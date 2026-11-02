@@ -20,7 +20,7 @@ import { useStake } from '@/hooks/use-stake';
 import { INSET } from '@/theme';
 
 /**
- * Stake history, pushed from House's month card: the ledger by month, every
+ * Stake history, pushed from House's first figure: the ledger by month, every
  * forfeit naming its John, payments and shares in words, yours or the whole
  * house's. The month so far and settling up live on House. An admin can
  * let everyone off a month's forfeits from here, through the reset sheet.

@@ -7,6 +7,7 @@ import {
   joinParts,
   monthAbbr,
   monthCard,
+  overviewFigures,
   moneyLines,
   monthsInWords,
   monthWord,
@@ -86,6 +87,56 @@ describe("joinParts", () => {
   it("skips empty segments, and says nothing for nothing", () => {
     expect(joinParts([[{ text: "" }], [{ text: "5 pts" }], []])).toEqual([{ text: "5 pts" }]);
     expect(joinParts([])).toEqual([]);
+  });
+});
+
+describe("overviewFigures", () => {
+  const stake = (net: Record<string, number>, forfeited: Record<string, number> = {}) => ({
+    month: "2026-10",
+    projection: projection(net, forfeited),
+  });
+  const base = { month: "2026-10", me: "sam", rules: { currency: "GBP" as const, stakeMinor: 2000 }, housemates: 4 };
+
+  it("gives your month, the stake, the housemates and the John list, in that order", () => {
+    const johns = [
+      { points: 3, everyWeeks: 1 },
+      { points: 2, everyWeeks: 2 },
+    ];
+    const figures = overviewFigures({ ...base, stake: stake({ sam: 401 }), johns });
+    expect(figures.map((f) => f.key)).toEqual(["money", "stake", "people", "johns"]);
+    expect(figures[0]).toEqual({
+      key: "money",
+      value: "£4.01",
+      label: HOUSE_PAGE_COPY.upIn("October"),
+      note: "Nothing forfeited, shared out 1 Nov",
+      good: true,
+    });
+    expect(figures[1]).toMatchObject({ value: "£20", label: HOUSE_PAGE_COPY.stakeEach });
+    expect(figures[2]).toMatchObject({ value: "4", label: "housemates" });
+    expect(figures[3]).toMatchObject({ value: "2", label: "Johns on the list", note: "about 4 pts a week" });
+  });
+
+  it("says what you're down in words, not in green", () => {
+    const [money] = overviewFigures({ ...base, me: "tom", stake: stake({ tom: -934 }, { tom: 1000 }) });
+    expect(money).toMatchObject({ value: "£9.34", label: HOUSE_PAGE_COPY.downIn("October"), note: "£10 forfeited, shared out 1 Nov", good: false });
+  });
+
+  it("gives what you forfeited when you're square, and when it's shared out", () => {
+    expect(overviewFigures({ ...base, stake: stake({}) })[0]).toMatchObject({
+      value: "£0",
+      label: HOUSE_PAGE_COPY.forfeitedIn("October"),
+      note: HOUSE_PAGE_COPY.sharedOutAlone("1 Nov"),
+    });
+    expect(overviewFigures({ ...base, stake: stake({ sam: 0 }, { sam: 200 }) })[0]).toMatchObject({ value: "£2" });
+  });
+
+  it("leaves a figure empty until it's read, and says one housemate and one John in the singular", () => {
+    const figures = overviewFigures({ ...base, month: "2026-11", housemates: 1, johns: undefined });
+    expect(figures[0]).toMatchObject({ value: null, label: HOUSE_PAGE_COPY.forfeitedIn("November") });
+    expect(figures[2].label).toBe("housemate");
+    expect(figures[3]).toMatchObject({ value: null, note: null });
+    expect(overviewFigures({ ...base, johns: [{ points: 1, everyWeeks: 1 }] })[3].label).toBe("John on the list");
+    expect(overviewFigures({ ...base, johns: [] })[3]).toMatchObject({ value: "0", note: null });
   });
 });
 

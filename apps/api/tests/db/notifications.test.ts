@@ -1,3 +1,4 @@
+import { nextWeek } from "@app/core";
 import { getHours } from "date-fns";
 import { tz } from "@date-fns/tz";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -35,15 +36,26 @@ function recorder() {
   return { sent, notify: async (to: string[], message: PushMessage) => void sent.push({ to, message }) };
 }
 
-/** A house with Bins and Bathroom dealt, Bins due in `hours`. */
-async function dueHouse(hours: number, { needsPhoto = false } = {}) {
+/**
+ * A pretend "now" for the reminder tests: Wednesday 10:00 of next week. Reminders only go out when the
+ * engine ticks, and ticks take the time they're given, so these tests read the same whatever the real
+ * clock says (they used to break late on Sunday nights, when an hour on was next week).
+ */
+function pretendNow() {
+  const week = nextWeek(thisWeek(), ZONE, 1);
+  return new Date(week.startsAt.getTime() + 2 * 24 * HOUR + 10 * HOUR);
+}
+
+/** A house with Bins and Bathroom dealt, Bins due `hours` after `now` (the real time unless given). */
+async function dueHouse(hours: number, { needsPhoto = false, now = new Date() } = {}) {
   const house = await makeHouse(["Ava", "Ben", "Cal"]);
-  await addJohns(house.id, [{ name: "Bins", needsPhoto }, { name: "Bathroom", points: 4 }], thisWeek());
-  const { assignments } = await deal(house.id, thisWeek(), new Date());
+  const week = thisWeek(now);
+  await addJohns(house.id, [{ name: "Bins", needsPhoto }, { name: "Bathroom", points: 4 }], week);
+  const { assignments } = await deal(house.id, week, now);
   const bins = assignments.find((a) => a.name === "Bins")!;
   // The other one out of the window, so only Bins is reminded.
-  await db.from("assignments").update({ due_at: new Date(Date.now() + 100 * HOUR).toISOString() }).neq("id", bins.id).eq("house_id", house.id);
-  await db.from("assignments").update({ due_at: new Date(Date.now() + hours * HOUR).toISOString() }).eq("id", bins.id);
+  await db.from("assignments").update({ due_at: new Date(now.getTime() + 100 * HOUR).toISOString() }).neq("id", bins.id).eq("house_id", house.id);
+  await db.from("assignments").update({ due_at: new Date(now.getTime() + hours * HOUR).toISOString() }).eq("id", bins.id);
   return { house, bins, owner: actorFor(house, bins.user_id) };
 }
 
@@ -63,11 +75,13 @@ function action(token: string, act: string) {
 }
 
 describe("reminders", () => {
+  const now = pretendNow();
+
   it("names the John and when it's due, once per stage, with a Done button", async () => {
-    const { house, bins } = await dueHouse(20);
+    const { house, bins } = await dueHouse(20, { now });
     const r = recorder();
-    await tickHouse(db, house.id, new Date(), r.notify);
-    await tickHouse(db, house.id, new Date(), r.notify);
+    await tickHouse(db, house.id, now, r.notify);
+    await tickHouse(db, house.id, now, r.notify);
     expect(r.sent).toHaveLength(1);
     expect(r.sent[0].to).toEqual([bins.user_id]);
     expect(r.sent[0].message).toMatchObject({
@@ -80,35 +94,35 @@ describe("reminders", () => {
   });
 
   it("has no button for a John that needs a photo", async () => {
-    const { house } = await dueHouse(2, { needsPhoto: true });
+    const { house } = await dueHouse(2, { needsPhoto: true, now });
     const r = recorder();
-    await tickHouse(db, house.id, new Date(), r.notify);
+    await tickHouse(db, house.id, now, r.notify);
     expect(r.sent[0].message.title).toBe("Bins is due soon");
     expect(r.sent[0].message.act).toBeUndefined();
     expect(r.sent[0].message.body).toContain("It needs a photo, so tick it in the app.");
   });
 
   it("sends nothing to someone who turned reminders off, and doesn't try again", async () => {
-    const { house, bins } = await dueHouse(20);
+    const { house, bins } = await dueHouse(20, { now });
     await setPrefs(house, bins.user_id, { reminders: false });
     const r = recorder();
-    await tickHouse(db, house.id, new Date(), r.notify);
+    await tickHouse(db, house.id, now, r.notify);
     expect(r.sent).toEqual([]);
     const { data } = await db.from("assignments").select("reminded").eq("id", bins.id).single();
     expect(data!.reminded).toBe(1);
   });
 
   it("holds a reminder through quiet hours, and sends it after", async () => {
-    const { house, bins } = await dueHouse(20);
-    const hour = getHours(new Date(), { in: tz(ZONE) });
+    const { house, bins } = await dueHouse(20, { now });
+    const hour = getHours(now, { in: tz(ZONE) });
     await setPrefs(house, bins.user_id, { quiet_from: hour, quiet_until: (hour + 1) % 24, timezone: ZONE });
     const r = recorder();
-    await tickHouse(db, house.id, new Date(), r.notify);
+    await tickHouse(db, house.id, now, r.notify);
     expect(r.sent).toEqual([]);
     const { data } = await db.from("assignments").select("reminded").eq("id", bins.id).single();
     expect(data!.reminded).toBe(0);
 
-    await tickHouse(db, house.id, new Date(Date.now() + HOUR), r.notify);
+    await tickHouse(db, house.id, new Date(now.getTime() + HOUR), r.notify);
     expect(r.sent).toHaveLength(1);
   });
 });

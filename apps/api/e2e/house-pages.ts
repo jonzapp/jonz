@@ -6,15 +6,13 @@ import type { Locator, Page } from "@playwright/test";
 // way to the list. These find whichever the page shows, so a test walks
 // House the same way at any width.
 
-/** Rows on House whose page is listed beside House by another name: your preferences are on Days and time away. */
-const LISTED_AS: Record<string, string> = { "to-prefs": "nav-away" };
 
 /** The row on House that opens one of its setup pages ("to-johns"), or that page in the list beside House on a laptop. */
 export function toHousePage(page: Page, row: string): Locator {
   return page
     .getByTestId(row)
     .filter({ visible: true })
-    .or(page.getByTestId("house-nav").getByTestId(LISTED_AS[row] ?? row.replace(/^to-/, "nav-")));
+    .or(page.getByTestId("house-nav").getByTestId(row.replace(/^to-/, "nav-")));
 }
 
 /** The way back to House from one of its pages: the title bar's back, or Overview in the list beside it on a laptop. */

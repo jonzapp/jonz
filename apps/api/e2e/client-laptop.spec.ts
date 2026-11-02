@@ -136,7 +136,14 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
 
   await page.getByRole("tab", { name: SECTION_LABEL.house }).click();
   const house = page.getByTestId("house-screen");
-  await expect(house.getByTestId("month-card")).toBeVisible();
+  // The house at a glance in four figures on one line, then the Table beside the Wall, the two sharing a top edge.
+  const figures = house.getByTestId("house-figures");
+  await expect(figures.getByRole("link")).toHaveCount(4);
+  expect(await topOf(figures.getByRole("link").first())).toBeCloseTo(await topOf(figures.getByRole("link").last()), 0);
+  await expect(house.getByTestId("house-pair-start").getByTestId("house-table")).toBeVisible();
+  await expect(house.getByTestId("house-pair-end").getByTestId("wall-section")).toBeVisible();
+  expect(await topOf(house.getByTestId("house-pair-start"))).toBeCloseTo(await topOf(house.getByTestId("house-pair-end")), 0);
+  await fillsTheRoom(page, house.getByTestId("house-pair-end"));
   await shoot(page, "house");
 
   // House lists its pages beside them: the John list, and a John in the panel beside it.
@@ -176,8 +183,15 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   await fillsTheRoom(page, person.getByTestId("person-sections-column").last());
   await shoot(page, "person");
 
-  // Groups, Admins, Preferences and History are parts of other pages now: six in the list.
-  await expect(nav.getByRole("link")).toHaveCount(6);
+  // Groups, Admins, Preferences and History are parts of other pages now, and You has its own: seven in the list.
+  await expect(nav.getByRole("link")).toHaveCount(7);
+  // You: your settings beside help and leaving.
+  await nav.getByTestId("nav-you").click();
+  await expect(page.getByTestId("you-pair-start").getByTestId("sign-out")).toBeVisible();
+  await expect(page.getByTestId("you-pair-end").getByTestId("to-delete-account")).toBeVisible();
+  await expect(page.getByTestId("you-pair-end").getByTestId("leave")).toBeVisible();
+  expect(await topOf(page.getByTestId("you-pair-start"))).toBeCloseTo(await topOf(page.getByTestId("you-pair-end")), 0);
+  await shoot(page, "you");
   await nav.getByTestId("nav-wall").click();
   // History beside the Wall, under its name, the two sharing a top edge.
   const history = page.getByTestId("wall-pair-end").getByTestId("history-section");
@@ -200,13 +214,14 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   await expect(page.getByTestId("john-kinds").getByTestId("johns-groups")).toBeVisible();
 
   await page.getByTestId("house-nav").getByRole("link", { name: HOUSE_LOWER_COPY.overview }).click();
-  await expect(house.getByTestId("month-card")).toBeVisible();
+  await expect(house.getByTestId("house-figures")).toBeVisible();
 
   // A screen wide enough for the list beside the chat with Jonz still has one panel down the right: a John closes the chat.
   await page.setViewportSize({ width: 1920, height: 1080 });
-  await expect(house.getByTestId("columns")).toBeVisible();
+  await expect(house.getByTestId("house-pair")).toBeVisible();
+  const table = groupOf(house.getByTestId("house-table"));
   const wall = groupOf(house.getByTestId("wall-section").locator(":scope > div").first());
-  expect(await topOf(house.getByTestId("month-card"))).toBeCloseTo(await topOf(wall), 0);
+  expect(await topOf(table)).toBeCloseTo(await topOf(wall), 0);
   await shoot(page, "house-wide");
   await house.getByTestId("ask-jonz").click();
   await expect(page.getByTestId("ask-panel")).toBeVisible();
@@ -221,9 +236,10 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   await page.keyboard.press("Escape");
   await nav.getByRole("link", { name: HOUSE_LOWER_COPY.overview }).click();
 
-  // The narrowest laptop leaves too little room beside the rail: one column, as on a phone.
+  // The narrowest laptop leaves too little room for House's list beside the rail: the setup, the Pass and You
+  // are rows on the page again, under the Table and the Wall.
   await page.setViewportSize({ width: 1100, height: 900 });
   await expect(page.getByTestId("house-nav")).toHaveCount(0);
-  await expect(house.getByTestId("columns")).toHaveCount(0);
   await expect(house.getByTestId("setup-section")).toBeVisible();
+  await expect(house.getByTestId("to-you")).toBeVisible();
 });

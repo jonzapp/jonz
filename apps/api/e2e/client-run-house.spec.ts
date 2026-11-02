@@ -156,20 +156,24 @@ test("run a house from nothing on the phone", async ({ browser }) => {
   await expect(person.getByTestId("toggle-admin")).toContainText(PERSON_COPY.makeHousemate);
   await backToHouse(page, person.getByRole("button", { name: FOCUS_SHELL_COPY.backTo(SECTION_LABEL.house) })).click();
   await expect(page).toHaveURL(/\/house$/);
-  await house.getByTestId("to-name").click();
+  // Your name is on You, a row at the foot of House on a phone and a page in its list on a laptop.
+  await toHousePage(page, "to-you").click();
+  await expect(page).toHaveURL(/\/house\/you$/);
+  const you = page.getByTestId("you-screen");
+  await you.getByTestId("to-name").click();
   const nameSheet = page.getByTestId("name-sheet");
   await nameSheet.getByTestId("my-name").fill("Ava R");
   await nameSheet.getByTestId("save-name").click();
   await expect(nameSheet).toBeHidden();
-  await expect(house.getByTestId("to-name")).toContainText("Ava R");
+  await expect(you.getByTestId("to-name")).toContainText("Ava R");
   const { data: roles } = await db.from("members").select("user_id, role").eq("house_id", houseRow!.id);
   expect(roles).toContainEqual({ user_id: ben, role: "admin" });
   const { data: profile } = await db.from("profiles").select("display_name").eq("id", ava).single();
   expect(profile!.display_name).toBe("Ava R");
 
   // Ben leaves, after its confirm, and is back at starting or joining one.
-  await benPage.goto("/house");
-  await benPage.getByTestId("house-screen").getByTestId("leave").click();
+  await benPage.goto("/house/you");
+  await benPage.getByTestId("you-screen").getByTestId("leave").click();
   await benPage.getByTestId("leave-sheet").getByTestId("confirm").click();
   await expect(benPage).toHaveURL(/\/welcome$/);
   const { data: left } = await db.from("members").select("user_id").eq("house_id", houseRow!.id);
@@ -190,8 +194,8 @@ test("run a house from nothing on the phone", async ({ browser }) => {
   expect(newList).toEqual(oldList);
   expect(newList!.length).toBeGreaterThan(0);
 
-  // Ava signs out from House.
-  await house.getByTestId("sign-out").click();
+  // Ava signs out from You.
+  await you.getByTestId("sign-out").click();
   await expect(page).toHaveURL(/\/signin$/);
   await expect(page.getByRole("button", { name: SIGN_IN_COPY.google })).toBeVisible();
 

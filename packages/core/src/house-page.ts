@@ -1,7 +1,8 @@
 import { format } from "date-fns";
 
 import { currentOrNext, shiftMonth, type AwayPeriod } from "./away";
-import { FOCUS_SHELL_COPY, HOUSE_PAGE_COPY, PERSON_COPY, STAKE_HISTORY_COPY } from "./copy";
+import { weeklyEffort, type JohnDef } from "./board";
+import { FOCUS_SHELL_COPY, HOUSE_LOWER_COPY, HOUSE_PAGE_COPY, PERSON_COPY, STAKE_HISTORY_COPY } from "./copy";
 import type { BalanceRow } from "./deal";
 import type { Currency, HouseRules, SettleIn } from "./domain";
 import { dateRange, dayLabel, firstName, formatBalance, monthLabel, pointsLabel, STATUS_MARK, type StatusIcon } from "./format";
@@ -142,6 +143,73 @@ export function monthCard(stake: Pick<StakeView, "month" | "projection">, me: st
     return { label, lead: HOUSE_PAGE_COPY.nothingYet, figure: null, good: false, meta: HOUSE_PAGE_COPY.sharedOutAlone(day) };
   }
   return { label, lead: HOUSE_PAGE_COPY.even, figure: null, good: false, meta };
+}
+
+// The Overview's figures --------------------------------------------------------
+
+/** One of the Overview's figures: the figure, what it counts, and a quieter line under them. */
+export interface OverviewFigure {
+  key: "money" | "stake" | "people" | "johns";
+  /** "£4.01", "4", or null while it's still being read. */
+  value: string | null;
+  label: string;
+  note: string | null;
+  /** The figure is green: only your month, and only when you're up. */
+  good: boolean;
+}
+
+/**
+ * The Overview's four figures, left to right: your month so far (what
+ * you're up or down, else what you've forfeited, and when it's shared
+ * out), the stake, how many live here, and the John list with its effort
+ * in an average week. Money lost is said in words, not in colour, as the
+ * month card did.
+ */
+export function overviewFigures(input: {
+  /** The Stake's month and projection, once read. */
+  stake?: Pick<StakeView, "month" | "projection">;
+  /** The month to name before the Stake is read, `yyyy-MM`. */
+  month: string;
+  me: string;
+  rules: Pick<HouseRules, "currency" | "stakeMinor">;
+  housemates: number;
+  /** The John list, once read. */
+  johns?: readonly Pick<JohnDef, "points" | "everyWeeks">[];
+}): OverviewFigure[] {
+  const { stake, me, rules, housemates, johns } = input;
+  const money = (minor: number) => formatMoney(minor, rules.currency);
+  const month = monthWord(stake?.month ?? input.month);
+  let mine: OverviewFigure = { key: "money", value: null, label: HOUSE_PAGE_COPY.forfeitedIn(month), note: null, good: false };
+  if (stake) {
+    const card = monthCard(stake, me, rules.currency);
+    const own = stake.projection.find((p) => p.userId === me);
+    const net = own?.net ?? 0;
+    const forfeited = own?.forfeited ?? 0;
+    mine =
+      net > 0
+        ? { key: "money", value: money(net), label: HOUSE_PAGE_COPY.upIn(month), note: card.meta, good: true }
+        : net < 0
+          ? { key: "money", value: money(-net), label: HOUSE_PAGE_COPY.downIn(month), note: card.meta, good: false }
+          : {
+              key: "money",
+              value: money(forfeited),
+              label: HOUSE_PAGE_COPY.forfeitedIn(month),
+              note: HOUSE_PAGE_COPY.sharedOutAlone(shareOutDay(stake.month)),
+              good: false,
+            };
+  }
+  return [
+    mine,
+    { key: "stake", value: money(rules.stakeMinor), label: HOUSE_PAGE_COPY.stakeEach, note: null, good: false },
+    { key: "people", value: String(housemates), label: HOUSE_PAGE_COPY.housemates(housemates), note: null, good: false },
+    {
+      key: "johns",
+      value: johns ? String(johns.length) : null,
+      label: HOUSE_PAGE_COPY.johnsListed(johns?.length ?? 0),
+      note: johns && johns.length > 0 ? HOUSE_LOWER_COPY.perWeek(Math.round(weeklyEffort(johns))) : null,
+      good: false,
+    },
+  ];
 }
 
 // Settling up -----------------------------------------------------------------

@@ -80,8 +80,10 @@ test("tab titles, the look, and reminders on this device", async ({ browser }) =
   await page.getByRole("tab", { name: SECTION_LABEL.house }).click();
   await expect(page).toHaveTitle("House · Jonz");
 
-  // Night, chosen here, stays chosen on this device.
-  const house = page.getByTestId("house-screen");
+  // Night, chosen on You, stays chosen on this device.
+  await page.goto("/house/you");
+  await expect(page).toHaveTitle("You · Jonz");
+  const house = page.getByTestId("you-screen");
   const ground = () => house.evaluate((el) => getComputedStyle(el).backgroundColor);
   const day = await ground();
   await house.getByRole("radio", { name: LOOK_LABEL.dark }).click();
@@ -94,13 +96,13 @@ test("tab titles, the look, and reminders on this device", async ({ browser }) =
   await house.getByRole("radio", { name: LOOK_LABEL.system }).click();
   await expect.poll(ground).toBe(day);
 
-  // Reminders, from their row under You: on, saved as Ava's, then off again.
+  // Reminders, from their row on You: on, saved as Ava's, then off again.
   const db = admin();
   const rows = async () => (await db.from("push_subscriptions").select("user_id, endpoint, p256dh, auth").eq("user_id", userId)).data;
   const remindersRow = house.getByTestId("to-reminders");
   await expect(remindersRow).toContainText(HOUSE_LOWER_COPY.off);
   await remindersRow.click();
-  // The sheet is a modal, outside House's screen.
+  // The sheet is a modal, outside the page.
   const reminders = page.getByTestId("reminders-sheet");
   await reminders.getByTestId("enable-push").click();
   await expect(reminders.getByText(REMINDERS_COPY.turnedOn)).toBeVisible();

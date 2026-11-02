@@ -1,32 +1,45 @@
-import { formatMoney, HOUSE_PAGE_COPY, PAGE_TITLE, PASS_COPY, passUnlocked } from '@app/core';
+import {
+  HOUSE_LOWER_COPY,
+  HOUSE_PAGE_COPY,
+  monthOf,
+  overviewFigures,
+  PAGE_TITLE,
+  PASS_COPY,
+  passUnlocked,
+  type OverviewFigure,
+} from '@app/core';
+import type { Href } from 'expo-router';
 
-import { LeaveSection } from '@/components/house-page/leave-section';
-import { MonthCard } from '@/components/house-page/month-card';
+import { Avatar } from '@/components/avatar';
+import { Figures } from '@/components/figures';
 import { PassLocked, PassSection } from '@/components/house-page/pass-section';
+import { SettleUpSection } from '@/components/house-page/settle-up';
 import { SetupSection } from '@/components/house-page/setup-section';
 import { TableSection } from '@/components/house-page/table-section';
 import { WallSection } from '@/components/house-page/wall-section';
 import { useHouseWorkspace } from '@/components/house/workspace';
-import { YouSection } from '@/components/house-page/you-section';
+import { Pair } from '@/components/page-columns';
 import { PageTitle } from '@/components/page-title';
 import { Reading, ReadFailed } from '@/components/read-state';
-import { Columns, Screen, useColumns } from '@/components/screen';
-import { TitleBar, TopLine } from '@/components/title-bar';
+import { Row } from '@/components/row';
+import { Screen } from '@/components/screen';
+import { Section } from '@/components/section';
+import { TitleBar } from '@/components/title-bar';
 import { useAway } from '@/hooks/use-away';
 import { useHouse, type HouseView } from '@/hooks/use-house';
+import { useJohnList } from '@/hooks/use-john-list';
 import { useMembership } from '@/hooks/use-membership';
 import { usePull, useReadOnFocus } from '@/hooks/use-refresh';
 import { useStake } from '@/hooks/use-stake';
 import { useTable } from '@/hooks/use-table';
 
 /**
- * House, the third tab: the house's group page. The month's money and
- * settling up in the one card, then the Table; below them the lower
- * sections, each its own component in components/house-page: the Wall's
- * latest, the house's setup, the House Pass, you, and leaving. Without the
- * Pass (once it's enforced) the month card and the Table give way to a row
- * to the Pass page. The pages it pushes keep the tabs (house/_layout is a
- * stack).
+ * House, the third tab: the house's Overview. Four figures, then settling
+ * up while there's any, then the Table and the Wall's latest; on a phone,
+ * the house's setup, the House Pass and the way to You under them. Each
+ * section is its own component in components/house-page. Without the Pass
+ * (once it's enforced) the figures and the Table give way to a row to the
+ * Pass page. The pages it pushes keep the tabs (house/_layout is a stack).
  */
 export default function HouseScreen() {
   const { session, house } = useMembership();
@@ -50,7 +63,7 @@ function HouseFor({ houseId, userId }: { houseId: string; userId: string }) {
   const bar = <TitleBar title={snapshot?.house.name ?? PAGE_TITLE.house} ask={view?.me?.role === 'admin'} />;
 
   return (
-    <Screen bar={bar} spreads refreshing={refreshing} onRefresh={pull} testID="house-screen">
+    <Screen bar={bar} fills refreshing={refreshing} onRefresh={pull} testID="house-screen">
       <PageTitle page={PAGE_TITLE.house} />
       {!view ? (
         query.isError ? (
@@ -65,10 +78,21 @@ function HouseFor({ houseId, userId }: { houseId: string; userId: string }) {
   );
 }
 
+/** The page each of the Overview's figures opens. */
+const FIGURE_PAGE: Record<OverviewFigure['key'], Href> = {
+  money: '/house/stake',
+  stake: '/house/rules',
+  people: '/house/away',
+  johns: '/house/johns',
+};
+
 /**
- * House's sections: the month's money and the Table, then the lower
- * sections. On a laptop the money and the Table keep the main column and
- * the lower sections sit beside them.
+ * The Overview's sections: the house at a glance in four figures (your
+ * month, the stake, the housemates and the John list, each opening its
+ * page), anything from a closed month still to settle, then the Table
+ * beside the Wall's latest. On a phone the Wall comes under the Table, and
+ * the setup, the Pass and the way to You under them; on a laptop those are
+ * in House's list beside the page.
  */
 function HouseSections({
   houseId,
@@ -85,55 +109,57 @@ function HouseSections({
   stake: ReturnType<typeof useStake>;
   away: ReturnType<typeof useAway>;
 }) {
-  const two = useColumns();
-  // On a laptop the setup and the Pass are in the list beside the page.
   const { listed } = useHouseWorkspace();
+  const list = useJohnList(houseId);
+  // The John list doesn't come over Realtime, and a housemate may have changed it.
+  useReadOnFocus(list.refetch, { skipFirst: true });
+  const { rules, members } = view.snapshot;
   const unlocked = passUnlocked(view.snapshot.house.pass, view.now);
-  const top = (
-    <TopLine>
-      {HOUSE_PAGE_COPY.sub(view.snapshot.members.length, formatMoney(view.snapshot.rules.stakeMinor, view.snapshot.rules.currency))}
-    </TopLine>
-  );
-  const money = unlocked ? (
-    <>
-      <MonthCard houseId={houseId} userId={userId} view={view} stake={stake} />
-      <TableSection userId={userId} view={view} table={table} stake={stake} away={away} />
-    </>
-  ) : (
-    <>
-      <PassLocked label={PASS_COPY.stake} feature={PASS_COPY.stake} testID="stake-locked" />
-      <PassLocked label={PASS_COPY.table} feature={PASS_COPY.table} testID="table-locked" />
-    </>
-  );
-  const lower = (
-    <>
-      <WallSection houseId={houseId} userId={userId} view={view} />
-      {listed ? null : <SetupSection houseId={houseId} userId={userId} view={view} />}
-      {listed ? null : <PassSection view={view} />}
-      <YouSection houseId={houseId} userId={userId} view={view} />
-      <LeaveSection houseId={houseId} userId={userId} view={view} />
-    </>
-  );
-  // On a laptop the line heads the main column, a section label's height, so the month card and the Wall's
-  // group in the panel beside it share a top edge.
-  if (two) {
-    return (
-      <Columns
-        main={
-          <>
-            {top}
-            {money}
-          </>
-        }
-        side={lower}
-      />
-    );
-  }
+  const figures = overviewFigures({
+    stake: stake.data,
+    month: monthOf(view.now, rules.timezone),
+    me: userId,
+    rules,
+    housemates: members.length,
+    johns: list.data?.johns,
+  }).map((figure) => ({ ...figure, href: FIGURE_PAGE[figure.key] }));
+  const me = view.me;
   return (
     <>
-      {top}
-      {money}
-      {lower}
+      {unlocked ? (
+        <>
+          {stake.isError ? <ReadFailed message={HOUSE_PAGE_COPY.stakeUnreadable} onRetry={() => void stake.refetch()} /> : null}
+          <Figures figures={figures} label={HOUSE_PAGE_COPY.figures} testID="house-figures" />
+          {stake.data ? <SettleUpSection houseId={houseId} userId={userId} view={view} stake={stake.data} /> : null}
+        </>
+      ) : (
+        <PassLocked label={PASS_COPY.stake} feature={PASS_COPY.stake} testID="stake-locked" />
+      )}
+      <Pair
+        testID="house-pair"
+        start={
+          unlocked ? (
+            <TableSection userId={userId} view={view} table={table} stake={stake} away={away} />
+          ) : (
+            <PassLocked label={PASS_COPY.table} feature={PASS_COPY.table} testID="table-locked" />
+          )
+        }
+        end={<WallSection houseId={houseId} userId={userId} view={view} />}
+      />
+      {listed ? null : <SetupSection houseId={houseId} userId={userId} view={view} />}
+      {listed ? null : <PassSection view={view} />}
+      {listed || !me ? null : (
+        <Section label={PAGE_TITLE.you} testID="you-row">
+          <Row
+            leading={<Avatar name={me.name} userId={userId} me />}
+            title={me.name}
+            meta={HOUSE_LOWER_COPY.youMeta}
+            href="/house/you"
+            chevron
+            testID="to-you"
+          />
+        </Section>
+      )}
     </>
   );
 }

@@ -22,14 +22,14 @@ test.afterAll(async () => {
   await cleanUp(made);
 });
 
-test("sends a problem with a screenshot from House, then reads the reply and writes back", async ({ browser }) => {
+test("sends a problem with a screenshot from You, then reads the reply and writes back", async ({ browser }) => {
   const context = await browser.newContext();
   const { userId } = await dealtHouseInClient(context, "Ava Reports", "Flat 40", [{ name: "Wipe the hob", category: "kitchen" }]);
   made.push(userId);
   const page = await context.newPage();
-  await page.goto("/house");
+  await page.goto("/house/you");
 
-  // House > Help > Report a problem opens the sheet, listing what it will send.
+  // You > Help > Report a problem opens the sheet, listing what it will send.
   await page.getByTestId("to-report").filter({ visible: true }).click();
   const form = page.getByTestId("report-form");
   await expect(form).toBeVisible();
@@ -55,8 +55,8 @@ test("sends a problem with a screenshot from House, then reads the reply and wri
   await admin().from("report_messages").insert({ report_id: id, from_owner: true, author_name: "Glyn", body: "Thanks Ava, fixed in today's update." });
   await admin().from("reports").update({ state: "replied", updated_at: new Date().toISOString() }).eq("id", id);
 
-  // House says a reply is waiting; the report shows it, and writing back sends it to the Inbox as new.
-  await page.goto("/house");
+  // You says a reply is waiting; the report shows it, and writing back sends it to the Inbox as new.
+  await page.goto("/house/you");
   await expect(page.getByTestId("to-reports").filter({ visible: true })).toContainText(REPORT_COPY.yoursMeta(1, 1));
   await page.goto(`/house/reports/${id}`);
   const thread = page.getByTestId("report-thread");
@@ -68,8 +68,8 @@ test("sends a problem with a screenshot from House, then reads the reply and wri
   await expect(thread).toContainText("Thank you!");
   await expect(page.getByTestId("your-report-state")).toHaveText(REPORT_COPY.state.new);
 
-  // Read now: House no longer says a reply is waiting.
-  await page.goto("/house");
+  // Read now: You no longer says a reply is waiting.
+  await page.goto("/house/you");
   await expect(page.getByTestId("to-reports").filter({ visible: true })).not.toContainText(REPORT_COPY.yoursMeta(1, 1));
   await context.close();
 });

@@ -108,6 +108,8 @@ export const PANEL = 400;
 export const FILL_MAX = 1600;
 /** The narrowest column a filled page's sections go into: two on a 1440 laptop, three on a 1920 screen. */
 export const COLUMN_MIN = 360;
+/** The narrowest a figure gets in a row of `Figures` before the row goes two to a line, as on a phone. */
+export const FIGURE_MIN = 180;
 /** Between one section and the next. */
 export const SECTION_GAP = 32;
 /** From a section's label to its group. */
