@@ -57,8 +57,9 @@ export function WallSection({ houseId, userId, view }: { houseId: string; userId
   );
 
   return (
-    <View testID="wall-section">
-      <TourSpot id="house.wall">
+    // Round the section, not inside it: tests and layouts reach its children.
+    <TourSpot id="house.wall">
+      <View testID="wall-section">
         <Section label={WALL_COPY.title} right={seeAll}>
           {!latest.data ? (
             <GroupItem>
@@ -87,13 +88,13 @@ export function WallSection({ houseId, userId, view }: { houseId: string; userId
             ))
           )}
         </Section>
-      </TourSpot>
-      <WallEventSheet
-        row={shown ?? null}
-        problem={shown && problemAt === shown.id ? problem : null}
-        onReact={(kind, on) => shown && react(shown.id, kind, on)}
-        onClose={() => setOpen(null)}
-      />
-    </View>
+        <WallEventSheet
+          row={shown ?? null}
+          problem={shown && problemAt === shown.id ? problem : null}
+          onReact={(kind, on) => shown && react(shown.id, kind, on)}
+          onClose={() => setOpen(null)}
+        />
+      </View>
+    </TourSpot>
   );
 }

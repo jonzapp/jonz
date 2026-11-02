@@ -1,24 +1,19 @@
-import { ADMINS_COPY, PAGE_TITLE, rulesRows, SETUP_COPY } from "@app/core";
-import { useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { ADMINS_COPY, PAGE_TITLE, rulesRows, SETUP_COPY } from '@app/core';
+import { useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 
-import { AdminsList } from "@/components/house/admins-list";
-import { HousePage } from "@/components/house/house-page";
-import {
-  RulesFoot,
-  RulesForm,
-  useRulesForm,
-  type RulesValues,
-} from "@/components/house/rules-form";
-import { Pair } from "@/components/page-columns";
-import { Row } from "@/components/row";
-import { Section } from "@/components/section";
-import { TextButton } from "@/components/text-button";
-import { useToast } from "@/components/toast";
-import { useHouse, type HouseView } from "@/hooks/use-house";
-import { useMembership } from "@/hooks/use-membership";
-import { usePull, useReadOnFocus } from "@/hooks/use-refresh";
-import { TourSpot } from "@/components/tour/tour-spot";
+import { AdminsList } from '@/components/house/admins-list';
+import { HousePage } from '@/components/house/house-page';
+import { RulesFoot, RulesForm, useRulesForm, type RulesValues } from '@/components/house/rules-form';
+import { Pair } from '@/components/page-columns';
+import { Row } from '@/components/row';
+import { Section } from '@/components/section';
+import { TextButton } from '@/components/text-button';
+import { useToast } from '@/components/toast';
+import { useHouse, type HouseView } from '@/hooks/use-house';
+import { useMembership } from '@/hooks/use-membership';
+import { usePull, useReadOnFocus } from '@/hooks/use-refresh';
+import { TourSpot } from '@/components/tour/tour-spot';
 
 /**
  * The house rules, pushed from House: the stake, the forfeits, disputes,
@@ -49,7 +44,7 @@ function RulesFor({ houseId, userId }: { houseId: string; userId: string }) {
     onRefresh: pull,
   };
 
-  if (view && view.me?.role === "admin" && editing) {
+  if (view && view.me?.role === 'admin' && editing) {
     const { snapshot } = view;
     const values = {
       name: snapshot.house.name,
@@ -76,14 +71,7 @@ function RulesFor({ houseId, userId }: { houseId: string; userId: string }) {
 
   return (
     <HousePage {...page} testID="rules-screen" fills>
-      {() => (
-        <RulesReadOut
-          houseId={houseId}
-          userId={userId}
-          view={view!}
-          onEdit={() => setEditing(true)}
-        />
-      )}
+      {() => <RulesReadOut houseId={houseId} userId={userId} view={view!} onEdit={() => setEditing(true)} />}
     </HousePage>
   );
 }
@@ -92,51 +80,23 @@ function RulesFor({ houseId, userId }: { houseId: string; userId: string }) {
  * The rules as everyone reads them, with Edit for an admin, and beside them
  * on a laptop (under them on a phone) the admins: who can change them.
  */
-function RulesReadOut({
-  houseId,
-  userId,
-  view,
-  onEdit,
-}: {
-  houseId: string;
-  userId: string;
-  view: HouseView;
-  onEdit: () => void;
-}) {
+function RulesReadOut({ houseId, userId, view, onEdit }: { houseId: string; userId: string; view: HouseView; onEdit: () => void }) {
   const { snapshot } = view;
-  const isAdmin = view.me?.role === "admin";
+  const isAdmin = view.me?.role === 'admin';
   return (
     <Pair
       testID="rules-pair"
       start={
         <TourSpot id="rules.form">
-          <Section
-            label={SETUP_COPY.rules}
-            right={
-              isAdmin ? (
-                <TextButton
-                  label={SETUP_COPY.edit}
-                  align="end"
-                  onPress={onEdit}
-                  testID="edit-rules"
-                />
-              ) : undefined
-            }
-            testID="rules-panel"
-          >
-            {rulesRows(
-              snapshot.rules,
-              snapshot.house.awayMakeup,
-              snapshot.house.settleIn,
-            ).map((rule) => (
-              <Row
-                key={rule.label}
-                title={rule.label}
-                trailing={rule.value}
-                testID="rule"
-              />
-            ))}
-          </Section>
+        <Section
+          label={SETUP_COPY.rules}
+          right={isAdmin ? <TextButton label={SETUP_COPY.edit} align="end" onPress={onEdit} testID="edit-rules" /> : undefined}
+          testID="rules-panel"
+        >
+          {rulesRows(snapshot.rules, snapshot.house.awayMakeup, snapshot.house.settleIn).map((rule) => (
+            <Row key={rule.label} title={rule.label} trailing={rule.value} testID="rule" />
+          ))}
+        </Section>
         </TourSpot>
       }
       end={
@@ -158,7 +118,7 @@ function RulesEditing({
 }: {
   houseId: string;
   values: RulesValues;
-  page: Omit<Parameters<typeof HousePage>[0], "testID" | "children">;
+  page: Omit<Parameters<typeof HousePage>[0], 'testID' | 'children'>;
   onSaved: () => void;
   onCancel: () => void;
 }) {

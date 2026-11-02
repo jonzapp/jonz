@@ -11,7 +11,6 @@ import { useHouse, type HouseView } from '@/hooks/use-house';
 import { useJohnList } from '@/hooks/use-john-list';
 import { useMembership } from '@/hooks/use-membership';
 import { usePull, useReadOnFocus } from '@/hooks/use-refresh';
-import { TourSpot } from '@/components/tour/tour-spot';
 
 /**
  * The John list, pushed from House: every John by kind, how often and how
@@ -68,7 +67,6 @@ function JohnListPage({ houseId, userId, view, list }: { houseId: string; userId
   const amongKinds = useFilled() !== null && list.johns.length > 0;
   return (
     <>
-      <TourSpot id="johns.list">
       <JohnList
         houseId={houseId}
         rules={view.snapshot.rules}
@@ -81,7 +79,6 @@ function JohnListPage({ houseId, userId, view, list }: { houseId: string; userId
         // A group's row is about two lines, with Add a group and the note under them.
         more={amongKinds && groups ? [{ key: 'groups', weight: list.groups.length + 3, node: groups }] : undefined}
       />
-      </TourSpot>
       {isAdmin && list.johns.length > 0 ? (
         <DealFoot houseId={houseId} started={view.snapshot.house.everDealt} canRedeal={canRedeal(view.board)} />
       ) : null}
