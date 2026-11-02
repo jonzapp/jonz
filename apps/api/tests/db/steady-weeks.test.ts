@@ -318,13 +318,15 @@ describe("save_prefs", () => {
 
 describe("plan_john", () => {
   async function planHouse() {
+    // Next week, which is always ahead of the real clock, so "soon" (its second day) is a good time whenever this runs.
     const house = await makeHouse(["Ava", "Ben"]);
-    await addJohns(house.id, [{ name: "Bins" }], thisWeek());
-    const { weekId, assignments } = await deal(house.id, thisWeek(), new Date());
+    const week = nextWeek(thisWeek(), ZONE, 1);
+    await addJohns(house.id, [{ name: "Bins" }], week);
+    const { weekId, assignments } = await deal(house.id, week, week.startsAt);
     const { data: w } = await db.from("weeks").select("ends_at").eq("id", weekId).single();
     const ends = Date.parse(w!.ends_at);
     const bins = assignments[0];
-    return { house, bins, owner: actorFor(house, bins.user_id), ends, soon: new Date(Math.min(Date.now() + HOUR, ends - 60_000)) };
+    return { house, bins, owner: actorFor(house, bins.user_id), ends, soon: new Date(week.startsAt.getTime() + 24 * HOUR) };
   }
 
   it("is the holder's, for a time from now to the week's end, and clears with null", async () => {
@@ -512,15 +514,16 @@ describe("Plan it reminders", () => {
   }
 
   it("come at the planned time instead of the usual ones, once, and again for a new plan", async () => {
+    // A pretend clock in next week, so the test doesn't care what day or hour it really is. Next week is
+    // always ahead of the real clock, which plan_john checks plans against, and ticks take the pretend time.
     const house = await makeHouse(["Ava", "Ben"]);
-    const week = thisWeek();
+    const week = nextWeek(thisWeek(), ZONE, 1);
     await addJohns(house.id, [{ name: "Bins" }], week);
-    const { weekId, assignments } = await deal(house.id, week, new Date());
+    const { assignments } = await deal(house.id, week, week.startsAt);
     const bins = assignments[0];
     const owner = actorFor(house, bins.user_id);
-    // Due in 20 hours, the usual "due tomorrow"; planned for 5 hours from now (the clock is moved to suit).
-    const { data: w } = await db.from("weeks").select("ends_at").eq("id", weekId).single();
-    const plan = new Date(Math.min(Date.now() + 5 * HOUR, Date.parse(w!.ends_at) - 2 * HOUR));
+    // Planned for the week's third morning; due 15 hours after the plan, the usual "due tomorrow".
+    const plan = new Date(week.startsAt.getTime() + 2 * 24 * HOUR + 10 * HOUR);
     expectOk(await db.from("assignments").update({ due_at: new Date(plan.getTime() + 15 * HOUR).toISOString() }).eq("id", bins.id));
     expectOk(await owner.db.rpc("plan_john", { p_assignment: bins.id, p_at: plan.toISOString() }));
 

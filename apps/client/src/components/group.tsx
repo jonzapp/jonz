@@ -47,8 +47,8 @@ export function Group({ children, style, testID }: { children: ReactNode; style?
 }
 
 /**
- * Rows inside the one Card (House's month card: a settle-up row, then
- * "Stake history"). They start at the card's own padding rather than
+ * Rows inside the one Card (Today's setup card: its words, then its
+ * rows). They start at the card's own padding rather than
  * insetting again, and each draws a hairline above itself across the card's
  * content width, the first one included, since words come before them.
  * It leaves INSET between those words and the first line.

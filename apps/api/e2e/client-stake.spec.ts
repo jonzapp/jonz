@@ -48,21 +48,21 @@ test("a closed month's debt is settled once the person paid marks it received", 
   await expect(benPage.getByRole("heading", { name: STAKE_HISTORY_COPY.title })).toBeVisible();
   await expect(benPage.getByTestId("stake-screen").getByTestId("ledger-entry").filter({ hasText: STAKE_HISTORY_COPY.aJohn })).toContainText(four);
 
-  // Back on House, the month card says what he owes, with nothing to mark.
+  // Back on House, settling up says what he owes, with nothing to mark.
   await backToHouse(benPage, benPage.getByTestId("stake-screen").getByTestId("back")).click();
   await expect(benPage).toHaveURL(/\/house$/);
-  const owed = benPage.getByTestId("house-screen").getByTestId("month-card").getByTestId("transfer");
+  const owed = benPage.getByTestId("house-screen").getByTestId("settle-up").getByTestId("transfer");
   await expect(owed).toHaveCount(1);
   await expect(owed).toContainText(HOUSE_PAGE_COPY.youOwe("Ava", four));
   await expect(owed).toContainText(HOUSE_PAGE_COPY.waitingFor("Ava"));
   await expect(owed.getByRole("button")).toHaveCount(0);
 
-  // Ava, paid, marks it received from House's month card; the house is square.
+  // Ava, paid, marks it received from settling up on House; the house is square, so settling up goes.
   const avaPage = await avaContext.newPage();
   await avaPage.goto("/today");
   await avaPage.getByRole("tab", { name: SECTION_LABEL.house }).click();
-  const card = avaPage.getByTestId("house-screen").getByTestId("month-card");
-  const due = card.getByTestId("transfer");
+  const avaHouse = avaPage.getByTestId("house-screen");
+  const due = avaHouse.getByTestId("settle-up").getByTestId("transfer");
   await expect(due).toContainText(HOUSE_PAGE_COPY.owesYou("Ben", four));
   await due.getByRole("button", { name: HOUSE_PAGE_COPY.markReceivedFrom("Ben", four) }).click();
   await expect(due).toHaveCount(0);
@@ -70,7 +70,9 @@ test("a closed month's debt is settled once the person paid marks it received", 
   await expect(owed).toHaveCount(0);
 
   // Stake history says so once, from her side, however it's shown.
-  await card.getByTestId("to-stake").getByRole("link").click();
+  await expect(avaHouse.getByTestId("settle-up")).toHaveCount(0);
+  // Her month's figure opens Stake history.
+  await avaHouse.getByTestId("figure-money").click();
   await expect(avaPage).toHaveURL(/\/house\/stake$/);
   const stake = avaPage.getByTestId("stake-screen");
   const paid = stake.getByTestId("ledger-entry").filter({ hasText: STAKE_HISTORY_COPY.paid("Ben", STAKE_HISTORY_COPY.yourself) });

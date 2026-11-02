@@ -6,7 +6,8 @@ pages are private artifacts on claude.ai.
 
 | Date | Decision | Where | Rule |
 | --- | --- | --- | --- |
-| 2026-11-01 | Ten House pages are six: Groups on Johns, Admins beside Rules, Preferences with Time away as "Days and time away", History beside the Wall; old links land on the merged page | this PR | [layout](layout.md#navigation) |
+| 2026-11-01 | House's Overview is four figures (your month, the stake, housemates, the John list), then the Table beside the Wall; your settings, help and leaving move to a You page, the seventh in House's list | this PR | [layout](layout.md#navigation) |
+| 2026-11-01 | Ten House pages are six: Groups on Johns, Admins beside Rules, Preferences with Time away as "Days and time away", History beside the Wall; old links land on the merged page | #94 | [layout](layout.md#navigation) |
 | 2026-11-01 | House's pages on a laptop fill the room beside House's list, our own sections in columns (two at 1440, three at 1920); not names hanging left, one wide column or cards | #93 | [layout](layout.md#laptop-pages) |
 | 2026-11-01 | Making an account with email asks for one name box (what housemates call you, no first and last) and a required tick box for the Terms and being 13 or older; no birthday | this PR | [controls](controls.md#inputs) |
 | 2026-11-01 | Every 6-digit code is six equal boxes edge to edge with the button, filled in for you where a phone or password manager can, and checked on the sixth digit | #90 | [controls](controls.md#inputs) |

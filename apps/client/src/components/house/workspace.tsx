@@ -1,4 +1,4 @@
-import { FOCUS_SHELL_COPY, HOUSE_LOWER_COPY, PASS_COPY, WALL_COPY } from '@app/core';
+import { FOCUS_SHELL_COPY, HOUSE_LOWER_COPY, PAGE_TITLE, PASS_COPY, WALL_COPY } from '@app/core';
 import { usePathname, useRouter, type Href } from 'expo-router';
 import {
   HouseIcon,
@@ -7,6 +7,7 @@ import {
   PlaneIcon,
   ScrollTextIcon,
   TicketIcon,
+  UserRoundIcon,
   XIcon,
   type LucideIcon,
 } from 'lucide-react-native';
@@ -126,7 +127,7 @@ export function HouseWorkspace({ children }: { children: ReactNode }) {
   );
 }
 
-/** House's pages in the list, in House's order: its top and the Wall, then its setup, then the Pass. */
+/** House's pages in the list, in House's order: its top and the Wall, then its setup, then the Pass and you. */
 const PAGES: { group: string | null; items: { href: Href; label: string; icon: LucideIcon; testID: string }[] }[] = [
   {
     group: null,
@@ -145,7 +146,10 @@ const PAGES: { group: string | null; items: { href: Href; label: string; icon: L
   },
   {
     group: null,
-    items: [{ href: '/house/pass', label: PASS_COPY.title, icon: TicketIcon, testID: 'nav-pass' }],
+    items: [
+      { href: '/house/pass', label: PASS_COPY.title, icon: TicketIcon, testID: 'nav-pass' },
+      { href: '/house/you', label: PAGE_TITLE.you, icon: UserRoundIcon, testID: 'nav-you' },
+    ],
   },
 ];
 

@@ -37,8 +37,20 @@ const LOOK_OPTIONS = LOOKS.map((value) => ({ value, label: LOOK_LABEL[value] }))
  * email (a sheet), and signing out. Reminders and the look are this
  * device's own. Then Leave: your moving-out date (its own page) and Delete
  * my account, in hazard (a sheet), with a line saying it's on the web too.
+ * The You page shows it whole on a phone; on a laptop `account` (You) and
+ * `rest` (help and Leave) sit side by side.
  */
-export function YouSection({ houseId, userId, view }: { houseId: string; userId: string; view: HouseView }) {
+export function YouSection({
+  houseId,
+  userId,
+  view,
+  part = 'all',
+}: {
+  houseId: string;
+  userId: string;
+  view: HouseView;
+  part?: 'all' | 'account' | 'rest';
+}) {
   const [look, setLook] = useLook();
   const { colors } = useTheme();
   const [sheet, setSheet] = useState<'name' | 'reminders' | 'password' | 'delete' | null>(null);
@@ -67,88 +79,92 @@ export function YouSection({ houseId, userId, view }: { houseId: string; userId:
   }
 
   return (
-    <View testID="you-section" style={styles.sections}>
-      <Section label={HOUSE_COPY.you}>
-        <Row
-          leading={<Avatar name={name} userId={userId} me />}
-          title={HOUSE_LOWER_COPY.name}
-          meta={name}
-          onPress={() => {
-            setOpened((n) => n + 1);
-            setSheet('name');
-          }}
-          chevron
-          testID="to-name"
-        />
-        {reminders.support === 'none' ? null : (
+    <View testID={part === 'rest' ? 'you-rest' : 'you-section'} style={styles.sections}>
+      {part === 'rest' ? null : (
+        <Section label={HOUSE_COPY.you}>
           <Row
-            leading={<RowIcon icon={BellIcon} />}
-            title={HOUSE_LOWER_COPY.reminders}
-            meta={reminders.on === null ? <PendingMeta /> : reminders.on ? HOUSE_LOWER_COPY.on : HOUSE_LOWER_COPY.off}
-            onPress={() => setSheet('reminders')}
-            chevron
-            testID="to-reminders"
-          />
-        )}
-        {listed ? null : (
-          <Row
-            leading={<RowIcon icon={SlidersHorizontalIcon} />}
-            title={STEADY_COPY.prefs}
-            meta={prefsLine(view.me.prefs)}
-            href="/house/away"
-            chevron
-            testID="to-prefs"
-          />
-        )}
-        <Row
-          leading={<RowIcon icon={SunMoonIcon} />}
-          title={HOUSE_LOWER_COPY.look}
-          trailing={<Segmented options={LOOK_OPTIONS} value={look} onChange={setLook} label={ME_COPY.look} testID="look" />}
-        />
-        {email ? (
-          <Row
-            leading={<RowIcon icon={KeyRoundIcon} />}
-            title={PASSWORD_SETTING_COPY.label}
-            meta={hasPassword ? PASSWORD_SETTING_COPY.change : PASSWORD_SETTING_COPY.add}
+            leading={<Avatar name={name} userId={userId} me />}
+            title={HOUSE_LOWER_COPY.name}
+            meta={name}
             onPress={() => {
               setOpened((n) => n + 1);
-              setSheet('password');
+              setSheet('name');
             }}
             chevron
-            testID="to-password"
+            testID="to-name"
           />
-        ) : null}
-        <Row
-          leading={<RowIcon icon={LogOutIcon} />}
-          title={HOUSE_LOWER_COPY.signOut}
-          onPress={() => void out()}
-          disabled={signingOut}
-          testID="sign-out"
-        />
-      </Section>
-
-      <HelpSection house={view.snapshot.house.name} />
-
-      <View style={styles.leave}>
-        <Section label={DELETE_COPY.leave}>
+          {reminders.support === 'none' ? null : (
+            <Row
+              leading={<RowIcon icon={BellIcon} />}
+              title={HOUSE_LOWER_COPY.reminders}
+              meta={reminders.on === null ? <PendingMeta /> : reminders.on ? HOUSE_LOWER_COPY.on : HOUSE_LOWER_COPY.off}
+              onPress={() => setSheet('reminders')}
+              chevron
+              testID="to-reminders"
+            />
+          )}
+          {listed ? null : (
+            <Row
+              leading={<RowIcon icon={SlidersHorizontalIcon} />}
+              title={STEADY_COPY.prefs}
+              meta={prefsLine(view.me.prefs)}
+              href="/house/away"
+              chevron
+              testID="to-prefs"
+            />
+          )}
           <Row
-            leading={<RowIcon icon={TruckIcon} />}
-            title={MOVING_COPY.row}
-            meta={movingOutOn ? dateRange(movingOutOn, movingOutOn) : MOVING_COPY.notPlanned}
-            href="/house/moving"
-            chevron
-            testID="to-moving"
+            leading={<RowIcon icon={SunMoonIcon} />}
+            title={HOUSE_LOWER_COPY.look}
+            trailing={<Segmented options={LOOK_OPTIONS} value={look} onChange={setLook} label={ME_COPY.look} testID="look" />}
           />
+          {email ? (
+            <Row
+              leading={<RowIcon icon={KeyRoundIcon} />}
+              title={PASSWORD_SETTING_COPY.label}
+              meta={hasPassword ? PASSWORD_SETTING_COPY.change : PASSWORD_SETTING_COPY.add}
+              onPress={() => {
+                setOpened((n) => n + 1);
+                setSheet('password');
+              }}
+              chevron
+              testID="to-password"
+            />
+          ) : null}
           <Row
-            leading={<Trash2Icon size={24} color={colors.hazard} aria-hidden />}
-            title={DELETE_COPY.row}
-            tone="hazard"
-            onPress={() => setSheet('delete')}
-            testID="to-delete-account"
+            leading={<RowIcon icon={LogOutIcon} />}
+            title={HOUSE_LOWER_COPY.signOut}
+            onPress={() => void out()}
+            disabled={signingOut}
+            testID="sign-out"
           />
         </Section>
-        <Meta style={styles.elsewhere}>{DELETE_COPY.elsewhere}</Meta>
-      </View>
+      )}
+
+      {part === 'account' ? null : <HelpSection house={view.snapshot.house.name} />}
+
+      {part === 'account' ? null : (
+        <View style={styles.leave}>
+          <Section label={DELETE_COPY.leave}>
+            <Row
+              leading={<RowIcon icon={TruckIcon} />}
+              title={MOVING_COPY.row}
+              meta={movingOutOn ? dateRange(movingOutOn, movingOutOn) : MOVING_COPY.notPlanned}
+              href="/house/moving"
+              chevron
+              testID="to-moving"
+            />
+            <Row
+              leading={<Trash2Icon size={24} color={colors.hazard} aria-hidden />}
+              title={DELETE_COPY.row}
+              tone="hazard"
+              onPress={() => setSheet('delete')}
+              testID="to-delete-account"
+            />
+          </Section>
+          <Meta style={styles.elsewhere}>{DELETE_COPY.elsewhere}</Meta>
+        </View>
+      )}
 
       <NameSheet
         key={opened}

@@ -29,11 +29,18 @@ still look right stretched (content capped, nothing pinned to far edges).
 - **Things you set together are on one page.** House's pages are Overview,
   The Wall (with History beside it), Johns (with their groups), Rules (with
   who the admins are), Days and time away (your days, best time and Johns
-  you'd rather, beside the house's time away), and House Pass. A merged
+  you'd rather, beside the house's time away), House Pass, and You (your
+  name, look and sign-in beside help and leaving). A merged
   page puts its two parts side by side on a laptop (`Pair`) and one after
   the other on a phone, or a switch where both are long lists (the Wall
   and History). An old link to a merged page lands on the page it joined.
   (House pages, 1 Nov)
+- **House's Overview is the house at a glance:** a row of four figures
+  (`Figures`: your month, the stake, the housemates, the John list), each
+  opening its page, then settling up while there's any, then the Table
+  beside the Wall's latest. Your own settings are on You, not the
+  Overview; on a phone a row at the Overview's foot opens it. (House
+  pages, 1 Nov)
 
 ## The title bar
 
@@ -42,8 +49,9 @@ still look right stretched (content capped, nothing pinned to far edges).
   them. (Header A, #41)
 - The bar holds only the title, the sparkles and `•••`. A page's actions sit
   next to what they change. (Owner admin, 30 Oct)
-- What a page says about itself (Today's date, House's housemates, Week's
-  dates) is its first line, under the bar. (#41)
+- What a page says about itself (Today's date, Week's dates) is its first
+  line, under the bar; House says it in its figures. (#41; House pages,
+  1 Nov)
 - Pushed pages put "‹ House" above the title. (Focus, #17)
 - From `WIDE` the bar runs the full width of the content area; it isn't
   boxed to a centred column. (#59)

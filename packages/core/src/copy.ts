@@ -37,6 +37,8 @@ export const PAGE_TITLE = {
   prefs: "Preferences",
   moving: "Moving out",
   movingOn: "Moving on",
+  /** Your own page under House: your name, look and sign-in, help, and leaving. */
+  you: "You",
   deleteAccount: "Delete your account",
 } as const;
 
@@ -1138,6 +1140,20 @@ export const HOUSE_PAGE_COPY = {
   sharedOut: (day: string) => `shared out ${day}`,
   /** The meta line when the Lead has already said nothing was forfeited. */
   sharedOutAlone: (day: string) => `Forfeits are shared out ${day}`,
+  /**
+   * The Overview's row of figures, each a figure over what it counts, and
+   * the row's name to a screen reader. Your month: "£4.01" over "you’re up
+   * in October", or "£0" over "forfeited in October".
+   */
+  figures: "The house at a glance",
+  upIn: (month: string) => `you’re up in ${month}`,
+  downIn: (month: string) => `you’re down in ${month}`,
+  forfeitedIn: (month: string) => `forfeited in ${month}`,
+  stakeEach: "stake a month each",
+  housemates: (n: number) => (n === 1 ? "housemate" : "housemates"),
+  johnsListed: (n: number) => (n === 1 ? "John on the list" : "Johns on the list"),
+  /** Settling up, on the Overview while anything from a closed month is still to settle. */
+  settleUp: "Settle up",
   /** A debt from closed months, with the months it's from when they can be named: "Tom owes you £4.01 for September". */
   owesYou: (name: string, amount: string, months = "") => `${name} owes you ${amount}${months ? ` for ${months}` : ""}`,
   youOwe: (name: string, amount: string, months = "") => `You owe ${name} ${amount}${months ? ` for ${months}` : ""}`,
@@ -1481,6 +1497,10 @@ export const HOUSE_LOWER_COPY = {
   noGroups: "None",
   groupsValue: (n: number) => `${n} ${n === 1 ? "group" : "groups"}`,
   // You.
+  /** Under your name at the top of the You page: "Elm Street, admin". */
+  youIn: (house: string, admin: boolean) => `${house}, ${admin ? "admin" : "housemate"}`,
+  /** The Overview's way to the You page on a phone, under your name. */
+  youMeta: "Name, look, sign-in and leaving",
   name: "Name",
   rename: "Change your name",
   save: "Save",

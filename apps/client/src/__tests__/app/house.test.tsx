@@ -19,7 +19,7 @@ import { Linking, Platform, Share, Text, useWindowDimensions } from 'react-nativ
 import { loadAway } from '@/api/away';
 import { loadHouse } from '@/api/board';
 import { catchUp } from '@/api/house';
-import { resetJoinCode } from '@/api/settings';
+import { loadJohnList, resetJoinCode } from '@/api/settings';
 import { confirmPayment, loadStake, type StakeRead } from '@/api/stake';
 import * as Clipboard from 'expo-clipboard';
 import { loadTable } from '@/api/table';
@@ -33,12 +33,12 @@ jest.mock('@/api/board', () => ({ loadHouse: jest.fn() }));
 jest.mock('@/api/house', () => ({ catchUp: jest.fn() }));
 jest.mock('@/api/stake', () => ({ loadStake: jest.fn(), confirmPayment: jest.fn() }));
 jest.mock('@/api/table', () => ({ loadTable: jest.fn() }));
-jest.mock('@/api/settings', () => ({ resetJoinCode: jest.fn() }));
+jest.mock('@/api/settings', () => ({ resetJoinCode: jest.fn(), loadJohnList: jest.fn() }));
 jest.mock('@/api/supabase', () => ({ supabase: {} }));
 jest.mock('expo-clipboard', () => ({ setStringAsync: jest.fn().mockResolvedValue(true) }));
 
-// The lower half of the page is the lower House track's, with its own tests:
-// here it only has to be mounted, in its order, under the money and the Table.
+// The Wall's latest and the lower sections have their own tests: here they
+// only have to be mounted, in their order, beside and under the Table.
 const standIn = (name: string) => {
   const { Text: RNText } = jest.requireActual<typeof import('react-native')>('react-native');
   function StandIn() {
@@ -48,8 +48,6 @@ const standIn = (name: string) => {
 };
 jest.mock('@/components/house-page/wall-section', () => ({ WallSection: standIn('the Wall') }));
 jest.mock('@/components/house-page/setup-section', () => ({ SetupSection: standIn('House setup') }));
-jest.mock('@/components/house-page/you-section', () => ({ YouSection: standIn('You') }));
-jest.mock('@/components/house-page/leave-section', () => ({ LeaveSection: standIn('Leaving') }));
 
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({ __esModule: true, default: jest.fn() }));
 jest.mock('@/hooks/use-membership', () => ({
@@ -107,12 +105,19 @@ async function open({ workspace = false } = {}) {
       'house/stake': () => <Text>Stake page</Text>,
       'house/wall': () => <Text>Wall page</Text>,
       'house/people/[userId]': () => <Text>Person page</Text>,
+      'house/you': () => <Text>You page</Text>,
     },
     '/house',
   );
   await untilRead();
-  // The Stake, the Table and time away are read after the house itself.
-  await waitFor(() => expect(screen.queryByLabelText(HOUSE_PAGE_COPY.readingStake)).toBeNull());
+  // The Stake, the Table, the John list and time away are read after the house itself.
+  // Your month's figure fills in once the Stake is read, or the Stake says it couldn't be.
+  await waitFor(() =>
+    expect(
+      screen.queryByText(HOUSE_PAGE_COPY.stakeUnreadable) ?? within(screen.getByTestId('figure-money')).getAllByText(/£/)[0],
+    ).toBeOnTheScreen(),
+  );
+  await waitFor(() => expect(screen.getByTestId('figure-johns')).toHaveTextContent(/\d/));
   await waitFor(() => expect(screen.queryByLabelText(HOUSE_PAGE_COPY.readingTable)).toBeNull());
 }
 
@@ -144,31 +149,40 @@ beforeEach(() => {
   });
   (loadStake as jest.Mock).mockResolvedValue(OWED_TO_YOU);
   (loadAway as jest.Mock).mockResolvedValue({ today: '2026-10-26', periods: [] });
+  (loadJohnList as jest.Mock).mockResolvedValue({
+    johns: [
+      { points: 3, everyWeeks: 1 },
+      { points: 2, everyWeeks: 2 },
+    ],
+    groups: [],
+  });
   (confirmPayment as jest.Mock).mockResolvedValue(undefined);
 });
 
 // Undoes the web's Platform.OS and Share's stand-in.
 afterEach(() => jest.restoreAllMocks());
 
-it('names the house in the title bar, with how many live there and the stake first on the page', async () => {
+it('names the house in the title bar, and leads the page with its figures', async () => {
   await open();
   const bar = within(screen.getByTestId('title-bar'));
   expect(bar.getByRole('header', { name: 'Flat 3' })).toBeOnTheScreen();
-  // Not a second line in the bar: every tab's bar is the same height.
-  expect(bar.queryByText(HOUSE_PAGE_COPY.sub(2, '£20'))).toBeNull();
-  expect(within(screen.getByTestId('top-line')).getByText(HOUSE_PAGE_COPY.sub(2, '£20'))).toBeOnTheScreen();
+  // Each figure over what it counts, each opening its page.
+  expect(screen.getByTestId('figure-stake')).toHaveTextContent(`£20${HOUSE_PAGE_COPY.stakeEach}`);
+  expect(screen.getByTestId('figure-people')).toHaveTextContent('2housemates');
+  expect(screen.getByTestId('figure-johns')).toHaveTextContent(`2${HOUSE_PAGE_COPY.johnsListed(2)}${HOUSE_LOWER_COPY.perWeek(4)}`);
+  expect(within(screen.getByTestId('house-figures')).getAllByRole('link')).toHaveLength(4);
   // House is a tab's top: there's no way back from it.
   expect(bar.queryByRole('button', { name: FOCUS_SHELL_COPY.back })).toBeNull();
 });
 
-it('keeps the lower sections under the money and the Table, in their order', async () => {
+it('keeps the Wall and the setup under the Table on a phone, then the Pass and the way to You', async () => {
   await open();
-  expect(screen.getAllByTestId('lower').map((node) => node.props.children)).toEqual([
-    'the Wall',
-    'House setup',
-    'You',
-    'Leaving',
-  ]);
+  expect(screen.getAllByTestId('lower').map((node) => node.props.children)).toEqual(['the Wall', 'House setup']);
+  expect(screen.getByTestId('pass-section')).toBeOnTheScreen();
+  const you = screen.getByTestId('to-you');
+  expect(you).toHaveTextContent(new RegExp(`Priya.*${HOUSE_LOWER_COPY.youMeta}`));
+  await fireEvent.press(within(you).getByRole('link'));
+  expect(screen).toHavePathname('/house/you');
 });
 
 it('shows where the house stands on the House Pass, with the way to its page', async () => {
@@ -177,34 +191,44 @@ it('shows where the house stands on the House Pass, with the way to its page', a
   expect(within(row).getByText(PASS_COPY.title)).toBeOnTheScreen();
   expect(within(row).getByText(PASS_COPY.founding)).toBeOnTheScreen();
   // The Pass isn't enforced yet, so every house keeps the money and the Table.
-  expect(screen.getByTestId('month-card')).toBeOnTheScreen();
+  expect(screen.getByTestId('house-figures')).toBeOnTheScreen();
   expect(screen.queryByTestId('stake-locked')).toBeNull();
 });
 
-describe('the month card', () => {
+describe('your month and settling up', () => {
   it('leads with your month so far, the figure green while you are up', async () => {
     await open();
-    const lead = screen.getByTestId('month-lead');
-    expect(lead).toHaveTextContent(`${HOUSE_PAGE_COPY.up} £3`);
-    expect(within(lead).getByText('£3')).toHaveStyle({ color: BIN_NIGHT.light.good });
-    expect(screen.getByText(`${HOUSE_PAGE_COPY.nothingForfeited}, ${HOUSE_PAGE_COPY.sharedOut('1 Nov')}`)).toBeOnTheScreen();
+    const money = screen.getByTestId('figure-money');
+    expect(money).toHaveTextContent(
+      `£3${HOUSE_PAGE_COPY.upIn('October')}${HOUSE_PAGE_COPY.nothingForfeited}, ${HOUSE_PAGE_COPY.sharedOut('1 Nov')}`,
+    );
+    expect(within(money).getByText('£3')).toHaveStyle({ color: BIN_NIGHT.light.good });
   });
 
   it('says what you are down in plain ink, with what it cost you', async () => {
     (loadStake as jest.Mock).mockResolvedValue(stakeRead([entry(1, 'priya', 'forfeit', -300, '2026-10')]));
     await open();
-    const lead = screen.getByTestId('month-lead');
-    expect(lead).toHaveTextContent(`${HOUSE_PAGE_COPY.down} £3`);
+    const money = screen.getByTestId('figure-money');
+    expect(money).toHaveTextContent(
+      `£3${HOUSE_PAGE_COPY.downIn('October')}${HOUSE_PAGE_COPY.forfeited('£3')}, ${HOUSE_PAGE_COPY.sharedOut('1 Nov')}`,
+    );
     // Green is for what you're up only: money lost is said in words, not in colour.
-    expect(within(lead).getByText('£3')).not.toHaveStyle({ color: BIN_NIGHT.light.good });
-    expect(screen.getByText(`${HOUSE_PAGE_COPY.forfeited('£3')}, ${HOUSE_PAGE_COPY.sharedOut('1 Nov')}`)).toBeOnTheScreen();
+    expect(within(money).getByText('£3')).not.toHaveStyle({ color: BIN_NIGHT.light.good });
   });
 
-  it('says when nothing has been forfeited at all', async () => {
+  it('says when nothing has been forfeited at all, with nothing to settle', async () => {
     (loadStake as jest.Mock).mockResolvedValue(stakeRead([]));
     await open();
-    expect(screen.getByTestId('month-lead')).toHaveTextContent(HOUSE_PAGE_COPY.nothingYet);
-    expect(screen.getByText(HOUSE_PAGE_COPY.sharedOutAlone('1 Nov'))).toBeOnTheScreen();
+    expect(screen.getByTestId('figure-money')).toHaveTextContent(
+      `£0${HOUSE_PAGE_COPY.forfeitedIn('October')}${HOUSE_PAGE_COPY.sharedOutAlone('1 Nov')}`,
+    );
+    expect(screen.queryByTestId('settle-up')).toBeNull();
+  });
+
+  it('opens Stake history from your month', async () => {
+    await open();
+    await fireEvent.press(screen.getByTestId('figure-money'));
+    expect(screen).toHavePathname('/house/stake');
   });
 
   it('marks what is owed to you received, from the month it is from', async () => {
@@ -280,7 +304,7 @@ describe('the month card', () => {
     });
   });
 
-  it('leads to Stake history', async () => {
+  it('leads to Stake history from settling up', async () => {
     await open();
     await fireEvent.press(within(screen.getByTestId('to-stake')).getByRole('link'));
     expect(screen).toHavePathname('/house/stake');
@@ -292,7 +316,7 @@ describe('the month card', () => {
     await open();
     expect(await screen.findByRole('alert')).toHaveTextContent(HOUSE_PAGE_COPY.stakeUnreadable);
     await fireEvent.press(screen.getByRole('button', { name: FOCUS_SHELL_COPY.retry }));
-    expect(await screen.findByTestId('month-lead')).toHaveTextContent(new RegExp(HOUSE_PAGE_COPY.up));
+    await waitFor(() => expect(screen.getByTestId('figure-money')).toHaveTextContent(new RegExp(HOUSE_PAGE_COPY.upIn('October'))));
   });
 });
 
@@ -446,12 +470,12 @@ it('reads the house again each time House comes into view', async () => {
     '/house',
   );
   await untilRead();
-  expect(screen.getByText(HOUSE_PAGE_COPY.sub(2, '£20'))).toBeOnTheScreen();
+  await waitFor(() => expect(screen.getByTestId('figure-stake')).toHaveTextContent(new RegExp('^£20')));
   // Someone else changes the stake while you're on another tab.
   (loadHouse as jest.Mock).mockResolvedValue(snapshot({ rules: { ...snapshot().rules, stakeMinor: 2500 } }));
   await act(() => router.navigate('/week'));
   await act(() => router.navigate('/house'));
-  await waitFor(() => expect(screen.getByText(HOUSE_PAGE_COPY.sub(2, '£25'))).toBeOnTheScreen());
+  await waitFor(() => expect(screen.getByTestId('figure-stake')).toHaveTextContent(new RegExp('^£25')));
 });
 
 it("says when it can't read the house, and tries again", async () => {
@@ -465,30 +489,22 @@ it("says when it can't read the house, and tries again", async () => {
 describe('on a laptop', () => {
   beforeEach(() => (useWindowDimensions as jest.Mock).mockReturnValue({ width: 1440, height: 900, scale: 1, fontScale: 1 }));
 
-  it('keeps the money and the Table in the main column and the lower sections beside them', async () => {
+  it('puts the figures across the top, then the Table beside the Wall', async () => {
     await open();
-    const main = within(screen.getByTestId('column-main'));
-    const side = within(screen.getByTestId('column-side'));
-    // The house's line heads the main column, so the month card lines up with the Wall's group beside it.
-    expect(main.getByTestId('top-line')).toBeOnTheScreen();
-    expect(main.getByTestId('month-card')).toBeOnTheScreen();
-    expect(main.getByTestId('house-table')).toBeOnTheScreen();
-    expect(side.getAllByTestId('lower').map((node) => node.props.children)).toEqual(['the Wall', 'House setup', 'You', 'Leaving']);
+    expect(screen.getByTestId('house-figures')).toBeOnTheScreen();
+    expect(within(screen.getByTestId('house-pair-start')).getByTestId('house-table')).toBeOnTheScreen();
+    expect(within(screen.getByTestId('house-pair-end')).getAllByTestId('lower').map((node) => node.props.children)).toEqual([
+      'the Wall',
+    ]);
   });
 
-  it('leaves the setup and the Pass to the list of House’s pages beside it', async () => {
+  it('leaves the setup, the Pass and You to the list of House’s pages beside it', async () => {
     await open({ workspace: true });
     expect(screen.getByTestId('house-nav')).toBeOnTheScreen();
-    expect(screen.getAllByTestId('lower').map((node) => node.props.children)).toEqual(['the Wall', 'You', 'Leaving']);
+    expect(screen.getAllByTestId('lower').map((node) => node.props.children)).toEqual(['the Wall']);
     expect(screen.queryByTestId('pass-section')).toBeNull();
-    // Preferences too: the list has them (on Days and time away), so You doesn't again.
-    expect(screen.getByTestId('nav-away')).toHaveTextContent(HOUSE_LOWER_COPY.away);
-    expect(screen.queryByTestId('to-prefs')).toBeNull();
+    expect(screen.queryByTestId('to-you')).toBeNull();
+    expect(screen.getByTestId('nav-you')).toHaveTextContent('You');
   });
 
-  it('stays in one column at the narrowest laptop', async () => {
-    (useWindowDimensions as jest.Mock).mockReturnValue({ width: 1100, height: 900, scale: 1, fontScale: 1 });
-    await open();
-    expect(screen.queryByTestId('columns')).toBeNull();
-  });
 });
