@@ -70,8 +70,9 @@ function measure(view: HostInstance | null): Promise<TourRect | null> {
 function reveal(view: HostInstance | null, scroll: ScrollViewInstance | null) {
   if (!view) return;
   if (Platform.OS === 'web') {
-    // react-native-web's View is the element itself.
-    (view as unknown as { scrollIntoView?: (o: ScrollIntoViewOptions) => void }).scrollIntoView?.({ block: 'center', inline: 'nearest' });
+    // react-native-web's View is the element itself. To the top of the page, under the title bar, as on a
+    // phone: a tall spot then leaves room for the card under it, where centring it would leave none.
+    (view as unknown as { scrollIntoView?: (o: ScrollIntoViewOptions) => void }).scrollIntoView?.({ block: 'start', inline: 'nearest' });
     return;
   }
   const inner = scroll?.getInnerViewRef?.() as HostInstance | null | undefined;

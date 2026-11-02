@@ -53,11 +53,13 @@ async function playTour(page: Page, id: TourId, facts: TourFacts, shotName?: str
     expect(box).not.toBeNull();
     expect(Math.abs(ring!.x + 8 - box!.x)).toBeLessThan(2);
     expect(Math.abs(ring!.y + 8 - box!.y)).toBeLessThan(2);
-    // The card doesn't cover the spot, unless the spot is taller than the window.
+    // The card doesn't cover the spot, unless the window hasn't room for both (a tall spot on a small phone).
     const viewport = page.viewportSize()!;
     const cardBox = (await card.boundingBox())!;
     expect(cardBox.y + cardBox.height).toBeLessThanOrEqual(viewport.height);
-    if (box!.height + 200 < viewport.height) {
+    const below = box!.y + box!.height + 8 + 12 + cardBox.height <= viewport.height - 16;
+    const above = box!.y - 8 - 12 - cardBox.height >= 16;
+    if (below || above) {
       const overlaps =
         cardBox.x < box!.x + box!.width && box!.x < cardBox.x + cardBox.width && cardBox.y < box!.y + box!.height && box!.y < cardBox.y + cardBox.height;
       expect(overlaps, `${id}: step ${i + 1}'s card is clear of ${step.spot}`).toBe(false);
