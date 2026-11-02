@@ -4,7 +4,7 @@
 
 A question mark in the title bar of every tab opens Help: a short tour of
 the page you're on, the other tours as Guides, and the ways to report a
-problem or send an idea (the same ones as House's Help section, #87). A
+problem or send an idea (the same ones as the You page's Help section, #87). A
 tour dims the page, lights one part of it at a time with an amber ring, and
 says what it is in a card beside it. Someone new is offered Today's tour
 once, on Today; Not now puts it away for good.

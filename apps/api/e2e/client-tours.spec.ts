@@ -178,8 +178,8 @@ test("Not now puts the offer away for good", async ({ context, page }) => {
   await expect
     .poll(async () => (await admin().auth.admin.getUserById(userId)).data.user?.user_metadata.tours)
     .toEqual({ seen: [], offerDone: true });
-  // House's Help has the tours too.
-  await page.getByTestId("tab-house").click();
-  await page.getByTestId("to-guides").filter({ visible: true }).click();
+  // The You page's Help has the tours too.
+  await page.goto("/house/you");
+  await page.getByTestId("you-screen").getByTestId("to-guides").click();
   await expect(page.getByTestId("help-sheet")).toBeVisible();
 });

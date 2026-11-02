@@ -22,7 +22,7 @@ import { INSET, SECTION_GAP, SPACE } from '@/theme';
  * Help, from the title bar's question mark: a tour of the page you're on
  * (the sheet's one amber button), the other tours as Guides (an admin's
  * among them for admins), then the same ways to report a problem or send an
- * idea that House's Help section has, and Your reports. Reporting changes
+ * idea that the You page's Help section has, and Your reports. Reporting changes
  * the sheet's own content to the report form, as a sheet does, rather than
  * opening a second sheet. Choosing a tour puts the sheet away and starts it
  * once the sheet has gone.
