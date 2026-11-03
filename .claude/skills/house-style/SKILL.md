@@ -48,33 +48,19 @@ the checklist that goes with them. Work through it for every UI change.
 
 ## Design options for Glyn
 
-- Show them in the standard picker: load the `design-options-picker` skill
-  (`.claude/skills/design-options-picker/SKILL.md`). It opens on One at a
-  time, with Phone and Laptop, Day and Night.
-- Theme the picker in Bin Night, using the `theme` block in this skill's
-  `picker-theme` section below.
+- Show them with the `design-options-picker` skill. Its only copy is in the
+  shared skills repo `glynfinck/skills` (`design-options-picker/`); if the
+  skill isn't loaded, add that repo to the session and read it there.
+- Theme: Overpass, uppercase titles at weight 900, colours from `BIN_NIGHT`
+  in `packages/core/src/bin-night.ts` (light and dark): `bg` background,
+  `surface` card, `sunk` muted, `fg` foreground, `muted` mutedForeground,
+  `line` border, `rec` hivis, `onRec` onHivis. Day: `accent` and `bezel`
+  foreground, `onAccent` card. Night: `accent` hivis, `onAccent` background,
+  `bezel` border.
 - Show the real app: every step is a screenshot of the web build (or a draft
   built from the real components with sample data). Never hand-drawn HTML.
-  For Live preview, give the option a `liveUrl` to the branch's Vercel
-  preview or to staging.
-- 2 to 4 true alternatives for one thing, one recommended, one decision.
-  Several pages in one piece of work (say the admin page and the app page)
-  are separate `items` in one picker, not separate pages.
-  Plain English; he often reads on an iPhone.
-
-### picker-theme
-
-```js
-theme: {
-  font: '"Overpass", "Helvetica Neue", Arial, sans-serif',
-  display: '"Overpass", "Arial Black", Arial, sans-serif',
-  titleCase: 'uppercase', titleWeight: 900,
-  light: { bg: '#e7e9e5', surface: '#f7f8f5', sunk: '#dde0db', fg: '#16181a', muted: '#596066', line: '#c5c9c3', accent: '#16181a', onAccent: '#f7f8f5', rec: '#f6b800', onRec: '#16181a', bezel: '#16181a' },
-  dark: { bg: '#111315', surface: '#1a1d20', sunk: '#24282c', fg: '#edefeb', muted: '#99a0a5', line: '#2c3135', accent: '#ffc21a', onAccent: '#111315', rec: '#ffc21a', onRec: '#111315', bezel: '#2c3135' }
-}
-```
-
-If `apps/client/src/theme.ts` changes these colours, change them here too.
+  Live preview's `liveUrl` is the branch's Vercel preview or staging.
+- Plain English; he often reads on an iPhone.
 
 ## When Glyn picks something
 
