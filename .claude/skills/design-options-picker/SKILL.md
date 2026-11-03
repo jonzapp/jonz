@@ -36,6 +36,8 @@ The picker engine lives in the published artifact **Design picker**: https://cla
 
 In a repo that holds this skill, the same engine is also beside this file (`picker.js`, `picker.css`, and `example.html`, the working example). If the published copy and the repo copy differ, the repo copy wins: publish it with the page as local `files` instead.
 
+The main copy of this skill lives in the shared skills repo, glynfinck/skills (folder `design-options-picker/`). Change it there first, then copy the same files here so agents working in this repo have it without access to that repo.
+
 1. Read it with the Artifact tool (`action: "read"`) to see a full working example: two items, a three-screen flow, a Now option, a theme.
 2. Write a new `index.html`: a `<title>`, the viewport-fit meta, Google Fonts links for the product's fonts, `<link rel="stylesheet" href="picker.css">`, `<div id="picker"></div>`, a `<script>` that sets `window.PICKER`, then `<script src="picker.js"></script>` last.
 3. Publish it as a new artifact and copy the engine server side, without downloading it:
