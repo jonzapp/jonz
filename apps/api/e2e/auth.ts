@@ -43,8 +43,12 @@ export async function signInToClient(context: BrowserContext, name: string): Pro
 }
 
 /** signInToClient's session, with a supabase-js client signed in as the same person. */
-async function clientSession(context: BrowserContext, name: string): Promise<{ id: string; client: SupabaseClient }> {
-  const { email, id } = await createHousemate(name);
+async function clientSession(
+  context: BrowserContext,
+  name: string,
+  newToTours = false,
+): Promise<{ id: string; client: SupabaseClient }> {
+  const { email, id } = await createHousemate(name, newToTours);
 
   const store = new Map<string, string>();
   const client = createClient(SUPABASE_URL!, ANON_KEY!, {
@@ -88,6 +92,8 @@ async function clientSession(context: BrowserContext, name: string): Promise<{ i
  * ties are broken here, a second apart, in the order the test gives them
  * (by `dueTime`, then as named), so Next up stays the one the test expects
  * whatever day the suite runs. `at` deals as if it were then, for checking that.
+ * `{ newToTours: true }` makes them someone Today hasn't yet offered its tour
+ * to; it has to be set before sign-in, as the session carries it.
  */
 export async function dealtHouseInClient(
   context: BrowserContext,
@@ -95,9 +101,10 @@ export async function dealtHouseInClient(
   houseName: string,
   johns: { name: string; category?: string; needsPhoto?: boolean; dueTime?: string; onCall?: boolean }[],
   housemates: { context: BrowserContext; name: string }[] = [],
-  at?: Date,
+  given?: Date | { at?: Date; newToTours?: boolean },
 ): Promise<{ userId: string; houseId: string; housemateIds: string[]; weekId: string }> {
-  const { id, client } = await clientSession(context, name);
+  const { at, newToTours } = given instanceof Date ? { at: given, newToTours: false } : (given ?? {});
+  const { id, client } = await clientSession(context, name, newToTours);
   const { data: houseId, error } = await client.rpc("create_house", {
     p_name: houseName,
     p_timezone: "Europe/London",
@@ -204,13 +211,15 @@ export async function houseOf(owner: string, houseName: string): Promise<{ owner
 }
 
 /** A confirmed user with a password, named as housemates will see them. */
-async function createHousemate(name: string): Promise<{ email: string; id: string }> {
+async function createHousemate(name: string, newToTours = false): Promise<{ email: string; id: string }> {
   const email = `e2e-${randomUUID()}@test.local`;
   const { data, error } = await admin().auth.admin.createUser({
     email,
     password: PASSWORD,
     email_confirm: true,
-    user_metadata: { display_name: name },
+    // Everyone here is new, so Today would offer its tour: these tests say they've had the offer, unless
+    // client-tours.spec.ts asks for someone who hasn't (newToTours).
+    user_metadata: { display_name: name, tours: { seen: [], offerDone: !newToTours } },
   });
   if (error) throw error;
   return { email, id: data.user.id };

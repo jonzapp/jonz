@@ -1,6 +1,6 @@
-import { FOCUS_SHELL_COPY, HOUSE_DRAFT_COPY } from '@app/core';
+import { FOCUS_SHELL_COPY, HOUSE_DRAFT_COPY, TOUR_COPY } from '@app/core';
 import { useRouter, type Href } from 'expo-router';
-import { ChevronLeftIcon, EllipsisIcon, SparklesIcon } from 'lucide-react-native';
+import { ChevronLeftIcon, CircleQuestionMarkIcon, EllipsisIcon, SparklesIcon } from 'lucide-react-native';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,6 +9,8 @@ import { useHouseWorkspace } from '@/components/house/workspace';
 import { useContentWidth } from '@/components/screen';
 import { Meta, Title } from '@/components/text';
 import { IconButton } from '@/components/icon-button';
+import { useTour } from '@/components/tour/tour-context';
+import { TourSpot } from '@/components/tour/tour-spot';
 import { useAskJonz, useAskPanelOpen } from '@/hooks/use-ask-jonz';
 import { FONT, GUTTER, INSET, SECTION_GAP, SPACE, TAP, TITLE_BAR, useTheme, WIDE } from '@/theme';
 
@@ -29,6 +31,9 @@ import { FONT, GUTTER, INSET, SECTION_GAP, SPACE, TAP, TITLE_BAR, useTheme, WIDE
  * lines up with the content below it; from WIDE it holds the edges of the
  * page beside the rail, as a desktop app's toolbar does: the Title where the
  * page's words start, the sparkles at the window's right edge.
+ * A house's tabs (a bar with no `back`, inside the tour player) carry Help's
+ * question mark just inside the sparkles, or at the edge without them: it
+ * opens the Help sheet, with a tour of the page.
  */
 export function TitleBar({
   title,
@@ -55,6 +60,8 @@ export function TitleBar({
   const maxWidth = useWindowDimensions().width >= WIDE ? undefined : contentWidth;
   // On a laptop House's pages are listed beside them, which is the way back to House.
   const way = useHouseWorkspace().listed && back === '/house' ? undefined : back;
+  const tours = useTour();
+  const help = tours != null && back == null;
   return (
     <View
       testID="title-bar"
@@ -70,7 +77,14 @@ export function TitleBar({
             {sub ? <Meta numberOfLines={1}>{sub}</Meta> : null}
           </View>
           {/* The sparkles hold the edge on every tab; the screen's own button sits inside them. */}
-          {right == null ? null : <View style={[styles.right, ask && styles.inside]}>{right}</View>}
+          {right == null ? null : <View style={[styles.right, (ask || help) && styles.inside]}>{right}</View>}
+          {help ? (
+            <View style={[styles.ask, styles.more, ask && styles.inside]}>
+              <TourSpot id="shell.help">
+                <IconButton icon={CircleQuestionMarkIcon} label={TOUR_COPY.open} onPress={tours.openHelp} testID="help-button" />
+              </TourSpot>
+            </View>
+          ) : null}
           {ask ? <AskButton /> : null}
         </View>
       </View>
@@ -131,6 +145,7 @@ function AskButton() {
   const open = useAskPanelOpen();
   return (
     <View style={[styles.ask, styles.more]}>
+      <TourSpot id="shell.ask">
       <IconButton
         icon={SparklesIcon}
         label={HOUSE_DRAFT_COPY.open}
@@ -139,6 +154,7 @@ function AskButton() {
         href={'href' in ask ? ask.href : undefined}
         testID="ask-jonz"
       />
+      </TourSpot>
     </View>
   );
 }

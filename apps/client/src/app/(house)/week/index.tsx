@@ -44,6 +44,7 @@ import { WeekSummaryBar } from '@/components/week/summary';
 import { WeekEmpty } from '@/components/week/week-empty';
 import { WeekMenu } from '@/components/week/week-menu';
 import { WeekTable } from '@/components/week/week-table';
+import { TourSpot } from '@/components/tour/tour-spot';
 import { useAway } from '@/hooks/use-away';
 import { useHouse, type HouseView } from '@/hooks/use-house';
 import { useJohnList } from '@/hooks/use-john-list';
@@ -94,7 +95,11 @@ function WeekFor({ houseId, userId }: { houseId: string; userId: string }) {
         <>
           <TitleBar
             title={PAGE_TITLE.week}
-            right={<MoreButton onPress={() => setMenu(true)} />}
+            right={
+              <TourSpot id="week.more">
+                <MoreButton onPress={() => setMenu(true)} />
+              </TourSpot>
+            }
             ask={view?.me?.role === 'admin'}
           />
           <WeekMenu
@@ -181,6 +186,7 @@ function Board({
   const swapReady = canSwap(board, me);
 
   const summaryBar = (
+    <TourSpot id="week.summary">
     <WeekSummaryBar
       range={weekRangeLine(week.startsAt, week.endsAt, now, rules.timezone)}
       summary={summary}
@@ -198,11 +204,14 @@ function Board({
           : null
       }
     />
+    </TourSpot>
   );
   // Johns done together: one row each, under Together on a phone, in the table's one list on a laptop.
   const together = weekTogether(board.items, userId, shown);
   const johnRows = wide ? (
-    <WeekTable {...weekList(oneRowPerJob(board.items, userId), shown)} context={context} />
+    <TourSpot id="week.everyone">
+      <WeekTable {...weekList(oneRowPerJob(board.items, userId), shown)} context={context} />
+    </TourSpot>
   ) : (
     <>
       {together.length > 0 ? (
@@ -212,21 +221,32 @@ function Board({
           ))}
         </Section>
       ) : null}
-      {weekPeople(board.items, memberIds, userId, shown).map((person) => (
-        <PersonSection
-          key={person.userId}
-          person={person}
-          context={context}
-          points={pointsOf(person.userId)}
-          away={awayOf(person.userId)}
-          onCall={onCallOf(person.userId)}
-          swapReady={person.userId === userId && swapReady}
-        />
-      ))}
+      {weekPeople(board.items, memberIds, userId, shown).map((person, i) => {
+        const section = (
+          <PersonSection
+            key={person.userId}
+            person={person}
+            context={context}
+            points={pointsOf(person.userId)}
+            away={awayOf(person.userId)}
+            onCall={onCallOf(person.userId)}
+            swapReady={person.userId === userId && swapReady}
+          />
+        );
+        // A tour lights the first (yours): the rest are the same, and all of them would be taller than the screen.
+        return i === 0 ? (
+          <TourSpot key={person.userId} id="week.everyone">
+            {section}
+          </TourSpot>
+        ) : (
+          section
+        );
+      })}
     </>
   );
   const fair =
     fairness && shares ? (
+      <TourSpot id="week.fairness">
       <FairnessFooter
         sentence={fairness}
         balances={shares.balances}
@@ -235,6 +255,7 @@ function Board({
         nameOf={nameOf}
         awayMakeup={house.awayMakeup}
       />
+      </TourSpot>
     ) : null;
   // What the deal looked ahead to, once the list is read to name the Johns.
   const look = list

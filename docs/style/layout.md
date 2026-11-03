@@ -47,7 +47,7 @@ still look right stretched (content capped, nothing pinned to far edges).
 - One 52pt bar on every tab: the page's name on the left, the sparkles (Ask
   Jonz, admins) always at the right edge, the page's own `•••` just inside
   them. (Header A, #41)
-- The bar holds only the title, the sparkles and `•••`. A page's actions sit
+- The bar holds only the title, the sparkles, the question mark and `•••`. A page's actions sit
   next to what they change. (Owner admin, 30 Oct)
 - What a page says about itself (Today's date, Week's dates) is its first
   line, under the bar; House says it in its figures. (#41; House pages,
@@ -55,6 +55,9 @@ still look right stretched (content capped, nothing pinned to far edges).
 - Pushed pages put "‹ House" above the title. (Focus, #17)
 - From `WIDE` the bar runs the full width of the content area; it isn't
   boxed to a centred column. (#59)
+- Every tab's bar has a question mark just inside the sparkles: Help, with
+  the page's tour and Report a problem. Pushed pages leave it out. (Help
+  and tours, 1 Nov)
 
 ## Laptop pages
 

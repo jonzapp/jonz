@@ -42,6 +42,7 @@ import { Meta } from '@/components/text';
 import { useAskJonz } from '@/hooks/use-ask-jonz';
 import { useMove } from '@/hooks/use-move';
 import { INSET, LABEL_GAP, SECTION_GAP, SPACE } from '@/theme';
+import { TourSpot } from '@/components/tour/tour-spot';
 
 type Draft = Omit<JohnDef, 'id'> & { id?: string };
 
@@ -119,6 +120,7 @@ export function JohnList({
   return (
     <>
       {johns.length === 0 ? (
+        <TourSpot id="johns.list">
         <EmptyState
           icon={ListTodoIcon}
           title={SETUP_COPY.noJohns}
@@ -132,6 +134,7 @@ export function JohnList({
             ) : undefined
           }
         />
+        </TourSpot>
       ) : (
         <>
           {filled ? (
@@ -150,6 +153,8 @@ export function JohnList({
               ) : null}
             </View>
           ) : null}
+          {/* The kinds, not the bar above them: a View round both would take the page's gap between them. */}
+          <TourSpot id="johns.list">
           <Flow
             testID="john-kinds"
             items={johnsByKind(johns)
@@ -182,6 +187,7 @@ export function JohnList({
               }))
               .concat(more ?? [])}
           />
+          </TourSpot>
         </>
       )}
       {johns.length > 0 && !filled ? (

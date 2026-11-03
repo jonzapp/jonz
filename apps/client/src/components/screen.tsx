@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useContext, useRef, useState, type ReactNode } from 'react';
 import {
   RefreshControl,
   ScrollView,
@@ -8,9 +8,11 @@ import {
   type LayoutChangeEvent,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
+  type ScrollViewInstance,
 } from 'react-native';
 
 import { useHouseWorkspace } from '@/components/house/workspace';
+import { TourScrollContext } from '@/components/tour/tour-spot';
 import { ASIDE, COLUMNS_MIN, CONTENT_MAX, FILL_MAX, GUTTER, HOUSE_NAV, MAIN_MAX, RAIL, SECTION_GAP, useTheme, WIDE } from '@/theme';
 
 const ContentWidth = createContext(CONTENT_MAX);
@@ -104,6 +106,8 @@ export function Screen({
   const filling = fills && !spreads && windowWidth >= WIDE;
   const max = two ? undefined : filling ? FILL_MAX : maxWidth;
   const onLayout = spreads || filling ? (e: LayoutChangeEvent) => setMeasured(e.nativeEvent.layout.width) : undefined;
+  // A tour scrolls a spot on this page into view through it.
+  const scroll = useRef<ScrollViewInstance>(null);
   return (
     <ContentWidth.Provider value={max ?? MAIN_MAX}>
       <TwoColumns.Provider value={two}>
@@ -111,6 +115,7 @@ export function Screen({
           <View testID={testID} onLayout={onLayout} style={[styles.screen, { backgroundColor: colors.background }]}>
             {bar}
             <ScrollView
+              ref={scroll}
               testID="page-scroll"
               style={styles.scroll}
               scrollEventThrottle={onNearEnd ? 200 : undefined}
@@ -123,7 +128,9 @@ export function Screen({
                 ) : undefined
               }
             >
-              <PageScrollContext.Provider value={{ onNearEnd, refreshing, onRefresh }}>{children}</PageScrollContext.Provider>
+              <TourScrollContext.Provider value={scroll}>
+                <PageScrollContext.Provider value={{ onNearEnd, refreshing, onRefresh }}>{children}</PageScrollContext.Provider>
+              </TourScrollContext.Provider>
             </ScrollView>
           </View>
         </Filled.Provider>
@@ -152,9 +159,12 @@ export function Screen({
 export function Columns({ main, side }: { main: ReactNode; side: ReactNode }) {
   const { colors } = useTheme();
   const scroll = useContext(PageScrollContext);
+  const mainRef = useRef<ScrollViewInstance>(null);
+  const sideRef = useRef<ScrollViewInstance>(null);
   return (
     <View style={styles.columns} testID="columns">
       <ScrollView
+        ref={mainRef}
         testID="column-main-scroll"
         style={styles.mainScroll}
         contentContainerStyle={styles.mainPage}
@@ -167,17 +177,22 @@ export function Columns({ main, side }: { main: ReactNode; side: ReactNode }) {
         }
       >
         <ContentWidth.Provider value={CONTENT_MAX}>
-          <View style={styles.main} testID="column-main">
-            {main}
-          </View>
+          <TourScrollContext.Provider value={mainRef}>
+            <View style={styles.main} testID="column-main">
+              {main}
+            </View>
+          </TourScrollContext.Provider>
         </ContentWidth.Provider>
       </ScrollView>
       <ScrollView
+        ref={sideRef}
         testID="column-side"
         style={[styles.side, { borderLeftColor: colors.border }]}
         contentContainerStyle={styles.sidePage}
       >
-        <ContentWidth.Provider value={ASIDE}>{side}</ContentWidth.Provider>
+        <ContentWidth.Provider value={ASIDE}>
+          <TourScrollContext.Provider value={sideRef}>{side}</TourScrollContext.Provider>
+        </ContentWidth.Provider>
       </ScrollView>
     </View>
   );

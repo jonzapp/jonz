@@ -1,7 +1,7 @@
-import { REPORT_COPY, type ReportKind } from '@app/core';
+import { REPORT_COPY, TOUR_COPY, type ReportKind } from '@app/core';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { BugIcon, LightbulbIcon, MessagesSquareIcon } from 'lucide-react-native';
+import { BugIcon, CompassIcon, LightbulbIcon, MessagesSquareIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -12,15 +12,19 @@ import { Row, RowIcon } from '@/components/row';
 import { Section } from '@/components/section';
 import { Sheet } from '@/components/sheet';
 import { Meta } from '@/components/text';
+import { useTour } from '@/components/tour/tour-context';
 import { INSET, SPACE } from '@/theme';
 
 /**
- * Help, on House between You and Leave: report a problem or send an idea
- * (one sheet, either way in), and Your reports with the replies to read.
+ * Help, on House between You and Leave: the tours (Tours and guides opens
+ * the Help sheet, as the title bar's question mark does), report a problem
+ * or send an idea (one sheet, either way in), and Your reports with the
+ * replies to read.
  * Under it, the support address for anyone who'd rather email.
  */
 export function HelpSection({ house }: { house: string }) {
   const client = useQueryClient();
+  const tours = useTour();
   const [open, setOpen] = useState<ReportKind | null>(null);
   const mine = useQuery({ queryKey: ['my-reports'], queryFn: myReports });
   // Sent: it's under Your reports, where the reply will come.
@@ -33,6 +37,16 @@ export function HelpSection({ house }: { house: string }) {
   return (
     <View style={styles.stack} testID="help-section">
       <Section label={REPORT_COPY.help}>
+        {tours ? (
+          <Row
+            leading={<RowIcon icon={CompassIcon} />}
+            title={TOUR_COPY.guidesRow}
+            meta={TOUR_COPY.guidesMeta}
+            onPress={tours.openHelp}
+            chevron
+            testID="to-guides"
+          />
+        ) : null}
         <Row leading={<RowIcon icon={BugIcon} />} title={REPORT_COPY.report} onPress={() => setOpen('problem')} chevron testID="to-report" />
         <Row leading={<RowIcon icon={LightbulbIcon} />} title={REPORT_COPY.idea} onPress={() => setOpen('idea')} chevron testID="to-idea" />
         <Row

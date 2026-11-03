@@ -40,6 +40,18 @@ Short and gentle (about 200ms), only to show where something came from or
 went. It switches off when the phone asks for reduced motion. (**New**)
 *Backed by* the HIG's Reduce Motion and WCAG 2.3.3.
 
+## Tours
+
+A tour dims the page and lights one part at a time with an amber ring and a
+card beside it: a title, a sentence, and Skip, Back, Next (Done on the
+last). Five steps at most, each title 32 characters and each sentence 140.
+You start tours from Help; the only one offered is Today's, once, to
+someone new, as a card on Today (never a pop-up over it). A tour never asks
+you to tap the page: it shows, then gets out of the way. (Help and tours,
+1 Nov)
+*Backed by* Chameleon's tour data (tours you start finish twice as often;
+3 to 4 steps finish best), Adobe Spectrum's coach marks, NN/g on help.
+
 ## Notices
 
 An owner notice is a banner in its kind's colours across the top of the app;

@@ -37,6 +37,7 @@ export * from "./share";
 export * from "./stake";
 export * from "./staging";
 export * from "./steady";
+export * from "./tours";
 export * from "./steady-run";
 export * from "./steady-deal";
 export * from "./steady-budget";

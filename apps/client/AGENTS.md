@@ -299,6 +299,13 @@ permanent once a store has seen them.
   run them, `eas build` with a production profile, `eas submit` or
   `eas update` without being asked.
 
+- Help and tours (`src/components/tour/`, spec
+  `docs/specs/help-and-tours.md`): the title bar's question mark opens
+  `HelpSheet`; `TourProvider` in the house layout plays tours. A new tour is
+  a `TOURS` entry in `@app/core` plus `<TourSpot id=…>` round each part it
+  lights; never position a tour card by hand. Light components import
+  `useTour` from `tour-context.ts`, not the provider.
+
 ### Bin Night in React Native
 
 The rules themselves (what to use where, on a phone and a laptop) are in

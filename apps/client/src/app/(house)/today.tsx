@@ -15,6 +15,8 @@ import { RestOfWeek } from '@/components/today/rest-of-week';
 import { SetupCard } from '@/components/today/setup-card';
 import { SwapOfferCard, SwapSuggestion } from '@/components/today/swap-ask';
 import { WeekGlance } from '@/components/today/week-glance';
+import { TourOffer } from '@/components/tour/tour-offer';
+import { TourSpot } from '@/components/tour/tour-spot';
 import { useAway } from '@/hooks/use-away';
 import { useHouse, type HouseView } from '@/hooks/use-house';
 import { useJohnList } from '@/hooks/use-john-list';
@@ -87,8 +89,9 @@ function TodayView({
   const two = useColumns();
   const day = <TopLine>{dayLabel(now, rules.timezone)}</TopLine>;
 
-  const next =
-    page.state.kind === 'setup' ? (
+  const next = (
+    <TourSpot id="today.nextUp">
+      {page.state.kind === 'setup' ? (
       <SetupCard
         houseId={house.id}
         houseName={house.name}
@@ -107,7 +110,9 @@ function TodayView({
         awayMakeup={house.awayMakeup}
         bestTime={me?.prefs.bestTime ?? null}
       />
-    );
+      )}
+    </TourSpot>
+  );
   // A John you'd rather not, and asks to swap made to you.
   const swap = (
     <>
@@ -117,7 +122,9 @@ function TodayView({
       {page.swap ? <SwapSuggestion houseId={house.id} ask={page.swap} nameOf={(id) => nameOf(id) ?? ''} /> : null}
     </>
   );
-  const needsYou = (
+  // A spot wraps only what's drawn: an empty one would still take a gap on the page.
+  const needsYou = today.toVote.length + today.toCover.length === 0 ? null : (
+    <TourSpot id="today.needsYou">
     <NeedsYou
       items={today.toVote}
       toCover={today.toCover}
@@ -126,6 +133,7 @@ function TodayView({
       zone={rules.timezone}
       now={now}
     />
+    </TourSpot>
   );
   const onCall = (
     <OnCall
@@ -137,13 +145,17 @@ function TodayView({
       now={now}
     />
   );
-  const rest = (
-    <RestOfWeek
-      going={page.going}
-      finished={page.finished}
-      context={{ houseId: house.id, userId, zone: rules.timezone, rules, now, nameOf }}
-    />
+  const rest = page.going.length + page.finished.length === 0 ? null : (
+    <TourSpot id="today.rest">
+      <RestOfWeek
+        going={page.going}
+        finished={page.finished}
+        context={{ houseId: house.id, userId, zone: rules.timezone, rules, now, nameOf }}
+      />
+    </TourSpot>
   );
+  // Someone new is offered a look round, once; it never starts by itself.
+  const offer = <TourOffer now={now} />;
   const mover = members.find((m) => m.userId === userId)?.movingOutOn ?? null;
   const localToday = localDate(now, rules.timezone);
   const moving = movingLine(mover, localToday, house.name);
@@ -185,6 +197,7 @@ function TodayView({
         main={
           <>
             {day}
+            {offer}
             {next}
             {swap}
             {rest}
@@ -205,6 +218,7 @@ function TodayView({
   return (
     <>
       {day}
+      {offer}
       {next}
       {swap}
       {needsYou}

@@ -20,6 +20,8 @@ jest.mock('@/api/disputes', () => ({ castVote: jest.fn(), raiseDispute: jest.fn(
 jest.mock('@/api/johns', () => ({ markDone: jest.fn(), undoDone: jest.fn(), spendImmunity: jest.fn() }));
 jest.mock('@/api/photos', () => ({ pickPhoto: jest.fn(), uploadProof: jest.fn() }));
 jest.mock('@/api/resets', () => ({ previewReset: jest.fn(), applyReset: jest.fn() }));
+jest.mock('@/api/reports', () => ({ myReports: jest.fn(async () => []), sendReport: jest.fn(), pickScreenshot: jest.fn() }));
+jest.mock('@/api/tours', () => ({ saveToursSaved: jest.fn(async () => undefined) }));
 jest.mock('@/api/supabase', () => {
   const mockChannel = { on: jest.fn(), subscribe: jest.fn() };
   mockChannel.on.mockReturnValue(mockChannel);

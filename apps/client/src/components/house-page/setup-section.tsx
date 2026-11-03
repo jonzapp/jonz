@@ -9,6 +9,7 @@ import { useAway } from '@/hooks/use-away';
 import { useJohnList } from '@/hooks/use-john-list';
 import { useReadOnFocus } from '@/hooks/use-refresh';
 import { useTheme } from '@/theme';
+import { TourSpot } from '@/components/tour/tour-spot';
 
 /**
  * House setup: a row to each of the house's setup pages, each showing what
@@ -37,32 +38,34 @@ export function SetupSection({ houseId, userId, view }: { houseId: string; userI
   });
 
   return (
-    <Section label={FOCUS_SHELL_COPY.setup} right={HOUSE_LOWER_COPY.setupNote} testID="setup-section">
-      <Row
-        leading={<RowIcon icon={ListTodoIcon} />}
-        title={HOUSE_LOWER_COPY.johns}
-        meta={values.johns ?? pending}
-        href="/house/johns"
-        chevron
-        testID="to-johns"
-      />
-      <Row
-        leading={<RowIcon icon={ScrollTextIcon} />}
-        title={HOUSE_LOWER_COPY.rules}
-        meta={values.rules}
-        href="/house/rules"
-        chevron
-        testID="to-rules"
-      />
-      <Row
-        leading={<RowIcon icon={PlaneIcon} />}
-        title={HOUSE_LOWER_COPY.away}
-        meta={values.away ?? pending}
-        href="/house/away"
-        chevron
-        testID="to-away"
-      />
-    </Section>
+    <TourSpot id="house.setup">
+      <Section label={FOCUS_SHELL_COPY.setup} right={HOUSE_LOWER_COPY.setupNote} testID="setup-section">
+        <Row
+          leading={<RowIcon icon={ListTodoIcon} />}
+          title={HOUSE_LOWER_COPY.johns}
+          meta={values.johns ?? pending}
+          href="/house/johns"
+          chevron
+          testID="to-johns"
+        />
+        <Row
+          leading={<RowIcon icon={ScrollTextIcon} />}
+          title={HOUSE_LOWER_COPY.rules}
+          meta={values.rules}
+          href="/house/rules"
+          chevron
+          testID="to-rules"
+        />
+        <Row
+          leading={<RowIcon icon={PlaneIcon} />}
+          title={HOUSE_LOWER_COPY.away}
+          meta={values.away ?? pending}
+          href="/house/away"
+          chevron
+          testID="to-away"
+        />
+      </Section>
+    </TourSpot>
   );
 }
 

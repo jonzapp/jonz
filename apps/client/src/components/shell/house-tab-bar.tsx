@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { CountBadge } from '@/components/badge';
 import { Meta, RowTitle } from '@/components/text';
+import { TourSpot } from '@/components/tour/tour-spot';
 import { FONT, GUTTER, INSET, RAIL, SPACE, TAP, useTheme } from '@/theme';
 
 /** The house's three places, in the order the tabs and the rail show them. */
@@ -91,13 +92,15 @@ export function HouseTabBar({
 
   if (!wide) {
     return (
-      <View
-        role="tablist"
-        accessibilityLabel={FOCUS_SHELL_COPY.places}
-        style={[styles.bar, { paddingBottom: insets.bottom, backgroundColor: colors.background, borderTopColor: colors.border }]}
-      >
-        {places}
-      </View>
+      <TourSpot id="shell.tabs">
+        <View
+          role="tablist"
+          accessibilityLabel={FOCUS_SHELL_COPY.places}
+          style={[styles.bar, { paddingBottom: insets.bottom, backgroundColor: colors.background, borderTopColor: colors.border }]}
+        >
+          {places}
+        </View>
+      </TourSpot>
     );
   }
 
@@ -109,9 +112,11 @@ export function HouseTabBar({
           <Meta>{SHELL_COPY.housemates(house.memberCount)}</Meta>
         </View>
       ) : null}
-      <View role="tablist" accessibilityLabel={FOCUS_SHELL_COPY.places} style={styles.railItems}>
-        {places}
-      </View>
+      <TourSpot id="shell.tabs">
+        <View role="tablist" accessibilityLabel={FOCUS_SHELL_COPY.places} style={styles.railItems}>
+          {places}
+        </View>
+      </TourSpot>
     </View>
   );
 }

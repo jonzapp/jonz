@@ -18,6 +18,7 @@ import { Row, RowIcon } from '@/components/row';
 import { useContentWidth } from '@/components/screen';
 import { Section } from '@/components/section';
 import type { HouseView } from '@/hooks/use-house';
+import { TourSpot } from '@/components/tour/tour-spot';
 
 type Span = 'week' | 'month';
 
@@ -65,50 +66,52 @@ export function TableSection({
 
   return (
     <View>
-      <Section
-        label={HOUSE_PAGE_COPY.table}
-        right={
-          <PickMenu
-            options={[
-              { value: 'week', label: HOUSE_PAGE_COPY.week },
-              { value: 'month', label: monthWord(month) },
-            ]}
-            value={span}
-            onChange={setSpan}
-            label={HOUSE_PAGE_COPY.show}
-            testID="table-span"
+      <TourSpot id="house.table">
+        <Section
+          label={HOUSE_PAGE_COPY.table}
+          right={
+            <PickMenu
+              options={[
+                { value: 'week', label: HOUSE_PAGE_COPY.week },
+                { value: 'month', label: monthWord(month) },
+              ]}
+              value={span}
+              onChange={setSpan}
+              label={HOUSE_PAGE_COPY.show}
+              testID="table-span"
+            />
+          }
+          testID="house-table"
+        >
+          {lines ? (
+            lines.map((line) => <Standing key={line.userId} line={line} />)
+          ) : (
+            <GroupItem>
+              {table.isError ? (
+                <ReadFailed message={HOUSE_PAGE_COPY.tableUnreadable} onRetry={() => void table.refetch()} />
+              ) : (
+                <Reading label={HOUSE_PAGE_COPY.readingTable} />
+              )}
+            </GroupItem>
+          )}
+          <Row
+            leading={<RowIcon icon={UserPlusIcon} />}
+            title={HOUSE_PAGE_COPY.invite}
+            onPress={() => setSheet('invite')}
+            chevron
+            testID="invite"
           />
-        }
-        testID="house-table"
-      >
-        {lines ? (
-          lines.map((line) => <Standing key={line.userId} line={line} />)
-        ) : (
-          <GroupItem>
-            {table.isError ? (
-              <ReadFailed message={HOUSE_PAGE_COPY.tableUnreadable} onRetry={() => void table.refetch()} />
-            ) : (
-              <Reading label={HOUSE_PAGE_COPY.readingTable} />
-            )}
-          </GroupItem>
-        )}
-        <Row
-          leading={<RowIcon icon={UserPlusIcon} />}
-          title={HOUSE_PAGE_COPY.invite}
-          onPress={() => setSheet('invite')}
-          chevron
-          testID="invite"
-        />
-        <Row
-          leading={<RowIcon icon={InfoIcon} />}
-          title={HOUSE_PAGE_COPY.rules}
-          // Whole on the narrowest phone, rather than cut at "How points and the…".
-          titleLines={2}
-          onPress={() => setSheet('rules')}
-          chevron
-          testID="how-it-works"
-        />
-      </Section>
+          <Row
+            leading={<RowIcon icon={InfoIcon} />}
+            title={HOUSE_PAGE_COPY.rules}
+            // Whole on the narrowest phone, rather than cut at "How points and the…".
+            titleLines={2}
+            onPress={() => setSheet('rules')}
+            chevron
+            testID="how-it-works"
+          />
+        </Section>
+      </TourSpot>
       <InviteSheet
         visible={sheet === 'invite'}
         onClose={() => setSheet(null)}

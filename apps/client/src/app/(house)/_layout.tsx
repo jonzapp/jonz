@@ -9,6 +9,7 @@ import { JohnSheetProvider } from "@/components/john-sheet";
 import { SheetRailContext } from "@/components/sheet";
 import { HouseTabBar, type ShellHouse } from "@/components/shell/house-tab-bar";
 import { ToastProvider } from "@/components/toast";
+import { TourProvider } from "@/components/tour/tour-provider";
 import { AskPanelProvider } from "@/hooks/use-ask-jonz";
 import { PhotosContext } from "@/hooks/photos";
 import { useHouse, useLiveHouse } from "@/hooks/use-house";
@@ -28,6 +29,8 @@ const TAB_BAR = 56;
  * From WIDE every sheet centres itself on the page beside the rail, and the
  * chat with Jonz opens as a panel down the right (AskPanel) with the page
  * still beside it.
+ * The tours and the Help sheet (TourProvider) are mounted here too, round
+ * every tab, as a tour can walk from one page to another.
  */
 export default function HouseLayout() {
   // The root layout's guard only opens this group with a house and a session.
@@ -43,6 +46,14 @@ export default function HouseLayout() {
     memberCount: view?.snapshot.members.length ?? 1,
   };
   const toVote = view?.today.toVote.length ?? 0;
+  // What a tour's steps depend on, as the tour starts.
+  const admin = view?.me?.role === "admin";
+  const toCheck = toVote + (view?.today.toCover.length ?? 0) > 0;
+  const hasJohns = (view?.today.mine.length ?? 0) > 0;
+  const facts = useMemo(
+    () => ({ admin, wide, toCheck, hasJohns }),
+    [admin, wide, toCheck, hasJohns],
+  );
   const members = view?.snapshot.members;
   const photos = useMemo(
     () =>
@@ -62,6 +73,7 @@ export default function HouseLayout() {
         >
           <JohnSheetProvider houseId={house!.id} userId={session!.user.id}>
             <AskPanelProvider>
+              <TourProvider facts={facts}>
               <View style={styles.row}>
                 <View style={styles.page}>
                   <Tabs
@@ -95,6 +107,7 @@ export default function HouseLayout() {
                 </View>
                 <AskPanel houseId={house!.id} userId={session!.user.id} />
               </View>
+              </TourProvider>
             </AskPanelProvider>
           </JohnSheetProvider>
         </ToastProvider>

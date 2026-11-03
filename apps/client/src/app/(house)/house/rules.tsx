@@ -13,6 +13,7 @@ import { useToast } from '@/components/toast';
 import { useHouse, type HouseView } from '@/hooks/use-house';
 import { useMembership } from '@/hooks/use-membership';
 import { usePull, useReadOnFocus } from '@/hooks/use-refresh';
+import { TourSpot } from '@/components/tour/tour-spot';
 
 /**
  * The house rules, pushed from House: the stake, the forfeits, disputes,
@@ -86,6 +87,7 @@ function RulesReadOut({ houseId, userId, view, onEdit }: { houseId: string; user
     <Pair
       testID="rules-pair"
       start={
+        <TourSpot id="rules.form">
         <Section
           label={SETUP_COPY.rules}
           right={isAdmin ? <TextButton label={SETUP_COPY.edit} align="end" onPress={onEdit} testID="edit-rules" /> : undefined}
@@ -95,6 +97,7 @@ function RulesReadOut({ houseId, userId, view, onEdit }: { houseId: string; user
             <Row key={rule.label} title={rule.label} trailing={rule.value} testID="rule" />
           ))}
         </Section>
+        </TourSpot>
       }
       end={
         <Section label={ADMINS_COPY.title} bare testID="admins-section">
