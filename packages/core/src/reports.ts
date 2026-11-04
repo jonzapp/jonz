@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import type { ListFacet, ListWhen } from "./admin-list";
+import { LEGAL, type LegalPage } from "./legal";
 
 // Report a problem (docs/specs/report-a-problem.md): what someone tells Jonz
 // from inside the app, what they see again under Your reports, and how the
@@ -14,6 +15,10 @@ export const REPORT_STATES = ["new", "open", "replied", "fixed"] as const;
 export type ReportState = (typeof REPORT_STATES)[number];
 
 export const SUPPORT_EMAIL = "support@jonz.app";
+
+/** Where a report came from: the app's sheet, or an email to support@jonz.app. */
+export const REPORT_SOURCES = ["app", "email"] as const;
+export type ReportSource = (typeof REPORT_SOURCES)[number];
 
 /** How much one report may carry, and how many a day each person may send. */
 export const REPORT_LIMITS = {
@@ -50,6 +55,15 @@ export type ReportMessageRequest = z.infer<typeof ReportMessageRequest>;
 
 export const ReportMessageResponse = z.object({ ok: z.literal(true) });
 
+/** POST /api/reports/:id/fixed: mark it (and every report folded into it) fixed, and maybe tell them. */
+export const ReportFixRequest = z.object({
+  note: z.string().trim().max(REPORT_LIMITS.words).nullable(),
+  tell: z.boolean(),
+});
+export type ReportFixRequest = z.infer<typeof ReportFixRequest>;
+
+export const ReportFixResponse = z.object({ ok: z.literal(true), fixed: z.number(), told: z.number() });
+
 /** A report's first line, short enough for a push or a list row. */
 export function reportGist(words: string, max = 80): string {
   const line = words.trim().split("\n")[0].trim();
@@ -68,8 +82,10 @@ export const REPORT_PUSH = {
   sent: (kind: ReportKind, name: string | null) =>
     `${name ?? "Someone"} sent ${kind === "problem" ? "a problem" : kind === "idea" ? "an idea" : "a question"}`,
   wroteBack: (name: string | null) => `${name ?? "Someone"} wrote back`,
+  emailed: (name: string | null) => `${name ?? "Someone"} emailed support`,
   /** To its sender. */
   replied: (signed: string | null) => (signed ? `${signed} at Jonz replied` : "Jonz replied"),
+  fixed: "Fixed: the problem you reported",
 } as const;
 
 export const REPORT_COPY = {
@@ -124,6 +140,31 @@ export const REPORT_COPY = {
   markFixed: "Mark fixed",
   reopen: "Open it again",
   note: "Every reply and every change goes in the audit log.",
+  // Where it came from (step 2).
+  byColumn: "By",
+  source: { app: "App", email: "Email" } satisfies Record<ReportSource, string>,
+  byEmail: "By email",
+  emailOnly: (address: string) => `${address}, by email`,
+  replyByEmail: (name: string) => `Reply to ${name} by email`,
+  subject: (subject: string) => `Subject: ${subject}`,
+  // Same as (step 3).
+  sameAs: "Same as…",
+  sameAsTitle: "Same as another report",
+  sameAsBody: "Fold this into the report that says the same thing. When that one is fixed, everyone who reported it is told.",
+  sameAsSearch: "Words or a report’s id",
+  sameAsNone: "Nothing like that",
+  foldedInto: (name: string) => `Same as ${name}’s report`,
+  notSame: "Not the same",
+  alsoFrom: (count: number) => (count === 1 ? "1 more person reported this" : `${count} more people reported this`),
+  also: (count: number) => (count === 1 ? "+1" : `+${count}`),
+  // Fixed, and telling everyone (step 3).
+  fixTitle: "Mark fixed",
+  fixNote: "What changed",
+  fixNotePlaceholder: "It’s fixed in today’s update. Thank you for telling us.",
+  fixTell: (count: number) => (count <= 1 ? "Tell them it’s fixed" : `Tell all ${count} people it’s fixed`),
+  fixTellMeta: "In the app and by email",
+  fixSend: "Mark fixed",
+  fixedTold: (told: number) => (told === 0 ? "Marked fixed" : told === 1 ? "Marked fixed and told them" : `Marked fixed and told ${told} people`),
   noHouse: "No house",
   role: { admin: "admin", member: "housemate" },
   gone: "Someone who left",
@@ -134,7 +175,7 @@ export const REPORT_COPY = {
   searchPlaceholder: "Name, email, house or words",
   count: (count: string) => (count === "1" ? "1 report" : `${count} reports`),
   empty: "Nothing to answer",
-  emptyBody: "Problems, ideas and questions from the app arrive here.",
+  emptyBody: "Problems, ideas and questions from the app and by email arrive here.",
 } as const;
 
 /** The Inbox's filters: what state it's in, and what kind it is. It opens on what's waiting for you. */
@@ -148,6 +189,15 @@ export const REPORT_FACETS: readonly ListFacet[] = [
       { value: "replied", label: "Replied", words: ["replied", "answered"] },
       { value: "fixed", label: "Fixed", words: ["fixed", "done", "closed"] },
       { value: "any", label: "Any state" },
+    ],
+  },
+  {
+    key: "source",
+    label: "From",
+    options: [
+      { value: "any", label: "App or email" },
+      { value: "app", label: "The app", words: ["app", "in-app"] },
+      { value: "email", label: "Email", words: ["email", "mail", "emailed"] },
     ],
   },
   {
@@ -178,3 +228,48 @@ export function reportAge(iso: string, now: Date): string {
   if (hours < 24 * 6) return WEEKDAY[at.getDay()];
   return `${at.getDate()} ${MONTH[at.getMonth()]}`;
 }
+
+/**
+ * jonz.app/help: how to reach Jonz, for anyone, signed in or not, and
+ * where the README and CONTRIBUTING send people instead of GitHub issues.
+ */
+export const HELP_PAGE: LegalPage = {
+  title: "Help",
+  updated: "Jonz support",
+  lead: `Something not working, an idea, or a question? Tell us and a person at Jonz reads it and writes back, usually within a day or two.`,
+  sections: [
+    {
+      heading: "From inside Jonz",
+      body: [
+        "Open House, then Help. Report a problem or Send an idea opens a short form: say what happened, add up to three screenshots if they help, and send.",
+        "Leave “Send the details that help” ticked and it also says which pages you were on, your app or browser and the last error Jonz showed, so we can find it faster. You see exactly what goes before you send.",
+        "Our replies arrive under House, Help, Your reports, with a notification and an email. Write back there any time.",
+        "If Jonz ever shows “Something went wrong”, press Tell us what happened on that screen.",
+      ],
+    },
+    {
+      heading: "By email",
+      body: [
+        `Email ${SUPPORT_EMAIL} from any address. Say what you were doing and what you saw; a screenshot pasted into the email is fine, but we only read the words.`,
+        "We answer by email. Reply to our answer to keep the conversation going: it stays together with what you first sent.",
+        `If you email from the address you sign in with, it shows under Your reports in the app too.`,
+      ],
+      links: [{ label: `Email ${SUPPORT_EMAIL}`, href: `mailto:${SUPPORT_EMAIL}` }],
+    },
+    {
+      heading: "Your account and your data",
+      body: [
+        "To delete your account, open House, then Delete my account, or use the page below. To ask what we keep about you, or to have it corrected, email us.",
+      ],
+      links: [
+        { label: "Delete my account", href: "/delete" },
+        { label: "Privacy Policy", href: LEGAL.privacyPath },
+        { label: "Terms", href: LEGAL.termsPath },
+      ],
+    },
+    {
+      heading: "Security problems",
+      body: [`If you’ve found a way to see or change something you shouldn’t, email ${SUPPORT_EMAIL} with “Security” in the subject, and please don’t share it until we’ve fixed it.`],
+    },
+  ],
+};

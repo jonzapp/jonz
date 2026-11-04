@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Report a problem, send an idea or ask a question
+    url: https://jonz.app/help
+    about: From inside Jonz (House, then Help) or by email to support@jonz.app. Every one gets a reply.
   - name: Report a security problem
     url: https://github.com/jonzapp/jonz/security/advisories/new
     about: Privately, please. Don't open a public issue.
-  - name: Ask about your house or the House Pass
-    url: mailto:hello@jonz.app
-    about: Questions about your account, your house or billing go by email.

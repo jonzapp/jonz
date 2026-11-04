@@ -1,14 +1,18 @@
-import { REPORT_COPY } from '@app/core';
+import { REPORT_COPY, REPORT_LIMITS, reportGist } from '@app/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CheckIcon, RotateCcwIcon } from 'lucide-react-native';
-import { useEffect } from 'react';
+import { CheckIcon, CopyIcon, MailIcon, RotateCcwIcon, SearchIcon, UnlinkIcon } from 'lucide-react-native';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
-import { openReport, replyToReport, setReportState, type Report } from '@/api/reports';
+import { fixReport, openReport, replyToReport, sameAsFind, setReportState, setSameAs, type Report, type ReportLink } from '@/api/reports';
 import { Alert } from '@/components/alert';
 import { Button } from '@/components/button';
+import { Field } from '@/components/field';
 import { Group } from '@/components/group';
 import { DetailsList, ReplyBox, ReportChip, ReportThread } from '@/components/report/report-parts';
+import { Row, RowIcon } from '@/components/row';
+import { ChoiceRow } from '@/components/setup/choice-row';
+import { Sheet } from '@/components/sheet';
 import { Lead, Meta } from '@/components/text';
 import { SPACE, useTheme } from '@/theme';
 
@@ -16,11 +20,13 @@ import { SPACE, useTheme } from '@/theme';
 export const INBOX_KEY = ['owner-inbox'] as const;
 
 /**
- * One report, for the owner: who sent it and from where, the conversation,
- * what the app sent with it, a box to reply (in the app and by email), and
- * Mark fixed (or Open it again). Opening a new one marks it read.
+ * One report, for the owner: who sent it and from where (the app, or an
+ * email), the conversation, what the app sent with it, a box to reply (in
+ * the app and by email, or by email alone), the reports folded into it,
+ * and its actions: Mark fixed (telling everyone who reported it) or Open it
+ * again, and Same as… to fold it into another. Opening a new one marks it read.
  */
-export function ReportPanel({ id }: { id: string }) {
+export function ReportPanel({ id, onOpen }: { id: string; onOpen?: (id: string) => void }) {
   const { colors } = useTheme();
   const client = useQueryClient();
   const report = useQuery({ queryKey: [...INBOX_KEY, 'report', id], queryFn: () => openReport(id) });
@@ -30,33 +36,64 @@ export function ReportPanel({ id }: { id: string }) {
     if (opened) void client.invalidateQueries({ queryKey: [...INBOX_KEY, 'rows'] });
   }, [client, opened]);
   const refresh = () => client.invalidateQueries({ queryKey: INBOX_KEY });
-  const fix = useMutation({
-    mutationFn: (state: 'fixed' | 'open') => setReportState(id, state),
-    onSuccess: refresh,
-  });
+  const reopen = useMutation({ mutationFn: () => setReportState(id, 'open'), onSuccess: refresh });
 
   if (report.isPending) return <ActivityIndicator color={colors.mutedForeground} style={styles.wait} />;
   if (report.isError) return <Alert message={report.error.message} testID="report-panel-problem" />;
-  return <ReportBody report={report.data} fixing={fix} onReply={async (text) => {
-    await replyToReport(id, text);
-    await refresh();
-  }} />;
+  return (
+    <ReportBody
+      report={report.data}
+      reopen={reopen}
+      refresh={refresh}
+      onOpen={onOpen}
+      onReply={async (text) => {
+        await replyToReport(id, text);
+        await refresh();
+      }}
+    />
+  );
 }
 
 function ReportBody({
   report,
-  fixing,
+  reopen,
+  refresh,
+  onOpen,
   onReply,
 }: {
   report: Report;
-  fixing: { mutate: (state: 'fixed' | 'open') => void; isPending: boolean; error: Error | null };
+  reopen: { mutate: () => void; isPending: boolean; error: Error | null };
+  refresh: () => Promise<void>;
+  onOpen?: (id: string) => void;
   onReply: (text: string) => Promise<void>;
 }) {
+  const [sheet, setSheet] = useState<'fix' | 'same' | null>(null);
+  const [done, setDone] = useState<string | null>(null);
+  const [unfolding, setUnfolding] = useState<string | null>(null);
   const first = report.name?.split(' ')[0] ?? REPORT_COPY.gone;
-  const where = [report.house ?? REPORT_COPY.noHouse, report.role ? REPORT_COPY.role[report.role as 'admin' | 'member'] ?? null : null, report.email]
-    .filter(Boolean)
-    .join(', ');
+  const emailOnly = report.source === 'email' && !report.userId;
+  const where = emailOnly
+    ? REPORT_COPY.emailOnly(report.email ?? REPORT_COPY.gone)
+    : [
+        report.house ?? REPORT_COPY.noHouse,
+        report.role ? (REPORT_COPY.role[report.role as 'admin' | 'member'] ?? null) : null,
+        report.email,
+        report.source === 'email' ? REPORT_COPY.byEmail : null,
+      ]
+        .filter(Boolean)
+        .join(', ');
   const fixed = report.state === 'fixed';
+  // Someone to answer: their account, or the address the email came from.
+  const answerable = report.userId !== null || (emailOnly && report.email !== null);
+  const unfold = async () => {
+    setUnfolding(null);
+    try {
+      await setSameAs(report.id, null);
+      await refresh();
+    } catch (e) {
+      setUnfolding(e instanceof Error ? e.message : String(e));
+    }
+  };
   return (
     <View style={styles.panel} testID="report-panel">
       <View style={styles.head}>
@@ -67,26 +104,196 @@ function ReportBody({
           <ReportChip state={report.state} owner testID="report-panel-state" />
         </View>
         <Meta>{where}</Meta>
+        {report.subject ? <Meta testID="report-panel-subject">{REPORT_COPY.subject(report.subject)}</Meta> : null}
       </View>
+      {report.sameAs ? (
+        <Group testID="report-same-as">
+          <Row
+            leading={<RowIcon icon={CopyIcon} />}
+            title={REPORT_COPY.foldedInto(report.sameAs.name?.split(' ')[0] ?? REPORT_COPY.gone)}
+            meta={reportGist(report.sameAs.words)}
+            onPress={onOpen ? () => onOpen(report.sameAs!.id) : undefined}
+            href={onOpen ? undefined : `/admin/inbox/${report.sameAs.id}`}
+            chevron
+            testID="report-same-as-link"
+          />
+          <Row leading={<RowIcon icon={UnlinkIcon} />} title={REPORT_COPY.notSame} onPress={() => void unfold()} testID="report-not-same" />
+        </Group>
+      ) : null}
+      {unfolding ? <Alert message={unfolding} /> : null}
       <ReportThread report={report} viewer="owner" />
       {report.details ? (
         <Group>
           <DetailsList details={report.details} />
         </Group>
       ) : null}
-      {report.userId ? <ReplyBox placeholder={REPORT_COPY.replyTo(first)} onSend={onReply} testID="report-reply" /> : null}
+      {report.also.length > 0 ? <AlsoReported also={report.also} onOpen={onOpen} /> : null}
+      {answerable ? (
+        <ReplyBox placeholder={emailOnly ? REPORT_COPY.replyByEmail(first) : REPORT_COPY.replyTo(first)} onSend={onReply} testID="report-reply" />
+      ) : null}
       <View style={styles.actions}>
         <Button
           label={fixed ? REPORT_COPY.reopen : REPORT_COPY.markFixed}
           icon={fixed ? RotateCcwIcon : CheckIcon}
           variant="outline"
-          disabled={fixing.isPending}
-          onPress={() => fixing.mutate(fixed ? 'open' : 'fixed')}
+          disabled={reopen.isPending}
+          onPress={() => {
+            setDone(null);
+            if (fixed) reopen.mutate();
+            else setSheet('fix');
+          }}
           testID={fixed ? 'report-reopen' : 'report-fixed'}
         />
+        {report.sameAs ? null : (
+          <Button label={REPORT_COPY.sameAs} icon={CopyIcon} variant="outline" onPress={() => setSheet('same')} testID="report-same" />
+        )}
       </View>
-      {fixing.error ? <Alert message={fixing.error.message} /> : null}
+      {done ? <Meta testID="report-fixed-done">{done}</Meta> : null}
+      {reopen.error ? <Alert message={reopen.error.message} /> : null}
       <Meta>{REPORT_COPY.note}</Meta>
+      <Sheet visible={sheet === 'fix'} title={REPORT_COPY.fixTitle} onClose={() => setSheet(null)} testID="report-fix-sheet">
+        {sheet === 'fix' ? (
+          <FixForm
+            report={report}
+            onDone={async (said) => {
+              setSheet(null);
+              setDone(said);
+              await refresh();
+            }}
+          />
+        ) : null}
+      </Sheet>
+      <Sheet
+        visible={sheet === 'same'}
+        title={REPORT_COPY.sameAsTitle}
+        description={REPORT_COPY.sameAsBody}
+        onClose={() => setSheet(null)}
+        testID="report-same-sheet"
+      >
+        {sheet === 'same' ? (
+          <SameAsForm
+            report={report}
+            onDone={async () => {
+              setSheet(null);
+              await refresh();
+            }}
+          />
+        ) : null}
+      </Sheet>
+    </View>
+  );
+}
+
+/** The reports folded into this one: who sent each, and what they said. */
+function AlsoReported({ also, onOpen }: { also: readonly ReportLink[]; onOpen?: (id: string) => void }) {
+  return (
+    <View style={styles.also} testID="report-also">
+      <Meta>{REPORT_COPY.alsoFrom(also.length)}</Meta>
+      <Group>
+        {also.map((one) => (
+          <Row
+            key={one.id}
+            title={one.name ?? REPORT_COPY.gone}
+            meta={reportGist(one.words)}
+            trailing={<ReportChip state={one.state} owner />}
+            onPress={onOpen ? () => onOpen(one.id) : undefined}
+            href={onOpen ? undefined : `/admin/inbox/${one.id}`}
+            chevron
+            testID={`report-also-${one.id}`}
+          />
+        ))}
+      </Group>
+    </View>
+  );
+}
+
+/**
+ * Mark fixed: what changed (optional), and whether to tell everyone who
+ * reported it, in the app and by email. The note goes in each of their
+ * conversations; without one they read a plain thank you.
+ */
+function FixForm({ report, onDone }: { report: Report; onDone: (said: string) => Promise<void> }) {
+  const [note, setNote] = useState('');
+  const [tell, setTell] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
+  const people = 1 + report.also.filter((one) => one.state !== 'fixed').length;
+  const send = async () => {
+    setBusy(true);
+    setProblem(null);
+    try {
+      const { told } = await fixReport(report.id, note, tell);
+      await onDone(REPORT_COPY.fixedTold(told));
+    } catch (e) {
+      setProblem(e instanceof Error ? e.message : String(e));
+      setBusy(false);
+    }
+  };
+  return (
+    <View style={styles.form} testID="report-fix-form">
+      <Field
+        label={REPORT_COPY.fixNote}
+        placeholder={REPORT_COPY.fixNotePlaceholder}
+        value={note}
+        onChangeText={setNote}
+        multiline
+        maxLength={REPORT_LIMITS.words}
+        editable={tell}
+        testID="report-fix-note"
+      />
+      <Group>
+        <ChoiceRow
+          role="checkbox"
+          label={REPORT_COPY.fixTell(people)}
+          meta={REPORT_COPY.fixTellMeta}
+          checked={tell}
+          onPress={() => setTell((on) => !on)}
+        />
+      </Group>
+      {problem ? <Alert message={problem} testID="report-fix-problem" /> : null}
+      <View style={styles.start}>
+        <Button label={busy ? REPORT_COPY.sending : REPORT_COPY.fixSend} icon={tell ? MailIcon : CheckIcon} disabled={busy} onPress={() => void send()} testID="report-fix-send" />
+      </View>
+    </View>
+  );
+}
+
+/** Same as…: search for the report this one repeats, and fold it in. */
+function SameAsForm({ report, onDone }: { report: Report; onDone: () => Promise<void> }) {
+  const [q, setQ] = useState('');
+  const [problem, setProblem] = useState<string | null>(null);
+  const found = useQuery({ queryKey: [...INBOX_KEY, 'same-as', report.id, q.trim()], queryFn: () => sameAsFind(report.id, q.trim()) });
+  const pick = async (main: string) => {
+    setProblem(null);
+    try {
+      await setSameAs(report.id, main);
+      await onDone();
+    } catch (e) {
+      setProblem(e instanceof Error ? e.message : String(e));
+    }
+  };
+  return (
+    <View style={styles.form} testID="report-same-form">
+      <Field label={REPORT_COPY.sameAsSearch} value={q} onChangeText={setQ} autoFocus testID="report-same-search" />
+      {problem ? <Alert message={problem} /> : null}
+      {found.isError ? <Alert message={found.error.message} /> : null}
+      {found.data && found.data.length === 0 ? <Meta>{REPORT_COPY.sameAsNone}</Meta> : null}
+      {found.data && found.data.length > 0 ? (
+        <Group>
+          {found.data.map((one) => (
+            <Row
+              key={one.id}
+              leading={<RowIcon icon={SearchIcon} />}
+              title={one.name ?? REPORT_COPY.gone}
+              meta={reportGist(one.words)}
+              metaLines={2}
+              trailing={<ReportChip state={one.state} owner />}
+              onPress={() => void pick(one.id)}
+              testID={`report-same-${one.id}`}
+            />
+          ))}
+        </Group>
+      ) : null}
     </View>
   );
 }
@@ -96,6 +303,9 @@ const styles = StyleSheet.create({
   head: { gap: SPACE.xs },
   titleLine: { flexDirection: 'row', alignItems: 'center', gap: SPACE.md },
   name: { flex: 1 },
-  actions: { alignItems: 'flex-start' },
+  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACE.sm },
+  also: { gap: SPACE.sm },
+  form: { gap: SPACE.lg },
+  start: { alignItems: 'flex-start' },
   wait: { marginTop: SPACE.xl },
 });
