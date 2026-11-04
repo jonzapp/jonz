@@ -15,6 +15,7 @@ import { useHouse } from '@/hooks/use-house';
 import { useMove } from '@/hooks/use-move';
 import { useUndoOffer } from '@/hooks/use-undo-offer';
 import { SECTION_GAP, useTheme } from '@/theme';
+import { useRoleCopy } from '@/hooks/use-kind';
 
 /**
  * What an admin can do about a housemate, on their page: make them an admin
@@ -36,14 +37,15 @@ export function PersonAdmin({ houseId, userId, person }: { houseId: string; user
   const weekId = useHouse(houseId, userId).view?.board.week?.id ?? null;
   const name = firstName(person.name);
   const admin = person.role === 'admin';
+  const words = useRoleCopy().person;
 
   return (
     <View testID="person-admin" style={styles.stack}>
-      <Section label={PERSON_COPY.admin}>
+      <Section label={words.section}>
         <Row
           leading={<RowIcon icon={admin ? ShieldOffIcon : ShieldCheckIcon} />}
-          title={admin ? PERSON_COPY.makeHousemate : PERSON_COPY.makeAdmin}
-          meta={admin ? PERSON_COPY.makeHousemateMeta : PERSON_COPY.makeAdminMeta}
+          title={admin ? words.makeMember : words.makeAdmin}
+          meta={admin ? words.makeMemberMeta : words.makeAdminMeta}
           disabled={role.pending}
           onPress={() =>
             void role.run(() => setRole(houseId, person.userId, admin ? 'member' : 'admin')).then((done) => {

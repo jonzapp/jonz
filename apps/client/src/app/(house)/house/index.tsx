@@ -1,4 +1,5 @@
 import {
+  familyHides,
   HOUSE_LOWER_COPY,
   HOUSE_PAGE_COPY,
   monthOf,
@@ -124,9 +125,11 @@ function HouseSections({
     johns: list.data?.johns,
   }).map((figure) => ({ ...figure, href: FIGURE_PAGE[figure.key] }));
   const me = view.me;
+  // A family has no Stake: no money figures, no settling up (familyHides).
+  const noStake = familyHides(view.snapshot.house.kind).stake;
   return (
     <>
-      {unlocked ? (
+      {noStake ? null : unlocked ? (
         <>
           {stake.isError ? <ReadFailed message={HOUSE_PAGE_COPY.stakeUnreadable} onRetry={() => void stake.refetch()} /> : null}
           <Figures figures={figures} label={HOUSE_PAGE_COPY.figures} testID="house-figures" />

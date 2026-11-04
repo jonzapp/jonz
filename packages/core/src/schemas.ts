@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { BUDGETS, CATEGORIES, CURRENCIES, DEAL_MODES, JOHN_WHEN, SETTLE_IN } from "./domain";
+import { BUDGETS, CATEGORIES, CURRENCIES, DEAL_MODES, HOUSE_KINDS, JOHN_WHEN, SETTLE_IN } from "./domain";
 import { PASS_PURCHASES } from "./pass";
 
 // Shapes the apps and the API agree on. The API validates requests with
@@ -41,6 +41,8 @@ export const CreateHouse = z.object({
   timezone: z.string().min(1),
   currency: z.enum(CURRENCIES),
   weekStarts: z.coerce.number().int().min(1).max(7),
+  /** Who lives here: housemates unless it says family. */
+  kind: z.enum(HOUSE_KINDS).optional(),
 });
 export type CreateHouse = z.infer<typeof CreateHouse>;
 

@@ -26,6 +26,10 @@
   tested above the default size.
 - The words themselves follow the voice in [feel.md](feel.md) and the
   shared sentences in `packages/core/src/copy.ts`.
+- **A family's words.** In a family house an admin is a **Parent** and
+  everyone else a **Kid**, wherever the app names a role (`roleCopy(kind)`
+  in `packages/core/src/family.ts`); the roles underneath are the same.
+  Never call a family's people housemates. (Family houses, this PR)
 
 ## One word for each thing
 

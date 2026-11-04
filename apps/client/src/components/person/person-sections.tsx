@@ -1,5 +1,6 @@
 import {
   awayLines,
+  familyHides,
   HOUSE_PAGE_COPY,
   moneyLines,
   monthOf,
@@ -129,28 +130,33 @@ export function PersonSections({
         </Section>
       ),
     },
-    {
-      key: 'money',
-      weight: 4,
-      node: (
-        <Section label={HOUSE_PAGE_COPY.soFar(monthWord(month))} testID="person-money">
-          {stake.data ? (
-            <PersonLines
-              lines={moneyLines({
-                projection: stake.data.projection.find((p) => p.userId === person.userId),
-                month: stake.data.month,
-                stakeMinor: rules.stakeMinor,
-                record: monthRow,
-                currency: rules.currency,
-              })}
-            />
-          ) : (
-            <Pending query={stake} label={HOUSE_PAGE_COPY.readingStake} unreadable={HOUSE_PAGE_COPY.stakeUnreadable} />
-          )}
-        </Section>
-      ),
-    },
   ];
+  // A family has no Stake, so nothing about money (familyHides).
+  if (!familyHides(view.snapshot.house.kind).stake) {
+    items.push(
+      {
+        key: 'money',
+        weight: 4,
+        node: (
+          <Section label={HOUSE_PAGE_COPY.soFar(monthWord(month))} testID="person-money">
+            {stake.data ? (
+              <PersonLines
+                lines={moneyLines({
+                  projection: stake.data.projection.find((p) => p.userId === person.userId),
+                  month: stake.data.month,
+                  stakeMinor: rules.stakeMinor,
+                  record: monthRow,
+                  currency: rules.currency,
+                })}
+              />
+            ) : (
+              <Pending query={stake} label={HOUSE_PAGE_COPY.readingStake} unreadable={HOUSE_PAGE_COPY.stakeUnreadable} />
+            )}
+          </Section>
+        ),
+      },
+    );
+  }
   if (owing.length) {
     items.push({
       key: 'settling',

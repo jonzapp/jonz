@@ -1,4 +1,4 @@
-import { HOUSE_PAGE_COPY, localDate, monthOf, monthWord, tableLines, type TableLine } from '@app/core';
+import { FAMILY_COPY, HOUSE_PAGE_COPY, localDate, monthOf, monthWord, tableLines, type TableLine } from '@app/core';
 import type { UseQueryResult } from '@tanstack/react-query';
 import { InfoIcon, UserPlusIcon } from 'lucide-react-native';
 import { useState } from 'react';
@@ -96,7 +96,7 @@ export function TableSection({
           )}
           <Row
             leading={<RowIcon icon={UserPlusIcon} />}
-            title={HOUSE_PAGE_COPY.invite}
+            title={view.snapshot.house.kind === 'family' ? FAMILY_COPY.invite : HOUSE_PAGE_COPY.invite}
             onPress={() => setSheet('invite')}
             chevron
             testID="invite"

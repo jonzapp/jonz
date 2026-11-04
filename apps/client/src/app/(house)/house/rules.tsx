@@ -1,4 +1,4 @@
-import { ADMINS_COPY, PAGE_TITLE, rulesRows, SETUP_COPY } from '@app/core';
+import { PAGE_TITLE, roleCopy, rulesRows, SETUP_COPY } from '@app/core';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -52,6 +52,7 @@ function RulesFor({ houseId, userId }: { houseId: string; userId: string }) {
       awayMakeup: snapshot.house.awayMakeup,
       settleIn: snapshot.house.settleIn,
       memberIds: snapshot.members.map((m) => m.userId),
+      kind: snapshot.house.kind,
     };
     return (
       <RulesEditing
@@ -93,14 +94,14 @@ function RulesReadOut({ houseId, userId, view, onEdit }: { houseId: string; user
           right={isAdmin ? <TextButton label={SETUP_COPY.edit} align="end" onPress={onEdit} testID="edit-rules" /> : undefined}
           testID="rules-panel"
         >
-          {rulesRows(snapshot.rules, snapshot.house.awayMakeup, snapshot.house.settleIn).map((rule) => (
+          {rulesRows(snapshot.rules, snapshot.house.awayMakeup, snapshot.house.settleIn, snapshot.house.kind).map((rule) => (
             <Row key={rule.label} title={rule.label} trailing={rule.value} testID="rule" />
           ))}
         </Section>
         </TourSpot>
       }
       end={
-        <Section label={ADMINS_COPY.title} bare testID="admins-section">
+        <Section label={roleCopy(snapshot.house.kind).admins.title} bare testID="admins-section">
           <AdminsList houseId={houseId} userId={userId} view={view} />
         </Section>
       }

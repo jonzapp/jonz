@@ -1,7 +1,7 @@
 import { DELETE_PATH } from "./account-deletion";
 import { safeNext, signInPath, signInReason } from "./auth-paths";
 import { FRONT_DOOR_COPY, SIGN_IN_COPY } from "./copy";
-import { CURRENCIES, type Currency, DEFAULT_RULES, DOW_LABEL, type IsoDow } from "./domain";
+import { CURRENCIES, type Currency, DEFAULT_RULES, DOW_LABEL, type HouseKind, type IsoDow } from "./domain";
 import { moneyInput } from "./money";
 import { normaliseJoinCode } from "./schemas";
 
@@ -9,7 +9,7 @@ import { normaliseJoinCode } from "./schemas";
 // sign-in, reading an invite link or code, and the new house's defaults line.
 
 /** Where the front door's two buttons land once you've signed in. */
-export const DOOR = { start: "/house/new", invite: "/welcome" } as const;
+export const DOOR = { start: "/house/new", startFamily: "/house/new?kind=family", invite: "/welcome" } as const;
 
 /** A join link's path as it was given; the join page itself says when its code is bad. */
 const JOIN_PATH = /^\/join\/[^/?#]+$/;
@@ -23,7 +23,7 @@ const JOIN_PATH = /^\/join\/[^/?#]+$/;
  */
 export function afterSignIn(next: string | null | undefined): string | undefined {
   const target = safeNext(next);
-  if (target === DOOR.start || target === DOOR.invite || target === DELETE_PATH || JOIN_PATH.test(target)) return target;
+  if (target === DOOR.start || target === DOOR.startFamily || target === DOOR.invite || target === DELETE_PATH || JOIN_PATH.test(target)) return target;
   return undefined;
 }
 
@@ -57,7 +57,7 @@ export function googleReturn(next: string | null | undefined): string {
 export function signInLine(next: string | null | undefined, apple = false): string {
   if (apple) return SIGN_IN_COPY.eitherAccount;
   const target = afterSignIn(next);
-  if (target === DOOR.start) return FRONT_DOOR_COPY.startReason;
+  if (target === DOOR.start || target === DOOR.startFamily) return FRONT_DOOR_COPY.startReason;
   if (target === DOOR.invite) return FRONT_DOOR_COPY.inviteReason;
   return signInReason(next);
 }
@@ -92,14 +92,17 @@ export function houseDefaults({
   weekStarts,
   timezone,
   stakeMinor = DEFAULT_RULES.stakeMinor,
+  kind = "housemates",
 }: {
   currency: Currency;
   weekStarts: IsoDow;
   timezone: string;
   stakeMinor?: number;
+  /** A family has no stake, so its line starts with the week. */
+  kind?: HouseKind;
 }): string[] {
   return [
-    FRONT_DOOR_COPY.stakeEach(`${currency} ${moneyInput(stakeMinor)}`),
+    ...(kind === "family" ? [] : [FRONT_DOOR_COPY.stakeEach(`${currency} ${moneyInput(stakeMinor)}`)]),
     FRONT_DOOR_COPY.weekStarts(DOW_LABEL[weekStarts]),
     timeZoneName(timezone),
   ];

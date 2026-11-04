@@ -1,4 +1,4 @@
-import { BIN_NIGHT, FRONT_DOOR_COPY, MOVING_COPY, NEW_HOUSE_COPY } from '@app/core';
+import { BIN_NIGHT, FAMILY_COPY, FRONT_DOOR_COPY, MOVING_COPY, NEW_HOUSE_COPY } from '@app/core';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
 import { createHouse } from '@/api/house';
@@ -10,8 +10,9 @@ jest.mock('@/api/house', () => ({ createHouse: jest.fn() }));
 jest.mock('@/api/moving', () => ({ startHouseFrom: jest.fn() }));
 let mockMoving: { fromHouse: string; houseName: string; johns: number } | null = null;
 let mockFrom: string | undefined;
+let mockKind: string | undefined;
 jest.mock('@/hooks/use-moving-on', () => ({ useMovingOn: () => ({ data: mockMoving }) }));
-jest.mock('expo-router', () => ({ ...jest.requireActual('expo-router'), useLocalSearchParams: () => ({ from: mockFrom }) }));
+jest.mock('expo-router', () => ({ ...jest.requireActual('expo-router'), useLocalSearchParams: () => ({ from: mockFrom, kind: mockKind }) }));
 jest.mock('@/hooks/use-membership', () => ({ useMembership: () => ({ refresh: mockRefresh }) }));
 jest.mock('@/locale', () => ({ deviceTimeZone: () => 'America/St_Johns', deviceCurrency: () => 'CAD' }));
 
@@ -23,6 +24,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockMoving = null;
   mockFrom = undefined;
+  mockKind = undefined;
 });
 
 it('asks for one thing, the name, with the defaults in a line', async () => {
@@ -45,7 +47,7 @@ it('starts the house with the defaults, then reads the house again', async () =>
   await render(<NewHouse />);
   await fireEvent.changeText(screen.getByLabelText(FRONT_DOOR_COPY.name), 'Flat 3');
   await fireEvent.press(screen.getByRole('button', { name: FRONT_DOOR_COPY.submit }));
-  expect(create).toHaveBeenCalledWith({ name: 'Flat 3', timezone: 'America/St_Johns', currency: 'CAD', weekStarts: 1 });
+  expect(create).toHaveBeenCalledWith({ name: 'Flat 3', timezone: 'America/St_Johns', currency: 'CAD', weekStarts: 1, kind: 'housemates' });
   expect(mockRefresh).toHaveBeenCalled();
 });
 
@@ -81,7 +83,7 @@ it('opens the currency and the first day under Change, and the line follows them
 
   await fireEvent.changeText(screen.getByLabelText(FRONT_DOOR_COPY.name), 'Flat 3');
   await fireEvent.press(screen.getByRole('button', { name: FRONT_DOOR_COPY.submit }));
-  expect(create).toHaveBeenCalledWith({ name: 'Flat 3', timezone: 'America/St_Johns', currency: 'EUR', weekStarts: 7 });
+  expect(create).toHaveBeenCalledWith({ name: 'Flat 3', timezone: 'America/St_Johns', currency: 'EUR', weekStarts: 7, kind: 'housemates' });
 });
 
 it('says what the database refused, and lets you try again', async () => {
@@ -97,6 +99,43 @@ it('says what the database refused, and lets you try again', async () => {
 it('offers the way in for someone with an invite', async () => {
   await render(<NewHouse />);
   expect(screen.getByRole('link', { name: FRONT_DOOR_COPY.invite })).toHaveProp('href', '/welcome');
+});
+
+describe('a family', () => {
+  /** A kind's choice says what it means as well as its name. */
+  const kindName = (kind: 'family' | 'housemates') => `${FAMILY_COPY.kinds[kind]}, ${FAMILY_COPY.kindBody[kind]}`;
+  beforeEach(() => {
+    mockKind = 'family';
+  });
+
+  it('asks who lives here, with Family picked from the front door, and starts a family', async () => {
+    create.mockResolvedValue('h1');
+    await render(<NewHouse />);
+    expect(screen.getByRole('header', { name: FAMILY_COPY.newHeading })).toBeOnTheScreen();
+    expect(screen.getByText(FAMILY_COPY.whoLivesHere)).toBeOnTheScreen();
+    expect(screen.getByRole('radio', { name: kindName('family') })).toBeChecked();
+    // A family has no stake, so the line starts with the week.
+    expect(screen.getByTestId('house-defaults')).toHaveTextContent(line('weeks start Monday', 'America/St Johns'));
+    await fireEvent.changeText(screen.getByLabelText(FRONT_DOOR_COPY.name), 'The Parks');
+    await fireEvent.press(screen.getByRole('button', { name: FAMILY_COPY.submit }));
+    expect(create).toHaveBeenCalledWith({ name: 'The Parks', timezone: 'America/St_Johns', currency: 'CAD', weekStarts: 1, kind: 'family' });
+  });
+
+  it('can be changed back to housemates before it starts', async () => {
+    create.mockResolvedValue('h1');
+    await render(<NewHouse />);
+    await fireEvent.press(screen.getByRole('radio', { name: kindName('housemates') }));
+    expect(screen.getByRole('header', { name: NEW_HOUSE_COPY.heading })).toBeOnTheScreen();
+    await fireEvent.changeText(screen.getByLabelText(FRONT_DOOR_COPY.name), 'Flat 3');
+    await fireEvent.press(screen.getByRole('button', { name: FRONT_DOOR_COPY.submit }));
+    expect(create).toHaveBeenCalledWith(expect.objectContaining({ kind: 'housemates' }));
+  });
+
+  it("isn't asked about until families open, unless a link asks for one", async () => {
+    mockKind = undefined;
+    await render(<NewHouse />);
+    expect(screen.queryByText(FAMILY_COPY.whoLivesHere)).not.toBeOnTheScreen();
+  });
 });
 
 describe('from the Moving on screen', () => {
