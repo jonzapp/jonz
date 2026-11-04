@@ -122,7 +122,8 @@ of design picks. It wins over older specs and PR descriptions. Before
 changing any screen, component, sheet, email or draft, load the
 `house-style` skill (`.claude/skills/house-style/SKILL.md`). When Glyn picks
 a design option, the PR that builds it updates the rule and adds a line to
-`docs/style/decisions.md`.
+`docs/style/decisions.md`. For design options for Glyn,
+see "Design options for Glyn" in the `house-style` skill.
 
 ## Rules live in the lowest layer that can hold them
 
