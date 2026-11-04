@@ -124,6 +124,9 @@ export const JohnDraft = z.object({
   // In a family (johns.pay_minor): what it earns a kid. Absent from a form
   // that doesn't show it, which leaves the John's as it is.
   payMinor: amount.optional(),
+  // In a family (johns.min_age): the youngest a kid can be to be dealt it,
+  // or null for anyone. Absent leaves the John's as it is.
+  minAge: z.number().int().min(2, "Give an age from 2 to 18.").max(18, "Give an age from 2 to 18.").nullable().optional(),
 }).refine((j) => (j.everyMonths === null) === (j.weekOfMonth === null), "Say which week of the month it lands in.");
 export type JohnDraft = z.infer<typeof JohnDraft>;
 /** A JohnDraft before it is checked: the monthly fields may be left out (a weekly John). */

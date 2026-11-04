@@ -90,6 +90,8 @@ const MESSAGES: Record<string, string> = {
   message_no_way: "Pick at least one way to send it.",
   message_nobody: "Nobody would get that: there’s nobody there to send it to.",
   parents_only: "Only a parent can OK a John.",
+  parents_add_kids: "Only a parent in a family can add a child.",
+  bad_born_year: "Give the year they were born. Kids are 18 or under.",
   nothing_to_ok: "That tick has already been answered.",
   nothing_to_pay: "There’s nothing left to pay for that month.",
   not_pay_day_yet: "Pay day is the 1st, once the month is over.",

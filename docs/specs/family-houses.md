@@ -118,6 +118,33 @@ moves the money. Parents' own Johns earn nothing.
 - Start a house: a family's defaults line starts "Pocket money up to GBP 10
   a month each".
 
+## Step 4: kids without a sign-in, and ages
+
+Under-13s don't need their own account. A parent adds a child and runs
+their profile, and each John can say how old you have to be for it.
+
+- **Add a child** on House's Table, for a parent: a name and the year they
+  were born (18 or under). `POST /api/kids` (lib/moves/kids.ts) checks the
+  caller is a parent in a family, makes the child's account banned and at
+  an address that can't exist (`kid-…@kids.jonz.invalid`, so no email is
+  sent: lib/email.ts), then `add_kid(p_parent, p_kid, p_born)`, which only
+  the service can call, puts them in the family with `members.signs_in`
+  false and `members.born_year`, and posts "joined" on the Wall.
+- `runs_for(p_house, p_kid)`: you're a parent in that family and the kid
+  doesn't sign in. `my_open_assignment` (every tick, Not done, swap and roll
+  call) and `can_upload_proof` let such a parent act on the kid's place. A
+  parent's tick needs no OK, so it stands at once, and the John earns for
+  the kid.
+- Today: a parent with a kid like that has a switcher in the title bar
+  ("You ▾", then each such kid by first name). Picking a kid shows the kid's
+  Today, as the kid would see it (no Needs your OK, no Ask Jonz), and ticks
+  as the kid.
+- `johns.min_age` (2 to 18, or none), set in the John editor (**Youngest
+  age**) and shown in the John's line ("10 and up"). The deal leaves out a
+  kid who turns less than that in the week's year (`oldEnough`). Anyone with
+  no year born (parents, kids who sign in) can always be dealt it. If nobody
+  is old enough, the John waits, as when nobody is home.
+
 ## Edge cases
 
 - Until `FAMILY_OPEN`, nobody sees the choice unless a link asks for a
@@ -143,3 +170,6 @@ storage as the session (localStorage on the web, SQLite-backed on phones).
 - [x] A kid's OK'd John earns what it says, up to the monthly cap; a parent's earns nothing (tests/db/pocket-money.test.ts).
 - [x] A parent taps Paid for a month that's over, once; nobody else can.
 - [x] House shows the month so far, Pay day and what's still to pay; the Table lists only the kids.
+- [x] A parent adds a child who can't sign in, and ticks for them; it stands without an OK and earns (tests/db/kid-profiles.test.ts).
+- [x] A kid younger than a John's youngest age isn't dealt it.
+- [x] Today's switcher shows a kid's Today to a parent, and ticks as the kid.

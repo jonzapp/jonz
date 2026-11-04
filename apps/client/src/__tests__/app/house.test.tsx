@@ -31,6 +31,7 @@ import { renderPages, untilRead } from '@/testing/pages';
 jest.mock('@/api/away', () => ({ loadAway: jest.fn() }));
 jest.mock('@/api/board', () => ({ loadHouse: jest.fn() }));
 jest.mock('@/api/house', () => ({ catchUp: jest.fn() }));
+jest.mock('@/api/kids', () => ({ addKid: jest.fn() }));
 jest.mock('@/api/stake', () => ({ loadStake: jest.fn(), confirmPayment: jest.fn() }));
 jest.mock('@/api/table', () => ({ loadTable: jest.fn() }));
 jest.mock('@/api/settings', () => ({ resetJoinCode: jest.fn(), loadJohnList: jest.fn() }));

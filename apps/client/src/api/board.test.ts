@@ -93,8 +93,9 @@ it('reads the house, its people and this week in one go', async () => {
   expect(snapshot.rules).toMatchObject({ timezone: 'Europe/London', currency: 'GBP', weekStarts: 1, disputeHours: 24 });
   expect(snapshot.members).toEqual([
     { userId: 'u1', name: 'Priya', photo: 'https://lh3.googleusercontent.com/a/priya=s96-c', role: 'admin', streak: 3, immunityTokens: 1, swapTokens: 0,
-      prefs: { days: [3, 6], bestTime: 'morning', rather: { j1: 1 } } },
-    { userId: 'u2', name: 'Housemate', photo: null, role: 'member', streak: 0, immunityTokens: 0, swapTokens: 1, prefs: { days: [], bestTime: null, rather: {} } },
+      prefs: { days: [3, 6], bestTime: 'morning', rather: { j1: 1 } }, signsIn: true, bornYear: null },
+    { userId: 'u2', name: 'Housemate', photo: null, role: 'member', streak: 0, immunityTokens: 0, swapTokens: 1, prefs: { days: [], bestTime: null, rather: {} },
+      signsIn: true, bornYear: null },
   ]);
   expect(snapshot.week).toEqual(WEEK);
   // This week's, then any flag from last week still open: the mock answers both reads alike.

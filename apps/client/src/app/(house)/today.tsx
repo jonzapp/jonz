@@ -12,11 +12,15 @@ import {
   todayPage,
   type PocketView,
   type StakeView,
+  KIDS_COPY,
+  switchChoices,
 } from '@app/core';
+import { useState } from 'react';
 
 import type { AwayView } from '@/api/away';
 import type { JohnList } from '@/api/settings';
 import { PageTitle } from '@/components/page-title';
+import { PickMenu } from '@/components/pick-menu';
 import { Reading, ReadFailed } from '@/components/read-state';
 import { Columns, Screen, useColumns } from '@/components/screen';
 import { TitleBar, TopLine } from '@/components/title-bar';
@@ -55,7 +59,13 @@ export default function Today() {
   return <TodayFor houseId={house!.id} userId={session!.user.id} />;
 }
 
-function TodayFor({ houseId, userId }: { houseId: string; userId: string }) {
+function TodayFor({ houseId, userId: me }: { houseId: string; userId: string }) {
+  // A parent can switch to a kid who doesn't sign in, and tick for them (family step 4).
+  const [viewing, setViewing] = useState(me);
+  const { query: mine } = useHouse(houseId, me);
+  const snap = mine.data;
+  const choices = snap ? switchChoices(snap.members, me, snap.house.kind === 'family') : [];
+  const userId = choices.some((c) => c.value === viewing) ? viewing : me;
   const { query, view } = useHouse(houseId, userId);
   const away = useAway(houseId, query.data);
   const stake = useStake(houseId, query.data);
@@ -70,7 +80,17 @@ function TodayFor({ houseId, userId }: { houseId: string; userId: string }) {
 
   return (
     <Screen
-      bar={<TitleBar title={PAGE_TITLE.today} ask={view?.me?.role === 'admin'} />}
+      bar={
+        <TitleBar
+          title={PAGE_TITLE.today}
+          ask={view?.me?.role === 'admin'}
+          right={
+            choices.length > 0 ? (
+              <PickMenu options={choices} value={userId} onChange={setViewing} label={KIDS_COPY.switchLabel} testID="kid-switch" />
+            ) : undefined
+          }
+        />
+      }
       spreads
       refreshing={refreshing}
       onRefresh={pull}

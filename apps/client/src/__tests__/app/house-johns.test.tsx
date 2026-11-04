@@ -3,6 +3,7 @@ import {
   CATEGORY_LABEL,
   CREW_COPY,
   DEAL_COPY,
+  KIDS_COPY,
   FOCUS_SHELL_COPY,
   HOUSE_LOWER_COPY,
   JOHN_LIST_COPY,
@@ -425,6 +426,25 @@ describe('a parent, in a family', () => {
     await open();
     await fireEvent.press(screen.getByRole('button', { name: JOHN_LIST_COPY.add }));
     expect(screen.queryByTestId('john-pay')).toBeNull();
+    expect(screen.queryByTestId('john-min-age')).toBeNull();
+  });
+
+  it('says how old a kid has to be for it, or leaves it for anyone', async () => {
+    const base = snapshot();
+    (loadHouse as jest.Mock).mockResolvedValue(snapshot({ house: { ...base.house, kind: 'family', pocketCapMinor: 1000 } }));
+    await open();
+    await fireEvent.press(screen.getByRole('button', { name: JOHN_LIST_COPY.add }));
+    const form = within(screen.getByTestId('john-form'));
+    await fireEvent.changeText(form.getByTestId('john-name'), 'Use the oven');
+    await fireEvent.changeText(form.getByTestId('john-min-age'), '30');
+    await fireEvent.press(form.getByTestId('save-john'));
+    expect(form.getByText(KIDS_COPY.problems.minAge)).toBeOnTheScreen();
+    expect(saveJohn).not.toHaveBeenCalled();
+    await fireEvent.changeText(form.getByTestId('john-min-age'), '10');
+    await fireEvent.press(form.getByTestId('save-john'));
+    await waitFor(() =>
+      expect(saveJohn).toHaveBeenCalledWith('h1', expect.anything(), expect.objectContaining({ name: 'Use the oven', minAge: 10 }), expect.any(Date)),
+    );
   });
 });
 

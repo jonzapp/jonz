@@ -38,7 +38,7 @@ export async function loadJohnList(houseId: string): Promise<JohnList> {
     supabase
       .from('johns')
       .select(
-        'id, name, category, points, every_weeks, every_months, week_of_month, anchor_month, anchor_week, due_dow, due_time, needs_photo, group_id, kind, respond_hours, per_week, crew, keep_day, pay_minor',
+        'id, name, category, points, every_weeks, every_months, week_of_month, anchor_month, anchor_week, due_dow, due_time, needs_photo, group_id, kind, respond_hours, per_week, crew, keep_day, pay_minor, min_age',
       )
       .eq('house_id', houseId)
       .is('archived_at', null)
@@ -84,6 +84,7 @@ export async function saveJohn(houseId: string, rules: HouseRules, draft: JohnDr
     crew: j.when === 'on_call' ? 1 : j.crew,
     keep_day: j.when !== 'on_call' && j.keepDay,
     ...(j.payMinor === undefined ? {} : { pay_minor: j.payMinor }),
+    ...(j.minAge === undefined ? {} : { min_age: j.minAge }),
   };
   wrote(
     j.id
@@ -134,6 +135,7 @@ export async function addJohns(
       keep_day: j.when !== 'on_call' && j.keepDay,
       // Every row names every column: a bulk insert fills one left out with null.
       pay_minor: j.payMinor ?? 0,
+      min_age: j.minAge ?? null,
     };
   });
   wrote(await supabase.from('johns').insert(rows).select('id'));

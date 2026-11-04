@@ -860,6 +860,7 @@ export type Database = {
           house_id: string
           id: string
           keep_day: boolean
+          min_age: number | null
           pay_minor: number
           kind: string
           name: string
@@ -884,6 +885,7 @@ export type Database = {
           house_id: string
           id?: string
           keep_day?: boolean
+          min_age?: number | null
           pay_minor?: number
           kind?: string
           name: string
@@ -908,6 +910,7 @@ export type Database = {
           house_id?: string
           id?: string
           keep_day?: boolean
+          min_age?: number | null
           pay_minor?: number
           kind?: string
           name?: string
@@ -1004,6 +1007,7 @@ export type Database = {
       }
       members: {
         Row: {
+          born_year: number | null
           best_time: string | null
           house_id: string
           immunity_tokens: number
@@ -1011,12 +1015,14 @@ export type Database = {
           moving_out_on: string | null
           rather: Json
           role: string
+          signs_in: boolean
           streak: number
           suits_days: number[]
           swap_tokens: number
           user_id: string
         }
         Insert: {
+          born_year?: number | null
           best_time?: string | null
           house_id: string
           immunity_tokens?: number
@@ -1024,12 +1030,14 @@ export type Database = {
           moving_out_on?: string | null
           rather?: Json
           role?: string
+          signs_in?: boolean
           streak?: number
           suits_days?: number[]
           swap_tokens?: number
           user_id: string
         }
         Update: {
+          born_year?: number | null
           best_time?: string | null
           house_id?: string
           immunity_tokens?: number
@@ -1037,6 +1045,7 @@ export type Database = {
           moving_out_on?: string | null
           rather?: Json
           role?: string
+          signs_in?: boolean
           streak?: number
           suits_days?: number[]
           swap_tokens?: number
@@ -1943,6 +1952,14 @@ export type Database = {
       pay_pocket_money: {
         Args: { p_house: string; p_kid: string; p_month: string }
         Returns: number
+      }
+      add_kid: {
+        Args: { p_parent: string; p_kid: string; p_born: number }
+        Returns: string
+      }
+      runs_for: {
+        Args: { p_house: string; p_kid: string }
+        Returns: boolean
       }
       answer_swap: {
         Args: { p_accept: boolean; p_offer: string }
