@@ -148,6 +148,7 @@ export function wallScene(view: HouseView, userId: string, events: readonly Wall
     statusOf: (id) => status.get(id),
     struck: struckAt(events),
     clock,
+    family: view.snapshot.house.kind === 'family',
   };
 }
 
