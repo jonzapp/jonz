@@ -204,6 +204,8 @@ export type AssignmentRow = Pick<
   crew?: CrewRow[] | null;
   /** When its holder planned to do it (Plan it), when read. */
   planned_at?: string | null;
+  /** In a family: a kid's tick waiting for a parent's OK, when read. */
+  awaits_ok?: boolean;
 };
 
 /** An open dispute, with its votes: `disputes` and `dispute_votes` as read. */
@@ -252,8 +254,10 @@ export interface BoardItem {
   coveredBy: string | null;
   outcome: Outcome | null;
   status: LiveStatus;
-  /** When a tick in the dispute window stands, if nothing changes. */
+  /** When a tick in the dispute window stands, if nothing changes; null while it waits for a parent's OK. */
   standsAt: Date | null;
+  /** In a family: a kid's tick waiting for a parent's OK (no closing time). */
+  awaitsOk?: boolean;
   dispute: DisputeView | null;
   /** On a flag (an on-call John someone said needs doing): when, and who said so. */
   flaggedAt: Date | null;
@@ -339,6 +343,7 @@ export function buildWeekBoard(input: {
         doneAt,
         excused: a.excused,
         disputeOpen: dispute !== null,
+        awaitsOk: a.awaits_ok ?? false,
         weekEndsAt: carried ? new Date(week.starts_at) : endsAt,
         flaggedAt,
         closesAt: a.closes_at ? new Date(a.closes_at) : null,
@@ -364,7 +369,8 @@ export function buildWeekBoard(input: {
         coveredBy: a.covered_by,
         outcome,
         status,
-        standsAt: checkedFrom && !outcome ? standsAt(checkedFrom, disputeHours) : null,
+        standsAt: checkedFrom && !outcome && !facts.awaitsOk ? standsAt(checkedFrom, disputeHours) : null,
+        awaitsOk: facts.awaitsOk && !outcome,
         dispute,
         flaggedAt,
         flaggedBy: a.flagged_by ?? null,
@@ -481,10 +487,11 @@ export function byDoneLatest(a: { doneAt?: Date | null; dueAt: Date }, b: { done
 /**
  * Today for one housemate: their Johns in Today's order, how many are left,
  * what awaits their vote (anyone's tick but their own, a cover of their
- * John included), and, given the moment and the house's grace, housemates'
- * Johns they could cover.
+ * John included), given the moment and the house's grace, housemates'
+ * Johns they could cover, and, for a parent in a family, the kids' ticks
+ * waiting for an OK.
  */
-export function todayView(board: WeekBoard, userId: string, cover?: { now: Date; graceHours: number }) {
+export function todayView(board: WeekBoard, userId: string, cover?: { now: Date; graceHours: number }, parent = false) {
   const mine = board.items
     .filter((i) => i.userId === userId)
     .sort((a, b) => TODAY_ORDER[a.status] - TODAY_ORDER[b.status] || a.dueAt.getTime() - b.dueAt.getTime());
@@ -493,7 +500,26 @@ export function todayView(board: WeekBoard, userId: string, cover?: { now: Date;
     left: mine.filter((i) => isOpen(i.status)).length,
     toVote: toVote(board, userId),
     toCover: cover ? toCover(board, userId, cover.now, cover.graceHours) : [],
+    toOk: parent ? toOk(board, userId) : [],
   };
+}
+
+/**
+ * In a family, the kids' ticks waiting for a parent's OK, oldest first: what
+ * a parent's "Needs your OK" lists. A Together John's one tick is listed
+ * once, on the place it was ticked from. Never your own tick.
+ */
+export function toOk(board: WeekBoard, userId: string): BoardItem[] {
+  const seen = new Set<string>();
+  return board.items
+    .filter((i) => i.awaitsOk && (i.coveredBy ?? i.crew?.tickedBy ?? i.userId) !== userId)
+    .filter((i) => {
+      const job = jobKey(i);
+      if (seen.has(job)) return false;
+      seen.add(job);
+      return true;
+    })
+    .sort((a, b) => (a.doneAt?.getTime() ?? 0) - (b.doneAt?.getTime() ?? 0));
 }
 
 /**

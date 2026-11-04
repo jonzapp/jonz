@@ -23,6 +23,7 @@ import { useMove } from '@/hooks/use-move';
 import { SPACE } from '@/theme';
 
 import type { JohnSheetContext } from './body';
+import { AwaitsOk } from './parent-ok';
 import { SheetLines } from './parts';
 
 /**
@@ -75,10 +76,13 @@ export function YoursChecking({ item, context }: { item: BoardItem; context: Joh
  * A housemate's fresh tick: who ticked it and when it stands, and an
  * outline Dispute, which opens "What's wrong with it" and "Put it to the
  * house" in place. Only that press opens the form (and its keyboard), even
- * when the sheet was opened to dispute: most who look are just looking.
+ * when the sheet was opened to dispute: most who look are just looking. In
+ * a family, a kid's tick waits for a parent's OK instead (parent-ok.tsx).
  */
 export function TheirsChecking({ item, context }: { item: BoardItem; context: JohnSheetContext }) {
   const [disputing, setDisputing] = useState(false);
+  // In a family a kid's tick waits for a parent's OK instead: nobody disputes it.
+  if (item.awaitsOk) return <AwaitsOk item={item} context={context} />;
   return (
     <SheetLines>
       <Body testID="ticked-line">{tickedLine(item, context.members, context.userId, context.rules, context.now)}</Body>

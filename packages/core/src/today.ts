@@ -3,7 +3,7 @@ import { differenceInCalendarDays, format } from "date-fns";
 
 import { currentOrNext, type AwayPeriod } from "./away";
 import { byDoneLatest, isOpen, TODAY_ORDER, type BoardItem, type DisputeView, type WeekBoard } from "./board";
-import { CREW_COPY, FOCUS_SHELL_COPY, JOHN_SHEET_COPY, NEXT_UP_COPY } from "./copy";
+import { CREW_COPY, FOCUS_SHELL_COPY, JOHN_SHEET_COPY, NEXT_UP_COPY, PARENT_OK_COPY } from "./copy";
 import { andNames } from "./crew";
 import type { Currency, HouseRules } from "./domain";
 import { dateRange, dueInLine, firstName, pointsLabel, relative, sinceLabel, STATUS_LABEL, STATUS_MARK } from "./format";
@@ -328,6 +328,34 @@ export function voteTally(dispute: DisputeView, now: Date): string {
   return JOHN_SHEET_COPY.tally(dispute.reject, dispute.uphold, voteCloses(dispute.closesAt, now));
 }
 
+/** Needs your OK's title for a kid's tick: "Leo did Feed the fish". */
+export function okTitle(item: Pick<BoardItem, "userId" | "name"> & Partial<Pick<BoardItem, "coveredBy" | "crew">>, people: readonly Person[]): string {
+  return PARENT_OK_COPY.rowTitle(called(people, tickerOf(item)), item.name);
+}
+
+/** Its meta line: "Ticked 2h ago". */
+export function okMeta(item: Pick<BoardItem, "doneAt">, now: Date): string {
+  return PARENT_OK_COPY.rowMeta(relative(item.doneAt ?? now, now));
+}
+
+/**
+ * Above a parent's OK and Not yet: "Sam or Alex can OK it. Not yet sends it
+ * back to Leo." `parentIds` are the house's parents, the viewer first as
+ * "You" when they are one.
+ */
+export function okWho(
+  item: Pick<BoardItem, "userId"> & Partial<Pick<BoardItem, "coveredBy" | "crew">>,
+  people: readonly Person[],
+  parentIds: readonly string[],
+  viewerId: string,
+): string {
+  const names = [...parentIds]
+    .sort((a, b) => (a === viewerId ? -1 : b === viewerId ? 1 : 0))
+    .map((id) => (id === viewerId ? JOHN_SHEET_COPY.you : called(people, id)));
+  const parents = names.length <= 1 ? (names[0] ?? "") : `${names.slice(0, -1).join(", ")} or ${names[names.length - 1]}`;
+  return PARENT_OK_COPY.who(parents, called(people, tickerOf(item)));
+}
+
 /** What the John sheet offers, from whose John it is and where it has got to. */
 export type JohnSheetMode =
   | "yours-open"
@@ -457,8 +485,9 @@ export function tickedLine(item: BoardItem, people: readonly Person[], viewerId:
     : item.absentAt
       ? CREW_COPY.without(who, tickedAt(item.absentAt, now, rules.timezone), whom)
       : null;
-  const stands =
-    item.standsAt === null
+  const stands = item.awaitsOk
+    ? PARENT_OK_COPY.waiting
+    : item.standsAt === null
       ? null
       : item.standsAt.getTime() > now.getTime()
         ? JOHN_SHEET_COPY.standsIn(relative(item.standsAt, now))

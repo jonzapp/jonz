@@ -87,8 +87,11 @@ export function roleCopy(kind: HouseKind) {
 
 /**
  * What a family hides from the housemates' app: the Stake, with its money
- * figures, forfeits and settling up. Housemates see everything.
+ * figures, forfeits and settling up, and the housemate check's vote (a
+ * kid's tick waits for a parent's OK instead, with no window to dispute
+ * in). Housemates see everything.
  */
-export function familyHides(kind: HouseKind): { stake: boolean } {
-  return { stake: kind === "family" };
+export function familyHides(kind: HouseKind): { stake: boolean; vote: boolean } {
+  const family = kind === "family";
+  return { stake: family, vote: family };
 }

@@ -44,8 +44,10 @@ export default function HouseLayout() {
   const shell: ShellHouse = {
     name: view?.snapshot.house.name ?? house!.name,
     memberCount: view?.snapshot.members.length ?? 1,
+    family: view?.snapshot.house.kind === "family",
   };
-  const toVote = view?.today.toVote.length ?? 0;
+  // The Today tab's badge: votes waiting for you, or in a family, kids' ticks waiting for your OK.
+  const toVote = (view?.today.toVote.length ?? 0) + (view?.today.toOk.length ?? 0);
   // What a tour's steps depend on, as the tour starts.
   const admin = view?.me?.role === "admin";
   const toCheck = toVote + (view?.today.toCover.length ?? 0) > 0;

@@ -59,7 +59,7 @@ describe("a family's money", () => {
       expect(res.error?.message ?? "").toContain("houses_family_no_stake");
     }
     // Everything else a parent sets as an admin does.
-    expectOk(await parent.db.from("houses").update({ dispute_hours: 12 }).eq("id", id).select("id"));
+    expectOk(await parent.db.from("houses").update({ cover_grace_hours: 6 }).eq("id", id).select("id"));
   });
 
   it("can't be made a family while it has a stake", async () => {

@@ -89,6 +89,8 @@ const MESSAGES: Record<string, string> = {
   message_wall_person: "A Wall is the whole house’s, so a message to one person can’t go on it.",
   message_no_way: "Pick at least one way to send it.",
   message_nobody: "Nobody would get that: there’s nobody there to send it to.",
+  parents_only: "Only a parent can OK a John.",
+  nothing_to_ok: "That tick has already been answered.",
 };
 
 export function humanError(error: { message?: string; code?: string } | null | undefined): string {

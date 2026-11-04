@@ -42,7 +42,9 @@ export function useHouse(houseId: string, userId: string): { query: UseQueryResu
     now,
   });
   const me = snapshot.members.find((m) => m.userId === userId) ?? null;
-  const today = todayView(board, userId, { now, graceHours: snapshot.rules.coverGraceHours });
+  // In a family, a parent's Today lists the kids' ticks waiting for their OK.
+  const parent = snapshot.house.kind === 'family' && me?.role === 'admin';
+  const today = todayView(board, userId, { now, graceHours: snapshot.rules.coverGraceHours }, parent);
   return { query, view: { snapshot, board, today, me, now } };
 }
 

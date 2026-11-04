@@ -1,7 +1,7 @@
 // House setup's pages: the rules as label and value, the Johns by category, a John's schedule line and the admins' names.
 import { isoDayOf, shiftMonth, type AwayPeriod } from "./away";
 import type { BoardItem, JohnDef } from "./board";
-import { CREW_COPY, FOCUS_SHELL_COPY, GROUPS_COPY, JOHN_LIST_COPY, RULES_COPY, SETUP_COPY, STEADY_COPY } from "./copy";
+import { CREW_COPY, FOCUS_SHELL_COPY, GROUPS_COPY, JOHN_LIST_COPY, PARENT_OK_COPY, RULES_COPY, SETUP_COPY, STEADY_COPY } from "./copy";
 import { MAKEUP_LABEL } from "./deal";
 import { CATEGORIES, CATEGORY_LABEL, DOW_LABEL, type Category, type Currency, type DealMode, type HouseKind, type HouseRules, type IsoDow, type SettleIn } from "./domain";
 import { familyHides } from "./family";
@@ -103,9 +103,10 @@ function forfeit(minor: number, currency: Currency): string {
 export function rulesRows(rules: HouseRules, awayMakeup: number, settleIn?: SettleIn, kind: HouseKind = "housemates"): LabelValue[] {
   // A family has no stake, so it reads none of the money's rows.
   if (familyHides(kind).stake) {
-    return rulesRows(rules, awayMakeup).filter(
-      (row) => row.label !== SETUP_COPY.stake && row.label !== SETUP_COPY.late && row.label !== SETUP_COPY.missed,
-    );
+    // Nor a vote: the check window's row says who OKs a kid's tick instead.
+    return rulesRows(rules, awayMakeup)
+      .filter((row) => row.label !== SETUP_COPY.stake && row.label !== SETUP_COPY.late && row.label !== SETUP_COPY.missed)
+      .map((row) => (row.label === SETUP_COPY.disputes ? { label: PARENT_OK_COPY.rulesLabel, value: PARENT_OK_COPY.rulesValue } : row));
   }
   const rows: LabelValue[] = [
     { label: STEADY_COPY.mode, value: STEADY_COPY.modeName[rules.dealMode] },

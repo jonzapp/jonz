@@ -1,4 +1,4 @@
-import { CastVote, disputeProblem, MoveResponse, RaiseDispute } from '@app/core';
+import { AnswerTick, CastVote, disputeProblem, MoveResponse, RaiseDispute } from '@app/core';
 
 import { apiPost } from './http';
 
@@ -16,4 +16,13 @@ export async function raiseDispute(assignmentId: string, reason: string): Promis
 /** Vote on a dispute: `uphold` true says it wasn't done. */
 export async function castVote(disputeId: string, uphold: boolean): Promise<void> {
   await apiPost(`/api/disputes/${disputeId}/votes`, CastVote.parse({ uphold }), MoveResponse);
+}
+
+/**
+ * A parent answers a kid's tick, in a family: OK lets it stand, Not yet
+ * (`ok` false) sends it back. Through apps/api, which tells the kid on Not
+ * yet and settles an OK'd John at once (lib/moves/oks.ts there).
+ */
+export async function answerTick(assignmentId: string, ok: boolean): Promise<void> {
+  await apiPost(`/api/oks/${assignmentId}`, AnswerTick.parse({ ok }), MoveResponse);
 }

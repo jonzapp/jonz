@@ -20,8 +20,8 @@ export interface House {
   everyone: Actor[];
 }
 
-/** A house set up the way the app does it: create_house, then join_house by code. */
-export async function makeHouse(names: string[] = ["Ava", "Ben", "Cal"]): Promise<House> {
+/** A house set up the way the app does it: create_house, then join_house by code. A family's first name is its parent. */
+export async function makeHouse(names: string[] = ["Ava", "Ben", "Cal"], kind: "housemates" | "family" = "housemates"): Promise<House> {
   const [first, ...rest] = names;
   const admin = await signedInUser(first);
   const { data: id, error } = await admin.db.rpc("create_house", {
@@ -29,6 +29,7 @@ export async function makeHouse(names: string[] = ["Ava", "Ben", "Cal"]): Promis
     p_timezone: ZONE,
     p_currency: "GBP",
     p_week_starts: 1,
+    ...(kind === "family" ? { p_kind: "family" } : {}),
   });
   if (error) throw error;
   track.house(id!);
