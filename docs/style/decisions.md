@@ -6,6 +6,7 @@ pages are private artifacts on claude.ai.
 
 | Date | Decision | Where | Rule |
 | --- | --- | --- | --- |
+| 2026-11-04 | One word for each thing (the Jonz words): deal, a skip, Done / Not done, an invite and its code, split for forfeits, square, Mark done, photos, house rules, Who it's for; a test keeps retired words out of the copy | this PR | [words](words.md#one-word-for-each-thing) |
 | 2026-11-01 | Help is a question mark in every tab's title bar: the page's tour, the other tours, and Report a problem. Tours are short (five steps at most), started by you, offered once to someone new, and saved as seen | this PR | [layout](layout.md#the-title-bar), [states](states.md#tours) |
 | 2026-11-01 | House's Overview is four figures (your month, the stake, housemates, the John list), then the Table beside the Wall; your settings, help and leaving move to a You page, the seventh in House's list | #95 | [layout](layout.md#navigation) |
 | 2026-11-01 | Ten House pages are six: Groups on Johns, Admins beside Rules, Preferences with Time away as "Days and time away", History beside the Wall; old links land on the merged page | #94 | [layout](layout.md#navigation) |

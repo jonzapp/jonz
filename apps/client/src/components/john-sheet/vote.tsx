@@ -68,7 +68,7 @@ function SheetVote({ houseId, dispute, onVoted }: { houseId: string; dispute: Di
             variant="outline"
             chosen={dispute.myVote === false}
             icon={dispute.myVote === false ? CheckIcon : ThumbsUpIcon}
-            label={DISPUTE_COPY.fine}
+            label={DISPUTE_COPY.done}
             disabled={move.pending}
             onPress={() => void vote(false)}
             testID="vote-fine"

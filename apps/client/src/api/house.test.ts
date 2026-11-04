@@ -58,7 +58,7 @@ describe('joinHouse', () => {
   it("says the database's refusal in words", async () => {
     rpc.mockResolvedValue({ data: null, error: { message: 'already_in_house', code: 'P0001' } });
     await expect(joinHouse('AB3DEF7H')).rejects.toThrow("You’re already in a house. Leave it first to join another.");
-    await expect(joinHouse('bad')).rejects.toThrow("That join link doesn’t open a house. Ask a housemate for theirs, or start your own.");
+    await expect(joinHouse('bad')).rejects.toThrow("That invite doesn’t open a house. Ask a housemate for theirs, or start your own.");
   });
 });
 

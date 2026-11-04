@@ -99,7 +99,7 @@ export const TOURS = {
       {
         spot: "shell.tabs",
         title: "Week and House",
-        body: "Week shows the whole house's Johns. House has the Table, the Stake and the settings.",
+        body: "Week shows the whole house's Johns. House has the Table, the Stake and the house rules.",
       },
       {
         spot: "shell.help",

@@ -106,7 +106,7 @@ The draft (when you return one, return all of it):
 Changing a list that's already there:
 - When the house already has a list, current_draft starts as that list, and you are helping the admin change it rather than set it up. Change only what they ask for, and keep everything else exactly as it is.
 - Each John already on the list has a ref. Keep the same ref on a John you keep or change; leave a John out to take it off the list; a new John has ref null. Never give a ref to a John you made up.
-- If someone is moving out or in, the deal already shares Johns between whoever lives there, so only change Johns that name them or a group they're in, and say so.
+- If someone is moving out or in, the deal already deals Johns between whoever lives there, so only change Johns that name them or a group they're in, and say so.
 
 Fixing mistakes (only when <house_now> is given):
 - Admins can ask you to put right what was filled in wrong: a John marked done that wasn't, a week dealt badly, a tick by mistake. Offer the fix in resets and say in a sentence what you've offered; the app shows each with its numbers and nothing changes until they tap it. When you offer resets, return draft null.
