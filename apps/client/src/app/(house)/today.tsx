@@ -8,6 +8,7 @@ import { Columns, Screen, useColumns } from '@/components/screen';
 import { TitleBar, TopLine } from '@/components/title-bar';
 import { MoveInAsk } from '@/components/today/move-in-ask';
 import { NeedsYou } from '@/components/today/needs-you';
+import { NeedsYourOk } from '@/components/today/needs-your-ok';
 import { NextUp } from '@/components/today/next-up';
 import { OnCall } from '@/components/today/on-call';
 import { PageLine, PageLines } from '@/components/today/page-line';
@@ -26,7 +27,8 @@ import { useStake } from '@/hooks/use-stake';
 
 /**
  * Today, for doing: your next John in the one card (or what takes its
- * place), the disputes that need your vote, the on-call Johns anyone can
+ * place), the disputes that need your vote (in a family, a parent's
+ * Needs your OK instead), the on-call Johns anyone can
  * flag, the rest of your week, and one
  * line on where you stand (with your time away, when a trip is coming, and
  * your moving-out day, once you've said). When a housemate is moving out,
@@ -135,6 +137,12 @@ function TodayView({
     />
     </TourSpot>
   );
+  // In a family, a parent's Needs your OK takes the vote's place (there is no vote).
+  const needsOk = today.toOk.length === 0 ? null : (
+    <TourSpot id="today.needsYou">
+      <NeedsYourOk items={today.toOk} members={members} now={now} />
+    </TourSpot>
+  );
   const onCall = (
     <OnCall
       houseId={house.id}
@@ -206,6 +214,7 @@ function TodayView({
         }
         side={
           <>
+            {needsOk}
             {needsYou}
             {ask}
             {onCall}
@@ -221,6 +230,7 @@ function TodayView({
       {offer}
       {next}
       {swap}
+      {needsOk}
       {needsYou}
       {ask}
       {onCall}

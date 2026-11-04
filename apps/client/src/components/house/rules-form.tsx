@@ -136,6 +136,8 @@ export function RulesForm({ form }: { form: RulesFormState }) {
     : BUDGET_PLAIN;
 
   const noStake = familyHides(form.kind).stake;
+  // A family has no vote, so no window to dispute in: a kid's tick waits for a parent's OK.
+  const noVote = familyHides(form.kind).vote;
   const money = [
     { key: 'stake', label: RULES_COPY.stake(symbol), testID: 'house-stake' },
     { key: 'late', label: RULES_COPY.late(symbol), testID: 'house-late' },
@@ -201,13 +203,15 @@ export function RulesForm({ form }: { form: RulesFormState }) {
       </Section>
       <View style={styles.noted}>
         <Section label={SETUP_COPY.fairness} testID="rules-fairness">
-          <PickRow
-            label={SETUP_COPY.disputes}
-            options={DISPUTE_OPTIONS}
-            value={v.disputeHours}
-            onChange={(disputeHours) => set({ disputeHours })}
-            disabled={pending}
-          />
+          {noVote ? null : (
+            <PickRow
+              label={SETUP_COPY.disputes}
+              options={DISPUTE_OPTIONS}
+              value={v.disputeHours}
+              onChange={(disputeHours) => set({ disputeHours })}
+              disabled={pending}
+            />
+          )}
           <PickRow
             label={SETUP_COPY.lateWindow}
             options={LATE_OPTIONS}

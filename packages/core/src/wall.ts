@@ -161,6 +161,11 @@ export function describeEvent(e: WallEvent, nameOf: (userId: string | null) => s
       return { icon: "gavel", tone: "hazard", parts: [t(`The house struck ${possessive(against)} tick on ${john}. It’s open again.`)] };
     case "rejected":
       return { icon: "gavel", tone: "good", parts: [t(`The house backed ${possessive(against)} ${john}. The tick stands.`)] };
+    // A parent's answer to a kid's tick, in a family.
+    case "okayed":
+      return { icon: "badge-check", tone: "good", parts: [b(who), t(` OK’d ${possessive(against)} ${john}.`)] };
+    case "not_yet":
+      return { icon: "undo", tone: "hazard", parts: [b(who), t(` sent ${possessive(against)} ${john} back. It’s open again.`)] };
     case "immunity_earned":
       return {
         icon: "shield",

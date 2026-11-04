@@ -10,6 +10,7 @@ import {
   monthOf,
   MOVING_COPY,
   NEXT_UP_COPY,
+  PARENT_OK_COPY,
   NOT_DEALT_COPY,
   ON_CALL_COPY,
   PAGE_TITLE,
@@ -543,6 +544,40 @@ describe('Needs you', () => {
     await fireEvent.press(rows[0]);
     const body = await screen.findByTestId('john-sheet-body');
     expect(within(body).getByRole('button', { name: JOHN_SHEET_COPY.coverIt })).toBeOnTheScreen();
+  });
+});
+
+describe('Needs your OK, in a family', () => {
+  const family = (kind: 'family' | 'housemates' = 'family') => {
+    const base = snapshot();
+    return snapshot({
+      house: { ...base.house, kind },
+      rules: { ...base.rules, disputeHours: kind === 'family' ? 0 : 24 },
+      assignments: [
+        ...base.assignments.slice(0, 3),
+        assignment({ id: 'a4', user_id: 'sam', name: 'Clean the bath', done_at: at(-2), awaits_ok: kind === 'family' }),
+      ],
+    });
+  };
+
+  it("lists a kid's tick for a parent, in place of the vote", async () => {
+    read.mockResolvedValue(family());
+    await open();
+    const section = screen.getByTestId('needs-your-ok');
+    expect(within(section).getByText(PARENT_OK_COPY.needsYourOk)).toBeOnTheScreen();
+    const row = within(section).getByTestId('ok-row');
+    expect(within(row).getByText('Sam did Clean the bath')).toBeOnTheScreen();
+    expect(row).toHaveTextContent(/Ticked 2h ago/);
+    expect(screen.queryByTestId('needs-you')).toBeNull();
+    await fireEvent.press(row);
+    const body = await screen.findByTestId('john-sheet-body');
+    expect(within(body).getByRole('button', { name: PARENT_OK_COPY.ok })).toBeOnTheScreen();
+  });
+
+  it('is not there for housemates', async () => {
+    read.mockResolvedValue(family('housemates'));
+    await open();
+    expect(screen.queryByTestId('needs-your-ok')).toBeNull();
   });
 });
 

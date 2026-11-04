@@ -1,4 +1,4 @@
-import { ADMINS_COPY, HISTORY_COPY, PAGE_TITLE, PARENTS_COPY, SETUP_COPY } from '@app/core';
+import { ADMINS_COPY, HISTORY_COPY, PAGE_TITLE, PARENTS_COPY, PARENT_OK_COPY, SETUP_COPY } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 
 import { loadHouse } from '@/api/board';
@@ -106,11 +106,12 @@ describe('in a family', () => {
     await waitFor(() => expect(setRole).toHaveBeenCalledWith('h1', 'ada', 'admin'));
   });
 
-  it('leaves the stake and forfeits out of the rules', async () => {
+  it('leaves the stake, forfeits and vote out of the rules', async () => {
     await open();
     const rules = within(screen.getByTestId('rules-panel'));
     expect(rules.queryByText(SETUP_COPY.stake)).not.toBeOnTheScreen();
     expect(rules.queryByText(SETUP_COPY.missed)).not.toBeOnTheScreen();
-    expect(rules.getByText(SETUP_COPY.disputes)).toBeOnTheScreen();
+    expect(rules.queryByText(SETUP_COPY.disputes)).not.toBeOnTheScreen();
+    expect(rules.getByText(PARENT_OK_COPY.rulesValue)).toBeOnTheScreen();
   });
 });

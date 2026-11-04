@@ -166,6 +166,39 @@ export const PARENTS_COPY = {
   handOver: (name: string) => `Make ${name} a parent and leave`,
 } as const;
 
+/**
+ * A parent's OK (family step 2): in a family nobody votes on a tick. A kid's
+ * tick waits for a parent to say OK, or Not yet, which sends it back.
+ */
+export const PARENT_OK_COPY = {
+  /** Today's section for a parent. */
+  needsYourOk: "Needs your OK",
+  /** A Needs your OK row: "Leo did Feed the fish". */
+  rowTitle: (kid: string, john: string) => `${kid} did ${john}`,
+  /** Its meta line: "Ticked 2h ago". */
+  rowMeta: (ago: string) => `Ticked ${ago}`,
+  /** After "Ticked by Leo at 15:22" while it waits. */
+  waiting: "waiting for a parent’s OK",
+  /** Above the two buttons: who can answer, and what Not yet does. */
+  who: (parents: string, kid: string) => `${parents} can OK it. Not yet sends it back to ${kid}.`,
+  ok: "OK it",
+  notYet: "Not yet",
+  /** What the sheet says once you've answered, as it closes. */
+  okayed: "OK’d",
+  sentBack: "Sent back",
+  /** Push to the parents when a kid ticks. */
+  askTitle: (kid: string, john: string) => `${kid} did ${john}`,
+  askBody: "It needs your OK.",
+  /** Push to the kid on Not yet. */
+  notYetTitle: (john: string) => `Not yet: ${john}`,
+  notYetBody: (parent: string) => `${parent} sent it back. Have another go.`,
+  /** When the parent has left. */
+  aParent: "A parent",
+  /** House rules' row in place of the dispute window. */
+  rulesLabel: "Checking",
+  rulesValue: "A parent OKs each kid’s tick",
+} as const;
+
 /** An invite: the web's /join/[code] and the app's. */
 export const JOIN_COPY = {
   badLink: "That link doesn’t work",
@@ -294,6 +327,7 @@ export const SHELL_COPY = {
 } as const;
 
 const waitingForYourVote = (count: number) => `${count} waiting for your vote`;
+const waitingForYourOk = (count: number) => `${count} waiting for your OK`;
 
 /**
  * Focus's shell: the words of the tabs, the rail, the title bars and the
@@ -309,8 +343,9 @@ export const FOCUS_SHELL_COPY = {
   more: "More",
   /** The tabs, or the rail, to a screen reader. */
   places: "Places",
-  /** A tab's spoken name, with its badge when it has one: "Today, 1 waiting for your vote". */
-  tab: (label: string, toVote: number) => (toVote > 0 ? `${label}, ${waitingForYourVote(toVote)}` : label),
+  /** A tab's spoken name, with its badge when it has one: "Today, 1 waiting for your vote" (in a family, "your OK"). */
+  tab: (label: string, toVote: number, family = false) =>
+    toVote > 0 ? `${label}, ${family ? waitingForYourOk(toVote) : waitingForYourVote(toVote)}` : label,
   /** The fold that keeps finished Johns out of the way. */
   done: (count: number) => `Done (${count})`,
   reading: "Reading the house",
