@@ -139,6 +139,7 @@ export type Database = {
         Row: {
           absent_at: string | null
           awaits_ok: boolean
+          pay_minor: number
           category: string
           changed_at: string | null
           changed_by: string | null
@@ -174,6 +175,7 @@ export type Database = {
         Insert: {
           absent_at?: string | null
           awaits_ok?: boolean
+          pay_minor?: number
           category: string
           changed_at?: string | null
           changed_by?: string | null
@@ -209,6 +211,7 @@ export type Database = {
         Update: {
           absent_at?: string | null
           awaits_ok?: boolean
+          pay_minor?: number
           category?: string
           changed_at?: string | null
           changed_by?: string | null
@@ -753,6 +756,7 @@ export type Database = {
         Row: {
           away_makeup: number
           cover_grace_hours: number
+          pocket_cap_minor: number
           created_at: string
           created_by: string | null
           currency: string
@@ -779,6 +783,7 @@ export type Database = {
         Insert: {
           away_makeup?: number
           cover_grace_hours?: number
+          pocket_cap_minor?: number
           created_at?: string
           created_by?: string | null
           currency?: string
@@ -805,6 +810,7 @@ export type Database = {
         Update: {
           away_makeup?: number
           cover_grace_hours?: number
+          pocket_cap_minor?: number
           created_at?: string
           created_by?: string | null
           currency?: string
@@ -854,6 +860,7 @@ export type Database = {
           house_id: string
           id: string
           keep_day: boolean
+          pay_minor: number
           kind: string
           name: string
           needs_photo: boolean
@@ -877,6 +884,7 @@ export type Database = {
           house_id: string
           id?: string
           keep_day?: boolean
+          pay_minor?: number
           kind?: string
           name: string
           needs_photo?: boolean
@@ -900,6 +908,7 @@ export type Database = {
           house_id?: string
           id?: string
           keep_day?: boolean
+          pay_minor?: number
           kind?: string
           name?: string
           needs_photo?: boolean
@@ -1202,6 +1211,107 @@ export type Database = {
           {
             foreignKeyName: "month_let_offs_let_off_by_fkey"
             columns: ["let_off_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pocket_earnings: {
+        Row: {
+          amount_minor: number
+          assignment_id: string
+          created_at: string
+          house_id: string
+          month: string
+          user_id: string
+        }
+        Insert: {
+          amount_minor: number
+          assignment_id: string
+          created_at?: string
+          house_id: string
+          month: string
+          user_id: string
+        }
+        Update: {
+          amount_minor?: number
+          assignment_id?: string
+          created_at?: string
+          house_id?: string
+          month?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pocket_earnings_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: true
+            referencedRelation: "assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pocket_earnings_house_id_fkey"
+            columns: ["house_id"]
+            isOneToOne: false
+            referencedRelation: "houses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pocket_earnings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pocket_pays: {
+        Row: {
+          amount_minor: number
+          created_at: string
+          house_id: string
+          id: string
+          month: string
+          paid_by: string | null
+          user_id: string
+        }
+        Insert: {
+          amount_minor: number
+          created_at?: string
+          house_id: string
+          id?: string
+          month: string
+          paid_by?: string | null
+          user_id: string
+        }
+        Update: {
+          amount_minor?: number
+          created_at?: string
+          house_id?: string
+          id?: string
+          month?: string
+          paid_by?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pocket_pays_house_id_fkey"
+            columns: ["house_id"]
+            isOneToOne: false
+            referencedRelation: "houses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pocket_pays_paid_by_fkey"
+            columns: ["paid_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pocket_pays_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -1829,6 +1939,10 @@ export type Database = {
       answer_tick: {
         Args: { p_assignment: string; p_ok: boolean }
         Returns: string
+      }
+      pay_pocket_money: {
+        Args: { p_house: string; p_kid: string; p_month: string }
+        Returns: number
       }
       answer_swap: {
         Args: { p_accept: boolean; p_offer: string }

@@ -87,6 +87,7 @@ it('reads the house, its people and this week in one go', async () => {
     kind: 'housemates',
     awayMakeup: 100,
     settleIn: 'jonz',
+    pocketCapMinor: 0,
     pass: { plan: 'trial', until: new Date('2026-11-01T09:00:00Z'), buyerId: null },
   });
   expect(snapshot.rules).toMatchObject({ timezone: 'Europe/London', currency: 'GBP', weekStarts: 1, disputeHours: 24 });

@@ -406,6 +406,28 @@ describe('an admin', () => {
   });
 });
 
+describe('a parent, in a family', () => {
+  it('says what a John earns a kid, and lists it', async () => {
+    const base = snapshot();
+    (loadHouse as jest.Mock).mockResolvedValue(snapshot({ house: { ...base.house, kind: 'family', pocketCapMinor: 1000 } }));
+    await open();
+    await fireEvent.press(screen.getByRole('button', { name: JOHN_LIST_COPY.add }));
+    const form = within(screen.getByTestId('john-form'));
+    await fireEvent.changeText(form.getByTestId('john-name'), 'Feed the fish');
+    await fireEvent.changeText(form.getByTestId('john-pay'), '0.20');
+    await fireEvent.press(form.getByTestId('save-john'));
+    await waitFor(() =>
+      expect(saveJohn).toHaveBeenCalledWith('h1', expect.anything(), expect.objectContaining({ name: 'Feed the fish', payMinor: 20 }), expect.any(Date)),
+    );
+  });
+
+  it('is not asked of housemates', async () => {
+    await open();
+    await fireEvent.press(screen.getByRole('button', { name: JOHN_LIST_COPY.add }));
+    expect(screen.queryByTestId('john-pay')).toBeNull();
+  });
+});
+
 describe('the deal', () => {
   /** This week dealt, and nothing in it ticked yet. */
   const unticked = () => snapshot({ assignments: [assignment(), assignment({ id: 'a4', user_id: 'sam', name: 'Clean the bath' })] });

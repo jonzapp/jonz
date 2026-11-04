@@ -199,6 +199,60 @@ export const PARENT_OK_COPY = {
   rulesValue: "A parent OKs each kid’s tick",
 } as const;
 
+/** Pocket money and Pay day, family step 3: what Johns earn, the month card and Paid. */
+export const POCKET_COPY = {
+  /** After a kid's John's due time: "earns 50p". */
+  earns: (money: string) => `earns ${money}`,
+  /** Under a kid's Today: "£4.50 earned so far in October". */
+  kidMonth: (money: string, month: string) => `${money} earned so far in ${month}`,
+  /** A parent's OK on a John that earns: "OK, pay 20p". */
+  okPay: (money: string) => `OK, pay ${money}`,
+  /** House's line under the family's name: "2 parents, 2 kids, up to £10 a month each". */
+  family: (parents: number, kids: number, cap: string) =>
+    `${parents} ${parents === 1 ? "parent" : "parents"}, ${kids} ${kids === 1 ? "kid" : "kids"}, up to ${cap} a month each`,
+  /** The month card. */
+  card: "Pocket money",
+  monthSoFar: (month: string) => `${month} so far`,
+  earnedSoFar: (money: string) => `${money} earned so far`,
+  payDay: (day: string) => `Pay day is ${day}`,
+  /** A month that's over, still to pay: "Pay Maya £6.50 for September". */
+  pay: (kid: string, money: string, month: string) => `Pay ${kid} ${money} for ${month}`,
+  payHow: "Cash, your bank app, or their card",
+  paid: (kid: string, money: string) => `Paid ${kid} ${money}`,
+  /** What a kid sees of their own month that's over. */
+  owedYou: (money: string, month: string) => `${money} for ${month} on its way`,
+  payDayKid: "A parent pays you, then taps Paid.",
+  history: "Pocket money history",
+  historyEmpty: "Nothing earned yet. Each John a parent OKs earns what it says.",
+  historySoFar: "So far",
+  /** Someone who has since left. */
+  someone: "Someone",
+  historyPaid: (parent: string, day: string) => `Paid by ${parent}, ${day}`,
+  historyOwed: (money: string) => `${money} still to pay`,
+  /** The Table's trailing figure in a family is what each kid earned this month. */
+  table: "Earned this month",
+  /** The John editor's field, a parent's only. */
+  johnField: "Earns",
+  johnFieldMeta: "What a kid earns when a parent OKs it. Parents’ own Johns earn nothing.",
+  /** House rules. */
+  rulesLabel: "Pocket money",
+  rulesValue: (cap: string) => `Up to ${cap} a month each`,
+  capField: "Pocket money a month",
+  capFieldMeta: "The most each kid can earn in a month.",
+  /** Start a house's defaults line for a family. */
+  defaults: (cap: string) => `Pocket money up to ${cap} a month each`,
+  /** How pocket money works, the Table's sheet in a family. */
+  howItWorks: "How pocket money works",
+  earningLabel: "Earning",
+  earningBody: (cap: string) =>
+    `Each John says what it earns. A kid earns it once a parent OKs their tick, up to ${cap} a month. Parents’ own Johns earn nothing.`,
+  payDayLabel: "Pay day",
+  payDayBody:
+    "On the 1st, House says what each kid earned last month. Pay them outside Jonz, by cash, a bank app or a kids’ card, and tap Paid. Jonz never moves the money itself.",
+  pointsLabel: "Points",
+  pointsBody: "Points still say how much each John is, so the deal is fair.",
+} as const;
+
 /** An invite: the web's /join/[code] and the app's. */
 export const JOIN_COPY = {
   badLink: "That link doesn’t work",

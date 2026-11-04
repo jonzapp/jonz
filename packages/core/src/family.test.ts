@@ -56,10 +56,10 @@ describe("the front door and Start a house, for a family", () => {
     expect(afterSignIn("/house/new?kind=commune")).toBeUndefined();
   });
 
-  it("leaves the stake off a family's defaults line", () => {
+  it("puts pocket money in place of the stake on a family's defaults line", () => {
     const base = { currency: "GBP", weekStarts: 1, timezone: "Europe/London" } as const;
     expect(houseDefaults(base)[0]).toBe("GBP 20 a month each");
-    expect(houseDefaults({ ...base, kind: "family" })).toEqual(houseDefaults(base).slice(1));
+    expect(houseDefaults({ ...base, kind: "family" })).toEqual(["Pocket money up to GBP 10 a month each", ...houseDefaults(base).slice(1)]);
   });
 
   it("says a family on its join link", () => {

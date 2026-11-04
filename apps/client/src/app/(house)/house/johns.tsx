@@ -73,6 +73,7 @@ function JohnListPage({ houseId, userId, view, list }: { houseId: string; userId
         johns={list.johns}
         groups={list.groups}
         editable={isAdmin}
+        family={view.snapshot.house.kind === 'family'}
         whoAdds={johnsComing(view.snapshot.members, userId)}
         // Until the first deal, the deal at the foot is the page's one amber button.
         quietAdd={!view.snapshot.house.everDealt}

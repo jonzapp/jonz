@@ -47,6 +47,8 @@ export interface JohnDef {
   crew: number;
   /** Keeps its day: always dealt, on its own day, whatever the budget (steady.ts). Never on call. */
   keepDay: boolean;
+  /** In a family: what it earns a kid, in minor units (pocket money); 0 or absent earns nothing. */
+  payMinor?: number;
 }
 
 /** Where a new John starts in the editor: a weekly kitchen John, due Sunday night, for the whole house. */
@@ -67,13 +69,14 @@ export const NEW_JOHN: Omit<JohnDef, "id"> = {
   perWeek: 2,
   crew: 1,
   keepDay: false,
+  payMinor: 0,
 };
 
 /** A John on the list, from its row (a read without the on-call or monthly columns gets a weekly John due on a day). */
 export function johnDef(
   row: Pick<Row<"johns">, "id" | "name" | "category" | "points" | "every_weeks" | "due_dow" | "due_time" | "needs_photo" | "group_id"> &
     Partial<
-      Pick<Row<"johns">, "kind" | "respond_hours" | "per_week" | "every_months" | "week_of_month" | "anchor_month" | "anchor_week" | "crew" | "keep_day">
+      Pick<Row<"johns">, "kind" | "respond_hours" | "per_week" | "every_months" | "week_of_month" | "anchor_month" | "anchor_week" | "crew" | "keep_day" | "pay_minor">
     >,
 ): JohnDef {
   return {
@@ -95,6 +98,7 @@ export function johnDef(
     perWeek: row.per_week ?? NEW_JOHN.perWeek,
     crew: row.kind === "on_call" ? 1 : (row.crew ?? 1),
     keepDay: row.kind !== "on_call" && (row.keep_day ?? false),
+    payMinor: row.pay_minor ?? 0,
   };
 }
 
@@ -206,6 +210,8 @@ export type AssignmentRow = Pick<
   planned_at?: string | null;
   /** In a family: a kid's tick waiting for a parent's OK, when read. */
   awaits_ok?: boolean;
+  /** In a family: what it earns a kid (pocket money), when read. */
+  pay_minor?: number;
 };
 
 /** An open dispute, with its votes: `disputes` and `dispute_votes` as read. */
@@ -258,6 +264,8 @@ export interface BoardItem {
   standsAt: Date | null;
   /** In a family: a kid's tick waiting for a parent's OK (no closing time). */
   awaitsOk?: boolean;
+  /** In a family: what it earns a kid, in minor units (0 earns nothing). */
+  payMinor?: number;
   dispute: DisputeView | null;
   /** On a flag (an on-call John someone said needs doing): when, and who said so. */
   flaggedAt: Date | null;
@@ -303,6 +311,8 @@ export function buildWeekBoard(input: {
   everDealt: boolean;
   disputeHours: number;
   now: Date;
+  /** In a family: the kids, whose Johns earn what they say (pocket money). Absent, nothing earns. */
+  earners?: readonly string[];
 }): WeekBoard {
   const { week, now, disputeHours, memberIds } = input;
   if (!week) return { week: null, items: [], table: standings([], memberIds), notStarted: !input.everDealt };
@@ -371,6 +381,8 @@ export function buildWeekBoard(input: {
         status,
         standsAt: checkedFrom && !outcome && !facts.awaitsOk ? standsAt(checkedFrom, disputeHours) : null,
         awaitsOk: facts.awaitsOk && !outcome,
+        // Only a kid's earns: a parent's own Johns earn nothing.
+        ...(a.pay_minor && input.earners?.includes(a.covered_by ?? a.user_id) ? { payMinor: a.pay_minor } : {}),
         dispute,
         flaggedAt,
         flaggedBy: a.flagged_by ?? null,

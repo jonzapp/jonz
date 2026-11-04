@@ -93,6 +93,7 @@ describe("johnDef", () => {
       perWeek: 2,
       crew: 1,
       keepDay: false,
+      payMinor: 0,
     });
   });
 

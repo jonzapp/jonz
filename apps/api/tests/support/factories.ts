@@ -72,6 +72,8 @@ export interface JohnSpec {
   crew?: number;
   /** Always dealt, always on its own day, whatever the budget. */
   keepDay?: boolean;
+  /** In a family, what it earns a kid, in pence. */
+  pay?: number;
 }
 
 export async function addJohns(houseId: string, specs: JohnSpec[], anchor: WeekWindow) {
@@ -99,6 +101,7 @@ export async function addJohns(houseId: string, specs: JohnSpec[], anchor: WeekW
         per_week: s.onCall?.perWeek ?? 2,
         crew: s.crew ?? 1,
         keep_day: s.keepDay ?? false,
+        pay_minor: s.pay ?? 0,
       })),
     )
     .select("id, name");

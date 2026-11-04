@@ -91,6 +91,8 @@ const MESSAGES: Record<string, string> = {
   message_nobody: "Nobody would get that: there’s nobody there to send it to.",
   parents_only: "Only a parent can OK a John.",
   nothing_to_ok: "That tick has already been answered.",
+  nothing_to_pay: "There’s nothing left to pay for that month.",
+  not_pay_day_yet: "Pay day is the 1st, once the month is over.",
 };
 
 export function humanError(error: { message?: string; code?: string } | null | undefined): string {

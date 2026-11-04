@@ -1,4 +1,4 @@
-import { okWho, PARENT_OK_COPY, tickedLine, type BoardItem } from '@app/core';
+import { okWho, PARENT_OK_COPY, pocketMoney, POCKET_COPY, tickedLine, type BoardItem } from '@app/core';
 import { ThumbsDownIcon, ThumbsUpIcon } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
@@ -46,7 +46,8 @@ export function AwaitsOk({ item, context }: { item: BoardItem; context: JohnShee
               <Button
                 variant="outline"
                 icon={ThumbsUpIcon}
-                label={PARENT_OK_COPY.ok}
+                // A John that earns says so: "OK, pay 20p".
+                label={item.payMinor ? POCKET_COPY.okPay(pocketMoney(item.payMinor, context.rules.currency)) : PARENT_OK_COPY.ok}
                 disabled={move.pending}
                 onPress={() => void answer(true)}
                 testID="ok-it"

@@ -1,4 +1,18 @@
-import { askWhosMovingIn, dayLabel, localDate, movingLine, NEXT_UP_COPY, onCallItems, PAGE_TITLE, todayPage, type StakeView } from '@app/core';
+import {
+  askWhosMovingIn,
+  dayLabel,
+  localDate,
+  monthWord,
+  movingLine,
+  NEXT_UP_COPY,
+  onCallItems,
+  PAGE_TITLE,
+  pocketMoney,
+  POCKET_COPY,
+  todayPage,
+  type PocketView,
+  type StakeView,
+} from '@app/core';
 
 import type { AwayView } from '@/api/away';
 import type { JohnList } from '@/api/settings';
@@ -22,6 +36,7 @@ import { useAway } from '@/hooks/use-away';
 import { useHouse, type HouseView } from '@/hooks/use-house';
 import { useJohnList } from '@/hooks/use-john-list';
 import { useMembership } from '@/hooks/use-membership';
+import { usePocket } from '@/hooks/use-pocket';
 import { usePull, useReadOnFocus } from '@/hooks/use-refresh';
 import { useStake } from '@/hooks/use-stake';
 
@@ -44,12 +59,13 @@ function TodayFor({ houseId, userId }: { houseId: string; userId: string }) {
   const { query, view } = useHouse(houseId, userId);
   const away = useAway(houseId, query.data);
   const stake = useStake(houseId, query.data);
+  const pocket = usePocket(houseId, query.data);
   // The setup checklist counts the list.
   const list = useJohnList(houseId);
   // Time away isn't followed live: read it again whenever Today comes back into view.
   useReadOnFocus(away.refetch, { skipFirst: true });
   const { refreshing, pull } = usePull(houseId, () =>
-    Promise.all([query.refetch(), away.refetch(), stake.refetch(), list.refetch()]),
+    Promise.all([query.refetch(), away.refetch(), stake.refetch(), list.refetch(), pocket.refetch()]),
   );
 
   return (
@@ -62,7 +78,13 @@ function TodayFor({ houseId, userId }: { houseId: string; userId: string }) {
     >
       <PageTitle page={PAGE_TITLE.today} />
       {view ? (
-        <TodayView view={view} away={away.data ?? null} stake={stake.data ?? null} list={list.data ?? null} />
+        <TodayView
+          view={view}
+          away={away.data ?? null}
+          stake={stake.data ?? null}
+          list={list.data ?? null}
+          pocket={pocket.data ?? null}
+        />
       ) : query.isError ? (
         <ReadFailed onRetry={() => void query.refetch()} />
       ) : (
@@ -77,16 +99,25 @@ function TodayView({
   away,
   stake,
   list,
+  pocket,
 }: {
   view: HouseView;
   away: AwayView | null;
   stake: StakeView | null;
   list: JohnList | null;
+  /** In a family: the pocket money, for a kid's line on what they've earned. */
+  pocket: PocketView | null;
 }) {
   const { snapshot, board, today, me, now } = view;
   const { house, rules, members } = snapshot;
   const userId = me?.userId ?? '';
   const page = todayPage({ board, mine: today.mine, userId, me, members, rules, away, stake, offers: snapshot.offers, now });
+  // A kid in a family sees what they've earned this month in place of where they stand.
+  const earned =
+    house.kind === 'family' && me?.role !== 'admin' && pocket
+      ? POCKET_COPY.kidMonth(pocketMoney(pocket.earned[userId] ?? 0, rules.currency), monthWord(pocket.month))
+      : null;
+  const standing = earned ?? page.standing;
   const nameOf = (id: string) => members.find((m) => m.userId === id)?.name ?? null;
   const two = useColumns();
   const day = <TopLine>{dayLabel(now, rules.timezone)}</TopLine>;
@@ -177,10 +208,12 @@ function TodayView({
     <MoveInAsk houseName={house.name} joinCode={house.joinCode} />
   ) : null;
   const lines =
-    page.standing || page.away || moving ? (
+    standing || page.away || moving ? (
       // The page's quiet lines sit together, under the week.
       <PageLines>
-        {page.standing ? <PageLine text={page.standing} href="/house" testID="standing-line" /> : null}
+        {standing ? (
+          <PageLine text={standing} href={earned ? '/house/pocket' : '/house'} testID={earned ? 'earned-line' : 'standing-line'} />
+        ) : null}
         {page.away ? (
           <PageLine
             text={page.away}
