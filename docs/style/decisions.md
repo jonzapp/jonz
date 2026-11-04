@@ -6,7 +6,8 @@ pages are private artifacts on claude.ai.
 
 | Date | Decision | Where | Rule |
 | --- | --- | --- | --- |
-| 2026-11-04 | Kids without a sign-in: a parent's Add a child on the Table (name and year born), a "You ▾" switcher on Today's title bar to tick for them, and Youngest age on each John (mockups approved 2026-11-04) | this PR | [words](words.md) |
+| 2026-11-04 | The Family Pass: the same Pass and price, named for a family with a family's extras, bought only by a parent; families open to everyone (mockups approved 2026-11-04) | this PR | [words](words.md) |
+| 2026-11-04 | Kids without a sign-in: a parent's Add a child on the Table (name and year born), a "You ▾" switcher on Today's title bar to tick for them, and Youngest age on each John (mockups approved 2026-11-04) | #107 | [words](words.md) |
 | 2026-11-04 | Pocket money: in a family each John says what it earns a kid ("earns 50p"), House's month card replaces the Stake with Pay day and a Paid button per kid, and the Table lists only the kids (mockups approved 2026-11-04) | #106 | [words](words.md) |
 | 2026-11-04 | A parent's OK: in a family the John sheet's vote becomes OK it / Not yet for a parent, and Today's Needs you becomes Needs your OK (mockups approved 2026-11-04) | #105 | [words](words.md) |
 | 2026-11-04 | Family houses: a Housemates / Family switch on the front door and "Who lives here?" at Start; in a family, admins are Parents and everyone else Kids, and the Stake is hidden (mockups approved 2026-11-04) | this PR | [words](words.md) |
