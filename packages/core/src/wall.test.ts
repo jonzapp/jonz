@@ -145,9 +145,9 @@ describe("describeEvent", () => {
   });
 
   it("tells the perks, earned and spent", () => {
-    expect(line("immunity_earned", { streak: 4 })).toBe("Ben earned an immunity token: 4 clean weeks in a row.");
+    expect(line("immunity_earned", { streak: 4 })).toBe("Ben earned a skip: 4 clean weeks in a row.");
     expect(line("swap_earned")).toBe("Ben topped the week and earned a swap.");
-    expect(line("immunity_used", { name: "Bins" })).toBe("Ben spent immunity on Bins.");
+    expect(line("immunity_used", { name: "Bins" })).toBe("Ben used a skip on Bins.");
     expect(line("swap_used", { gave: "Bins", took: "Hob", with: "cal" })).toBe("Ben swapped Bins for Cal’s Hob.");
   });
 
@@ -171,7 +171,7 @@ describe("describeEvent", () => {
     expect(line("moved_out", { who: "Ben Okafor", pass_until: "2026-11-29" })).toBe(
       "Ben moved out, and their House Pass went with them. The house keeps the extras until Sun 29 Nov.",
     );
-    expect(line("month_closed", { month: "2026-10" }, null)).toBe("October 2026 is closed and the Stake is shared out.");
+    expect(line("month_closed", { month: "2026-10" }, null)).toBe("October 2026 is closed and its forfeits are split.");
     expect(line("paid", { to: "ava", amount: 250 })).toBe("You got £2.50 from Ben.");
     // Moved into Splitwise rather than paid (houses.settle_in).
     expect(line("paid", { to: "ava", amount: 250, via: "splitwise" })).toBe("You put Ben’s £2.50 into Splitwise.");

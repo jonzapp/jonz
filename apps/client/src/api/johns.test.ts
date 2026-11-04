@@ -33,7 +33,7 @@ it('ticks a John with who did it through the roll call route, which tells them',
   );
 });
 
-it('takes a tick back, and spends immunity, through their own functions', async () => {
+it('takes a tick back, and uses a skip, through their own functions', async () => {
   await undoDone('a1');
   expect(rpc).toHaveBeenCalledWith('undo_done', { p_assignment: 'a1' });
   await spendImmunity('a1');
@@ -44,7 +44,7 @@ it('swaps one of yours for a housemate\'s through use_swap', async () => {
   await spendSwap('a1', 'a2');
   expect(rpc).toHaveBeenCalledWith('use_swap', { p_mine: 'a1', p_theirs: 'a2' });
   rpc.mockResolvedValue({ data: null, error: { message: 'no_swap', code: 'P0001' } });
-  await expect(spendSwap('a1', 'a2')).rejects.toThrow("You don’t have a swap token.");
+  await expect(spendSwap('a1', 'a2')).rejects.toThrow("You don’t have a swap.");
 });
 
 it('asks to swap through the swaps route, which tells them, and answers through answer_swap', async () => {

@@ -87,7 +87,7 @@ export const STATUS_LABEL: Record<LiveStatus, string> = {
   done: "Done",
   late: "Done late",
   missed: "Missed",
-  excused: "Excused",
+  excused: "Skipped",
   covered: "Covered by a housemate",
 };
 
@@ -119,7 +119,7 @@ export const STATUS_MARK: Record<LiveStatus, StatusMark> = {
   overdue: { tone: "hazard", icon: "triangle", label: "Overdue" },
   missed: { tone: "hazard", icon: "x", label: "Missed" },
   disputed: { tone: "hazard", icon: "flag", label: "Disputed" },
-  excused: { tone: "quiet", icon: "shield", label: "Excused" },
+  excused: { tone: "quiet", icon: "shield", label: "Skipped" },
   // Done, but not by the person it was dealt to: for them it counts as missed.
   covered: { tone: "hazard", icon: "x", label: "Covered" },
 };

@@ -54,7 +54,7 @@ export const GOOGLE_LIMITED_USE = `${APP_NAME}’s use and transfer to any other
 export const PRIVACY_POLICY: LegalPage = {
   title: "Privacy Policy",
   updated: `Last updated ${LEGAL.updated}`,
-  lead: `${APP_NAME} keeps what it needs to share out your house’s Johns and nothing more. This page says what that is, who sees it, who helps us run ${APP_NAME}, and how to get it deleted. It covers the website at jonz.app and the ${APP_NAME} apps for iPhone and Android.`,
+  lead: `${APP_NAME} keeps what it needs to deal out your house’s Johns and nothing more. This page says what that is, who sees it, who helps us run ${APP_NAME}, and how to get it deleted. It covers the website at jonz.app and the ${APP_NAME} apps for iPhone and Android.`,
   sections: [
     {
       heading: "Who we are",
@@ -197,7 +197,7 @@ export const TERMS: LegalPage = {
     {
       heading: "What Jonz is",
       body: [
-        `${APP_NAME} shares out a house’s chores (Johns) fairly each week, lets housemates check each other’s ticks, and keeps the points and the Stake. Running a fair house is free. The House Pass adds the extras for the whole house.`,
+        `${APP_NAME} deals out a house’s chores (Johns) fairly each week, lets housemates check each other’s ticks, and keeps the points and the Stake. Running a fair house is free. The House Pass adds the extras for the whole house.`,
       ],
     },
     {

@@ -186,7 +186,7 @@ describe("STATUS_MARK", () => {
     expect(STATUS_MARK.overdue.icon).toBe("triangle");
     expect(STATUS_MARK.missed.icon).toBe("x");
     expect(STATUS_MARK.disputed.icon).toBe("flag");
-    expect(STATUS_MARK.excused).toEqual({ tone: "quiet", icon: "shield", label: "Excused" });
+    expect(STATUS_MARK.excused).toEqual({ tone: "quiet", icon: "shield", label: "Skipped" });
   });
 
   it("writes its words in sentence case, leaving caps to the style", () => {

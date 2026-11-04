@@ -171,7 +171,7 @@ describe('Next up', () => {
     expect(screen.getByTestId('next-up-meta')).toHaveTextContent(/^Bins, due .+, £1 if late$/);
     expect(within(card).getByRole('button', { name: JOHN_COPY.markDone })).toBeOnTheScreen();
     expect(within(card).getByRole('button', { name: NEXT_UP_COPY.photo })).toBeOnTheScreen();
-    // Not overdue, and no token to spend: no hazard, no way to skip.
+    // Not overdue, and no skip to use: no hazard, no way to skip.
     expect(screen.queryByTestId('overdue-edge')).toBeNull();
     expect(screen.queryByTestId('skip-or-swap')).toBeNull();
     // Someone else's John is never yours to do.
@@ -569,7 +569,7 @@ describe('the rest of your week', () => {
     expect(within(hob).queryByTestId('status-done')).toBeNull();
   });
 
-  it('shows an immunity skip with its shield, folded with the done, and a disputed John with who raised it', async () => {
+  it('shows a skip with its shield, folded with the done, and a disputed John with who raised it', async () => {
     const dispute: DisputeRow = {
       id: 'd1',
       assignment_id: 'a2',
@@ -595,7 +595,7 @@ describe('the rest of your week', () => {
     expect(within(stairs).getByLabelText(NEXT_UP_COPY.stateLabel.disputed)).toBeOnTheScreen();
     await fireEvent.press(screen.getByTestId('done-fold'));
     const hob = within(section).getAllByTestId('my-john')[1];
-    expect(hob).toHaveTextContent(/^Wipe the hobKitchen, skipped with immunity$/);
+    expect(hob).toHaveTextContent(/^Wipe the hobKitchen, skipped$/);
     // Never spoken as "Not done".
     expect(within(hob).queryByLabelText(NEXT_UP_COPY.stateLabel.open)).toBeNull();
   });

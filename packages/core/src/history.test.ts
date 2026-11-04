@@ -68,7 +68,7 @@ describe("actionLine", () => {
     expect(say("cover", { name: "Bins" }, "Cal", "You")).toBe("Cal covered your Bins");
     expect(say("flag", { name: "Recycling" }, "You")).toBe("You flagged Recycling");
     expect(say("swap", { name: "Hoover", gave: "Bins" }, "You", "Cal")).toBe("You swapped Bins for Cal’s Hoover");
-    expect(say("immunity", { name: "Oven" })).toBe("Ben used immunity on Oven");
+    expect(say("immunity", { name: "Oven" })).toBe("Ben used a skip on Oven");
     expect(say("dispute", { name: "Bins" }, "Cal", "Ben")).toBe("Cal disputed Ben’s Bins");
     expect(say("vote", { name: "Bins", uphold: true }, "You", "Ben")).toBe("You voted to strike Ben’s Bins");
     expect(say("vote", { name: "Bins", uphold: false }, "Cal", "You")).toBe("Cal voted to keep your Bins");
