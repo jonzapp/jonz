@@ -199,6 +199,38 @@ export const PARENT_OK_COPY = {
   rulesValue: "A parent OKs each kid’s tick",
 } as const;
 
+/**
+ * Kids without a sign-in, family step 4: a parent adds a child by name and
+ * year born, ticks for them from Today's switcher, and says how old you have
+ * to be for each John.
+ */
+export const KIDS_COPY = {
+  /** The Table's row, for a parent. */
+  add: "Add a child",
+  addTitle: "Add a child",
+  addBody: "For a child without their own phone. They don’t sign in: a parent picks them at the top of Today and ticks for them.",
+  name: "Name",
+  born: "Year they were born",
+  bornMeta: "So they’re only dealt Johns they’re old enough for.",
+  submit: "Add them",
+  added: (name: string) => `${name} is in. They’re dealt Johns from next week.`,
+  /** Today's switcher, for a parent with a kid like that. */
+  switchLabel: "Whose Today",
+  you: "You",
+  /** A person's page and House's people: what a kid like that is. */
+  noSignIn: "No sign-in, a parent ticks for them",
+  /** The John editor, in a family. */
+  minAgeField: "Youngest age",
+  minAgeMeta: "Kids younger than this aren’t dealt it. Leave it empty for anyone.",
+  /** In a John's line: "8 and up". */
+  minAgeLine: (age: number) => `${age} and up`,
+  problems: {
+    name: "Give their name.",
+    born: "Give the year they were born, like 2016. Kids are 18 or under.",
+    minAge: "Give an age from 2 to 18, or leave it empty.",
+  },
+} as const;
+
 /** Pocket money and Pay day, family step 3: what Johns earn, the month card and Paid. */
 export const POCKET_COPY = {
   /** After a kid's John's due time: "earns 50p". */

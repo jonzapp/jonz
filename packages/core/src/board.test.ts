@@ -94,6 +94,7 @@ describe("johnDef", () => {
       crew: 1,
       keepDay: false,
       payMinor: 0,
+      minAge: null,
     });
   });
 

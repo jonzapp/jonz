@@ -11,6 +11,8 @@ import {
   johnsByKind,
   moneyInput,
   NEW_JOHN,
+  KIDS_COPY,
+  parseMinAge,
   parseMoney,
   pocketMoney,
   POCKET_COPY,
@@ -177,7 +179,8 @@ export function JohnList({
                     {kind.johns.map((j) => {
                       const schedule = scheduleLine(j, groupName(j.groupId));
                       const earns = family && j.payMinor ? POCKET_COPY.earns(pocketMoney(j.payMinor, rules.currency)) : null;
-                      const line = [schedule, j.crew === 1 ? null : CREW_COPY.choice(j.crew), j.keepDay ? STEADY_COPY.keepsDay : null, earns]
+                      const aged = family && j.minAge ? KIDS_COPY.minAgeLine(j.minAge) : null;
+                      const line = [schedule, j.crew === 1 ? null : CREW_COPY.choice(j.crew), j.keepDay ? STEADY_COPY.keepsDay : null, earns, aged]
                         .filter(Boolean)
                         .join(', ');
                       return (
@@ -278,6 +281,9 @@ function JohnForm({
   // In a family, what it earns a kid, as typed.
   const [pay, setPay] = useState(() => moneyInput(initial.payMinor ?? 0));
   const [payProblem, setPayProblem] = useState<string | null>(null);
+  // In a family, the youngest a kid can be to be dealt it, as typed (empty for anyone).
+  const [age, setAge] = useState(() => (initial.minAge == null ? '' : String(initial.minAge)));
+  const [ageProblem, setAgeProblem] = useState<string | null>(null);
   const [picking, setPicking] = useState<TimingWord | null>(null);
   const set = (patch: Partial<Draft>) => setV((old) => ({ ...old, ...patch }));
   const sharers = [{ value: '', label: JOHN_LIST_COPY.everyone }, ...groups.map((g) => ({ value: g.id, label: g.name }))];
@@ -294,7 +300,12 @@ function JohnForm({
       setPayProblem(RULES_COPY.badAmount);
       return;
     }
-    if (await move.run(() => saveJohn(houseId, rules, family ? { ...v, payMinor } : v, new Date()))) onDone();
+    const minAge = family ? parseMinAge(age) : undefined;
+    if (family && minAge === undefined) {
+      setAgeProblem(KIDS_COPY.problems.minAge);
+      return;
+    }
+    if (await move.run(() => saveJohn(houseId, rules, family ? { ...v, payMinor, minAge } : v, new Date()))) onDone();
   }
 
   async function remove() {
@@ -352,6 +363,23 @@ function JohnForm({
                 hint={POCKET_COPY.johnFieldMeta}
                 problem={payProblem ?? undefined}
                 testID="john-pay"
+              />
+            </GroupItem>
+          ) : null}
+          {family ? (
+            <GroupItem>
+              <Field
+                label={KIDS_COPY.minAgeField}
+                value={age}
+                onChangeText={(text) => {
+                  setAge(text);
+                  setAgeProblem(null);
+                }}
+                keyboardType="number-pad"
+                maxLength={2}
+                hint={KIDS_COPY.minAgeMeta}
+                problem={ageProblem ?? undefined}
+                testID="john-min-age"
               />
             </GroupItem>
           ) : null}

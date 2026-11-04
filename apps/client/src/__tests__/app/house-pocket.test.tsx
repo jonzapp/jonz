@@ -1,10 +1,11 @@
-import { buildStake, POCKET_COPY, pocketView } from '@app/core';
+import { buildStake, KIDS_COPY, POCKET_COPY, pocketView } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 import { Text, useWindowDimensions } from 'react-native';
 
 import { loadAway } from '@/api/away';
 import { loadHouse } from '@/api/board';
 import { catchUp } from '@/api/house';
+import { addKid } from '@/api/kids';
 import { loadPocket, payPocketMoney } from '@/api/pocket';
 import { loadJohnList } from '@/api/settings';
 import { loadStake } from '@/api/stake';
@@ -17,6 +18,7 @@ import { renderPages, untilRead } from '@/testing/pages';
 jest.mock('@/api/away', () => ({ loadAway: jest.fn() }));
 jest.mock('@/api/board', () => ({ loadHouse: jest.fn() }));
 jest.mock('@/api/house', () => ({ catchUp: jest.fn() }));
+jest.mock('@/api/kids', () => ({ addKid: jest.fn() }));
 jest.mock('@/api/stake', () => ({ loadStake: jest.fn(), confirmPayment: jest.fn() }));
 jest.mock('@/api/table', () => ({ loadTable: jest.fn() }));
 jest.mock('@/api/pocket', () => ({ loadPocket: jest.fn(), payPocketMoney: jest.fn() }));
@@ -135,6 +137,30 @@ describe("a family's House", () => {
     expect(rows.map((r) => within(r).queryByText('£2.70') ?? within(r).queryByText('£4.50'))).not.toContain(null);
     expect(table.queryByText('Priya')).toBeNull();
     expect(table.getByText(POCKET_COPY.howItWorks)).toBeOnTheScreen();
+  });
+});
+
+describe('adding a child', () => {
+  it("is a parent's, from the Table: a name and the year they were born", async () => {
+    (addKid as jest.Mock).mockResolvedValue('kit');
+    await open();
+    await fireEvent.press(await screen.findByTestId('add-a-child'));
+    const form = within(screen.getByTestId('add-kid-form'));
+    await fireEvent.changeText(form.getByTestId('kid-name'), 'Kit Park');
+    await fireEvent.changeText(form.getByTestId('kid-born'), '20');
+    await fireEvent.press(form.getByTestId('add-kid'));
+    expect(form.getByText(KIDS_COPY.problems.born)).toBeOnTheScreen();
+    expect(addKid).not.toHaveBeenCalled();
+    await fireEvent.changeText(form.getByTestId('kid-born'), String(new Date().getFullYear() - 7));
+    await fireEvent.press(form.getByTestId('add-kid'));
+    await waitFor(() => expect(addKid).toHaveBeenCalledWith('Kit Park', new Date().getFullYear() - 7));
+  });
+
+  it("isn't offered to a kid", async () => {
+    mockMe = 'maya';
+    await open();
+    await screen.findByTestId('house-table');
+    expect(screen.queryByTestId('add-a-child')).toBeNull();
   });
 });
 

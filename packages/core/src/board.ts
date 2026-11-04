@@ -49,6 +49,8 @@ export interface JohnDef {
   keepDay: boolean;
   /** In a family: what it earns a kid, in minor units (pocket money); 0 or absent earns nothing. */
   payMinor?: number;
+  /** In a family: how old a kid has to be to be dealt it (johns.min_age), or null for anyone. */
+  minAge?: number | null;
 }
 
 /** Where a new John starts in the editor: a weekly kitchen John, due Sunday night, for the whole house. */
@@ -70,13 +72,14 @@ export const NEW_JOHN: Omit<JohnDef, "id"> = {
   crew: 1,
   keepDay: false,
   payMinor: 0,
+  minAge: null,
 };
 
 /** A John on the list, from its row (a read without the on-call or monthly columns gets a weekly John due on a day). */
 export function johnDef(
   row: Pick<Row<"johns">, "id" | "name" | "category" | "points" | "every_weeks" | "due_dow" | "due_time" | "needs_photo" | "group_id"> &
     Partial<
-      Pick<Row<"johns">, "kind" | "respond_hours" | "per_week" | "every_months" | "week_of_month" | "anchor_month" | "anchor_week" | "crew" | "keep_day" | "pay_minor">
+      Pick<Row<"johns">, "kind" | "respond_hours" | "per_week" | "every_months" | "week_of_month" | "anchor_month" | "anchor_week" | "crew" | "keep_day" | "pay_minor" | "min_age">
     >,
 ): JohnDef {
   return {
@@ -99,6 +102,7 @@ export function johnDef(
     crew: row.kind === "on_call" ? 1 : (row.crew ?? 1),
     keepDay: row.kind !== "on_call" && (row.keep_day ?? false),
     payMinor: row.pay_minor ?? 0,
+    minAge: row.min_age ?? null,
   };
 }
 
