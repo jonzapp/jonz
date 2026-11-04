@@ -11,8 +11,9 @@ from the app (`docs/specs/report-a-problem.md`). The first three before it were:
 - **Deletions**: accounts waiting to be deleted (see "Deleting an account").
 - **Audit log**: everything done on the admin pages, which nobody can change.
 
-Later PRs add an overview, houses, messages, a support inbox
-with an agent that asks before it acts, and an owner Ask Jonz. Designs are in
+**Messages** writes to a person, a house or everyone (see "Messages").
+Later PRs add an overview, houses, a support agent that asks before it
+acts, and an owner Ask Jonz. Designs are in
 the owner admin viewer (https://claude.ai/artifact/97GEyJDGnrWxB8HTbbrXmo).
 
 ## Who gets in
@@ -55,6 +56,43 @@ the owner admin viewer (https://claude.ai/artifact/97GEyJDGnrWxB8HTbbrXmo).
     24 hours.
   - The app keeps the last notices it read. If it can't reach Jonz it shows
     its own "can't reach Jonz" band.
+
+## Messages
+
+One message, to the right people, safely
+(`supabase/migrations/20261113090000_owner_messages.sql`,
+`apps/api/lib/moves/messages.ts`).
+
+- **To.** A person (found by name, email or an id's start), a house (by
+  name or join code) or everyone with an account. Nobody whose account is
+  being deleted. The form shows how far it reaches before it goes: "Send to
+  5 people", and under each way how many it reaches that way.
+- **Ways.** Any of three:
+  - **A push**, the subject as its title. It has no switch, as a reply to a
+    report doesn't; quiet hours make it silent. It opens the Wall when the
+    message went there too.
+  - **A post on the Wall**, as From Jonz (event kind `jonz_message`), on
+    every house's Wall for everyone. Never for one person: the whole house
+    reads its Wall.
+  - **An email** (`ownerMessageEmail`), whose reply reaches
+    support@jonz.app, with an idempotency key per message and person.
+- **Send me a test.** The same message to you alone, the ways it would go
+  less the Wall (a Wall-only message is tested as a push). It needs only a
+  subject and the words.
+- **Everyone** takes a second tap that names the number.
+- **Sending.** `owner_send_message` checks it's the owner with their code,
+  posts on the Walls, writes the audit entry (`message.send` or
+  `message.test`, people and houses by id only) and leaves one outbox row a
+  person. `POST /api/admin/messages` then pushes and emails from the outbox
+  for up to 40 seconds; the clock sends whatever is left, 20 seconds a tick.
+  Taking a row deletes it under `SKIP LOCKED`, so two senders never send
+  one person the same message twice.
+- **The page.** On a laptop, the form, with how it looks (as a push, or on
+  the Wall) and the last five sent beside it; on a phone the form, then
+  Preview as a sheet. **All sent** is a busy list: it finds a subject, the
+  words, a person or a house; To (A person, A house, Everyone, Tests), Way
+  (Push, Wall, Email), and When is Sent. A message opens in full in a
+  sheet.
 
 ## Deleting an account
 

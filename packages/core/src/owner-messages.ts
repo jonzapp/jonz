@@ -118,7 +118,7 @@ export function wayMeta(way: keyof MessageWays, audience: MessageAudience, reach
   if (way === "push") {
     if (!reach) return MESSAGE_COPY.pushMeta;
     if (audience === "person") return reach.push > 0 ? MESSAGE_COPY.pushOnOne : MESSAGE_COPY.pushOffOne;
-    return `${reach.push.toLocaleString("en-GB")} of ${people(reach.people)} have them on, silent in quiet hours`;
+    return `${reach.push.toLocaleString("en-GB")} of ${people(reach.people)} ${reach.people === 1 ? "has" : "have"} them on, silent in quiet hours`;
   }
   return MESSAGE_COPY.emailMeta;
 }
@@ -137,10 +137,10 @@ export function sentTo(row: { audience: SentAudience; toName: string | null }): 
 
 /** The ways a sent message went, in words: "Push, Wall and email". */
 export function sentWays(row: MessageWays): string {
-  const ways = [row.push && "Push", row.wall && "Wall", row.email && "email"].filter(Boolean) as string[];
+  const ways = [row.push && "push", row.wall && "Wall", row.email && "email"].filter(Boolean) as string[];
   if (ways.length === 0) return "";
-  const words = ways.map((w, i) => (i === 0 ? w[0].toUpperCase() + w.slice(1) : w.toLowerCase()));
-  return words.length === 1 ? words[0] : `${words.slice(0, -1).join(", ")} and ${words[words.length - 1]}`;
+  const words = ways.length === 1 ? ways[0] : `${ways.slice(0, -1).join(", ")} and ${ways[ways.length - 1]}`;
+  return words[0].toUpperCase() + words.slice(1);
 }
 
 /** A sent message's line under its subject: "Elm Street, 5 people, Push and Wall". */
@@ -197,7 +197,7 @@ export const MESSAGE_COPY = {
   count: (n: number, max: number) => `${n} of ${max}`,
   confirmEveryone: (n: number) => `Send to all ${people(n)}?`,
   confirmEveryoneBody: "Everyone with an account gets it, the ways you picked. It can’t be taken back.",
-  confirmSend: (n: number) => `Send to ${people(n)}`,
+  confirmSend: (n: number) => `Yes, send to ${people(n)}`,
   sentToast: (n: number) => `Sent to ${people(n)}`,
   testToast: "Test sent to you",
   testNoPush: "You haven’t turned on pushes on any device, so only the email will arrive.",
