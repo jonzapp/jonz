@@ -7,13 +7,19 @@ import { NOTICE_KINDS, type NoticeKind } from "./notices";
 export const ADMIN_PATH = "/admin";
 
 export const ADMIN_PAGES = [
+  { key: "overview", label: "Overview", path: "/admin/overview" },
   { key: "inbox", label: "Inbox", path: "/admin/inbox" },
+  { key: "houses", label: "Houses", path: "/admin/houses" },
   { key: "messages", label: "Messages", path: "/admin/messages" },
   { key: "notices", label: "Notices", path: "/admin/notices" },
   { key: "deletions", label: "Deletions", path: "/admin/deletions" },
   { key: "audit", label: "Audit log", path: "/admin/audit" },
 ] as const;
 export type AdminPage = (typeof ADMIN_PAGES)[number]["key"];
+
+/** On a phone, the pages that get a tab; the rest are under More. */
+export const ADMIN_TABS: readonly AdminPage[] = ["overview", "inbox", "houses", "notices"];
+export const ADMIN_MORE = { label: "More", path: "/admin/more" } as const;
 
 export const ADMIN_COPY = {
   owner: "Owner",

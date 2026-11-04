@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 
+import type { Overview } from "@app/core";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { adminClient, signedInUser, visitor, type Actor } from "@/tests/support/clients";
@@ -48,7 +49,8 @@ async function ok<T>(call: PromiseLike<{ data: T; error: { message: string } | n
 async function settle(houseId: string, outcomes: { outcome: "done" | "late" | "missed" | "covered"; daysAgo: number }[]) {
   await addJohns(houseId, [{ name: "Bins" }], weeksAgo(2));
   const { assignments } = await deal(houseId, weeksAgo(2), new Date(Date.now() - 14 * DAY));
-  const { id: _id, ...template } = assignments[0];
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { id, ...template } = assignments[0];
   const rows = outcomes.map((o) => {
     const at = ago(o.daysAgo);
     return { ...template, due_at: at, outcome: o.outcome, settled_at: at, done_at: o.outcome === "missed" ? null : at };
@@ -138,9 +140,9 @@ describe("Houses", () => {
     await settle(made[2].id, [{ outcome: "done", daysAgo: 3 }]);
 
     const seen: string[] = [];
-    let cursor: { at: string; id: string } | null = null;
+    let cursor = null as { at: string; id: string } | null;
     for (let i = 0; i < 4; i++) {
-      const data = await ok(page(owner, { p_limit: 1, p_cursor_at: cursor?.at, p_cursor_id: cursor?.id }));
+      const data: { id: string; sort_at: string }[] | null = await ok(page(owner, { p_limit: 1, p_cursor_at: cursor?.at, p_cursor_id: cursor?.id }));
       if (!data || data.length === 0) break;
       seen.push(data[0].id);
       cursor = { at: data[0].sort_at, id: data[0].id };
@@ -179,7 +181,7 @@ describe("Houses", () => {
 
 describe("Overview", () => {
   it("counts the window's houses, people, active houses, Passes, on time and Ask Jonz", async () => {
-    const before = (await ok(owner.db.rpc("owner_overview", { p_days: 7 }))) as Record<string, any>;
+    const before = (await ok(owner.db.rpc("owner_overview", { p_days: 7 }))) as unknown as Overview;
     await settle(house.id, [
       { outcome: "done", daysAgo: 1 },
       { outcome: "late", daysAgo: 2 },
@@ -189,7 +191,7 @@ describe("Overview", () => {
       { house_id: house.id, outcome: "ai" },
       { house_id: house.id, outcome: "failed" },
     ]));
-    const after = (await ok(owner.db.rpc("owner_overview", { p_days: 7 }))) as Record<string, any>;
+    const after = (await ok(owner.db.rpc("owner_overview", { p_days: 7 }))) as unknown as Overview;
     // Other suites run alongside, so only what this test added is checked, as at least.
     expect(after.days).toBe(7);
     expect(after.houses).toBeGreaterThanOrEqual(before.houses);
@@ -206,10 +208,10 @@ describe("Overview", () => {
     expect(after.weeks[9].active).toBeGreaterThanOrEqual(1);
     expect(new Date(after.weeks[0].ends).getTime()).toBeLessThan(new Date(after.weeks[9].ends).getTime());
 
-    const month = (await ok(owner.db.rpc("owner_overview", { p_days: 30 }))) as Record<string, any>;
+    const month = (await ok(owner.db.rpc("owner_overview", { p_days: 30 }))) as unknown as Overview;
     expect(month.days).toBe(30);
     // Anything else is a week.
-    const odd = (await ok(owner.db.rpc("owner_overview", { p_days: 3 }))) as Record<string, any>;
+    const odd = (await ok(owner.db.rpc("owner_overview", { p_days: 3 }))) as unknown as Overview;
     expect(odd.days).toBe(7);
   });
 
