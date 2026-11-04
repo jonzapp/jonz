@@ -5,6 +5,7 @@ import type { BrowserContext } from "@playwright/test";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 import { dealWeek, loadHouse } from "../lib/engine/tick";
+import { totp } from "../tests/support/mfa";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -47,6 +48,8 @@ async function clientSession(
   context: BrowserContext,
   name: string,
   newToTours = false,
+  /** Done with the signed-in client before the session goes into the browser (the owner's second factor). */
+  first?: (client: SupabaseClient, id: string) => Promise<void>,
 ): Promise<{ id: string; client: SupabaseClient }> {
   const { email, id } = await createHousemate(name, newToTours);
 
@@ -64,6 +67,7 @@ async function clientSession(
   });
   const { error } = await client.auth.signInWithPassword({ email, password: PASSWORD });
   if (error) throw error;
+  await first?.(client, id);
 
   await context.addInitScript(
     ({ origin, entries }: { origin: string; entries: [string, string][] }) => {
@@ -74,6 +78,23 @@ async function clientSession(
     { origin: CLIENT_URL, entries: [...store] },
   );
   return { id, client };
+}
+
+/**
+ * The owner of Jonz signed in to the web build with their code passed, as
+ * the admin pages need (docs/specs/owner-admin.md): an app_owners row, and a
+ * TOTP factor added and checked before the session goes into the browser,
+ * so its token says aal2. Returns the signed-in client too.
+ */
+export async function ownerInClient(context: BrowserContext, name: string): Promise<{ id: string; client: SupabaseClient }> {
+  return clientSession(context, name, false, async (client, id) => {
+    const { error: ownerError } = await admin().from("app_owners").insert({ user_id: id });
+    if (ownerError) throw ownerError;
+    const { data: factor, error } = await client.auth.mfa.enroll({ factorType: "totp" });
+    if (error) throw error;
+    const { error: verifyError } = await client.auth.mfa.challengeAndVerify({ factorId: factor.id, code: totp(factor.totp.secret) });
+    if (verifyError) throw verifyError;
+  });
 }
 
 /**

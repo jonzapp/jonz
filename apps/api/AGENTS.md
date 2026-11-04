@@ -63,7 +63,11 @@ web-push.
   `POST /api/reports/:id/messages` and `POST /api/reports/:id/reply`
   (Report a problem: send one, write back, and the owner's reply, each
   followed by a push to the other side and, for a reply, an email;
-  `lib/moves/reports.ts`, `docs/specs/report-a-problem.md`), and
+  `lib/moves/reports.ts`, `docs/specs/report-a-problem.md`),
+  `POST /api/admin/messages` (the owner's Messages: a push, a Wall post or
+  an email to a person, a house or everyone, or a test to themself; the
+  database checks and audits, then `lib/moves/messages.ts` sends from the
+  outbox, and the clock sends what's left), and
   `POST /api/push-actions` (a button on a notification: the one route with
   no bearer token, because the push's own signed token, `lib/push-token.ts`,
   stands in for it). A database

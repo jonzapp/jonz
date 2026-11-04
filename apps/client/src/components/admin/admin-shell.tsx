@@ -1,6 +1,6 @@
 import { ADMIN_COPY, ADMIN_PAGES, type AdminPage } from '@app/core';
 import { Link } from 'expo-router';
-import { InboxIcon, ScrollTextIcon, MegaphoneIcon, UserXIcon, type LucideIcon } from 'lucide-react-native';
+import { InboxIcon, MegaphoneIcon, MessageSquareIcon, ScrollTextIcon, UserXIcon, type LucideIcon } from 'lucide-react-native';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,7 +10,7 @@ import { Chip } from '@/components/status-mark';
 import { Meta } from '@/components/text';
 import { FONT, RAIL, SPACE, TAP, useTheme, WIDE } from '@/theme';
 
-const ICON: Record<AdminPage, LucideIcon> = { inbox: InboxIcon, notices: MegaphoneIcon, deletions: UserXIcon, audit: ScrollTextIcon };
+const ICON: Record<AdminPage, LucideIcon> = { inbox: InboxIcon, messages: MessageSquareIcon, notices: MegaphoneIcon, deletions: UserXIcon, audit: ScrollTextIcon };
 
 /** The tab bar's height above the home bar, so a toast clears it. */
 export const ADMIN_TAB_BAR = 56;

@@ -3,7 +3,9 @@ import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 
 import { runDeletions } from "@/lib/account/deletions";
+import { sendEmail } from "@/lib/email";
 import { tickAll } from "@/lib/engine/tick";
+import { sendOutbox } from "@/lib/moves/messages";
 import { stopCarriedPasses } from "@/lib/pass/moves";
 import { passStripe } from "@/lib/pass/stripe";
 import { pushNotifier } from "@/lib/push";
@@ -45,6 +47,12 @@ async function tick(request: Request) {
     for (const error of run.errors) results.push({ houseId: "deletions", error });
   } catch (e) {
     results.push({ houseId: "deletions", error: e instanceof Error ? e.message : String(e) });
+  }
+  // The owner's messages still to push and email, for up to 20 seconds (lib/moves/messages.ts).
+  try {
+    await sendOutbox({ db, notify: pushNotifier(db), email: sendEmail }, { until: Date.now() + 20_000 });
+  } catch (e) {
+    results.push({ houseId: "messages", error: e instanceof Error ? e.message : String(e) });
   }
   const failed = results.filter((r) => r.error);
   return NextResponse.json(
