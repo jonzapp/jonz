@@ -25,6 +25,7 @@ export * from "./money";
 export * from "./moving";
 export * from "./notices";
 export * from "./owner-admin";
+export * from "./owner-messages";
 export * from "./reports";
 export * from "./qr-shape";
 export * from "./notify";

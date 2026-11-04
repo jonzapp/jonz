@@ -84,6 +84,11 @@ const MESSAGES: Record<string, string> = {
   report_shot: "That screenshot didn’t upload. Add it again.",
   report_limit: "That’s a lot for one day. Try again tomorrow, or email support@jonz.app.",
   report_state: "A report can be marked fixed, or opened again.",
+  message_audience: "Send it to a person, a house or everyone.",
+  message_who: "Pick who it goes to.",
+  message_wall_person: "A Wall is the whole house’s, so a message to one person can’t go on it.",
+  message_no_way: "Pick at least one way to send it.",
+  message_nobody: "Nobody would get that: there’s nobody there to send it to.",
 };
 
 export function humanError(error: { message?: string; code?: string } | null | undefined): string {

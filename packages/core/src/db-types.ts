@@ -1193,6 +1193,99 @@ export type Database = {
           },
         ]
       }
+      owner_message_outbox: {
+        Row: {
+          message_id: string
+          user_id: string
+        }
+        Insert: {
+          message_id: string
+          user_id: string
+        }
+        Update: {
+          message_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_message_outbox_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "owner_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_message_outbox_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      owner_messages: {
+        Row: {
+          audience: string
+          body: string
+          by_email: boolean
+          by_push: boolean
+          by_wall: boolean
+          house_id: string | null
+          id: string
+          people: number
+          person_id: string | null
+          sent_at: string
+          sent_by: string | null
+          subject: string
+          walls: number
+        }
+        Insert: {
+          audience: string
+          body: string
+          by_email: boolean
+          by_push: boolean
+          by_wall: boolean
+          house_id?: string | null
+          id?: string
+          people: number
+          person_id?: string | null
+          sent_at?: string
+          sent_by?: string | null
+          subject: string
+          walls?: number
+        }
+        Update: {
+          audience?: string
+          body?: string
+          by_email?: boolean
+          by_push?: boolean
+          by_wall?: boolean
+          house_id?: string | null
+          id?: string
+          people?: number
+          person_id?: string | null
+          sent_at?: string
+          sent_by?: string | null
+          subject?: string
+          walls?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_messages_house_id_fkey"
+            columns: ["house_id"]
+            isOneToOne: false
+            referencedRelation: "houses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_messages_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notices: {
         Row: {
           body: string
@@ -1979,6 +2072,121 @@ export type Database = {
           requested_at: string
           requested_by: string
           user_id: string
+        }[]
+      }
+      owner_houses_find: {
+        Args: { p_q: string }
+        Returns: {
+          id: string
+          name: string
+          people: number
+        }[]
+      }
+      owner_message_people: {
+        Args: { p_audience: string; p_house: string; p_person: string }
+        Returns: {
+          user_id: string
+        }[]
+      }
+      owner_message_reach: {
+        Args: { p_audience: string; p_house?: string; p_person?: string }
+        Returns: Json
+      }
+      owner_messages_count: {
+        Args: {
+          p_after?: string
+          p_audience?: string
+          p_before?: string
+          p_q?: string
+          p_way?: string
+        }
+        Returns: number
+      }
+      owner_messages_find: {
+        Args: {
+          p_after?: string
+          p_audience?: string
+          p_before?: string
+          p_q?: string
+          p_way?: string
+        }
+        Returns: {
+          audience: string
+          body: string
+          by_email: boolean
+          by_push: boolean
+          by_wall: boolean
+          id: string
+          people: number
+          sent_at: string
+          subject: string
+          to_name: string
+          waiting: number
+          walls: number
+        }[]
+      }
+      owner_messages_page: {
+        Args: {
+          p_after?: string
+          p_audience?: string
+          p_before?: string
+          p_cursor_at?: string
+          p_cursor_id?: string
+          p_limit?: number
+          p_q?: string
+          p_way?: string
+        }
+        Returns: {
+          audience: string
+          body: string
+          by_email: boolean
+          by_push: boolean
+          by_wall: boolean
+          id: string
+          people: number
+          sent_at: string
+          subject: string
+          to_name: string
+          waiting: number
+          walls: number
+        }[]
+      }
+      owner_people_find: {
+        Args: { p_q: string }
+        Returns: {
+          email: string
+          house_id: string
+          house_name: string
+          id: string
+          name: string
+        }[]
+      }
+      owner_send_message: {
+        Args: {
+          p_audience: string
+          p_body: string
+          p_email: boolean
+          p_house: string | null
+          p_person: string | null
+          p_push: boolean
+          p_subject: string
+          p_wall: boolean
+        }
+        Returns: Json
+      }
+      take_message_outbox: {
+        Args: { p_limit?: number; p_message?: string }
+        Returns: {
+          body: string
+          by_email: boolean
+          by_push: boolean
+          by_wall: boolean
+          email: string
+          message_id: string
+          name: string
+          subject: string
+          user_id: string
+          zone: string
         }[]
       }
       owner_open_report: { Args: { p_report: string }; Returns: Json }

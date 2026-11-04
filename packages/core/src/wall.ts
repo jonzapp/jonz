@@ -113,6 +113,7 @@ export type WallIcon =
   | "banknote"
   | "bell-ring"
   | "badge-check"
+  | "megaphone"
   | "undo";
 
 export interface WallLine {
@@ -238,6 +239,9 @@ export function describeEvent(e: WallEvent, nameOf: (userId: string | null) => s
         parts: [b(by), t(` undid ${possessive(who)} ${undoneWhat(String(e.data.what), (e.data.name as string | null) ?? null)}.`)],
       };
     }
+    case "jonz_message":
+      // A message from Jonz itself (the owner's Messages): its subject.
+      return { icon: "megaphone", parts: [b("Jonz"), t(`: ${String(e.data.subject ?? "")}`)] };
     case "reset":
       // An admin fixed something: who, and what.
       return {

@@ -1365,6 +1365,8 @@ export const LIST_COPY = {
 
 /** The whole Wall, by day. */
 export const WALL_FEED_COPY = {
+  /** A message from Jonz itself with no subject (it always has one). */
+  fromJonz: "From Jonz",
   /** House's way to the whole Wall, and what it says to a screen reader. */
   seeAll: "See all",
   seeAllOf: (wall: string) => `See all of ${wall}`,
