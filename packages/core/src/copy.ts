@@ -24,6 +24,7 @@ export const PAGE_TITLE = {
   house: "House",
   privacy: "Privacy",
   terms: "Terms",
+  help: "Help",
   notFound: "Nothing here",
   welcome: "No house yet",
   johnList: "The John list",
@@ -53,8 +54,13 @@ export const NOT_FOUND_COPY = {
 
 export const ERROR_COPY = {
   title: "Something went wrong",
-  body: "It wasn’t you. Try again, and if it keeps happening, tell the house admin.",
+  body: "It wasn’t you. Try again, and if it keeps happening, tell us what happened.",
   retry: "Try again",
+  /** The crash screen's way to report it (docs/specs/report-a-problem.md, step 3). */
+  tell: "Tell us what happened",
+  tellTitle: "What happened?",
+  told: "Sent, thank you. We’ll reply under House, Your reports, and by email.",
+  orEmail: "Or email support@jonz.app.",
   /** Your house couldn't be read, so no screen can be chosen yet. */
   unreachable: "Can’t reach your house",
   unreachableBody: "Check the connection, then try again.",

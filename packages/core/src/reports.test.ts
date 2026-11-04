@@ -37,8 +37,8 @@ describe("a report as the app sends it", () => {
 });
 
 describe("the Inbox", () => {
-  it("opens on what's waiting, and filters by state and kind only", () => {
-    expect(REPORT_FACETS.map((f) => f.key)).toEqual(["state", "kind"]);
+  it("opens on what's waiting, and filters by state, where it came from, and kind", () => {
+    expect(REPORT_FACETS.map((f) => f.key)).toEqual(["state", "source", "kind"]);
     expect(REPORT_FACETS[0].options[0].value).toBe("waiting");
   });
 
@@ -65,6 +65,7 @@ describe("telling the other side", () => {
 
   it("emails a reply with the words, a way back into the app, and what they wrote", () => {
     const email = reportReplyEmail({
+      id: "1a2b3c4d-0000-4000-8000-000000000000",
       name: "Ava Brown",
       signed: "Glyn",
       kind: "problem",
@@ -72,11 +73,43 @@ describe("telling the other side", () => {
       reply: "Thanks Ava.\n\nIt's fixed in today's update.",
       url: "https://jonz.app/house/reports/r1",
     });
-    expect(email.subject).toBe("Re: The bins John vanished from Today right after I ticked the…");
+    expect(email.subject).toBe("Re: The bins John vanished from Today right after I ticked the… (ref 1a2b3c4d)");
     expect(email.text).toContain("Hi Ava,");
     expect(email.text).toContain("Glyn at Jonz replied.");
     expect(email.text).toContain("It's fixed in today's update.");
     expect(email.html).toContain("https://jonz.app/house/reports/r1");
-    expect(email.text).toContain("You sent this problem from Jonz.");
+    expect(email.text).toContain("You sent this problem to Jonz.");
+  });
+
+  it("answers an emailed report by email, under its own subject, with no app link", () => {
+    const email = reportReplyEmail({
+      id: "1a2b3c4d-0000-4000-8000-000000000000",
+      name: "Sam",
+      signed: "Glyn",
+      kind: "question",
+      words: "Can I pay the Stake by card?",
+      subject: "Re: Paying the Stake",
+      reply: "Yes, from House, Stake.",
+      url: null,
+    });
+    expect(email.subject).toBe("Re: Paying the Stake (ref 1a2b3c4d)");
+    expect(email.html).not.toContain("Open it in Jonz");
+    expect(email.text).toContain("You emailed support@jonz.app. Reply to this email to write back.");
+  });
+
+  it("says it's fixed to everyone who reported it", () => {
+    const email = reportReplyEmail({
+      id: "1a2b3c4d-0000-4000-8000-000000000000",
+      name: "Ava",
+      signed: "Glyn",
+      kind: "problem",
+      words: "The bins John vanished",
+      reply: "This is fixed now. Thank you for telling us.",
+      url: "https://jonz.app/house/reports/r1",
+      fixed: true,
+    });
+    expect(email.subject).toBe("Fixed: The bins John vanished (ref 1a2b3c4d)");
+    expect(email.text).toContain("Glyn at Jonz fixed what you reported.");
+    expect(REPORT_PUSH.fixed).toBe("Fixed: the problem you reported");
   });
 });

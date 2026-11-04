@@ -19,6 +19,7 @@ export * from "./email-sign-in";
 export * from "./errors";
 export * from "./format";
 export * from "./history";
+export * from "./inbound-email";
 export * from "./legal";
 export * from "./mark";
 export * from "./money";

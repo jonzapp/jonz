@@ -84,6 +84,7 @@ const MESSAGES: Record<string, string> = {
   report_shot: "That screenshot didn’t upload. Add it again.",
   report_limit: "That’s a lot for one day. Try again tomorrow, or email support@jonz.app.",
   report_state: "A report can be marked fixed, or opened again.",
+  report_same: "A report can’t be the same as itself.",
 };
 
 export function humanError(error: { message?: string; code?: string } | null | undefined): string {

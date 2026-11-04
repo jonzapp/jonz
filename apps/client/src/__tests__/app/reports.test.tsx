@@ -7,6 +7,7 @@ import { catchUp } from '@/api/house';
 import { ownerStatus } from '@/api/owner';
 import { forgetDetails, noteError, notePage } from '@/api/report-details';
 import {
+  fixReport,
   inboxCount,
   inboxPage,
   myReport,
@@ -14,9 +15,11 @@ import {
   openReport,
   pickScreenshot,
   replyToReport,
+  sameAsFind,
   seeReport,
   sendReport,
   setReportState,
+  setSameAs,
   writeBack,
   type InboxRow,
   type Report,
@@ -46,6 +49,9 @@ jest.mock('@/api/reports', () => ({
   openReport: jest.fn(),
   replyToReport: jest.fn(),
   setReportState: jest.fn(),
+  fixReport: jest.fn(),
+  setSameAs: jest.fn(),
+  sameAsFind: jest.fn(),
 }));
 jest.mock('@/api/supabase', () => ({ supabase: {} }));
 jest.mock('@/api/http', () => ({ apiPost: jest.fn() }));
@@ -77,6 +83,10 @@ const BINS: Report = {
     { from: 'them', name: 'Ava Brown', at: ago(30 * MIN), text: WORDS, shots: ['https://storage.test/shot.jpg'] },
     { from: 'jonz', name: 'Glyn', at: ago(5 * MIN), text: 'Thanks Ava, fixed in today’s update.' },
   ],
+  source: 'app',
+  subject: null,
+  sameAs: null,
+  also: [],
 };
 
 const ROW: InboxRow = {
@@ -89,6 +99,10 @@ const ROW: InboxRow = {
   state: 'new',
   words: WORDS,
   sentAt: ago(4 * MIN),
+  source: 'app',
+  subject: null,
+  folded: false,
+  also: 0,
 };
 
 beforeEach(() => {
@@ -112,6 +126,9 @@ beforeEach(() => {
   jest.mocked(openReport).mockResolvedValue({ ...BINS, state: 'open' });
   jest.mocked(replyToReport).mockResolvedValue(undefined);
   jest.mocked(setReportState).mockResolvedValue(undefined);
+  jest.mocked(fixReport).mockResolvedValue({ fixed: 1, told: 1 });
+  jest.mocked(setSameAs).mockResolvedValue(undefined);
+  jest.mocked(sameAsFind).mockResolvedValue([{ id: 'r7', name: 'Ben Cole', words: 'The bins John is missing', state: 'open' }]);
 });
 
 describe('Help on House', () => {
@@ -212,7 +229,7 @@ describe('the owner’s Inbox', () => {
     await renderPages(ROUTES, '/admin/inbox');
     const row = await screen.findByTestId('inbox-r1');
     expect(row).toHaveTextContent(/Ava Brown.*The bins John vanished.*Problem, The Annexe, 4 min/);
-    expect(inboxPage).toHaveBeenLastCalledWith(null, { q: '', state: 'waiting', kind: null, after: null, before: null });
+    expect(inboxPage).toHaveBeenLastCalledWith(null, { q: '', state: 'waiting', source: null, kind: null, after: null, before: null });
     await fireEvent.press(row);
     expect(await screen.findByTestId('admin-inbox-report')).toBeVisible();
     await waitFor(() => expect(openReport).toHaveBeenCalledWith('r1'));
@@ -227,7 +244,77 @@ describe('the owner’s Inbox', () => {
     await fireEvent.press(screen.getByTestId('report-reply-send'));
     await waitFor(() => expect(replyToReport).toHaveBeenCalledWith('r1', 'Fixed now, thank you.'));
     await fireEvent.press(screen.getByTestId('report-fixed'));
-    await waitFor(() => expect(setReportState).toHaveBeenCalledWith('r1', 'fixed'));
+    const fix = await screen.findByTestId('report-fix-form');
+    await fireEvent.changeText(within(fix).getByTestId('report-fix-note'), 'Fixed in today’s update.');
+    await fireEvent.press(within(fix).getByTestId('report-fix-send'));
+    await waitFor(() => expect(fixReport).toHaveBeenCalledWith('r1', 'Fixed in today’s update.', true));
+    expect(await screen.findByTestId('report-fixed-done')).toHaveTextContent(REPORT_COPY.fixedTold(1));
+  });
+
+  it('marks fixed without telling anyone when the box is unticked, and says how many it tells', async () => {
+    jest.mocked(openReport).mockResolvedValue({
+      ...BINS,
+      state: 'open',
+      also: [
+        { id: 'r7', name: 'Ben Cole', words: 'Bins gone', state: 'open' },
+        { id: 'r8', name: 'Sam', words: 'Same here', state: 'new' },
+      ],
+    });
+    jest.mocked(fixReport).mockResolvedValue({ fixed: 3, told: 0 });
+    await renderPages(ROUTES, '/admin/inbox/r1');
+    expect(await screen.findByTestId('report-also')).toHaveTextContent(/2 more people reported this.*Ben Cole.*Sam/);
+    await fireEvent.press(screen.getByTestId('report-fixed'));
+    const fix = await screen.findByTestId('report-fix-form');
+    const tell = within(fix).getByRole('checkbox', { name: new RegExp(REPORT_COPY.fixTell(3)) });
+    await fireEvent.press(tell);
+    await fireEvent.press(within(fix).getByTestId('report-fix-send'));
+    await waitFor(() => expect(fixReport).toHaveBeenCalledWith('r1', '', false));
+  });
+
+  it('folds a report into the one it is the same as, and takes it out again', async () => {
+    await renderPages(ROUTES, '/admin/inbox/r1');
+    await fireEvent.press(await screen.findByTestId('report-same'));
+    const same = await screen.findByTestId('report-same-form');
+    await fireEvent.changeText(within(same).getByTestId('report-same-search'), 'bins');
+    await waitFor(() => expect(sameAsFind).toHaveBeenCalledWith('r1', 'bins'));
+    await fireEvent.press(await within(same).findByTestId('report-same-r7'));
+    await waitFor(() => expect(setSameAs).toHaveBeenCalledWith('r1', 'r7'));
+
+    jest.mocked(openReport).mockResolvedValue({ ...BINS, state: 'open', sameAs: { id: 'r7', name: 'Ben Cole', words: 'The bins John is missing', state: 'open' } });
+    await renderPages(ROUTES, '/admin/inbox/r2');
+    expect(await screen.findByTestId('report-same-as')).toHaveTextContent(/Same as Ben’s report.*The bins John is missing/);
+    expect(screen.queryByTestId('report-same')).toBeNull();
+    await fireEvent.press(screen.getByTestId('report-not-same'));
+    await waitFor(() => expect(setSameAs).toHaveBeenCalledWith('r1', null));
+  });
+
+  it('shows an emailed report with its address and subject, and replies by email', async () => {
+    jest.mocked(openReport).mockResolvedValue({
+      ...BINS,
+      kind: 'question',
+      state: 'open',
+      userId: null,
+      name: 'Sam Lee',
+      email: 'sam@example.com',
+      house: null,
+      role: null,
+      details: null,
+      source: 'email',
+      subject: 'Paying the Stake',
+    });
+    await renderPages(ROUTES, '/admin/inbox/r1');
+    const panel = await screen.findByTestId('report-panel');
+    expect(panel).toHaveTextContent(/Sam Lee.*sam@example.com, by email.*Subject: Paying the Stake/);
+    expect(screen.getByLabelText(REPORT_COPY.replyByEmail('Sam'))).toBeVisible();
+  });
+
+  it('says which reports came by email in the list', async () => {
+    jest.mocked(inboxPage).mockResolvedValue({
+      items: [{ ...ROW, name: 'Sam Lee', userId: null, house: null, kind: 'question', source: 'email', subject: 'Paying the Stake', also: 2 }],
+      more: false,
+    });
+    await renderPages(ROUTES, '/admin/inbox');
+    expect(await screen.findByTestId('inbox-r1')).toHaveTextContent(/Sam Lee.*Paying the Stake: The bins John.*\+2.*Question, by email, 4 min/);
   });
 
   it('has no reply box once its sender has deleted their account, and opens a fixed one again', async () => {
