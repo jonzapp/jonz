@@ -96,7 +96,7 @@ export const BEST_TIME_HOUR: Record<BestTime, number> = { morning: 9, afternoon:
 
 /**
  * Who lives in a house (houses.kind): housemates, equals sharing a place, or
- * a family, where parents hand out Johns and kids do them. A family is the
+ * a family, where parents deal out Johns and kids do them. A family is the
  * same house underneath with its own words and no Stake
  * (docs/specs/family-houses.md).
  */

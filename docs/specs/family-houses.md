@@ -40,7 +40,7 @@ nobody puts money in or forfeits it.
   remembers the choice (`door-kind.ts`).
 - Start a house: "Who lives here?" above the name, with Family picked when
   the link says `?kind=family` (or the device remembers it). Family's sign
-  is "Set up your family", and its defaults line has no stake. A move
+  is "Start your family", and its defaults line has no stake. A move
   (`?from=`) doesn't ask: the kind follows the old house.
 - Words (`roleCopy(kind)`, `PARENTS_COPY`): Rules' Admins section is
   Parents ("Add a parent"), a person's page says Parent or Kid, the You page

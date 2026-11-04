@@ -113,6 +113,7 @@ export type WallIcon =
   | "banknote"
   | "bell-ring"
   | "badge-check"
+  | "megaphone"
   | "undo";
 
 export interface WallLine {
@@ -164,12 +165,12 @@ export function describeEvent(e: WallEvent, nameOf: (userId: string | null) => s
       return {
         icon: "shield",
         tone: "hivis",
-        parts: [b(who), t(` earned an immunity token: ${String(e.data.streak)} clean weeks in a row.`)],
+        parts: [b(who), t(` earned a skip: ${String(e.data.streak)} clean weeks in a row.`)],
       };
     case "swap_earned":
       return { icon: "repeat", tone: "hivis", parts: [b(who), t(" topped the week and earned a swap.")] };
     case "immunity_used":
-      return { icon: "shield", parts: [b(who), t(` spent immunity on ${john}.`)] };
+      return { icon: "shield", parts: [b(who), t(` used a skip on ${john}.`)] };
     case "swap_used":
       return {
         icon: "repeat",
@@ -217,7 +218,7 @@ export function describeEvent(e: WallEvent, nameOf: (userId: string | null) => s
         : { icon: "truck", parts: [b(was), t(" moved out.")] };
     }
     case "month_closed":
-      return { icon: "calendar-check", parts: [t(`${monthLabel(String(e.data.month))} is closed and the Stake is shared out.`)] };
+      return { icon: "calendar-check", parts: [t(`${monthLabel(String(e.data.month))} is closed and its forfeits are split.`)] };
     case "paid":
       return {
         icon: "banknote",
@@ -238,6 +239,9 @@ export function describeEvent(e: WallEvent, nameOf: (userId: string | null) => s
         parts: [b(by), t(` undid ${possessive(who)} ${undoneWhat(String(e.data.what), (e.data.name as string | null) ?? null)}.`)],
       };
     }
+    case "jonz_message":
+      // A message from Jonz itself (the owner's Messages): its subject.
+      return { icon: "megaphone", parts: [b("Jonz"), t(`: ${String(e.data.subject ?? "")}`)] };
     case "reset":
       // An admin fixed something: who, and what.
       return {

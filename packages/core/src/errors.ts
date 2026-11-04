@@ -5,7 +5,7 @@
 const MESSAGES: Record<string, string> = {
   sign_in_required: "Sign in first.",
   already_in_house: "You’re already in a house. Leave it first to join another.",
-  unknown_code: "That join link doesn’t open a house. Ask a housemate for theirs, or start your own.",
+  unknown_code: "That invite doesn’t open a house. Ask a housemate for theirs, or start your own.",
   unknown_timezone: "That time zone isn’t one we recognise.",
   admins_only: "Only the house admins can do that.",
   last_admin: "Make someone else an admin first. A house needs at least one.",
@@ -20,8 +20,8 @@ const MESSAGES: Record<string, string> = {
   not_disputable: "That tick can’t be disputed any more.",
   already_disputed: "Someone’s already disputing that tick.",
   vote_closed: "Voting on that has closed.",
-  no_immunity: "You don’t have an immunity token.",
-  no_swap: "You don’t have a swap token.",
+  no_immunity: "You don’t have a skip.",
+  no_swap: "You don’t have a swap.",
   not_swappable: "Only two open Johns from the same week can be swapped.",
   more_than_owed: "That’s more than is owed.",
   bad_payment: "That payment doesn’t add up.",
@@ -53,7 +53,7 @@ const MESSAGES: Record<string, string> = {
   not_this_week: "Only this week can be re-dealt.",
   already_undone: "That’s already been undone.",
   not_on_call: "That John isn’t on call, so it can’t be flagged.",
-  not_dealt: "This week hasn’t been handed out yet, so nobody is on call.",
+  not_dealt: "This week hasn’t been dealt yet, so nobody is on call.",
   nobody_home: "Everyone who shares that John is away today.",
   just_done: "You’ve just done that one. Undo it if that was a mistake.",
   not_a_flag: "That John wasn’t flagged.",
@@ -84,6 +84,11 @@ const MESSAGES: Record<string, string> = {
   report_shot: "That screenshot didn’t upload. Add it again.",
   report_limit: "That’s a lot for one day. Try again tomorrow, or email support@jonz.app.",
   report_state: "A report can be marked fixed, or opened again.",
+  message_audience: "Send it to a person, a house or everyone.",
+  message_who: "Pick who it goes to.",
+  message_wall_person: "A Wall is the whole house’s, so a message to one person can’t go on it.",
+  message_no_way: "Pick at least one way to send it.",
+  message_nobody: "Nobody would get that: there’s nobody there to send it to.",
 };
 
 export function humanError(error: { message?: string; code?: string } | null | undefined): string {

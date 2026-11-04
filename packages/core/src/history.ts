@@ -52,9 +52,9 @@ export const HISTORY_COPY = {
   ticked: "Marked done.",
   covered: "Covered.",
   flagged: "Flagged. Whoever’s on call has been told.",
-  /** After Done it: Undo takes back the tick and its flag. */
-  doneIt: "Done it. Counted once.",
-  immunity: "Immunity used.",
+  /** After Mark done: Undo takes back the tick and its flag. */
+  doneIt: "Marked done. Counted once.",
+  immunity: "Skip used.",
   swapped: "Swapped.",
   disputed: "Dispute raised.",
   paid: "Marked received.",
@@ -150,7 +150,7 @@ export function actionLine(
     case "swap":
       return `${who} swapped ${String(data.gave ?? "a John")} for ${possessive(subject)} ${john}`;
     case "immunity":
-      return `${who} used immunity on ${john}`;
+      return `${who} used a skip on ${john}`;
     case "dispute":
       return `${who} disputed ${possessive(subject)} ${john}`;
     case "vote":
@@ -181,7 +181,7 @@ export function undoneWhat(kind: string, name: string | null): string {
     case "swap":
       return `swap for ${john}`;
     case "immunity":
-      return `immunity on ${john}`;
+      return `a skip on ${john}`;
     case "dispute":
       return `dispute of ${john}`;
     case "vote":

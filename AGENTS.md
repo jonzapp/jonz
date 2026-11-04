@@ -92,10 +92,15 @@ accounts: never run it without being asked (see "Hosting and deploys").
 
 ## Words
 
-A chore is a **John**; the plural is **Johns**. The money is **the Stake**,
-the standings **the Table**, the feed **the Wall**. Handing out a week's
-Johns is **the deal**. Copy never says "chore app", and never "rota" (the
-house doesn't use the word).
+A chore is a **John**; the plural is **Johns**, and **Jonz** is only the
+app. The money is **the Stake**, the standings **the Table**, the feed **the
+Wall**. Giving out a week's Johns is **the deal**. A pass on one John is **a
+skip**, paired with **a swap**; the vote's answers are **Done** and **Not
+done**; housemates get in with **an invite** and its **code**; forfeits are
+**split**, and "share" means only the fair share. One word for each thing:
+the glossary in `docs/style/words.md`, guarded by
+`packages/core/src/words.test.ts`. Copy never says "chore app", and never
+"rota" (the house doesn't use the word).
 
 ## House style: Bin Night
 

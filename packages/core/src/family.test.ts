@@ -42,7 +42,7 @@ describe("the front door and Start a house, for a family", () => {
   it("sets up a family with its own heading and button", () => {
     expect(newHouseWords("family")).toEqual({
       title: PAGE_TITLE.newFamily,
-      heading: "Set up your family",
+      heading: "Start your family",
       intro: FAMILY_COPY.newIntro,
       submit: "Start the family",
     });
@@ -63,7 +63,7 @@ describe("the front door and Start a house, for a family", () => {
   });
 
   it("says a family on its join link", () => {
-    expect(joinLine("family", 4)).toBe("4 people are in this family. Join and you’re handed Johns from next week.");
+    expect(joinLine("family", 4)).toBe("4 people are in this family. Join and you’re dealt Johns from next week.");
     expect(joinLine("housemates", 4)).toBe(JOIN_COPY.livesHere(4));
   });
 });

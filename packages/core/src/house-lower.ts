@@ -222,6 +222,7 @@ const ICON: Record<string, WallIcon> = {
   paid: "banknote",
   undone: "undo",
   reset: "undo",
+  jonz_message: "megaphone",
 };
 
 const FAMILY: Record<string, WallFamily> = {
@@ -261,7 +262,7 @@ function boldRuns(title: string, bold: readonly string[]): Part[] {
 }
 
 /** The house's own news: nobody's plate leads it. */
-const HOUSE_NEWS = new Set(["upheld", "rejected", "month_closed"]);
+const HOUSE_NEWS = new Set(["upheld", "rejected", "month_closed", "jonz_message"]);
 
 /**
  * One event as a row, from where the viewer stands: one sentence with first
@@ -424,6 +425,13 @@ export function wallFeedRow(event: WallEvent, scene: WallScene): WallFeedRow {
       detail = MOVING_COPY.movingDetail;
       break;
     }
+    case "jonz_message":
+      // A message from Jonz itself: its subject, and its words to read in full.
+      title = text("subject") || WALL_FEED_COPY.fromJonz;
+      bold = [];
+      detail = text("body") || null;
+      lead = null;
+      break;
     case "month_closed":
       title = WALL_FEED_COPY.monthClosed(monthName(text("month")));
       detail = WALL_FEED_COPY.sharedOut;

@@ -28,7 +28,7 @@ export default function AdminLayout() {
   if (status.isError) return <ReadFailed onRetry={() => void status.refetch()} />;
   if (!status.data.owner) return <NotFound />;
   if (!status.data.mfa) return <CodeGate onPassed={() => void status.refetch()} />;
-  const page = pathname.startsWith('/admin/audit') ? 'audit' : pathname.startsWith('/admin/deletions') ? 'deletions' : pathname.startsWith('/admin/inbox') ? 'inbox' : 'notices';
+  const page = pathname.startsWith('/admin/audit') ? 'audit' : pathname.startsWith('/admin/deletions') ? 'deletions' : pathname.startsWith('/admin/inbox') ? 'inbox' : pathname.startsWith('/admin/messages') ? 'messages' : 'notices';
   return (
     <ToastProvider bottom={wide ? SPACE.xl : ADMIN_TAB_BAR + insets.bottom + SPACE.lg}>
       <AdminShell page={page}>
