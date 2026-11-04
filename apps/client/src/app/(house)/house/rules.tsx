@@ -53,6 +53,7 @@ function RulesFor({ houseId, userId }: { houseId: string; userId: string }) {
       settleIn: snapshot.house.settleIn,
       memberIds: snapshot.members.map((m) => m.userId),
       kind: snapshot.house.kind,
+      pocketCapMinor: snapshot.house.pocketCapMinor,
     };
     return (
       <RulesEditing
@@ -94,7 +95,13 @@ function RulesReadOut({ houseId, userId, view, onEdit }: { houseId: string; user
           right={isAdmin ? <TextButton label={SETUP_COPY.edit} align="end" onPress={onEdit} testID="edit-rules" /> : undefined}
           testID="rules-panel"
         >
-          {rulesRows(snapshot.rules, snapshot.house.awayMakeup, snapshot.house.settleIn, snapshot.house.kind).map((rule) => (
+          {rulesRows(
+            snapshot.rules,
+            snapshot.house.awayMakeup,
+            snapshot.house.settleIn,
+            snapshot.house.kind,
+            snapshot.house.pocketCapMinor,
+          ).map((rule) => (
             <Row key={rule.label} title={rule.label} trailing={rule.value} testID="rule" />
           ))}
         </Section>

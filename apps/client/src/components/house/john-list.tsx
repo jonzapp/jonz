@@ -4,12 +4,18 @@ import {
   CREW_CHOICES,
   CREW_COPY,
   crewLine,
+  CURRENCY_SYMBOL,
   JOHN_LIST_COPY,
   NEXT_UP_COPY,
   johnFacts,
   johnsByKind,
+  moneyInput,
   NEW_JOHN,
+  parseMoney,
+  pocketMoney,
+  POCKET_COPY,
   pointsLabel,
+  RULES_COPY,
   scheduleLine,
   SETUP_COPY,
   STEADY_COPY,
@@ -65,6 +71,7 @@ export function JohnList({
   whoAdds,
   quietAdd = false,
   more,
+  family = false,
 }: {
   houseId: string;
   rules: HouseRules;
@@ -77,6 +84,8 @@ export function JohnList({
   quietAdd?: boolean;
   /** On a laptop, more sections to sit among the kinds (the house's groups). */
   more?: readonly FlowItem[];
+  /** In a family each John can earn pocket money: the form asks how much, and each row says. */
+  family?: boolean;
 }) {
   const [editing, setEditing] = useState<Draft | null>(null);
   const [reading, setReading] = useState<JohnDef | null>(null);
@@ -99,6 +108,7 @@ export function JohnList({
           rules={rules}
           initial={draft}
           groups={groups}
+          family={family}
           onDone={panel.close}
         />
       ),
@@ -166,7 +176,8 @@ export function JohnList({
                   <Section label={kind.label} testID={`kind-${kind.category}`}>
                     {kind.johns.map((j) => {
                       const schedule = scheduleLine(j, groupName(j.groupId));
-                      const line = [schedule, j.crew === 1 ? null : CREW_COPY.choice(j.crew), j.keepDay ? STEADY_COPY.keepsDay : null]
+                      const earns = family && j.payMinor ? POCKET_COPY.earns(pocketMoney(j.payMinor, rules.currency)) : null;
+                      const line = [schedule, j.crew === 1 ? null : CREW_COPY.choice(j.crew), j.keepDay ? STEADY_COPY.keepsDay : null, earns]
                         .filter(Boolean)
                         .join(', ');
                       return (
@@ -214,6 +225,7 @@ export function JohnList({
             rules={rules}
             initial={editing}
             groups={groups}
+            family={family}
             onDone={() => setEditing(null)}
           />
         ) : null}
@@ -251,16 +263,21 @@ function JohnForm({
   rules,
   initial,
   groups,
+  family = false,
   onDone,
 }: {
   houseId: string;
   rules: HouseRules;
   initial: Draft;
   groups: GroupDef[];
+  family?: boolean;
   onDone: () => void;
 }) {
   const move = useMove(houseId);
   const [v, setV] = useState(initial);
+  // In a family, what it earns a kid, as typed.
+  const [pay, setPay] = useState(() => moneyInput(initial.payMinor ?? 0));
+  const [payProblem, setPayProblem] = useState<string | null>(null);
   const [picking, setPicking] = useState<TimingWord | null>(null);
   const set = (patch: Partial<Draft>) => setV((old) => ({ ...old, ...patch }));
   const sharers = [{ value: '', label: JOHN_LIST_COPY.everyone }, ...groups.map((g) => ({ value: g.id, label: g.name }))];
@@ -272,7 +289,12 @@ function JohnForm({
   const together = line ? `${line}. ${CREW_COPY.hint}` : null;
 
   async function save() {
-    if (await move.run(() => saveJohn(houseId, rules, v, new Date()))) onDone();
+    const payMinor = family ? parseMoney(pay) : undefined;
+    if (payMinor === null || (payMinor !== undefined && payMinor < 0)) {
+      setPayProblem(RULES_COPY.badAmount);
+      return;
+    }
+    if (await move.run(() => saveJohn(houseId, rules, family ? { ...v, payMinor } : v, new Date()))) onDone();
   }
 
   async function remove() {
@@ -317,6 +339,22 @@ function JohnForm({
       <View style={styles.noted}>
         <Group>
           <PickRow label={JOHN_LIST_COPY.effort} options={EFFORT} value={v.points} onChange={(points) => set({ points })} />
+          {family ? (
+            <GroupItem>
+              <Field
+                label={`${POCKET_COPY.johnField} (${CURRENCY_SYMBOL[rules.currency]})`}
+                value={pay}
+                onChangeText={(text) => {
+                  setPay(text);
+                  setPayProblem(null);
+                }}
+                keyboardType="decimal-pad"
+                hint={POCKET_COPY.johnFieldMeta}
+                problem={payProblem ?? undefined}
+                testID="john-pay"
+              />
+            </GroupItem>
+          ) : null}
           {/* On call stays one person: whoever is on call. */}
           {v.when === 'day' ? (
             <PickRow label={CREW_COPY.doneBy} options={CREW} value={v.crew} onChange={(crew) => set({ crew })} testID="john-crew" />

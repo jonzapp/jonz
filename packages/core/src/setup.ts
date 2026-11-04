@@ -1,7 +1,7 @@
 // House setup's pages: the rules as label and value, the Johns by category, a John's schedule line and the admins' names.
 import { isoDayOf, shiftMonth, type AwayPeriod } from "./away";
 import type { BoardItem, JohnDef } from "./board";
-import { CREW_COPY, FOCUS_SHELL_COPY, GROUPS_COPY, JOHN_LIST_COPY, PARENT_OK_COPY, RULES_COPY, SETUP_COPY, STEADY_COPY } from "./copy";
+import { CREW_COPY, FOCUS_SHELL_COPY, GROUPS_COPY, JOHN_LIST_COPY, PARENT_OK_COPY, POCKET_COPY, RULES_COPY, SETUP_COPY, STEADY_COPY } from "./copy";
 import { MAKEUP_LABEL } from "./deal";
 import { CATEGORIES, CATEGORY_LABEL, DOW_LABEL, type Category, type Currency, type DealMode, type HouseKind, type HouseRules, type IsoDow, type SettleIn } from "./domain";
 import { familyHides } from "./family";
@@ -100,13 +100,22 @@ function forfeit(minor: number, currency: Currency): string {
 }
 
 /** The house rules in plain words, one line each, as everyone reads them. */
-export function rulesRows(rules: HouseRules, awayMakeup: number, settleIn?: SettleIn, kind: HouseKind = "housemates"): LabelValue[] {
-  // A family has no stake, so it reads none of the money's rows.
+export function rulesRows(
+  rules: HouseRules,
+  awayMakeup: number,
+  settleIn?: SettleIn,
+  kind: HouseKind = "housemates",
+  /** In a family: the most each kid can earn in a month. */
+  pocketCapMinor = 0,
+): LabelValue[] {
+  // A family has no stake, so it reads none of the money's rows: pocket money in their place.
   if (familyHides(kind).stake) {
     // Nor a vote: the check window's row says who OKs a kid's tick instead.
-    return rulesRows(rules, awayMakeup)
+    const rows = rulesRows(rules, awayMakeup)
       .filter((row) => row.label !== SETUP_COPY.stake && row.label !== SETUP_COPY.late && row.label !== SETUP_COPY.missed)
       .map((row) => (row.label === SETUP_COPY.disputes ? { label: PARENT_OK_COPY.rulesLabel, value: PARENT_OK_COPY.rulesValue } : row));
+    rows.splice(2, 0, { label: POCKET_COPY.rulesLabel, value: POCKET_COPY.rulesValue(formatMoney(pocketCapMinor, rules.currency)) });
+    return rows;
   }
   const rows: LabelValue[] = [
     { label: STEADY_COPY.mode, value: STEADY_COPY.modeName[rules.dealMode] },
@@ -265,13 +274,22 @@ export interface RulesDraft {
   stake: string;
   late: string;
   missed: string;
+  /** In a family: the most each kid can earn in a month, as typed. Absent for housemates. */
+  pocket?: string;
 }
 
 /** Where a problem with the form sits: under one of its fields, or (`form`) by Save. */
-export type RulesField = "name" | "timezone" | "stake" | "late" | "missed" | "form";
+export type RulesField = "name" | "timezone" | "stake" | "late" | "missed" | "pocket" | "form";
 
 /** The form as it starts, from the house's name, its rules, its make-up rate and where it settles up. */
-export function rulesDraft(name: string, rules: HouseRules, awayMakeup: number, settleIn: SettleIn = "jonz"): RulesDraft {
+export function rulesDraft(
+  name: string,
+  rules: HouseRules,
+  awayMakeup: number,
+  settleIn: SettleIn = "jonz",
+  /** A family's pocket money cap; left out for housemates, whose form has no such field. */
+  pocketCapMinor?: number,
+): RulesDraft {
   return {
     name,
     timezone: rules.timezone,
@@ -287,6 +305,7 @@ export function rulesDraft(name: string, rules: HouseRules, awayMakeup: number, 
     stake: moneyInput(rules.stakeMinor),
     late: moneyInput(rules.lateForfeitMinor),
     missed: moneyInput(rules.missedForfeitMinor),
+    ...(pocketCapMinor === undefined ? {} : { pocket: moneyInput(pocketCapMinor) }),
   };
 }
 
@@ -310,7 +329,8 @@ export function rulesChanged(draft: RulesDraft, from: RulesDraft): boolean {
     draft.settleIn !== from.settleIn ||
     draft.dealMode !== from.dealMode ||
     draft.dealBudget !== from.dealBudget ||
-    (["stake", "late", "missed"] as const).some((k) => amount(draft[k]) !== amount(from[k]))
+    (["stake", "late", "missed"] as const).some((k) => amount(draft[k]) !== amount(from[k])) ||
+    amount(draft.pocket ?? "") !== amount(from.pocket ?? "")
   );
 }
 
@@ -326,6 +346,8 @@ export function checkRules(
   const problems: Partial<Record<RulesField, string>> = {};
   const amounts = { stake: amountOf(draft.stake), late: amountOf(draft.late), missed: amountOf(draft.missed) };
   for (const key of ["stake", "late", "missed"] as const) if (amounts[key] === null) problems[key] = RULES_COPY.badAmount;
+  const pocket = draft.pocket === undefined ? undefined : amountOf(draft.pocket);
+  if (pocket === null) problems.pocket = RULES_COPY.badAmount;
   const parsed = HouseSettings.safeParse({
     name: draft.name,
     timezone: draft.timezone,
@@ -341,6 +363,7 @@ export function checkRules(
     settleIn: draft.settleIn,
     dealMode: draft.dealMode,
     dealBudget: draft.dealBudget,
+    ...(pocket === undefined ? {} : { pocketCapMinor: pocket ?? 0 }),
   });
   const field: Record<string, RulesField> = {
     name: "name",
@@ -348,6 +371,7 @@ export function checkRules(
     stakeMinor: "stake",
     lateForfeitMinor: "late",
     missedForfeitMinor: "missed",
+    pocketCapMinor: "pocket",
   };
   if (!parsed.success) {
     for (const issue of parsed.error.issues) {

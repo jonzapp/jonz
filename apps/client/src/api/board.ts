@@ -51,6 +51,8 @@ export interface HouseSnapshot {
     awayMakeup: number;
     /** Where the house settles up at month end (houses.settle_in). */
     settleIn: SettleIn;
+    /** In a family: the most each kid can earn in a month (houses.pocket_cap_minor); 0 for housemates. */
+    pocketCapMinor?: number;
     /** The House Pass: who has the extras, and until when. */
     pass: HousePass;
   };
@@ -144,6 +146,7 @@ export async function loadHouse(houseId: string, now: Date): Promise<HouseSnapsh
       kind: houseKind(house.kind),
       awayMakeup: house.away_makeup,
       settleIn: house.settle_in === 'splitwise' ? 'splitwise' : 'jonz',
+      pocketCapMinor: house.pocket_cap_minor ?? 0,
       pass: passOf(house),
     },
     rules,

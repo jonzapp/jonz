@@ -1,7 +1,7 @@
 import { DELETE_PATH } from "./account-deletion";
 import { safeNext, signInPath, signInReason } from "./auth-paths";
-import { FRONT_DOOR_COPY, SIGN_IN_COPY } from "./copy";
-import { CURRENCIES, type Currency, DEFAULT_RULES, DOW_LABEL, type HouseKind, type IsoDow } from "./domain";
+import { FRONT_DOOR_COPY, POCKET_COPY, SIGN_IN_COPY } from "./copy";
+import { CURRENCIES, type Currency, DEFAULT_RULES, DOW_LABEL, FAMILY_POCKET_CAP, type HouseKind, type IsoDow } from "./domain";
 import { moneyInput } from "./money";
 import { normaliseJoinCode } from "./schemas";
 
@@ -98,11 +98,13 @@ export function houseDefaults({
   weekStarts: IsoDow;
   timezone: string;
   stakeMinor?: number;
-  /** A family has no stake, so its line starts with the week. */
+  /** A family has no stake: its line starts with pocket money instead. */
   kind?: HouseKind;
 }): string[] {
   return [
-    ...(kind === "family" ? [] : [FRONT_DOOR_COPY.stakeEach(`${currency} ${moneyInput(stakeMinor)}`)]),
+    kind === "family"
+      ? POCKET_COPY.defaults(`${currency} ${moneyInput(FAMILY_POCKET_CAP)}`)
+      : FRONT_DOOR_COPY.stakeEach(`${currency} ${moneyInput(stakeMinor)}`),
     FRONT_DOOR_COPY.weekStarts(DOW_LABEL[weekStarts]),
     timeZoneName(timezone),
   ];

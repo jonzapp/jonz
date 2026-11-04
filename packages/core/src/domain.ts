@@ -132,6 +132,9 @@ export interface HouseRules {
   dealBudget: number;
 }
 
+/** What a new family's kids can each earn in a month, in minor units (create_house). */
+export const FAMILY_POCKET_CAP = 1000;
+
 export const DEFAULT_RULES: Omit<HouseRules, "timezone" | "currency"> = {
   weekStarts: 1,
   stakeMinor: 2000,

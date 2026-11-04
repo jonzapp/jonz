@@ -1,4 +1,15 @@
-import { FAMILY_COPY, HOUSE_PAGE_COPY, localDate, monthOf, monthWord, tableLines, type TableLine } from '@app/core';
+import {
+  FAMILY_COPY,
+  HOUSE_PAGE_COPY,
+  localDate,
+  monthOf,
+  monthWord,
+  pocketMoney,
+  POCKET_COPY,
+  tableLines,
+  type PocketView,
+  type TableLine,
+} from '@app/core';
 import type { UseQueryResult } from '@tanstack/react-query';
 import { InfoIcon, UserPlusIcon } from 'lucide-react-native';
 import { useState } from 'react';
@@ -27,7 +38,9 @@ type Span = 'week' | 'month';
  * the month's points (chosen from the menu in its header), what matters
  * about them in the meta line and the month's money trailing; your own row
  * tinted. Each row opens that housemate's page. Then inviting housemates and
- * how it all works, each a sheet.
+ * how it all works, each a sheet. A family's Table lists only the kids,
+ * with what each has earned this month trailing, and its sheet is how
+ * pocket money works.
  */
 export function TableSection({
   userId,
@@ -35,12 +48,15 @@ export function TableSection({
   table,
   stake,
   away,
+  pocket,
 }: {
   userId: string;
   view: HouseView;
   table: UseQueryResult<TableSnapshot>;
   stake: UseQueryResult<StakeRead>;
   away: UseQueryResult<AwayView>;
+  /** In a family: what each kid has earned, for the Table's money. */
+  pocket?: UseQueryResult<PocketView>;
 }) {
   const [span, setSpan] = useState<Span>('week');
   const [sheet, setSheet] = useState<'invite' | 'rules' | null>(null);
@@ -48,7 +64,12 @@ export function TableSection({
   const { snapshot, board, now } = view;
   const zone = snapshot.rules.timezone;
   const month = table.data?.month ?? monthOf(now, zone);
-  const rows = span === 'week' ? board.table : table.data?.monthTable;
+  const family = snapshot.house.kind === 'family';
+  const kids = new Set(snapshot.members.filter((m) => m.role !== 'admin').map((m) => m.userId));
+  const all = span === 'week' ? board.table : table.data?.monthTable;
+  // A family's Table is the kids'.
+  const rows = family ? all?.filter((row) => kids.has(row.userId)) : all;
+  const earned = pocket?.data?.earned;
   const lines = rows
     ? tableLines({
         rows,
@@ -61,7 +82,11 @@ export function TableSection({
         away: away.data?.periods ?? null,
         today: away.data?.today ?? localDate(now, zone),
         column,
-      })
+      }).map((line) =>
+        family
+          ? { ...line, money: earned ? pocketMoney(earned[line.userId] ?? 0, snapshot.rules.currency) : null, losing: false }
+          : line,
+      )
     : null;
 
   return (
@@ -103,7 +128,7 @@ export function TableSection({
           />
           <Row
             leading={<RowIcon icon={InfoIcon} />}
-            title={HOUSE_PAGE_COPY.rules}
+            title={family ? POCKET_COPY.howItWorks : HOUSE_PAGE_COPY.rules}
             // Whole on the narrowest phone, rather than cut at "How points and the…".
             titleLines={2}
             onPress={() => setSheet('rules')}
@@ -124,6 +149,7 @@ export function TableSection({
         onClose={() => setSheet(null)}
         rules={snapshot.rules}
         awayMakeup={snapshot.house.awayMakeup}
+        pocketCapMinor={family ? (snapshot.house.pocketCapMinor ?? 0) : undefined}
       />
     </View>
   );

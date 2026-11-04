@@ -18,6 +18,7 @@ export * from "./auth-email";
 export * from "./email-sign-in";
 export * from "./errors";
 export * from "./family";
+export * from "./pocket";
 export * from "./format";
 export * from "./history";
 export * from "./legal";

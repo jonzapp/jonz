@@ -79,6 +79,45 @@ one a parent makes for a kid, needs no OK and stands at once.
   parent who can answer and OK it / Not yet; a kid sees that it waits, with
   Undo on their own.
 
+## Step 3: pocket money and Pay day
+
+In a family the Stake becomes pocket money (the mockups' "House and Pay
+day"). Each John says what it earns. A kid earns it once their tick stands,
+up to the family's cap a month each. After the month a parent pays each kid
+outside Jonz (cash, a bank app, a kids' card) and taps **Paid**. Jonz never
+moves the money. Parents' own Johns earn nothing.
+
+- `johns.pay_minor`: what a John earns, set by a parent in the John editor
+  (**Earns**). Each dealt place keeps its own copy (`assignments.pay_minor`,
+  trigger `assignment_pay`), so changing a John changes only the week's open
+  places (`john_pay_changed`), never a month already earned.
+- `houses.pocket_cap_minor`: the most each kid can earn in a month. A family
+  starts at 10 (£10, $10) and a parent changes it in House rules (**Pocket
+  money a month**). `start_house_from` brings the cap and each John's pay.
+- `pocket_earnings`: one row per John a kid earned from, in the month it was
+  due, written by the trigger `pocket_earn` when a place settles done. The
+  amount is cut so the month stays within the cap. Whoever covered a John
+  earns it; a parent's place earns nothing. If a place stops being done (an
+  admin's reset) its earning goes.
+- `pay_pocket_money(p_house, p_kid, p_month)`: a parent only
+  (`parents_only`), for a month that's over (`not_pay_day_yet`), paying what
+  is still owed for it (`nothing_to_pay` when nothing is). It writes
+  `pocket_pays` and the Wall's `pocket_paid` ("Sam paid Maya £6.50 for
+  September."). Nobody can write either table directly.
+- House: a family's month card replaces the Stake: "October so far", what
+  the kids have earned, "Pay day is 1 Nov", then "Pay Maya £6.50 for
+  September" with **Paid Maya £6.50** for each month still to pay (the first
+  amber), and Pocket money history (`/house/pocket`). A kid sees only their
+  own, on its way, with no button. The line under the name says "2 parents,
+  2 kids, up to £10 a month each".
+- The Table lists only the kids, with what each has earned this month
+  trailing, and its sheet is How pocket money works.
+- Today: a kid's Johns say what they earn ("due Sun 18:00, earns 50p", and
+  "50p" trailing a row), and the page's line is "£4.50 earned so far in
+  October". A parent's OK on a John that earns says "OK, pay 20p".
+- Start a house: a family's defaults line starts "Pocket money up to GBP 10
+  a month each".
+
 ## Edge cases
 
 - Until `FAMILY_OPEN`, nobody sees the choice unless a link asks for a
@@ -101,3 +140,6 @@ storage as the session (localStorage on the web, SQLite-backed on phones).
 - [x] A kid's tick waits for a parent's OK with no closing time; Not yet sends it back (tests/db/parent-ok.test.ts).
 - [x] Nobody can dispute in a family, and a family can't be given a window.
 - [x] A parent's Today lists Needs your OK, and the sheet answers it.
+- [x] A kid's OK'd John earns what it says, up to the monthly cap; a parent's earns nothing (tests/db/pocket-money.test.ts).
+- [x] A parent taps Paid for a month that's over, once; nobody else can.
+- [x] House shows the month so far, Pay day and what's still to pay; the Table lists only the kids.

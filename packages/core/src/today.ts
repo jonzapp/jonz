@@ -3,13 +3,14 @@ import { differenceInCalendarDays, format } from "date-fns";
 
 import { currentOrNext, type AwayPeriod } from "./away";
 import { byDoneLatest, isOpen, TODAY_ORDER, type BoardItem, type DisputeView, type WeekBoard } from "./board";
-import { CREW_COPY, FOCUS_SHELL_COPY, JOHN_SHEET_COPY, NEXT_UP_COPY, PARENT_OK_COPY } from "./copy";
+import { CREW_COPY, FOCUS_SHELL_COPY, JOHN_SHEET_COPY, NEXT_UP_COPY, PARENT_OK_COPY, POCKET_COPY } from "./copy";
 import { andNames } from "./crew";
 import type { Currency, HouseRules } from "./domain";
 import { dateRange, dueInLine, firstName, pointsLabel, relative, sinceLabel, STATUS_LABEL, STATUS_MARK } from "./format";
 import { johnKind } from "./john-row";
 import { formatMoney } from "./money";
 import { canCover, coverOpensAt, type LiveStatus } from "./outcome";
+import { pocketMoney } from "./pocket";
 import type { TableRow } from "./points";
 import { oftenWords } from "./repeat";
 import type { StakeView } from "./stake";
@@ -233,7 +234,9 @@ export function nextUpMeta(item: BoardItem, rules: HouseRules, now: Date, room: 
   const due = NEXT_UP_COPY.due(dueInLine(item.dueAt, now, zone)) + (item.movedFrom ? `, ${NEXT_UP_COPY.beforeYouGo}` : "");
   const { late, missed } = forfeits(rules, room);
   const cost = late ? NEXT_UP_COPY.ifLate(late) : missed ? NEXT_UP_COPY.ifMissed(missed) : null;
-  return { kind, due: [due, cost].filter(Boolean).join(", "), overdue: null };
+  // A kid's John in a family says what it earns instead (there's nothing to lose).
+  const earns = item.payMinor ? POCKET_COPY.earns(pocketMoney(item.payMinor, rules.currency)) : null;
+  return { kind, due: [due, cost ?? earns].filter(Boolean).join(", "), overdue: null };
 }
 
 /** "1st", "2nd", "3rd", "4th", "11th", "22nd". */

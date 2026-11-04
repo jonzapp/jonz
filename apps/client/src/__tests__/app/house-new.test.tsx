@@ -114,8 +114,10 @@ describe('a family', () => {
     expect(screen.getByRole('header', { name: FAMILY_COPY.newHeading })).toBeOnTheScreen();
     expect(screen.getByText(FAMILY_COPY.whoLivesHere)).toBeOnTheScreen();
     expect(screen.getByRole('radio', { name: kindName('family') })).toBeChecked();
-    // A family has no stake, so the line starts with the week.
-    expect(screen.getByTestId('house-defaults')).toHaveTextContent(line('weeks start Monday', 'America/St Johns'));
+    // A family has no stake: the line starts with pocket money.
+    expect(screen.getByTestId('house-defaults')).toHaveTextContent(
+      line('Pocket money up to CAD 10 a month each', 'weeks start Monday', 'America/St Johns'),
+    );
     await fireEvent.changeText(screen.getByLabelText(FRONT_DOOR_COPY.name), 'The Parks');
     await fireEvent.press(screen.getByRole('button', { name: FAMILY_COPY.submit }));
     expect(create).toHaveBeenCalledWith({ name: 'The Parks', timezone: 'America/St_Johns', currency: 'CAD', weekStarts: 1, kind: 'family' });

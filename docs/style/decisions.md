@@ -6,7 +6,8 @@ pages are private artifacts on claude.ai.
 
 | Date | Decision | Where | Rule |
 | --- | --- | --- | --- |
-| 2026-11-04 | A parent's OK: in a family the John sheet's vote becomes OK it / Not yet for a parent, and Today's Needs you becomes Needs your OK (mockups approved 2026-11-04) | this PR | [words](words.md) |
+| 2026-11-04 | Pocket money: in a family each John says what it earns a kid ("earns 50p"), House's month card replaces the Stake with Pay day and a Paid button per kid, and the Table lists only the kids (mockups approved 2026-11-04) | this PR | [words](words.md) |
+| 2026-11-04 | A parent's OK: in a family the John sheet's vote becomes OK it / Not yet for a parent, and Today's Needs you becomes Needs your OK (mockups approved 2026-11-04) | #105 | [words](words.md) |
 | 2026-11-04 | Family houses: a Housemates / Family switch on the front door and "Who lives here?" at Start; in a family, admins are Parents and everyone else Kids, and the Stake is hidden (mockups approved 2026-11-04) | this PR | [words](words.md) |
 | 2026-11-04 | One word for each thing (the Jonz words): deal, a skip, Done / Not done, an invite and its code, split for forfeits, square, Mark done, photos, house rules, Who it's for; a test keeps retired words out of the copy | this PR | [words](words.md#one-word-for-each-thing) |
 | 2026-11-01 | Help is a question mark in every tab's title bar: the page's tour, the other tours, and Report a problem. Tours are short (five steps at most), started by you, offered once to someone new, and saved as seen | this PR | [layout](layout.md#the-title-bar), [states](states.md#tours) |

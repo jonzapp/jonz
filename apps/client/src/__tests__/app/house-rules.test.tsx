@@ -179,6 +179,21 @@ describe('an admin', () => {
     expect(screen.getAllByTestId('rule')[6]).toHaveTextContent(/within 48 hours/);
   });
 
+  it("in a family, sets the most each kid can earn in a month, in place of the stake", async () => {
+    const base = snapshot();
+    (loadHouse as jest.Mock).mockResolvedValue(
+      snapshot({
+        house: { ...base.house, kind: 'family', pocketCapMinor: 1000 },
+        rules: { ...base.rules, stakeMinor: 0, lateForfeitMinor: 0, missedForfeitMinor: 0, disputeHours: 0 },
+      }),
+    );
+    await edit();
+    expect(screen.queryByTestId('house-stake')).toBeNull();
+    await fireEvent.changeText(screen.getByTestId('house-pocket'), '12.50');
+    await fireEvent.press(screen.getByTestId('save-rules'));
+    expect(updateHouse).toHaveBeenCalledWith('h1', expect.objectContaining({ pocketCapMinor: 1250 }));
+  });
+
   it('picks how the house shares Johns and its budget, each saying what it does to the list', async () => {
     await edit();
     const workload = within(screen.getByTestId('rules-workload'));
