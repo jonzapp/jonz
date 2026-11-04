@@ -8,17 +8,17 @@ const HEIGHT = 160;
 const LEFT = 36;
 const RIGHT = 44;
 
-/** A round top for the scale: 4, 40, 120, 1,200, so the gridlines fall on plain numbers. */
+/** A round, even top for the scale (4, 40, 120, 1,200), so the gridlines at half and the top fall on plain numbers. */
 function top(max: number): number {
   if (max <= 4) return 4;
   const step = 10 ** Math.floor(Math.log10(max));
-  for (const m of [1, 1.2, 1.6, 2, 3, 4, 6, 8, 10]) if (m * step >= max) return m * step;
+  for (const m of [1, 1.2, 1.6, 2, 4, 6, 8, 10]) if (m * step >= max) return m * step;
   return 10 * step;
 }
 
 /**
  * One line in ink over a few weeks, with the latest value labelled at its
- * end, gridlines at four plain numbers, and the first and last weeks named
+ * end, gridlines at nought, half and the top, and the first and last weeks named
  * under it. The figures are said in words as well, for a screen reader.
  */
 export function WeekChart({
@@ -40,7 +40,7 @@ export function WeekChart({
   const plot = Math.max(0, width - LEFT - RIGHT);
   const x = (i: number) => LEFT + (values.length > 1 ? (i / (values.length - 1)) * plot : plot);
   const y = (v: number) => SPACE.sm + (1 - v / max) * (HEIGHT - 2 * SPACE.sm);
-  const grid = [0, max / 3, (2 * max) / 3, max].map((v) => Math.round(v));
+  const grid = [0, max / 2, max];
   const latest = values[values.length - 1] ?? 0;
   return (
     <View
