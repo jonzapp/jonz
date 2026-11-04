@@ -20,7 +20,7 @@ create index if not exists assignments_house_due on public.assignments (house_id
 -- trend. "Active" is a house where someone ticked a John in the window.
 -- On time counts Johns that came due in the window and were settled: done
 -- or covered is on time, late and missed aren't, excused doesn't count.
-create function public.owner_overview(p_days integer default 7)
+create or replace function public.owner_overview(p_days integer default 7)
 returns jsonb
 language plpgsql
 stable
@@ -124,7 +124,7 @@ $$;
 -- starts with them, or someone in it by name or email), its Pass (paid,
 -- trial, none), how lately it was used (this week, this month, quiet for a
 -- month), and when it started.
-create function public.owner_houses_match(
+create or replace function public.owner_houses_match(
   p_q text default '',
   p_pass text default null,
   p_active text default null,
@@ -195,7 +195,7 @@ $$;
 
 -- A page of them, most recently active first (never-used houses last), after
 -- the last one shown (its sort_at and id).
-create function public.owner_houses_page(
+create or replace function public.owner_houses_page(
   p_q text default '',
   p_pass text default null,
   p_active text default null,
@@ -233,7 +233,7 @@ end;
 $$;
 
 -- How many match.
-create function public.owner_houses_count(
+create or replace function public.owner_houses_count(
   p_q text default '',
   p_pass text default null,
   p_active text default null,
@@ -253,7 +253,7 @@ $$;
 -- One house, read only: its settings that matter for support, its Pass and
 -- who pays, and each person with their role, on-time share over four weeks,
 -- time away now or next, and a move-out date. Null when there's no such house.
-create function public.owner_house(p_house uuid)
+create or replace function public.owner_house(p_house uuid)
 returns jsonb
 language plpgsql
 stable
