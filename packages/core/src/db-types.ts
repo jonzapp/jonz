@@ -138,6 +138,7 @@ export type Database = {
       assignments: {
         Row: {
           absent_at: string | null
+          awaits_ok: boolean
           category: string
           changed_at: string | null
           changed_by: string | null
@@ -158,6 +159,9 @@ export type Database = {
           john_id: string | null
           name: string
           needs_photo: boolean
+          ok_asked_at: string | null
+          okayed_at: string | null
+          okayed_by: string | null
           outcome: string | null
           photo_path: string | null
           planned_at: string | null
@@ -169,6 +173,7 @@ export type Database = {
         }
         Insert: {
           absent_at?: string | null
+          awaits_ok?: boolean
           category: string
           changed_at?: string | null
           changed_by?: string | null
@@ -189,6 +194,9 @@ export type Database = {
           john_id?: string | null
           name: string
           needs_photo?: boolean
+          ok_asked_at?: string | null
+          okayed_at?: string | null
+          okayed_by?: string | null
           outcome?: string | null
           photo_path?: string | null
           planned_at?: string | null
@@ -200,6 +208,7 @@ export type Database = {
         }
         Update: {
           absent_at?: string | null
+          awaits_ok?: boolean
           category?: string
           changed_at?: string | null
           changed_by?: string | null
@@ -220,6 +229,9 @@ export type Database = {
           john_id?: string | null
           name?: string
           needs_photo?: boolean
+          ok_asked_at?: string | null
+          okayed_at?: string | null
+          okayed_by?: string | null
           outcome?: string | null
           photo_path?: string | null
           planned_at?: string | null
@@ -1813,6 +1825,10 @@ export type Database = {
           p_target: Json
         }
         Returns: Json
+      }
+      answer_tick: {
+        Args: { p_assignment: string; p_ok: boolean }
+        Returns: string
       }
       answer_swap: {
         Args: { p_accept: boolean; p_offer: string }

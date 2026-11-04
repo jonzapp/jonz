@@ -24,6 +24,8 @@ export interface AssignmentFacts {
   excused: boolean;
   /** A dispute has been raised on the current tick and not yet resolved. */
   disputeOpen: boolean;
+  /** In a family: a kid's tick waiting for a parent's OK. It holds until a parent answers, with no closing time. */
+  awaitsOk?: boolean;
   weekEndsAt: Date;
   /**
    * On a John due on a day: when it turns missed, its due time plus the
@@ -73,7 +75,7 @@ export function settleOutcome(
     return "missed";
   }
   if (a.doneAt) {
-    if (a.disputeOpen) return null;
+    if (a.disputeOpen || a.awaitsOk) return null;
     if (now < standsAt(a.doneAt, disputeHours)) return null;
     if (a.coveredBy) return "covered";
     return a.doneAt <= a.dueAt ? "done" : "late";
@@ -87,7 +89,7 @@ export type LiveStatus =
   | "upcoming" // not done, due more than a day away
   | "due-soon" // not done, due within a day
   | "overdue" // not done, past due, week still open
-  | "checking" // ticked, inside the dispute window
+  | "checking" // ticked, inside the dispute window (or, in a family, waiting for a parent's OK)
   | "disputed" // ticked, dispute open (a place its roll call left off, too)
   | Outcome; // "covered" from the moment a housemate covers it, while it's checked too; "missed" from a roll call that left its holder off
 

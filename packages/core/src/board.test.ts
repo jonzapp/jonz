@@ -421,7 +421,7 @@ describe("todayView", () => {
   });
 
   it("is empty for someone with nothing this week", () => {
-    expect(todayView(board([]), ME)).toEqual({ mine: [], left: 0, toVote: [], toCover: [] });
+    expect(todayView(board([]), ME)).toEqual({ mine: [], left: 0, toVote: [], toCover: [], toOk: [] });
   });
 });
 

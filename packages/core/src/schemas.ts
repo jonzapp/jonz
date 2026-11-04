@@ -173,6 +173,10 @@ export function disputeProblem(issues: readonly { path: readonly PropertyKey[]; 
 export const CastVote = z.object({ uphold: z.boolean() });
 export type CastVote = z.infer<typeof CastVote>;
 
+/** POST /api/oks/:assignmentId: a parent answers a kid's tick (family step 2). `ok` false is Not yet. */
+export const AnswerTick = z.object({ ok: z.boolean() });
+export type AnswerTick = z.infer<typeof AnswerTick>;
+
 /** POST /api/deal: hand out this week's Johns, or re-deal a week nobody has ticked in. */
 export const DealRequest = z.object({ houseId: z.uuid() });
 export type DealRequest = z.infer<typeof DealRequest>;
