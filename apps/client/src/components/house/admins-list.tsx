@@ -1,4 +1,4 @@
-import { ADMINS_COPY, firstName, HISTORY_COPY } from '@app/core';
+import { firstName, HISTORY_COPY, roleCopy } from '@app/core';
 import { ShieldCheckIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -35,6 +35,7 @@ export function AdminsList({ houseId, userId, view }: { houseId: string; userId:
   const admins = members.filter((m) => m.role === 'admin');
   const others = members.filter((m) => m.role !== 'admin');
   const amAdmin = view.me?.role === 'admin';
+  const ADMINS_COPY = roleCopy(view.snapshot.house.kind).admins;
 
   function change(person: Housemate, to: 'admin' | 'member') {
     const name = firstName(person.name);

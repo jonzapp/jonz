@@ -18,10 +18,15 @@ beforeEach(() => jest.clearAllMocks());
 
 describe('getMyHouse', () => {
   it('reads your house through your own session', async () => {
-    query.maybeSingle.mockResolvedValue({ data: { house_id: 'h1', houses: { name: 'Flat 3' } }, error: null });
-    await expect(getMyHouse('u1')).resolves.toEqual({ id: 'h1', name: 'Flat 3' });
+    query.maybeSingle.mockResolvedValue({ data: { house_id: 'h1', houses: { name: 'Flat 3', kind: 'housemates' } }, error: null });
+    await expect(getMyHouse('u1')).resolves.toEqual({ id: 'h1', name: 'Flat 3', kind: 'housemates' });
     expect(supabase.from).toHaveBeenCalledWith('members');
     expect(query.eq).toHaveBeenCalledWith('user_id', 'u1');
+  });
+
+  it('says when your house is a family', async () => {
+    query.maybeSingle.mockResolvedValue({ data: { house_id: 'h1', houses: { name: 'The Parks', kind: 'family' } }, error: null });
+    await expect(getMyHouse('u1')).resolves.toMatchObject({ kind: 'family' });
   });
 
   it('is null in no house, and fails when it cannot read', async () => {
@@ -34,8 +39,8 @@ describe('getMyHouse', () => {
 
 describe('houseByCode', () => {
   it('tidies the code before asking', async () => {
-    rpc.mockResolvedValue({ data: [{ id: 'h1', name: 'Flat 3', members: 3 }], error: null });
-    await expect(houseByCode('ab3d-ef7h')).resolves.toEqual({ id: 'h1', name: 'Flat 3', members: 3 });
+    rpc.mockResolvedValue({ data: [{ id: 'h1', name: 'Flat 3', members: 3, kind: 'housemates' }], error: null });
+    await expect(houseByCode('ab3d-ef7h')).resolves.toEqual({ id: 'h1', name: 'Flat 3', members: 3, kind: 'housemates' });
     expect(rpc).toHaveBeenCalledWith('house_by_code', { p_code: 'AB3DEF7H' });
   });
 
@@ -73,7 +78,14 @@ describe('createHouse', () => {
       p_timezone: 'Europe/London',
       p_currency: 'GBP',
       p_week_starts: 1,
+      p_kind: 'housemates',
     });
+  });
+
+  it('sets up a family when asked', async () => {
+    rpc.mockResolvedValue({ data: 'h1', error: null });
+    await createHouse({ ...house, kind: 'family' });
+    expect(rpc).toHaveBeenCalledWith('create_house', expect.objectContaining({ p_kind: 'family' }));
   });
 
   it("asks for a name before asking the database, and says the database's refusal in words", async () => {

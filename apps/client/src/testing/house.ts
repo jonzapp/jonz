@@ -31,7 +31,7 @@ export function assignment(overrides: Partial<AssignmentRow> = {}): AssignmentRo
 
 export function snapshot(overrides: Partial<HouseSnapshot> = {}): HouseSnapshot {
   return {
-    house: { id: 'h1', name: 'Flat 3', joinCode: 'AB3DEF7H', everDealt: true, awayMakeup: 100, settleIn: 'jonz', pass: { plan: 'founding', until: null, buyerId: null } },
+    house: { id: 'h1', name: 'Flat 3', joinCode: 'AB3DEF7H', everDealt: true, kind: 'housemates', awayMakeup: 100, settleIn: 'jonz', pass: { plan: 'founding', until: null, buyerId: null } },
     rules: {
       timezone: 'Europe/London',
       currency: 'GBP',

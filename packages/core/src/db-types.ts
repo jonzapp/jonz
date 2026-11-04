@@ -750,6 +750,7 @@ export type Database = {
           first_dealt_at: string | null
           id: string
           join_code: string
+          kind: string
           late_forfeit_minor: number
           late_hours: number
           missed_forfeit_minor: number
@@ -775,6 +776,7 @@ export type Database = {
           first_dealt_at?: string | null
           id?: string
           join_code?: string
+          kind?: string
           late_forfeit_minor?: number
           late_hours?: number
           missed_forfeit_minor?: number
@@ -800,6 +802,7 @@ export type Database = {
           first_dealt_at?: string | null
           id?: string
           join_code?: string
+          kind?: string
           late_forfeit_minor?: number
           late_hours?: number
           missed_forfeit_minor?: number
@@ -1780,6 +1783,7 @@ export type Database = {
       create_house: {
         Args: {
           p_currency: string
+          p_kind?: string
           p_name: string
           p_timezone: string
           p_week_starts: number
@@ -1827,6 +1831,7 @@ export type Database = {
         Args: { p_code: string }
         Returns: {
           id: string
+          kind: string
           members: number
           name: string
         }[]

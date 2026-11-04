@@ -28,6 +28,7 @@ export function SetupSection({ houseId, userId, view }: { houseId: string; userI
 
   const values = houseSetupValues({
     rules: view.snapshot.rules,
+    kind: view.snapshot.house.kind,
     johns: list.data?.johns,
     groups: list.data?.groups.length,
     away: away.data?.periods,

@@ -1,6 +1,7 @@
 import {
   AWAY_MAKEUP,
   checkRules,
+  familyHides,
   CURRENCIES,
   COVER_GRACE_HOURS,
   LATE_HOURS,
@@ -17,6 +18,7 @@ import {
   STEADY_COPY,
   DEAL_MODES,
   type Currency,
+  type HouseKind,
   type HouseRules,
   type IsoDow,
   type RulesDraft,
@@ -65,6 +67,8 @@ export interface RulesValues {
   awayMakeup: number;
   settleIn: SettleIn;
   memberIds: readonly string[];
+  /** A family has no stake, so its Money section is only the currency. */
+  kind?: HouseKind;
 }
 
 /**
@@ -107,7 +111,7 @@ export function useRulesForm(houseId: string, values: RulesValues, onSaved: () =
     else setProblems({ [rulesRefusalField(refusal)]: refusal });
   }
 
-  return { draft, set, problems, pending: move.pending, changed: rulesChanged(draft, start), save, houseId, memberIds: values.memberIds };
+  return { draft, set, problems, pending: move.pending, changed: rulesChanged(draft, start), save, houseId, memberIds: values.memberIds, kind: values.kind ?? 'housemates' };
 }
 
 export type RulesFormState = ReturnType<typeof useRulesForm>;
@@ -131,11 +135,13 @@ export function RulesForm({ form }: { form: RulesFormState }) {
     ? budget.choices.map((c) => ({ value: c.budget, label: c.label, meta: c.suggested ? `${STEADY_COPY.suggested} ${c.effect}` : c.effect }))
     : BUDGET_PLAIN;
 
+  const noStake = familyHides(form.kind).stake;
   const money = [
     { key: 'stake', label: RULES_COPY.stake(symbol), testID: 'house-stake' },
     { key: 'late', label: RULES_COPY.late(symbol), testID: 'house-late' },
     { key: 'missed', label: RULES_COPY.missed(symbol), testID: 'house-missed' },
   ] as const;
+  const moneyFields = noStake ? [] : money;
 
   return (
     <>
@@ -170,7 +176,7 @@ export function RulesForm({ form }: { form: RulesFormState }) {
           onChange={(currency: Currency) => set({ currency })}
           disabled={pending}
         />
-        {money.map((m) => (
+        {moneyFields.map((m) => (
           <GroupItem key={m.key}>
             <Field
               label={m.label}
@@ -183,13 +189,15 @@ export function RulesForm({ form }: { form: RulesFormState }) {
             />
           </GroupItem>
         ))}
-        <PickRow
-          label={RULES_COPY.settleIn}
-          options={SETTLE_OPTIONS}
-          value={v.settleIn}
-          onChange={(settleIn: SettleIn) => set({ settleIn })}
-          disabled={pending}
-        />
+        {noStake ? null : (
+          <PickRow
+            label={RULES_COPY.settleIn}
+            options={SETTLE_OPTIONS}
+            value={v.settleIn}
+            onChange={(settleIn: SettleIn) => set({ settleIn })}
+            disabled={pending}
+          />
+        )}
       </Section>
       <View style={styles.noted}>
         <Section label={SETUP_COPY.fairness} testID="rules-fairness">
