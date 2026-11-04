@@ -18,6 +18,7 @@ export function pageTitle(page?: string): string {
 export const PAGE_TITLE = {
   signIn: "Sign in",
   newHouse: "Start your house",
+  newFamily: "Start your family",
   join: "Join a house",
   today: "Today",
   week: "This week",
@@ -101,6 +102,68 @@ export const NEW_HOUSE_COPY = {
   weekStarts: "The week starts on",
   timezone: "Time zone",
   busy: "Setting up…",
+} as const;
+
+/**
+ * A family house's words (docs/specs/family-houses.md): the front door's
+ * Family side, "Who lives here?" when a house starts, and the roles, where
+ * an admin is a parent and everyone else a kid. Same roles underneath.
+ */
+export const FAMILY_COPY = {
+  /** The front door's switch, and the choice when a house starts. */
+  kinds: { housemates: "Housemates", family: "Family" },
+  switchLabel: "Who it’s for",
+  door: {
+    headline: "Jonz: chores that earn pocket money.",
+    points: [
+      { key: "list", body: "List the jobs around the house. We call them Johns." },
+      { key: "share", body: "Jonz deals them out by age, or you do." },
+      { key: "stake", body: "Kids tick them off, you say OK, and each one earns. Pay day adds it up every month." },
+    ],
+    start: "Start a family",
+  },
+  whoLivesHere: "Who lives here?",
+  kindBody: {
+    housemates: "Equals sharing a place. Everyone puts in the same each month.",
+    family: "Parents deal out Johns and say OK. Kids earn pocket money.",
+  },
+  newHeading: "Start your family",
+  newIntro: "You’ll be a parent. Next you add the Johns and your kids.",
+  submit: "Start the family",
+  /** A join link to a family. */
+  /** House's Invite row, in a family. */
+  invite: "Invite your family",
+  livesHere: (people: number) =>
+    `${people} ${people === 1 ? "person is" : "people are"} in this family. Join and you’re dealt Johns from next week.`,
+} as const;
+
+/** The words for the two roles, by kind of house: what an admin and everyone else are called. */
+export const ROLE_WORDS = {
+  housemates: { admin: "admin", admins: "admins", member: "housemate", Admin: "Admin", Admins: "Admins", Member: "Housemate" },
+  family: { admin: "parent", admins: "parents", member: "kid", Admin: "Parent", Admins: "Parents", Member: "Kid" },
+} as const;
+
+/** House › Rules' list of parents, in a family (ADMINS_COPY for housemates). */
+export const PARENTS_COPY = {
+  title: "Parents",
+  meta: (admins: number, everyone: number) => `${admins} of ${everyone}`,
+  note: "Parents change the list, the rules and who’s in, and fix mistakes. What they change is posted on the Wall.",
+  you: (name: string) => `${name} (you)`,
+  add: "Add a parent",
+  addTitle: "Add a parent",
+  addBody: "They can change the list and the rules, and fix anyone’s mistakes.",
+  everyoneIs: "Everyone here is a parent already.",
+  make: (name: string) => `Make ${name} a parent`,
+  remove: "Remove",
+  removeLabel: (name: string) => `Remove ${name} as a parent`,
+  onlyAdmin: "The only parent can’t step down. Leaving hands the family over.",
+  /** On a person's page. */
+  makeParent: "Make a parent",
+  makeKid: "Make a kid",
+  makeKidMeta: "Stops being a parent",
+  /** Leaving, as the only parent. */
+  lastParent: "You’re the only parent. Pick who looks after the family when you go.",
+  handOver: (name: string) => `Make ${name} a parent and leave`,
 } as const;
 
 /** An invite: the web's /join/[code] and the app's. */

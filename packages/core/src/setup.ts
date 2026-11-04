@@ -3,7 +3,8 @@ import { isoDayOf, shiftMonth, type AwayPeriod } from "./away";
 import type { BoardItem, JohnDef } from "./board";
 import { CREW_COPY, FOCUS_SHELL_COPY, GROUPS_COPY, JOHN_LIST_COPY, RULES_COPY, SETUP_COPY, STEADY_COPY } from "./copy";
 import { MAKEUP_LABEL } from "./deal";
-import { CATEGORIES, CATEGORY_LABEL, DOW_LABEL, type Category, type Currency, type DealMode, type HouseRules, type IsoDow, type SettleIn } from "./domain";
+import { CATEGORIES, CATEGORY_LABEL, DOW_LABEL, type Category, type Currency, type DealMode, type HouseKind, type HouseRules, type IsoDow, type SettleIn } from "./domain";
+import { familyHides } from "./family";
 import { humanError } from "./errors";
 import { dateRange, firstName, joinRange, monthLabel, pointsLabel } from "./format";
 import { formatMoney, formatSigned, moneyInput, parseMoney } from "./money";
@@ -99,7 +100,13 @@ function forfeit(minor: number, currency: Currency): string {
 }
 
 /** The house rules in plain words, one line each, as everyone reads them. */
-export function rulesRows(rules: HouseRules, awayMakeup: number, settleIn?: SettleIn): LabelValue[] {
+export function rulesRows(rules: HouseRules, awayMakeup: number, settleIn?: SettleIn, kind: HouseKind = "housemates"): LabelValue[] {
+  // A family has no stake, so it reads none of the money's rows.
+  if (familyHides(kind).stake) {
+    return rulesRows(rules, awayMakeup).filter(
+      (row) => row.label !== SETUP_COPY.stake && row.label !== SETUP_COPY.late && row.label !== SETUP_COPY.missed,
+    );
+  }
   const rows: LabelValue[] = [
     { label: STEADY_COPY.mode, value: STEADY_COPY.modeName[rules.dealMode] },
     { label: STEADY_COPY.budget, value: STEADY_COPY.budgetEach(rules.dealBudget) },

@@ -1,4 +1,4 @@
-import { ADMINS_COPY, HISTORY_COPY, PAGE_TITLE } from '@app/core';
+import { ADMINS_COPY, HISTORY_COPY, PAGE_TITLE, PARENTS_COPY, SETUP_COPY } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 
 import { loadHouse } from '@/api/board';
@@ -87,4 +87,30 @@ it('lets an admin step another down, and shows housemates the list alone', async
   const theirs = await open();
   expect(theirs.queryByTestId('add-admin')).toBeNull();
   expect(theirs.queryByTestId('remove-admin')).toBeNull();
+});
+
+describe('in a family', () => {
+  beforeEach(() => {
+    const family = snapshot({ members: [...snapshot().members, ADA] });
+    (loadHouse as jest.Mock).mockResolvedValue({ ...family, house: { ...family.house, kind: 'family' } });
+  });
+
+  it('calls the admins parents, and adds a parent from the kids', async () => {
+    const list = await open();
+    expect(within(screen.getByTestId('admins-section')).getByText(PARENTS_COPY.title)).toBeOnTheScreen();
+    expect(screen.getByText(new RegExp(PARENTS_COPY.onlyAdmin))).toBeOnTheScreen();
+    await fireEvent.press(list.getByRole('button', { name: PARENTS_COPY.add }));
+    const sheet = within(screen.getByTestId('add-admin-sheet'));
+    await fireEvent.press(sheet.getByRole('radio', { name: 'Ada' }));
+    await fireEvent.press(sheet.getByRole('button', { name: PARENTS_COPY.make('Ada') }));
+    await waitFor(() => expect(setRole).toHaveBeenCalledWith('h1', 'ada', 'admin'));
+  });
+
+  it('leaves the stake and forfeits out of the rules', async () => {
+    await open();
+    const rules = within(screen.getByTestId('rules-panel'));
+    expect(rules.queryByText(SETUP_COPY.stake)).not.toBeOnTheScreen();
+    expect(rules.queryByText(SETUP_COPY.missed)).not.toBeOnTheScreen();
+    expect(rules.getByText(SETUP_COPY.disputes)).toBeOnTheScreen();
+  });
 });

@@ -1,4 +1,4 @@
-import { HOUSE_LOWER_COPY, PAGE_TITLE } from '@app/core';
+import { PAGE_TITLE, roleCopy } from '@app/core';
 import { StyleSheet, View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
@@ -59,7 +59,7 @@ function YouBody({ houseId, userId, view }: { houseId: string; userId: string; v
         <Avatar name={me.name} userId={userId} me size={PHOTO} />
         <View style={styles.words}>
           <Lead>{me.name}</Lead>
-          <Meta>{HOUSE_LOWER_COPY.youIn(view.snapshot.house.name, me.role === 'admin')}</Meta>
+          <Meta>{roleCopy(view.snapshot.house.kind).youIn(view.snapshot.house.name, me.role === 'admin')}</Meta>
         </View>
       </View>
       <Pair

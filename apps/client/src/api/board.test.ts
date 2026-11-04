@@ -84,6 +84,7 @@ it('reads the house, its people and this week in one go', async () => {
   const snapshot = await loadHouse('h1', NOW);
 
   expect(snapshot.house).toEqual({ id: 'h1', name: 'Flat 3', joinCode: 'AB3DEF7H', everDealt: true,
+    kind: 'housemates',
     awayMakeup: 100,
     settleIn: 'jonz',
     pass: { plan: 'trial', until: new Date('2026-11-01T09:00:00Z'), buyerId: null },

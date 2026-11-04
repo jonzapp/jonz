@@ -1,4 +1,4 @@
-import { FOCUS_SHELL_COPY, PAGE_TITLE, PERSON_COPY, SECTION_LABEL } from '@app/core';
+import { FOCUS_SHELL_COPY, PAGE_TITLE, SECTION_LABEL } from '@app/core';
 import { useLocalSearchParams } from 'expo-router';
 import { UserRoundXIcon } from 'lucide-react-native';
 
@@ -15,6 +15,7 @@ import { useMembership } from '@/hooks/use-membership';
 import { usePull, useReadOnFocus } from '@/hooks/use-refresh';
 import { useStake } from '@/hooks/use-stake';
 import { useTable } from '@/hooks/use-table';
+import { useRoleCopy } from '@/hooks/use-kind';
 
 /**
  * A housemate's page, pushed from a row of House's Table: their record,
@@ -40,6 +41,7 @@ function PersonFor({ houseId, userId, personId }: { houseId: string; userId: str
     Promise.all([query.refetch(), table.refetch(), stake.refetch(), away.refetch()]),
   );
   const person = view?.snapshot.members.find((m) => m.userId === personId) ?? null;
+  const roles = useRoleCopy();
   // Someone who isn't in the house any more is named as such, not as House itself.
   const title = person?.name ?? (view ? FOCUS_SHELL_COPY.formerHousemate : PAGE_TITLE.house);
 
@@ -48,7 +50,7 @@ function PersonFor({ houseId, userId, personId }: { houseId: string; userId: str
       bar={
         <TitleBar
           title={title}
-          sub={person ? PERSON_COPY.sub(person.role === 'admin', person.userId === userId) : undefined}
+          sub={person ? roles.sub(person.role === 'admin', person.userId === userId) : undefined}
           back="/house"
           backLabel={SECTION_LABEL.house}
         />
