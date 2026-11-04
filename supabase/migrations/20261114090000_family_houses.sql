@@ -1,4 +1,5 @@
 -- Family houses, step 1 of the family version (docs/specs/family-houses.md).
+-- Safe to run twice (a preview database may have run an earlier copy).
 --
 -- A house is now one of two kinds: housemates (everything as before) or a
 -- family. A family is the same house underneath with its own words (admins
@@ -12,10 +13,11 @@
 -- --- 1. houses.kind --------------------------------------------------------------------------
 
 alter table public.houses
-  add column kind text not null default 'housemates' check (kind in ('housemates', 'family'));
+  add column if not exists kind text not null default 'housemates' check (kind in ('housemates', 'family'));
 
 -- A family never stakes or forfeits money. Enforced here, so a family's
 -- rules can't be given a stake by any route.
+alter table public.houses drop constraint if exists houses_family_no_stake;
 alter table public.houses
   add constraint houses_family_no_stake check (
     kind = 'housemates' or (stake_minor = 0 and late_forfeit_minor = 0 and missed_forfeit_minor = 0)
@@ -26,9 +28,9 @@ alter table public.houses
 -- As 20261107090000, with the kind. A family starts with no stake and no
 -- forfeits. The old four-argument version goes, so a call without the kind
 -- still finds exactly one function (the kind defaults to housemates).
-drop function public.create_house(text, text, text, smallint);
+drop function if exists public.create_house(text, text, text, smallint);
 
-create function public.create_house(
+create or replace function public.create_house(
   p_name text,
   p_timezone text,
   p_currency text,
@@ -115,7 +117,7 @@ $$;
 
 -- As 20261027094000, plus the kind, so the join page can speak to a family.
 -- A new column in what it returns means a new function, so the old one goes.
-drop function public.house_by_code(text);
+drop function if exists public.house_by_code(text);
 
 create function public.house_by_code(p_code text)
 returns table (id uuid, name text, members bigint, kind text)
