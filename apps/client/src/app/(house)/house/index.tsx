@@ -65,7 +65,7 @@ function HouseFor({ houseId, userId }: { houseId: string; userId: string }) {
   );
 
   const snapshot = view?.snapshot;
-  const bar = <TitleBar title={snapshot?.house.name ?? PAGE_TITLE.house} ask={memberCan(view?.me, 'johns.edit')} />;
+  const bar = <TitleBar title={snapshot?.house.name ?? PAGE_TITLE.house} ask={memberCan(view?.me, 'house.read')} />;
 
   return (
     <Screen bar={bar} fills refreshing={refreshing} onRefresh={pull} testID="house-screen">

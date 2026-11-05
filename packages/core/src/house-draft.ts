@@ -333,6 +333,21 @@ export function draftPlan(draft: HouseDraft, keep: readonly number[], existingGr
   return { makeGroups, johns, everyoneForNow };
 }
 
+/** The most Jonz says in one turn, so a runaway reply can't fill the screen. Room for a short list. */
+export const REPLY_MAX = 1500;
+
+/** Jonz's reply as the chat shows it: spaces tidied, line breaks kept (at most one blank line), cut to fit. */
+export function tidyReply(reply: string): string {
+  return reply
+    .split("\n")
+    .map((line) => line.replace(/[ \t\f\v\r]+/g, " ").trim())
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim()
+    .slice(0, REPLY_MAX)
+    .trim();
+}
+
 /** What Claude asks with, before it's checked. */
 export interface RawAsk {
   kind?: unknown;
@@ -445,19 +460,25 @@ export function draftChanges(base: HouseDraft | null, next: HouseDraft): DraftCh
   return changes;
 }
 
-/** What changed on a John, in words, for under its name: "was every week, was 3 pts". */
+/**
+ * What changed on a John, before → after, for under its (new) name on the
+ * card: "Every week → every 2 weeks, Sun 21:00 → Sat 21:00, 3 → 4 pts". A new
+ * name says what it was called.
+ */
 export function changedLine(before: DraftedJohn, after: DraftedJohn): string {
   const parts: string[] = [];
+  const lower = (s: string) => s.charAt(0).toLocaleLowerCase() + s.slice(1);
+  const arrow = (was: string, now: string) => `${was} → ${lower(now)}`;
   if (before.name !== after.name) parts.push(`was “${before.name}”`);
-  const timing = (j: DraftedJohn) =>
-    j.when === "on_call"
-      ? "on call"
-      : `${oftenWords(j).toLocaleLowerCase()}, ${dueWords(j, j.dueTime, DOW_LABEL[j.dueDow as IsoDow].slice(0, 3))}`;
-  if (timing(before) !== timing(after)) parts.push(`was ${timing(before)}`);
-  if (before.points !== after.points) parts.push(`was ${before.points} ${before.points === 1 ? "pt" : "pts"}`);
-  if (before.crew !== after.crew) parts.push(`was ${CREW_COPY.choice(before.crew).toLocaleLowerCase()}`);
-  if (before.group !== after.group) parts.push(`was ${before.group ?? "everyone’s"}`);
-  if (before.category !== after.category) parts.push(`was ${CATEGORY_LABEL[before.category]}`);
+  // How often and when, each only if it moved: "Every week → every 2 weeks", "Sat 18:00 → Sun 10:00".
+  const often = (j: DraftedJohn) => (j.when === "on_call" ? "On call" : oftenWords(j));
+  const due = (j: DraftedJohn) => dueWords(j, j.dueTime, DOW_LABEL[j.dueDow as IsoDow].slice(0, 3));
+  if (often(before) !== often(after)) parts.push(arrow(often(before), often(after)));
+  if (before.when !== "on_call" && after.when !== "on_call" && due(before) !== due(after)) parts.push(`${due(before)} → ${due(after)}`);
+  if (before.points !== after.points) parts.push(`${before.points} → ${after.points} ${after.points === 1 ? "pt" : "pts"}`);
+  if (before.crew !== after.crew) parts.push(arrow(CREW_COPY.choice(before.crew), CREW_COPY.choice(after.crew)));
+  if (before.group !== after.group) parts.push(arrow(before.group ?? "Everyone’s", after.group ?? "everyone’s"));
+  if (before.category !== after.category) parts.push(arrow(CATEGORY_LABEL[before.category], CATEGORY_LABEL[after.category]));
   return parts.join(", ");
 }
 

@@ -30,8 +30,8 @@ import {
   type StarterKind,
 } from '@app/core';
 import { router } from 'expo-router';
-import { ArrowUpIcon, CheckIcon } from 'lucide-react-native';
-import { useRef, useState } from 'react';
+import { ArrowUpIcon, CheckIcon, MinusIcon, PencilIcon, PlusIcon } from 'lucide-react-native';
+import { useMemo, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type ScrollViewInstance } from 'react-native';
 
 import { applyDraft, sendChat } from '@/api/draft';
@@ -80,8 +80,13 @@ const NO_RING = Platform.OS === 'web' ? ({ outlineStyle: 'none' } as object) : n
 const SEND = 34;
 const SEND_INSET = (LINE - SEND) / 2;
 
-/** How many of the draft's Johns show before "See all". */
+/** How many of a new house's drafted Johns show before "See all". */
 const FOLDED = 3;
+/** How many changes to a list show before "See all": most asks are a few, and all of them show. */
+const CHANGES_FOLDED = 6;
+
+/** The card's sections, in the order it shows them: what goes first, so it's never missed. */
+const KINDS = ['remove', 'change', 'add'] as const;
 
 /** "Sam", "Sam and Priya", "Sam, Priya and Tom". */
 function namesList(names: readonly string[]): string {
@@ -119,6 +124,7 @@ export function SetupChat({
   people,
   me,
   passOpen,
+  canChange = true,
   onOpenList = () => router.dismissTo('/house/johns'),
 }: {
   houseId: string;
@@ -131,14 +137,20 @@ export function SetupChat({
   me: string;
   /** Whether the House Pass's extras are open to this house: changing a list with Jonz is one. */
   passOpen: boolean;
+  /** Whether this person may change the list (an admin, a parent). Without it, Jonz answers questions and drafts nothing. */
+  canChange?: boolean;
   /** The done row's way to the John list: back down the stack on a page, across to it from the side panel. */
   onOpenList?: () => void;
 }) {
   const { colors, type } = useTheme();
   const scroll = useRef<ScrollViewInstance>(null);
   const keeping = useMove(houseId);
-  // The list as the chat found it: what a draft's changes are counted from. Read once, so applying doesn't move it.
-  const [base] = useState(() => (johns.length > 0 ? listAsDraft(johns, groups) : null));
+  // The list as the chat found it: what a draft's changes are counted from. Held while a draft is open, so
+  // applying doesn't move it under the card; once a draft is applied, it's the list as it now is.
+  const live = useMemo(() => (johns.length > 0 ? listAsDraft(johns, groups) : null), [johns, groups]);
+  const [held, setHeld] = useState(live);
+  const [rebase, setRebase] = useState(false);
+  const base = rebase ? live : held;
   const editing = base !== null;
   const [turns, setTurns] = useState<Turn[]>([]);
   const [draft, setDraft] = useState<HouseDraft | null>(base);
@@ -152,7 +164,8 @@ export function SetupChat({
   const [sending, setSending] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
 
-  const done = turns.some((t) => t.role === 'done');
+  // A new house's chat ends once its first list is in (the deal question follows); a list's chat carries on.
+  const done = !editing && turns.some((t) => t.role === 'done');
   const busy = sending || keeping.pending;
   // The draft card sits under the turn that last changed the draft; only Jonz's last question can be answered.
   const draftAt = turns.findLastIndex((t) => t.role === 'assistant' && t.draft !== null);
@@ -164,6 +177,11 @@ export function SetupChat({
   function answered(reply: Turn & { role: 'assistant' }, said: Turn[]) {
     setTurns([...said, reply]);
     if (reply.draft) {
+      // A new draft holds the list it was made from until it's applied.
+      if (rebase) {
+        setHeld(live);
+        setRebase(false);
+      }
       setDraft(reply.draft);
       setKeep(draftChanges(base, reply.draft).map((c) => c.key));
     }
@@ -207,7 +225,9 @@ export function SetupChat({
     let added = 0;
     if (await keeping.run(async () => (added = await applyDraft(houseId, rules, base, draft, keep, { johns, groups }, new Date())))) {
       setTurns((was) => [...was, { role: 'done', added }]);
+      // The next message starts from the list as it now is, read again from the house.
       setDraft(null);
+      setRebase(true);
     }
   }
 
@@ -226,9 +246,9 @@ export function SetupChat({
         testID="chat"
       >
         <View style={styles.said} testID="chat-greeting">
-          <Body>{editing ? HOUSE_DRAFT_COPY.greetingList : HOUSE_DRAFT_COPY.greeting}</Body>
-          {editing && turns.length === 0 ? <Meta>{HOUSE_DRAFT_COPY.privacy}</Meta> : null}
-          {!editing && turns.length === 0 ? (
+          <Body>{!canChange ? HOUSE_DRAFT_COPY.greetingAsk : editing ? HOUSE_DRAFT_COPY.greetingList : HOUSE_DRAFT_COPY.greeting}</Body>
+          {(editing || !canChange) && turns.length === 0 ? <Meta>{HOUSE_DRAFT_COPY.privacy}</Meta> : null}
+          {!editing && canChange && turns.length === 0 ? (
             <>
               <Meta>{HOUSE_DRAFT_COPY.orStart}</Meta>
               <View style={styles.choices}>
@@ -342,7 +362,9 @@ export function SetupChat({
                 <TextInput
                   accessibilityLabel={HOUSE_DRAFT_COPY.message}
                   placeholder={
-                    editing && turns.length === 0
+                    !canChange
+                      ? HOUSE_DRAFT_COPY.placeholderAsk
+                      : editing && turns.length === 0
                       ? HOUSE_DRAFT_COPY.placeholderList
                       : draft
                         ? HOUSE_DRAFT_COPY.placeholderChange
@@ -507,47 +529,57 @@ function DraftCard({
 }) {
   const editing = base !== null;
   const changes = draftChanges(base, draft);
-  // Opened, a new house's Johns go in the list's own order: kitchen first, then the bathrooms, and so on.
-  const ordered = editing ? changes : CATEGORIES.flatMap((cat) => changes.filter((c) => c.kind !== 'remove' && c.john.category === cat));
-  const shown = open ? ordered : changes.slice(0, FOLDED);
+  // A list's changes sorted by kind (taking off, changing, adding); a new house's Johns, opened, in the list's own order.
+  const ordered = editing
+    ? KINDS.flatMap((kind) => changes.filter((c) => c.kind === kind))
+    : CATEGORIES.flatMap((cat) => changes.filter((c) => c.kind !== 'remove' && c.john.category === cat));
+  const folded = editing ? CHANGES_FOLDED : FOLDED;
+  const shown = open ? ordered : (editing ? ordered : changes).slice(0, folded);
   const groups = draft.groups.filter((g) => changes.some((c) => c.kind !== 'remove' && c.john.group === g.name));
   const waiting = groups.filter((g) => g.memberIds.length === 0);
   const after = afterApplying(base, changes, keep);
   const line = (j: DraftedJohn) => [scheduleLine({ ...j, dueDow: j.dueDow as IsoDow }, j.group), pointsLabel(j.points)].join(', ');
+  const row = (c: DraftChange) => {
+    const j = c.kind === 'remove' ? c.before : c.john;
+    const meta = c.kind === 'change' ? changedLine(c.before, c.john) : [line(j), editing ? null : j.why || null].filter(Boolean).join(', ');
+    return (
+      <ChoiceRow
+        key={c.key}
+        role="checkbox"
+        label={j.name}
+        meta={meta}
+        leading={editing ? <KindIcon kind={c.kind} /> : undefined}
+        checked={keep.includes(c.key)}
+        onPress={() => onToggle(c.key)}
+        disabled={pending}
+        metaLines={2}
+        testID={`draft-${c.kind === 'add' ? 'john' : c.kind}`}
+      />
+    );
+  };
   return (
     <View style={styles.card} testID="draft-card">
-      <Section
-        label={editing ? HOUSE_DRAFT_COPY.changesLabel : HOUSE_DRAFT_COPY.draftLabel}
-        right={
-          editing
-            ? HOUSE_DRAFT_COPY.changesMeta(pointsAWeek(base.johns), pointsAWeek(after))
-            : HOUSE_DRAFT_COPY.draftMeta(keep.length, pointsAWeek(after))
-        }
-      >
-        {shown.map((c) => {
-          const j = c.kind === 'remove' ? c.before : c.john;
-          const meta =
-            c.kind === 'remove'
-              ? `${HOUSE_DRAFT_COPY.removing}, ${line(j)}`
-              : c.kind === 'change'
-                ? `${line(j)}, ${changedLine(c.before, c.john)}`
-                : [editing ? HOUSE_DRAFT_COPY.adding : null, line(j), j.why || null].filter(Boolean).join(', ');
-          return (
-            <ChoiceRow
-              key={c.key}
-              role="checkbox"
-              label={j.name}
-              meta={meta}
-              checked={keep.includes(c.key)}
-              onPress={() => onToggle(c.key)}
-              disabled={pending}
-              metaLines={2}
-              testID={`draft-${c.kind === 'add' ? 'john' : c.kind}`}
-            />
-          );
-        })}
-      </Section>
-      {changes.length > FOLDED ? (
+      {editing ? (
+        <>
+          <Meta style={styles.inset} testID="draft-points">
+            {HOUSE_DRAFT_COPY.changesMeta(pointsAWeek(base.johns), pointsAWeek(after))}
+          </Meta>
+          {KINDS.map((kind) => {
+            const these = shown.filter((c) => c.kind === kind);
+            const all = changes.filter((c) => c.kind === kind).length;
+            return these.length > 0 ? (
+              <Section key={kind} label={KIND_HEADING[kind]} count={all} testID={`draft-${kind}s`}>
+                {these.map(row)}
+              </Section>
+            ) : null;
+          })}
+        </>
+      ) : (
+        <Section label={HOUSE_DRAFT_COPY.draftLabel} right={HOUSE_DRAFT_COPY.draftMeta(keep.length, pointsAWeek(after))}>
+          {shown.map(row)}
+        </Section>
+      )}
+      {changes.length > folded ? (
         <TextButton
           label={open ? HOUSE_DRAFT_COPY.showLess : HOUSE_DRAFT_COPY.seeAll(changes.length)}
           onPress={() => onOpen(!open)}
@@ -596,6 +628,19 @@ function DraftCard({
       />
     </View>
   );
+}
+
+const KIND_HEADING = {
+  remove: HOUSE_DRAFT_COPY.removingHeading,
+  change: HOUSE_DRAFT_COPY.changingHeading,
+  add: HOUSE_DRAFT_COPY.addingHeading,
+} as const;
+
+/** What a change does, at the row's leading edge: a minus in the hazard colour to take off, a pencil to change, a plus to add. */
+function KindIcon({ kind }: { kind: DraftChange['kind'] }) {
+  const { colors } = useTheme();
+  const Icon = kind === 'add' ? PlusIcon : kind === 'change' ? PencilIcon : MinusIcon;
+  return <Icon size={20} color={kind === 'remove' ? colors.hazard : colors.foreground} aria-hidden />;
 }
 
 const styles = StyleSheet.create({

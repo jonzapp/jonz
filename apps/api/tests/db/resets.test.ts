@@ -191,32 +191,25 @@ describe("Ask Jonz's resets", () => {
     const { house, a, owner } = await dealtHouse();
     expectOk(await owner.db.rpc("mark_done", { p_assignment: a.id }));
     let told: DraftContext | null = null;
+    const said: boolean[] = [];
     const result = await chatTurn(
       { db: house.admin.db, userId: house.admin.userId },
       house.id,
       [{ role: "user", text: "That tick was a mistake, and reset the week" }],
       null,
       new Date(),
-      async (ctx): Promise<DraftAnswer> => {
+      async (ctx, tools): Promise<DraftAnswer> => {
         told = ctx;
         const ref = [...ctx.now!.matchAll(/(h\d+) [^;]*ticked/g)][0][1];
-        return {
-          raw: {
-            reply: "Here's what I'd put right.",
-            ask: { kind: "none" },
-            draft: null,
-            resets: [
-              { what: "undo", ref, person: null, outcome: null, week: null, month: null },
-              { what: "week", ref: null, person: null, outcome: null, week: "this", month: null },
-              // Not a ref it was given: left out.
-              { what: "result", ref: "j99", person: null, outcome: "missed", week: null, month: null },
-            ],
-          },
-          inputTokens: 1,
-          outputTokens: 1,
-        };
+        expect(tools.may.resets).toBe(true);
+        said.push((await tools.offerReset({ what: "undo", ref, person: null, outcome: null, week: null, month: null })).ok);
+        said.push((await tools.offerReset({ what: "week", ref: null, person: null, outcome: null, week: "this", month: null })).ok);
+        // Not a ref it was given: Jonz is told, and it's left off the card.
+        said.push((await tools.offerReset({ what: "result", ref: "j99", person: null, outcome: "missed", week: null, month: null })).ok);
+        return { raw: { reply: "Here's what I'd put right.", ask: { kind: "none" } }, inputTokens: 1, outputTokens: 1 };
       },
     );
+    expect(said).toEqual([true, true, false]);
     expect(told!.now).toMatch(/This week, from .*: j1 /);
     if ("refusal" in result) throw new Error("refused");
     expect(result.resets!.map((r) => r.kind)).toEqual(["undo", "reset"]);

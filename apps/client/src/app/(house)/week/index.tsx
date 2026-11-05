@@ -101,7 +101,7 @@ function WeekFor({ houseId, userId }: { houseId: string; userId: string }) {
                 <MoreButton onPress={() => setMenu(true)} />
               </TourSpot>
             }
-            ask={memberCan(view?.me, 'johns.edit')}
+            ask={memberCan(view?.me, 'house.read')}
           />
           <WeekMenu
             visible={menu}
