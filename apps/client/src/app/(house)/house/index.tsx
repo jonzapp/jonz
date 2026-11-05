@@ -2,6 +2,7 @@ import {
   familyHides,
   HOUSE_LOWER_COPY,
   HOUSE_PAGE_COPY,
+  memberCan,
   monthOf,
   overviewFigures,
   PAGE_TITLE,
@@ -64,7 +65,7 @@ function HouseFor({ houseId, userId }: { houseId: string; userId: string }) {
   );
 
   const snapshot = view?.snapshot;
-  const bar = <TitleBar title={snapshot?.house.name ?? PAGE_TITLE.house} ask={view?.me?.role === 'admin'} />;
+  const bar = <TitleBar title={snapshot?.house.name ?? PAGE_TITLE.house} ask={memberCan(view?.me, 'johns.edit')} />;
 
   return (
     <Screen bar={bar} fills refreshing={refreshing} onRefresh={pull} testID="house-screen">

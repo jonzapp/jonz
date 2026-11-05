@@ -24,6 +24,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 import { offerResets, resetState, type ResetState } from "./ask-resets";
 import type { Caller, Refusal } from "./disputes";
+import { permitted } from "./permitted";
 
 /** The most Jonz says in one turn, so a runaway reply can't fill the screen. */
 const REPLY_MAX = 600;
@@ -56,14 +57,9 @@ export async function chatTurn(
   now: Date,
   ask: (ctx: DraftContext) => Promise<DraftAnswer> = askClaude,
 ): Promise<{ refusal: Refusal } | ChatResponse> {
-  const { data: me } = await caller.db
-    .from("members")
-    .select("role")
-    .eq("house_id", houseId)
-    .eq("user_id", caller.userId)
-    .maybeSingle();
-  if (!me) return { refusal: { code: "42501", message: "not_in_house" } };
-  if (me.role !== "admin") return { refusal: { code: "42501", message: "admins_only" } };
+  // Drafting and changing the list is for whoever may change it (an admin today).
+  const refused = await permitted(caller, houseId, "johns.edit");
+  if (refused) return { refusal: refused };
 
   const [{ data: house }, { data: members }, { data: johns }, { data: groups }] = await Promise.all([
     caller.db.from("houses").select("week_starts, pass_plan, pass_until, pass_buyer").eq("id", houseId).single(),
