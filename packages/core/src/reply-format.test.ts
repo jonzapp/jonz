@@ -1,14 +1,31 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
-import { attrsOf, cardOf, CARDS, CARDS_MAX, chipOf, PAGES, parseReply, REPLY_FORMAT_GUIDE, replyText, type Block, type Inline } from "./reply-format";
+import {
+  attrsOf,
+  cardOf,
+  CARDS,
+  CARDS_MAX,
+  chipOf,
+  PAGES,
+  parseReply,
+  REPLY_FORMAT_GUIDE,
+  replyText,
+  type Block,
+  type Inline,
+} from "./reply-format";
 import { REPLY_SAMPLES } from "./reply-samples";
+
+// The same cases every run, so a check passes or fails the same any time and a failure can be
+// replayed. Look wider on purpose with FC_SEED=<any number> npx vitest run reply-format.
+fc.configureGlobal({ seed: Number(process.env.FC_SEED ?? 20261105) });
 
 const sample = (id: string) => REPLY_SAMPLES.find((s) => s.id === id)!.reply;
 
 /** Every inline in a tree of blocks, in reading order. */
 function allInlines(blocks: Block[]): Inline[] {
-  const kids = (ks: Inline[]): Inline[] => ks.flatMap((k) => [k, ...("kids" in k ? kids(k.kids) : [])]);
+  const kids = (ks: Inline[]): Inline[] =>
+    ks.flatMap((k) => [k, ...("kids" in k ? kids(k.kids) : [])]);
   return blocks.flatMap((b) => {
     switch (b.t) {
       case "p":
@@ -32,7 +49,9 @@ const words = (blocks: Block[]) =>
 
 describe("parseReply", () => {
   it("reads plain words as one paragraph", () => {
-    expect(parseReply("Any time.")).toEqual([{ t: "p", kids: [{ t: "text", text: "Any time." }] }]);
+    expect(parseReply("Any time.")).toEqual([
+      { t: "p", kids: [{ t: "text", text: "Any time." }] },
+    ]);
   });
 
   it("is empty for nothing", () => {
@@ -57,18 +76,36 @@ describe("parseReply", () => {
 
   it("reads every heading level as one kind of heading", () => {
     const blocks = parseReply("# One\n## Two\n### Three\n###### Six");
-    expect(blocks.map((b) => b.t)).toEqual(["heading", "heading", "heading", "heading"]);
+    expect(blocks.map((b) => b.t)).toEqual([
+      "heading",
+      "heading",
+      "heading",
+      "heading",
+    ]);
   });
 
   it("reads bullet and numbered lists, with where numbering starts", () => {
     const [bullets, numbers] = parseReply("- a\n- b\n\n3. c\n4. d");
-    expect(bullets).toMatchObject({ t: "list", ordered: false, items: [{ checked: null }, { checked: null }] });
+    expect(bullets).toMatchObject({
+      t: "list",
+      ordered: false,
+      items: [{ checked: null }, { checked: null }],
+    });
     expect(numbers).toMatchObject({ t: "list", ordered: true, start: 3 });
   });
 
   it("reads a task list's boxes", () => {
-    const [list] = parseReply(sample("checklist")).filter((b) => b.t === "list");
-    expect(list).toMatchObject({ items: [{ checked: true }, { checked: false }, { checked: false }, { checked: false }] });
+    const [list] = parseReply(sample("checklist")).filter(
+      (b) => b.t === "list",
+    );
+    expect(list).toMatchObject({
+      items: [
+        { checked: true },
+        { checked: false },
+        { checked: false },
+        { checked: false },
+      ],
+    });
   });
 
   it("nests lists three deep, then flattens what's deeper into words", () => {
@@ -82,18 +119,29 @@ describe("parseReply", () => {
   });
 
   it("reads a table with its alignment", () => {
-    const table = parseReply(sample("table")).find((b) => b.t === "table") as Extract<Block, { t: "table" }>;
-    expect(table.head.map((c) => words([{ t: "p", kids: c }]))).toEqual(["Person", "Given", "Done"]);
+    const table = parseReply(sample("table")).find(
+      (b) => b.t === "table",
+    ) as Extract<Block, { t: "table" }>;
+    expect(table.head.map((c) => words([{ t: "p", kids: c }]))).toEqual([
+      "Person",
+      "Given",
+      "Done",
+    ]);
     expect(table.rows).toHaveLength(4);
     expect(table.align).toEqual([null, "right", "right"]);
   });
 
   it("reads quotes and rules", () => {
-    expect(parseReply("> Note this\n\n---").map((b) => b.t)).toEqual(["quote", "rule"]);
+    expect(parseReply("> Note this\n\n---").map((b) => b.t)).toEqual([
+      "quote",
+      "rule",
+    ]);
   });
 
   it("makes chips of jonz: links", () => {
-    const chips = allInlines(parseReply(sample("howto"))).filter((k) => k.t === "chip");
+    const chips = allInlines(parseReply(sample("howto"))).filter(
+      (k) => k.t === "chip",
+    );
     expect(chips).toEqual([
       { t: "chip", kind: "page", ref: "away", label: "Days and time away" },
       { t: "chip", kind: "john", ref: "0000000a", label: "Bins out" },
@@ -109,18 +157,26 @@ describe("parseReply", () => {
   });
 
   it("keeps a directive's words inside a sentence as words", () => {
-    expect(parseReply("Use ::week to see it")).toEqual([{ t: "p", kids: [{ t: "text", text: "Use ::week to see it" }] }]);
+    expect(parseReply("Use ::week to see it")).toEqual([
+      { t: "p", kids: [{ t: "text", text: "Use ::week to see it" }] },
+    ]);
   });
 
   it(`shows at most ${CARDS_MAX} cards`, () => {
-    expect(parseReply("::shares\n\n::shares\n\n::shares\n\n::shares\n\n::shares").filter((b) => b.t === "card")).toHaveLength(CARDS_MAX);
+    expect(
+      parseReply(
+        "::shares\n\n::shares\n\n::shares\n\n::shares\n\n::shares",
+      ).filter((b) => b.t === "card"),
+    ).toHaveLength(CARDS_MAX);
   });
 
   it("shows nothing it doesn't trust as anything but words", () => {
     const blocks = parseReply(sample("messy"));
     const inl = allInlines(blocks);
     // No chips for the web link, the gone John aside (the app decides those), the unknown page.
-    expect(inl.filter((k) => k.t === "chip").map((k) => (k as { ref: string }).ref)).toEqual(["ffffffff", "Zed"]);
+    expect(
+      inl.filter((k) => k.t === "chip").map((k) => (k as { ref: string }).ref),
+    ).toEqual(["ffffffff", "Zed"]);
     // No card for ::nonsense.
     expect(blocks.some((b) => b.t === "card")).toBe(false);
     const all = words(blocks);
@@ -133,22 +189,53 @@ describe("parseReply", () => {
   });
 
   it("never throws, whatever it's given", () => {
-    const nasty = ["**", "[", "](", "::", "::{", "|", "| a |\n| - |", "- [ ]", "> > > > > > deep", "`", "\u0000", "a".repeat(5000), "1. \n2. ", "<script>alert(1)</script>"];
+    const nasty = [
+      "**",
+      "[",
+      "](",
+      "::",
+      "::{",
+      "|",
+      "| a |\n| - |",
+      "- [ ]",
+      "> > > > > > deep",
+      "`",
+      "\u0000",
+      "a".repeat(5000),
+      "1. \n2. ",
+      "<script>alert(1)</script>",
+    ];
     for (const n of nasty) expect(() => parseReply(n)).not.toThrow();
-    expect(words(parseReply("<script>alert(1)</script>"))).toContain("<script>");
+    expect(words(parseReply("<script>alert(1)</script>"))).toContain(
+      "<script>",
+    );
   });
 
   it("reads every sample", () => {
-    for (const s of REPLY_SAMPLES) expect(parseReply(s.reply).length, s.id).toBeGreaterThan(0);
+    for (const s of REPLY_SAMPLES)
+      expect(parseReply(s.reply).length, s.id).toBeGreaterThan(0);
   });
 });
 
 describe("chipOf", () => {
   it("knows johns, people and pages", () => {
-    expect(chipOf("jonz:john/3f2a9c1e", "Bins")).toEqual({ t: "chip", kind: "john", ref: "3f2a9c1e", label: "Bins" });
-    expect(chipOf("jonz:person/Priya", "Priya")).toMatchObject({ kind: "person", ref: "Priya" });
-    expect(chipOf("JONZ:Page/Away", "Away")).toMatchObject({ kind: "page", ref: "away" });
-    expect(chipOf("jonz:person/Mary%20Ann", "Mary Ann")).toMatchObject({ ref: "Mary Ann" });
+    expect(chipOf("jonz:john/3f2a9c1e", "Bins")).toEqual({
+      t: "chip",
+      kind: "john",
+      ref: "3f2a9c1e",
+      label: "Bins",
+    });
+    expect(chipOf("jonz:person/Priya", "Priya")).toMatchObject({
+      kind: "person",
+      ref: "Priya",
+    });
+    expect(chipOf("JONZ:Page/Away", "Away")).toMatchObject({
+      kind: "page",
+      ref: "away",
+    });
+    expect(chipOf("jonz:person/Mary%20Ann", "Mary Ann")).toMatchObject({
+      ref: "Mary Ann",
+    });
   });
 
   it("refuses anything else", () => {
@@ -168,9 +255,20 @@ describe("cards", () => {
   });
 
   it("checks each card's attributes", () => {
-    expect(cardOf("week", { who: "everyone" })).toEqual({ card: "week", who: null, open: false });
-    expect(cardOf("week", { who: "Sam", open: "" })).toEqual({ card: "week", who: "Sam", open: true });
-    expect(cardOf("johns", { refs: "0000000c, 0000000e nope!" })).toEqual({ card: "johns", refs: ["0000000c", "0000000e"] });
+    expect(cardOf("week", { who: "everyone" })).toEqual({
+      card: "week",
+      who: null,
+      open: false,
+    });
+    expect(cardOf("week", { who: "Sam", open: "" })).toEqual({
+      card: "week",
+      who: "Sam",
+      open: true,
+    });
+    expect(cardOf("johns", { refs: "0000000c, 0000000e nope!" })).toEqual({
+      card: "johns",
+      refs: ["0000000c", "0000000e"],
+    });
     expect(cardOf("johns", {})).toEqual({ card: "johns", refs: [] });
     expect(cardOf("map", {})).toBeNull();
   });
@@ -197,30 +295,81 @@ describe("replyText", () => {
 
 describe("the prompt's guide", () => {
   it("names every page and every card the app draws, and nothing else", () => {
-    for (const p of Object.keys(PAGES)) expect(REPLY_FORMAT_GUIDE).toContain(`${p} (${PAGES[p as keyof typeof PAGES].label})`);
+    for (const p of Object.keys(PAGES))
+      expect(REPLY_FORMAT_GUIDE).toContain(
+        `${p} (${PAGES[p as keyof typeof PAGES].label})`,
+      );
     for (const c of CARDS) expect(REPLY_FORMAT_GUIDE).toContain(`::${c}`);
-    const named = [...REPLY_FORMAT_GUIDE.matchAll(/::([a-z]+)/g)].map((m) => m[1]);
+    const named = [...REPLY_FORMAT_GUIDE.matchAll(/::([a-z]+)/g)].map(
+      (m) => m[1],
+    );
     expect(new Set(named)).toEqual(new Set(CARDS));
   });
 
   it("writes every example in it so the app reads it as meant", () => {
-    const examples = [...REPLY_FORMAT_GUIDE.matchAll(/(::[a-z]+(?:\{[^}]*\})?)/g)].map((m) => m[1]);
-    for (const e of examples) expect(parseReply(e), e).toEqual([{ t: "card", card: expect.any(Object) }]);
+    const examples = [
+      ...REPLY_FORMAT_GUIDE.matchAll(/(::[a-z]+(?:\{[^}]*\})?)/g),
+    ].map((m) => m[1]);
+    for (const e of examples)
+      expect(parseReply(e), e).toEqual([
+        { t: "card", card: expect.any(Object) },
+      ]);
   });
 });
 
 /** Property tests: whatever Claude writes, the reader holds. */
 describe("parseReply, for any text", () => {
-  const markdownish = fc.array(
-    fc.oneof(
-      fc.string(),
-      fc.constantFrom("**", "*", "_", "~~", "`", "[", "](", ")", "jonz:john/", "jonz:person/", "jonz:page/", "https://x.y", "::", "::week", "{", "}", "|", "---", "- ", "1. ", "> ", "#", "\n", "\n\n", "  ", "<b>", "&amp;", "![", "- [ ] ", "- [x] "),
-    ),
-    { maxLength: 60 },
-  ).map((parts) => parts.join(""));
+  const markdownish = fc
+    .array(
+      fc.oneof(
+        fc.string(),
+        fc.constantFrom(
+          "**",
+          "*",
+          "_",
+          "~~",
+          "`",
+          "[",
+          "](",
+          ")",
+          "jonz:john/",
+          "jonz:person/",
+          "jonz:page/",
+          "https://x.y",
+          "::",
+          "::week",
+          "{",
+          "}",
+          "|",
+          "---",
+          "- ",
+          "1. ",
+          "> ",
+          "#",
+          "\n",
+          "\n\n",
+          "  ",
+          "<b>",
+          "&amp;",
+          "![",
+          "- [ ] ",
+          "- [x] ",
+        ),
+      ),
+      { maxLength: 60 },
+    )
+    .map((parts) => parts.join(""));
 
   it("never throws, and makes only the blocks and runs the app draws", () => {
-    const blockKinds = new Set(["p", "heading", "list", "quote", "table", "card", "rule"]);
+    const blockKinds = new Set([
+      "p",
+      "heading",
+      "list",
+      "quote",
+      "table",
+      "card",
+      "rule",
+    ]);
     const runKinds = new Set(["text", "strong", "em", "del", "chip", "br"]);
     const walk = (bs: Block[]): void => {
       for (const b of bs) {
@@ -233,8 +382,11 @@ describe("parseReply, for any text", () => {
       fc.property(markdownish, (src) => {
         const blocks = parseReply(src);
         walk(blocks);
-        for (const k of allInlines(blocks)) expect(runKinds.has(k.t)).toBe(true);
-        expect(blocks.filter((b) => b.t === "card").length).toBeLessThanOrEqual(CARDS_MAX);
+        for (const k of allInlines(blocks))
+          expect(runKinds.has(k.t)).toBe(true);
+        expect(blocks.filter((b) => b.t === "card").length).toBeLessThanOrEqual(
+          CARDS_MAX,
+        );
       }),
       { numRuns: 500 },
     );
@@ -242,17 +394,37 @@ describe("parseReply, for any text", () => {
 
   it("never makes a chip that leaves the app", () => {
     fc.assert(
-      fc.property(markdownish, fc.webUrl(), fc.string({ minLength: 1, maxLength: 20 }), (before, url, label) => {
-        const chips = allInlines(parseReply(`${before}\n\n[${label.replace(/[[\]]/g, "")}](${url})`)).filter((k) => k.t === "chip");
-        for (const c of chips) expect(["john", "person", "page"]).toContain((c as { kind: string }).kind);
-        expect(chips.some((c) => (c as { ref: string }).ref.includes("://"))).toBe(false);
-      }),
+      fc.property(
+        markdownish,
+        fc.webUrl(),
+        fc.string({ minLength: 1, maxLength: 20 }),
+        (before, url, label) => {
+          const chips = allInlines(
+            parseReply(`${before}\n\n[${label.replace(/[[\]]/g, "")}](${url})`),
+          ).filter((k) => k.t === "chip");
+          for (const c of chips)
+            expect(["john", "person", "page"]).toContain(
+              (c as { kind: string }).kind,
+            );
+          expect(
+            chips.some((c) => (c as { ref: string }).ref.includes("://")),
+          ).toBe(false);
+        },
+      ),
       { numRuns: 300 },
     );
   });
 
   it("keeps every word of text with no Markdown in it", () => {
-    const plainWords = fc.array(fc.stringMatching(/^[A-Za-z0-9,.'’?!]{1,12}$/), { minLength: 1, maxLength: 30 }).map((ws) => ws.join(" "));
+    // Starting with a letter: "0. a" or "1) a" at the start is a numbered list, which is Markdown.
+    const plainWords = fc
+      .tuple(
+        fc.stringMatching(/^[A-Za-z][A-Za-z0-9,.'’?!]{0,11}$/),
+        fc.array(fc.stringMatching(/^[A-Za-z0-9,.'’?!]{1,12}$/), {
+          maxLength: 29,
+        }),
+      )
+      .map(([first, ws]) => [first, ...ws].join(" "));
     fc.assert(
       fc.property(plainWords, (src) => {
         expect(words(parseReply(src))).toBe(src);
