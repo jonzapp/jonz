@@ -225,9 +225,10 @@ export function SetupChat({
     let added = 0;
     if (await keeping.run(async () => (added = await applyDraft(houseId, rules, base, draft, keep, { johns, groups }, new Date())))) {
       setTurns((was) => [...was, { role: 'done', added }]);
-      // The next message starts from the list as it now is, read again from the house.
+      // A list's chat carries on from the list as it now is, read again from the house. A new house's
+      // chat ends here (the deal question follows), so it keeps the base it had.
       setDraft(null);
-      setRebase(true);
+      if (editing) setRebase(true);
     }
   }
 
