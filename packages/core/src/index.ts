@@ -30,6 +30,7 @@ export * from "./notices";
 export * from "./owner-admin";
 export * from "./permissions";
 export * from "./owner-messages";
+export * from "./owner-houses";
 export * from "./reports";
 export * from "./qr-shape";
 export * from "./notify";

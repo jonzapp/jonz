@@ -3,8 +3,10 @@
 ## What it does
 
 The owner of Jonz (not a house admin) has pages of their own at `/admin`.
-`/admin` opens on the **Inbox**: problems, ideas and questions people send
-from the app (`docs/specs/report-a-problem.md`). The first three before it were:
+`/admin` opens on the **Overview** (see "Overview"). The **Inbox** holds
+problems, ideas and questions people send from the app
+(`docs/specs/report-a-problem.md`), and **Houses** finds any house (see
+"Houses"). The first three pages were:
 
 - **Notices**: a band at the top of the app for everyone. It can be an outage
   status, an offer, or news.
@@ -12,8 +14,8 @@ from the app (`docs/specs/report-a-problem.md`). The first three before it were:
 - **Audit log**: everything done on the admin pages, which nobody can change.
 
 **Messages** writes to a person, a house or everyone (see "Messages").
-Later PRs add an overview, houses, a support agent that asks before it
-acts, and an owner Ask Jonz. Designs are in
+Later PRs add a support agent that asks before it acts, and an owner Ask
+Jonz. Designs are in
 the owner admin viewer (https://claude.ai/artifact/97GEyJDGnrWxB8HTbbrXmo).
 
 ## Who gets in
@@ -56,6 +58,52 @@ the owner admin viewer (https://claude.ai/artifact/97GEyJDGnrWxB8HTbbrXmo).
     24 hours.
   - The app keeps the last notices it read. If it can't reach Jonz it shows
     its own "can't reach Jonz" band.
+
+## Overview
+
+Is Jonz healthy, and does anything need me? One read (`owner_overview`)
+answers it, again every minute while the page is open.
+
+- **Needs you** first: up to three new reports and up to three accounts
+  deleted within a day, oldest first, each opening its page. Open the Inbox
+  sits on the heading, with how many are new.
+- **Right now:** the database (how long this page's read took: Up under a
+  second, Slow past it) and the clock (when it last caught a house up: Up
+  within half an hour, Late after). A word and an icon, never colour alone.
+- **This week**, or the last 30 days from the switch on the heading: Houses
+  (new ones, against the window before), People (to a house), Active houses
+  (where someone ticked a John), House Passes (yearly, monthly, Founding;
+  the free month isn't one), Johns on time (done or covered, of those that
+  came due and were settled; excused doesn't count) and Ask Jonz (house
+  drafts asked for, and how many Claude didn't answer). Houses, Active and
+  Passes open the Houses list, filtered.
+- **Active houses each week:** ten weeks, the last ending now, as one ink line
+  with the latest value labelled.
+- **In the app now:** the notice people see, as they see it, and Change it
+  in Notices.
+- On a laptop Right now and the notice sit beside the rest; on a phone they
+  all stack, Needs you first.
+
+## Houses
+
+Find a house and look at it, read only. A busy list (`owner_houses_page`,
+`owner_houses_count`), most recently active first and never-used houses
+last:
+
+- **Search** a house's name, the start of its join code or id, or someone in
+  it by name or email.
+- **Filters:** Pass (Paid, Free month, None: a Pass or free month that ran
+  out), Active (This week, This month, Quiet a month), and When is Started.
+- **Columns:** House, People, Pass, Last active (the last tick), On time
+  (over four weeks), Started. On a phone, one line under the name.
+- **A house** (`owner_house`): when it started and its admins, each person
+  with their role, on time over four weeks, time away now and a move-out
+  date, its Pass and who pays, and its zone, currency, join code and number
+  of Johns. In the side panel on a laptop, its own page on a phone
+  (`/admin/houses/[id]`). Nothing here changes a house, so nothing goes in
+  the audit log. Opening the house as its people see it is left for later.
+- **On a phone** the tabs are Overview, Inbox, Houses, Notices and More;
+  More holds Messages, Deletions and the Audit log.
 
 ## Messages
 

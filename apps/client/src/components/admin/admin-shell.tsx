@@ -1,6 +1,16 @@
-import { ADMIN_COPY, ADMIN_PAGES, type AdminPage } from '@app/core';
+import { ADMIN_COPY, ADMIN_MORE, ADMIN_PAGES, ADMIN_TABS, type AdminPage } from '@app/core';
 import { Link } from 'expo-router';
-import { InboxIcon, MegaphoneIcon, MessageSquareIcon, ScrollTextIcon, UserXIcon, type LucideIcon } from 'lucide-react-native';
+import {
+  EllipsisIcon,
+  HouseIcon,
+  InboxIcon,
+  LayoutGridIcon,
+  MegaphoneIcon,
+  MessageSquareIcon,
+  ScrollTextIcon,
+  UserXIcon,
+  type LucideIcon,
+} from 'lucide-react-native';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,7 +20,16 @@ import { Chip } from '@/components/status-mark';
 import { Meta } from '@/components/text';
 import { FONT, RAIL, SPACE, TAP, useTheme, WIDE } from '@/theme';
 
-const ICON: Record<AdminPage, LucideIcon> = { inbox: InboxIcon, messages: MessageSquareIcon, notices: MegaphoneIcon, deletions: UserXIcon, audit: ScrollTextIcon };
+/** Each page's icon, on the rail, the tabs and More. */
+export const ADMIN_ICON: Record<AdminPage, LucideIcon> = {
+  overview: LayoutGridIcon,
+  inbox: InboxIcon,
+  houses: HouseIcon,
+  messages: MessageSquareIcon,
+  notices: MegaphoneIcon,
+  deletions: UserXIcon,
+  audit: ScrollTextIcon,
+};
 
 /** The tab bar's height above the home bar, so a toast clears it. */
 export const ADMIN_TAB_BAR = 56;
@@ -20,7 +39,7 @@ export const ADMIN_TAB_BAR = 56;
  * the wordmark and an Owner chip so it is never mistaken for a house; on a
  * phone, tabs along the bottom, as the house's tabs are.
  */
-export function AdminShell({ page, children }: { page: AdminPage; children: ReactNode }) {
+export function AdminShell({ page, children }: { page: AdminPage | 'more'; children: ReactNode }) {
   const { colors } = useTheme();
   const wide = useWindowDimensions().width >= WIDE;
   if (!wide) {
@@ -39,7 +58,7 @@ export function AdminShell({ page, children }: { page: AdminPage; children: Reac
   );
 }
 
-function AdminRail({ page }: { page: AdminPage }) {
+function AdminRail({ page }: { page: AdminPage | 'more' }) {
   const { colors, type } = useTheme();
   const insets = useSafeAreaInsets();
   return (
@@ -53,7 +72,7 @@ function AdminRail({ page }: { page: AdminPage }) {
       </View>
       <View role="tablist" style={styles.items}>
         {ADMIN_PAGES.map(({ key, label, path }) => {
-          const Icon = ICON[key];
+          const Icon = ADMIN_ICON[key];
           const on = key === page;
           return (
             <Link key={key} href={path as never} asChild>
@@ -77,8 +96,8 @@ function AdminRail({ page }: { page: AdminPage }) {
 }
 
 /** On a phone: the owner's pages as tabs along the bottom, the current one ink with the hi-vis marker. */
-function AdminTabs({ page }: { page: AdminPage }) {
-  const { colors, type } = useTheme();
+function AdminTabs({ page }: { page: AdminPage | 'more' }) {
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   return (
     <View
@@ -86,21 +105,25 @@ function AdminTabs({ page }: { page: AdminPage }) {
       testID="admin-tabs"
       style={[styles.bar, { paddingBottom: insets.bottom, backgroundColor: colors.background, borderTopColor: colors.border }]}
     >
-      {ADMIN_PAGES.map(({ key, label, path }) => {
-        const Icon = ICON[key];
-        const on = key === page;
-        const ink = on ? colors.foreground : colors.mutedForeground;
-        return (
-          <Link key={key} href={path as never} asChild>
-            <Pressable role="tab" aria-selected={on} style={styles.tab} testID={`admin-tab-${key}`}>
-              {on ? <View aria-hidden style={[styles.tabMarker, { backgroundColor: colors.hivis }]} /> : null}
-              <Icon size={24} color={ink} strokeWidth={2.5} aria-hidden />
-              <Text style={[type.tabLabel, { color: ink }]}>{label}</Text>
-            </Pressable>
-          </Link>
-        );
-      })}
+      {ADMIN_PAGES.filter((p) => ADMIN_TABS.includes(p.key)).map(({ key, label, path }) => (
+        <AdminTab key={key} label={label} path={path} icon={ADMIN_ICON[key]} on={key === page} testID={`admin-tab-${key}`} />
+      ))}
+      <AdminTab label={ADMIN_MORE.label} path={ADMIN_MORE.path} icon={EllipsisIcon} on={!(ADMIN_TABS as readonly string[]).includes(page)} testID="admin-tab-more" />
     </View>
+  );
+}
+
+function AdminTab({ label, path, icon: Icon, on, testID }: { label: string; path: string; icon: LucideIcon; on: boolean; testID: string }) {
+  const { colors, type } = useTheme();
+  const ink = on ? colors.foreground : colors.mutedForeground;
+  return (
+    <Link href={path as never} asChild>
+      <Pressable role="tab" aria-selected={on} style={styles.tab} testID={testID}>
+        {on ? <View aria-hidden style={[styles.tabMarker, { backgroundColor: colors.hivis }]} /> : null}
+        <Icon size={24} color={ink} strokeWidth={2.5} aria-hidden />
+        <Text style={[type.tabLabel, { color: ink }]}>{label}</Text>
+      </Pressable>
+    </Link>
   );
 }
 
