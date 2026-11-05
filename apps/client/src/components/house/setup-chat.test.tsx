@@ -238,9 +238,13 @@ describe('with a list already', () => {
     expect(screen.queryByTestId('starter-family')).toBeNull();
     await say('Bathroom is more work, and no bins');
     expect(chat).toHaveBeenCalledWith('h1', [{ role: 'user', text: 'Bathroom is more work, and no bins' }], base);
-    expect(await screen.findByTestId('draft-change')).toHaveTextContent(/was 3 pts/);
-    expect(screen.getByTestId('draft-john')).toHaveTextContent(new RegExp(HOUSE_DRAFT_COPY.adding));
-    expect(screen.getByTestId('draft-remove')).toHaveTextContent(new RegExp(HOUSE_DRAFT_COPY.removing));
+    expect(await screen.findByTestId('draft-change')).toHaveTextContent(/3 → 4 pts/);
+    // Sorted by what each does, taking off first so it's never missed.
+    const headings = [HOUSE_DRAFT_COPY.removingHeading, HOUSE_DRAFT_COPY.changingHeading, HOUSE_DRAFT_COPY.addingHeading];
+    expect(screen.getByTestId('draft-removes')).toHaveTextContent(new RegExp(`^${headings[0]}`));
+    expect(screen.getByTestId('draft-changes')).toHaveTextContent(new RegExp(`^${headings[1]}`));
+    expect(screen.getByTestId('draft-adds')).toHaveTextContent(new RegExp(`^${headings[2]}`));
+    expect(screen.getByTestId('draft-remove')).toHaveTextContent(/Bins out/);
     expect(screen.getByText(HOUSE_DRAFT_COPY.changesMeta(4, 7))).toBeTruthy();
     await fireEvent.press(screen.getByRole('checkbox', { name: /^Bins out/ }));
     await fireEvent.press(screen.getByRole('button', { name: HOUSE_DRAFT_COPY.apply(2) }));
@@ -248,6 +252,21 @@ describe('with a list already', () => {
     expect(await screen.findByText(HOUSE_DRAFT_COPY.applied(1))).toBeTruthy();
     // The house was asked how it shares Johns when it was new; House rules has it now.
     expect(screen.queryByTestId('chat-mode')).toBeNull();
+    // The chat carries on, from the list as it now is.
+    chat.mockResolvedValue({ reply: 'Anything else?', ask: null, draft: null, source: 'ai' });
+    await say('And the oven?');
+    expect(chat).toHaveBeenLastCalledWith('h1', expect.any(Array), null);
+  });
+
+  it('answers someone who can’t change the list, with no starters and no card', async () => {
+    chat.mockResolvedValue({ reply: 'Ben has bins this week.', ask: null, draft: null, source: 'ai' });
+    await render(<SetupChat houseId="h1" rules={RULES} johns={johns} groups={[]} people={people} me={ME} passOpen canChange={false} />, {
+      wrapper: House,
+    });
+    expect(screen.getByText(HOUSE_DRAFT_COPY.greetingAsk)).toBeTruthy();
+    await say('Who has bins?');
+    expect(await screen.findByText('Ben has bins this week.')).toBeTruthy();
+    expect(screen.queryByTestId('draft-card')).toBeNull();
   });
 
   it('offers the House Pass in place of the message box when the house hasn’t got it', async () => {

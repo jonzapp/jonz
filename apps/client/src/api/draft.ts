@@ -13,14 +13,15 @@ import { apiPost, ApiRequestError } from './http';
 import { addJohns, archiveJohn, saveGroup, saveJohn, type JohnList } from './settings';
 import { supabase } from './supabase';
 
-// Describe your house: one turn of the setup chat with apps/api (Claude, or
-// a starter list when Claude isn't there), then add the Johns an admin kept.
+// Ask Jonz and Describe your house: one turn of the chat with apps/api
+// (Claude, or a starter list when Claude isn't there), then apply the changes
+// an admin kept.
 // Keeping goes through the John list's own grants and save_group, exactly as
 // adding Johns and groups by hand does; the draft itself is never stored.
 
 /**
  * Jonz's answer to the chat so far, with the draft as it stands. A refusal
- * (not an admin, too many turns today) throws its sentence; if the API
+ * (not in the house, too many turns today) throws its sentence; if the API
  * can't be reached at all, offlineTurn answers here as the API would
  * (a starter list that fits, or the draft left as it is), so setting up a
  * house never stops here.
@@ -89,7 +90,9 @@ export async function applyDraft(
   for (const c of picked) {
     if (c.kind === 'change') {
       const was = list.johns.find((j) => j.id === c.john.id);
-      if (was) await saveJohn(houseId, rules, { ...was, ...written(c.at), id: was.id }, now);
+      // What the chat doesn't know about (keeps its day, pocket money, age) stays as it was.
+      const next = written(c.at);
+      if (was) await saveJohn(houseId, rules, { ...was, ...next, keepDay: next.when === 'on_call' ? false : was.keepDay, id: was.id }, now);
     } else if (c.kind === 'remove' && c.before.id) {
       await archiveJohn(houseId, c.before.id, now);
     }

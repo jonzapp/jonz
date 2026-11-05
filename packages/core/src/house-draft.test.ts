@@ -354,14 +354,15 @@ describe("changing a list that's already there", () => {
     expect(changes.map((c) => c.key)).toEqual(["change:" + BATH, "add:1", "add:2", "remove:" + BINS]);
     const changed = changes[0];
     if (changed.kind !== "change") throw new Error("not a change");
-    expect(changedLine(changed.before, changed.john)).toBe("was 3 pts");
+    expect(changedLine(changed.before, changed.john)).toBe("3 → 4 pts");
   });
 
-  it("says what changed in words", () => {
+  it("says what changed in words, before → after", () => {
     const [bath] = base.johns;
     expect(changedLine(bath, { ...bath, name: "Upstairs bathroom", everyWeeks: 2, dueDow: 6, group: null })).toBe(
-      "was “Bathroom”, was every week, Sun 21:00, was Upstairs",
+      "was “Bathroom”, Every week → every 2 weeks, Sun 21:00 → Sat 21:00, Upstairs → everyone’s",
     );
+    expect(changedLine(bath, { ...bath, when: "on_call" })).toBe("Every week → on call");
   });
 
   it("treats every John in a new house's draft as one to add", () => {

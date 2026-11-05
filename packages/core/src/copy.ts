@@ -1807,16 +1807,21 @@ export const HOUSE_DRAFT_COPY = {
   open: `Ask ${APP_NAME}`,
   greetingList: "What would you like to change? I can add Johns, change them or take some off, and nothing changes until you apply it.",
   placeholderList: "Sam’s moving out…",
-  /** The card's label, and its line: the house's points a week before and after. */
-  changesLabel: "Changes",
+  /** The card's line over its changes: the house's points a week before and after. */
   changesMeta: (before: number, after: number) => (before === after ? `${after} pts a week` : `${before} → ${after} pts a week`),
-  /** Each change's kind, before what it says about the John. */
-  adding: "New",
-  removing: "Taking off",
+  /** The card's three headings, in the order it shows them: what goes, what changes, what's new. */
+  removingHeading: "Taking off",
+  changingHeading: "Changing",
+  addingHeading: "Adding",
   apply: (n: number) => (n === 0 ? "Pick at least one change" : n === 1 ? "Apply 1 change" : `Apply ${n} changes`),
   applying: "Applying…",
   applied: (n: number) => (n === 1 ? "1 change made" : `${n} changes made`),
   appliedMeta: "From the next deal",
+  /** For someone who can't change the list (a member, a kid): Jonz answers questions. */
+  greetingAsk: "Ask me about the house: who has what this week, who’s away, how fair shares stand, or what a rule means.",
+  placeholderAsk: "Who’s on bins this week?",
+  /** Claude couldn't be reached to answer a question. */
+  offlineAsk: "I couldn’t answer just now. Try again in a minute.",
   /** In place of the message box, for a house without the Pass. */
   passNeeded: `Changing your list with ${APP_NAME} comes with the House Pass. Setting up a new house stays free.`,
   seePass: "See the House Pass",

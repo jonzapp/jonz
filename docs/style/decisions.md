@@ -6,6 +6,7 @@ pages are private artifacts on claude.ai.
 
 | Date | Decision | Where | Rule |
 | --- | --- | --- | --- |
+| 2026-11-05 | Ask Jonz changes to the list on one card sorted by kind: Taking off (hazard minus) first, then Changing (pencil, before → after), then Adding (plus), each ticked, one Apply; the chat carries on after it | this PR | [states](states.md#mistakes) |
 | 2026-11-05 | The title bar's buttons are one group at the right edge in a fixed order (the page's own button, Help, the sparkles at the edge), squares touching so the gaps are even | this PR | [layout](layout.md#the-title-bar) |
 | 2026-11-04 | Kids without a sign-in: a parent's Add a child on the Table (name and year born), a "You ▾" switcher on Today's title bar to tick for them, and Youngest age on each John (mockups approved 2026-11-04) | this PR | [words](words.md) |
 | 2026-11-04 | Pocket money: in a family each John says what it earns a kid ("earns 50p"), House's month card replaces the Stake with Pay day and a Paid button per kid, and the Table lists only the kids (mockups approved 2026-11-04) | #106 | [words](words.md) |

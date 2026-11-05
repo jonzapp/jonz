@@ -27,6 +27,13 @@ hazard edge. Today's next John's plate turns hazard once it's overdue.
 - **"Are you sure?"** (`ConfirmSheet`) only for a move that can't be undone.
   Everything else happens at once and offers Undo. (Undo, #47) *Backed by*
   NN/g: confirmations used for everything get tapped through unread.
+- **Changes someone else drafted (Ask Jonz) wait on one card,** sorted by
+  what they do: Taking off first, with the hazard minus, so a loss is never
+  missed under the adds; then Changing, before → after; then Adding. Each is
+  ticked and can be unticked; one button applies the ticked ones. (Ask Jonz
+  edits, this PR) *Backed by* Nielsen's "visibility of system status" and
+  "user control and freedom": the person sees every change and its effect
+  before it happens.
 - **An error** says what went wrong and what to do, in one sentence, with Try
   again where trying again can help. Refusals from the database come through
   `humanError` in core. (AGENTS.md) *Backed by* Nielsen's "help users

@@ -1,4 +1,4 @@
-import { PAGE_TITLE, passUnlocked } from '@app/core';
+import { memberCan, PAGE_TITLE, passUnlocked } from '@app/core';
 import { useState, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -46,6 +46,7 @@ export function AskJonz({
           people={view.snapshot.members}
           me={userId}
           passOpen={passUnlocked(view.snapshot.house.pass, view.now)}
+          canChange={memberCan(view.me, 'johns.edit')}
           onOpenList={onOpenList}
         />
       ) : (

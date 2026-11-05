@@ -22,17 +22,24 @@ the greeting for anyone who'd rather not write, and stand in whenever
 Claude can't be reached. It's free for every house.
 
 Once the house has Johns, the same page is **Ask Jonz**, for changes
-("Sam's moving out", "bathroom is more work"). Jonz starts from the list
-as it is and the card shows only what changes: Johns changed (with what
-they were: "was 4 pts"), new ones and ones taken off, each ticked, with
-the house's points a week before and after. Nothing changes until the
-admin presses Apply. This part is the House Pass's: without it the message
+("Sam's moving out", "bathroom is more work") and questions ("who's on
+bins?"). Jonz acts as the person asking: it can look at anything they can
+see in the app (the list, the week, people, time away, History, fair
+shares, the rules) without asking, and propose anything they may change.
+Every change waits on a card. The card is sorted by what each change
+does: **Taking off** first (a minus in the hazard colour), then
+**Changing** (a pencil, before → after: "Every week → every 2 weeks, 3 → 4
+pts"), then **Adding** (a plus), each ticked, with the house's points a
+week before and after. Nothing changes until they press Apply, and the
+chat carries on after it, from the list as it now is. Anyone in the house
+can ask; someone who can't change the list (a member, a kid) gets answers
+and no card. This part is the House Pass's: without it the message
 box gives way to the Pass (shown only once `PASS_ENFORCED` is on).
 
 The message box is one line while empty (a lighter hint that never
 wraps) and grows with what's typed, up to about five lines, then scrolls
-inside itself. Admins open the chat from the sparkles in the title bar on
-Today, Week and House.
+inside itself. Everyone opens the chat from the sparkles in the title bar
+on Today, Week and House (not while a parent is acting for a kid).
 
 ## Inputs and outputs
 
@@ -47,13 +54,21 @@ Today, Week and House.
   as the list holds it plus `group` and `why`; each group with `memberIds`
   (housemates already in the house) and `waitingFor` (names nobody goes by
   yet); `note`, what the draft assumed.
-- Only an admin of the house may ask (403 otherwise). A house gets
+- Anyone in the house may ask (403 otherwise). What Jonz may propose is
+  what they may do (`my_permissions`, `packages/core/src/permissions.ts`). A house gets
   `CHAT_TURNS_PER_DAY` (30) turns from Claude in any 24 hours (409
   `draft_limit` after that); starter lists are unlimited.
 - Claude is `anthropic/claude-haiku-5.5` through Vercel's AI Gateway (OIDC
-  on Vercel, no key), with structured outputs (`apps/api/lib/ai/house-draft.ts`).
-  The current draft goes back to Claude in words (`draftForModel`: "me",
-  first names, on call). Core's `tidyDraft` and `tidyAsk` check every value
+  on Vercel, no key), with tools and a structured last word
+  (`apps/api/lib/ai/house-draft.ts`, at most 12 steps a turn). Reads
+  (`list_johns`, `week`, `people`, `time_away`, `history`, `balances`,
+  `house_rules`, in `apps/api/lib/moves/ask-reads.ts`) run through the
+  person's own session, so row rules decide what Jonz sees. Writes
+  (`add_john`, `change_john`, `remove_john`, `set_group`, `offer_reset`)
+  are offered only with the matching permission and change a draft held
+  for the turn, one John a call (`editDraft` in
+  `packages/core/src/draft-edits.ts`), by the John's short ref. The draft
+  is in words (`draftForModel`: "me", first names, on call). Core's `tidyDraft` and `tidyAsk` check every value
   afterwards: names cut to fit, numbers put in range, unknown kinds made
   Other, duplicates dropped, group members matched to housemates by name,
   at most 30 Johns and 6 groups. Effort follows the John list's existing
@@ -108,8 +123,11 @@ keyboard.
 - [x] An admin with an empty list can chat about the house, answer by
   tapping, open the draft, untick Johns and add the rest.
 - [x] Starter lists work with no gateway, and when Claude fails.
-- [x] Housemates who aren't admins are refused; a house is held to 30
-  turns a day.
+- [x] A house is held to 30 turns a day.
+- [x] Anyone in the house can ask Jonz about the house; only what they
+  may change is offered, and everything waits on the card.
+- [x] Jonz can change, add and take off any John, or the whole list, one
+  at a time, and the card sorts them by kind.
 - [x] An admin with a list can ask Jonz for changes from the title bar's
   sparkles, untick some and apply the rest; it's the House Pass's.
 - [ ] On production, a real chat drafts a sensible list through the AI
