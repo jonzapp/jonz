@@ -1,4 +1,4 @@
-import { formatMoney, HOUSE_PAGE_COPY, monthLabel, RESET_COPY, SECTION_LABEL, STAKE_HISTORY_COPY, stakeHistory } from '@app/core';
+import { formatMoney, HOUSE_PAGE_COPY, memberCan, monthLabel, RESET_COPY, SECTION_LABEL, STAKE_HISTORY_COPY, stakeHistory } from '@app/core';
 import { CoinsIcon, RotateCcwIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -54,7 +54,7 @@ function StakeFor({ houseId, userId }: { houseId: string; userId: string }) {
   const nothingAtAll = stake.data?.ledger.length === 0;
   // The two latest months with forfeits in them, for an admin to let off.
   const forfeitMonths =
-    view?.me?.role === 'admin' && stake.data
+    memberCan(view?.me, 'history.reset') && stake.data
       ? [...new Set(stake.data.ledger.filter((l) => l.kind === 'forfeit').map((l) => l.month))].sort().reverse().slice(0, 2)
       : [];
 

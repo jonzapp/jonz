@@ -6,6 +6,7 @@ import { dealWeek, loadHouse } from "@/lib/engine/tick";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 import type { Caller, Refusal } from "./disputes";
+import { permitted } from "./permitted";
 
 /**
  * Hand out this week's Johns. The first time, it starts the house off;
@@ -16,14 +17,8 @@ import type { Caller, Refusal } from "./disputes";
  * both call this.
  */
 export async function dealThisWeek(caller: Caller, houseId: string, now: Date): Promise<Refusal | null> {
-  const { data: me } = await caller.db
-    .from("members")
-    .select("role")
-    .eq("house_id", houseId)
-    .eq("user_id", caller.userId)
-    .maybeSingle();
-  if (!me) return { code: "42501", message: "not_in_house" };
-  if (me.role !== "admin") return { code: "42501", message: "admins_only" };
+  const refused = await permitted(caller, houseId, "week.deal");
+  if (refused) return refused;
 
   const admin = createAdminClient();
   const { house, members } = await loadHouse(admin, houseId);

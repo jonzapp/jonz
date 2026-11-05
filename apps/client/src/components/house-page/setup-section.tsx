@@ -1,4 +1,4 @@
-import { FOCUS_SHELL_COPY, HOUSE_LOWER_COPY, houseSetupValues, localDate } from '@app/core';
+import { FOCUS_SHELL_COPY, HOUSE_LOWER_COPY, houseSetupValues, localDate, memberCan } from '@app/core';
 import { ListTodoIcon, PlaneIcon, ScrollTextIcon } from 'lucide-react-native';
 import { View } from 'react-native';
 
@@ -35,7 +35,7 @@ export function SetupSection({ houseId, userId, view }: { houseId: string; userI
     today: away.data?.today ?? localDate(view.now, view.snapshot.rules.timezone),
     members: view.snapshot.members,
     me: userId,
-    admin: view.me?.role === 'admin',
+    admin: memberCan(view.me, 'johns.add'),
   });
 
   return (

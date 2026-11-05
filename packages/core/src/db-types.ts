@@ -1226,6 +1226,21 @@ export type Database = {
           },
         ]
       }
+      permissions: {
+        Row: {
+          about: string
+          name: string
+        }
+        Insert: {
+          about: string
+          name: string
+        }
+        Update: {
+          about?: string
+          name?: string
+        }
+        Relationships: []
+      }
       pocket_earnings: {
         Row: {
           amount_minor: number
@@ -1739,6 +1754,29 @@ export type Database = {
           },
         ]
       }
+      role_permissions: {
+        Row: {
+          permission: string
+          role: string
+        }
+        Insert: {
+          permission: string
+          role: string
+        }
+        Update: {
+          permission?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_permissions_permission_fkey"
+            columns: ["permission"]
+            isOneToOne: false
+            referencedRelation: "permissions"
+            referencedColumns: ["name"]
+          },
+        ]
+      }
       swap_offers: {
         Row: {
           answer: string | null
@@ -1965,6 +2003,7 @@ export type Database = {
         Args: { p_accept: boolean; p_offer: string }
         Returns: undefined
       }
+      can: { Args: { h: string; perm: string }; Returns: boolean }
       can_upload_proof: { Args: { object_name: string }; Returns: boolean }
       cancel_away: { Args: { p_away: string }; Returns: undefined }
       cast_vote: {
@@ -2093,7 +2132,6 @@ export type Database = {
         }[]
       }
       identity_photo: { Args: { data: Json }; Returns: string }
-      is_admin: { Args: { h: string }; Returns: boolean }
       is_member: { Args: { h: string }; Returns: boolean }
       house_has_paid_pass: { Args: { p_house: string }; Returns: boolean }
       is_owner: { Args: never; Returns: boolean }
@@ -2117,6 +2155,7 @@ export type Database = {
           pass_state: string | null
         }[]
       }
+      my_permissions: { Args: { h: string }; Returns: string[] }
       my_open_assignment: {
         Args: { p_assignment: string }
         Returns: {
@@ -2534,6 +2573,10 @@ export type Database = {
       use_swap: {
         Args: { p_mine: string; p_theirs: string }
         Returns: undefined
+      }
+      user_can: {
+        Args: { h: string; perm: string; who: string }
+        Returns: boolean
       }
       write_back: {
         Args: { p_body: string; p_report: string }

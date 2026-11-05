@@ -174,6 +174,18 @@ a design option, the PR that builds it updates the rule and adds a line to
   yours) or `P0001` with a short code that `errors.ts` turns into a sentence.
   Whatever calls them (the Expo app, or a route in `apps/api`) only
   translates and refreshes: it never decides.
+- **Who can do what** is one list: `PERMISSIONS` and `ROLE_PERMISSIONS` in
+  `packages/core/src/permissions.ts`, and the same rows in the
+  `permissions` / `role_permissions` tables
+  (`supabase/migrations/20261118090000_permissions.sql`). Every table rule
+  and move asks `public.can(house, 'johns.remove')` (the server asks about
+  someone else with `user_can`); the API asks `permitted()`
+  (`apps/api/lib/moves/permitted.ts`); the app asks `memberCan(me, …)`.
+  Never compare `role` to `'admin'` to decide whether someone may do
+  something: add a permission to both lists (a db test checks they match;
+  `apps/api/tests/unit/permission-checks.test.ts` fails on a hand-written
+  role check). Reading the role is fine for a rule of the house (a house
+  keeps an admin, parents don't earn pocket money).
 
 ## The clock
 

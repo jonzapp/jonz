@@ -1,4 +1,4 @@
-import { formatMoney, payRows, pocketCard, POCKET_COPY, type PayRow, type PocketView } from '@app/core';
+import { formatMoney, memberCan, payRows, pocketCard, POCKET_COPY, type PayRow, type PocketView } from '@app/core';
 import type { UseQueryResult } from '@tanstack/react-query';
 import { CheckIcon } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
@@ -36,7 +36,7 @@ export function PocketSection({
   pocket: UseQueryResult<PocketView>;
 }) {
   const { rules, members } = view.snapshot;
-  const parent = view.me?.role === 'admin';
+  const parent = memberCan(view.me, 'pocket.pay');
   const inset = useRowInset();
   if (!pocket.data) {
     return (

@@ -1,4 +1,4 @@
-import { FOCUS_SHELL_COPY, PAGE_TITLE, SECTION_LABEL } from '@app/core';
+import { FOCUS_SHELL_COPY, memberCan, PAGE_TITLE, SECTION_LABEL } from '@app/core';
 import { useLocalSearchParams } from 'expo-router';
 import { UserRoundXIcon } from 'lucide-react-native';
 
@@ -78,7 +78,7 @@ function PersonFor({ houseId, userId, personId }: { houseId: string; userId: str
           stake={stake}
           away={away}
           admin={
-            view.me?.role === 'admin' && person.userId !== userId ? (
+            memberCan(view.me, 'people.remove') && person.userId !== userId ? (
               <PersonAdmin houseId={houseId} userId={userId} person={person} />
             ) : undefined
           }
