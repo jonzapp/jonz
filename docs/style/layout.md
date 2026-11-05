@@ -58,6 +58,12 @@ still look right stretched (content capped, nothing pinned to far edges).
 - Every tab's bar has a question mark just inside the sparkles: Help, with
   the page's tour and Report a problem. Pushed pages leave it out. (Help
   and tours, 1 Nov)
+- The bar's buttons are one group at the right edge, always in this order:
+  the page's own button (`•••`, or Today's "You ▾"), the question mark, then
+  the sparkles at the edge. Their 48 squares touch, with no gaps or margins
+  of their own, so the space between glyphs is the same everywhere and a
+  long title like THIS WEEK fits on a phone. Without the sparkles (a
+  housemate) the question mark takes the edge. (Bar buttons A, 5 Nov)
 
 ## Laptop pages
 

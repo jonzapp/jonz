@@ -17,10 +17,11 @@ import { FONT, GUTTER, INSET, SECTION_GAP, SPACE, TAP, TITLE_BAR, useTheme, WIDE
 /**
  * The top of every house screen, in place of the old wordmark strip: the
  * screen's one Title (caps, one line) on the pavement with a hairline under
- * it, and on the right the screen's own button (`right`, a MoreButton) and
- * the sparkles that open Jonz (`ask`: Describe your house, or Ask Jonz once
- * there's a list). The sparkles always sit at the edge, with the screen's
- * button just inside them, so switching tabs moves nothing: every tab's bar
+ * it, and on the right one group of buttons in a fixed order: the screen's
+ * own button (`right`, a MoreButton or Today's "You ▾"), Help's question
+ * mark, then the sparkles that open Jonz (`ask`: Describe your house, or Ask
+ * Jonz once there's a list) at the edge. The buttons' squares touch, so the
+ * gaps between them are even, and switching tabs moves nothing: every tab's bar
  * is the same 52 tall. What a tab says about itself (Today's date, House's
  * housemates) is its page's TopLine, not a second line here. A pushed page
  * passes `back`, the page its back goes to, whatever came before it: a
@@ -32,8 +33,8 @@ import { FONT, GUTTER, INSET, SECTION_GAP, SPACE, TAP, TITLE_BAR, useTheme, WIDE
  * page beside the rail, as a desktop app's toolbar does: the Title where the
  * page's words start, the sparkles at the window's right edge.
  * A house's tabs (a bar with no `back`, inside the tour player) carry Help's
- * question mark just inside the sparkles, or at the edge without them: it
- * opens the Help sheet, with a tour of the page.
+ * question mark just inside the sparkles, or at the edge without them (a
+ * housemate): it opens the Help sheet, with a tour of the page.
  */
 export function TitleBar({
   title,
@@ -76,16 +77,19 @@ export function TitleBar({
             </Title>
             {sub ? <Meta numberOfLines={1}>{sub}</Meta> : null}
           </View>
-          {/* The sparkles hold the edge on every tab; the screen's own button sits inside them. */}
-          {right == null ? null : <View style={[styles.right, (ask || help) && styles.inside]}>{right}</View>}
-          {help ? (
-            <View style={[styles.ask, styles.more, ask && styles.inside]}>
-              <TourSpot id="shell.help">
-                <IconButton icon={CircleQuestionMarkIcon} label={TOUR_COPY.open} onPress={tours.openHelp} testID="help-button" />
-              </TourSpot>
+          {right != null || help || ask ? (
+            // One group at the edge, in a fixed order with no gaps of its own: the
+            // screen's button, Help, then the sparkles at the edge.
+            <View testID="bar-tools" style={styles.tools}>
+              {right}
+              {help ? (
+                <TourSpot id="shell.help">
+                  <IconButton icon={CircleQuestionMarkIcon} label={TOUR_COPY.open} onPress={tours.openHelp} testID="help-button" />
+                </TourSpot>
+              ) : null}
+              {ask ? <AskButton /> : null}
             </View>
           ) : null}
-          {ask ? <AskButton /> : null}
         </View>
       </View>
     </View>
@@ -144,8 +148,7 @@ function AskButton() {
   const ask = useAskJonz('toggle');
   const open = useAskPanelOpen();
   return (
-    <View style={[styles.ask, styles.more]}>
-      <TourSpot id="shell.ask">
+    <TourSpot id="shell.ask">
       <IconButton
         icon={SparklesIcon}
         label={HOUSE_DRAFT_COPY.open}
@@ -154,18 +157,13 @@ function AskButton() {
         href={'href' in ask ? ask.href : undefined}
         testID="ask-jonz"
       />
-      </TourSpot>
-    </View>
+    </TourSpot>
   );
 }
 
 /** The title bar's "•••": opens the screen's ActionMenu. */
 export function MoreButton({ onPress, testID = 'more' }: { onPress: () => void; testID?: string }) {
-  return (
-    <View style={styles.more}>
-      <IconButton icon={EllipsisIcon} label={FOCUS_SHELL_COPY.more} onPress={onPress} testID={testID} />
-    </View>
-  );
+  return <IconButton icon={EllipsisIcon} label={FOCUS_SHELL_COPY.more} onPress={onPress} testID={testID} />;
 }
 
 const styles = StyleSheet.create({
@@ -185,9 +183,10 @@ const styles = StyleSheet.create({
   words: { flex: 1, minWidth: 0 },
   // Overpass's caps sit high in their line, so the title comes down a little.
   title: { paddingTop: 4 },
-  right: { flexShrink: 0, marginVertical: -SPACE.xs },
-  // Before the sparkles: cancels the dots' pull to the edge, so the two sit side by side.
-  inside: { marginRight: SPACE.md },
+  // The buttons' 48 squares touch, so every glyph is the same 48 from the next;
+  // the last one's glyph lines up with the content's edge, and they sit in the
+  // bar's own 4 above and below.
+  tools: { flexShrink: 0, flexDirection: 'row', alignItems: 'center', marginVertical: -SPACE.xs, marginRight: -SPACE.md },
   back: {
     alignSelf: 'flex-start',
     minHeight: TAP,
@@ -199,10 +198,6 @@ const styles = StyleSheet.create({
     paddingRight: SPACE.sm,
   },
   backWords: { fontFamily: FONT.bold },
-  // The dots' right edge lines up with the content's.
-  more: { marginRight: -SPACE.md },
-  // Sits in the bar's own 4 above and below, like the dots.
-  ask: { flexShrink: 0, marginVertical: -SPACE.xs },
   pressed: { opacity: 0.6 },
   topLine: { minHeight: 24, justifyContent: 'center', paddingHorizontal: INSET, marginBottom: SPACE.sm - SECTION_GAP },
 });

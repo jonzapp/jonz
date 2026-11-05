@@ -41,6 +41,17 @@ it("keeps the sparkles at the edge on every tab, with the screen's menu inside t
   expect(within(screen.getByTestId('title-bar')).getAllByTestId(/^(more|ask-jonz)$/)).toHaveLength(2);
 });
 
+it("holds its buttons in one group at the edge, the screen's own first", async () => {
+  await renderRouter(routes, { initialUrl: '/week' });
+  const tools = within(screen.getByTestId('bar-tools'));
+  expect(tools.getAllByTestId(/^(more|ask-jonz)$/).map((b) => b.props.testID)).toEqual(['more', 'ask-jonz']);
+});
+
+it('has no group on a pushed page with nothing to show', async () => {
+  await renderRouter(routes, { initialUrl: '/house/wall' });
+  expect(screen.queryByTestId('bar-tools')).toBeNull();
+});
+
 it('carries a sub line and the screen menu', async () => {
   await renderRouter(routes, { initialUrl: '/house' });
   expect(screen.getByText('2 housemates')).toBeOnTheScreen();
