@@ -15,6 +15,10 @@ import { CLIENT_URL } from "./auth";
 // - Pictures: each sample at each width and look, compared with the ones
 //   kept beside this file. Remake them on purpose with
 //   `npx playwright test client-replies --project=laptop-chrome --update-snapshots`
+//   with the Chromium this Playwright installs (CI's): another build wraps
+//   a line a few pixels sooner or later. Without the download, Chrome for
+//   Testing's headless shell of the version in playwright-core's
+//   browsers.json is the same build (PW_CHROMIUM=.../chrome-headless-shell).
 //
 // Chromium on a laptop only: the page sets its own widths, and pictures are
 // only comparable from one browser.
