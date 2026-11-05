@@ -1,6 +1,6 @@
 import "server-only";
 
-import { generateText, isStepCount, Output, tool, type LanguageModel, type ToolSet } from "ai";
+import { tool, type LanguageModel, type ToolSet } from "ai";
 import {
   APP_NAME,
   CATEGORIES,
@@ -12,10 +12,10 @@ import {
   type DraftEdit,
   type EditResult,
   type IsoDow,
-  type RawAsk,
 } from "@app/core";
 import { z } from "zod";
 
+import { AGENT_MODEL, canAsk, runAgent, type AgentAnswer } from "@/lib/ai/agent";
 import type { HouseReads } from "@/lib/moves/ask-reads";
 
 // Ask Jonz (and Describe your house, which is the same chat on a new house):
@@ -26,14 +26,12 @@ import type { HouseReads } from "@/lib/moves/ask-reads";
 // draft of the list, set_group a draft group, offer_reset a reset; nothing
 // is written until the person taps Apply on the card, which runs the same
 // moves the app's own buttons do. A write tool is only offered when the
-// person may make that move (packages/core/src/permissions.ts). The call
-// goes through Vercel's AI Gateway: on Vercel it signs in with the
-// project's OIDC token, so there is no key to keep.
+// person may make that move (packages/core/src/permissions.ts). The turn
+// runs through the shared loop in agent.ts, through Vercel's AI Gateway: on
+// Vercel it signs in with the project's OIDC token, so there is no key to keep.
 
-export const DRAFT_MODEL = "anthropic/claude-haiku-5.5";
-
-/** The most tool calls and answers in one turn, so a confused model can't loop. */
-export const STEPS_MAX = 12;
+export const DRAFT_MODEL = AGENT_MODEL;
+export { STEPS_MAX } from "@/lib/ai/agent";
 
 /** A John's fields as Claude writes them. Loose on purpose: ranges are core's to enforce (tidyDraft). */
 const JohnFields = {
@@ -63,12 +61,6 @@ const ResetInput = z.object({
   month: z.enum(["this", "last"]).nullable(),
 });
 export type ResetInput = z.infer<typeof ResetInput>;
-
-/** Jonz's last word in a turn, as Claude is asked to return it. */
-const FinalAnswer = z.object({
-  reply: z.string().describe("What you say to the person."),
-  ask: z.object({ kind: z.enum(["none", "choices", "day"]), options: z.array(z.string()) }),
-});
 
 /** What Claude can do this turn, already narrowed to what the person may do. */
 export interface JonzTools {
@@ -105,11 +97,7 @@ export interface DraftContext {
   now: string | null;
 }
 
-export interface DraftAnswer {
-  raw: { reply: string; ask: RawAsk };
-  inputTokens: number;
-  outputTokens: number;
-}
+export type DraftAnswer = AgentAnswer;
 
 /** Fixed, so it caches: who Jonz is, how the app works, and how to use the tools. The house itself goes in the messages. */
 const SYSTEM = `You are ${APP_NAME}'s assistant, inside ${APP_NAME}, an app that shares out chores fairly in a shared house or a family. You talk with one person in the house and act for them: you can look at anything they can see in the app, and propose anything they're allowed to change. They approve every change on a card before anything happens.
@@ -243,37 +231,10 @@ export function jonzToolSet(t: JonzTools): ToolSet {
   return set;
 }
 
-/**
- * Whether Claude is set up here: on Vercel (the gateway signs in with the
- * deployment's OIDC token) or with AI_GATEWAY_API_KEY set. Without either,
- * as locally and in CI, the chat answers with starter lists.
- */
-export function canDraft(): boolean {
-  return Boolean(process.env.VERCEL || process.env.AI_GATEWAY_API_KEY);
-}
+/** Whether Claude is set up here (agent.ts); without it the chat answers with starter lists. */
+export const canDraft = canAsk;
 
-/**
- * One turn of Jonz: Claude reads and proposes through the tools, then says
- * its last word. Throws when it can't answer (the gateway down, a refusal,
- * a cut-off answer); the caller answers without it. `model` is Claude, unless
- * a test stands in for it.
- */
-export async function askClaude(ctx: DraftContext, tools: JonzTools, model: LanguageModel = DRAFT_MODEL): Promise<DraftAnswer> {
-  const result = await generateText({
-    model,
-    system: SYSTEM,
-    messages: chatMessages(ctx),
-    tools: jonzToolSet(tools),
-    output: Output.object({ schema: FinalAnswer, name: "jonz_reply" }),
-    stopWhen: isStepCount(STEPS_MAX),
-    maxOutputTokens: 4000,
-    maxRetries: 1,
-    timeout: 45_000,
-  });
-  if (result.finishReason !== "stop") throw new Error(`No answer: ${result.finishReason}`);
-  return {
-    raw: result.output,
-    inputTokens: result.totalUsage.inputTokens ?? 0,
-    outputTokens: result.totalUsage.outputTokens ?? 0,
-  };
+/** One turn of a housemate's Ask Jonz: the house's prompt and tools in the shared loop. */
+export function askClaude(ctx: DraftContext, tools: JonzTools, model: LanguageModel = DRAFT_MODEL): Promise<DraftAnswer> {
+  return runAgent({ system: SYSTEM, messages: chatMessages(ctx), tools: jonzToolSet(tools), model });
 }
