@@ -146,7 +146,7 @@ export async function chatTurn(
     return result;
   };
   const tools: JonzTools = {
-    reads: houseReads(caller, houseId, { house: { name: house.name, kind: house.kind }, rules, people: everyone, now }),
+    reads: houseReads(caller, houseId, { house: { name: house.name, kind: house.kind, awayMakeup: house.away_makeup }, rules, people: everyone, now }),
     listJohns: () => listLines(raw),
     edit(e) {
       // The tool is only offered to someone who may, but a model's call is checked all the same.

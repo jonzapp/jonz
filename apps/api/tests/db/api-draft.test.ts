@@ -200,7 +200,7 @@ describe("chatTurn, with Claude stood in for", () => {
       // Even called, a write it wasn't given is refused.
       expect(tools.edit({ kind: "add", john: { name: "Sneaky" } }).ok).toBe(false);
       expect(tools.setGroup("Us", ["me"]).ok).toBe(false);
-      reads = [tools.listJohns(), await tools.reads.people(), await tools.reads.rules(), await tools.reads.timeAway(), await tools.reads.balances(), await tools.reads.week("this"), await tools.reads.history()];
+      reads = [tools.listJohns(), await tools.reads.people(), await tools.reads.rules(), await tools.reads.timeAway(), await tools.reads.balances(), await tools.reads.week("this"), await tools.reads.history(), await tools.reads.stake(), await tools.reads.whyJohn("bathroom", null), tools.reads.howItWorks("stake")];
       return { raw: { reply: "Ava and you.", ask: { kind: "none" } }, inputTokens: 1, outputTokens: 1 };
     });
     expect(result).toEqual({ reply: "Ava and you.", ask: null, draft: null, source: "ai" });
@@ -210,6 +210,10 @@ describe("chatTurn, with Claude stood in for", () => {
     expect(reads[2]).toContain("The week starts on Monday");
     expect(reads[5]).toMatch(/^(Week from|The week from) \d{4}-\d{2}-\d{2}/);
     expect(reads[6]).toBeTruthy();
+    expect(reads[7]).toMatch(/^Stake .* a month each/);
+    expect(reads[7]).toContain("No forfeits yet.");
+    expect(reads[8]).toMatch(/^Bathroom, week from \d{4}-\d{2}-\d{2}, dealt to (me|Ava):/);
+    expect(reads[9]).toContain("Nobody loses more than");
   });
 
   it("refuses someone outside the house", async () => {
