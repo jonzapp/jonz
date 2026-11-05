@@ -1,6 +1,8 @@
 import { MockLanguageModelV4 } from "ai/test";
 import { describe, expect, it } from "vitest";
 
+import { REPLY_FORMAT_GUIDE, REPLY_SAMPLES, tidyReply } from "@app/core";
+
 import { askClaude, jonzToolSet, type DraftContext, type JonzTools } from "@/lib/ai/house-draft";
 
 /** Ask Jonz's tools: every read for everyone, a write only for a move the person may make. */
@@ -72,5 +74,23 @@ describe("askClaude", () => {
     expect(JSON.stringify(call.prompt)).toContain("Elm Road");
     expect((call.tools ?? []).map((t) => t.name)).toContain("remove_john");
     expect((call.tools ?? []).map((t) => t.name)).not.toContain("add_john");
+  });
+
+  it("tells Claude how to write: Markdown, chips and cards, from the same list the app draws", async () => {
+    const model = new MockLanguageModelV4({
+      doGenerate: {
+        content: [{ type: "text", text: JSON.stringify({ reply: REPLY_SAMPLES[1].reply, ask: { kind: "none", options: [] } }) }],
+        finishReason: { unified: "stop", raw: "end_turn" },
+        usage,
+        warnings: [],
+      },
+    });
+    const answer = await askClaude(ctx, tools({}), model);
+    const system = JSON.stringify(model.doGenerateCalls[0].prompt[0]);
+    expect(system).toContain(JSON.stringify(REPLY_FORMAT_GUIDE).slice(1, -1));
+    // The old rule against lists and Markdown is gone.
+    expect(system).not.toMatch(/no bullets or markdown/i);
+    // A Markdown reply comes through with its lines and cards as written.
+    expect(tidyReply(answer.raw.reply)).toBe(REPLY_SAMPLES[1].reply);
   });
 });

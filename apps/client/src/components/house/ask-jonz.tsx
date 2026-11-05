@@ -3,9 +3,12 @@ import { useState, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { SetupChat } from '@/components/house/setup-chat';
+import { useJohnSheetIfAny } from '@/components/john-sheet';
+import { replyPieces } from '@/components/reply/pieces';
 import { Reading, ReadFailed } from '@/components/read-state';
 import { useHouse } from '@/hooks/use-house';
 import { useJohnList } from '@/hooks/use-john-list';
+import { useTable } from '@/hooks/use-table';
 import { GUTTER, useTheme } from '@/theme';
 
 /**
@@ -30,6 +33,8 @@ export function AskJonz({
   const { colors } = useTheme();
   const { query, view } = useHouse(houseId, userId);
   const list = useJohnList(houseId);
+  const table = useTable(houseId, query.data);
+  const sheet = useJohnSheetIfAny();
   const retry = () => void Promise.all([query.refetch(), list.refetch()]);
   const ready = view !== null && list.data !== undefined;
   const [title, setTitle] = useState<string | null>(null);
@@ -48,6 +53,24 @@ export function AskJonz({
           passOpen={passUnlocked(view.snapshot.house.pass, view.now)}
           canChange={memberCan(view.me, 'johns.edit')}
           onOpenList={onOpenList}
+          pieces={replyPieces({
+            viewerId: userId,
+            people: view.snapshot.members.map((m) => ({ userId: m.userId, name: m.name })),
+            johns: list.data.johns,
+            groups: list.data.groups,
+            items: view.board.items,
+            rowContext: {
+              houseId,
+              userId,
+              zone: view.snapshot.rules.timezone,
+              rules: view.snapshot.rules,
+              now: view.now,
+              nameOf: (id) => view.snapshot.members.find((m) => m.userId === id)?.name ?? null,
+            },
+            balances: table.data?.balances ?? null,
+            awayMakeup: view.snapshot.house.awayMakeup,
+            openJohn: sheet?.open,
+          })}
         />
       ) : (
         <View style={styles.reading}>{query.isError || list.isError ? <ReadFailed onRetry={retry} /> : <Reading />}</View>

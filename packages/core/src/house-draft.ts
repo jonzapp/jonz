@@ -333,14 +333,19 @@ export function draftPlan(draft: HouseDraft, keep: readonly number[], existingGr
   return { makeGroups, johns, everyoneForNow };
 }
 
-/** The most Jonz says in one turn, so a runaway reply can't fill the screen. Room for a short list. */
-export const REPLY_MAX = 1500;
+/** The most Jonz says in one turn, so a runaway reply can't fill the screen. Room for a short list in Markdown. */
+export const REPLY_MAX = 2000;
 
-/** Jonz's reply as the chat shows it: spaces tidied, line breaks kept (at most one blank line), cut to fit. */
+/** Jonz's reply as the chat shows it: spaces tidied, line breaks and indents kept (at most one blank line), cut to fit. */
 export function tidyReply(reply: string): string {
   return reply
     .split("\n")
-    .map((line) => line.replace(/[ \t\f\v\r]+/g, " ").trim())
+    // A line's indent is Markdown's (a list inside a list): kept, tabs as two spaces; spaces inside it tidied.
+    .map((line) => {
+      const indent = (/^[ \t]*/.exec(line)?.[0] ?? "").replace(/\t/g, "  ");
+      const words = line.replace(/[ \t\f\v\r]+/g, " ").trim();
+      return words ? indent + words : "";
+    })
     .join("\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim()
