@@ -1,4 +1,5 @@
 import {
+  ASK_CHATS_COPY,
   CATEGORIES,
   changedLine,
   CHAT_MAX_MESSAGES,
@@ -28,13 +29,16 @@ import {
   type HouseRules,
   type JohnDef,
   type IsoDow,
+  type SavedTurn,
   type StarterKind,
 } from '@app/core';
 import { router } from 'expo-router';
 import { CheckIcon, MinusIcon, PencilIcon, PlusIcon } from 'lucide-react-native';
-import { useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { keepChat, type SavedChat } from '@/api/ask-chats';
 import { applyDraft, sendChat } from '@/api/draft';
 import { saveDealMode } from '@/api/settings';
 import { Alert } from '@/components/alert';
@@ -53,6 +57,7 @@ import { ChoiceRow } from '@/components/setup/choice-row';
 import { Body, Meta } from '@/components/text';
 import { TextButton } from '@/components/text-button';
 import { useAskUsage } from '@/hooks/use-ask-usage';
+import { askChatsKey } from '@/hooks/keys';
 import { useMove } from '@/hooks/use-move';
 import { INSET, SPACE, useTheme } from '@/theme';
 
@@ -75,8 +80,34 @@ type Turn =
       moves?: ChatMove[];
       /** How long Jonz thought, and the steps it showed meanwhile; a starter list has none. */
       thought?: { seconds: number; steps: string[] };
+      /** A reply from a chat kept earlier that had a card then: the card isn't kept, so it says to ask again. */
+      old?: boolean;
     }
   | { role: 'done'; added: number };
+
+/** A kept chat's turns as the chat shows them: no card comes back, only that there was one. */
+export function fromSaved(saved: readonly SavedTurn[]): Turn[] {
+  return saved.map((t) =>
+    t.role === 'assistant' ? { role: 'assistant', text: t.text, ask: t.ask, draft: null, old: t.hadCard } : t,
+  );
+}
+
+/** The chat's turns as they're kept: what was said, and whether a reply had a card. */
+export function toSaved(turns: readonly Turn[]): SavedTurn[] {
+  return turns.map((t) =>
+    t.role === 'assistant'
+      ? {
+          role: 'assistant',
+          text: t.text,
+          ask: t.ask,
+          hadCard: Boolean(t.old || t.draft || t.resets?.length || t.moves?.length),
+        }
+      : t,
+  );
+}
+
+/** The time, for how long Jonz thought: read in a send, never while drawing. */
+const clock = () => Date.now();
 
 /** How many of a new house's drafted Johns show before "See all". */
 const FOLDED = 3;
@@ -125,6 +156,9 @@ export function SetupChat({
   canChange = true,
   onOpenList = () => router.dismissTo('/house/johns'),
   pieces = NO_PIECES,
+  saved = null,
+  onKept,
+  recent,
 }: {
   houseId: string;
   rules: HouseRules;
@@ -142,6 +176,12 @@ export function SetupChat({
   onOpenList?: () => void;
   /** What Jonz's replies' chips and cards stand for (components/reply/pieces.tsx); without it they're words. */
   pieces?: ReplyPieces;
+  /** A chat kept earlier, to carry on with; none starts a new one. Remount (a new key) to switch. */
+  saved?: SavedChat | null;
+  /** The chat is kept, under this id: after each answer, so it's never lost. */
+  onKept?: (id: string) => void;
+  /** Under the greeting before anything's said: the chats to pick up again. */
+  recent?: ReactNode;
 }) {
   const keeping = useMove(houseId);
   // The list as the chat found it: what a draft's changes are counted from. Held while a draft is open, so
@@ -151,7 +191,14 @@ export function SetupChat({
   const [rebase, setRebase] = useState(false);
   const base = rebase ? live : held;
   const editing = base !== null;
-  const [turns, setTurns] = useState<Turn[]>([]);
+  const [turns, setTurns] = useState<Turn[]>(() => fromSaved(saved?.turns ?? []));
+  const chatId = useRef(saved?.id ?? null);
+  // Keeping goes one at a time, so the first answer's new row is the one the next answer updates.
+  const queue = useRef<Promise<void>>(Promise.resolve());
+  const unkept = useRef(false);
+  // Only a chat with something written in it is kept: a starter list tapped and kept is no chat to come back to.
+  const written = useRef((saved?.turns.length ?? 0) > 0);
+  const client = useQueryClient();
   const [draft, setDraft] = useState<HouseDraft | null>(base);
   const [keep, setKeep] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
@@ -171,7 +218,26 @@ export function SetupChat({
   // What Jonz shows itself doing while it answers: "your list" once there's a draft or a list to look at.
   const steps = HOUSE_DRAFT_COPY.thinkingSteps(draft !== null);
 
+  // Each answer (and each list applied) keeps the chat as it now is. A chat that can't be kept carries on
+  // regardless: keeping is for coming back to it, never in the way of it.
+  useEffect(() => {
+    if (!unkept.current || !written.current || turns.length === 0) return;
+    unkept.current = false;
+    const kept = toSaved(turns);
+    queue.current = queue.current.then(async () => {
+      try {
+        chatId.current = await keepChat(houseId, chatId.current, kept);
+        onKept?.(chatId.current);
+        await client.invalidateQueries({ queryKey: askChatsKey(houseId) });
+      } catch {
+        // Not kept this time; the next answer tries again with the whole chat.
+        unkept.current = true;
+      }
+    });
+  }, [turns, houseId, client, onKept]);
+
   function answered(reply: Turn & { role: 'assistant' }, said: Turn[]) {
+    unkept.current = true;
     setTurns([...said, reply]);
     if (reply.draft) {
       // A new draft holds the list it was made from until it's applied.
@@ -189,17 +255,18 @@ export function SetupChat({
     if (!said || busy || done) return;
     const before = turns;
     const next: Turn[] = [...turns, { role: 'user', text: said }];
+    written.current = true;
     setTurns(next);
     setText('');
     setProblem(null);
     setSending(true);
-    const asked = Date.now();
+    const asked = clock();
     try {
       const messages: ChatMessage[] = next
         .flatMap((t) => (t.role === 'done' || !t.text ? [] : [{ role: t.role, text: t.text }]))
         .slice(-CHAT_MAX_MESSAGES);
       const answer = await sendChat(houseId, messages, draft);
-      const took = Date.now() - asked;
+      const took = clock() - asked;
       const thought = { seconds: Math.max(1, Math.round(took / 1000)), steps: stepsShown(steps, took) };
       if (answer.allowance) usage.put(answer.allowance);
       answered({ role: 'assistant', text: answer.reply, ask: answer.ask, draft: answer.draft, resets: answer.resets, moves: answer.moves, thought }, next);
@@ -224,6 +291,7 @@ export function SetupChat({
     if (!draft) return;
     let added = 0;
     if (await keeping.run(async () => (added = await applyDraft(houseId, rules, base, draft, keep, { johns, groups }, new Date())))) {
+      unkept.current = true;
       setTurns((was) => [...was, { role: 'done', added }]);
       // A list's chat carries on from the list as it now is, read again from the house. A new house's
       // chat ends here (the deal question follows), so it keeps the base it had.
@@ -294,6 +362,7 @@ export function SetupChat({
           </>
         ) : null}
       </Said>
+      {turns.length === 0 ? recent : null}
 
       {turns.map((turn, at) => {
         if (turn.role === 'user') {
@@ -325,6 +394,7 @@ export function SetupChat({
         }
         return (
           <JonzSaid key={at} text={turn.text} thought={turn.thought} pieces={pieces}>
+            {turn.old ? <Meta testID="chat-old-card">{ASK_CHATS_COPY.oldCard}</Meta> : null}
             {/* The question's answers sit under the question, over the draft it's about. */}
             {turn === last && ask ? <AskCard ask={ask} weekStarts={rules.weekStarts} onAnswer={(a) => void send(a)} /> : null}
             {/* A turn that changes nothing on a house's list (a question, say) has no card. */}

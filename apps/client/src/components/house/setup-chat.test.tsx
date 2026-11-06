@@ -1,9 +1,10 @@
-import { ASK_USAGE_COPY, type AskUsage, HOUSE_DRAFT_COPY, RESET_COPY, STEADY_COPY, type ChatReset, listAsDraft, NEW_JOHN, NEXT_UP_COPY, starterDraft, tidyDraft, type HouseRules, type JohnDef } from '@app/core';
+import { ASK_CHATS_COPY, ASK_USAGE_COPY, type AskUsage, HOUSE_DRAFT_COPY, RESET_COPY, STEADY_COPY, type ChatReset, listAsDraft, NEW_JOHN, NEXT_UP_COPY, starterDraft, tidyDraft, type HouseRules, type JohnDef } from '@app/core';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import type { ReactNode } from 'react';
 
+import { keepChat } from '@/api/ask-chats';
 import { applyDraft, askUsageOf, sendChat } from '@/api/draft';
 import { undoAction } from '@/api/history';
 import { applyReset } from '@/api/resets';
@@ -17,6 +18,7 @@ jest.mock('@/api/draft', () => ({
   sendChat: jest.fn(),
   askUsageOf: jest.fn(async () => ({ left: 1, house: false, resetsAt: '2026-11-09T00:00:00.000Z', pass: true, people: 2, houseUsed: 0, mineUsed: 0, usedBy: [] })),
 }));
+jest.mock('@/api/ask-chats', () => ({ keepChat: jest.fn(async () => 'chat-1') }));
 jest.mock('@/api/history', () => ({ undoAction: jest.fn() }));
 jest.mock('@/api/resets', () => ({ applyReset: jest.fn() }));
 jest.mock('@/api/settings', () => ({ saveDealMode: jest.fn() }));
@@ -419,5 +421,81 @@ describe("the week's Ask Jonz", () => {
     await open();
     await say(HOUSE);
     expect(await screen.findByTestId('chat-out')).toBeTruthy();
+  });
+});
+
+describe('kept chats', () => {
+  const kept = keepChat as jest.Mock;
+
+  it('keeps the chat after each answer: a new one first, then the same one, with no card kept', async () => {
+    await open();
+    await say(HOUSE);
+    await waitFor(() => expect(kept).toHaveBeenCalledTimes(1));
+    expect(kept).toHaveBeenCalledWith('h1', null, [
+      { role: 'user', text: HOUSE },
+      { role: 'assistant', text: 'Here’s a first go.', ask: null, hadCard: true },
+    ]);
+    chat.mockResolvedValueOnce({ reply: 'Bins are Monday.', ask: null, draft: null, source: 'ai' });
+    await say('When are the bins?');
+    await waitFor(() => expect(kept).toHaveBeenCalledTimes(2));
+    expect(kept.mock.calls[1][1]).toBe('chat-1');
+    expect(kept.mock.calls[1][2].at(-1)).toEqual({ role: 'assistant', text: 'Bins are Monday.', ask: null, hadCard: false });
+  });
+
+  it('carries on with a kept chat: its words come back, a card says to ask again, and Jonz is sent what was said', async () => {
+    const johns: JohnDef[] = [{ ...NEW_JOHN, id: 'j1', name: 'Bins out', category: 'bins' } as JohnDef];
+    await render(
+      <SetupChat
+        houseId="h1"
+        rules={RULES}
+        johns={johns}
+        groups={[]}
+        people={people}
+        me={ME}
+        passOpen
+        saved={{
+          id: 'chat-9',
+          title: 'Bins weekly',
+          turns: [
+            { role: 'user', text: 'Bins weekly' },
+            { role: 'assistant', text: 'Here’s the change.', ask: null, hadCard: true },
+          ],
+        }}
+        recent={null}
+      />,
+      { wrapper: House },
+    );
+    expect(screen.getByText('Bins weekly')).toBeTruthy();
+    expect(screen.getByTestId('chat-old-card')).toHaveTextContent(ASK_CHATS_COPY.oldCard);
+    expect(screen.queryByTestId('draft-card')).toBeNull();
+    chat.mockResolvedValueOnce({ reply: 'Done that.', ask: null, draft: null, source: 'ai' });
+    await say('Thanks');
+    expect(chat.mock.calls[0][1]).toEqual([
+      { role: 'user', text: 'Bins weekly' },
+      { role: 'assistant', text: 'Here’s the change.' },
+      { role: 'user', text: 'Thanks' },
+    ]);
+    await waitFor(() => expect(kept).toHaveBeenCalled());
+    expect(kept.mock.calls[0][1]).toBe('chat-9');
+  });
+
+  it('keeps nothing when only a starter list was tapped', async () => {
+    await open();
+    await fireEvent.press(screen.getByTestId('starter-family'));
+    await fireEvent.press(screen.getByTestId('describe-keep'));
+    await screen.findByTestId('chat-done');
+    expect(kept).not.toHaveBeenCalled();
+  });
+
+  it('shows the chats to pick up only before anything is said', async () => {
+    const { Text } = jest.requireActual('react-native');
+    await render(
+      <SetupChat houseId="h1" rules={RULES} johns={[]} groups={[]} people={people} me={ME} passOpen recent={<Text>recent here</Text>} />,
+      { wrapper: House },
+    );
+    expect(screen.getByText('recent here')).toBeTruthy();
+    await say(HOUSE);
+    await screen.findByText('Here’s a first go.');
+    expect(screen.queryByText('recent here')).toBeNull();
   });
 });

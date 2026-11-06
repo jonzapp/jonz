@@ -22,9 +22,9 @@ export default function DescribeScreen() {
     <AskJonz
       houseId={house!.id}
       userId={session!.user.id}
-      bar={(title) => (
+      bar={(title, actions) => (
         <>
-          <TitleBar title={title} back="/house" backLabel={SECTION_LABEL.house} />
+          <TitleBar title={title} back="/house" backLabel={SECTION_LABEL.house} right={actions} />
           <PageTitle page={title} />
         </>
       )}
