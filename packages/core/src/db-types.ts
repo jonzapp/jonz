@@ -1435,6 +1435,36 @@ export type Database = {
           },
         ]
       }
+      owner_ask_turns: {
+        Row: {
+          asked_at: string
+          id: string
+          input_tokens: number
+          output_tokens: number
+          owner_id: string
+          question: string
+          reply: string | null
+        }
+        Insert: {
+          asked_at?: string
+          id?: string
+          input_tokens?: number
+          output_tokens?: number
+          owner_id?: string
+          question: string
+          reply?: string | null
+        }
+        Update: {
+          asked_at?: string
+          id?: string
+          input_tokens?: number
+          output_tokens?: number
+          owner_id?: string
+          question?: string
+          reply?: string | null
+        }
+        Relationships: []
+      }
       notices: {
         Row: {
           body: string
@@ -2023,6 +2053,10 @@ export type Database = {
         }
         Returns: string
       }
+      claim_owner_ask: {
+        Args: { p_limit: number; p_question: string }
+        Returns: string
+      }
       close_month: {
         Args: { p_entries: Json; p_house: string; p_month: string }
         Returns: boolean
@@ -2217,6 +2251,10 @@ export type Database = {
       open_flag: {
         Args: { p_at: string; p_by?: string; p_john: string }
         Returns: string
+      }
+      finish_owner_ask: {
+        Args: { p_input: number; p_output: number; p_reply: string; p_turn: string }
+        Returns: undefined
       }
       owner_delete_now: {
         Args: { p_reason?: string; p_user: string }

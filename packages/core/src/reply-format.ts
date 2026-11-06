@@ -343,10 +343,17 @@ const CARD_GUIDE: Record<CardName, string> = {
  * How Ask Jonz writes, for its instructions: built from PAGES and CARDS, so
  * the prompt can only name chips and cards the app draws.
  */
-export const REPLY_FORMAT_GUIDE = [
-  "How to write (the app draws your reply as Markdown, with its own pieces):",
+const MARKDOWN_RULES = [
   "- Write Markdown like other chat apps: **bold** for the few words that matter, a short bullet or numbered list for steps or several things, a ### heading only when a long reply has parts, a small table only to compare a few numbers side by side. No emoji, code, web links or images.",
   "- Keep it short: most replies are one to three sentences, and none longer than a phone screen.",
+];
+
+/** How to write where there's no house to show: Markdown alone, no chips or cards (the owner's Ask Jonz). */
+export const PLAIN_REPLY_GUIDE = ["How to write (the app draws your reply as Markdown):", ...MARKDOWN_RULES].join("\n");
+
+export const REPLY_FORMAT_GUIDE = [
+  "How to write (the app draws your reply as Markdown, with its own pieces):",
+  ...MARKDOWN_RULES,
   "- Name things as chips people can tap: a John as [its name](jonz:john/REF) with its ref from list_johns; someone in the house as [first name](jonz:person/First name) (never the person you're talking with: that's just “you”); a page of the app as [its name](jonz:page/NAME).",
   `- The pages: ${(Object.keys(PAGES) as PageName[]).map((p) => `${p} (${PAGES[p].label})`).join(", ")}.`,
   "- Show the house's facts as live cards rather than typing them out, each on a line of its own:",
