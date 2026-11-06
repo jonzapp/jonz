@@ -25,6 +25,11 @@ export function useJohnSheet(): JohnSheetApi {
   return api;
 }
 
+/** The John sheet's opener where there may be none above (a chat reply drawn outside the house): null then. */
+export function useJohnSheetIfAny(): JohnSheetApi | null {
+  return useContext(JohnSheetApiContext);
+}
+
 /**
  * The one John sheet: every John action lives in it, opened by tapping a
  * John anywhere (Today, Week, House). Mounted once, in the house layout. It

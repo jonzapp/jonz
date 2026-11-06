@@ -69,4 +69,8 @@ describe("tidyReply", () => {
     expect(tidyReply("  Bins:   Ava \r\n\n\n\nBathroom:\tBen  ")).toBe("Bins: Ava\n\nBathroom: Ben");
     expect(tidyReply("x".repeat(REPLY_MAX + 50))).toHaveLength(REPLY_MAX);
   });
+
+  it("keeps a Markdown list's indents, so a list inside a list stays inside", () => {
+    expect(tidyReply("- Food shop\n  - Big   shop\n\t- List  \n   \n")).toBe("- Food shop\n  - Big shop\n  - List");
+  });
 });

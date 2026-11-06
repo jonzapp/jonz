@@ -43,6 +43,7 @@ import { Row, RowIcon } from '@/components/row';
 import { Section } from '@/components/section';
 import { Segmented } from '@/components/segmented';
 import { ResetsCard } from '@/components/house/resets-card';
+import { NO_PIECES, Reply, type ReplyPieces } from '@/components/reply/reply';
 import { stepsShown, Thinking, ThoughtFold } from '@/components/house/thinking';
 import { ChoiceRow } from '@/components/setup/choice-row';
 import { Body, Meta } from '@/components/text';
@@ -126,6 +127,7 @@ export function SetupChat({
   passOpen,
   canChange = true,
   onOpenList = () => router.dismissTo('/house/johns'),
+  pieces = NO_PIECES,
 }: {
   houseId: string;
   rules: HouseRules;
@@ -141,6 +143,8 @@ export function SetupChat({
   canChange?: boolean;
   /** The done row's way to the John list: back down the stack on a page, across to it from the side panel. */
   onOpenList?: () => void;
+  /** What Jonz's replies' chips and cards stand for (components/reply/pieces.tsx); without it they're words. */
+  pieces?: ReplyPieces;
 }) {
   const { colors, type } = useTheme();
   const scroll = useRef<ScrollViewInstance>(null);
@@ -304,7 +308,7 @@ export function SetupChat({
           return (
             <View key={at} style={styles.said}>
               {turn.thought ? <ThoughtFold seconds={turn.thought.seconds} steps={turn.thought.steps} /> : null}
-              {turn.text ? <Body testID="chat-reply">{turn.text}</Body> : null}
+              {turn.text ? <Reply source={turn.text} pieces={pieces} testID="chat-reply" /> : null}
               {/* The question's answers sit under the question, over the draft it's about. */}
               {turn === last && ask ? <AskCard ask={ask} weekStarts={rules.weekStarts} onAnswer={(a) => void send(a)} /> : null}
               {/* A turn that changes nothing on a house's list (a question, say) has no card. */}

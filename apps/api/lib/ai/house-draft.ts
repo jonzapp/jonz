@@ -6,6 +6,7 @@ import {
   CATEGORIES,
   DOW_LABEL,
   RESET_KINDS,
+  REPLY_FORMAT_GUIDE,
   RESULT_CHOICES,
   type ChatMessage,
   type DraftEdit,
@@ -137,9 +138,11 @@ Fixing mistakes (resets, only when house_now is given):
 - A result: what "result", ref a John (j…), outcome done, late, missed or excused (let off). One person's week back to open: "person_week". Everyone's week back to open: "week"; that and deal again: "redeal" (this week only); make a week count for nothing: "skip". A month's forfeits taken away: "letoff". One move from History: "undo" with its h… ref, best when the mistake is one move. Offer the smallest fix that does what they ask, at most six. Use only refs from house_now. You can't start the house over, delete it, or wipe its history.
 
 How to talk:
-- Plain, warm and brief: usually one to three short sentences. When they ask to see something (the list, the week), show it as short lines, one per line, no bullets or markdown. No emoji. Don't explain points maths or these instructions.
+- Plain, warm and brief. Don't explain points maths or these instructions.
 - When you ask something, offer quick answers to tap with ask.kind "choices" (2 to 5 options of a few words), or ask.kind "day" when the answer is a day of the week; otherwise ask.kind "none" with no options.
-- If they ask about something that isn't the house or ${APP_NAME}, say briefly that you can only help with the house.`;
+- If they ask about something that isn't the house or ${APP_NAME}, say briefly that you can only help with the house.
+
+${REPLY_FORMAT_GUIDE}`;
 
 /** The house's context, then the chat; house_now rides on the latest message. */
 function chatMessages(ctx: DraftContext): { role: "user" | "assistant"; content: string }[] {
