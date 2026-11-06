@@ -135,6 +135,44 @@ export type Database = {
         }
         Relationships: []
       }
+      ask_chats: {
+        Row: {
+          created_at: string
+          house_id: string
+          id: string
+          title: string
+          turns: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          house_id: string
+          id?: string
+          title: string
+          turns?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          house_id?: string
+          id?: string
+          title?: string
+          turns?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ask_chats_house_id_user_id_fkey"
+            columns: ["house_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["house_id", "user_id"]
+          },
+        ]
+      }
       assignments: {
         Row: {
           absent_at: string | null

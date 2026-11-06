@@ -1761,7 +1761,7 @@ export const HOUSE_DRAFT_COPY = {
   placeholderChange: "Try “oven every month”",
   message: "Message",
   send: "Send",
-  privacy: "What you write is sent to Anthropic’s Claude, through Vercel, to draft the list.",
+  privacy: "What you write is sent to Anthropic’s Claude, through Vercel, to answer. Only you can see your chats, and they’re kept until you delete them.",
   /** While Jonz is answering. */
   thinking: `${APP_NAME} is thinking…`,
   /**

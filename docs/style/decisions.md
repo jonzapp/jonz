@@ -6,6 +6,7 @@ pages are private artifacts on claude.ai.
 
 | Date | Decision | Where | Rule |
 | --- | --- | --- | --- |
+| 2026-11-06 | Ask Jonz chats are kept until you delete them: the latest three on the chat's start, See all for Your chats with Delete, New chat in the title bar; no expiry | this PR | [lists](lists.md#rows) |
 | 2026-11-05 | Ask Jonz replies in Markdown with Jonz pieces: chips for Johns, people and pages in a sentence, live cards for the week, fair shares and the list (option B) | this PR | [words](words.md#ask-jonzs-replies) |
 | 2026-11-05 | Ask Jonz changes to the list on one card sorted by kind: Taking off (hazard minus) first, then Changing (pencil, before → after), then Adding (plus), each ticked, one Apply; the chat carries on after it | this PR | [states](states.md#mistakes) |
 | 2026-11-05 | The title bar's buttons are one group at the right edge in a fixed order (the page's own button, Help, the sparkles at the edge), squares touching so the gaps are even | this PR | [layout](layout.md#the-title-bar) |

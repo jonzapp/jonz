@@ -1,0 +1,85 @@
+import { z } from "zod";
+
+import { dayLabel } from "./format";
+import { ChatAsk } from "./house-draft";
+import { addDaysTo, localDate } from "./week";
+
+/**
+ * Ask Jonz chats, kept until the person deletes them (the ask_chats table:
+ * theirs alone, gone when they leave the house or delete their account).
+ * A chat is kept as what it showed: what they said, Jonz's replies and
+ * questions, and whether a reply had a card. A card is never kept to apply
+ * later: the house may have changed since, so a reopened chat says to ask
+ * again.
+ */
+export const SavedTurn = z.discriminatedUnion("role", [
+  z.object({ role: z.literal("user"), text: z.string().max(4000) }),
+  z.object({
+    role: z.literal("assistant"),
+    text: z.string().max(20000),
+    ask: ChatAsk.nullable(),
+    /** The reply came with a card (changes, resets, moves). */
+    hadCard: z.boolean(),
+  }),
+  z.object({ role: z.literal("done"), added: z.number().int().min(0) }),
+]);
+export type SavedTurn = z.infer<typeof SavedTurn>;
+
+/** The most turns a chat keeps; past it, the oldest go first. */
+export const CHAT_SAVED_TURNS = 200;
+
+/** How many chats Ask Jonz's start shows. */
+export const RECENT_CHATS = 3;
+
+/** The longest a chat's title runs: two lines of a row in the 400-wide side panel, so it's never cut short on screen. */
+export const CHAT_TITLE_MAX = 44;
+
+/** A chat's title: the first thing they said, on one line, cut at a word to fit CHAT_TITLE_MAX. */
+export function chatTitle(turns: readonly SavedTurn[]): string {
+  const first = turns.find((t) => t.role === "user")?.text ?? "";
+  const line = first.replace(/\s+/g, " ").trim();
+  if (line.length <= CHAT_TITLE_MAX) return line || ASK_CHATS_COPY.untitled;
+  const cut = line.slice(0, CHAT_TITLE_MAX - 1);
+  const at = cut.lastIndexOf(" ");
+  return `${(at > CHAT_TITLE_MAX / 2 ? cut.slice(0, at) : cut).replace(/[\s,.;:–-]+$/, "")}…`;
+}
+
+/** Turns as they're kept: valid ones only, the last CHAT_SAVED_TURNS. */
+export function savedTurns(raw: unknown): SavedTurn[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.flatMap((t) => {
+    const parsed = SavedTurn.safeParse(t);
+    return parsed.success ? [parsed.data] : [];
+  }).slice(-CHAT_SAVED_TURNS);
+}
+
+/** When a chat was last used: "Today", "Yesterday", else "Mon 3 Nov". */
+export function chatWhen(at: Date, now: Date, zone: string): string {
+  const day = localDate(at, zone);
+  const today = localDate(now, zone);
+  if (day === today) return ASK_CHATS_COPY.today;
+  if (day === addDaysTo(today, -1)) return ASK_CHATS_COPY.yesterday;
+  return dayLabel(at, zone);
+}
+
+export const ASK_CHATS_COPY = {
+  recent: "Pick up where you left off",
+  seeAll: "See all",
+  all: "Your chats",
+  allMeta: "Only you can see these",
+  allNote: "Chats are kept until you delete them, and go if you leave the house or delete your account.",
+  none: "No chats yet. What you ask Jonz is kept here.",
+  newChat: "New chat",
+  back: "Back to the chat",
+  today: "Today",
+  yesterday: "Yesterday",
+  untitled: "A chat with Jonz",
+  delete: "Delete",
+  deleteChat: (title: string) => `Delete “${title}”`,
+  deleteTitle: "Delete this chat?",
+  deleteBody: "It’s gone for good. Anything it changed in the house stays changed.",
+  deleted: "Chat deleted.",
+  /** Under a reply in a reopened chat that had a card then. */
+  oldCard: "This had a card earlier. Ask again to change things now.",
+  privacy: "Only you can see your chats. They’re kept until you delete them.",
+} as const;

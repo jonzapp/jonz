@@ -112,8 +112,15 @@ on Today, Week and House (not while a parent is acting for a kid).
   scale (points 1 to 20), and how often any period the list takes, in weeks
   or months (`docs/specs/any-length-repeats.md`).
 - Each turn asked of Claude is a `house_drafts` row (outcome, how many
-  Johns drafted, tokens), readable only by the service role. The chat is
-  never stored.
+  Johns drafted, tokens), readable only by the service role.
+- Chats are kept until the person deletes them (`ask_chats`, theirs alone
+  by RLS, gone with their membership when they leave the house or delete
+  their account). A chat keeps what was said, Jonz's replies and
+  questions, and whether a reply had a card; never the card itself, so a
+  reopened chat says to ask again instead of applying a stale change.
+  Ask Jonz's start shows the latest three (Pick up where you left off);
+  See all opens Your chats, where any chat opens or is deleted after a
+  sheet. New chat sits in the title bar. No chat expires.
 - Keeping makes the groups the kept Johns need through `save_group`, then
   adds the Johns in one insert through the admins' column grants
   (`keepDraft`, `addJohns` in `apps/client/src/api`). A drafted group with
