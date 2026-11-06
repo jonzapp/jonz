@@ -75,7 +75,11 @@ export interface JonzTools {
   setGroup(name: string, members: string[]): EditResult;
   /** Offer a reset (an admin's), in house_now's refs; the card shows it with its numbers. */
   offerReset(r: ResetInput): Promise<EditResult>;
-  may: { add: boolean; change: boolean; remove: boolean; groups: boolean; resets: boolean };
+  /** Put booking the person's own time away on the card. */
+  offerAway(a: { from: string; to: string; note: string | null }): Promise<EditResult>;
+  /** Put cancelling some of the person's own time away on the card, by its ref from time_away. */
+  offerCancelAway(ref: string): Promise<EditResult>;
+  may: { add: boolean; change: boolean; remove: boolean; groups: boolean; resets: boolean; away: boolean };
 }
 
 /** The house and the chat as Claude is told about them. */
@@ -116,7 +120,7 @@ How ${APP_NAME} works:
 
 Your tools:
 - Look things up before you answer: list_johns for the John list (with refs), week for who has what this week, last week or next, people, time_away, history, balances (fair shares), stake (the money), why_john (why a John went to someone), how_it_works (how a part of the app works, with this house's numbers), house_rules. Reads are free and need no permission; use as many as you need. Never guess what you could look up.
-- Changes are proposals. add_john, change_john and remove_john change a draft of the list, one John per call; set_group makes a new group, or changes who's in one the house has (give everyone who should be in it, not just who's joining); offer_reset offers a fix (only when house_now is given). Each tool says whether it worked; if it didn't, fix the call or tell the person. Nothing changes until they tap Apply on the card, so never say something is done: say what you've put on the card.
+- Changes are proposals. add_john, change_john and remove_john change a draft of the list, one John per call; set_group makes a new group, or changes who's in one the house has (give everyone who should be in it, not just who's joining); offer_reset offers a fix (only when house_now is given); book_away and cancel_away put the person's own time away on a card (read time_away first: their periods have refs, and a booking can't overlap one). Each tool says whether it worked; if it didn't, fix the call or tell the person. Nothing changes until they tap Apply on the card, so never say something is done: say what you've put on the card.
 - Only the tools for moves this person may make are there. If they ask for something that's for an admin (a parent in a family), say so plainly. Deleting a group is on [Groups](jonz:page/groups).
 - These moves aren't on the card yet. If they ask for one they may make, say you can't do it from the chat yet and give where it's done, with its chip:
 ${ASK_ELSEWHERE_GUIDE}
@@ -247,6 +251,18 @@ export function jonzToolSet(t: JonzTools): ToolSet {
       description: "Propose a group (some of the house who share Johns the others don't), by name and the first names of everyone in it; “me” is the person writing. For a group the house has, this changes who's in it: list everyone who should be, not just who's joining.",
       inputSchema: z.object({ name: z.string(), members: z.array(z.string()) }),
       execute: async ({ name, members }) => said(t.setGroup(name, members)),
+    });
+  }
+  if (t.may.away) {
+    set.book_away = tool({
+      description: "Put booking time away for the person you're talking with on the card: first and last day away (yyyy-mm-dd, in the house's dates), and where if they said. Only their own time away. They tap to book it.",
+      inputSchema: z.object({ from: z.string(), to: z.string(), note: z.string().nullable() }),
+      execute: async (a) => said(await t.offerAway(a)),
+    });
+    set.cancel_away = tool({
+      description: "Put cancelling some of the person's own time away on the card (or coming back early), by its ref from time_away.",
+      inputSchema: z.object({ ref: z.string() }),
+      execute: async ({ ref }) => said(await t.offerCancelAway(ref)),
     });
   }
   if (t.may.resets) {

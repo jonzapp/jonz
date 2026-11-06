@@ -22,6 +22,7 @@ import {
   tidyDraft,
   tidyReply,
   type ChatMessage,
+  type ChatMove,
   type ChatReset,
   type ChatResponse,
   type EditResult,
@@ -34,6 +35,7 @@ import { askClaude, canDraft, type DraftAnswer, type DraftContext, type JonzTool
 import { createAdminClient } from "@/lib/supabase/admin";
 
 import { houseReads } from "./ask-reads";
+import { awayMoves } from "./ask-away";
 import { askWeek, usageNow } from "./ask-usage";
 import { offerResets, resetState, type ResetState } from "./ask-resets";
 import type { Caller, Refusal } from "./disputes";
@@ -156,6 +158,8 @@ export async function chatTurn(
   let raw: RawDraft = draftNow ? draftForModel(draftNow, people, caller.userId) : { johns: [], groups: [], note: null };
   let changed = false;
   const resets: ChatReset[] = [];
+  const moves: ChatMove[] = [];
+  const away = awayMoves(caller, houseId, localDate(now, rules.timezone), moves);
   const kept = (result: EditResult, next: RawDraft): EditResult => {
     if (result.ok) {
       raw = next;
@@ -194,12 +198,15 @@ export async function chatTurn(
       resets.push(offered);
       return { ok: true, said: "On the card." };
     },
+    offerAway: (a) => (may("away.book") ? away.offerAway(a) : Promise.resolve({ ok: false, said: "That isn't something this person can do." })),
+    offerCancelAway: (ref) => (may("away.book") ? away.offerCancelAway(ref) : Promise.resolve({ ok: false, said: "That isn't something this person can do." })),
     may: {
       add: may("johns.add"),
       change: may("johns.edit"),
       remove: may("johns.remove"),
       groups: may("groups.edit") && (may("johns.add") || may("johns.edit")),
       resets: state !== null,
+      away: may("away.book"),
     },
   };
 
@@ -238,6 +245,14 @@ export async function chatTurn(
     .eq("id", turn);
   const reply = tidyReply(answer.raw.reply);
   // Nothing to say and nothing drafted before: a starter list does better than silence.
-  if (!reply && !draft && !draftNow && resets.length === 0) return offline();
-  return { reply, ask: tidyAsk(answer.raw.ask), draft, source: "ai", ...(resets.length > 0 ? { resets } : {}), allowance: await allowanceNow() };
+  if (!reply && !draft && !draftNow && resets.length === 0 && moves.length === 0) return offline();
+  return {
+    reply,
+    ask: tidyAsk(answer.raw.ask),
+    draft,
+    source: "ai",
+    ...(resets.length > 0 ? { resets } : {}),
+    ...(moves.length > 0 ? { moves } : {}),
+    allowance: await allowanceNow(),
+  };
 }

@@ -18,6 +18,7 @@ import {
   weeklyEffort,
   type ChatAsk,
   type ChatMessage,
+  type ChatMove,
   type ChatReset,
   type DealMode,
   type DraftChange,
@@ -44,6 +45,7 @@ import { Group } from '@/components/group';
 import { Row, RowIcon } from '@/components/row';
 import { Section } from '@/components/section';
 import { Segmented } from '@/components/segmented';
+import { MovesCard } from '@/components/house/moves-card';
 import { ResetsCard } from '@/components/house/resets-card';
 import { NO_PIECES, type ReplyPieces } from '@/components/reply/reply';
 import { stepsShown, Thinking } from '@/components/house/thinking';
@@ -69,6 +71,8 @@ type Turn =
       ask: ChatAsk | null;
       draft: HouseDraft | null;
       resets?: ChatReset[];
+      /** Other moves Jonz put on a card (time away). */
+      moves?: ChatMove[];
       /** How long Jonz thought, and the steps it showed meanwhile; a starter list has none. */
       thought?: { seconds: number; steps: string[] };
     }
@@ -198,7 +202,7 @@ export function SetupChat({
       const took = Date.now() - asked;
       const thought = { seconds: Math.max(1, Math.round(took / 1000)), steps: stepsShown(steps, took) };
       if (answer.allowance) usage.put(answer.allowance);
-      answered({ role: 'assistant', text: answer.reply, ask: answer.ask, draft: answer.draft, resets: answer.resets, thought }, next);
+      answered({ role: 'assistant', text: answer.reply, ask: answer.ask, draft: answer.draft, resets: answer.resets, moves: answer.moves, thought }, next);
     } catch (reason) {
       // Refused (too many today, say): what was said goes back in the box to try again.
       setTurns(before);
@@ -342,6 +346,7 @@ export function SetupChat({
             {turn.resets && turn.resets.length > 0 ? (
               <ResetsCard houseId={houseId} items={turn.resets} me={me} nameOf={nameOf} currency={rules.currency} zone={rules.timezone} />
             ) : null}
+            {turn.moves && turn.moves.length > 0 ? <MovesCard houseId={houseId} items={turn.moves} /> : null}
           </JonzSaid>
         );
       })}

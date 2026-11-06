@@ -31,8 +31,10 @@ const houseTools = (): JonzTools => ({
   edit: () => ({ ok: true, said: "ok" }),
   setGroup: () => ({ ok: true, said: "ok" }),
   offerReset: async () => ({ ok: true, said: "ok" }),
+  offerAway: async () => ({ ok: true, said: "ok" }),
+  offerCancelAway: async () => ({ ok: true, said: "ok" }),
   // Everything a house's admin may do: the most a housemate's Ask Jonz is ever given.
-  may: { add: true, change: true, remove: true, groups: true, resets: true },
+  may: { add: true, change: true, remove: true, groups: true, resets: true, away: true },
 });
 
 const usage = { inputTokens: { total: 10, noCache: 10, cacheRead: 0, cacheWrite: 0 }, outputTokens: { total: 5, text: 5, reasoning: 0 } };
