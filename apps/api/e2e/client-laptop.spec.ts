@@ -186,8 +186,8 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   await fillsTheRoom(page, person.getByTestId("person-sections-column").last());
   await shoot(page, "person");
 
-  // Groups, Admins, Preferences and History are parts of other pages now, and You has its own: seven in the list.
-  await expect(nav.getByRole("link")).toHaveCount(7);
+  // Groups, Admins, Preferences and History are parts of other pages now, You has its own, and so does Ask Jonz usage: eight in the list.
+  await expect(nav.getByRole("link")).toHaveCount(8);
   // You: your settings beside help and leaving.
   await nav.getByTestId("nav-you").click();
   await expect(page.getByTestId("you-pair-start").getByTestId("sign-out")).toBeVisible();
