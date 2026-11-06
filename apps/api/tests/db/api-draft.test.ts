@@ -14,7 +14,7 @@ import type { DraftAnswer, DraftContext, JonzTools } from "@/lib/ai/house-draft"
 import { chatTurn } from "@/lib/moves/draft";
 import { adminClient, signedInUser, type Actor } from "@/tests/support/clients";
 import { expectOk } from "@/tests/support/expect";
-import { addJohns, makeHouse, thisWeek } from "@/tests/support/factories";
+import { addJohns, deal, makeHouse, thisWeek } from "@/tests/support/factories";
 
 /**
  * POST /api/setup/draft, called as the app calls it, and the chat turn
@@ -192,6 +192,8 @@ describe("chatTurn, with Claude stood in for", () => {
     const house = await makeHouse(["Ava", "Ben"]);
     const [ben] = house.members;
     await addJohns(house.id, [{ name: "Bathroom" }], thisWeek());
+    // Dealt, so why_john has a week to explain.
+    await deal(house.id, thisWeek(), new Date());
     let reads: string[] = [];
     const result = await chatTurn({ db: ben.db, userId: ben.userId }, house.id, said("Who's in the house?"), null, new Date(), async (ctx, tools) => {
       expect(ctx.me.role).toBe("member");
