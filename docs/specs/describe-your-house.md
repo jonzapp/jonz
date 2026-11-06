@@ -92,7 +92,10 @@ on Today, Week and House (not while a parent is acting for a kid).
   is in words (`draftForModel`: "me", first names, on call). Core's `tidyDraft` and `tidyAsk` check every value
   afterwards: names cut to fit, numbers put in range, unknown kinds made
   Other, duplicates dropped, group members matched to housemates by name,
-  at most 30 Johns and 6 groups. Effort follows the John list's existing
+  at most 30 Johns and 6 groups. `set_group` makes a new group or changes
+  who's in one the house has (every group is in the draft, even one with
+  no Johns); the card lists that under Changing as "before → after", and
+  Apply saves it with `save_group` (`groupChanges` in core). Effort follows the John list's existing
   scale (points 1 to 20), and how often any period the list takes, in weeks
   or months (`docs/specs/any-length-repeats.md`).
 - Each turn asked of Claude is a `house_drafts` row (outcome, how many

@@ -262,6 +262,22 @@ describe('with a list already', () => {
     expect(chat).toHaveBeenLastCalledWith('h1', expect.any(Array), null);
   });
 
+  it('changes who’s in a group the house has, as a change to tick', async () => {
+    const IVY = '00000000-0000-4000-8000-000000000009';
+    const floor = { id: '44444444-4444-4444-8444-444444444444', name: 'Main floor', memberIds: [ME] };
+    const withFloor = listAsDraft(johns, [floor]);
+    const ivyIn = { ...withFloor, groups: [{ name: 'Main floor', memberIds: [ME, IVY], waitingFor: [] }] };
+    chat.mockResolvedValue({ reply: 'Ivy’s in once you apply.', ask: null, draft: ivyIn, source: 'ai' });
+    await render(
+      <SetupChat houseId="h1" rules={RULES} johns={johns} groups={[floor]} people={[...people, { userId: IVY, name: 'Ivy Moss' }]} me={ME} passOpen />,
+      { wrapper: House },
+    );
+    await say('Add Ivy to main floor');
+    expect(await screen.findByTestId('draft-group-change')).toHaveTextContent(`Main floor${HOUSE_DRAFT_COPY.groupPeople('You', 'You and Ivy')}`);
+    await fireEvent.press(screen.getByRole('button', { name: HOUSE_DRAFT_COPY.apply(1) }));
+    expect(keep).toHaveBeenCalledWith('h1', RULES, withFloor, ivyIn, ['group:Main floor'], { johns, groups: [floor] }, expect.any(Date));
+  });
+
   it('answers someone who can’t change the list, with no starters and no card', async () => {
     chat.mockResolvedValue({ reply: 'Ben has bins this week.', ask: null, draft: null, source: 'ai' });
     await render(<SetupChat houseId="h1" rules={RULES} johns={johns} groups={[]} people={people} me={ME} passOpen canChange={false} />, {

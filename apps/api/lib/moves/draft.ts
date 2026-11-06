@@ -177,14 +177,13 @@ export async function chatTurn(
       if (!may("groups.edit")) return { ok: false, said: "That isn't something this person can do." };
       const named = name.trim();
       if (!named || groupMembers.length === 0) return { ok: false, said: "A group needs a name and someone in it." };
-      if ((list?.groups ?? []).some((g) => g.name.toLocaleLowerCase() === named.toLocaleLowerCase())) {
-        return { ok: false, said: `The house already has a group called "${named}": its people are changed on the House page.` };
-      }
+      const there = (list?.groups ?? []).find((g) => g.name.toLocaleLowerCase() === named.toLocaleLowerCase());
       const others = (raw.groups ?? []).filter((g) => String(g.name).toLocaleLowerCase() !== named.toLocaleLowerCase());
-      return kept({ ok: true, said: `Group "${named}" drafted. Put Johns in it with group "${named}", or it won't be made.` }, {
-        ...raw,
-        groups: [...others, { name: named, members: groupMembers }],
-      });
+      // A group the house has: its new people go on the card under Changing. A new one is made with the Johns that need it.
+      const said = there
+        ? `"${there.name}" will be ${groupMembers.join(", ")} once they tap Apply. Its Johns stay in it.`
+        : `Group "${named}" drafted. Put Johns in it with group "${named}", or it won't be made.`;
+      return kept({ ok: true, said }, { ...raw, groups: [...others, { name: there?.name ?? named, members: groupMembers }] });
     },
     async offerReset(r) {
       if (!state || !may("history.reset")) return { ok: false, said: "Resets aren't available here." };

@@ -4,6 +4,7 @@ import {
   CHAT_MAX_MESSAGES,
   DEAL_MODES,
   draftChanges,
+  groupChanges,
   DOW_LABEL,
   HOUSE_DRAFT_COPY,
   listAsDraft,
@@ -175,7 +176,7 @@ export function SetupChat({
         setRebase(false);
       }
       setDraft(reply.draft);
-      setKeep(draftChanges(base, reply.draft).map((c) => c.key));
+      setKeep([...draftChanges(base, reply.draft), ...groupChanges(base, reply.draft)].map((c) => c.key));
     }
   }
 
@@ -323,7 +324,7 @@ export function SetupChat({
             {/* The question's answers sit under the question, over the draft it's about. */}
             {turn === last && ask ? <AskCard ask={ask} weekStarts={rules.weekStarts} onAnswer={(a) => void send(a)} /> : null}
             {/* A turn that changes nothing on a house's list (a question, say) has no card. */}
-            {at === draftAt && draft && (!editing || draftChanges(base, draft).length > 0) ? (
+            {at === draftAt && draft && (!editing || draftChanges(base, draft).length + groupChanges(base, draft).length > 0) ? (
               <DraftCard
                 base={base}
                 draft={draft}
@@ -458,6 +459,7 @@ function DraftCard({
 }) {
   const editing = base !== null;
   const changes = draftChanges(base, draft);
+  const regrouped = groupChanges(base, draft);
   // A list's changes sorted by kind (taking off, changing, adding); a new house's Johns, opened, in the list's own order.
   const ordered = editing
     ? KINDS.flatMap((kind) => changes.filter((c) => c.kind === kind))
@@ -495,10 +497,26 @@ function DraftCard({
           </Meta>
           {KINDS.map((kind) => {
             const these = shown.filter((c) => c.kind === kind);
-            const all = changes.filter((c) => c.kind === kind).length;
-            return these.length > 0 ? (
+            // Groups the house has, with new people in them, go under Changing after the Johns.
+            const moved = kind === 'change' ? regrouped : [];
+            const all = changes.filter((c) => c.kind === kind).length + moved.length;
+            return these.length + moved.length > 0 ? (
               <Section key={kind} label={KIND_HEADING[kind]} count={all} testID={`draft-${kind}s`}>
                 {these.map(row)}
+                {moved.map((g) => (
+                  <ChoiceRow
+                    key={g.key}
+                    role="checkbox"
+                    label={g.before.name}
+                    meta={HOUSE_DRAFT_COPY.groupPeople(membersLine(g.before.memberIds, people, me), membersLine(g.group.memberIds, people, me))}
+                    leading={<KindIcon kind="change" />}
+                    checked={keep.includes(g.key)}
+                    onPress={() => onToggle(g.key)}
+                    disabled={pending}
+                    metaLines={2}
+                    testID="draft-group-change"
+                  />
+                ))}
               </Section>
             ) : null;
           })}

@@ -183,6 +183,24 @@ describe("chatTurn, with Claude stood in for", () => {
     expect(johns).toEqual([{ name: "Bathroom", points: 3 }, { name: "Bins out", points: 1 }, { name: "Hoover", points: 2 }]);
   });
 
+  it("changes who's in a group the house has, even one with no Johns, writing nothing", async () => {
+    const house = await makeHouse(["Ava", "Ben"]);
+    await addJohns(house.id, [{ name: "Bathroom" }], thisWeek());
+    const { data: floor } = await db.from("groups").insert({ house_id: house.id, name: "Main floor" }).select("id").single();
+    expectOk(await db.from("group_members").insert({ group_id: floor!.id, house_id: house.id, user_id: house.admin.userId }));
+    const ben = house.members[0];
+    const result = await chatTurn({ db: house.admin.db, userId: house.admin.userId }, house.id, said("Add Ben to main floor"), null, new Date(), async (_ctx, tools) => {
+      const done = tools.setGroup("main floor", ["me", ben.name.split(" ")[0]]);
+      expect(done).toMatchObject({ ok: true });
+      expect(done.said).toContain("Main floor");
+      return { raw: { reply: "Ben's in once you apply.", ask: { kind: "none" } }, inputTokens: 10, outputTokens: 5 };
+    });
+    if ("refusal" in result) throw new Error("refused");
+    expect(result.draft!.groups).toEqual([{ name: "Main floor", memberIds: [house.admin.userId, ben.userId], waitingFor: [] }]);
+    const { data: members } = await db.from("group_members").select("user_id").eq("group_id", floor!.id);
+    expect(members).toEqual([{ user_id: house.admin.userId }]);
+  });
+
   it("can take the whole list off", async () => {
     const house = await makeHouse(["Ava"]);
     const done = await addJohns(house.id, [{ name: "Bathroom" }, { name: "Bins out" }], thisWeek());
