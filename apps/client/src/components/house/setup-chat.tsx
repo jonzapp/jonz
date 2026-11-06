@@ -37,6 +37,7 @@ import { applyDraft, sendChat } from '@/api/draft';
 import { saveDealMode } from '@/api/settings';
 import { Alert } from '@/components/alert';
 import { Button } from '@/components/button';
+import { LowWarning, OutNotice, usageState } from '@/components/chat/ask-usage';
 import { ChatLog, Composer, ComposerBar, JonzSaid, Said, UserBubble } from '@/components/chat/chat';
 import { Group } from '@/components/group';
 import { Row, RowIcon } from '@/components/row';
@@ -48,6 +49,7 @@ import { stepsShown, Thinking } from '@/components/house/thinking';
 import { ChoiceRow } from '@/components/setup/choice-row';
 import { Body, Meta } from '@/components/text';
 import { TextButton } from '@/components/text-button';
+import { useAskUsage } from '@/hooks/use-ask-usage';
 import { useMove } from '@/hooks/use-move';
 import { INSET, SPACE, useTheme } from '@/theme';
 
@@ -151,6 +153,8 @@ export function SetupChat({
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
+  const usage = useAskUsage(houseId);
+  const week = usageState(usage.data);
 
   // A new house's chat ends once its first list is in (the deal question follows); a list's chat carries on.
   const done = !editing && turns.some((t) => t.role === 'done');
@@ -192,12 +196,15 @@ export function SetupChat({
       const answer = await sendChat(houseId, messages, draft);
       const took = Date.now() - asked;
       const thought = { seconds: Math.max(1, Math.round(took / 1000)), steps: stepsShown(steps, took) };
+      if (answer.allowance) usage.put(answer.allowance);
       answered({ role: 'assistant', text: answer.reply, ask: answer.ask, draft: answer.draft, resets: answer.resets, thought }, next);
     } catch (reason) {
       // Refused (too many today, say): what was said goes back in the box to try again.
       setTurns(before);
       setText(said);
       setProblem(reason instanceof Error ? reason.message : String(reason));
+      // Used up while they wrote: the box gives way to the notice.
+      void usage.refetch();
     } finally {
       setSending(false);
     }
@@ -240,18 +247,23 @@ export function SetupChat({
             <Meta>{HOUSE_DRAFT_COPY.passNeeded}</Meta>
             <Button variant="outline" label={HOUSE_DRAFT_COPY.seePass} href="/house/pass" testID="chat-see-pass" />
           </ComposerBar>
+        ) : week === 'out' && usage.data ? (
+          <OutNotice usage={usage.data} zone={rules.timezone} />
         ) : (
-          <Composer
-            value={text}
-            onChangeText={setText}
-            onSend={() => void send(text)}
-            busy={busy}
-            placeholder={placeholder}
-            label={HOUSE_DRAFT_COPY.message}
-            sendLabel={HOUSE_DRAFT_COPY.send}
-            maxLength={MESSAGE_MAX}
-            problem={problem}
-          />
+          <>
+            {week === 'low' && usage.data ? <LowWarning usage={usage.data} zone={rules.timezone} /> : null}
+            <Composer
+              value={text}
+              onChangeText={setText}
+              onSend={() => void send(text)}
+              busy={busy}
+              placeholder={placeholder}
+              label={HOUSE_DRAFT_COPY.message}
+              sendLabel={HOUSE_DRAFT_COPY.send}
+              maxLength={MESSAGE_MAX}
+              problem={problem}
+            />
+          </>
         )
       }
     >

@@ -24,14 +24,95 @@ export const DRAFT_MAX_GROUPS = 6;
 export const MESSAGE_MAX = 800;
 /** How many messages of the chat go to Claude each time: enough for setting up a house. */
 export const CHAT_MAX_MESSAGES = 24;
-/** Messages a house can send Claude in a day; starter lists are free and unlimited. */
-export const CHAT_TURNS_PER_DAY = 30;
 /**
- * Messages one person can send Claude in a day, whichever house they're in:
- * a little over a house's day, so nobody gets more by leaving a house and
- * starting another.
+ * A house's Ask Jonz for a week, in Claude's tokens (what it reads and
+ * writes): one pool the whole house shares, bigger with the House Pass. It
+ * comes back when the house's week starts. A turn is about 6,000 to 20,000
+ * tokens, so the free pool is a good few dozen questions and the Pass's a
+ * few hundred. Starter lists are free and unlimited.
+ */
+export const ASK_POOL_TOKENS = { free: 400_000, pass: 2_000_000 } as const;
+/** What a turn holds against the pool while Claude answers, so turns sent together can't all slip in; its answer puts in what it used. */
+export const ASK_TURN_RESERVE = 10_000;
+/** The most of the pool one person can use when the house has two or more people: nobody can use it all up. */
+export const ASK_SHARE_MAX = 0.5;
+/**
+ * Messages one person can send Claude in a day, whichever house they're in,
+ * so nobody gets more by leaving a house and starting another.
  */
 export const CHAT_TURNS_PER_PERSON_PER_DAY = 40;
+
+/** How much of this week's Ask Jonz a person has left, shown under the chat. */
+export const AskAllowance = z.object({
+  /** What's left of what they may still use this week, 0 to 1. */
+  left: z.number().min(0).max(1),
+  /** Whether the house's pool (not their own share) is what runs out first. */
+  house: z.boolean(),
+  /** When it comes back: the start of the house's next week. */
+  resetsAt: z.string(),
+});
+export type AskAllowance = z.infer<typeof AskAllowance>;
+
+/** A person's cap and what's left of it, from the week's pool and how much the house and they have used. */
+export function askAllowance(input: { pool: number; people: number; houseUsed: number; mineUsed: number; resetsAt: Date }): AskAllowance & { cap: number } {
+  const cap = input.people >= 2 ? Math.floor(input.pool * ASK_SHARE_MAX) : input.pool;
+  const mine = Math.max(0, cap - input.mineUsed);
+  const house = Math.max(0, input.pool - input.houseUsed);
+  const room = Math.min(mine, house);
+  // On your own the house's pool is yours, so it's the house's that runs out.
+  return { cap, left: cap > 0 ? Math.min(1, room / cap) : 0, house: input.people < 2 || house < mine, resetsAt: input.resetsAt.toISOString() };
+}
+
+/** Under this much left, the chat warns over the message box. */
+export const ASK_LOW = 0.25;
+
+/** The week's Ask Jonz for the usage page and the chat: what's left, what each has used, and when it's back. */
+export const AskUsage = AskAllowance.extend({
+  /** Whether the house has the House Pass (the bigger pool). */
+  pass: z.boolean(),
+  /** How many live in the house. With two or more nobody uses more than half. */
+  people: z.number().int().min(1),
+  /** How much of the house's pool is used, 0 to 1. */
+  houseUsed: z.number().min(0).max(1),
+  /** How much of what they may use (their half, or the pool on their own) is used, 0 to 1. */
+  mineUsed: z.number().min(0).max(1),
+  /** Each person who has used some, most first, as a share of the house's pool. */
+  usedBy: z.array(z.object({ userId: z.uuid(), used: z.number().min(0).max(1) })),
+});
+export type AskUsage = z.infer<typeof AskUsage>;
+
+/** When the week's Ask Jonz comes back, in the house's time: "Monday at 00:00". */
+export function askBackOn(resetsAt: string, zone: string): string {
+  const at = new Date(resetsAt);
+  const day = new Intl.DateTimeFormat("en-GB", { weekday: "long", timeZone: zone }).format(at);
+  const time = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: zone }).format(at);
+  return `${day} at ${time}`;
+}
+
+/** The usage page's figures, from the pool, who lives in the house, and the tokens each has used this week. */
+export function askUsage(input: {
+  pool: number;
+  pass: boolean;
+  people: readonly string[];
+  me: string;
+  used: ReadonlyMap<string, number>;
+  resetsAt: Date;
+}): AskUsage {
+  const houseUsed = [...input.used.values()].reduce((a, b) => a + b, 0);
+  const mineUsed = input.used.get(input.me) ?? 0;
+  const { cap, ...allowance } = askAllowance({ pool: input.pool, people: input.people.length, houseUsed, mineUsed, resetsAt: input.resetsAt });
+  const share = (n: number, of: number) => (of > 0 ? Math.min(1, n / of) : 1);
+  return {
+    ...allowance,
+    pass: input.pass,
+    people: Math.max(1, input.people.length),
+    houseUsed: share(houseUsed, input.pool),
+    mineUsed: share(mineUsed, cap),
+    usedBy: input.people
+      .map((userId) => ({ userId, used: share(input.used.get(userId) ?? 0, input.pool) }))
+      .sort((a, b) => b.used - a.used),
+  };
+}
 /** The most quick answers one question offers. */
 export const CHOICES_MAX = 5;
 
@@ -124,6 +205,8 @@ export const ChatResponse = z.object({
   source: z.enum(DRAFT_SOURCES),
   /** Resets Jonz offers an admin, each with its numbers, for the Resets card. Nothing is reset until they tap. */
   resets: z.array(ChatReset).max(CHAT_RESETS_MAX).optional(),
+  /** What's left of this week's Ask Jonz for the person asking, after this turn. */
+  allowance: AskUsage.optional(),
 });
 export type ChatResponse = z.infer<typeof ChatResponse>;
 
