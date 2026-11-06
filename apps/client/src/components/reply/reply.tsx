@@ -74,7 +74,7 @@ function BlockView({ block }: { block: Block }) {
   switch (block.t) {
     case 'p':
       return (
-        <Body testID="reply-p">
+        <Body testID="reply-p" style={hasChip(block.kids) ? styles.chipLines : undefined}>
           <Runs kids={block.kids} />
         </Body>
       );
@@ -91,7 +91,11 @@ function BlockView({ block }: { block: Block }) {
           accessibilityRole={Platform.OS === 'web' ? ('list' as never) : undefined}
           testID={block.ordered ? 'reply-ol' : 'reply-ul'}
         >
-          {block.items.map((item, i) => (
+          {block.items.map((item, i) => {
+            // The number, bullet or box sits on the item's first line, which is taller when it has a pill.
+            const first = item.blocks[0];
+            const tall = first?.t === 'p' && hasChip(first.kids);
+            return (
             <View
               key={i}
               style={styles.item}
@@ -99,13 +103,13 @@ function BlockView({ block }: { block: Block }) {
               testID="reply-li"
             >
               {/* A step's number is read out (a list's order matters); a bullet or a box isn't, the item says Done or To do. */}
-              <View style={styles.mark} aria-hidden={!block.ordered || item.checked !== null}>
+              <View style={[styles.mark, tall && styles.markTall]} aria-hidden={!block.ordered || item.checked !== null}>
                 {item.checked !== null ? (
                   <View style={[styles.box, { borderColor: colors.foreground }, item.checked && { backgroundColor: colors.foreground }]}>
                     {item.checked ? <CheckIcon size={12} strokeWidth={3} color={colors.background} /> : null}
                   </View>
                 ) : block.ordered ? (
-                  <Text style={[type.body, styles.number]}>{`${block.start + i}.`}</Text>
+                  <Text style={[type.body, styles.number, tall && styles.chipLines]}>{`${block.start + i}.`}</Text>
                 ) : (
                   <View style={[styles.bullet, { backgroundColor: colors.foreground }]} />
                 )}
@@ -117,7 +121,8 @@ function BlockView({ block }: { block: Block }) {
                 <Blocks blocks={item.blocks} tight />
               </View>
             </View>
-          ))}
+            );
+          })}
         </View>
       );
     case 'quote':
@@ -163,6 +168,11 @@ function Table({ head, rows, align }: { head: Inline[][]; rows: Inline[][][]; al
       ))}
     </View>
   );
+}
+
+/** Whether a paragraph has a pill in it: its lines then open up, so pills on lines above and below each other don't touch. */
+function hasChip(kids: Inline[]): boolean {
+  return kids.some((k) => k.t === 'chip' || ('kids' in k && hasChip(k.kids)));
 }
 
 function plainOf(kids: Inline[]): string {
@@ -251,6 +261,8 @@ export function Chip({ label, target }: { label: string; target: ChipTarget }) {
 }
 
 const CHIP_HEIGHT = 28;
+/** A line with pills in it: a pill and a small gap, so two pills on lines one above the other never touch. */
+const CHIP_LINE = CHIP_HEIGHT + SPACE.xs;
 /** A bullet's dot and a task's box, drawn to sit on Body's line. */
 const DOT = 6;
 const BOX = 18;
@@ -279,6 +291,8 @@ const styles = StyleSheet.create({
   cell: { flex: 1, minWidth: 0, ...TABULAR },
   firstCell: { flex: 1.6 },
   // The pill keeps to the line: its slot is a line tall (Body's 24) and the pill hangs over it a little.
+  chipLines: { lineHeight: CHIP_LINE },
+  markTall: { height: CHIP_LINE },
   chipSlot: { height: 24, justifyContent: 'center', ...(Platform.OS === 'web' ? ({ verticalAlign: 'middle' } as object) : {}) },
   chip: {
     height: CHIP_HEIGHT,
