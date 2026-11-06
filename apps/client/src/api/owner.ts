@@ -4,11 +4,13 @@ import {
   humanError,
   NOTICE_KINDS,
   noticeFromRow,
+  OwnerAskResponse,
   noticeSearchFilter,
   qrShape,
   type AuditEntry,
   type AuditWhat,
   type AuditWho,
+  type ChatMessage,
   type ListAsk,
   type Notice,
   type NoticeKind,
@@ -427,4 +429,9 @@ export async function stopDeletion(userId: string, reason: string): Promise<void
 export async function deleteByEmail(email: string, reason: string): Promise<void> {
   const { error } = await supabase.rpc('owner_request_deletion', { p_email: email.trim(), p_reason: reason.trim() || undefined });
   if (error) throw new Error(humanError(error));
+}
+
+/** POST /api/admin/ask: one turn of the owner's Ask Jonz, the chat so far ending with what they asked. */
+export function askOwner(messages: ChatMessage[]): Promise<OwnerAskResponse> {
+  return apiPost('/api/admin/ask', { messages }, OwnerAskResponse);
 }

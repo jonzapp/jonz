@@ -74,6 +74,7 @@ const MESSAGES: Record<string, string> = {
   already_asked: "You’ve already asked about that John today.",
   swap_gone: "That ask has run out, so the Johns stay as they were.",
   owner_only: "Only the owner can do that, signed in with their code.",
+  ask_limit: "That’s enough questions for one day. Ask again tomorrow, or use the admin pages.",
   notice_ends_first: "A notice has to end after it starts.",
   audit_append_only: "The audit log can’t be changed.",
   no_deletion: "That account isn’t waiting to be deleted any more.",

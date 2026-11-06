@@ -1,5 +1,7 @@
 import { Marked, type Token, type Tokens, type TokenizerExtension } from "marked";
 
+import { ADMIN_PAGES } from "./owner-admin";
+
 /**
  * Ask Jonz's replies: Markdown (CommonMark with GitHub's tables), plus
  * Jonz's own pieces. Claude writes Markdown best, and every chat app shows
@@ -57,7 +59,7 @@ export type Inline =
   | { t: "strong"; kids: Inline[] }
   | { t: "em"; kids: Inline[] }
   | { t: "del"; kids: Inline[] }
-  | { t: "chip"; kind: "john" | "person" | "page"; ref: string; label: string }
+  | { t: "chip"; kind: ChipKind; ref: string; label: string }
   | { t: "br" };
 
 export type Block =
@@ -120,15 +122,31 @@ export function cardOf(name: string, attrs: Record<string, string>): ReplyCard |
   }
 }
 
+/**
+ * What a chip can stand for. A house's: a John, someone in the house, a page
+ * of the app. The owner's (their Ask Jonz only): a report in the Inbox, an
+ * audit entry, an account, an admin page. Each chat's pieces find only their
+ * own; anything else is drawn as its words.
+ */
+export const CHIP_KINDS = ["john", "person", "page", "report", "audit", "account", "admin"] as const;
+export type ChipKind = (typeof CHIP_KINDS)[number];
+
+const ID = /^[0-9a-f][0-9a-f-]{3,35}$/i;
+const ADMIN_KEYS: readonly string[] = ADMIN_PAGES.map((p) => p.key);
+
 /** A jonz: address as a chip, or null for one the app doesn't know. */
 export function chipOf(href: string, label: string): Extract<Inline, { t: "chip" }> | null {
-  const m = /^jonz:(john|person|page)\/(.+)$/i.exec(href.trim());
+  const m = new RegExp(`^jonz:(${CHIP_KINDS.join("|")})/(.+)$`, "i").exec(href.trim());
   if (!m) return null;
-  const kind = m[1].toLowerCase() as "john" | "person" | "page";
+  const kind = m[1].toLowerCase() as ChipKind;
   const ref = decodeURIComponent(m[2]).trim();
   if (!ref || !label.trim()) return null;
-  if (kind === "page" && !(ref.toLowerCase() in PAGES)) return null;
-  return { t: "chip", kind, ref: kind === "page" ? ref.toLowerCase() : ref, label: label.trim() };
+  const lower = ref.toLowerCase();
+  if (kind === "page" && !(lower in PAGES)) return null;
+  if (kind === "admin" && !ADMIN_KEYS.includes(lower)) return null;
+  if ((kind === "report" || kind === "account") && !ID.test(ref)) return null;
+  if (kind === "audit" && !/^\d{1,18}$/.test(ref)) return null;
+  return { t: "chip", kind, ref: kind === "page" || kind === "admin" ? lower : ref, label: label.trim() };
 }
 
 function text(t: string): Inline {
@@ -340,16 +358,55 @@ const CARD_GUIDE: Record<CardName, string> = {
 };
 
 /**
+ * How the app draws a reply, for both chats' instructions: what each bit of
+ * Markdown turns into on the screen, so Claude writes for the screen it has.
+ * Each line says what parseReply and components/reply do; change them
+ * together.
+ */
+const SCREEN_RULES = [
+  "- The reply shows on a phone, about 40 characters a line, or in a side panel as narrow on a laptop, in the app's own type, light or dark. Lead with the answer, then only what helps. Most replies are one to three sentences; none is longer than a phone screen.",
+  "- Paragraphs: a blank line between them. A single line break inside a paragraph is ignored, so never wrap lines by hand.",
+  "- **Bold** stands out strongly: use it for the one or two words or numbers that matter most, never a whole sentence. *Italic* shows plain on phones, so never rely on it. ~~Struck~~ words show crossed out: use them only for an old value next to its new one.",
+  "- A heading shows as a small bold label, the same at every level: write ### and only when a long reply has two or more parts. Never start a short reply with one.",
+  '- Lists: "- " for things side by side, "1. " for steps in order, "- [ ] " and "- [x] " for a to-do list with boxes. Lists nest three deep at most (deeper shows as plain lines); keep each item to a line or two.',
+  "- Tables: a phone fits about three short columns. Use one only to compare a few numbers side by side, numbers right-aligned (---:), never for one thing's details.",
+  '- "> " shows words with a bar down the side: use it for words someone will copy, like a message to send.',
+  "- Code, web links, images and HTML show as their plain words, and emoji look out of place, so never write them.",
+  "- A chip is a rounded pill inside the sentence with its own little picture; tapping it opens what it names. Its words stay on one line and are cut short if long, so give it one to four words. Never bold a chip or put one in a heading (it shows as plain words there). A chip whose address the app doesn't know shows as bold words, so use only addresses from your reads.",
+  "- Use these pieces with taste, like a good writer, not to decorate: plain sentences are the default, and each piece must earn its place. Reach for one only when it makes the answer quicker to read or act on: a chip for the thing they'll want to open next, a list when there are three or more things or steps, a card when the live rows say it better than words, a table only to compare. A short answer is usually one plain sentence with at most one chip or bold. Never chip the same thing twice in a reply, and never chip or bold in every sentence.",
+  "- A list with a chip at the start of each item reads well; a sentence with more than two chips doesn't.",
+];
+
+/** How the owner's Ask Jonz writes: Markdown, with chips for what the admin pages hold, and no house's chips or cards. */
+export const OWNER_REPLY_GUIDE = [
+  "How to write (the app draws your reply as Markdown, with its own pieces):",
+  ...SCREEN_RULES,
+  "- Name things as chips the owner can tap, with ids from your reads only: a report as [a few words on it](jonz:report/ID), an audit entry as [what happened](jonz:audit/ID), someone's account as [their name](jonz:account/ID), an admin page as [its name](jonz:admin/PAGE). Each shows with an arrow and opens that page.",
+  `- The admin pages: ${ADMIN_PAGES.map((p) => `${p.key} (${p.label})`).join(", ")}.`,
+  "- For example:",
+  "  2 reports are **waiting**:",
+  "  1. [Ticks not saving](jonz:report/5c1e9a20) from Sam, this morning",
+  "  2. [A dark icon](jonz:report/8b2d4f10) from Priya, yesterday",
+  "",
+  "  Reply from the [Inbox](jonz:admin/inbox).",
+].join("\n");
+
+/**
  * How Ask Jonz writes, for its instructions: built from PAGES and CARDS, so
  * the prompt can only name chips and cards the app draws.
  */
 export const REPLY_FORMAT_GUIDE = [
   "How to write (the app draws your reply as Markdown, with its own pieces):",
-  "- Write Markdown like other chat apps: **bold** for the few words that matter, a short bullet or numbered list for steps or several things, a ### heading only when a long reply has parts, a small table only to compare a few numbers side by side. No emoji, code, web links or images.",
-  "- Keep it short: most replies are one to three sentences, and none longer than a phone screen.",
-  "- Name things as chips people can tap: a John as [its name](jonz:john/REF) with its ref from list_johns; someone in the house as [first name](jonz:person/First name) (never the person you're talking with: that's just “you”); a page of the app as [its name](jonz:page/NAME).",
+  ...SCREEN_RULES,
+  "- Name things as chips people can tap: a John as [its name](jonz:john/REF) with its ref from list_johns (it shows with the John's colour and opens it); someone in the house as [first name](jonz:person/First name) (it shows with their photo, or their initial, and opens their page; never the person you're talking with: that's just “you”); a page of the app as [its name](jonz:page/NAME) (it shows with an arrow).",
   `- The pages: ${(Object.keys(PAGES) as PageName[]).map((p) => `${p} (${PAGES[p].label})`).join(", ")}.`,
-  "- Show the house's facts as live cards rather than typing them out, each on a line of its own:",
+  "- Show the house's facts as live cards rather than typing them out, each on a line of its own with a blank line before and after:",
   ...CARDS.map((c) => `  - ${CARD_GUIDE[c]}`),
-  `- A card shows the app's own live data: don't repeat its rows in words; say in a sentence what matters about it. At most ${CARDS_MAX} cards a reply.`,
+  `- A card is a full-width panel with its own heading and the app's own live rows, so never write a heading for it or repeat its rows in words: say in a sentence before it what matters. At most ${CARDS_MAX} cards a reply.`,
+  "- For example:",
+  "  You have **2 Johns** left this week:",
+  "",
+  '  ::week{who="me" open}',
+  "",
+  "  [Bins out](jonz:john/3f2a9c1e) is due tonight. [Priya](jonz:person/Priya) offered to swap if you're busy.",
 ].join("\n");

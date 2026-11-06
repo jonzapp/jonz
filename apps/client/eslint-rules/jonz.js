@@ -4,6 +4,8 @@
 // nobody until someone fixes it (then `npx eslint --prune-suppressions`
 // shrinks the list); anything new fails.
 
+const path = require('node:path');
+
 const COLOUR_KEY = /(^color$|Color$|^fill$|^stroke$)/;
 const COLOUR_VALUE = /^(#[0-9a-f]{3,8}|(rgb|rgba|hsl|hsla)\(.*\)|white|black|red|green|blue|yellow|orange|grey|gray)$/i;
 const SPACING_KEY = /^(padding|margin)(Top|Bottom|Left|Right|Horizontal|Vertical|Start|End|Block|Inline)?$|^(gap|rowGap|columnGap)$/;
@@ -166,6 +168,30 @@ module.exports = {
             if (PRESSABLES.has(name)) context.report({ node, messageId: 'screen', data: { name } });
           },
         };
+      },
+    },
+    'owner-only': {
+      meta: {
+        type: 'problem',
+        docs: { description: "The owner's pieces stay on the owner's pages: only /admin imports them (docs/specs/owner-admin.md)." },
+        messages: {
+          owner: "{{source}} is the owner's: only the /admin screens and components/admin use it, so it can't reach a housemate's app.",
+        },
+        schema: [],
+      },
+      create(context) {
+        const file = context.filename.replace(/\\/g, '/');
+        // The owner's own pages, their pieces, and the hidden style page, which shows every piece.
+        if (/\/src\/(app\/admin|components\/admin|components\/style-page)\//.test(file)) return {};
+        // Where an import points, from the alias or relative to this file.
+        const where = (source) =>
+          source.startsWith('@/') ? `/src/${source.slice(2)}` : source.startsWith('.') ? path.posix.join(path.posix.dirname(file), source) : source;
+        const owners = (source) => /\/src\/(components\/admin|api\/owner)(\/|$)/.test(where(source));
+        const check = (node) => {
+          const source = node.source && node.source.value;
+          if (typeof source === 'string' && owners(source)) context.report({ node, messageId: 'owner', data: { source } });
+        };
+        return { ImportDeclaration: check, ExportNamedDeclaration: check, ExportAllDeclaration: check, ImportExpression: check };
       },
     },
   },

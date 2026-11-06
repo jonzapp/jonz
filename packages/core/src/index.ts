@@ -70,5 +70,6 @@ export * from "./house-lower";
 export * from "./setup";
 export * from "./front-door";
 export * from "./house-draft";
+export * from "./owner-ask";
 export * from "./draft-edits";
 export type * from "./db-types";
