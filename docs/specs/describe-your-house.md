@@ -60,10 +60,18 @@ on Today, Week and House (not while a parent is acting for a kid).
   `draft_limit` after that); starter lists are unlimited.
 - Claude is `anthropic/claude-haiku-5.5` through Vercel's AI Gateway (OIDC
   on Vercel, no key), with tools and a structured last word
-  (`apps/api/lib/ai/house-draft.ts`, at most 12 steps a turn). Reads
+  (`apps/api/lib/ai/house-draft.ts` on the shared loop in
+  `apps/api/lib/ai/agent.ts`, at most 12 steps a turn). Reads
   (`list_johns`, `week`, `people`, `time_away`, `history`, `balances`,
-  `house_rules`, in `apps/api/lib/moves/ask-reads.ts`) run through the
-  person's own session, so row rules decide what Jonz sees. Writes
+  `stake`, `why_john`, `how_it_works`, `house_rules`, in
+  `apps/api/lib/moves/ask-reads.ts`) run through the person's own session,
+  so row rules decide what Jonz sees. Everyone in the house gets every
+  read, so anyone can ask how things work: why they got a John (`why_john`
+  is the John sheet's Why?), why they're behind or owe money (`balances`,
+  `stake`), what the House Pass is for. `how_it_works` gives each rule in
+  words built from the app's own copy and code with the house's numbers
+  (`packages/core/src/how-it-works.ts`), and Jonz walks through the maths
+  with the person's real numbers rather than guessing. Writes
   (`add_john`, `change_john`, `remove_john`, `set_group`, `offer_reset`)
   are offered only with the matching permission and change a draft held
   for the turn, one John a call (`editDraft` in

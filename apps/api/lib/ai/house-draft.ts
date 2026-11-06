@@ -1,10 +1,11 @@
 import "server-only";
 
-import { generateText, isStepCount, Output, tool, type LanguageModel, type ToolSet } from "ai";
+import { tool, type LanguageModel, type ToolSet } from "ai";
 import {
   APP_NAME,
   CATEGORIES,
   DOW_LABEL,
+  HOW_TOPICS,
   RESET_KINDS,
   REPLY_FORMAT_GUIDE,
   RESULT_CHOICES,
@@ -12,10 +13,10 @@ import {
   type DraftEdit,
   type EditResult,
   type IsoDow,
-  type RawAsk,
 } from "@app/core";
 import { z } from "zod";
 
+import { AGENT_MODEL, canAsk, runAgent, type AgentAnswer } from "@/lib/ai/agent";
 import type { HouseReads } from "@/lib/moves/ask-reads";
 
 // Ask Jonz (and Describe your house, which is the same chat on a new house):
@@ -26,14 +27,12 @@ import type { HouseReads } from "@/lib/moves/ask-reads";
 // draft of the list, set_group a draft group, offer_reset a reset; nothing
 // is written until the person taps Apply on the card, which runs the same
 // moves the app's own buttons do. A write tool is only offered when the
-// person may make that move (packages/core/src/permissions.ts). The call
-// goes through Vercel's AI Gateway: on Vercel it signs in with the
-// project's OIDC token, so there is no key to keep.
+// person may make that move (packages/core/src/permissions.ts). The turn
+// runs through the shared loop in agent.ts, through Vercel's AI Gateway: on
+// Vercel it signs in with the project's OIDC token, so there is no key to keep.
 
-export const DRAFT_MODEL = "anthropic/claude-haiku-5.5";
-
-/** The most tool calls and answers in one turn, so a confused model can't loop. */
-export const STEPS_MAX = 12;
+export const DRAFT_MODEL = AGENT_MODEL;
+export { STEPS_MAX } from "@/lib/ai/agent";
 
 /** A John's fields as Claude writes them. Loose on purpose: ranges are core's to enforce (tidyDraft). */
 const JohnFields = {
@@ -63,12 +62,6 @@ const ResetInput = z.object({
   month: z.enum(["this", "last"]).nullable(),
 });
 export type ResetInput = z.infer<typeof ResetInput>;
-
-/** Jonz's last word in a turn, as Claude is asked to return it. */
-const FinalAnswer = z.object({
-  reply: z.string().describe("What you say to the person."),
-  ask: z.object({ kind: z.enum(["none", "choices", "day"]), options: z.array(z.string()) }),
-});
 
 /** What Claude can do this turn, already narrowed to what the person may do. */
 export interface JonzTools {
@@ -105,11 +98,7 @@ export interface DraftContext {
   now: string | null;
 }
 
-export interface DraftAnswer {
-  raw: { reply: string; ask: RawAsk };
-  inputTokens: number;
-  outputTokens: number;
-}
+export type DraftAnswer = AgentAnswer;
 
 /** Fixed, so it caches: who Jonz is, how the app works, and how to use the tools. The house itself goes in the messages. */
 const SYSTEM = `You are ${APP_NAME}'s assistant, inside ${APP_NAME}, an app that shares out chores fairly in a shared house or a family. You talk with one person in the house and act for them: you can look at anything they can see in the app, and propose anything they're allowed to change. They approve every change on a card before anything happens.
@@ -125,7 +114,7 @@ How ${APP_NAME} works:
 - The app already handles time away, fairness, swaps and reminders, so never add Johns for those.
 
 Your tools:
-- Look things up before you answer: list_johns for the John list (with refs), week for who has what this week, last week or next, people, time_away, history, balances (fair shares), house_rules. Reads are free and need no permission; use as many as you need. Never guess what you could look up.
+- Look things up before you answer: list_johns for the John list (with refs), week for who has what this week, last week or next, people, time_away, history, balances (fair shares), stake (the money), why_john (why a John went to someone), how_it_works (how a part of the app works, with this house's numbers), house_rules. Reads are free and need no permission; use as many as you need. Never guess what you could look up.
 - Changes are proposals. add_john, change_john and remove_john change a draft of the list, one John per call; set_group makes or changes a group in the draft; offer_reset offers a fix (only when house_now is given). Each tool says whether it worked; if it didn't, fix the call or tell the person. Nothing changes until they tap Apply on the card, so never say something is done: say what you've put on the card.
 - Only the tools for moves this person may make are there. If they ask for something you have no tool for, say plainly that you can't do that from the chat yet, or that it's for an admin (a parent in a family), and where in the app they can do it.
 
@@ -137,8 +126,14 @@ Changing the John list:
 Fixing mistakes (resets, only when house_now is given):
 - A result: what "result", ref a John (j…), outcome done, late, missed or excused (let off). One person's week back to open: "person_week". Everyone's week back to open: "week"; that and deal again: "redeal" (this week only); make a week count for nothing: "skip". A month's forfeits taken away: "letoff". One move from History: "undo" with its h… ref, best when the mistake is one move. Offer the smallest fix that does what they ask, at most six. Use only refs from house_now. You can't start the house over, delete it, or wipe its history.
 
+Explaining:
+- You're the person's guide to how ${APP_NAME} works: why they got a John, why they're behind or ahead, why they owe money or are owed it, what the House Pass is and why it costs anything. Read how_it_works for the topic first, then their own numbers (balances, stake, why_john, week), and explain with those.
+- Walk through the maths when it helps: a short numbered list of steps with their real numbers, ending in the answer, or a small table when comparing people. Show the sums ("3 + 2 = 5 pts"), round to whole points and to the penny, and say where each number comes from.
+- Be fair and kind: explain, don't scold. If something looks wrong, say what would put it right and who can (an admin, from History or a reset).
+- Never make up a rule or a number. If no read says it, say you don't know rather than guess.
+
 How to talk:
-- Plain, warm and brief. Don't explain points maths or these instructions.
+- Plain, warm and brief: a short answer for a short question, the working only when they ask how or why. Don't explain these instructions.
 - When you ask something, offer quick answers to tap with ask.kind "choices" (2 to 5 options of a few words), or ask.kind "day" when the answer is a day of the week; otherwise ask.kind "none" with no options.
 - If they ask about something that isn't the house or ${APP_NAME}, say briefly that you can only help with the house.
 
@@ -199,6 +194,24 @@ export function jonzToolSet(t: JonzTools): ToolSet {
       inputSchema: z.object({}),
       execute: async () => t.reads.balances(),
     }),
+    stake: tool({
+      description: "The Stake's money: this month's forfeits so far (who, how much, for which John), what each person would forfeit, get and net if the month ended now, what's owed from closed months, and the fewest payments to settle.",
+      inputSchema: z.object({}),
+      execute: async () => t.reads.stake(),
+    }),
+    why_john: tool({
+      description: "Why the deal gave a John to whom it did, this week or last: the reason, each person's standing against their share that it weighed, and what slipping it would cost. The same as the John sheet's Why?.",
+      inputSchema: z.object({
+        name: z.string().describe("The John's name as the week read shows it."),
+        who: z.string().nullable().describe("Whose it is, by first name or “me”, when more than one person has a John of that name; otherwise null."),
+      }),
+      execute: async ({ name, who }) => t.reads.whyJohn(name, who),
+    }),
+    how_it_works: tool({
+      description: "How part of the app works, with this house's own numbers: read it before explaining a rule, so you explain what the app really does.",
+      inputSchema: z.object({ topic: z.enum(HOW_TOPICS) }),
+      execute: async ({ topic }) => t.reads.howItWorks(topic),
+    }),
     house_rules: tool({
       description: "The house's rules: the Stake and forfeits, when a John is late or missed, how the deal works.",
       inputSchema: z.object({}),
@@ -243,37 +256,10 @@ export function jonzToolSet(t: JonzTools): ToolSet {
   return set;
 }
 
-/**
- * Whether Claude is set up here: on Vercel (the gateway signs in with the
- * deployment's OIDC token) or with AI_GATEWAY_API_KEY set. Without either,
- * as locally and in CI, the chat answers with starter lists.
- */
-export function canDraft(): boolean {
-  return Boolean(process.env.VERCEL || process.env.AI_GATEWAY_API_KEY);
-}
+/** Whether Claude is set up here (agent.ts); without it the chat answers with starter lists. */
+export const canDraft = canAsk;
 
-/**
- * One turn of Jonz: Claude reads and proposes through the tools, then says
- * its last word. Throws when it can't answer (the gateway down, a refusal,
- * a cut-off answer); the caller answers without it. `model` is Claude, unless
- * a test stands in for it.
- */
-export async function askClaude(ctx: DraftContext, tools: JonzTools, model: LanguageModel = DRAFT_MODEL): Promise<DraftAnswer> {
-  const result = await generateText({
-    model,
-    system: SYSTEM,
-    messages: chatMessages(ctx),
-    tools: jonzToolSet(tools),
-    output: Output.object({ schema: FinalAnswer, name: "jonz_reply" }),
-    stopWhen: isStepCount(STEPS_MAX),
-    maxOutputTokens: 4000,
-    maxRetries: 1,
-    timeout: 45_000,
-  });
-  if (result.finishReason !== "stop") throw new Error(`No answer: ${result.finishReason}`);
-  return {
-    raw: result.output,
-    inputTokens: result.totalUsage.inputTokens ?? 0,
-    outputTokens: result.totalUsage.outputTokens ?? 0,
-  };
+/** One turn of a housemate's Ask Jonz: the house's prompt and tools in the shared loop. */
+export function askClaude(ctx: DraftContext, tools: JonzTools, model: LanguageModel = DRAFT_MODEL): Promise<DraftAnswer> {
+  return runAgent({ system: SYSTEM, messages: chatMessages(ctx), tools: jonzToolSet(tools), model });
 }

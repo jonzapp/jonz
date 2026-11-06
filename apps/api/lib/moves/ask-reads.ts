@@ -3,6 +3,12 @@ import "server-only";
 import {
   actionLine,
   addDaysTo,
+  buildStake,
+  buildWeekBoard,
+  howItWorks,
+  jobPlaces,
+  johnWhy,
+  monthOf,
   DOW_LABEL,
   firstName,
   formatMoney,
@@ -10,6 +16,8 @@ import {
   localDate,
   weekWindow,
   type HouseRules,
+  type HowTopic,
+  type LedgerRow,
 } from "@app/core";
 
 import type { Caller } from "./disputes";
@@ -29,9 +37,18 @@ export interface HouseReads {
   history(): Promise<string>;
   balances(): Promise<string>;
   rules(): Promise<string>;
+  /** The Stake: this month's forfeits so far and what they'd come to, and what's owed from closed months. */
+  stake(): Promise<string>;
+  /** Why the deal gave a John (this week or last, by name) to whom it did, and how it added up. */
+  whyJohn(name: string, who: string | null): Promise<string>;
+  /** How part of the app works, with this house's numbers (core how-it-works.ts). */
+  howItWorks(topic: HowTopic): string;
 }
 
-type House = { name: string; kind: string };
+/** PostgREST's most rows a read (max_rows); the ledger is read in pages of it. */
+const LEDGER_PAGE = 1000;
+
+type House = { name: string; kind: string; awayMakeup: number };
 
 export interface ReadsContext {
   house: House;
@@ -145,6 +162,109 @@ export function houseReads(caller: Caller, houseId: string, ctx: ReadsContext): 
         `A tick can be questioned for ${r.disputeHours} hours. A John is late after its due time and missed ${r.lateHours} hours after; others may cover it ${r.coverGraceHours} hours after it's due.`,
         `The deal is ${r.dealMode}${r.dealBudget ? `, about ${r.dealBudget} pts a person a week` : ", with no weekly limit"}.`,
       ].join("\n");
+    },
+
+    async stake() {
+      const r = ctx.rules;
+      if (r.stakeMinor <= 0) return "This house has no Stake: nothing costs money.";
+      const money = (minor: number) => formatMoney(minor, r.currency);
+      const month = monthOf(ctx.now, zone);
+      // The whole ledger, a page at a time below the last id read, as the Stake page reads it: every balance is a sum of all of it.
+      type Entry = LedgerRow & { assignments: { name: string; outcome: string | null; due_at: string } | null };
+      const rows: Entry[] = [];
+      for (let below: number | null = null; ; ) {
+        const query = caller.db
+          .from("ledger")
+          .select("id, user_id, kind, amount_minor, month, counterparty, doers, created_at, assignments(name, outcome, due_at)")
+          .eq("house_id", houseId);
+        const { data } = await (below === null ? query : query.lt("id", below)).order("id", { ascending: false }).limit(LEDGER_PAGE);
+        const got = (data ?? []) as Entry[];
+        rows.push(...got);
+        if (got.length < LEDGER_PAGE) break;
+        below = got[got.length - 1].id;
+      }
+      const closes = await caller.db.from("month_closes").select("month").eq("house_id", houseId);
+      const view = buildStake({
+        ledger: rows,
+        closedMonths: (closes.data ?? []).map((c) => c.month),
+        memberIds: ctx.people.map((p) => p.userId),
+        stakeMinor: r.stakeMinor,
+        month,
+      });
+      const forfeits = rows
+        .filter((row) => row.month === month && row.kind === "forfeit")
+        .map((row) => {
+          const john = row.assignments;
+          const to = row.counterparty ? `, goes to ${nameOf(row.counterparty)} who covered it` : "";
+          return `- ${nameOf(row.user_id)}: ${money(-row.amount_minor)} for ${john?.name ?? "a John"} (${john?.outcome ?? "forfeit"}, due ${john ? when(john.due_at) : "?"})${to}`;
+        });
+      const projection = view.projection
+        .filter((p) => p.forfeitedRaw || p.received || p.net)
+        .map(
+          (p) =>
+            `- ${nameOf(p.userId)}: forfeited ${money(p.forfeitedRaw)}${p.forfeited < p.forfeitedRaw ? ` (capped at ${money(p.forfeited)})` : ""}, gets ${money(p.received)} of others', net ${p.net >= 0 ? "+" : "−"}${money(Math.abs(p.net))}`,
+        );
+      const owed = [...view.outstanding].filter(([, v]) => v !== 0).map(([id, v]) => `- ${nameOf(id)}: ${v < 0 ? "owes" : "is owed"} ${money(Math.abs(v))}`);
+      const pay = view.transfers.map((t) => `- ${nameOf(t.from)} pays ${nameOf(t.to)} ${money(t.amount)}`);
+      return [
+        `Stake ${money(r.stakeMinor)} a month each; late ${money(r.lateForfeitMinor)}, missed ${money(r.missedForfeitMinor)}.`,
+        `This month (${month}) so far, shared out when it ends:`,
+        ...(forfeits.length ? forfeits : ["- No forfeits yet."]),
+        ...(projection.length ? ["If the month ended now:", ...projection] : []),
+        "Owed from closed months, after payments:",
+        ...(owed.length ? owed : ["- Nothing: everyone is settled."]),
+        ...(pay.length ? ["Fewest payments to settle:", ...pay] : []),
+      ].join("\n");
+    },
+
+    async whyJohn(name, who) {
+      const thisWeek = weekWindow(ctx.now, zone, ctx.rules.weekStarts);
+      const wanted = name.trim().toLowerCase();
+      const whoId =
+        who === null ? null : who === "me" ? caller.userId : (ctx.people.find((p) => firstName(p.name).toLowerCase() === who.toLowerCase())?.userId ?? null);
+      for (const startsOn of [thisWeek.startsOn, addDaysTo(thisWeek.startsOn, -7)]) {
+        const { data: week } = await caller.db.from("weeks").select("id, starts_on, starts_at, ends_at").eq("house_id", houseId).eq("starts_on", startsOn).maybeSingle();
+        if (!week) continue;
+        const { data: rows } = await caller.db
+          .from("assignments")
+          .select("*, johns(every_weeks, every_months), crew(user_id, helper, points)")
+          .eq("week_id", week.id)
+          .order("due_at");
+        const board = buildWeekBoard({
+          week,
+          assignments: rows ?? [],
+          disputes: [],
+          memberIds: ctx.people.map((p) => p.userId),
+          userId: caller.userId,
+          everDealt: true,
+          disputeHours: ctx.rules.disputeHours,
+          now: ctx.now,
+        });
+        const named = board.items.filter((i) => i.name.toLowerCase().includes(wanted));
+        const item =
+          named.find((i) => whoId !== null && i.userId === whoId) ?? (whoId === null ? (named.find((i) => i.userId === caller.userId) ?? named[0]) : undefined);
+        if (!item) continue;
+        const why = johnWhy(item, ctx.people, caller.userId, ctx.rules, ctx.now, jobPlaces(item, board.items));
+        return [
+          `${item.name}, week from ${startsOn}, dealt to ${nameOf(item.userId)}:`,
+          why.answer,
+          ...(why.rows.length
+            ? [
+                "How it added up (standing against their share, furthest behind first):",
+                ...why.rows.map((w) => `- ${w.name}: ${w.value}${w.meta ? ` (${w.meta})` : ""}${w.chosen ? ", dealt it" : ""}`),
+                why.key,
+              ]
+            : []),
+          why.stakes ?? "",
+        ]
+          .filter(Boolean)
+          .join("\n");
+      }
+      return `No John called “${name}”${who ? ` for ${who}` : ""} this week or last. The week read lists what was dealt.`;
+    },
+
+    howItWorks(topic) {
+      return howItWorks(topic, { rules: ctx.rules, family: ctx.house.kind === "family", awayMakeup: ctx.house.awayMakeup });
     },
   };
 }
