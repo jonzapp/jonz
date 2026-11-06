@@ -18,7 +18,9 @@ const tools = (may: Partial<JonzTools["may"]>): JonzTools => ({
   edit: () => ({ ok: true, said: "ok" }),
   setGroup: () => ({ ok: true, said: "ok" }),
   offerReset: async () => ({ ok: true, said: "ok" }),
-  may: { add: false, change: false, remove: false, groups: false, resets: false, ...may },
+  offerAway: async () => ({ ok: true, said: "ok" }),
+  offerCancelAway: async () => ({ ok: true, said: "ok" }),
+  may: { add: false, change: false, remove: false, groups: false, resets: false, away: false, ...may },
 });
 const READS = ["balances", "history", "house_rules", "how_it_works", "list_johns", "people", "stake", "time_away", "week", "why_john"];
 
@@ -29,8 +31,8 @@ describe("jonzToolSet", () => {
 
   it("adds each write only with its permission", () => {
     expect(Object.keys(jonzToolSet(tools({ remove: true }))).sort()).toEqual([...READS, "remove_john"].sort());
-    expect(Object.keys(jonzToolSet(tools({ add: true, change: true, remove: true, groups: true, resets: true }))).sort()).toEqual(
-      [...READS, "add_john", "change_john", "remove_john", "set_group", "offer_reset"].sort(),
+    expect(Object.keys(jonzToolSet(tools({ add: true, change: true, remove: true, groups: true, resets: true, away: true }))).sort()).toEqual(
+      [...READS, "add_john", "change_john", "remove_john", "set_group", "offer_reset", "book_away", "cancel_away"].sort(),
     );
   });
 });
@@ -42,10 +44,11 @@ const MAY_FOR: Record<keyof JonzTools["may"], Permission> = {
   remove: "johns.remove",
   groups: "groups.edit",
   resets: "history.reset",
+  away: "away.book",
 };
 
 describe("every permission has a way through Ask Jonz", () => {
-  const all = Object.keys(jonzToolSet(tools({ add: true, change: true, remove: true, groups: true, resets: true })));
+  const all = Object.keys(jonzToolSet(tools({ add: true, change: true, remove: true, groups: true, resets: true, away: true })));
   const writes = all.filter((t) => !READS.includes(t));
 
   it("says how Jonz handles each one", () => {
@@ -53,7 +56,7 @@ describe("every permission has a way through Ask Jonz", () => {
   });
 
   it("gives each card move's tools, switched on by that move's permission", () => {
-    const on = { add: true, change: true, remove: true, groups: true, resets: true };
+    const on = { add: true, change: true, remove: true, groups: true, resets: true, away: true };
     for (const [perm, c] of Object.entries(ASK_COVERAGE)) {
       if (c.by !== "card") continue;
       for (const name of c.tools) {

@@ -1,5 +1,7 @@
 import {
+  addDaysTo,
   ASK_POOL_TOKENS,
+  localDate,
   ASK_TURN_RESERVE,
   hasPass,
   passOf,
@@ -135,7 +137,7 @@ describe("chatTurn, with Claude stood in for", () => {
     const result = await chatTurn({ db: house.admin.db, userId: house.admin.userId }, house.id, messages, null, new Date(), async (ctx, tools) => {
       told = ctx;
       expect(tools.listJohns()).toBe("The list is empty.");
-      expect(tools.may).toEqual({ add: true, change: true, remove: true, groups: true, resets: false });
+      expect(tools.may).toEqual({ add: true, change: true, remove: true, groups: true, resets: false, away: true });
       return firstGo(ctx, tools);
     });
     const me = house.admin.name.split(" ")[0];
@@ -201,6 +203,48 @@ describe("chatTurn, with Claude stood in for", () => {
     expect(members).toEqual([{ user_id: house.admin.userId }]);
   });
 
+  it("puts the person's own time away on a card, booking and cancelling, checked and writing nothing", async () => {
+    const house = await makeHouse(["Ava", "Ben"]);
+    await addJohns(house.id, [{ name: "Bathroom" }], thisWeek());
+    const now = new Date();
+    // Days well clear of today, so the house's zone doesn't matter.
+    const day = (n: number) => addDaysTo(localDate(now, "UTC"), n);
+    const { data: trip } = await db
+      .from("away")
+      .insert({ house_id: house.id, user_id: house.admin.userId, starts_on: day(20), ends_on: day(22) })
+      .select("id")
+      .single();
+    await db.from("away").insert({ house_id: house.id, user_id: house.members[0].userId, starts_on: day(30), ends_on: day(31) });
+    let listed = "";
+    const result = await chatTurn({ db: house.admin.db, userId: house.admin.userId }, house.id, said("Away 10th to 12th, and cancel my later trip"), null, now, async (_ctx, tools) => {
+      expect(tools.may.away).toBe(true);
+      listed = await tools.reads.timeAway();
+      expect((await tools.offerAway({ from: day(-5), to: day(-3), note: null })).ok).toBe(false);
+      expect((await tools.offerAway({ from: day(12), to: day(10), note: null })).ok).toBe(false);
+      expect((await tools.offerAway({ from: "next friday", to: day(10), note: null })).ok).toBe(false);
+      // Overlaps a trip of theirs, until that trip is cancelled on the same card.
+      expect((await tools.offerAway({ from: day(21), to: day(25), note: null })).ok).toBe(false);
+      expect((await tools.offerAway({ from: day(10), to: day(12), note: " Lisbon " })).ok).toBe(true);
+      // Someone else's trip has no ref to cancel.
+      expect((await tools.offerCancelAway("nobody")).ok).toBe(false);
+      expect((await tools.offerCancelAway(trip!.id.slice(0, 8))).ok).toBe(true);
+      expect((await tools.offerAway({ from: day(21), to: day(25), note: null })).ok).toBe(true);
+      expect(await tools.offerAway({ from: day(10), to: day(12), note: "Lisbon" })).toEqual({ ok: true, said: "Already on the card." });
+      return { raw: { reply: "On the card.", ask: { kind: "none" } }, inputTokens: 10, outputTokens: 5 };
+    });
+    expect(listed).toContain(`ref ${trip!.id.slice(0, 8)}`);
+    expect(listed.match(/ref /g)).toHaveLength(1);
+    if ("refusal" in result) throw new Error("refused");
+    expect(result.draft).toBeNull();
+    expect(result.moves).toEqual([
+      { kind: "away", from: day(10), to: day(12), note: "Lisbon" },
+      { kind: "cancel_away", awayId: trip!.id, from: day(20), to: day(22) },
+      { kind: "away", from: day(21), to: day(25) },
+    ]);
+    const { count } = await db.from("away").select("id", { count: "exact", head: true }).eq("house_id", house.id);
+    expect(count).toBe(2);
+  });
+
   it("can take the whole list off", async () => {
     const house = await makeHouse(["Ava"]);
     const done = await addJohns(house.id, [{ name: "Bathroom" }, { name: "Bins out" }], thisWeek());
@@ -220,7 +264,7 @@ describe("chatTurn, with Claude stood in for", () => {
     const result = await chatTurn({ db: ben.db, userId: ben.userId }, house.id, said("Who's in the house?"), null, new Date(), async (ctx, tools) => {
       expect(ctx.me.role).toBe("member");
       expect(ctx.allowed).not.toContain(PERMISSIONS["johns.add"]);
-      expect(tools.may).toEqual({ add: false, change: false, remove: false, groups: false, resets: false });
+      expect(tools.may).toEqual({ add: false, change: false, remove: false, groups: false, resets: false, away: true });
       // Even called, a write it wasn't given is refused.
       expect(tools.edit({ kind: "add", john: { name: "Sneaky" } }).ok).toBe(false);
       expect(tools.setGroup("Us", ["me"]).ok).toBe(false);

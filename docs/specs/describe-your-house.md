@@ -101,7 +101,14 @@ on Today, Week and House (not while a parent is acting for a kid).
   tools, or, not on the card yet, by a chip to the page where it's done,
   which Jonz's instructions list. A test fails if a permission is left
   out, a card tool is missing or switched by another permission, or a write
-  tool isn't on the list. Effort follows the John list's existing
+  tool isn't on the list. Moves that aren't list changes go on their own
+  card under the answer (`ChatMove` in `packages/core/src/chat-moves.ts`,
+  `MovesCard` in the app): first, booking and cancelling the person's own
+  time away (`book_away`, `cancel_away`, checked in
+  `apps/api/lib/moves/ask-away.ts`: dates, not before today, no overlap
+  with a trip that isn't being cancelled, cancel only by a ref of their
+  own). Each row starts ticked; tapping does them through `set_away` and
+  `cancel_away`, as the person. Effort follows the John list's existing
   scale (points 1 to 20), and how often any period the list takes, in weeks
   or months (`docs/specs/any-length-repeats.md`).
 - Each turn asked of Claude is a `house_drafts` row (outcome, how many

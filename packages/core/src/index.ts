@@ -4,6 +4,7 @@
 // takes `now`.
 export * from "./account-deletion";
 export * from "./ask-coverage";
+export * from "./chat-moves";
 export * from "./admin-list";
 export * from "./auth-paths";
 export * from "./away";

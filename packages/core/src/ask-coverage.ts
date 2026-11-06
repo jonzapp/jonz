@@ -23,7 +23,7 @@ export type AskCoverage =
 export const ASK_COVERAGE: Record<Permission, AskCoverage> = {
   "house.read": { by: "reads" },
   "ticks.own": { by: "page", page: "today", where: "their John on Today" },
-  "away.book": { by: "page", page: "away", where: "Days and time away" },
+  "away.book": { by: "card", tools: ["book_away", "cancel_away"] },
   "swaps.ask": { by: "page", page: "today", where: "the John on Today (Ask to swap), or the ask on Today to answer it" },
   "covers.take": { by: "page", page: "today", where: "the overdue John on Today" },
   "flags.raise": { by: "page", page: "today", where: "the on-call John on Today" },

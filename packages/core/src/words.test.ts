@@ -21,6 +21,8 @@ const FILES = [
   "email.ts",
   "reports.ts",
   "pass.ts",
+  "chat-moves.ts",
+  "ask-coverage.ts",
 ];
 
 const RETIRED: [RegExp, string][] = [

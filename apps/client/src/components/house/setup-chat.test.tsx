@@ -278,6 +278,16 @@ describe('with a list already', () => {
     expect(keep).toHaveBeenCalledWith('h1', RULES, withFloor, ivyIn, ['group:Main floor'], { johns, groups: [floor] }, expect.any(Date));
   });
 
+  it('puts time away Jonz offers on its own card, under its answer', async () => {
+    chat.mockResolvedValue({ reply: 'Booked once you tap.', ask: null, draft: null, source: 'ai', moves: [{ kind: 'away', from: '2026-11-20', to: '2026-11-23' }] });
+    await openList();
+    await say('I’m away 20th to 23rd');
+    expect(await screen.findByTestId('moves-card')).toBeTruthy();
+    expect(screen.getByTestId('move-away')).toBeTruthy();
+    // No list change, so no draft card.
+    expect(screen.queryByTestId('draft-changes')).toBeNull();
+  });
+
   it('answers someone who can’t change the list, with no starters and no card', async () => {
     chat.mockResolvedValue({ reply: 'Ben has bins this week.', ask: null, draft: null, source: 'ai' });
     await render(<SetupChat houseId="h1" rules={RULES} johns={johns} groups={[]} people={people} me={ME} passOpen canChange={false} />, {

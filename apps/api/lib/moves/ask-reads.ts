@@ -126,11 +126,13 @@ export function houseReads(caller: Caller, houseId: string, ctx: ReadsContext): 
     async timeAway() {
       const { data } = await caller.db
         .from("away")
-        .select("user_id, starts_on, ends_on, note")
+        .select("id, user_id, starts_on, ends_on, note")
         .eq("house_id", houseId)
         .gte("ends_on", addDaysTo(today, -30))
         .order("starts_on");
-      const lines = (data ?? []).map((a) => `${nameOf(a.user_id)}: ${a.starts_on} to ${a.ends_on}${a.note ? ` (${a.note})` : ""}${a.starts_on <= today && a.ends_on >= today ? ", away now" : ""}`);
+      // The person's own, from today on, carry a ref for cancel_away.
+      const ref = (a: { id: string; user_id: string; ends_on: string }) => (a.user_id === caller.userId && a.ends_on >= today ? `, ref ${a.id.slice(0, 8)}` : "");
+      const lines = (data ?? []).map((a) => `${nameOf(a.user_id)}: ${a.starts_on} to ${a.ends_on}${a.note ? ` (${a.note})` : ""}${a.starts_on <= today && a.ends_on >= today ? ", away now" : ""}${ref(a)}`);
       return [`Today is ${today}.`, ...(lines.length ? lines : ["Nobody has time away booked."])].join("\n");
     },
 

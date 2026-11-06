@@ -14,6 +14,7 @@ import type { GroupDef, JohnDef } from "./board";
 import { CATEGORIES, CATEGORY_LABEL, DOW_LABEL, JOHN_WHEN, type Category, type IsoDow } from "./domain";
 import { firstName } from "./format";
 import { dueWords, LAST_OF_MONTH, MAX_EVERY_MONTHS, MAX_EVERY_WEEKS, oftenWords } from "./repeat";
+import { CHAT_MOVES_MAX, ChatMove } from "./chat-moves";
 import { CHAT_RESETS_MAX, ChatReset } from "./resets";
 import type { JohnDraft } from "./schemas";
 
@@ -205,6 +206,8 @@ export const ChatResponse = z.object({
   source: z.enum(DRAFT_SOURCES),
   /** Resets Jonz offers an admin, each with its numbers, for the Resets card. Nothing is reset until they tap. */
   resets: z.array(ChatReset).max(CHAT_RESETS_MAX).optional(),
+  /** Other moves Jonz puts on a card (time away), for the person to tick and apply. */
+  moves: z.array(ChatMove).max(CHAT_MOVES_MAX).optional(),
   /** What's left of this week's Ask Jonz for the person asking, after this turn. */
   allowance: AskUsage.optional(),
 });
