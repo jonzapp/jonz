@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
-import { attrsOf, cardOf, CARDS, CARDS_MAX, chipOf, PAGES, parseReply, REPLY_FORMAT_GUIDE, replyText, type Block, type Inline } from "./reply-format";
+import { attrsOf, cardOf, CARDS, CARDS_MAX, chipOf, OWNER_REPLY_GUIDE, PAGES, parseReply, REPLY_FORMAT_GUIDE, replyText, type Block, type Inline } from "./reply-format";
 import { REPLY_SAMPLES } from "./reply-samples";
 
 // The same cases every run, so a check passes or fails the same any time and a failure can be
@@ -210,6 +210,32 @@ describe("the prompt's guide", () => {
   it("writes every example in it so the app reads it as meant", () => {
     const examples = [...REPLY_FORMAT_GUIDE.matchAll(/(::[a-z]+(?:\{[^}]*\})?)/g)].map((m) => m[1]);
     for (const e of examples) expect(parseReply(e), e).toEqual([{ t: "card", card: expect.any(Object) }]);
+  });
+
+  /** The guide's worked example, its two-space indent taken off. */
+  const example = (guide: string) =>
+    guide
+      .split("\n")
+      .slice(guide.split("\n").indexOf("- For example:") + 1)
+      .map((l) => l.replace(/^ {2}/, ""))
+      .join("\n");
+  const kinds = (bs: Block[]): string[] =>
+    bs.flatMap((b) => {
+      const walk = (ks: Inline[]): string[] => ks.flatMap((k) => (k.t === "chip" ? [k.kind] : "kids" in k ? walk(k.kids) : []));
+      if (b.t === "p" || b.t === "heading") return walk(b.kids);
+      if (b.t === "list") return b.items.flatMap((i) => kinds(i.blocks));
+      if (b.t === "card") return [`::${b.card.card}`];
+      return [];
+    });
+
+  it("shows a house's example as the app draws it: a card, a John and a person", () => {
+    expect(kinds(parseReply(example(REPLY_FORMAT_GUIDE)))).toEqual(["::week", "john", "person"]);
+  });
+
+  it("shows the owner's example as the app draws it: reports in a list and an admin page, no house pieces", () => {
+    expect(kinds(parseReply(example(OWNER_REPLY_GUIDE)))).toEqual(["report", "report", "admin"]);
+    for (const house of ["jonz:john", "jonz:person", "jonz:page", "::"]) expect(OWNER_REPLY_GUIDE).not.toContain(house);
+    for (const owner of ["jonz:report", "jonz:audit", "jonz:account", "jonz:admin", "Inbox"]) expect(REPLY_FORMAT_GUIDE).not.toContain(owner);
   });
 });
 
