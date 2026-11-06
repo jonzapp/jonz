@@ -31,7 +31,21 @@ export type OwnerAskResponse = z.infer<typeof OwnerAskResponse>;
 
 export const OWNER_ASK_COPY = {
   title: "Ask Jonz",
+  /** On the bar, so the owner's chat is never mistaken for a housemate's. */
   label: "Owner",
-  placeholder: "Ask about Jonz, the inbox, the log…",
+  greeting: "Ask me about the inbox, accounts waiting to be deleted, the audit log, notices or messages. I read what the admin pages show and change nothing: I'll tell you where to do it.",
+  placeholder: "Ask about the inbox, the log…",
+  send: "Send",
+  box: "Ask Jonz, owner",
   offline: "I can’t reach Claude just now, so I can’t answer. Everything I’d read is on the admin pages.",
+  open: "Ask Jonz, owner",
+  close: "Close Ask Jonz",
+  thinkingSteps: ["Reading the admin pages", "Looking it up", "Writing it down"],
+  /** What a screen reader says for an owner's chip. */
+  spoken: {
+    report: (label: string) => `${label}, report`,
+    audit: (label: string) => `${label}, audit entry`,
+    account: (label: string) => `${label}, account`,
+    admin: (label: string) => `${label}, page`,
+  },
 } as const;

@@ -84,7 +84,7 @@ describe("two assistants, no shared access", () => {
     expect(ownerSystem).toContain("the owner of the whole service");
     expect(ownerSystem).toContain("You can't change anything");
     for (const words of ["owner", "Inbox", "Audit log", "Deletions", "admin pages", "from_people"]) expect(houseSystem).not.toContain(words);
-    for (const words of ["list_johns", "house_now", "offer_reset", "Apply on the card", "jonz:", "::week"]) expect(ownerSystem).not.toContain(words);
+    for (const words of ["list_johns", "house_now", "offer_reset", "Apply on the card", "jonz:john", "::week"]) expect(ownerSystem).not.toContain(words);
   });
 });
 

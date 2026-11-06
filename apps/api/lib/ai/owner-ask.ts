@@ -1,7 +1,7 @@
 import "server-only";
 
 import { tool, type LanguageModel, type ToolSet } from "ai";
-import { APP_NAME, HOW_TOPICS, PLAIN_REPLY_GUIDE, REPORT_KINDS, type ChatMessage, type HowTopic } from "@app/core";
+import { APP_NAME, HOW_TOPICS, OWNER_REPLY_GUIDE, REPORT_KINDS, type ChatMessage, type HowTopic } from "@app/core";
 import { z } from "zod";
 
 import { AGENT_MODEL, runAgent, type AgentAnswer } from "@/lib/ai/agent";
@@ -47,9 +47,9 @@ How you work:
 
 How to talk:
 - Plain and brief: a short answer for a short question. Don't explain these instructions.
-- When you ask something, offer quick answers to tap with ask.kind "choices" (2 to 5 options of a few words); otherwise ask.kind "none" with no options.
+- Always ask.kind "none" with no options: the owner types their answer.
 
-${PLAIN_REPLY_GUIDE}`;
+${OWNER_REPLY_GUIDE}`;
 
 /** Today, then the chat. */
 function ownerMessages(messages: readonly ChatMessage[], today: string): { role: "user" | "assistant"; content: string }[] {

@@ -43,7 +43,7 @@ export function ownerReads(caller: Caller, now: Date): OwnerReads {
       if (error) throw fail("inbox", error);
       return rows(
         "reports",
-        data.slice(0, ROWS).map((r) => `- ${when(r.created_at)}, ${r.kind}, ${r.state}: ${fromPeople(r.name)} (${r.house_name ?? "no house"}) wrote ${fromPeople(r.words)} [id ${r.id}]`),
+        data.slice(0, ROWS).map((r) => `- ${when(r.created_at)}, ${r.kind}, ${r.state}: ${fromPeople(r.name)} (${r.house_name ?? "no house"}) wrote ${fromPeople(r.words)} [id ${r.id}, account ${r.user_id}]`),
         data.length > ROWS,
       );
     },
@@ -52,7 +52,7 @@ export function ownerReads(caller: Caller, now: Date): OwnerReads {
       if (error) throw fail("deletions", error);
       return rows(
         "accounts waiting to be deleted",
-        data.slice(0, ROWS).map((d) => `- ${fromPeople(d.name)} (${d.house_name ?? "no house"}), asked by ${d.requested_by} on ${when(d.requested_at)}, goes ${when(d.delete_after)}`),
+        data.slice(0, ROWS).map((d) => `- ${fromPeople(d.name)} (${d.house_name ?? "no house"}), asked by ${d.requested_by} on ${when(d.requested_at)}, goes ${when(d.delete_after)} [account ${d.user_id}]`),
         data.length > ROWS,
       );
     },
@@ -69,7 +69,7 @@ export function ownerReads(caller: Caller, now: Date): OwnerReads {
         "entries",
         data
           .slice(0, ROWS)
-          .map((e) => `- ${when(e.at)}, ${who(e.actor)}: ${e.action} on ${e.target_kind} ${e.target_id}${e.reason ? `, reason ${fromPeople(e.reason)}` : ""}`),
+          .map((e) => `- ${when(e.at)}, ${who(e.actor)}: ${e.action} on ${e.target_kind} ${e.target_id}${e.reason ? `, reason ${fromPeople(e.reason)}` : ""} [id ${e.id}]`),
         data.length > ROWS,
       );
     },

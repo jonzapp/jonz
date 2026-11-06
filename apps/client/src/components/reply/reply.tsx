@@ -1,4 +1,4 @@
-import { parseReply, type Block, type Inline, type ReplyCard } from '@app/core';
+import { parseReply, type Block, type ChipKind, type Inline, type ReplyCard } from '@app/core';
 import { router, type Href } from 'expo-router';
 import { ArrowUpRightIcon, CheckIcon } from 'lucide-react-native';
 import { createContext, Fragment, useContext, useMemo, useState, type ReactNode } from 'react';
@@ -31,7 +31,11 @@ export interface ReplyPieces {
   person(ref: string): ChipTarget | null;
   page(ref: string): ChipTarget | null;
   card(card: ReplyCard): ReactNode;
+  /** The owner's chips (their Ask Jonz only): a report, an audit entry, an account, an admin page. A house's pieces have none. */
+  owner?(kind: OwnerChipKind, ref: string, label: string): ChipTarget | null;
 }
+
+export type OwnerChipKind = Exclude<ChipKind, 'john' | 'person' | 'page'>;
 
 /** Nothing found: every chip its words, every card left out. */
 export const NO_PIECES: ReplyPieces = { john: () => null, person: () => null, page: () => null, card: () => null };
@@ -217,7 +221,14 @@ function Runs({ kids }: { kids: Inline[] }) {
 
 function ChipRun({ chip }: { chip: Extract<Inline, { t: 'chip' }> }) {
   const pieces = useContext(Pieces);
-  const target = chip.kind === 'john' ? pieces.john(chip.ref) : chip.kind === 'person' ? pieces.person(chip.ref) : pieces.page(chip.ref);
+  const target =
+    chip.kind === 'john'
+      ? pieces.john(chip.ref)
+      : chip.kind === 'person'
+        ? pieces.person(chip.ref)
+        : chip.kind === 'page'
+          ? pieces.page(chip.ref)
+          : (pieces.owner?.(chip.kind, chip.ref, chip.label) ?? null);
   if (!target) return <Text style={styles.strong}>{chip.label}</Text>;
   return <Chip label={chip.label} target={target} />;
 }
