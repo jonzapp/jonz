@@ -353,8 +353,9 @@ export function tidyDraft(
     if (johns.length === Math.max(DRAFT_MAX_JOHNS, list.johnIds.length + 10)) break;
   }
 
-  // A group no kept John uses is noise on the review screen.
-  const used = groups.filter((g) => johns.some((j) => j.group === g.name));
+  // A new group no kept John uses is noise on the review screen. One the
+  // house has stays, so a change to who's in it can be shown.
+  const used = groups.filter((g) => johns.some((j) => j.group === g.name) || list.groups.some((h) => key(h.name) === key(g.name)));
   const note = text(raw.note, 400);
   return { johns, groups: used, note: note || null };
 }
@@ -493,7 +494,7 @@ export function offlineTurn(messages: readonly ChatMessage[], draft: HouseDraft 
  * id, and the groups they use with who's in them.
  */
 export function listAsDraft(johns: readonly JohnDef[], groups: readonly GroupDef[]): HouseDraft {
-  const used = groups.filter((g) => johns.some((j) => j.groupId === g.id));
+  // Every group the house has, Johns or not, so a chat can change who's in any of them.
   return {
     johns: johns.map((j) => ({
       id: j.id,
@@ -510,10 +511,10 @@ export function listAsDraft(johns: readonly JohnDef[], groups: readonly GroupDef
       respondHours: j.respondHours,
       perWeek: j.perWeek,
       crew: j.crew,
-      group: used.find((g) => g.id === j.groupId)?.name ?? null,
+      group: groups.find((g) => g.id === j.groupId)?.name ?? null,
       why: "",
     })),
-    groups: used.map((g) => ({ name: g.name, memberIds: [...g.memberIds], waitingFor: [] })),
+    groups: groups.map((g) => ({ name: g.name, memberIds: [...g.memberIds], waitingFor: [] })),
     note: null,
   };
 }
@@ -546,6 +547,29 @@ export function draftChanges(base: HouseDraft | null, next: HouseDraft): DraftCh
     if (before.id && !kept.has(before.id)) changes.push({ kind: "remove", key: `remove:${before.id}`, before });
   }
   return changes;
+}
+
+/** A group the house already has, with different people in it: who's in it before and after. */
+export interface GroupChange {
+  kind: "group";
+  key: string;
+  group: DraftedGroup;
+  before: DraftedGroup;
+}
+
+/**
+ * Groups the house has whose people a draft changes. A group the draft
+ * leaves out stays as it is (taking one off is the House page's), and a
+ * new group is made with the Johns that need it (draftPlan).
+ */
+export function groupChanges(base: HouseDraft | null, next: HouseDraft): GroupChange[] {
+  if (!base) return [];
+  return next.groups.flatMap((group) => {
+    const before = base.groups.find((g) => key(g.name) === key(group.name));
+    if (!before || group.memberIds.length === 0) return [];
+    const same = before.memberIds.length === group.memberIds.length && before.memberIds.every((id) => group.memberIds.includes(id));
+    return same ? [] : [{ kind: "group" as const, key: `group:${before.name}`, group: { ...group, name: before.name }, before }];
+  });
 }
 
 /**

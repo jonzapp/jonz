@@ -1812,6 +1812,8 @@ export const HOUSE_DRAFT_COPY = {
   /** The card's three headings, in the order it shows them: what goes, what changes, what's new. */
   removingHeading: "Taking off",
   changingHeading: "Changing",
+  /** A group the house has, with new people in it, under Changing: "You and Sam → you, Sam and Ivy". */
+  groupPeople: (before: string, after: string) => `${before} → ${after}`,
   addingHeading: "Adding",
   apply: (n: number) => (n === 0 ? "Pick at least one change" : n === 1 ? "Apply 1 change" : `Apply ${n} changes`),
   applying: "Applying…",

@@ -3,6 +3,7 @@ import "server-only";
 import { tool, type LanguageModel, type ToolSet } from "ai";
 import {
   APP_NAME,
+  ASK_ELSEWHERE_GUIDE,
   CATEGORIES,
   DOW_LABEL,
   HOW_TOPICS,
@@ -115,8 +116,10 @@ How ${APP_NAME} works:
 
 Your tools:
 - Look things up before you answer: list_johns for the John list (with refs), week for who has what this week, last week or next, people, time_away, history, balances (fair shares), stake (the money), why_john (why a John went to someone), how_it_works (how a part of the app works, with this house's numbers), house_rules. Reads are free and need no permission; use as many as you need. Never guess what you could look up.
-- Changes are proposals. add_john, change_john and remove_john change a draft of the list, one John per call; set_group makes or changes a group in the draft; offer_reset offers a fix (only when house_now is given). Each tool says whether it worked; if it didn't, fix the call or tell the person. Nothing changes until they tap Apply on the card, so never say something is done: say what you've put on the card.
-- Only the tools for moves this person may make are there. If they ask for something you have no tool for, say plainly that you can't do that from the chat yet, or that it's for an admin (a parent in a family), and where in the app they can do it.
+- Changes are proposals. add_john, change_john and remove_john change a draft of the list, one John per call; set_group makes a new group, or changes who's in one the house has (give everyone who should be in it, not just who's joining); offer_reset offers a fix (only when house_now is given). Each tool says whether it worked; if it didn't, fix the call or tell the person. Nothing changes until they tap Apply on the card, so never say something is done: say what you've put on the card.
+- Only the tools for moves this person may make are there. If they ask for something that's for an admin (a parent in a family), say so plainly. Deleting a group is on [Groups](jonz:page/groups).
+- These moves aren't on the card yet. If they ask for one they may make, say you can't do it from the chat yet and give where it's done, with its chip:
+${ASK_ELSEWHERE_GUIDE}
 
 Changing the John list:
 - Change only what they ask for. Use change_john with only the fields that change; use the ref from list_johns. Use remove_john to take one off. To change many (or the whole list), make one call per John.
@@ -241,7 +244,7 @@ export function jonzToolSet(t: JonzTools): ToolSet {
   }
   if (t.may.groups) {
     set.set_group = tool({
-      description: "Propose a group (some of the house who share Johns the others don't), by name and first names; “me” is the person writing.",
+      description: "Propose a group (some of the house who share Johns the others don't), by name and the first names of everyone in it; “me” is the person writing. For a group the house has, this changes who's in it: list everyone who should be, not just who's joining.",
       inputSchema: z.object({ name: z.string(), members: z.array(z.string()) }),
       execute: async ({ name, members }) => said(t.setGroup(name, members)),
     });

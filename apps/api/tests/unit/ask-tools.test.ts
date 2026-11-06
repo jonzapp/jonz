@@ -1,7 +1,7 @@
 import { MockLanguageModelV4 } from "ai/test";
 import { describe, expect, it } from "vitest";
 
-import { REPLY_FORMAT_GUIDE, REPLY_SAMPLES, tidyReply } from "@app/core";
+import { ASK_COVERAGE, ASK_ELSEWHERE_GUIDE, ASK_WRITE_TOOLS, PERMISSION_NAMES, PERMISSIONS, REPLY_FORMAT_GUIDE, REPLY_SAMPLES, tidyReply, type Permission } from "@app/core";
 
 import { askClaude, jonzToolSet, type DraftContext, type JonzTools } from "@/lib/ai/house-draft";
 
@@ -32,6 +32,64 @@ describe("jonzToolSet", () => {
     expect(Object.keys(jonzToolSet(tools({ add: true, change: true, remove: true, groups: true, resets: true }))).sort()).toEqual(
       [...READS, "add_john", "change_john", "remove_john", "set_group", "offer_reset"].sort(),
     );
+  });
+});
+
+// What each tool's switch in JonzTools["may"] stands for (draft.ts sets them from these permissions).
+const MAY_FOR: Record<keyof JonzTools["may"], Permission> = {
+  add: "johns.add",
+  change: "johns.edit",
+  remove: "johns.remove",
+  groups: "groups.edit",
+  resets: "history.reset",
+};
+
+describe("every permission has a way through Ask Jonz", () => {
+  const all = Object.keys(jonzToolSet(tools({ add: true, change: true, remove: true, groups: true, resets: true })));
+  const writes = all.filter((t) => !READS.includes(t));
+
+  it("says how Jonz handles each one", () => {
+    expect(Object.keys(ASK_COVERAGE).sort()).toEqual([...PERMISSION_NAMES].sort());
+  });
+
+  it("gives each card move's tools, switched on by that move's permission", () => {
+    const on = { add: true, change: true, remove: true, groups: true, resets: true };
+    for (const [perm, c] of Object.entries(ASK_COVERAGE)) {
+      if (c.by !== "card") continue;
+      for (const name of c.tools) {
+        expect(all, `${perm} needs ${name}`).toContain(name);
+        // The one switch that takes the tool away is the permission's own.
+        const off = (Object.keys(MAY_FOR) as (keyof JonzTools["may"])[]).filter((k) => !(name in jonzToolSet(tools({ ...on, [k]: false }))));
+        expect(off, name).toHaveLength(1);
+        const owner = ASK_COVERAGE[MAY_FOR[off[0]]];
+        expect(owner.by === "card" && owner.tools.includes(name), `${name} is switched by ${MAY_FOR[off[0]]}`).toBe(true);
+      }
+    }
+  });
+
+  it("has no write tool that the list doesn't account for", () => {
+    expect([...writes].sort()).toEqual([...ASK_WRITE_TOOLS].sort());
+  });
+
+  it("tells Jonz where every other move is done, with a page chip", async () => {
+    const model = new MockLanguageModelV4({
+      doGenerate: {
+        content: [{ type: "text", text: JSON.stringify({ reply: "Ok.", ask: { kind: "none", options: [] } }) }],
+        finishReason: { unified: "stop", raw: "end_turn" },
+        usage: { inputTokens: { total: 1, noCache: 1, cacheRead: 0, cacheWrite: 0 }, outputTokens: { total: 1, text: 1, reasoning: 0 } },
+        warnings: [],
+      },
+    });
+    await askClaude(
+      { people: [], me: { name: "Ava", role: "member" }, houseName: "Elm", family: false, weekStarts: 1, today: "Friday", allowed: [], messages: [{ role: "user", text: "Hi" }], editing: true, now: null },
+      tools({}),
+      model,
+    );
+    const system = JSON.stringify(model.doGenerateCalls[0].prompt[0]);
+    expect(system).toContain(JSON.stringify(ASK_ELSEWHERE_GUIDE).slice(1, -1));
+    for (const [perm, c] of Object.entries(ASK_COVERAGE)) {
+      if (c.by === "page") expect(ASK_ELSEWHERE_GUIDE).toContain(`${PERMISSIONS[perm as Permission]}: ${c.where}, [`);
+    }
   });
 });
 

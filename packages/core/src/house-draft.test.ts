@@ -18,6 +18,7 @@ import {
   changedLine,
   draftChanges,
   draftForModel,
+  groupChanges,
   listAsDraft,
   draftPlan,
   guessStarter,
@@ -371,6 +372,27 @@ describe("changing a list that's already there", () => {
 
   it("treats every John in a new house's draft as one to add", () => {
     expect(draftChanges(null, starterDraft("couple")).every((c) => c.kind === "add")).toBe(true);
+  });
+
+  it("lists groups with no Johns too, so Jonz can change who's in them", () => {
+    const floor = { id: "44444444-4444-4444-8444-444444444444", name: "Main floor", memberIds: [ME] };
+    expect(listAsDraft(list, [UP, floor]).groups.map((g) => g.name)).toEqual(["Upstairs", "Main floor"]);
+  });
+
+  it("finds a group whose people changed, keeping the house's name for it", () => {
+    const IVY = "00000000-0000-4000-8000-000000000009";
+    const next = { ...base, groups: [{ name: "upstairs", memberIds: [ME, IVY], waitingFor: [] }] };
+    expect(groupChanges(base, next)).toEqual([
+      { kind: "group", key: "group:Upstairs", group: { name: "Upstairs", memberIds: [ME, IVY], waitingFor: [] }, before: base.groups[0] },
+    ]);
+    expect(groupChanges(base, base)).toEqual([]);
+    expect(groupChanges(null, next)).toEqual([]);
+    expect(groupChanges(base, { ...base, groups: [{ name: "Upstairs", memberIds: [], waitingFor: [] }] })).toEqual([]);
+    expect(draftChanges(base, next)).toEqual([]);
+  });
+
+  it("says who's in a group, before → after", () => {
+    expect(HOUSE_DRAFT_COPY.groupPeople("You and Sam", "You, Sam and Ivy")).toBe("You and Sam → You, Sam and Ivy");
   });
 });
 

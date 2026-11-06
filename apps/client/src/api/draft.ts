@@ -2,6 +2,7 @@ import {
   AskUsage,
   ChatResponse,
   draftChanges,
+  groupChanges,
   draftPlan,
   offlineTurn,
   type ChatMessage,
@@ -88,6 +89,12 @@ export async function applyDraft(
     picked.flatMap((c) => (c.kind === 'add' ? [written(c.at)] : [])),
     now,
   );
+  // Groups the house has, with new people in them.
+  const regrouped = groupChanges(base, draft).filter((g) => keys.includes(g.key));
+  for (const c of regrouped) {
+    const id = list.groups.find((g) => g.name === c.before.name)?.id;
+    if (id) await saveGroup(houseId, { id, name: c.before.name, members: [...c.group.memberIds] });
+  }
   for (const c of picked) {
     if (c.kind === 'change') {
       const was = list.johns.find((j) => j.id === c.john.id);
@@ -98,7 +105,7 @@ export async function applyDraft(
       await archiveJohn(houseId, c.before.id, now);
     }
   }
-  return picked.length;
+  return picked.length + regrouped.length;
 }
 
 /** The week's Ask Jonz: what's left of theirs, the house's and each person's use, and when it's back. */
