@@ -22,6 +22,20 @@ as $$
   where d.house_id = p_house and d.created_at >= p_since;
 $$;
 
+-- Tokens each person in a house has used since the week started, for the
+-- usage page (anyone in the house sees who used how much of the pool).
+create function public.ask_usage_people(p_house uuid, p_since timestamptz)
+returns table (user_id uuid, used bigint)
+language sql
+stable
+security definer set search_path = ''
+as $$
+  select d.user_id, sum(d.input_tokens + d.output_tokens)::bigint
+  from public.house_drafts d
+  where d.house_id = p_house and d.created_at >= p_since
+  group by d.user_id;
+$$;
+
 -- Write down one turn, or refuse: ask_pool_used when the house has used its
 -- week, ask_share_used when this person has used theirs (p_share), and
 -- draft_limit when they've sent their day's worth from any house. A turn
@@ -63,6 +77,8 @@ end;
 $$;
 
 revoke execute on function public.ask_usage(uuid, uuid, timestamptz) from public, anon, authenticated;
+revoke execute on function public.ask_usage_people(uuid, timestamptz) from public, anon, authenticated;
 revoke execute on function public.claim_ask_turn(uuid, uuid, timestamptz, bigint, bigint, integer, integer) from public, anon, authenticated;
 grant execute on function public.ask_usage(uuid, uuid, timestamptz) to service_role;
+grant execute on function public.ask_usage_people(uuid, timestamptz) to service_role;
 grant execute on function public.claim_ask_turn(uuid, uuid, timestamptz, bigint, bigint, integer, integer) to service_role;

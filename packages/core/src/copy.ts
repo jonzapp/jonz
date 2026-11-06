@@ -1824,10 +1824,46 @@ export const HOUSE_DRAFT_COPY = {
   offlineAsk: "I couldn’t answer just now. Try again in a minute.",
   /** In place of the message box, for a house without the Pass. */
   passNeeded: `Changing your list with ${APP_NAME} comes with the House Pass. Setting up a new house stays free.`,
-  /** Under the message box after an answer: what's left of this week's Ask Jonz, and when more comes when it's low. */
-  allowance: (left: number, house: boolean, backOn: string) =>
-    `${Math.floor(left * 100)}% of ${house ? "the house’s" : "your"} Ask ${APP_NAME} left this week${left < 0.25 ? `. More on ${backOn}.` : "."}`,
   seePass: "See the House Pass",
+} as const;
+
+/** A share, 0 to 1, as a whole percent, never rounded up to 100 or down to 0. */
+function percent(share: number): number {
+  const n = Math.round(share * 100);
+  return share > 0 && n === 0 ? 1 : share < 1 && n === 100 ? 99 : n;
+}
+
+/**
+ * Ask Jonz's week: the warning over the message box when it's low, the
+ * notice in its place once it's all used, and the usage page (House, setup).
+ * `backOn` is the weekday and time the house's week starts.
+ */
+export const ASK_USAGE_COPY = {
+  title: `Ask ${APP_NAME} usage`,
+  /** Its row on House: what's left of yours. */
+  rowMeta: (left: number) => `${percent(left)}% of yours left this week`,
+  thisWeek: "This week",
+  resets: (backOn: string) => `Resets ${backOn}`,
+  house: "The house",
+  houseNote: (people: number) => (people < 2 ? "Just you" : people === 2 ? "Between the two of you" : `Between all ${people} of you`),
+  you: "You",
+  youNote: "Of your half: nobody can use more than half the house’s",
+  whoUsed: "Who used it",
+  used: (share: number) => `${percent(share)}% used`,
+  /** Under the page, for a house without the Pass. */
+  passMore: "With the House Pass the house gets five times as much.",
+  /** Over the message box once under a quarter is left. */
+  low: (left: number, house: boolean, backOn: string) =>
+    `Only ${percent(left)}% of ${house ? "the house’s" : "your"} Ask ${APP_NAME} left this week. More on ${backOn}.`,
+  lowLabel: "See usage",
+  /** In place of the message box once it's all used. */
+  outHouse: `The house has used this week’s Ask ${APP_NAME}`,
+  outMine: "You’ve used your half this week",
+  outHouseNote: (backOn: string, pass: boolean) =>
+    `Back for everyone ${backOn}.${pass ? "" : " With the House Pass the house gets five times as much."}`,
+  outMineNote: (backOn: string) => `Back ${backOn}. Nobody can use more than half, so the others still have theirs.`,
+  seeUsage: "See usage",
+  getPass: "Get the House Pass",
 } as const;
 
 /**

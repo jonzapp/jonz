@@ -1,4 +1,5 @@
 import {
+  AskUsage,
   ChatResponse,
   draftChanges,
   draftPlan,
@@ -98,4 +99,9 @@ export async function applyDraft(
     }
   }
   return picked.length;
+}
+
+/** The week's Ask Jonz: what's left of theirs, the house's and each person's use, and when it's back. */
+export async function askUsageOf(houseId: string): Promise<AskUsage> {
+  return apiPost('/api/ask/usage', { houseId }, AskUsage);
 }

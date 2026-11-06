@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 
+import { ASK_USAGE_COPY } from "./copy";
 import { NEW_JOHN, type JohnDef } from "./board";
 
 import {
   askAllowance,
+  askBackOn,
+  askUsage,
   DRAFT_MAX_GROUPS,
   DRAFT_MAX_JOHNS,
   CHOICES_MAX,
@@ -374,7 +377,7 @@ describe("changing a list that's already there", () => {
 describe("askAllowance", () => {
   const resetsAt = new Date("2026-11-09T00:00:00Z");
   it("gives someone living alone the whole pool", () => {
-    expect(askAllowance({ pool: 1000, people: 1, houseUsed: 250, mineUsed: 250, resetsAt })).toEqual({ cap: 1000, left: 0.75, house: false, resetsAt: resetsAt.toISOString() });
+    expect(askAllowance({ pool: 1000, people: 1, houseUsed: 250, mineUsed: 250, resetsAt })).toEqual({ cap: 1000, left: 0.75, house: true, resetsAt: resetsAt.toISOString() });
   });
   it("caps each person at half when two or more live there", () => {
     expect(askAllowance({ pool: 1000, people: 3, houseUsed: 300, mineUsed: 250, resetsAt })).toMatchObject({ cap: 500, left: 0.5, house: false });
@@ -386,5 +389,49 @@ describe("askAllowance", () => {
   it("never says more than all of it, or less than none", () => {
     expect(askAllowance({ pool: 1000, people: 2, houseUsed: 0, mineUsed: 0, resetsAt }).left).toBe(1);
     expect(askAllowance({ pool: 1000, people: 2, houseUsed: 600, mineUsed: 600, resetsAt }).left).toBe(0);
+  });
+});
+
+describe("askUsage", () => {
+  const resetsAt = new Date("2026-11-09T00:00:00Z");
+  const [ava, ben, cat] = ["11111111-1111-4111-8111-111111111111", "22222222-2222-4222-8222-222222222222", "33333333-3333-4333-8333-333333333333"];
+  it("gives the house's use, theirs as a share of their half, and each person's, most first", () => {
+    const usage = askUsage({ pool: 1000, pass: false, people: [ava, ben, cat], me: ben, used: new Map([[ava, 300], [ben, 100]]), resetsAt });
+    expect(usage).toMatchObject({ pass: false, people: 3, houseUsed: 0.4, mineUsed: 0.2, left: 0.8, house: false, resetsAt: resetsAt.toISOString() });
+    expect(usage.usedBy).toEqual([
+      { userId: ava, used: 0.3 },
+      { userId: ben, used: 0.1 },
+      { userId: cat, used: 0 },
+    ]);
+  });
+  it("never shows more than all of it used, even with a turn's reserve on top", () => {
+    const usage = askUsage({ pool: 1000, pass: true, people: [ava], me: ava, used: new Map([[ava, 1200]]), resetsAt });
+    expect(usage).toMatchObject({ houseUsed: 1, mineUsed: 1, left: 0, house: true });
+  });
+  it("leaves out someone who has moved on but keeps the house's total", () => {
+    const usage = askUsage({ pool: 1000, pass: false, people: [ava, ben], me: ava, used: new Map([[ava, 100], [cat, 500]]), resetsAt });
+    expect(usage.houseUsed).toBe(0.6);
+    expect(usage.usedBy.map((p) => p.userId)).toEqual([ava, ben]);
+  });
+});
+
+describe("askBackOn", () => {
+  it("says the day and time the house's week starts, in the house's time", () => {
+    expect(askBackOn("2026-11-09T00:00:00.000Z", "Europe/London")).toBe("Monday at 00:00");
+    expect(askBackOn("2026-11-09T05:00:00.000Z", "America/New_York")).toBe("Monday at 00:00");
+    expect(askBackOn("2026-11-08T23:00:00.000Z", "Europe/Paris")).toBe("Monday at 00:00");
+  });
+});
+
+describe("ASK_USAGE_COPY", () => {
+  it("never rounds a little to none or nearly all to all", () => {
+    expect(ASK_USAGE_COPY.used(0.001)).toBe("1% used");
+    expect(ASK_USAGE_COPY.used(0.999)).toBe("99% used");
+    expect(ASK_USAGE_COPY.used(0)).toBe("0% used");
+    expect(ASK_USAGE_COPY.used(1)).toBe("100% used");
+  });
+  it("names whose Ask Jonz is low", () => {
+    expect(ASK_USAGE_COPY.low(0.18, false, "Monday at 00:00")).toBe("Only 18% of your Ask Jonz left this week. More on Monday at 00:00.");
+    expect(ASK_USAGE_COPY.low(0.1, true, "Monday at 00:00")).toContain("the house’s");
   });
 });

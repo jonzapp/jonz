@@ -12,6 +12,9 @@ import { BATH, BINS, renderPages } from '@/testing/pages';
 import { SetupSection } from './setup-section';
 
 jest.mock('@/api/away', () => ({ loadAway: jest.fn() }));
+jest.mock('@/api/draft', () => ({
+  askUsageOf: jest.fn(async () => ({ left: 0.62, house: false, resetsAt: '2026-11-09T00:00:00.000Z', pass: true, people: 2, houseUsed: 0.3, mineUsed: 0.38, usedBy: [] })),
+}));
 jest.mock('@/api/board', () => ({ loadHouse: jest.fn() }));
 jest.mock('@/api/house', () => ({ catchUp: jest.fn() }));
 jest.mock('@/api/settings', () => ({ loadJohnList: jest.fn() }));
@@ -68,7 +71,7 @@ it('shows what each page is set to now', async () => {
 it('leaves Groups, the admins and History to the pages they are on now', async () => {
   await open();
   await rowSays('to-johns', /2 Johns,/);
-  expect(within(screen.getByTestId('setup-section')).getAllByRole('link')).toHaveLength(3);
+  expect(within(screen.getByTestId('setup-section')).getAllByRole('link')).toHaveLength(4);
   for (const id of ['to-groups', 'to-admins', 'to-history']) expect(screen.queryByTestId(id)).toBeNull();
 });
 
@@ -99,4 +102,9 @@ it.each([
   await fireEvent.press(within(screen.getByTestId(testID)).getByRole('link'));
   expect(screen).toHavePathname(path);
   expect(screen.getByText(page)).toBeOnTheScreen();
+});
+
+it("shows what's left of your Ask Jonz this week and opens the usage page", async () => {
+  await open();
+  await rowSays('to-ask-usage', /62% of yours left this week/);
 });

@@ -2048,6 +2048,10 @@ export type Database = {
         Args: { p_house: string; p_since: string; p_user: string }
         Returns: { house_used: number; mine_used: number }[]
       }
+      ask_usage_people: {
+        Args: { p_house: string; p_since: string }
+        Returns: { used: number; user_id: string }[]
+      }
       claim_ask_turn: {
         Args: {
           p_house: string

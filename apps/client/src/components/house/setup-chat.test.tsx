@@ -1,10 +1,10 @@
-import { HOUSE_DRAFT_COPY, RESET_COPY, STEADY_COPY, type ChatReset, listAsDraft, NEW_JOHN, NEXT_UP_COPY, starterDraft, tidyDraft, type HouseRules, type JohnDef } from '@app/core';
+import { ASK_USAGE_COPY, type AskUsage, HOUSE_DRAFT_COPY, RESET_COPY, STEADY_COPY, type ChatReset, listAsDraft, NEW_JOHN, NEXT_UP_COPY, starterDraft, tidyDraft, type HouseRules, type JohnDef } from '@app/core';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import type { ReactNode } from 'react';
 
-import { applyDraft, sendChat } from '@/api/draft';
+import { applyDraft, askUsageOf, sendChat } from '@/api/draft';
 import { undoAction } from '@/api/history';
 import { applyReset } from '@/api/resets';
 import { saveDealMode } from '@/api/settings';
@@ -12,7 +12,11 @@ import { testQueryClient } from '@/testing/query';
 
 import { SetupChat } from './setup-chat';
 
-jest.mock('@/api/draft', () => ({ applyDraft: jest.fn(), sendChat: jest.fn() }));
+jest.mock('@/api/draft', () => ({
+  applyDraft: jest.fn(),
+  sendChat: jest.fn(),
+  askUsageOf: jest.fn(async () => ({ left: 1, house: false, resetsAt: '2026-11-09T00:00:00.000Z', pass: true, people: 2, houseUsed: 0, mineUsed: 0, usedBy: [] })),
+}));
 jest.mock('@/api/history', () => ({ undoAction: jest.fn() }));
 jest.mock('@/api/resets', () => ({ applyReset: jest.fn() }));
 jest.mock('@/api/settings', () => ({ saveDealMode: jest.fn() }));
@@ -336,5 +340,58 @@ describe('fixing mistakes', () => {
     await fireEvent.press(screen.getByRole('button', { name: RESET_COPY.undoAll }));
     expect(await screen.findByText(RESET_COPY.putBack)).toBeTruthy();
     expect(undoAction).toHaveBeenCalledWith('reset-1');
+  });
+});
+
+describe("the week's Ask Jonz", () => {
+  const usage = (over: Partial<AskUsage>): AskUsage => ({
+    left: 1,
+    house: false,
+    resetsAt: '2026-11-09T00:00:00.000Z',
+    pass: true,
+    people: 3,
+    houseUsed: 0,
+    mineUsed: 0,
+    usedBy: [],
+    ...over,
+  });
+
+  it('says nothing while there is plenty left', async () => {
+    (askUsageOf as jest.Mock).mockResolvedValue(usage({ left: 0.62 }));
+    await open();
+    await waitFor(() => expect(askUsageOf).toHaveBeenCalledWith('h1'));
+    expect(screen.queryByTestId('chat-low')).toBeNull();
+    expect(screen.getByTestId('chat-input')).toBeTruthy();
+  });
+
+  it('warns over the box once under a quarter is left, with when more comes', async () => {
+    (askUsageOf as jest.Mock).mockResolvedValue(usage({ left: 0.18 }));
+    await open();
+    expect(await screen.findByTestId('chat-low')).toHaveTextContent(ASK_USAGE_COPY.low(0.18, false, 'Monday at 00:00'));
+    expect(screen.getByTestId('chat-input')).toBeTruthy();
+  });
+
+  it('puts the notice in the box’s place once their half is used, without the Pass', async () => {
+    (askUsageOf as jest.Mock).mockResolvedValue(usage({ left: 0, pass: false }));
+    await open();
+    expect(await screen.findByTestId('chat-out')).toHaveTextContent(ASK_USAGE_COPY.outMine, { exact: false });
+    expect(screen.queryByTestId('chat-input')).toBeNull();
+    expect(screen.queryByTestId('chat-out-pass')).toBeNull();
+    expect(screen.getByTestId('chat-out-usage')).toBeTruthy();
+  });
+
+  it('offers the Pass when the whole house has used its week and has no Pass', async () => {
+    (askUsageOf as jest.Mock).mockResolvedValue(usage({ left: 0, house: true, pass: false }));
+    await open();
+    expect(await screen.findByTestId('chat-out')).toHaveTextContent(ASK_USAGE_COPY.outHouse, { exact: false });
+    expect(screen.getByTestId('chat-out-pass')).toBeTruthy();
+  });
+
+  it('turns the box into the notice when an answer uses the last of it', async () => {
+    (askUsageOf as jest.Mock).mockResolvedValue(usage({ left: 0.5 }));
+    chat.mockResolvedValue({ reply: 'Done.', ask: null, draft: null, source: 'ai', allowance: usage({ left: 0 }) });
+    await open();
+    await say(HOUSE);
+    expect(await screen.findByTestId('chat-out')).toBeTruthy();
   });
 });

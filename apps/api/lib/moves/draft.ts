@@ -2,7 +2,6 @@ import "server-only";
 
 import {
   CHAT_RESETS_MAX,
-  ASK_POOL_TOKENS,
   ASK_TURN_RESERVE,
   askAllowance,
   CHAT_TURNS_PER_PERSON_PER_DAY,
@@ -15,7 +14,6 @@ import {
   listAsDraft,
   localDate,
   offlineTurn,
-  hasPass,
   passOf,
   passUnlocked,
   PERMISSIONS,
@@ -23,7 +21,6 @@ import {
   tidyAsk,
   tidyDraft,
   tidyReply,
-  weekWindow,
   type ChatMessage,
   type ChatReset,
   type ChatResponse,
@@ -37,6 +34,7 @@ import { askClaude, canDraft, type DraftAnswer, type DraftContext, type JonzTool
 import { createAdminClient } from "@/lib/supabase/admin";
 
 import { houseReads } from "./ask-reads";
+import { askWeek, usageNow } from "./ask-usage";
 import { offerResets, resetState, type ResetState } from "./ask-resets";
 import type { Caller, Refusal } from "./disputes";
 import { myPermissions } from "./permitted";
@@ -120,11 +118,8 @@ export async function chatTurn(
 
   // The week's pool: the house's own week, so it comes back when the house's week starts.
   const admin = createAdminClient();
-  const week = weekWindow(now, rules.timezone, rules.weekStarts);
-  const pool = hasPass(passOf(house), now) ? ASK_POOL_TOKENS.pass : ASK_POOL_TOKENS.free;
-  const share = (houseUsed: number, mineUsed: number) =>
-    askAllowance({ pool, people: everyone.length, houseUsed, mineUsed, resetsAt: week.endsAt });
-  const { cap } = share(0, 0);
+  const { week, pool } = askWeek(house, now);
+  const { cap } = askAllowance({ pool, people: everyone.length, houseUsed: 0, mineUsed: 0, resetsAt: week.endsAt });
   const { data: turn, error: limit } = await admin.rpc("claim_ask_turn", {
     p_house: houseId,
     p_user: caller.userId,
@@ -138,13 +133,14 @@ export async function chatTurn(
     if (["draft_limit", "ask_pool_used", "ask_share_used"].includes(limit.message)) return { refusal: { code: "P0001", message: limit.message } };
     throw new Error(`Couldn't count the week's Ask Jonz: ${limit.message}`);
   }
-  /** What's left after this turn, for the line under the chat. */
-  const allowanceNow = async () => {
-    const { data } = await admin.rpc("ask_usage", { p_house: houseId, p_user: caller.userId, p_since: week.startsAt.toISOString() });
-    const used = data?.[0];
-    const { left, house: houseFirst, resetsAt } = share(Number(used?.house_used ?? 0), Number(used?.mine_used ?? 0));
-    return { left, house: houseFirst, resetsAt };
-  };
+  /** What's left after this turn, for the chat's warning and the usage page. */
+  const allowanceNow = () =>
+    usageNow(
+      house,
+      (members ?? []).map((m) => m.user_id),
+      caller.userId,
+      now,
+    );
 
   // What the admin might want put right. Without it the chat still drafts.
   let state: ResetState | null = null;

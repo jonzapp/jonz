@@ -32,3 +32,6 @@ export const movingOnKey = (userId: string) => ['moving-on', userId] as const;
 
 /** A family's pocket money, under the house: a tick standing or Paid reads it again. */
 export const pocketKey = (houseId: string) => [...houseKey(houseId), 'pocket'] as const;
+
+/** The week's Ask Jonz: what's left, who used it, when it's back. */
+export const askUsageKey = (houseId: string) => [...houseKey(houseId), 'ask-usage'] as const;

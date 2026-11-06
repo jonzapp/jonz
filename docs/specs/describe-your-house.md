@@ -62,8 +62,15 @@ on Today, Week and House (not while a parent is acting for a kid).
   A turn holds `ASK_TURN_RESERVE` tokens while Claude answers, so turns sent
   together can't slip past. Refusals: 409 `ask_pool_used`,
   `ask_share_used`, and `draft_limit` at a person's 40 turns a day from any
-  house. Each answer says what's left (`allowance`), shown under the box.
-  Starter lists are unlimited.
+  house. Each answer says what's left (`allowance`, an `AskUsage`), and
+  `POST /api/ask/usage` `{ houseId }` gives the same to anyone in the house
+  (`lib/moves/ask-usage.ts`). The chat says nothing while there's plenty;
+  under a quarter left (`ASK_LOW`) a card over the box says how much and
+  when more comes, and opens **Ask Jonz usage** (`/house/ask-usage`, also a
+  row in House setup): the house's use, yours, and each person's, and when
+  it resets. Once it's all used the box gives way to a notice saying whose
+  ran out and when it's back, with See usage, and Get the House Pass when
+  the whole house is out without one. Starter lists are unlimited.
 - Claude is `anthropic/claude-haiku-5.5` through Vercel's AI Gateway (OIDC
   on Vercel, no key), with tools and a structured last word
   (`apps/api/lib/ai/house-draft.ts` on the shared loop in
@@ -137,7 +144,7 @@ keyboard.
 - [x] An admin with an empty list can chat about the house, answer by
   tapping, open the draft, untick Johns and add the rest.
 - [x] Starter lists work with no gateway, and when Claude fails.
-- [x] A house shares a weekly pool, nobody over half, with what's left shown under the chat.
+- [x] A house shares a weekly pool, nobody over half; the chat warns when it's low, gives way to a notice once it's used, and the usage page shows who used it.
 - [x] Anyone in the house can ask Jonz about the house; only what they
   may change is offered, and everything waits on the card.
 - [x] Jonz can change, add and take off any John, or the whole list, one
