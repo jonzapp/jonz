@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { NEW_JOHN, type JohnDef } from "./board";
 
 import {
+  askAllowance,
   DRAFT_MAX_GROUPS,
   DRAFT_MAX_JOHNS,
   CHOICES_MAX,
@@ -367,5 +368,23 @@ describe("changing a list that's already there", () => {
 
   it("treats every John in a new house's draft as one to add", () => {
     expect(draftChanges(null, starterDraft("couple")).every((c) => c.kind === "add")).toBe(true);
+  });
+});
+
+describe("askAllowance", () => {
+  const resetsAt = new Date("2026-11-09T00:00:00Z");
+  it("gives someone living alone the whole pool", () => {
+    expect(askAllowance({ pool: 1000, people: 1, houseUsed: 250, mineUsed: 250, resetsAt })).toEqual({ cap: 1000, left: 0.75, house: false, resetsAt: resetsAt.toISOString() });
+  });
+  it("caps each person at half when two or more live there", () => {
+    expect(askAllowance({ pool: 1000, people: 3, houseUsed: 300, mineUsed: 250, resetsAt })).toMatchObject({ cap: 500, left: 0.5, house: false });
+  });
+  it("says when the house runs out before their share does", () => {
+    expect(askAllowance({ pool: 1000, people: 3, houseUsed: 900, mineUsed: 0, resetsAt })).toMatchObject({ left: 0.2, house: true });
+    expect(askAllowance({ pool: 1000, people: 3, houseUsed: 1200, mineUsed: 0, resetsAt })).toMatchObject({ left: 0, house: true });
+  });
+  it("never says more than all of it, or less than none", () => {
+    expect(askAllowance({ pool: 1000, people: 2, houseUsed: 0, mineUsed: 0, resetsAt }).left).toBe(1);
+    expect(askAllowance({ pool: 1000, people: 2, houseUsed: 600, mineUsed: 600, resetsAt }).left).toBe(0);
   });
 });

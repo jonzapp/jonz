@@ -63,6 +63,8 @@ const MESSAGES: Record<string, string> = {
   too_soon_to_cover: "It’s still theirs to do. You can cover it once the grace period is up.",
   pass_needed: "Changing your list with Jonz comes with the House Pass.",
   draft_limit: "That’s enough for one day. Add the draft as it is and change it on the list, or try again tomorrow.",
+  ask_pool_used: "Your house has used this week’s Ask Jonz. It comes back when the house’s week starts.",
+  ask_share_used: "You’ve used your half of the house’s Ask Jonz this week. It comes back when the house’s week starts.",
   john_covered: "A housemate covered this one. Dispute it if it wasn’t done.",
   roll_call_needed: "A John done together is ticked with who did it. Open it and mark it done there.",
   not_in_crew: "Whoever ticks it did it, so you’re on the list.",

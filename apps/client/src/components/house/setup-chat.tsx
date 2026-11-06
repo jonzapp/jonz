@@ -25,6 +25,7 @@ import {
   type HouseDraft,
   type HouseRules,
   type JohnDef,
+  type AskAllowance,
   type IsoDow,
   type StarterKind,
 } from '@app/core';
@@ -151,6 +152,7 @@ export function SetupChat({
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
+  const [allowance, setAllowance] = useState<AskAllowance | null>(null);
 
   // A new house's chat ends once its first list is in (the deal question follows); a list's chat carries on.
   const done = !editing && turns.some((t) => t.role === 'done');
@@ -192,6 +194,7 @@ export function SetupChat({
       const answer = await sendChat(houseId, messages, draft);
       const took = Date.now() - asked;
       const thought = { seconds: Math.max(1, Math.round(took / 1000)), steps: stepsShown(steps, took) };
+      if (answer.allowance) setAllowance(answer.allowance);
       answered({ role: 'assistant', text: answer.reply, ask: answer.ask, draft: answer.draft, resets: answer.resets, thought }, next);
     } catch (reason) {
       // Refused (too many today, say): what was said goes back in the box to try again.
@@ -251,6 +254,11 @@ export function SetupChat({
             sendLabel={HOUSE_DRAFT_COPY.send}
             maxLength={MESSAGE_MAX}
             problem={problem}
+            note={
+              allowance
+                ? HOUSE_DRAFT_COPY.allowance(allowance.left, allowance.house, new Intl.DateTimeFormat(undefined, { weekday: 'long' }).format(new Date(allowance.resetsAt)))
+                : null
+            }
           />
         )
       }

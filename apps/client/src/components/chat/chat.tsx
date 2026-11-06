@@ -6,7 +6,7 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text
 import { Alert } from '@/components/alert';
 import { ThoughtFold } from '@/components/house/thinking';
 import { NO_PIECES, Reply, type ReplyPieces } from '@/components/reply/reply';
-import { Body } from '@/components/text';
+import { Body, Meta } from '@/components/text';
 import { CONTENT_MAX, GUTTER, RADIUS, SECTION_GAP, SPACE, TAP, useTheme } from '@/theme';
 
 // The chat's own pieces, shared by every chat with Jonz: a housemate's Ask
@@ -122,6 +122,7 @@ export function Composer({
   sendLabel,
   maxLength,
   problem,
+  note,
 }: {
   value: string;
   onChangeText: (text: string) => void;
@@ -136,6 +137,8 @@ export function Composer({
   maxLength: number;
   /** Why the last message didn't go, over the box. */
   problem?: string | null;
+  /** A quiet line under the box, such as what's left of the week's Ask Jonz. */
+  note?: string | null;
 }) {
   const { colors, type } = useTheme();
   // How tall the words in the box come out, measured off-screen: the box grows to fit them, up to BOX_MAX.
@@ -187,6 +190,7 @@ export function Composer({
         </View>
         <SendButton label={sendLabel} onPress={onSend} disabled={busy || !value.trim()} />
       </View>
+      {note ? <Meta testID="chat-note">{note}</Meta> : null}
     </ComposerBar>
   );
 }

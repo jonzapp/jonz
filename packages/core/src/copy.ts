@@ -1824,6 +1824,9 @@ export const HOUSE_DRAFT_COPY = {
   offlineAsk: "I couldn’t answer just now. Try again in a minute.",
   /** In place of the message box, for a house without the Pass. */
   passNeeded: `Changing your list with ${APP_NAME} comes with the House Pass. Setting up a new house stays free.`,
+  /** Under the message box after an answer: what's left of this week's Ask Jonz, and when more comes when it's low. */
+  allowance: (left: number, house: boolean, backOn: string) =>
+    `${Math.floor(left * 100)}% of ${house ? "the house’s" : "your"} Ask ${APP_NAME} left this week${left < 0.25 ? `. More on ${backOn}.` : "."}`,
   seePass: "See the House Pass",
 } as const;
 

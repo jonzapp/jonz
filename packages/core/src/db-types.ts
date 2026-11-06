@@ -2044,12 +2044,19 @@ export type Database = {
         Args: { a: Database["public"]["Tables"]["assignments"]["Row"] }
         Returns: string
       }
-      claim_draft_turn: {
+      ask_usage: {
+        Args: { p_house: string; p_since: string; p_user: string }
+        Returns: { house_used: number; mine_used: number }[]
+      }
+      claim_ask_turn: {
         Args: {
           p_house: string
-          p_house_limit: number
+          p_pool: number
+          p_reserve: number
+          p_share: number
+          p_since: string
           p_user: string
-          p_user_limit: number
+          p_user_day: number
         }
         Returns: string
       }

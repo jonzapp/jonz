@@ -2,7 +2,9 @@ import "server-only";
 
 import {
   CHAT_RESETS_MAX,
-  CHAT_TURNS_PER_DAY,
+  ASK_POOL_TOKENS,
+  ASK_TURN_RESERVE,
+  askAllowance,
   CHAT_TURNS_PER_PERSON_PER_DAY,
   draftForModel,
   editDraft,
@@ -13,6 +15,7 @@ import {
   listAsDraft,
   localDate,
   offlineTurn,
+  hasPass,
   passOf,
   passUnlocked,
   PERMISSIONS,
@@ -20,6 +23,7 @@ import {
   tidyAsk,
   tidyDraft,
   tidyReply,
+  weekWindow,
   type ChatMessage,
   type ChatReset,
   type ChatResponse,
@@ -59,10 +63,12 @@ function listLines(raw: RawDraft): string {
  * own grants. A new house's chat drafts its first list, free; a house with a
  * list already is the House Pass's (`pass_needed` without it).
  *
- * A house gets CHAT_TURNS_PER_DAY turns from Claude a day, a person
- * CHAT_TURNS_PER_PERSON_PER_DAY. Each turn is written down before Claude is
- * asked (claim_draft_turn), so turns sent together can't all slip under the
- * limit. When Claude isn't set up or doesn't answer, offlineTurn answers (a
+ * A house shares one pool of Claude's tokens a week (ASK_POOL_TOKENS,
+ * bigger with the House Pass), of which nobody uses more than half when two
+ * or more live there; a person also gets CHAT_TURNS_PER_PERSON_PER_DAY turns
+ * a day. Each turn is written down before Claude is asked (claim_ask_turn),
+ * so turns sent together can't all slip under the pool, and each answer says
+ * what's left (allowance). When Claude isn't set up or doesn't answer, offlineTurn answers (a
  * starter list that fits, or the draft left as it is), so setup never stops
  * here.
  *
@@ -102,18 +108,6 @@ export async function chatTurn(
 
   if (!canDraft() && ask === askClaude) return offline();
 
-  const admin = createAdminClient();
-  const { data: turn, error: limit } = await admin.rpc("claim_draft_turn", {
-    p_house: houseId,
-    p_user: caller.userId,
-    p_house_limit: CHAT_TURNS_PER_DAY,
-    p_user_limit: CHAT_TURNS_PER_PERSON_PER_DAY,
-  });
-  if (limit) {
-    if (limit.message === "draft_limit") return { refusal: { code: "P0001", message: "draft_limit" } };
-    throw new Error(`Couldn't count the day's turns: ${limit.message}`);
-  }
-
   const everyone = (members ?? [])
     .map((m) => ({ userId: m.user_id, name: m.profiles?.display_name ?? "", role: m.role }))
     .filter((p) => p.name);
@@ -123,6 +117,34 @@ export async function chatTurn(
   const family = house.kind === "family";
   const rules = rulesOf(house);
   const myRole = everyone.find((p) => p.userId === caller.userId)?.role ?? "member";
+
+  // The week's pool: the house's own week, so it comes back when the house's week starts.
+  const admin = createAdminClient();
+  const week = weekWindow(now, rules.timezone, rules.weekStarts);
+  const pool = hasPass(passOf(house), now) ? ASK_POOL_TOKENS.pass : ASK_POOL_TOKENS.free;
+  const share = (houseUsed: number, mineUsed: number) =>
+    askAllowance({ pool, people: everyone.length, houseUsed, mineUsed, resetsAt: week.endsAt });
+  const { cap } = share(0, 0);
+  const { data: turn, error: limit } = await admin.rpc("claim_ask_turn", {
+    p_house: houseId,
+    p_user: caller.userId,
+    p_since: week.startsAt.toISOString(),
+    p_pool: pool,
+    p_share: cap,
+    p_user_day: CHAT_TURNS_PER_PERSON_PER_DAY,
+    p_reserve: ASK_TURN_RESERVE,
+  });
+  if (limit) {
+    if (["draft_limit", "ask_pool_used", "ask_share_used"].includes(limit.message)) return { refusal: { code: "P0001", message: limit.message } };
+    throw new Error(`Couldn't count the week's Ask Jonz: ${limit.message}`);
+  }
+  /** What's left after this turn, for the line under the chat. */
+  const allowanceNow = async () => {
+    const { data } = await admin.rpc("ask_usage", { p_house: houseId, p_user: caller.userId, p_since: week.startsAt.toISOString() });
+    const used = data?.[0];
+    const { left, house: houseFirst, resetsAt } = share(Number(used?.house_used ?? 0), Number(used?.mine_used ?? 0));
+    return { left, house: houseFirst, resetsAt };
+  };
 
   // What the admin might want put right. Without it the chat still drafts.
   let state: ResetState | null = null;
@@ -206,7 +228,7 @@ export async function chatTurn(
     );
   } catch (e) {
     console.error("draft_failed", e instanceof Error ? e.message : e);
-    await admin.from("house_drafts").update({ outcome: "failed" }).eq("id", turn);
+    await admin.from("house_drafts").update({ outcome: "failed", input_tokens: 0 }).eq("id", turn);
     return offline();
   }
 
@@ -222,5 +244,5 @@ export async function chatTurn(
   const reply = tidyReply(answer.raw.reply);
   // Nothing to say and nothing drafted before: a starter list does better than silence.
   if (!reply && !draft && !draftNow && resets.length === 0) return offline();
-  return { reply, ask: tidyAsk(answer.raw.ask), draft, source: "ai", ...(resets.length > 0 ? { resets } : {}) };
+  return { reply, ask: tidyAsk(answer.raw.ask), draft, source: "ai", ...(resets.length > 0 ? { resets } : {}), allowance: await allowanceNow() };
 }
