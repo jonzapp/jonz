@@ -97,6 +97,8 @@ export interface TickSummary {
   weeksClosed: number;
   monthsClosed: string[];
   reminders: number;
+  /** The house became what Rules said it would on the 1st. */
+  kindChanged?: boolean;
 }
 
 // The house's rules from its row live in core, beside the board both apps build.
@@ -151,6 +153,8 @@ export async function tickHouse(
   if (notify && house.kind === "family") await askParents(db, house, members, now, notify);
   summary.weeksClosed = await closeWeeks(db, house, members, now);
   summary.monthsClosed = await closeMonths(db, house, members, now);
+  // A switch to a family that waited for this month to be settled (Rules' Who lives here).
+  if (house.next_kind) summary.kindChanged = must(await db.rpc("apply_next_kind", { p_house: house.id, p_now: now.toISOString() }), "next kind");
   if (notify) summary.reminders = await sendReminders(db, house, now, notify);
 
   must(await db.from("houses").update({ ticked_at: now.toISOString() }).eq("id", house.id), "ticked_at");

@@ -57,6 +57,8 @@ export interface HouseSnapshot {
     settleIn: SettleIn;
     /** In a family: the most each kid can earn in a month (houses.pocket_cap_minor); 0 for housemates. */
     pocketCapMinor?: number;
+    /** A switch from Rules' Who lives here that waits for the 1st (houses.next_kind, next_kind_on). */
+    nextKind?: { kind: HouseKind; on: string } | null;
     /** The House Pass: who has the extras, and until when. */
     pass: HousePass;
   };
@@ -151,6 +153,7 @@ export async function loadHouse(houseId: string, now: Date): Promise<HouseSnapsh
       awayMakeup: house.away_makeup,
       settleIn: house.settle_in === 'splitwise' ? 'splitwise' : 'jonz',
       pocketCapMinor: house.pocket_cap_minor ?? 0,
+      nextKind: house.next_kind && house.next_kind_on ? { kind: houseKind(house.next_kind), on: house.next_kind_on } : null,
       pass: passOf(house),
     },
     rules,

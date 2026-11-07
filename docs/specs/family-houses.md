@@ -173,3 +173,36 @@ storage as the session (localStorage on the web, SQLite-backed on phones).
 - [x] A parent adds a child who can't sign in, and ticks for them; it stands without an OK and earns (tests/db/kid-profiles.test.ts).
 - [x] A kid younger than a John's youngest age isn't dealt it.
 - [x] Today's switcher shows a kid's Today to a parent, and ticks as the kid.
+
+## Switching a house
+
+Picked by Glyn on 7 November 2026 (the picker "What's left for families"):
+a house you already have can become a family, or go back, without starting
+again and losing the list, the people and the history.
+
+- Rules has **Who lives here** for everyone to read. An admin sees
+  Housemates and Family as radio rows (`KindSwitch`); picking the other one
+  opens a sheet that says what changes, and **Make it a family** /
+  **Make it housemates** does it.
+- `set_house_kind(p_house, p_kind)`: an admin only (`house.settings`).
+  - To a family with no money in it (stake and forfeits all 0): at once.
+  - To a family with money in it: `houses.next_kind` / `next_kind_on`, the
+    1st of next month in the house's time zone. The month is settled up as
+    usual; the Rules row says "Becomes a family on Tue 1 Dec, once November
+    is settled up". Picking Housemates while it waits keeps it as it is.
+  - Back to housemates: at once, refused (`kids_without_sign_in`) while a
+    kid doesn't sign in. Ticks waiting for an OK stand, the housemate check
+    comes back (24 hours), and the stake stays 0 until an admin sets one.
+- `apply_house_kind` makes the change: a family's stake and forfeits go to
+  0, `dispute_hours` to 0, and pocket money starts at 10 a month each.
+- The clock (`tickHouse`, `apply_next_kind(p_house, p_now)`, service only)
+  makes a waiting change once its day has come and the month before it is
+  closed, or a week after the day if that month never closes.
+- Pocket money earned in a family can still be marked Paid after it goes
+  back to housemates (`pay_pocket_money` no longer checks the kind).
+- The Wall says each step (`kind_changed`): "Sam made the house a family
+  from Tue 1 Dec, once this month is settled up.", "The house is a family
+  now.", "Sam kept the house as housemates.", "Sam made the house
+  housemates again."
+
+- [x] An admin switches a house to a family, at once or on the 1st, and back (tests/db/switch-house-kind.test.ts).

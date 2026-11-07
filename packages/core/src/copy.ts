@@ -167,6 +167,29 @@ export const PARENTS_COPY = {
 } as const;
 
 /**
+ * Rules' Who lives here: an admin switches the house between housemates and
+ * a family (docs/specs/family-houses.md, "Switching a house").
+ */
+export const KIND_SWITCH_COPY = {
+  label: "Who lives here",
+  /** Under a switch that waits for the 1st. */
+  waits: (on: string, month: string) => `Becomes a family on ${on}, once ${month} is settled up.`,
+  keep: "Keep housemates",
+  toFamilyTitle: (house: string) => `Make ${house} a family?`,
+  toFamilyNow: (cap: string) =>
+    `Admins become parents, and everyone else a kid. There’s no stake: a parent says OK to each kid’s tick, and Johns can earn pocket money, up to ${cap} a month each. It changes now, and you can switch back.`,
+  toFamilyLater: (on: string, month: string, cap: string) =>
+    `Admins become parents, and everyone else a kid. ${month} is settled up as usual, then the Stake stops. From ${on} a parent says OK to each kid’s tick, and Johns can earn pocket money, up to ${cap} a month each. You can switch back.`,
+  toFamily: "Make it a family",
+  toHousematesTitle: (house: string) => `Make ${house} housemates again?`,
+  toHousemates:
+    "Parents become admins, and kids housemates. Ticks waiting for an OK stand, and anyone can question a tick again for 24 hours. There’s no stake until an admin sets one. Pocket money already earned can still be marked Paid.",
+  toHousematesConfirm: "Make it housemates",
+  done: { family: "It’s a family now.", housemates: "It’s housemates again.", kept: "Kept as housemates." },
+  later: (on: string) => `It becomes a family on ${on}.`,
+} as const;
+
+/**
  * A parent's OK (family step 2): in a family nobody votes on a tick. A kid's
  * tick waits for a parent to say OK, or Not yet, which sends it back.
  */

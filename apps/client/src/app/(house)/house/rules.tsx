@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { AdminsList } from '@/components/house/admins-list';
 import { HousePage } from '@/components/house/house-page';
+import { KindSwitch } from '@/components/house/kind-switch';
 import { RulesFoot, RulesForm, useRulesForm, type RulesValues } from '@/components/house/rules-form';
 import { Pair } from '@/components/page-columns';
 import { Row } from '@/components/row';
@@ -13,6 +14,7 @@ import { useToast } from '@/components/toast';
 import { useHouse, type HouseView } from '@/hooks/use-house';
 import { useMembership } from '@/hooks/use-membership';
 import { usePull, useReadOnFocus } from '@/hooks/use-refresh';
+import { SECTION_GAP } from '@/theme';
 import { TourSpot } from '@/components/tour/tour-spot';
 
 /**
@@ -108,9 +110,12 @@ function RulesReadOut({ houseId, userId, view, onEdit }: { houseId: string; user
         </TourSpot>
       }
       end={
-        <Section label={roleCopy(snapshot.house.kind).admins.title} bare testID="admins-section">
-          <AdminsList houseId={houseId} userId={userId} view={view} />
-        </Section>
+        <View style={styles.stack}>
+          <KindSwitch houseId={houseId} view={view} />
+          <Section label={roleCopy(snapshot.house.kind).admins.title} bare testID="admins-section">
+            <AdminsList houseId={houseId} userId={userId} view={view} />
+          </Section>
+        </View>
       }
     />
   );
@@ -143,4 +148,5 @@ function RulesEditing({
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
+  stack: { gap: SECTION_GAP },
 });
