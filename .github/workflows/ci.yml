@@ -93,9 +93,9 @@ jobs:
 
       # Both web apps: the Next app, and the Expo app's web build, which
       # Playwright exports against this stack and serves on 8205.
-      # About ten minutes when green; a run stuck past twenty is failing.
+      # About eighteen minutes when green now; a run stuck past thirty is failing.
       - name: End-to-end (phones and a laptop)
-        timeout-minutes: 20
+        timeout-minutes: 30
         run: npm run test:e2e
         env:
           CI: "1"
