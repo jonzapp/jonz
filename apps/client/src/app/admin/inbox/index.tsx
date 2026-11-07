@@ -1,5 +1,5 @@
 import { REPORT_COPY, REPORT_FACETS, REPORT_WHEN, reportAge, reportGist, type ListAsk } from '@app/core';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { InboxIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -48,8 +48,10 @@ export default function InboxPage() {
 
 function Inbox({ busy }: { busy: BusyList<InboxRow> }) {
   const two = useColumns();
-  const [chosenId, setChosen] = useState<string | null>(null);
-  const chosen = busy.items.find((r) => r.id === chosenId) ?? busy.items[0] ?? null;
+  // A link in (the Overview's Needs you, a pushed page opened on a laptop) names the one to open with ?open=.
+  const { open } = useLocalSearchParams<{ open?: string }>();
+  const [chosenId, setChosen] = useState<string | null>(open ?? null);
+  const shownId = chosenId ?? busy.items[0]?.id ?? null;
   const now = new Date();
   const list = (
     <BusyListView
@@ -71,7 +73,7 @@ function Inbox({ busy }: { busy: BusyList<InboxRow> }) {
           }}
           quiet={['kind', 'when']}
           strong={['from']}
-          chosen={chosen?.id === report.id}
+          chosen={shownId === report.id}
           onPress={() => setChosen(report.id)}
           accessibilityLabel={`${report.name ?? REPORT_COPY.gone}, ${reportGist(report.words)}`}
           testID={`inbox-${report.id}`}
@@ -93,7 +95,7 @@ function Inbox({ busy }: { busy: BusyList<InboxRow> }) {
       empty={{ icon: InboxIcon, title: REPORT_COPY.empty, body: REPORT_COPY.emptyBody }}
     />
   );
-  if (two) return <Columns main={list} side={chosen ? <ReportPanel key={chosen.id} id={chosen.id} /> : <View style={styles.none} />} />;
+  if (two) return <Columns main={list} side={shownId ? <ReportPanel key={shownId} id={shownId} /> : <View style={styles.none} />} />;
   return list;
 }
 
