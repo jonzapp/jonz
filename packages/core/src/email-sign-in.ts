@@ -23,6 +23,8 @@ export const EMAIL_SIGN_IN_COPY = {
   /** The tick box on making an account: agreeing is a tick, not a line under the button. */
   agree: "I agree to the Terms and Privacy Policy",
   agreeMeta: "And I’m 13 or older.",
+  /** Cloudflare's bot check hasn't finished (or couldn't run). */
+  notChecked: "Still checking you’re not a bot. Try again in a moment.",
   noAgree: "Tick the box to agree to the Terms and say you’re 13 or older.",
   email: "Email",
   password: "Password",

@@ -77,6 +77,19 @@ describe("auth settings", () => {
     });
   });
 
+  it("turns on Turnstile with its secret, leaves it alone without one, and notices it off", () => {
+    expect(authSettings(CONFIG, null, EMAILS, "turnstile-secret")).toMatchObject({
+      security_captcha_enabled: true,
+      security_captcha_provider: "turnstile",
+      security_captcha_secret: "turnstile-secret",
+    });
+    expect(Object.keys(authSettings(CONFIG, null, EMAILS)).filter((k) => k.startsWith("security_captcha"))).toEqual([]);
+    const read = { ...SMTP, ...authSettings(CONFIG, null, EMAILS) };
+    expect(authProblems(read, CONFIG, null, EMAILS)).toEqual([]);
+    expect(authProblems({ ...read, security_captcha_enabled: false }, CONFIG, null, EMAILS, "turnstile-secret")).toEqual(["the Turnstile bot check is off"]);
+    expect(authProblems({ ...read, security_captcha_enabled: true, security_captcha_provider: "turnstile" }, CONFIG, null, EMAILS, "turnstile-secret")).toEqual([]);
+  });
+
   it("accepts the settings it wrote when they read back the same", () => {
     expect(authProblems({ ...SMTP, ...authSettings(CONFIG, GOOGLE, EMAILS), external_google_secret: undefined }, CONFIG, GOOGLE)).toEqual([]);
   });

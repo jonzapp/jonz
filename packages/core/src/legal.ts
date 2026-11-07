@@ -123,6 +123,7 @@ export const PRIVACY_POLICY: LegalPage = {
         "• Vercel: hosts the website and the API, mainly in the United States.",
         "• Anthropic, through Vercel: writes Ask Jonz’s answers.",
         "• Resend: sends Jonz’s emails and receives replies to them, in Ireland, EU. It sees your email address and the email, and keeps them for 30 days.",
+        "• Cloudflare Turnstile: checks that whoever signs in or makes an account with an email is a person, not a bot. It sees your browser or phone and its internet address, not your email or password, and doesn’t track you across sites.",
         "• Stripe, and Link (Stripe’s checkout): take payment for the House Pass and handle tax, receipts and refunds as the seller of record. They collect your payment details and billing address under Stripe’s own privacy policy.",
         "• Google, Microsoft and Apple: sign you in, and deliver notifications to your browser or phone (as do Mozilla for Firefox and other browser makers). Notifications say what the reminder is about and nothing else.",
         "We may also share information if the law requires it, to protect people’s safety, or with whoever takes over Jonz, who would be bound by this policy.",

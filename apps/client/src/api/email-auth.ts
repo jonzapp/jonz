@@ -7,8 +7,11 @@ import { supabase } from './supabase';
 // nothing here leaves the app for a link. Each throws Supabase's AuthError,
 // which core's emailAuthProblem puts into words.
 
-export async function signInWithEmail(email: string, password: string): Promise<void> {
-  const { error } = await supabase.auth.signInWithPassword({ email: cleanEmail(email), password });
+// `captchaToken` is Cloudflare's bot check (components/bot-check): production
+// Supabase refuses a sign-in, a new account or a reset email without one.
+
+export async function signInWithEmail(email: string, password: string, captchaToken?: string): Promise<void> {
+  const { error } = await supabase.auth.signInWithPassword({ email: cleanEmail(email), password, options: { captchaToken } });
   if (error) throw error;
 }
 
@@ -16,13 +19,13 @@ export async function signInWithEmail(email: string, password: string): Promise<
  * Makes the account and emails its code. Resolves `signed-in` where an
  * address needs no confirming (local development), else `code-sent`.
  */
-export async function signUpWithEmail(email: string, password: string, name: string): Promise<'signed-in' | 'code-sent'> {
+export async function signUpWithEmail(email: string, password: string, name: string, captchaToken?: string): Promise<'signed-in' | 'code-sent'> {
   // display_name becomes the new profile's name (the on_auth_user_created trigger);
   // the Terms they ticked, and when, stay with the account.
   const { data, error } = await supabase.auth.signUp({
     email: cleanEmail(email),
     password,
-    options: { data: { display_name: name.trim(), terms_agreed: LEGAL.updated, terms_agreed_at: new Date().toISOString() } },
+    options: { captchaToken, data: { display_name: name.trim(), terms_agreed: LEGAL.updated, terms_agreed_at: new Date().toISOString() } },
   });
   if (error) throw error;
   return data.session ? 'signed-in' : 'code-sent';
@@ -35,14 +38,14 @@ export async function confirmEmail(email: string, code: string): Promise<void> {
 }
 
 /** Sends the sign-up code again. */
-export async function resendSignUpCode(email: string): Promise<void> {
-  const { error } = await supabase.auth.resend({ type: 'signup', email: cleanEmail(email) });
+export async function resendSignUpCode(email: string, captchaToken?: string): Promise<void> {
+  const { error } = await supabase.auth.resend({ type: 'signup', email: cleanEmail(email), options: { captchaToken } });
   if (error) throw error;
 }
 
 /** Emails a reset code. Says nothing about whether the address has an account. */
-export async function sendPasswordReset(email: string): Promise<void> {
-  const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail(email));
+export async function sendPasswordReset(email: string, captchaToken?: string): Promise<void> {
+  const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail(email), { captchaToken });
   if (error) throw error;
 }
 
