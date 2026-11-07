@@ -40,6 +40,8 @@ export interface WallScene {
   struck?: ReadonlyMap<string, Date>;
   /** The time as a clock ("14:10"), for the Wall's days; otherwise how long ago ("3h"), for House. */
   clock?: boolean;
+  /** A family's Wall says "joined the family" where housemates "moved in". */
+  family?: boolean;
 }
 
 /**
@@ -407,8 +409,8 @@ export function wallFeedRow(event: WallEvent, scene: WallScene): WallFeedRow {
       break;
     }
     case "joined":
-      title = WALL_FEED_COPY.joined(who.subject);
-      detail = WALL_FEED_COPY.newHousemate;
+      title = scene.family ? WALL_FEED_COPY.joinedFamily(who.subject) : WALL_FEED_COPY.joined(who.subject);
+      detail = scene.family ? WALL_FEED_COPY.newInFamily : WALL_FEED_COPY.newHousemate;
       break;
     case "moving_out": {
       const on = text("on");

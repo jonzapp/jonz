@@ -1,4 +1,4 @@
-import { FOCUS_SHELL_COPY, LEGAL, PAGE_TITLE, PASS_COPY, SECTION_LABEL } from '@app/core';
+import { FAMILY_PASS_COPY, FOCUS_SHELL_COPY, LEGAL, PAGE_TITLE, PASS_COPY, SECTION_LABEL } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 
 import { loadHouse } from '@/api/board';
@@ -57,6 +57,18 @@ it('sits under a title bar with the way back to House', async () => {
   const bar = within(screen.getByTestId('title-bar'));
   expect(bar.getByRole('header', { name: PAGE_TITLE.pass })).toBeOnTheScreen();
   expect(bar.getByRole('button', { name: FOCUS_SHELL_COPY.backTo(SECTION_LABEL.house) })).toBeOnTheScreen();
+});
+
+it('is the Family Pass in a family, with what a family gets', async () => {
+  const base = snapshot();
+  (loadHouse as jest.Mock).mockResolvedValue({ ...base, house: { ...base.house, kind: 'family' } });
+  await open();
+  expect(within(screen.getByTestId('title-bar')).getByRole('header', { name: FAMILY_PASS_COPY.title })).toBeOnTheScreen();
+  expect(screen.getByTestId('pass-lead')).toHaveTextContent(FAMILY_PASS_COPY.foundingLead);
+  expect(screen.getByText(FAMILY_PASS_COPY.includes)).toBeOnTheScreen();
+  expect(screen.getByText(FAMILY_PASS_COPY.pocket)).toBeOnTheScreen();
+  expect(screen.getByText(FAMILY_PASS_COPY.kids)).toBeOnTheScreen();
+  expect(screen.queryByText(PASS_COPY.stake)).toBeNull();
 });
 
 it('thanks a Founding house, and offers it no plans', async () => {
