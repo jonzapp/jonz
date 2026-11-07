@@ -803,6 +803,8 @@ export type Database = {
         Row: {
           away_makeup: number
           cover_grace_hours: number
+          next_kind: string | null
+          next_kind_on: string | null
           pocket_cap_minor: number
           created_at: string
           created_by: string | null
@@ -830,6 +832,8 @@ export type Database = {
         Insert: {
           away_makeup?: number
           cover_grace_hours?: number
+          next_kind?: string | null
+          next_kind_on?: string | null
           pocket_cap_minor?: number
           created_at?: string
           created_by?: string | null
@@ -857,6 +861,8 @@ export type Database = {
         Update: {
           away_makeup?: number
           cover_grace_hours?: number
+          next_kind?: string | null
+          next_kind_on?: string | null
           pocket_cap_minor?: number
           created_at?: string
           created_by?: string | null
@@ -2236,6 +2242,11 @@ export type Database = {
       }
       answer_tick: {
         Args: { p_assignment: string; p_ok: boolean }
+        Returns: string
+      }
+      apply_next_kind: { Args: { p_house: string; p_now: string }; Returns: boolean }
+      set_house_kind: {
+        Args: { p_house: string; p_kind: string }
         Returns: string
       }
       owner_make_promotion: {

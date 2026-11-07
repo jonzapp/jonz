@@ -236,3 +236,14 @@ export async function deleteGroup(groupId: string) {
 export async function dealThisWeek(houseId: string) {
   await apiPost('/api/deal', { houseId }, MoveResponse);
 }
+
+/**
+ * An admin picks who lives here (Rules). Returns the day it changes when it
+ * waits for the 1st, or null when it changed at once (or a waiting change was
+ * kept as it is).
+ */
+export async function setHouseKind(houseId: string, kind: 'housemates' | 'family'): Promise<string | null> {
+  const { data, error } = await supabase.rpc('set_house_kind', { p_house: houseId, p_kind: kind });
+  if (error) throw new Error(humanError(error));
+  return data ?? null;
+}
