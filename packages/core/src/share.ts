@@ -38,6 +38,8 @@ export const SHARE_COPY = {
   /** A code that opens nothing: reset, or its house is empty. */
   expiredTitle: "This invite has expired",
   expiredLine: "Ask the house for a new link.",
+  offerEnded: "This offer has ended",
+  offerEndedLine: "Ask for a new link.",
 } as const;
 
 /**
@@ -58,6 +60,25 @@ export function joinSign(invite: InviteCard | null, namesHouse = SHARE_NAMES_HOU
   if (!invite) return { legend: "Invite expired", plate: SHARE_COPY.expiredLine };
   if (!namesHouse) return { legend: APP_NAME, plate: "You're invited to a house." };
   return { legend: invite.name, plate: `Join ${SHARE_COPY.housemates(invite.members)} on ${APP_NAME}.` };
+}
+
+/**
+ * An offer link's sign: what it gives on the amber plate ("Half off"), "Your
+ * House Pass, a gift from Jonz." under it; "Offer ended" once it's stopped,
+ * ended or never was.
+ */
+export function offerSign(offer: OfferCard | null): ShareSign {
+  if (!offer?.live) return { legend: "Offer ended", plate: SHARE_COPY.offerEndedLine };
+  return { legend: offer.legend, plate: offer.plate };
+}
+
+/** A promotion as its link's card shows it: what anyone with the link sees, never who it's for. */
+export interface OfferCard {
+  live: boolean;
+  legend: string;
+  plate: string;
+  title: string;
+  sentence: string;
 }
 
 /** A house as its join link's card shows it. */
@@ -144,6 +165,19 @@ export function joinPreview(code: string, invite: InviteCard | null, namesHouse 
     image,
     imageAlt: title,
   };
+}
+
+/**
+ * An offer link's card. `offer` is its promotion, or null when the code opens
+ * nothing; `code` is already checked (offerCode), so it is safe in a URL.
+ */
+export function offerPreview(code: string, offer: OfferCard | null): SharePreview {
+  const url = `${SHARE_SITE}/offer/${code}`;
+  const image = `${SHARE_SITE}/api/og/offer/${code}`;
+  if (!offer?.live) {
+    return { title: SHARE_COPY.offerEnded, description: SHARE_COPY.offerEndedLine, url, image, imageAlt: SHARE_COPY.offerEnded };
+  }
+  return { title: offer.title, description: offer.sentence, url, image, imageAlt: offer.title };
 }
 
 const ESCAPES: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };

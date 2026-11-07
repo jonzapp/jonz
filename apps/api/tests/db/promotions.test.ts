@@ -4,6 +4,7 @@ import { PromotionRequest, type PromotionRequest as Draft } from "@app/core";
 import type Stripe from "stripe";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { GET as shareCard } from "@/app/api/share/[[...path]]/route";
 import { startCheckout } from "@/lib/moves/pass";
 import { emailPromotion, makePromotion, readOffer, retryPromotion, stopPromotion } from "@/lib/moves/promotions";
 import { applyPassEvent } from "@/lib/pass/events";
@@ -251,9 +252,11 @@ describe("a free Pass", () => {
     expect(usedUp).toMatchObject({ status: 409 });
   });
 
-  it("for good makes a Founding house", async () => {
+  it("for good makes a Founding house, with Stripe not set up at all", async () => {
     const made = await make({ kind: "gift", percent: null, duration: null, plans: [], months: null, people: [ben.email] });
-    expect(await startCheckout(buyer(ben), stripes().pass, house.id, "yearly", APP, "local", new Date(), made.code)).toMatchObject({ url: expect.any(String) });
+    const half = await make({ audience: "anyone" });
+    expect(await startCheckout(buyer(ben), null, house.id, "yearly", APP, "local", new Date(), half.code)).toMatchObject({ status: 503 });
+    expect(await startCheckout(buyer(ben), null, house.id, "yearly", APP, "local", new Date(), made.code)).toMatchObject({ url: expect.any(String) });
     const { data: h } = await db.from("houses").select("pass_plan, pass_until, pass_buyer").eq("id", house.id).single();
     expect(h).toEqual({ pass_plan: "founding", pass_until: null, pass_buyer: null });
   });
@@ -298,6 +301,24 @@ describe("the offer's link", () => {
     const made = await make({ audience: "anyone" });
     await stopPromotion(me(owner), null, made.id);
     expect(await readOffer(db, made.code, null, new Date())).toMatchObject({ state: "ended", legend: "Offer ended" });
+  });
+});
+
+describe("its link in a chat", () => {
+  const card = async (path: string[]) => (await shareCard(new Request("https://api.jonz.app/api/share"), { params: Promise.resolve({ path }) })).text();
+
+  it("says what it gives, never who it's for, and Offer ended once stopped", async () => {
+    const s = stripes();
+    const made = await make({ people: [ava.email] }, s);
+    const live = await card(["offer", made.code.toLowerCase()]);
+    expect(live).toContain('<meta property="og:title" content="Half off your House Pass" />');
+    expect(live).toContain(`<meta property="og:image" content="https://jonz.app/api/og/offer/${made.code}" />`);
+    expect(live).not.toContain(ava.email);
+
+    expect(await stopPromotion(me(owner), s.offers, made.id)).toBeNull();
+    expect(await card(["offer", made.code])).toContain('<meta property="og:title" content="This offer has ended" />');
+    expect(await card(["offer", "NOSUCHCODE"])).toContain("This offer has ended");
+    expect(await card(["offer", "<b>"])).toContain('<meta property="og:title" content="Jonz" />');
   });
 });
 
