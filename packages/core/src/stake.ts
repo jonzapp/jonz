@@ -76,8 +76,9 @@ export interface MonthForfeit {
  * than round the house; with several (a no-show's), it's split evenly among
  * them, the odd penny to whoever comes first. When the cap trims someone's
  * forfeits, each covered one shrinks in the same proportion (rounded down)
- * and the rest of what they keep is shared as usual. A coverer who has left
- * the house gets nothing: their cut is shared like any other forfeit.
+ * and the rest of what they keep is shared as usual. Someone who has left
+ * the house gets nothing: a coverer's cut is shared like any other forfeit,
+ * and the shares go only to people in `memberIds`.
  */
 export function settleMonth(
   memberIds: readonly string[],
@@ -122,7 +123,14 @@ export function settleMonth(
       amount -= cut;
     }
     if (amount === 0) continue;
-    const inOrder = ids.filter((id) => id !== payer);
+    // Only people still in the house share it: someone who left pays what
+    // they owe, but gets none of anyone else's.
+    const inOrder = memberIds.filter((id) => id !== payer);
+    if (inOrder.length === 0) {
+      forfeited[payer] -= amount;
+      entries.push({ userId: payer, kind: "cap_refund", amount });
+      continue;
+    }
     const start = turn % inOrder.length;
     const others = [...inOrder.slice(start), ...inOrder.slice(0, start)];
     const base = Math.floor(amount / others.length);

@@ -138,6 +138,18 @@ describe("settleMonth", () => {
     const { s } = monthLedger(["sam", "alex", "jo"], 2000, [{ userId: "sam", amount: 300, to: "gone" }]);
     expect(s.received).toEqual({ sam: 0, alex: 150, jo: 150 });
   });
+
+  it("gives someone who left none of the others' forfeits, though they pay their own", () => {
+    // Priya moved out mid-month: her forfeit is still taken, and Sam's goes only to Alex and Jo.
+    const { s, bal } = monthLedger(["sam", "alex", "jo"], 2000, [
+      { userId: "sam", amount: 300 },
+      { userId: "priya", amount: 100 },
+    ]);
+    expect(s.received.priya).toBe(0);
+    expect(s.received.sam + s.received.alex + s.received.jo).toBe(400);
+    expect(s.received.alex + s.received.jo).toBeGreaterThanOrEqual(300 + 66);
+    expect([...bal.values()].reduce((x, y) => x + y, 0)).toBe(0);
+  });
 });
 
 describe("settleUp", () => {

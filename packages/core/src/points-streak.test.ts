@@ -7,7 +7,8 @@ describe("pointsEarned", () => {
   it("pays full for on time, half for late, nothing otherwise", () => {
     expect(pointsEarned("done", 5)).toBe(5);
     expect(pointsEarned("checking", 5)).toBe(5);
-    expect(pointsEarned("late", 5)).toBe(2);
+    expect(pointsEarned("late", 5)).toBe(3);
+    expect(pointsEarned("late", 1)).toBe(1);
     expect(pointsEarned("missed", 5)).toBe(0);
     expect(pointsEarned("excused", 5)).toBe(0);
     expect(pointsEarned("overdue", 5)).toBe(0);
@@ -19,7 +20,7 @@ describe("standings", () => {
     [
       { userId: "priya", points: 5, status: "done" },
       { userId: "priya", points: 2, status: "upcoming" },
-      { userId: "sam", points: 3, status: "late" },
+      { userId: "sam", points: 2, status: "late" },
       { userId: "sam", points: 4, status: "done" },
       { userId: "tom", points: 3, status: "missed" },
       { userId: "you", points: 2, status: "done" },

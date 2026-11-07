@@ -249,6 +249,27 @@ describe("closing the month", () => {
     expect(closes!.map((c) => c.month)).toContain(month);
   });
 
+  it("shares forfeits only with people still in the house", async () => {
+    const house = await makeHouse(["Ava", "Ben", "Cal"]);
+    const [ava, ben, cal] = house.everyone;
+    const week = weeksAgo(6);
+    await addJohns(house.id, [{ name: "Bins", points: 2 }, { name: "Hob", points: 2 }], week);
+    const { assignments } = await deal(house.id, week, week.startsAt);
+    // Ava and Cal each miss one; Cal moves out before the month closes.
+    await db.from("assignments").update({ user_id: ava.userId }).eq("id", assignments[0].id);
+    await db.from("assignments").update({ user_id: cal.userId }).eq("id", assignments[1].id);
+    const month = monthOf(new Date(assignments[0].due_at), ZONE);
+    await tickHouse(db, house.id, new Date(week.endsAt.getTime() + DAY));
+    await db.from("members").delete().eq("house_id", house.id).eq("user_id", cal.userId);
+    await tickHouse(db, house.id, new Date(week.endsAt.getTime() + 40 * DAY));
+
+    const rows = (await ledgerOf(house.id)).filter((r) => r.month === month);
+    const shareOf = (id: string) => rows.filter((r) => r.kind === "share" && r.user_id === id).reduce((t, r) => t + r.amount_minor, 0);
+    // Cal still pays, but gets none of Ava's: it all goes to Ben.
+    expect([shareOf(ava.userId), shareOf(ben.userId), shareOf(cal.userId)]).toEqual([150, 450, 0]);
+    expect(rows.reduce((t, r) => t + r.amount_minor, 0)).toBe(0);
+  });
+
   it("survives two ticks racing each other", async () => {
     const house = await makeHouse(["Ava", "Ben"]);
     const week = weeksAgo(6);
