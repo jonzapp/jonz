@@ -29,6 +29,7 @@
     "db:start": "supabase start",
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
+    "db:standards": "psql \"${DB_URL:-postgresql://postgres:postgres@127.0.0.1:54342/postgres}\" -q -f supabase/checks/standards.sql",
     "email:preview": "node scripts/email-preview.mjs"
   },
   "devDependencies": {
