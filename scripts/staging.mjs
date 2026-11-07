@@ -123,7 +123,22 @@ step("Supabase staging branch");
 const project = (await supa("GET", "/v1/projects")).find((p) => (p.ref ?? p.id) === C.supabase.ref || (p.name === C.supabase.name && p.organization_id === C.supabase.orgId));
 if (!project) stop(`No Supabase project called ${C.supabase.name}: production comes first (npm run provision).`);
 const parentRef = project.ref ?? project.id;
-const branch = findBranch(await supa("GET", `/v1/projects/${parentRef}/branches`), C.staging.branch);
+let branch = findBranch(await supa("GET", `/v1/projects/${parentRef}/branches`), C.staging.branch);
+// A branch made just now has no migrations yet: wait for them as after a reset.
+let fresh = false;
+if (!branch && !CHECK_ONLY) {
+  say(`  · creating ${C.staging.branch} (persistent, from git ${C.staging.branch}; Micro, about $10 a month)`);
+  await supa("POST", `/v1/projects/${parentRef}/branches`, {
+    branch_name: C.staging.branch,
+    git_branch: C.staging.branch,
+    persistent: true,
+  });
+  for (let i = 0; !branch && i < 30; i++) {
+    await sleep(10000);
+    branch = findBranch(await supa("GET", `/v1/projects/${parentRef}/branches`), C.staging.branch);
+  }
+  fresh = true;
+}
 if (!branch) {
   fail(`there's no ${C.staging.branch} branch`);
   todo.push({
@@ -159,15 +174,16 @@ if (RESET && !CHECK_ONLY) {
 }
 
 for (let i = 0; ; i++) {
-  const health = await supa("GET", `/v1/projects/${ref}`).catch(() => null);
-  const missing = health?.status === "ACTIVE_HEALTHY" ? missingMigrations(localVersions, await remoteVersions().catch(() => [])) : null;
+  // /v1/projects/{ref} doesn't answer for a branch, so ask its database.
+  const remote = await remoteVersions().catch(() => null);
+  const missing = remote ? missingMigrations(localVersions, remote) : null;
   if (missing && missing.length === 0) {
     pass(`healthy, with all ${localVersions.length} migrations`);
     break;
   }
-  if (i > 60 || (!RESET && missing)) {
+  if (i > 60 || (!RESET && !fresh && missing)) {
     if (missing) fail(`not applied yet: ${missing.join(", ")} (they arrive when ${C.staging.branch} is pushed)`);
-    else fail(`${ref} is ${health?.status ?? "unreachable"}`);
+    else fail(`${ref}'s database isn't answering yet`);
     break;
   }
   if (i === 0) say("  · waiting for the branch and its migrations");

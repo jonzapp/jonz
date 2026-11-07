@@ -23,6 +23,8 @@ export const EMAIL_SIGN_IN_COPY = {
   /** The tick box on making an account: agreeing is a tick, not a line under the button. */
   agree: "I agree to the Terms and Privacy Policy",
   agreeMeta: "And I’m 13 or older.",
+  /** Cloudflare's bot check hasn't finished (or couldn't run). */
+  notChecked: "Still checking you’re not a bot. Try again in a moment.",
   noAgree: "Tick the box to agree to the Terms and say you’re 13 or older.",
   email: "Email",
   password: "Password",
@@ -60,6 +62,8 @@ export const EMAIL_SIGN_IN_COPY = {
   tooMany: "Too many tries. Wait a few minutes, then try again.",
   failed: "That didn’t work. Try again.",
   notOpen: "Email sign-in isn’t open yet. Use Google or Microsoft for now.",
+  /** A reset on an account with an authenticator app: Supabase wants that code too, which this form doesn't ask for. */
+  needsAuthenticator: "This account has an authenticator app, so the password wasn’t saved. Sign in with Google or Microsoft, then add a password on your House page under You.",
 } as const;
 
 /** A sign-up's name: what housemates see, 1 to 60 characters, as renaming yourself allows. */
@@ -109,6 +113,8 @@ export function emailAuthProblem(error: { code?: string | null; status?: number 
       return EMAIL_SIGN_IN_COPY.tooMany;
     case "email_address_invalid":
       return EMAIL_SIGN_IN_COPY.badEmail;
+    case "insufficient_aal":
+      return EMAIL_SIGN_IN_COPY.needsAuthenticator;
     case "signup_disabled":
     case "email_provider_disabled":
       return EMAIL_SIGN_IN_COPY.notOpen;
@@ -127,4 +133,8 @@ export const PASSWORD_SETTING_COPY = {
   save: "Save the password",
   busy: "Saving…",
   saved: "Password saved.",
+  /** Asked only when Supabase wants it: an account with an authenticator app (the owners'). */
+  authenticator: "Authenticator code",
+  authenticatorBody: "Your account has an authenticator app. Type its code to save the password.",
+  wrongAuthenticator: "That code didn’t work. Type the newest one from your authenticator app.",
 } as const;

@@ -69,6 +69,8 @@ export function AskJonz({
   const [openId, setOpenId] = useState<string | null>(null);
   const [all, setAll] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
+  // A new chat with nothing in it has nothing for New chat to clear: the pencil waits, dimmed, until there is.
+  const [talked, setTalked] = useState(false);
   const kept = useCallback((id: string) => setOpenId(id), []);
 
   function fresh() {
@@ -93,7 +95,7 @@ export function AskJonz({
   // Describe your house is a long title, and a new house's chat is one sitting: the buttons would push the
   // title into dots there. Leaving the page and coming back starts afresh.
   const describing = title === PAGE_TITLE.describe && !all;
-  const newChat = describing ? null : <IconButton icon={SquarePenIcon} label={ASK_CHATS_COPY.newChat} onPress={fresh} testID="chat-new" />;
+  const newChat = describing ? null : <IconButton icon={SquarePenIcon} label={ASK_CHATS_COPY.newChat} onPress={fresh} disabled={!talked && !all} testID="chat-new" />;
   const yours =
     describing || all ? null : (
       <IconButton
@@ -139,6 +141,7 @@ export function AskJonz({
           key={chat.serial}
           saved={chat.saved}
           onKept={kept}
+          onTalked={setTalked}
           houseId={houseId}
           rules={view.snapshot.rules}
           johns={list.data.johns}

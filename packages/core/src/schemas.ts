@@ -150,6 +150,15 @@ export const AwayDraft = z.object({
 });
 export type AwayDraft = z.infer<typeof AwayDraft>;
 
+/** POST /api/away's answer: how many of your Johns booking made due before you go, handed to housemates, or skipped. */
+export const AwayResponse = z.object({
+  ok: z.literal(true),
+  before: z.number().int().min(0),
+  handed: z.number().int().min(0),
+  skipped: z.number().int().min(0),
+});
+export type AwayResponse = z.infer<typeof AwayResponse>;
+
 /** A name you go by: what renaming yourself writes to profiles.display_name. */
 export const DisplayName = z.string().trim().min(1, "Names are 1 to 60 characters.").max(60, "Names are 1 to 60 characters.");
 
@@ -222,7 +231,15 @@ export const SwapAskResponse = z.object({ ok: z.literal(true), offerId: z.uuid()
 export type SwapAskResponse = z.infer<typeof SwapAskResponse>;
 
 /** POST /api/pass/checkout: buy the House Pass for a house, on the web. */
-export const PassCheckoutRequest = z.object({ houseId: z.uuid(), plan: z.enum(PASS_PURCHASES) });
+/**
+ * POST /api/pass/checkout: buy a plan for a house. `offer` is a promotion's
+ * code from its link (docs/specs/promotions.md); a free Pass takes any plan.
+ */
+export const PassCheckoutRequest = z.object({
+  houseId: z.uuid(),
+  plan: z.enum(PASS_PURCHASES),
+  offer: z.string().trim().min(1).max(40).optional(),
+});
 export type PassCheckoutRequest = z.infer<typeof PassCheckoutRequest>;
 
 /** POST /api/pass/manage: the buyer changes or cancels the house's plan. */

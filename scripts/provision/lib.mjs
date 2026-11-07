@@ -21,16 +21,20 @@ export const EMAIL_SMTP = { host: "smtp.resend.com", port: "465", user: "resend"
 
 /**
  * Supabase's emails as Management API fields, from @app/core's
- * authEmailTemplates(): mailer_subjects_<name> and mailer_templates_<name>_content.
+ * authEmailTemplates() and securityNoticeTemplates(): mailer_subjects_<name>
+ * and mailer_templates_<name>_content. A security notice (<kind>_notification)
+ * is also turned on: mailer_notifications_<kind>_enabled.
  * @param {Record<string, { subject: string; html: string }>} templates
- * @returns {Record<string, string>}
+ * @returns {Record<string, string | boolean>}
  */
 export function mailerFields(templates) {
-  /** @type {Record<string, string>} */
+  /** @type {Record<string, string | boolean>} */
   const body = {};
   for (const [name, t] of Object.entries(templates)) {
     body[`mailer_subjects_${name}`] = t.subject;
     body[`mailer_templates_${name}_content`] = t.html;
+    const notice = name.match(/^(.+)_notification$/);
+    if (notice) body[`mailer_notifications_${notice[1]}_enabled`] = true;
   }
   return body;
 }
@@ -42,7 +46,8 @@ export function mailerFields(templates) {
  * code (never auto-confirmed), and Supabase's emails are Jonz's own
  * (`templates`, from @app/core). SMTP itself is left as set in the dashboard.
  */
-export function authSettings(c, google, templates) {
+/** @param {string | null} [captchaSecret] */
+export function authSettings(c, google, templates, captchaSecret = null) {
   const body = {
     site_url: siteUrl(c),
     uri_allow_list: `${siteUrl(c)}/**`,
@@ -55,6 +60,13 @@ export function authSettings(c, google, templates) {
     rate_limit_email_sent: EMAIL_AUTH.emailsPerHour,
     ...mailerFields(templates),
   };
+  // Cloudflare Turnstile on sign-in, sign-up and reset emails; the app sends
+  // the token (apps/client's bot-check). Without the secret it's left alone.
+  if (captchaSecret) {
+    body.security_captcha_enabled = true;
+    body.security_captcha_provider = "turnstile";
+    body.security_captcha_secret = captchaSecret;
+  }
   if (google) {
     body.external_google_enabled = true;
     body.external_google_client_id = googleClientIds(c, google);
@@ -84,8 +96,18 @@ export const googleSkipsNonce = (c) => Boolean(c.google.iosClientId);
  * reported success on the way in, so nothing counts as done until it reads
  * back right.
  */
-export function authProblems(actual, c, google, templates) {
+/**
+ * @param {any} actual
+ * @param {any} c
+ * @param {any} google
+ * @param {any} [templates]
+ * @param {string | null} [captchaSecret]
+ */
+export function authProblems(actual, c, google, templates, captchaSecret = null) {
   const problems = [];
+  if (captchaSecret && (!actual.security_captcha_enabled || actual.security_captcha_provider !== "turnstile")) {
+    problems.push("the Turnstile bot check is off");
+  }
   if (actual.site_url !== siteUrl(c)) problems.push(`site URL is ${actual.site_url || "unset"}, not ${siteUrl(c)}`);
   const allowed = String(actual.uri_allow_list ?? "")
     .split(",")
@@ -101,7 +123,8 @@ export function authProblems(actual, c, google, templates) {
   if (actual.smtp_admin_email !== EMAIL_SMTP.sender(c)) problems.push(`Supabase's emails come from ${actual.smtp_admin_email || "unset"}, not ${EMAIL_SMTP.sender(c)}`);
   if (templates) {
     for (const [key, value] of Object.entries(mailerFields(templates))) {
-      if (actual[key] !== value) problems.push(`${key} isn't Jonz's own email`);
+      if (actual[key] === value) continue;
+      problems.push(key.startsWith("mailer_notifications_") ? `the ${key.slice(21, -8).replace(/_/g, " ")} security email is off` : `${key} isn't Jonz's own email`);
     }
   }
   if (google) {

@@ -53,10 +53,19 @@ the checklist that goes with them. Work through it for every UI change.
 
 ## Design options for Glyn
 
-- Show the real app: screenshots of the web build, or drafts built from the
-  real components with sample data. Never hand-drawn HTML.
-- 2 to 4 true alternatives for one thing, one recommended, one decision.
-  Plain English; he often reads on an iPhone.
+- Show them with the `design-options-picker` skill. Its only copy is in the
+  shared skills repo `glynfinck/skills` (`design-options-picker/`); if the
+  skill isn't loaded, add that repo to the session and read it there.
+- Theme: Overpass, uppercase titles at weight 900, colours from `BIN_NIGHT`
+  in `packages/core/src/bin-night.ts` (light and dark): `bg` background,
+  `surface` card, `sunk` muted, `fg` foreground, `muted` mutedForeground,
+  `line` border, `rec` hivis, `onRec` onHivis. Day: `accent` and `bezel`
+  foreground, `onAccent` card. Night: `accent` hivis, `onAccent` background,
+  `bezel` border.
+- Show the real app: every step is a screenshot of the web build (or a draft
+  built from the real components with sample data). Never hand-drawn HTML.
+  Live preview's `liveUrl` is the branch's Vercel preview or staging.
+- Plain English; he often reads on an iPhone.
 
 ## When Glyn picks something
 

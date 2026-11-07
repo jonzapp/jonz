@@ -28,10 +28,10 @@ describe("corsHeaders", () => {
     });
   });
 
-  it("adds nothing for anyone else, or for a phone (no Origin)", () => {
-    expect(corsHeaders("https://evil.example", allowed)).toEqual({});
-    expect(corsHeaders("http://localhost:8205.evil.example", allowed)).toEqual({});
-    expect(corsHeaders(null, allowed)).toEqual({});
+  it("lets nobody else in, or a phone (no Origin), but still says the answer depends on Origin", () => {
+    expect(corsHeaders("https://evil.example", allowed)).toEqual({ Vary: "Origin" });
+    expect(corsHeaders("http://localhost:8205.evil.example", allowed)).toEqual({ Vary: "Origin" });
+    expect(corsHeaders(null, allowed)).toEqual({ Vary: "Origin" });
     expect(corsHeaders("http://localhost:8205", [])).toEqual({});
   });
 
@@ -41,10 +41,10 @@ describe("corsHeaders", () => {
       "Access-Control-Allow-Origin": "https://jonz-web-git-fix-glynfincks-projects.vercel.app",
     });
     expect(corsHeaders("https://staging.jonz.app", previews)).toMatchObject({ Vary: "Origin" });
-    expect(corsHeaders("https://evil.example/x-glynfincks-projects.vercel.app", previews)).toEqual({});
-    expect(corsHeaders("https://a.b-glynfincks-projects.vercel.app", previews)).toEqual({});
-    expect(corsHeaders("https://x-glynfincks-projects.vercel.app.evil.example", previews)).toEqual({});
-    expect(corsHeaders("https://x-glynfincksXprojects.vercel.app", previews)).toEqual({});
+    expect(corsHeaders("https://evil.example/x-glynfincks-projects.vercel.app", previews)).toEqual({ Vary: "Origin" });
+    expect(corsHeaders("https://a.b-glynfincks-projects.vercel.app", previews)).toEqual({ Vary: "Origin" });
+    expect(corsHeaders("https://x-glynfincks-projects.vercel.app.evil.example", previews)).toEqual({ Vary: "Origin" });
+    expect(corsHeaders("https://x-glynfincksXprojects.vercel.app", previews)).toEqual({ Vary: "Origin" });
   });
 });
 

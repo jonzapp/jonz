@@ -12,6 +12,8 @@
 //   GOOGLE_CLIENT_ID        from the Google console; leave both unset on the
 //   GOOGLE_CLIENT_SECRET    first run and this prints what to paste there
 //   SUPABASE_DB_PASSWORD    written here when this script creates the project
+//   TURNSTILE_SECRET        Cloudflare Turnstile's secret key (the bot check on
+//                           email sign-in); unset leaves the check as it is
 //
 // Safe to run again and again: every step looks before it writes, and no
 // secret it generates is ever printed.
@@ -267,11 +269,16 @@ if (missing.length === 0) {
 // --- 4. Sign-in ---------------------------------------------------------------------
 
 step("Sign-in (Supabase auth settings)");
-const emails = (await loadCore("auth-email.ts")).authEmailTemplates();
-if (!CHECK_ONLY) await supa("PATCH", `/v1/projects/${ref}/config/auth`, authSettings(C, google, emails));
+const authEmail = await loadCore("auth-email.ts");
+const emails = { ...authEmail.authEmailTemplates(), ...authEmail.securityNoticeTemplates() };
+// Cloudflare Turnstile's secret (the TURNSTILE_SECRET Actions secret); the site key is in apps/client/src/api/turnstile.ts.
+const captcha = env.TURNSTILE_SECRET?.trim() || null;
+if (captcha) mask(captcha);
+if (!CHECK_ONLY) await supa("PATCH", `/v1/projects/${ref}/config/auth`, authSettings(C, google, emails, captcha));
 const auth = await supa("GET", `/v1/projects/${ref}/config/auth`);
-const problems = authProblems(auth, C, google, emails);
-if (problems.length === 0) pass(`site URL ${siteUrl(C)}, email and password on with Jonz's emails through Resend${google ? ", Google on" : ""}`);
+const problems = authProblems(auth, C, google, emails, captcha);
+if (problems.length === 0) pass(`site URL ${siteUrl(C)}, email and password on with Jonz's emails through Resend${google ? ", Google on" : ""}${captcha ? ", Turnstile bot check on" : ""}`);
+if (!captcha) say("  · no TURNSTILE_SECRET: the bot check on email sign-in is left as it is");
 if (google && !C.google.iosClientId && C.google.androidClientIds.length === 0) {
   say("  · Google signs in on the web only: the app's iOS and Android clients aren't in config.mjs yet (DEPLOYMENT.md)");
 }

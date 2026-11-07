@@ -3,7 +3,6 @@
   "framework": null,
   "buildCommand": "node scripts/build-web.mjs",
   "outputDirectory": "dist",
-  "relatedProjects": ["prj_7iAOREFWVIdf2Xi5TAoyO9a9ma7R"],
   "redirects": [
     { "source": "/wall", "destination": "/house/wall", "permanent": false },
     { "source": "/stake", "destination": "/house/stake", "permanent": false },

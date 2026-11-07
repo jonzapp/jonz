@@ -34,7 +34,7 @@ it('signs in with an email and password', async () => {
   await type('email-address', 'sam@example.com');
   await type('email-password', 'correct horse');
   await fireEvent.press(screen.getByRole('button', { name: COPY.signIn }));
-  expect(signInWithEmail).toHaveBeenCalledWith('sam@example.com', 'correct horse');
+  expect(signInWithEmail).toHaveBeenCalledWith('sam@example.com', 'correct horse', 'test-token');
   expect(screen.queryByRole('alert')).toBeNull();
 });
 
@@ -65,7 +65,7 @@ it('makes an account, then checks the emailed code as soon as its sixth digit is
   expect(screen.getByRole('alert')).toHaveTextContent(COPY.shortPassword);
   await type('email-password', 'long enough');
   await fireEvent.press(screen.getByRole('button', { name: COPY.signUp }));
-  expect(signUpWithEmail).toHaveBeenCalledWith('sam@example.com', 'long enough', 'Sam');
+  expect(signUpWithEmail).toHaveBeenCalledWith('sam@example.com', 'long enough', 'Sam', 'test-token');
   expect(screen.getByText(COPY.codeHint('sam@example.com'))).toBeOnTheScreen();
   expect(screen.getByText(COPY.existingHint)).toBeOnTheScreen();
   await type('email-code', '123 45');
@@ -94,7 +94,7 @@ it('sends a new sign-up code, and says a wrong one is wrong', async () => {
   await type('email-code', '0000007');
   expect(screen.getByTestId('email-code').props.value).toBe('7');
   await fireEvent.press(screen.getByRole('button', { name: COPY.resend }));
-  expect(resendSignUpCode).toHaveBeenCalledWith('sam@example.com');
+  expect(resendSignUpCode).toHaveBeenCalledWith('sam@example.com', 'test-token');
   expect(screen.getByText(COPY.resent)).toBeOnTheScreen();
 });
 
@@ -105,12 +105,25 @@ it('resets a forgotten password with an emailed code', async () => {
   await fireEvent.press(screen.getByRole('button', { name: COPY.toForgot }));
   await type('email-address', 'sam@example.com');
   await fireEvent.press(screen.getByRole('button', { name: COPY.sendReset }));
-  expect(sendPasswordReset).toHaveBeenCalledWith('sam@example.com');
+  expect(sendPasswordReset).toHaveBeenCalledWith('sam@example.com', 'test-token');
   expect(screen.getByText(COPY.resetBody('sam@example.com'))).toBeOnTheScreen();
   await type('email-code', '654321');
   await type('email-password', 'a new one please');
   await fireEvent.press(screen.getByRole('button', { name: COPY.reset }));
   expect(resetPassword).toHaveBeenCalledWith('sam@example.com', '654321', 'a new one please');
+});
+
+it('says when a reset could not save the password because the account has an authenticator app', async () => {
+  (sendPasswordReset as jest.Mock).mockResolvedValue(undefined);
+  (resetPassword as jest.Mock).mockRejectedValue({ code: 'insufficient_aal', status: 401 });
+  await render(<EmailSignIn />);
+  await fireEvent.press(screen.getByRole('button', { name: COPY.toForgot }));
+  await type('email-address', 'sam@example.com');
+  await fireEvent.press(screen.getByRole('button', { name: COPY.sendReset }));
+  await type('email-code', '654321');
+  await type('email-password', 'a new one please');
+  await fireEvent.press(screen.getByRole('button', { name: COPY.reset }));
+  expect(screen.getByRole('alert')).toHaveTextContent(COPY.needsAuthenticator);
 });
 
 it('says email sign-in is not open yet, where production still has it off', async () => {
@@ -139,7 +152,7 @@ it('fills like any login: the keyboard sends it, and password managers know whic
   await type('email-address', 'sam@example.com');
   await type('email-password', 'correct horse');
   await fireEvent(screen.getByTestId('email-password'), 'submitEditing');
-  expect(signUpWithEmail).toHaveBeenCalledWith('sam@example.com', 'correct horse', 'Sam');
+  expect(signUpWithEmail).toHaveBeenCalledWith('sam@example.com', 'correct horse', 'Sam', 'test-token');
 });
 
 it('asks a new account for the name housemates will see', async () => {
@@ -168,5 +181,23 @@ it('makes an account only once the Terms box is ticked, and keeps which Terms', 
   await fireEvent.press(box);
   expect(box).toBeChecked();
   await fireEvent.press(screen.getByRole('button', { name: COPY.signUp }));
-  expect(signUpWithEmail).toHaveBeenCalledWith('sam@example.com', 'correct horse', 'Sam');
+  expect(signUpWithEmail).toHaveBeenCalledWith('sam@example.com', 'correct horse', 'Sam', 'test-token');
+});
+
+it('waits for the bot check before asking Supabase', async () => {
+  const bot = jest.requireMock('./bot-check') as { BotCheck: unknown };
+  const real = bot.BotCheck;
+  bot.BotCheck = function UnfinishedCheck() {
+    return null; // a check that hasn't finished: no token yet
+  };
+  try {
+    await render(<EmailSignIn />);
+    await type('email-address', 'sam@example.com');
+    await type('email-password', 'correct horse');
+    await fireEvent.press(screen.getByRole('button', { name: COPY.signIn }));
+    expect(signInWithEmail).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert')).toHaveTextContent(COPY.notChecked);
+  } finally {
+    bot.BotCheck = real;
+  }
 });

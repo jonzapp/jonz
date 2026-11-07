@@ -51,6 +51,12 @@ test("a chat is kept, comes back from Your chats, and can be deleted", async ({ 
   await here.getByTestId("chat-new").click();
   await expect(here.getByTestId("draft-card")).toHaveCount(0);
   await expect(here.getByTestId("saved-chat")).toHaveCount(0);
+  // With nothing in it yet, New chat has nothing to clear: it waits, dimmed, until something's written.
+  await expect(here.getByTestId("chat-new")).toBeDisabled();
+  await here.getByTestId("chat-input").fill("Who has the bins?");
+  await expect(here.getByTestId("chat-new")).toBeEnabled();
+  await here.getByTestId("chat-new").click();
+  await expect(here.getByTestId("chat-input")).toHaveValue("");
 
   // Your chats, from the clock on the bar's leading edge: the kept one, under Today.
   await here.getByTestId("chats-open").click();

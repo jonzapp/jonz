@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
-import { authEmailTemplates } from "../../packages/core/src/auth-email";
+import { authEmailTemplates, securityNoticeTemplates } from "../../packages/core/src/auth-email";
 import { CONFIG } from "./config.mjs";
 import {
   apexDomain,
@@ -54,7 +54,7 @@ const NATIVE = {
 
 /** What production's dashboard holds for SMTP once Resend is pasted in. */
 const SMTP = { smtp_host: "smtp.resend.com", smtp_port: 465, smtp_user: "resend", smtp_admin_email: "hello@jonz.app" };
-const EMAILS = authEmailTemplates();
+const EMAILS = { ...authEmailTemplates(), ...securityNoticeTemplates() };
 
 describe("auth settings", () => {
   it("sends only production's fields, never the local config", () => {
@@ -75,6 +75,34 @@ describe("auth settings", () => {
       external_google_client_id: GOOGLE.clientId,
       external_google_secret: GOOGLE.secret,
     });
+  });
+
+  it("turns on Turnstile with its secret, leaves it alone without one, and notices it off", () => {
+    expect(authSettings(CONFIG, null, EMAILS, "turnstile-secret")).toMatchObject({
+      security_captcha_enabled: true,
+      security_captcha_provider: "turnstile",
+      security_captcha_secret: "turnstile-secret",
+    });
+    expect(Object.keys(authSettings(CONFIG, null, EMAILS)).filter((k) => k.startsWith("security_captcha"))).toEqual([]);
+    const read = { ...SMTP, ...authSettings(CONFIG, null, EMAILS) };
+    expect(authProblems(read, CONFIG, null, EMAILS)).toEqual([]);
+    expect(authProblems({ ...read, security_captcha_enabled: false }, CONFIG, null, EMAILS, "turnstile-secret")).toEqual(["the Turnstile bot check is off"]);
+    expect(authProblems({ ...read, security_captcha_enabled: true, security_captcha_provider: "turnstile" }, CONFIG, null, EMAILS, "turnstile-secret")).toEqual([]);
+  });
+
+  it("turns on every security notice, in Jonz's words, and notices one left off", () => {
+    const body = authSettings(CONFIG, null, EMAILS) as Record<string, unknown>;
+    for (const kind of ["password_changed", "email_changed", "mfa_factor_enrolled", "mfa_factor_unenrolled", "identity_linked", "identity_unlinked"]) {
+      expect(body[`mailer_notifications_${kind}_enabled`]).toBe(true);
+      expect(body[`mailer_templates_${kind}_notification_content`]).toContain("support@jonz.app");
+    }
+    expect(body.mailer_subjects_password_changed_notification).toBe("Your Jonz password was changed");
+    // The sign-in emails have no switch of their own.
+    expect(Object.keys(body).filter((k) => k.startsWith("mailer_notifications_"))).toHaveLength(6);
+    const read = { ...SMTP, ...body };
+    expect(authProblems({ ...read, mailer_notifications_password_changed_enabled: false }, CONFIG, null, EMAILS)).toEqual([
+      "the password changed security email is off",
+    ]);
   });
 
   it("accepts the settings it wrote when they read back the same", () => {
