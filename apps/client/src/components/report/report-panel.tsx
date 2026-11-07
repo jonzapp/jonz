@@ -76,7 +76,7 @@ function ReportBody({
         </Group>
       ) : null}
       {report.userId ? <ReplyBox placeholder={REPORT_COPY.replyTo(first)} onSend={onReply} testID="report-reply" /> : null}
-      <ButtonRow>
+      <ButtonRow atEdge>
         <Button
           label={fixed ? REPORT_COPY.reopen : REPORT_COPY.markFixed}
           icon={fixed ? RotateCcwIcon : CheckIcon}

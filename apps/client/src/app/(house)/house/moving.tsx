@@ -117,7 +117,7 @@ function MovingForm({
               />
               {move.problem ? <Alert message={move.problem} /> : null}
               <View style={styles.action}>
-                <ButtonRow>
+                <ButtonRow atEdge>
                   <Button
                     label={picked ? MOVING_COPY.save(dateRange(picked, picked)) : MOVING_COPY.pick}
                     disabled={!picked || !changed || move.pending}

@@ -142,7 +142,7 @@ export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
     <View style={[styles.unreachable, { backgroundColor: colors.background }]}>
       <Heading level={2}>{ERROR_COPY.title}</Heading>
       <Body muted>{ERROR_COPY.body}</Body>
-      <ButtonRow>
+      <ButtonRow atEdge>
         <Button label={ERROR_COPY.retry} icon={RefreshCwIcon} onPress={() => void retry()} />
       </ButtonRow>
     </View>
@@ -156,7 +156,7 @@ function Unreachable({ onRetry }: { onRetry: () => Promise<void> }) {
     <View style={[styles.unreachable, { backgroundColor: colors.background }]}>
       <Heading level={2}>{ERROR_COPY.unreachable}</Heading>
       <Body muted>{ERROR_COPY.unreachableBody}</Body>
-      <ButtonRow>
+      <ButtonRow atEdge>
         <Button label={ERROR_COPY.retry} icon={RefreshCwIcon} onPress={() => void onRetry()} />
       </ButtonRow>
     </View>

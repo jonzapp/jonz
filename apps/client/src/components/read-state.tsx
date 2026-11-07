@@ -18,7 +18,7 @@ export function ReadFailed({ message = FOCUS_SHELL_COPY.unreadable, onRetry }: {
   return (
     <View style={styles.failed}>
       <Alert message={message} />
-      <ButtonRow>
+      <ButtonRow atEdge>
         <Button variant="outline" icon={RefreshCwIcon} label={FOCUS_SHELL_COPY.retry} onPress={onRetry} />
       </ButtonRow>
     </View>

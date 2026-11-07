@@ -104,24 +104,24 @@ export function Buttons() {
     <Section label="Buttons" testID="style-buttons">
       <Group>
         <GroupItem>
-          <Meta>Each kind on its own: across the column on a phone, its own width in a wide column.</Meta>
+          <Meta>Each kind on its own on the page: across the column on a phone, its own width in a wide laptop column. In a card, sheet or form it fills on a laptop too.</Meta>
           <View style={styles.stack}>
-            <ButtonRow testID="lone-button">
+            <ButtonRow atEdge testID="lone-button">
               <Button label="Primary, one a screen" icon={PlusIcon} onPress={none} testID="button-primary" />
             </ButtonRow>
-            <ButtonRow>
+            <ButtonRow atEdge>
               <Button variant="outline" label="Outline" icon={CopyIcon} onPress={none} />
             </ButtonRow>
-            <ButtonRow>
+            <ButtonRow atEdge>
               <Button variant="ghost" label="Ghost" onPress={none} />
             </ButtonRow>
-            <ButtonRow>
+            <ButtonRow atEdge>
               <Button variant="hazard" label="Hazard, for undoing" icon={Undo2Icon} onPress={none} />
             </ButtonRow>
-            <ButtonRow>
+            <ButtonRow atEdge>
               <Button variant="outline" label="Chosen" icon={CheckIcon} chosen onPress={none} />
             </ButtonRow>
-            <ButtonRow>
+            <ButtonRow atEdge>
               <Button label="Disabled" disabled onPress={none} />
             </ButtonRow>
           </View>

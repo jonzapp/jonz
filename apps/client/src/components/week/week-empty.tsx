@@ -45,7 +45,7 @@ export function WeekEmpty({
   }
   const steps = setupChecklist(johns, memberCount);
   const action = !isAdmin ? undefined : steps.johnCount === 0 ? (
-    <ButtonRow>
+    <ButtonRow atEdge>
       <Button variant="outline" icon={ListTodoIcon} label={NEXT_UP_COPY.addJohns} href="/house/johns" testID="add-johns" />
     </ButtonRow>
   ) : (

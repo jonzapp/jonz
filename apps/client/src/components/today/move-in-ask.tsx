@@ -24,7 +24,7 @@ export function MoveInAsk({ houseName, joinCode }: { houseName: string; joinCode
         <SectionLabel style={styles.label}>{MOVING_COPY.askTitle}</SectionLabel>
         <Body style={styles.body}>{MOVING_COPY.askBody(houseName)}</Body>
         <View style={styles.action}>
-          <ButtonRow>
+          <ButtonRow atEdge>
             <Button
               label={MOVING_COPY.askButton}
               icon={Share2Icon}

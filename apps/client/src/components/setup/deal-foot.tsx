@@ -43,7 +43,7 @@ export function DealFoot({ houseId, started, canRedeal = true }: { houseId: stri
     <View style={styles.foot} testID="deal">
       <Meta>{started ? DEAL_COPY.againBody : DEAL_COPY.firstBody}</Meta>
       {started ? (
-        <ButtonRow>
+        <ButtonRow atEdge>
           <Button
             variant="outline"
             icon={ShuffleIcon}

@@ -23,9 +23,11 @@ export function useRowFit(): RowFit | null {
 
 /**
  * Where every Button sits. A button on its own (Deal week 1, Copy key, Try
- * again) fills its column on a phone, and in any column up to FORM_MAX (a
- * form, a sheet, a side panel); in a wider column on a laptop it keeps its
- * own width at the leading edge.
+ * again) fills its column: on a phone always, and on a laptop too inside a
+ * card, a sheet, a form or a side panel. One on the bare page (`atEdge`:
+ * an empty page's action, Re-deal under the list, Try again) keeps its own
+ * width at the leading edge in a laptop column wider than FORM_MAX, rather
+ * than stretching across the page.
  *
  * Two or three buttons that belong together: Mark done and Photo, Approve and
  * Object, Mark fixed and Same as. They always share the line equally, never
@@ -39,11 +41,14 @@ export function useRowFit(): RowFit | null {
 export function ButtonRow({
   children,
   stacked: stackedAlways = false,
+  atEdge = false,
   testID,
 }: {
   children: ReactNode;
   /** Always one under another (the front door's two ways in on a phone). */
   stacked?: boolean;
+  /** A button on its own on the bare page: its own width at the leading edge of a wide laptop column. */
+  atEdge?: boolean;
   testID?: string;
 }) {
   const { width: window } = useWindowDimensions();
@@ -55,9 +60,9 @@ export function ButtonRow({
   const count = Children.toArray(children).filter(Boolean).length;
   const needs = count * BUTTON_MIN + (count - 1) * SPACE.sm;
   const stacked = stackedAlways || window < NARROW || (width !== null && (width < needs || width <= wrapsAt));
-  // On its own: the column's width, unless that is a wide one on a laptop.
+  // On its own: the column's width, unless it's on the bare page in a wide laptop column.
   const alone = count === 1;
-  const own = alone && window >= WIDE && (width === null || width > FORM_MAX);
+  const own = alone && atEdge && window >= WIDE && (width === null || width > FORM_MAX);
   // A label can say it wrapped before the row knows its own width (children
   // are laid out first), so the news waits until the width arrives.
   const widthNow = useRef<number | null>(null);

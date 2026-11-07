@@ -36,8 +36,8 @@ it('re-deals in outline once the house has started', async () => {
   expect(screen.getByRole('button', { name: DEAL_COPY.again })).toHaveStyle({ backgroundColor: 'transparent' });
 });
 
-it("says it in the screen's words, in the colour asked for, across the column on a phone", async () => {
-  await render(<DealButton houseId="h1" label="Deal week 1" variant="outline" />, { wrapper: House });
+it("says it in the screen's words, in the colour asked for, across a card", async () => {
+  await render(<DealButton houseId="h1" label="Deal week 1" variant="outline" fill />, { wrapper: House });
   const button = screen.getByRole('button', { name: 'Deal week 1' });
   expect(button).toHaveStyle({ backgroundColor: 'transparent' });
   // On its own, a ButtonRow puts it across the column (Week's empty page, Today's setup card).

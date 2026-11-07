@@ -37,10 +37,10 @@ describe('a button on its own', () => {
     expect(screen.getByTestId('row')).toHaveStyle({ alignItems: 'stretch' });
   });
 
-  it('keeps its own width at the leading edge of a wide column on a laptop', async () => {
+  it('on the bare page, keeps its own width at the leading edge of a wide column on a laptop', async () => {
     (useWindowDimensions as jest.Mock).mockReturnValue(LAPTOP);
     await render(
-      <ButtonRow testID="row">
+      <ButtonRow atEdge testID="row">
         <Button label="Deal week 1" onPress={none} />
       </ButtonRow>,
     );
@@ -49,10 +49,21 @@ describe('a button on its own', () => {
     expect(screen.getByTestId('row')).toHaveStyle({ alignItems: 'flex-start' });
   });
 
-  it('fills a form, a sheet or a side panel on a laptop (up to FORM_MAX)', async () => {
+  it('in a card, fills it on a laptop too, however wide (Today\'s setup card)', async () => {
     (useWindowDimensions as jest.Mock).mockReturnValue(LAPTOP);
     await render(
       <ButtonRow testID="row">
+        <Button label="Deal week 1" onPress={none} />
+      </ButtonRow>,
+    );
+    await laidOutAt(1000);
+    expect(screen.getByRole('button', { name: 'Deal week 1' })).toHaveStyle({ alignSelf: 'stretch' });
+  });
+
+  it('on the bare page, still fills a column up to FORM_MAX on a laptop (a form, a side panel)', async () => {
+    (useWindowDimensions as jest.Mock).mockReturnValue(LAPTOP);
+    await render(
+      <ButtonRow atEdge testID="row">
         <Button label="Send report" onPress={none} />
       </ButtonRow>,
     );

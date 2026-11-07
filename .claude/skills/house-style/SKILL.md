@@ -26,7 +26,8 @@ the checklist that goes with them. Work through it for every UI change.
 - Buttons side by side: equal widths, stacking at full width when they don't
   fit. Never sized to their words, never cut off with "…".
 - A button on its own fills its column on a phone (Deal week 1, Try again),
-  and keeps its own width in a wide column on a laptop. Every `Button` goes
+  and on a laptop fills a card, sheet or form; on the bare page of a wide
+  laptop column it keeps its own width (`ButtonRow atEdge`). Every `Button` goes
   in a `ButtonRow`, alone or with others; lint (`jonz/button-in-row`) and
   `e2e/client-buttons.spec.ts` check it.
 - Icon-only buttons: one size, one look, each with a spoken name.

@@ -343,7 +343,7 @@ export function AwayForm({ houseId, today, weekStarts }: { houseId: string; toda
           <Meta>{AWAY_COPY.moved(moved)}</Meta>
         </View>
       ) : null}
-      <ButtonRow>
+      <ButtonRow atEdge>
         <Button
           icon={PlaneIcon}
           label={move.pending ? AWAY_COPY.booking : SETUP_COPY.book}

@@ -17,8 +17,9 @@ import { SPACE } from '@/theme';
  * can say it otherwise, and `variant` overrides the colour (Today's setup
  * checklist and Week keep it outline until the steps before it have
  * something).
- * Like every button on its own it fills its column on a phone (ButtonRow),
- * and keeps its own width in a wide column on a laptop. The server checks
+ * Like every button on its own it fills its column on a phone (ButtonRow).
+ * On a laptop it keeps its own width on the leading edge of the bare page,
+ * or with `fill` spans its card (Today's setup card). The server checks
  * it's an admin asking.
  */
 export function DealButton({
@@ -26,17 +27,20 @@ export function DealButton({
   started = false,
   label,
   variant,
+  fill = false,
 }: {
   houseId: string;
   /** The house has dealt before. */
   started?: boolean;
   label?: string;
   variant?: 'primary' | 'outline';
+  /** In a card: across it on a laptop too. */
+  fill?: boolean;
 }) {
   const move = useMove(houseId);
   return (
     <View style={styles.stack}>
-      <ButtonRow>
+      <ButtonRow atEdge={!fill}>
         <Button
           variant={variant ?? (started ? 'outline' : 'primary')}
           icon={ShuffleIcon}

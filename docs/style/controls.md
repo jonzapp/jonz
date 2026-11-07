@@ -19,9 +19,11 @@
 - One of a pair you pick from (the vote) uses `chosen`: ink edge on the
   tint, never amber. (Focus, #17)
 - **A button on its own fills its column on a phone** (Deal week 1, Copy
-  key, Send report, Try again), and in any column up to `FORM_MAX` (520) on
-  a laptop: a form, a sheet, a side panel. In a wider column on a laptop it
-  keeps its own width at the leading edge, never stretched across a page.
+  key, Send report, Try again). On a laptop it still fills a card, a sheet,
+  a form or a side panel (Today's setup card, Copy key). One on the bare
+  page (an empty page's action, Re-deal under the list, Try again) keeps
+  its own width at the leading edge of a laptop column wider than
+  `FORM_MAX` (520), never stretched across a page (`ButtonRow atEdge`).
   (Copy key A, #75; Week's Deal week 1, 7 Nov) *Backed by* GOV.UK's
   buttons, full width on a phone and their own width from a tablet up, and
   Material's guidance against full-width buttons on wide screens.
