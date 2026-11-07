@@ -1,4 +1,4 @@
-import { ADMIN_MORE, ADMIN_PAGES } from '@app/core';
+import { ADMIN_PAGES } from '@app/core';
 import { useQuery } from '@tanstack/react-query';
 import { Stack, usePathname } from 'expo-router';
 import { useWindowDimensions } from 'react-native';
@@ -29,7 +29,7 @@ export default function AdminLayout() {
   if (status.isError) return <ReadFailed onRetry={() => void status.refetch()} />;
   if (!status.data.owner) return <NotFound />;
   if (!status.data.mfa) return <CodeGate onPassed={() => void status.refetch()} />;
-  const page = ADMIN_PAGES.find((p) => pathname.startsWith(p.path))?.key ?? (pathname.startsWith(ADMIN_MORE.path) ? 'more' : 'overview');
+  const page = ADMIN_PAGES.find((p) => pathname.startsWith(p.path))?.key ?? 'overview';
   return (
     <ToastProvider bottom={wide ? SPACE.xl : ADMIN_TAB_BAR + insets.bottom + SPACE.lg}>
       <AdminShell page={page}>

@@ -102,8 +102,12 @@ last:
   of Johns. In the side panel on a laptop, its own page on a phone
   (`/admin/houses/[id]`). Nothing here changes a house, so nothing goes in
   the audit log. Opening the house as its people see it is left for later.
-- **On a phone** the tabs are Overview, Inbox, Houses, Notices and More;
-  More holds Messages, Deletions and the Audit log.
+- **Tabs by job.** The pages sit in five groups (`ADMIN_GROUPS`): Overview,
+  Inbox, Houses, Send (Messages, Notices) and Records (Deletions, Audit
+  log). On a phone each group is a tab; a tab with more than one page opens
+  its first, with a switch at the top for the rest. On a laptop the side
+  list shows every page, Send's and Records' under small headings. A new
+  page joins a group, so the bar stays at five.
 
 ## Messages
 

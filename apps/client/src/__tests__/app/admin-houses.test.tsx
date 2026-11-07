@@ -7,11 +7,17 @@ import { liveNotices, ownerStatus } from '@/api/owner';
 import AdminLayout from '@/app/admin/_layout';
 import HousePage from '@/app/admin/houses/[id]';
 import HousesPage from '@/app/admin/houses/index';
-import MorePage from '@/app/admin/more';
+import DeletionsPage from '@/app/admin/deletions';
 import OverviewPage from '@/app/admin/overview';
 import { renderPages, untilRead } from '@/testing/pages';
 
-jest.mock('@/api/owner', () => ({ ownerStatus: jest.fn(), liveNotices: jest.fn() }));
+jest.mock('@/api/owner', () => ({
+  ...jest.requireActual<typeof import('@/api/owner')>('@/api/owner'),
+  ownerStatus: jest.fn(),
+  liveNotices: jest.fn(),
+  deletionsPage: jest.fn().mockResolvedValue({ people: [], more: false }),
+  deletionsCount: jest.fn().mockResolvedValue(0),
+}));
 jest.mock('@/api/houses', () => ({
   ...jest.requireActual<typeof import('@/api/houses')>('@/api/houses'),
   ownerOverview: jest.fn(),
@@ -34,7 +40,7 @@ const ROUTES = {
   'admin/overview': OverviewPage,
   'admin/houses/index': HousesPage,
   'admin/houses/[id]': HousePage,
-  'admin/more': MorePage,
+  'admin/deletions': DeletionsPage,
 };
 
 const minutesAgo = (n: number) => new Date(Date.now() - n * 60_000).toISOString();
@@ -173,11 +179,22 @@ describe('Houses', () => {
   });
 });
 
-describe('More, on a phone', () => {
-  it('holds the pages without a tab', async () => {
-    await renderPages(ROUTES, '/admin/more');
+describe('Tabs by job, on a phone', () => {
+  it('has five tabs, and Records opens Deletions with a switch to the Audit log', async () => {
+    await renderPages(ROUTES, '/admin/deletions');
     await untilRead();
-    for (const key of ['messages', 'deletions', 'audit']) expect(screen.getByTestId(`admin-more-${key}`)).toBeVisible();
-    expect(screen.getByTestId('admin-tab-more')).toBeSelected();
+    for (const key of ['overview', 'inbox', 'houses', 'send', 'records']) expect(screen.getByTestId(`admin-tab-${key}`)).toBeVisible();
+    expect(screen.getByTestId('admin-tab-records')).toBeSelected();
+    expect(within(screen.getByTestId('admin-switch')).getByText('Deletions')).toBeVisible();
+    expect(within(screen.getByTestId('admin-switch')).getByText('Audit log')).toBeVisible();
+  });
+
+  it('shows no switch on a laptop, where the side list names every page', async () => {
+    (useWindowDimensions as jest.Mock).mockReturnValue(LAPTOP);
+    await renderPages(ROUTES, '/admin/deletions');
+    await untilRead();
+    expect(screen.queryByTestId('admin-switch')).toBeNull();
+    expect(screen.getByTestId('admin-nav-audit')).toBeVisible();
+    expect(screen.getByText('Records')).toBeVisible();
   });
 });

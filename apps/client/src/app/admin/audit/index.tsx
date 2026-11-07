@@ -10,6 +10,7 @@ import { Columns, Screen, useColumns } from '@/components/screen';
 import { TitleBar } from '@/components/title-bar';
 import { useMembership } from '@/hooks/use-membership';
 import { useNow } from '@/hooks/use-now';
+import { AdminSwitch } from '@/components/admin/admin-shell';
 
 /**
  * The audit log, built for thousands of entries a day: no day headings, one
@@ -32,6 +33,7 @@ export default function AuditPage() {
   });
   return (
     <Screen spreads bar={<TitleBar title="Audit log" />} onNearEnd={busy.onNearEnd} testID="admin-audit">
+      <AdminSwitch page="audit" />
       <AuditLog busy={busy} ownerId={ownerId} />
     </Screen>
   );

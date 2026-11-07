@@ -17,9 +17,30 @@ export const ADMIN_PAGES = [
 ] as const;
 export type AdminPage = (typeof ADMIN_PAGES)[number]["key"];
 
-/** On a phone, the pages that get a tab; the rest are under More. */
-export const ADMIN_TABS: readonly AdminPage[] = ["overview", "inbox", "houses", "notices"];
-export const ADMIN_MORE = { label: "More", path: "/admin/more" } as const;
+/**
+ * The owner's pages grouped by job: one tab each on a phone, a small heading
+ * each on the laptop's side list. A tab with more than one page opens its
+ * first, with a switch at the top for the rest. A new page joins a group, so
+ * the bar stays at five.
+ */
+export const ADMIN_GROUPS = [
+  { key: "overview", label: "Overview", pages: ["overview"] },
+  { key: "inbox", label: "Inbox", pages: ["inbox"] },
+  { key: "houses", label: "Houses", pages: ["houses"] },
+  { key: "send", label: "Send", pages: ["messages", "notices"] },
+  { key: "records", label: "Records", pages: ["deletions", "audit"] },
+] as const satisfies readonly { key: string; label: string; pages: readonly AdminPage[] }[];
+export type AdminGroup = (typeof ADMIN_GROUPS)[number]["key"];
+
+/** The group a page is in. */
+export function adminGroupOf(page: AdminPage): (typeof ADMIN_GROUPS)[number] {
+  return ADMIN_GROUPS.find((g) => (g.pages as readonly AdminPage[]).includes(page)) ?? ADMIN_GROUPS[0];
+}
+
+/** A page's label and path, by its key. */
+export function adminPage(page: AdminPage): (typeof ADMIN_PAGES)[number] {
+  return ADMIN_PAGES.find((p) => p.key === page) ?? ADMIN_PAGES[0];
+}
 
 export const ADMIN_COPY = {
   owner: "Owner",
