@@ -31,6 +31,7 @@ describe("email sign-in checks", () => {
   it("puts Supabase's refusals into words, never saying whether an address has an account", () => {
     expect(emailAuthProblem({ code: "invalid_credentials" })).toBe(EMAIL_SIGN_IN_COPY.wrongPassword);
     expect(emailAuthProblem({ code: "otp_expired" })).toBe(EMAIL_SIGN_IN_COPY.wrongCode);
+    expect(emailAuthProblem({ code: "insufficient_aal", status: 401 })).toBe(EMAIL_SIGN_IN_COPY.needsAuthenticator);
     expect(emailAuthProblem({ code: "weak_password" })).toBe(EMAIL_SIGN_IN_COPY.weakPassword);
     expect(emailAuthProblem({ code: "signup_disabled" })).toBe(EMAIL_SIGN_IN_COPY.notOpen);
     expect(emailAuthProblem({ status: 429 })).toBe(EMAIL_SIGN_IN_COPY.tooMany);
