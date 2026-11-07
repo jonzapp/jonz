@@ -194,6 +194,7 @@ function NextJohn({
       <View style={styles.buttons}>
         <View style={styles.grow}>
           {item.needsPhoto ? (
+            // eslint-disable-next-line jonz/button-in-row -- Today's one exception (docs/style/controls.md)
             <Button
               icon={CameraIcon}
               label={working ?? NEXT_UP_COPY.takePhoto}
@@ -202,6 +203,7 @@ function NextJohn({
               testID="mark-done"
             />
           ) : (
+            // eslint-disable-next-line jonz/button-in-row -- Today's one exception (docs/style/controls.md)
             <Button icon={CheckIcon} label={working ?? JOHN_COPY.markDone} disabled={tick.busy} onPress={() => void tick.tick()} testID="mark-done" />
           )}
         </View>

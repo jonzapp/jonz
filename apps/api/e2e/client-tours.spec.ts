@@ -70,12 +70,12 @@ async function playTour(page: Page, id: TourId, facts: TourFacts, shotName?: str
   await expect(page.getByTestId("tour")).toHaveCount(0);
 }
 
-/** Opens Help and starts a tour from it: the page's own (the amber button) or one of the guides. */
-async function startFromHelp(page: Page, screen: string, id: TourId, here: boolean) {
+/** Opens Help and starts a tour from it, under Show me around. */
+async function startFromHelp(page: Page, screen: string, id: TourId) {
   await helpButton(page, screen).click();
   const sheet = page.getByTestId("help-sheet");
   await expect(sheet).toBeVisible();
-  await (here ? sheet.getByTestId("help-tour-here") : sheet.getByTestId(`help-tour-${id}`)).click();
+  await sheet.getByTestId(`help-tour-${id}`).click();
 }
 
 test("every tour plays through, each step lit on screen", async ({ context, page }, info) => {
@@ -100,28 +100,38 @@ test("every tour plays through, each step lit on screen", async ({ context, page
   await page.goto("/today");
   await expect(page.getByTestId("today-screen").getByTestId("next-up")).toBeVisible();
 
-  // Help from the question mark: Today's tour first, the rest as guides, and the ways to report.
+  // Help from the question mark: Ask Jonz and the guide first, then Today's tour first, the rest, and the ways to report.
   await helpButton(page, "today-screen").click();
   const sheet = page.getByTestId("help-sheet");
-  await expect(sheet.getByTestId("help-tour-here")).toHaveText(TOURS.today.title);
+  await expect(sheet.getByTestId("help-ask")).toBeVisible();
+  await expect(sheet.getByTestId("help-guide")).toBeVisible();
+  await expect(sheet.getByTestId("help-guides").getByTestId(/^help-tour-/).first()).toContainText(TOURS.today.name);
   await expect(sheet.getByTestId("help-tour-setUp")).toBeVisible();
   await expect(sheet.getByTestId("help-report")).toBeVisible();
   await shoot(page, `help-${wide ? "laptop" : "phone"}`);
-  await sheet.getByTestId("sheet-close").click();
 
-  await startFromHelp(page, "today-screen", "today", true);
+  // Read the guide: the list, then a page in the house's own words, the same Jonz reads.
+  await sheet.getByTestId("help-guide").click();
+  await expect(page.getByTestId("guide")).toBeVisible();
+  await page.getByTestId("guide-today").click();
+  await expect(page.getByTestId("guide-words")).toContainText(TOURS.today.steps[0].body);
+  await expect(page.getByTestId("guide-page").getByTestId("guide-ask")).toBeVisible();
+  await page.goto("/today");
+  await expect(page.getByTestId("today-screen").getByTestId("next-up")).toBeVisible();
+
+  await startFromHelp(page, "today-screen", "today");
   await playTour(page, "today", facts, `today-${wide ? "laptop" : "phone"}`);
 
   await page.getByTestId("tab-week").click();
-  await startFromHelp(page, "week-screen", "week", true);
+  await startFromHelp(page, "week-screen", "week");
   await playTour(page, "week", facts, `week-${wide ? "laptop" : "phone"}`);
 
   await page.getByTestId("tab-house").click();
-  await startFromHelp(page, "house-screen", "house", true);
+  await startFromHelp(page, "house-screen", "house");
   await playTour(page, "house", facts, `house-${wide ? "laptop" : "phone"}`);
 
   // The admins' tour walks across pages: the John list, the rules, Week and Today.
-  await startFromHelp(page, "house-screen", "setUp", false);
+  await startFromHelp(page, "house-screen", "setUp");
   await playTour(page, "setUp", facts, `setup-${wide ? "laptop" : "phone"}`);
 
   // Each is saved as seen on the account, and Help says so.

@@ -1764,7 +1764,7 @@ export const HOUSE_DRAFT_COPY = {
   placeholderChange: "Try “oven every month”",
   message: "Message",
   send: "Send",
-  privacy: "What you write is sent to Anthropic’s Claude, through Vercel, to draft the list.",
+  privacy: "What you write is sent to Anthropic’s Claude, through Vercel, to answer. Only you can see your chats, and they’re kept until you delete them.",
   /** While Jonz is answering. */
   thinking: `${APP_NAME} is thinking…`,
   /**
@@ -1810,19 +1810,65 @@ export const HOUSE_DRAFT_COPY = {
   open: `Ask ${APP_NAME}`,
   greetingList: "What would you like to change? I can add Johns, change them or take some off, and nothing changes until you apply it.",
   placeholderList: "Sam’s moving out…",
-  /** The card's label, and its line: the house's points a week before and after. */
-  changesLabel: "Changes",
+  /** The card's line over its changes: the house's points a week before and after. */
   changesMeta: (before: number, after: number) => (before === after ? `${after} pts a week` : `${before} → ${after} pts a week`),
-  /** Each change's kind, before what it says about the John. */
-  adding: "New",
-  removing: "Taking off",
+  /** The card's three headings, in the order it shows them: what goes, what changes, what's new. */
+  removingHeading: "Taking off",
+  changingHeading: "Changing",
+  /** A group the house has, with new people in it, under Changing: "You and Sam → you, Sam and Ivy". */
+  groupPeople: (before: string, after: string) => `${before} → ${after}`,
+  addingHeading: "Adding",
   apply: (n: number) => (n === 0 ? "Pick at least one change" : n === 1 ? "Apply 1 change" : `Apply ${n} changes`),
   applying: "Applying…",
   applied: (n: number) => (n === 1 ? "1 change made" : `${n} changes made`),
   appliedMeta: "From the next deal",
+  /** For someone who can't change the list (a member, a kid): Jonz answers questions. */
+  greetingAsk: "Ask me about the house: who has what this week, who’s away, how fair shares stand, or what a rule means.",
+  placeholderAsk: "Who’s on bins this week?",
+  /** Claude couldn't be reached to answer a question. */
+  offlineAsk: "I couldn’t answer just now. Try again in a minute.",
   /** In place of the message box, for a house without the Pass. */
   passNeeded: `Changing your list with ${APP_NAME} comes with the House Pass. Setting up a new house stays free.`,
   seePass: "See the House Pass",
+} as const;
+
+/** A share, 0 to 1, as a whole percent, never rounded up to 100 or down to 0. */
+function percent(share: number): number {
+  const n = Math.round(share * 100);
+  return share > 0 && n === 0 ? 1 : share < 1 && n === 100 ? 99 : n;
+}
+
+/**
+ * Ask Jonz's week: the warning over the message box when it's low, the
+ * notice in its place once it's all used, and the usage page (House, setup).
+ * `backOn` is the weekday and time the house's week starts.
+ */
+export const ASK_USAGE_COPY = {
+  title: `Ask ${APP_NAME} usage`,
+  /** Its row on House: what's left of yours. */
+  rowMeta: (left: number) => `${percent(left)}% of yours left this week`,
+  thisWeek: "This week",
+  resets: (backOn: string) => `Resets ${backOn}`,
+  house: "The house",
+  houseNote: (people: number) => (people < 2 ? "Just you" : people === 2 ? "Between the two of you" : `Between all ${people} of you`),
+  you: "You",
+  youNote: "Of your half: nobody can use more than half the house’s",
+  whoUsed: "Who used it",
+  used: (share: number) => `${percent(share)}% used`,
+  /** Under the page, for a house without the Pass. */
+  passMore: "With the House Pass the house gets five times as much.",
+  /** Over the message box once under a quarter is left. */
+  low: (left: number, house: boolean, backOn: string) =>
+    `Only ${percent(left)}% of ${house ? "the house’s" : "your"} Ask ${APP_NAME} left this week. More on ${backOn}.`,
+  lowLabel: "See usage",
+  /** In place of the message box once it's all used. */
+  outHouse: `The house has used this week’s Ask ${APP_NAME}`,
+  outMine: "You’ve used your half this week",
+  outHouseNote: (backOn: string, pass: boolean) =>
+    `Back for everyone ${backOn}.${pass ? "" : " With the House Pass the house gets five times as much."}`,
+  outMineNote: (backOn: string) => `Back ${backOn}. Nobody can use more than half, so the others still have theirs.`,
+  seeUsage: "See usage",
+  getPass: "Get the House Pass",
 } as const;
 
 /**

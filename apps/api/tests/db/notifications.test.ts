@@ -213,7 +213,9 @@ describe("POST /api/push-actions", () => {
     const [body, sig] = good.split(".");
     const forged = Buffer.from(JSON.stringify({ u: bins.user_id, a: crypto.randomUUID(), e: 9e9 })).toString("base64url");
     expect((await action(`${forged}.${sig}`, "done")).status).toBe(401);
-    expect((await action(`${body}.x${sig.slice(1)}`, "done")).status).toBe(401);
+    // Its first letter changed, always to a different one: a signature that already starts with "x" isn't mangled by an "x".
+    const mangled = `${sig[0] === "x" ? "y" : "x"}${sig.slice(1)}`;
+    expect((await action(`${body}.${mangled}`, "done")).status).toBe(401);
     expect((await action("nonsense", "done")).status).toBe(401);
     const old = pushToken({ userId: bins.user_id, assignmentId: bins.id }, new Date(Date.now() - 9 * 24 * HOUR))!;
     expect((await action(old, "done")).status).toBe(401);

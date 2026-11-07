@@ -1,6 +1,6 @@
 import { TOUR_COPY, TOURS, type TourFacts } from '@app/core';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import { Text } from 'react-native';
 
@@ -52,10 +52,10 @@ function Today({ only }: { only?: string[] }) {
   );
 }
 
-async function show(only?: string[], given: TourFacts = facts) {
+async function show(only?: string[], given: TourFacts = facts, canAsk = false) {
   await render(
     <QueryClientProvider client={testQueryClient()}>
-      <TourProvider facts={given}>
+      <TourProvider facts={given} canAsk={canAsk}>
         <Today only={only} />
       </TourProvider>
     </QueryClientProvider>,
@@ -172,11 +172,16 @@ it('lights the spot with the card under it on a phone', async () => {
 });
 
 describe('the Help sheet', () => {
-  it("offers the page's tour first, the others as guides, and the ways to report", async () => {
+  it("leads with asking Jonz and the guide, then the page's tour first, the others, and the ways to report", async () => {
     mockMeta = { tours: { seen: ['week'], offerDone: true } };
-    await show();
+    await show(undefined, facts, true);
     await fireEvent.press(screen.getByText('help'));
-    expect(screen.getByTestId('help-tour-here')).toHaveTextContent(TOURS.today.title);
+    expect(screen.getByTestId('help-ask')).toHaveTextContent(new RegExp(TOUR_COPY.ask));
+    expect(screen.getByTestId('help-guide')).toHaveTextContent(new RegExp(TOUR_COPY.guide));
+    const tours = within(screen.getByTestId('help-guides')).getAllByTestId(/^help-tour-/);
+    expect(tours[0]).toHaveProp('testID', 'help-tour-today');
+    expect(tours[0]).toHaveTextContent(new RegExp(TOURS.today.name));
+    expect(tours[0]).toHaveTextContent(/This page/);
     expect(screen.getByTestId('help-tour-week')).toHaveTextContent(new RegExp(TOUR_COPY.seen));
     expect(screen.getByTestId('help-tour-house')).toBeTruthy();
     // The admins' tour is for admins.
@@ -185,11 +190,18 @@ describe('the Help sheet', () => {
     expect(screen.getByTestId('help-reports')).toBeTruthy();
   });
 
+  it('leaves out Ask Jonz for someone who can’t use it, but keeps the guide', async () => {
+    await show();
+    await fireEvent.press(screen.getByText('help'));
+    expect(screen.queryByTestId('help-ask')).toBeNull();
+    expect(screen.getByTestId('help-guide')).toBeTruthy();
+  });
+
   it("lists the admins' tour for an admin, and no page tour off the tabs", async () => {
     mockPath = '/house/johns';
     await show(undefined, { ...facts, admin: true });
     await fireEvent.press(screen.getByText('help'));
-    expect(screen.queryByTestId('help-tour-here')).toBeNull();
+    expect(screen.queryByText(/This page/)).toBeNull();
     expect(screen.getByTestId('help-tour-setUp')).toBeTruthy();
   });
 
@@ -197,7 +209,7 @@ describe('the Help sheet', () => {
     await show();
     await fireEvent.press(screen.getByText('help'));
     await fireEvent.press(screen.getByTestId('help-report'));
-    expect(screen.queryByTestId('help-tour-here')).toBeNull();
+    expect(screen.queryByTestId('help-guides')).toBeNull();
     expect(screen.getByText('Report a problem')).toBeTruthy();
   });
 });

@@ -1,4 +1,4 @@
-import { okWho, PARENT_OK_COPY, pocketMoney, POCKET_COPY, tickedLine, type BoardItem } from '@app/core';
+import { memberCan, okWho, PARENT_OK_COPY, pocketMoney, POCKET_COPY, tickedLine, type BoardItem } from '@app/core';
 import { ThumbsDownIcon, ThumbsUpIcon } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
@@ -25,7 +25,7 @@ export function AwaitsOk({ item, context }: { item: BoardItem; context: JohnShee
   const move = useMove(context.houseId);
   const toast = useToast();
   const parentIds = context.members.filter((m) => m.role === 'admin').map((m) => m.userId);
-  const parent = context.me?.role === 'admin';
+  const parent = memberCan(context.me, 'ticks.ok');
 
   async function answer(ok: boolean) {
     // A Together John is answered from any of its places: they share one tick.

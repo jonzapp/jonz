@@ -6,6 +6,7 @@ import { Platform, Share, StyleSheet, Text, View } from 'react-native';
 import { resetJoinCode } from '@/api/settings';
 import { Alert } from '@/components/alert';
 import { Button } from '@/components/button';
+import { ButtonRow } from '@/components/button-row';
 import { Sheet } from '@/components/sheet';
 import { SectionLabel } from '@/components/text';
 import { useMove } from '@/hooks/use-move';
@@ -97,30 +98,34 @@ export function InviteSheet({
         </Text>
       </View>
       <View style={styles.buttons}>
-        <Button icon={Share2Icon} label={HOUSE_PAGE_COPY.shareInvite} onPress={() => void share()} testID="share-invite" />
-        {web?.clipboard ? (
-          <Button
-            variant="outline"
-            icon={copied ? CheckIcon : CopyIcon}
-            label={copied ? INVITE_COPY.copied : HOUSE_PAGE_COPY.copyLink}
-            onPress={() => void copy()}
-            testID="copy-link"
-          />
-        ) : null}
+        <ButtonRow stacked>
+          <Button icon={Share2Icon} label={HOUSE_PAGE_COPY.shareInvite} onPress={() => void share()} testID="share-invite" />
+          {web?.clipboard ? (
+            <Button
+              variant="outline"
+              icon={copied ? CheckIcon : CopyIcon}
+              label={copied ? INVITE_COPY.copied : HOUSE_PAGE_COPY.copyLink}
+              onPress={() => void copy()}
+              testID="copy-link"
+            />
+          ) : null}
+        </ButtonRow>
       </View>
       {resetFor ? (
         <View style={styles.reset}>
-          <Button
-            variant="ghost"
-            icon={RefreshCwIcon}
-            label={INVITE_COPY.newCode}
-            disabled={reset.pending}
-            onPress={() => {
-              setCopied(false);
-              void reset.run(() => resetJoinCode(resetFor));
-            }}
-            testID="new-code"
-          />
+          <ButtonRow>
+            <Button
+              variant="ghost"
+              icon={RefreshCwIcon}
+              label={INVITE_COPY.newCode}
+              disabled={reset.pending}
+              onPress={() => {
+                setCopied(false);
+                void reset.run(() => resetJoinCode(resetFor));
+              }}
+              testID="new-code"
+            />
+          </ButtonRow>
           <Text style={[type.meta, { color: colors.mutedForeground }]}>{INVITE_COPY.newCodeNote}</Text>
           {reset.problem ? <Alert message={reset.problem} /> : null}
         </View>

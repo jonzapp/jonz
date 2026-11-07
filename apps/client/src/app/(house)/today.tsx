@@ -2,6 +2,7 @@ import {
   askWhosMovingIn,
   dayLabel,
   localDate,
+  memberCan,
   monthWord,
   movingLine,
   NEXT_UP_COPY,
@@ -83,7 +84,7 @@ function TodayFor({ houseId, userId: me }: { houseId: string; userId: string }) 
       bar={
         <TitleBar
           title={PAGE_TITLE.today}
-          ask={view?.me?.role === 'admin'}
+          ask={userId === me && memberCan(view?.me, 'house.read')}
           right={
             choices.length > 0 ? (
               <PickMenu options={choices} value={userId} onChange={setViewing} label={KIDS_COPY.switchLabel} testID="kid-switch" />

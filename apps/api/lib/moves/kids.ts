@@ -5,6 +5,7 @@ import { type AddKid } from "@app/core";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 import type { Caller, Refusal } from "./disputes";
+import { permitted } from "./permitted";
 
 /** Where a kid's account says it lives: a domain that can't exist, so no email is ever sent there (lib/email.ts). */
 export const KID_DOMAIN = "kids.jonz.invalid";
@@ -19,10 +20,10 @@ export const KID_DOMAIN = "kids.jonz.invalid";
 export async function addKid(caller: Caller, kid: AddKid): Promise<{ userId: string } | Refusal> {
   const { data: mine } = await caller.db
     .from("members")
-    .select("house_id, role, houses(kind)")
+    .select("house_id, houses(kind)")
     .eq("user_id", caller.userId)
     .maybeSingle();
-  if (!mine || mine.role !== "admin" || mine.houses?.kind !== "family") {
+  if (!mine || mine.houses?.kind !== "family" || (await permitted(caller, mine.house_id, "people.kids"))) {
     return { message: "parents_add_kids", code: "42501" };
   }
 
