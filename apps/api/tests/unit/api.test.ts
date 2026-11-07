@@ -81,7 +81,7 @@ describe("refused", () => {
   it("says a refusal in words, with what kind it was", async () => {
     const notYours = refused(request, { message: "own_john", code: "42501" });
     expect(notYours.status).toBe(403);
-    expect(await notYours.json()).toEqual({ error: "You can’t vote on your own John." });
+    expect(await notYours.json()).toEqual({ error: "You can’t vote on your own John, or on a cover of it." });
 
     const notNow = refused(request, { message: "already_disputed", code: "P0001" });
     expect(notNow.status).toBe(409);

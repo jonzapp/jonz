@@ -46,8 +46,8 @@ export const CreateHouse = z.object({
 });
 export type CreateHouse = z.infer<typeof CreateHouse>;
 
-/** How long a tick can be disputed, in hours: 0 is the honour system. */
-export const DISPUTE_HOURS = [0, 6, 12, 24, 48, 72] as const;
+/** How long a tick can be disputed, in hours: at least 12 in a housemates' house (houses_dispute_hours_fair). */
+export const DISPUTE_HOURS = [12, 24, 48, 72] as const;
 
 /** How long past its due time a John stays its owner's before a housemate can cover it (houses.cover_grace_hours). */
 export const COVER_GRACE_HOURS = [0, 1, 3, 6, 12, 24] as const;

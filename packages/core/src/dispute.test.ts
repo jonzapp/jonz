@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { verdict } from "./dispute";
+import { verdict, votersOn } from "./dispute";
 
 const closesAt = new Date("2026-10-09T12:00:00Z");
 const before = new Date("2026-10-09T08:00:00Z");
@@ -36,7 +36,24 @@ describe("verdict", () => {
     expect(verdict({ eligible: 4, uphold: 1, reject: 1, closesAt }, before)).toBeNull();
   });
 
-  it("lets the only other housemate decide alone", () => {
-    expect(verdict({ eligible: 1, uphold: 1, reject: 0, closesAt }, before)).toBe("upheld");
+  it("with one voter, waits for the vote to close before striking", () => {
+    // A house of two: the one who asked can't strike it alone at once; the ticker has until the close to send a photo.
+    expect(verdict({ eligible: 1, uphold: 1, reject: 0, closesAt }, before)).toBeNull();
+    expect(verdict({ eligible: 1, uphold: 1, reject: 0, closesAt }, closesAt)).toBe("upheld");
+    // They took the question back before it closed: the tick stands.
+    expect(verdict({ eligible: 1, uphold: 0, reject: 0, closesAt }, closesAt)).toBe("rejected");
+  });
+});
+
+describe("votersOn", () => {
+  const house = ["ava", "ben", "cal"];
+
+  it("is everyone but whoever ticked it", () => {
+    expect(votersOn(house, { userId: "ava", coveredBy: null })).toEqual(["ben", "cal"]);
+  });
+
+  it("on a cover, leaves out the coverer and whoever's John it was", () => {
+    expect(votersOn(house, { userId: "ava", coveredBy: "ben" })).toEqual(["cal"]);
+    expect(votersOn(["ava", "ben"], { userId: "ava", coveredBy: "ben" })).toEqual([]);
   });
 });

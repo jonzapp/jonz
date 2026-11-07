@@ -327,8 +327,9 @@ characters or more, your choice) to seed, and for sign-in the same
 `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` and `AZURE_CLIENT_ID`/
 `AZURE_CLIENT_SECRET` as production. What stays by hand, once:
 
-1. Create the persistent branch `staging` of `Johns`, from the git branch
-   `staging` (the workflow's first run makes the git branch).
+1. Nothing for the database: "Set up and check" creates the persistent branch
+   `staging` of `Johns` from the git branch `staging` if it isn't there (the
+   workflow's first run makes the git branch).
 2. In `jonz-api`, make `APP_URL` and `STRIPE_WEBHOOK_SECRET` Production only,
    and give Preview the sandbox key and the webhook secret of a second
    sandbox endpoint, `https://api.staging.jonz.app/api/stripe/webhook`.
