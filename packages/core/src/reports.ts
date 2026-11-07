@@ -250,7 +250,7 @@ export const HELP_PAGE: LegalPage = {
     {
       heading: "By email",
       body: [
-        `Email ${SUPPORT_EMAIL} from any address. Say what you were doing and what you saw; a screenshot pasted into the email is fine, but we only read the words.`,
+        `Email ${SUPPORT_EMAIL} from any address. Say what you were doing and what you saw; you can paste in a screenshot, but we only read the words.`,
         "We answer by email. Reply to our answer to keep the conversation going: it stays together with what you first sent.",
         `If you email from the address you sign in with, it shows under Your reports in the app too.`,
       ],

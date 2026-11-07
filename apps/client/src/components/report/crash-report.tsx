@@ -6,6 +6,7 @@ import { StyleSheet, View } from 'react-native';
 import { noteError } from '@/api/report-details';
 import { supabase } from '@/api/supabase';
 import { Button } from '@/components/button';
+import { ButtonRow } from '@/components/button-row';
 import { ReportForm } from '@/components/report/report-form';
 import { Sheet } from '@/components/sheet';
 import { Meta } from '@/components/text';
@@ -38,7 +39,7 @@ export function CrashReport({ error }: { error: Error }) {
   if (!signedIn) return <Meta>{ERROR_COPY.orEmail}</Meta>;
   return (
     <View style={styles.stack}>
-      <View style={styles.start}>
+      <ButtonRow>
         <Button
           label={ERROR_COPY.tell}
           icon={MessageSquareWarningIcon}
@@ -49,7 +50,7 @@ export function CrashReport({ error }: { error: Error }) {
           }}
           testID="crash-report"
         />
-      </View>
+      </ButtonRow>
       <Sheet visible={open} title={ERROR_COPY.tellTitle} onClose={() => setOpen(false)} testID="crash-report-sheet">
         {open ? (
           <ReportForm
@@ -68,5 +69,4 @@ export function CrashReport({ error }: { error: Error }) {
 
 const styles = StyleSheet.create({
   stack: { gap: SPACE.sm },
-  start: { alignItems: 'flex-start' },
 });
