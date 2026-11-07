@@ -1,6 +1,6 @@
 import "server-only";
 
-import { NOTIFY_COPY, type Database } from "@app/core";
+import { NOTIFY_COPY, votersOn, type Database } from "@app/core";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { tickHouse } from "@/lib/engine/tick";
@@ -27,8 +27,9 @@ export interface Refusal {
 
 /**
  * Dispute a housemate's tick. The ticker and everyone who votes hear about
- * it, and the house is ticked: in a house of two the raiser's own vote is
- * already the majority, so it is decided now.
+ * it, and the house is ticked, which decides it at once when the raiser's
+ * vote is already a majority. With only one voter it waits for the vote to
+ * close, so whoever ticked it can answer with a photo (answer_dispute).
  */
 export async function raiseDispute(caller: Caller, assignmentId: string, reason: string, now: Date): Promise<Refusal | null> {
   const { data: disputeId, error } = await caller.db.rpc("raise_dispute", { p_assignment: assignmentId, p_reason: reason });
@@ -48,7 +49,9 @@ export async function raiseDispute(caller: Caller, assignmentId: string, reason:
     const ticker = a.covered_by ?? a.user_id;
     const zone = a.houses?.timezone ?? "UTC";
     const { data: members } = await caller.db.from("members").select("user_id").eq("house_id", a.house_id);
-    const voters = (members ?? []).map((m) => m.user_id).filter((id) => id !== ticker && id !== caller.userId);
+    const voters = votersOn((members ?? []).map((m) => m.user_id), { userId: a.user_id, coveredBy: a.covered_by }).filter(
+      (id) => id !== caller.userId,
+    );
     await notify([ticker], { title: NOTIFY_COPY.disputedTitle(a.name), body: reason, url: "/week", kind: "checks", zone });
     await notify(voters, {
       title: NOTIFY_COPY.voteTitle(a.name),

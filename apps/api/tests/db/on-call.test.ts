@@ -81,7 +81,10 @@ describe("raise_flag", () => {
     expect(again).toBe(first);
 
     expectOk(await holder.db.rpc("mark_done", { p_assignment: first! }));
-    const { data: next } = await flagger.db.rpc("raise_flag", { p_john: bins.id });
+    // Once its window has gone by since that flag (fair checks), a new one opens.
+    await db.from("assignments").update({ flagged_at: new Date(Date.now() - 13 * HOUR).toISOString() }).eq("id", first!);
+    const { data: next, error } = await flagger.db.rpc("raise_flag", { p_john: bins.id });
+    expectOk({ error });
     expect(next).not.toBe(first);
   });
 
@@ -148,11 +151,15 @@ describe("Done it taps", () => {
     return data!;
   }
 
-  it("counts a Done it once: another within ten minutes is refused, while a housemate can still flag it", async () => {
+  it("counts a Done it once: another within ten minutes is refused, and a housemate waits out the window", async () => {
     const { bins, ben, cal } = await benOnCall();
-    expectOk(await doneIt(ben, bins.id));
+    const { data: first } = await doneIt(ben, bins.id);
     expectRule(await doneIt(ben, bins.id), "just_done");
     expect(await flagsOf(bins.id)).toHaveLength(1);
+    // Just done: a housemate can flag it again once its window has gone by since (fair checks).
+    expectRule(await cal.db.rpc("raise_flag", { p_john: bins.id }), "flagged_recently");
+    const earlier = new Date(Date.now() - 13 * HOUR).toISOString();
+    await db.from("assignments").update({ flagged_at: earlier, done_at: earlier }).eq("id", first!);
     expectOk(await cal.db.rpc("raise_flag", { p_john: bins.id }));
     expect(await flagsOf(bins.id)).toHaveLength(2);
   });

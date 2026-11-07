@@ -119,24 +119,24 @@ test("run a house from nothing on the phone", async ({ browser }) => {
   await expect(benToday.getByTestId("next-up-name")).toBeVisible();
   await expect(benToday.getByTestId("my-john")).toHaveCount(0);
 
-  // The house rules: a bigger stake, and no disputes.
+  // The house rules: a bigger stake, and the shortest check window.
   await page.goto("/house/rules");
   const rulesPage = page.getByTestId("rules-screen");
   await rulesPage.getByTestId("edit-rules").click();
   await rulesPage.getByTestId("house-stake").fill("25");
   await pickRow(page, SETUP_COPY.disputes).click();
-  await rulesPage.getByRole("radio", { name: RULES_COPY.disputeHours(0) }).click();
+  await rulesPage.getByRole("radio", { name: RULES_COPY.disputeHours(12) }).click();
   await rulesPage.getByTestId("save-rules").click();
   await expect(page.getByTestId("toast")).toHaveText(SETUP_COPY.saved);
   const { data: rules } = await db.from("houses").select("stake_minor, dispute_hours").eq("id", houseRow!.id).single();
-  expect(rules).toEqual({ stake_minor: 2500, dispute_hours: 0 });
+  expect(rules).toEqual({ stake_minor: 2500, dispute_hours: 12 });
   const stake = SETUP_COPY.perMonth(formatMoney(2500, houseRow!.currency as Currency));
 
   // Ben reads the rules but can't change them, nor the list.
   await benPage.goto("/house/rules");
   const benRules = benPage.getByTestId("rules-screen");
   await expect(benRules.getByTestId("rule").filter({ hasText: SETUP_COPY.stake })).toContainText(stake);
-  await expect(benRules.getByTestId("rule").filter({ hasText: SETUP_COPY.disputes })).toContainText(SETUP_COPY.disputeWindow(0));
+  await expect(benRules.getByTestId("rule").filter({ hasText: SETUP_COPY.disputes })).toContainText(SETUP_COPY.disputeWindow(12));
   // Beside the rules, the admins who can change them.
   await expect(benRules.getByTestId("admins-section").getByTestId("admin-row")).toHaveText(/Ava/);
   await expect(benRules.getByTestId("admins-section").getByTestId("add-admin")).toHaveCount(0);

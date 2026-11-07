@@ -1,11 +1,13 @@
 import { DISPUTE_COPY, JOHN_COPY, NEXT_UP_COPY, PAGE_TITLE, SECTION_LABEL, WEEK_SUMMARY_COPY } from "@app/core";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
+import { tickHouse } from "../lib/engine/tick";
 import { admin, CLIENT_URL, cleanUp, dealtHouseInClient } from "./auth";
 
 // The board in the Expo app's web build: two housemates, one ticks, the
-// other opens it from the board and disputes it in its John sheet, and in a
-// house of two that decides at once. A phone shows a group per person; a
+// other opens it from the board and disputes it in its John sheet. In a
+// house of two the one voter can't strike it alone at once: it's decided
+// when the vote closes (docs/specs/fair-checks.md). A phone shows a group per person; a
 // laptop shows the house as a table. Either way a John is a `week-row`.
 test.use({ baseURL: CLIENT_URL });
 
@@ -17,7 +19,7 @@ function onBoard(page: Page, john: string): Locator {
   return page.getByTestId("week-screen").getByTestId("week-row").filter({ hasText: john }).filter({ visible: true });
 }
 
-test("dispute a housemate's tick from the board, and the house of two decides at once", async ({ browser }) => {
+test("dispute a housemate's tick from the board, and the house of two decides when the vote closes", async ({ browser }) => {
   const avaContext = await browser.newContext();
   const benContext = await browser.newContext();
   const { userId, houseId, housemateIds } = await dealtHouseInClient(
@@ -54,8 +56,8 @@ test("dispute a housemate's tick from the board, and the house of two decides at
   await expect(theirs.getByRole("img", { name: NEXT_UP_COPY.stateLabel.checking })).toBeVisible();
   await expect(theirs.getByTestId("status-checking")).toBeVisible();
 
-  // The row opens its John sheet, where she disputes it. Her vote is already
-  // the majority, so it's struck at once.
+  // The row opens its John sheet, where she disputes it. She's the only
+  // voter, so it waits for the vote to close.
   await theirs.getByRole("button", { name: benJohn }).click();
   const sheet = ava.getByTestId("john-sheet");
   await expect(sheet.getByTestId("john-sheet-name")).toHaveText(benJohn);
@@ -63,10 +65,18 @@ test("dispute a housemate's tick from the board, and the house of two decides at
   await sheet.getByLabel(DISPUTE_COPY.label).fill("Still greasy");
   await sheet.getByRole("button", { name: DISPUTE_COPY.send }).click();
   await expect(sheet.getByRole("button", { name: DISPUTE_COPY.open, exact: true })).toHaveCount(0);
-  await expect(theirs.getByRole("img", { name: NEXT_UP_COPY.stateLabel.checking })).toHaveCount(0);
-  await expect(theirs.getByRole("img", { name: WEEK_SUMMARY_COPY.notDone })).toBeVisible();
+  await expect(theirs.getByRole("img", { name: NEXT_UP_COPY.stateLabel.disputed })).toBeVisible();
+  const { data: open } = await admin().from("disputes").select("id, resolution").eq("house_id", houseId);
+  expect(open).toEqual([{ id: expect.any(String), resolution: null }]);
 
-  // Ben's Today follows, live: his John is open again.
+  // The vote closes with no photo from Ben: the tick is struck.
+  await admin().from("disputes").update({ closes_at: new Date(Date.now() - 1000).toISOString() }).eq("id", open![0].id);
+  await tickHouse(admin(), houseId, new Date());
+  await ava.reload();
+  await expect(onBoard(ava, benJohn).getByRole("img", { name: WEEK_SUMMARY_COPY.notDone })).toBeVisible();
+
+  // Ben's Today follows: his John is open again.
+  await ben.reload();
   await expect(benToday.getByTestId("next-up").getByRole("button", { name: JOHN_COPY.markDone, exact: true })).toBeVisible();
   await expect(benToday.getByTestId("next-up-name")).toHaveText(benJohn);
   const { data: struck } = await admin().from("disputes").select("resolution").eq("house_id", houseId);

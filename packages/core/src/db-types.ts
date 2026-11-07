@@ -467,6 +467,7 @@ export type Database = {
           created_at: string
           house_id: string
           id: string
+          photo_path: string | null
           raised_by: string | null
           reason: string
           resolution: string | null
@@ -479,6 +480,7 @@ export type Database = {
           created_at?: string
           house_id: string
           id?: string
+          photo_path?: string | null
           raised_by?: string | null
           reason: string
           resolution?: string | null
@@ -491,6 +493,7 @@ export type Database = {
           created_at?: string
           house_id?: string
           id?: string
+          photo_path?: string | null
           raised_by?: string | null
           reason?: string
           resolution?: string | null
@@ -2065,6 +2068,10 @@ export type Database = {
       }
       runs_for: {
         Args: { p_house: string; p_kid: string }
+        Returns: boolean
+      }
+      answer_dispute: {
+        Args: { p_dispute: string; p_photo_path: string }
         Returns: boolean
       }
       answer_swap: {
