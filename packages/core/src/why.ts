@@ -210,6 +210,6 @@ function stakesLine(
   }
   if (item.coveredBy) return WHY_COPY.coveredCounts(say.Who(item.coveredBy), say.whose(item.coveredBy));
   if (item.status === "missed") return WHY_COPY.missedCounts(say.who(holder));
-  if (item.status === "excused") return WHY_COPY.excusedCounts(holder === viewerId ? WHY_COPY.yours : say.whose(holder));
+  if (item.status === "excused") return WHY_COPY.excusedCounts;
   return WHY_COPY.counts(say.whose(holder));
 }

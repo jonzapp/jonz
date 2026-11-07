@@ -128,8 +128,8 @@ describe("johnRow", () => {
 
   it("ends a finished John with what it earned, as the green box says done; late keeps its mark, excused has nothing", () => {
     expect(row({ status: "done", points: 3 })).toMatchObject({ tick: "done", tickLabel: "Done", trailing: "points", points: 3 });
-    // Half, rounded down, for a late one.
-    expect(row({ status: "late", points: 3 })).toMatchObject({ tick: "done", tickLabel: "Done late", trailing: "status", points: 1 });
+    // Half, rounded up, for a late one.
+    expect(row({ status: "late", points: 3 })).toMatchObject({ tick: "done", tickLabel: "Done late", trailing: "status", points: 2 });
     expect(row({ status: "excused", points: 3 })).toMatchObject({
       tick: "excused",
       tickLabel: "Skipped",

@@ -10,7 +10,8 @@
  * The breakdown adds up one person's span the way the deal does
  * (deal.ts carryOver, creditedTo): their share comes off, then each John
  * counts for whoever did it. A miss counts for nobody, a cover for the
- * coverer, a skip or an open John for its holder. A John ticked by roll call
+ * coverer, an open John for its holder. A skip counts for nobody, and the
+ * share comes off smaller by its part (deal.ts keptOfWeek). A John ticked by roll call
  * (crew.ts) counts for everyone on it, their share each, helpers included
  * (a "Helped" line); a holder it left off has a miss.
  */
@@ -20,7 +21,7 @@ import { format } from "date-fns";
 import { awayDays, type AwayPeriod } from "./away";
 import { RECORD_COPY } from "./copy";
 import { andNames } from "./crew";
-import { creditedTo } from "./deal";
+import { creditedTo, excusedJohn, keptOfWeek } from "./deal";
 import { dayLabel, monthLabel, weekRange } from "./format";
 import { localDate, monthOf } from "./week";
 
@@ -264,9 +265,17 @@ export function recordBreakdown(
   const johns = input.johns.filter((j) => ids.has(j.week_id)).sort((a, b) => a.due_at.localeCompare(b.due_at));
   // A skipped week counts for nothing, as the deal counts it: no share, no credit.
   const skipped = new Set(weeks.filter((w) => w.skipped_at).map((w) => w.id));
+  // A skipped or excused John comes out of its week: each share of it shrinks by its part.
+  const keptIn = (weekId: string) =>
+    keptOfWeek(
+      input.shares.filter((s) => s.week_id === weekId).reduce((sum, s) => sum + Number(s.share), 0),
+      input.johns
+        .filter((j) => j.week_id === weekId && excusedJohn({ outcome: j.outcome, coveredBy: j.covered_by, excused: j.excused }))
+        .reduce((sum, j) => sum + j.points, 0),
+    );
   const share = input.shares
     .filter((s) => ids.has(s.week_id) && !skipped.has(s.week_id) && s.user_id === userId)
-    .reduce((sum, s) => sum + Number(s.share), 0);
+    .reduce((sum, s) => sum + Number(s.share) * keptIn(s.week_id), 0);
 
   const lines = new Map<BreakdownKey, BreakdownLine>(BREAKDOWN_ORDER.map((key) => [key, { key, points: 0, johns: [] }]));
   lines.get("share")!.points = -round(share);
@@ -282,7 +291,7 @@ export function recordBreakdown(
       credit ??
       (mine
         ? Number(mine.points)
-        : !j.absent_at && creditedTo({ userId: j.user_id, points: j.points, outcome: j.outcome, coveredBy: j.covered_by }) === userId
+        : !j.absent_at && creditedTo({ userId: j.user_id, points: j.points, outcome: j.outcome, coveredBy: j.covered_by, excused: j.excused }) === userId
           ? j.points
           : 0);
     if (!skipped.has(j.week_id)) line.points += earned;
