@@ -53,11 +53,29 @@ export async function sendPasswordReset(email: string, captchaToken?: string): P
 export async function resetPassword(email: string, code: string, password: string): Promise<void> {
   const { error } = await supabase.auth.verifyOtp({ email: cleanEmail(email), token: cleanCode(code), type: 'recovery' });
   if (error) throw error;
-  await setPassword(password);
+  try {
+    await setPassword(password);
+  } catch (reason) {
+    // The right code signed in, but there's no password: don't leave them
+    // signed in as if it worked. Signed out, the form says why.
+    await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
+    throw reason;
+  }
 }
 
-/** Adds or changes the signed-in account's password. */
-export async function setPassword(password: string): Promise<void> {
+/**
+ * Adds or changes the signed-in account's password. An account with an
+ * authenticator app needs its code first (Supabase answers insufficient_aal
+ * without it); a wrong one is `authenticator_wrong`.
+ */
+export async function setPassword(password: string, authenticatorCode?: string): Promise<void> {
+  if (authenticatorCode) {
+    const { data: factors, error: listError } = await supabase.auth.mfa.listFactors();
+    if (listError) throw listError;
+    const factorId = factors.totp.find((factor) => factor.status === 'verified')?.id;
+    const checked = factorId ? await supabase.auth.mfa.challengeAndVerify({ factorId, code: cleanCode(authenticatorCode) }) : null;
+    if (!checked || checked.error) throw Object.assign(new Error('the authenticator code was refused'), { code: 'authenticator_wrong' });
+  }
   const { error } = await supabase.auth.updateUser({ password });
   if (error) throw error;
 }
