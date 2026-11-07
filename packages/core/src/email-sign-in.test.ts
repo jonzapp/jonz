@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { authEmailTemplates } from "./auth-email";
+import { authEmailTemplates, securityNoticeTemplates } from "./auth-email";
 import {
   cleanCode,
   cleanEmail,
@@ -53,6 +53,32 @@ describe("Supabase's emails", () => {
       expect(t.html).toContain("https://jonz.app/email/sign.png");
       expect(t.subject).not.toMatch(/!/);
     }
+  });
+});
+
+describe("Supabase's security notices", () => {
+  const all = securityNoticeTemplates();
+
+  it("tells you about every change to how you sign in", () => {
+    expect(Object.keys(all).sort()).toEqual([
+      "email_changed_notification",
+      "identity_linked_notification",
+      "identity_unlinked_notification",
+      "mfa_factor_enrolled_notification",
+      "mfa_factor_unenrolled_notification",
+      "password_changed_notification",
+    ]);
+  });
+
+  it("says what to do if it wasn't you, in Jonz's look, with no code in it", () => {
+    for (const t of Object.values(all)) {
+      expect(t.html).toContain("support@jonz.app");
+      expect(t.html).toContain("https://jonz.app/email/sign.png");
+      expect(t.html).not.toContain("{{ .Token }}");
+      expect(t.subject).toMatch(/^(Your|An|A) /);
+      expect(t.subject).not.toMatch(/!/);
+    }
+    expect(all.password_changed_notification.html).toContain("https://jonz.app/signin");
   });
 });
 
