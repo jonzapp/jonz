@@ -37,6 +37,7 @@ import {
   tableInputs,
   USUAL_WEEKS,
   verdict,
+  votersOn,
   weekStateOf,
   weekWindow,
   weekWinners,
@@ -505,10 +506,12 @@ async function decideDisputes(db: Db, house: HouseRow, members: readonly MemberR
   );
   let decided = 0;
   for (const d of open) {
-    // Whose tick it is: the coverer's, for a cover. They don't vote on it.
-    const ticker = d.assignments?.covered_by ?? d.assignments?.user_id ?? null;
-    const eligible = members.filter((m) => m.user_id !== ticker).length;
-    const mine = votes.filter((v) => v.dispute_id === d.id && v.user_id !== ticker);
+    // Whose tick it is (the coverer's, for a cover) and, on a cover, whose John it was: neither votes on it.
+    const voters = d.assignments
+      ? votersOn(members.map((m) => m.user_id), { userId: d.assignments.user_id, coveredBy: d.assignments.covered_by })
+      : members.map((m) => m.user_id);
+    const eligible = voters.length;
+    const mine = votes.filter((v) => v.dispute_id === d.id && voters.includes(v.user_id));
     const result = verdict(
       {
         eligible,

@@ -37,6 +37,8 @@ export async function resetHouse(
 ): Promise<{ refusal: Refusal } | { preview: ResetPreview } | { action: string }> {
   const refused = await permitted(caller, request.houseId, "history.reset");
   if (refused) return { refusal: refused };
+  const own = await ownResult(caller, request);
+  if (own) return { refusal: own };
   const { data: me } = await caller.db
     .from("members")
     .select("profiles(display_name)")
@@ -111,4 +113,30 @@ export async function resetHouse(
     }
   }
   return { action: done.action };
+}
+
+/**
+ * An admin can't change their own result (a John of theirs, or one they
+ * covered) or reset their own week: another admin does, or the house
+ * questions it. Someone alone in a house still can, as nobody else could.
+ */
+async function ownResult(caller: Caller, request: ResetRequest): Promise<Refusal | null> {
+  let mine = false;
+  if (request.kind === "result" && request.assignment) {
+    const { data: a } = await caller.db
+      .from("assignments")
+      .select("user_id, covered_by")
+      .eq("id", request.assignment)
+      .eq("house_id", request.houseId)
+      .maybeSingle();
+    mine = !!a && (a.user_id === caller.userId || a.covered_by === caller.userId);
+  } else if (request.kind === "person_week") {
+    mine = request.user === caller.userId;
+  }
+  if (!mine) return null;
+  const { count } = await caller.db
+    .from("members")
+    .select("user_id", { count: "exact", head: true })
+    .eq("house_id", request.houseId);
+  return (count ?? 0) > 1 ? { code: "42501", message: "own_result" } : null;
 }
