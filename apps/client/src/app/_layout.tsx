@@ -119,6 +119,8 @@ function Routes() {
               the house already open, never stacking a second one. */}
           {/* A join link opens for anyone, and signs you in in place. */}
           <Stack.Screen name="join/[joinCode]" />
+          {/* So does an offer's link, signing you in in place too. */}
+          <Stack.Screen name="offer/[offerCode]" />
           {/* So do the Privacy Policy, the Terms, deleting an account, and a link to nowhere. */}
           <Stack.Screen name="privacy" />
           <Stack.Screen name="delete" />

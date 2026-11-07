@@ -7,8 +7,8 @@ each promotion has one link to copy or share, and an Email them button for
 the people it names; the link opens a taped sign like a join link, and in a
 chat it shows the offer on the sign.
 
-PR 1 was the backend; PR 2 the admin page (below). The link's page and its
-picture come next, built on what's here.
+PR 1 was the backend; PR 2 the admin page; PR 3 the link's page and its
+picture in a chat (all below).
 
 ## What a promotion gives
 
@@ -102,6 +102,24 @@ Notices (`ADMIN_GROUPS` in `packages/core/src/owner-admin.ts`).
 
 The form's words, the form as typed made into a `PromotionRequest`, and how a
 promotion reads in the lists are `packages/core/src/owner-promotions.ts`.
+
+## The link
+
+- `/offer/CODE` (`apps/client/src/app/offer/[offerCode].tsx`) opens for
+  anyone, like a join link, on a taped sign: A gift from Jonz, the headline,
+  the sentence, the owner's note, and what each plan costs with it. Signed
+  out, Sign in to use it signs in on the page, so the code survives. Signed
+  in, it says when it's for someone else, when the house has used it or has
+  the Pass, and otherwise Use it: a free Pass is given there and then and
+  opens the Pass page; money off and months free go on to Stripe Checkout
+  with the offer on. Never who else it's for.
+- In a chat, vercel.json sends the link-preview bots to `/api/share/offer/CODE`
+  (`offerPreview` in `packages/core/src/share.ts`): the headline and sentence,
+  and `/api/og/offer/CODE`, the sign with what it gives ("Half off") and "Your
+  House Pass, a gift from Jonz." under it. Stopped, ended or unknown, both say
+  "Offer ended".
+- A free Pass needs nothing from Stripe, so its link works even where
+  checkout isn't open yet.
 
 ## Before it's live
 

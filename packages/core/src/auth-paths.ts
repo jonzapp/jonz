@@ -54,6 +54,7 @@ export function signInPath(next?: string | null): string {
 export function signInReason(next?: string | null): string {
   const target = safeNext(next);
   if (target.startsWith("/join")) return "Sign in to join your house.";
+  if (target.startsWith("/offer")) return "Sign in to use your offer.";
   if (target.startsWith("/stake")) return "Sign in to see who owes what.";
   if (target === DELETE_PATH) return DELETE_COPY.signInReason;
   return "Your house’s Johns are kept with the account you sign in with.";

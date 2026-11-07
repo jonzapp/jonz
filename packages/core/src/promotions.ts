@@ -406,3 +406,40 @@ export const PROMOTION_COPY = {
     `It works when you sign in to ${APP_NAME} as ${email}${until ? `, until ${until}` : ""}.${gift ? " No card needed." : " You pay on the next page and can cancel any time."}`,
   emailWhy: `A gift from ${APP_NAME}, sent only to you.`,
 } as const;
+
+/**
+ * The page an offer's link opens (apps/client/src/app/offer): a taped sign
+ * with what it gives, and Use it for whoever it's for.
+ */
+export const OFFER_PAGE_COPY = {
+  page: "Your offer",
+  giftFrom: `A gift from ${APP_NAME}`,
+  signIn: "Sign in to use it",
+  signedInAs: (email: string) => `Signed in as ${email}.`,
+  noHouse: "Start or join a house first, then open this link again.",
+  startHouse: "Start a house",
+  ended: "This offer has ended",
+  endedBody: "Ask for a new link.",
+  unknown: "This link doesn’t open an offer",
+  unknownBody: "Check it, or ask for a new one.",
+  goHome: `Go to ${APP_NAME}`,
+  goToHouse: "Go to your house",
+  noCard: "No card needed.",
+  payNext: "You pay on the next page and can cancel any time.",
+  using: "Opening…",
+  /** Money off needs Stripe Checkout, which only the web build opens. */
+  webOnly: "Open this link on jonz.app in a browser to use it.",
+} as const;
+
+/** The offer code in an offer link's path, as typed (upper-cased), or null when it can't be one. */
+export function offerCodeIn(path: string): string | null {
+  const match = /^\/offer\/([^/?#]+)\/?$/.exec(path);
+  if (!match) return null;
+  return offerCode(decodeURIComponent(match[1]));
+}
+
+/** A code as a link carries it, upper-cased, or null when it can't be a promotion's. */
+export function offerCode(raw: string): string | null {
+  const code = raw.trim().toUpperCase();
+  return /^[A-Z0-9]{4,20}$/.test(code) ? code : null;
+}

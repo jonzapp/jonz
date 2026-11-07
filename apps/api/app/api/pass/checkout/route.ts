@@ -1,4 +1,4 @@
-import { PASS_COPY, PassCheckoutRequest, PassRedirect } from "@app/core";
+import { PassCheckoutRequest, PassRedirect } from "@app/core";
 
 import { requireUser } from "@/lib/auth";
 import { env } from "@/lib/env";
@@ -11,7 +11,8 @@ import { error, json, preflight } from "@/lib/respond";
  * House Pass on the web, with a promotion's code if they came from its
  * link. Answers Stripe Checkout's URL to send the browser to
  * (lib/moves/pass.ts); the webhook gives the house the Pass once it's paid.
- * 503 while Stripe isn't set up.
+ * 503 while Stripe isn't set up, except for a free Pass's link, which needs
+ * no Stripe.
  */
 export async function POST(request: Request) {
   const auth = await requireUser(request);
@@ -20,12 +21,10 @@ export async function POST(request: Request) {
   const body = PassCheckoutRequest.safeParse(await request.json().catch(() => null));
   if (!body.success) return error(request, 400, "Say which house, and which plan.");
 
-  const stripe = passStripe();
-  if (!stripe) return error(request, 503, PASS_COPY.checkoutClosed);
-
+  // Null while Stripe isn't set up: then only a free Pass's link works (503 otherwise).
   const answer = await startCheckout(
     { db: auth.supabase, userId: auth.user.id, email: auth.user.email },
-    stripe,
+    passStripe(),
     body.data.houseId,
     body.data.plan,
     env.appUrlFor(request),
