@@ -21,16 +21,20 @@ export const EMAIL_SMTP = { host: "smtp.resend.com", port: "465", user: "resend"
 
 /**
  * Supabase's emails as Management API fields, from @app/core's
- * authEmailTemplates(): mailer_subjects_<name> and mailer_templates_<name>_content.
+ * authEmailTemplates() and securityNoticeTemplates(): mailer_subjects_<name>
+ * and mailer_templates_<name>_content. A security notice (<kind>_notification)
+ * is also turned on: mailer_notifications_<kind>_enabled.
  * @param {Record<string, { subject: string; html: string }>} templates
- * @returns {Record<string, string>}
+ * @returns {Record<string, string | boolean>}
  */
 export function mailerFields(templates) {
-  /** @type {Record<string, string>} */
+  /** @type {Record<string, string | boolean>} */
   const body = {};
   for (const [name, t] of Object.entries(templates)) {
     body[`mailer_subjects_${name}`] = t.subject;
     body[`mailer_templates_${name}_content`] = t.html;
+    const notice = name.match(/^(.+)_notification$/);
+    if (notice) body[`mailer_notifications_${notice[1]}_enabled`] = true;
   }
   return body;
 }
@@ -119,7 +123,8 @@ export function authProblems(actual, c, google, templates, captchaSecret = null)
   if (actual.smtp_admin_email !== EMAIL_SMTP.sender(c)) problems.push(`Supabase's emails come from ${actual.smtp_admin_email || "unset"}, not ${EMAIL_SMTP.sender(c)}`);
   if (templates) {
     for (const [key, value] of Object.entries(mailerFields(templates))) {
-      if (actual[key] !== value) problems.push(`${key} isn't Jonz's own email`);
+      if (actual[key] === value) continue;
+      problems.push(key.startsWith("mailer_notifications_") ? `the ${key.slice(21, -8).replace(/_/g, " ")} security email is off` : `${key} isn't Jonz's own email`);
     }
   }
   if (google) {

@@ -44,6 +44,7 @@ export * from "./notify";
 export * from "./outcome";
 export * from "./points";
 export * from "./pass";
+export * from "./promotions";
 export * from "./proof";
 export * from "./schemas";
 export * from "./share";

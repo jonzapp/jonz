@@ -1678,6 +1678,152 @@ export type Database = {
         }
         Relationships: []
       }
+      promotion_people: {
+        Row: {
+          email: string
+          emailed_at: string | null
+          opened_at: string | null
+          promotion_id: string
+          used_at: string | null
+        }
+        Insert: {
+          email: string
+          emailed_at?: string | null
+          opened_at?: string | null
+          promotion_id: string
+          used_at?: string | null
+        }
+        Update: {
+          email?: string
+          emailed_at?: string | null
+          opened_at?: string | null
+          promotion_id?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotion_people_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "promotions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promotion_uses: {
+        Row: {
+          at: string
+          email: string
+          house_id: string | null
+          id: string
+          plan: string | null
+          promotion_id: string
+          session: string | null
+          user_id: string | null
+        }
+        Insert: {
+          at?: string
+          email: string
+          house_id?: string | null
+          id?: string
+          plan?: string | null
+          promotion_id: string
+          session?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          at?: string
+          email?: string
+          house_id?: string | null
+          id?: string
+          plan?: string | null
+          promotion_id?: string
+          session?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotion_uses_house_id_fkey"
+            columns: ["house_id"]
+            isOneToOne: false
+            referencedRelation: "houses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotion_uses_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "promotions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promotions: {
+        Row: {
+          amount_off: Json | null
+          audience: string
+          code: string
+          duration: string | null
+          ends_at: string | null
+          id: string
+          kind: string
+          made_at: string
+          made_by: string | null
+          max_uses: number | null
+          months: number | null
+          name: string
+          note: string | null
+          percent_off: number | null
+          plans: string[]
+          state: string
+          stopped_at: string | null
+          stripe_code: string | null
+          stripe_coupon: string | null
+        }
+        Insert: {
+          amount_off?: Json | null
+          audience: string
+          code: string
+          duration?: string | null
+          ends_at?: string | null
+          id?: string
+          kind: string
+          made_at?: string
+          made_by?: string | null
+          max_uses?: number | null
+          months?: number | null
+          name: string
+          note?: string | null
+          percent_off?: number | null
+          plans?: string[]
+          state?: string
+          stopped_at?: string | null
+          stripe_code?: string | null
+          stripe_coupon?: string | null
+        }
+        Update: {
+          amount_off?: Json | null
+          audience?: string
+          code?: string
+          duration?: string | null
+          ends_at?: string | null
+          id?: string
+          kind?: string
+          made_at?: string
+          made_by?: string | null
+          max_uses?: number | null
+          months?: number | null
+          name?: string
+          note?: string | null
+          percent_off?: number | null
+          plans?: string[]
+          state?: string
+          stopped_at?: string | null
+          stripe_code?: string | null
+          stripe_coupon?: string | null
+        }
+        Relationships: []
+      }
       push_subscriptions: {
         Row: {
           auth: string
@@ -2075,6 +2221,86 @@ export type Database = {
         Args: { p_house: string; p_kind: string }
         Returns: string
       }
+      owner_make_promotion: {
+        Args: {
+          p_amount: Json | null
+          p_audience: string
+          p_code: string
+          p_duration: string | null
+          p_ends_at: string | null
+          p_kind: string
+          p_max_uses: number | null
+          p_months: number | null
+          p_name: string
+          p_note: string | null
+          p_people: string[]
+          p_percent: number | null
+          p_plans: string[]
+        }
+        Returns: string
+      }
+      owner_promotion: { Args: { p_id: string }; Returns: Json }
+      owner_promotion_emails: {
+        Args: { p_id: string }
+        Returns: {
+          email: string
+          name: string
+        }[]
+      }
+      owner_promotions_count: {
+        Args: { p_q?: string; p_state?: string; p_who?: string }
+        Returns: number
+      }
+      owner_promotions_find: {
+        Args: { p_q?: string; p_state?: string; p_who?: string }
+        Returns: {
+          amount_off: Json
+          audience: string
+          code: string
+          duration: string
+          ends_at: string
+          id: string
+          kind: string
+          made_at: string
+          max_uses: number
+          months: number
+          name: string
+          people: number
+          percent_off: number
+          plans: string[]
+          state: string
+          uses: number
+        }[]
+      }
+      owner_promotions_page: {
+        Args: {
+          p_cursor_at?: string
+          p_cursor_id?: string
+          p_limit?: number
+          p_q?: string
+          p_state?: string
+          p_who?: string
+        }
+        Returns: {
+          amount_off: Json
+          audience: string
+          code: string
+          duration: string
+          ends_at: string
+          id: string
+          kind: string
+          made_at: string
+          max_uses: number
+          months: number
+          name: string
+          people: number
+          percent_off: number
+          plans: string[]
+          state: string
+          uses: number
+        }[]
+      }
+      owner_stop_promotion: { Args: { p_id: string }; Returns: string }
       pay_pocket_money: {
         Args: { p_house: string; p_kid: string; p_month: string }
         Returns: number
@@ -2082,6 +2308,30 @@ export type Database = {
       add_kid: {
         Args: { p_parent: string; p_kid: string; p_born: number }
         Returns: string
+      }
+      promotion_opened: {
+        Args: { p_email: string; p_id: string }
+        Returns: undefined
+      }
+      promotion_ready: {
+        Args: { p_code: string; p_coupon: string; p_id: string }
+        Returns: undefined
+      }
+      promotion_state: {
+        Args: { p: Database["public"]["Tables"]["promotions"]["Row"] }
+        Returns: string
+      }
+      promotion_use: {
+        Args: {
+          p_email: string
+          p_house: string | null
+          p_id: string
+          p_plan: string | null
+          p_session: string | null
+          p_strict: boolean
+          p_user: string | null
+        }
+        Returns: boolean
       }
       runs_for: {
         Args: { p_house: string; p_kid: string }

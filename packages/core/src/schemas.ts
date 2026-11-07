@@ -231,7 +231,15 @@ export const SwapAskResponse = z.object({ ok: z.literal(true), offerId: z.uuid()
 export type SwapAskResponse = z.infer<typeof SwapAskResponse>;
 
 /** POST /api/pass/checkout: buy the House Pass for a house, on the web. */
-export const PassCheckoutRequest = z.object({ houseId: z.uuid(), plan: z.enum(PASS_PURCHASES) });
+/**
+ * POST /api/pass/checkout: buy a plan for a house. `offer` is a promotion's
+ * code from its link (docs/specs/promotions.md); a free Pass takes any plan.
+ */
+export const PassCheckoutRequest = z.object({
+  houseId: z.uuid(),
+  plan: z.enum(PASS_PURCHASES),
+  offer: z.string().trim().min(1).max(40).optional(),
+});
 export type PassCheckoutRequest = z.infer<typeof PassCheckoutRequest>;
 
 /** POST /api/pass/manage: the buyer changes or cancels the house's plan. */
