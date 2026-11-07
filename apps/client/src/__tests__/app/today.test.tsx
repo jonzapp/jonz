@@ -539,7 +539,8 @@ describe('Needs you', () => {
       }),
     );
     await open();
-    const section = screen.getByTestId('needs-you');
+    expect(screen.queryByTestId('needs-you')).toBeNull();
+    const section = screen.getByTestId('could-cover');
     const rows = within(section).getAllByTestId('cover-row');
     expect(rows).toHaveLength(1);
     expect(within(rows[0]).getByText('Cover Sam’s Clean the bath')).toBeOnTheScreen();

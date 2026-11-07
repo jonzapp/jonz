@@ -1,4 +1,4 @@
-import { PASS_COPY, PassCheckoutRequest, PassRedirect } from "@app/core";
+import { PASS_COPY, PASS_ENFORCED, PassCheckoutRequest, PassRedirect } from "@app/core";
 
 import { requireUser } from "@/lib/auth";
 import { env } from "@/lib/env";
@@ -10,11 +10,14 @@ import { error, json, preflight } from "@/lib/respond";
  * POST /api/pass/checkout `{ houseId, plan }`: a housemate buys the House
  * Pass on the web. Answers Stripe Checkout's URL to send the browser to
  * (lib/moves/pass.ts); the webhook gives the house the Pass once it's paid.
- * 503 while Stripe isn't set up.
+ * 503 while Stripe isn't set up, and during the beta, while nothing is
+ * locked (PASS_ENFORCED off), so nobody pays for what everyone has.
  */
 export async function POST(request: Request) {
   const auth = await requireUser(request);
   if ("response" in auth) return auth.response;
+
+  if (!PASS_ENFORCED) return error(request, 503, PASS_COPY.betaFree);
 
   const body = PassCheckoutRequest.safeParse(await request.json().catch(() => null));
   if (!body.success) return error(request, 400, "Say which house, and which plan.");

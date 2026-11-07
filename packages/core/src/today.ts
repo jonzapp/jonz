@@ -555,6 +555,9 @@ export function coverOffer(item: BoardItem, people: readonly Person[], viewerId:
   }
   if (item.userId !== viewerId && item.status === "overdue") {
     const opens = coverOpensAt(item.dueAt, rules.coverGraceHours, item.closesAt);
+    if (item.heldUntil && item.heldUntil > now && item.heldUntil >= opens) {
+      return { kind: "soon", text: JOHN_SHEET_COPY.coverHeld(upperFirst(owner), dueInLine(item.heldUntil, now, rules.timezone)) };
+    }
     return { kind: "soon", text: JOHN_SHEET_COPY.coverSoon(upperFirst(owner), dueInLine(opens, now, rules.timezone)) };
   }
   return { kind: null, text: null };

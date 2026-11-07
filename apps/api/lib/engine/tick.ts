@@ -54,6 +54,8 @@ import {
 } from "@app/core";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { tellHouse } from "./tell";
+
 /**
  * The engine: everything the clock does to a house.
  *
@@ -153,6 +155,7 @@ export async function tickHouse(
   summary.weeksClosed = await closeWeeks(db, house, members, now);
   summary.monthsClosed = await closeMonths(db, house, members, now);
   if (notify) summary.reminders = await sendReminders(db, house, now, notify);
+  if (notify) await tellHouse(db, house, members.map((m) => m.user_id), now, notify);
 
   must(await db.from("houses").update({ ticked_at: now.toISOString() }).eq("id", house.id), "ticked_at");
   return summary;

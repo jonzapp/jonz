@@ -299,6 +299,10 @@ export const JOIN_COPY = {
   livesHere: (people: number) =>
     `${people} ${people === 1 ? "person lives" : "people live"} here. Join and you’re dealt Johns from next week.`,
   join: (house: string) => `Join ${house}`,
+  /** Before joining: what the house plays for, so nobody joins a money game without knowing. */
+  stake: (stake: string, late: string, missed: string) =>
+    `This house plays for money: ${stake} a month each, ${late} for a late John and ${missed} for a missed one, split between everyone else.`,
+  noStake: "This house doesn’t play for money: it keeps score in points.",
   joining: "Joining…",
   back: "Back",
 } as const;
@@ -934,9 +938,11 @@ export const NEXT_UP_COPY = {
     covered: "Covered by a housemate",
   },
   needsYou: "Needs you",
+  /** Today's section, under your own Johns and On call: housemates' overdue Johns you could cover. */
+  couldCover: "You could cover",
   /** A row's meta once a housemate covered it: "covered by Glyn". */
   coveredBy: (name: string) => `covered by ${name}`,
-  /** A Needs you row's title for a housemate's overdue John you could cover. */
+  /** A You could cover row's title for a housemate's overdue John. */
   coverOn: (owner: string | null, john: string) => (owner ? `Cover ${owner}’s ${john}` : `Cover ${john}`),
   saysNotDone: (name: string) => `${name} says it’s not done`,
   closes: (when: string) => `closes ${when}`,
@@ -1017,6 +1023,13 @@ export const JOHN_SHEET_COPY = {
     `${owner} hasn’t done it. If you do, it counts as ${owner}’s miss, and you get ${points}${money ? ` and ${money}` : ""}.`,
   /** Overdue, but still inside the house's grace. */
   coverSoon: (owner: string, when: string) => `It’s still ${owner}’s to do. Anyone else can cover it from ${when}.`,
+  /** Overdue, and its owner said they're on it (hold_cover). */
+  coverHeld: (owner: string, when: string) => `${owner} is on it. Anyone else can cover it from ${when}.`,
+  /** On your own overdue John: hold covers off for a while, once. */
+  onIt: "I’m on it",
+  onItMeta: "Covers wait 2 hours",
+  /** Once you've said so: "Covers wait until today 21:40." */
+  held: (when: string) => `You’re on it. Covers wait until ${when}.`,
   /** A settled cover: "Glyn did it for Sam on Tue at 23:04, so it counts as Sam’s miss." */
   coveredSettled: (who: string, owner: string, whose: string, when: string | null) =>
     `${who} did it for ${owner}${when ? ` ${when}` : ""}, so it counts as ${whose} miss.`,
@@ -1936,6 +1949,8 @@ export const PASS_COPY = {
   foundingMeta: "The Pass for life, for houses that start at launch",
   /** Until the stores are set up there is nothing to press. */
   buyingSoon: "Buying opens with the app store release. Until then every house keeps everything.",
+  /** While the extras aren't locked (pass.ts PASS_ENFORCED): nothing is for sale. */
+  betaFree: "Free during the beta: every house keeps everything, and there’s nothing to buy yet.",
   /** Under the plans during the free month, when Stripe can put the first charge off. */
   firstCharge: (day: string) => `Nothing to pay until your free month ends on ${day}.`,
   /** Back from Stripe Checkout, before the webhook has landed. */

@@ -1,4 +1,4 @@
-import { CreateHouse, FreshResponse, houseKind, type HouseKind, humanError, JoinCode } from '@app/core';
+import { CreateHouse, type Currency, FreshResponse, houseKind, type HouseKind, humanError, JoinCode } from '@app/core';
 
 import { apiPost } from './http';
 import { supabase } from './supabase';
@@ -23,12 +23,17 @@ export async function getMyHouse(userId: string): Promise<MyHouse | null> {
   return { id: data.house_id, name: data.houses?.name ?? '', kind: houseKind(data.houses?.kind) };
 }
 
-/** What a join link shows a signed-in visitor: the house's name and size. */
+/** What a join link shows a signed-in visitor: the house's name and size, and what it plays for. */
 export interface Invite {
   id: string;
   name: string;
   members: number;
   kind: HouseKind;
+  currency: Currency;
+  /** The monthly stake and the fines, in minor units; 0 is no money. */
+  stakeMinor: number;
+  lateMinor: number;
+  missedMinor: number;
 }
 
 /** The house a join code opens, or null for a code that matches none (or can't be one). */
@@ -38,7 +43,18 @@ export async function houseByCode(code: string): Promise<Invite | null> {
   const { data, error } = await supabase.rpc('house_by_code', { p_code: parsed.data });
   if (error) throw error;
   const row = data?.[0];
-  return row ? { id: row.id, name: row.name, members: Number(row.members), kind: houseKind(row.kind) } : null;
+  return row
+    ? {
+        id: row.id,
+        name: row.name,
+        members: Number(row.members),
+        kind: houseKind(row.kind),
+        currency: row.currency as Currency,
+        stakeMinor: row.stake_minor,
+        lateMinor: row.late_forfeit_minor,
+        missedMinor: row.missed_forfeit_minor,
+      }
+    : null;
 }
 
 /** Join a house by its code. A refusal throws the sentence to show. */

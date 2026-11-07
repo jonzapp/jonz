@@ -1,0 +1,119 @@
+import {
+  closesAt,
+  coverOpensAt,
+  firstName,
+  rulesOf,
+  TELL_COPY,
+  TOLD_KINDS,
+  tellOf,
+  type Currency,
+  type Database,
+} from "@app/core";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+import type { Notify } from "./tick";
+
+// Telling people, once each, on the clock (docs/specs/tell-people.md): the
+// Wall posts nobody has been told about yet (events.told_at), pushed to
+// whoever each is about, and an owner's overdue John once covering opens on
+// it (assignments.cover_told_at). What each says is @app/core tell.ts.
+
+type Db = SupabaseClient<Database>;
+type HouseRow = Database["public"]["Tables"]["houses"]["Row"];
+
+const DAY = 24 * 3_600_000;
+
+function ok<T>(result: { data: T | null; error: { message: string } | null }, what: string): T {
+  if (result.error) throw new Error(`${what}: ${result.error.message}`);
+  return result.data as T;
+}
+
+/** Push what's new since the last tick. Answers how many pushes it sent. */
+export async function tellHouse(db: Db, house: HouseRow, memberIds: readonly string[], now: Date, notify: Notify): Promise<number> {
+  const zone = rulesOf(house).timezone;
+  const profiles = ok(await db.from("profiles").select("id, display_name").in("id", [...memberIds]), "profiles");
+  const nameOf = (id: string | null) => {
+    const p = profiles.find((x) => x.id === id);
+    return p ? firstName(p.display_name) : "A housemate";
+  };
+  let sent = 0;
+
+  // Posts: everything untold up to now is told now; only a day's worth is pushed.
+  const untold = ok(
+    await db
+      .from("events")
+      .select("id, kind, user_id, assignment_id, data, created_at")
+      .eq("house_id", house.id)
+      .is("told_at", null)
+      .lte("created_at", now.toISOString()),
+    "untold",
+  );
+  for (const e of untold) {
+    if (!(TOLD_KINDS as readonly string[]).includes(e.kind) || Date.parse(e.created_at) < now.getTime() - DAY) continue;
+    const told = tellOf(
+      { kind: e.kind, userId: e.user_id, assignmentId: e.assignment_id, data: (e.data ?? {}) as Record<string, unknown> },
+      nameOf,
+      memberIds,
+      house.currency as Currency,
+    );
+    if (!told) continue;
+    await notify(told.to, { title: told.title, body: told.body, url: told.url, kind: told.kind, zone, tag: told.tag });
+    sent += 1;
+  }
+  if (untold.length) {
+    ok(
+      await db
+        .from("events")
+        .update({ told_at: now.toISOString() })
+        .in(
+          "id",
+          untold.map((e) => e.id),
+        ),
+      "told",
+    );
+  }
+
+  // Covering opens: tell the owner once, while it's still theirs to do.
+  const overdue = ok(
+    await db
+      .from("assignments")
+      .select("id, user_id, name, due_at, flagged_at, closes_at, needs_photo, weeks(ends_at)")
+      .eq("house_id", house.id)
+      .is("outcome", null)
+      .is("done_at", null)
+      .is("covered_by", null)
+      .is("absent_at", null)
+      .is("cover_told_at", null)
+      .eq("excused", false)
+      .lt("due_at", now.toISOString()),
+    "overdue",
+  );
+  const opened: string[] = [];
+  for (const a of overdue) {
+    if (!a.weeks) continue;
+    const dueAt = new Date(a.due_at);
+    const closes = closesAt({
+      dueAt,
+      weekEndsAt: new Date(a.weeks.ends_at),
+      flaggedAt: a.flagged_at ? new Date(a.flagged_at) : null,
+      closesAt: a.closes_at ? new Date(a.closes_at) : null,
+    });
+    if (now < coverOpensAt(dueAt, house.cover_grace_hours, closes) || now >= closes) continue;
+    opened.push(a.id);
+    if (!memberIds.includes(a.user_id)) continue;
+    await notify([a.user_id], {
+      title: TELL_COPY.coverOpenTitle(a.name),
+      body: TELL_COPY.coverOpenBody,
+      url: "/today",
+      kind: "reminders",
+      zone,
+      ...(a.needs_photo ? {} : { act: { assignmentId: a.id } }),
+      tag: `john:${a.id}`,
+    });
+    sent += 1;
+  }
+  if (opened.length) {
+    ok(await db.from("assignments").update({ cover_told_at: now.toISOString() }).in("id", opened), "cover told");
+  }
+  return sent;
+}

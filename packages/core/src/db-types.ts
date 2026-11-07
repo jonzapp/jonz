@@ -182,6 +182,8 @@ export type Database = {
           changed_at: string | null
           changed_by: string | null
           closes_at: string | null
+          cover_held_until: string | null
+          cover_told_at: string | null
           covered_by: string | null
           created_at: string
           dealt: Json | null
@@ -220,6 +222,8 @@ export type Database = {
           changed_at?: string | null
           changed_by?: string | null
           closes_at?: string | null
+          cover_held_until?: string | null
+          cover_told_at?: string | null
           covered_by?: string | null
           created_at?: string
           dealt?: Json | null
@@ -258,6 +262,8 @@ export type Database = {
           changed_at?: string | null
           changed_by?: string | null
           closes_at?: string | null
+          cover_held_until?: string | null
+          cover_told_at?: string | null
           covered_by?: string | null
           created_at?: string
           dealt?: Json | null
@@ -538,6 +544,7 @@ export type Database = {
           house_id: string
           id: string
           kind: string
+          told_at: string | null
           user_id: string | null
         }
         Insert: {
@@ -547,6 +554,7 @@ export type Database = {
           house_id: string
           id?: string
           kind: string
+          told_at?: string | null
           user_id?: string | null
         }
         Update: {
@@ -556,6 +564,7 @@ export type Database = {
           house_id?: string
           id?: string
           kind?: string
+          told_at?: string | null
           user_id?: string | null
         }
         Relationships: [
@@ -2202,13 +2211,18 @@ export type Database = {
           user_id: string
         }[]
       }
+      hold_cover: { Args: { p_assignment: string }; Returns: string }
       house_by_code: {
         Args: { p_code: string }
         Returns: {
+          currency: string
           id: string
           kind: string
+          late_forfeit_minor: number
           members: number
+          missed_forfeit_minor: number
           name: string
+          stake_minor: number
         }[]
       }
       house_history: {

@@ -5,6 +5,7 @@ import { resetWhat } from "./resets";
 import { monthWord } from "./house-page";
 import { formatMoney } from "./money";
 import { pocketMoney } from "./pocket";
+import { ruleChanges } from "./tell";
 
 // The Wall as both apps show it: each event in words, built from the rows
 // they read (events, with their John's photo path and their reactions), so
@@ -202,6 +203,8 @@ export function describeEvent(e: WallEvent, nameOf: (userId: string | null) => s
       const none = skipped > 0 ? ` ${johns(skipped)} skipped, with nobody home to take ${skipped === 1 ? "it" : "them"}.` : "";
       return { icon: "plane", parts: [b(who), t(` ${you ? "are" : "is"} away ${range}.${due}${gave}${none}`)] };
     }
+    case "rules":
+      return { icon: "megaphone", parts: [b(who), t(` changed ${ruleChanges(e.data, currency)}.`)] };
     case "flagged": {
       // Who said it needs doing; null when the clock opened it again after a miss.
       const by = (e.data.by as string | null | undefined) ?? null;

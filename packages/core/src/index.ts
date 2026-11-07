@@ -46,6 +46,7 @@ export * from "./proof";
 export * from "./schemas";
 export * from "./share";
 export * from "./stake";
+export * from "./tell";
 export * from "./staging";
 export * from "./steady";
 export * from "./tours";

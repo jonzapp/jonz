@@ -62,6 +62,14 @@ export function coverJohn(assignmentId: string, photoPath?: string): Promise<voi
   return call(supabase.rpc('cover_john', { p_assignment: assignmentId, p_photo_path: photoPath }));
 }
 
+/**
+ * Say you're on your own overdue John: covers wait 2 hours (or until it
+ * turns missed, if sooner). Once per John.
+ */
+export function holdCover(assignmentId: string): Promise<void> {
+  return call(supabase.rpc('hold_cover', { p_assignment: assignmentId }));
+}
+
 /** Take a cover back while it's still being checked. */
 export function undoCover(assignmentId: string): Promise<void> {
   return call(supabase.rpc('undo_cover', { p_assignment: assignmentId }));

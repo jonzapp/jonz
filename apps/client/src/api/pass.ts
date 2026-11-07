@@ -1,4 +1,4 @@
-import { PassCheckoutRequest, PassManageRequest, PassRedirect, type PassPurchase } from '@app/core';
+import { PASS_ENFORCED, PassCheckoutRequest, PassManageRequest, PassRedirect, type PassPurchase } from '@app/core';
 import { Platform } from 'react-native';
 
 import { apiPost } from './http';
@@ -11,6 +11,15 @@ import { apiPost } from './http';
 /** Whether this build sells the Pass: the web, with EXPO_PUBLIC_PASS_CHECKOUT=on. */
 export function passCheckoutOpen(): boolean {
   return Platform.OS === 'web' && process.env.EXPO_PUBLIC_PASS_CHECKOUT === 'on';
+}
+
+/**
+ * Whether this build sells the Pass now: checkout is on and the extras are
+ * locked. During the beta (PASS_ENFORCED off) everyone has them, so
+ * nothing is for sale; a buyer can still manage a plan they hold.
+ */
+export function passSelling(): boolean {
+  return passCheckoutOpen() && PASS_ENFORCED;
 }
 
 /** Leaves the app for a Stripe page. */
