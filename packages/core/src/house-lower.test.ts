@@ -209,6 +209,9 @@ describe("wallFeedRow", () => {
       "Megan swapped Bins for your Hoover",
     );
     expect(row({ kind: "joined", data: {} }).title).toBe("Megan moved in");
+    // A family's Wall: someone joins the family.
+    expect(row({ kind: "joined", data: {} }, { family: true }).title).toBe("Megan joined the family");
+    expect(row({ kind: "joined", data: {} }, { family: true }).detail).toBe("New in the family");
     expect(row({ kind: "moving_out", data: { on: "2026-11-11" } }).title).toBe("Megan moves out on Wed 11 Nov");
     expect(row({ kind: "moving_out", data: { on: "2026-11-11" } }).detail).toBe("Moving out");
     expect(row({ kind: "moving_out", data: { on: null } }).title).toBe("Megan is staying after all");

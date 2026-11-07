@@ -24,7 +24,7 @@ import { ChevronLeftIcon, ChevronRightIcon, PlaneIcon } from 'lucide-react-nativ
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { cancelAway, setAway } from '@/api/away';
+import { cancelAway, setAway, type Booked } from '@/api/away';
 import type { Housemate } from '@/api/board';
 import { Alert } from '@/components/alert';
 import { Avatar } from '@/components/avatar';
@@ -296,11 +296,11 @@ export function AwayForm({ houseId, today, weekStarts }: { houseId: string; toda
   const [range, setRange] = useState<DateRange>({ from: null, to: null });
   const [picking, setPicking] = useState(false);
   const [note, setNote] = useState('');
-  const [moved, setMoved] = useState<number | null>(null);
+  const [moved, setMoved] = useState<Booked | null>(null);
 
   async function book() {
     if (!range.from || !range.to) return;
-    let count = 0;
+    let count: Booked = { before: 0, handed: 0, skipped: 0 };
     const ok = await move.run(async () => {
       count = await setAway({ from: range.from!, to: range.to!, note });
     });
@@ -338,9 +338,9 @@ export function AwayForm({ houseId, today, weekStarts }: { houseId: string; toda
         testID="away-note"
       />
       {move.problem ? <Alert message={move.problem} /> : null}
-      {moved ? (
+      {moved && moved.before + moved.handed + moved.skipped > 0 ? (
         <View accessibilityLiveRegion="polite">
-          <Meta>{AWAY_COPY.moved(moved)}</Meta>
+          <Meta>{AWAY_COPY.moved(moved.before, moved.handed, moved.skipped)}</Meta>
         </View>
       ) : null}
       <ButtonRow atEdge>

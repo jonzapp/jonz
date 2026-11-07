@@ -27,6 +27,8 @@ beforeEach(() => {
   mockKind = undefined;
 });
 
+const kindName = (kind: 'family' | 'housemates') => `${FAMILY_COPY.kinds[kind]}, ${FAMILY_COPY.kindBody[kind]}`;
+
 it('asks for one thing, the name, with the defaults in a line', async () => {
   await render(<NewHouse />);
   expect(screen.getByRole('header', { name: NEW_HOUSE_COPY.heading })).toBeOnTheScreen();
@@ -36,7 +38,9 @@ it('asks for one thing, the name, with the defaults in a line', async () => {
   expect(defaults).toHaveTextContent(line('CAD 20 a month each', 'weeks start Monday', 'America/St Johns'));
   expect(defaults).toHaveProp('numberOfLines', 2);
   expect(screen.getByTestId('change-defaults')).toHaveTextContent(FRONT_DOOR_COPY.change, { exact: false });
-  expect(screen.queryByRole('radio')).not.toBeOnTheScreen();
+  // Who lives here: Housemates or Family, housemates picked.
+  expect(screen.getByText(FAMILY_COPY.whoLivesHere)).toBeOnTheScreen();
+  expect(screen.getByRole('radio', { name: kindName('housemates') })).toBeChecked();
   const submit = screen.getByRole('button', { name: FRONT_DOOR_COPY.submit });
   expect(submit).toBeDisabled();
   expect(submit).toHaveStyle({ backgroundColor: BIN_NIGHT.light.hivis });
@@ -79,7 +83,7 @@ it('opens the currency and the first day under Change, and the line follows them
   // Done folds them away again, keeping what was chosen.
   await fireEvent.press(screen.getByTestId('change-defaults'));
   expect(screen.getByTestId('change-defaults')).toBeCollapsed();
-  expect(screen.queryByRole('radio')).not.toBeOnTheScreen();
+  expect(screen.queryByRole('radio', { name: 'EUR' })).not.toBeOnTheScreen();
 
   await fireEvent.changeText(screen.getByLabelText(FRONT_DOOR_COPY.name), 'Flat 3');
   await fireEvent.press(screen.getByRole('button', { name: FRONT_DOOR_COPY.submit }));
@@ -103,7 +107,6 @@ it('offers the way in for someone with an invite', async () => {
 
 describe('a family', () => {
   /** A kind's choice says what it means as well as its name. */
-  const kindName = (kind: 'family' | 'housemates') => `${FAMILY_COPY.kinds[kind]}, ${FAMILY_COPY.kindBody[kind]}`;
   beforeEach(() => {
     mockKind = 'family';
   });
@@ -133,10 +136,10 @@ describe('a family', () => {
     expect(create).toHaveBeenCalledWith(expect.objectContaining({ kind: 'housemates' }));
   });
 
-  it("isn't asked about until families open, unless a link asks for one", async () => {
+  it('is asked of everyone, now families are open', async () => {
     mockKind = undefined;
     await render(<NewHouse />);
-    expect(screen.queryByText(FAMILY_COPY.whoLivesHere)).not.toBeOnTheScreen();
+    expect(screen.getByText(FAMILY_COPY.whoLivesHere)).toBeOnTheScreen();
   });
 });
 

@@ -853,9 +853,23 @@ export const AWAY_COPY = {
   notePlaceholder: "Lisbon",
   book: "Book time away",
   booking: "Booking…",
-  /** What booking moved: the one consequence the calendar can't show. */
-  moved: (n: number) =>
-    `${n} of your Johns ${n === 1 ? "falls" : "fall"} due while you’re away, so ${n === 1 ? "it’s" : "they’re"} now due before you go.`,
+  /**
+   * What booking moved, the one consequence the calendar can't show: due
+   * before you go, or, too soon to do first, handed to a housemate (they're
+   * told) or skipped with nobody home.
+   */
+  moved: (n: number, handed = 0, skipped = 0) =>
+    [
+      n > 0
+        ? `${n} of your Johns ${n === 1 ? "falls" : "fall"} due while you’re away, so ${n === 1 ? "it’s" : "they’re"} now due before you go.`
+        : "",
+      handed > 0
+        ? `${handed} ${handed === 1 ? "was" : "were"} due too soon to do first, so ${handed === 1 ? "it’s gone" : "they’ve gone"} to a housemate, who’s been told. Cancel and ${handed === 1 ? "it comes" : "they come"} back to you.`
+        : "",
+      skipped > 0 ? `${skipped} ${skipped === 1 ? "was" : "were"} skipped, with nobody home to take ${skipped === 1 ? "it" : "them"}.` : "",
+    ]
+      .filter(Boolean)
+      .join(" "),
   back: "I’m back",
   cancel: "Cancel",
   nextMonth: "Next month",
@@ -886,6 +900,9 @@ export const AWAY_COPY = {
   backOn: (day: string) => `Back ${day}`,
   dayBefore: "Day before",
   dayAfter: "Day after",
+  /** The push to whoever a trip hands a John to: "Bathroom is yours now". */
+  handedTitle: (john: string) => `${john} is yours now`,
+  handedBody: (name: string, due: string) => `${name} is away, so it came to you. Due ${due}.`,
 } as const;
 
 /** Today: Next up, Needs you, the rest of your week and the standing line; a John's row, here and on Week. */
@@ -1561,6 +1578,9 @@ export const WALL_FEED_COPY = {
   dueBefore: (n: number, you: boolean) =>
     `${n} ${n === 1 ? "John" : "Johns"} due before ${you ? "you go" : "they go"}`,
   newHousemate: "New housemate",
+  /** In a family: "Maya joined the family", "New in the family". */
+  joinedFamily: (who: string) => `${who} joined the family`,
+  newInFamily: "New in the family",
   // An on-call John someone flagged: who flagged it, for whom, and how it went.
   flagged: (by: string, john: string, whom: string) => `${by} flagged ${john} for ${whom}`,
   flaggedOwn: (who: string, john: string) => `${who} flagged ${john}`,
@@ -1976,6 +1996,29 @@ export const PASS_COPY = {
   /** Where a locked extra was, once the Pass is enforced. */
   locked: (feature: string) => `${feature} comes with the House Pass`,
   unlock: "See the House Pass",
+} as const;
+
+/**
+ * The Pass in a family (family step 5): the same Pass and price, called the
+ * Family Pass, with the extras a family uses. Only a parent buys it.
+ */
+export const FAMILY_PASS_COPY = {
+  title: "Family Pass",
+  sectionNote: "For the whole family",
+  lead: "One Pass covers the whole family. Only a parent can buy it, and every kid gets the extras.",
+  foundingLead: `Your family has the Family Pass for life, as one of the first houses on ${APP_NAME}. Thank you.`,
+  includes: "What the family gets",
+  pocket: "Pocket money and Pay day",
+  pocketMeta: "Each OK’d John earns, paid out at month end",
+  kids: "Kid profiles",
+  kidsMeta: "For kids without a phone, no sign-in needed",
+  photos: "Photos to check",
+  photosMeta: "See the tidy room before you say OK",
+  free: "Free for every family, always: the deal, ticks, OKs, reminders and time away. No ads.",
+  bought: "Thanks for buying the Family Pass. It shows here in a moment.",
+  parentsOnly: "Only a parent can buy the Family Pass.",
+  locked: (feature: string) => `${feature} comes with the Family Pass`,
+  unlock: "See the Family Pass",
 } as const;
 
 /** The track record, opened from Week: the grid, and one person's breakdown. */

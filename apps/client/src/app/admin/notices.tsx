@@ -35,6 +35,7 @@ import { TitleBar } from '@/components/title-bar';
 import { useToast } from '@/components/toast';
 import { useNow } from '@/hooks/use-now';
 import { SPACE } from '@/theme';
+import { AdminSwitch } from '@/components/admin/admin-shell';
 
 const KIND_LABEL: Record<NoticeKind, string> = { status: 'Status', offer: 'Offer', news: 'News' };
 const STATE_LABEL: Record<NoticeState, string> = { live: 'Showing', scheduled: 'Starting later', ended: 'Ended' };
@@ -72,6 +73,7 @@ export default function NoticesPage() {
   });
   return (
     <Screen spreads bar={<TitleBar title="Notices" />} onNearEnd={busy.onNearEnd} testID="admin-notices">
+      <AdminSwitch page="notices" />
       <Notices busy={busy} chosen={chosen} choose={setChosen} />
     </Screen>
   );

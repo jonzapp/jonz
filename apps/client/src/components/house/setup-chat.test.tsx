@@ -21,6 +21,7 @@ jest.mock('@/api/draft', () => ({
 jest.mock('@/api/ask-chats', () => ({ keepChat: jest.fn(async () => 'chat-1') }));
 jest.mock('@/api/history', () => ({ undoAction: jest.fn() }));
 jest.mock('@/api/resets', () => ({ applyReset: jest.fn() }));
+jest.mock('@/api/away', () => ({ setAway: jest.fn(), cancelAway: jest.fn() }));
 jest.mock('@/api/settings', () => ({ saveDealMode: jest.fn() }));
 jest.mock('@/api/supabase', () => ({ supabase: {} }));
 jest.mock('expo-router', () => ({ ...jest.requireActual('expo-router'), router: { dismissTo: jest.fn() } }));
@@ -484,5 +485,17 @@ describe('kept chats', () => {
     await fireEvent.press(screen.getByTestId('describe-keep'));
     await screen.findByTestId('chat-done');
     expect(kept).not.toHaveBeenCalled();
+  });
+
+  it('says when there is something in the chat, so New chat has something to clear', async () => {
+    const talked = jest.fn();
+    await render(<SetupChat houseId="h1" rules={RULES} johns={[]} groups={[]} people={people} me={ME} passOpen onTalked={talked} />, {
+      wrapper: House,
+    });
+    expect(talked).toHaveBeenLastCalledWith(false);
+    await fireEvent.changeText(screen.getByTestId('chat-input'), 'Two bathrooms');
+    expect(talked).toHaveBeenLastCalledWith(true);
+    await fireEvent.changeText(screen.getByTestId('chat-input'), '  ');
+    expect(talked).toHaveBeenLastCalledWith(false);
   });
 });

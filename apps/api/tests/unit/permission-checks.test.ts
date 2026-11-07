@@ -21,6 +21,7 @@ const HOUSE_RULES: Record<string, string> = {
   set_member_role: "the last admin can't step down, and a role must be admin or member",
   pocket_earn: "parents don't earn pocket money",
   undo_action: "undoing a role change puts the old role back",
+  owner_house: "the owner's read of a house lists its admins first; who may read it is is_owner()",
 };
 
 /** The live definition of every public function and table rule, by name. */
