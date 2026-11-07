@@ -20,6 +20,7 @@ import {
   signUpWithEmail,
 } from '@/api/email-auth';
 import { Alert } from '@/components/alert';
+import { BotCheck } from '@/components/bot-check';
 import { Button } from '@/components/button';
 import { CodeBoxes } from '@/components/code-boxes';
 import { Field } from '@/components/field';
@@ -52,6 +53,9 @@ export function EmailSignIn() {
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<Problem | null>(null);
   const [note, setNote] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  /** Each try spends the bot check's token; a new round makes another. */
+  const [round, setRound] = useState(0);
 
   function go(next: EmailStep) {
     setStep(next);
@@ -75,7 +79,8 @@ export function EmailSignIn() {
       const message = emailAuthProblem(reason as { code?: string; status?: number });
       // An unconfirmed account gets a fresh code, and the code step.
       if ((reason as { code?: string }).code === 'email_not_confirmed') {
-        await resendSignUpCode(email).catch(() => undefined);
+        // With a fresh bot-check token, if there is one yet; else the code step's Send again does it.
+        if (token) await resendSignUpCode(email, token).catch(() => undefined);
         setStep('confirm');
       }
       // A wrong or old code shows on the code boxes themselves.
@@ -83,6 +88,20 @@ export function EmailSignIn() {
     } finally {
       setBusy(false);
     }
+  }
+
+  /**
+   * Runs a step Supabase checks for bots (signing in, a new account, sending
+   * a code): it needs Cloudflare's token, which works once, so the check
+   * starts again straight away.
+   */
+  function checked(checks: (Problem | null)[], act: (captcha: string) => Promise<void>) {
+    return run([...checks, token ? null : { message: COPY.notChecked }], async () => {
+      const captcha = token as string;
+      setToken(null);
+      setRound((n) => n + 1);
+      await act(captcha);
+    });
   }
 
   const nameCheck = (): Problem | null => {
@@ -172,15 +191,15 @@ export function EmailSignIn() {
       testID="email-password"
     />
   );
-  const signIn = () => run([emailCheck(), password ? null : passwordCheck()], () => signInWithEmail(email, password));
+  const signIn = () => checked([emailCheck(), password ? null : passwordCheck()], (captcha) => signInWithEmail(email, password, captcha));
   const signUp = () =>
-    run([nameCheck(), emailCheck(), passwordCheck(), agreeCheck()], async () => {
-      if ((await signUpWithEmail(email, password, name)) === 'code-sent') go('confirm');
+    checked([nameCheck(), emailCheck(), passwordCheck(), agreeCheck()], async (captcha) => {
+      if ((await signUpWithEmail(email, password, name, captcha)) === 'code-sent') go('confirm');
     });
   const confirm = () => run([codeCheck()], () => confirmEmail(email, code));
   const forgot = () =>
-    run([emailCheck()], async () => {
-      await sendPasswordReset(email);
+    checked([emailCheck()], async (captcha) => {
+      await sendPasswordReset(email, captcha);
       go('reset');
     });
   const reset = () => run([codeCheck(), passwordCheck()], () => resetPassword(email, code, password));
@@ -260,8 +279,8 @@ export function EmailSignIn() {
             label={COPY.resend}
             align="start"
             disabled={busy}
-            onPress={() => void run([], async () => {
-              await resendSignUpCode(email);
+            onPress={() => void checked([], async (captcha) => {
+              await resendSignUpCode(email, captcha);
               setNote(COPY.resent);
             })}
           />
@@ -277,7 +296,7 @@ export function EmailSignIn() {
           <Button
             label={busy ? COPY.sendResetBusy : COPY.sendReset}
             disabled={busy}
-onPress={() => void forgot()}
+            onPress={() => void forgot()}
             testID="email-forgot-button"
           />
           <TextButton label={COPY.back} align="start" onPress={() => go('sign-in')} disabled={busy} />
@@ -312,14 +331,15 @@ onPress={() => void forgot()}
             label={COPY.resend}
             align="start"
             disabled={busy}
-            onPress={() => void run([], async () => {
-              await sendPasswordReset(email);
+            onPress={() => void checked([], async (captcha) => {
+              await sendPasswordReset(email, captcha);
               setNote(COPY.resent);
             })}
           />
           <TextButton label={COPY.back} align="start" onPress={() => go('sign-in')} disabled={busy} />
         </SignInForm>
       ) : null}
+      <BotCheck round={round} onToken={setToken} />
     </View>
   );
 }
