@@ -192,6 +192,8 @@ export type Database = {
           flagged_at: string | null
           flagged_by: string | null
           group_name: string | null
+          handed_by_away: string | null
+          handed_from: string | null
           house_id: string
           id: string
           job_id: string | null
@@ -228,6 +230,8 @@ export type Database = {
           flagged_at?: string | null
           flagged_by?: string | null
           group_name?: string | null
+          handed_by_away?: string | null
+          handed_from?: string | null
           house_id: string
           id?: string
           job_id?: string | null
@@ -264,6 +268,8 @@ export type Database = {
           flagged_at?: string | null
           flagged_by?: string | null
           group_name?: string | null
+          handed_by_away?: string | null
+          handed_from?: string | null
           house_id?: string
           id?: string
           job_id?: string | null

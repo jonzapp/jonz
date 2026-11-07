@@ -819,9 +819,23 @@ export const AWAY_COPY = {
   notePlaceholder: "Lisbon",
   book: "Book time away",
   booking: "Booking…",
-  /** What booking moved: the one consequence the calendar can't show. */
-  moved: (n: number) =>
-    `${n} of your Johns ${n === 1 ? "falls" : "fall"} due while you’re away, so ${n === 1 ? "it’s" : "they’re"} now due before you go.`,
+  /**
+   * What booking moved, the one consequence the calendar can't show: due
+   * before you go, or, too soon to do first, handed to a housemate (they're
+   * told) or skipped with nobody home.
+   */
+  moved: (n: number, handed = 0, skipped = 0) =>
+    [
+      n > 0
+        ? `${n} of your Johns ${n === 1 ? "falls" : "fall"} due while you’re away, so ${n === 1 ? "it’s" : "they’re"} now due before you go.`
+        : "",
+      handed > 0
+        ? `${handed} ${handed === 1 ? "was" : "were"} due too soon to do first, so ${handed === 1 ? "it’s gone" : "they’ve gone"} to a housemate, who’s been told. Cancel and ${handed === 1 ? "it comes" : "they come"} back to you.`
+        : "",
+      skipped > 0 ? `${skipped} ${skipped === 1 ? "was" : "were"} skipped, with nobody home to take ${skipped === 1 ? "it" : "them"}.` : "",
+    ]
+      .filter(Boolean)
+      .join(" "),
   back: "I’m back",
   cancel: "Cancel",
   nextMonth: "Next month",
@@ -852,6 +866,9 @@ export const AWAY_COPY = {
   backOn: (day: string) => `Back ${day}`,
   dayBefore: "Day before",
   dayAfter: "Day after",
+  /** The push to whoever a trip hands a John to: "Bathroom is yours now". */
+  handedTitle: (john: string) => `${john} is yours now`,
+  handedBody: (name: string, due: string) => `${name} is away, so it came to you. Due ${due}.`,
 } as const;
 
 /** Today: Next up, Needs you, the rest of your week and the standing line; a John's row, here and on Week. */
