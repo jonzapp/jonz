@@ -187,6 +187,17 @@ export const KIND_SWITCH_COPY = {
   toHousematesConfirm: "Make it housemates",
   done: { family: "It’s a family now.", housemates: "It’s housemates again.", kept: "Kept as housemates." },
   later: (on: string) => `It becomes a family on ${on}.`,
+  /** The Wall. */
+  wall: {
+    later: (who: string, on: string) => `${who} made the house a family from ${on}`,
+    kept: (who: string) => `${who} kept the house as housemates`,
+    housemates: (who: string) => `${who} made the house housemates again`,
+    family: (who: string) => `${who} made the house a family`,
+    familyNow: "The house is a family now",
+    laterDetail: "Once this month is settled up",
+    familyDetail: "Parents say OK, and kids earn pocket money",
+    housematesDetail: "Everyone checks each other’s ticks again",
+  },
 } as const;
 
 /**

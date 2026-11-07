@@ -99,6 +99,19 @@ describe("wallFeedRow", () => {
     expect(r.who).toBe("You");
   });
 
+  it("says each step of switching the house to a family, and back", () => {
+    const r = (data: Record<string, unknown>, user_id: string | null = "megan") => row({ kind: "kind_changed", user_id, data });
+    expect(r({ kind: "family", on: "2026-12-01" }).title).toBe("Megan made the house a family from Tue 1 Dec");
+    expect(r({ kind: "family", on: "2026-12-01" }).detail).toBe("Once this month is settled up");
+    expect(r({ kind: "family", on: "2026-12-01" }).icon).toBe("home");
+    expect(r({ kind: "housemates", kept: true }).title).toBe("Megan kept the house as housemates");
+    expect(r({ kind: "housemates" }).title).toBe("Megan made the house housemates again");
+    expect(r({ kind: "family" }).title).toBe("Megan made the house a family");
+    const clock = r({ kind: "family" }, null);
+    expect(clock.title).toBe("The house is a family now");
+    expect(clock.actor).toBeNull();
+  });
+
   it("tells where a tick has got to from this week's board", () => {
     const status = (s: string) => () => s as never;
     expect(row({}, { statusOf: status("checking") }).detail).toBe(WALL_FEED_COPY.checking);
