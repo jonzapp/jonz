@@ -24,6 +24,7 @@ export * from "./family";
 export * from "./pocket";
 export * from "./kids";
 export * from "./kind-switch";
+export * from "./family-board";
 export * from "./format";
 export * from "./history";
 export * from "./legal";

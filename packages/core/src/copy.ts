@@ -265,6 +265,28 @@ export const KIDS_COPY = {
   },
 } as const;
 
+/**
+ * The board, a family's shared screen for the kitchen tablet
+ * (docs/specs/family-houses.md, "The board").
+ */
+export const BOARD_COPY = {
+  title: "The board",
+  /** House's row to it, for a parent. */
+  row: "The board",
+  rowMeta: "For the kitchen tablet: kids tick their own",
+  /** Under the title. */
+  intro: "Leave it open on the kitchen tablet. Kids tick their own Johns, and a parent says OK.",
+  note: "Ticks here wait for a parent’s OK. Tap a John to OK it or say Not yet.",
+  /** A kid's column: "£4.50 earned in November". */
+  earned: (money: string, month: string) => `${money} earned in ${month}`,
+  nothing: "Nothing to do today.",
+  tick: (kid: string, john: string) => `Tick ${john} for ${kid}`,
+  waits: "Waits for a parent’s OK",
+  photo: "Needs a photo: tick it from their Today",
+  noKids: "No kids yet. Invite them, or add a child from House.",
+  parentsOnly: "The board is for a parent to open on a shared screen.",
+} as const;
+
 /** Pocket money and Pay day, family step 3: what Johns earn, the month card and Paid. */
 export const POCKET_COPY = {
   /** After a kid's John's due time: "earns 50p". */
