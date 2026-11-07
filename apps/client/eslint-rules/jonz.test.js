@@ -66,6 +66,31 @@ describe('sends buttons side by side to a ButtonRow', () => {
   });
 });
 
+describe('places every button with a ButtonRow', () => {
+  tester.run('button-in-row', jonz.rules['button-in-row'], {
+    valid: [
+      'const x = <ButtonRow><Button label="Deal week 1" /></ButtonRow>;',
+      'const x = <View><ButtonRow stacked>{a ? <Button label="a" /> : null}<Button label="b" /></ButtonRow></View>;',
+      // An icon alone is a square wherever it sits.
+      'const x = <View><Button label="Photo" iconOnly /></View>;',
+      // Handed to a component that places it (EmptyState's action, a row's trailing slot).
+      'const x = <EmptyState action={<Button label="a" />} />;',
+      'const x = <Sheet><Button label="a" /></Sheet>;',
+    ],
+    invalid: [
+      {
+        // Week's Deal button before: at its own width on a phone.
+        code: "const x = <View style={styles.start}><Button label=\"Deal week 1\" /></View>;",
+        errors: [{ messageId: 'loose' }],
+      },
+      {
+        code: 'const x = <View>{a ? <Button label="a" /> : null}<>{b && <Button label="b" />}</></View>;',
+        errors: [{ messageId: 'loose' }, { messageId: 'loose' }],
+      },
+    ],
+  });
+});
+
 describe('keeps hand-made pressables out of screens', () => {
   tester.run('no-pressable-in-screens', jonz.rules['no-pressable-in-screens'], {
     valid: [{ code: "import { Pressable } from 'react-native';", filename: '/repo/apps/client/src/components/row.tsx' }],

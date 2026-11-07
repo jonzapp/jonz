@@ -8,6 +8,7 @@ import { deleteGroup, saveGroup } from '@/api/settings';
 import { Alert } from '@/components/alert';
 import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/button';
+import { ButtonRow } from '@/components/button-row';
 import { Field } from '@/components/field';
 import { Group, GroupItem } from '@/components/group';
 import { Row, RowIcon } from '@/components/row';
@@ -150,15 +151,17 @@ function GroupForm({
       </Section>
       <View style={styles.actions}>
         {move.problem ? <Alert message={move.problem} /> : null}
-        <Button
-          label={move.pending ? GROUPS_COPY.saving : initial.id ? GROUPS_COPY.save : GROUPS_COPY.create}
-          disabled={move.pending || picked.size === 0 || !name.trim()}
-          onPress={() => void save()}
-          testID="save-group"
-        />
-        {initial.id ? (
-          <Button variant="hazard" icon={Trash2Icon} label={GROUPS_COPY.remove} disabled={move.pending} onPress={() => void remove()} />
-        ) : null}
+        <ButtonRow stacked>
+          <Button
+            label={move.pending ? GROUPS_COPY.saving : initial.id ? GROUPS_COPY.save : GROUPS_COPY.create}
+            disabled={move.pending || picked.size === 0 || !name.trim()}
+            onPress={() => void save()}
+            testID="save-group"
+          />
+          {initial.id ? (
+            <Button variant="hazard" icon={Trash2Icon} label={GROUPS_COPY.remove} disabled={move.pending} onPress={() => void remove()} />
+          ) : null}
+        </ButtonRow>
       </View>
     </View>
   );

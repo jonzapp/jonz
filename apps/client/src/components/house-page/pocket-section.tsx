@@ -7,6 +7,7 @@ import { payPocketMoney } from '@/api/pocket';
 import { Alert } from '@/components/alert';
 import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/button';
+import { ButtonRow } from '@/components/button-row';
 import { GroupItem, useRowInset } from '@/components/group';
 import { Reading, ReadFailed } from '@/components/read-state';
 import { Row } from '@/components/row';
@@ -78,20 +79,22 @@ function PayDay({ houseId, row, fullName }: { houseId: string; row: PayRow; full
       <Row leading={<Avatar name={fullName} userId={row.userId} />} title={row.title} titleLines={2} meta={row.meta} />
       {row.action ? (
         <View style={[styles.action, { paddingHorizontal: inset }]}>
-          <Button
-            variant={row.primary ? 'primary' : 'outline'}
-            icon={CheckIcon}
-            label={row.action}
-            disabled={move.pending}
-            onPress={() =>
-              void move
-                .run(() => payPocketMoney(houseId, row.userId, row.month))
-                .then((done) => {
-                  if (done) toasts?.show(`${row.action}.`);
-                })
-            }
-            testID="paid"
-          />
+          <ButtonRow>
+            <Button
+              variant={row.primary ? 'primary' : 'outline'}
+              icon={CheckIcon}
+              label={row.action}
+              disabled={move.pending}
+              onPress={() =>
+                void move
+                  .run(() => payPocketMoney(houseId, row.userId, row.month))
+                  .then((done) => {
+                    if (done) toasts?.show(`${row.action}.`);
+                  })
+              }
+              testID="paid"
+            />
+          </ButtonRow>
         </View>
       ) : null}
       {move.problem ? (

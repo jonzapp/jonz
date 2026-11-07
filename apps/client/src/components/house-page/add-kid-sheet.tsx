@@ -5,6 +5,7 @@ import { StyleSheet, View } from 'react-native';
 import { addKid } from '@/api/kids';
 import { Alert } from '@/components/alert';
 import { Button } from '@/components/button';
+import { ButtonRow } from '@/components/button-row';
 import { Field } from '@/components/field';
 import { Group, GroupItem } from '@/components/group';
 import { Sheet } from '@/components/sheet';
@@ -67,7 +68,9 @@ function AddKidForm({ houseId, onDone }: { houseId: string; onDone: () => void }
       </Group>
       <View style={styles.actions}>
         {move.problem ? <Alert message={move.problem} /> : null}
-        <Button label={KIDS_COPY.submit} disabled={move.pending} onPress={() => void save()} testID="add-kid" />
+        <ButtonRow>
+          <Button label={KIDS_COPY.submit} disabled={move.pending} onPress={() => void save()} testID="add-kid" />
+        </ButtonRow>
       </View>
     </View>
   );

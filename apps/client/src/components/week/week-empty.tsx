@@ -2,6 +2,7 @@ import { NEXT_UP_COPY, NOT_DEALT_COPY, setupChecklist, WEEK_SUMMARY_COPY } from 
 import { CalendarDaysIcon, ListTodoIcon, ShuffleIcon } from 'lucide-react-native';
 
 import { Button } from '@/components/button';
+import { ButtonRow } from '@/components/button-row';
 import { EmptyState } from '@/components/empty-state';
 import { DealButton } from '@/components/house/deal-button';
 
@@ -44,7 +45,9 @@ export function WeekEmpty({
   }
   const steps = setupChecklist(johns, memberCount);
   const action = !isAdmin ? undefined : steps.johnCount === 0 ? (
-    <Button variant="outline" icon={ListTodoIcon} label={NEXT_UP_COPY.addJohns} href="/house/johns" testID="add-johns" />
+    <ButtonRow atEdge>
+      <Button variant="outline" icon={ListTodoIcon} label={NEXT_UP_COPY.addJohns} href="/house/johns" testID="add-johns" />
+    </ButtonRow>
   ) : (
     <DealButton houseId={houseId} label={NEXT_UP_COPY.dealWeek1} variant={steps.ready ? 'primary' : 'outline'} />
   );

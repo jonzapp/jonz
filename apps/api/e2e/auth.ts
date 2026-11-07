@@ -174,6 +174,35 @@ export async function dealtHouseInClient(
 }
 
 /**
+ * Someone signed in to the web build in a house of their own that hasn't
+ * been dealt yet, with these Johns on its list: Week and Today offer them
+ * "Deal week 1".
+ */
+export async function undealtHouseInClient(
+  context: BrowserContext,
+  name: string,
+  houseName: string,
+  johns: string[],
+): Promise<{ userId: string; houseId: string }> {
+  const { id, client } = await clientSession(context, name);
+  const { data: houseId, error } = await client.rpc("create_house", {
+    p_name: houseName,
+    p_timezone: "Europe/London",
+    p_currency: "GBP",
+    p_week_starts: 1,
+  });
+  if (error) throw error;
+  const anchor = weekIndex(weekWindow(new Date(), "Europe/London", 1).startsOn);
+  const { error: johnsError } = await admin()
+    .from("johns")
+    .insert(
+      johns.map((john) => ({ house_id: houseId, name: john, category: "other", points: 2, due_dow: 7, due_time: "21:00", every_weeks: 1, anchor_week: anchor })),
+    );
+  if (johnsError) throw johnsError;
+  return { userId: id, houseId };
+}
+
+/**
  * Johns due at one shared moment (the grace's, or plain Sunday 21:00), a
  * second apart in the test's order: by `dueTime` (default 21:00), then as
  * named. The first keeps the moment; the rest stay inside the same minute,

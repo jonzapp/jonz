@@ -5,6 +5,7 @@ import { StyleSheet, View } from 'react-native';
 import { raiseDispute } from '@/api/disputes';
 import { Alert } from '@/components/alert';
 import { Button } from '@/components/button';
+import { ButtonRow } from '@/components/button-row';
 import { Field } from '@/components/field';
 import { useMove } from '@/hooks/use-move';
 import { useUndoOffer } from '@/hooks/use-undo-offer';
@@ -51,12 +52,14 @@ export function DisputeForm({
         testID="dispute-reason"
       />
       {move.problem ? <Alert message={move.problem} /> : null}
-      <Button
-        label={move.pending ? DISPUTE_COPY.sending : DISPUTE_COPY.send}
-        disabled={move.pending || !reason.trim()}
-        onPress={() => void send()}
-        testID="send-dispute"
-      />
+      <ButtonRow>
+        <Button
+          label={move.pending ? DISPUTE_COPY.sending : DISPUTE_COPY.send}
+          disabled={move.pending || !reason.trim()}
+          onPress={() => void send()}
+          testID="send-dispute"
+        />
+      </ButtonRow>
     </View>
   );
 }

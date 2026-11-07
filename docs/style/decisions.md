@@ -6,6 +6,7 @@ pages are private artifacts on claude.ai.
 
 | Date | Decision | Where | Rule |
 | --- | --- | --- | --- |
+| 2026-11-07 | A button on its own fills its column on a phone (Week's Deal week 1 didn't) and a card on a laptop; its own width on the bare page of a wide laptop column; every Button in a ButtonRow, checked by lint and on the real pages | this PR | [controls](controls.md#kinds-of-button) |
 | 2026-11-07 | Ask Jonz's bar as chat apps lay it out: Your chats (clock) on the leading edge, New chat (pencil) on the trailing edge, icons only; Help leads with Ask Jonz and Read the guide (the guide is the words Jonz reads), tours as Show me around rows | this PR | [layout](layout.md) |
 | 2026-11-06 | Ask Jonz chats are kept until you delete them: the latest three on the chat's start, See all for Your chats with Delete, New chat in the title bar; no expiry | this PR | [lists](lists.md#rows) |
 | 2026-11-05 | Ask Jonz replies in Markdown with Jonz pieces: chips for Johns, people and pages in a sentence, live cards for the week, fair shares and the list (option B) | this PR | [words](words.md#ask-jonzs-replies) |

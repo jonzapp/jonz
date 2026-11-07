@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { Alert } from '@/components/alert';
 import { Button, type ButtonIcon } from '@/components/button';
+import { ButtonRow } from '@/components/button-row';
 import { Sheet } from '@/components/sheet';
 import { SPACE } from '@/theme';
 
@@ -51,10 +52,12 @@ export function ConfirmSheet({
       {children}
       {problem ? <Alert message={problem} /> : null}
       <View style={styles.buttons}>
-        {confirmLabel === null ? null : (
-          <Button variant={tone} icon={icon} label={confirmLabel} disabled={busy} onPress={onConfirm} testID="confirm" />
-        )}
-        <Button variant="outline" label={FOCUS_SHELL_COPY.cancel} disabled={busy} onPress={onClose} testID="cancel" />
+        <ButtonRow stacked>
+          {confirmLabel === null ? null : (
+            <Button variant={tone} icon={icon} label={confirmLabel} disabled={busy} onPress={onConfirm} testID="confirm" />
+          )}
+          <Button variant="outline" label={FOCUS_SHELL_COPY.cancel} disabled={busy} onPress={onClose} testID="cancel" />
+        </ButtonRow>
       </View>
     </Sheet>
   );

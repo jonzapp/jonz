@@ -23,6 +23,7 @@ import { useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/button';
+import { ButtonRow } from '@/components/button-row';
 import { Field } from '@/components/field';
 import { Group, GroupItem } from '@/components/group';
 import { Segmented } from '@/components/segmented';
@@ -418,7 +419,9 @@ export function TimingPicker({
       </View>
       {body}
       <View style={styles.inset}>
-        <Button label={REPEAT_COPY.done} onPress={onDone} testID="timing-done" />
+        <ButtonRow>
+          <Button label={REPEAT_COPY.done} onPress={onDone} testID="timing-done" />
+        </ButtonRow>
       </View>
     </View>
   );

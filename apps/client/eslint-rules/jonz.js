@@ -12,6 +12,8 @@ const SPACING_KEY = /^(padding|margin)(Top|Bottom|Left|Right|Horizontal|Vertical
 const TYPE_KEY = /^(fontSize|lineHeight|letterSpacing)$/;
 const RADIUS_KEY = /^border(TopLeft|TopRight|BottomLeft|BottomRight|TopStart|TopEnd|BottomStart|BottomEnd)?Radius$/;
 const BUTTONS = new Set(['Button', 'TextButton', 'IconButton']);
+// Plain layout boxes: a Button straight inside one of these has nothing placing it.
+const LAYOUT = new Set(['View', 'ScrollView', 'KeyboardAvoidingView', 'SafeAreaView']);
 const PRESSABLES = new Set(['Pressable', 'TouchableOpacity', 'TouchableHighlight', 'TouchableWithoutFeedback']);
 
 function keyName(property) {
@@ -146,6 +148,33 @@ module.exports = {
             // A column of buttons is fine; a row of them is the thing to catch.
             if (!looksLikeRow(node, context)) return;
             context.report({ node: node.openingElement, messageId: 'row' });
+          },
+        };
+      },
+    },
+    'button-in-row': {
+      meta: {
+        type: 'problem',
+        docs: { description: 'Every Button is placed by a ButtonRow, alone or with others (docs/style/controls.md).' },
+        messages: {
+          loose:
+            'Put this Button in a ButtonRow, even on its own: it fills the column on a phone and keeps its own width in a wide one on a laptop (docs/style/controls.md).',
+        },
+        schema: [],
+      },
+      create(context) {
+        return {
+          JSXElement(node) {
+            if (elementName(node) !== 'Button') return;
+            // An icon alone is a square wherever it sits (IconButton).
+            if (node.openingElement.attributes.some((a) => a.type === 'JSXAttribute' && a.name.name === 'iconOnly')) return;
+            // The nearest element holding it, looking through fragments, `cond ? a : b` and `x && a`.
+            let at = node.parent;
+            while (at && at.type !== 'JSXElement') {
+              if (!['JSXFragment', 'JSXExpressionContainer', 'ConditionalExpression', 'LogicalExpression'].includes(at.type)) return;
+              at = at.parent;
+            }
+            if (at && LAYOUT.has(elementName(at))) context.report({ node: node.openingElement, messageId: 'loose' });
           },
         };
       },
