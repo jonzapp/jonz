@@ -115,6 +115,7 @@ const MESSAGES: Record<string, string> = {
   nothing_to_ok: "That tick has already been answered.",
   nothing_to_pay: "There’s nothing left to pay for that month.",
   not_pay_day_yet: "Pay day is the 1st, once the month is over.",
+  kids_without_sign_in: "A kid without a sign-in can only be in a family. Remove them first.",
 };
 
 export function humanError(error: { message?: string; code?: string } | null | undefined): string {
