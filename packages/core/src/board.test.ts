@@ -363,6 +363,7 @@ describe("buildWeekBoard", () => {
       uphold: 1,
       reject: 1,
       myVote: true,
+      answered: false,
     });
   });
 

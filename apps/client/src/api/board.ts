@@ -117,7 +117,7 @@ export async function loadHouse(houseId: string, now: Date): Promise<HouseSnapsh
           .is('outcome', null),
         supabase
           .from('disputes')
-          .select('id, assignment_id, raised_by, reason, closes_at, dispute_votes(user_id, uphold)')
+          .select('id, assignment_id, raised_by, reason, closes_at, photo_path, dispute_votes(user_id, uphold)')
           .eq('house_id', houseId)
           .is('resolution', null),
         supabase.from('on_call').select('john_id, user_id, johns(name, category, needs_photo, archived_at)').eq('week_id', week.id),
