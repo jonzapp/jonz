@@ -16,3 +16,16 @@ jest.mock('./src/api/storage', () => {
   };
   return { authStorage: storage };
 });
+
+// Cloudflare's bot check runs in a web view on a phone (react-native-webview,
+// a native module Jest can't load). Tests get one that passes at once, and
+// again after each reset, as the real one does a moment later.
+jest.mock('./src/components/bot-check', () => {
+  const { useEffect } = require('react');
+  return {
+    BotCheck: ({ onToken, round }) => {
+      useEffect(() => onToken('test-token'), [round]);
+      return null;
+    },
+  };
+});

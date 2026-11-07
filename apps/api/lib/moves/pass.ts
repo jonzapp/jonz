@@ -1,6 +1,7 @@
 import "server-only";
 
 import {
+  FAMILY_PASS_COPY,
   humanError,
   PASS_COPY,
   PASS_LOOKUP_KEYS,
@@ -32,7 +33,7 @@ function passPage(appUrl: string, bought: boolean): string {
 async function houseOf(caller: Caller, houseId: string) {
   const { data } = await caller.db
     .from("houses")
-    .select("id, currency, pass_plan, pass_until, pass_buyer")
+    .select("id, currency, kind, pass_plan, pass_until, pass_buyer")
     .eq("id", houseId)
     .maybeSingle();
   return data;
@@ -41,7 +42,7 @@ async function houseOf(caller: Caller, houseId: string) {
 /**
  * Buying the House Pass on the web: a Stripe Checkout Session for the plan,
  * in the house's currency, carrying the house and the buyer for the webhook.
- * Any housemate can buy it. A plan bought during the free month first charges
+ * Any housemate can buy it; in a family, only a parent (the Family Pass). A plan bought during the free month first charges
  * when the free month ends. Nothing is written here; the webhook gives the
  * house its Pass once Stripe says it's paid. `stage` goes with the purchase
  * so only this copy's webhook acts on it (staging and production can share a
@@ -65,6 +66,16 @@ export async function startCheckout(
 ): Promise<PassAnswer> {
   const house = await houseOf(caller, houseId);
   if (!house) return NOT_IN_HOUSE;
+
+  if (house.kind === "family") {
+    const { data: me } = await caller.db
+      .from("members")
+      .select("role")
+      .eq("house_id", house.id)
+      .eq("user_id", caller.userId)
+      .maybeSingle();
+    if (me?.role !== "admin") return { status: 403, message: FAMILY_PASS_COPY.parentsOnly };
+  }
 
   const pass = passOf(house);
   const checked = offer ? await checkOffer(createAdminClient(), offer, caller.email, { id: house.id, pass }, plan, now) : null;

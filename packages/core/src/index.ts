@@ -36,6 +36,7 @@ export * from "./reply-format";
 export * from "./how-it-works";
 export * from "./reply-samples";
 export * from "./owner-messages";
+export * from "./owner-houses";
 export * from "./reports";
 export * from "./qr-shape";
 export * from "./notify";

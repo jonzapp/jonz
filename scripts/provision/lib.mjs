@@ -42,7 +42,8 @@ export function mailerFields(templates) {
  * code (never auto-confirmed), and Supabase's emails are Jonz's own
  * (`templates`, from @app/core). SMTP itself is left as set in the dashboard.
  */
-export function authSettings(c, google, templates) {
+/** @param {string | null} [captchaSecret] */
+export function authSettings(c, google, templates, captchaSecret = null) {
   const body = {
     site_url: siteUrl(c),
     uri_allow_list: `${siteUrl(c)}/**`,
@@ -55,6 +56,13 @@ export function authSettings(c, google, templates) {
     rate_limit_email_sent: EMAIL_AUTH.emailsPerHour,
     ...mailerFields(templates),
   };
+  // Cloudflare Turnstile on sign-in, sign-up and reset emails; the app sends
+  // the token (apps/client's bot-check). Without the secret it's left alone.
+  if (captchaSecret) {
+    body.security_captcha_enabled = true;
+    body.security_captcha_provider = "turnstile";
+    body.security_captcha_secret = captchaSecret;
+  }
   if (google) {
     body.external_google_enabled = true;
     body.external_google_client_id = googleClientIds(c, google);
@@ -84,8 +92,18 @@ export const googleSkipsNonce = (c) => Boolean(c.google.iosClientId);
  * reported success on the way in, so nothing counts as done until it reads
  * back right.
  */
-export function authProblems(actual, c, google, templates) {
+/**
+ * @param {any} actual
+ * @param {any} c
+ * @param {any} google
+ * @param {any} [templates]
+ * @param {string | null} [captchaSecret]
+ */
+export function authProblems(actual, c, google, templates, captchaSecret = null) {
   const problems = [];
+  if (captchaSecret && (!actual.security_captcha_enabled || actual.security_captcha_provider !== "turnstile")) {
+    problems.push("the Turnstile bot check is off");
+  }
   if (actual.site_url !== siteUrl(c)) problems.push(`site URL is ${actual.site_url || "unset"}, not ${siteUrl(c)}`);
   const allowed = String(actual.uri_allow_list ?? "")
     .split(",")

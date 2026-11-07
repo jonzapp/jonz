@@ -18,6 +18,12 @@ import { ASIDE, COLUMNS_MIN, CONTENT_MAX, FILL_MAX, GUTTER, HOUSE_NAV, MAIN_MAX,
 const ContentWidth = createContext(CONTENT_MAX);
 const TwoColumns = createContext(false);
 const Filled = createContext<number | null>(null);
+/**
+ * Whether a page's main column in `Columns` runs all the way to the side
+ * panel instead of stopping at MAIN_MAX: the owner's pages, whose lists are
+ * tables that use the room (AdminShell sets it).
+ */
+export const MainToPanel = createContext(false);
 
 /** What scrolling the page does, handed to the main column when two columns each scroll on their own. */
 interface PageScroll {
@@ -161,6 +167,7 @@ export function Columns({ main, side }: { main: ReactNode; side: ReactNode }) {
   const scroll = useContext(PageScrollContext);
   const mainRef = useRef<ScrollViewInstance>(null);
   const sideRef = useRef<ScrollViewInstance>(null);
+  const toPanel = useContext(MainToPanel);
   return (
     <View style={styles.columns} testID="columns">
       <ScrollView
@@ -178,7 +185,7 @@ export function Columns({ main, side }: { main: ReactNode; side: ReactNode }) {
       >
         <ContentWidth.Provider value={CONTENT_MAX}>
           <TourScrollContext.Provider value={mainRef}>
-            <View style={styles.main} testID="column-main">
+            <View style={[styles.main, toPanel && styles.mainToPanel]} testID="column-main">
               {main}
             </View>
           </TourScrollContext.Provider>
@@ -221,6 +228,7 @@ const styles = StyleSheet.create({
   mainScroll: { flex: 1, minWidth: 0 },
   mainPage: { paddingLeft: GUTTER, paddingRight: SECTION_GAP, paddingTop: GUTTER, paddingBottom: SECTION_GAP },
   main: { width: '100%', maxWidth: MAIN_MAX, gap: SECTION_GAP },
+  mainToPanel: { maxWidth: undefined },
   // Docked to the right edge, the page's whole height under the title bar.
   side: { flexGrow: 0, flexShrink: 0, width: ASIDE + 2 * GUTTER, borderLeftWidth: StyleSheet.hairlineWidth },
   sidePage: { paddingTop: GUTTER, paddingHorizontal: GUTTER, paddingBottom: SECTION_GAP, gap: SECTION_GAP },

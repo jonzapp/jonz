@@ -192,6 +192,8 @@ export type Database = {
           flagged_at: string | null
           flagged_by: string | null
           group_name: string | null
+          handed_by_away: string | null
+          handed_from: string | null
           house_id: string
           id: string
           job_id: string | null
@@ -228,6 +230,8 @@ export type Database = {
           flagged_at?: string | null
           flagged_by?: string | null
           group_name?: string | null
+          handed_by_away?: string | null
+          handed_from?: string | null
           house_id: string
           id?: string
           job_id?: string | null
@@ -264,6 +268,8 @@ export type Database = {
           flagged_at?: string | null
           flagged_by?: string | null
           group_name?: string | null
+          handed_by_away?: string | null
+          handed_from?: string | null
           house_id?: string
           id?: string
           job_id?: string | null
@@ -2609,12 +2615,51 @@ export type Database = {
           user_id: string
         }[]
       }
+      owner_house: {
+        Args: { p_house: string }
+        Returns: Json
+      }
+      owner_houses_count: {
+        Args: {
+          p_active?: string
+          p_after?: string
+          p_before?: string
+          p_pass?: string
+          p_q?: string
+        }
+        Returns: number
+      }
       owner_houses_find: {
         Args: { p_q: string }
         Returns: {
           id: string
           name: string
           people: number
+        }[]
+      }
+      owner_houses_page: {
+        Args: {
+          p_active?: string
+          p_after?: string
+          p_before?: string
+          p_cursor_at?: string
+          p_cursor_id?: string
+          p_limit?: number
+          p_pass?: string
+          p_q?: string
+        }
+        Returns: {
+          created_at: string
+          id: string
+          join_code: string
+          last_active: string | null
+          name: string
+          on_time: number
+          pass_plan: string
+          pass_until: string | null
+          people: number
+          settled: number
+          sort_at: string
         }[]
       }
       owner_message_people: {
@@ -2685,6 +2730,10 @@ export type Database = {
           waiting: number
           walls: number
         }[]
+      }
+      owner_overview: {
+        Args: { p_span?: string; p_zone?: string }
+        Returns: Json
       }
       owner_people_find: {
         Args: { p_q: string }

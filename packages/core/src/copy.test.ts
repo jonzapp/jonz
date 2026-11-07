@@ -212,6 +212,12 @@ describe("AWAY_COPY", () => {
   it("counts the Johns booking moved", () => {
     expect(AWAY_COPY.moved(1)).toBe("1 of your Johns falls due while you’re away, so it’s now due before you go.");
     expect(AWAY_COPY.moved(3)).toBe("3 of your Johns fall due while you’re away, so they’re now due before you go.");
+    expect(AWAY_COPY.moved(0, 1, 0)).toBe(
+      "1 was due too soon to do first, so it’s gone to a housemate, who’s been told. Cancel and it comes back to you.",
+    );
+    expect(AWAY_COPY.moved(1, 0, 2)).toBe(
+      "1 of your Johns falls due while you’re away, so it’s now due before you go. 2 were skipped, with nobody home to take them.",
+    );
   });
 
   it("tells you on Today when you’re away, and what your share does", () => {

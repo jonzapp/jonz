@@ -1,8 +1,11 @@
 import {
+  FAMILY_PASS_COPY,
   hasPass,
   LEGAL,
   PAGE_TITLE,
   PASS_COPY,
+  passWords,
+  type PassExtra,
   PASS_FREE_HISTORY_WEEKS,
   passFirstChargeNote,
   passLine,
@@ -11,7 +14,7 @@ import {
   type PassPurchase,
 } from '@app/core';
 import { useLocalSearchParams } from 'expo-router';
-import { CameraIcon, CoinsIcon, CreditCardIcon, HistoryIcon, TrophyIcon } from 'lucide-react-native';
+import { CameraIcon, CoinsIcon, CreditCardIcon, HistoryIcon, TrophyIcon, UserRoundIcon, type LucideIcon } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -83,7 +86,7 @@ function PassFor({ houseId, userId }: { houseId: string; userId: string }) {
 
   return (
     <HousePage
-      title={PAGE_TITLE.pass}
+      title={view?.snapshot.house.kind === 'family' ? FAMILY_PASS_COPY.title : PAGE_TITLE.pass}
       testID="pass-screen"
       fills
       ready={view !== null}
@@ -131,6 +134,8 @@ function PassReadOut({
   const { house, rules, members } = view.snapshot;
   const { now } = view;
   const { pass } = house;
+  // A family's Pass is the Family Pass, with a family's extras.
+  const words = passWords(house.kind, PASS_FREE_HISTORY_WEEKS);
   const founding = pass.plan === 'founding';
   const buyer = pass.buyerId ? members.find((m) => m.userId === pass.buyerId)?.name : undefined;
   const selling = passCheckoutOpen();
@@ -143,25 +148,20 @@ function PassReadOut({
   return (
     <>
       <View style={styles.words}>
-        <Body testID="pass-lead">{founding ? PASS_COPY.foundingLead : PASS_COPY.lead}</Body>
+        <Body testID="pass-lead">{founding ? words.foundingLead : words.lead}</Body>
         <Meta testID="pass-line">
           {buyer ? `${passLine(pass, now, rules.timezone)}, ${PASS_COPY.boughtBy(buyer)}` : passLine(pass, now, rules.timezone)}
         </Meta>
-        {waiting ? <Meta testID="pass-bought">{PASS_COPY.bought}</Meta> : null}
+        {waiting ? <Meta testID="pass-bought">{words.bought}</Meta> : null}
       </View>
 
       <Pair
         testID="pass-pair"
         start={
-          <Section label={PASS_COPY.includes}>
-            <Row leading={<RowIcon icon={CoinsIcon} />} title={PASS_COPY.stake} meta={PASS_COPY.stakeMeta} />
-            <Row leading={<RowIcon icon={TrophyIcon} />} title={PASS_COPY.table} meta={PASS_COPY.tableMeta} />
-            <Row leading={<RowIcon icon={CameraIcon} />} title={PASS_COPY.photos} meta={PASS_COPY.photosMeta} />
-            <Row
-              leading={<RowIcon icon={HistoryIcon} />}
-              title={PASS_COPY.history}
-              meta={PASS_COPY.historyMeta(PASS_FREE_HISTORY_WEEKS)}
-            />
+          <Section label={words.includes}>
+            {words.extras.map((extra) => (
+              <Row key={extra.key} leading={<RowIcon icon={EXTRA_ICON[extra.key]} />} title={extra.title} meta={extra.meta} />
+            ))}
           </Section>
         }
         end={
@@ -198,7 +198,7 @@ function PassReadOut({
         {firstCharge ? <Meta testID="pass-first-charge">{firstCharge}</Meta> : null}
         {founding || selling ? null : <Meta testID="pass-soon">{PASS_COPY.buyingSoon}</Meta>}
         {selling ? <Meta testID="pass-renewal">{PASS_COPY.renewal}</Meta> : null}
-        <Meta>{PASS_COPY.free}</Meta>
+        <Meta>{words.free}</Meta>
         <Meta testID="pass-money">{PASS_COPY.money}</Meta>
         {askFree ? (
           <>
@@ -211,6 +211,15 @@ function PassReadOut({
     </>
   );
 }
+
+const EXTRA_ICON: Record<PassExtra['key'], LucideIcon> = {
+  stake: CoinsIcon,
+  table: TrophyIcon,
+  photos: CameraIcon,
+  history: HistoryIcon,
+  pocket: CoinsIcon,
+  kids: UserRoundIcon,
+};
 
 /** An email to whoever runs Jonz, for a house that can't pay. */
 const ASK_FREE = `mailto:${LEGAL.email}?subject=${encodeURIComponent(PASS_COPY.askFreeSubject)}` as const;

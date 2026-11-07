@@ -161,6 +161,18 @@ describe("describeEvent", () => {
     );
   });
 
+  it("says what time away handed on or skipped, and when it was cancelled or ended early", () => {
+    expect(line("away", { starts_on: "2026-10-26", ends_on: "2026-10-28", moved: 3, handed: 1, excused: 1 })).toBe(
+      "Ben is away 26–28 Oct. 1 John is due before they go. 1 John went to housemates. 1 John skipped, with nobody home to take it.",
+    );
+    expect(line("away", { starts_on: "2026-10-26", ends_on: "2026-10-28", moved: 2, handed: 2, cancelled: true })).toBe(
+      "Ben cancelled time away, 26–28 Oct.",
+    );
+    expect(line("away", { starts_on: "2026-10-26", ends_on: "2026-10-28", moved: 0, back_on: "2026-10-27" })).toBe(
+      "Ben came back early from time away, 26–28 Oct.",
+    );
+  });
+
   it("tells the house’s comings and the Stake", () => {
     expect(line("joined")).toBe("Ben moved in.");
     expect(line("moving_out", { on: "2026-11-11" })).toBe("Ben moves out on Wed 11 Nov.");

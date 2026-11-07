@@ -1,6 +1,7 @@
 import {
   ADMINS_COPY,
   FAMILY_COPY,
+  FAMILY_PASS_COPY,
   FRONT_DOOR,
   FRONT_DOOR_COPY,
   HOUSE_LOWER_COPY,
@@ -8,18 +9,19 @@ import {
   NEW_HOUSE_COPY,
   PARENTS_COPY,
   PAGE_TITLE,
+  PASS_COPY,
   PERSON_COPY,
   ROLE_WORDS,
 } from "./copy";
 import type { HouseKind } from "./domain";
 
 /**
- * Whether anyone can pick Family yet. The family version lands one step at a
- * time (docs/specs/family-houses.md); until its last step the front door and
- * Start a house only offer it to a link that asks (`/house/new?kind=family`),
- * so nobody signs up for pocket money before it is built.
+ * Whether anyone can pick Family. The family version landed one step at a
+ * time (docs/specs/family-houses.md); until its last step (step 5) the front
+ * door and Start a house only offered it to a link that asked
+ * (`/house/new?kind=family`). Now the switch shows to everyone.
  */
-export const FAMILY_OPEN = false;
+export const FAMILY_OPEN = true;
 
 /** A kind from a link or storage, or null when it names none. */
 export function kindParam(value: string | string[] | null | undefined): HouseKind | null {
@@ -94,4 +96,58 @@ export function roleCopy(kind: HouseKind) {
 export function familyHides(kind: HouseKind): { stake: boolean; vote: boolean } {
   const family = kind === "family";
   return { stake: family, vote: family };
+}
+
+/** One extra the Pass brings, as its page lists it. */
+export interface PassExtra {
+  key: "stake" | "table" | "photos" | "history" | "pocket" | "kids";
+  title: string;
+  meta: string;
+}
+
+/**
+ * The Pass's words for the kind of house: in a family it is the Family Pass
+ * (the same Pass and price), with pocket money, kid profiles and photos to
+ * check as its extras. `historyWeeks` is how far back a house without it sees.
+ */
+export function passWords(kind: HouseKind, historyWeeks: number) {
+  const history: PassExtra = { key: "history", title: PASS_COPY.history, meta: PASS_COPY.historyMeta(historyWeeks) };
+  if (kind === "family") {
+    const f = FAMILY_PASS_COPY;
+    return {
+      title: f.title,
+      sectionNote: f.sectionNote,
+      lead: f.lead,
+      foundingLead: f.foundingLead,
+      includes: f.includes,
+      extras: [
+        { key: "pocket", title: f.pocket, meta: f.pocketMeta },
+        { key: "kids", title: f.kids, meta: f.kidsMeta },
+        { key: "photos", title: f.photos, meta: f.photosMeta },
+        history,
+      ] as PassExtra[],
+      free: f.free,
+      bought: f.bought,
+      locked: f.locked,
+      unlock: f.unlock,
+    };
+  }
+  const p = PASS_COPY;
+  return {
+    title: p.title,
+    sectionNote: p.sectionNote,
+    lead: p.lead,
+    foundingLead: p.foundingLead,
+    includes: p.includes,
+    extras: [
+      { key: "stake", title: p.stake, meta: p.stakeMeta },
+      { key: "table", title: p.table, meta: p.tableMeta },
+      { key: "photos", title: p.photos, meta: p.photosMeta },
+      history,
+    ] as PassExtra[],
+    free: p.free,
+    bought: p.bought,
+    locked: p.locked,
+    unlock: p.unlock,
+  };
 }

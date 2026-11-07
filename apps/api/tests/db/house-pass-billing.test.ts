@@ -115,6 +115,15 @@ describe("Checkout", () => {
     expect(await startCheckout(caller(house.admin), stripe, house.id, "founding", APP, "local", now())).toMatchObject({ status: 409 });
     expect(calls.checkout).toHaveLength(0);
   });
+
+  it("sells the Family Pass to a parent, never a kid", async () => {
+    const house = await makeHouse(["Sam", "Leo"], "family");
+    const [sam, leo] = house.everyone;
+    const { stripe, calls } = fakeStripe();
+    expect(await startCheckout(caller(leo), stripe, house.id, "yearly", APP, "local", now())).toMatchObject({ status: 403 });
+    expect(calls.checkout).toHaveLength(0);
+    expect(await startCheckout(caller(sam), stripe, house.id, "yearly", APP, "local", now())).toHaveProperty("url");
+  });
 });
 
 describe("Stripe's events", () => {
