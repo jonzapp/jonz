@@ -1,5 +1,5 @@
 import { HOUSE_FACETS, HOUSE_WHEN, HOUSES_COPY, houseAgo, houseMeta, passLabel, passNow, percentOf, type HouseRow, type ListAsk } from '@app/core';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { HouseIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -60,8 +60,10 @@ function PassCell({ house, now }: { house: HouseRow; now: Date }) {
 
 function Houses({ busy }: { busy: BusyList<HouseRow> }) {
   const two = useColumns();
-  const [chosenId, setChosen] = useState<string | null>(null);
-  const chosen = busy.items.find((h) => h.id === chosenId) ?? busy.items[0] ?? null;
+  // A link in (the Overview's Needs you, a pushed page opened on a laptop) names the one to open with ?open=.
+  const { open } = useLocalSearchParams<{ open?: string }>();
+  const [chosenId, setChosen] = useState<string | null>(open ?? null);
+  const shownId = chosenId ?? busy.items[0]?.id ?? null;
   const now = new Date();
   const list = (
     <BusyListView
@@ -84,7 +86,7 @@ function Houses({ busy }: { busy: BusyList<HouseRow> }) {
           }}
           quiet={['started']}
           strong={['house']}
-          chosen={chosen?.id === house.id}
+          chosen={shownId === house.id}
           onPress={() => setChosen(house.id)}
           accessibilityLabel={`${house.name}, ${houseMeta(house, now)}`}
           testID={`house-${house.id}`}
@@ -105,7 +107,7 @@ function Houses({ busy }: { busy: BusyList<HouseRow> }) {
       empty={{ icon: HouseIcon, title: HOUSES_COPY.empty, body: HOUSES_COPY.emptyBody }}
     />
   );
-  if (two) return <Columns main={list} side={chosen ? <HousePanel key={chosen.id} id={chosen.id} /> : <View style={styles.none} />} />;
+  if (two) return <Columns main={list} side={shownId ? <HousePanel key={shownId} id={shownId} /> : <View style={styles.none} />} />;
   return list;
 }
 

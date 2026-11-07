@@ -78,6 +78,11 @@ still look right stretched (content capped, nothing pinned to far edges).
   (`Columns`). Nothing floats centred in empty space; a one-column page sits
   at the left. (Option C, #59) *Backed by* Material's list-detail and
   supporting-pane layouts and the HIG's split view.
+- **The owner's pages use the whole room** (`MainToPanel`, set by
+  `AdminShell`): the main column runs to the side panel at any width, not
+  stopping at `MAIN_MAX`, since its lists are tables. A page a phone pushes
+  (a house, a report) opens beside its list on a laptop instead, never in
+  one column with the room blank beside it. (Owner admin, 7 Nov)
 - Things side by side share a top edge: the page's first line sits in the
   main column so a bare card in main lines up with the side's first group.
   (#48)

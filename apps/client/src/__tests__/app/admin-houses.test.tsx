@@ -180,6 +180,18 @@ describe('Houses', () => {
   });
 });
 
+describe('On a laptop, the room is used', () => {
+  it('opens a house linked to directly beside the list, and the list reaches the panel', async () => {
+    (useWindowDimensions as jest.Mock).mockReturnValue(LAPTOP);
+    await renderPages(ROUTES, '/admin/houses/h2');
+    await untilRead();
+    await waitFor(() => expect(ownerHouse).toHaveBeenCalledWith('h2'));
+    expect(screen.getByTestId('admin-houses')).toBeVisible();
+    expect(screen.queryByTestId('admin-house')).toBeNull();
+    expect(screen.getByTestId('column-main')).not.toHaveStyle({ maxWidth: 1040 });
+  });
+});
+
 describe('Tabs by job, on a phone', () => {
   it('has five tabs, and Records opens Deletions with a switch to the Audit log', async () => {
     await renderPages(ROUTES, '/admin/deletions');
