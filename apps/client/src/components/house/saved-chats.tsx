@@ -5,6 +5,7 @@ import { ScrollView, StyleSheet } from 'react-native';
 
 import { deleteChat, type ChatSummary } from '@/api/ask-chats';
 import { ConfirmSheet } from '@/components/confirm-sheet';
+import { Group } from '@/components/group';
 import { IconButton } from '@/components/icon-button';
 import { Row, RowIcon } from '@/components/row';
 import { Section } from '@/components/section';
@@ -80,10 +81,10 @@ export function AllChats({
 
   return (
     <ScrollView contentContainerStyle={styles.page} testID="all-chats">
-      {list.length === 0 ? (
-        <Section label={ASK_CHATS_COPY.all}>
+      {chats.data === undefined ? null : list.length === 0 ? (
+        <Group>
           <Row title={ASK_CHATS_COPY.none} titleLines={2} testID="chats-none" />
-        </Section>
+        </Group>
       ) : (
         chatGroups(list, now, zone).map((group) => (
           <Section key={group.label} label={group.label} testID="chats-group">

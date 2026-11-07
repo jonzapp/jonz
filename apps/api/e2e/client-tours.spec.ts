@@ -115,7 +115,7 @@ test("every tour plays through, each step lit on screen", async ({ context, page
   await expect(page.getByTestId("guide")).toBeVisible();
   await page.getByTestId("guide-today").click();
   await expect(page.getByTestId("guide-words")).toContainText(TOURS.today.steps[0].body);
-  await expect(page.getByTestId("guide-ask")).toBeVisible();
+  await expect(page.getByTestId("guide-page").getByTestId("guide-ask")).toBeVisible();
   await page.goto("/today");
   await expect(page.getByTestId("today-screen").getByTestId("next-up")).toBeVisible();
 

@@ -54,7 +54,7 @@ test("a chat is kept, comes back from Your chats, and can be deleted", async ({ 
 
   // Your chats, from the clock on the bar's leading edge: the kept one, under Today.
   await here.getByTestId("chats-open").click();
-  await expect(here.getByRole("heading", { name: ASK_CHATS_COPY.all })).toBeVisible();
+  await expect(here.getByRole("heading", { name: ASK_CHATS_COPY.all, level: 1 })).toBeVisible();
   const mine = here.getByTestId("all-chats").getByTestId("saved-chat").filter({ hasText: said });
   await expect(here.getByTestId("all-chats").getByTestId("saved-chat")).toHaveCount(1);
   await expect(mine).toContainText(ASK_CHATS_COPY.today);
