@@ -21,7 +21,9 @@ async function family() {
   const [sam, leo, ava] = house.everyone;
   await addJohns(house.id, [{ name: "Feed the fish", pay: 20 }, { name: "Lay the table" }, { name: "Bins out" }], WEEK);
   const { assignments } = await deal(house.id, WEEK, WEEK.startsAt);
-  const [fish, table, bins] = assignments;
+  // The deal's order isn't the list's: find each by name.
+  const named = (name: string) => assignments.find((a: { name: string }) => a.name === name)!;
+  const [fish, table, bins] = [named("Feed the fish"), named("Lay the table"), named("Bins out")];
   expectOk(await db.from("assignments").update({ user_id: leo.userId }).eq("id", fish.id).select("id"));
   expectOk(await db.from("assignments").update({ user_id: ava.userId }).eq("id", table.id).select("id"));
   expectOk(await db.from("assignments").update({ user_id: sam.userId }).eq("id", bins.id).select("id"));
