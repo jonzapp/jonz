@@ -7,6 +7,7 @@ pages are private artifacts on claude.ai.
 | Date | Decision | Where | Rule |
 | --- | --- | --- | --- |
 | 2026-11-07 | Switching a house you have to a family (or back): Who lives here in Rules, two radio rows for an admin and a sheet saying what changes; with money in it, it waits for the 1st (picker approved 2026-11-07) | this PR | [words](words.md) |
+| 2026-11-07 | A family's board for the kitchen tablet: one page, a column per kid of today's Johns (still to do, waiting for an OK, done today), earned this month at the column's head; a kid's tick there waits for a parent's OK (option A) | this PR | [layout](layout.md) |
 | 2026-11-07 | A button on its own fills its column on a phone (Week's Deal week 1 didn't) and a card on a laptop; its own width on the bare page of a wide laptop column; every Button in a ButtonRow, checked by lint and on the real pages | this PR | [controls](controls.md#kinds-of-button) |
 | 2026-11-07 | Ask Jonz's bar as chat apps lay it out: Your chats (clock) on the leading edge, New chat (pencil) on the trailing edge, icons only; Help leads with Ask Jonz and Read the guide (the guide is the words Jonz reads), tours as Show me around rows | this PR | [layout](layout.md) |
 | 2026-11-06 | Ask Jonz chats are kept until you delete them: the latest three on the chat's start, See all for Your chats with Delete, New chat in the title bar; no expiry | this PR | [lists](lists.md#rows) |

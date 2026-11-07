@@ -158,6 +158,26 @@ their profile, and each John can say how old you have to be for it.
 - `FAMILY_OPEN` is true: the front door's Housemates / Family switch and
   Start a house's "Who lives here?" show to everyone.
 
+## The board
+
+A family's shared screen, picked by Glyn on 7 November 2026 (option A). A
+parent opens **The board** from House (under the month card) on the kitchen
+tablet, signed in as themselves, and leaves it open.
+
+- A column for each kid, by first name, with what they've earned this month
+  at its head. In it: their Johns still to do that are due by the end of
+  today (overdue first), then those waiting for a parent's OK, then those
+  done today (`boardColumns`, packages/core/src/family-board.ts).
+- A kid taps the box to tick their own: `board_tick(p_assignment)` checks
+  the caller can OK ticks (a parent) in a family and the John is a kid's,
+  sets it done and makes it wait for an OK, as a tick from the kid's own
+  phone would, and posts "done" (or "late") for the kid on the Wall.
+- A John that needs a photo can't be ticked there ("tick it from their
+  Today"); one in a roll call neither.
+- Tapping a John opens its sheet, where a parent says OK or Not yet.
+- Anyone else, or a house that isn't a family, sees that the board is for a
+  parent on a shared screen.
+
 ## Edge cases
 
 - Until `FAMILY_OPEN`, nobody sees the choice unless a link asks for a
@@ -221,3 +241,4 @@ again and losing the list, the people and the history.
   housemates again."
 
 - [x] An admin switches a house to a family, at once or on the 1st, and back (tests/db/switch-house-kind.test.ts).
+- [x] The board shows each kid's Johns today, and a kid's tick there waits for an OK (tests/db/family-board.test.ts).
