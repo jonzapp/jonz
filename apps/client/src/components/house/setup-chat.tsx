@@ -158,6 +158,7 @@ export function SetupChat({
   pieces = NO_PIECES,
   saved = null,
   onKept,
+  onTalked,
 }: {
   houseId: string;
   rules: HouseRules;
@@ -179,6 +180,8 @@ export function SetupChat({
   saved?: SavedChat | null;
   /** The chat is kept, under this id: after each answer, so it's never lost. */
   onKept?: (id: string) => void;
+  /** Whether there's anything in the chat yet (said, or being written): New chat has nothing to clear until there is. */
+  onTalked?: (talked: boolean) => void;
 }) {
   const keeping = useMove(houseId);
   // The list as the chat found it: what a draft's changes are counted from. Held while a draft is open, so
@@ -208,6 +211,8 @@ export function SetupChat({
   // A new house's chat ends once its first list is in (the deal question follows); a list's chat carries on.
   const done = !editing && turns.some((t) => t.role === 'done');
   const busy = sending || keeping.pending;
+  const talked = turns.length > 0 || text.trim() !== '';
+  useEffect(() => onTalked?.(talked), [talked, onTalked]);
   // The draft card sits under the turn that last changed the draft; only Jonz's last question can be answered.
   const draftAt = turns.findLastIndex((t) => t.role === 'assistant' && t.draft !== null);
   const last = turns.at(-1);
