@@ -7,7 +7,7 @@ each promotion has one link to copy or share, and an Email them button for
 the people it names; the link opens a taped sign like a join link, and in a
 chat it shows the offer on the sign.
 
-This spec covers the backend (PR 1). The admin page and the link's page and
+PR 1 was the backend; PR 2 the admin page (below). The link's page and its
 picture come next, built on what's here.
 
 ## What a promotion gives
@@ -83,6 +83,25 @@ The webhook records a use when Checkout completes with `metadata.promotion`,
 once per Checkout Session. Stripe's own limit on the code (as many as it names,
 or the owner's limit) holds at checkout; a free Pass is taken under the
 database's lock (`promotion_use` with `p_strict`).
+
+## The admin page
+
+Promotions is the third page of the owner's Send tab, after Messages and
+Notices (`ADMIN_GROUPS` in `packages/core/src/owner-admin.ts`).
+
+- `/admin/promotions`: the form, with What they get beside it on a laptop
+  (the headline and sentence, what each plan costs with it, who can use it)
+  and a sheet on a phone; Recent under it. The code in the link is made from
+  the name until the owner types their own. Make it opens its page.
+- `/admin/promotions/all`: every promotion as a busy list, found by name,
+  code or an email on it, filtered by who and state.
+- `/admin/promotions/[id]`: what it gives and who can use it, the link to
+  copy or share, Email them (named), Try again (still `making`), Stop it, and
+  beside it who it's for (Used, Opened, Emailed, Not yet) and the houses that
+  used it.
+
+The form's words, the form as typed made into a `PromotionRequest`, and how a
+promotion reads in the lists are `packages/core/src/owner-promotions.ts`.
 
 ## Before it's live
 

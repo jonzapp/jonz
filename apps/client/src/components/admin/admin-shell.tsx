@@ -9,6 +9,7 @@ import {
   MessageSquareIcon,
   ScrollTextIcon,
   SendIcon,
+  TicketIcon,
   UserXIcon,
   type LucideIcon,
 } from 'lucide-react-native';
@@ -30,6 +31,7 @@ export const ADMIN_ICON: Record<AdminPage, LucideIcon> = {
   houses: HouseIcon,
   messages: MessageSquareIcon,
   notices: MegaphoneIcon,
+  promotions: TicketIcon,
   deletions: UserXIcon,
   audit: ScrollTextIcon,
 };
