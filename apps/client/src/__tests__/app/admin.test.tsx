@@ -75,7 +75,8 @@ jest.mock('@/api/houses', () => ({
   ownerOverview: jest.fn().mockResolvedValue({
     ms: 80,
     overview: {
-      days: 7, houses: 0, housesNew: 0, housesNewBefore: 0, people: 0, inHouses: 0, active: 0,
+      span: 'week',
+  from: '2026-11-02T00:00:00Z', houses: 0, housesNew: 0, housesNewBefore: 0, people: 0, inHouses: 0, active: 0,
       passes: { monthly: 0, yearly: 0, founding: 0, trial: 0 }, onTime: { onTime: 0, late: 0, missed: 0 },
       ask: { turns: 0, failed: 0 }, weeks: [], clock: null, reports: 0, needs: [],
     },

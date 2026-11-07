@@ -1,5 +1,7 @@
 import type { ListFacet, ListWhen } from "./admin-list";
+import { monthLabel, weekRange } from "./format";
 import type { PassPlan } from "./pass";
+import { monthOf } from "./week";
 
 // The owner's Overview and Houses (docs/specs/owner-admin.md, "Overview" and
 // "Houses"). The database counts and finds (supabase/migrations/
@@ -198,8 +200,13 @@ export interface OverviewNeed {
   at: string;
 }
 
+/** What the Overview's figures count: this week (from Monday) or this month, as the house's Track record does. */
+export type OverviewSpan = "week" | "month";
+
 export interface Overview {
-  days: 7 | 30;
+  span: OverviewSpan;
+  /** When the week or month began. */
+  from: string;
   houses: number;
   housesNew: number;
   housesNewBefore: number;
@@ -223,11 +230,18 @@ export interface Figure {
   meta: string;
 }
 
-const change = (now: number, before: number, days: number) => {
-  const span = days === 7 ? "last week" : "the 30 days before";
+const change = (now: number, before: number, which: OverviewSpan) => {
+  const span = which === "week" ? "last week" : "last month";
   if (now === before) return `the same as ${span}`;
   return now > before ? `up ${n(now - before)} on ${span}` : `down ${n(before - now)} on ${span}`;
 };
+
+/** The figures' heading, as the Track record names its span: "2–8 Nov", or "November 2026". */
+export function overviewRange(o: Pick<Overview, "span" | "from">, zone: string): string {
+  const from = new Date(o.from);
+  if (o.span === "month") return monthLabel(monthOf(from, zone));
+  return weekRange(from, new Date(from.getTime() + 7 * 86_400_000), zone);
+}
 
 /** The six figures, in reading order. */
 export function ownerFigures(o: Overview): Figure[] {
@@ -235,7 +249,7 @@ export function ownerFigures(o: Overview): Figure[] {
   const settled = o.onTime.onTime + o.onTime.late + o.onTime.missed;
   const perHouse = o.houses > 0 ? (o.inHouses / o.houses).toFixed(1) : "0";
   return [
-    { key: "houses", label: "Houses", value: n(o.houses), meta: `${n(o.housesNew)} new, ${change(o.housesNew, o.housesNewBefore, o.days)}` },
+    { key: "houses", label: "Houses", value: n(o.houses), meta: `${n(o.housesNew)} new, ${change(o.housesNew, o.housesNewBefore, o.span)}` },
     { key: "people", label: "People", value: n(o.people), meta: `${perHouse} to a house` },
     { key: "active", label: "Active houses", value: percentOf(o.active, o.houses) ?? "0%", meta: `${n(o.active)} of ${n(o.houses)}` },
     {
@@ -302,9 +316,8 @@ export const OVERVIEW_COPY = {
   up: "Up",
   late: "Late",
   slow: "Slow",
-  thisWindow: (days: 7 | 30) => (days === 7 ? "This week" : "This month"),
-  windowLabel: "Over",
-  windows: { 7: "Last 7 days", 30: "Last 30 days" } as const,
+  spanLabel: "Show",
+  spans: { week: "Week", month: "Month" } as Record<OverviewSpan, string>,
   chart: "Active houses each week",
   chartNote: "a house is active when someone ticks a John",
   thisWeek: "This week",

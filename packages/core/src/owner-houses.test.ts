@@ -8,6 +8,7 @@ import {
   houseMeta,
   needRow,
   ownerFigures,
+  overviewRange,
   passDetail,
   passLabel,
   percentOf,
@@ -123,7 +124,8 @@ describe("one house", () => {
 });
 
 const overview = (over: Partial<Overview> = {}): Overview => ({
-  days: 7,
+  span: "week",
+  from: "2026-11-02T00:00:00Z",
   houses: 128,
   housesNew: 12,
   housesNewBefore: 3,
@@ -150,8 +152,8 @@ describe("the Overview", () => {
       ["Johns on time", "81%", "212 late or missed"],
       ["Ask Jonz", "1,210", "every one answered"],
     ]);
-    const quiet = ownerFigures(overview({ days: 30, houses: 0, housesNew: 0, housesNewBefore: 2, inHouses: 0, active: 0, onTime: { onTime: 0, late: 0, missed: 0 }, ask: { turns: 3, failed: 1 } }));
-    expect(quiet.map((f) => f.meta)[0]).toBe("0 new, down 2 on the 30 days before");
+    const quiet = ownerFigures(overview({ span: "month", houses: 0, housesNew: 0, housesNewBefore: 2, inHouses: 0, active: 0, onTime: { onTime: 0, late: 0, missed: 0 }, ask: { turns: 3, failed: 1 } }));
+    expect(quiet.map((f) => f.meta)[0]).toBe("0 new, down 2 on last month");
     expect(quiet.map((f) => f.value)).toEqual(["0", "412", "0%", "37", "None due", "3"]);
     expect(quiet[5].meta).toBe("1 didn’t answer");
   });
@@ -175,5 +177,13 @@ describe("the Overview", () => {
       meta: "No house, unless they change their mind",
       href: "/admin/deletions",
     });
+  });
+});
+
+describe("overviewRange", () => {
+  it("names this week by its days and this month by its name, as the Track record does", () => {
+    expect(overviewRange({ span: "week", from: "2026-11-02T00:00:00Z" }, "Europe/London")).toBe("2–8 Nov");
+    expect(overviewRange({ span: "week", from: "2026-10-26T00:00:00Z" }, "Europe/London")).toBe("26 Oct–1 Nov");
+    expect(overviewRange({ span: "month", from: "2026-11-01T00:00:00Z" }, "Europe/London")).toBe("November 2026");
   });
 });

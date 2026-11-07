@@ -2469,7 +2469,7 @@ export type Database = {
         }[]
       }
       owner_overview: {
-        Args: { p_days?: number }
+        Args: { p_span?: string; p_zone?: string }
         Returns: Json
       }
       owner_people_find: {

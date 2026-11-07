@@ -1,14 +1,14 @@
-import { humanError, type HouseDetail, type HouseRow, type ListAsk, type Overview, type PassPlan } from '@app/core';
+import { humanError, type HouseDetail, type HouseRow, type ListAsk, type Overview, type OverviewSpan, type PassPlan } from '@app/core';
 
 import { supabase } from './supabase';
 
 // The owner's Overview and Houses (docs/specs/owner-admin.md): one read for
 // the Overview, and every house as a busy list, read only.
 
-/** The Overview over the last 7 or 30 days, and how long the read took. */
-export async function ownerOverview(days: 7 | 30): Promise<{ overview: Overview; ms: number }> {
+/** The Overview for this week or this month in the owner's zone, and how long the read took. */
+export async function ownerOverview(span: OverviewSpan, zone: string): Promise<{ overview: Overview; ms: number }> {
   const started = Date.now();
-  const { data, error } = await supabase.rpc('owner_overview', { p_days: days });
+  const { data, error } = await supabase.rpc('owner_overview', { p_span: span, p_zone: zone });
   if (error) throw new Error(humanError(error));
   return { overview: data as unknown as Overview, ms: Date.now() - started };
 }

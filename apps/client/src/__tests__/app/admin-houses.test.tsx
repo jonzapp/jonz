@@ -83,7 +83,8 @@ const ELM_DETAIL: HouseDetail = {
 };
 
 const OVERVIEW: Overview = {
-  days: 7,
+  span: 'week',
+  from: '2026-11-02T00:00:00Z',
   houses: 128,
   housesNew: 12,
   housesNewBefore: 3,
@@ -124,13 +125,13 @@ describe('Overview', () => {
     expect(screen.getByTestId('admin-tab-overview')).toBeSelected();
   });
 
-  it('reads the last 30 days when asked, and says the clock is late after half an hour', async () => {
+  it('reads this month when asked, and says the clock is late after half an hour', async () => {
     jest.mocked(ownerOverview).mockResolvedValue({ overview: { ...OVERVIEW, clock: minutesAgo(50) }, ms: 120 });
     await renderPages(ROUTES, '/admin/overview');
     await untilRead();
     expect(screen.getByTestId('health-clock')).toHaveTextContent(/Late/);
-    await fireEvent.press(within(screen.getByTestId('overview-days')).getByText(OVERVIEW_COPY.windows[30]));
-    await waitFor(() => expect(ownerOverview).toHaveBeenLastCalledWith(30));
+    await fireEvent.press(within(screen.getByTestId('overview-span')).getByText(OVERVIEW_COPY.spans.month));
+    await waitFor(() => expect(ownerOverview).toHaveBeenLastCalledWith('month', expect.any(String)));
   });
 
   it('says nothing needs you when nothing does', async () => {

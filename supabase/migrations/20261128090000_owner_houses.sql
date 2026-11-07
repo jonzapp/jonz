@@ -16,33 +16,39 @@ create index if not exists assignments_house_due on public.assignments (house_id
 
 -- --- Overview ---------------------------------------------------------------------------
 
--- Totals over the last p_days days (7 or 30), and the weeks before for the
--- trend. "Active" is a house where someone ticked a John in the window.
--- On time counts Johns that came due in the window and were settled: done
--- or covered is on time, late and missed aren't, excused doesn't count.
-create or replace function public.owner_overview(p_days integer default 7)
+-- Totals for this week (from Monday) or this month (from the 1st), in the
+-- owner's zone, as the house's Track record counts them, and the same stretch
+-- of the week or month before for the trend. "Active" is a house where
+-- someone ticked a John in it. On time counts Johns that came due in it and
+-- were settled: done or covered is on time, late and missed aren't, excused
+-- doesn't count.
+create or replace function public.owner_overview(p_span text default 'week', p_zone text default 'Europe/London')
 returns jsonb
 language plpgsql
 stable
 security definer set search_path = ''
 as $$
 declare
-  days integer := case when p_days = 30 then 30 else 7 end;
-  since timestamptz := now() - make_interval(days => days);
-  before timestamptz := now() - make_interval(days => days * 2);
+  span text := case when p_span = 'month' then 'month' else 'week' end;
+  zone text := case when exists (select 1 from pg_catalog.pg_timezone_names where name = p_zone) then p_zone else 'Europe/London' end;
+  step interval := case when p_span = 'month' then interval '1 month' else interval '1 week' end;
+  since timestamptz := date_trunc(span, now() at time zone zone) at time zone zone;
+  before timestamptz := (date_trunc(span, now() at time zone zone) - step) at time zone zone;
+  before_now timestamptz := now() - step;
   result jsonb;
 begin
   if not public.is_owner() then
     raise exception 'owner_only' using errcode = '42501';
   end if;
   select jsonb_build_object(
-    'days', days,
+    'span', span,
+    'from', since,
     'houses', (select count(*) from public.houses),
-    'housesNew', (select count(*) from public.houses where created_at > since),
-    'housesNewBefore', (select count(*) from public.houses where created_at > before and created_at <= since),
+    'housesNew', (select count(*) from public.houses where created_at >= since),
+    'housesNewBefore', (select count(*) from public.houses where created_at >= before and created_at <= before_now),
     'people', (select count(*) from public.profiles where deleted_at is null),
     'inHouses', (select count(distinct m.user_id) from public.members m),
-    'active', (select count(distinct a.house_id) from public.assignments a where a.done_at > since),
+    'active', (select count(distinct a.house_id) from public.assignments a where a.done_at >= since),
     'passes', (
       select jsonb_build_object(
         'monthly', count(*) filter (where pass_plan = 'monthly'),
@@ -60,7 +66,7 @@ begin
         'missed', count(*) filter (where outcome = 'missed')
       )
       from public.assignments
-      where due_at > since and due_at <= now() and outcome in ('done', 'covered', 'late', 'missed')
+      where due_at >= since and due_at <= now() and outcome in ('done', 'covered', 'late', 'missed')
     ),
     'ask', (
       select jsonb_build_object(
@@ -68,7 +74,7 @@ begin
         'failed', count(*) filter (where outcome = 'failed')
       )
       from public.house_drafts
-      where created_at > since
+      where created_at >= since
     ),
     -- Ten weeks of active houses, oldest first, the last ending now.
     'weeks', (
@@ -316,14 +322,14 @@ end;
 $$;
 
 revoke execute on function
-  public.owner_overview(integer),
+  public.owner_overview(text, text),
   public.owner_houses_match(text, text, text, timestamptz, timestamptz),
   public.owner_houses_page(text, text, text, timestamptz, timestamptz, timestamptz, uuid, integer),
   public.owner_houses_count(text, text, text, timestamptz, timestamptz),
   public.owner_house(uuid)
 from public, anon, authenticated;
 grant execute on function
-  public.owner_overview(integer),
+  public.owner_overview(text, text),
   public.owner_houses_page(text, text, text, timestamptz, timestamptz, timestamptz, uuid, integer),
   public.owner_houses_count(text, text, text, timestamptz, timestamptz),
   public.owner_house(uuid)

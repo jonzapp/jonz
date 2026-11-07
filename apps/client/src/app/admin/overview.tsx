@@ -1,4 +1,4 @@
-import { clockState, databaseState, needRow, noticeToShow, OVERVIEW_COPY, ownerFigures, type Overview } from '@app/core';
+import { clockState, databaseState, needRow, noticeToShow, OVERVIEW_COPY, ownerFigures, overviewRange, type Overview, type OverviewSpan } from '@app/core';
 import { useQuery } from '@tanstack/react-query';
 import { CheckIcon, TriangleAlertIcon } from 'lucide-react-native';
 import { useState } from 'react';
@@ -6,6 +6,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { ownerOverview } from '@/api/houses';
 import { liveNotices } from '@/api/owner';
+import { ownerZone } from '@/components/admin/audit-entry';
 import { WeekChart } from '@/components/admin/week-chart';
 import { Figures, type Figure } from '@/components/figures';
 import { Group } from '@/components/group';
@@ -48,15 +49,16 @@ export default function OverviewPage() {
 
 function OverviewBody() {
   const two = useColumns();
-  const [days, setDays] = useState<7 | 30>(7);
-  const read = useQuery({ queryKey: ['owner-overview', days], queryFn: () => ownerOverview(days), refetchInterval: 60_000 });
+  const [span, setSpan] = useState<OverviewSpan>('week');
+  const zone = ownerZone();
+  const read = useQuery({ queryKey: ['owner-overview', span, zone], queryFn: () => ownerOverview(span, zone), refetchInterval: 60_000 });
   if (read.isPending) return <Reading />;
   if (read.isError) return <ReadFailed message={read.error.message} onRetry={() => void read.refetch()} />;
   const { overview, ms } = read.data;
   const now = new Date();
   const needs = <NeedsYou overview={overview} now={now} />;
   const health = <RightNow overview={overview} ms={ms} now={now} />;
-  const numbers = <Numbers overview={overview} days={days} onDays={setDays} />;
+  const numbers = <Numbers overview={overview} zone={zone} onSpan={setSpan} />;
   if (two) {
     return (
       <Columns
@@ -117,7 +119,7 @@ function RightNow({ overview, ms, now }: { overview: Overview; ms: number; now: 
   );
 }
 
-function Numbers({ overview, days, onDays }: { overview: Overview; days: 7 | 30; onDays: (days: 7 | 30) => void }) {
+function Numbers({ overview, zone, onSpan }: { overview: Overview; zone: string; onSpan: (span: OverviewSpan) => void }) {
   const figures: Figure[] = ownerFigures(overview).map((f) => ({
     key: f.key,
     value: f.value,
@@ -126,25 +128,23 @@ function Numbers({ overview, days, onDays }: { overview: Overview; days: 7 | 30;
     href: FIGURE_HREF[f.key] as never,
   }));
   const weeks = overview.weeks;
+  const range = overviewRange(overview, zone);
   return (
     <>
       <Section
-        label={OVERVIEW_COPY.thisWindow(days)}
+        label={range}
         right={
           <Segmented
-            label={OVERVIEW_COPY.windowLabel}
-            options={[
-              { value: '7', label: OVERVIEW_COPY.windows[7] },
-              { value: '30', label: OVERVIEW_COPY.windows[30] },
-            ]}
-            value={String(days)}
-            onChange={(value) => onDays(value === '30' ? 30 : 7)}
-            testID="overview-days"
+            label={OVERVIEW_COPY.spanLabel}
+            options={(['week', 'month'] as const).map((value) => ({ value, label: OVERVIEW_COPY.spans[value] }))}
+            value={overview.span}
+            onChange={onSpan}
+            testID="overview-span"
           />
         }
         bare
       >
-        <Figures figures={figures} label={OVERVIEW_COPY.thisWindow(days)} testID="overview-figures" />
+        <Figures figures={figures} label={range} testID="overview-figures" />
       </Section>
       <Section label={OVERVIEW_COPY.chart} right={OVERVIEW_COPY.chartNote} bare>
         <WeekChart

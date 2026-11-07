@@ -70,8 +70,10 @@ answers it, again every minute while the page is open.
 - **Right now:** the database (how long this page's read took: Up under a
   second, Slow past it) and the clock (when it last caught a house up: Up
   within half an hour, Late after). A word and an icon, never colour alone.
-- **This week**, or the last 30 days from the switch on the heading: Houses
-  (new ones, against the window before), People (to a house), Active houses
+- **This week** (from Monday), or this month, from a Week | Month switch on
+  the heading, as the house's Track record does; the heading names it
+  ("2–8 Nov", "November 2026"), in the owner's zone. Houses (new ones,
+  against the same stretch of last week or month), People (to a house), Active houses
   (where someone ticked a John), House Passes (yearly, monthly, Founding;
   the free month isn't one), Johns on time (done or covered, of those that
   came due and were settled; excused doesn't count) and Ask Jonz (house

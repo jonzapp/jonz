@@ -64,12 +64,12 @@ const page = (actor: Actor, args: Record<string, unknown> = {}) => actor.db.rpc(
 describe("who may read them", () => {
   it("is the owner with their code: not before the code, not a housemate, not a visitor", async () => {
     for (const client of [ownerNoCode.db, house.admin.db, visitor()]) {
-      expectDenied(await client.rpc("owner_overview", { p_days: 7 }));
+      expectDenied(await client.rpc("owner_overview", { p_span: "week", p_zone: "UTC" }));
       expectDenied(await client.rpc("owner_houses_page", { p_q: name }));
       expectDenied(await client.rpc("owner_houses_count", { p_q: name }));
       expectDenied(await client.rpc("owner_house", { p_house: house.id }));
     }
-    expectOk(await owner.db.rpc("owner_overview", { p_days: 7 }));
+    expectOk(await owner.db.rpc("owner_overview", { p_span: "week", p_zone: "UTC" }));
   });
 
   it("can't be read past by calling the matching rows directly", async () => {
@@ -181,19 +181,23 @@ describe("Houses", () => {
 
 describe("Overview", () => {
   it("counts the window's houses, people, active houses, Passes, on time and Ask Jonz", async () => {
-    const before = (await ok(owner.db.rpc("owner_overview", { p_days: 7 }))) as unknown as Overview;
+    const before = (await ok(owner.db.rpc("owner_overview", { p_span: "week", p_zone: "UTC" }))) as unknown as Overview;
+    // Inside this week however far into it the test runs: a quarter, half and three quarters of the way from Monday to now.
+    const into = (Date.now() - new Date(before.from).getTime()) / DAY;
+    expect(into).toBeGreaterThanOrEqual(0);
+    expect(into).toBeLessThan(7);
     await settle(house.id, [
-      { outcome: "done", daysAgo: 1 },
-      { outcome: "late", daysAgo: 2 },
-      { outcome: "missed", daysAgo: 3 },
+      { outcome: "done", daysAgo: into * 0.25 },
+      { outcome: "late", daysAgo: into * 0.5 },
+      { outcome: "missed", daysAgo: into * 0.75 },
     ]);
     expectOk(await db.from("house_drafts").insert([
       { house_id: house.id, outcome: "ai" },
       { house_id: house.id, outcome: "failed" },
     ]));
-    const after = (await ok(owner.db.rpc("owner_overview", { p_days: 7 }))) as unknown as Overview;
+    const after = (await ok(owner.db.rpc("owner_overview", { p_span: "week", p_zone: "UTC" }))) as unknown as Overview;
     // Other suites run alongside, so only what this test added is checked, as at least.
-    expect(after.days).toBe(7);
+    expect(after.span).toBe("week");
     expect(after.houses).toBeGreaterThanOrEqual(before.houses);
     expect(after.housesNew).toBeGreaterThanOrEqual(1);
     expect(after.people).toBeGreaterThanOrEqual(2);
@@ -208,11 +212,11 @@ describe("Overview", () => {
     expect(after.weeks[9].active).toBeGreaterThanOrEqual(1);
     expect(new Date(after.weeks[0].ends).getTime()).toBeLessThan(new Date(after.weeks[9].ends).getTime());
 
-    const month = (await ok(owner.db.rpc("owner_overview", { p_days: 30 }))) as unknown as Overview;
-    expect(month.days).toBe(30);
+    const month = (await ok(owner.db.rpc("owner_overview", { p_span: "month", p_zone: "UTC" }))) as unknown as Overview;
+    expect(month.span).toBe("month");
     // Anything else is a week.
-    const odd = (await ok(owner.db.rpc("owner_overview", { p_days: 3 }))) as unknown as Overview;
-    expect(odd.days).toBe(7);
+    const odd = (await ok(owner.db.rpc("owner_overview", { p_span: "year", p_zone: "Nowhere/Else" }))) as unknown as Overview;
+    expect(odd.span).toBe("week");
   });
 
   it("lists what needs the owner: new reports and deletions due within a day", async () => {
@@ -226,7 +230,7 @@ describe("Overview", () => {
         delete_after: new Date(Date.now() + 3_600_000).toISOString(),
       }),
     );
-    const data = (await ok(owner.db.rpc("owner_overview", { p_days: 7 }))) as {
+    const data = (await ok(owner.db.rpc("owner_overview", { p_span: "week", p_zone: "UTC" }))) as {
       reports: number;
       needs: { kind: string; id: string; name: string; house: string | null }[];
     };
