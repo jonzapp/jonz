@@ -39,6 +39,7 @@ export const PAGES = {
   pass: { label: "House Pass", href: "/house/pass" },
   you: { label: "You (name, look, sign-in, help)", href: "/house/you" },
   wall: { label: "Wall", href: "/house/wall" },
+  guide: { label: "Guide", href: "/house/guide" },
 } as const;
 export type PageName = keyof typeof PAGES;
 

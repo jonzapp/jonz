@@ -1,12 +1,12 @@
 import { ASK_CHATS_COPY, memberCan, PAGE_TITLE, passUnlocked } from '@app/core';
-import { SquarePenIcon } from 'lucide-react-native';
+import { HistoryIcon, SquarePenIcon } from 'lucide-react-native';
 import { useCallback, useState, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { loadChat, type SavedChat } from '@/api/ask-chats';
 import { Alert } from '@/components/alert';
 import { IconButton } from '@/components/icon-button';
-import { AllChats, RecentChats } from '@/components/house/saved-chats';
+import { AllChats } from '@/components/house/saved-chats';
 import { SetupChat } from '@/components/house/setup-chat';
 import { useJohnSheetIfAny } from '@/components/john-sheet';
 import { replyPieces } from '@/components/reply/pieces';
@@ -20,16 +20,30 @@ import { GUTTER, useTheme } from '@/theme';
 type Open = { serial: number; saved: SavedChat | null };
 
 /**
+ * What the chat puts in its caller's title bar, laid out as chat apps lay
+ * theirs out: `lead` (Your chats) before the Title, `actions` (New chat) on
+ * the trailing edge, and on Your chats a `back` link to the chat.
+ */
+export interface AskBar {
+  title: string;
+  lead: ReactNode;
+  actions: ReactNode;
+  back: { label: string; onPress: () => void } | null;
+}
+
+/**
  * The chat with Jonz under a bar of the caller's own: Describe your house
  * while the list is empty, Ask Jonz once it has Johns (the title is fixed on
  * the first read, so adding Johns doesn't retitle it). The describe page
  * puts it under its title bar on a phone; from WIDE it's the right-hand
  * panel beside the page (AskPanel). `onOpenList` is the done row's way to
- * the John list. `bar` gets the title and New chat, for its right-hand side.
+ * the John list. `bar` draws the title bar from an AskBar.
  *
- * Chats are kept until the person deletes them: the start shows the latest
- * few to pick up again, and See all opens Your chats, where any can be
- * opened or deleted.
+ * Chats are kept until the person deletes them. As in ChatGPT and Claude,
+ * the clock on the leading edge opens Your chats (any can be opened or
+ * deleted there, with a back link to the chat), and the pencil on the
+ * trailing edge starts a new one, from anywhere; a new chat's start is
+ * just the greeting.
  */
 export function AskJonz({
   houseId,
@@ -39,7 +53,7 @@ export function AskJonz({
 }: {
   houseId: string;
   userId: string;
-  bar: (title: string, actions: ReactNode) => ReactNode;
+  bar: (bar: AskBar) => ReactNode;
   onOpenList?: () => void;
 }) {
   const { colors } = useTheme();
@@ -76,16 +90,32 @@ export function AskJonz({
     }
   }
 
-  // Describe your house is a long title, and a new house's chat is one sitting: New chat would push the
-  // title into dots there. Leaving the page and coming back starts afresh, with the kept chats on its start.
-  const newChat =
-    title === PAGE_TITLE.describe && !all ? null : (
-      <IconButton icon={SquarePenIcon} label={ASK_CHATS_COPY.newChat} onPress={fresh} testID="chat-new" />
+  // Describe your house is a long title, and a new house's chat is one sitting: the buttons would push the
+  // title into dots there. Leaving the page and coming back starts afresh.
+  const describing = title === PAGE_TITLE.describe && !all;
+  const newChat = describing ? null : <IconButton icon={SquarePenIcon} label={ASK_CHATS_COPY.newChat} onPress={fresh} testID="chat-new" />;
+  const yours =
+    describing || all ? null : (
+      <IconButton
+        icon={HistoryIcon}
+        label={ASK_CHATS_COPY.open}
+        onPress={() => {
+          setProblem(null);
+          setAll(true);
+        }}
+        testID="chats-open"
+      />
     );
+  const chatTitle = title ?? PAGE_TITLE.ask;
   const zone = view?.snapshot.rules.timezone ?? 'UTC';
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
-      {bar(all ? ASK_CHATS_COPY.all : (title ?? PAGE_TITLE.ask), newChat)}
+      {bar({
+        title: all ? ASK_CHATS_COPY.all : chatTitle,
+        lead: yours,
+        actions: newChat,
+        back: all ? { label: chatTitle, onPress: () => setAll(false) } : null,
+      })}
       {problem ? (
         <View style={styles.reading}>
           <Alert message={problem} />
@@ -97,7 +127,6 @@ export function AskJonz({
           zone={zone}
           now={view.now}
           onOpen={(id) => void pickUp(id)}
-          onBack={() => setAll(false)}
           onDeleted={(id) => {
             if (id === openId) {
               setChat((was) => ({ serial: was.serial + 1, saved: null }));
@@ -110,9 +139,6 @@ export function AskJonz({
           key={chat.serial}
           saved={chat.saved}
           onKept={kept}
-          recent={
-            <RecentChats houseId={houseId} zone={zone} now={view.now} onOpen={(id) => void pickUp(id)} onSeeAll={() => setAll(true)} />
-          }
           houseId={houseId}
           rules={view.snapshot.rules}
           johns={list.data.johns}

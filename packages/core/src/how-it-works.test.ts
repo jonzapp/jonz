@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { DEFAULT_RULES, type HouseRules } from "./domain";
-import { HOW_TOPICS, howItWorks, type HowFacts } from "./how-it-works";
+import { GUIDE_TOPIC, guideMarkdown, guideSections, HOW_TOPICS, howItWorks, isHowTopic, type HowFacts } from "./how-it-works";
+import { TOURS } from "./tours";
 import { formatMoney } from "./money";
 import { PASS_PRICES } from "./pass";
 
@@ -83,5 +84,37 @@ describe("howItWorks", () => {
     expect(howItWorks("family", { ...facts, family: true })).toMatch(
       /parent's OK/,
     );
+  });
+});
+
+describe("the guide", () => {
+  it("lists every topic once, with a title and a line, for the kind of house", () => {
+    for (const family of [false, true]) {
+      const topics = guideSections(family).flatMap((s) => s.topics);
+      expect(new Set(topics).size).toBe(topics.length);
+      expect(topics.includes("family")).toBe(family);
+      expect(topics.includes("stake")).toBe(!family);
+      for (const t of HOW_TOPICS) if (!(family ? ["stake", "settle_up"] : ["family"]).includes(t)) expect(topics, t).toContain(t);
+    }
+    for (const t of HOW_TOPICS) expect(GUIDE_TOPIC[t].title.length, t).toBeGreaterThan(2);
+  });
+
+  it("reads each page from its tour, so the guide and the tour say the same", () => {
+    const today = howItWorks("today", facts);
+    for (const step of TOURS.today.steps) expect(today).toContain(step.body);
+    expect(howItWorks("house", facts)).toContain(TOURS.setUp.steps[0].body);
+  });
+
+  it("never talks about the tools Jonz reads with", () => {
+    for (const t of HOW_TOPICS) expect(howItWorks(t, facts), t).not.toMatch(/\bread\b gives|why_john|settle_up\)|\(see /);
+  });
+
+  it("writes a piece as paragraphs and lists", () => {
+    expect(guideMarkdown("Lead\n- one\n\n- two\nAfter *this*")).toBe("Lead\n\n- one\n- two\n\nAfter \\*this\\*");
+  });
+
+  it("knows a topic from anything else in an address", () => {
+    expect(isHowTopic("covering")).toBe(true);
+    expect(isHowTopic("nope")).toBe(false);
   });
 });

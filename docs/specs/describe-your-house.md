@@ -118,9 +118,11 @@ on Today, Week and House (not while a parent is acting for a kid).
   their account). A chat keeps what was said, Jonz's replies and
   questions, and whether a reply had a card; never the card itself, so a
   reopened chat says to ask again instead of applying a stale change.
-  Ask Jonz's start shows the latest three (Pick up where you left off);
-  See all opens Your chats, where any chat opens or is deleted after a
-  sheet. New chat sits in the title bar. No chat expires.
+  As in ChatGPT and Claude, the clock on the bar's leading edge opens Your
+  chats (grouped Today, Last 7 days, Earlier, with a back link to the
+  chat), where any chat opens or is deleted after a sheet; the pencil on
+  the trailing edge starts a new chat. A new chat's start is just the
+  greeting. No chat expires.
 - Keeping makes the groups the kept Johns need through `save_group`, then
   adds the Johns in one insert through the admins' column grants
   (`keepDraft`, `addJohns` in `apps/client/src/api`). A drafted group with

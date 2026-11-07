@@ -461,7 +461,6 @@ describe('kept chats', () => {
             { role: 'assistant', text: 'Here’s the change.', ask: null, hadCard: true },
           ],
         }}
-        recent={null}
       />,
       { wrapper: House },
     );
@@ -485,17 +484,5 @@ describe('kept chats', () => {
     await fireEvent.press(screen.getByTestId('describe-keep'));
     await screen.findByTestId('chat-done');
     expect(kept).not.toHaveBeenCalled();
-  });
-
-  it('shows the chats to pick up only before anything is said', async () => {
-    const { Text } = jest.requireActual('react-native');
-    await render(
-      <SetupChat houseId="h1" rules={RULES} johns={[]} groups={[]} people={people} me={ME} passOpen recent={<Text>recent here</Text>} />,
-      { wrapper: House },
-    );
-    expect(screen.getByText('recent here')).toBeTruthy();
-    await say(HOUSE);
-    await screen.findByText('Here’s a first go.');
-    expect(screen.queryByText('recent here')).toBeNull();
   });
 });

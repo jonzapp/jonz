@@ -11,8 +11,12 @@ import { APP_NAME, HOUSE_PAGE_COPY, PASS_COPY, STEADY_COPY } from "./copy";
 import type { HouseRules } from "./domain";
 import { formatMoney } from "./money";
 import { PASS_ENFORCED, PASS_PRICES, PASS_TRIAL_DAYS } from "./pass";
+import { TOURS, type TourId } from "./tours";
 
 export const HOW_TOPICS = [
+  "today",
+  "week",
+  "house",
   "fair_shares",
   "deal",
   "points",
@@ -38,6 +42,9 @@ export interface HowFacts {
   awayMakeup: number;
 }
 
+/** A page's tour as the guide's lines: what each lit thing is, and what it's for. */
+const tourLines = (id: TourId) => TOURS[id].steps.map((step) => `- ${step.title}: ${step.body}`);
+
 /** "2 hours", "1 hour". */
 const hours = (n: number) => `${n} ${n === 1 ? "hour" : "hours"}`;
 
@@ -51,6 +58,17 @@ export function howItWorks(
     HOUSE_PAGE_COPY.makeup[awayMakeup] ?? HOUSE_PAGE_COPY.makeup[100];
   const prices = PASS_PRICES[rules.currency];
   switch (topic) {
+    case "today":
+      return ["Today is your own page: what's yours to do, and what needs you.", ...tourLines("today")].join("\n");
+    case "week":
+      return ["The week shows the whole house: who has which John, and how it's going.", ...tourLines("week")].join("\n");
+    case "house":
+      return [
+        "House is the house as a whole: how everyone's doing, what's been happening, and how it's set up.",
+        ...tourLines("house"),
+        "Admins set the house up:",
+        ...tourLines("setUp"),
+      ].join("\n");
     case "fair_shares":
       return [
         HOUSE_PAGE_COPY.rulesSharesBody(makeup),
@@ -58,7 +76,7 @@ export function howItWorks(
         "- Their share: for every John dealt, its points are split between everyone who shares it (everyone at home that day, or the group it belongs to), and their part is added to their share.",
         "- Done: the points of every John they actually did, on time or late, plus any they covered for someone else. A John done together splits its points between the people who did it.",
         "- A missed John counts for nobody: it adds to the share but nobody's done.",
-        "- Standing = done minus share. Below zero is behind, above zero is ahead. The balances read gives each person's numbers.",
+        "- Standing = done minus share. Below zero is behind, above zero is ahead. Everyone's numbers are under Is it fair? on the Week page.",
         "- The deal hands the next John to whoever is furthest behind, so standings drift back towards even. Someone behind gets a little more, but never more than half as much again as a usual week.",
         `- Time away is made up ${makeup}: the share for days away ${awayMakeup >= 100 ? "is caught up a little each week once back" : awayMakeup > 0 ? "is half caught up, a little each week once back" : "goes to whoever is home, so there's nothing to catch up"}.`,
       ].join("\n");
@@ -71,7 +89,7 @@ export function howItWorks(
         `- Effort each week: ${STEADY_COPY.budgetEach(rules.dealBudget)}. ${STEADY_COPY.budgetFoot}`,
         "- Who gets a John is decided by fair shares: whoever is furthest behind, skipping anyone who did it last time when someone else is as far behind, and anyone already handed the most extra a week gives.",
         "- People away that day are left out. Every John on the list has a day; a John that keeps its day is always dealt on it.",
-        "- Each John's sheet has a Why? that shows exactly how its deal added up; the why_john read gives the same.",
+        "- Each John's sheet has a Why? that shows exactly how its deal added up.",
       ].join("\n");
     case "points":
       return [
@@ -82,7 +100,7 @@ export function howItWorks(
       return [
         `A John is late once its due time passes. It can still be done late for ${hours(rules.lateHours)}; after that it's missed.`,
         `Late still counts as done for fair shares${rules.stakeMinor > 0 ? `, but costs ${money(rules.lateForfeitMinor)} from the Stake` : ""}. Missed counts for nobody${rules.stakeMinor > 0 ? ` and costs ${money(rules.missedForfeitMinor)}` : ""}.`,
-        `${hours(rules.coverGraceHours)} after it's due, a housemate can cover it instead (see covering).`,
+        `${hours(rules.coverGraceHours)} after it's due, a housemate can cover it instead.`,
       ].join("\n");
     case "covering":
       return [
@@ -102,9 +120,9 @@ export function howItWorks(
             `- Finish your Johns and you keep it all. A late John forfeits ${money(rules.lateForfeitMinor)}, a missed one ${money(rules.missedForfeitMinor)}.`,
             `- Nobody loses more than ${money(rules.stakeMinor)} in a month: anything over that is given back at month end.`,
             "- What someone forfeits is shared equally between the rest of the house at month end. A forfeit for a John someone else covered goes whole to the coverer instead. If it doesn't split evenly, the odd pennies take turns month by month.",
-            "- Only the differences change hands: the app adds up who owes whom and suggests the fewest payments (see settle_up). The app never moves money itself.",
+            "- Only the differences change hands: the app adds up who owes whom and suggests the fewest payments. The app never moves money itself.",
             `- Worked example: four people, ${money(rules.stakeMinor)} each. Sam is late once and misses once: ${money(rules.lateForfeitMinor)} + ${money(rules.missedForfeitMinor)} = ${money(rules.lateForfeitMinor + rules.missedForfeitMinor)}. The other three get a third each, about ${money(Math.floor((rules.lateForfeitMinor + rules.missedForfeitMinor) / 3))}, and Sam owes that between them.`,
-            "The stake read gives this month's real numbers so far.",
+            "This month's real numbers so far are on the Stake page.",
           ].join("\n");
     case "settle_up":
       return [
@@ -161,3 +179,74 @@ export function howItWorks(
         : "This house is housemates, not a family.";
   }
 }
+
+/**
+ * The guide: the same pieces as Ask Jonz reads, for people to read, with
+ * the house's own numbers. Each topic's title and a line on what it covers;
+ * Help's Read the guide opens the list, grouped as here.
+ */
+export const GUIDE_TOPIC: Record<HowTopic, { title: string; meta: string }> = {
+  today: { title: "Today", meta: "Your next John, and what needs you" },
+  week: { title: "The week", meta: "Everyone's Johns, and is it fair" },
+  house: { title: "House", meta: "The Table, the Wall and setting up" },
+  deal: { title: "How Johns are dealt", meta: "Smart and Classic, every week" },
+  points: { title: "Points", meta: "How effort is counted" },
+  fair_shares: { title: "Fair shares", meta: "Who's ahead and who's behind" },
+  ticks_and_questions: { title: "Ticking and questioning", meta: "Marking done, and checking a tick" },
+  late_and_missed: { title: "Late and missed", meta: "What happens after the due time" },
+  covering: { title: "Covering for someone", meta: "Doing an overdue John for them" },
+  swaps: { title: "Swaps", meta: "Trading a John with a housemate" },
+  on_call: { title: "On-call Johns", meta: "Done when they're needed" },
+  time_away: { title: "Time away", meta: "Being left out of the deal" },
+  history_and_resets: { title: "History and fixing mistakes", meta: "Undo, and resets for admins" },
+  stake: { title: "The Stake", meta: "What late and missed cost" },
+  settle_up: { title: "Settling up", meta: "Who pays whom at month end" },
+  house_pass: { title: "House Pass", meta: "What it adds, and the price" },
+  family: { title: "Families", meta: "Parents, kids and pocket money" },
+};
+
+const GUIDE_SECTIONS: readonly { label: string; topics: readonly HowTopic[] }[] = [
+  { label: "Getting started", topics: ["today", "week", "house"] },
+  {
+    label: "How it works",
+    topics: ["deal", "points", "fair_shares", "ticks_and_questions", "late_and_missed", "covering", "swaps", "on_call", "time_away", "history_and_resets"],
+  },
+  { label: "Money", topics: ["stake", "settle_up", "house_pass"] },
+  { label: "Your family", topics: ["family"] },
+];
+
+/** The guide's sections for this kind of house: a family has no Stake to settle, and only a family reads about families. */
+export function guideSections(family: boolean): { label: string; topics: HowTopic[] }[] {
+  const leftOut: readonly HowTopic[] = family ? ["stake", "settle_up"] : ["family"];
+  return GUIDE_SECTIONS.map((s) => ({ label: s.label, topics: s.topics.filter((t) => !leftOut.includes(t)) })).filter((s) => s.topics.length > 0);
+}
+
+/** Whether a guide address names a topic. */
+export function isHowTopic(topic: string): topic is HowTopic {
+  return (HOW_TOPICS as readonly string[]).includes(topic);
+}
+
+/**
+ * A piece as Markdown for the guide's page (drawn as Jonz's replies are):
+ * its "- " lines a list, its other lines paragraphs.
+ */
+export function guideMarkdown(text: string): string {
+  const lines = text.split("\n").map((line) => line.trim()).filter(Boolean);
+  return lines
+    .map((line, i) => {
+      const item = line.startsWith("- ");
+      const after = i === 0 ? "" : item && lines[i - 1].startsWith("- ") ? "\n" : "\n\n";
+      // A paragraph's own Markdown marks stay words: a leading number isn't a list, a star isn't bold.
+      const said = line.replace(/([*_`[\]<>#])/g, "\\$1").replace(/^(\d+)\./, "$1\\.");
+      return after + (item ? `- ${said.slice(2)}` : said);
+    })
+    .join("");
+}
+
+export const GUIDE_COPY = {
+  title: "Guide",
+  lead: `How ${APP_NAME} works, page by page, with your house's own numbers. ${APP_NAME} reads the same guide, so you can ask it too.`,
+  /** At the foot of the list and of each page. */
+  ask: `Not here? Ask ${APP_NAME}`,
+  askAbout: `Ask ${APP_NAME} about this`,
+} as const;
