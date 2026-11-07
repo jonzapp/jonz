@@ -199,6 +199,92 @@ export const PARENT_OK_COPY = {
   rulesValue: "A parent OKs each kid’s tick",
 } as const;
 
+/**
+ * Kids without a sign-in, family step 4: a parent adds a child by name and
+ * year born, ticks for them from Today's switcher, and says how old you have
+ * to be for each John.
+ */
+export const KIDS_COPY = {
+  /** The Table's row, for a parent. */
+  add: "Add a child",
+  addTitle: "Add a child",
+  addBody: "For a child without their own phone. They don’t sign in: a parent picks them at the top of Today and ticks for them.",
+  name: "Name",
+  born: "Year they were born",
+  bornMeta: "So they’re only dealt Johns they’re old enough for.",
+  submit: "Add them",
+  added: (name: string) => `${name} is in. They’re dealt Johns from next week.`,
+  /** Today's switcher, for a parent with a kid like that. */
+  switchLabel: "Whose Today",
+  you: "You",
+  /** A person's page and House's people: what a kid like that is. */
+  noSignIn: "No sign-in, a parent ticks for them",
+  /** The John editor, in a family. */
+  minAgeField: "Youngest age",
+  minAgeMeta: "Kids younger than this aren’t dealt it. Leave it empty for anyone.",
+  /** In a John's line: "8 and up". */
+  minAgeLine: (age: number) => `${age} and up`,
+  problems: {
+    name: "Give their name.",
+    born: "Give the year they were born, like 2016. Kids are 18 or under.",
+    minAge: "Give an age from 2 to 18, or leave it empty.",
+  },
+} as const;
+
+/** Pocket money and Pay day, family step 3: what Johns earn, the month card and Paid. */
+export const POCKET_COPY = {
+  /** After a kid's John's due time: "earns 50p". */
+  earns: (money: string) => `earns ${money}`,
+  /** Under a kid's Today: "£4.50 earned so far in October". */
+  kidMonth: (money: string, month: string) => `${money} earned so far in ${month}`,
+  /** A parent's OK on a John that earns: "OK, pay 20p". */
+  okPay: (money: string) => `OK, pay ${money}`,
+  /** House's line under the family's name: "2 parents, 2 kids, up to £10 a month each". */
+  family: (parents: number, kids: number, cap: string) =>
+    `${parents} ${parents === 1 ? "parent" : "parents"}, ${kids} ${kids === 1 ? "kid" : "kids"}, up to ${cap} a month each`,
+  /** The month card. */
+  card: "Pocket money",
+  monthSoFar: (month: string) => `${month} so far`,
+  earnedSoFar: (money: string) => `${money} earned so far`,
+  payDay: (day: string) => `Pay day is ${day}`,
+  /** A month that's over, still to pay: "Pay Maya £6.50 for September". */
+  pay: (kid: string, money: string, month: string) => `Pay ${kid} ${money} for ${month}`,
+  payHow: "Cash, your bank app, or their card",
+  paid: (kid: string, money: string) => `Paid ${kid} ${money}`,
+  /** What a kid sees of their own month that's over. */
+  owedYou: (money: string, month: string) => `${money} for ${month} on its way`,
+  payDayKid: "A parent pays you, then taps Paid.",
+  history: "Pocket money history",
+  historyEmpty: "Nothing earned yet. Each John a parent OKs earns what it says.",
+  historySoFar: "So far",
+  /** Someone who has since left. */
+  someone: "Someone",
+  historyPaid: (parent: string, day: string) => `Paid by ${parent}, ${day}`,
+  historyOwed: (money: string) => `${money} still to pay`,
+  /** The Table's trailing figure in a family is what each kid earned this month. */
+  table: "Earned this month",
+  /** The John editor's field, a parent's only. */
+  johnField: "Earns",
+  johnFieldMeta: "What a kid earns when a parent OKs it. Parents’ own Johns earn nothing.",
+  /** House rules. */
+  rulesLabel: "Pocket money",
+  rulesValue: (cap: string) => `Up to ${cap} a month each`,
+  capField: "Pocket money a month",
+  capFieldMeta: "The most each kid can earn in a month.",
+  /** Start a house's defaults line for a family. */
+  defaults: (cap: string) => `Pocket money up to ${cap} a month each`,
+  /** How pocket money works, the Table's sheet in a family. */
+  howItWorks: "How pocket money works",
+  earningLabel: "Earning",
+  earningBody: (cap: string) =>
+    `Each John says what it earns. A kid earns it once a parent OKs their tick, up to ${cap} a month. Parents’ own Johns earn nothing.`,
+  payDayLabel: "Pay day",
+  payDayBody:
+    "On the 1st, House says what each kid earned last month. Pay them outside Jonz, by cash, a bank app or a kids’ card, and tap Paid. Jonz never moves the money itself.",
+  pointsLabel: "Points",
+  pointsBody: "Points still say how much each John is, so the deal is fair.",
+} as const;
+
 /** An invite: the web's /join/[code] and the app's. */
 export const JOIN_COPY = {
   badLink: "That link doesn’t work",
@@ -1675,7 +1761,7 @@ export const HOUSE_DRAFT_COPY = {
   placeholderChange: "Try “oven every month”",
   message: "Message",
   send: "Send",
-  privacy: "What you write is sent to Anthropic’s Claude, through Vercel, to draft the list.",
+  privacy: "What you write is sent to Anthropic’s Claude, through Vercel, to answer. Only you can see your chats, and they’re kept until you delete them.",
   /** While Jonz is answering. */
   thinking: `${APP_NAME} is thinking…`,
   /**
@@ -1721,19 +1807,65 @@ export const HOUSE_DRAFT_COPY = {
   open: `Ask ${APP_NAME}`,
   greetingList: "What would you like to change? I can add Johns, change them or take some off, and nothing changes until you apply it.",
   placeholderList: "Sam’s moving out…",
-  /** The card's label, and its line: the house's points a week before and after. */
-  changesLabel: "Changes",
+  /** The card's line over its changes: the house's points a week before and after. */
   changesMeta: (before: number, after: number) => (before === after ? `${after} pts a week` : `${before} → ${after} pts a week`),
-  /** Each change's kind, before what it says about the John. */
-  adding: "New",
-  removing: "Taking off",
+  /** The card's three headings, in the order it shows them: what goes, what changes, what's new. */
+  removingHeading: "Taking off",
+  changingHeading: "Changing",
+  /** A group the house has, with new people in it, under Changing: "You and Sam → you, Sam and Ivy". */
+  groupPeople: (before: string, after: string) => `${before} → ${after}`,
+  addingHeading: "Adding",
   apply: (n: number) => (n === 0 ? "Pick at least one change" : n === 1 ? "Apply 1 change" : `Apply ${n} changes`),
   applying: "Applying…",
   applied: (n: number) => (n === 1 ? "1 change made" : `${n} changes made`),
   appliedMeta: "From the next deal",
+  /** For someone who can't change the list (a member, a kid): Jonz answers questions. */
+  greetingAsk: "Ask me about the house: who has what this week, who’s away, how fair shares stand, or what a rule means.",
+  placeholderAsk: "Who’s on bins this week?",
+  /** Claude couldn't be reached to answer a question. */
+  offlineAsk: "I couldn’t answer just now. Try again in a minute.",
   /** In place of the message box, for a house without the Pass. */
   passNeeded: `Changing your list with ${APP_NAME} comes with the House Pass. Setting up a new house stays free.`,
   seePass: "See the House Pass",
+} as const;
+
+/** A share, 0 to 1, as a whole percent, never rounded up to 100 or down to 0. */
+function percent(share: number): number {
+  const n = Math.round(share * 100);
+  return share > 0 && n === 0 ? 1 : share < 1 && n === 100 ? 99 : n;
+}
+
+/**
+ * Ask Jonz's week: the warning over the message box when it's low, the
+ * notice in its place once it's all used, and the usage page (House, setup).
+ * `backOn` is the weekday and time the house's week starts.
+ */
+export const ASK_USAGE_COPY = {
+  title: `Ask ${APP_NAME} usage`,
+  /** Its row on House: what's left of yours. */
+  rowMeta: (left: number) => `${percent(left)}% of yours left this week`,
+  thisWeek: "This week",
+  resets: (backOn: string) => `Resets ${backOn}`,
+  house: "The house",
+  houseNote: (people: number) => (people < 2 ? "Just you" : people === 2 ? "Between the two of you" : `Between all ${people} of you`),
+  you: "You",
+  youNote: "Of your half: nobody can use more than half the house’s",
+  whoUsed: "Who used it",
+  used: (share: number) => `${percent(share)}% used`,
+  /** Under the page, for a house without the Pass. */
+  passMore: "With the House Pass the house gets five times as much.",
+  /** Over the message box once under a quarter is left. */
+  low: (left: number, house: boolean, backOn: string) =>
+    `Only ${percent(left)}% of ${house ? "the house’s" : "your"} Ask ${APP_NAME} left this week. More on ${backOn}.`,
+  lowLabel: "See usage",
+  /** In place of the message box once it's all used. */
+  outHouse: `The house has used this week’s Ask ${APP_NAME}`,
+  outMine: "You’ve used your half this week",
+  outHouseNote: (backOn: string, pass: boolean) =>
+    `Back for everyone ${backOn}.${pass ? "" : " With the House Pass the house gets five times as much."}`,
+  outMineNote: (backOn: string) => `Back ${backOn}. Nobody can use more than half, so the others still have theirs.`,
+  seeUsage: "See usage",
+  getPass: "Get the House Pass",
 } as const;
 
 /**

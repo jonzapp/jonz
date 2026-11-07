@@ -17,8 +17,8 @@ const PANEL_SHARE = 0.36;
 /**
  * The chat with Jonz down the right of the window, from WIDE, while it's
  * open: its own title bar with a close button, the chat under it, and the
- * page still there to its left. Closing it ends the chat; anything applied
- * stays applied.
+ * page still there to its left. Closing it puts the chat away (it's kept,
+ * to pick up again from the start); anything applied stays applied.
  */
 export function AskPanel({ houseId, userId }: { houseId: string; userId: string }) {
   const panel = useContext(AskPanelContext);
@@ -34,10 +34,18 @@ export function AskPanel({ houseId, userId }: { houseId: string; userId: string 
       <AskJonz
         houseId={houseId}
         userId={userId}
-        bar={(title) => (
+        bar={({ title, lead, actions, back }) => (
           <TitleBar
             title={title}
-            right={<IconButton icon={XIcon} label={SHELL_COPY.close} onPress={close} testID="ask-close" />}
+            lead={lead}
+            onBack={back?.onPress}
+            backLabel={back?.label}
+            right={
+              <View style={styles.actions}>
+                {actions}
+                <IconButton icon={XIcon} label={SHELL_COPY.close} onPress={close} testID="ask-close" />
+              </View>
+            }
           />
         )}
         onOpenList={() => router.navigate('/house/johns')}
@@ -48,4 +56,5 @@ export function AskPanel({ houseId, userId }: { houseId: string; userId: string 
 
 const styles = StyleSheet.create({
   panel: { borderLeftWidth: StyleSheet.hairlineWidth },
+  actions: { flexDirection: 'row' },
 });

@@ -1,6 +1,7 @@
-import { FOCUS_SHELL_COPY, HOUSE_LOWER_COPY, PAGE_TITLE, PASS_COPY, WALL_COPY } from '@app/core';
+import { ASK_USAGE_COPY, FOCUS_SHELL_COPY, HOUSE_LOWER_COPY, PAGE_TITLE, PASS_COPY, WALL_COPY } from '@app/core';
 import { usePathname, useRouter, type Href } from 'expo-router';
 import {
+  GaugeIcon,
   HouseIcon,
   ListTodoIcon,
   MessageSquareIcon,
@@ -142,6 +143,7 @@ const PAGES: { group: string | null; items: { href: Href; label: string; icon: L
       { href: '/house/johns', label: HOUSE_LOWER_COPY.johns, icon: ListTodoIcon, testID: 'nav-johns' },
       { href: '/house/rules', label: HOUSE_LOWER_COPY.rules, icon: ScrollTextIcon, testID: 'nav-rules' },
       { href: '/house/away', label: HOUSE_LOWER_COPY.away, icon: PlaneIcon, testID: 'nav-away' },
+      { href: '/house/ask-usage', label: ASK_USAGE_COPY.title, icon: GaugeIcon, testID: 'nav-ask-usage' },
     ],
   },
   {

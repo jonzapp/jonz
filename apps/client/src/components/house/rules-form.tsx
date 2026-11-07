@@ -9,6 +9,7 @@ import {
   DISPUTE_HOURS,
   DOW_LABEL,
   MAKEUP_LABEL,
+  POCKET_COPY,
   RULES_COPY,
   rulesChanged,
   rulesDraft,
@@ -67,8 +68,10 @@ export interface RulesValues {
   awayMakeup: number;
   settleIn: SettleIn;
   memberIds: readonly string[];
-  /** A family has no stake, so its Money section is only the currency. */
+  /** A family has no stake, so its Money section is the currency and pocket money. */
   kind?: HouseKind;
+  /** In a family: the most each kid can earn in a month. */
+  pocketCapMinor?: number;
 }
 
 /**
@@ -81,7 +84,14 @@ export interface RulesValues {
  */
 export function useRulesForm(houseId: string, values: RulesValues, onSaved: () => void) {
   const move = useMove(houseId);
-  const [start] = useState(() => rulesDraft(values.name, values.rules, values.awayMakeup, values.settleIn));
+  const [start] = useState(() => rulesDraft(
+      values.name,
+      values.rules,
+      values.awayMakeup,
+      values.settleIn,
+      values.kind === 'family' ? (values.pocketCapMinor ?? 0) : undefined,
+    ),
+  );
   const [draft, setDraft] = useState<RulesDraft>(start);
   const [problems, setProblems] = useState<Partial<Record<RulesField, string>>>({});
 
@@ -191,6 +201,20 @@ export function RulesForm({ form }: { form: RulesFormState }) {
             />
           </GroupItem>
         ))}
+        {noStake && v.pocket !== undefined ? (
+          <GroupItem>
+            <Field
+              label={`${POCKET_COPY.capField} (${symbol})`}
+              value={v.pocket}
+              onChangeText={(pocket) => set({ pocket })}
+              keyboardType="decimal-pad"
+              hint={POCKET_COPY.capFieldMeta}
+              editable={!pending}
+              problem={problems.pocket}
+              testID="house-pocket"
+            />
+          </GroupItem>
+        ) : null}
         {noStake ? null : (
           <PickRow
             label={RULES_COPY.settleIn}

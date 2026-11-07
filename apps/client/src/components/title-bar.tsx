@@ -17,10 +17,11 @@ import { FONT, GUTTER, INSET, SECTION_GAP, SPACE, TAP, TITLE_BAR, useTheme, WIDE
 /**
  * The top of every house screen, in place of the old wordmark strip: the
  * screen's one Title (caps, one line) on the pavement with a hairline under
- * it, and on the right the screen's own button (`right`, a MoreButton) and
- * the sparkles that open Jonz (`ask`: Describe your house, or Ask Jonz once
- * there's a list). The sparkles always sit at the edge, with the screen's
- * button just inside them, so switching tabs moves nothing: every tab's bar
+ * it, and on the right one group of buttons in a fixed order: the screen's
+ * own button (`right`, a MoreButton or Today's "You ▾"), Help's question
+ * mark, then the sparkles that open Jonz (`ask`: Describe your house, or Ask
+ * Jonz once there's a list) at the edge. The buttons' squares touch, so the
+ * gaps between them are even, and switching tabs moves nothing: every tab's bar
  * is the same 52 tall. What a tab says about itself (Today's date, House's
  * housemates) is its page's TopLine, not a second line here. A pushed page
  * passes `back`, the page its back goes to, whatever came before it: a
@@ -32,8 +33,12 @@ import { FONT, GUTTER, INSET, SECTION_GAP, SPACE, TAP, TITLE_BAR, useTheme, WIDE
  * page beside the rail, as a desktop app's toolbar does: the Title where the
  * page's words start, the sparkles at the window's right edge.
  * A house's tabs (a bar with no `back`, inside the tour player) carry Help's
- * question mark just inside the sparkles, or at the edge without them: it
- * opens the Help sheet, with a tour of the page.
+ * question mark just inside the sparkles, or at the edge without them (a
+ * housemate): it opens the Help sheet, with a tour of the page.
+ * `lead` is a button on the leading edge before the Title, its glyph on the
+ * content's edge as the last one's is on the trailing edge: Ask Jonz's Your
+ * chats, where chat apps put the way to your chats. `onBack` is a back link
+ * that doesn't leave the page (Your chats back to the chat), in place of `back`.
  */
 export function TitleBar({
   title,
@@ -42,6 +47,8 @@ export function TitleBar({
   back,
   backLabel = FOCUS_SHELL_COPY.back,
   ask = false,
+  lead,
+  onBack,
 }: {
   title: string;
   /** A pushed page's line under the Title ("Sam, admin"). */
@@ -53,6 +60,10 @@ export function TitleBar({
   backLabel?: string;
   /** Show the sparkles that open the chat with Jonz (admins). */
   ask?: boolean;
+  /** One button on the leading edge, before the Title. */
+  lead?: ReactNode;
+  /** A back link (named by `backLabel`) that stays on this page, in place of `back`. */
+  onBack?: () => void;
 }) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -61,31 +72,40 @@ export function TitleBar({
   // On a laptop House's pages are listed beside them, which is the way back to House.
   const way = useHouseWorkspace().listed && back === '/house' ? undefined : back;
   const tours = useTour();
-  const help = tours != null && back == null;
+  const help = tours != null && back == null && onBack == null;
+  const pushed = way != null || onBack != null;
   return (
     <View
       testID="title-bar"
       style={[styles.bar, { paddingTop: insets.top, backgroundColor: colors.background, borderBottomColor: colors.border }]}
     >
       <View style={[styles.inner, { maxWidth }]}>
-        {way != null ? <BackLink to={way} label={backLabel} /> : null}
-        <View style={[styles.line, sub ? styles.withSub : null, way != null && styles.pushed]}>
+        {way != null ? <BackLink to={way} label={backLabel} /> : onBack ? <BackLink onPress={onBack} label={backLabel} /> : null}
+        <View style={[styles.line, sub ? styles.withSub : null, pushed && styles.pushed]}>
+          {lead != null ? (
+            <View testID="bar-lead" style={[styles.tools, styles.lead]}>
+              {lead}
+            </View>
+          ) : null}
           <View style={styles.words}>
             <Title numberOfLines={1} style={styles.title}>
               {title}
             </Title>
             {sub ? <Meta numberOfLines={1}>{sub}</Meta> : null}
           </View>
-          {/* The sparkles hold the edge on every tab; the screen's own button sits inside them. */}
-          {right == null ? null : <View style={[styles.right, (ask || help) && styles.inside]}>{right}</View>}
-          {help ? (
-            <View style={[styles.ask, styles.more, ask && styles.inside]}>
-              <TourSpot id="shell.help">
-                <IconButton icon={CircleQuestionMarkIcon} label={TOUR_COPY.open} onPress={tours.openHelp} testID="help-button" />
-              </TourSpot>
+          {right != null || help || ask ? (
+            // One group at the edge, in a fixed order with no gaps of its own: the
+            // screen's button, Help, then the sparkles at the edge.
+            <View testID="bar-tools" style={[styles.tools, styles.trail]}>
+              {right}
+              {help ? (
+                <TourSpot id="shell.help">
+                  <IconButton icon={CircleQuestionMarkIcon} label={TOUR_COPY.open} onPress={tours.openHelp} testID="help-button" />
+                </TourSpot>
+              ) : null}
+              {ask ? <AskButton /> : null}
             </View>
           ) : null}
-          {ask ? <AskButton /> : null}
         </View>
       </View>
     </View>
@@ -114,14 +134,14 @@ export function TopLine({ children }: { children: string }) {
  * another tab (Today's setup card, say) still goes to House, not back to
  * the tab it came from.
  */
-function BackLink({ to, label }: { to: Href; label: string }) {
+function BackLink({ to, onPress, label }: { to?: Href; onPress?: () => void; label: string }) {
   const { colors, type } = useTheme();
   const router = useRouter();
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label === FOCUS_SHELL_COPY.back ? label : FOCUS_SHELL_COPY.backTo(label)}
-      onPress={() => router.dismissTo(to)}
+      onPress={onPress ?? (() => to && router.dismissTo(to))}
       testID="back"
       style={({ pressed }) => [styles.back, pressed && styles.pressed]}
     >
@@ -144,8 +164,7 @@ function AskButton() {
   const ask = useAskJonz('toggle');
   const open = useAskPanelOpen();
   return (
-    <View style={[styles.ask, styles.more]}>
-      <TourSpot id="shell.ask">
+    <TourSpot id="shell.ask">
       <IconButton
         icon={SparklesIcon}
         label={HOUSE_DRAFT_COPY.open}
@@ -154,18 +173,13 @@ function AskButton() {
         href={'href' in ask ? ask.href : undefined}
         testID="ask-jonz"
       />
-      </TourSpot>
-    </View>
+    </TourSpot>
   );
 }
 
 /** The title bar's "•••": opens the screen's ActionMenu. */
 export function MoreButton({ onPress, testID = 'more' }: { onPress: () => void; testID?: string }) {
-  return (
-    <View style={styles.more}>
-      <IconButton icon={EllipsisIcon} label={FOCUS_SHELL_COPY.more} onPress={onPress} testID={testID} />
-    </View>
-  );
+  return <IconButton icon={EllipsisIcon} label={FOCUS_SHELL_COPY.more} onPress={onPress} testID={testID} />;
 }
 
 const styles = StyleSheet.create({
@@ -185,9 +199,13 @@ const styles = StyleSheet.create({
   words: { flex: 1, minWidth: 0 },
   // Overpass's caps sit high in their line, so the title comes down a little.
   title: { paddingTop: 4 },
-  right: { flexShrink: 0, marginVertical: -SPACE.xs },
-  // Before the sparkles: cancels the dots' pull to the edge, so the two sit side by side.
-  inside: { marginRight: SPACE.md },
+  // The buttons' 48 squares touch, so every glyph is the same 48 from the next;
+  // the last one's glyph lines up with the content's edge, and they sit in the
+  // bar's own 4 above and below.
+  tools: { flexShrink: 0, flexDirection: 'row', alignItems: 'center', marginVertical: -SPACE.xs },
+  trail: { marginRight: -SPACE.md },
+  // The leading button's glyph on the content's edge, and the Title 4 after its square (the line's gap less 8).
+  lead: { marginLeft: -SPACE.md, marginRight: -SPACE.sm },
   back: {
     alignSelf: 'flex-start',
     minHeight: TAP,
@@ -199,10 +217,6 @@ const styles = StyleSheet.create({
     paddingRight: SPACE.sm,
   },
   backWords: { fontFamily: FONT.bold },
-  // The dots' right edge lines up with the content's.
-  more: { marginRight: -SPACE.md },
-  // Sits in the bar's own 4 above and below, like the dots.
-  ask: { flexShrink: 0, marginVertical: -SPACE.xs },
   pressed: { opacity: 0.6 },
   topLine: { minHeight: 24, justifyContent: 'center', paddingHorizontal: INSET, marginBottom: SPACE.sm - SECTION_GAP },
 });

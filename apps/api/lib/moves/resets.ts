@@ -16,6 +16,7 @@ import { pushNotifier } from "@/lib/push";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 import type { Caller, Refusal } from "./disputes";
+import { permitted } from "./permitted";
 
 /**
  * An admin's reset (supabase/migrations/*_admin_resets.sql admin_reset):
@@ -34,14 +35,14 @@ export async function resetHouse(
   request: ResetRequest,
   now: Date,
 ): Promise<{ refusal: Refusal } | { preview: ResetPreview } | { action: string }> {
+  const refused = await permitted(caller, request.houseId, "history.reset");
+  if (refused) return { refusal: refused };
   const { data: me } = await caller.db
     .from("members")
-    .select("role, profiles(display_name)")
+    .select("profiles(display_name)")
     .eq("house_id", request.houseId)
     .eq("user_id", caller.userId)
-    .maybeSingle();
-  if (!me) return { refusal: { code: "42501", message: "not_in_house" } };
-  if (me.role !== "admin") return { refusal: { code: "42501", message: "admins_only" } };
+    .single();
 
   const admin = createAdminClient();
   const { house, members } = await loadHouse(admin, request.houseId);
@@ -89,7 +90,7 @@ export async function resetHouse(
 
   const notify = pushNotifier(admin);
   if (notify && done.told.length > 0) {
-    const by = (me.profiles as { display_name: string } | null)?.display_name ?? "An admin";
+    const by = (me?.profiles as { display_name: string } | null)?.display_name ?? "An admin";
     const { data: action } = await admin.from("house_actions").select("subject, data").eq("id", done.action).single();
     const words = (action?.data ?? {}) as Record<string, unknown>;
     const subjectId = action?.subject ?? null;

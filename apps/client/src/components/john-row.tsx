@@ -6,10 +6,12 @@ import {
   johnRow,
   monthOf,
   NEXT_UP_COPY,
+  pocketMoney,
   pointsLabel,
   undoWarning,
   WEEK_SUMMARY_COPY,
   type BoardItem,
+  type Currency,
   type HouseRules,
   type JohnRowPlan,
   type StakeView,
@@ -99,7 +101,7 @@ export function useJohnRow(item: BoardItem, context: JohnRowContext) {
       undo: () => (warning ? setAsking(true) : void undoNow()),
       undoing: undo.pending,
       vote: open,
-    }),
+    }, context.rules.currency),
     // A refusal from the confirm is said in it, and under the row once it has gone.
     problem: tick.problem ?? (asking ? null : undo.problem),
     confirm: warning ? (
@@ -124,6 +126,7 @@ function trailingFor(
   plan: JohnRowPlan,
   item: BoardItem,
   moves: { undo: () => void; undoing: boolean; vote: () => void },
+  currency: Currency,
 ): ReactNode {
   switch (plan.trailing) {
     case 'undo':
@@ -147,7 +150,8 @@ function trailingFor(
         />
       );
     case 'points':
-      return pointsLabel(plan.points);
+      // A kid's John in a family says what it earns.
+      return item.payMinor ? pocketMoney(item.payMinor, currency) : pointsLabel(plan.points);
     case 'status':
       return <StatusMark status={item.status} />;
     default:

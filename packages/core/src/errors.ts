@@ -63,6 +63,8 @@ const MESSAGES: Record<string, string> = {
   too_soon_to_cover: "It’s still theirs to do. You can cover it once the grace period is up.",
   pass_needed: "Changing your list with Jonz comes with the House Pass.",
   draft_limit: "That’s enough for one day. Add the draft as it is and change it on the list, or try again tomorrow.",
+  ask_pool_used: "Your house has used this week’s Ask Jonz. It comes back when the house’s week starts.",
+  ask_share_used: "You’ve used your half of the house’s Ask Jonz this week. It comes back when the house’s week starts.",
   john_covered: "A housemate covered this one. Dispute it if it wasn’t done.",
   roll_call_needed: "A John done together is ticked with who did it. Open it and mark it done there.",
   not_in_crew: "Whoever ticks it did it, so you’re on the list.",
@@ -74,6 +76,7 @@ const MESSAGES: Record<string, string> = {
   already_asked: "You’ve already asked about that John today.",
   swap_gone: "That ask has run out, so the Johns stay as they were.",
   owner_only: "Only the owner can do that, signed in with their code.",
+  ask_limit: "That’s enough questions for one day. Ask again tomorrow, or use the admin pages.",
   notice_ends_first: "A notice has to end after it starts.",
   audit_append_only: "The audit log can’t be changed.",
   no_deletion: "That account isn’t waiting to be deleted any more.",
@@ -90,7 +93,11 @@ const MESSAGES: Record<string, string> = {
   message_no_way: "Pick at least one way to send it.",
   message_nobody: "Nobody would get that: there’s nobody there to send it to.",
   parents_only: "Only a parent can OK a John.",
+  parents_add_kids: "Only a parent in a family can add a child.",
+  bad_born_year: "Give the year they were born. Kids are 18 or under.",
   nothing_to_ok: "That tick has already been answered.",
+  nothing_to_pay: "There’s nothing left to pay for that month.",
+  not_pay_day_yet: "Pay day is the 1st, once the month is over.",
 };
 
 export function humanError(error: { message?: string; code?: string } | null | undefined): string {

@@ -66,6 +66,31 @@ describe('sends buttons side by side to a ButtonRow', () => {
   });
 });
 
+describe('places every button with a ButtonRow', () => {
+  tester.run('button-in-row', jonz.rules['button-in-row'], {
+    valid: [
+      'const x = <ButtonRow><Button label="Deal week 1" /></ButtonRow>;',
+      'const x = <View><ButtonRow stacked>{a ? <Button label="a" /> : null}<Button label="b" /></ButtonRow></View>;',
+      // An icon alone is a square wherever it sits.
+      'const x = <View><Button label="Photo" iconOnly /></View>;',
+      // Handed to a component that places it (EmptyState's action, a row's trailing slot).
+      'const x = <EmptyState action={<Button label="a" />} />;',
+      'const x = <Sheet><Button label="a" /></Sheet>;',
+    ],
+    invalid: [
+      {
+        // Week's Deal button before: at its own width on a phone.
+        code: "const x = <View style={styles.start}><Button label=\"Deal week 1\" /></View>;",
+        errors: [{ messageId: 'loose' }],
+      },
+      {
+        code: 'const x = <View>{a ? <Button label="a" /> : null}<>{b && <Button label="b" />}</></View>;',
+        errors: [{ messageId: 'loose' }, { messageId: 'loose' }],
+      },
+    ],
+  });
+});
+
 describe('keeps hand-made pressables out of screens', () => {
   tester.run('no-pressable-in-screens', jonz.rules['no-pressable-in-screens'], {
     valid: [{ code: "import { Pressable } from 'react-native';", filename: '/repo/apps/client/src/components/row.tsx' }],
@@ -75,6 +100,25 @@ describe('keeps hand-made pressables out of screens', () => {
         filename: '/repo/apps/client/src/app/(house)/today.tsx',
         errors: [{ messageId: 'screen' }],
       },
+    ],
+  });
+});
+
+describe("keeps the owner's pieces on the owner's pages", () => {
+  tester.run('owner-only', jonz.rules['owner-only'], {
+    valid: [
+      { code: "import { ListTable } from '@/components/admin/list-table';", filename: '/repo/apps/client/src/app/admin/audit/index.tsx' },
+      { code: "import { auditPage } from '@/api/owner';", filename: '/repo/apps/client/src/components/admin/busy-list.tsx' },
+      { code: "import { ListTable } from '@/components/admin/list-table';", filename: '/repo/apps/client/src/components/style-page/samples.tsx' },
+      { code: "import { Reply } from '@/components/reply/reply';", filename: '/repo/apps/client/src/app/(tabs)/house.tsx' },
+      { code: "import { ownerish } from '@/components/administer';", filename: '/repo/apps/client/src/app/(tabs)/house.tsx' },
+    ],
+    invalid: [
+      { code: "import { AdminShell } from '@/components/admin/admin-shell';", filename: '/repo/apps/client/src/app/(tabs)/house.tsx', errors: [{ messageId: 'owner' }] },
+      { code: "import { auditPage } from '@/api/owner';", filename: '/repo/apps/client/src/components/chat/chat.tsx', errors: [{ messageId: 'owner' }] },
+      { code: "import { X } from '../admin/list-table';", filename: '/repo/apps/client/src/components/house/x.tsx', errors: [{ messageId: 'owner' }] },
+      { code: "export * from '@/components/admin/list-table';", filename: '/repo/apps/client/src/components/index.ts', errors: [{ messageId: 'owner' }] },
+      { code: "const m = import('@/api/owner');", filename: '/repo/apps/client/src/app/index.tsx', errors: [{ messageId: 'owner' }] },
     ],
   });
 });

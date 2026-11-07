@@ -2,7 +2,9 @@ import type { Currency } from "./domain";
 import { dateRange, firstName, monthLabel } from "./format";
 import { undoneWhat } from "./history";
 import { resetWhat } from "./resets";
+import { monthWord } from "./house-page";
 import { formatMoney } from "./money";
+import { pocketMoney } from "./pocket";
 
 // The Wall as both apps show it: each event in words, built from the rows
 // they read (events, with their John's photo path and their reactions), so
@@ -222,6 +224,17 @@ export function describeEvent(e: WallEvent, nameOf: (userId: string | null) => s
           }
         : { icon: "truck", parts: [b(was), t(" moved out.")] };
     }
+    case "pocket_paid":
+      return {
+        icon: "banknote",
+        tone: "good",
+        parts: [
+          b(who),
+          t(
+            ` paid ${nameOf((e.data.to as string) ?? null)} ${pocketMoney(Number(e.data.amount), currency)} for ${monthWord(String(e.data.month))}.`,
+          ),
+        ],
+      };
     case "month_closed":
       return { icon: "calendar-check", parts: [t(`${monthLabel(String(e.data.month))} is closed and its forfeits are split.`)] };
     case "paid":

@@ -343,7 +343,7 @@ export function AwayForm({ houseId, today, weekStarts }: { houseId: string; toda
           <Meta>{AWAY_COPY.moved(moved)}</Meta>
         </View>
       ) : null}
-      <View style={styles.start}>
+      <ButtonRow atEdge>
         <Button
           icon={PlaneIcon}
           label={move.pending ? AWAY_COPY.booking : SETUP_COPY.book}
@@ -351,7 +351,7 @@ export function AwayForm({ houseId, today, weekStarts }: { houseId: string; toda
           onPress={() => void book()}
           testID="book-away"
         />
-      </View>
+      </ButtonRow>
     </GroupItem>
   );
 }
@@ -376,5 +376,4 @@ const styles = StyleSheet.create({
   swatch: { width: 14, height: 14, borderRadius: 4 },
   home: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACE.md },
   homeItem: { flexDirection: 'row', alignItems: 'center', gap: SPACE.sm },
-  start: { alignItems: 'flex-start' },
 });

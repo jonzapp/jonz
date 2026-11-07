@@ -135,10 +135,49 @@ export type Database = {
         }
         Relationships: []
       }
+      ask_chats: {
+        Row: {
+          created_at: string
+          house_id: string
+          id: string
+          title: string
+          turns: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          house_id: string
+          id?: string
+          title: string
+          turns?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          house_id?: string
+          id?: string
+          title?: string
+          turns?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ask_chats_house_id_user_id_fkey"
+            columns: ["house_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["house_id", "user_id"]
+          },
+        ]
+      }
       assignments: {
         Row: {
           absent_at: string | null
           awaits_ok: boolean
+          pay_minor: number
           category: string
           changed_at: string | null
           changed_by: string | null
@@ -174,6 +213,7 @@ export type Database = {
         Insert: {
           absent_at?: string | null
           awaits_ok?: boolean
+          pay_minor?: number
           category: string
           changed_at?: string | null
           changed_by?: string | null
@@ -209,6 +249,7 @@ export type Database = {
         Update: {
           absent_at?: string | null
           awaits_ok?: boolean
+          pay_minor?: number
           category?: string
           changed_at?: string | null
           changed_by?: string | null
@@ -753,6 +794,7 @@ export type Database = {
         Row: {
           away_makeup: number
           cover_grace_hours: number
+          pocket_cap_minor: number
           created_at: string
           created_by: string | null
           currency: string
@@ -779,6 +821,7 @@ export type Database = {
         Insert: {
           away_makeup?: number
           cover_grace_hours?: number
+          pocket_cap_minor?: number
           created_at?: string
           created_by?: string | null
           currency?: string
@@ -805,6 +848,7 @@ export type Database = {
         Update: {
           away_makeup?: number
           cover_grace_hours?: number
+          pocket_cap_minor?: number
           created_at?: string
           created_by?: string | null
           currency?: string
@@ -854,6 +898,8 @@ export type Database = {
           house_id: string
           id: string
           keep_day: boolean
+          min_age: number | null
+          pay_minor: number
           kind: string
           name: string
           needs_photo: boolean
@@ -877,6 +923,8 @@ export type Database = {
           house_id: string
           id?: string
           keep_day?: boolean
+          min_age?: number | null
+          pay_minor?: number
           kind?: string
           name: string
           needs_photo?: boolean
@@ -900,6 +948,8 @@ export type Database = {
           house_id?: string
           id?: string
           keep_day?: boolean
+          min_age?: number | null
+          pay_minor?: number
           kind?: string
           name?: string
           needs_photo?: boolean
@@ -995,6 +1045,7 @@ export type Database = {
       }
       members: {
         Row: {
+          born_year: number | null
           best_time: string | null
           house_id: string
           immunity_tokens: number
@@ -1002,12 +1053,14 @@ export type Database = {
           moving_out_on: string | null
           rather: Json
           role: string
+          signs_in: boolean
           streak: number
           suits_days: number[]
           swap_tokens: number
           user_id: string
         }
         Insert: {
+          born_year?: number | null
           best_time?: string | null
           house_id: string
           immunity_tokens?: number
@@ -1015,12 +1068,14 @@ export type Database = {
           moving_out_on?: string | null
           rather?: Json
           role?: string
+          signs_in?: boolean
           streak?: number
           suits_days?: number[]
           swap_tokens?: number
           user_id: string
         }
         Update: {
+          born_year?: number | null
           best_time?: string | null
           house_id?: string
           immunity_tokens?: number
@@ -1028,6 +1083,7 @@ export type Database = {
           moving_out_on?: string | null
           rather?: Json
           role?: string
+          signs_in?: boolean
           streak?: number
           suits_days?: number[]
           swap_tokens?: number
@@ -1208,6 +1264,122 @@ export type Database = {
           },
         ]
       }
+      permissions: {
+        Row: {
+          about: string
+          name: string
+        }
+        Insert: {
+          about: string
+          name: string
+        }
+        Update: {
+          about?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      pocket_earnings: {
+        Row: {
+          amount_minor: number
+          assignment_id: string
+          created_at: string
+          house_id: string
+          month: string
+          user_id: string
+        }
+        Insert: {
+          amount_minor: number
+          assignment_id: string
+          created_at?: string
+          house_id: string
+          month: string
+          user_id: string
+        }
+        Update: {
+          amount_minor?: number
+          assignment_id?: string
+          created_at?: string
+          house_id?: string
+          month?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pocket_earnings_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: true
+            referencedRelation: "assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pocket_earnings_house_id_fkey"
+            columns: ["house_id"]
+            isOneToOne: false
+            referencedRelation: "houses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pocket_earnings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pocket_pays: {
+        Row: {
+          amount_minor: number
+          created_at: string
+          house_id: string
+          id: string
+          month: string
+          paid_by: string | null
+          user_id: string
+        }
+        Insert: {
+          amount_minor: number
+          created_at?: string
+          house_id: string
+          id?: string
+          month: string
+          paid_by?: string | null
+          user_id: string
+        }
+        Update: {
+          amount_minor?: number
+          created_at?: string
+          house_id?: string
+          id?: string
+          month?: string
+          paid_by?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pocket_pays_house_id_fkey"
+            columns: ["house_id"]
+            isOneToOne: false
+            referencedRelation: "houses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pocket_pays_paid_by_fkey"
+            columns: ["paid_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pocket_pays_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       owner_message_outbox: {
         Row: {
           message_id: string
@@ -1300,6 +1472,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      owner_ask_turns: {
+        Row: {
+          asked_at: string
+          id: string
+          input_tokens: number
+          output_tokens: number
+          owner_id: string
+          question: string
+          reply: string | null
+        }
+        Insert: {
+          asked_at?: string
+          id?: string
+          input_tokens?: number
+          output_tokens?: number
+          owner_id?: string
+          question: string
+          reply?: string | null
+        }
+        Update: {
+          asked_at?: string
+          id?: string
+          input_tokens?: number
+          output_tokens?: number
+          owner_id?: string
+          question?: string
+          reply?: string | null
+        }
+        Relationships: []
       }
       notices: {
         Row: {
@@ -1620,6 +1822,29 @@ export type Database = {
           },
         ]
       }
+      role_permissions: {
+        Row: {
+          permission: string
+          role: string
+        }
+        Insert: {
+          permission: string
+          role: string
+        }
+        Update: {
+          permission?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_permissions_permission_fkey"
+            columns: ["permission"]
+            isOneToOne: false
+            referencedRelation: "permissions"
+            referencedColumns: ["name"]
+          },
+        ]
+      }
       swap_offers: {
         Row: {
           answer: string | null
@@ -1830,10 +2055,23 @@ export type Database = {
         Args: { p_assignment: string; p_ok: boolean }
         Returns: string
       }
+      pay_pocket_money: {
+        Args: { p_house: string; p_kid: string; p_month: string }
+        Returns: number
+      }
+      add_kid: {
+        Args: { p_parent: string; p_kid: string; p_born: number }
+        Returns: string
+      }
+      runs_for: {
+        Args: { p_house: string; p_kid: string }
+        Returns: boolean
+      }
       answer_swap: {
         Args: { p_accept: boolean; p_offer: string }
         Returns: undefined
       }
+      can: { Args: { h: string; perm: string }; Returns: boolean }
       can_upload_proof: { Args: { object_name: string }; Returns: boolean }
       cancel_away: { Args: { p_away: string }; Returns: undefined }
       cast_vote: {
@@ -1844,13 +2082,28 @@ export type Database = {
         Args: { a: Database["public"]["Tables"]["assignments"]["Row"] }
         Returns: string
       }
-      claim_draft_turn: {
+      ask_usage: {
+        Args: { p_house: string; p_since: string; p_user: string }
+        Returns: { house_used: number; mine_used: number }[]
+      }
+      ask_usage_people: {
+        Args: { p_house: string; p_since: string }
+        Returns: { used: number; user_id: string }[]
+      }
+      claim_ask_turn: {
         Args: {
           p_house: string
-          p_house_limit: number
+          p_pool: number
+          p_reserve: number
+          p_share: number
+          p_since: string
           p_user: string
-          p_user_limit: number
+          p_user_day: number
         }
+        Returns: string
+      }
+      claim_owner_ask: {
+        Args: { p_limit: number; p_question: string }
         Returns: string
       }
       close_month: {
@@ -1962,7 +2215,6 @@ export type Database = {
         }[]
       }
       identity_photo: { Args: { data: Json }; Returns: string }
-      is_admin: { Args: { h: string }; Returns: boolean }
       is_member: { Args: { h: string }; Returns: boolean }
       house_has_paid_pass: { Args: { p_house: string }; Returns: boolean }
       is_owner: { Args: never; Returns: boolean }
@@ -1986,6 +2238,7 @@ export type Database = {
           pass_state: string | null
         }[]
       }
+      my_permissions: { Args: { h: string }; Returns: string[] }
       my_open_assignment: {
         Args: { p_assignment: string }
         Returns: {
@@ -2047,6 +2300,10 @@ export type Database = {
       open_flag: {
         Args: { p_at: string; p_by?: string; p_john: string }
         Returns: string
+      }
+      finish_owner_ask: {
+        Args: { p_input: number; p_output: number; p_reply: string; p_turn: string }
+        Returns: undefined
       }
       owner_delete_now: {
         Args: { p_reason?: string; p_user: string }
@@ -2446,6 +2703,10 @@ export type Database = {
       use_swap: {
         Args: { p_mine: string; p_theirs: string }
         Returns: undefined
+      }
+      user_can: {
+        Args: { h: string; perm: string; who: string }
+        Returns: boolean
       }
       write_back: {
         Args: { p_body: string; p_report: string }

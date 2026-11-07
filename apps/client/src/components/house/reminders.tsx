@@ -7,6 +7,7 @@ import { reminderSupport, remindersOn, turnRemindersOff, turnRemindersOn } from 
 import { Alert } from '@/components/alert';
 import { NotificationSettings } from '@/components/house/notification-settings';
 import { Button } from '@/components/button';
+import { ButtonRow } from '@/components/button-row';
 import { Meta, SectionLabel } from '@/components/text';
 import { SPACE } from '@/theme';
 
@@ -75,9 +76,13 @@ export function Reminders({ userId, labelled = true }: { userId: string; labelle
         <Meta>{REMINDERS_COPY.unsupported}</Meta>
       ) : on === null ? null : on ? (
         // Across the sheet, as every sheet's buttons are.
-        <Button variant="outline" icon={BellOffIcon} label={REMINDERS_COPY.off} disabled={busy} onPress={() => void disable()} />
+        <ButtonRow>
+          <Button variant="outline" icon={BellOffIcon} label={REMINDERS_COPY.off} disabled={busy} onPress={() => void disable()} />
+        </ButtonRow>
       ) : (
-        <Button icon={BellIcon} label={REMINDERS_COPY.on} disabled={busy} onPress={() => void enable()} testID="enable-push" />
+        <ButtonRow>
+          <Button icon={BellIcon} label={REMINDERS_COPY.on} disabled={busy} onPress={() => void enable()} testID="enable-push" />
+        </ButtonRow>
       )}
       {problem ? <Alert message={problem} /> : null}
       <View accessibilityLiveRegion="polite">{notice ? <Meta>{notice}</Meta> : null}</View>

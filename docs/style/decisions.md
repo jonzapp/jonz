@@ -6,7 +6,15 @@ pages are private artifacts on claude.ai.
 
 | Date | Decision | Where | Rule |
 | --- | --- | --- | --- |
-| 2026-11-04 | A parent's OK: in a family the John sheet's vote becomes OK it / Not yet for a parent, and Today's Needs you becomes Needs your OK (mockups approved 2026-11-04) | this PR | [words](words.md) |
+| 2026-11-07 | A button on its own fills its column on a phone (Week's Deal week 1 didn't) and a card on a laptop; its own width on the bare page of a wide laptop column; every Button in a ButtonRow, checked by lint and on the real pages | this PR | [controls](controls.md#kinds-of-button) |
+| 2026-11-07 | Ask Jonz's bar as chat apps lay it out: Your chats (clock) on the leading edge, New chat (pencil) on the trailing edge, icons only; Help leads with Ask Jonz and Read the guide (the guide is the words Jonz reads), tours as Show me around rows | this PR | [layout](layout.md) |
+| 2026-11-06 | Ask Jonz chats are kept until you delete them: the latest three on the chat's start, See all for Your chats with Delete, New chat in the title bar; no expiry | this PR | [lists](lists.md#rows) |
+| 2026-11-05 | Ask Jonz replies in Markdown with Jonz pieces: chips for Johns, people and pages in a sentence, live cards for the week, fair shares and the list (option B) | this PR | [words](words.md#ask-jonzs-replies) |
+| 2026-11-05 | Ask Jonz changes to the list on one card sorted by kind: Taking off (hazard minus) first, then Changing (pencil, before → after), then Adding (plus), each ticked, one Apply; the chat carries on after it | this PR | [states](states.md#mistakes) |
+| 2026-11-05 | The title bar's buttons are one group at the right edge in a fixed order (the page's own button, Help, the sparkles at the edge), squares touching so the gaps are even | this PR | [layout](layout.md#the-title-bar) |
+| 2026-11-04 | Kids without a sign-in: a parent's Add a child on the Table (name and year born), a "You ▾" switcher on Today's title bar to tick for them, and Youngest age on each John (mockups approved 2026-11-04) | this PR | [words](words.md) |
+| 2026-11-04 | Pocket money: in a family each John says what it earns a kid ("earns 50p"), House's month card replaces the Stake with Pay day and a Paid button per kid, and the Table lists only the kids (mockups approved 2026-11-04) | #106 | [words](words.md) |
+| 2026-11-04 | A parent's OK: in a family the John sheet's vote becomes OK it / Not yet for a parent, and Today's Needs you becomes Needs your OK (mockups approved 2026-11-04) | #105 | [words](words.md) |
 | 2026-11-04 | Family houses: a Housemates / Family switch on the front door and "Who lives here?" at Start; in a family, admins are Parents and everyone else Kids, and the Stake is hidden (mockups approved 2026-11-04) | this PR | [words](words.md) |
 | 2026-11-04 | One word for each thing (the Jonz words): deal, a skip, Done / Not done, an invite and its code, split for forfeits, square, Mark done, photos, house rules, Who it's for; a test keeps retired words out of the copy | this PR | [words](words.md#one-word-for-each-thing) |
 | 2026-11-01 | Help is a question mark in every tab's title bar: the page's tour, the other tours, and Report a problem. Tours are short (five steps at most), started by you, offered once to someone new, and saved as seen | this PR | [layout](layout.md#the-title-bar), [states](states.md#tours) |

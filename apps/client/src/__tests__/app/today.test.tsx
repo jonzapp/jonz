@@ -34,6 +34,7 @@ import { catchUp } from '@/api/house';
 import { answerSwap, askSwap, markDone, planJohn, undoDone } from '@/api/johns';
 import { pickPhoto } from '@/api/photos';
 import { dealThisWeek, loadJohnList } from '@/api/settings';
+import { loadPocket } from '@/api/pocket';
 import { loadStake } from '@/api/stake';
 import Today from '@/app/(house)/today';
 import { JohnSheetProvider } from '@/components/john-sheet';
@@ -47,6 +48,7 @@ jest.mock('@/api/away', () => ({ loadAway: jest.fn(), setAway: jest.fn(), cancel
 jest.mock('@/api/settings', () => ({ dealThisWeek: jest.fn(), loadJohnList: jest.fn() }));
 jest.mock('@/api/house', () => ({ catchUp: jest.fn() }));
 jest.mock('@/api/stake', () => ({ loadStake: jest.fn(), confirmPayment: jest.fn() }));
+jest.mock('@/api/pocket', () => ({ loadPocket: jest.fn(), payPocketMoney: jest.fn() }));
 jest.mock('@/api/disputes', () => ({ castVote: jest.fn(), raiseDispute: jest.fn() }));
 jest.mock('@/api/flags', () => ({ raiseFlag: jest.fn() }));
 jest.mock('@/api/johns', () => ({
@@ -581,6 +583,28 @@ describe('Needs your OK, in a family', () => {
   });
 });
 
+describe('pocket money, in a family', () => {
+  /** Priya as a kid this time, with Sam the parent; her Johns earn 50p each. */
+  const kid = () => {
+    const base = snapshot();
+    return snapshot({
+      house: { ...base.house, kind: 'family', pocketCapMinor: 1000 },
+      rules: { ...base.rules, stakeMinor: 0, lateForfeitMinor: 0, missedForfeitMinor: 0, disputeHours: 0 },
+      members: base.members.map((m) => ({ ...m, role: m.userId === 'sam' ? 'admin' : 'member' })),
+      assignments: base.assignments.map((a) => ({ ...a, pay_minor: 50 })),
+    });
+  };
+
+  it("tells a kid what each John earns, and what they've earned this month", async () => {
+    read.mockResolvedValue(kid());
+    (loadPocket as jest.Mock).mockResolvedValue({ month: '2026-10', soFar: 450, earned: { priya: 450 }, owed: [], history: [] });
+    await open();
+    expect(screen.getByTestId('next-up')).toHaveTextContent(/earns 50p/);
+    expect(within(screen.getByTestId('rest-of-week')).getAllByText('50p').length).toBeGreaterThan(0);
+    expect(await screen.findByTestId('earned-line')).toHaveTextContent('£4.50 earned so far in October');
+  });
+});
+
 describe('the rest of your week', () => {
   it('lists your other Johns, ticked from their tick box, with the finished ones folded', async () => {
     await open();
@@ -868,5 +892,37 @@ describe('on a laptop', () => {
     await open();
     expect(screen.queryByTestId('columns')).toBeNull();
     expect(screen.queryByTestId('week-glance')).toBeNull();
+  });
+});
+
+describe("a parent ticking for a kid, in a family", () => {
+  /** Priya the parent; Sam a kid who doesn't sign in, with Clean the bath. */
+  const family = (signsIn = false) => {
+    const base = snapshot();
+    return snapshot({
+      house: { ...base.house, kind: 'family', pocketCapMinor: 1000 },
+      rules: { ...base.rules, stakeMinor: 0, lateForfeitMinor: 0, missedForfeitMinor: 0, disputeHours: 0 },
+      members: base.members.map((m) => (m.userId === 'sam' ? { ...m, signsIn, bornYear: 2016 } : m)),
+    });
+  };
+
+  it("switches Today to the kid, and ticks their John", async () => {
+    read.mockResolvedValue(family());
+    (loadPocket as jest.Mock).mockResolvedValue({ month: '2026-10', soFar: 0, earned: {}, owed: [], history: [] });
+    await open();
+    expect(within(screen.getByTestId('next-up')).getByText('Bins out')).toBeOnTheScreen();
+    await fireEvent.press(screen.getByTestId('kid-switch'));
+    await fireEvent.press(screen.getByRole('radio', { name: 'Sam' }));
+    await waitFor(() => expect(within(screen.getByTestId('next-up')).getByText('Clean the bath')).toBeOnTheScreen());
+    // The kid's Today: no Ask Jonz.
+    expect(screen.queryByTestId('ask-jonz')).toBeNull();
+    await fireEvent.press(screen.getByTestId('mark-done'));
+    expect(markDone).toHaveBeenCalledWith('a4');
+  });
+
+  it("has no switcher when every kid signs in", async () => {
+    read.mockResolvedValue(family(true));
+    await open();
+    expect(screen.queryByTestId('kid-switch')).toBeNull();
   });
 });

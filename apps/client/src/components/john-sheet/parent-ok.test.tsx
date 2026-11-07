@@ -25,13 +25,15 @@ const HOUR = 3_600_000;
 const at = (hours: number) => new Date(Date.now() + hours * HOUR).toISOString();
 
 /** A family: Priya the parent, Sam a kid whose Clean the bath waits for an OK. */
-function family(): HouseSnapshot {
+function family(pay = 0): HouseSnapshot {
   const base = snapshot();
   return {
     ...base,
     house: { ...base.house, kind: 'family' },
     rules: { ...base.rules, stakeMinor: 0, lateForfeitMinor: 0, missedForfeitMinor: 0, disputeHours: 0 },
-    assignments: [assignment({ id: 'a4', user_id: 'sam', name: 'Clean the bath', category: 'bathroom', done_at: at(-1), awaits_ok: true })],
+    assignments: [
+      assignment({ id: 'a4', user_id: 'sam', name: 'Clean the bath', category: 'bathroom', done_at: at(-1), awaits_ok: true, pay_minor: pay }),
+    ],
   };
 }
 
@@ -44,8 +46,8 @@ function Opener() {
   );
 }
 
-async function openAs(userId: string) {
-  (loadHouse as jest.Mock).mockResolvedValue(family());
+async function openAs(userId: string, pay = 0) {
+  (loadHouse as jest.Mock).mockResolvedValue(family(pay));
   await render(
     <QueryClientProvider client={testQueryClient()}>
       <ToastProvider>
@@ -72,6 +74,12 @@ describe("a kid's tick in the John sheet", () => {
     expect(screen.getByTestId('ticked-line')).toHaveTextContent(PARENT_OK_COPY.waiting, { exact: false });
     expect(screen.queryByRole('button', { name: DISPUTE_COPY.open })).toBeNull();
     await fireEvent.press(screen.getByRole('button', { name: PARENT_OK_COPY.ok }));
+    await waitFor(() => expect(answerTick).toHaveBeenCalledWith('a4', true));
+  });
+
+  it('says what OK pays, on a John that earns', async () => {
+    await openAs('priya', 20);
+    await fireEvent.press(await screen.findByRole('button', { name: 'OK, pay 20p' }));
     await waitFor(() => expect(answerTick).toHaveBeenCalledWith('a4', true));
   });
 

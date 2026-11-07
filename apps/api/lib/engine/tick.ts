@@ -40,6 +40,7 @@ import {
   weekStateOf,
   weekWindow,
   weekWinners,
+  oldEnough,
   type AwayPeriod,
   type Database,
   type IsoDow,
@@ -69,7 +70,7 @@ export type Db = SupabaseClient<Database>;
 type HouseRow = Database["public"]["Tables"]["houses"]["Row"];
 type MemberRow = Pick<
   Database["public"]["Tables"]["members"]["Row"],
-  "user_id" | "role" | "joined_at" | "streak" | "immunity_tokens" | "swap_tokens" | "suits_days" | "rather" | "moving_out_on"
+  "user_id" | "role" | "joined_at" | "streak" | "immunity_tokens" | "swap_tokens" | "suits_days" | "rather" | "moving_out_on" | "born_year"
 >;
 
 export interface PushMessage {
@@ -117,7 +118,7 @@ export async function loadHouse(db: Db, houseId: string) {
   const members = must(
     await db
       .from("members")
-      .select("user_id, role, joined_at, streak, immunity_tokens, swap_tokens, suits_days, rather, moving_out_on")
+      .select("user_id, role, joined_at, streak, immunity_tokens, swap_tokens, suits_days, rather, moving_out_on, born_year")
       .eq("house_id", houseId)
       .order("joined_at")
       .order("user_id"),
@@ -346,10 +347,14 @@ export async function dealWeek(
     // From the day someone moves out, as if away for good.
     ...movingOutAway(dealt, week.startsOn, lastAhead),
   ];
+  const bornYear = new Map(members.map((m) => [m.user_id, m.born_year]));
   const sharersOf = (j: (typeof list)[number]) => {
     const group = j.group_id ? groups.find((g) => g.id === j.group_id) : undefined;
     const inGroup = (group?.group_members ?? []).map((m) => m.user_id).filter((id) => memberIds.includes(id));
-    return { sharers: inGroup.length > 0 ? inGroup : memberIds, groupName: inGroup.length > 0 ? group!.name : null };
+    const all = inGroup.length > 0 ? inGroup : memberIds;
+    // In a family, a kid younger than the John's youngest age isn't dealt it (kids.ts).
+    const sharers = all.filter((id) => oldEnough(bornYear.get(id), j.min_age, week.startsOn));
+    return { sharers, groupName: inGroup.length > 0 ? group!.name : null };
   };
   const { balances } = await loadBalances(db, house.id, week.startsOn, memberIds);
   const args: SteadyDealArgs = {

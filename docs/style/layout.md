@@ -58,6 +58,18 @@ still look right stretched (content capped, nothing pinned to far edges).
 - Every tab's bar has a question mark just inside the sparkles: Help, with
   the page's tour and Report a problem. Pushed pages leave it out. (Help
   and tours, 1 Nov)
+- The bar's buttons are one group at the right edge, always in this order:
+  the page's own button (`•••`, or Today's "You ▾"), the question mark, then
+  the sparkles at the edge. Their 48 squares touch, with no gaps or margins
+  of their own, so the space between glyphs is the same everywhere and a
+  long title like THIS WEEK fits on a phone. Without the sparkles (a
+  housemate) the question mark takes the edge. (Bar buttons A, 5 Nov)
+- Ask Jonz's bar follows chat apps (ChatGPT, Claude) and Apple's toolbar
+  rules: Your chats (a clock) is the one button on the leading edge, its
+  glyph on the content's edge, before the title; New chat (a pencil), and
+  Close in the laptop panel, at the trailing edge. Icons only: never words
+  beside icons in a bar. Your chats has "‹ Ask Jonz" above its title, back
+  to the chat. (Ask Jonz bar A, 7 Nov)
 
 ## Laptop pages
 

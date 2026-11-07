@@ -1,4 +1,4 @@
-import { PAGE_TITLE, roleCopy, rulesRows, SETUP_COPY } from '@app/core';
+import { memberCan, PAGE_TITLE, roleCopy, rulesRows, SETUP_COPY } from '@app/core';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -44,7 +44,7 @@ function RulesFor({ houseId, userId }: { houseId: string; userId: string }) {
     onRefresh: pull,
   };
 
-  if (view && view.me?.role === 'admin' && editing) {
+  if (view && memberCan(view.me, 'house.settings') && editing) {
     const { snapshot } = view;
     const values = {
       name: snapshot.house.name,
@@ -53,6 +53,7 @@ function RulesFor({ houseId, userId }: { houseId: string; userId: string }) {
       settleIn: snapshot.house.settleIn,
       memberIds: snapshot.members.map((m) => m.userId),
       kind: snapshot.house.kind,
+      pocketCapMinor: snapshot.house.pocketCapMinor,
     };
     return (
       <RulesEditing
@@ -83,7 +84,7 @@ function RulesFor({ houseId, userId }: { houseId: string; userId: string }) {
  */
 function RulesReadOut({ houseId, userId, view, onEdit }: { houseId: string; userId: string; view: HouseView; onEdit: () => void }) {
   const { snapshot } = view;
-  const isAdmin = view.me?.role === 'admin';
+  const isAdmin = memberCan(view.me, 'house.settings');
   return (
     <Pair
       testID="rules-pair"
@@ -94,7 +95,13 @@ function RulesReadOut({ houseId, userId, view, onEdit }: { houseId: string; user
           right={isAdmin ? <TextButton label={SETUP_COPY.edit} align="end" onPress={onEdit} testID="edit-rules" /> : undefined}
           testID="rules-panel"
         >
-          {rulesRows(snapshot.rules, snapshot.house.awayMakeup, snapshot.house.settleIn, snapshot.house.kind).map((rule) => (
+          {rulesRows(
+            snapshot.rules,
+            snapshot.house.awayMakeup,
+            snapshot.house.settleIn,
+            snapshot.house.kind,
+            snapshot.house.pocketCapMinor,
+          ).map((rule) => (
             <Row key={rule.label} title={rule.label} trailing={rule.value} testID="rule" />
           ))}
         </Section>

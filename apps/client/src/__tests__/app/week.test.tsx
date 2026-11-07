@@ -40,6 +40,7 @@ jest.mock('@/api/table', () => ({ loadTable: jest.fn() }));
 jest.mock('@/api/stake', () => ({ loadStake: jest.fn(), confirmPayment: jest.fn() }));
 jest.mock('@/api/settings', () => ({ dealThisWeek: jest.fn(), loadJohnList: jest.fn() }));
 jest.mock('@/api/house', () => ({ catchUp: jest.fn() }));
+jest.mock('@/api/kids', () => ({ addKid: jest.fn() }));
 jest.mock('@/api/johns', () => ({ markDone: jest.fn(), undoDone: jest.fn(), spendImmunity: jest.fn(), spendSwap: jest.fn() }));
 jest.mock('@/api/photos', () => ({ pickPhoto: jest.fn(), uploadProof: jest.fn() }));
 jest.mock('@/api/resets', () => ({ previewReset: jest.fn(), applyReset: jest.fn() }));

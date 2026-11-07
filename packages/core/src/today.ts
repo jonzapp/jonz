@@ -3,13 +3,15 @@ import { differenceInCalendarDays, format } from "date-fns";
 
 import { currentOrNext, type AwayPeriod } from "./away";
 import { byDoneLatest, isOpen, TODAY_ORDER, type BoardItem, type DisputeView, type WeekBoard } from "./board";
-import { CREW_COPY, FOCUS_SHELL_COPY, JOHN_SHEET_COPY, NEXT_UP_COPY, PARENT_OK_COPY } from "./copy";
+import { CREW_COPY, FOCUS_SHELL_COPY, JOHN_SHEET_COPY, NEXT_UP_COPY, PARENT_OK_COPY, POCKET_COPY } from "./copy";
 import { andNames } from "./crew";
 import type { Currency, HouseRules } from "./domain";
 import { dateRange, dueInLine, firstName, pointsLabel, relative, sinceLabel, STATUS_LABEL, STATUS_MARK } from "./format";
 import { johnKind } from "./john-row";
 import { formatMoney } from "./money";
 import { canCover, coverOpensAt, type LiveStatus } from "./outcome";
+import { can, type HouseRole } from "./permissions";
+import { pocketMoney } from "./pocket";
 import type { TableRow } from "./points";
 import { oftenWords } from "./repeat";
 import type { StakeView } from "./stake";
@@ -129,7 +131,7 @@ export type NextUpState =
  * name.
  */
 export function whoDeals(members: readonly (Person & { role: string })[]): string {
-  const admin = members.find((m) => m.role === "admin");
+  const admin = members.find((m) => can(m.role as HouseRole, "week.deal"));
   return admin ? firstName(admin.name) : NEXT_UP_COPY.anAdmin;
 }
 
@@ -145,7 +147,7 @@ export function nextUpState(input: {
 }): NextUpState {
   const { board, mine, members } = input;
   if (board.notStarted) {
-    if (members.some((m) => m.userId === input.userId && m.role === "admin")) return { kind: "setup" };
+    if (members.some((m) => m.userId === input.userId && can(m.role as HouseRole, "week.deal"))) return { kind: "setup" };
     return { kind: "waiting", admin: whoDeals(members) };
   }
   if (!board.week) return { kind: "undealt" };
@@ -233,7 +235,9 @@ export function nextUpMeta(item: BoardItem, rules: HouseRules, now: Date, room: 
   const due = NEXT_UP_COPY.due(dueInLine(item.dueAt, now, zone)) + (item.movedFrom ? `, ${NEXT_UP_COPY.beforeYouGo}` : "");
   const { late, missed } = forfeits(rules, room);
   const cost = late ? NEXT_UP_COPY.ifLate(late) : missed ? NEXT_UP_COPY.ifMissed(missed) : null;
-  return { kind, due: [due, cost].filter(Boolean).join(", "), overdue: null };
+  // A kid's John in a family says what it earns instead (there's nothing to lose).
+  const earns = item.payMinor ? POCKET_COPY.earns(pocketMoney(item.payMinor, rules.currency)) : null;
+  return { kind, due: [due, cost ?? earns].filter(Boolean).join(", "), overdue: null };
 }
 
 /** "1st", "2nd", "3rd", "4th", "11th", "22nd". */

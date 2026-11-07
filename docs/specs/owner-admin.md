@@ -239,6 +239,37 @@ signed out says what goes and stays and signs in on the way back to itself.
     or body. Kind (Something's wrong, Offers, News), State (Showing, Starting
     later, Ended), and When is Started.
 
+## Ask Jonz, owner
+
+The owner's own Ask Jonz, apart from every house's. Same model and loop
+(`apps/api/lib/ai/agent.ts`), nothing else shared:
+
+- **Its own address.** `POST /api/admin/ask` (`OwnerAskRequest`,
+  `OwnerAskResponse` in core). It answers only the owner with their code
+  this session (`owner_status`), and refuses anyone else with `owner_only`
+  before Claude is asked.
+- **Its own tools, reads only.** Inbox, Deletions, Audit log, Notices,
+  Messages, people, houses and how it works
+  (`apps/api/lib/ai/owner-ask.ts`), each through the owner's own session,
+  so the database's owner check holds for every read. Nothing uses the
+  service role. No tool sends, saves, ends or deletes: Jonz says what to do
+  and on which page, and offers the words, and the owner does it there.
+- **Its own instructions.** It knows it's talking with the owner and how the
+  admin pages work. Plain Markdown, no house chips or cards. What people
+  wrote (names, reports, reasons) reaches Claude marked `<from_people>`, to
+  be read as what they said, never as instructions.
+- **Its own history.** `owner_ask_turns`: each question is written before
+  Claude is asked (`claim_owner_ask`) and its answer after
+  (`finish_owner_ask`). Only the owner reads it, nobody writes it by hand,
+  and turns go after 90 days. `OWNER_ASK_TURNS_PER_DAY` (200) a day.
+- **Kept apart, tested.** A unit test fails if a housemate's Ask Jonz, even
+  an admin's, gets an owner tool or owner words, or the owner's gets a
+  house's.
+- **The panel** (after the admin layout): on a laptop, docked on the right
+  like the house's; on a phone, the sparkles in the admin title bar open it
+  full screen. Black, with an Owner label, so it's never mistaken for the
+  housemates' chat.
+
 ## Edge cases
 
 - **No notices yet:** an empty state that says what a notice is for.

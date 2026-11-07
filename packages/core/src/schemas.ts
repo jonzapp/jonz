@@ -87,6 +87,8 @@ export const HouseSettings = z.object({
   /** Steady weeks: absent from a form that doesn't show them, like coverGraceHours. */
   dealMode: z.enum(DEAL_MODES).optional(),
   dealBudget: z.coerce.number().int().refine((n) => (BUDGETS as readonly number[]).includes(n)).optional(),
+  /** In a family: the most each kid can earn in a month (houses.pocket_cap_minor). Absent from a housemates' form. */
+  pocketCapMinor: amount.optional(),
 });
 export type HouseSettings = z.infer<typeof HouseSettings>;
 
@@ -119,6 +121,12 @@ export const JohnDraft = z.object({
   crew: z.coerce.number().int().min(0).max(6).default(1),
   // Keep its day (johns.keep_day): always dealt, on its own day. Never on call.
   keepDay: z.boolean().default(false),
+  // In a family (johns.pay_minor): what it earns a kid. Absent from a form
+  // that doesn't show it, which leaves the John's as it is.
+  payMinor: amount.optional(),
+  // In a family (johns.min_age): the youngest a kid can be to be dealt it,
+  // or null for anyone. Absent leaves the John's as it is.
+  minAge: z.number().int().min(2, "Give an age from 2 to 18.").max(18, "Give an age from 2 to 18.").nullable().optional(),
 }).refine((j) => (j.everyMonths === null) === (j.weekOfMonth === null), "Say which week of the month it lands in.");
 export type JohnDraft = z.infer<typeof JohnDraft>;
 /** A JohnDraft before it is checked: the monthly fields may be left out (a weekly John). */

@@ -38,6 +38,10 @@ export interface Housemate {
   prefs: MyPrefs;
   /** The day they move out (the house's local date), once they've said. */
   movingOutOn?: string | null;
+  /** False for a kid without a sign-in, whose parents tick for them (family step 4). */
+  signsIn?: boolean;
+  /** In a family: the year a kid was born, which the deal keeps to (johns.min_age). */
+  bornYear?: number | null;
 }
 
 export interface HouseSnapshot {
@@ -51,6 +55,8 @@ export interface HouseSnapshot {
     awayMakeup: number;
     /** Where the house settles up at month end (houses.settle_in). */
     settleIn: SettleIn;
+    /** In a family: the most each kid can earn in a month (houses.pocket_cap_minor); 0 for housemates. */
+    pocketCapMinor?: number;
     /** The House Pass: who has the extras, and until when. */
     pass: HousePass;
   };
@@ -77,7 +83,7 @@ export async function loadHouse(houseId: string, now: Date): Promise<HouseSnapsh
     supabase
       .from('members')
       .select(
-        'user_id, role, streak, immunity_tokens, swap_tokens, suits_days, best_time, rather, moving_out_on, profiles(display_name, avatar_url)',
+        'user_id, role, streak, immunity_tokens, swap_tokens, suits_days, best_time, rather, moving_out_on, signs_in, born_year, profiles(display_name, avatar_url)',
       )
       .eq('house_id', houseId)
       .order('joined_at'),
@@ -144,6 +150,7 @@ export async function loadHouse(houseId: string, now: Date): Promise<HouseSnapsh
       kind: houseKind(house.kind),
       awayMakeup: house.away_makeup,
       settleIn: house.settle_in === 'splitwise' ? 'splitwise' : 'jonz',
+      pocketCapMinor: house.pocket_cap_minor ?? 0,
       pass: passOf(house),
     },
     rules,
@@ -157,6 +164,8 @@ export async function loadHouse(houseId: string, now: Date): Promise<HouseSnapsh
       swapTokens: m.swap_tokens,
       prefs: myPrefsOf(m),
       movingOutOn: m.moving_out_on,
+      signsIn: m.signs_in ?? true,
+      bornYear: m.born_year ?? null,
     })),
     week: week ? { id: week.id, starts_on: week.starts_on, starts_at: week.starts_at, ends_at: week.ends_at } : null,
     assignments: [...(assignments.data ?? []), ...(carried.data ?? [])],

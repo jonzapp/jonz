@@ -84,3 +84,28 @@ back into the shared copy.
 - An admin can still **let off** a result or a month (History's fixes):
   that is the admin waiving it, not a skip.
 
+
+## Ask Jonz's replies
+
+Ask Jonz writes Markdown, as other chat apps do, and the app draws it in
+these text roles: paragraphs in Body with **bold** runs, headings as
+SectionLabel, lists with their bullets or numbers in a 24 gutter, a task
+list's boxes, a table on the card colour with numbers at the end, a quote
+behind a 3pt edge (2026-11-05).
+
+- Johns, people and pages inside a sentence are chips: a pill on the card
+  colour with a hairline edge, the John's lid, the person's plate or a page's
+  arrow, and the words in bold. Tapping one opens the John's sheet, the
+  person's page or the page. A chip for something the house no longer has is
+  its words in bold, with nothing to tap.
+- Facts about the house come as cards between the paragraphs (this week's
+  Johns, fair shares, Johns on the list), drawn by the app from its own live
+  data, never as numbers the model typed.
+- Raw HTML, web links, images and code are shown as their words. Nothing
+  in a reply runs.
+- The formats live in `packages/core/src/reply-format.ts`; the prompt's
+  guide is built from the same list, so Jonz can only name what the app
+  draws. Every sample in `reply-samples.ts` is drawn at `/style/replies` and
+  pictured by `e2e/client-replies.spec.ts`.
+Backed by: WCAG 2.2 target size (a chip in a sentence is exempt from 24×24,
+and still 28 tall).

@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { CLIENT_URL } from "./auth";
+import { buttonBreaks } from "./button-rules";
 
 // The style page (/style, apps/client/src/components/style-page): every
 // building block and sample pages, checked at the widths the house style
@@ -105,6 +106,13 @@ for (const { name, width, path } of WIDTHS) {
     if (width < 360) {
       for (const { row, buttons } of rows) expect(new Set(buttons.map((b) => b.x)).size, `${row} stacks`).toBe(1);
     }
+
+    // A button on its own spans the column on a phone and keeps its own width in a wide one on a laptop.
+    const lone = await page.getByTestId("lone-button").getByRole("button").first().boundingBox();
+    const column = await page.getByTestId("lone-button").boundingBox();
+    if (width < 1024) expect(Math.abs((lone?.width ?? 0) - (column?.width ?? 0)), "lone button spans").toBeLessThanOrEqual(1);
+    else expect(lone?.width ?? 0, "lone button keeps its own width").toBeLessThan((column?.width ?? 0) / 2);
+    expect(await buttonBreaks(page, { oneAmber: false })).toEqual([]);
 
     // No words cut off.
     expect(await cutOff(page)).toEqual([]);
