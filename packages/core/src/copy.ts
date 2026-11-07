@@ -1881,6 +1881,8 @@ export const PASS_COPY = {
   founding: "Founding house",
   trialLeft: (days: number) => `Free month, ${days} ${days === 1 ? "day" : "days"} left`,
   trialEnded: "Free month ended",
+  /** A free month made longer by a promotion. */
+  freeUntil: (day: string) => `Free until ${day}`,
   renews: (plan: string, day: string) => `${plan}, renews ${day}`,
   ended: (day: string) => `Ended ${day}`,
   // The page.

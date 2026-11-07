@@ -4,6 +4,7 @@ import { passAfterSubscription, passFreeUntil, passOf, purchaseOfLookupKey, subs
 import type Stripe from "stripe";
 
 import type { Stage } from "@/lib/env";
+import { recordOfferUse } from "@/lib/moves/promotions";
 import type { AdminClient } from "@/lib/supabase/admin";
 
 import type { PassStripe, SubscriptionView } from "./stripe";
@@ -36,9 +37,11 @@ export async function applyPassEvent(
       const session = event.data.object;
       if (!ours(session.metadata)) return "ignored";
       if (session.mode === "subscription" && typeof session.subscription === "string") {
+        await recordOfferUse(db, session.metadata, session.id);
         return syncSubscription(db, stripe, session.subscription, now, ours);
       }
       if (session.mode === "payment" && session.payment_status === "paid") {
+        await recordOfferUse(db, session.metadata, session.id);
         return giveFounding(db, stripe, session);
       }
       return "ignored";

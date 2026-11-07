@@ -69,7 +69,11 @@ web-push.
   `POST /api/admin/messages` (the owner's Messages: a push, a Wall post or
   an email to a person, a house or everyone, or a test to themself; the
   database checks and audits, then `lib/moves/messages.ts` sends from the
-  outbox, and the clock sends what's left), and
+  outbox, and the clock sends what's left), the owner's Promotions
+  (`POST /api/admin/promotions` to make one, then `/:id/stop`, `/:id/retry`
+  and `/:id/email`; `lib/moves/promotions.ts`, `docs/specs/promotions.md`),
+  `GET /api/offer/:code` (a promotion's link: what it gives, and signed in,
+  whether it's yours; the one GET with an optional bearer token), and
   `POST /api/push-actions` (a button on a notification: the one route with
   no bearer token, because the push's own signed token, `lib/push-token.ts`,
   stands in for it). A database
