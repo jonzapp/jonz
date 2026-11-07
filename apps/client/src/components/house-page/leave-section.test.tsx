@@ -71,7 +71,7 @@ it('asks first, saying what leaving costs in money', async () => {
   const sheet = await ask();
   expect(sheet.getByRole('header', { name: HOUSE_LOWER_COPY.leaveAsk('Flat 3') })).toBeOnTheScreen();
   expect(
-    await sheet.findByText('You’ll lose your £3.33 share of October’s stake so far, and Sam still owes you £4.50.'),
+    await sheet.findByText('You’ll lose the £3.33 coming to you from October’s forfeits, and Sam still owes you £4.50.'),
   ).toBeOnTheScreen();
   expect(removeMember).not.toHaveBeenCalled();
 });

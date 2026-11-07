@@ -1,8 +1,20 @@
-import { DISPUTE_COPY, FOCUS_SHELL_COPY, JOHN_SHEET_COPY, voteTally, type BoardItem, type DisputeView } from '@app/core';
-import { CheckIcon, ThumbsDownIcon, ThumbsUpIcon } from 'lucide-react-native';
+import {
+  DISPUTE_COPY,
+  FOCUS_SHELL_COPY,
+  JOHN_COPY,
+  JOHN_SHEET_COPY,
+  voteCloses,
+  votersOn,
+  voteTally,
+  type BoardItem,
+  type DisputeView,
+} from '@app/core';
+import { CameraIcon, CheckIcon, ImagesIcon, ThumbsDownIcon, ThumbsUpIcon } from 'lucide-react-native';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { castVote } from '@/api/disputes';
+import { answerDispute, castVote } from '@/api/disputes';
+import { pickPhoto, uploadProof } from '@/api/photos';
 import { Alert } from '@/components/alert';
 import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/button';
@@ -17,13 +29,21 @@ import { SheetLines } from './parts';
 
 /**
  * A disputed John: the reason in body ink (a house decision, not an error)
- * beside whoever raised it, the tally, and, for anyone but the owner, the
- * vote in the tally's order. The owner only hears that the house is voting.
+ * beside whoever raised it, the tally, and, for whoever may vote, the vote
+ * in the tally's order. Whoever ticked it can answer with a photo: with only
+ * one voter that settles it. On a cover, whoever's John it was only hears
+ * that the rest of the house is checking it (dispute.ts votersOn).
  */
 export function Disputed({ item, context }: { item: BoardItem; context: JohnSheetContext }) {
   const dispute = item.dispute;
-  const mine = item.userId === context.userId;
+  const ticker = item.coveredBy ?? item.userId;
+  const mine = ticker === context.userId;
+  const ownsCover = Boolean(item.coveredBy) && item.userId === context.userId;
   if (!dispute) return null;
+  const voters = votersOn(
+    context.members.map((m) => m.userId),
+    { userId: item.userId, coveredBy: item.coveredBy },
+  );
   return (
     <SheetLines testID="dispute-note">
       <View style={styles.reason}>
@@ -36,7 +56,18 @@ export function Disputed({ item, context }: { item: BoardItem; context: JohnShee
       </View>
       <Meta testID="tally">{voteTally(dispute, context.now)}</Meta>
       {mine ? (
-        <Body>{JOHN_SHEET_COPY.yourTick}</Body>
+        <>
+          <Body testID="your-tick">
+            {dispute.answered
+              ? JOHN_SHEET_COPY.answered
+              : voters.length === 1
+                ? JOHN_SHEET_COPY.onlyVoter(context.nameOf(voters[0]), voteCloses(dispute.closesAt, context.now))
+                : JOHN_SHEET_COPY.yourTick}
+          </Body>
+          {dispute.answered ? null : <AnswerWithPhoto houseId={context.houseId} assignmentId={dispute.assignmentId} disputeId={dispute.id} onDone={context.close} />}
+        </>
+      ) : ownsCover ? (
+        <Body testID="cover-of-yours">{JOHN_SHEET_COPY.coverOfYours(context.nameOf(ticker))}</Body>
       ) : (
         <SheetVote houseId={context.houseId} dispute={dispute} onVoted={context.close} />
       )}
@@ -68,7 +99,7 @@ function SheetVote({ houseId, dispute, onVoted }: { houseId: string; dispute: Di
             variant="outline"
             chosen={dispute.myVote === false}
             icon={dispute.myVote === false ? CheckIcon : ThumbsUpIcon}
-            label={DISPUTE_COPY.fine}
+            label={DISPUTE_COPY.done}
             disabled={move.pending}
             onPress={() => void vote(false)}
             testID="vote-fine"
@@ -85,6 +116,76 @@ function SheetVote({ houseId, dispute, onVoted }: { houseId: string; dispute: Di
         </ButtonRow>
       </View>
       {move.problem ? <Alert message={move.problem} /> : null}
+    </>
+  );
+}
+
+/**
+ * A photo of it done, from the camera or the library, for a question on
+ * your tick: uploaded to the John's folder, then answer_dispute.
+ */
+function AnswerWithPhoto({
+  houseId,
+  assignmentId,
+  disputeId,
+  onDone,
+}: {
+  houseId: string;
+  assignmentId: string;
+  disputeId: string;
+  onDone: () => void;
+}) {
+  const move = useMove(houseId);
+  const [uploading, setUploading] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
+
+  async function answer(source: 'camera' | 'library') {
+    setProblem(null);
+    let uri: string | null;
+    try {
+      uri = await pickPhoto(source);
+    } catch (reason) {
+      setProblem(reason instanceof Error ? reason.message : JOHN_COPY.photoFailed);
+      return;
+    }
+    if (!uri) return;
+    setUploading(true);
+    let path: string;
+    try {
+      path = await uploadProof(houseId, assignmentId, uri);
+    } catch {
+      setProblem(JOHN_COPY.photoFailed);
+      return;
+    } finally {
+      setUploading(false);
+    }
+    if (await move.run(() => answerDispute(disputeId, path))) onDone();
+  }
+
+  const busy = move.pending || uploading;
+  return (
+    <>
+      <View style={styles.pair}>
+        <ButtonRow>
+          <Button
+            variant="outline"
+            icon={CameraIcon}
+            label={JOHN_SHEET_COPY.answerPhoto}
+            disabled={busy}
+            onPress={() => void answer('camera')}
+            testID="answer-photo"
+          />
+          <Button
+            variant="outline"
+            icon={ImagesIcon}
+            label={JOHN_SHEET_COPY.fromLibrary}
+            disabled={busy}
+            onPress={() => void answer('library')}
+            testID="answer-library"
+          />
+        </ButtonRow>
+      </View>
+      {problem ?? move.problem ? <Alert message={(problem ?? move.problem)!} /> : null}
     </>
   );
 }

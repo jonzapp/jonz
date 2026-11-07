@@ -31,6 +31,7 @@ export function useHouse(houseId: string, userId: string): { query: UseQueryResu
   const snapshot = query.data;
   if (!snapshot) return { query, view: null };
 
+  const family = snapshot.house.kind === 'family';
   const board = buildWeekBoard({
     week: snapshot.week,
     assignments: snapshot.assignments,
@@ -40,9 +41,13 @@ export function useHouse(houseId: string, userId: string): { query: UseQueryResu
     everDealt: snapshot.house.everDealt,
     disputeHours: snapshot.rules.disputeHours,
     now,
+    // In a family each kid's John earns what it says.
+    ...(family ? { earners: snapshot.members.filter((m) => m.role !== 'admin').map((m) => m.userId) } : {}),
   });
   const me = snapshot.members.find((m) => m.userId === userId) ?? null;
-  const today = todayView(board, userId, { now, graceHours: snapshot.rules.coverGraceHours });
+  // In a family, a parent's Today lists the kids' ticks waiting for their OK.
+  const parent = family && me?.role === 'admin';
+  const today = todayView(board, userId, { now, graceHours: snapshot.rules.coverGraceHours }, parent);
   return { query, view: { snapshot, board, today, me, now } };
 }
 

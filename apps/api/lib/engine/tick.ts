@@ -4,6 +4,9 @@ import {
   crewByJob,
   dealtMembers,
   dueInLine,
+  firstName,
+  FOCUS_SHELL_COPY,
+  PARENT_OK_COPY,
   earnsImmunity,
   forfeitFor,
   isCleanWeek,
@@ -34,9 +37,11 @@ import {
   tableInputs,
   USUAL_WEEKS,
   verdict,
+  votersOn,
   weekStateOf,
   weekWindow,
   weekWinners,
+  oldEnough,
   type AwayPeriod,
   type Database,
   type IsoDow,
@@ -66,7 +71,7 @@ export type Db = SupabaseClient<Database>;
 type HouseRow = Database["public"]["Tables"]["houses"]["Row"];
 type MemberRow = Pick<
   Database["public"]["Tables"]["members"]["Row"],
-  "user_id" | "role" | "joined_at" | "streak" | "immunity_tokens" | "swap_tokens" | "suits_days" | "rather" | "moving_out_on"
+  "user_id" | "role" | "joined_at" | "streak" | "immunity_tokens" | "swap_tokens" | "suits_days" | "rather" | "moving_out_on" | "born_year"
 >;
 
 export interface PushMessage {
@@ -114,7 +119,7 @@ export async function loadHouse(db: Db, houseId: string) {
   const members = must(
     await db
       .from("members")
-      .select("user_id, role, joined_at, streak, immunity_tokens, swap_tokens, suits_days, rather, moving_out_on")
+      .select("user_id, role, joined_at, streak, immunity_tokens, swap_tokens, suits_days, rather, moving_out_on, born_year")
       .eq("house_id", houseId)
       .order("joined_at")
       .order("user_id"),
@@ -144,6 +149,7 @@ export async function tickHouse(
   }
   summary.disputes = await decideDisputes(db, house, members, now);
   summary.settled = await settleDue(db, house, now, notify);
+  if (notify && house.kind === "family") await askParents(db, house, members, now, notify);
   summary.weeksClosed = await closeWeeks(db, house, members, now);
   summary.monthsClosed = await closeMonths(db, house, members, now);
   if (notify) summary.reminders = await sendReminders(db, house, now, notify);
@@ -342,10 +348,14 @@ export async function dealWeek(
     // From the day someone moves out, as if away for good.
     ...movingOutAway(dealt, week.startsOn, lastAhead),
   ];
+  const bornYear = new Map(members.map((m) => [m.user_id, m.born_year]));
   const sharersOf = (j: (typeof list)[number]) => {
     const group = j.group_id ? groups.find((g) => g.id === j.group_id) : undefined;
     const inGroup = (group?.group_members ?? []).map((m) => m.user_id).filter((id) => memberIds.includes(id));
-    return { sharers: inGroup.length > 0 ? inGroup : memberIds, groupName: inGroup.length > 0 ? group!.name : null };
+    const all = inGroup.length > 0 ? inGroup : memberIds;
+    // In a family, a kid younger than the John's youngest age isn't dealt it (kids.ts).
+    const sharers = all.filter((id) => oldEnough(bornYear.get(id), j.min_age, week.startsOn));
+    return { sharers, groupName: inGroup.length > 0 ? group!.name : null };
   };
   const { balances } = await loadBalances(db, house.id, week.startsOn, memberIds);
   const args: SteadyDealArgs = {
@@ -492,10 +502,12 @@ async function decideDisputes(db: Db, house: HouseRow, members: readonly MemberR
   );
   let decided = 0;
   for (const d of open) {
-    // Whose tick it is: the coverer's, for a cover. They don't vote on it.
-    const ticker = d.assignments?.covered_by ?? d.assignments?.user_id ?? null;
-    const eligible = members.filter((m) => m.user_id !== ticker).length;
-    const mine = votes.filter((v) => v.dispute_id === d.id && v.user_id !== ticker);
+    // Whose tick it is (the coverer's, for a cover) and, on a cover, whose John it was: neither votes on it.
+    const voters = d.assignments
+      ? votersOn(members.map((m) => m.user_id), { userId: d.assignments.user_id, coveredBy: d.assignments.covered_by })
+      : members.map((m) => m.user_id);
+    const eligible = voters.length;
+    const mine = votes.filter((v) => v.dispute_id === d.id && voters.includes(v.user_id));
     const result = verdict(
       {
         eligible,
@@ -512,6 +524,57 @@ async function decideDisputes(db: Db, house: HouseRow, members: readonly MemberR
   return decided;
 }
 
+// --- A parent's OK ---------------------------------------------------------------
+
+/**
+ * In a family, tell the parents once about each kid's tick that waits for
+ * their OK ("Leo did Feed the fish"). A Together John's places share one
+ * tick, so it is said once. Marked as asked whether or not a push went.
+ */
+async function askParents(db: Db, house: HouseRow, members: readonly MemberRow[], now: Date, notify: Notify) {
+  const waiting = must(
+    await db
+      .from("assignments")
+      .select("id, job_id, user_id, covered_by, name")
+      .eq("house_id", house.id)
+      .eq("awaits_ok", true)
+      .is("ok_asked_at", null)
+      .is("outcome", null),
+    "awaiting an OK",
+  );
+  if (waiting.length === 0) return;
+  const parents = members.filter((m) => m.role === "admin").map((m) => m.user_id);
+  const kids = [...new Set(waiting.map((a) => a.covered_by ?? a.user_id))];
+  const names = new Map(
+    must(await db.from("profiles").select("id, display_name").in("id", kids), "kids").map((p) => [p.id, firstName(p.display_name)]),
+  );
+  const told = new Set<string>();
+  for (const a of waiting) {
+    const job = a.job_id ?? a.id;
+    if (told.has(job)) continue;
+    told.add(job);
+    const kid = a.covered_by ?? a.user_id;
+    await notify(
+      parents.filter((p) => p !== kid),
+      {
+        title: PARENT_OK_COPY.askTitle(names.get(kid) ?? FOCUS_SHELL_COPY.formerHousemate, a.name),
+        body: PARENT_OK_COPY.askBody,
+        url: "/today",
+        kind: "checks",
+        zone: house.timezone,
+        tag: `ok:${job}`,
+      },
+    );
+  }
+  must(
+    await db
+      .from("assignments")
+      .update({ ok_asked_at: now.toISOString() })
+      .in("id", waiting.map((a) => a.id)),
+    "asked",
+  );
+}
+
 // --- Settling outcomes -----------------------------------------------------------
 
 async function settleDue(db: Db, house: HouseRow, now: Date, notify?: Notify) {
@@ -521,7 +584,7 @@ async function settleDue(db: Db, house: HouseRow, now: Date, notify?: Notify) {
   const open = must(
     await db
       .from("assignments")
-      .select("id, john_id, job_id, due_at, done_at, absent_at, excused, flagged_at, closes_at, covered_by, weeks(ends_at)")
+      .select("id, john_id, job_id, due_at, done_at, absent_at, excused, flagged_at, closes_at, covered_by, awaits_ok, weeks(ends_at)")
       .eq("house_id", house.id)
       .is("outcome", null),
     "open assignments",
@@ -544,6 +607,7 @@ async function settleDue(db: Db, house: HouseRow, now: Date, notify?: Notify) {
         doneAt: a.done_at ? new Date(a.done_at) : null,
         excused: a.excused,
         disputeOpen: disputed.has(a.id) || (a.job_id !== null && disputedJobs.has(a.job_id)),
+        awaitsOk: a.awaits_ok,
         weekEndsAt: new Date(a.weeks!.ends_at),
         flaggedAt: a.flagged_at ? new Date(a.flagged_at) : null,
         closesAt: a.closes_at ? new Date(a.closes_at) : null,

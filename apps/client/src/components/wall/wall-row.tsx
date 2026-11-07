@@ -22,6 +22,7 @@ import {
   FlagIcon,
   FlameIcon,
   GavelIcon,
+  MegaphoneIcon,
   PlaneIcon,
   RepeatIcon,
   ShieldIcon,
@@ -61,6 +62,7 @@ const WALL_ICON: Record<WallIcon, LucideIcon> = {
   banknote: BanknoteIcon,
   'bell-ring': BellRingIcon,
   'badge-check': BadgeCheckIcon,
+  megaphone: MegaphoneIcon,
   undo: Undo2Icon,
 };
 

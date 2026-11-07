@@ -19,7 +19,7 @@ export const LEGAL = {
   /** Whose courts and law the Terms name. */
   law: "England and Wales",
   /** When either page last changed in substance. */
-  updated: "31 October 2026",
+  updated: "6 November 2026",
   privacyPath: "/privacy",
   termsPath: "/terms",
   site: "https://jonz.app",
@@ -54,7 +54,7 @@ export const GOOGLE_LIMITED_USE = `${APP_NAME}’s use and transfer to any other
 export const PRIVACY_POLICY: LegalPage = {
   title: "Privacy Policy",
   updated: `Last updated ${LEGAL.updated}`,
-  lead: `${APP_NAME} keeps what it needs to share out your house’s Johns and nothing more. This page says what that is, who sees it, who helps us run ${APP_NAME}, and how to get it deleted. It covers the website at jonz.app and the ${APP_NAME} apps for iPhone and Android.`,
+  lead: `${APP_NAME} keeps what it needs to deal out your house’s Johns and nothing more. This page says what that is, who sees it, who helps us run ${APP_NAME}, and how to get it deleted. It covers the website at jonz.app and the ${APP_NAME} apps for iPhone and Android.`,
   sections: [
     {
       heading: "Who we are",
@@ -69,7 +69,7 @@ export const PRIVACY_POLICY: LegalPage = {
         "Your house: its name, currency, time zone and rules; the Johns, who was given which, and when each was ticked; any photo you add to a tick; disputes, votes and reactions; time away and groups; the points table; the Stake ledger of what housemates owe each other; and the history of changes admins make.",
         "Reminders: if you turn them on, the address your browser or phone gives us to send notifications to, and which reminders you want and when.",
         "The House Pass: which plan your house has, who bought it, and the IDs Stripe gives the purchase. We never see or store card details.",
-        "Ask Jonz: how many times your house used it each day and how long the answers were, so we can keep it within its daily limit. Not what you wrote.",
+        "Ask Jonz: your chats with it (what you wrote, Jonz’s replies, and whether a reply had changes to apply), kept until you delete them, and how much of the house’s weekly allowance each person used. Only you can see your chats. They’re deleted if you leave the house or delete your account.",
         "Reports: a problem, idea or question you send us in the app, any screenshots you add, our replies, and the details you choose to send with it (described below).",
         "Technical: our hosts keep short-lived logs of requests (your IP address, browser and the page asked for) to keep the service running and secure. Your browser or phone stores your sign-in and your light or dark choice. There are no ads, no analytics, and no tracking cookies.",
       ],
@@ -105,7 +105,7 @@ export const PRIVACY_POLICY: LegalPage = {
     {
       heading: "Ask Jonz",
       body: [
-        "When an admin asks Jonz to draft or change the John list, what they write, the first names of the house and the house’s Johns are sent to Anthropic’s Claude, through Vercel’s AI Gateway, to write the answer. We don’t store the chat, and Anthropic doesn’t train on it. Please don’t put anything private in it that the house wouldn’t want shared.",
+        "When you ask Jonz something, what you write and what Jonz looks up in your house to answer (first names, the Johns and the parts of the house you can see) are sent to Anthropic’s Claude, through Vercel’s AI Gateway, to write the answer. We keep your chats so you can come back to them; only you can see them, and you can delete any of them at any time. Anthropic doesn’t train on them. Please don’t put anything private in it that the house wouldn’t want shared.",
       ],
     },
     {
@@ -197,7 +197,7 @@ export const TERMS: LegalPage = {
     {
       heading: "What Jonz is",
       body: [
-        `${APP_NAME} shares out a house’s chores (Johns) fairly each week, lets housemates check each other’s ticks, and keeps the points and the Stake. Running a fair house is free. The House Pass adds the extras for the whole house.`,
+        `${APP_NAME} deals out a house’s chores (Johns) fairly each week, lets housemates check each other’s ticks, and keeps the points and the Stake. Running a fair house is free. The House Pass adds the extras for the whole house.`,
       ],
     },
     {

@@ -3,8 +3,8 @@ import { format } from "date-fns";
 
 import type { AwayPeriod } from "./away";
 import { weeklyEffort, type JohnDef } from "./board";
-import { FOCUS_SHELL_COPY, HOUSE_LOWER_COPY, MOVING_COPY, WALL_FEED_COPY } from "./copy";
-import type { Currency, HouseRules } from "./domain";
+import { FOCUS_SHELL_COPY, HOUSE_LOWER_COPY, MOVING_COPY, STEADY_COPY, WALL_FEED_COPY } from "./copy";
+import type { Currency, HouseKind, HouseRules } from "./domain";
 import { dateRange, dayLabel, firstName, STATUS_MARK, type StatusIcon } from "./format";
 import { undoneWhat } from "./history";
 import { formatMoney } from "./money";
@@ -222,6 +222,7 @@ const ICON: Record<string, WallIcon> = {
   paid: "banknote",
   undone: "undo",
   reset: "undo",
+  jonz_message: "megaphone",
 };
 
 const FAMILY: Record<string, WallFamily> = {
@@ -261,7 +262,7 @@ function boldRuns(title: string, bold: readonly string[]): Part[] {
 }
 
 /** The house's own news: nobody's plate leads it. */
-const HOUSE_NEWS = new Set(["upheld", "rejected", "month_closed"]);
+const HOUSE_NEWS = new Set(["upheld", "rejected", "month_closed", "jonz_message"]);
 
 /**
  * One event as a row, from where the viewer stands: one sentence with first
@@ -424,6 +425,13 @@ export function wallFeedRow(event: WallEvent, scene: WallScene): WallFeedRow {
       detail = MOVING_COPY.movingDetail;
       break;
     }
+    case "jonz_message":
+      // A message from Jonz itself: its subject, and its words to read in full.
+      title = text("subject") || WALL_FEED_COPY.fromJonz;
+      bold = [];
+      detail = text("body") || null;
+      lead = null;
+      break;
     case "month_closed":
       title = WALL_FEED_COPY.monthClosed(monthName(text("month")));
       detail = WALL_FEED_COPY.sharedOut;
@@ -552,7 +560,10 @@ export interface HouseSetupValues {
  * still live here, earliest first.
  */
 export function houseSetupValues(input: {
-  rules: Pick<HouseRules, "currency" | "stakeMinor" | "lateForfeitMinor" | "missedForfeitMinor">;
+  rules: Pick<HouseRules, "currency" | "stakeMinor" | "lateForfeitMinor" | "missedForfeitMinor"> &
+    Partial<Pick<HouseRules, "dealMode" | "dealBudget">>;
+  /** A family has no stake, so its Rules row says how Johns are shared instead. */
+  kind?: HouseKind;
   /** The John list, once read. */
   johns?: readonly Pick<JohnDef, "points" | "everyWeeks">[];
   /** How many groups, once read. */
@@ -592,11 +603,14 @@ export function houseSetupValues(input: {
 
   return {
     johns: johnsValue,
-    rules: HOUSE_LOWER_COPY.rulesValue(
-      rules.stakeMinor > 0 ? money(rules.stakeMinor) : null,
-      money(rules.lateForfeitMinor),
-      money(rules.missedForfeitMinor),
-    ),
+    rules:
+      input.kind === "family"
+        ? `${STEADY_COPY.modeName[rules.dealMode ?? "smart"]}, ${STEADY_COPY.budgetEach(rules.dealBudget ?? 4)}`
+        : HOUSE_LOWER_COPY.rulesValue(
+            rules.stakeMinor > 0 ? money(rules.stakeMinor) : null,
+            money(rules.lateForfeitMinor),
+            money(rules.missedForfeitMinor),
+          ),
     away: awayValue,
     groups: groups === undefined ? null : groups === 0 ? HOUSE_LOWER_COPY.noGroups : HOUSE_LOWER_COPY.groupsValue(groups),
     showGroups: input.admin || (groups ?? 0) > 0,

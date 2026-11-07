@@ -2,7 +2,9 @@ import type { Currency } from "./domain";
 import { dateRange, firstName, monthLabel } from "./format";
 import { undoneWhat } from "./history";
 import { resetWhat } from "./resets";
+import { monthWord } from "./house-page";
 import { formatMoney } from "./money";
+import { pocketMoney } from "./pocket";
 
 // The Wall as both apps show it: each event in words, built from the rows
 // they read (events, with their John's photo path and their reactions), so
@@ -113,6 +115,7 @@ export type WallIcon =
   | "banknote"
   | "bell-ring"
   | "badge-check"
+  | "megaphone"
   | "undo";
 
 export interface WallLine {
@@ -160,16 +163,21 @@ export function describeEvent(e: WallEvent, nameOf: (userId: string | null) => s
       return { icon: "gavel", tone: "hazard", parts: [t(`The house struck ${possessive(against)} tick on ${john}. It’s open again.`)] };
     case "rejected":
       return { icon: "gavel", tone: "good", parts: [t(`The house backed ${possessive(against)} ${john}. The tick stands.`)] };
+    // A parent's answer to a kid's tick, in a family.
+    case "okayed":
+      return { icon: "badge-check", tone: "good", parts: [b(who), t(` OK’d ${possessive(against)} ${john}.`)] };
+    case "not_yet":
+      return { icon: "undo", tone: "hazard", parts: [b(who), t(` sent ${possessive(against)} ${john} back. It’s open again.`)] };
     case "immunity_earned":
       return {
         icon: "shield",
         tone: "hivis",
-        parts: [b(who), t(` earned an immunity token: ${String(e.data.streak)} clean weeks in a row.`)],
+        parts: [b(who), t(` earned a skip: ${String(e.data.streak)} clean weeks in a row.`)],
       };
     case "swap_earned":
       return { icon: "repeat", tone: "hivis", parts: [b(who), t(" topped the week and earned a swap.")] };
     case "immunity_used":
-      return { icon: "shield", parts: [b(who), t(` spent immunity on ${john}.`)] };
+      return { icon: "shield", parts: [b(who), t(` used a skip on ${john}.`)] };
     case "swap_used":
       return {
         icon: "repeat",
@@ -216,8 +224,19 @@ export function describeEvent(e: WallEvent, nameOf: (userId: string | null) => s
           }
         : { icon: "truck", parts: [b(was), t(" moved out.")] };
     }
+    case "pocket_paid":
+      return {
+        icon: "banknote",
+        tone: "good",
+        parts: [
+          b(who),
+          t(
+            ` paid ${nameOf((e.data.to as string) ?? null)} ${pocketMoney(Number(e.data.amount), currency)} for ${monthWord(String(e.data.month))}.`,
+          ),
+        ],
+      };
     case "month_closed":
-      return { icon: "calendar-check", parts: [t(`${monthLabel(String(e.data.month))} is closed and the Stake is shared out.`)] };
+      return { icon: "calendar-check", parts: [t(`${monthLabel(String(e.data.month))} is closed and its forfeits are split.`)] };
     case "paid":
       return {
         icon: "banknote",
@@ -238,6 +257,9 @@ export function describeEvent(e: WallEvent, nameOf: (userId: string | null) => s
         parts: [b(by), t(` undid ${possessive(who)} ${undoneWhat(String(e.data.what), (e.data.name as string | null) ?? null)}.`)],
       };
     }
+    case "jonz_message":
+      // A message from Jonz itself (the owner's Messages): its subject.
+      return { icon: "megaphone", parts: [b("Jonz"), t(`: ${String(e.data.subject ?? "")}`)] };
     case "reset":
       // An admin fixed something: who, and what.
       return {

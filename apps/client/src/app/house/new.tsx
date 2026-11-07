@@ -3,12 +3,16 @@ import {
   CURRENCY_CHOICES,
   DAY_CHOICES,
   DOOR,
+  FAMILY_COPY,
+  FAMILY_OPEN,
   FRONT_DOOR_COPY,
   houseDefaults,
+  type HouseKind,
   type IsoDow,
+  kindParam,
   MOVING_COPY,
   NEW_HOUSE_COPY,
-  PAGE_TITLE,
+  newHouseWords,
   timeZoneName,
 } from '@app/core';
 import { useLocalSearchParams } from 'expo-router';
@@ -22,12 +26,14 @@ import { Button } from '@/components/button';
 import { Field, FieldLabel } from '@/components/field';
 import { DefaultsLine } from '@/components/front-door/defaults-line';
 import { Door, DoorFoot, Sign, SignHeading } from '@/components/front-door/door';
+import { KindChoice } from '@/components/front-door/kind-choice';
 import { PageTitle } from '@/components/page-title';
 import { Segmented } from '@/components/segmented';
 import { Meta } from '@/components/text';
 import { TextButton } from '@/components/text-button';
 import { useMembership } from '@/hooks/use-membership';
 import { useMovingOn } from '@/hooks/use-moving-on';
+import { rememberedKind } from '@/door-kind';
 import { deviceCurrency, deviceTimeZone } from '@/locale';
 import { SPACE } from '@/theme';
 
@@ -37,14 +43,25 @@ import { SPACE } from '@/theme';
  * with "Change" to open the currency and the first day of the week. Once the
  * house exists, the root layout's guard moves on to Today.
  *
+ * Above the name, "Who lives here?": housemates or a family, picked already
+ * from the front door's switch (`?kind=`, or what this device remembers).
+ * Until families open (FAMILY_OPEN) the question shows only to a link that
+ * asks for a family.
+ *
  * From the Moving on screen (`?from=` the house you left) it's your new
  * place, and the old house's John list comes with it.
  */
 export default function NewHouse() {
   const { refresh } = useMembership();
-  const { from } = useLocalSearchParams<{ from?: string }>();
+  const { from, kind: asked } = useLocalSearchParams<{ from?: string; kind?: string }>();
   const moving = useMovingOn().data ?? null;
   const copying = moving && moving.fromHouse === from && moving.johns > 0 ? moving : null;
+  const [kind, setKind] = useState<HouseKind>(
+    () => kindParam(asked) ?? (FAMILY_OPEN ? rememberedKind() : null) ?? 'housemates',
+  );
+  // A move keeps the old house's kind, so there's nothing to ask.
+  const asking = !copying && (FAMILY_OPEN || kindParam(asked) === 'family');
+  const words = newHouseWords(kind);
   const [timezone] = useState(deviceTimeZone);
   const [name, setName] = useState('');
   const [currency, setCurrency] = useState<Currency>(deviceCurrency);
@@ -58,7 +75,7 @@ export default function NewHouse() {
     setProblem(null);
     try {
       const input = { name, timezone, currency, weekStarts };
-      await (copying ? startHouseFrom(copying.fromHouse, input) : createHouse(input));
+      await (copying ? startHouseFrom(copying.fromHouse, input) : createHouse({ ...input, kind }));
       await refresh();
     } catch (reason) {
       setProblem(reason instanceof Error ? reason.message : String(reason));
@@ -68,13 +85,19 @@ export default function NewHouse() {
 
   return (
     <Door testID="new-house-screen">
-      <PageTitle page={PAGE_TITLE.newHouse} />
+      <PageTitle page={words.title} />
       <Sign>
         {copying ? (
           <SignHeading title={MOVING_COPY.newHeading} body={MOVING_COPY.newIntro(copying.houseName, copying.johns)} />
         ) : (
-          <SignHeading title={NEW_HOUSE_COPY.heading} body={NEW_HOUSE_COPY.intro} />
+          <SignHeading title={words.heading} body={words.intro} />
         )}
+        {asking ? (
+          <View style={styles.pick}>
+            <FieldLabel>{FAMILY_COPY.whoLivesHere}</FieldLabel>
+            <KindChoice value={kind} onChange={setKind} />
+          </View>
+        ) : null}
         <View style={styles.name}>
           <Field
             label={FRONT_DOOR_COPY.name}
@@ -90,7 +113,7 @@ export default function NewHouse() {
             testID="house-name"
           />
           <DefaultsLine
-            parts={houseDefaults({ currency, weekStarts, timezone })}
+            parts={houseDefaults({ currency, weekStarts, timezone, kind })}
             open={changing}
             onToggle={() => setChanging((was) => !was)}
           />
@@ -124,7 +147,7 @@ export default function NewHouse() {
         ) : null}
         {problem ? <Alert message={problem} /> : null}
         <Button
-          label={busy ? NEW_HOUSE_COPY.busy : FRONT_DOOR_COPY.submit}
+          label={busy ? NEW_HOUSE_COPY.busy : words.submit}
           onPress={() => void submit()}
           disabled={busy || !name.trim()}
           testID="create-house"

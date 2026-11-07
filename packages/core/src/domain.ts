@@ -94,6 +94,20 @@ export const BEST_TIMES = ["morning", "afternoon", "evening"] as const;
 export type BestTime = (typeof BEST_TIMES)[number];
 export const BEST_TIME_HOUR: Record<BestTime, number> = { morning: 9, afternoon: 14, evening: 19 };
 
+/**
+ * Who lives in a house (houses.kind): housemates, equals sharing a place, or
+ * a family, where parents deal out Johns and kids do them. A family is the
+ * same house underneath with its own words and no Stake
+ * (docs/specs/family-houses.md).
+ */
+export const HOUSE_KINDS = ["housemates", "family"] as const;
+export type HouseKind = (typeof HOUSE_KINDS)[number];
+
+/** A house row's kind, as the app reads it: anything unknown is housemates. */
+export function houseKind(kind: string | null | undefined): HouseKind {
+  return kind === "family" ? "family" : "housemates";
+}
+
 /** The knobs a house turns. Money is always in minor units (pence, cents). */
 /** Where a house settles up at month end (houses.settle_in): here, by marking what arrives, or in Splitwise. */
 export const SETTLE_IN = ["jonz", "splitwise"] as const;
@@ -117,6 +131,9 @@ export interface HouseRules {
   /** Points a week each (BUDGETS), or 0 for no limit. */
   dealBudget: number;
 }
+
+/** What a new family's kids can each earn in a month, in minor units (create_house). */
+export const FAMILY_POCKET_CAP = 1000;
 
 export const DEFAULT_RULES: Omit<HouseRules, "timezone" | "currency"> = {
   weekStarts: 1,

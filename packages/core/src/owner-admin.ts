@@ -8,6 +8,7 @@ export const ADMIN_PATH = "/admin";
 
 export const ADMIN_PAGES = [
   { key: "inbox", label: "Inbox", path: "/admin/inbox" },
+  { key: "messages", label: "Messages", path: "/admin/messages" },
   { key: "notices", label: "Notices", path: "/admin/notices" },
   { key: "deletions", label: "Deletions", path: "/admin/deletions" },
   { key: "audit", label: "Audit log", path: "/admin/audit" },

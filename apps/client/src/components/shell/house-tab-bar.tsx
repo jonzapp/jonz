@@ -28,6 +28,8 @@ const STROKE = { strokeWidth: 2.5, strokeLinecap: 'butt', strokeLinejoin: 'round
 export interface ShellHouse {
   name: string;
   memberCount: number;
+  /** A family: Today's badge counts kids' ticks waiting for your OK, not votes. */
+  family?: boolean;
 }
 
 /**
@@ -63,7 +65,7 @@ export function HouseTabBar({
     const common = {
       role: 'tab' as const,
       'aria-selected': focused,
-      accessibilityLabel: FOCUS_SHELL_COPY.tab(label, badge),
+      accessibilityLabel: FOCUS_SHELL_COPY.tab(label, badge, house?.family),
       testID: `tab-${place}`,
       onPress,
     };

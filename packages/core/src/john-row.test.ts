@@ -132,7 +132,7 @@ describe("johnRow", () => {
     expect(row({ status: "late", points: 3 })).toMatchObject({ tick: "done", tickLabel: "Done late", trailing: "status", points: 1 });
     expect(row({ status: "excused", points: 3 })).toMatchObject({
       tick: "excused",
-      tickLabel: "Skipped with immunity",
+      tickLabel: "Skipped",
       trailing: null,
       points: 0,
     });
@@ -199,11 +199,11 @@ describe("johnRow's meta line", () => {
     expect(row({ status: "disputed", dispute: null })).toMatchObject({ meta: "Disputed", lid: false });
   });
 
-  it("says when a finished one was done, and that immunity excused one", () => {
+  it("says when a finished one was done, and that a skip skipped one", () => {
     expect(meta({ status: "done", doneAt: new Date("2026-10-21T13:10:00Z") })).toBe("Kitchen, done yesterday 14:10");
     expect(meta({ status: "late", doneAt: new Date("2026-10-12T13:10:00Z") })).toBe("Kitchen, done Mon 12 Oct");
     expect(meta({ status: "late", doneAt: null, dueAt: new Date("2026-10-22T08:00:00Z") })).toBe("Kitchen, today 09:00");
-    expect(meta({ status: "excused" })).toBe("Kitchen, skipped with immunity");
+    expect(meta({ status: "excused" })).toBe("Kitchen, skipped");
   });
 
   it("says a John pulled forward by time away is due before they go", () => {

@@ -19,6 +19,13 @@ describe("sendEmail", () => {
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
+  it("never writes to a kid without a sign-in", async () => {
+    vi.stubEnv("RESEND_API_KEY", "re_test");
+    const fetchImpl = vi.fn();
+    expect(await sendEmail("kid-1@kids.jonz.invalid", message, { tag: "notice" }, fetchImpl)).toEqual({ sent: false, reason: "no-address" });
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
   it("posts the email to Resend from hello@, replies to support@", async () => {
     vi.stubEnv("RESEND_API_KEY", "re_test");
     vi.stubEnv("EMAIL_FROM", "");

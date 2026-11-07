@@ -58,9 +58,12 @@ async function holdsTheEdges(page: Page, screen: Locator, firstCard: Locator) {
   const card = await firstCard.boundingBox();
   const side = await screen.getByTestId("column-side").boundingBox();
   const ask = await screen.getByTestId("ask-jonz").boundingBox();
+  const help = await screen.getByTestId("help-button").boundingBox();
   // The card's words are INSET in from its edge.
   expect(title?.x ?? 0).toBeCloseTo((card?.x ?? 0) + 16, 0);
   expect((ask?.x ?? 0) + (ask?.width ?? 0)).toBeGreaterThan(window - 32);
+  // Help sits right against the sparkles, the bar's buttons one even group.
+  expect((help?.x ?? 0) + (help?.width ?? 0)).toBeCloseTo(ask?.x ?? 0, 0);
   expect((side?.x ?? 0) + (side?.width ?? 0)).toBeCloseTo(window, 0);
   expect(side?.y ?? 0).toBeCloseTo((bar?.y ?? 0) + (bar?.height ?? 0), 0);
 }
@@ -183,8 +186,8 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   await fillsTheRoom(page, person.getByTestId("person-sections-column").last());
   await shoot(page, "person");
 
-  // Groups, Admins, Preferences and History are parts of other pages now, and You has its own: seven in the list.
-  await expect(nav.getByRole("link")).toHaveCount(7);
+  // Groups, Admins, Preferences and History are parts of other pages now, You has its own, and so does Ask Jonz usage: eight in the list.
+  await expect(nav.getByRole("link")).toHaveCount(8);
   // You: your settings beside help and leaving.
   await nav.getByTestId("nav-you").click();
   await expect(page.getByTestId("you-pair-start").getByTestId("sign-out")).toBeVisible();

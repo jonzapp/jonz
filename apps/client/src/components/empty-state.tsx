@@ -22,7 +22,7 @@ export function EmptyState({
   icon: LucideIcon;
   title: string;
   body?: string;
-  /** One button, at its own width (a primary Button for the one thing to do). */
+  /** One button, in a ButtonRow: across the column on a phone, its own width in a wide one on a laptop. */
   action?: ReactNode;
   testID?: string;
 }) {
@@ -50,5 +50,6 @@ const styles = StyleSheet.create({
   plate: { width: PLATE, height: PLATE, borderRadius: PLATE / 2, alignItems: 'center', justifyContent: 'center' },
   title: { marginTop: SPACE.lg },
   body: { marginTop: SPACE.xs },
-  action: { marginTop: SPACE.xl },
+  // Across the column, so a ButtonRow inside can fill it on a phone.
+  action: { marginTop: SPACE.xl, alignSelf: 'stretch' },
 });

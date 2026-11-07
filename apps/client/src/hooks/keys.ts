@@ -29,3 +29,10 @@ export const historyKey = (houseId: string) => [...houseKey(houseId), 'history']
 
 /** The house you just left, while it can come with you (the Moving on screen). Yours, not a house's. */
 export const movingOnKey = (userId: string) => ['moving-on', userId] as const;
+
+/** A family's pocket money, under the house: a tick standing or Paid reads it again. */
+export const pocketKey = (houseId: string) => [...houseKey(houseId), 'pocket'] as const;
+
+/** The week's Ask Jonz: what's left, who used it, when it's back. */
+export const askUsageKey = (houseId: string) => [...houseKey(houseId), 'ask-usage'] as const;
+export const askChatsKey = (houseId: string) => [...houseKey(houseId), 'ask-chats'] as const;

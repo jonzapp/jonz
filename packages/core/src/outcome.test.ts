@@ -132,6 +132,14 @@ describe("flags (on-call Johns)", () => {
     expect(settleOutcome(flag, at("2026-10-09T20:00:00Z"), 24)).toBe("missed");
   });
 
+  it("gives a struck flag at least its time to redo it", () => {
+    // Struck Friday 6pm: 12 hours to redo, past its own close at 8pm.
+    const struck = { ...flag, closesAt: at("2026-10-10T06:00:00Z") };
+    expect(closesAt(struck)).toEqual(at("2026-10-10T06:00:00Z"));
+    // A redo time earlier than its own close changes nothing.
+    expect(closesAt({ ...flag, closesAt: at("2026-10-09T10:00:00Z") }).toISOString()).toBe("2026-10-09T20:00:00.000Z");
+  });
+
   it("misses an overdue flag when its week ends first", () => {
     // Raised Sunday 4am, due 4pm; the week ends 11pm, before 4am Monday.
     const late = { ...base, flaggedAt: at("2026-10-11T04:00:00Z"), dueAt: at("2026-10-11T16:00:00Z") };

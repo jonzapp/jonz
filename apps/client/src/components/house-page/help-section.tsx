@@ -1,7 +1,7 @@
 import { REPORT_COPY, TOUR_COPY, type ReportKind } from '@app/core';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { BugIcon, CompassIcon, LightbulbIcon, MessagesSquareIcon } from 'lucide-react-native';
+import { BookOpenIcon, BugIcon, CompassIcon, LightbulbIcon, MessagesSquareIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -16,8 +16,8 @@ import { useTour } from '@/components/tour/tour-context';
 import { INSET, SPACE } from '@/theme';
 
 /**
- * Help, on House between You and Leave: the tours (Tours and guides opens
- * the Help sheet, as the title bar's question mark does), report a problem
+ * Help, on House between You and Leave: Read the guide, the tours (Show me
+ * around opens the Help sheet, as the title bar's question mark does), report a problem
  * or send an idea (one sheet, either way in), and Your reports with the
  * replies to read.
  * Under it, the support address for anyone who'd rather email.
@@ -37,6 +37,14 @@ export function HelpSection({ house }: { house: string }) {
   return (
     <View style={styles.stack} testID="help-section">
       <Section label={REPORT_COPY.help}>
+        <Row
+          leading={<RowIcon icon={BookOpenIcon} />}
+          title={TOUR_COPY.guide}
+          meta={TOUR_COPY.guideMeta}
+          href="/house/guide"
+          chevron
+          testID="to-guide"
+        />
         {tours ? (
           <Row
             leading={<RowIcon icon={CompassIcon} />}

@@ -1,13 +1,12 @@
 import { REPORT_COPY, TOUR_COPY, TOURS, tourForPage, tourLength, toursFor, tourSteps, type ReportKind, type TourId } from '@app/core';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { BugIcon, CheckIcon, CompassIcon, LightbulbIcon, MessagesSquareIcon } from 'lucide-react-native';
+import { BookOpenIcon, BugIcon, CheckIcon, LightbulbIcon, MessagesSquareIcon, SparklesIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { myReports } from '@/api/reports';
 import { CountBadge } from '@/components/badge';
-import { Button } from '@/components/button';
 import { ReportForm } from '@/components/report/report-form';
 import { Row, RowIcon } from '@/components/row';
 import { Section } from '@/components/section';
@@ -15,14 +14,17 @@ import { Sheet } from '@/components/sheet';
 import { Chip } from '@/components/status-mark';
 import { Meta } from '@/components/text';
 import { useTour } from '@/components/tour/tour-context';
+import { useAskJonz } from '@/hooks/use-ask-jonz';
 import { useMembership } from '@/hooks/use-membership';
-import { INSET, SECTION_GAP, SPACE } from '@/theme';
+import { INSET, SECTION_GAP } from '@/theme';
 
 /**
- * Help, from the title bar's question mark: a tour of the page you're on
- * (the sheet's one amber button), the other tours as Guides (an admin's
- * among them for admins), then the same ways to report a problem or send an
- * idea that the You page's Help section has, and Your reports. Reporting changes
+ * Help, from the title bar's question mark. First the two ways to find
+ * something out, as help centres lead: Ask Jonz (the chat, when you may use
+ * it) and Read the guide (the same words Jonz reads). Then Show me around:
+ * the tours, the page you're on first (an admin's among them for admins).
+ * Then the same ways to report a problem or send an idea that the You
+ * page's Help section has, and Your reports. Reporting changes
  * the sheet's own content to the report form, as a sheet does, rather than
  * opening a second sheet. Choosing a tour puts the sheet away and starts it
  * once the sheet has gone.
@@ -30,6 +32,7 @@ import { INSET, SECTION_GAP, SPACE } from '@/theme';
 export function HelpSheet({
   visible,
   page,
+  canAsk = false,
   onClose,
   onTour,
   onDismissed,
@@ -37,6 +40,8 @@ export function HelpSheet({
   visible: boolean;
   /** The page it was opened on: its tour comes first. */
   page: string;
+  /** Whether this person may use Ask Jonz. */
+  canAsk?: boolean;
   onClose: () => void;
   onTour: (id: TourId) => void;
   onDismissed: () => void;
@@ -61,7 +66,7 @@ export function HelpSheet({
       {reporting ? (
         <Reporting kind={reporting} onSent={close} />
       ) : visible ? (
-        <HelpMenu page={page} onTour={onTour} onReport={setReporting} onClose={close} />
+        <HelpMenu page={page} canAsk={canAsk} onTour={onTour} onReport={setReporting} onClose={close} />
       ) : null}
     </Sheet>
   );
@@ -69,42 +74,74 @@ export function HelpSheet({
 
 function HelpMenu({
   page,
+  canAsk,
   onTour,
   onReport,
   onClose,
 }: {
   page: string;
+  canAsk: boolean;
   onTour: (id: TourId) => void;
   onReport: (kind: ReportKind) => void;
   onClose: () => void;
 }) {
   const tours = useTour();
+  const ask = useAskJonz('open');
   const mine = useQuery({ queryKey: ['my-reports'], queryFn: myReports });
   if (!tours) return null;
   const here = tourForPage(page);
-  const guides = toursFor(tours.facts).filter((id) => id !== here);
+  // The page's own tour first, then the rest.
+  const all = toursFor(tours.facts);
+  const listed = here ? [here, ...all.filter((id) => id !== here)] : all;
   const unread = mine.data?.filter((r) => r.unread).length ?? 0;
+  const go = (href: string) => {
+    onClose();
+    router.push(href as never);
+  };
   return (
     <View style={styles.menu}>
-      {here ? (
-        <View style={styles.lead}>
-          <Button label={TOURS[here].title} icon={CompassIcon} onPress={() => onTour(here)} testID="help-tour-here" />
-          <Meta>{tourLength(tourSteps(here, tours.facts).length)}</Meta>
-        </View>
-      ) : null}
-      {guides.length > 0 ? (
-        <Section label={TOUR_COPY.guides} testID="help-guides">
-          {guides.map((id) => (
-            <Row
-              key={id}
-              title={TOURS[id].title}
-              meta={tourLength(tourSteps(id, tours.facts).length)}
-              trailing={tours.saved.seen.includes(id) ? <Chip label={TOUR_COPY.seen} icon={CheckIcon} tone="good" /> : undefined}
-              onPress={() => onTour(id)}
-              chevron
-              testID={`help-tour-${id}`}
-            />
-          ))}
+      <Section label={TOUR_COPY.findOut} testID="help-find-out">
+        {canAsk ? (
+          <Row
+            leading={<RowIcon icon={SparklesIcon} />}
+            title={TOUR_COPY.ask}
+            meta={TOUR_COPY.askMeta}
+            onPress={() => {
+              if ('href' in ask) go(ask.href as string);
+              else {
+                onClose();
+                ask.onPress();
+              }
+            }}
+            chevron
+            testID="help-ask"
+          />
+        ) : null}
+        <Row
+          leading={<RowIcon icon={BookOpenIcon} />}
+          title={TOUR_COPY.guide}
+          meta={TOUR_COPY.guideMeta}
+          onPress={() => go('/house/guide')}
+          chevron
+          testID="help-guide"
+        />
+      </Section>
+      {listed.length > 0 ? (
+        <Section label={TOUR_COPY.showMeAround} testID="help-guides">
+          {listed.map((id) => {
+            const length = tourLength(tourSteps(id, tours.facts).length);
+            return (
+              <Row
+                key={id}
+                title={TOURS[id].name}
+                meta={id === here ? TOUR_COPY.thisPage(length) : length}
+                trailing={tours.saved.seen.includes(id) ? <Chip label={TOUR_COPY.seen} icon={CheckIcon} tone="good" /> : undefined}
+                onPress={() => onTour(id)}
+                chevron
+                testID={`help-tour-${id}`}
+              />
+            );
+          })}
         </Section>
       ) : null}
       <Section label={TOUR_COPY.somethingWrong}>
@@ -115,10 +152,7 @@ function HelpMenu({
           title={REPORT_COPY.yours}
           meta={REPORT_COPY.yoursMeta(mine.data?.length ?? 0, unread)}
           trailing={<CountBadge count={unread} />}
-          onPress={() => {
-            onClose();
-            router.push('/house/reports' as never);
-          }}
+          onPress={() => go('/house/reports')}
           chevron
           testID="help-reports"
         />
@@ -148,6 +182,5 @@ function Reporting({ kind, onSent }: { kind: ReportKind; onSent: () => void }) {
 
 const styles = StyleSheet.create({
   menu: { gap: SECTION_GAP },
-  lead: { gap: SPACE.sm, paddingHorizontal: INSET },
   email: { paddingLeft: INSET },
 });

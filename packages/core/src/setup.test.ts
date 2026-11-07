@@ -101,7 +101,7 @@ describe("johnFacts", () => {
   it("reads a John out in full", () => {
     expect(johnFacts(john({ category: "bathroom", points: 1, everyWeeks: 2, dueDow: 5, dueTime: "18:00", needsPhoto: true }), "Upstairs")).toEqual([
       { label: "Kind", value: "Bathroom" },
-      { label: "Shared by", value: "Upstairs" },
+      { label: "Who it’s for", value: "Upstairs" },
       { label: "Effort", value: "1 pt" },
       { label: "How often", value: "Every 2 weeks" },
       { label: "Due", value: "Friday 18:00" },
@@ -128,7 +128,7 @@ describe("johnFacts", () => {
 
   it("shares a John with no group among everyone", () => {
     const facts = johnFacts(john({}), null);
-    expect(facts[1]).toEqual({ label: "Shared by", value: "Everyone" });
+    expect(facts[1]).toEqual({ label: "Who it’s for", value: "Everyone" });
     expect(facts[5]).toEqual({ label: "Photo", value: "Not needed" });
   });
 });

@@ -6,6 +6,7 @@ import { StyleSheet, View } from 'react-native';
 import { setMovingOut } from '@/api/moving';
 import { Alert } from '@/components/alert';
 import { Button } from '@/components/button';
+import { ButtonRow } from '@/components/button-row';
 import { GroupItem } from '@/components/group';
 import { HousePage } from '@/components/house/house-page';
 import { Pair, useSideBySide } from '@/components/page-columns';
@@ -115,13 +116,15 @@ function MovingForm({
                 onChange={(next) => setPicked(next.to ?? next.from)}
               />
               {move.problem ? <Alert message={move.problem} /> : null}
-              <View style={styles.start}>
-                <Button
-                  label={picked ? MOVING_COPY.save(dateRange(picked, picked)) : MOVING_COPY.pick}
-                  disabled={!picked || !changed || move.pending}
-                  onPress={() => void move.run(() => setMovingOut(picked))}
-                  testID="moving-save"
-                />
+              <View style={styles.action}>
+                <ButtonRow atEdge>
+                  <Button
+                    label={picked ? MOVING_COPY.save(dateRange(picked, picked)) : MOVING_COPY.pick}
+                    disabled={!picked || !changed || move.pending}
+                    onPress={() => void move.run(() => setMovingOut(picked))}
+                    testID="moving-save"
+                  />
+                </ButtonRow>
               </View>
             </GroupItem>
           </Section>
@@ -136,7 +139,7 @@ const styles = StyleSheet.create({
   page: { gap: SECTION_GAP },
   words: { gap: SPACE.md },
   intro: { paddingHorizontal: INSET },
-  start: { alignItems: 'flex-start', marginTop: SPACE.sm },
+  action: { marginTop: SPACE.sm },
   // A line under a group, on the leading edge.
   note: { paddingHorizontal: INSET },
 });

@@ -7,6 +7,7 @@ import { reportDetails } from '@/api/report-details';
 import { pickScreenshot, sendReport } from '@/api/reports';
 import { Alert } from '@/components/alert';
 import { Button } from '@/components/button';
+import { ButtonRow } from '@/components/button-row';
 import { Field, FieldLabel } from '@/components/field';
 import { Group } from '@/components/group';
 import { DetailsList, Shot } from '@/components/report/report-parts';
@@ -104,13 +105,15 @@ export function ReportForm({ start, house, onSent }: { start: ReportKind; house:
       </Group>
       <View style={styles.end}>
         {problem ? <Alert message={problem} testID="report-problem" /> : null}
-        <Button
-          label={busy ? REPORT_COPY.sending : REPORT_COPY.send[kind]}
-          icon={SendIcon}
-          disabled={busy || !text.trim()}
-          onPress={() => void submit()}
-          testID="report-send"
-        />
+        <ButtonRow>
+          <Button
+            label={busy ? REPORT_COPY.sending : REPORT_COPY.send[kind]}
+            icon={SendIcon}
+            disabled={busy || !text.trim()}
+            onPress={() => void submit()}
+            testID="report-send"
+          />
+        </ButtonRow>
         <Meta>{REPORT_COPY.promise}</Meta>
       </View>
     </View>

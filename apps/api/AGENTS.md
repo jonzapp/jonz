@@ -59,11 +59,17 @@ web-push.
   (Describe your house: one turn of the setup chat, in which Claude drafts
   and changes a John list for an admin to review,
   `lib/moves/draft.ts` and `lib/ai/house-draft.ts`, the only code that
-  calls Claude; `docs/specs/describe-your-house.md`), `POST /api/reports`,
+  calls Claude; `docs/specs/describe-your-house.md`), `POST /api/ask/usage`
+  (the week's Ask Jonz for the chat's warning and the usage page,
+  `lib/moves/ask-usage.ts`), `POST /api/reports`,
   `POST /api/reports/:id/messages` and `POST /api/reports/:id/reply`
   (Report a problem: send one, write back, and the owner's reply, each
   followed by a push to the other side and, for a reply, an email;
-  `lib/moves/reports.ts`, `docs/specs/report-a-problem.md`), and
+  `lib/moves/reports.ts`, `docs/specs/report-a-problem.md`),
+  `POST /api/admin/messages` (the owner's Messages: a push, a Wall post or
+  an email to a person, a house or everyone, or a test to themself; the
+  database checks and audits, then `lib/moves/messages.ts` sends from the
+  outbox, and the clock sends what's left), and
   `POST /api/push-actions` (a button on a notification: the one route with
   no bearer token, because the push's own signed token, `lib/push-token.ts`,
   stands in for it). A database

@@ -245,14 +245,14 @@ describe('your open John', () => {
     expect(await within(body).findByRole('alert')).toHaveTextContent('That week has closed.');
   });
 
-  it("offers no way out without a token", async () => {
+  it("offers no way out without a skip or a swap", async () => {
     await show(house([binsOut(), samsBath()]));
     await openOn('Open a1');
     expect(screen.queryByTestId('if-you-cant')).toBeNull();
   });
 
   describe("opened at If you can't (Today's skip or swap)", () => {
-    it('starts on the skip, ready to confirm, when immunity is all you hold', async () => {
+    it('starts on the skip, ready to confirm, when a skip is all you hold', async () => {
       await show(house([binsOut(), samsBath()], priyaWith({ immunityTokens: 1 })));
       const body = await openOn('Open a1 at cant');
       expect(within(within(body).getByTestId('skip-confirm')).getByText(JOHN_SHEET_COPY.skipSentence('Bins out', 0))).toBeOnTheScreen();
@@ -301,7 +301,7 @@ describe('your open John', () => {
     });
   });
 
-  describe('skipping with immunity', () => {
+  describe('using a skip', () => {
     it('says what it means first, and can be called off', async () => {
       await show(house([binsOut()], priyaWith({ immunityTokens: 1 })));
       const body = await openOn('Open a1');
@@ -425,7 +425,7 @@ describe('a John done together, and help', () => {
     expect(within(body).queryByRole('button', { name: CREW_COPY.withHelp })).toBeNull();
     await fireEvent.press(within(body).getByRole('button', { name: JOHN_COPY.markDone }));
     const call = within(body).getByTestId('roll-call');
-    expect(within(body).getByTestId('roll-call-sub')).toHaveTextContent('8 pts, shared by whoever did it');
+    expect(within(body).getByTestId('roll-call-sub')).toHaveTextContent('8 pts, split between whoever did it');
     expect(within(call).getByRole('checkbox', { name: `You, ${CREW_COPY.youDidIt}` })).toBeDisabled();
     expect(within(call).getByRole('checkbox', { name: 'Sam' })).toBeChecked();
     expect(within(call).getByTestId('roll-call-split')).toHaveTextContent('8 pts ÷ 2, 4 pts each');
@@ -603,15 +603,15 @@ describe('a disputed John', () => {
     const body = await openOn('Open a4');
     expect(within(body).getByTestId('john-sheet-when')).toHaveTextContent('Disputed by Megan');
     expect(within(body).getByText('“Ring round the bath”')).toBeOnTheScreen();
-    expect(within(body).getByTestId('tally')).toHaveTextContent(/^0 fine, 1 not done, closes in 1[78]h$/);
-    expect(within(body).getByRole('button', { name: DISPUTE_COPY.fine })).not.toBeSelected();
+    expect(within(body).getByTestId('tally')).toHaveTextContent(/^0 done, 1 not done, closes in 1[78]h$/);
+    expect(within(body).getByRole('button', { name: DISPUTE_COPY.done })).not.toBeSelected();
     expect(within(body).getByRole('button', { name: DISPUTE_COPY.notDone })).not.toBeSelected();
   });
 
   it('counts your vote, puts itself away, and says where to change it', async () => {
     await show(disputed());
     const body = await openOn('Open a4');
-    await fireEvent.press(within(body).getByRole('button', { name: DISPUTE_COPY.fine }));
+    await fireEvent.press(within(body).getByRole('button', { name: DISPUTE_COPY.done }));
     expect(castVote).toHaveBeenCalledWith('d1', false);
     await waitFor(() => expect(screen.queryByTestId('john-sheet-body')).toBeNull());
     expect(screen.getByText(JOHN_SHEET_COPY.voted)).toBeOnTheScreen();
@@ -625,8 +625,8 @@ describe('a disputed John', () => {
       ]),
     );
     const body = await openOn('Open a4');
-    expect(within(body).getByTestId('tally')).toHaveTextContent(/^1 fine, 1 not done/);
-    expect(within(body).getByRole('button', { name: DISPUTE_COPY.fine })).toBeSelected();
+    expect(within(body).getByTestId('tally')).toHaveTextContent(/^1 done, 1 not done/);
+    expect(within(body).getByRole('button', { name: DISPUTE_COPY.done })).toBeSelected();
     expect(within(body).getByRole('button', { name: DISPUTE_COPY.notDone })).not.toBeSelected();
   });
 
@@ -645,7 +645,29 @@ describe('a disputed John', () => {
     );
     const body = await openOn('Open a1');
     expect(within(body).getByText(JOHN_SHEET_COPY.yourTick)).toBeOnTheScreen();
-    expect(within(body).queryByRole('button', { name: DISPUTE_COPY.fine })).toBeNull();
+    expect(within(body).queryByRole('button', { name: DISPUTE_COPY.done })).toBeNull();
+    expect(within(body).getByRole('button', { name: JOHN_SHEET_COPY.answerPhoto })).toBeOnTheScreen();
+  });
+
+  it('tells the owner in a house of two that a photo settles it', async () => {
+    const [priya] = snapshot().members;
+    await show(house([binsOut({ done_at: at(-2) })], [priya, MEGAN], [{ ...dispute(), assignment_id: 'a1' }]));
+    const body = await openOn('Open a1');
+    expect(within(body).getByTestId('your-tick')).toHaveTextContent(/^Only Megan can vote, so a photo settles it\./);
+    expect(within(body).getByRole('button', { name: JOHN_SHEET_COPY.answerPhoto })).toBeOnTheScreen();
+  });
+
+  it('leaves the owner of a covered John out of the vote on the cover', async () => {
+    await show(
+      house(
+        [binsOut({ done_at: at(-2), covered_by: 'sam' })],
+        [...snapshot().members, MEGAN],
+        [{ ...dispute(), assignment_id: 'a1' }],
+      ),
+    );
+    const body = await openOn('Open a1');
+    expect(within(body).getByTestId('cover-of-yours')).toHaveTextContent(JOHN_SHEET_COPY.coverOfYours('Sam'));
+    expect(within(body).queryByRole('button', { name: DISPUTE_COPY.done })).toBeNull();
   });
 });
 
@@ -668,7 +690,7 @@ describe('a settled John', () => {
 
   it.each([
     [{ done_at: at(-1), outcome: 'late' as const }, /^Sam did it late, .+\.$/],
-    [{ excused: true }, /^Sam skipped it with immunity, so there’s no forfeit\.$/],
+    [{ excused: true }, /^Sam used a skip on it, so there’s no forfeit\.$/],
     [{ due_at: at(-30), outcome: 'missed' as const }, /^It was missed\.$/],
   ])('says what happened, in place of what lateness would cost: %o', async (how, words) => {
     await show(house([binsOut(), samsBath(how)]));

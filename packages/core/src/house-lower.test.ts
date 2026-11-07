@@ -188,7 +188,7 @@ describe("wallFeedRow", () => {
   });
 
   it("tells perks, immunity, swaps and new housemates", () => {
-    expect(row({ kind: "immunity_earned", data: { streak: 4 } }).title).toBe("Megan earned immunity");
+    expect(row({ kind: "immunity_earned", data: { streak: 4 } }).title).toBe("Megan earned a skip");
     expect(row({ kind: "immunity_earned", data: { streak: 4 } }).detail).toBe("4 clean weeks in a row");
     expect(row({ kind: "swap_earned", data: {} }).title).toBe("Megan topped the week");
     expect(row({ kind: "immunity_used", data: { name: "Bins" } }).title).toBe("Megan skipped Bins");
@@ -551,14 +551,14 @@ describe("leaveCost", () => {
   const base = { me: "sam", month: "2026-10", share: 333, transfers: [], members: MEMBERS, currency: "GBP" as const };
 
   it("costs your share so far of the month's forfeits", () => {
-    expect(leaveCost(base)).toBe("You’ll lose your £3.33 share of October’s stake so far.");
-    expect(leaveCost({ ...base, share: 1000 })).toBe("You’ll lose your £10 share of October’s stake so far.");
-    expect(leaveCost({ ...base, month: "" })).toBe("You’ll lose your £3.33 share of this month’s stake so far.");
+    expect(leaveCost(base)).toBe("You’ll lose the £3.33 coming to you from October’s forfeits.");
+    expect(leaveCost({ ...base, share: 1000 })).toBe("You’ll lose the £10 coming to you from October’s forfeits.");
+    expect(leaveCost({ ...base, month: "" })).toBe("You’ll lose the £3.33 coming to you from this month’s forfeits.");
   });
 
   it("names every settle-up still open with you, owed to you first", () => {
     expect(leaveCost({ ...base, transfers: [{ from: "tom", to: "sam", amount: 134 }] })).toBe(
-      "You’ll lose your £3.33 share of October’s stake so far, and Tom still owes you £1.34.",
+      "You’ll lose the £3.33 coming to you from October’s forfeits, and Tom still owes you £1.34.",
     );
     expect(
       leaveCost({
@@ -569,7 +569,7 @@ describe("leaveCost", () => {
           { from: "tom", to: "megan", amount: 500 },
         ],
       }),
-    ).toBe("You’ll lose your £3.33 share of October’s stake so far, Tom still owes you £1.34, and you still owe Priya £2.");
+    ).toBe("You’ll lose the £3.33 coming to you from October’s forfeits, Tom still owes you £1.34, and you still owe Priya £2.");
   });
 
   it("leaves the share out when there's nothing to lose: no forfeits, no stake, or only your own", () => {
@@ -599,7 +599,7 @@ describe("leaveCost", () => {
   });
 
   it("rounds nothing: pence stay pence", () => {
-    expect(leaveCost({ ...base, share: 1, transfers: [] })).toBe("You’ll lose your £0.01 share of October’s stake so far.");
+    expect(leaveCost({ ...base, share: 1, transfers: [] })).toBe("You’ll lose the £0.01 coming to you from October’s forfeits.");
   });
 
   it("names someone who has left as a former housemate", () => {

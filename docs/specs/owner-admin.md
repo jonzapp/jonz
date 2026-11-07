@@ -11,8 +11,9 @@ from the app (`docs/specs/report-a-problem.md`). The first three before it were:
 - **Deletions**: accounts waiting to be deleted (see "Deleting an account").
 - **Audit log**: everything done on the admin pages, which nobody can change.
 
-Later PRs add an overview, houses, messages, a support inbox
-with an agent that asks before it acts, and an owner Ask Jonz. Designs are in
+**Messages** writes to a person, a house or everyone (see "Messages").
+Later PRs add an overview, houses, a support agent that asks before it
+acts, and an owner Ask Jonz. Designs are in
 the owner admin viewer (https://claude.ai/artifact/97GEyJDGnrWxB8HTbbrXmo).
 
 ## Who gets in
@@ -55,6 +56,43 @@ the owner admin viewer (https://claude.ai/artifact/97GEyJDGnrWxB8HTbbrXmo).
     24 hours.
   - The app keeps the last notices it read. If it can't reach Jonz it shows
     its own "can't reach Jonz" band.
+
+## Messages
+
+One message, to the right people, safely
+(`supabase/migrations/20261113090000_owner_messages.sql`,
+`apps/api/lib/moves/messages.ts`).
+
+- **To.** A person (found by name, email or an id's start), a house (by
+  name or join code) or everyone with an account. Nobody whose account is
+  being deleted. The form shows how far it reaches before it goes: "Send to
+  5 people", and under each way how many it reaches that way.
+- **Ways.** Any of three:
+  - **A push**, the subject as its title. It has no switch, as a reply to a
+    report doesn't; quiet hours make it silent. It opens the Wall when the
+    message went there too.
+  - **A post on the Wall**, as From Jonz (event kind `jonz_message`), on
+    every house's Wall for everyone. Never for one person: the whole house
+    reads its Wall.
+  - **An email** (`ownerMessageEmail`), whose reply reaches
+    support@jonz.app, with an idempotency key per message and person.
+- **Send me a test.** The same message to you alone, the ways it would go
+  less the Wall (a Wall-only message is tested as a push). It needs only a
+  subject and the words.
+- **Everyone** takes a second tap that names the number.
+- **Sending.** `owner_send_message` checks it's the owner with their code,
+  posts on the Walls, writes the audit entry (`message.send` or
+  `message.test`, people and houses by id only) and leaves one outbox row a
+  person. `POST /api/admin/messages` then pushes and emails from the outbox
+  for up to 40 seconds; the clock sends whatever is left, 20 seconds a tick.
+  Taking a row deletes it under `SKIP LOCKED`, so two senders never send
+  one person the same message twice.
+- **The page.** On a laptop, the form, with how it looks (as a push, or on
+  the Wall) and the last five sent beside it; on a phone the form, then
+  Preview as a sheet. **All sent** is a busy list: it finds a subject, the
+  words, a person or a house; To (A person, A house, Everyone, Tests), Way
+  (Push, Wall, Email), and When is Sent. A message opens in full in a
+  sheet.
 
 ## Deleting an account
 
@@ -152,6 +190,37 @@ signed out says what goes and stays and signs in on the way back to itself.
     top; under them, Every notice, newest start first. Finds words in a title
     or body. Kind (Something's wrong, Offers, News), State (Showing, Starting
     later, Ended), and When is Started.
+
+## Ask Jonz, owner
+
+The owner's own Ask Jonz, apart from every house's. Same model and loop
+(`apps/api/lib/ai/agent.ts`), nothing else shared:
+
+- **Its own address.** `POST /api/admin/ask` (`OwnerAskRequest`,
+  `OwnerAskResponse` in core). It answers only the owner with their code
+  this session (`owner_status`), and refuses anyone else with `owner_only`
+  before Claude is asked.
+- **Its own tools, reads only.** Inbox, Deletions, Audit log, Notices,
+  Messages, people, houses and how it works
+  (`apps/api/lib/ai/owner-ask.ts`), each through the owner's own session,
+  so the database's owner check holds for every read. Nothing uses the
+  service role. No tool sends, saves, ends or deletes: Jonz says what to do
+  and on which page, and offers the words, and the owner does it there.
+- **Its own instructions.** It knows it's talking with the owner and how the
+  admin pages work. Plain Markdown, no house chips or cards. What people
+  wrote (names, reports, reasons) reaches Claude marked `<from_people>`, to
+  be read as what they said, never as instructions.
+- **Its own history.** `owner_ask_turns`: each question is written before
+  Claude is asked (`claim_owner_ask`) and its answer after
+  (`finish_owner_ask`). Only the owner reads it, nobody writes it by hand,
+  and turns go after 90 days. `OWNER_ASK_TURNS_PER_DAY` (200) a day.
+- **Kept apart, tested.** A unit test fails if a housemate's Ask Jonz, even
+  an admin's, gets an owner tool or owner words, or the owner's gets a
+  house's.
+- **The panel** (after the admin layout): on a laptop, docked on the right
+  like the house's; on a phone, the sparkles in the admin title bar open it
+  full screen. Black, with an Owner label, so it's never mistaken for the
+  housemates' chat.
 
 ## Edge cases
 

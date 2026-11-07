@@ -3,13 +3,15 @@ import { differenceInCalendarDays, format } from "date-fns";
 
 import { currentOrNext, type AwayPeriod } from "./away";
 import { byDoneLatest, isOpen, TODAY_ORDER, type BoardItem, type DisputeView, type WeekBoard } from "./board";
-import { CREW_COPY, FOCUS_SHELL_COPY, JOHN_SHEET_COPY, NEXT_UP_COPY } from "./copy";
+import { CREW_COPY, FOCUS_SHELL_COPY, JOHN_SHEET_COPY, NEXT_UP_COPY, PARENT_OK_COPY, POCKET_COPY } from "./copy";
 import { andNames } from "./crew";
 import type { Currency, HouseRules } from "./domain";
 import { dateRange, dueInLine, firstName, pointsLabel, relative, sinceLabel, STATUS_LABEL, STATUS_MARK } from "./format";
 import { johnKind } from "./john-row";
 import { formatMoney } from "./money";
 import { canCover, coverOpensAt, type LiveStatus } from "./outcome";
+import { can, type HouseRole } from "./permissions";
+import { pocketMoney } from "./pocket";
 import type { TableRow } from "./points";
 import { oftenWords } from "./repeat";
 import type { StakeView } from "./stake";
@@ -129,7 +131,7 @@ export type NextUpState =
  * name.
  */
 export function whoDeals(members: readonly (Person & { role: string })[]): string {
-  const admin = members.find((m) => m.role === "admin");
+  const admin = members.find((m) => can(m.role as HouseRole, "week.deal"));
   return admin ? firstName(admin.name) : NEXT_UP_COPY.anAdmin;
 }
 
@@ -145,7 +147,7 @@ export function nextUpState(input: {
 }): NextUpState {
   const { board, mine, members } = input;
   if (board.notStarted) {
-    if (members.some((m) => m.userId === input.userId && m.role === "admin")) return { kind: "setup" };
+    if (members.some((m) => m.userId === input.userId && can(m.role as HouseRole, "week.deal"))) return { kind: "setup" };
     return { kind: "waiting", admin: whoDeals(members) };
   }
   if (!board.week) return { kind: "undealt" };
@@ -233,7 +235,9 @@ export function nextUpMeta(item: BoardItem, rules: HouseRules, now: Date, room: 
   const due = NEXT_UP_COPY.due(dueInLine(item.dueAt, now, zone)) + (item.movedFrom ? `, ${NEXT_UP_COPY.beforeYouGo}` : "");
   const { late, missed } = forfeits(rules, room);
   const cost = late ? NEXT_UP_COPY.ifLate(late) : missed ? NEXT_UP_COPY.ifMissed(missed) : null;
-  return { kind, due: [due, cost].filter(Boolean).join(", "), overdue: null };
+  // A kid's John in a family says what it earns instead (there's nothing to lose).
+  const earns = item.payMinor ? POCKET_COPY.earns(pocketMoney(item.payMinor, rules.currency)) : null;
+  return { kind, due: [due, cost ?? earns].filter(Boolean).join(", "), overdue: null };
 }
 
 /** "1st", "2nd", "3rd", "4th", "11th", "22nd". */
@@ -326,6 +330,34 @@ export function voteMeta(dispute: DisputeView, people: readonly Person[], now: D
 /** The tally, in the vote buttons' order: "1 fine, 1 not done, closes in 17h". */
 export function voteTally(dispute: DisputeView, now: Date): string {
   return JOHN_SHEET_COPY.tally(dispute.reject, dispute.uphold, voteCloses(dispute.closesAt, now));
+}
+
+/** Needs your OK's title for a kid's tick: "Leo did Feed the fish". */
+export function okTitle(item: Pick<BoardItem, "userId" | "name"> & Partial<Pick<BoardItem, "coveredBy" | "crew">>, people: readonly Person[]): string {
+  return PARENT_OK_COPY.rowTitle(called(people, tickerOf(item)), item.name);
+}
+
+/** Its meta line: "Ticked 2h ago". */
+export function okMeta(item: Pick<BoardItem, "doneAt">, now: Date): string {
+  return PARENT_OK_COPY.rowMeta(relative(item.doneAt ?? now, now));
+}
+
+/**
+ * Above a parent's OK and Not yet: "Sam or Alex can OK it. Not yet sends it
+ * back to Leo." `parentIds` are the house's parents, the viewer first as
+ * "You" when they are one.
+ */
+export function okWho(
+  item: Pick<BoardItem, "userId"> & Partial<Pick<BoardItem, "coveredBy" | "crew">>,
+  people: readonly Person[],
+  parentIds: readonly string[],
+  viewerId: string,
+): string {
+  const names = [...parentIds]
+    .sort((a, b) => (a === viewerId ? -1 : b === viewerId ? 1 : 0))
+    .map((id) => (id === viewerId ? JOHN_SHEET_COPY.you : called(people, id)));
+  const parents = names.length <= 1 ? (names[0] ?? "") : `${names.slice(0, -1).join(", ")} or ${names[names.length - 1]}`;
+  return PARENT_OK_COPY.who(parents, called(people, tickerOf(item)));
 }
 
 /** What the John sheet offers, from whose John it is and where it has got to. */
@@ -457,8 +489,9 @@ export function tickedLine(item: BoardItem, people: readonly Person[], viewerId:
     : item.absentAt
       ? CREW_COPY.without(who, tickedAt(item.absentAt, now, rules.timezone), whom)
       : null;
-  const stands =
-    item.standsAt === null
+  const stands = item.awaitsOk
+    ? PARENT_OK_COPY.waiting
+    : item.standsAt === null
       ? null
       : item.standsAt.getTime() > now.getTime()
         ? JOHN_SHEET_COPY.standsIn(relative(item.standsAt, now))

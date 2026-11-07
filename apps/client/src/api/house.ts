@@ -1,4 +1,4 @@
-import { CreateHouse, FreshResponse, humanError, JoinCode } from '@app/core';
+import { CreateHouse, FreshResponse, houseKind, type HouseKind, humanError, JoinCode } from '@app/core';
 
 import { apiPost } from './http';
 import { supabase } from './supabase';
@@ -7,18 +7,20 @@ import { supabase } from './supabase';
 export interface MyHouse {
   id: string;
   name: string;
+  /** Housemates or a family (houses.kind): which words the app uses. */
+  kind: HouseKind;
 }
 
 /** Your house, read through your own session; null when you're in none. */
 export async function getMyHouse(userId: string): Promise<MyHouse | null> {
   const { data, error } = await supabase
     .from('members')
-    .select('house_id, houses(name)')
+    .select('house_id, houses(name, kind)')
     .eq('user_id', userId)
     .maybeSingle();
   if (error) throw error;
   if (!data) return null;
-  return { id: data.house_id, name: data.houses?.name ?? '' };
+  return { id: data.house_id, name: data.houses?.name ?? '', kind: houseKind(data.houses?.kind) };
 }
 
 /** What a join link shows a signed-in visitor: the house's name and size. */
@@ -26,6 +28,7 @@ export interface Invite {
   id: string;
   name: string;
   members: number;
+  kind: HouseKind;
 }
 
 /** The house a join code opens, or null for a code that matches none (or can't be one). */
@@ -35,7 +38,7 @@ export async function houseByCode(code: string): Promise<Invite | null> {
   const { data, error } = await supabase.rpc('house_by_code', { p_code: parsed.data });
   if (error) throw error;
   const row = data?.[0];
-  return row ? { id: row.id, name: row.name, members: Number(row.members) } : null;
+  return row ? { id: row.id, name: row.name, members: Number(row.members), kind: houseKind(row.kind) } : null;
 }
 
 /** Join a house by its code. A refusal throws the sentence to show. */
@@ -56,6 +59,7 @@ export async function createHouse(input: CreateHouse): Promise<string> {
     p_timezone: parsed.data.timezone,
     p_currency: parsed.data.currency,
     p_week_starts: parsed.data.weekStarts,
+    p_kind: parsed.data.kind ?? 'housemates',
   });
   if (error) throw new Error(humanError(error));
   return data;

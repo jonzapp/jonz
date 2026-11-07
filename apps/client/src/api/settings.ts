@@ -38,7 +38,7 @@ export async function loadJohnList(houseId: string): Promise<JohnList> {
     supabase
       .from('johns')
       .select(
-        'id, name, category, points, every_weeks, every_months, week_of_month, anchor_month, anchor_week, due_dow, due_time, needs_photo, group_id, kind, respond_hours, per_week, crew, keep_day',
+        'id, name, category, points, every_weeks, every_months, week_of_month, anchor_month, anchor_week, due_dow, due_time, needs_photo, group_id, kind, respond_hours, per_week, crew, keep_day, pay_minor, min_age',
       )
       .eq('house_id', houseId)
       .is('archived_at', null)
@@ -83,6 +83,8 @@ export async function saveJohn(houseId: string, rules: HouseRules, draft: JohnDr
     // On call is always one person (johns_crew_on_call), and has no day to keep (johns_keep_day_on_call).
     crew: j.when === 'on_call' ? 1 : j.crew,
     keep_day: j.when !== 'on_call' && j.keepDay,
+    ...(j.payMinor === undefined ? {} : { pay_minor: j.payMinor }),
+    ...(j.minAge === undefined ? {} : { min_age: j.minAge }),
   };
   wrote(
     j.id
@@ -131,6 +133,9 @@ export async function addJohns(
       per_week: j.perWeek,
       crew: j.when === 'on_call' ? 1 : j.crew,
       keep_day: j.when !== 'on_call' && j.keepDay,
+      // Every row names every column: a bulk insert fills one left out with null.
+      pay_minor: j.payMinor ?? 0,
+      min_age: j.minAge ?? null,
     };
   });
   wrote(await supabase.from('johns').insert(rows).select('id'));
@@ -171,6 +176,7 @@ export async function updateHouse(houseId: string, settings: HouseSettings) {
         ...(s.settleIn === undefined ? {} : { settle_in: s.settleIn }),
         ...(s.dealMode === undefined ? {} : { deal_mode: s.dealMode }),
         ...(s.dealBudget === undefined ? {} : { deal_budget: s.dealBudget }),
+        ...(s.pocketCapMinor === undefined ? {} : { pocket_cap_minor: s.pocketCapMinor }),
       })
       .eq('id', houseId)
       .select('id'),

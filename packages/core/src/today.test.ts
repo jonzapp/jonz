@@ -456,8 +456,8 @@ describe("the vote's words", () => {
     expect(voteTitle({ userId: "gone", name: "Clean the bathroom" }, PEOPLE)).toBe("Vote on Clean the bathroom");
   });
 
-  it("tallies fine before not done, the buttons' order", () => {
-    expect(voteTally(dispute({ uphold: 2, reject: 0 }), now)).toBe("0 fine, 2 not done, closes in 17h");
+  it("tallies done before not done, the buttons' order", () => {
+    expect(voteTally(dispute({ uphold: 2, reject: 0 }), now)).toBe("0 done, 2 not done, closes in 17h");
   });
 });
 
@@ -531,7 +531,7 @@ describe("the sheet's header", () => {
     expect(settled("done")).toEqual({ sign: null, text: "Priya did it on time, on Mon at 12:00." });
     expect(settled("late")).toEqual({ sign: "late", text: "Priya did it late, on Mon at 12:00." });
     expect(settled("missed")).toEqual({ sign: "missed", text: "It was missed." });
-    expect(settled("excused")).toEqual({ sign: null, text: "Priya skipped it with immunity, so there’s no forfeit." });
+    expect(settled("excused")).toEqual({ sign: null, text: "Priya used a skip on it, so there’s no forfeit." });
   });
 
   it("caps what lateness costs at what's left of the stake", () => {
@@ -574,7 +574,7 @@ describe("settledLine", () => {
     expect(settled("done")).toBe("Priya did it on time, on Mon at 12:00.");
     expect(settled("done", RULES, ME)).toBe("You did it on time, on Mon at 12:00.");
     expect(settled("late")).toBe("Priya did it late, on Mon at 12:00.");
-    expect(settled("excused")).toBe("Priya skipped it with immunity, so there’s no forfeit.");
+    expect(settled("excused")).toBe("Priya used a skip on it, so there’s no forfeit.");
     expect(settled("missed")).toBe("It was missed.");
   });
 
@@ -681,13 +681,13 @@ describe("undoWarning", () => {
 
 describe("the copy", () => {
   it("names the card's way into If you can't by what you hold", () => {
-    expect(NEXT_UP_COPY.cant(true, true)).toBe("Skip with immunity or swap");
-    expect(NEXT_UP_COPY.cant(true, false)).toBe("Skip with immunity");
+    expect(NEXT_UP_COPY.cant(true, true)).toBe("Use a skip or swap");
+    expect(NEXT_UP_COPY.cant(true, false)).toBe("Use a skip");
     expect(NEXT_UP_COPY.cant(false, true)).toBe("Swap this John");
   });
 
-  it("says what spending immunity leaves you with", () => {
-    expect(JOHN_SHEET_COPY.skipSentence("Fresh towels", 0)).toBe("Skip Fresh towels this week? No forfeit, and your immunity is used up.");
+  it("says what using a skip leaves you with", () => {
+    expect(JOHN_SHEET_COPY.skipSentence("Fresh towels", 0)).toBe("Skip Fresh towels this week? No forfeit, and that’s your last skip.");
     expect(JOHN_SHEET_COPY.skipSentence("Fresh towels", 1)).toBe("Skip Fresh towels this week? No forfeit, and you’ll have 1 left.");
   });
 

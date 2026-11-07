@@ -109,7 +109,7 @@ export const RESET_COPY = {
   unreadable: "What this would change couldn’t be worked out.",
   nothing: "Nothing to reset: nobody has ticked anything here.",
   done: "Done.",
-  undo: (until: string) => `You can undo this from History until ${until}’s Stake is shared out.`,
+  undo: (until: string) => `You can undo this from History until ${until}’s forfeits are split.`,
   ticks: (n: number) => (n === 1 ? "1 tick cleared" : `${n} ticks cleared`),
   balances: "Balances",
   stake: "Stake",
