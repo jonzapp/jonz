@@ -1,4 +1,4 @@
-import { PASS_COPY, passLine } from '@app/core';
+import { PASS_COPY, PASS_FREE_HISTORY_WEEKS, passLine, passWords } from '@app/core';
 import { LockIcon, TicketIcon } from 'lucide-react-native';
 
 import { Row, RowIcon } from '@/components/row';
@@ -11,11 +11,12 @@ import type { HouseView } from '@/hooks/use-house';
  */
 export function PassSection({ view }: { view: HouseView }) {
   const { house, rules } = view.snapshot;
+  const words = passWords(house.kind, PASS_FREE_HISTORY_WEEKS);
   return (
-    <Section label={PASS_COPY.section} right={PASS_COPY.sectionNote} testID="pass-section">
+    <Section label={words.title} right={words.sectionNote} testID="pass-section">
       <Row
         leading={<RowIcon icon={TicketIcon} />}
-        title={PASS_COPY.title}
+        title={words.title}
         meta={passLine(house.pass, view.now, rules.timezone)}
         href="/house/pass"
         chevron

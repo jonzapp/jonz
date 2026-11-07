@@ -150,6 +150,15 @@ export const AwayDraft = z.object({
 });
 export type AwayDraft = z.infer<typeof AwayDraft>;
 
+/** POST /api/away's answer: how many of your Johns booking made due before you go, handed to housemates, or skipped. */
+export const AwayResponse = z.object({
+  ok: z.literal(true),
+  before: z.number().int().min(0),
+  handed: z.number().int().min(0),
+  skipped: z.number().int().min(0),
+});
+export type AwayResponse = z.infer<typeof AwayResponse>;
+
 /** A name you go by: what renaming yourself writes to profiles.display_name. */
 export const DisplayName = z.string().trim().min(1, "Names are 1 to 60 characters.").max(60, "Names are 1 to 60 characters.");
 

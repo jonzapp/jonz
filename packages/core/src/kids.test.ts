@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { johnDef } from "./board";
 import { humanError } from "./errors";
+import { passWords } from "./family";
 import { bornYearOk, checkKid, oldEnough, parseMinAge, switchChoices } from "./kids";
 import { JohnDraft } from "./schemas";
 
@@ -68,5 +69,17 @@ describe("a John's youngest age", () => {
     const draft = { name: "Use the oven", category: "kitchen", points: 3, everyWeeks: 1, dueDow: 7, dueTime: "18:00", needsPhoto: false, groupId: null };
     expect(JohnDraft.parse({ ...draft, minAge: 10 }).minAge).toBe(10);
     expect(JohnDraft.safeParse({ ...draft, minAge: 30 }).success).toBe(false);
+  });
+});
+
+describe("the Family Pass", () => {
+  it("is the same Pass with a family's words and extras", () => {
+    const family = passWords("family", 4);
+    expect(family.title).toBe("Family Pass");
+    expect(family.extras.map((e) => e.key)).toEqual(["pocket", "kids", "photos", "history"]);
+    expect(family.lead).toContain("Only a parent can buy it");
+    const house = passWords("housemates", 4);
+    expect(house.title).toBe("House Pass");
+    expect(house.extras.map((e) => e.key)).toEqual(["stake", "table", "photos", "history"]);
   });
 });

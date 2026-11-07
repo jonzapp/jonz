@@ -114,7 +114,9 @@ permanent once a store has seen them.
   the database decides, and the client only translates a refusal with
   `humanError` from `@app/core` and refreshes. `apps/api` is called only for
   the moves that need a server: `POST /api/deal`, `POST /api/disputes`,
-  `POST /api/disputes/:id/votes`, `POST /api/fresh`, `POST /api/flags` and
+  `POST /api/disputes/:id/votes`, `POST /api/fresh`, `POST /api/flags`,
+  `POST /api/away` (`away.ts`: `setAway`, which pushes whoever a trip
+  hands a John to) and
   `POST /api/setup/draft` (`draft.ts`: `sendChat`, one turn of the
   setup chat, answered as the API would by `offlineTurn` if the API can't
   be reached, and `applyDraft` (`keepDraft` for a new house),

@@ -42,7 +42,7 @@ beforeEach(() => {
   (catchUp as jest.Mock).mockResolvedValue(false);
   (loadJohnList as jest.Mock).mockResolvedValue({ johns: [], groups: [] });
   (cancelAway as jest.Mock).mockResolvedValue(undefined);
-  (setAway as jest.Mock).mockResolvedValue(0);
+  (setAway as jest.Mock).mockResolvedValue({ before: 0, handed: 0, skipped: 0 });
 });
 
 it('sits under a title bar with the way back to House', async () => {
@@ -206,7 +206,7 @@ describe('booking', () => {
   });
 
   it('books your time away from the calendar, and says what it moved', async () => {
-    (setAway as jest.Mock).mockResolvedValue(2);
+    (setAway as jest.Mock).mockResolvedValue({ before: 2, handed: 1, skipped: 0 });
     await open();
     const form = within(screen.getByTestId('away-form'));
     expect(form.getByText(AWAY_COPY.howItWorks)).toBeOnTheScreen();
@@ -220,7 +220,7 @@ describe('booking', () => {
     await fireEvent.changeText(form.getByTestId('away-note'), 'Lisbon');
     await fireEvent.press(form.getByRole('button', { name: SETUP_COPY.book }));
     expect(setAway).toHaveBeenCalledWith({ from: '2026-10-26', to: '2026-10-28', note: 'Lisbon' });
-    expect(await screen.findByText(AWAY_COPY.moved(2))).toBeOnTheScreen();
+    expect(await screen.findByText(AWAY_COPY.moved(2, 1, 0))).toBeOnTheScreen();
     // Ready for the next one.
     await waitFor(() => expect(form.getByTestId('book-away')).toBeDisabled());
     expect(form.getByTestId('away-note')).toHaveDisplayValue('');
