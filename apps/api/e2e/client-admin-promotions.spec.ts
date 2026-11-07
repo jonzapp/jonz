@@ -60,7 +60,11 @@ test("makes a free year for three people, then opens it with its link", async ({
   await expect(preview.getByTestId("promotion-preview-title")).toHaveText("A free year of the House Pass");
   await expect(preview.getByTestId("promotion-preview-who")).toContainText("Only sam.okafor@example.com, priya.n@example.com and leo.marsh@example.com, once each.");
   await shoot(page, "promotions");
-  if (!wide) await page.keyboard.press("Escape");
+  if (!wide) {
+    // The sheet's own close: Safari doesn't take Escape as a close.
+    await page.getByTestId("promotion-preview-sheet").getByTestId("sheet-close").click();
+    await expect(page.getByTestId("sheet-scrim")).toHaveCount(0);
+  }
 
   await page.getByTestId("promotion-make").click();
   await expect(page.getByTestId("admin-promotion")).toBeVisible();
