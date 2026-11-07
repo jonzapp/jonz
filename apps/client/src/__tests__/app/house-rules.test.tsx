@@ -1,10 +1,10 @@
-import { FOCUS_SHELL_COPY, NEW_JOHN, PAGE_TITLE, RULES_COPY, SECTION_LABEL, SETUP_COPY, STEADY_COPY } from '@app/core';
+import { FAMILY_COPY, FOCUS_SHELL_COPY, KIND_SWITCH_COPY, NEW_JOHN, PAGE_TITLE, RULES_COPY, SECTION_LABEL, SETUP_COPY, STEADY_COPY } from '@app/core';
 import { Slot } from 'expo-router';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 
 import { loadHouse } from '@/api/board';
 import { catchUp } from '@/api/house';
-import { loadJohnList, updateHouse } from '@/api/settings';
+import { loadJohnList, setHouseKind, updateHouse } from '@/api/settings';
 import RulesScreen from '@/app/(house)/house/rules';
 import { ToastProvider } from '@/components/toast';
 import { snapshot } from '@/testing/house';
@@ -12,7 +12,7 @@ import { renderPages, untilRead } from '@/testing/pages';
 
 jest.mock('@/api/board', () => ({ loadHouse: jest.fn() }));
 jest.mock('@/api/house', () => ({ catchUp: jest.fn() }));
-jest.mock('@/api/settings', () => ({ updateHouse: jest.fn(), loadJohnList: jest.fn() }));
+jest.mock('@/api/settings', () => ({ updateHouse: jest.fn(), loadJohnList: jest.fn(), setHouseKind: jest.fn() }));
 jest.mock('@/api/supabase', () => ({ supabase: {} }));
 jest.mock('@/locale', () => ({ deviceTimeZone: () => 'Europe/London' }));
 
@@ -286,5 +286,59 @@ describe('an admin', () => {
     expect(screen.getByText(`${RULES_COPY.awayNote} ${RULES_COPY.makeupHint[100]}`)).toBeOnTheScreen();
     await pick(SETUP_COPY.away, 'Not at all');
     expect(screen.getByText(`${RULES_COPY.awayNote} ${RULES_COPY.makeupHint[0]}`)).toBeOnTheScreen();
+  });
+});
+
+describe('Who lives here', () => {
+  it('reads out what the house is to someone who is not an admin, with no way to change it', async () => {
+    await open('sam');
+    const section = within(screen.getByTestId('kind-switch'));
+    expect(section.getByTestId('kind-now')).toHaveTextContent(new RegExp(`^${FAMILY_COPY.kinds.housemates}`));
+    expect(section.queryByRole('radio')).toBeNull();
+  });
+
+  it("lets an admin make the house a family, saying first it waits for the month's money", async () => {
+    (setHouseKind as jest.Mock).mockResolvedValue('2026-11-01');
+    await open();
+    expect(screen.getByRole('radio', { name: new RegExp(`^${FAMILY_COPY.kinds.housemates}, `) })).toBeChecked();
+    await fireEvent.press(screen.getByRole('radio', { name: new RegExp(`^${FAMILY_COPY.kinds.family}, `) }));
+    const sheet = within(screen.getByTestId('kind-sheet'));
+    expect(sheet.getByText(KIND_SWITCH_COPY.toFamilyTitle('Flat 3'))).toBeOnTheScreen();
+    expect(sheet.getByText(/is settled up as usual, then the Stake stops/)).toBeOnTheScreen();
+    await fireEvent.press(sheet.getByRole('button', { name: KIND_SWITCH_COPY.toFamily }));
+    await waitFor(() => expect(setHouseKind).toHaveBeenCalledWith('h1', 'family'));
+    expect(await screen.findByText(KIND_SWITCH_COPY.later('Sun 1 Nov'))).toBeOnTheScreen();
+  });
+
+  it('shows a change that waits for the 1st, and keeps housemates without asking', async () => {
+    const base = snapshot();
+    (loadHouse as jest.Mock).mockResolvedValue(snapshot({ house: { ...base.house, nextKind: { kind: 'family', on: '2026-12-01' } } }));
+    (setHouseKind as jest.Mock).mockResolvedValue(null);
+    await open();
+    const family = screen.getByRole('radio', { name: new RegExp(`^${FAMILY_COPY.kinds.family}, `) });
+    expect(family).toBeChecked();
+    expect(family).toHaveAccessibleName(new RegExp(KIND_SWITCH_COPY.waits('Tue 1 Dec', 'November')));
+    await fireEvent.press(screen.getByRole('radio', { name: new RegExp(`^${FAMILY_COPY.kinds.housemates}, `) }));
+    await waitFor(() => expect(setHouseKind).toHaveBeenCalledWith('h1', 'housemates'));
+    expect(screen.queryByTestId('kind-sheet')).toBeNull();
+    expect(await screen.findByText(KIND_SWITCH_COPY.done.kept)).toBeOnTheScreen();
+  });
+
+  it('asks before making a family housemates again', async () => {
+    const base = snapshot();
+    (loadHouse as jest.Mock).mockResolvedValue(
+      snapshot({
+        house: { ...base.house, kind: 'family', pocketCapMinor: 1000 },
+        rules: { ...base.rules, stakeMinor: 0, lateForfeitMinor: 0, missedForfeitMinor: 0, disputeHours: 0 },
+      }),
+    );
+    (setHouseKind as jest.Mock).mockResolvedValue(null);
+    await open();
+    await fireEvent.press(screen.getByRole('radio', { name: new RegExp(`^${FAMILY_COPY.kinds.housemates}, `) }));
+    const sheet = within(screen.getByTestId('kind-sheet'));
+    expect(sheet.getByText(KIND_SWITCH_COPY.toHousemates)).toBeOnTheScreen();
+    await fireEvent.press(sheet.getByRole('button', { name: KIND_SWITCH_COPY.toHousematesConfirm }));
+    await waitFor(() => expect(setHouseKind).toHaveBeenCalledWith('h1', 'housemates'));
+    expect(await screen.findByText(KIND_SWITCH_COPY.done.housemates)).toBeOnTheScreen();
   });
 });
