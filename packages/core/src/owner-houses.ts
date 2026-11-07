@@ -5,7 +5,7 @@ import { monthOf } from "./week";
 
 // The owner's Overview and Houses (docs/specs/owner-admin.md, "Overview" and
 // "Houses"). The database counts and finds (supabase/migrations/
-// 20261128090000_owner_houses.sql); these are the words, and the figures in
+// 20261129090000_owner_houses.sql); these are the words, and the figures in
 // sentences.
 
 const MONTH = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
