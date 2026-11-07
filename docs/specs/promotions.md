@@ -42,7 +42,7 @@ The Stripe promotion code is named by Stripe and never typed by anyone.
 
 ## Where it lives
 
-- `supabase/migrations/20261128090000_promotions.sql`: `promotions`,
+- `supabase/migrations/20261130090000_promotions.sql`: `promotions`,
   `promotion_people` (the named emails, with when each opened the link, was
   emailed and used it) and `promotion_uses` (one per house, and per Checkout
   Session). Nobody reads them through the API: the owner reads and writes
