@@ -189,7 +189,7 @@ describe("disputes, decided by the tick", () => {
     expect(d!.resolution).toBe("upheld");
   });
 
-  it("decides at once in a house of two, where raising it is the majority", async () => {
+  it("in a house of two, waits for the vote to close, then strikes it with time to redo it", async () => {
     const house = await makeHouse(["Ava", "Ben"]);
     await addJohns(house.id, [{ name: "Bins" }, { name: "Bathroom", points: 4 }], thisWeek());
     const { assignments } = await deal(house.id, thisWeek(), new Date());
@@ -200,10 +200,14 @@ describe("disputes, decided by the tick", () => {
       p_reason: "Still full",
     });
     expect(error).toBeNull();
+    // The one who asked is the only voter: nothing is decided before the vote closes.
+    expect((await tickHouse(db, house.id, new Date())).disputes).toBe(0);
+    await db.from("disputes").update({ closes_at: new Date(Date.now() - 1000).toISOString() }).eq("assignment_id", a.id);
     const summary = await tickHouse(db, house.id, new Date());
     expect(summary.disputes).toBe(1);
-    const { data: row } = await db.from("assignments").select("done_at").eq("id", a.id).single();
+    const { data: row } = await db.from("assignments").select("done_at, closes_at").eq("id", a.id).single();
     expect(row!.done_at).toBeNull();
+    expect(Date.parse(row!.closes_at!)).toBeGreaterThan(Date.now() + 11 * 3_600_000);
   });
 
   it("lets a tick stand when the house sides with it", async () => {

@@ -226,6 +226,8 @@ export interface DisputeRow {
   reason: string;
   closes_at: string;
   dispute_votes: { user_id: string; uphold: boolean }[] | null;
+  /** A photo whoever ticked it answered with (answer_dispute). Absent when the read didn't ask. */
+  photo_path?: string | null;
 }
 
 export interface DisputeView {
@@ -238,6 +240,8 @@ export interface DisputeView {
   reject: number;
   /** How the viewer voted, or null if they haven't. */
   myVote: boolean | null;
+  /** Whoever ticked it answered with a photo. */
+  answered?: boolean;
 }
 
 export interface BoardItem {
@@ -335,6 +339,7 @@ export function buildWeekBoard(input: {
       uphold: votes.filter((v) => v.uphold).length,
       reject: votes.filter((v) => !v.uphold).length,
       myVote: votes.find((v) => v.user_id === input.userId)?.uphold ?? null,
+      answered: Boolean(d.photo_path),
     });
   }
 
@@ -539,16 +544,16 @@ export function toOk(board: WeekBoard, userId: string): BoardItem[] {
 }
 
 /**
- * Disputes waiting for the viewer's vote: anyone's tick but their own (a
- * cover of their John included). A job's one check is listed once, on the
- * place it was raised on.
+ * Disputes waiting for the viewer's vote: anyone's tick but their own, and
+ * not a housemate's cover of the viewer's John (dispute.ts votersOn). A
+ * job's one check is listed once, on the place it was raised on.
  */
 function toVote(board: WeekBoard, userId: string): BoardItem[] {
   return board.items.filter((i) => {
     const d = i.dispute;
     if (!d || d.myVote !== null) return false;
     const checked = board.items.find((x) => x.id === d.assignmentId) ?? i;
-    return checked === i && (i.coveredBy ?? i.userId) !== userId;
+    return checked === i && (i.coveredBy ?? i.userId) !== userId && !(i.coveredBy && i.userId === userId);
   });
 }
 
