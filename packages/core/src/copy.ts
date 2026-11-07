@@ -970,7 +970,15 @@ export const JOHN_SHEET_COPY = {
   byYou: "you",
   /** The vote so far, in the buttons' order: done, then not done. */
   tally: (done: number, notDone: number, closes: string) => `${done} done, ${notDone} not done, ${closes}`,
-  yourTick: "The house is voting on your tick.",
+  yourTick: "The house is voting on your tick. A photo of it done helps them decide.",
+  /** Your tick, questioned by the only one who can vote: a photo settles it. */
+  onlyVoter: (name: string, closes: string) =>
+    `Only ${name} can vote, so a photo settles it. Add one before the vote ${closes}. With no photo the tick is struck, and you get 12 more hours to do it.`,
+  /** You answered with a photo and the vote goes on. */
+  answered: "Your photo is on the John for the house to see.",
+  /** Your John, which a housemate covered: the rest of the house checks the cover. */
+  coverOfYours: (name: string) => `${name} covered this. The rest of the house checks it, not you.`,
+  answerPhoto: "Add a photo of it done",
   /** Undoing a tick after its due time, before it's undone. */
   undoTitle: (john: string) => `Undo ${john}?`,
   undoLate: (late: string | null) =>

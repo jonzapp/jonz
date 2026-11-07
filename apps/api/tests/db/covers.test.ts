@@ -92,14 +92,16 @@ describe("taking a cover back", () => {
 });
 
 describe("disputing a cover", () => {
-  it("is open to the assignee, not the coverer, and upheld opens the John again", async () => {
+  it("is open to the rest of the house, not the coverer or the assignee, and upheld opens the John again", async () => {
     const { a, owner, coverer, third } = await overdueJohn(4);
     await coverer.db.rpc("cover_john", { p_assignment: a.id });
     expectDenied(await coverer.db.rpc("raise_dispute", { p_assignment: a.id, p_reason: "I did it" }));
-    const { data: dispute, error } = await owner.db.rpc("raise_dispute", { p_assignment: a.id, p_reason: "I did it at 9" });
+    // The assignee can't strike a cover of their own John (fair checks): the rest of the house checks it.
+    expectDenied(await owner.db.rpc("raise_dispute", { p_assignment: a.id, p_reason: "I did it at 9" }));
+    const { data: dispute, error } = await third.db.rpc("raise_dispute", { p_assignment: a.id, p_reason: "Still full" });
     expect(error).toBeNull();
     expectDenied(await coverer.db.rpc("cast_vote", { p_dispute: dispute!, p_uphold: false }));
-    expectOk(await third.db.rpc("cast_vote", { p_dispute: dispute!, p_uphold: true }));
+    expectDenied(await owner.db.rpc("cast_vote", { p_dispute: dispute!, p_uphold: true }));
     expectRule(await coverer.db.rpc("undo_cover", { p_assignment: a.id }), "under_dispute");
 
     expectOk(await db.rpc("resolve_dispute", { p_dispute: dispute!, p_resolution: "upheld" }));

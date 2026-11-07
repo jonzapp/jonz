@@ -86,7 +86,10 @@ export function TheirsChecking({ item, context }: { item: BoardItem; context: Jo
   return (
     <SheetLines>
       <Body testID="ticked-line">{tickedLine(item, context.members, context.userId, context.rules, context.now)}</Body>
-      {disputing ? (
+      {item.coveredBy && item.userId === context.userId ? (
+        // A housemate covered your John: the rest of the house checks the cover, not you.
+        <Body testID="cover-of-yours">{JOHN_SHEET_COPY.coverOfYours(context.nameOf(item.coveredBy))}</Body>
+      ) : disputing ? (
         <DisputeForm houseId={context.houseId} assignmentId={item.id} />
       ) : (
         <Button variant="outline" icon={FlagIcon} label={DISPUTE_COPY.open} onPress={() => setDisputing(true)} testID="dispute" />

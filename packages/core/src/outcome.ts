@@ -50,13 +50,15 @@ const HOUR = 3_600_000;
  * A flag: at twice its window (raised at 8pm with 12 hours, missed at 8pm the
  * next day), or when its week ends if it is overdue by then. A flag never
  * passes to whoever is on call next week: it stays missed or done by whoever
- * had it. The database's closes_at says the same.
+ * had it. A flag struck by the house gets at least closesAt (12 hours from
+ * the strike) to be done again. The database's closes_at says the same.
  */
 export function closesAt(a: Pick<AssignmentFacts, "dueAt" | "weekEndsAt" | "flaggedAt" | "closesAt">): Date {
   if (!a.flaggedAt) return a.closesAt ?? a.weekEndsAt;
   const missAt = new Date(a.dueAt.getTime() * 2 - a.flaggedAt.getTime());
-  if (a.dueAt < a.weekEndsAt) return missAt < a.weekEndsAt ? missAt : a.weekEndsAt;
-  return missAt;
+  const own = a.dueAt < a.weekEndsAt && missAt >= a.weekEndsAt ? a.weekEndsAt : missAt;
+  // A flag has no closes_at of its own: one set is a struck tick's time to redo it.
+  return a.closesAt && a.closesAt > own ? a.closesAt : own;
 }
 
 export function standsAt(doneAt: Date, disputeHours: number): Date {

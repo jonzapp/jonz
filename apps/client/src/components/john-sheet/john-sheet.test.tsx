@@ -646,6 +646,28 @@ describe('a disputed John', () => {
     const body = await openOn('Open a1');
     expect(within(body).getByText(JOHN_SHEET_COPY.yourTick)).toBeOnTheScreen();
     expect(within(body).queryByRole('button', { name: DISPUTE_COPY.done })).toBeNull();
+    expect(within(body).getByRole('button', { name: JOHN_SHEET_COPY.answerPhoto })).toBeOnTheScreen();
+  });
+
+  it('tells the owner in a house of two that a photo settles it', async () => {
+    const [priya] = snapshot().members;
+    await show(house([binsOut({ done_at: at(-2) })], [priya, MEGAN], [{ ...dispute(), assignment_id: 'a1' }]));
+    const body = await openOn('Open a1');
+    expect(within(body).getByTestId('your-tick')).toHaveTextContent(/^Only Megan can vote, so a photo settles it\./);
+    expect(within(body).getByRole('button', { name: JOHN_SHEET_COPY.answerPhoto })).toBeOnTheScreen();
+  });
+
+  it('leaves the owner of a covered John out of the vote on the cover', async () => {
+    await show(
+      house(
+        [binsOut({ done_at: at(-2), covered_by: 'sam' })],
+        [...snapshot().members, MEGAN],
+        [{ ...dispute(), assignment_id: 'a1' }],
+      ),
+    );
+    const body = await openOn('Open a1');
+    expect(within(body).getByTestId('cover-of-yours')).toHaveTextContent(JOHN_SHEET_COPY.coverOfYours('Sam'));
+    expect(within(body).queryByRole('button', { name: DISPUTE_COPY.done })).toBeNull();
   });
 });
 
