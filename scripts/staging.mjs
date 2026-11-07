@@ -174,15 +174,16 @@ if (RESET && !CHECK_ONLY) {
 }
 
 for (let i = 0; ; i++) {
-  const health = await supa("GET", `/v1/projects/${ref}`).catch(() => null);
-  const missing = health?.status === "ACTIVE_HEALTHY" ? missingMigrations(localVersions, await remoteVersions().catch(() => [])) : null;
+  // /v1/projects/{ref} doesn't answer for a branch, so ask its database.
+  const remote = await remoteVersions().catch(() => null);
+  const missing = remote ? missingMigrations(localVersions, remote) : null;
   if (missing && missing.length === 0) {
     pass(`healthy, with all ${localVersions.length} migrations`);
     break;
   }
   if (i > 60 || (!RESET && !fresh && missing)) {
     if (missing) fail(`not applied yet: ${missing.join(", ")} (they arrive when ${C.staging.branch} is pushed)`);
-    else fail(`${ref} is ${health?.status ?? "unreachable"}`);
+    else fail(`${ref}'s database isn't answering yet`);
     break;
   }
   if (i === 0) say("  · waiting for the branch and its migrations");
