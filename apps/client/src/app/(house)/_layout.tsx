@@ -75,7 +75,7 @@ export default function HouseLayout() {
         >
           <JohnSheetProvider houseId={house!.id} userId={session!.user.id}>
             <AskPanelProvider>
-              <TourProvider facts={facts}>
+              <TourProvider facts={facts} canAsk={memberCan(view?.me, "house.read")}>
               <View style={styles.row}>
                 <View style={styles.page}>
                   <Tabs

@@ -158,7 +158,6 @@ export function SetupChat({
   pieces = NO_PIECES,
   saved = null,
   onKept,
-  recent,
 }: {
   houseId: string;
   rules: HouseRules;
@@ -180,8 +179,6 @@ export function SetupChat({
   saved?: SavedChat | null;
   /** The chat is kept, under this id: after each answer, so it's never lost. */
   onKept?: (id: string) => void;
-  /** Under the greeting before anything's said: the chats to pick up again. */
-  recent?: ReactNode;
 }) {
   const keeping = useMove(houseId);
   // The list as the chat found it: what a draft's changes are counted from. Held while a draft is open, so
@@ -362,7 +359,6 @@ export function SetupChat({
           </>
         ) : null}
       </Said>
-      {turns.length === 0 ? recent : null}
 
       {turns.map((turn, at) => {
         if (turn.role === 'user') {

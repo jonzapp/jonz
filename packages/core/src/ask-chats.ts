@@ -28,9 +28,6 @@ export type SavedTurn = z.infer<typeof SavedTurn>;
 /** The most turns a chat keeps; past it, the oldest go first. */
 export const CHAT_SAVED_TURNS = 200;
 
-/** How many chats Ask Jonz's start shows. */
-export const RECENT_CHATS = 3;
-
 /** The longest a chat's title runs: two lines of a row in the 400-wide side panel, so it's never cut short on screen. */
 export const CHAT_TITLE_MAX = 44;
 
@@ -62,15 +59,35 @@ export function chatWhen(at: Date, now: Date, zone: string): string {
   return dayLabel(at, zone);
 }
 
+/** Your chats in groups by when each was last used, as chat apps list them: Today, Last 7 days, Earlier. Empty groups are left out. */
+export function chatGroups<T extends { updatedAt: string }>(
+  chats: readonly T[],
+  now: Date,
+  zone: string,
+): { label: string; chats: T[] }[] {
+  const today = localDate(now, zone);
+  const weekAgo = addDaysTo(today, -7);
+  const groups = [
+    { label: ASK_CHATS_COPY.today, chats: [] as T[] },
+    { label: ASK_CHATS_COPY.lastWeek, chats: [] as T[] },
+    { label: ASK_CHATS_COPY.earlier, chats: [] as T[] },
+  ];
+  for (const chat of chats) {
+    const day = localDate(new Date(chat.updatedAt), zone);
+    groups[day >= today ? 0 : day > weekAgo ? 1 : 2].chats.push(chat);
+  }
+  return groups.filter((g) => g.chats.length > 0);
+}
+
 export const ASK_CHATS_COPY = {
-  recent: "Pick up where you left off",
-  seeAll: "See all",
   all: "Your chats",
-  allMeta: "Only you can see these",
-  allNote: "Chats are kept until you delete them, and go if you leave the house or delete your account.",
+  /** Ask Jonz's leading button, to a screen reader. */
+  open: "Your chats",
+  lastWeek: "Last 7 days",
+  earlier: "Earlier",
+  allNote: "Only you can see your chats. They’re kept until you delete them, and go if you leave the house or delete your account.",
   none: "No chats yet. What you ask Jonz is kept here.",
   newChat: "New chat",
-  back: "Back to the chat",
   today: "Today",
   yesterday: "Yesterday",
   untitled: "A chat with Jonz",

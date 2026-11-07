@@ -1,15 +1,15 @@
-import { ASK_CHATS_COPY, chatWhen, RECENT_CHATS } from '@app/core';
+import { ASK_CHATS_COPY, chatGroups, chatWhen } from '@app/core';
 import { MessagesSquareIcon, Trash2Icon } from 'lucide-react-native';
 import { useState, type ReactNode } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 
 import { deleteChat, type ChatSummary } from '@/api/ask-chats';
 import { ConfirmSheet } from '@/components/confirm-sheet';
+import { Group } from '@/components/group';
 import { IconButton } from '@/components/icon-button';
 import { Row, RowIcon } from '@/components/row';
 import { Section } from '@/components/section';
 import { Meta } from '@/components/text';
-import { TextButton } from '@/components/text-button';
 import { useToastIfAny } from '@/components/toast';
 import { useAskChats } from '@/hooks/use-ask-chats';
 import { useMove } from '@/hooks/use-move';
@@ -27,7 +27,7 @@ function ChatRow({
   now: Date;
   zone: string;
   onOpen: (id: string) => void;
-  trailing?: ReactNode;
+  trailing: ReactNode;
 }) {
   return (
     <Row
@@ -36,7 +36,6 @@ function ChatRow({
       meta={chatWhen(new Date(chat.updatedAt), now, zone)}
       leading={<RowIcon icon={MessagesSquareIcon} />}
       trailing={trailing}
-      chevron={trailing == null}
       onPress={() => onOpen(chat.id)}
       testID="saved-chat"
     />
@@ -44,57 +43,24 @@ function ChatRow({
 }
 
 /**
- * Ask Jonz's start: your latest few chats in this house, to pick one up
- * again, and See all for the rest. Nothing while there are none.
- */
-export function RecentChats({
-  houseId,
-  zone,
-  now,
-  onOpen,
-  onSeeAll,
-}: {
-  houseId: string;
-  zone: string;
-  now: Date;
-  onOpen: (id: string) => void;
-  onSeeAll: () => void;
-}) {
-  const chats = useAskChats(houseId);
-  const list = chats.data ?? [];
-  if (list.length === 0) return null;
-  return (
-    <Section
-      label={ASK_CHATS_COPY.recent}
-      right={<TextButton label={ASK_CHATS_COPY.seeAll} onPress={onSeeAll} testID="chats-see-all" />}
-      testID="recent-chats"
-    >
-      {list.slice(0, RECENT_CHATS).map((c) => (
-        <ChatRow key={c.id} chat={c} now={now} zone={zone} onOpen={onOpen} />
-      ))}
-    </Section>
-  );
-}
-
-/**
- * Your chats: every one you've kept in this house, the latest first. Open
- * one to carry on with it, or delete it (after a sheet that says it's gone
- * for good). `onDeleted` lets the chat that's open start afresh when it's
- * the one deleted.
+ * Your chats, from the clock in Ask Jonz's bar (which titles it, with the
+ * way back to the chat): every one you've kept in this house, the latest
+ * first, under Today, Last 7 days and Earlier, as chat apps list them.
+ * Open one to carry on with it, or delete it (after a sheet that says it's
+ * gone for good). `onDeleted` lets the chat that's open start afresh when
+ * it's the one deleted.
  */
 export function AllChats({
   houseId,
   zone,
   now,
   onOpen,
-  onBack,
   onDeleted,
 }: {
   houseId: string;
   zone: string;
   now: Date;
   onOpen: (id: string) => void;
-  onBack: () => void;
   onDeleted: (id: string) => void;
 }) {
   const chats = useAskChats(houseId);
@@ -115,30 +81,33 @@ export function AllChats({
 
   return (
     <ScrollView contentContainerStyle={styles.page} testID="all-chats">
-      <TextButton label={ASK_CHATS_COPY.back} onPress={onBack} align="start" testID="chats-back" />
-      <Section label={ASK_CHATS_COPY.all} right={ASK_CHATS_COPY.allMeta}>
-        {list.length === 0 ? (
+      {chats.data === undefined ? null : list.length === 0 ? (
+        <Group>
           <Row title={ASK_CHATS_COPY.none} titleLines={2} testID="chats-none" />
-        ) : (
-          list.map((c) => (
-            <ChatRow
-              key={c.id}
-              chat={c}
-              now={now}
-              zone={zone}
-              onOpen={onOpen}
-              trailing={
-                <IconButton
-                  icon={Trash2Icon}
-                  label={ASK_CHATS_COPY.deleteChat(c.title)}
-                  onPress={() => setDoomed(c)}
-                  testID="chat-delete"
-                />
-              }
-            />
-          ))
-        )}
-      </Section>
+        </Group>
+      ) : (
+        chatGroups(list, now, zone).map((group) => (
+          <Section key={group.label} label={group.label} testID="chats-group">
+            {group.chats.map((c) => (
+              <ChatRow
+                key={c.id}
+                chat={c}
+                now={now}
+                zone={zone}
+                onOpen={onOpen}
+                trailing={
+                  <IconButton
+                    icon={Trash2Icon}
+                    label={ASK_CHATS_COPY.deleteChat(c.title)}
+                    onPress={() => setDoomed(c)}
+                    testID="chat-delete"
+                  />
+                }
+              />
+            ))}
+          </Section>
+        ))
+      )}
       <Meta style={styles.note}>{ASK_CHATS_COPY.allNote}</Meta>
       <ConfirmSheet
         visible={doomed !== null}

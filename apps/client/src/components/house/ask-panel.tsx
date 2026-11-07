@@ -34,9 +34,12 @@ export function AskPanel({ houseId, userId }: { houseId: string; userId: string 
       <AskJonz
         houseId={houseId}
         userId={userId}
-        bar={(title, actions) => (
+        bar={({ title, lead, actions, back }) => (
           <TitleBar
             title={title}
+            lead={lead}
+            onBack={back?.onPress}
+            backLabel={back?.label}
             right={
               <View style={styles.actions}>
                 {actions}

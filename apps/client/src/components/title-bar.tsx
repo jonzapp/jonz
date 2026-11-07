@@ -35,6 +35,10 @@ import { FONT, GUTTER, INSET, SECTION_GAP, SPACE, TAP, TITLE_BAR, useTheme, WIDE
  * A house's tabs (a bar with no `back`, inside the tour player) carry Help's
  * question mark just inside the sparkles, or at the edge without them (a
  * housemate): it opens the Help sheet, with a tour of the page.
+ * `lead` is a button on the leading edge before the Title, its glyph on the
+ * content's edge as the last one's is on the trailing edge: Ask Jonz's Your
+ * chats, where chat apps put the way to your chats. `onBack` is a back link
+ * that doesn't leave the page (Your chats back to the chat), in place of `back`.
  */
 export function TitleBar({
   title,
@@ -43,6 +47,8 @@ export function TitleBar({
   back,
   backLabel = FOCUS_SHELL_COPY.back,
   ask = false,
+  lead,
+  onBack,
 }: {
   title: string;
   /** A pushed page's line under the Title ("Sam, admin"). */
@@ -54,6 +60,10 @@ export function TitleBar({
   backLabel?: string;
   /** Show the sparkles that open the chat with Jonz (admins). */
   ask?: boolean;
+  /** One button on the leading edge, before the Title. */
+  lead?: ReactNode;
+  /** A back link (named by `backLabel`) that stays on this page, in place of `back`. */
+  onBack?: () => void;
 }) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -62,15 +72,21 @@ export function TitleBar({
   // On a laptop House's pages are listed beside them, which is the way back to House.
   const way = useHouseWorkspace().listed && back === '/house' ? undefined : back;
   const tours = useTour();
-  const help = tours != null && back == null;
+  const help = tours != null && back == null && onBack == null;
+  const pushed = way != null || onBack != null;
   return (
     <View
       testID="title-bar"
       style={[styles.bar, { paddingTop: insets.top, backgroundColor: colors.background, borderBottomColor: colors.border }]}
     >
       <View style={[styles.inner, { maxWidth }]}>
-        {way != null ? <BackLink to={way} label={backLabel} /> : null}
-        <View style={[styles.line, sub ? styles.withSub : null, way != null && styles.pushed]}>
+        {way != null ? <BackLink to={way} label={backLabel} /> : onBack ? <BackLink onPress={onBack} label={backLabel} /> : null}
+        <View style={[styles.line, sub ? styles.withSub : null, pushed && styles.pushed]}>
+          {lead != null ? (
+            <View testID="bar-lead" style={[styles.tools, styles.lead]}>
+              {lead}
+            </View>
+          ) : null}
           <View style={styles.words}>
             <Title numberOfLines={1} style={styles.title}>
               {title}
@@ -80,7 +96,7 @@ export function TitleBar({
           {right != null || help || ask ? (
             // One group at the edge, in a fixed order with no gaps of its own: the
             // screen's button, Help, then the sparkles at the edge.
-            <View testID="bar-tools" style={styles.tools}>
+            <View testID="bar-tools" style={[styles.tools, styles.trail]}>
               {right}
               {help ? (
                 <TourSpot id="shell.help">
@@ -118,14 +134,14 @@ export function TopLine({ children }: { children: string }) {
  * another tab (Today's setup card, say) still goes to House, not back to
  * the tab it came from.
  */
-function BackLink({ to, label }: { to: Href; label: string }) {
+function BackLink({ to, onPress, label }: { to?: Href; onPress?: () => void; label: string }) {
   const { colors, type } = useTheme();
   const router = useRouter();
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label === FOCUS_SHELL_COPY.back ? label : FOCUS_SHELL_COPY.backTo(label)}
-      onPress={() => router.dismissTo(to)}
+      onPress={onPress ?? (() => to && router.dismissTo(to))}
       testID="back"
       style={({ pressed }) => [styles.back, pressed && styles.pressed]}
     >
@@ -186,7 +202,10 @@ const styles = StyleSheet.create({
   // The buttons' 48 squares touch, so every glyph is the same 48 from the next;
   // the last one's glyph lines up with the content's edge, and they sit in the
   // bar's own 4 above and below.
-  tools: { flexShrink: 0, flexDirection: 'row', alignItems: 'center', marginVertical: -SPACE.xs, marginRight: -SPACE.md },
+  tools: { flexShrink: 0, flexDirection: 'row', alignItems: 'center', marginVertical: -SPACE.xs },
+  trail: { marginRight: -SPACE.md },
+  // The leading button's glyph on the content's edge, and the Title 4 after its square (the line's gap less 8).
+  lead: { marginLeft: -SPACE.md, marginRight: -SPACE.sm },
   back: {
     alignSelf: 'flex-start',
     minHeight: TAP,

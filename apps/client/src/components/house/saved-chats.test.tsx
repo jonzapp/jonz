@@ -6,7 +6,7 @@ import type { ReactNode } from 'react';
 import { deleteChat, listChats } from '@/api/ask-chats';
 import { testQueryClient } from '@/testing/query';
 
-import { AllChats, RecentChats } from './saved-chats';
+import { AllChats } from './saved-chats';
 
 jest.mock('@/api/ask-chats', () => ({ listChats: jest.fn(), deleteChat: jest.fn(async () => undefined) }));
 
@@ -28,32 +28,21 @@ beforeEach(() => {
   (listChats as jest.Mock).mockResolvedValue(CHATS);
 });
 
-it('shows the latest three chats with when each was last used, and See all', async () => {
+it('lists every chat under Today, Last 7 days and Earlier, and opens one', async () => {
   const open = jest.fn();
-  const all = jest.fn();
-  await render(<RecentChats houseId="h1" zone="Europe/London" now={NOW} onOpen={open} onSeeAll={all} />, { wrapper: House });
-  expect(await screen.findByText('Add Ivy to main floor')).toBeTruthy();
-  expect(screen.getAllByTestId('saved-chat')).toHaveLength(3);
-  expect(screen.getByText(ASK_CHATS_COPY.today)).toBeTruthy();
-  expect(screen.getByText(ASK_CHATS_COPY.yesterday)).toBeTruthy();
-  expect(screen.queryByText('Oven every month')).toBeNull();
+  await render(<AllChats houseId="h1" zone="Europe/London" now={NOW} onOpen={open} onDeleted={jest.fn()} />, { wrapper: House });
+  expect(await screen.findByText('Oven every month')).toBeTruthy();
+  expect(screen.getAllByTestId('chats-group')).toHaveLength(3);
+  expect(screen.getByText(ASK_CHATS_COPY.lastWeek)).toBeTruthy();
+  expect(screen.getByText(ASK_CHATS_COPY.earlier)).toBeTruthy();
   await fireEvent.press(screen.getByText('Who has the bins?'));
   expect(open).toHaveBeenCalledWith('b');
-  await fireEvent.press(screen.getByTestId('chats-see-all'));
-  expect(all).toHaveBeenCalled();
-});
-
-it('shows nothing when there are no chats yet', async () => {
-  (listChats as jest.Mock).mockResolvedValue([]);
-  await render(<RecentChats houseId="h1" zone="Europe/London" now={NOW} onOpen={jest.fn()} onSeeAll={jest.fn()} />, { wrapper: House });
-  await waitFor(() => expect(listChats).toHaveBeenCalled());
-  expect(screen.queryByTestId('recent-chats')).toBeNull();
 });
 
 it('lists every chat and deletes one only after the sheet says it is gone for good', async () => {
   const deleted = jest.fn();
   await render(
-    <AllChats houseId="h1" zone="Europe/London" now={NOW} onOpen={jest.fn()} onBack={jest.fn()} onDeleted={deleted} />,
+    <AllChats houseId="h1" zone="Europe/London" now={NOW} onOpen={jest.fn()} onDeleted={deleted} />,
     { wrapper: House },
   );
   expect(await screen.findByText('Oven every month')).toBeTruthy();
@@ -69,7 +58,7 @@ it('lists every chat and deletes one only after the sheet says it is gone for go
 it('says so when there are no chats', async () => {
   (listChats as jest.Mock).mockResolvedValue([]);
   await render(
-    <AllChats houseId="h1" zone="Europe/London" now={NOW} onOpen={jest.fn()} onBack={jest.fn()} onDeleted={jest.fn()} />,
+    <AllChats houseId="h1" zone="Europe/London" now={NOW} onOpen={jest.fn()} onDeleted={jest.fn()} />,
     { wrapper: House },
   );
   expect(await screen.findByText(ASK_CHATS_COPY.none)).toBeTruthy();

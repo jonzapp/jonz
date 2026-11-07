@@ -59,7 +59,9 @@ export interface TourStep {
 }
 
 export interface Tour {
-  /** The Help sheet's row: "Show me around Today". */
+  /** What it shows you round, in a few words: the Help sheet's row under Show me around ("Today"). */
+  name: string;
+  /** In full, where it stands alone: "Show me around Today". */
   title: string;
   /** Who it's for, when not everyone: an admin's tour is listed for admins only. */
   forWhom?: "admin";
@@ -76,6 +78,7 @@ export const TOUR_BODY_MAX = 140;
 
 export const TOURS = {
   today: {
+    name: "Today",
     title: "Show me around Today",
     page: "/today",
     steps: [
@@ -104,11 +107,12 @@ export const TOURS = {
       {
         spot: "shell.help",
         title: "Help, any time",
-        body: "Tap the question mark to take a tour again, or tell us about a problem.",
+        body: "Tap the question mark to ask Jonz, read the guide, take a tour again, or tell us about a problem.",
       },
     ],
   },
   week: {
+    name: "The week",
     title: "Show me around the week",
     page: "/week",
     steps: [
@@ -135,6 +139,7 @@ export const TOURS = {
     ],
   },
   house: {
+    name: "House",
     title: "Show me around House",
     page: "/house",
     steps: [
@@ -162,6 +167,7 @@ export const TOURS = {
     ],
   },
   setUp: {
+    name: "Setting up your house",
     title: "Setting up your house",
     forWhom: "admin",
     page: "/house/johns",
@@ -276,7 +282,16 @@ export const TOUR_COPY = {
   help: "Help",
   /** The title bar's question mark, to a screen reader. */
   open: "Help",
-  guides: "Guides",
+  /** The Help sheet's first section: the ways to find something out. */
+  findOut: "Find out",
+  ask: "Ask Jonz",
+  askMeta: "Ask how anything works",
+  guide: "Read the guide",
+  guideMeta: "Every page and rule, explained",
+  /** The tours, under Help. */
+  showMeAround: "Show me around",
+  /** The tour of the page Help was opened on, first under Show me around. */
+  thisPage: (length: string) => `This page, ${length}`,
   forAdmins: "For admins",
   somethingWrong: "Something wrong?",
   next: "Next",
@@ -290,7 +305,7 @@ export const TOUR_COPY = {
   offerBody: "Take a one-minute look around Today.",
   offerYes: "Show me",
   offerNo: "Not now",
-  guidesRow: "Tours and guides",
+  guidesRow: "Show me around",
   guidesMeta: "A minute each, any time",
 } as const;
 
