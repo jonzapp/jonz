@@ -187,13 +187,20 @@ export function describeEvent(e: WallEvent, nameOf: (userId: string | null) => s
         ],
       };
     case "away": {
-      const moved = Number(e.data.moved ?? 0);
+      // What booking did: moved to before you go, handed to a housemate, or
+      // skipped with nobody home. A cancelled trip keeps its post and says so.
       const you = who === "You";
-      const due = moved > 0 ? ` ${moved} ${moved === 1 ? "John is" : "Johns are"} due before ${you ? "you go" : "they go"}.` : "";
-      return {
-        icon: "plane",
-        parts: [b(who), t(` ${you ? "are" : "is"} away ${dateRange(String(e.data.starts_on), String(e.data.ends_on))}.${due}`)],
-      };
+      const range = dateRange(String(e.data.starts_on), String(e.data.ends_on));
+      if (e.data.cancelled) return { icon: "plane", parts: [b(who), t(` cancelled time away, ${range}.`)] };
+      if (e.data.back_on) return { icon: "plane", parts: [b(who), t(` came back early from time away, ${range}.`)] };
+      const handed = Number(e.data.handed ?? 0);
+      const skipped = Number(e.data.excused ?? 0);
+      const before = Math.max(0, Number(e.data.moved ?? 0) - handed - skipped);
+      const johns = (n: number) => `${n} ${n === 1 ? "John" : "Johns"}`;
+      const due = before > 0 ? ` ${johns(before)} ${before === 1 ? "is" : "are"} due before ${you ? "you go" : "they go"}.` : "";
+      const gave = handed > 0 ? ` ${johns(handed)} went to housemates.` : "";
+      const none = skipped > 0 ? ` ${johns(skipped)} skipped, with nobody home to take ${skipped === 1 ? "it" : "them"}.` : "";
+      return { icon: "plane", parts: [b(who), t(` ${you ? "are" : "is"} away ${range}.${due}${gave}${none}`)] };
     }
     case "flagged": {
       // Who said it needs doing; null when the clock opened it again after a miss.

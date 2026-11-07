@@ -54,7 +54,9 @@ web-push.
   query. CORS only for `ALLOWED_ORIGINS` (`lib/env.ts`): the Expo web build
   on 8205 locally; phones send no Origin.
   Today: `POST /api/fresh` (catch a house up, at most once a minute),
-  `POST /api/disputes`, `POST /api/disputes/:id/votes`, `POST /api/deal`
+  `POST /api/disputes`, `POST /api/disputes/:id/votes`, `POST /api/away`
+  (book time away; whoever it hands a John to gets a push,
+  `lib/moves/away.ts`), `POST /api/deal`
   (an admin hands out or re-deals the week), `POST /api/setup/draft`
   (Describe your house: one turn of the setup chat, in which Claude drafts
   and changes a John list for an admin to review,
