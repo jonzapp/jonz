@@ -486,4 +486,16 @@ describe('kept chats', () => {
     await screen.findByTestId('chat-done');
     expect(kept).not.toHaveBeenCalled();
   });
+
+  it('says when there is something in the chat, so New chat has something to clear', async () => {
+    const talked = jest.fn();
+    await render(<SetupChat houseId="h1" rules={RULES} johns={[]} groups={[]} people={people} me={ME} passOpen onTalked={talked} />, {
+      wrapper: House,
+    });
+    expect(talked).toHaveBeenLastCalledWith(false);
+    await fireEvent.changeText(screen.getByTestId('chat-input'), 'Two bathrooms');
+    expect(talked).toHaveBeenLastCalledWith(true);
+    await fireEvent.changeText(screen.getByTestId('chat-input'), '  ');
+    expect(talked).toHaveBeenLastCalledWith(false);
+  });
 });
