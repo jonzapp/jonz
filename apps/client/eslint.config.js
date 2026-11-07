@@ -20,6 +20,7 @@ module.exports = defineConfig([
       'jonz/no-raw-type-size': 'error',
       'jonz/spacing-from-scale': 'error',
       'jonz/no-hand-made-button-row': 'error',
+      'jonz/button-in-row': 'error',
       'jonz/no-pressable-in-screens': 'error',
       'jonz/owner-only': 'error',
     },

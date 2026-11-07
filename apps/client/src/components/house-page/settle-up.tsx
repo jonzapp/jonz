@@ -7,6 +7,7 @@ import { confirmPayment, type StakeRead } from '@/api/stake';
 import { Alert } from '@/components/alert';
 import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/button';
+import { ButtonRow } from '@/components/button-row';
 import { GroupItem, useRowInset } from '@/components/group';
 import { Row } from '@/components/row';
 import { Section } from '@/components/section';
@@ -94,6 +95,7 @@ function SettleUp({ houseId, row }: { houseId: string; row: SettleRow }) {
       {splitwise ? (
         <View style={[styles.copy, { paddingHorizontal: inset }]} testID="splitwise-line">
           <Meta style={styles.description}>{splitwise.description}</Meta>
+          {/* eslint-disable-next-line jonz/button-in-row -- beside the words it copies, not a lone action */}
           <Button
             variant="outline"
             icon={CopyIcon}
@@ -108,24 +110,26 @@ function SettleUp({ houseId, row }: { houseId: string; row: SettleRow }) {
       ) : null}
       {row.action ? (
         <View style={[styles.action, { paddingHorizontal: inset }]}>
-          <Button
-            variant={row.primary ? 'primary' : 'outline'}
-            icon={CheckIcon}
-            label={move.pending ? HOUSE_PAGE_COPY.marking : row.action}
-            spoken={move.pending ? undefined : (row.spoken ?? undefined)}
-            disabled={move.pending}
-            onPress={() =>
-              void move
-                .run(() =>
-                  splitwise
-                    ? confirmPayment(houseId, row.userId, row.amount, 'splitwise')
-                    : confirmPayment(houseId, row.userId, row.amount),
-                )
-                .then((done) => {
-                  if (done) offer(splitwise ? HISTORY_COPY.inSplitwise : HISTORY_COPY.paid, 'payment', row.userId);
-                })
-            }
-          />
+          <ButtonRow>
+            <Button
+              variant={row.primary ? 'primary' : 'outline'}
+              icon={CheckIcon}
+              label={move.pending ? HOUSE_PAGE_COPY.marking : row.action}
+              spoken={move.pending ? undefined : (row.spoken ?? undefined)}
+              disabled={move.pending}
+              onPress={() =>
+                void move
+                  .run(() =>
+                    splitwise
+                      ? confirmPayment(houseId, row.userId, row.amount, 'splitwise')
+                      : confirmPayment(houseId, row.userId, row.amount),
+                  )
+                  .then((done) => {
+                    if (done) offer(splitwise ? HISTORY_COPY.inSplitwise : HISTORY_COPY.paid, 'payment', row.userId);
+                  })
+              }
+            />
+          </ButtonRow>
         </View>
       ) : null}
       {move.problem ? (

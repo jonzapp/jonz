@@ -1,15 +1,16 @@
 import { Children, createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
-import { BUTTON_MIN, NARROW, SPACE } from '@/theme';
+import { BUTTON_MIN, FORM_MAX, NARROW, SPACE, WIDE } from '@/theme';
 
 /**
- * How a Button inside a ButtonRow sits: an equal share of a line, or the full
- * width of a stack. `wrapped` is how a sharing button says its words took
- * more than one line, so the row stacks instead.
+ * How a Button inside a ButtonRow sits: an equal share of a line, the full
+ * width of a stack, or (a button on its own in a wide column on a laptop)
+ * its own width at the leading edge. `wrapped` is how a sharing button says
+ * its words took more than one line, so the row stacks instead.
  */
 interface RowFit {
-  fit: 'share' | 'full';
+  fit: 'share' | 'full' | 'own';
   wrapped: () => void;
 }
 
@@ -21,6 +22,11 @@ export function useRowFit(): RowFit | null {
 }
 
 /**
+ * Where every Button sits. A button on its own (Deal week 1, Copy key, Try
+ * again) fills its column on a phone, and in any column up to FORM_MAX (a
+ * form, a sheet, a side panel); in a wider column on a laptop it keeps its
+ * own width at the leading edge.
+ *
  * Two or three buttons that belong together: Mark done and Photo, Approve and
  * Object, Mark fixed and Same as. They always share the line equally, never
  * sized to their words, and are always the same height. When the row is too
@@ -49,6 +55,9 @@ export function ButtonRow({
   const count = Children.toArray(children).filter(Boolean).length;
   const needs = count * BUTTON_MIN + (count - 1) * SPACE.sm;
   const stacked = stackedAlways || window < NARROW || (width !== null && (width < needs || width <= wrapsAt));
+  // On its own: the column's width, unless that is a wide one on a laptop.
+  const alone = count === 1;
+  const own = alone && window >= WIDE && (width === null || width > FORM_MAX);
   // A label can say it wrapped before the row knows its own width (children
   // are laid out first), so the news waits until the width arrives.
   const widthNow = useRef<number | null>(null);
@@ -58,7 +67,8 @@ export function ButtonRow({
     if (at === null) wrapPending.current = true;
     else setWrapsAt((was) => Math.max(was, at));
   }, []);
-  const value = useMemo<RowFit>(() => ({ fit: stacked ? 'full' : 'share', wrapped }), [stacked, wrapped]);
+  const fit = own ? 'own' : alone || stacked ? 'full' : 'share';
+  const value = useMemo<RowFit>(() => ({ fit, wrapped }), [fit, wrapped]);
   return (
     <RowFitContext.Provider value={value}>
       <View
@@ -72,7 +82,7 @@ export function ButtonRow({
             setWrapsAt((was) => Math.max(was, at));
           }
         }}
-        style={stacked ? styles.stack : styles.row}
+        style={own ? styles.own : fit === 'full' ? styles.stack : styles.row}
       >
         {children}
       </View>
@@ -83,4 +93,5 @@ export function ButtonRow({
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'stretch', gap: SPACE.sm },
   stack: { flexDirection: 'column', alignItems: 'stretch', gap: SPACE.sm },
+  own: { flexDirection: 'column', alignItems: 'flex-start' },
 });

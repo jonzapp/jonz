@@ -18,8 +18,21 @@
   dates ›). (Focus, #17)
 - One of a pair you pick from (the vote) uses `chosen`: ink edge on the
   tint, never amber. (Focus, #17)
-- A wide action on its own is full width (Copy key, Send report). (Copy key
-  A, #75)
+- **A button on its own fills its column on a phone** (Deal week 1, Copy
+  key, Send report, Try again), and in any column up to `FORM_MAX` (520) on
+  a laptop: a form, a sheet, a side panel. In a wider column on a laptop it
+  keeps its own width at the leading edge, never stretched across a page.
+  (Copy key A, #75; Week's Deal week 1, 7 Nov) *Backed by* GOV.UK's
+  buttons, full width on a phone and their own width from a tablet up, and
+  Material's guidance against full-width buttons on wide screens.
+- That is a `ButtonRow` with one button in it. **Every `Button` sits in a
+  `ButtonRow`**, alone or with others, so no screen decides a button's width
+  by hand. The lint rule `jonz/button-in-row` refuses a `Button` laid
+  straight in a `View`, and `e2e/client-buttons.spec.ts` measures Week,
+  Today, House, its pages and a John's sheet on each phone and the laptop.
+  An icon-only button is exempt (it's a square), and so is a button sharing
+  its line with words or links: Next up's Photo, the John list's Add a John
+  beside its count, the tour's Next beside Back and Skip.
 - Screens never restyle a button: no `style` on `Button`, and no hand-made
   `Pressable` dressed as one outside `components/`. (**New**, enforced by
   lint)

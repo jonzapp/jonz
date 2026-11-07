@@ -7,6 +7,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { deletionPreview, requestDeletion } from '@/api/account';
 import { Alert } from '@/components/alert';
 import { Button } from '@/components/button';
+import { ButtonRow } from '@/components/button-row';
 import { Field } from '@/components/field';
 import { Reading } from '@/components/read-state';
 import { Body } from '@/components/text';
@@ -65,14 +66,16 @@ export function DeleteAccountForm({ onKeep }: { onKeep: () => void }) {
       />
       {problem ? <Alert message={problem} /> : null}
       <View style={styles.buttons}>
-        <Button
-          variant="hazard"
-          icon={Trash2Icon}
-          label={DELETE_COPY.confirm}
-          disabled={!ready || busy}
-          onPress={() => void remove()}
-          testID="delete-account"
-        />
+        <ButtonRow>
+          <Button
+            variant="hazard"
+            icon={Trash2Icon}
+            label={DELETE_COPY.confirm}
+            disabled={!ready || busy}
+            onPress={() => void remove()}
+            testID="delete-account"
+          />
+        </ButtonRow>
         <TextButton label={DELETE_COPY.keepIt} disabled={busy} onPress={onKeep} testID="keep-it" />
       </View>
     </View>

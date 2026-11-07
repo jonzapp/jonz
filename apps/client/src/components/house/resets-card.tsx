@@ -7,6 +7,7 @@ import { undoAction } from '@/api/history';
 import { applyReset } from '@/api/resets';
 import { Alert } from '@/components/alert';
 import { Button } from '@/components/button';
+import { ButtonRow } from '@/components/button-row';
 import { HazardTape } from '@/components/hazard-tape';
 import { Row, RowIcon } from '@/components/row';
 import { Section } from '@/components/section';
@@ -79,7 +80,9 @@ export function ResetsCard({
         />
         {move.problem ? <Alert message={move.problem} /> : null}
         {!undone && done.actions.length > 0 ? (
-          <Button variant="outline" icon={Undo2Icon} label={RESET_COPY.undoAll} onPress={() => void undo()} disabled={move.pending} testID="resets-undo" />
+          <ButtonRow>
+            <Button variant="outline" icon={Undo2Icon} label={RESET_COPY.undoAll} onPress={() => void undo()} disabled={move.pending} testID="resets-undo" />
+          </ButtonRow>
         ) : null}
       </View>
     );
@@ -108,14 +111,16 @@ export function ResetsCard({
         {toldLine(told, nameOf)}
       </Meta>
       {move.problem ? <Alert message={move.problem} /> : null}
-      <Button
-        variant="hazard"
-        icon={RotateCcwIcon}
-        label={move.pending ? RESET_COPY.applying : RESET_COPY.applyN(keep.length)}
-        onPress={() => void apply()}
-        disabled={move.pending || keep.length === 0}
-        testID="resets-apply"
-      />
+      <ButtonRow>
+        <Button
+          variant="hazard"
+          icon={RotateCcwIcon}
+          label={move.pending ? RESET_COPY.applying : RESET_COPY.applyN(keep.length)}
+          onPress={() => void apply()}
+          disabled={move.pending || keep.length === 0}
+          testID="resets-apply"
+        />
+      </ButtonRow>
     </View>
   );
 }

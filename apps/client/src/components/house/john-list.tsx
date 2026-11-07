@@ -34,6 +34,7 @@ import { StyleSheet, View } from 'react-native';
 import { archiveJohn, saveJohn } from '@/api/settings';
 import { Alert } from '@/components/alert';
 import { Button } from '@/components/button';
+import { ButtonRow } from '@/components/button-row';
 import { EmptyState } from '@/components/empty-state';
 import { Field } from '@/components/field';
 import { Group, GroupItem } from '@/components/group';
@@ -140,8 +141,10 @@ export function JohnList({
           action={
             editable ? (
               <View style={styles.emptyActions}>
-                <Button icon={SparklesIcon} label={NEXT_UP_COPY.describe} {...ask} testID="describe-house" />
-                <Button variant="outline" icon={PlusIcon} label={JOHN_LIST_COPY.add} onPress={add} testID="add-john" />
+                <ButtonRow stacked>
+                  <Button icon={SparklesIcon} label={NEXT_UP_COPY.describe} {...ask} testID="describe-house" />
+                  <Button variant="outline" icon={PlusIcon} label={JOHN_LIST_COPY.add} onPress={add} testID="add-john" />
+                </ButtonRow>
               </View>
             ) : undefined
           }
@@ -155,6 +158,7 @@ export function JohnList({
                 {`${JOHN_LIST_COPY.count(johns.length)} ${JOHN_LIST_COPY.perWeek(weeklyEffort(johns))}`}
               </Meta>
               {editable ? (
+                // eslint-disable-next-line jonz/button-in-row -- the page's tool beside its count, at the top right (docs/style/layout.md)
                 <Button
                   variant={quietAdd ? 'outline' : undefined}
                   icon={PlusIcon}
@@ -416,15 +420,17 @@ function JohnForm({
       </View>
       <View style={styles.actions}>
         {move.problem ? <Alert message={move.problem} /> : null}
-        <Button
-          label={move.pending ? JOHN_LIST_COPY.saving : v.id ? JOHN_LIST_COPY.save : JOHN_LIST_COPY.create}
-          disabled={move.pending || !v.name.trim()}
-          onPress={() => void save()}
-          testID="save-john"
-        />
-        {v.id ? (
-          <Button variant="hazard" icon={Trash2Icon} label={JOHN_LIST_COPY.remove} disabled={move.pending} onPress={() => void remove()} />
-        ) : null}
+        <ButtonRow stacked>
+          <Button
+            label={move.pending ? JOHN_LIST_COPY.saving : v.id ? JOHN_LIST_COPY.save : JOHN_LIST_COPY.create}
+            disabled={move.pending || !v.name.trim()}
+            onPress={() => void save()}
+            testID="save-john"
+          />
+          {v.id ? (
+            <Button variant="hazard" icon={Trash2Icon} label={JOHN_LIST_COPY.remove} disabled={move.pending} onPress={() => void remove()} />
+          ) : null}
+        </ButtonRow>
       </View>
     </View>
   );

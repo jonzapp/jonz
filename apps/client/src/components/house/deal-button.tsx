@@ -5,6 +5,7 @@ import { StyleSheet, View } from 'react-native';
 import { dealThisWeek } from '@/api/settings';
 import { Alert } from '@/components/alert';
 import { Button } from '@/components/button';
+import { ButtonRow } from '@/components/button-row';
 import { useMove } from '@/hooks/use-move';
 import { SPACE } from '@/theme';
 
@@ -16,34 +17,35 @@ import { SPACE } from '@/theme';
  * can say it otherwise, and `variant` overrides the colour (Today's setup
  * checklist and Week keep it outline until the steps before it have
  * something).
- * It sits at its own width on the leading edge, or across its container
- * with `fill` (in a card). The server checks it's an admin asking.
+ * Like every button on its own it fills its column on a phone (ButtonRow),
+ * and keeps its own width in a wide column on a laptop. The server checks
+ * it's an admin asking.
  */
 export function DealButton({
   houseId,
   started = false,
   label,
   variant,
-  fill = false,
 }: {
   houseId: string;
   /** The house has dealt before. */
   started?: boolean;
   label?: string;
   variant?: 'primary' | 'outline';
-  fill?: boolean;
 }) {
   const move = useMove(houseId);
   return (
-    <View style={[styles.stack, !fill && styles.start]}>
-      <Button
-        variant={variant ?? (started ? 'outline' : 'primary')}
-        icon={ShuffleIcon}
-        label={move.pending ? DEAL_COPY.dealing : (label ?? (started ? DEAL_COPY.again : NEXT_UP_COPY.dealWeek1))}
-        disabled={move.pending}
-        onPress={() => void move.run(() => dealThisWeek(houseId))}
-        testID="deal-week"
-      />
+    <View style={styles.stack}>
+      <ButtonRow>
+        <Button
+          variant={variant ?? (started ? 'outline' : 'primary')}
+          icon={ShuffleIcon}
+          label={move.pending ? DEAL_COPY.dealing : (label ?? (started ? DEAL_COPY.again : NEXT_UP_COPY.dealWeek1))}
+          disabled={move.pending}
+          onPress={() => void move.run(() => dealThisWeek(houseId))}
+          testID="deal-week"
+        />
+      </ButtonRow>
       {move.problem ? <Alert message={move.problem} /> : null}
     </View>
   );
@@ -51,5 +53,4 @@ export function DealButton({
 
 const styles = StyleSheet.create({
   stack: { gap: SPACE.sm },
-  start: { alignItems: 'flex-start' },
 });

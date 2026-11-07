@@ -21,6 +21,7 @@ import { ListTableRow, type ListColumn } from '@/components/admin/list-table';
 import { Alert } from '@/components/alert';
 import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/button';
+import { ButtonRow } from '@/components/button-row';
 import { Field } from '@/components/field';
 import { Group } from '@/components/group';
 import { Row, RowIcon } from '@/components/row';
@@ -252,12 +253,12 @@ function ChosenSheet({ person, inline = false, onClose }: { person: PendingDelet
       {problem ? <Alert message={problem} /> : null}
       <View style={styles.buttons}>
         {asking === null ? (
-          <>
+          <ButtonRow stacked>
             <Button variant="hazard" label={ADMIN_COPY.deleteNow} onPress={() => setAsking('now')} testID="deletion-now" />
             <Button variant="outline" label={ADMIN_COPY.stop} onPress={() => setAsking('stop')} testID="deletion-stop" />
-          </>
+          </ButtonRow>
         ) : (
-          <>
+          <ButtonRow stacked>
             <Button
               variant={asking === 'now' ? 'hazard' : 'primary'}
               label={asking === 'now' ? ADMIN_COPY.deleteNow : ADMIN_COPY.stop}
@@ -266,7 +267,7 @@ function ChosenSheet({ person, inline = false, onClose }: { person: PendingDelet
               testID="deletion-confirm"
             />
             <Button variant="outline" label={FOCUS_SHELL_COPY.cancel} disabled={busy} onPress={() => setAsking(null)} testID="deletion-cancel" />
-          </>
+          </ButtonRow>
         )}
         {inline && asking === null ? <TextButton label={SHELL_COPY.close} onPress={onClose} testID="deletion-close" /> : null}
       </View>

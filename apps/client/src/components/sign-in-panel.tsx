@@ -7,6 +7,7 @@ import { appleSignInAvailable, signInWithApple, signInWithGoogle, signInWithMicr
 import { ON_STAGING } from '@/api/staging';
 import { Alert } from '@/components/alert';
 import { Button } from '@/components/button';
+import { ButtonRow } from '@/components/button-row';
 import { DemoSignIn } from '@/components/demo-sign-in';
 import { EmailSignIn } from '@/components/email-sign-in';
 import { DoorFoot, Sign, SignHeading } from '@/components/front-door/door';
@@ -85,23 +86,25 @@ export function SignInPanel({ next, failed: failedBefore = false }: { next?: str
             />
           ) : null}
 
-          <Button
-            variant="outline"
-            icon={GoogleIcon}
-            label={busy === 'Google' ? SIGN_IN_COPY.googleBusy : SIGN_IN_COPY.google}
-            disabled={busy !== null}
-            onPress={() => void attempt('Google', () => signInWithGoogle(googleReturn(next)))}
-            testID="google-sign-in"
-          />
+          <ButtonRow stacked>
+            <Button
+              variant="outline"
+              icon={GoogleIcon}
+              label={busy === 'Google' ? SIGN_IN_COPY.googleBusy : SIGN_IN_COPY.google}
+              disabled={busy !== null}
+              onPress={() => void attempt('Google', () => signInWithGoogle(googleReturn(next)))}
+              testID="google-sign-in"
+            />
 
-          <Button
-            variant="outline"
-            icon={MicrosoftIcon}
-            label={busy === 'Microsoft' ? SIGN_IN_COPY.microsoftBusy : SIGN_IN_COPY.microsoft}
-            disabled={busy !== null}
-            onPress={() => void attempt('Microsoft', () => signInWithMicrosoft(googleReturn(next)))}
-            testID="microsoft-sign-in"
-          />
+            <Button
+              variant="outline"
+              icon={MicrosoftIcon}
+              label={busy === 'Microsoft' ? SIGN_IN_COPY.microsoftBusy : SIGN_IN_COPY.microsoft}
+              disabled={busy !== null}
+              onPress={() => void attempt('Microsoft', () => signInWithMicrosoft(googleReturn(next)))}
+              testID="microsoft-sign-in"
+            />
+          </ButtonRow>
 
           <Meta>{SIGN_IN_COPY.sameAccount}</Meta>
         </View>

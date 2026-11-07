@@ -115,6 +115,7 @@ export function TourOverlay({
               {last ? null : <TextButton label={TOUR_COPY.skip} onPress={onSkip} testID="tour-skip" />}
               <View style={styles.space} />
               {index > 0 ? <TextButton label={TOUR_COPY.back} onPress={onBack} testID="tour-back" /> : null}
+              {/* eslint-disable-next-line jonz/button-in-row -- Next shares the line with Skip and Back, at the trailing edge */}
               <Button label={last ? TOUR_COPY.done : TOUR_COPY.next} onPress={onNext} testID="tour-next" />
             </View>
           </View>

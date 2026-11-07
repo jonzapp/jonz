@@ -7,6 +7,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { openReport, replyToReport, setReportState, type Report } from '@/api/reports';
 import { Alert } from '@/components/alert';
 import { Button } from '@/components/button';
+import { ButtonRow } from '@/components/button-row';
 import { Group } from '@/components/group';
 import { DetailsList, ReplyBox, ReportChip, ReportThread } from '@/components/report/report-parts';
 import { Lead, Meta } from '@/components/text';
@@ -75,7 +76,7 @@ function ReportBody({
         </Group>
       ) : null}
       {report.userId ? <ReplyBox placeholder={REPORT_COPY.replyTo(first)} onSend={onReply} testID="report-reply" /> : null}
-      <View style={styles.actions}>
+      <ButtonRow>
         <Button
           label={fixed ? REPORT_COPY.reopen : REPORT_COPY.markFixed}
           icon={fixed ? RotateCcwIcon : CheckIcon}
@@ -84,7 +85,7 @@ function ReportBody({
           onPress={() => fixing.mutate(fixed ? 'open' : 'fixed')}
           testID={fixed ? 'report-reopen' : 'report-fixed'}
         />
-      </View>
+      </ButtonRow>
       {fixing.error ? <Alert message={fixing.error.message} /> : null}
       <Meta>{REPORT_COPY.note}</Meta>
     </View>
@@ -96,6 +97,5 @@ const styles = StyleSheet.create({
   head: { gap: SPACE.xs },
   titleLine: { flexDirection: 'row', alignItems: 'center', gap: SPACE.md },
   name: { flex: 1 },
-  actions: { alignItems: 'flex-start' },
   wait: { marginTop: SPACE.xl },
 });

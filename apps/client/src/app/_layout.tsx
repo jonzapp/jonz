@@ -11,6 +11,7 @@ import { StyleSheet, View } from 'react-native';
 import { notePage } from '@/api/report-details';
 import { BeingDeleted } from '@/components/account/being-deleted';
 import { Button } from '@/components/button';
+import { ButtonRow } from '@/components/button-row';
 import { NoticeBand } from '@/components/notice-banner';
 import { StagingRibbon } from '@/components/staging-ribbon';
 import { Body, Heading } from '@/components/text';
@@ -141,9 +142,9 @@ export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
     <View style={[styles.unreachable, { backgroundColor: colors.background }]}>
       <Heading level={2}>{ERROR_COPY.title}</Heading>
       <Body muted>{ERROR_COPY.body}</Body>
-      <View style={styles.start}>
+      <ButtonRow>
         <Button label={ERROR_COPY.retry} icon={RefreshCwIcon} onPress={() => void retry()} />
-      </View>
+      </ButtonRow>
     </View>
   );
 }
@@ -155,14 +156,13 @@ function Unreachable({ onRetry }: { onRetry: () => Promise<void> }) {
     <View style={[styles.unreachable, { backgroundColor: colors.background }]}>
       <Heading level={2}>{ERROR_COPY.unreachable}</Heading>
       <Body muted>{ERROR_COPY.unreachableBody}</Body>
-      <View style={styles.start}>
+      <ButtonRow>
         <Button label={ERROR_COPY.retry} icon={RefreshCwIcon} onPress={() => void onRetry()} />
-      </View>
+      </ButtonRow>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   unreachable: { flex: 1, justifyContent: 'center', padding: SPACE.xl, gap: SPACE.lg },
-  start: { alignItems: 'flex-start' },
 });

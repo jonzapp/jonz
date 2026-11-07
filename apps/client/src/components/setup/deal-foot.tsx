@@ -5,6 +5,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { dealThisWeek } from '@/api/settings';
 import { Button } from '@/components/button';
+import { ButtonRow } from '@/components/button-row';
 import { ConfirmSheet } from '@/components/confirm-sheet';
 import { DealButton } from '@/components/house/deal-button';
 import { Meta } from '@/components/text';
@@ -42,7 +43,7 @@ export function DealFoot({ houseId, started, canRedeal = true }: { houseId: stri
     <View style={styles.foot} testID="deal">
       <Meta>{started ? DEAL_COPY.againBody : DEAL_COPY.firstBody}</Meta>
       {started ? (
-        <View style={styles.start}>
+        <ButtonRow>
           <Button
             variant="outline"
             icon={ShuffleIcon}
@@ -53,7 +54,7 @@ export function DealFoot({ houseId, started, canRedeal = true }: { houseId: stri
             }}
             testID="deal-week"
           />
-        </View>
+        </ButtonRow>
       ) : (
         <DealButton houseId={houseId} />
       )}
@@ -77,5 +78,4 @@ export function DealFoot({ houseId, started, canRedeal = true }: { houseId: stri
 const styles = StyleSheet.create({
   // On the pavement, on the leading edge.
   foot: { paddingHorizontal: INSET, gap: SPACE.md },
-  start: { alignItems: 'flex-start' },
 });

@@ -22,11 +22,11 @@ beforeEach(() => {
   deal.mockResolvedValue(undefined);
 });
 
-it('starts the house in amber, "Deal week 1" as on every screen, at its own width on the leading edge, and deals the week', async () => {
+it('starts the house in amber, "Deal week 1" as on every screen, across the column on a phone, and deals the week', async () => {
   await render(<DealButton houseId="h1" />, { wrapper: House });
   const button = screen.getByRole('button', { name: NEXT_UP_COPY.dealWeek1 });
   expect(button).toHaveStyle({ backgroundColor: light.hivis });
-  expect(button.parent).toHaveStyle({ alignItems: 'flex-start' });
+  expect(button).toHaveStyle({ alignSelf: 'stretch' });
   await fireEvent.press(button);
   expect(deal).toHaveBeenCalledWith('h1');
 });
@@ -36,11 +36,12 @@ it('re-deals in outline once the house has started', async () => {
   expect(screen.getByRole('button', { name: DEAL_COPY.again })).toHaveStyle({ backgroundColor: 'transparent' });
 });
 
-it("says it in the screen's words, in the colour asked for, across a card", async () => {
-  await render(<DealButton houseId="h1" label="Deal week 1" variant="outline" fill />, { wrapper: House });
+it("says it in the screen's words, in the colour asked for, across the column on a phone", async () => {
+  await render(<DealButton houseId="h1" label="Deal week 1" variant="outline" />, { wrapper: House });
   const button = screen.getByRole('button', { name: 'Deal week 1' });
   expect(button).toHaveStyle({ backgroundColor: 'transparent' });
-  expect(button.parent).not.toHaveStyle({ alignItems: 'flex-start' });
+  // On its own, a ButtonRow puts it across the column (Week's empty page, Today's setup card).
+  expect(button).toHaveStyle({ alignSelf: 'stretch' });
   expect(screen.getByTestId('deal-week')).toBe(button);
 });
 

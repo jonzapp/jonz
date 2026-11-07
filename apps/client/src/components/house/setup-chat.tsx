@@ -43,6 +43,7 @@ import { applyDraft, sendChat } from '@/api/draft';
 import { saveDealMode } from '@/api/settings';
 import { Alert } from '@/components/alert';
 import { Button } from '@/components/button';
+import { ButtonRow } from '@/components/button-row';
 import { LowWarning, OutNotice, usageState } from '@/components/chat/ask-usage';
 import { ChatLog, Composer, ComposerBar, JonzSaid, Said, UserBubble } from '@/components/chat/chat';
 import { Group } from '@/components/group';
@@ -630,20 +631,22 @@ function DraftCard({
         </Meta>
       ) : null}
       {problem ? <Alert message={problem} /> : null}
-      <Button
-        label={
-          pending
-            ? editing
-              ? HOUSE_DRAFT_COPY.applying
-              : HOUSE_DRAFT_COPY.keeping
-            : editing
-              ? HOUSE_DRAFT_COPY.apply(keep.length)
-              : HOUSE_DRAFT_COPY.keep(keep.length)
-        }
-        onPress={onKeep}
-        disabled={pending || keep.length === 0}
-        testID="describe-keep"
-      />
+      <ButtonRow>
+        <Button
+          label={
+            pending
+              ? editing
+                ? HOUSE_DRAFT_COPY.applying
+                : HOUSE_DRAFT_COPY.keeping
+              : editing
+                ? HOUSE_DRAFT_COPY.apply(keep.length)
+                : HOUSE_DRAFT_COPY.keep(keep.length)
+          }
+          onPress={onKeep}
+          disabled={pending || keep.length === 0}
+          testID="describe-keep"
+        />
+      </ButtonRow>
     </View>
   );
 }

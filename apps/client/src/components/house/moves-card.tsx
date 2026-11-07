@@ -6,6 +6,7 @@ import { StyleSheet, View } from 'react-native';
 import { cancelAway, setAway } from '@/api/away';
 import { Alert } from '@/components/alert';
 import { Button } from '@/components/button';
+import { ButtonRow } from '@/components/button-row';
 import { Row, RowIcon } from '@/components/row';
 import { Section } from '@/components/section';
 import { ChoiceRow } from '@/components/setup/choice-row';
@@ -66,12 +67,14 @@ export function MovesCard({ houseId, items }: { houseId: string; items: readonly
         ))}
       </Section>
       {move.problem ? <Alert message={move.problem} /> : null}
-      <Button
-        label={move.pending ? CHAT_MOVES_COPY.applying : CHAT_MOVES_COPY.apply(keep.length)}
-        onPress={() => void apply()}
-        disabled={move.pending || keep.length === 0}
-        testID="moves-apply"
-      />
+      <ButtonRow>
+        <Button
+          label={move.pending ? CHAT_MOVES_COPY.applying : CHAT_MOVES_COPY.apply(keep.length)}
+          onPress={() => void apply()}
+          disabled={move.pending || keep.length === 0}
+          testID="moves-apply"
+        />
+      </ButtonRow>
     </View>
   );
 }

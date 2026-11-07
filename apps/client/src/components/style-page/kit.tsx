@@ -98,19 +98,32 @@ export function Colours() {
   );
 }
 
-/** Every button: each kind alone, then rows of them, then icon buttons and text buttons. */
+/** Every button: each kind alone (as a lone ButtonRow places it), then rows of them, then icon buttons and text buttons. */
 export function Buttons() {
   return (
     <Section label="Buttons" testID="style-buttons">
       <Group>
         <GroupItem>
+          <Meta>Each kind on its own: across the column on a phone, its own width in a wide column.</Meta>
           <View style={styles.stack}>
-            <Button label="Primary, one a screen" icon={PlusIcon} onPress={none} testID="button-primary" />
-            <Button variant="outline" label="Outline" icon={CopyIcon} onPress={none} />
-            <Button variant="ghost" label="Ghost" onPress={none} />
-            <Button variant="hazard" label="Hazard, for undoing" icon={Undo2Icon} onPress={none} />
-            <Button variant="outline" label="Chosen" icon={CheckIcon} chosen onPress={none} />
-            <Button label="Disabled" disabled onPress={none} />
+            <ButtonRow testID="lone-button">
+              <Button label="Primary, one a screen" icon={PlusIcon} onPress={none} testID="button-primary" />
+            </ButtonRow>
+            <ButtonRow>
+              <Button variant="outline" label="Outline" icon={CopyIcon} onPress={none} />
+            </ButtonRow>
+            <ButtonRow>
+              <Button variant="ghost" label="Ghost" onPress={none} />
+            </ButtonRow>
+            <ButtonRow>
+              <Button variant="hazard" label="Hazard, for undoing" icon={Undo2Icon} onPress={none} />
+            </ButtonRow>
+            <ButtonRow>
+              <Button variant="outline" label="Chosen" icon={CheckIcon} chosen onPress={none} />
+            </ButtonRow>
+            <ButtonRow>
+              <Button label="Disabled" disabled onPress={none} />
+            </ButtonRow>
           </View>
         </GroupItem>
         <GroupItem>
@@ -282,7 +295,7 @@ export function Loading() {
 }
 
 const styles = StyleSheet.create({
-  stack: { gap: SPACE.sm, alignItems: 'flex-start' },
+  stack: { gap: SPACE.sm },
   across: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACE.sm, alignItems: 'center' },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACE.sm, alignItems: 'center' },
   swatches: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACE.md },

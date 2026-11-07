@@ -78,7 +78,7 @@ export function SetupCard({
           />
         </CardRows>
         <View style={styles.deal}>
-          <DealButton houseId={houseId} label={NEXT_UP_COPY.dealWeek1} variant={steps.ready ? 'primary' : 'outline'} fill />
+          <DealButton houseId={houseId} label={NEXT_UP_COPY.dealWeek1} variant={steps.ready ? 'primary' : 'outline'} />
         </View>
       </Card>
       <InviteSheet visible={inviting} onClose={() => setInviting(false)} code={joinCode} houseName={houseName} />

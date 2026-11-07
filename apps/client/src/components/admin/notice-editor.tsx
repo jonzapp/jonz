@@ -19,6 +19,7 @@ import { StyleSheet, View } from 'react-native';
 
 import type { SavedNotice } from '@/api/owner';
 import { Button } from '@/components/button';
+import { ButtonRow } from '@/components/button-row';
 import { Field, FieldLabel } from '@/components/field';
 import { Segmented } from '@/components/segmented';
 import { Meta } from '@/components/text';
@@ -184,8 +185,10 @@ export function NoticeEditor({
         )}
       </View>
       <View style={styles.actions}>
-        <Button label={notice === null && form.starts === 'now' ? ADMIN_COPY.saveAndShow : ADMIN_COPY.save} onPress={save} disabled={saving} testID="notice-save" />
-        {onEnd ? <Button label={ADMIN_COPY.endNow} variant="hazard" onPress={onEnd} disabled={saving} testID="notice-end" /> : null}
+        <ButtonRow stacked>
+          <Button label={notice === null && form.starts === 'now' ? ADMIN_COPY.saveAndShow : ADMIN_COPY.save} onPress={save} disabled={saving} testID="notice-save" />
+          {onEnd ? <Button label={ADMIN_COPY.endNow} variant="hazard" onPress={onEnd} disabled={saving} testID="notice-end" /> : null}
+        </ButtonRow>
       </View>
       <Meta>{ADMIN_COPY.auditNote}</Meta>
     </View>
