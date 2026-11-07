@@ -1,10 +1,11 @@
-import { HOUSE_DRAFT_COPY, RESET_COPY, STEADY_COPY, type ChatReset, listAsDraft, NEW_JOHN, NEXT_UP_COPY, starterDraft, tidyDraft, type HouseRules, type JohnDef } from '@app/core';
+import { ASK_CHATS_COPY, ASK_USAGE_COPY, type AskUsage, HOUSE_DRAFT_COPY, RESET_COPY, STEADY_COPY, type ChatReset, listAsDraft, NEW_JOHN, NEXT_UP_COPY, starterDraft, tidyDraft, type HouseRules, type JohnDef } from '@app/core';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import type { ReactNode } from 'react';
 
-import { applyDraft, sendChat } from '@/api/draft';
+import { keepChat } from '@/api/ask-chats';
+import { applyDraft, askUsageOf, sendChat } from '@/api/draft';
 import { undoAction } from '@/api/history';
 import { applyReset } from '@/api/resets';
 import { saveDealMode } from '@/api/settings';
@@ -12,7 +13,12 @@ import { testQueryClient } from '@/testing/query';
 
 import { SetupChat } from './setup-chat';
 
-jest.mock('@/api/draft', () => ({ applyDraft: jest.fn(), sendChat: jest.fn() }));
+jest.mock('@/api/draft', () => ({
+  applyDraft: jest.fn(),
+  sendChat: jest.fn(),
+  askUsageOf: jest.fn(async () => ({ left: 1, house: false, resetsAt: '2026-11-09T00:00:00.000Z', pass: true, people: 2, houseUsed: 0, mineUsed: 0, usedBy: [] })),
+}));
+jest.mock('@/api/ask-chats', () => ({ keepChat: jest.fn(async () => 'chat-1') }));
 jest.mock('@/api/history', () => ({ undoAction: jest.fn() }));
 jest.mock('@/api/resets', () => ({ applyReset: jest.fn() }));
 jest.mock('@/api/settings', () => ({ saveDealMode: jest.fn() }));
@@ -238,9 +244,13 @@ describe('with a list already', () => {
     expect(screen.queryByTestId('starter-family')).toBeNull();
     await say('Bathroom is more work, and no bins');
     expect(chat).toHaveBeenCalledWith('h1', [{ role: 'user', text: 'Bathroom is more work, and no bins' }], base);
-    expect(await screen.findByTestId('draft-change')).toHaveTextContent(/was 3 pts/);
-    expect(screen.getByTestId('draft-john')).toHaveTextContent(new RegExp(HOUSE_DRAFT_COPY.adding));
-    expect(screen.getByTestId('draft-remove')).toHaveTextContent(new RegExp(HOUSE_DRAFT_COPY.removing));
+    expect(await screen.findByTestId('draft-change')).toHaveTextContent(/3 → 4 pts/);
+    // Sorted by what each does, taking off first so it's never missed.
+    const headings = [HOUSE_DRAFT_COPY.removingHeading, HOUSE_DRAFT_COPY.changingHeading, HOUSE_DRAFT_COPY.addingHeading];
+    expect(screen.getByTestId('draft-removes')).toHaveTextContent(new RegExp(`^${headings[0]}`));
+    expect(screen.getByTestId('draft-changes')).toHaveTextContent(new RegExp(`^${headings[1]}`));
+    expect(screen.getByTestId('draft-adds')).toHaveTextContent(new RegExp(`^${headings[2]}`));
+    expect(screen.getByTestId('draft-remove')).toHaveTextContent(/Bins out/);
     expect(screen.getByText(HOUSE_DRAFT_COPY.changesMeta(4, 7))).toBeTruthy();
     await fireEvent.press(screen.getByRole('checkbox', { name: /^Bins out/ }));
     await fireEvent.press(screen.getByRole('button', { name: HOUSE_DRAFT_COPY.apply(2) }));
@@ -248,6 +258,47 @@ describe('with a list already', () => {
     expect(await screen.findByText(HOUSE_DRAFT_COPY.applied(1))).toBeTruthy();
     // The house was asked how it shares Johns when it was new; House rules has it now.
     expect(screen.queryByTestId('chat-mode')).toBeNull();
+    // The chat carries on, from the list as it now is.
+    chat.mockResolvedValue({ reply: 'Anything else?', ask: null, draft: null, source: 'ai' });
+    await say('And the oven?');
+    expect(chat).toHaveBeenLastCalledWith('h1', expect.any(Array), null);
+  });
+
+  it('changes who’s in a group the house has, as a change to tick', async () => {
+    const IVY = '00000000-0000-4000-8000-000000000009';
+    const floor = { id: '44444444-4444-4444-8444-444444444444', name: 'Main floor', memberIds: [ME] };
+    const withFloor = listAsDraft(johns, [floor]);
+    const ivyIn = { ...withFloor, groups: [{ name: 'Main floor', memberIds: [ME, IVY], waitingFor: [] }] };
+    chat.mockResolvedValue({ reply: 'Ivy’s in once you apply.', ask: null, draft: ivyIn, source: 'ai' });
+    await render(
+      <SetupChat houseId="h1" rules={RULES} johns={johns} groups={[floor]} people={[...people, { userId: IVY, name: 'Ivy Moss' }]} me={ME} passOpen />,
+      { wrapper: House },
+    );
+    await say('Add Ivy to main floor');
+    expect(await screen.findByTestId('draft-group-change')).toHaveTextContent(`Main floor${HOUSE_DRAFT_COPY.groupPeople('You', 'You and Ivy')}`);
+    await fireEvent.press(screen.getByRole('button', { name: HOUSE_DRAFT_COPY.apply(1) }));
+    expect(keep).toHaveBeenCalledWith('h1', RULES, withFloor, ivyIn, ['group:Main floor'], { johns, groups: [floor] }, expect.any(Date));
+  });
+
+  it('puts time away Jonz offers on its own card, under its answer', async () => {
+    chat.mockResolvedValue({ reply: 'Booked once you tap.', ask: null, draft: null, source: 'ai', moves: [{ kind: 'away', from: '2026-11-20', to: '2026-11-23' }] });
+    await openList();
+    await say('I’m away 20th to 23rd');
+    expect(await screen.findByTestId('moves-card')).toBeTruthy();
+    expect(screen.getByTestId('move-away')).toBeTruthy();
+    // No list change, so no draft card.
+    expect(screen.queryByTestId('draft-changes')).toBeNull();
+  });
+
+  it('answers someone who can’t change the list, with no starters and no card', async () => {
+    chat.mockResolvedValue({ reply: 'Ben has bins this week.', ask: null, draft: null, source: 'ai' });
+    await render(<SetupChat houseId="h1" rules={RULES} johns={johns} groups={[]} people={people} me={ME} passOpen canChange={false} />, {
+      wrapper: House,
+    });
+    expect(screen.getByText(HOUSE_DRAFT_COPY.greetingAsk)).toBeTruthy();
+    await say('Who has bins?');
+    expect(await screen.findByText('Ben has bins this week.')).toBeTruthy();
+    expect(screen.queryByTestId('draft-card')).toBeNull();
   });
 
   it('offers the House Pass in place of the message box when the house hasn’t got it', async () => {
@@ -317,5 +368,121 @@ describe('fixing mistakes', () => {
     await fireEvent.press(screen.getByRole('button', { name: RESET_COPY.undoAll }));
     expect(await screen.findByText(RESET_COPY.putBack)).toBeTruthy();
     expect(undoAction).toHaveBeenCalledWith('reset-1');
+  });
+});
+
+describe("the week's Ask Jonz", () => {
+  const usage = (over: Partial<AskUsage>): AskUsage => ({
+    left: 1,
+    house: false,
+    resetsAt: '2026-11-09T00:00:00.000Z',
+    pass: true,
+    people: 3,
+    houseUsed: 0,
+    mineUsed: 0,
+    usedBy: [],
+    ...over,
+  });
+
+  it('says nothing while there is plenty left', async () => {
+    (askUsageOf as jest.Mock).mockResolvedValue(usage({ left: 0.62 }));
+    await open();
+    await waitFor(() => expect(askUsageOf).toHaveBeenCalledWith('h1'));
+    expect(screen.queryByTestId('chat-low')).toBeNull();
+    expect(screen.getByTestId('chat-input')).toBeTruthy();
+  });
+
+  it('warns over the box once under a quarter is left, with when more comes', async () => {
+    (askUsageOf as jest.Mock).mockResolvedValue(usage({ left: 0.18 }));
+    await open();
+    expect(await screen.findByTestId('chat-low')).toHaveTextContent(ASK_USAGE_COPY.low(0.18, false, 'Monday at 00:00'));
+    expect(screen.getByTestId('chat-input')).toBeTruthy();
+  });
+
+  it('puts the notice in the box’s place once their half is used, without the Pass', async () => {
+    (askUsageOf as jest.Mock).mockResolvedValue(usage({ left: 0, pass: false }));
+    await open();
+    expect(await screen.findByTestId('chat-out')).toHaveTextContent(ASK_USAGE_COPY.outMine, { exact: false });
+    expect(screen.queryByTestId('chat-input')).toBeNull();
+    expect(screen.queryByTestId('chat-out-pass')).toBeNull();
+    expect(screen.getByTestId('chat-out-usage')).toBeTruthy();
+  });
+
+  it('offers the Pass when the whole house has used its week and has no Pass', async () => {
+    (askUsageOf as jest.Mock).mockResolvedValue(usage({ left: 0, house: true, pass: false }));
+    await open();
+    expect(await screen.findByTestId('chat-out')).toHaveTextContent(ASK_USAGE_COPY.outHouse, { exact: false });
+    expect(screen.getByTestId('chat-out-pass')).toBeTruthy();
+  });
+
+  it('turns the box into the notice when an answer uses the last of it', async () => {
+    (askUsageOf as jest.Mock).mockResolvedValue(usage({ left: 0.5 }));
+    chat.mockResolvedValue({ reply: 'Done.', ask: null, draft: null, source: 'ai', allowance: usage({ left: 0 }) });
+    await open();
+    await say(HOUSE);
+    expect(await screen.findByTestId('chat-out')).toBeTruthy();
+  });
+});
+
+describe('kept chats', () => {
+  const kept = keepChat as jest.Mock;
+
+  it('keeps the chat after each answer: a new one first, then the same one, with no card kept', async () => {
+    await open();
+    await say(HOUSE);
+    await waitFor(() => expect(kept).toHaveBeenCalledTimes(1));
+    expect(kept).toHaveBeenCalledWith('h1', null, [
+      { role: 'user', text: HOUSE },
+      { role: 'assistant', text: 'Here’s a first go.', ask: null, hadCard: true },
+    ]);
+    chat.mockResolvedValueOnce({ reply: 'Bins are Monday.', ask: null, draft: null, source: 'ai' });
+    await say('When are the bins?');
+    await waitFor(() => expect(kept).toHaveBeenCalledTimes(2));
+    expect(kept.mock.calls[1][1]).toBe('chat-1');
+    expect(kept.mock.calls[1][2].at(-1)).toEqual({ role: 'assistant', text: 'Bins are Monday.', ask: null, hadCard: false });
+  });
+
+  it('carries on with a kept chat: its words come back, a card says to ask again, and Jonz is sent what was said', async () => {
+    const johns: JohnDef[] = [{ ...NEW_JOHN, id: 'j1', name: 'Bins out', category: 'bins' } as JohnDef];
+    await render(
+      <SetupChat
+        houseId="h1"
+        rules={RULES}
+        johns={johns}
+        groups={[]}
+        people={people}
+        me={ME}
+        passOpen
+        saved={{
+          id: 'chat-9',
+          title: 'Bins weekly',
+          turns: [
+            { role: 'user', text: 'Bins weekly' },
+            { role: 'assistant', text: 'Here’s the change.', ask: null, hadCard: true },
+          ],
+        }}
+      />,
+      { wrapper: House },
+    );
+    expect(screen.getByText('Bins weekly')).toBeTruthy();
+    expect(screen.getByTestId('chat-old-card')).toHaveTextContent(ASK_CHATS_COPY.oldCard);
+    expect(screen.queryByTestId('draft-card')).toBeNull();
+    chat.mockResolvedValueOnce({ reply: 'Done that.', ask: null, draft: null, source: 'ai' });
+    await say('Thanks');
+    expect(chat.mock.calls[0][1]).toEqual([
+      { role: 'user', text: 'Bins weekly' },
+      { role: 'assistant', text: 'Here’s the change.' },
+      { role: 'user', text: 'Thanks' },
+    ]);
+    await waitFor(() => expect(kept).toHaveBeenCalled());
+    expect(kept.mock.calls[0][1]).toBe('chat-9');
+  });
+
+  it('keeps nothing when only a starter list was tapped', async () => {
+    await open();
+    await fireEvent.press(screen.getByTestId('starter-family'));
+    await fireEvent.press(screen.getByTestId('describe-keep'));
+    await screen.findByTestId('chat-done');
+    expect(kept).not.toHaveBeenCalled();
   });
 });

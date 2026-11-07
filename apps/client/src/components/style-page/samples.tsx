@@ -31,8 +31,10 @@ export function TodaySample() {
           {/* eslint-disable-next-line jonz/no-hand-made-button-row -- Next up's documented layout (docs/style/controls.md) */}
           <View style={styles.nextButtons}>
             <View style={styles.grow}>
+              {/* eslint-disable-next-line jonz/button-in-row -- Next up's documented exception (docs/style/controls.md) */}
               <Button icon={CheckIcon} label="Mark done" onPress={none} />
             </View>
+            {/* eslint-disable-next-line jonz/button-in-row -- Next up's documented exception (docs/style/controls.md) */}
             <Button variant="outline" icon={CameraIcon} label="Photo" onPress={none} />
           </View>
         </View>

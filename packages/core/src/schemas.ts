@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { BUDGETS, CATEGORIES, CURRENCIES, DEAL_MODES, JOHN_WHEN, SETTLE_IN } from "./domain";
+import { BUDGETS, CATEGORIES, CURRENCIES, DEAL_MODES, HOUSE_KINDS, JOHN_WHEN, SETTLE_IN } from "./domain";
 import { PASS_PURCHASES } from "./pass";
 
 // Shapes the apps and the API agree on. The API validates requests with
@@ -41,11 +41,13 @@ export const CreateHouse = z.object({
   timezone: z.string().min(1),
   currency: z.enum(CURRENCIES),
   weekStarts: z.coerce.number().int().min(1).max(7),
+  /** Who lives here: housemates unless it says family. */
+  kind: z.enum(HOUSE_KINDS).optional(),
 });
 export type CreateHouse = z.infer<typeof CreateHouse>;
 
-/** How long a tick can be disputed, in hours: 0 is the honour system. */
-export const DISPUTE_HOURS = [0, 6, 12, 24, 48, 72] as const;
+/** How long a tick can be disputed, in hours: at least 12 in a housemates' house (houses_dispute_hours_fair). */
+export const DISPUTE_HOURS = [12, 24, 48, 72] as const;
 
 /** How long past its due time a John stays its owner's before a housemate can cover it (houses.cover_grace_hours). */
 export const COVER_GRACE_HOURS = [0, 1, 3, 6, 12, 24] as const;
@@ -85,6 +87,8 @@ export const HouseSettings = z.object({
   /** Steady weeks: absent from a form that doesn't show them, like coverGraceHours. */
   dealMode: z.enum(DEAL_MODES).optional(),
   dealBudget: z.coerce.number().int().refine((n) => (BUDGETS as readonly number[]).includes(n)).optional(),
+  /** In a family: the most each kid can earn in a month (houses.pocket_cap_minor). Absent from a housemates' form. */
+  pocketCapMinor: amount.optional(),
 });
 export type HouseSettings = z.infer<typeof HouseSettings>;
 
@@ -117,6 +121,12 @@ export const JohnDraft = z.object({
   crew: z.coerce.number().int().min(0).max(6).default(1),
   // Keep its day (johns.keep_day): always dealt, on its own day. Never on call.
   keepDay: z.boolean().default(false),
+  // In a family (johns.pay_minor): what it earns a kid. Absent from a form
+  // that doesn't show it, which leaves the John's as it is.
+  payMinor: amount.optional(),
+  // In a family (johns.min_age): the youngest a kid can be to be dealt it,
+  // or null for anyone. Absent leaves the John's as it is.
+  minAge: z.number().int().min(2, "Give an age from 2 to 18.").max(18, "Give an age from 2 to 18.").nullable().optional(),
 }).refine((j) => (j.everyMonths === null) === (j.weekOfMonth === null), "Say which week of the month it lands in.");
 export type JohnDraft = z.infer<typeof JohnDraft>;
 /** A JohnDraft before it is checked: the monthly fields may be left out (a weekly John). */
@@ -170,6 +180,10 @@ export function disputeProblem(issues: readonly { path: readonly PropertyKey[]; 
 /** POST /api/disputes/:id/votes: `uphold` true says it wasn't done. */
 export const CastVote = z.object({ uphold: z.boolean() });
 export type CastVote = z.infer<typeof CastVote>;
+
+/** POST /api/oks/:assignmentId: a parent answers a kid's tick (family step 2). `ok` false is Not yet. */
+export const AnswerTick = z.object({ ok: z.boolean() });
+export type AnswerTick = z.infer<typeof AnswerTick>;
 
 /** POST /api/deal: hand out this week's Johns, or re-deal a week nobody has ticked in. */
 export const DealRequest = z.object({ houseId: z.uuid() });

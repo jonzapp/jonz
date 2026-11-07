@@ -1,6 +1,8 @@
 import {
+  familyHides,
   HOUSE_LOWER_COPY,
   HOUSE_PAGE_COPY,
+  memberCan,
   monthOf,
   overviewFigures,
   PAGE_TITLE,
@@ -13,6 +15,7 @@ import type { Href } from 'expo-router';
 import { Avatar } from '@/components/avatar';
 import { Figures } from '@/components/figures';
 import { PassLocked, PassSection } from '@/components/house-page/pass-section';
+import { PocketSection } from '@/components/house-page/pocket-section';
 import { SettleUpSection } from '@/components/house-page/settle-up';
 import { SetupSection } from '@/components/house-page/setup-section';
 import { TableSection } from '@/components/house-page/table-section';
@@ -29,6 +32,7 @@ import { useAway } from '@/hooks/use-away';
 import { useHouse, type HouseView } from '@/hooks/use-house';
 import { useJohnList } from '@/hooks/use-john-list';
 import { useMembership } from '@/hooks/use-membership';
+import { usePocket } from '@/hooks/use-pocket';
 import { usePull, useReadOnFocus } from '@/hooks/use-refresh';
 import { useStake } from '@/hooks/use-stake';
 import { useTable } from '@/hooks/use-table';
@@ -52,15 +56,16 @@ function HouseFor({ houseId, userId }: { houseId: string; userId: string }) {
   const table = useTable(houseId, query.data);
   const stake = useStake(houseId, query.data);
   const away = useAway(houseId, query.data);
+  const pocket = usePocket(houseId, query.data);
   // Who lives here, the rules and time away aren't sent over Realtime, so
   // read the house again each time House comes into view.
   useReadOnFocus(query.refetch);
   const { refreshing, pull } = usePull(houseId, () =>
-    Promise.all([query.refetch(), table.refetch(), stake.refetch(), away.refetch()]),
+    Promise.all([query.refetch(), table.refetch(), stake.refetch(), away.refetch(), pocket.refetch()]),
   );
 
   const snapshot = view?.snapshot;
-  const bar = <TitleBar title={snapshot?.house.name ?? PAGE_TITLE.house} ask={view?.me?.role === 'admin'} />;
+  const bar = <TitleBar title={snapshot?.house.name ?? PAGE_TITLE.house} ask={memberCan(view?.me, 'house.read')} />;
 
   return (
     <Screen bar={bar} fills refreshing={refreshing} onRefresh={pull} testID="house-screen">
@@ -72,7 +77,7 @@ function HouseFor({ houseId, userId }: { houseId: string; userId: string }) {
           <Reading />
         )
       ) : (
-        <HouseSections houseId={houseId} userId={userId} view={view} table={table} stake={stake} away={away} />
+        <HouseSections houseId={houseId} userId={userId} view={view} table={table} stake={stake} away={away} pocket={pocket} />
       )}
     </Screen>
   );
@@ -101,6 +106,7 @@ function HouseSections({
   table,
   stake,
   away,
+  pocket,
 }: {
   houseId: string;
   userId: string;
@@ -108,6 +114,7 @@ function HouseSections({
   table: ReturnType<typeof useTable>;
   stake: ReturnType<typeof useStake>;
   away: ReturnType<typeof useAway>;
+  pocket: ReturnType<typeof usePocket>;
 }) {
   const { listed } = useHouseWorkspace();
   const list = useJohnList(houseId);
@@ -124,9 +131,13 @@ function HouseSections({
     johns: list.data?.johns,
   }).map((figure) => ({ ...figure, href: FIGURE_PAGE[figure.key] }));
   const me = view.me;
+  // A family has no Stake: no money figures, no settling up (familyHides). Pocket money in their place.
+  const noStake = familyHides(view.snapshot.house.kind).stake;
   return (
     <>
-      {unlocked ? (
+      {noStake ? (
+        <PocketSection houseId={houseId} userId={userId} view={view} pocket={pocket} />
+      ) : unlocked ? (
         <>
           {stake.isError ? <ReadFailed message={HOUSE_PAGE_COPY.stakeUnreadable} onRetry={() => void stake.refetch()} /> : null}
           <Figures figures={figures} label={HOUSE_PAGE_COPY.figures} testID="house-figures" />
@@ -139,7 +150,7 @@ function HouseSections({
         testID="house-pair"
         start={
           unlocked ? (
-            <TableSection userId={userId} view={view} table={table} stake={stake} away={away} />
+            <TableSection userId={userId} view={view} table={table} stake={stake} away={away} pocket={pocket} />
           ) : (
             <PassLocked label={PASS_COPY.table} feature={PASS_COPY.table} testID="table-locked" />
           )

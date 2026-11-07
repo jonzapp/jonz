@@ -1,4 +1,4 @@
-import { SECTION_LABEL } from "@app/core";
+import { memberCan, SECTION_LABEL } from "@app/core";
 import { Tabs } from "expo-router/js-tabs";
 import { useMemo } from "react";
 import { StyleSheet, useWindowDimensions, View } from "react-native";
@@ -44,10 +44,12 @@ export default function HouseLayout() {
   const shell: ShellHouse = {
     name: view?.snapshot.house.name ?? house!.name,
     memberCount: view?.snapshot.members.length ?? 1,
+    family: view?.snapshot.house.kind === "family",
   };
-  const toVote = view?.today.toVote.length ?? 0;
+  // The Today tab's badge: votes waiting for you, or in a family, kids' ticks waiting for your OK.
+  const toVote = (view?.today.toVote.length ?? 0) + (view?.today.toOk.length ?? 0);
   // What a tour's steps depend on, as the tour starts.
-  const admin = view?.me?.role === "admin";
+  const admin = memberCan(view?.me, "house.settings");
   const toCheck = toVote + (view?.today.toCover.length ?? 0) > 0;
   const hasJohns = (view?.today.mine.length ?? 0) > 0;
   const facts = useMemo(
@@ -73,7 +75,7 @@ export default function HouseLayout() {
         >
           <JohnSheetProvider houseId={house!.id} userId={session!.user.id}>
             <AskPanelProvider>
-              <TourProvider facts={facts}>
+              <TourProvider facts={facts} canAsk={memberCan(view?.me, "house.read")}>
               <View style={styles.row}>
                 <View style={styles.page}>
                   <Tabs

@@ -103,7 +103,7 @@ test("ask Jonz from Today to change the list, and apply what's ticked", async ({
   await page.getByTestId("chat-input").fill(`${couple[0].name} is more work, no ${couple[1].name}, and add windows`);
   await page.getByTestId("chat-send").click();
 
-  await expect(page.getByTestId("draft-change")).toContainText(`was ${couple[0].points} pts`);
+  await expect(page.getByTestId("draft-change")).toContainText(`${couple[0].points} → `);
   await expect(page.getByTestId("draft-remove")).toContainText(couple[1].name);
   await expect(page.getByTestId("draft-john")).toContainText("Windows");
   await page.getByTestId("describe-keep").click();

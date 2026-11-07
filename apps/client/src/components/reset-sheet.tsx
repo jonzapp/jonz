@@ -6,6 +6,7 @@ import { StyleSheet, View } from 'react-native';
 import { applyReset, previewReset, type ResetAsk } from '@/api/resets';
 import { Alert } from '@/components/alert';
 import { Button } from '@/components/button';
+import { ButtonRow } from '@/components/button-row';
 import { ConfirmSheet } from '@/components/confirm-sheet';
 import { Reading, ReadFailed } from '@/components/read-state';
 import { Body, Meta, RowTitle } from '@/components/text';
@@ -152,10 +153,12 @@ export function ResetPanel({
       {sheet ? <Body>{sheet.body}</Body> : preview.data?.nothing ? <Body>{RESET_COPY.nothing}</Body> : null}
       {sheet ? <ResetLines sheet={sheet} /> : <Waiting reset={reset} />}
       {move.problem ? <Alert message={move.problem} /> : null}
-      {sheet ? (
-        <Button variant="hazard" icon={RotateCcwIcon} label={sheet.confirm} disabled={move.pending} onPress={() => void reset.confirm()} testID="confirm" />
-      ) : null}
-      <Button variant="outline" label={FOCUS_SHELL_COPY.cancel} disabled={move.pending} onPress={onClose} testID="cancel" />
+      <ButtonRow stacked>
+        {sheet ? (
+          <Button variant="hazard" icon={RotateCcwIcon} label={sheet.confirm} disabled={move.pending} onPress={() => void reset.confirm()} testID="confirm" />
+        ) : null}
+        <Button variant="outline" label={FOCUS_SHELL_COPY.cancel} disabled={move.pending} onPress={onClose} testID="cancel" />
+      </ButtonRow>
     </View>
   );
 }

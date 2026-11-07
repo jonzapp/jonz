@@ -3,6 +3,9 @@
 // and the tests all run the same code. Every function that depends on time
 // takes `now`.
 export * from "./account-deletion";
+export * from "./ask-chats";
+export * from "./ask-coverage";
+export * from "./chat-moves";
 export * from "./admin-list";
 export * from "./auth-paths";
 export * from "./away";
@@ -17,6 +20,9 @@ export * from "./email";
 export * from "./auth-email";
 export * from "./email-sign-in";
 export * from "./errors";
+export * from "./family";
+export * from "./pocket";
+export * from "./kids";
 export * from "./format";
 export * from "./history";
 export * from "./inbound-email";
@@ -26,6 +32,11 @@ export * from "./money";
 export * from "./moving";
 export * from "./notices";
 export * from "./owner-admin";
+export * from "./permissions";
+export * from "./reply-format";
+export * from "./how-it-works";
+export * from "./reply-samples";
+export * from "./owner-messages";
 export * from "./reports";
 export * from "./qr-shape";
 export * from "./notify";
@@ -63,4 +74,6 @@ export * from "./house-lower";
 export * from "./setup";
 export * from "./front-door";
 export * from "./house-draft";
+export * from "./owner-ask";
+export * from "./draft-edits";
 export type * from "./db-types";

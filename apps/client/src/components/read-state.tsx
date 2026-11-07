@@ -4,6 +4,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { Alert } from '@/components/alert';
 import { Button } from '@/components/button';
+import { ButtonRow } from '@/components/button-row';
 import { SPACE, useTheme } from '@/theme';
 
 /** A screen's first read on its way: a spinner, named for a screen reader. */
@@ -17,9 +18,9 @@ export function ReadFailed({ message = FOCUS_SHELL_COPY.unreadable, onRetry }: {
   return (
     <View style={styles.failed}>
       <Alert message={message} />
-      <View style={styles.start}>
+      <ButtonRow atEdge>
         <Button variant="outline" icon={RefreshCwIcon} label={FOCUS_SHELL_COPY.retry} onPress={onRetry} />
-      </View>
+      </ButtonRow>
     </View>
   );
 }
@@ -27,5 +28,4 @@ export function ReadFailed({ message = FOCUS_SHELL_COPY.unreadable, onRetry }: {
 const styles = StyleSheet.create({
   reading: { marginTop: SPACE.xxl },
   failed: { gap: SPACE.lg },
-  start: { alignItems: 'flex-start' },
 });

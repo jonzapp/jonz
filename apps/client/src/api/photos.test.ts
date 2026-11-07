@@ -65,9 +65,9 @@ describe('pickPhoto', () => {
 
   it('says where to allow the camera or photos when the app may not use them', async () => {
     picker.requestCameraPermissionsAsync.mockResolvedValue({ granted: false });
-    await expect(pickPhoto('camera')).rejects.toThrow('Jonz needs the camera for photo receipts. Allow it in Settings.');
+    await expect(pickPhoto('camera')).rejects.toThrow('Jonz needs the camera for photos. Allow it in Settings.');
     picker.requestMediaLibraryPermissionsAsync.mockResolvedValue({ granted: false });
-    await expect(pickPhoto('library')).rejects.toThrow('Jonz needs your photos for photo receipts. Allow it in Settings.');
+    await expect(pickPhoto('library')).rejects.toThrow('Jonz needs your photos for this. Allow it in Settings.');
     expect(picker.launchCameraAsync).not.toHaveBeenCalled();
     expect(picker.launchImageLibraryAsync).not.toHaveBeenCalled();
   });

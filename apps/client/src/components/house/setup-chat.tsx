@@ -1,14 +1,15 @@
 import {
+  ASK_CHATS_COPY,
   CATEGORIES,
   changedLine,
   CHAT_MAX_MESSAGES,
   DEAL_MODES,
   draftChanges,
+  groupChanges,
   DOW_LABEL,
   HOUSE_DRAFT_COPY,
   listAsDraft,
   MESSAGE_MAX,
-  withAlpha,
   membersLine,
   pointsLabel,
   scheduleLine,
@@ -18,6 +19,7 @@ import {
   weeklyEffort,
   type ChatAsk,
   type ChatMessage,
+  type ChatMove,
   type ChatReset,
   type DealMode,
   type DraftChange,
@@ -27,28 +29,38 @@ import {
   type HouseRules,
   type JohnDef,
   type IsoDow,
+  type SavedTurn,
   type StarterKind,
 } from '@app/core';
 import { router } from 'expo-router';
-import { ArrowUpIcon, CheckIcon } from 'lucide-react-native';
-import { useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type ScrollViewInstance } from 'react-native';
+import { CheckIcon, MinusIcon, PencilIcon, PlusIcon } from 'lucide-react-native';
+import { useQueryClient } from '@tanstack/react-query';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { StyleSheet, View } from 'react-native';
 
+import { keepChat, type SavedChat } from '@/api/ask-chats';
 import { applyDraft, sendChat } from '@/api/draft';
 import { saveDealMode } from '@/api/settings';
 import { Alert } from '@/components/alert';
 import { Button } from '@/components/button';
+import { ButtonRow } from '@/components/button-row';
+import { LowWarning, OutNotice, usageState } from '@/components/chat/ask-usage';
+import { ChatLog, Composer, ComposerBar, JonzSaid, Said, UserBubble } from '@/components/chat/chat';
 import { Group } from '@/components/group';
 import { Row, RowIcon } from '@/components/row';
 import { Section } from '@/components/section';
 import { Segmented } from '@/components/segmented';
+import { MovesCard } from '@/components/house/moves-card';
 import { ResetsCard } from '@/components/house/resets-card';
-import { stepsShown, Thinking, ThoughtFold } from '@/components/house/thinking';
+import { NO_PIECES, type ReplyPieces } from '@/components/reply/reply';
+import { stepsShown, Thinking } from '@/components/house/thinking';
 import { ChoiceRow } from '@/components/setup/choice-row';
 import { Body, Meta } from '@/components/text';
 import { TextButton } from '@/components/text-button';
+import { useAskUsage } from '@/hooks/use-ask-usage';
+import { askChatsKey } from '@/hooks/keys';
 import { useMove } from '@/hooks/use-move';
-import { CONTENT_MAX, GUTTER, INSET, RADIUS, SECTION_GAP, SPACE, TAP, useTheme } from '@/theme';
+import { INSET, SPACE, useTheme } from '@/theme';
 
 type Person = { userId: string; name: string };
 
@@ -65,23 +77,46 @@ type Turn =
       ask: ChatAsk | null;
       draft: HouseDraft | null;
       resets?: ChatReset[];
+      /** Other moves Jonz put on a card (time away). */
+      moves?: ChatMove[];
       /** How long Jonz thought, and the steps it showed meanwhile; a starter list has none. */
       thought?: { seconds: number; steps: string[] };
+      /** A reply from a chat kept earlier that had a card then: the card isn't kept, so it says to ask again. */
+      old?: boolean;
     }
   | { role: 'done'; added: number };
 
-/** The box's inside height for one line: a thumb tall with its edge. */
-const LINE = TAP - 2;
-/** The message box at its tallest: five lines, then it scrolls. */
-const BOX_MAX = LINE + 4 * 24;
-/** No focus ring of the browser's own round the words: the bubble round them darkens instead. */
-const NO_RING = Platform.OS === 'web' ? ({ outlineStyle: 'none' } as object) : null;
-/** The send arrow's round, and its room from the bubble's edge (the same all round, one line tall). */
-const SEND = 34;
-const SEND_INSET = (LINE - SEND) / 2;
+/** A kept chat's turns as the chat shows them: no card comes back, only that there was one. */
+export function fromSaved(saved: readonly SavedTurn[]): Turn[] {
+  return saved.map((t) =>
+    t.role === 'assistant' ? { role: 'assistant', text: t.text, ask: t.ask, draft: null, old: t.hadCard } : t,
+  );
+}
 
-/** How many of the draft's Johns show before "See all". */
+/** The chat's turns as they're kept: what was said, and whether a reply had a card. */
+export function toSaved(turns: readonly Turn[]): SavedTurn[] {
+  return turns.map((t) =>
+    t.role === 'assistant'
+      ? {
+          role: 'assistant',
+          text: t.text,
+          ask: t.ask,
+          hadCard: Boolean(t.old || t.draft || t.resets?.length || t.moves?.length),
+        }
+      : t,
+  );
+}
+
+/** The time, for how long Jonz thought: read in a send, never while drawing. */
+const clock = () => Date.now();
+
+/** How many of a new house's drafted Johns show before "See all". */
 const FOLDED = 3;
+/** How many changes to a list show before "See all": most asks are a few, and all of them show. */
+const CHANGES_FOLDED = 6;
+
+/** The card's sections, in the order it shows them: what goes first, so it's never missed. */
+const KINDS = ['remove', 'change', 'add'] as const;
 
 /** "Sam", "Sam and Priya", "Sam, Priya and Tom". */
 function namesList(names: readonly string[]): string {
@@ -119,7 +154,11 @@ export function SetupChat({
   people,
   me,
   passOpen,
+  canChange = true,
   onOpenList = () => router.dismissTo('/house/johns'),
+  pieces = NO_PIECES,
+  saved = null,
+  onKept,
 }: {
   houseId: string;
   rules: HouseRules;
@@ -131,28 +170,44 @@ export function SetupChat({
   me: string;
   /** Whether the House Pass's extras are open to this house: changing a list with Jonz is one. */
   passOpen: boolean;
+  /** Whether this person may change the list (an admin, a parent). Without it, Jonz answers questions and drafts nothing. */
+  canChange?: boolean;
   /** The done row's way to the John list: back down the stack on a page, across to it from the side panel. */
   onOpenList?: () => void;
+  /** What Jonz's replies' chips and cards stand for (components/reply/pieces.tsx); without it they're words. */
+  pieces?: ReplyPieces;
+  /** A chat kept earlier, to carry on with; none starts a new one. Remount (a new key) to switch. */
+  saved?: SavedChat | null;
+  /** The chat is kept, under this id: after each answer, so it's never lost. */
+  onKept?: (id: string) => void;
 }) {
-  const { colors, type } = useTheme();
-  const scroll = useRef<ScrollViewInstance>(null);
   const keeping = useMove(houseId);
-  // The list as the chat found it: what a draft's changes are counted from. Read once, so applying doesn't move it.
-  const [base] = useState(() => (johns.length > 0 ? listAsDraft(johns, groups) : null));
+  // The list as the chat found it: what a draft's changes are counted from. Held while a draft is open, so
+  // applying doesn't move it under the card; once a draft is applied, it's the list as it now is.
+  const live = useMemo(() => (johns.length > 0 ? listAsDraft(johns, groups) : null), [johns, groups]);
+  const [held, setHeld] = useState(live);
+  const [rebase, setRebase] = useState(false);
+  const base = rebase ? live : held;
   const editing = base !== null;
-  const [turns, setTurns] = useState<Turn[]>([]);
+  const [turns, setTurns] = useState<Turn[]>(() => fromSaved(saved?.turns ?? []));
+  const chatId = useRef(saved?.id ?? null);
+  // Keeping goes one at a time, so the first answer's new row is the one the next answer updates.
+  const queue = useRef<Promise<void>>(Promise.resolve());
+  const unkept = useRef(false);
+  // Only a chat with something written in it is kept: a starter list tapped and kept is no chat to come back to.
+  const written = useRef((saved?.turns.length ?? 0) > 0);
+  const client = useQueryClient();
   const [draft, setDraft] = useState<HouseDraft | null>(base);
   const [keep, setKeep] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
-  // How tall the words in the box come out, measured off-screen: the box grows to fit them, up to BOX_MAX.
-  const [wordsHeight, setWordsHeight] = useState(0);
-  // The bubble shows the focus, not the words inside it.
-  const [focused, setFocused] = useState(false);
   const [sending, setSending] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
+  const usage = useAskUsage(houseId);
+  const week = usageState(usage.data);
 
-  const done = turns.some((t) => t.role === 'done');
+  // A new house's chat ends once its first list is in (the deal question follows); a list's chat carries on.
+  const done = !editing && turns.some((t) => t.role === 'done');
   const busy = sending || keeping.pending;
   // The draft card sits under the turn that last changed the draft; only Jonz's last question can be answered.
   const draftAt = turns.findLastIndex((t) => t.role === 'assistant' && t.draft !== null);
@@ -161,11 +216,35 @@ export function SetupChat({
   // What Jonz shows itself doing while it answers: "your list" once there's a draft or a list to look at.
   const steps = HOUSE_DRAFT_COPY.thinkingSteps(draft !== null);
 
+  // Each answer (and each list applied) keeps the chat as it now is. A chat that can't be kept carries on
+  // regardless: keeping is for coming back to it, never in the way of it.
+  useEffect(() => {
+    if (!unkept.current || !written.current || turns.length === 0) return;
+    unkept.current = false;
+    const kept = toSaved(turns);
+    queue.current = queue.current.then(async () => {
+      try {
+        chatId.current = await keepChat(houseId, chatId.current, kept);
+        onKept?.(chatId.current);
+        await client.invalidateQueries({ queryKey: askChatsKey(houseId) });
+      } catch {
+        // Not kept this time; the next answer tries again with the whole chat.
+        unkept.current = true;
+      }
+    });
+  }, [turns, houseId, client, onKept]);
+
   function answered(reply: Turn & { role: 'assistant' }, said: Turn[]) {
+    unkept.current = true;
     setTurns([...said, reply]);
     if (reply.draft) {
+      // A new draft holds the list it was made from until it's applied.
+      if (rebase) {
+        setHeld(live);
+        setRebase(false);
+      }
       setDraft(reply.draft);
-      setKeep(draftChanges(base, reply.draft).map((c) => c.key));
+      setKeep([...draftChanges(base, reply.draft), ...groupChanges(base, reply.draft)].map((c) => c.key));
     }
   }
 
@@ -174,24 +253,28 @@ export function SetupChat({
     if (!said || busy || done) return;
     const before = turns;
     const next: Turn[] = [...turns, { role: 'user', text: said }];
+    written.current = true;
     setTurns(next);
     setText('');
     setProblem(null);
     setSending(true);
-    const asked = Date.now();
+    const asked = clock();
     try {
       const messages: ChatMessage[] = next
         .flatMap((t) => (t.role === 'done' || !t.text ? [] : [{ role: t.role, text: t.text }]))
         .slice(-CHAT_MAX_MESSAGES);
       const answer = await sendChat(houseId, messages, draft);
-      const took = Date.now() - asked;
+      const took = clock() - asked;
       const thought = { seconds: Math.max(1, Math.round(took / 1000)), steps: stepsShown(steps, took) };
-      answered({ role: 'assistant', text: answer.reply, ask: answer.ask, draft: answer.draft, resets: answer.resets, thought }, next);
+      if (answer.allowance) usage.put(answer.allowance);
+      answered({ role: 'assistant', text: answer.reply, ask: answer.ask, draft: answer.draft, resets: answer.resets, moves: answer.moves, thought }, next);
     } catch (reason) {
       // Refused (too many today, say): what was said goes back in the box to try again.
       setTurns(before);
       setText(said);
       setProblem(reason instanceof Error ? reason.message : String(reason));
+      // Used up while they wrote: the box gives way to the notice.
+      void usage.refetch();
     } finally {
       setSending(false);
     }
@@ -206,8 +289,12 @@ export function SetupChat({
     if (!draft) return;
     let added = 0;
     if (await keeping.run(async () => (added = await applyDraft(houseId, rules, base, draft, keep, { johns, groups }, new Date())))) {
+      unkept.current = true;
       setTurns((was) => [...was, { role: 'done', added }]);
+      // A list's chat carries on from the list as it now is, read again from the house. A new house's
+      // chat ends here (the deal question follows), so it keeps the base it had.
       setDraft(null);
+      if (editing) setRebase(true);
     }
   }
 
@@ -215,187 +302,124 @@ export function SetupChat({
   const gated = editing && !passOpen;
   const nameOf = (id: string) => (id === me ? 'You' : (people.find((p) => p.userId === id)?.name ?? 'Someone'));
 
+  const placeholder = !canChange
+    ? HOUSE_DRAFT_COPY.placeholderAsk
+    : editing && turns.length === 0
+      ? HOUSE_DRAFT_COPY.placeholderList
+      : draft
+        ? HOUSE_DRAFT_COPY.placeholderChange
+        : HOUSE_DRAFT_COPY.placeholder;
+
   return (
-    <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView
-        ref={scroll}
-        style={styles.fill}
-        contentContainerStyle={styles.chat}
-        keyboardShouldPersistTaps="handled"
-        onContentSizeChange={() => scroll.current?.scrollToEnd({ animated: true })}
-        testID="chat"
-      >
-        <View style={styles.said} testID="chat-greeting">
-          <Body>{editing ? HOUSE_DRAFT_COPY.greetingList : HOUSE_DRAFT_COPY.greeting}</Body>
-          {editing && turns.length === 0 ? <Meta>{HOUSE_DRAFT_COPY.privacy}</Meta> : null}
-          {!editing && turns.length === 0 ? (
-            <>
-              <Meta>{HOUSE_DRAFT_COPY.orStart}</Meta>
-              <View style={styles.choices}>
-                {STARTER_KINDS.map((kind) => (
-                  <Button
-                    key={kind}
-                    variant="outline"
-                    label={HOUSE_DRAFT_COPY.starter[kind].title}
-                    spoken={`${HOUSE_DRAFT_COPY.starter[kind].title}: ${HOUSE_DRAFT_COPY.starter[kind].meta}`}
-                    onPress={() => pick(kind)}
-                    testID={`starter-${kind}`}
-                  />
-                ))}
-              </View>
-              <Meta>{HOUSE_DRAFT_COPY.privacy}</Meta>
-            </>
-          ) : null}
-        </View>
-
-        {turns.map((turn, at) => {
-          if (turn.role === 'user') {
-            return (
-              <View key={at} style={[styles.bubble, { backgroundColor: colors.secondary }]} testID="chat-user">
-                <Body>{turn.text}</Body>
-              </View>
-            );
-          }
-          if (turn.role === 'done') {
-            const row = (
-              <Group testID="chat-done">
-                <Row
-                  title={editing ? HOUSE_DRAFT_COPY.applied(turn.added) : HOUSE_DRAFT_COPY.added(turn.added)}
-                  meta={editing ? HOUSE_DRAFT_COPY.appliedMeta : HOUSE_DRAFT_COPY.addedMeta}
-                  leading={<RowIcon icon={CheckIcon} />}
-                  onPress={onOpenList}
-                  accessibilityLabel={`${editing ? HOUSE_DRAFT_COPY.applied(turn.added) : HOUSE_DRAFT_COPY.added(turn.added)}. ${HOUSE_DRAFT_COPY.openList}`}
-                  chevron
-                  testID="chat-open-list"
-                />
-              </Group>
-            );
-            // A new house's one question about the deal, asked once its first list is in.
-            return editing ? (
-              <View key={at}>{row}</View>
-            ) : (
-              <View key={at} style={styles.said}>
-                {row}
-                <ModeAsk houseId={houseId} start={rules.dealMode} />
-              </View>
-            );
-          }
-          return (
-            <View key={at} style={styles.said}>
-              {turn.thought ? <ThoughtFold seconds={turn.thought.seconds} steps={turn.thought.steps} /> : null}
-              {turn.text ? <Body testID="chat-reply">{turn.text}</Body> : null}
-              {/* The question's answers sit under the question, over the draft it's about. */}
-              {turn === last && ask ? <AskCard ask={ask} weekStarts={rules.weekStarts} onAnswer={(a) => void send(a)} /> : null}
-              {/* A turn that changes nothing on a house's list (a question, say) has no card. */}
-              {at === draftAt && draft && (!editing || draftChanges(base, draft).length > 0) ? (
-                <DraftCard
-                  base={base}
-                  draft={draft}
-                  keep={keep}
-                  open={open}
-                  onOpen={setOpen}
-                  onToggle={toggle}
-                  onKeep={() => void add()}
-                  pending={keeping.pending}
-                  problem={keeping.problem}
-                  people={people}
-                  me={me}
-                />
-              ) : null}
-              {turn.resets && turn.resets.length > 0 ? (
-                <ResetsCard houseId={houseId} items={turn.resets} me={me} nameOf={nameOf} currency={rules.currency} zone={rules.timezone} />
-              ) : null}
-            </View>
-          );
-        })}
-
-        {sending ? <Thinking steps={steps} /> : null}
-      </ScrollView>
-
-      {done ? null : gated ? (
-        <View style={[styles.composer, { borderColor: colors.border, backgroundColor: colors.background }]}>
-          <View style={styles.composerLine} testID="chat-pass">
+    <ChatLog
+      foot={
+        done ? null : gated ? (
+          <ComposerBar testID="chat-pass">
             <Meta>{HOUSE_DRAFT_COPY.passNeeded}</Meta>
             <Button variant="outline" label={HOUSE_DRAFT_COPY.seePass} href="/house/pass" testID="chat-see-pass" />
-          </View>
-        </View>
-      ) : (
-        <View style={[styles.composer, { borderColor: colors.border, backgroundColor: colors.background }]}>
-          <View style={styles.composerLine}>
-            {problem ? <Alert message={problem} /> : null}
-            {/* One bubble, as in the Claude app: the words, and the send arrow inside it at the bottom right. */}
-            <View
-              style={[styles.box, { borderColor: focused ? colors.foreground : colors.mutedForeground, backgroundColor: colors.card }]}
-              testID="chat-box"
-            >
-              <View style={styles.field}>
-                {/* The words as the box would wrap them, unseen, so the box can be as tall as they are. */}
-                <Text
-                  aria-hidden
-                  importantForAccessibility="no-hide-descendants"
-                  pointerEvents="none"
-                  onLayout={(e) => setWordsHeight(e.nativeEvent.layout.height)}
-                  style={[styles.input, styles.measure, type.body]}
-                >
-                  {`${text}\u200b`}
-                </Text>
-                <TextInput
-                  accessibilityLabel={HOUSE_DRAFT_COPY.message}
-                  placeholder={
-                    editing && turns.length === 0
-                      ? HOUSE_DRAFT_COPY.placeholderList
-                      : draft
-                        ? HOUSE_DRAFT_COPY.placeholderChange
-                        : HOUSE_DRAFT_COPY.placeholder
-                  }
-                  placeholderTextColor={withAlpha(colors.mutedForeground, 0.7)}
-                  value={text}
-                  onChangeText={setText}
-                  onFocus={() => setFocused(true)}
-                  onBlur={() => setFocused(false)}
-                  maxLength={MESSAGE_MAX}
-                  // As in other chat apps: one line while empty, the hint cut short rather than spilling; as you
-                  // write it grows to show the whole message, up to BOX_MAX, then scrolls inside itself.
-                  multiline
-                  numberOfLines={1}
-                  scrollEnabled
-                  style={[
-                    styles.input,
-                    { fontFamily: type.body.fontFamily, fontSize: type.body.fontSize, lineHeight: type.body.lineHeight },
-                    { height: text ? Math.min(Math.max(wordsHeight, LINE), BOX_MAX) : LINE },
-                    { color: colors.foreground },
-                    NO_RING,
-                  ]}
-                  testID="chat-input"
-                />
-              </View>
-              <SendButton onPress={() => void send(text)} disabled={busy || !text.trim()} />
-            </View>
-          </View>
-        </View>
-      )}
-    </KeyboardAvoidingView>
-  );
-}
-
-/** The send arrow inside the message box: amber once there's something to send, quiet until then. */
-function SendButton({ onPress, disabled }: { onPress: () => void; disabled: boolean }) {
-  const { colors } = useTheme();
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={HOUSE_DRAFT_COPY.send}
-      accessibilityState={{ disabled }}
-      disabled={disabled}
-      onPress={onPress}
-      hitSlop={SEND_INSET}
-      testID="chat-send"
-      style={({ pressed }) => [styles.send, pressed && { opacity: 0.85 }]}
+          </ComposerBar>
+        ) : week === 'out' && usage.data ? (
+          <OutNotice usage={usage.data} zone={rules.timezone} />
+        ) : (
+          <>
+            {week === 'low' && usage.data ? <LowWarning usage={usage.data} zone={rules.timezone} /> : null}
+            <Composer
+              value={text}
+              onChangeText={setText}
+              onSend={() => void send(text)}
+              busy={busy}
+              placeholder={placeholder}
+              label={HOUSE_DRAFT_COPY.message}
+              sendLabel={HOUSE_DRAFT_COPY.send}
+              maxLength={MESSAGE_MAX}
+              problem={problem}
+            />
+          </>
+        )
+      }
     >
-      <View style={[styles.sendDot, { backgroundColor: disabled ? colors.secondary : colors.hivis }]}>
-        <ArrowUpIcon size={18} color={disabled ? colors.mutedForeground : colors.onHivis} aria-hidden />
-      </View>
-    </Pressable>
+      <Said testID="chat-greeting">
+        <Body>{!canChange ? HOUSE_DRAFT_COPY.greetingAsk : editing ? HOUSE_DRAFT_COPY.greetingList : HOUSE_DRAFT_COPY.greeting}</Body>
+        {(editing || !canChange) && turns.length === 0 ? <Meta>{HOUSE_DRAFT_COPY.privacy}</Meta> : null}
+        {!editing && canChange && turns.length === 0 ? (
+          <>
+            <Meta>{HOUSE_DRAFT_COPY.orStart}</Meta>
+            <View style={styles.choices}>
+              {STARTER_KINDS.map((kind) => (
+                <Button
+                  key={kind}
+                  variant="outline"
+                  label={HOUSE_DRAFT_COPY.starter[kind].title}
+                  spoken={`${HOUSE_DRAFT_COPY.starter[kind].title}: ${HOUSE_DRAFT_COPY.starter[kind].meta}`}
+                  onPress={() => pick(kind)}
+                  testID={`starter-${kind}`}
+                />
+              ))}
+            </View>
+            <Meta>{HOUSE_DRAFT_COPY.privacy}</Meta>
+          </>
+        ) : null}
+      </Said>
+
+      {turns.map((turn, at) => {
+        if (turn.role === 'user') {
+          return <UserBubble key={at} text={turn.text} />;
+        }
+        if (turn.role === 'done') {
+          const row = (
+            <Group testID="chat-done">
+              <Row
+                title={editing ? HOUSE_DRAFT_COPY.applied(turn.added) : HOUSE_DRAFT_COPY.added(turn.added)}
+                meta={editing ? HOUSE_DRAFT_COPY.appliedMeta : HOUSE_DRAFT_COPY.addedMeta}
+                leading={<RowIcon icon={CheckIcon} />}
+                onPress={onOpenList}
+                accessibilityLabel={`${editing ? HOUSE_DRAFT_COPY.applied(turn.added) : HOUSE_DRAFT_COPY.added(turn.added)}. ${HOUSE_DRAFT_COPY.openList}`}
+                chevron
+                testID="chat-open-list"
+              />
+            </Group>
+          );
+          // A new house's one question about the deal, asked once its first list is in.
+          return editing ? (
+            <View key={at}>{row}</View>
+          ) : (
+            <Said key={at}>
+              {row}
+              <ModeAsk houseId={houseId} start={rules.dealMode} />
+            </Said>
+          );
+        }
+        return (
+          <JonzSaid key={at} text={turn.text} thought={turn.thought} pieces={pieces}>
+            {turn.old ? <Meta testID="chat-old-card">{ASK_CHATS_COPY.oldCard}</Meta> : null}
+            {/* The question's answers sit under the question, over the draft it's about. */}
+            {turn === last && ask ? <AskCard ask={ask} weekStarts={rules.weekStarts} onAnswer={(a) => void send(a)} /> : null}
+            {/* A turn that changes nothing on a house's list (a question, say) has no card. */}
+            {at === draftAt && draft && (!editing || draftChanges(base, draft).length + groupChanges(base, draft).length > 0) ? (
+              <DraftCard
+                base={base}
+                draft={draft}
+                keep={keep}
+                open={open}
+                onOpen={setOpen}
+                onToggle={toggle}
+                onKeep={() => void add()}
+                pending={keeping.pending}
+                problem={keeping.problem}
+                people={people}
+                me={me}
+              />
+            ) : null}
+            {turn.resets && turn.resets.length > 0 ? (
+              <ResetsCard houseId={houseId} items={turn.resets} me={me} nameOf={nameOf} currency={rules.currency} zone={rules.timezone} />
+            ) : null}
+            {turn.moves && turn.moves.length > 0 ? <MovesCard houseId={houseId} items={turn.moves} /> : null}
+          </JonzSaid>
+        );
+      })}
+
+      {sending ? <Thinking steps={steps} /> : null}
+    </ChatLog>
   );
 }
 
@@ -507,47 +531,74 @@ function DraftCard({
 }) {
   const editing = base !== null;
   const changes = draftChanges(base, draft);
-  // Opened, a new house's Johns go in the list's own order: kitchen first, then the bathrooms, and so on.
-  const ordered = editing ? changes : CATEGORIES.flatMap((cat) => changes.filter((c) => c.kind !== 'remove' && c.john.category === cat));
-  const shown = open ? ordered : changes.slice(0, FOLDED);
+  const regrouped = groupChanges(base, draft);
+  // A list's changes sorted by kind (taking off, changing, adding); a new house's Johns, opened, in the list's own order.
+  const ordered = editing
+    ? KINDS.flatMap((kind) => changes.filter((c) => c.kind === kind))
+    : CATEGORIES.flatMap((cat) => changes.filter((c) => c.kind !== 'remove' && c.john.category === cat));
+  const folded = editing ? CHANGES_FOLDED : FOLDED;
+  const shown = open ? ordered : (editing ? ordered : changes).slice(0, folded);
   const groups = draft.groups.filter((g) => changes.some((c) => c.kind !== 'remove' && c.john.group === g.name));
   const waiting = groups.filter((g) => g.memberIds.length === 0);
   const after = afterApplying(base, changes, keep);
   const line = (j: DraftedJohn) => [scheduleLine({ ...j, dueDow: j.dueDow as IsoDow }, j.group), pointsLabel(j.points)].join(', ');
+  const row = (c: DraftChange) => {
+    const j = c.kind === 'remove' ? c.before : c.john;
+    const meta = c.kind === 'change' ? changedLine(c.before, c.john) : [line(j), editing ? null : j.why || null].filter(Boolean).join(', ');
+    return (
+      <ChoiceRow
+        key={c.key}
+        role="checkbox"
+        label={j.name}
+        meta={meta}
+        leading={editing ? <KindIcon kind={c.kind} /> : undefined}
+        checked={keep.includes(c.key)}
+        onPress={() => onToggle(c.key)}
+        disabled={pending}
+        metaLines={2}
+        testID={`draft-${c.kind === 'add' ? 'john' : c.kind}`}
+      />
+    );
+  };
   return (
     <View style={styles.card} testID="draft-card">
-      <Section
-        label={editing ? HOUSE_DRAFT_COPY.changesLabel : HOUSE_DRAFT_COPY.draftLabel}
-        right={
-          editing
-            ? HOUSE_DRAFT_COPY.changesMeta(pointsAWeek(base.johns), pointsAWeek(after))
-            : HOUSE_DRAFT_COPY.draftMeta(keep.length, pointsAWeek(after))
-        }
-      >
-        {shown.map((c) => {
-          const j = c.kind === 'remove' ? c.before : c.john;
-          const meta =
-            c.kind === 'remove'
-              ? `${HOUSE_DRAFT_COPY.removing}, ${line(j)}`
-              : c.kind === 'change'
-                ? `${line(j)}, ${changedLine(c.before, c.john)}`
-                : [editing ? HOUSE_DRAFT_COPY.adding : null, line(j), j.why || null].filter(Boolean).join(', ');
-          return (
-            <ChoiceRow
-              key={c.key}
-              role="checkbox"
-              label={j.name}
-              meta={meta}
-              checked={keep.includes(c.key)}
-              onPress={() => onToggle(c.key)}
-              disabled={pending}
-              metaLines={2}
-              testID={`draft-${c.kind === 'add' ? 'john' : c.kind}`}
-            />
-          );
-        })}
-      </Section>
-      {changes.length > FOLDED ? (
+      {editing ? (
+        <>
+          <Meta style={styles.inset} testID="draft-points">
+            {HOUSE_DRAFT_COPY.changesMeta(pointsAWeek(base.johns), pointsAWeek(after))}
+          </Meta>
+          {KINDS.map((kind) => {
+            const these = shown.filter((c) => c.kind === kind);
+            // Groups the house has, with new people in them, go under Changing after the Johns.
+            const moved = kind === 'change' ? regrouped : [];
+            const all = changes.filter((c) => c.kind === kind).length + moved.length;
+            return these.length + moved.length > 0 ? (
+              <Section key={kind} label={KIND_HEADING[kind]} count={all} testID={`draft-${kind}s`}>
+                {these.map(row)}
+                {moved.map((g) => (
+                  <ChoiceRow
+                    key={g.key}
+                    role="checkbox"
+                    label={g.before.name}
+                    meta={HOUSE_DRAFT_COPY.groupPeople(membersLine(g.before.memberIds, people, me), membersLine(g.group.memberIds, people, me))}
+                    leading={<KindIcon kind="change" />}
+                    checked={keep.includes(g.key)}
+                    onPress={() => onToggle(g.key)}
+                    disabled={pending}
+                    metaLines={2}
+                    testID="draft-group-change"
+                  />
+                ))}
+              </Section>
+            ) : null;
+          })}
+        </>
+      ) : (
+        <Section label={HOUSE_DRAFT_COPY.draftLabel} right={HOUSE_DRAFT_COPY.draftMeta(keep.length, pointsAWeek(after))}>
+          {shown.map(row)}
+        </Section>
+      )}
+      {changes.length > folded ? (
         <TextButton
           label={open ? HOUSE_DRAFT_COPY.showLess : HOUSE_DRAFT_COPY.seeAll(changes.length)}
           onPress={() => onOpen(!open)}
@@ -580,56 +631,41 @@ function DraftCard({
         </Meta>
       ) : null}
       {problem ? <Alert message={problem} /> : null}
-      <Button
-        label={
-          pending
-            ? editing
-              ? HOUSE_DRAFT_COPY.applying
-              : HOUSE_DRAFT_COPY.keeping
-            : editing
-              ? HOUSE_DRAFT_COPY.apply(keep.length)
-              : HOUSE_DRAFT_COPY.keep(keep.length)
-        }
-        onPress={onKeep}
-        disabled={pending || keep.length === 0}
-        testID="describe-keep"
-      />
+      <ButtonRow>
+        <Button
+          label={
+            pending
+              ? editing
+                ? HOUSE_DRAFT_COPY.applying
+                : HOUSE_DRAFT_COPY.keeping
+              : editing
+                ? HOUSE_DRAFT_COPY.apply(keep.length)
+                : HOUSE_DRAFT_COPY.keep(keep.length)
+          }
+          onPress={onKeep}
+          disabled={pending || keep.length === 0}
+          testID="describe-keep"
+        />
+      </ButtonRow>
     </View>
   );
 }
 
+const KIND_HEADING = {
+  remove: HOUSE_DRAFT_COPY.removingHeading,
+  change: HOUSE_DRAFT_COPY.changingHeading,
+  add: HOUSE_DRAFT_COPY.addingHeading,
+} as const;
+
+/** What a change does, at the row's leading edge: a minus in the hazard colour to take off, a pencil to change, a plus to add. */
+function KindIcon({ kind }: { kind: DraftChange['kind'] }) {
+  const { colors } = useTheme();
+  const Icon = kind === 'add' ? PlusIcon : kind === 'change' ? PencilIcon : MinusIcon;
+  return <Icon size={20} color={kind === 'remove' ? colors.hazard : colors.foreground} aria-hidden />;
+}
+
 const styles = StyleSheet.create({
-  fill: { flex: 1 },
-  chat: {
-    width: '100%',
-    maxWidth: CONTENT_MAX,
-    alignSelf: 'center',
-    paddingHorizontal: GUTTER,
-    paddingTop: GUTTER,
-    paddingBottom: SECTION_GAP,
-    gap: SPACE.xl,
-  },
-  said: { gap: SPACE.md },
   choices: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACE.sm },
-  // What the admin said: on the tint, to the right, as a chosen button sits.
-  bubble: { alignSelf: 'flex-end', maxWidth: '85%', borderRadius: RADIUS, paddingHorizontal: SPACE.md, paddingVertical: SPACE.sm },
   card: { gap: SPACE.md },
   inset: { paddingHorizontal: INSET },
-  composer: { borderTopWidth: StyleSheet.hairlineWidth },
-  composerLine: {
-    width: '100%',
-    maxWidth: CONTENT_MAX,
-    alignSelf: 'center',
-    paddingHorizontal: GUTTER,
-    paddingVertical: SPACE.sm,
-    gap: SPACE.sm,
-  },
-  // The bubble: its edge round the words and the send arrow, which stays at its foot as the words grow.
-  box: { flexDirection: 'row', alignItems: 'flex-end', borderWidth: 1, borderRadius: RADIUS * 2, paddingRight: SEND_INSET },
-  field: { flex: 1 },
-  input: { paddingLeft: SPACE.md, paddingRight: SPACE.sm, paddingVertical: SPACE.md - 1 },
-  measure: { position: 'absolute', left: 0, right: 0, opacity: 0 },
-  // A thumb-sized target round a round arrow, sitting in the bubble's bottom-right corner.
-  send: { width: SEND, height: LINE, alignItems: 'center', justifyContent: 'center' },
-  sendDot: { width: SEND, height: SEND, borderRadius: SEND / 2, alignItems: 'center', justifyContent: 'center' },
 });

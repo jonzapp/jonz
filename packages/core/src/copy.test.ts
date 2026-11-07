@@ -18,7 +18,6 @@ import {
   LOOK_LABEL,
   LOOKS,
   lookOf,
-  MEMBERS_COPY,
   NEW_HOUSE_COPY,
   NOT_FOUND_COPY,
   NOT_DEALT_COPY,
@@ -31,7 +30,6 @@ import {
   SECTIONS,
   SHELL_COPY,
   SIGN_IN_COPY,
-  STAKE_COPY,
   STAKE_HISTORY_COPY,
   TABLE_COPY,
   TAGLINE,
@@ -58,27 +56,19 @@ const today = [
   TODAY_COPY.left(3),
   TODAY_COPY.streak(1),
   TODAY_COPY.streak(4),
-  TODAY_COPY.immunity(2),
   JOHN_COPY.standsIn("in 3 hours"),
   JOHN_COPY.disputed("Still filthy"),
   JOHN_COPY.votes(1, 2, "in 5 hours"),
   JOHN_COPY.dueBeforeYouGo("Fri 21:00"),
   NOT_DEALT_COPY.nothingThisWeek,
   NOT_DEALT_COPY.nothingThisWeekBody,
-  NOT_DEALT_COPY.notYet,
-  ...NOT_DEALT_COPY.adminSteps,
-  NOT_DEALT_COPY.waitingFor("Ava"),
   INVITE_COPY.shareTitle("Flat 3"),
 ];
 const words = [
   APP_NAME,
   TAGLINE,
-  FRONT_DOOR.eyebrow,
   FRONT_DOOR.headline,
   FRONT_DOOR.signIn,
-  FRONT_DOOR.start,
-  FRONT_DOOR.join,
-  ...FRONT_DOOR.points.flatMap((p) => [p.title, p.body]),
   ...signIn,
   ...house,
   ...today,
@@ -91,11 +81,6 @@ describe("the words before signing in", () => {
 
   it("carry no emoji", () => {
     for (const text of words) expect(text).not.toMatch(/\p{Extended_Pictographic}/u);
-  });
-
-  it("names each point once", () => {
-    const keys = FRONT_DOOR.points.map((p) => p.key);
-    expect(new Set(keys).size).toBe(keys.length);
   });
 });
 
@@ -135,7 +120,7 @@ describe("WEEK_COPY", () => {
   it("counts and tallies in words", () => {
     expect(WEEK_COPY.doneOf(0, 0)).toBe("0 of 0");
     expect(WEEK_COPY.doneOf(3, 7)).toBe("3 of 7");
-    expect(WEEK_COPY.tally(1, 0, "in 5h")).toBe("1 not done, 0 fine, closes in 5h");
+    expect(WEEK_COPY.tally(1, 0, "in 5h")).toBe("0 done, 1 not done, closes in 5h");
     expect(WEEK_COPY.disputeOn("Bins", "Still full")).toBe("Bins: “Still full”");
   });
 });
@@ -158,8 +143,8 @@ describe("SECTIONS", () => {
   it("counts the house and your standing in words", () => {
     expect(SHELL_COPY.housemates(1)).toBe("1 housemate");
     expect(SHELL_COPY.housemates(4)).toBe("4 housemates");
-    expect(SHELL_COPY.standing(0, 1)).toBe("0-week streak, 1 token");
-    expect(SHELL_COPY.standing(5, 0)).toBe("5-week streak, 0 tokens");
+    expect(SHELL_COPY.standing(0, 1)).toBe("0-week streak, 1 skip");
+    expect(SHELL_COPY.standing(5, 0)).toBe("5-week streak, 0 skips");
   });
 });
 
@@ -184,24 +169,6 @@ describe("TABLE_COPY", () => {
   });
 });
 
-describe("STAKE_COPY", () => {
-  it("puts the house’s sums into sentences", () => {
-    expect(STAKE_COPY.eyebrow("£20")).toBe("£20 each, every month");
-    expect(STAKE_COPY.soFarBody("£1", "£3")).toMatch(/^Late costs £1, missed costs £3, and nobody/);
-    expect(STAKE_COPY.forfeitedSoFar(null)).toBe("Nothing forfeited so far.");
-    expect(STAKE_COPY.forfeitedSoFar("£4")).toBe("£4 forfeited so far.");
-  });
-
-  it("says which side of a payment you were on", () => {
-    expect(STAKE_COPY.counterparty(500, "Ben")).toBe("to Ben");
-    expect(STAKE_COPY.counterparty(-500, "Ava")).toBe("from Ava");
-  });
-
-  it("names every kind of ledger entry", () => {
-    for (const kind of ["forfeit", "cap_refund", "share", "payment"]) expect(STAKE_COPY.kind[kind]).toBeTruthy();
-  });
-});
-
 describe("JOHN_LIST_COPY", () => {
   it("says how often and when, short", () => {
     expect(JOHN_LIST_COPY.when(1, "Sunday", "21:00")).toBe("Every week, due Sun 21:00");
@@ -216,8 +183,7 @@ describe("JOHN_LIST_COPY", () => {
 });
 
 describe("DEAL_COPY", () => {
-  it("keeps the words the web’s deal button has always had", () => {
-    expect(DEAL_COPY.first).toBe("Hand out this week’s Johns");
+  it("calls giving out the week the deal", () => {
     expect(DEAL_COPY.again).toBe("Re-deal this week");
   });
 });
@@ -233,13 +199,6 @@ describe("RULES_COPY", () => {
     expect(RULES_COPY.disputeHours(48)).toBe("48 hours after a tick");
     for (const n of [100, 50, 0]) expect(RULES_COPY.makeupHint[n]).toBeTruthy();
     expect(RULES_COPY.phoneZone("America/New_York")).toBe("Use this phone’s: America/New York");
-  });
-});
-
-describe("MEMBERS_COPY", () => {
-  it("names who’s being removed by their first name", () => {
-    expect(MEMBERS_COPY.removeName("Ben Wall")).toBe("Remove Ben");
-    expect(MEMBERS_COPY.removeName("Cal")).toBe("Remove Cal");
   });
 });
 

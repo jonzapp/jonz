@@ -28,8 +28,9 @@ export type ButtonIcon = ComponentType<{ size?: number; color?: string; 'aria-hi
  * panel or menu it opens is open (`aria-expanded`). `ink` recolours a ghost
  * button's icon and words for a coloured band (a notice), from the theme.
  * Inside a `ButtonRow` it takes an equal share of the line, or the full
- * width when the row stacks; its words wrap rather than get cut. Screens
- * never restyle a button: use `ButtonRow` to place buttons together.
+ * width when the row stacks or it is on its own; its words wrap rather
+ * than get cut. Screens never restyle a button: a `ButtonRow` places every
+ * one, alone or together (the lint rule `jonz/button-in-row`).
  */
 export function Button({
   label,
@@ -81,6 +82,9 @@ export function Button({
   const chosenState =
     chosen === undefined ? {} : Platform.OS === 'web' ? ({ 'aria-pressed': chosen } as object) : { 'aria-selected': chosen };
   const expandedState = expanded === undefined ? {} : ({ 'aria-expanded': expanded } as object);
+  // For the layout checks (e2e/button-rules.ts): how the button was placed and its kind, as data-* on the web.
+  const placed =
+    Platform.OS === 'web' ? ({ dataSet: { button: iconOnly ? 'icon' : (fit ?? 'loose'), variant: chosen === undefined ? variant : 'chosen' } } as object) : {};
 
   const button = (
     <Pressable
@@ -88,6 +92,7 @@ export function Button({
       aria-disabled={disabled}
       {...chosenState}
       {...expandedState}
+      {...placed}
       accessibilityLabel={iconOnly ? label : spoken}
       disabled={disabled}
       onPress={onPress}

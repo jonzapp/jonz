@@ -132,4 +132,15 @@ describe('applyDraft', () => {
     expect(saveJohn).not.toHaveBeenCalled();
     expect(archiveJohn).not.toHaveBeenCalled();
   });
+
+  it('changes who’s in a group the house has, by its id, only when ticked', async () => {
+    const IVY = '00000000-0000-4000-8000-000000000009';
+    const floor = { id: 'g1', name: 'Main floor', memberIds: [ME] };
+    const was = listAsDraft(johns, [floor]);
+    const ivyIn = { ...was, groups: [{ name: 'Main floor', memberIds: [ME, IVY], waitingFor: [] }] };
+    await expect(applyDraft(HOUSE, RULES, was, ivyIn, [], { johns, groups: [floor] }, NOW)).resolves.toBe(0);
+    expect(saveGroup).not.toHaveBeenCalled();
+    await expect(applyDraft(HOUSE, RULES, was, ivyIn, ['group:Main floor'], { johns, groups: [floor] }, NOW)).resolves.toBe(1);
+    expect(saveGroup).toHaveBeenCalledWith(HOUSE, { id: 'g1', name: 'Main floor', members: [ME, IVY] });
+  });
 });

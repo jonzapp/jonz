@@ -11,7 +11,7 @@ import { env } from "@/lib/env";
 
 const RESEND = "https://api.resend.com/emails";
 
-export type SendResult = { sent: true; id: string } | { sent: false; reason: "no-key" | "refused"; detail?: string };
+export type SendResult = { sent: true; id: string } | { sent: false; reason: "no-key" | "refused" | "no-address"; detail?: string };
 
 export interface SendOptions {
   /** A short name for the kind of email, kept with it in Resend for counting: "account-deleted", "notice". */
@@ -27,6 +27,8 @@ export async function sendEmail(
   options: SendOptions,
   fetchImpl: typeof fetch = fetch,
 ): Promise<SendResult> {
+  // A kid without a sign-in has an address at a domain that can't exist (lib/moves/kids.ts).
+  if (/\.invalid$/i.test(to.trim())) return { sent: false, reason: "no-address" };
   const key = env.resendApiKey();
   if (!key) {
     console.info(`email: skipped "${message.subject}" (${options.tag}), no RESEND_API_KEY`);

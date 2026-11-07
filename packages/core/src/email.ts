@@ -356,3 +356,28 @@ export function noticeEmail(args: {
       args.kind !== "status" && args.unsubscribeUrl ? { label: "Stop offers and news", url: args.unsubscribeUrl } : undefined,
   });
 }
+
+/**
+ * A message from the owner (docs/specs/owner-admin.md, "Messages"), by
+ * email: the subject, then the words as they were written, paragraph by
+ * paragraph, and a way back to the app. Replying reaches support@jonz.app.
+ */
+export function ownerMessageEmail(args: { name: string | null; subject: string; body: string; url: string; test?: boolean }): EmailMessage {
+  const paragraphs = args.body
+    .split(/\n\s*\n/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  return renderEmail({
+    subject: args.test ? `Test: ${args.subject}` : args.subject,
+    preheader: args.body.slice(0, 90),
+    headline: args.subject,
+    blocks: [
+      { type: "text", text: hi(args.name) },
+      ...paragraphs.map((text) => ({ type: "text" as const, text })),
+      { type: "button", label: "Open Jonz", url: args.url },
+    ],
+    why: args.test
+      ? "A test of a message from Jonz, sent only to you."
+      : `A message from ${APP_NAME}. Reply to this email to answer it.`,
+  });
+}

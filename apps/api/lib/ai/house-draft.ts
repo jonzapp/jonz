@@ -1,180 +1,284 @@
 import "server-only";
 
-import { generateText, Output } from "ai";
-import { APP_NAME, CATEGORIES, DOW_LABEL, RESET_KINDS, RESULT_CHOICES, type ChatMessage, type IsoDow, type RawAsk, type RawDraft } from "@app/core";
+import { tool, type LanguageModel, type ToolSet } from "ai";
+import {
+  APP_NAME,
+  ASK_ELSEWHERE_GUIDE,
+  CATEGORIES,
+  DOW_LABEL,
+  HOW_TOPICS,
+  RESET_KINDS,
+  REPLY_FORMAT_GUIDE,
+  RESULT_CHOICES,
+  type ChatMessage,
+  type DraftEdit,
+  type EditResult,
+  type IsoDow,
+} from "@app/core";
 import { z } from "zod";
 
-// Describe your house: Jonz (Claude) talks an admin through setting up the
-// house and drafts the John list as it goes. One call is one turn of the
-// chat: Claude reads the chat so far and the draft as it stands, and answers
-// with what it says, what it asks (with quick answers or a day to tap), and
-// the new draft when it changed. A small, cheap model is plenty for this,
-// with structured outputs so the answer is always JSON of the right shape;
-// core's tidyDraft and tidyAsk still check every value, because a schema
-// can't say "between 1 and 20" to the model. The call goes through Vercel's
-// AI Gateway, as Pub Golf's does: on Vercel it signs in with the project's
-// OIDC token, so there is no key to keep.
+import { AGENT_MODEL, canAsk, runAgent, type AgentAnswer } from "@/lib/ai/agent";
+import type { HouseReads } from "@/lib/moves/ask-reads";
 
-export const DRAFT_MODEL = "anthropic/claude-haiku-5.5";
+// Ask Jonz (and Describe your house, which is the same chat on a new house):
+// Claude with tools that act as the person asking. Reads (the list, the
+// week, people, time away, History, fair shares, rules) run straight away
+// through that person's own session, so the database decides what it can
+// see. Writes are proposals: add_john, change_john and remove_john change a
+// draft of the list, set_group a draft group, offer_reset a reset; nothing
+// is written until the person taps Apply on the card, which runs the same
+// moves the app's own buttons do. A write tool is only offered when the
+// person may make that move (packages/core/src/permissions.ts). The turn
+// runs through the shared loop in agent.ts, through Vercel's AI Gateway: on
+// Vercel it signs in with the project's OIDC token, so there is no key to keep.
 
-/** A drafted John as Claude writes it. Loose on purpose: ranges are core's to enforce. */
-const ModelJohn = z.object({
-  ref: z.string().nullable(),
-  name: z.string(),
+export const DRAFT_MODEL = AGENT_MODEL;
+export { STEPS_MAX } from "@/lib/ai/agent";
+
+/** A John's fields as Claude writes them. Loose on purpose: ranges are core's to enforce (tidyDraft). */
+const JohnFields = {
+  name: z.string().describe("A few plain words, sentence case: “Bathroom clean”, “Bins out”."),
   category: z.enum(CATEGORIES),
-  points: z.number().int(),
-  everyWeeks: z.number().int(),
-  everyMonths: z.number().int().nullable(),
-  weekOfMonth: z.number().int().nullable(),
-  dueDow: z.number().int(),
-  dueTime: z.string(),
-  needsPhoto: z.boolean(),
-  onCall: z.boolean(),
-  respondHours: z.number().int(),
-  perWeek: z.number().int(),
-  crew: z.number().int(),
-  group: z.string().nullable(),
-  why: z.string(),
-});
+  points: z.number().int().describe("Effort: 1 ≈ 5 min, 2 ≈ 15 min, 3 ≈ 30 min, 5 ≈ an hour, 8–10 half a day, up to 20 a whole day."),
+  everyWeeks: z.number().int().describe("1 weekly, 2 every other week, up to 26. Use 1 when it repeats in months."),
+  everyMonths: z.number().int().nullable().describe("Every N months (1 monthly, 3 quarterly, 12 yearly), or null for a John that repeats in weeks."),
+  weekOfMonth: z.number().int().nullable().describe("With everyMonths: which of its day in the month (1 first … 4 fourth, 5 last); otherwise null."),
+  dueDow: z.number().int().describe("1 Monday … 7 Sunday."),
+  dueTime: z.string().describe("24-hour HH:MM."),
+  needsPhoto: z.boolean().describe("True only for a job the house is likely to argue about."),
+  onCall: z.boolean().describe("True for a job done whenever it's needed (the bin when it's full) rather than on a day."),
+  respondHours: z.number().int().describe("On call: hours to do it once flagged (1–72). Otherwise 12."),
+  perWeek: z.number().int().describe("On call: about how often it comes up a week (1–14). Otherwise 2."),
+  crew: z.number().int().describe("How many do it together: 1 almost always, 2–6 for a group job, 0 for everyone at home."),
+  group: z.string().nullable().describe("The group that shares it, by name, or null for everyone."),
+  why: z.string().describe("A few words when the choice isn't obvious, otherwise empty."),
+};
 
-/** A reset an admin asked for, in the refs of <house_now> (lib/moves/ask-resets.ts makes them ids). */
-const ModelReset = z.object({
+const ResetInput = z.object({
   what: z.enum([...RESET_KINDS, "undo"]),
-  ref: z.string().nullable(),
-  person: z.string().nullable(),
+  ref: z.string().nullable().describe("A John this week or last (j…) for a result, or a History move (h…) for an undo, from house_now."),
+  person: z.string().nullable().describe("First name for person_week, or “me”."),
   outcome: z.enum(RESULT_CHOICES).nullable(),
   week: z.enum(["this", "last"]).nullable(),
   month: z.enum(["this", "last"]).nullable(),
 });
+export type ResetInput = z.infer<typeof ResetInput>;
 
-/** One turn of Jonz's side of the chat, as Claude is asked to return it. */
-const ModelTurn = z.object({
-  reply: z.string(),
-  ask: z.object({ kind: z.enum(["none", "choices", "day"]), options: z.array(z.string()) }),
-  draft: z
-    .object({
-      johns: z.array(ModelJohn),
-      groups: z.array(z.object({ name: z.string(), members: z.array(z.string()) })),
-      note: z.string().nullable(),
-    })
-    .nullable(),
-  resets: z.array(ModelReset),
-});
+/** What Claude can do this turn, already narrowed to what the person may do. */
+export interface JonzTools {
+  reads: HouseReads;
+  /** The John list as it stands in this chat (the house's, with any changes so far), with refs. */
+  listJohns(): string;
+  /** Add, change or take off a John in the draft; only kinds in `may` are offered. */
+  edit(e: DraftEdit): EditResult;
+  /** Make or change a group in the draft. */
+  setGroup(name: string, members: string[]): EditResult;
+  /** Offer a reset (an admin's), in house_now's refs; the card shows it with its numbers. */
+  offerReset(r: ResetInput): Promise<EditResult>;
+  /** Put booking the person's own time away on the card. */
+  offerAway(a: { from: string; to: string; note: string | null }): Promise<EditResult>;
+  /** Put cancelling some of the person's own time away on the card, by its ref from time_away. */
+  offerCancelAway(ref: string): Promise<EditResult>;
+  may: { add: boolean; change: boolean; remove: boolean; groups: boolean; resets: boolean; away: boolean };
+}
 
 /** The house and the chat as Claude is told about them. */
 export interface DraftContext {
   /** First names of everyone in the house, the person asking first. */
   people: string[];
+  /** The person asking: first name and role in words ("admin", "parent", "member", "kid"). */
+  me: { name: string; role: string };
+  houseName: string;
+  family: boolean;
   weekStarts: IsoDow;
-  /** The chat so far, oldest first, ending with what the admin just said. */
+  /** Today in the house, "Thursday 2026-11-05", and the time. */
+  today: string;
+  /** What the person may do, in plain words (PERMISSIONS). */
+  allowed: string[];
+  /** The chat so far, oldest first, ending with what the person just said. */
   messages: readonly ChatMessage[];
-  /** The draft as it stands, in words (draftForModel), or null before there is one. */
-  draft: RawDraft | null;
-  /** Whether the house has a list already, which the draft started as and the chat changes. */
+  /** Whether the house has a John list already. */
   editing: boolean;
-  /** The last two weeks and what can be undone, in words with refs (resetState), when the admin can reset; null otherwise. */
+  /** The last two weeks and what can be undone, in words with refs, when the person can reset; null otherwise. */
   now: string | null;
 }
 
-/** Fixed, so it caches: how Jonz talks and what makes a good John list. The house itself goes in the messages. */
-const SYSTEM = `You are ${APP_NAME}, the assistant in a chore-sharing app for shared houses. In ${APP_NAME} a chore is called a John. Each week the app deals the Johns out fairly between the housemates, weighted by effort points, and housemates check each other's ticks. You are helping one of the house's admins in a short chat: setting a new house up by drafting its John list as you go, or changing the list a house already has. They review the draft and apply what they want; nothing changes until they do.
+export type DraftAnswer = AgentAnswer;
+
+/** Fixed, so it caches: who Jonz is, how the app works, and how to use the tools. The house itself goes in the messages. */
+const SYSTEM = `You are ${APP_NAME}'s assistant, inside ${APP_NAME}, an app that shares out chores fairly in a shared house or a family. You talk with one person in the house and act for them: you can look at anything they can see in the app, and propose anything they're allowed to change. They approve every change on a card before anything happens.
+
+How ${APP_NAME} works:
+- A chore is called a John. The house's John list says what needs doing, how often, on which day, and how much effort it is in points.
+- Each week the app deals the Johns out fairly between the people at home, weighted by points and by who has done more or less so far (fair shares). Time away is left out of the deal. Smart deal balances points; Classic takes turns.
+- People tick a John when it's done; housemates can question a tick. A John not done by its due time is late, and later still missed; in a house with a Stake, late and missed Johns cost money at the end of the month. Someone else can cover an overdue John.
+- On-call Johns (the bin when it's full) are done when someone flags them, by whoever is on call that week.
+- Swaps: you can ask someone to swap one of your Johns for one of theirs.
+- History lists every move, and most can be undone. Admins can put mistakes right (resets).
+- In a family, admins are called parents and members kids; a kid's tick waits for a parent's OK, and Johns can earn pocket money.
+- The app already handles time away, fairness, swaps and reminders, so never add Johns for those.
+
+Your tools:
+- Look things up before you answer: list_johns for the John list (with refs), week for who has what this week, last week or next, people, time_away, history, balances (fair shares), stake (the money), why_john (why a John went to someone), how_it_works (how a part of the app works, with this house's numbers), house_rules. Reads are free and need no permission; use as many as you need. Never guess what you could look up.
+- Changes are proposals. add_john, change_john and remove_john change a draft of the list, one John per call; set_group makes a new group, or changes who's in one the house has (give everyone who should be in it, not just who's joining); offer_reset offers a fix (only when house_now is given); book_away and cancel_away put the person's own time away on a card (read time_away first: their periods have refs, and a booking can't overlap one). Each tool says whether it worked; if it didn't, fix the call or tell the person. Nothing changes until they tap Apply on the card, so never say something is done: say what you've put on the card.
+- Only the tools for moves this person may make are there. If they ask for something that's for an admin (a parent in a family), say so plainly. Deleting a group is on [Groups](jonz:page/groups).
+- These moves aren't on the card yet. If they ask for one they may make, say you can't do it from the chat yet and give where it's done, with its chip:
+${ASK_ELSEWHERE_GUIDE}
+
+Changing the John list:
+- Change only what they ask for. Use change_john with only the fields that change; use the ref from list_johns. Use remove_john to take one off. To change many (or the whole list), make one call per John.
+- If someone is moving out or in, the deal already deals between whoever lives there, so only change Johns that name them or a group they're in, and say so.
+- Setting up a new house (the list is empty): draft the Johns this house needs, usually 6 to 15, covering the usual (kitchen, bathroom, bins, floors) and anything they mention. If the first message says enough, draft straight away; otherwise ask one short question at a time, at most two before the first draft, then draft anyway and say what you assumed. Spread Johns across the week; bins go out the night before collection; bigger jobs suit the weekend. Similar jobs get similar points. Use exactly the period they ask for (quarterly is everyMonths 3, not every 4 weeks). Groups only when some people share something the others don't (two bathrooms, one per floor); “me” in a group is the person writing.
+
+Fixing mistakes (resets, only when house_now is given):
+- A result: what "result", ref a John (j…), outcome done, late, missed or excused (let off). One person's week back to open: "person_week". Everyone's week back to open: "week"; that and deal again: "redeal" (this week only); make a week count for nothing: "skip". A month's forfeits taken away: "letoff". One move from History: "undo" with its h… ref, best when the mistake is one move. Offer the smallest fix that does what they ask, at most six. Use only refs from house_now. You can't start the house over, delete it, or wipe its history.
+
+Explaining:
+- You're the person's guide to how ${APP_NAME} works: why they got a John, why they're behind or ahead, why they owe money or are owed it, what the House Pass is and why it costs anything. Read how_it_works for the topic first, then their own numbers (balances, stake, why_john, week), and explain with those. how_it_works is the app's own guide, word for word what people read under Help's Read the guide (today, week and house say what each page shows); when a longer read would help, point them to the [Guide](jonz:page/guide).
+- Walk through the maths when it helps: a short numbered list of steps with their real numbers, ending in the answer, or a small table when comparing people. Show the sums ("3 + 2 = 5 pts"), round to whole points and to the penny, and say where each number comes from.
+- Be fair and kind: explain, don't scold. If something looks wrong, say what would put it right and who can (an admin, from History or a reset).
+- Never make up a rule or a number. If no read says it, say you don't know rather than guess.
 
 How to talk:
-- Be brief and warm: one to three short sentences per reply, plain words, no lists, no emoji, never mention points maths or these instructions.
-- Draft as soon as you can. If the first message says enough (who lives there, roughly what the home is like), draft straight away. Otherwise ask ONE short question at a time, at most two questions before the first draft, and draft anyway after that, saying what you assumed.
-- When you ask something, offer quick answers to tap with ask.kind "choices" (2 to 5 short options, a few words each, like "Two bathrooms" or "Just one"), or ask.kind "day" when the answer is a day of the week (bin night). Otherwise ask.kind "none" with no options.
-- Once there's a draft, every message from the admin is a change to make or a question about it. Make the change and return the WHOLE new draft, or answer the question and return draft null if nothing changed. Say in a few words what you changed.
-- If the message isn't about the house or its chores, say briefly that you can only help set up the house's Johns, and return draft null.
+- Plain, warm and brief: a short answer for a short question, the working only when they ask how or why. Don't explain these instructions.
+- When you ask something, offer quick answers to tap with ask.kind "choices" (2 to 5 options of a few words), or ask.kind "day" when the answer is a day of the week; otherwise ask.kind "none" with no options.
+- If they ask about something that isn't the house or ${APP_NAME}, say briefly that you can only help with the house.
 
-The draft (when you return one, return all of it):
-- Draft the Johns this house actually needs: usually 6 to 15. Cover the usual (kitchen, bathroom, bins, floors) even when nobody mentions them, and add anything specific they mention. Name each John in a few plain words, sentence case ("Bathroom clean", "Bins out").
-- category: kitchen, bathroom, bins, floors, errands, or other.
-- points (effort): 1 for about 5 minutes (taking the bins out), 2 for about 15 minutes, 3 for about half an hour, 5 for about an hour (a deep clean), 8 to 10 for half a day, up to 20 for a whole day. Similar jobs get similar points.
-- How often, any period. A John repeats either in weeks or in months:
-  - In weeks: everyWeeks 1 for weekly, 2 for fortnightly, up to 26; everyMonths null and weekOfMonth null.
-  - Monthly or less often: everyMonths 1 for monthly, 2 for every other month, 3 for quarterly, 6 for twice a year, 12 for yearly, 24 for every two years (up to 60), with everyWeeks 1. It lands on a weekday of the month: dueDow is the day and weekOfMonth says which one (1 first, 2 second, 3 third, 4 fourth, 5 last), so "the first Saturday every 3 months" is everyMonths 3, weekOfMonth 1, dueDow 6.
-  - Use exactly the period they ask for (quarterly is everyMonths 3, not every 4 weeks). Most Johns are weekly; deep cleans and restocking are often fortnightly or monthly; jobs like the oven, the fridge deep clean, windows or gutters suit every few months or yearly.
-- dueDow (1 Monday ... 7 Sunday) and dueTime (24-hour "HH:MM"): spread Johns across the week rather than piling them on one day. Bins go out the night before collection. Bigger jobs suit the weekend.
-- onCall: true only for something done whenever it's needed rather than on a day (the kitchen bin when it's full, emptying the dishwasher). Then respondHours (how long whoever is on call has once someone flags it, 1 to 72, usually 6 to 24) and perWeek (about how often it comes up each week, 1 to 14). For other Johns set respondHours 12 and perWeek 2. An on-call John has everyWeeks 1, everyMonths null and weekOfMonth null.
-- crew: how many do it together. 1 for almost every John. 2 to 6 for a job people do as a group (a garden tidy by 3, a pre-inspection clean by everyone), or 0 for everyone at home that day. points are per person, so a garden tidy by 3 at 4 points is 12 in all. An on-call John has crew 1.
-- needsPhoto: true only for a job the house is likely to argue about (a deep clean), otherwise false.
-- group: null unless only some of the house share the John (two bathrooms, one per floor). Then the group's name, which must be one of the groups you return.
-- why: a few words when the choice isn't obvious ("two bathrooms, so one each"), otherwise "".
-- groups: only when some people share something the others don't. Name the group after what it's for ("Upstairs"), and list its members by first name; "me" is the person writing.
-- note: one short sentence on the main thing you assumed that the house should check, or null.
+${REPLY_FORMAT_GUIDE}`;
 
-Changing a list that's already there:
-- When the house already has a list, current_draft starts as that list, and you are helping the admin change it rather than set it up. Change only what they ask for, and keep everything else exactly as it is.
-- Each John already on the list has a ref. Keep the same ref on a John you keep or change; leave a John out to take it off the list; a new John has ref null. Never give a ref to a John you made up.
-- If someone is moving out or in, the deal already shares Johns between whoever lives there, so only change Johns that name them or a group they're in, and say so.
-
-Fixing mistakes (only when <house_now> is given):
-- Admins can ask you to put right what was filled in wrong: a John marked done that wasn't, a week dealt badly, a tick by mistake. Offer the fix in resets and say in a sentence what you've offered; the app shows each with its numbers and nothing changes until they tap it. When you offer resets, return draft null.
-- what "result" changes one John's result: ref is the John (j…) and outcome is done, late, missed or excused (let off).
-- what "person_week" puts one person's Johns this week back to open: person is their first name ("me" for the person writing), week "this" or "last".
-- what "week" puts everyone's Johns back to open, "redeal" does that and deals the week again (this week only), "skip" makes the week count for nothing: week "this" or "last".
-- what "letoff" takes a month's forfeits away: month "this" or "last".
-- what "undo" takes back one move from History: ref is the move (h…). Prefer an undo when the mistake is one move ("I ticked Bins by mistake").
-- Offer the smallest fix that does what they ask, at most six. Use only refs from <house_now>; if what they mean isn't there, say so and offer nothing. Unused fields are null.
-- You can't start the house over, delete it, or wipe its history; if they ask, say an admin can reset a week or a month at a time.
-- If <house_now> isn't given, return resets [] and, if they ask to fix something, say only an admin can do that.
-
-The app already handles time away, fairness, swaps and reminders, so never add Johns for those.`;
-
-/** The house's context, then the chat; the draft as it stands rides on the admin's latest message. */
+/** The house's context, then the chat; house_now rides on the latest message. */
 function chatMessages(ctx: DraftContext): { role: "user" | "assistant"; content: string }[] {
   const people = ctx.people.length > 0 ? ctx.people.join(", ") : "only the person writing";
   const house = [
-    `In the house already: ${people} (the first is the person writing). Others they name haven't joined yet.`,
+    `House: ${ctx.houseName}, ${ctx.family ? "a family" : "housemates"}. Today is ${ctx.today}.`,
+    `You're talking with ${ctx.me.name}, ${ctx.family ? "a" : "an"} ${ctx.me.role}. In the house: ${people} (the first is ${ctx.me.name}). Others they name haven't joined yet.`,
     `The house's week starts on ${DOW_LABEL[ctx.weekStarts]}.`,
-    ctx.editing
-      ? "The house already has a John list: current_draft is it, with any changes so far. Change it as they ask."
-      : "The house is new: there's no list yet.",
+    ctx.editing ? "The house has a John list: list_johns shows it." : "The house is new: its John list is empty, so you're helping set it up.",
+    `${ctx.me.name} may: ${ctx.allowed.join("; ")}.`,
   ].join("\n");
-  // The chat starts with what the admin said; Jonz's greeting is the app's, not part of it.
+  // The chat starts with what the person said; Jonz's greeting is the app's, not part of it.
   const first = ctx.messages.findIndex((m) => m.role === "user");
   const chat = ctx.messages.slice(first).map((m) => ({ role: m.role, content: m.text }));
   chat[0] = { role: "user", content: `<house>\n${house}\n</house>\n\n${chat[0].content}` };
-  const last = chat.length - 1;
-  const draft = ctx.draft ? JSON.stringify(ctx.draft) : "none yet";
-  const now = ctx.now ? `\n\n<house_now>\n${ctx.now}\n</house_now>` : "";
-  chat[last] = { role: "user", content: `${chat[last].content}\n\n<current_draft>${draft}</current_draft>${now}` };
+  if (ctx.now) {
+    const last = chat.length - 1;
+    chat[last] = { role: "user", content: `${chat[last].content}\n\n<house_now>\n${ctx.now}\n</house_now>` };
+  }
   return chat;
 }
 
-export interface DraftAnswer {
-  raw: { reply: string; ask: RawAsk; draft: RawDraft | null; resets?: z.infer<typeof ModelReset>[] };
-  inputTokens: number;
-  outputTokens: number;
-}
-
-/**
- * Whether drafting with Claude is set up here: on Vercel (the gateway signs in
- * with the deployment's OIDC token) or with AI_GATEWAY_API_KEY set. Without
- * either, as locally and in CI, the chat answers with starter lists.
- */
-export function canDraft(): boolean {
-  return Boolean(process.env.VERCEL || process.env.AI_GATEWAY_API_KEY);
-}
-
-/**
- * Ask Claude for Jonz's next turn. Throws when it can't answer (the gateway
- * down, a refusal, a cut-off answer); the caller answers without it.
- */
-export async function askClaude(ctx: DraftContext): Promise<DraftAnswer> {
-  const result = await generateText({
-    model: DRAFT_MODEL,
-    system: SYSTEM,
-    messages: chatMessages(ctx),
-    output: Output.object({ schema: ModelTurn, name: "jonz_turn" }),
-    maxOutputTokens: 8000,
-    maxRetries: 1,
-    timeout: 25_000,
-  });
-  if (result.finishReason !== "stop") throw new Error(`No answer: ${result.finishReason}`);
-  return {
-    raw: result.output,
-    inputTokens: result.usage.inputTokens ?? 0,
-    outputTokens: result.usage.outputTokens ?? 0,
+/** The tools Claude gets this turn: every read, and the writes this person may make. */
+export function jonzToolSet(t: JonzTools): ToolSet {
+  const said = (r: EditResult) => r.said;
+  const set: ToolSet = {
+    list_johns: tool({
+      description: "The house's John list as it stands in this chat, with each John's ref and every field.",
+      inputSchema: z.object({}),
+      execute: async () => t.listJohns(),
+    }),
+    week: tool({
+      description: "Who has which John this week, last week or next, with due times and whether each is done.",
+      inputSchema: z.object({ which: z.enum(["this", "last", "next"]) }),
+      execute: async ({ which }) => t.reads.week(which),
+    }),
+    people: tool({
+      description: "Everyone in the house with their role, who's moving out, and the groups.",
+      inputSchema: z.object({}),
+      execute: async () => t.reads.people(),
+    }),
+    time_away: tool({
+      description: "Time away booked, from a month ago on, and who's away today.",
+      inputSchema: z.object({}),
+      execute: async () => t.reads.timeAway(),
+    }),
+    history: tool({
+      description: "The house's latest moves (ticks, swaps, changes, resets), newest first.",
+      inputSchema: z.object({}),
+      execute: async () => t.reads.history(),
+    }),
+    balances: tool({
+      description: "Fair shares: each person's points given and done since they joined, and who's ahead or behind.",
+      inputSchema: z.object({}),
+      execute: async () => t.reads.balances(),
+    }),
+    stake: tool({
+      description: "The Stake's money: this month's forfeits so far (who, how much, for which John), what each person would forfeit, get and net if the month ended now, what's owed from closed months, and the fewest payments to settle.",
+      inputSchema: z.object({}),
+      execute: async () => t.reads.stake(),
+    }),
+    why_john: tool({
+      description: "Why the deal gave a John to whom it did, this week or last: the reason, each person's standing against their share that it weighed, and what slipping it would cost. The same as the John sheet's Why?.",
+      inputSchema: z.object({
+        name: z.string().describe("The John's name as the week read shows it."),
+        who: z.string().nullable().describe("Whose it is, by first name or “me”, when more than one person has a John of that name; otherwise null."),
+      }),
+      execute: async ({ name, who }) => t.reads.whyJohn(name, who),
+    }),
+    how_it_works: tool({
+      description: "How part of the app works, with this house's own numbers: read it before explaining a rule, so you explain what the app really does.",
+      inputSchema: z.object({ topic: z.enum(HOW_TOPICS) }),
+      execute: async ({ topic }) => t.reads.howItWorks(topic),
+    }),
+    house_rules: tool({
+      description: "The house's rules: the Stake and forfeits, when a John is late or missed, how the deal works.",
+      inputSchema: z.object({}),
+      execute: async () => t.reads.rules(),
+    }),
   };
+  if (t.may.add) {
+    set.add_john = tool({
+      description: "Propose a new John for the list. Shown on the card under Adding.",
+      inputSchema: z.object(JohnFields),
+      execute: async (john) => said(t.edit({ kind: "add", john })),
+    });
+  }
+  if (t.may.change) {
+    set.change_john = tool({
+      description: "Propose changing a John on the list: its ref (or name) and only the fields that change. Shown under Changing, before and after.",
+      inputSchema: z.object({ ref: z.string(), set: z.object(JohnFields).partial() }),
+      execute: async ({ ref, set: fields }) => said(t.edit({ kind: "change", ref, set: fields })),
+    });
+  }
+  if (t.may.remove) {
+    set.remove_john = tool({
+      description: "Propose taking a John off the list, by its ref (or name). Shown under Taking off.",
+      inputSchema: z.object({ ref: z.string() }),
+      execute: async ({ ref }) => said(t.edit({ kind: "remove", ref })),
+    });
+  }
+  if (t.may.groups) {
+    set.set_group = tool({
+      description: "Propose a group (some of the house who share Johns the others don't), by name and the first names of everyone in it; “me” is the person writing. For a group the house has, this changes who's in it: list everyone who should be, not just who's joining.",
+      inputSchema: z.object({ name: z.string(), members: z.array(z.string()) }),
+      execute: async ({ name, members }) => said(t.setGroup(name, members)),
+    });
+  }
+  if (t.may.away) {
+    set.book_away = tool({
+      description: "Put booking time away for the person you're talking with on the card: first and last day away (yyyy-mm-dd, in the house's dates), and where if they said. Only their own time away. They tap to book it.",
+      inputSchema: z.object({ from: z.string(), to: z.string(), note: z.string().nullable() }),
+      execute: async (a) => said(await t.offerAway(a)),
+    });
+    set.cancel_away = tool({
+      description: "Put cancelling some of the person's own time away on the card (or coming back early), by its ref from time_away.",
+      inputSchema: z.object({ ref: z.string() }),
+      execute: async ({ ref }) => said(await t.offerCancelAway(ref)),
+    });
+  }
+  if (t.may.resets) {
+    set.offer_reset = tool({
+      description: "Offer a fix for something filled in wrong, in house_now's refs. Unused fields are null. The card shows it with its numbers.",
+      inputSchema: ResetInput,
+      execute: async (r) => said(await t.offerReset(r)),
+    });
+  }
+  return set;
+}
+
+/** Whether Claude is set up here (agent.ts); without it the chat answers with starter lists. */
+export const canDraft = canAsk;
+
+/** One turn of a housemate's Ask Jonz: the house's prompt and tools in the shared loop. */
+export function askClaude(ctx: DraftContext, tools: JonzTools, model: LanguageModel = DRAFT_MODEL): Promise<DraftAnswer> {
+  return runAgent({ system: SYSTEM, messages: chatMessages(ctx), tools: jonzToolSet(tools), model });
 }

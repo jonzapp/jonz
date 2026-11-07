@@ -10,8 +10,6 @@ it('opens on the wordmark, the taped sign and three plain sentences', async () =
   expect(screen.getByTestId('hazard-tape', { includeHiddenElements: true })).toBeOnTheScreen();
   expect(screen.getByRole('header', { name: FRONT_DOOR.headline })).toBeOnTheScreen();
   for (const point of FRONT_DOOR_COPY.points) expect(screen.getByText(point.body)).toBeOnTheScreen();
-  // The old feature cards are gone.
-  for (const point of FRONT_DOOR.points) expect(screen.queryByText(point.title)).not.toBeOnTheScreen();
   expect(screen.getByRole('link', { name: 'Privacy' })).toHaveProp('href', '/privacy');
   expect(screen.getByRole('link', { name: 'Terms' })).toHaveProp('href', '/terms');
 });

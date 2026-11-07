@@ -118,7 +118,8 @@ permanent once a store has seen them.
   `POST /api/setup/draft` (`draft.ts`: `sendChat`, one turn of the
   setup chat, answered as the API would by `offlineTurn` if the API can't
   be reached, and `applyDraft` (`keepDraft` for a new house),
-  which applies the changes an admin ticked through `settings.ts`).
+  which applies the changes an admin ticked through `settings.ts`), and
+  `POST /api/ask/usage` (`draft.ts`: `askUsageOf`, the week's Ask Jonz).
 - `src/hooks/`: connect `@app/core` and `src/api/` to screens (e.g.
   `use-session.ts`). `use-membership.tsx` is the session and the house it's
   in, read behind the splash screen, with `refresh()` for after creating or

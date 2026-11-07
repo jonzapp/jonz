@@ -14,6 +14,7 @@ import type { GroupDef, JohnDef } from "./board";
 import { CATEGORIES, CATEGORY_LABEL, DOW_LABEL, JOHN_WHEN, type Category, type IsoDow } from "./domain";
 import { firstName } from "./format";
 import { dueWords, LAST_OF_MONTH, MAX_EVERY_MONTHS, MAX_EVERY_WEEKS, oftenWords } from "./repeat";
+import { CHAT_MOVES_MAX, ChatMove } from "./chat-moves";
 import { CHAT_RESETS_MAX, ChatReset } from "./resets";
 import type { JohnDraft } from "./schemas";
 
@@ -24,14 +25,95 @@ export const DRAFT_MAX_GROUPS = 6;
 export const MESSAGE_MAX = 800;
 /** How many messages of the chat go to Claude each time: enough for setting up a house. */
 export const CHAT_MAX_MESSAGES = 24;
-/** Messages a house can send Claude in a day; starter lists are free and unlimited. */
-export const CHAT_TURNS_PER_DAY = 30;
 /**
- * Messages one person can send Claude in a day, whichever house they're in:
- * a little over a house's day, so nobody gets more by leaving a house and
- * starting another.
+ * A house's Ask Jonz for a week, in Claude's tokens (what it reads and
+ * writes): one pool the whole house shares, bigger with the House Pass. It
+ * comes back when the house's week starts. A turn is about 6,000 to 20,000
+ * tokens, so the free pool is a good few dozen questions and the Pass's a
+ * few hundred. Starter lists are free and unlimited.
+ */
+export const ASK_POOL_TOKENS = { free: 400_000, pass: 2_000_000 } as const;
+/** What a turn holds against the pool while Claude answers, so turns sent together can't all slip in; its answer puts in what it used. */
+export const ASK_TURN_RESERVE = 10_000;
+/** The most of the pool one person can use when the house has two or more people: nobody can use it all up. */
+export const ASK_SHARE_MAX = 0.5;
+/**
+ * Messages one person can send Claude in a day, whichever house they're in,
+ * so nobody gets more by leaving a house and starting another.
  */
 export const CHAT_TURNS_PER_PERSON_PER_DAY = 40;
+
+/** How much of this week's Ask Jonz a person has left, shown under the chat. */
+export const AskAllowance = z.object({
+  /** What's left of what they may still use this week, 0 to 1. */
+  left: z.number().min(0).max(1),
+  /** Whether the house's pool (not their own share) is what runs out first. */
+  house: z.boolean(),
+  /** When it comes back: the start of the house's next week. */
+  resetsAt: z.string(),
+});
+export type AskAllowance = z.infer<typeof AskAllowance>;
+
+/** A person's cap and what's left of it, from the week's pool and how much the house and they have used. */
+export function askAllowance(input: { pool: number; people: number; houseUsed: number; mineUsed: number; resetsAt: Date }): AskAllowance & { cap: number } {
+  const cap = input.people >= 2 ? Math.floor(input.pool * ASK_SHARE_MAX) : input.pool;
+  const mine = Math.max(0, cap - input.mineUsed);
+  const house = Math.max(0, input.pool - input.houseUsed);
+  const room = Math.min(mine, house);
+  // On your own the house's pool is yours, so it's the house's that runs out.
+  return { cap, left: cap > 0 ? Math.min(1, room / cap) : 0, house: input.people < 2 || house < mine, resetsAt: input.resetsAt.toISOString() };
+}
+
+/** Under this much left, the chat warns over the message box. */
+export const ASK_LOW = 0.25;
+
+/** The week's Ask Jonz for the usage page and the chat: what's left, what each has used, and when it's back. */
+export const AskUsage = AskAllowance.extend({
+  /** Whether the house has the House Pass (the bigger pool). */
+  pass: z.boolean(),
+  /** How many live in the house. With two or more nobody uses more than half. */
+  people: z.number().int().min(1),
+  /** How much of the house's pool is used, 0 to 1. */
+  houseUsed: z.number().min(0).max(1),
+  /** How much of what they may use (their half, or the pool on their own) is used, 0 to 1. */
+  mineUsed: z.number().min(0).max(1),
+  /** Each person who has used some, most first, as a share of the house's pool. */
+  usedBy: z.array(z.object({ userId: z.uuid(), used: z.number().min(0).max(1) })),
+});
+export type AskUsage = z.infer<typeof AskUsage>;
+
+/** When the week's Ask Jonz comes back, in the house's time: "Monday at 00:00". */
+export function askBackOn(resetsAt: string, zone: string): string {
+  const at = new Date(resetsAt);
+  const day = new Intl.DateTimeFormat("en-GB", { weekday: "long", timeZone: zone }).format(at);
+  const time = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: zone }).format(at);
+  return `${day} at ${time}`;
+}
+
+/** The usage page's figures, from the pool, who lives in the house, and the tokens each has used this week. */
+export function askUsage(input: {
+  pool: number;
+  pass: boolean;
+  people: readonly string[];
+  me: string;
+  used: ReadonlyMap<string, number>;
+  resetsAt: Date;
+}): AskUsage {
+  const houseUsed = [...input.used.values()].reduce((a, b) => a + b, 0);
+  const mineUsed = input.used.get(input.me) ?? 0;
+  const { cap, ...allowance } = askAllowance({ pool: input.pool, people: input.people.length, houseUsed, mineUsed, resetsAt: input.resetsAt });
+  const share = (n: number, of: number) => (of > 0 ? Math.min(1, n / of) : 1);
+  return {
+    ...allowance,
+    pass: input.pass,
+    people: Math.max(1, input.people.length),
+    houseUsed: share(houseUsed, input.pool),
+    mineUsed: share(mineUsed, cap),
+    usedBy: input.people
+      .map((userId) => ({ userId, used: share(input.used.get(userId) ?? 0, input.pool) }))
+      .sort((a, b) => b.used - a.used),
+  };
+}
 /** The most quick answers one question offers. */
 export const CHOICES_MAX = 5;
 
@@ -124,6 +206,10 @@ export const ChatResponse = z.object({
   source: z.enum(DRAFT_SOURCES),
   /** Resets Jonz offers an admin, each with its numbers, for the Resets card. Nothing is reset until they tap. */
   resets: z.array(ChatReset).max(CHAT_RESETS_MAX).optional(),
+  /** Other moves Jonz puts on a card (time away), for the person to tick and apply. */
+  moves: z.array(ChatMove).max(CHAT_MOVES_MAX).optional(),
+  /** What's left of this week's Ask Jonz for the person asking, after this turn. */
+  allowance: AskUsage.optional(),
 });
 export type ChatResponse = z.infer<typeof ChatResponse>;
 
@@ -270,8 +356,9 @@ export function tidyDraft(
     if (johns.length === Math.max(DRAFT_MAX_JOHNS, list.johnIds.length + 10)) break;
   }
 
-  // A group no kept John uses is noise on the review screen.
-  const used = groups.filter((g) => johns.some((j) => j.group === g.name));
+  // A new group no kept John uses is noise on the review screen. One the
+  // house has stays, so a change to who's in it can be shown.
+  const used = groups.filter((g) => johns.some((j) => j.group === g.name) || list.groups.some((h) => key(h.name) === key(g.name)));
   const note = text(raw.note, 400);
   return { johns, groups: used, note: note || null };
 }
@@ -333,6 +420,26 @@ export function draftPlan(draft: HouseDraft, keep: readonly number[], existingGr
   return { makeGroups, johns, everyoneForNow };
 }
 
+/** The most Jonz says in one turn, so a runaway reply can't fill the screen. Room for a short list in Markdown. */
+export const REPLY_MAX = 2000;
+
+/** Jonz's reply as the chat shows it: spaces tidied, line breaks and indents kept (at most one blank line), cut to fit. */
+export function tidyReply(reply: string): string {
+  return reply
+    .split("\n")
+    // A line's indent is Markdown's (a list inside a list): kept, tabs as two spaces; spaces inside it tidied.
+    .map((line) => {
+      const indent = (/^[ \t]*/.exec(line)?.[0] ?? "").replace(/\t/g, "  ");
+      const words = line.replace(/[ \t\f\v\r]+/g, " ").trim();
+      return words ? indent + words : "";
+    })
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim()
+    .slice(0, REPLY_MAX)
+    .trim();
+}
+
 /** What Claude asks with, before it's checked. */
 export interface RawAsk {
   kind?: unknown;
@@ -390,7 +497,7 @@ export function offlineTurn(messages: readonly ChatMessage[], draft: HouseDraft 
  * id, and the groups they use with who's in them.
  */
 export function listAsDraft(johns: readonly JohnDef[], groups: readonly GroupDef[]): HouseDraft {
-  const used = groups.filter((g) => johns.some((j) => j.groupId === g.id));
+  // Every group the house has, Johns or not, so a chat can change who's in any of them.
   return {
     johns: johns.map((j) => ({
       id: j.id,
@@ -407,10 +514,10 @@ export function listAsDraft(johns: readonly JohnDef[], groups: readonly GroupDef
       respondHours: j.respondHours,
       perWeek: j.perWeek,
       crew: j.crew,
-      group: used.find((g) => g.id === j.groupId)?.name ?? null,
+      group: groups.find((g) => g.id === j.groupId)?.name ?? null,
       why: "",
     })),
-    groups: used.map((g) => ({ name: g.name, memberIds: [...g.memberIds], waitingFor: [] })),
+    groups: groups.map((g) => ({ name: g.name, memberIds: [...g.memberIds], waitingFor: [] })),
     note: null,
   };
 }
@@ -445,19 +552,48 @@ export function draftChanges(base: HouseDraft | null, next: HouseDraft): DraftCh
   return changes;
 }
 
-/** What changed on a John, in words, for under its name: "was every week, was 3 pts". */
+/** A group the house already has, with different people in it: who's in it before and after. */
+export interface GroupChange {
+  kind: "group";
+  key: string;
+  group: DraftedGroup;
+  before: DraftedGroup;
+}
+
+/**
+ * Groups the house has whose people a draft changes. A group the draft
+ * leaves out stays as it is (taking one off is the House page's), and a
+ * new group is made with the Johns that need it (draftPlan).
+ */
+export function groupChanges(base: HouseDraft | null, next: HouseDraft): GroupChange[] {
+  if (!base) return [];
+  return next.groups.flatMap((group) => {
+    const before = base.groups.find((g) => key(g.name) === key(group.name));
+    if (!before || group.memberIds.length === 0) return [];
+    const same = before.memberIds.length === group.memberIds.length && before.memberIds.every((id) => group.memberIds.includes(id));
+    return same ? [] : [{ kind: "group" as const, key: `group:${before.name}`, group: { ...group, name: before.name }, before }];
+  });
+}
+
+/**
+ * What changed on a John, before → after, for under its (new) name on the
+ * card: "Every week → every 2 weeks, Sun 21:00 → Sat 21:00, 3 → 4 pts". A new
+ * name says what it was called.
+ */
 export function changedLine(before: DraftedJohn, after: DraftedJohn): string {
   const parts: string[] = [];
+  const lower = (s: string) => s.charAt(0).toLocaleLowerCase() + s.slice(1);
+  const arrow = (was: string, now: string) => `${was} → ${lower(now)}`;
   if (before.name !== after.name) parts.push(`was “${before.name}”`);
-  const timing = (j: DraftedJohn) =>
-    j.when === "on_call"
-      ? "on call"
-      : `${oftenWords(j).toLocaleLowerCase()}, ${dueWords(j, j.dueTime, DOW_LABEL[j.dueDow as IsoDow].slice(0, 3))}`;
-  if (timing(before) !== timing(after)) parts.push(`was ${timing(before)}`);
-  if (before.points !== after.points) parts.push(`was ${before.points} ${before.points === 1 ? "pt" : "pts"}`);
-  if (before.crew !== after.crew) parts.push(`was ${CREW_COPY.choice(before.crew).toLocaleLowerCase()}`);
-  if (before.group !== after.group) parts.push(`was ${before.group ?? "everyone’s"}`);
-  if (before.category !== after.category) parts.push(`was ${CATEGORY_LABEL[before.category]}`);
+  // How often and when, each only if it moved: "Every week → every 2 weeks", "Sat 18:00 → Sun 10:00".
+  const often = (j: DraftedJohn) => (j.when === "on_call" ? "On call" : oftenWords(j));
+  const due = (j: DraftedJohn) => dueWords(j, j.dueTime, DOW_LABEL[j.dueDow as IsoDow].slice(0, 3));
+  if (often(before) !== often(after)) parts.push(arrow(often(before), often(after)));
+  if (before.when !== "on_call" && after.when !== "on_call" && due(before) !== due(after)) parts.push(`${due(before)} → ${due(after)}`);
+  if (before.points !== after.points) parts.push(`${before.points} → ${after.points} ${after.points === 1 ? "pt" : "pts"}`);
+  if (before.crew !== after.crew) parts.push(arrow(CREW_COPY.choice(before.crew), CREW_COPY.choice(after.crew)));
+  if (before.group !== after.group) parts.push(arrow(before.group ?? "Everyone’s", after.group ?? "everyone’s"));
+  if (before.category !== after.category) parts.push(arrow(CATEGORY_LABEL[before.category], CATEGORY_LABEL[after.category]));
   return parts.join(", ");
 }
 

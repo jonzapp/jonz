@@ -92,10 +92,15 @@ accounts: never run it without being asked (see "Hosting and deploys").
 
 ## Words
 
-A chore is a **John**; the plural is **Johns**. The money is **the Stake**,
-the standings **the Table**, the feed **the Wall**. Handing out a week's
-Johns is **the deal**. Copy never says "chore app", and never "rota" (the
-house doesn't use the word).
+A chore is a **John**; the plural is **Johns**, and **Jonz** is only the
+app. The money is **the Stake**, the standings **the Table**, the feed **the
+Wall**. Giving out a week's Johns is **the deal**. A pass on one John is **a
+skip**, paired with **a swap**; the vote's answers are **Done** and **Not
+done**; housemates get in with **an invite** and its **code**; forfeits are
+**split**, and "share" means only the fair share. One word for each thing:
+the glossary in `docs/style/words.md`, guarded by
+`packages/core/src/words.test.ts`. Copy never says "chore app", and never
+"rota" (the house doesn't use the word).
 
 ## House style: Bin Night
 
@@ -169,6 +174,18 @@ a design option, the PR that builds it updates the rule and adds a line to
   yours) or `P0001` with a short code that `errors.ts` turns into a sentence.
   Whatever calls them (the Expo app, or a route in `apps/api`) only
   translates and refreshes: it never decides.
+- **Who can do what** is one list: `PERMISSIONS` and `ROLE_PERMISSIONS` in
+  `packages/core/src/permissions.ts`, and the same rows in the
+  `permissions` / `role_permissions` tables
+  (`supabase/migrations/20261118090000_permissions.sql`). Every table rule
+  and move asks `public.can(house, 'johns.remove')` (the server asks about
+  someone else with `user_can`); the API asks `permitted()`
+  (`apps/api/lib/moves/permitted.ts`); the app asks `memberCan(me, …)`.
+  Never compare `role` to `'admin'` to decide whether someone may do
+  something: add a permission to both lists (a db test checks they match;
+  `apps/api/tests/unit/permission-checks.test.ts` fails on a hand-written
+  role check). Reading the role is fine for a rule of the house (a house
+  keeps an admin, parents don't earn pocket money).
 
 ## The clock
 

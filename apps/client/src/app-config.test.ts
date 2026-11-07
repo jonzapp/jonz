@@ -50,8 +50,8 @@ describe('app.config.ts', () => {
       | undefined;
     expect(picker).toBeDefined();
     const [, options] = picker!;
-    expect(options.cameraPermission).toMatch(/^Jonz uses the camera for photo receipts/);
-    expect(options.photosPermission).toMatch(/^Jonz uses your photos for photo receipts/);
+    expect(options.cameraPermission).toMatch(/^Jonz uses the camera for photos/);
+    expect(options.photosPermission).toMatch(/^Jonz uses your photos so the house/);
     expect(options.microphonePermission).toBe(false);
   });
 });

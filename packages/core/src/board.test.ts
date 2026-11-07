@@ -93,6 +93,8 @@ describe("johnDef", () => {
       perWeek: 2,
       crew: 1,
       keepDay: false,
+      payMinor: 0,
+      minAge: null,
     });
   });
 
@@ -361,6 +363,7 @@ describe("buildWeekBoard", () => {
       uphold: 1,
       reject: 1,
       myVote: true,
+      answered: false,
     });
   });
 
@@ -421,7 +424,7 @@ describe("todayView", () => {
   });
 
   it("is empty for someone with nothing this week", () => {
-    expect(todayView(board([]), ME)).toEqual({ mine: [], left: 0, toVote: [], toCover: [] });
+    expect(todayView(board([]), ME)).toEqual({ mine: [], left: 0, toVote: [], toCover: [], toOk: [] });
   });
 });
 

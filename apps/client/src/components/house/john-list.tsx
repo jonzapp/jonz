@@ -4,12 +4,20 @@ import {
   CREW_CHOICES,
   CREW_COPY,
   crewLine,
+  CURRENCY_SYMBOL,
   JOHN_LIST_COPY,
   NEXT_UP_COPY,
   johnFacts,
   johnsByKind,
+  moneyInput,
   NEW_JOHN,
+  KIDS_COPY,
+  parseMinAge,
+  parseMoney,
+  pocketMoney,
+  POCKET_COPY,
   pointsLabel,
+  RULES_COPY,
   scheduleLine,
   SETUP_COPY,
   STEADY_COPY,
@@ -26,6 +34,7 @@ import { StyleSheet, View } from 'react-native';
 import { archiveJohn, saveJohn } from '@/api/settings';
 import { Alert } from '@/components/alert';
 import { Button } from '@/components/button';
+import { ButtonRow } from '@/components/button-row';
 import { EmptyState } from '@/components/empty-state';
 import { Field } from '@/components/field';
 import { Group, GroupItem } from '@/components/group';
@@ -65,6 +74,7 @@ export function JohnList({
   whoAdds,
   quietAdd = false,
   more,
+  family = false,
 }: {
   houseId: string;
   rules: HouseRules;
@@ -77,6 +87,8 @@ export function JohnList({
   quietAdd?: boolean;
   /** On a laptop, more sections to sit among the kinds (the house's groups). */
   more?: readonly FlowItem[];
+  /** In a family each John can earn pocket money: the form asks how much, and each row says. */
+  family?: boolean;
 }) {
   const [editing, setEditing] = useState<Draft | null>(null);
   const [reading, setReading] = useState<JohnDef | null>(null);
@@ -99,6 +111,7 @@ export function JohnList({
           rules={rules}
           initial={draft}
           groups={groups}
+          family={family}
           onDone={panel.close}
         />
       ),
@@ -128,8 +141,10 @@ export function JohnList({
           action={
             editable ? (
               <View style={styles.emptyActions}>
-                <Button icon={SparklesIcon} label={NEXT_UP_COPY.describe} {...ask} testID="describe-house" />
-                <Button variant="outline" icon={PlusIcon} label={JOHN_LIST_COPY.add} onPress={add} testID="add-john" />
+                <ButtonRow stacked>
+                  <Button icon={SparklesIcon} label={NEXT_UP_COPY.describe} {...ask} testID="describe-house" />
+                  <Button variant="outline" icon={PlusIcon} label={JOHN_LIST_COPY.add} onPress={add} testID="add-john" />
+                </ButtonRow>
               </View>
             ) : undefined
           }
@@ -143,6 +158,7 @@ export function JohnList({
                 {`${JOHN_LIST_COPY.count(johns.length)} ${JOHN_LIST_COPY.perWeek(weeklyEffort(johns))}`}
               </Meta>
               {editable ? (
+                // eslint-disable-next-line jonz/button-in-row -- the page's tool beside its count, at the top right (docs/style/layout.md)
                 <Button
                   variant={quietAdd ? 'outline' : undefined}
                   icon={PlusIcon}
@@ -166,7 +182,9 @@ export function JohnList({
                   <Section label={kind.label} testID={`kind-${kind.category}`}>
                     {kind.johns.map((j) => {
                       const schedule = scheduleLine(j, groupName(j.groupId));
-                      const line = [schedule, j.crew === 1 ? null : CREW_COPY.choice(j.crew), j.keepDay ? STEADY_COPY.keepsDay : null]
+                      const earns = family && j.payMinor ? POCKET_COPY.earns(pocketMoney(j.payMinor, rules.currency)) : null;
+                      const aged = family && j.minAge ? KIDS_COPY.minAgeLine(j.minAge) : null;
+                      const line = [schedule, j.crew === 1 ? null : CREW_COPY.choice(j.crew), j.keepDay ? STEADY_COPY.keepsDay : null, earns, aged]
                         .filter(Boolean)
                         .join(', ');
                       return (
@@ -214,6 +232,7 @@ export function JohnList({
             rules={rules}
             initial={editing}
             groups={groups}
+            family={family}
             onDone={() => setEditing(null)}
           />
         ) : null}
@@ -251,16 +270,24 @@ function JohnForm({
   rules,
   initial,
   groups,
+  family = false,
   onDone,
 }: {
   houseId: string;
   rules: HouseRules;
   initial: Draft;
   groups: GroupDef[];
+  family?: boolean;
   onDone: () => void;
 }) {
   const move = useMove(houseId);
   const [v, setV] = useState(initial);
+  // In a family, what it earns a kid, as typed.
+  const [pay, setPay] = useState(() => moneyInput(initial.payMinor ?? 0));
+  const [payProblem, setPayProblem] = useState<string | null>(null);
+  // In a family, the youngest a kid can be to be dealt it, as typed (empty for anyone).
+  const [age, setAge] = useState(() => (initial.minAge == null ? '' : String(initial.minAge)));
+  const [ageProblem, setAgeProblem] = useState<string | null>(null);
   const [picking, setPicking] = useState<TimingWord | null>(null);
   const set = (patch: Partial<Draft>) => setV((old) => ({ ...old, ...patch }));
   const sharers = [{ value: '', label: JOHN_LIST_COPY.everyone }, ...groups.map((g) => ({ value: g.id, label: g.name }))];
@@ -272,7 +299,17 @@ function JohnForm({
   const together = line ? `${line}. ${CREW_COPY.hint}` : null;
 
   async function save() {
-    if (await move.run(() => saveJohn(houseId, rules, v, new Date()))) onDone();
+    const payMinor = family ? parseMoney(pay) : undefined;
+    if (payMinor === null || (payMinor !== undefined && payMinor < 0)) {
+      setPayProblem(RULES_COPY.badAmount);
+      return;
+    }
+    const minAge = family ? parseMinAge(age) : undefined;
+    if (family && minAge === undefined) {
+      setAgeProblem(KIDS_COPY.problems.minAge);
+      return;
+    }
+    if (await move.run(() => saveJohn(houseId, rules, family ? { ...v, payMinor, minAge } : v, new Date()))) onDone();
   }
 
   async function remove() {
@@ -317,6 +354,39 @@ function JohnForm({
       <View style={styles.noted}>
         <Group>
           <PickRow label={JOHN_LIST_COPY.effort} options={EFFORT} value={v.points} onChange={(points) => set({ points })} />
+          {family ? (
+            <GroupItem>
+              <Field
+                label={`${POCKET_COPY.johnField} (${CURRENCY_SYMBOL[rules.currency]})`}
+                value={pay}
+                onChangeText={(text) => {
+                  setPay(text);
+                  setPayProblem(null);
+                }}
+                keyboardType="decimal-pad"
+                hint={POCKET_COPY.johnFieldMeta}
+                problem={payProblem ?? undefined}
+                testID="john-pay"
+              />
+            </GroupItem>
+          ) : null}
+          {family ? (
+            <GroupItem>
+              <Field
+                label={KIDS_COPY.minAgeField}
+                value={age}
+                onChangeText={(text) => {
+                  setAge(text);
+                  setAgeProblem(null);
+                }}
+                keyboardType="number-pad"
+                maxLength={2}
+                hint={KIDS_COPY.minAgeMeta}
+                problem={ageProblem ?? undefined}
+                testID="john-min-age"
+              />
+            </GroupItem>
+          ) : null}
           {/* On call stays one person: whoever is on call. */}
           {v.when === 'day' ? (
             <PickRow label={CREW_COPY.doneBy} options={CREW} value={v.crew} onChange={(crew) => set({ crew })} testID="john-crew" />
@@ -350,15 +420,17 @@ function JohnForm({
       </View>
       <View style={styles.actions}>
         {move.problem ? <Alert message={move.problem} /> : null}
-        <Button
-          label={move.pending ? JOHN_LIST_COPY.saving : v.id ? JOHN_LIST_COPY.save : JOHN_LIST_COPY.create}
-          disabled={move.pending || !v.name.trim()}
-          onPress={() => void save()}
-          testID="save-john"
-        />
-        {v.id ? (
-          <Button variant="hazard" icon={Trash2Icon} label={JOHN_LIST_COPY.remove} disabled={move.pending} onPress={() => void remove()} />
-        ) : null}
+        <ButtonRow stacked>
+          <Button
+            label={move.pending ? JOHN_LIST_COPY.saving : v.id ? JOHN_LIST_COPY.save : JOHN_LIST_COPY.create}
+            disabled={move.pending || !v.name.trim()}
+            onPress={() => void save()}
+            testID="save-john"
+          />
+          {v.id ? (
+            <Button variant="hazard" icon={Trash2Icon} label={JOHN_LIST_COPY.remove} disabled={move.pending} onPress={() => void remove()} />
+          ) : null}
+        </ButtonRow>
       </View>
     </View>
   );

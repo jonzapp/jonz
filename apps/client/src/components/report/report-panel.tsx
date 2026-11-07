@@ -7,6 +7,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { fixReport, openReport, replyToReport, sameAsFind, setReportState, setSameAs, type Report, type ReportLink } from '@/api/reports';
 import { Alert } from '@/components/alert';
 import { Button } from '@/components/button';
+import { ButtonRow } from '@/components/button-row';
 import { Field } from '@/components/field';
 import { Group } from '@/components/group';
 import { DetailsList, ReplyBox, ReportChip, ReportThread } from '@/components/report/report-parts';
@@ -131,7 +132,7 @@ function ReportBody({
       {answerable ? (
         <ReplyBox placeholder={emailOnly ? REPORT_COPY.replyByEmail(first) : REPORT_COPY.replyTo(first)} onSend={onReply} testID="report-reply" />
       ) : null}
-      <View style={styles.actions}>
+      <ButtonRow atEdge>
         <Button
           label={fixed ? REPORT_COPY.reopen : REPORT_COPY.markFixed}
           icon={fixed ? RotateCcwIcon : CheckIcon}
@@ -147,7 +148,7 @@ function ReportBody({
         {report.sameAs ? null : (
           <Button label={REPORT_COPY.sameAs} icon={CopyIcon} variant="outline" onPress={() => setSheet('same')} testID="report-same" />
         )}
-      </View>
+      </ButtonRow>
       {done ? <Meta testID="report-fixed-done">{done}</Meta> : null}
       {reopen.error ? <Alert message={reopen.error.message} /> : null}
       <Meta>{REPORT_COPY.note}</Meta>
@@ -251,9 +252,9 @@ function FixForm({ report, onDone }: { report: Report; onDone: (said: string) =>
         />
       </Group>
       {problem ? <Alert message={problem} testID="report-fix-problem" /> : null}
-      <View style={styles.start}>
+      <ButtonRow>
         <Button label={busy ? REPORT_COPY.sending : REPORT_COPY.fixSend} icon={tell ? MailIcon : CheckIcon} disabled={busy} onPress={() => void send()} testID="report-fix-send" />
-      </View>
+      </ButtonRow>
     </View>
   );
 }
@@ -303,9 +304,7 @@ const styles = StyleSheet.create({
   head: { gap: SPACE.xs },
   titleLine: { flexDirection: 'row', alignItems: 'center', gap: SPACE.md },
   name: { flex: 1 },
-  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACE.sm },
   also: { gap: SPACE.sm },
   form: { gap: SPACE.lg },
-  start: { alignItems: 'flex-start' },
   wait: { marginTop: SPACE.xl },
 });

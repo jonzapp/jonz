@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
+import { ButtonRow } from '@/components/button-row';
 import { Card } from '@/components/card';
 import { InviteSheet } from '@/components/house-page/invite-sheet';
 import { Body, SectionLabel } from '@/components/text';
@@ -22,14 +23,16 @@ export function MoveInAsk({ houseName, joinCode }: { houseName: string; joinCode
       <Card testID="move-in-ask">
         <SectionLabel style={styles.label}>{MOVING_COPY.askTitle}</SectionLabel>
         <Body style={styles.body}>{MOVING_COPY.askBody(houseName)}</Body>
-        <View style={styles.start}>
-          <Button
-            label={MOVING_COPY.askButton}
-            icon={Share2Icon}
-            variant="outline"
-            onPress={() => setInviting(true)}
-            testID="move-in-invite"
-          />
+        <View style={styles.action}>
+          <ButtonRow atEdge>
+            <Button
+              label={MOVING_COPY.askButton}
+              icon={Share2Icon}
+              variant="outline"
+              onPress={() => setInviting(true)}
+              testID="move-in-invite"
+            />
+          </ButtonRow>
         </View>
       </Card>
       <InviteSheet visible={inviting} onClose={() => setInviting(false)} code={joinCode} houseName={houseName} />
@@ -41,5 +44,5 @@ const styles = StyleSheet.create({
   // Overpass's caps sit high in their line.
   label: { paddingTop: 2 },
   body: { marginTop: SPACE.sm },
-  start: { alignItems: 'flex-start', marginTop: SPACE.lg },
+  action: { marginTop: SPACE.lg },
 });

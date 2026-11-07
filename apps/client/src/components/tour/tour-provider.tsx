@@ -41,7 +41,7 @@ const trimmed = (path: string) => path.replace(/\/+$/, '') || '/';
  * FIND_FOR is passed over. Finishing or skipping saves the tour as seen on
  * your account, so the offer on Today goes, and the Help sheet marks it.
  */
-export function TourProvider({ facts, children }: { facts: TourFacts; children: ReactNode }) {
+export function TourProvider({ facts, canAsk = false, children }: { facts: TourFacts; canAsk?: boolean; children: ReactNode }) {
   const { session } = useMembership();
   const pathname = usePathname();
   const window = useWindowDimensions();
@@ -159,6 +159,7 @@ export function TourProvider({ facts, children }: { facts: TourFacts; children: 
         <HelpSheet
           visible={help}
           page={pathname}
+          canAsk={canAsk}
           onClose={() => setHelp(false)}
           onTour={(id) => {
             pending.current = id;

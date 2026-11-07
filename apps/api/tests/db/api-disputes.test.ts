@@ -79,16 +79,17 @@ describe("POST /api/disputes", () => {
     expect((await stateOf(john.id)).disputes).toEqual([]);
   });
 
-  it("decides at once in a house of two, where raising it is the majority", async () => {
+  it("waits in a house of two, where the one who asked is the only voter (fair checks)", async () => {
     const { house, john, owner } = await tickedHouse(["Ava", "Ben"]);
     const res = await dispute(someoneElse(house, owner.userId), { assignmentId: john.id, reason: "Still full" });
     expect(res.status).toBe(200);
     expect(res.headers.get("access-control-allow-origin")).toBe("http://localhost:8205");
     expect(await res.json()).toEqual({ ok: true });
 
+    // Whoever ticked it has until the vote closes to answer with a photo.
     const state = await stateOf(john.id);
-    expect(state.done).toBe(false);
-    expect(state.disputes).toEqual([{ id: expect.any(String), resolution: "upheld" }]);
+    expect(state.done).toBe(true);
+    expect(state.disputes).toEqual([{ id: expect.any(String), resolution: null }]);
   });
 
   it("leaves it to the vote in a bigger house", async () => {
@@ -151,7 +152,7 @@ describe("POST /api/disputes/:id/votes", () => {
     const { owner, disputeId, john } = await openDispute();
     const res = await castVote(owner, disputeId, { uphold: false });
     expect(res.status).toBe(403);
-    expect(await res.json()).toEqual({ error: "You can’t vote on your own John." });
+    expect(await res.json()).toEqual({ error: "You can’t vote on your own John, or on a cover of it." });
     expect((await stateOf(john.id)).disputes[0].resolution).toBeNull();
   });
 

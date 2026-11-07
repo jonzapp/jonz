@@ -1,4 +1,4 @@
-import { DOOR, FRONT_DOOR_COPY, JOIN_COPY, PAGE_TITLE } from '@app/core';
+import { DOOR, FRONT_DOOR_COPY, JOIN_COPY, joinLine, PAGE_TITLE } from '@app/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 
@@ -92,7 +92,7 @@ export default function Join() {
         </Sign>
       ) : (
         <Sign>
-          <SignHeading above={JOIN_COPY.invited} title={invite.name} body={JOIN_COPY.livesHere(invite.members)} />
+          <SignHeading above={JOIN_COPY.invited} title={invite.name} body={joinLine(invite.kind, invite.members)} />
           {problem ? <Alert message={problem} /> : null}
           <Button
             label={joining ? JOIN_COPY.joining : FRONT_DOOR_COPY.join}
