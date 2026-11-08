@@ -252,7 +252,10 @@ describe("closing the month", () => {
   it("shares forfeits only with people still in the house", async () => {
     const house = await makeHouse(["Ava", "Ben", "Cal"]);
     const [ava, ben, cal] = house.everyone;
-    const week = weeksAgo(6);
+    // A fixed week, the last of September 2026: the weeks the clock deals after it
+    // fall in October, so the month holds only this week's two misses. (From the
+    // real clock, some days picked a week mid-month and counted later misses too.)
+    const week = weeksAgo(6, new Date("2026-11-08T12:00:00Z"));
     await addJohns(house.id, [{ name: "Bins", points: 2 }, { name: "Hob", points: 2 }], week);
     const { assignments } = await deal(house.id, week, week.startsAt);
     // Ava and Cal each miss one; Cal moves out before the month closes.
