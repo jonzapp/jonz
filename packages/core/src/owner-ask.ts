@@ -40,6 +40,9 @@ export const OWNER_ASK_COPY = {
   offline: "I can’t reach Claude just now, so I can’t answer. Everything I’d read is on the admin pages.",
   open: "Ask Jonz, owner",
   close: "Close Ask Jonz",
+  /** Under Your chats: the owner's are theirs alone, apart from every house's. */
+  chatsNote: "Only you can see these chats. They’re kept until you delete them.",
+  deleteBody: "It’s gone for good.",
   thinkingSteps: ["Reading the admin pages", "Looking it up", "Writing it down"],
   /** What a screen reader says for an owner's chip. */
   spoken: {

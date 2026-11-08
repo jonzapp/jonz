@@ -55,3 +55,16 @@ export async function deleteChat(id: string): Promise<void> {
   const { error } = await supabase.from('ask_chats').delete().eq('id', id);
   if (error) throw new Error(humanError(error));
 }
+
+/**
+ * Where a chat's history is kept, so the same pieces (Your chats, keeping
+ * after each answer) serve a housemate's Ask Jonz and the owner's: `key` is
+ * its list's cache key.
+ */
+export interface ChatStore {
+  key: readonly unknown[];
+  list: () => Promise<ChatSummary[]>;
+  load: (id: string) => Promise<SavedChat>;
+  keep: (id: string | null, turns: readonly SavedTurn[]) => Promise<string>;
+  remove: (id: string) => Promise<void>;
+}

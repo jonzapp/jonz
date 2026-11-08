@@ -269,6 +269,12 @@ The owner's own Ask Jonz, apart from every house's. Same model and loop
   Claude is asked (`claim_owner_ask`) and its answer after
   (`finish_owner_ask`). Only the owner reads it, nobody writes it by hand,
   and turns go after 90 days. `OWNER_ASK_TURNS_PER_DAY` (200) a day.
+- **Its chats, kept.** Like a housemate's Ask Jonz, each chat is kept
+  until the owner deletes it, in `owner_ask_chats` (only the owner, with
+  their code, reads or writes their own). The same bar and pieces as the
+  house's chat: the clock before the title opens Your chats (`AllChats`,
+  grouped Today, Last 7 days, Earlier, each with Delete), the pencil starts
+  a new chat, and a kept chat carries on where it was.
 - **Kept apart, tested.** A unit test fails if a housemate's Ask Jonz, even
   an admin's, gets an owner tool or owner words, or the owner's gets a
   house's.

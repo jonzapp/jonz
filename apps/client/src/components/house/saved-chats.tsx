@@ -1,9 +1,10 @@
 import { ASK_CHATS_COPY, chatGroups, chatWhen } from '@app/core';
 import { MessagesSquareIcon, Trash2Icon } from 'lucide-react-native';
 import { useState, type ReactNode } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ScrollView, StyleSheet } from 'react-native';
 
-import { deleteChat, type ChatSummary } from '@/api/ask-chats';
+import { type ChatStore, type ChatSummary } from '@/api/ask-chats';
 import { ConfirmSheet } from '@/components/confirm-sheet';
 import { Group } from '@/components/group';
 import { IconButton } from '@/components/icon-button';
@@ -11,8 +12,6 @@ import { Row, RowIcon } from '@/components/row';
 import { Section } from '@/components/section';
 import { Meta } from '@/components/text';
 import { useToastIfAny } from '@/components/toast';
-import { useAskChats } from '@/hooks/use-ask-chats';
-import { useMove } from '@/hooks/use-move';
 import { GUTTER, INSET, SECTION_GAP } from '@/theme';
 
 /** A chat as a row: what it began with, and when it was last used. */
@@ -48,34 +47,50 @@ function ChatRow({
  * first, under Today, Last 7 days and Earlier, as chat apps list them.
  * Open one to carry on with it, or delete it (after a sheet that says it's
  * gone for good). `onDeleted` lets the chat that's open start afresh when
- * it's the one deleted.
+ * it's the one deleted. `store` is where the chats are kept: a house's
+ * (houseChats) or the owner's own (ownerChats), the same list for both.
  */
 export function AllChats({
-  houseId,
+  store,
   zone,
   now,
   onOpen,
   onDeleted,
+  note = ASK_CHATS_COPY.allNote,
+  deleteBody = ASK_CHATS_COPY.deleteBody,
 }: {
-  houseId: string;
+  store: ChatStore;
   zone: string;
   now: Date;
   onOpen: (id: string) => void;
   onDeleted: (id: string) => void;
+  /** The line under the list, and the delete sheet's words: a house's say what leaving it does. */
+  note?: string;
+  deleteBody?: string;
 }) {
-  const chats = useAskChats(houseId);
-  const move = useMove(houseId);
+  const chats = useQuery({ queryKey: store.key, queryFn: store.list });
+  const client = useQueryClient();
   const toast = useToastIfAny();
   const [doomed, setDoomed] = useState<ChatSummary | null>(null);
+  const [pending, setPending] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
   const list = chats.data ?? [];
 
   async function remove() {
     if (!doomed) return;
     const id = doomed.id;
-    if (await move.run(() => deleteChat(id))) {
+    setPending(true);
+    setProblem(null);
+    try {
+      await store.remove(id);
+      await client.invalidateQueries({ queryKey: store.key });
       setDoomed(null);
       onDeleted(id);
       toast?.show(ASK_CHATS_COPY.deleted);
+    } catch (reason) {
+      setProblem(reason instanceof Error ? reason.message : String(reason));
+    } finally {
+      setPending(false);
     }
   }
 
@@ -108,15 +123,15 @@ export function AllChats({
           </Section>
         ))
       )}
-      <Meta style={styles.note}>{ASK_CHATS_COPY.allNote}</Meta>
+      <Meta style={styles.note}>{note}</Meta>
       <ConfirmSheet
         visible={doomed !== null}
         title={ASK_CHATS_COPY.deleteTitle}
-        body={ASK_CHATS_COPY.deleteBody}
+        body={deleteBody}
         confirmLabel={ASK_CHATS_COPY.delete}
         icon={Trash2Icon}
-        busy={move.pending}
-        problem={move.problem}
+        busy={pending}
+        problem={problem}
         onConfirm={() => void remove()}
         onClose={() => setDoomed(null)}
         testID="chat-delete-sheet"

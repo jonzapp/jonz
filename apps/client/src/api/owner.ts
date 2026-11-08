@@ -1,12 +1,15 @@
 import {
   AUDIT_WHAT_ACTION,
   auditSearchFilter,
+  CHAT_SAVED_TURNS,
+  chatTitle,
   humanError,
   NOTICE_KINDS,
   noticeFromRow,
   OwnerAskResponse,
   noticeSearchFilter,
   qrShape,
+  savedTurns,
   type AuditEntry,
   type AuditWhat,
   type AuditWho,
@@ -16,8 +19,10 @@ import {
   type NoticeKind,
   type PendingDeletion,
   type QrShape,
+  type SavedTurn,
 } from '@app/core';
 
+import type { ChatStore } from './ask-chats';
 import { apiPost } from './http';
 import { supabase } from './supabase';
 
@@ -435,3 +440,41 @@ export async function deleteByEmail(email: string, reason: string): Promise<void
 export function askOwner(messages: ChatMessage[]): Promise<OwnerAskResponse> {
   return apiPost('/api/admin/ask', { messages }, OwnerAskResponse);
 }
+
+/**
+ * The owner's own chats (owner_ask_chats), through their session with their
+ * code: the database lets only the owner read, keep or delete their own.
+ */
+export const ownerChats: ChatStore = {
+  key: ['owner-ask-chats'],
+  async list() {
+    const { data, error } = await supabase
+      .from('owner_ask_chats')
+      .select('id, title, updated_at')
+      .order('updated_at', { ascending: false })
+      .limit(200);
+    if (error) throw new Error(humanError(error));
+    return (data ?? []).map((c) => ({ id: c.id, title: c.title, updatedAt: c.updated_at }));
+  },
+  async load(id) {
+    const { data, error } = await supabase.from('owner_ask_chats').select('id, title, turns').eq('id', id).single();
+    if (error) throw new Error(humanError(error));
+    return { id: data.id, title: data.title, turns: savedTurns(data.turns) };
+  },
+  async keep(id, turns: readonly SavedTurn[]) {
+    const kept = turns.slice(-CHAT_SAVED_TURNS);
+    const title = chatTitle(turns);
+    if (id) {
+      const { error } = await supabase.from('owner_ask_chats').update({ title, turns: kept }).eq('id', id);
+      if (error) throw new Error(humanError(error));
+      return id;
+    }
+    const { data, error } = await supabase.from('owner_ask_chats').insert({ title, turns: kept }).select('id').single();
+    if (error) throw new Error(humanError(error));
+    return data.id;
+  },
+  async remove(id) {
+    const { error } = await supabase.from('owner_ask_chats').delete().eq('id', id);
+    if (error) throw new Error(humanError(error));
+  },
+};

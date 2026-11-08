@@ -54,14 +54,13 @@ export function OwnerAskDock() {
   const ask = useContext(OwnerAskContext);
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
-  const insets = useSafeAreaInsets();
   const opened = useOpened(ask?.open ?? false);
   if (!ask || width < WIDE || !opened) return null;
   return (
     <View
       style={[
         styles.dock,
-        { width: Math.min(PANEL, width * PANEL_SHARE), paddingTop: insets.top, borderLeftColor: colors.border },
+        { width: Math.min(PANEL, width * PANEL_SHARE), borderLeftColor: colors.border },
         !ask.open && styles.hidden,
       ]}
       testID="owner-ask-panel"
@@ -86,7 +85,7 @@ export function OwnerAskSheet() {
   }, [pathname, setOpen]);
   if (!ask || width >= WIDE || !opened) return null;
   return (
-    <LookBackground style={[styles.cover, { paddingTop: insets.top, paddingBottom: insets.bottom }, !ask.open && styles.hidden]}>
+    <LookBackground style={[styles.cover, { paddingBottom: insets.bottom }, !ask.open && styles.hidden]}>
       <OwnerAsk onClose={() => ask.setOpen(false)} />
     </LookBackground>
   );

@@ -11,6 +11,7 @@ import { SetupChat } from '@/components/house/setup-chat';
 import { useJohnSheetIfAny } from '@/components/john-sheet';
 import { replyPieces } from '@/components/reply/pieces';
 import { Reading, ReadFailed } from '@/components/read-state';
+import { houseChats } from '@/hooks/use-ask-chats';
 import { useHouse } from '@/hooks/use-house';
 import { useJohnList } from '@/hooks/use-john-list';
 import { useTable } from '@/hooks/use-table';
@@ -125,7 +126,7 @@ export function AskJonz({
       ) : null}
       {ready && all ? (
         <AllChats
-          houseId={houseId}
+          store={houseChats(houseId)}
           zone={zone}
           now={view.now}
           onOpen={(id) => void pickUp(id)}
