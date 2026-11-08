@@ -1,6 +1,6 @@
 import type { OwnerPermission } from "./owner-moves";
 import type { PassFeature } from "./pass";
-import type { Permission } from "./permissions";
+import type { AccountPermission, Permission } from "./permissions";
 
 // The operation registry (docs/specs/operation-registry.md): every operation
 // a person can perform on Jonz, from the app, the API, Ask Jonz or (later)
@@ -19,25 +19,24 @@ import type { Permission } from "./permissions";
 // what it should say, so a gap shows up as a failing test.
 
 /**
- * What guards an operation, as the database checks it today.
+ * What guards an operation or a table.
  *
- * - `permission`: a named permission, asked with can(house, …) for a house
- *   one or can_app(…) for the admin pages.
- * - `member`: anyone in the house the operation is about.
- * - `own`: only the caller's own row (their tick, their trip, their offer).
- * - `signed_in`: anyone signed in, about their own account.
+ * - `permission`: a named permission. A house one is asked with
+ *   can(house, …), an admin page one with can_app(…), and an account one
+ *   (`account:…`) is anyone signed in, about their own rows.
  * - `check`: a yes/no helper that answers about the caller and changes
  *   nothing (can, is_member…).
- *
- * `member` and `own` are what is left to name: step 3 of the plan gives
- * each a permission, and the count below falls to zero.
+ * - `member` and `own` (tables only, until their reads are split by
+ *   resource): anyone in the house, or the caller's own rows.
  */
 export type Guard =
-  | { by: "permission"; permission: Permission | OwnerPermission }
+  | { by: "permission"; permission: Permission | OwnerPermission | AccountPermission }
+  | { by: "check" }
   | { by: "member" }
-  | { by: "own" }
-  | { by: "signed_in" }
-  | { by: "check" };
+  | { by: "own" };
+
+/** An operation always names its permission, unless it's a check. */
+export type OperationGuard = Exclude<Guard, { by: "member" } | { by: "own" }>;
 
 /** Which part of Jonz an operation acts in. */
 export const OPERATION_SCOPES = ["house", "app", "account"] as const;
@@ -49,7 +48,12 @@ export interface Operation {
   scope: OperationScope;
   /** Whether it changes anything. */
   effect: "read" | "write";
-  guard: Guard;
+  /**
+   * The least it takes. An operation on other people's rows as well as
+   * your own (removing a flag, leaving or removing someone) asks the
+   * higher permission, inside, for theirs.
+   */
+  guard: OperationGuard;
   /**
    * The database function it runs. `server` ones are callable only by the
    * API's service role, after the route has checked the guard.
@@ -68,11 +72,12 @@ export interface Operation {
 }
 
 const op = <T extends Operation>(o: T) => o;
-const perm = (permission: Permission | OwnerPermission): Guard => ({ by: "permission", permission });
+const perm = (permission: Permission | OwnerPermission | AccountPermission) => ({ by: "permission", permission }) as const;
+const CHECK = { by: "check" } as const;
+const ACCOUNT_READ = perm("account:read");
+const ACCOUNT_WRITE = perm("account:write_own");
 const MEMBER: Guard = { by: "member" };
 const OWN: Guard = { by: "own" };
-const SIGNED_IN: Guard = { by: "signed_in" };
-const CHECK: Guard = { by: "check" };
 
 export const OPERATIONS = {
   // --- Checks: answer about the caller, change nothing ---------------------------------------
@@ -89,60 +94,60 @@ export const OPERATIONS = {
   owner_status: op({ about: "Whether to show the admin pages, ask for the code, and what the caller may do there", scope: "app", effect: "read", guard: CHECK, rpc: { name: "owner_status" } }),
 
   // --- Your account ---------------------------------------------------------------------------
-  create_house: op({ about: "Start a new house", scope: "account", effect: "write", guard: SIGNED_IN, rpc: { name: "create_house" } }),
-  start_house_from: op({ about: "Start a new house from one you're moving on from", scope: "account", effect: "write", guard: SIGNED_IN, rpc: { name: "start_house_from" } }),
-  house_by_code: op({ about: "Look up a house by its join code", scope: "account", effect: "read", guard: SIGNED_IN, rpc: { name: "house_by_code" } }),
-  join_house: op({ about: "Join a house with its code", scope: "account", effect: "write", guard: SIGNED_IN, rpc: { name: "join_house" } }),
-  set_my_photo: op({ about: "Change your photo", scope: "account", effect: "write", guard: OWN, rpc: { name: "set_my_photo" } }),
-  set_away: op({ about: "Book time away", scope: "account", effect: "write", guard: OWN, rpc: { name: "set_away" }, route: "POST /api/away" }),
-  cancel_away: op({ about: "Cancel your time away", scope: "account", effect: "write", guard: OWN, rpc: { name: "cancel_away" } }),
-  set_moving_out: op({ about: "Say the day you're moving out", scope: "account", effect: "write", guard: OWN, rpc: { name: "set_moving_out" } }),
-  moving_on: op({ about: "Where you're moving on from, and what comes with you", scope: "account", effect: "read", guard: SIGNED_IN, rpc: { name: "moving_on" } }),
-  leave_pass: op({ about: "Stop paying for a House Pass you bought for a house you've left", scope: "account", effect: "write", guard: OWN, rpc: { name: "leave_pass" }, destructive: true }),
-  account_deletion_preview: op({ about: "What deleting your account would remove", scope: "account", effect: "read", guard: SIGNED_IN, rpc: { name: "account_deletion_preview" } }),
-  account_deletion_status: op({ about: "Whether your account is being deleted, and when", scope: "account", effect: "read", guard: SIGNED_IN, rpc: { name: "account_deletion_status" } }),
-  request_account_deletion: op({ about: "Start deleting your account", scope: "account", effect: "write", guard: SIGNED_IN, rpc: { name: "request_account_deletion" }, destructive: true }),
-  keep_account: op({ about: "Stop your account being deleted", scope: "account", effect: "write", guard: SIGNED_IN, rpc: { name: "keep_account" } }),
-  my_reports: op({ about: "The problems you've reported, and their replies", scope: "account", effect: "read", guard: SIGNED_IN, rpc: { name: "my_reports" } }),
-  send_report: op({ about: "Report a problem", scope: "account", effect: "write", guard: SIGNED_IN, rpc: { name: "send_report" }, route: "POST /api/reports" }),
-  write_back: op({ about: "Write back on a problem you reported", scope: "account", effect: "write", guard: OWN, rpc: { name: "write_back" }, route: "POST /api/reports/[id]/messages" }),
-  see_report: op({ about: "Mark a reply to your report as seen", scope: "account", effect: "write", guard: OWN, rpc: { name: "see_report" } }),
+  create_house: op({ about: "Start a new house", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "create_house" } }),
+  start_house_from: op({ about: "Start a new house from one you're moving on from", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "start_house_from" } }),
+  house_by_code: op({ about: "Look up a house by its join code", scope: "account", effect: "read", guard: ACCOUNT_READ, rpc: { name: "house_by_code" } }),
+  join_house: op({ about: "Join a house with its code", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "join_house" } }),
+  set_my_photo: op({ about: "Change your photo", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "set_my_photo" } }),
+  set_away: op({ about: "Book time away", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "set_away" }, route: "POST /api/away" }),
+  cancel_away: op({ about: "Cancel your time away", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "cancel_away" } }),
+  set_moving_out: op({ about: "Say the day you're moving out", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "set_moving_out" } }),
+  moving_on: op({ about: "Where you're moving on from, and what comes with you", scope: "account", effect: "read", guard: ACCOUNT_READ, rpc: { name: "moving_on" } }),
+  leave_pass: op({ about: "Stop paying for a House Pass you bought for a house you've left", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "leave_pass" }, destructive: true }),
+  account_deletion_preview: op({ about: "What deleting your account would remove", scope: "account", effect: "read", guard: ACCOUNT_READ, rpc: { name: "account_deletion_preview" } }),
+  account_deletion_status: op({ about: "Whether your account is being deleted, and when", scope: "account", effect: "read", guard: ACCOUNT_READ, rpc: { name: "account_deletion_status" } }),
+  request_account_deletion: op({ about: "Start deleting your account", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "request_account_deletion" }, destructive: true }),
+  keep_account: op({ about: "Stop your account being deleted", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "keep_account" } }),
+  my_reports: op({ about: "The problems you've reported, and their replies", scope: "account", effect: "read", guard: ACCOUNT_READ, rpc: { name: "my_reports" } }),
+  send_report: op({ about: "Report a problem", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "send_report" }, route: "POST /api/reports" }),
+  write_back: op({ about: "Write back on a problem you reported", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "write_back" }, route: "POST /api/reports/[id]/messages" }),
+  see_report: op({ about: "Mark a reply to your report as seen", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "see_report" } }),
 
   // --- A house: reading -----------------------------------------------------------------------
-  house_history: op({ about: "The house's history, a page at a time", scope: "house", effect: "read", guard: MEMBER, rpc: { name: "house_history" }, entitlement: "history" }),
+  house_history: op({ about: "The house's history, a page at a time", scope: "house", effect: "read", guard: perm("house:read"), rpc: { name: "house_history" }, entitlement: "history" }),
   ask_usage: op({ about: "How much of the house's Ask Jonz this month each person has used", scope: "house", effect: "read", guard: perm("house:read"), rpc: { name: "ask_usage_people", server: true }, route: "POST /api/ask/usage" }),
-  catch_up: op({ about: "Bring the house up to date: close a finished week, deal the next", scope: "house", effect: "write", guard: MEMBER, route: "POST /api/fresh" }),
+  catch_up: op({ about: "Bring the house up to date: close a finished week, deal the next", scope: "house", effect: "write", guard: perm("house:read"), route: "POST /api/fresh" }),
 
   // --- A house: your own Johns ----------------------------------------------------------------
-  mark_done: op({ about: "Tick off a John", scope: "house", effect: "write", guard: OWN, rpc: { name: "mark_done" }, entitlement: "photos" }),
-  undo_done: op({ about: "Take back a tick", scope: "house", effect: "write", guard: OWN, rpc: { name: "undo_done" } }),
-  plan_john: op({ about: "Say when you'll do a John", scope: "house", effect: "write", guard: OWN, rpc: { name: "plan_john" } }),
-  roll_call: op({ about: "Tick off a shared John, with who helped", scope: "house", effect: "write", guard: OWN, rpc: { name: "roll_call" }, route: "POST /api/roll-call", entitlement: "photos" }),
-  save_prefs: op({ about: "Change which days and times suit you, and Johns you'd rather", scope: "house", effect: "write", guard: OWN, rpc: { name: "save_prefs" } }),
-  use_immunity: op({ about: "Use an immunity on a John", scope: "house", effect: "write", guard: OWN, rpc: { name: "use_immunity" } }),
-  use_swap: op({ about: "Use a swap token to swap a John", scope: "house", effect: "write", guard: OWN, rpc: { name: "use_swap" } }),
-  offer_swap: op({ about: "Ask someone to swap a John with you", scope: "house", effect: "write", guard: OWN, rpc: { name: "offer_swap" }, route: "POST /api/swaps" }),
-  answer_swap: op({ about: "Say yes or no to a swap ask", scope: "house", effect: "write", guard: OWN, rpc: { name: "answer_swap" } }),
-  answer_dispute: op({ about: "Answer a question about your tick, with a photo", scope: "house", effect: "write", guard: OWN, rpc: { name: "answer_dispute" }, entitlement: "photos" }),
-  undo_action: op({ about: "Undo a move from History", scope: "house", effect: "write", guard: OWN, rpc: { name: "undo_action" } }),
-  undo_latest: op({ about: "Undo your latest move of a kind", scope: "house", effect: "write", guard: OWN, rpc: { name: "undo_latest" } }),
+  mark_done: op({ about: "Tick off a John", scope: "house", effect: "write", guard: perm("ticks:write_own"), rpc: { name: "mark_done" }, entitlement: "photos" }),
+  undo_done: op({ about: "Take back a tick", scope: "house", effect: "write", guard: perm("ticks:write_own"), rpc: { name: "undo_done" } }),
+  plan_john: op({ about: "Say when you'll do a John", scope: "house", effect: "write", guard: perm("ticks:write_own"), rpc: { name: "plan_john" } }),
+  roll_call: op({ about: "Tick off a shared John, with who helped", scope: "house", effect: "write", guard: perm("ticks:write_own"), rpc: { name: "roll_call" }, route: "POST /api/roll-call", entitlement: "photos" }),
+  save_prefs: op({ about: "Change which days and times suit you, and Johns you'd rather", scope: "house", effect: "write", guard: perm("profile:write_own"), rpc: { name: "save_prefs" } }),
+  use_immunity: op({ about: "Use an immunity on a John", scope: "house", effect: "write", guard: perm("perks:write_own"), rpc: { name: "use_immunity" } }),
+  use_swap: op({ about: "Use a swap token to swap a John", scope: "house", effect: "write", guard: perm("perks:write_own"), rpc: { name: "use_swap" } }),
+  offer_swap: op({ about: "Ask someone to swap a John with you", scope: "house", effect: "write", guard: perm("swaps:write_own"), rpc: { name: "offer_swap" }, route: "POST /api/swaps" }),
+  answer_swap: op({ about: "Say yes or no to a swap ask", scope: "house", effect: "write", guard: perm("swaps:write_own"), rpc: { name: "answer_swap" } }),
+  answer_dispute: op({ about: "Answer a question about your tick, with a photo", scope: "house", effect: "write", guard: perm("disputes:write_own"), rpc: { name: "answer_dispute" }, entitlement: "photos" }),
+  undo_action: op({ about: "Undo a move from History", scope: "house", effect: "write", guard: perm("history:write_own"), rpc: { name: "undo_action" } }),
+  undo_latest: op({ about: "Undo your latest move of a kind", scope: "house", effect: "write", guard: perm("history:write_own"), rpc: { name: "undo_latest" } }),
 
   // --- A house: anyone in it ------------------------------------------------------------------
-  cover_john: op({ about: "Do someone else's overdue John", scope: "house", effect: "write", guard: MEMBER, rpc: { name: "cover_john" }, entitlement: "photos" }),
-  hold_cover: op({ about: "Say you're on someone else's overdue John", scope: "house", effect: "write", guard: MEMBER, rpc: { name: "hold_cover" } }),
-  undo_cover: op({ about: "Take back a cover", scope: "house", effect: "write", guard: OWN, rpc: { name: "undo_cover" } }),
-  raise_flag: op({ about: "Flag an on-call John that needs doing", scope: "house", effect: "write", guard: MEMBER, rpc: { name: "raise_flag" }, route: "POST /api/flags" }),
-  raise_dispute: op({ about: "Question a tick", scope: "house", effect: "write", guard: MEMBER, rpc: { name: "raise_dispute" }, route: "POST /api/disputes" }),
-  cast_vote: op({ about: "Vote on a questioned tick", scope: "house", effect: "write", guard: MEMBER, rpc: { name: "cast_vote" }, route: "POST /api/disputes/[id]/votes" }),
-  confirm_payment: op({ about: "Mark money paid between housemates", scope: "house", effect: "write", guard: MEMBER, rpc: { name: "confirm_payment" }, destructive: true, entitlement: "stake" }),
+  cover_john: op({ about: "Do someone else's overdue John", scope: "house", effect: "write", guard: perm("swaps:write_own"), rpc: { name: "cover_john" }, entitlement: "photos" }),
+  hold_cover: op({ about: "Say you're on someone else's overdue John", scope: "house", effect: "write", guard: perm("swaps:write_own"), rpc: { name: "hold_cover" } }),
+  undo_cover: op({ about: "Take back a cover", scope: "house", effect: "write", guard: perm("swaps:write_own"), rpc: { name: "undo_cover" } }),
+  raise_flag: op({ about: "Flag an on-call John that needs doing", scope: "house", effect: "write", guard: perm("flags:write_own"), rpc: { name: "raise_flag" }, route: "POST /api/flags" }),
+  raise_dispute: op({ about: "Question a tick", scope: "house", effect: "write", guard: perm("disputes:write_own"), rpc: { name: "raise_dispute" }, route: "POST /api/disputes" }),
+  cast_vote: op({ about: "Vote on a questioned tick", scope: "house", effect: "write", guard: perm("disputes:write_own"), rpc: { name: "cast_vote" }, route: "POST /api/disputes/[id]/votes" }),
+  confirm_payment: op({ about: "Mark money paid between housemates", scope: "house", effect: "write", guard: perm("payments:write_own"), rpc: { name: "confirm_payment" }, destructive: true, entitlement: "stake" }),
   ask_house: op({ about: "Ask Jonz about the house, or ask it to change something", scope: "house", effect: "write", guard: perm("house:read"), route: "POST /api/setup/draft" }),
-  pass_checkout: op({ about: "Buy the House Pass", scope: "house", effect: "write", guard: MEMBER, route: "POST /api/pass/checkout" }),
-  pass_billing: op({ about: "Open billing for a House Pass you bought", scope: "house", effect: "read", guard: OWN, route: "POST /api/pass/manage" }),
+  pass_checkout: op({ about: "Buy the House Pass", scope: "house", effect: "write", guard: perm("billing:write_own"), route: "POST /api/pass/checkout" }),
+  pass_billing: op({ about: "Open billing for a House Pass you bought", scope: "house", effect: "read", guard: perm("billing:write_own"), route: "POST /api/pass/manage" }),
 
   // --- A house: admins (Parents) --------------------------------------------------------------
   answer_tick: op({ about: "OK a kid's tick, or send it back", scope: "house", effect: "write", guard: perm("ticks:write"), rpc: { name: "answer_tick" }, route: "POST /api/oks/[id]" }),
   board_tick: op({ about: "Tick a kid's John from the kitchen board", scope: "house", effect: "write", guard: perm("ticks:write"), rpc: { name: "board_tick" } }),
-  remove_flag: op({ about: "Remove anyone's flag", scope: "house", effect: "write", guard: perm("flags:write"), rpc: { name: "remove_flag" } }),
+  remove_flag: op({ about: "Remove a flag: your own, or anyone's with flags:write", scope: "house", effect: "write", guard: perm("flags:write_own"), rpc: { name: "remove_flag" } }),
   save_group: op({ about: "Make or change a group", scope: "house", effect: "write", guard: perm("groups:write"), rpc: { name: "save_group" } }),
   delete_group: op({ about: "Delete a group", scope: "house", effect: "write", guard: perm("groups:write"), rpc: { name: "delete_group" }, destructive: true }),
   reset_join_code: op({ about: "Make a new join code (the old one stops working)", scope: "house", effect: "write", guard: perm("house:write"), rpc: { name: "reset_join_code" }, destructive: true }),
@@ -151,7 +156,7 @@ export const OPERATIONS = {
   reset_house: op({ about: "Put a result, a week or a month's forfeits right", scope: "house", effect: "write", guard: perm("history:write"), rpc: { name: "admin_reset", server: true }, route: "POST /api/resets", destructive: true }),
   pay_pocket_money: op({ about: "Mark a kid's pocket money paid", scope: "house", effect: "write", guard: perm("pocket_money:write"), rpc: { name: "pay_pocket_money" }, destructive: true }),
   add_kid: op({ about: "Add a child without a sign-in", scope: "house", effect: "write", guard: perm("members:write"), rpc: { name: "add_kid", server: true }, route: "POST /api/kids" }),
-  remove_member: op({ about: "Remove someone from the house", scope: "house", effect: "write", guard: perm("members:write"), rpc: { name: "remove_member" }, destructive: true }),
+  remove_member: op({ about: "Leave the house, or remove someone from it with members:write", scope: "house", effect: "write", guard: perm("members:write_own"), rpc: { name: "remove_member" }, destructive: true }),
   set_member_role: op({ about: "Make someone an admin, or not", scope: "house", effect: "write", guard: perm("members:write"), rpc: { name: "set_member_role" }, destructive: true }),
   hand_over: op({ about: "Hand admin over to someone else", scope: "house", effect: "write", guard: perm("members:write"), rpc: { name: "hand_over" }, destructive: true }),
 
@@ -281,10 +286,10 @@ export const TABLES = {
   weeks: reads("Weeks"),
   reports: reads("Problems people reported", OWN),
   report_messages: reads("Replies on reported problems", OWN),
-  notices: { ...reads("Notices that are on (and every notice, for the admin pages)", SIGNED_IN), public: true },
-  permissions: reads("The permissions list", SIGNED_IN),
-  role_permissions: reads("What each house role may do", SIGNED_IN),
-  app_role_permissions: reads("What each admin page role may do", SIGNED_IN),
+  notices: { ...reads("Notices that are on (and every notice, for the admin pages)", ACCOUNT_READ), public: true },
+  permissions: reads("The permissions list", ACCOUNT_READ),
+  role_permissions: reads("What each house role may do", ACCOUNT_READ),
+  app_role_permissions: reads("What each admin page role may do", ACCOUNT_READ),
   admin_audit: reads("The audit log of admin page changes", perm("admin:read")),
   support_drafts: reads("The support agent's draft replies", perm("reports:write")),
   owner_ask_turns: reads("The owner's Ask Jonz turns", perm("admin:read")),
@@ -292,13 +297,6 @@ export const TABLES = {
 
 export type TableName = keyof typeof TABLES;
 
-/** What a guard needs left to do, step 3 of the plan: name a permission for each. */
-export function unnamedGuards(): OperationName[] {
-  return OPERATION_NAMES.filter((n) => {
-    const g = OPERATIONS[n].guard.by;
-    return g === "member" || g === "own";
-  });
-}
 
 const sqlText = (v: string) => `'${v.replaceAll("'", "''")}'`;
 

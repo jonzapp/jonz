@@ -2806,7 +2806,7 @@ export type Database = {
       my_app_role: { Args: never; Returns: string }
       my_permissions: { Args: { h: string }; Returns: string[] }
       my_open_assignment: {
-        Args: { p_assignment: string }
+        Args: { p_assignment: string; p_permission?: string }
         Returns: {
           absent_at: string | null
           category: string

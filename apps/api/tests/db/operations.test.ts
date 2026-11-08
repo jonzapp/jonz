@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { OPERATIONS, OPERATION_NAMES, OWNER_ROLE_PERMISSIONS, type Operation } from "@app/core";
+import { HOUSE_MATRIX, OPERATIONS, OPERATION_NAMES, OWNER_ROLE_PERMISSIONS, type Operation, type Permission } from "@app/core";
 import { describe, expect, it } from "vitest";
 
 import { adminClient, signedInUser, type Actor } from "@/tests/support/clients";
@@ -15,7 +15,9 @@ import { ANON_KEY, SUPABASE_URL } from "@/tests/support/env";
  * operation guarded by anything but `signed_in` refuses someone outside the
  * house (a read may instead show them nothing); an admin page operation refuses a housemate, an owner who hasn't
  * given their code, and a support person when support doesn't hold its
- * permission. Arguments come from the database's own description of each
+ * permission. And each house operation asks its own permission: a member
+ * without it (the admin-only ones, or one taken away from members for the
+ * call) is refused. Arguments come from the database's own description of each
  * function (PostgREST's OpenAPI document), filled with the house's real ids,
  * so a refusal is the guard and not a missing row. Which roles may do each
  * one is tested in the permission matrix (permission-matrix.test.ts).
@@ -80,6 +82,14 @@ async function aHouse() {
   return { house, ids };
 }
 
+/**
+ * Operations this test can't bring to their permission check: with nothing
+ * of Ben's to act on, they stop first. Each is tested where it lives.
+ * - undo_latest finds the caller's latest move, then asks undo_action
+ *   (history:write_own), which is on this list's other side.
+ */
+const UNREACHED: readonly string[] = ["undo_latest"];
+
 const listed = OPERATION_NAMES.map((n) => [n, OPERATIONS[n] as Operation] as const).filter(([, o]) => o.rpc && !o.rpc.server);
 
 async function call(who: Actor, fn: string, args: Record<string, string> | undefined, ids: Ids) {
@@ -127,6 +137,30 @@ describe("every operation refuses people it isn't for", () => {
       if (!(OWNER_ROLE_PERMISSIONS.support as readonly string[]).includes(o.guard.permission)) {
         const res = await call(support, fn, sigs[fn], ids);
         if (res.error?.code !== "42501") allowed.push(`support: ${name}`);
+      }
+    }
+    expect(allowed).toEqual([]);
+  });
+
+  it("a house operation asks its own permission: a member without it is refused", async () => {
+    const { house, ids } = await aHouse();
+    const ben = house.members[0];
+    const sigs = await signatures(ben);
+    const db = adminClient();
+    const allowed: string[] = [];
+    for (const [name, o] of listed) {
+      if (o.scope !== "house" || o.guard.by !== "permission") continue;
+      const permission = o.guard.permission as Permission;
+      const held = HOUSE_MATRIX[permission].member;
+      // Only migrations change the role list; the test takes the row away for one call, then puts it back.
+      if (held) expectOk(await db.from("role_permissions").delete().eq("role", "member").eq("permission", permission));
+      try {
+        const res = await call(ben, o.rpc!.name, sigs[o.rpc!.name], ids);
+        const data: unknown = res.data;
+        const shown = Array.isArray(data) ? data.length > 0 : data != null;
+        if (!res.error ? o.effect === "write" || shown : res.error.code !== "42501" && !UNREACHED.includes(name)) allowed.push(`${name} (${permission})`);
+      } finally {
+        if (held) expectOk(await db.from("role_permissions").insert({ role: "member", permission }));
       }
     }
     expect(allowed).toEqual([]);

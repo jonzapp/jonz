@@ -1,17 +1,22 @@
 import { describe, expect, it } from "vitest";
 
-import { OPERATIONS, OPERATION_NAMES, registrySql, SYSTEM_ROUTES, TABLES, type Operation, unnamedGuards } from "./operations";
+import { OPERATIONS, OPERATION_NAMES, registrySql, SYSTEM_ROUTES, TABLES, type Operation } from "./operations";
 import { OWNER_PERMISSION_NAMES } from "./owner-moves";
-import { PERMISSION_NAMES } from "./permissions";
+import { ACCOUNT_PERMISSIONS, PERMISSION_NAMES } from "./permissions";
 
 const all = OPERATION_NAMES.map((name) => [name, OPERATIONS[name] as Operation] as const);
 
 describe("the operation registry", () => {
-  it("guards house operations with house permissions, and admin page ones with app permissions", () => {
+  it("names a permission from its own scope's list on every operation that isn't a check", () => {
+    const lists: Record<Operation["scope"], readonly string[]> = {
+      house: PERMISSION_NAMES,
+      app: OWNER_PERMISSION_NAMES,
+      account: Object.keys(ACCOUNT_PERMISSIONS),
+    };
     for (const [name, o] of all) {
-      if (o.guard.by !== "permission") continue;
-      const names: readonly string[] = o.scope === "app" ? OWNER_PERMISSION_NAMES : PERMISSION_NAMES;
-      expect(names, name).toContain(o.guard.permission);
+      if (o.guard.by === "check") continue;
+      expect(o.guard.by, name).toBe("permission");
+      if (o.guard.by === "permission") expect(lists[o.scope], name).toContain(o.guard.permission);
     }
   });
 
@@ -44,11 +49,6 @@ describe("the operation registry", () => {
       const writes = t.grants.some((g) => g !== "select");
       expect("write" in t, name).toBe(writes);
     }
-  });
-
-  // Step 3 of the plan names a permission for each of these; this list only shrinks.
-  it("knows which operations still check membership or ownership instead of a named permission", () => {
-    expect(unnamedGuards()).toHaveLength(30);
   });
 
   it("is what the database standards check reads", async () => {

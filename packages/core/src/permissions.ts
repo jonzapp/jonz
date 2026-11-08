@@ -38,6 +38,9 @@ export const PERMISSIONS = {
   "perks:write_own": "Use an immunity or a swap token",
   "profile:write_own": "Change your own name, photo, notification settings and preferences",
   "members:write_own": "Leave the house",
+  "history:write_own": "Undo your own moves from History",
+  "payments:write_own": "Mark money paid between housemates",
+  "billing:write_own": "Buy the House Pass, and open billing for one you bought",
   // Admins (Parents in a family).
   "house:write": "Change the house's name and rules, and make a new join code",
   "johns:write": "Add Johns to the list, change them, and take them off",
@@ -73,6 +76,9 @@ const EVERYONE: Permission[] = [
   "perks:write_own",
   "profile:write_own",
   "members:write_own",
+  "history:write_own",
+  "payments:write_own",
+  "billing:write_own",
 ];
 
 /** What each role may do. An admin may do everything a member may. */
@@ -80,6 +86,18 @@ export const ROLE_PERMISSIONS: Record<HouseRole, readonly Permission[]> = {
   member: EVERYONE,
   admin: PERMISSION_NAMES,
 };
+
+/**
+ * What anyone signed in may do about their own account, wherever they are:
+ * no house role is needed, and the database checks it is their own row
+ * (auth.uid()). They have names so an outside app (an MCP client) can ask
+ * for them like any other permission.
+ */
+export const ACCOUNT_PERMISSIONS = {
+  "account:read": "See your own account: your reports, moving on, and whether it's being deleted",
+  "account:write_own": "Change your own account: start or join a house, your photo, time away, moving out, reports, and deleting your account",
+} as const;
+export type AccountPermission = keyof typeof ACCOUNT_PERMISSIONS;
 
 /** Whether someone with this role (or no role: not in the house) may do it. */
 export function can(role: HouseRole | null | undefined, permission: Permission): boolean {
