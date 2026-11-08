@@ -111,9 +111,24 @@ export function ReportThread({ report, viewer }: { report: Report; viewer: 'them
  * inside it once there's something to send. `onSend` sends it; the box
  * empties once it's gone, and says why if it couldn't.
  */
-export function ReplyBox({ placeholder, onSend, testID = 'reply-box' }: { placeholder: string; onSend: (text: string) => Promise<void>; testID?: string }) {
+export function ReplyBox({
+  placeholder,
+  onSend,
+  testID = 'reply-box',
+  text: held,
+  onChangeText,
+}: {
+  placeholder: string;
+  onSend: (text: string) => Promise<void>;
+  testID?: string;
+  /** The words, when the page holds them (the support agent's suggestion can fill the box). */
+  text?: string;
+  onChangeText?: (text: string) => void;
+}) {
   const { colors, type } = useTheme();
-  const [text, setText] = useState('');
+  const [own, setOwn] = useState('');
+  const text = held ?? own;
+  const setText = onChangeText ?? setOwn;
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const ready = text.trim().length > 0 && !busy;

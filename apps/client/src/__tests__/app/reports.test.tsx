@@ -1,10 +1,10 @@
-import { REPORT_COPY } from '@app/core';
+import { REPORT_COPY, SUPPORT_DRAFT_COPY } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 import { useWindowDimensions } from 'react-native';
 
 import { loadHouse } from '@/api/board';
 import { catchUp } from '@/api/house';
-import { ownerStatus } from '@/api/owner';
+import { deleteByEmail, ownerStatus } from '@/api/owner';
 import { forgetDetails, noteError, notePage } from '@/api/report-details';
 import {
   fixReport,
@@ -20,9 +20,12 @@ import {
   sendReport,
   setReportState,
   setSameAs,
+  setSupportDraft,
+  supportDraft,
   writeBack,
   type InboxRow,
   type Report,
+  type SupportDraft,
 } from '@/api/reports';
 import ReportScreen from '@/app/(house)/house/reports/[id]';
 import ReportsScreen from '@/app/(house)/house/reports/index';
@@ -35,7 +38,7 @@ import { renderPages } from '@/testing/pages';
 
 jest.mock('@/api/board', () => ({ loadHouse: jest.fn() }));
 jest.mock('@/api/house', () => ({ catchUp: jest.fn() }));
-jest.mock('@/api/owner', () => ({ ownerStatus: jest.fn(), liveNotices: jest.fn().mockResolvedValue([]) }));
+jest.mock('@/api/owner', () => ({ ownerStatus: jest.fn(), liveNotices: jest.fn().mockResolvedValue([]), deleteByEmail: jest.fn() }));
 jest.mock('@/api/reports', () => ({
   ...jest.requireActual<typeof import('@/api/reports')>('@/api/reports'),
   pickScreenshot: jest.fn(),
@@ -52,6 +55,8 @@ jest.mock('@/api/reports', () => ({
   fixReport: jest.fn(),
   setSameAs: jest.fn(),
   sameAsFind: jest.fn(),
+  supportDraft: jest.fn(),
+  setSupportDraft: jest.fn(),
 }));
 jest.mock('@/api/supabase', () => ({ supabase: {} }));
 jest.mock('@/api/http', () => ({ apiPost: jest.fn() }));
@@ -129,6 +134,9 @@ beforeEach(() => {
   jest.mocked(fixReport).mockResolvedValue({ fixed: 1, told: 1 });
   jest.mocked(setSameAs).mockResolvedValue(undefined);
   jest.mocked(sameAsFind).mockResolvedValue([{ id: 'r7', name: 'Ben Cole', words: 'The bins John is missing', state: 'open' }]);
+  jest.mocked(supportDraft).mockResolvedValue(null);
+  jest.mocked(setSupportDraft).mockResolvedValue(undefined);
+  jest.mocked(deleteByEmail).mockResolvedValue(undefined);
 });
 
 describe('Help on House', () => {
@@ -333,5 +341,74 @@ describe('the owner’s Inbox', () => {
     await waitFor(() => expect(openReport).toHaveBeenCalledWith('r1'));
     await fireEvent.press(screen.getByTestId('inbox-r2'));
     await waitFor(() => expect(openReport).toHaveBeenCalledWith('r2'));
+  });
+});
+
+describe('the support agent', () => {
+  const ROUTES = { 'admin/_layout': AdminLayout, 'admin/inbox/index': InboxPage, 'admin/inbox/[id]': InboxReportPage };
+  const DRAFT: SupportDraft = {
+    id: 'd1',
+    state: 'ready',
+    reply: 'Thanks Ava, I can see it. I’m looking at it now.',
+    action: 'same_as',
+    sameAs: { id: 'r7', name: 'Ben Cole', words: 'The bins John is missing', state: 'open' },
+    why: 'Ben reported the same thing yesterday.',
+  };
+  // Waiting: Ava's words, and nothing from Jonz yet.
+  beforeEach(() => jest.mocked(openReport).mockResolvedValue({ ...BINS, state: 'open', messages: [BINS.messages[0]] }));
+
+  it('suggests a reply and a step, and does both only when the owner taps', async () => {
+    jest.mocked(supportDraft).mockResolvedValue(DRAFT);
+    await renderPages(ROUTES, '/admin/inbox/r1');
+    const card = await screen.findByTestId('support-draft');
+    expect(card).toHaveTextContent(/Jonz suggests.*Ben reported the same thing yesterday.*Thanks Ava, I can see it.*Same as Ben’s report/);
+    expect(replyToReport).not.toHaveBeenCalled();
+    expect(setSameAs).not.toHaveBeenCalled();
+    await fireEvent.press(within(card).getByTestId('support-draft-send'));
+    await waitFor(() => expect(setSupportDraft).toHaveBeenCalledWith('d1', 'used'));
+    expect(replyToReport).toHaveBeenCalledWith('r1', DRAFT.reply);
+    expect(setSameAs).toHaveBeenCalledWith('r1', 'r7');
+  });
+
+  it('puts the words in the reply box to change first, and sets one aside', async () => {
+    jest.mocked(supportDraft).mockResolvedValue({ ...DRAFT, action: 'none', sameAs: null });
+    await renderPages(ROUTES, '/admin/inbox/r1');
+    await fireEvent.press(await screen.findByTestId('support-draft-edit'));
+    expect(screen.getByTestId('report-reply-input')).toHaveDisplayValue(DRAFT.reply);
+    await fireEvent.changeText(screen.getByTestId('report-reply-input'), 'Thanks Ava, on it.');
+    await fireEvent.press(screen.getByTestId('report-reply-send'));
+    await waitFor(() => expect(replyToReport).toHaveBeenCalledWith('r1', 'Thanks Ava, on it.'));
+    await waitFor(() => expect(setSupportDraft).toHaveBeenCalledWith('d1', 'used'));
+    expect(setSameAs).not.toHaveBeenCalled();
+  });
+
+  it('sets a suggestion aside with Not this', async () => {
+    jest.mocked(supportDraft).mockResolvedValue({ ...DRAFT, action: 'none', sameAs: null });
+    await renderPages(ROUTES, '/admin/inbox/r1');
+    await fireEvent.press(await screen.findByTestId('support-draft-dismiss'));
+    await waitFor(() => expect(setSupportDraft).toHaveBeenCalledWith('d1', 'dismissed'));
+    await waitFor(() => expect(screen.queryByTestId('support-draft')).toBeNull());
+    expect(replyToReport).not.toHaveBeenCalled();
+  });
+
+  it('asks again before it starts the 30 days', async () => {
+    jest.mocked(supportDraft).mockResolvedValue({ ...DRAFT, action: 'delete', sameAs: null });
+    await renderPages(ROUTES, '/admin/inbox/r1');
+    const card = await screen.findByTestId('support-draft');
+    expect(card).toHaveTextContent(new RegExp(SUPPORT_DRAFT_COPY.deleteStep));
+    await fireEvent.press(within(card).getByTestId('support-draft-send'));
+    expect(deleteByEmail).not.toHaveBeenCalled();
+    await fireEvent.press(await screen.findByTestId('support-draft-delete-yes'));
+    await waitFor(() => expect(deleteByEmail).toHaveBeenCalledWith('ava@example.com', SUPPORT_DRAFT_COPY.deleteReason));
+    expect(replyToReport).toHaveBeenCalledWith('r1', DRAFT.reply);
+  });
+
+  it('suggests nothing on a report that is already answered', async () => {
+    jest.mocked(openReport).mockResolvedValue({ ...BINS, state: 'replied' });
+    jest.mocked(supportDraft).mockResolvedValue(DRAFT);
+    await renderPages(ROUTES, '/admin/inbox/r1');
+    await screen.findByTestId('report-panel');
+    expect(screen.queryByTestId('support-draft')).toBeNull();
+    expect(supportDraft).not.toHaveBeenCalled();
   });
 });
