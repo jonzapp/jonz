@@ -5,6 +5,7 @@ import { resetWhat } from "./resets";
 import { monthWord } from "./house-page";
 import { formatMoney } from "./money";
 import { pocketMoney } from "./pocket";
+import { ruleChanges } from "./tell";
 
 // The Wall as both apps show it: each event in words, built from the rows
 // they read (events, with their John's photo path and their reactions), so
@@ -116,7 +117,8 @@ export type WallIcon =
   | "bell-ring"
   | "badge-check"
   | "megaphone"
-  | "undo";
+  | "undo"
+  | "home";
 
 export interface WallLine {
   icon: WallIcon;
@@ -187,14 +189,23 @@ export function describeEvent(e: WallEvent, nameOf: (userId: string | null) => s
         ],
       };
     case "away": {
-      const moved = Number(e.data.moved ?? 0);
+      // What booking did: moved to before you go, handed to a housemate, or
+      // skipped with nobody home. A cancelled trip keeps its post and says so.
       const you = who === "You";
-      const due = moved > 0 ? ` ${moved} ${moved === 1 ? "John is" : "Johns are"} due before ${you ? "you go" : "they go"}.` : "";
-      return {
-        icon: "plane",
-        parts: [b(who), t(` ${you ? "are" : "is"} away ${dateRange(String(e.data.starts_on), String(e.data.ends_on))}.${due}`)],
-      };
+      const range = dateRange(String(e.data.starts_on), String(e.data.ends_on));
+      if (e.data.cancelled) return { icon: "plane", parts: [b(who), t(` cancelled time away, ${range}.`)] };
+      if (e.data.back_on) return { icon: "plane", parts: [b(who), t(` came back early from time away, ${range}.`)] };
+      const handed = Number(e.data.handed ?? 0);
+      const skipped = Number(e.data.excused ?? 0);
+      const before = Math.max(0, Number(e.data.moved ?? 0) - handed - skipped);
+      const johns = (n: number) => `${n} ${n === 1 ? "John" : "Johns"}`;
+      const due = before > 0 ? ` ${johns(before)} ${before === 1 ? "is" : "are"} due before ${you ? "you go" : "they go"}.` : "";
+      const gave = handed > 0 ? ` ${johns(handed)} went to housemates.` : "";
+      const none = skipped > 0 ? ` ${johns(skipped)} skipped, with nobody home to take ${skipped === 1 ? "it" : "them"}.` : "";
+      return { icon: "plane", parts: [b(who), t(` ${you ? "are" : "is"} away ${range}.${due}${gave}${none}`)] };
     }
+    case "rules":
+      return { icon: "megaphone", parts: [b(who), t(` changed ${ruleChanges(e.data, currency)}.`)] };
     case "flagged": {
       // Who said it needs doing; null when the clock opened it again after a miss.
       const by = (e.data.by as string | null | undefined) ?? null;
@@ -223,6 +234,17 @@ export function describeEvent(e: WallEvent, nameOf: (userId: string | null) => s
             parts: [b(was), t(` moved out, and their House Pass went with them. The house keeps the extras until ${dateRange(until, until)}.`)],
           }
         : { icon: "truck", parts: [b(was), t(" moved out.")] };
+    }
+    case "kind_changed": {
+      // Rules' Who lives here: a family now, from the 1st, kept, or housemates again.
+      const on = typeof e.data.on === "string" ? e.data.on : null;
+      const family = e.data.kind === "family";
+      if (on) return { icon: "home", parts: [b(who), t(` made the house a family from ${dateRange(on, on)}, once this month is settled up.`)] };
+      if (e.data.kept) return { icon: "home", parts: [b(who), t(" kept the house as housemates.")] };
+      if (!family) return { icon: "home", parts: [b(who), t(" made the house housemates again.")] };
+      return e.userId
+        ? { icon: "home", parts: [b(who), t(" made the house a family. Parents say OK, and kids earn pocket money.")] }
+        : { icon: "home", parts: [t("The house is a family now. Parents say OK, and kids earn pocket money.")] };
     }
     case "pocket_paid":
       return {

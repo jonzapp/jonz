@@ -21,7 +21,7 @@ import { Pressable, ScrollView, Text } from 'react-native';
 import type { Housemate, HouseSnapshot } from '@/api/board';
 import { loadHouse } from '@/api/board';
 import { castVote } from '@/api/disputes';
-import { coverJohn, markDone, removeFlag, rollCall, spendImmunity, spendSwap, undoCover, undoDone } from '@/api/johns';
+import { coverJohn, holdCover, markDone, removeFlag, rollCall, spendImmunity, spendSwap, undoCover, undoDone } from '@/api/johns';
 import { pickPhoto } from '@/api/photos';
 import { applyReset, previewReset } from '@/api/resets';
 import { signPhoto } from '@/api/wall';
@@ -40,6 +40,7 @@ jest.mock('@/api/johns', () => ({
   rollCall: jest.fn(),
   undoDone: jest.fn(),
   coverJohn: jest.fn(),
+  holdCover: jest.fn(),
   undoCover: jest.fn(),
   spendImmunity: jest.fn(),
   spendSwap: jest.fn(),
@@ -365,18 +366,11 @@ describe('your open John', () => {
       await waitFor(() => expect(screen.queryByTestId('john-sheet-body')).toBeNull());
     });
 
-    it('says which of their Johns is overdue, with its edge and its mark until picked', async () => {
+    it("doesn't offer a housemate's John that's already overdue", async () => {
       await show(house([binsOut(), samsBath({ due_at: at(-5) })], priyaWith({ swapTokens: 1 })));
-      const body = await openOn('Open a1 at swap');
-      // Its status is said too, not just drawn.
-      const choice = within(body).getByRole('radio', { name: /^Clean the bath, Overdue, Sam, was due / });
-      expect(within(choice).getByTestId('status-overdue')).toBeOnTheScreen();
-      expect(within(within(body).getByTestId('swap-choice')).getByTestId('hazard-tape', { includeHiddenElements: true })).toBeOnTheScreen();
-      await fireEvent.press(choice);
-      // Picked, the tick takes the mark's place, and the word leads the meta line instead.
-      expect(within(choice).queryByTestId('status-overdue')).toBeNull();
-      expect(within(choice).getByTestId('swap-chosen')).toBeOnTheScreen();
-      expect(within(choice).getByText(/^Overdue, Sam, was due /)).toBeOnTheScreen();
+      const body = await openOn('Open a1');
+      // Only Johns not yet due trade (use_swap): with only Sam's overdue one, there's no swap to offer.
+      expect(within(body).queryByTestId('swap-row')).toBeNull();
     });
 
     it('goes back to the tick on Cancel', async () => {
@@ -574,6 +568,33 @@ describe("covering a housemate's John", () => {
     const body = await openOn('Open a4');
     expect(within(body).getByTestId('cover-soon')).toHaveTextContent(/^It’s still Sam’s to do\. Anyone else can cover it from /);
     expect(within(body).queryByRole('button', { name: JOHN_SHEET_COPY.coverIt })).toBeNull();
+  });
+
+  it("says its owner is on it, and holds the cover off until then", async () => {
+    await show(house([binsOut(), samsBath({ due_at: at(-5), cover_held_until: at(1) })]));
+    const body = await openOn('Open a4');
+    expect(within(body).getByTestId('cover-soon')).toHaveTextContent(/^Sam is on it\. Anyone else can cover it from /);
+    expect(within(body).queryByRole('button', { name: JOHN_SHEET_COPY.coverIt })).toBeNull();
+  });
+
+  it("lets the owner say they're on it once covers open, once", async () => {
+    (holdCover as jest.Mock).mockResolvedValue(undefined);
+    await show(house([binsOut({ due_at: at(-5) })]));
+    const body = await openOn('Open a1');
+    await fireEvent.press(within(body).getByTestId('on-it'));
+    expect(holdCover).toHaveBeenCalledWith('a1');
+  });
+
+  it("doesn't offer it inside the grace", async () => {
+    await show(house([binsOut({ due_at: at(-1) })]));
+    expect(within(await openOn('Open a1')).queryByTestId('on-it')).toBeNull();
+  });
+
+  it("says until when the owner's hold lasts", async () => {
+    await show(house([binsOut({ due_at: at(-5), cover_held_until: at(1) })]));
+    const body = await openOn('Open a1');
+    expect(within(body).queryByTestId('on-it')).toBeNull();
+    expect(within(body).getByTestId('cover-held')).toHaveTextContent(/^You’re on it\. Covers wait until /);
   });
 
   it("says who covered it, and lets the coverer take it back", async () => {

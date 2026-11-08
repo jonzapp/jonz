@@ -1,8 +1,11 @@
 import {
+  FAMILY_PASS_COPY,
   hasPass,
   LEGAL,
   PAGE_TITLE,
   PASS_COPY,
+  passWords,
+  type PassExtra,
   PASS_FREE_HISTORY_WEEKS,
   passFirstChargeNote,
   passLine,
@@ -11,12 +14,12 @@ import {
   type PassPurchase,
 } from '@app/core';
 import { useLocalSearchParams } from 'expo-router';
-import { CameraIcon, CoinsIcon, CreditCardIcon, HistoryIcon, TrophyIcon } from 'lucide-react-native';
+import { CameraIcon, CoinsIcon, CreditCardIcon, HistoryIcon, TrophyIcon, UserRoundIcon, type LucideIcon } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { ApiRequestError } from '@/api/http';
-import { leaveFor, passBillingUrl, passCheckoutOpen, passCheckoutUrl } from '@/api/pass';
+import { leaveFor, passBillingUrl, passCheckoutOpen, passCheckoutUrl, passSelling } from '@/api/pass';
 import { HousePage } from '@/components/house/house-page';
 import { Pair } from '@/components/page-columns';
 import { Row, RowIcon } from '@/components/row';
@@ -32,10 +35,11 @@ import { INSET, SPACE } from '@/theme';
 /**
  * The House Pass, pushed from House: where the house stands, what the Pass
  * gives everyone in it, and the plans. A Founding house sees its thanks in
- * place of the plans. On the web, with EXPO_PUBLIC_PASS_CHECKOUT=on, a plan
- * opens Stripe Checkout and the buyer can manage the plan; everywhere else
- * buying waits for the store release, so the plans are shown, not sold, and
- * the page says so.
+ * place of the plans. On the web, with EXPO_PUBLIC_PASS_CHECKOUT=on and the
+ * extras locked (PASS_ENFORCED), a plan opens Stripe Checkout; a buyer can
+ * manage their plan whenever checkout is on. During the beta (nothing
+ * locked) the plans are shown, not sold, and the page says it's free;
+ * elsewhere buying waits for the store release, and the page says so.
  */
 export default function PassScreen() {
   const { session, house } = useMembership();
@@ -83,7 +87,7 @@ function PassFor({ houseId, userId }: { houseId: string; userId: string }) {
 
   return (
     <HousePage
-      title={PAGE_TITLE.pass}
+      title={view?.snapshot.house.kind === 'family' ? FAMILY_PASS_COPY.title : PAGE_TITLE.pass}
       testID="pass-screen"
       fills
       ready={view !== null}
@@ -131,37 +135,36 @@ function PassReadOut({
   const { house, rules, members } = view.snapshot;
   const { now } = view;
   const { pass } = house;
+  // A family's Pass is the Family Pass, with a family's extras.
+  const words = passWords(house.kind, PASS_FREE_HISTORY_WEEKS);
   const founding = pass.plan === 'founding';
   const buyer = pass.buyerId ? members.find((m) => m.userId === pass.buyerId)?.name : undefined;
-  const selling = passCheckoutOpen();
+  const checkout = passCheckoutOpen();
+  // Nothing is sold while everyone has the extras anyway.
+  const selling = passSelling();
   // Selling, a house sees only what it can buy now: a house on a paid plan changes it from Manage.
   const offers = passOffers(rules.currency).filter((o) => !selling || passPurchaseRefusal(pass, o.plan, now) === null);
-  const canManage = selling && pass.buyerId === userId && (pass.plan === 'monthly' || pass.plan === 'yearly');
+  const canManage = checkout && pass.buyerId === userId && (pass.plan === 'monthly' || pass.plan === 'yearly');
   const firstCharge = selling ? passFirstChargeNote(pass, now, rules.timezone) : null;
   // Only once the free month or a plan has ended, so a new house isn't steered away from paying.
   const askFree = !hasPass(pass, now);
   return (
     <>
       <View style={styles.words}>
-        <Body testID="pass-lead">{founding ? PASS_COPY.foundingLead : PASS_COPY.lead}</Body>
+        <Body testID="pass-lead">{founding ? words.foundingLead : words.lead}</Body>
         <Meta testID="pass-line">
           {buyer ? `${passLine(pass, now, rules.timezone)}, ${PASS_COPY.boughtBy(buyer)}` : passLine(pass, now, rules.timezone)}
         </Meta>
-        {waiting ? <Meta testID="pass-bought">{PASS_COPY.bought}</Meta> : null}
+        {waiting ? <Meta testID="pass-bought">{words.bought}</Meta> : null}
       </View>
 
       <Pair
         testID="pass-pair"
         start={
-          <Section label={PASS_COPY.includes}>
-            <Row leading={<RowIcon icon={CoinsIcon} />} title={PASS_COPY.stake} meta={PASS_COPY.stakeMeta} />
-            <Row leading={<RowIcon icon={TrophyIcon} />} title={PASS_COPY.table} meta={PASS_COPY.tableMeta} />
-            <Row leading={<RowIcon icon={CameraIcon} />} title={PASS_COPY.photos} meta={PASS_COPY.photosMeta} />
-            <Row
-              leading={<RowIcon icon={HistoryIcon} />}
-              title={PASS_COPY.history}
-              meta={PASS_COPY.historyMeta(PASS_FREE_HISTORY_WEEKS)}
-            />
+          <Section label={words.includes}>
+            {words.extras.map((extra) => (
+              <Row key={extra.key} leading={<RowIcon icon={EXTRA_ICON[extra.key]} />} title={extra.title} meta={extra.meta} />
+            ))}
           </Section>
         }
         end={
@@ -196,9 +199,11 @@ function PassReadOut({
 
       <View style={styles.words}>
         {firstCharge ? <Meta testID="pass-first-charge">{firstCharge}</Meta> : null}
-        {founding || selling ? null : <Meta testID="pass-soon">{PASS_COPY.buyingSoon}</Meta>}
+        {founding || selling ? null : (
+          <Meta testID="pass-soon">{checkout ? PASS_COPY.betaFree : PASS_COPY.buyingSoon}</Meta>
+        )}
         {selling ? <Meta testID="pass-renewal">{PASS_COPY.renewal}</Meta> : null}
-        <Meta>{PASS_COPY.free}</Meta>
+        <Meta>{words.free}</Meta>
         <Meta testID="pass-money">{PASS_COPY.money}</Meta>
         {askFree ? (
           <>
@@ -211,6 +216,15 @@ function PassReadOut({
     </>
   );
 }
+
+const EXTRA_ICON: Record<PassExtra['key'], LucideIcon> = {
+  stake: CoinsIcon,
+  table: TrophyIcon,
+  photos: CameraIcon,
+  history: HistoryIcon,
+  pocket: CoinsIcon,
+  kids: UserRoundIcon,
+};
 
 /** An email to whoever runs Jonz, for a house that can't pay. */
 const ASK_FREE = `mailto:${LEGAL.email}?subject=${encodeURIComponent(PASS_COPY.askFreeSubject)}` as const;

@@ -22,6 +22,7 @@ import {
   FlagIcon,
   FlameIcon,
   GavelIcon,
+  HouseIcon,
   MegaphoneIcon,
   PlaneIcon,
   RepeatIcon,
@@ -57,6 +58,7 @@ const WALL_ICON: Record<WallIcon, LucideIcon> = {
   repeat: RepeatIcon,
   plane: PlaneIcon,
   'user-plus': UserPlusIcon,
+  home: HouseIcon,
   truck: TruckIcon,
   'calendar-check': CalendarCheckIcon,
   banknote: BanknoteIcon,
@@ -148,6 +150,7 @@ export function wallScene(view: HouseView, userId: string, events: readonly Wall
     statusOf: (id) => status.get(id),
     struck: struckAt(events),
     clock,
+    family: view.snapshot.house.kind === 'family',
   };
 }
 

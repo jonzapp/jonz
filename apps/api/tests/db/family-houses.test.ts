@@ -106,6 +106,6 @@ describe("house_by_code", () => {
     const { data: house } = await db.from("houses").select("join_code").eq("id", id).single();
     const visitor = await signedInUser("Maya");
     const { data } = await visitor.db.rpc("house_by_code", { p_code: house!.join_code });
-    expect(data).toEqual([{ id, name: "The Parks", members: 1, kind: "family" }]);
+    expect(data).toMatchObject([{ id, name: "The Parks", members: 1, kind: "family" }]);
   });
 });

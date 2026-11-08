@@ -609,6 +609,15 @@ describe("cantOptions", () => {
     expect(cantOptions(mine, fb, me(0, 1))?.swapFor).toEqual([theirs[1], theirs[0]]);
   });
 
+  it("swaps only Johns not yet due, yours and theirs", () => {
+    const late = item("late", { status: "overdue", dueAt: at(-20) });
+    const theirsLate = item("theirs-late", { userId: "megan", status: "overdue", dueAt: at(-2) });
+    const ob = board([mine, late, theirsLate, ...theirs]);
+    expect(cantOptions(late, ob, me(1, 1))).toEqual({ immunity: 1, swapFor: [] });
+    expect(cantOptions(late, ob, me(0, 1))).toBeNull();
+    expect(cantOptions(mine, ob, me(0, 1))?.swapFor).toEqual([theirs[1], theirs[0]]);
+  });
+
   it("offers nothing without a token to spend, or a swap with nobody to swap with", () => {
     expect(cantOptions(mine, b, me(0, 0))).toBeNull();
     expect(cantOptions(mine, board([mine, theirs[2]]), me(0, 1))).toBeNull();

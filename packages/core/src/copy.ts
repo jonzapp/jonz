@@ -25,6 +25,7 @@ export const PAGE_TITLE = {
   house: "House",
   privacy: "Privacy",
   terms: "Terms",
+  help: "Help",
   notFound: "Nothing here",
   welcome: "No house yet",
   johnList: "The John list",
@@ -54,8 +55,13 @@ export const NOT_FOUND_COPY = {
 
 export const ERROR_COPY = {
   title: "Something went wrong",
-  body: "It wasn’t you. Try again, and if it keeps happening, tell the house admin.",
+  body: "It wasn’t you. Try again, and if it keeps happening, tell us what happened.",
   retry: "Try again",
+  /** The crash screen's way to report it (docs/specs/report-a-problem.md, step 3). */
+  tell: "Tell us what happened",
+  tellTitle: "What happened?",
+  told: "Sent, thank you. We’ll reply under House, Your reports, and by email.",
+  orEmail: "Or email support@jonz.app.",
   /** Your house couldn't be read, so no screen can be chosen yet. */
   unreachable: "Can’t reach your house",
   unreachableBody: "Check the connection, then try again.",
@@ -167,6 +173,40 @@ export const PARENTS_COPY = {
 } as const;
 
 /**
+ * Rules' Who lives here: an admin switches the house between housemates and
+ * a family (docs/specs/family-houses.md, "Switching a house").
+ */
+export const KIND_SWITCH_COPY = {
+  label: "Who lives here",
+  /** Under a switch that waits for the 1st. */
+  waits: (on: string, month: string) => `Becomes a family on ${on}, once ${month} is settled up.`,
+  keep: "Keep housemates",
+  toFamilyTitle: (house: string) => `Make ${house} a family?`,
+  toFamilyNow: (cap: string) =>
+    `Admins become parents, and everyone else a kid. There’s no stake: a parent says OK to each kid’s tick, and Johns can earn pocket money, up to ${cap} a month each. It changes now, and you can switch back.`,
+  toFamilyLater: (on: string, month: string, cap: string) =>
+    `Admins become parents, and everyone else a kid. ${month} is settled up as usual, then the Stake stops. From ${on} a parent says OK to each kid’s tick, and Johns can earn pocket money, up to ${cap} a month each. You can switch back.`,
+  toFamily: "Make it a family",
+  toHousematesTitle: (house: string) => `Make ${house} housemates again?`,
+  toHousemates:
+    "Parents become admins, and kids housemates. Ticks waiting for an OK stand, and anyone can question a tick again for 24 hours. There’s no stake until an admin sets one. Pocket money already earned can still be marked Paid.",
+  toHousematesConfirm: "Make it housemates",
+  done: { family: "It’s a family now.", housemates: "It’s housemates again.", kept: "Kept as housemates." },
+  later: (on: string) => `It becomes a family on ${on}.`,
+  /** The Wall. */
+  wall: {
+    later: (who: string, on: string) => `${who} made the house a family from ${on}`,
+    kept: (who: string) => `${who} kept the house as housemates`,
+    housemates: (who: string) => `${who} made the house housemates again`,
+    family: (who: string) => `${who} made the house a family`,
+    familyNow: "The house is a family now",
+    laterDetail: "Once this month is settled up",
+    familyDetail: "Parents say OK, and kids earn pocket money",
+    housematesDetail: "Everyone checks each other’s ticks again",
+  },
+} as const;
+
+/**
  * A parent's OK (family step 2): in a family nobody votes on a tick. A kid's
  * tick waits for a parent to say OK, or Not yet, which sends it back.
  */
@@ -229,6 +269,28 @@ export const KIDS_COPY = {
     born: "Give the year they were born, like 2016. Kids are 18 or under.",
     minAge: "Give an age from 2 to 18, or leave it empty.",
   },
+} as const;
+
+/**
+ * The board, a family's shared screen for the kitchen tablet
+ * (docs/specs/family-houses.md, "The board").
+ */
+export const BOARD_COPY = {
+  title: "The board",
+  /** House's row to it, for a parent. */
+  row: "The board",
+  rowMeta: "For the kitchen tablet: kids tick their own",
+  /** Under the title. */
+  intro: "Leave it open on the kitchen tablet. Kids tick their own Johns, and a parent says OK.",
+  note: "Ticks here wait for a parent’s OK. Tap a John to OK it or say Not yet.",
+  /** A kid's column: "£4.50 earned in November". */
+  earned: (money: string, month: string) => `${money} earned in ${month}`,
+  nothing: "Nothing to do today.",
+  tick: (kid: string, john: string) => `Tick ${john} for ${kid}`,
+  waits: "Waits for a parent’s OK",
+  photo: "Needs a photo: tick it from their Today",
+  noKids: "No kids yet. Invite them, or add a child from House.",
+  parentsOnly: "The board is for a parent to open on a shared screen.",
 } as const;
 
 /** Pocket money and Pay day, family step 3: what Johns earn, the month card and Paid. */
@@ -299,6 +361,10 @@ export const JOIN_COPY = {
   livesHere: (people: number) =>
     `${people} ${people === 1 ? "person lives" : "people live"} here. Join and you’re dealt Johns from next week.`,
   join: (house: string) => `Join ${house}`,
+  /** Before joining: what the house plays for, so nobody joins a money game without knowing. */
+  stake: (stake: string, late: string, missed: string) =>
+    `This house plays for money: ${stake} a month each, ${late} for a late John and ${missed} for a missed one, split between everyone else.`,
+  noStake: "This house doesn’t play for money: it keeps score in points.",
   joining: "Joining…",
   back: "Back",
 } as const;
@@ -819,9 +885,23 @@ export const AWAY_COPY = {
   notePlaceholder: "Lisbon",
   book: "Book time away",
   booking: "Booking…",
-  /** What booking moved: the one consequence the calendar can't show. */
-  moved: (n: number) =>
-    `${n} of your Johns ${n === 1 ? "falls" : "fall"} due while you’re away, so ${n === 1 ? "it’s" : "they’re"} now due before you go.`,
+  /**
+   * What booking moved, the one consequence the calendar can't show: due
+   * before you go, or, too soon to do first, handed to a housemate (they're
+   * told) or skipped with nobody home.
+   */
+  moved: (n: number, handed = 0, skipped = 0) =>
+    [
+      n > 0
+        ? `${n} of your Johns ${n === 1 ? "falls" : "fall"} due while you’re away, so ${n === 1 ? "it’s" : "they’re"} now due before you go.`
+        : "",
+      handed > 0
+        ? `${handed} ${handed === 1 ? "was" : "were"} due too soon to do first, so ${handed === 1 ? "it’s gone" : "they’ve gone"} to a housemate, who’s been told. Cancel and ${handed === 1 ? "it comes" : "they come"} back to you.`
+        : "",
+      skipped > 0 ? `${skipped} ${skipped === 1 ? "was" : "were"} skipped, with nobody home to take ${skipped === 1 ? "it" : "them"}.` : "",
+    ]
+      .filter(Boolean)
+      .join(" "),
   back: "I’m back",
   cancel: "Cancel",
   nextMonth: "Next month",
@@ -852,6 +932,9 @@ export const AWAY_COPY = {
   backOn: (day: string) => `Back ${day}`,
   dayBefore: "Day before",
   dayAfter: "Day after",
+  /** The push to whoever a trip hands a John to: "Bathroom is yours now". */
+  handedTitle: (john: string) => `${john} is yours now`,
+  handedBody: (name: string, due: string) => `${name} is away, so it came to you. Due ${due}.`,
 } as const;
 
 /** Today: Next up, Needs you, the rest of your week and the standing line; a John's row, here and on Week. */
@@ -917,9 +1000,11 @@ export const NEXT_UP_COPY = {
     covered: "Covered by a housemate",
   },
   needsYou: "Needs you",
+  /** Today's section, under your own Johns and On call: housemates' overdue Johns you could cover. */
+  couldCover: "You could cover",
   /** A row's meta once a housemate covered it: "covered by Glyn". */
   coveredBy: (name: string) => `covered by ${name}`,
-  /** A Needs you row's title for a housemate's overdue John you could cover. */
+  /** A You could cover row's title for a housemate's overdue John. */
   coverOn: (owner: string | null, john: string) => (owner ? `Cover ${owner}’s ${john}` : `Cover ${john}`),
   saysNotDone: (name: string) => `${name} says it’s not done`,
   closes: (when: string) => `closes ${when}`,
@@ -1000,6 +1085,13 @@ export const JOHN_SHEET_COPY = {
     `${owner} hasn’t done it. If you do, it counts as ${owner}’s miss, and you get ${points}${money ? ` and ${money}` : ""}.`,
   /** Overdue, but still inside the house's grace. */
   coverSoon: (owner: string, when: string) => `It’s still ${owner}’s to do. Anyone else can cover it from ${when}.`,
+  /** Overdue, and its owner said they're on it (hold_cover). */
+  coverHeld: (owner: string, when: string) => `${owner} is on it. Anyone else can cover it from ${when}.`,
+  /** On your own overdue John: hold covers off for a while, once. */
+  onIt: "I’m on it",
+  onItMeta: "Covers wait 2 hours",
+  /** Once you've said so: "Covers wait until today 21:40." */
+  held: (when: string) => `You’re on it. Covers wait until ${when}.`,
   /** A settled cover: "Glyn did it for Sam on Tue at 23:04, so it counts as Sam’s miss." */
   coveredSettled: (who: string, owner: string, whose: string, when: string | null) =>
     `${who} did it for ${owner}${when ? ` ${when}` : ""}, so it counts as ${whose} miss.`,
@@ -1149,7 +1241,8 @@ export const WHY_COPY = {
   counts: (whose: string) => `It counts as ${whose} work.`,
   coveredCounts: (who: string, whose: string) => `${who} covered it, so it counts as ${whose} work.`,
   missedCounts: (holder: string) => `It was missed, so it counts for nobody: the work comes back to ${holder} in the next deals.`,
-  excusedCounts: (whose: string) => `It was skipped, so it still counts as ${whose}.`,
+  /** A skip comes out of the week (deal.ts keptOfWeek): nobody is owed it or credited with it. */
+  excusedCounts: "It was skipped, so it counts for nobody: it comes out of everyone’s share this week.",
   You: "You",
   you: "you",
   your: "your",
@@ -1527,6 +1620,9 @@ export const WALL_FEED_COPY = {
   dueBefore: (n: number, you: boolean) =>
     `${n} ${n === 1 ? "John" : "Johns"} due before ${you ? "you go" : "they go"}`,
   newHousemate: "New housemate",
+  /** In a family: "Maya joined the family", "New in the family". */
+  joinedFamily: (who: string) => `${who} joined the family`,
+  newInFamily: "New in the family",
   // An on-call John someone flagged: who flagged it, for whom, and how it went.
   flagged: (by: string, john: string, whom: string) => `${by} flagged ${john} for ${whom}`,
   flaggedOwn: (who: string, john: string) => `${who} flagged ${john}`,
@@ -1889,6 +1985,8 @@ export const PASS_COPY = {
   founding: "Founding house",
   trialLeft: (days: number) => `Free month, ${days} ${days === 1 ? "day" : "days"} left`,
   trialEnded: "Free month ended",
+  /** A free month made longer by a promotion. */
+  freeUntil: (day: string) => `Free until ${day}`,
   renews: (plan: string, day: string) => `${plan}, renews ${day}`,
   ended: (day: string) => `Ended ${day}`,
   // The page.
@@ -1916,6 +2014,8 @@ export const PASS_COPY = {
   foundingMeta: "The Pass for life, for houses that start at launch",
   /** Until the stores are set up there is nothing to press. */
   buyingSoon: "Buying opens with the app store release. Until then every house keeps everything.",
+  /** While the extras aren't locked (pass.ts PASS_ENFORCED): nothing is for sale. */
+  betaFree: "Free during the beta: every house keeps everything, and there’s nothing to buy yet.",
   /** Under the plans during the free month, when Stripe can put the first charge off. */
   firstCharge: (day: string) => `Nothing to pay until your free month ends on ${day}.`,
   /** Back from Stripe Checkout, before the webhook has landed. */
@@ -1942,6 +2042,29 @@ export const PASS_COPY = {
   /** Where a locked extra was, once the Pass is enforced. */
   locked: (feature: string) => `${feature} comes with the House Pass`,
   unlock: "See the House Pass",
+} as const;
+
+/**
+ * The Pass in a family (family step 5): the same Pass and price, called the
+ * Family Pass, with the extras a family uses. Only a parent buys it.
+ */
+export const FAMILY_PASS_COPY = {
+  title: "Family Pass",
+  sectionNote: "For the whole family",
+  lead: "One Pass covers the whole family. Only a parent can buy it, and every kid gets the extras.",
+  foundingLead: `Your family has the Family Pass for life, as one of the first houses on ${APP_NAME}. Thank you.`,
+  includes: "What the family gets",
+  pocket: "Pocket money and Pay day",
+  pocketMeta: "Each OK’d John earns, paid out at month end",
+  kids: "Kid profiles",
+  kidsMeta: "For kids without a phone, no sign-in needed",
+  photos: "Photos to check",
+  photosMeta: "See the tidy room before you say OK",
+  free: "Free for every family, always: the deal, ticks, OKs, reminders and time away. No ads.",
+  bought: "Thanks for buying the Family Pass. It shows here in a moment.",
+  parentsOnly: "Only a parent can buy the Family Pass.",
+  locked: (feature: string) => `${feature} comes with the Family Pass`,
+  unlock: "See the Family Pass",
 } as const;
 
 /** The track record, opened from Week: the grid, and one person's breakdown. */

@@ -12,6 +12,7 @@ import { notePage } from '@/api/report-details';
 import { BeingDeleted } from '@/components/account/being-deleted';
 import { Button } from '@/components/button';
 import { ButtonRow } from '@/components/button-row';
+import { CrashReport } from '@/components/report/crash-report';
 import { NoticeBand } from '@/components/notice-banner';
 import { StagingRibbon } from '@/components/staging-ribbon';
 import { Body, Heading } from '@/components/text';
@@ -119,8 +120,11 @@ function Routes() {
               the house already open, never stacking a second one. */}
           {/* A join link opens for anyone, and signs you in in place. */}
           <Stack.Screen name="join/[joinCode]" />
-          {/* So do the Privacy Policy, the Terms, deleting an account, and a link to nowhere. */}
+          {/* So does an offer's link, signing you in in place too. */}
+          <Stack.Screen name="offer/[offerCode]" />
+          {/* So do the Privacy Policy, the Terms, Help, deleting an account, and a link to nowhere. */}
           <Stack.Screen name="privacy" />
+          <Stack.Screen name="help" />
           <Stack.Screen name="delete" />
           <Stack.Screen name="terms" />
           {/* The style page, where it's shown at all (components/style-page/enabled.ts). */}
@@ -134,9 +138,9 @@ function Routes() {
 
 /**
  * Anything that throws while drawing a screen, as the web's error page: say
- * so, and try the screen again.
+ * so, try the screen again, or tell us what happened.
  */
-export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   const { colors } = useTheme();
   return (
     <View style={[styles.unreachable, { backgroundColor: colors.background }]}>
@@ -145,6 +149,7 @@ export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
       <ButtonRow atEdge>
         <Button label={ERROR_COPY.retry} icon={RefreshCwIcon} onPress={() => void retry()} />
       </ButtonRow>
+      <CrashReport error={error} />
     </View>
   );
 }

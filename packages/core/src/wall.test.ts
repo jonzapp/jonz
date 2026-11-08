@@ -151,6 +151,10 @@ describe("describeEvent", () => {
     expect(line("swap_used", { gave: "Bins", took: "Hob", with: "cal" })).toBe("Ben swapped Bins for Cal’s Hob.");
   });
 
+  it("says who changed the house rules, and what", () => {
+    expect(line("rules", { changes: { missed_forfeit_minor: [300, 0] } })).toBe("Ben changed the missed fine from £3 to £0.");
+  });
+
   it("tells time away, with the Johns it moved", () => {
     expect(line("away", { starts_on: "2026-10-26", ends_on: "2026-10-28", moved: 0 })).toBe("Ben is away 26–28 Oct.");
     expect(line("away", { starts_on: "2026-10-26", ends_on: "2026-10-28", moved: 1 }, "ava")).toBe(
@@ -158,6 +162,18 @@ describe("describeEvent", () => {
     );
     expect(line("away", { starts_on: "2026-10-26", ends_on: "2026-10-28", moved: 2 })).toBe(
       "Ben is away 26–28 Oct. 2 Johns are due before they go.",
+    );
+  });
+
+  it("says what time away handed on or skipped, and when it was cancelled or ended early", () => {
+    expect(line("away", { starts_on: "2026-10-26", ends_on: "2026-10-28", moved: 3, handed: 1, excused: 1 })).toBe(
+      "Ben is away 26–28 Oct. 1 John is due before they go. 1 John went to housemates. 1 John skipped, with nobody home to take it.",
+    );
+    expect(line("away", { starts_on: "2026-10-26", ends_on: "2026-10-28", moved: 2, handed: 2, cancelled: true })).toBe(
+      "Ben cancelled time away, 26–28 Oct.",
+    );
+    expect(line("away", { starts_on: "2026-10-26", ends_on: "2026-10-28", moved: 0, back_on: "2026-10-27" })).toBe(
+      "Ben came back early from time away, 26–28 Oct.",
     );
   });
 

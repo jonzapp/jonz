@@ -68,7 +68,7 @@ export function passLine(pass: HousePass, now: Date, zone: string): string {
   const day = format(pass.until!, "d MMM", { in: tz(zone) });
   const left = passDaysLeft(pass, now)!;
   if (left === 0) return pass.plan === "trial" ? PASS_COPY.trialEnded : PASS_COPY.ended(day);
-  if (pass.plan === "trial") return PASS_COPY.trialLeft(left);
+  if (pass.plan === "trial") return left > PASS_TRIAL_DAYS ? PASS_COPY.freeUntil(day) : PASS_COPY.trialLeft(left);
   return PASS_COPY.renews(pass.plan === "yearly" ? PASS_COPY.yearly : PASS_COPY.monthly, day);
 }
 

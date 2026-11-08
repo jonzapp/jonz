@@ -285,6 +285,23 @@ describe("carryOver", () => {
     expect(Object.fromEntries(out)).toEqual({ a: 2, b: -2 });
   });
 
+  it("takes a skipped John out of its week: neither owed nor done", () => {
+    // The review's case: a's 3-point John skipped in a week of 3 points shared 1.5 each.
+    const out = carryOver(
+      [
+        {
+          shares: [
+            { userId: "a", share: 1.5 },
+            { userId: "b", share: 1.5 },
+          ],
+          assignments: [{ userId: "a", points: 3, outcome: "excused", excused: true }],
+        },
+      ],
+      ["a", "b"],
+    );
+    expect(Object.fromEntries(out)).toEqual({ a: 0, b: 0 });
+  });
+
   it("starts a newcomer at zero", () => {
     const out = carryOver(
       [{ shares: [{ userId: "a", share: 3 }], assignments: [{ userId: "a", points: 6 }] }],
@@ -385,16 +402,12 @@ describe("carryOver", () => {
 });
 
 describe("creditedTo", () => {
-  it("is the holder for done, late, excused and still open, the coverer for a cover, nobody for a miss", () => {
+  it("is the holder for done, late and still open, the coverer for a cover, nobody for a miss or a skip", () => {
     const j = { userId: "a", points: 2 };
-    expect(["done", "late", "excused", null, undefined].map((outcome) => creditedTo({ ...j, outcome }))).toEqual([
-      "a",
-      "a",
-      "a",
-      "a",
-      "a",
-    ]);
+    expect(["done", "late", null, undefined].map((outcome) => creditedTo({ ...j, outcome }))).toEqual(["a", "a", "a", "a"]);
     expect(creditedTo({ ...j, outcome: "missed" })).toBeNull();
+    expect(creditedTo({ ...j, outcome: "excused" })).toBeNull();
+    expect(creditedTo({ ...j, outcome: null, excused: true })).toBeNull();
     expect(creditedTo({ ...j, outcome: "covered", coveredBy: "b" })).toBe("b");
     // A cover still being checked counts for the coverer too.
     expect(creditedTo({ ...j, outcome: null, coveredBy: "b" })).toBe("b");

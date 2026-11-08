@@ -3,7 +3,7 @@ import type { LiveStatus } from "./outcome";
 /**
  * The Table: effort points earned, not points handed out.
  *
- * A John done on time earns its points, a late one earns half (rounded down),
+ * A John done on time earns its points, a late one earns half (rounded up),
  * and a missed or excused one earns nothing. A tick still inside its dispute
  * window counts as done, provisionally, so the live table moves when you
  * tick rather than a day later.
@@ -15,7 +15,7 @@ export function pointsEarned(status: LiveStatus, points: number): number {
     case "disputed":
       return points;
     case "late":
-      return Math.floor(points / 2);
+      return Math.ceil(points / 2);
     default:
       return 0;
   }

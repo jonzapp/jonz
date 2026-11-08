@@ -36,6 +36,7 @@ import { TextButton } from '@/components/text-button';
 import { TitleBar } from '@/components/title-bar';
 import { useToast } from '@/components/toast';
 import { FORM_MAX, SPACE } from '@/theme';
+import { AdminSwitch } from '@/components/admin/admin-shell';
 
 const SENT_KEY = ['owner-sent'] as const;
 const RECENT = 5;
@@ -60,6 +61,7 @@ const START: Form = { audience: 'house', picked: null, subject: '', body: '', wa
 export default function MessagesPage() {
   return (
     <Screen spreads bar={<TitleBar title={MESSAGE_COPY.page} />} testID="admin-messages">
+      <AdminSwitch page="messages" />
       <Messages />
     </Screen>
   );

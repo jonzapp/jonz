@@ -4,6 +4,7 @@ import {
   canCover,
   closesAt,
   coverOpensAt,
+  holdable,
   liveStatus,
   settleOutcome,
   standsAt,
@@ -210,5 +211,24 @@ describe("covering", () => {
     expect(canCover({ ...a, doneAt: at("2026-10-09T00:00:00Z") }, "glyn", now, 3)).toBe(false);
     expect(canCover({ ...a, excused: true }, "glyn", now, 3)).toBe(false);
     expect(canCover({ ...a, outcome: "missed" }, "glyn", now, 3)).toBe(false);
+  });
+
+  it("waits while its owner is on it", () => {
+    const held = at("2026-10-08T23:00:00Z");
+    const a = { userId: "sam", doneAt: null, outcome: null, dueAt: due, closesAt: closes, heldUntil: held };
+    expect(canCover(a, "glyn", at("2026-10-08T22:59:59Z"), 3)).toBe(false);
+    expect(canCover(a, "glyn", held, 3)).toBe(true);
+  });
+
+  it("lets the owner say they're on it once covers are open, once, before it's missed", () => {
+    const a = { userId: "sam", doneAt: null, outcome: null, dueAt: due, closesAt: closes };
+    const open = at("2026-10-08T21:00:00Z");
+    expect(holdable(a, "sam", at("2026-10-08T20:59:59Z"), 3)).toBe(false);
+    expect(holdable(a, "sam", open, 3)).toBe(true);
+    expect(holdable(a, "glyn", open, 3)).toBe(false);
+    expect(holdable({ ...a, heldUntil: at("2026-10-08T23:00:00Z") }, "sam", open, 3)).toBe(false);
+    expect(holdable({ ...a, jobId: "j1" }, "sam", open, 3)).toBe(false);
+    expect(holdable({ ...a, doneAt: open }, "sam", open, 3)).toBe(false);
+    expect(holdable(a, "sam", closes, 3)).toBe(false);
   });
 });

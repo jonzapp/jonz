@@ -1,5 +1,8 @@
 import { cancelAway, loadAway, setAway } from './away';
+import { apiPost } from './http';
 import { supabase } from './supabase';
+
+jest.mock('./http', () => ({ apiPost: jest.fn() }));
 
 const mockCalls: [string, unknown[]][] = [];
 let mockAnswer: { data: unknown; error: unknown } = { data: [], error: null };
@@ -23,6 +26,7 @@ jest.mock('./supabase', () => ({
 }));
 
 const rpc = supabase.rpc as unknown as jest.Mock;
+const post = apiPost as unknown as jest.Mock;
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -53,22 +57,17 @@ describe('loadAway', () => {
 });
 
 describe('setAway', () => {
-  it('books through set_away and says how many Johns it moved', async () => {
-    rpc.mockResolvedValue({ data: 2, error: null });
-    expect(await setAway({ from: '2026-10-26', to: '2026-10-28', note: ' Lisbon ' })).toBe(2);
-    expect(rpc).toHaveBeenCalledWith('set_away', { p_starts: '2026-10-26', p_ends: '2026-10-28', p_note: 'Lisbon' });
-  });
-
-  it('sends no note when there is none', async () => {
-    rpc.mockResolvedValue({ data: null, error: null });
-    expect(await setAway({ from: '2026-10-26', to: '2026-10-26', note: '  ' })).toBe(0);
-    expect(rpc).toHaveBeenCalledWith('set_away', { p_starts: '2026-10-26', p_ends: '2026-10-26', p_note: undefined });
-  });
-
-  it("says what's wrong before asking, and the database's refusal after", async () => {
-    await expect(setAway({ from: '', to: '2026-10-28' })).rejects.toThrow("Pick the first day you’re away.");
+  it('books through the API, which tells whoever it hands a John to, and says what it did to your Johns', async () => {
+    post.mockResolvedValue({ ok: true, before: 1, handed: 1, skipped: 0 });
+    expect(await setAway({ from: '2026-10-26', to: '2026-10-28', note: ' Lisbon ' })).toEqual({ before: 1, handed: 1, skipped: 0 });
+    expect(post).toHaveBeenCalledWith('/api/away', { from: '2026-10-26', to: '2026-10-28', note: 'Lisbon' }, expect.anything());
     expect(rpc).not.toHaveBeenCalled();
-    rpc.mockResolvedValue({ data: null, error: { code: 'P0001', message: 'away_overlaps' } });
+  });
+
+  it("says what's wrong before asking, and the API's refusal after", async () => {
+    await expect(setAway({ from: '', to: '2026-10-28' })).rejects.toThrow("Pick the first day you’re away.");
+    expect(post).not.toHaveBeenCalled();
+    post.mockRejectedValue(new Error("You’re already away for some of those days."));
     await expect(setAway({ from: '2026-10-26', to: '2026-10-28' })).rejects.toThrow("You’re already away for some of those days.");
   });
 });

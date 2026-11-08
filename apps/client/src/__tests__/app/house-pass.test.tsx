@@ -1,10 +1,10 @@
-import { FOCUS_SHELL_COPY, LEGAL, PAGE_TITLE, PASS_COPY, SECTION_LABEL } from '@app/core';
+import { FAMILY_PASS_COPY, FOCUS_SHELL_COPY, LEGAL, PAGE_TITLE, PASS_COPY, SECTION_LABEL } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 
 import { loadHouse } from '@/api/board';
 import { catchUp } from '@/api/house';
 import { ApiRequestError } from '@/api/http';
-import { leaveFor, passBillingUrl, passCheckoutOpen, passCheckoutUrl } from '@/api/pass';
+import { leaveFor, passBillingUrl, passCheckoutOpen, passCheckoutUrl, passSelling } from '@/api/pass';
 import PassScreen from '@/app/(house)/house/pass';
 import { ToastProvider } from '@/components/toast';
 import { snapshot } from '@/testing/house';
@@ -15,6 +15,7 @@ jest.mock('@/api/house', () => ({ catchUp: jest.fn() }));
 jest.mock('@/api/auth', () => ({ getAccessToken: jest.fn() }));
 jest.mock('@/api/pass', () => ({
   passCheckoutOpen: jest.fn(() => false),
+  passSelling: jest.fn(() => false),
   passCheckoutUrl: jest.fn(),
   passBillingUrl: jest.fn(),
   leaveFor: jest.fn(),
@@ -50,6 +51,7 @@ beforeEach(() => {
   (loadHouse as jest.Mock).mockResolvedValue(snapshot());
   (catchUp as jest.Mock).mockResolvedValue(false);
   (passCheckoutOpen as jest.Mock).mockReturnValue(false);
+  (passSelling as jest.Mock).mockReturnValue(false);
 });
 
 it('sits under a title bar with the way back to House', async () => {
@@ -57,6 +59,18 @@ it('sits under a title bar with the way back to House', async () => {
   const bar = within(screen.getByTestId('title-bar'));
   expect(bar.getByRole('header', { name: PAGE_TITLE.pass })).toBeOnTheScreen();
   expect(bar.getByRole('button', { name: FOCUS_SHELL_COPY.backTo(SECTION_LABEL.house) })).toBeOnTheScreen();
+});
+
+it('is the Family Pass in a family, with what a family gets', async () => {
+  const base = snapshot();
+  (loadHouse as jest.Mock).mockResolvedValue({ ...base, house: { ...base.house, kind: 'family' } });
+  await open();
+  expect(within(screen.getByTestId('title-bar')).getByRole('header', { name: FAMILY_PASS_COPY.title })).toBeOnTheScreen();
+  expect(screen.getByTestId('pass-lead')).toHaveTextContent(FAMILY_PASS_COPY.foundingLead);
+  expect(screen.getByText(FAMILY_PASS_COPY.includes)).toBeOnTheScreen();
+  expect(screen.getByText(FAMILY_PASS_COPY.pocket)).toBeOnTheScreen();
+  expect(screen.getByText(FAMILY_PASS_COPY.kids)).toBeOnTheScreen();
+  expect(screen.queryByText(PASS_COPY.stake)).toBeNull();
 });
 
 it('thanks a Founding house, and offers it no plans', async () => {
@@ -105,6 +119,7 @@ it('says who bought it', async () => {
 describe('selling on the web', () => {
   beforeEach(() => {
     (passCheckoutOpen as jest.Mock).mockReturnValue(true);
+    (passSelling as jest.Mock).mockReturnValue(true);
   });
 
   it('sends a house on its free month to Checkout for the plan pressed, and says when it first pays', async () => {
@@ -150,5 +165,25 @@ describe('selling on the web', () => {
     withPass({ plan: 'trial', until: new Date(Date.now() + 12 * DAY), buyerId: null });
     await open('/house/pass?bought=1');
     expect(screen.getByTestId('pass-bought')).toHaveTextContent(PASS_COPY.bought);
+  });
+});
+
+describe('during the beta, with checkout on and nothing locked', () => {
+  beforeEach(() => {
+    (passCheckoutOpen as jest.Mock).mockReturnValue(true);
+  });
+
+  it('says it is free and sells nothing', async () => {
+    withPass({ plan: 'trial', until: new Date(Date.now() + 12 * DAY), buyerId: null });
+    await open();
+    expect(screen.getByTestId('pass-soon')).toHaveTextContent(PASS_COPY.betaFree);
+    await fireEvent.press(screen.getByTestId('plan-yearly'));
+    expect(passCheckoutUrl).not.toHaveBeenCalled();
+  });
+
+  it('still lets a buyer manage the plan they hold', async () => {
+    withPass({ plan: 'monthly', until: new Date(Date.now() + 20 * DAY), buyerId: 'priya' });
+    await open();
+    expect(screen.getByTestId('pass-manage')).toBeOnTheScreen();
   });
 });

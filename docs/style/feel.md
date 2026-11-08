@@ -76,3 +76,5 @@ from its real components with sample data, never hand-drawn HTML. Hand
 drawings drifted from the app twice. (Family version, 30 Oct; bug reports,
 31 Oct) Give 2 to 4 true alternatives for one thing, lead with one
 recommendation, and ask for one decision. (28 Oct)
+They are shown in the standard design picker; how is in the `house-style`
+skill, "Design options for Glyn". (3 Nov)

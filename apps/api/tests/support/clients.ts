@@ -13,6 +13,8 @@ export interface Actor {
   db: Db;
   userId: string;
   name: string;
+  /** What they're signed in with. */
+  email: string;
 }
 
 /** Local-only, and never a real credential: these users live for one test. */
@@ -49,7 +51,7 @@ export async function signedInUser(name: string): Promise<Actor> {
   const db = freshClient();
   const { error: signInError } = await db.auth.signInWithPassword({ email, password: PASSWORD });
   if (signInError) throw signInError;
-  return { db, userId, name };
+  return { db, userId, name, email };
 }
 
 /** Signed out: the `anon` role, no auth.uid() at all. */

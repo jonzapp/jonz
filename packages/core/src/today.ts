@@ -555,6 +555,9 @@ export function coverOffer(item: BoardItem, people: readonly Person[], viewerId:
   }
   if (item.userId !== viewerId && item.status === "overdue") {
     const opens = coverOpensAt(item.dueAt, rules.coverGraceHours, item.closesAt);
+    if (item.heldUntil && item.heldUntil > now && item.heldUntil >= opens) {
+      return { kind: "soon", text: JOHN_SHEET_COPY.coverHeld(upperFirst(owner), dueInLine(item.heldUntil, now, rules.timezone)) };
+    }
     return { kind: "soon", text: JOHN_SHEET_COPY.coverSoon(upperFirst(owner), dueInLine(opens, now, rules.timezone)) };
   }
   return { kind: null, text: null };
@@ -585,11 +588,12 @@ export function cantOptions(
   me: { userId: string; immunityTokens: number; swapTokens: number } | null,
 ): CantOptions | null {
   if (!me || item.userId !== me.userId || !isOpen(item.status)) return null;
-  // A flag stays with whoever was on call: only Johns due on a day trade.
+  // A flag stays with whoever was on call: only Johns due on a day trade,
+  // and only ones not yet due, on both sides (use_swap, 20261129090000).
   const swapFor =
-    me.swapTokens > 0 && item.flaggedAt === null
+    me.swapTokens > 0 && item.flaggedAt === null && item.status !== "overdue"
       ? board.items
-          .filter((i) => i.userId !== me.userId && isOpen(i.status) && i.flaggedAt === null)
+          .filter((i) => i.userId !== me.userId && isOpen(i.status) && i.status !== "overdue" && i.flaggedAt === null)
           // Nobody ends up with two places in one Together John.
           .filter((i) => !(item.together ?? []).includes(i.userId) && !(i.together ?? []).includes(me.userId))
           .sort((a, b) => a.dueAt.getTime() - b.dueAt.getTime())

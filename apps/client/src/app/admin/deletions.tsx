@@ -33,6 +33,7 @@ import { TitleBar } from '@/components/title-bar';
 import { useToast } from '@/components/toast';
 import { useNow } from '@/hooks/use-now';
 import { SPACE, TABULAR, useTheme } from '@/theme';
+import { AdminSwitch } from '@/components/admin/admin-shell';
 
 const KEY = ['owner-deletions'];
 
@@ -67,6 +68,7 @@ export default function DeletionsPage() {
   });
   return (
     <Screen spreads bar={<TitleBar title="Deletions" />} onNearEnd={busy.onNearEnd} testID="admin-deletions">
+      <AdminSwitch page="deletions" />
       <Deletions busy={busy} />
     </Screen>
   );

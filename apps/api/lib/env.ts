@@ -46,6 +46,14 @@ export const env = {
    * Unset locally and on staging, where emails are logged, not sent.
    */
   resendApiKey: () => process.env.RESEND_API_KEY || null,
+  /**
+   * Email to support@jonz.app (lib/inbound.ts): the secret Resend signs its
+   * inbound webhook with ("whsec_…"), and a Resend key that may read
+   * received mail. Without both, the webhook answers 503 and the mail
+   * waits in Resend.
+   */
+  resendWebhookSecret: () => process.env.RESEND_WEBHOOK_SECRET || null,
+  resendReceivingKey: () => process.env.RESEND_RECEIVING_KEY || null,
   /** Who emails come from: Jonz <hello@jonz.app>, unless EMAIL_FROM says otherwise. */
   emailFrom: () => process.env.EMAIL_FROM || EMAIL_ADDRESSES.from,
   /**

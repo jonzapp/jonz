@@ -3,7 +3,7 @@ import { format } from "date-fns";
 
 import type { AwayPeriod } from "./away";
 import { weeklyEffort, type JohnDef } from "./board";
-import { FOCUS_SHELL_COPY, HOUSE_LOWER_COPY, MOVING_COPY, STEADY_COPY, WALL_FEED_COPY } from "./copy";
+import { FOCUS_SHELL_COPY, HOUSE_LOWER_COPY, KIND_SWITCH_COPY, MOVING_COPY, STEADY_COPY, WALL_FEED_COPY } from "./copy";
 import type { Currency, HouseKind, HouseRules } from "./domain";
 import { dateRange, dayLabel, firstName, STATUS_MARK, type StatusIcon } from "./format";
 import { undoneWhat } from "./history";
@@ -40,6 +40,8 @@ export interface WallScene {
   struck?: ReadonlyMap<string, Date>;
   /** The time as a clock ("14:10"), for the Wall's days; otherwise how long ago ("3h"), for House. */
   clock?: boolean;
+  /** A family's Wall says "joined the family" where housemates "moved in". */
+  family?: boolean;
 }
 
 /**
@@ -216,6 +218,7 @@ const ICON: Record<string, WallIcon> = {
   swap_used: "repeat",
   away: "plane",
   joined: "user-plus",
+  kind_changed: "home",
   moving_out: "truck",
   moved_out: "truck",
   month_closed: "calendar-check",
@@ -407,8 +410,8 @@ export function wallFeedRow(event: WallEvent, scene: WallScene): WallFeedRow {
       break;
     }
     case "joined":
-      title = WALL_FEED_COPY.joined(who.subject);
-      detail = WALL_FEED_COPY.newHousemate;
+      title = scene.family ? WALL_FEED_COPY.joinedFamily(who.subject) : WALL_FEED_COPY.joined(who.subject);
+      detail = scene.family ? WALL_FEED_COPY.newInFamily : WALL_FEED_COPY.newHousemate;
       break;
     case "moving_out": {
       const on = text("on");
@@ -432,6 +435,25 @@ export function wallFeedRow(event: WallEvent, scene: WallScene): WallFeedRow {
       detail = text("body") || null;
       lead = null;
       break;
+    case "kind_changed": {
+      // Rules' Who lives here: a family from the 1st, kept, housemates again, or a family now.
+      const on = text("on");
+      const w = KIND_SWITCH_COPY.wall;
+      if (on) {
+        title = w.later(who.subject, dateRange(on, on));
+        detail = w.laterDetail;
+      } else if (event.data.kept) {
+        title = w.kept(who.subject);
+      } else if (event.data.kind !== "family") {
+        title = w.housemates(who.subject);
+        detail = w.housematesDetail;
+      } else {
+        title = event.userId ? w.family(who.subject) : w.familyNow;
+        bold = event.userId ? bold : [];
+        detail = w.familyDetail;
+      }
+      break;
+    }
     case "month_closed":
       title = WALL_FEED_COPY.monthClosed(monthName(text("month")));
       detail = WALL_FEED_COPY.sharedOut;

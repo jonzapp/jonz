@@ -1,4 +1,4 @@
-import { formatMoney, memberCan, payRows, pocketCard, POCKET_COPY, type PayRow, type PocketView } from '@app/core';
+import { BOARD_COPY, formatMoney, memberCan, payRows, pocketCard, POCKET_COPY, type PayRow, type PocketView } from '@app/core';
 import type { UseQueryResult } from '@tanstack/react-query';
 import { CheckIcon } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
@@ -64,6 +64,7 @@ export function PocketSection({
         <PayDay key={row.key} houseId={houseId} row={row} fullName={members.find((m) => m.userId === row.userId)?.name ?? row.name} />
       ))}
       <Row title={POCKET_COPY.history} href="/house/pocket" chevron testID="to-pocket" />
+      {parent ? <Row title={BOARD_COPY.row} meta={BOARD_COPY.rowMeta} href="/house/board" chevron testID="to-board" /> : null}
     </Section>
     </>
   );

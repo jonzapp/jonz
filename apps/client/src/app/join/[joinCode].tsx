@@ -1,4 +1,4 @@
-import { DOOR, FRONT_DOOR_COPY, JOIN_COPY, joinLine, PAGE_TITLE } from '@app/core';
+import { DOOR, formatMoney, FRONT_DOOR_COPY, JOIN_COPY, joinLine, PAGE_TITLE } from '@app/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 
@@ -9,6 +9,7 @@ import { Door, Sign, SignHeading } from '@/components/front-door/door';
 import { PageTitle } from '@/components/page-title';
 import { ReadFailed, Reading } from '@/components/read-state';
 import { SignInPanel } from '@/components/sign-in-panel';
+import { Body } from '@/components/text';
 import { useMembership } from '@/hooks/use-membership';
 
 /**
@@ -16,7 +17,8 @@ import { useMembership } from '@/hooks/use-membership';
  * path the web app's links use. Open to anyone, so the code survives signing
  * in: signed out, it signs you in here. Like the web, it names the house only
  * to someone signed in: then the house's name on the taped sign, how many
- * live there, and "Join the house". A read that fails says so, with "Try
+ * live there, what it plays for (the stake and fines, so nobody joins a
+ * money game unaware), and "Join the house". A read that fails says so, with "Try
  * again". (The parameter is `joinCode`, not `code`: the web's Google redirect
  * comes back with a `?code=` of its own, and a refusal with `?error=`.)
  */
@@ -93,6 +95,17 @@ export default function Join() {
       ) : (
         <Sign>
           <SignHeading above={JOIN_COPY.invited} title={invite.name} body={joinLine(invite.kind, invite.members)} />
+          {invite.kind === 'family' ? null : (
+            <Body testID="join-stake">
+              {invite.stakeMinor > 0 || invite.lateMinor > 0 || invite.missedMinor > 0
+                ? JOIN_COPY.stake(
+                    formatMoney(invite.stakeMinor, invite.currency),
+                    formatMoney(invite.lateMinor, invite.currency),
+                    formatMoney(invite.missedMinor, invite.currency),
+                  )
+                : JOIN_COPY.noStake}
+            </Body>
+          )}
           {problem ? <Alert message={problem} /> : null}
           <Button
             label={joining ? JOIN_COPY.joining : FRONT_DOOR_COPY.join}

@@ -3,8 +3,10 @@ import {
   coverOffer,
   CREW_COPY,
   firstName,
+  dueInLine,
   FOCUS_SHELL_COPY,
   HISTORY_COPY,
+  holdable,
   JOHN_COPY,
   JOHN_SHEET_COPY,
   NEXT_UP_COPY,
@@ -14,11 +16,11 @@ import {
   type BoardItem,
   type CantOptions,
 } from '@app/core';
-import { CameraIcon, CheckIcon, ImagesIcon, RepeatIcon, ShieldIcon, UsersIcon } from 'lucide-react-native';
+import { CameraIcon, CheckIcon, HandIcon, ImagesIcon, RepeatIcon, ShieldIcon, UsersIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { spendImmunity, spendSwap } from '@/api/johns';
+import { holdCover, spendImmunity, spendSwap } from '@/api/johns';
 import { Alert } from '@/components/alert';
 import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/button';
@@ -109,6 +111,7 @@ export function YoursOpen({ item, context, onRollCall }: { item: BoardItem; cont
           <Button variant="ghost" icon={UsersIcon} label={CREW_COPY.withHelp} disabled={tick.busy} onPress={onRollCall} testID="done-with-help" />
         )}
         {tick.problem ? <Alert message={tick.problem} /> : null}
+        <OnIt item={item} context={context} />
         {plannable(item, context.userId) ? (
           <PlanIt
             houseId={context.houseId}
@@ -130,6 +133,32 @@ export function YoursOpen({ item, context, onRollCall }: { item: BoardItem; cont
           onSwap={() => setSwapping(true)}
         />
       ) : null}
+    </>
+  );
+}
+
+/**
+ * Once housemates can cover your overdue John: "I'm on it" holds covers off
+ * for 2 hours, once; after that, the line saying until when.
+ */
+function OnIt({ item, context }: { item: BoardItem; context: JohnSheetContext }) {
+  const move = useMove(context.houseId);
+  const { now, rules, userId } = context;
+  if (item.heldUntil && item.heldUntil > now && !item.doneAt) {
+    return <Body testID="cover-held">{JOHN_SHEET_COPY.held(dueInLine(item.heldUntil, now, rules.timezone))}</Body>;
+  }
+  if (!holdable({ ...item, excused: item.status === 'excused' }, userId, now, rules.coverGraceHours)) return null;
+  return (
+    <>
+      <Row
+        leading={<RowIcon icon={HandIcon} />}
+        title={JOHN_SHEET_COPY.onIt}
+        meta={JOHN_SHEET_COPY.onItMeta}
+        disabled={move.pending}
+        onPress={() => void move.run(() => holdCover(item.id))}
+        testID="on-it"
+      />
+      {move.problem ? <Alert message={move.problem} /> : null}
     </>
   );
 }

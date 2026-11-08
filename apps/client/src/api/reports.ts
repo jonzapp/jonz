@@ -4,10 +4,13 @@ import {
   REPORT_KINDS,
   REPORT_LIMITS,
   REPORT_STATES,
+  REPORT_SOURCES,
+  ReportFixResponse,
   ReportMessageResponse,
   ReportResponse,
   type ReportDetails,
   type ReportKind,
+  type ReportSource,
   type ReportState,
 } from '@app/core';
 import { randomUUID } from 'expo-crypto';
@@ -59,6 +62,22 @@ export interface Report {
   words: string;
   messages: ReportMessage[];
   details: ReportDetails | null;
+  /** Where it came from: the app, or an email to support. */
+  source: ReportSource;
+  /** An emailed one's subject. */
+  subject: string | null;
+  /** The report it's folded into ("Same as"), for the owner. */
+  sameAs: ReportLink | null;
+  /** The reports folded into it, for the owner. */
+  also: ReportLink[];
+}
+
+/** Another report, as a line that leads to it. */
+export interface ReportLink {
+  id: string;
+  name: string | null;
+  words: string;
+  state: ReportState;
 }
 
 /** A row of Your reports. */
@@ -83,10 +102,24 @@ export interface InboxRow {
   state: ReportState;
   words: string;
   sentAt: string;
+  source: ReportSource;
+  subject: string | null;
+  /** Folded into another report. */
+  folded: boolean;
+  /** How many reports are folded into this one. */
+  also: number;
 }
 
 const kindOf = (value: string): ReportKind => (REPORT_KINDS as readonly string[]).includes(value) ? (value as ReportKind) : 'problem';
 const stateOf = (value: string): ReportState => (REPORT_STATES as readonly string[]).includes(value) ? (value as ReportState) : 'new';
+const sourceOf = (value: string | null | undefined): ReportSource => (value === 'email' ? 'email' : 'app');
+
+function linkOf(value: unknown): ReportLink | null {
+  if (!value || typeof value !== 'object') return null;
+  const v = value as { id?: string; name?: string | null; words?: string; state?: string };
+  if (!v.id) return null;
+  return { id: v.id, name: v.name ?? null, words: v.words ?? '', state: stateOf(v.state ?? 'new') };
+}
 
 function detailsOf(value: unknown): ReportDetails | null {
   if (!value || typeof value !== 'object') return null;
@@ -186,7 +219,7 @@ export async function myReports(): Promise<MyReport[]> {
 /** One of yours, with the conversation; null when it isn't there (or isn't yours). */
 export async function myReport(id: string): Promise<Report | null> {
   const [{ data: row, error }, { data: rows, error: messagesError }] = await Promise.all([
-    supabase.from('reports').select('id, user_id, kind, state, words, details, shots, created_at').eq('id', id).maybeSingle(),
+    supabase.from('reports').select('id, user_id, kind, state, words, details, shots, created_at, source, subject').eq('id', id).maybeSingle(),
     supabase.from('report_messages').select('from_owner, author_name, body, at').eq('report_id', id).order('at').order('id'),
   ]);
   if (error || messagesError) throw new Error(humanError(error ?? messagesError));
@@ -205,6 +238,10 @@ export async function myReport(id: string): Promise<Report | null> {
     words: row.words,
     details: detailsOf(row.details),
     messages: conversation({ name: null, at: row.created_at, words: row.words, shots }, rows ?? []),
+    source: sourceOf(row.source),
+    subject: row.subject,
+    sameAs: null,
+    also: [],
   };
 }
 
@@ -221,10 +258,11 @@ export async function writeBack(id: string, body: string): Promise<void> {
 
 // --- The owner's Inbox ----------------------------------------------------------------
 
-/** What the Inbox is narrowed to: the words, the state ('waiting' is new or open), the kind, and when it was sent. */
+/** What the Inbox is narrowed to: the words, the state ('waiting' is new or open), where it came from, the kind, and when it was sent. */
 export interface InboxFilter {
   q: string;
   state: 'waiting' | ReportState | null;
+  source: ReportSource | null;
   kind: ReportKind | null;
   after: string | null;
   before: string | null;
@@ -234,9 +272,11 @@ export interface InboxFilter {
 export function inboxFilter(ask: ListAsk): InboxFilter {
   const state = ask.picks.state ?? 'waiting';
   const kind = ask.picks.kind;
+  const source = ask.picks.source;
   return {
     q: ask.q,
     state: state === 'waiting' || (REPORT_STATES as readonly string[]).includes(state) ? (state as InboxFilter['state']) : null,
+    source: source && (REPORT_SOURCES as readonly string[]).includes(source) ? (source as ReportSource) : null,
     kind: kind && (REPORT_KINDS as readonly string[]).includes(kind) ? (kind as ReportKind) : null,
     after: ask.after,
     before: ask.before,
@@ -255,6 +295,7 @@ const filterArgs = (filter: InboxFilter) => ({
   p_q: filter.q,
   p_state: filter.state ?? undefined,
   p_kind: filter.kind ?? undefined,
+  p_from: filter.source ?? undefined,
   p_after: filter.after ?? undefined,
   p_before: filter.before ?? undefined,
 });
@@ -280,6 +321,10 @@ export async function inboxPage(after: InboxCursor | null, filter: InboxFilter):
       state: stateOf(r.state),
       words: r.words,
       sentAt: r.created_at,
+      source: sourceOf(r.source),
+      subject: r.subject,
+      folded: r.same_as !== null,
+      also: r.also,
     })),
     more: rows.length > PAGE,
   };
@@ -306,6 +351,10 @@ interface OpenedRow {
   shots: string[];
   created_at: string;
   messages: MessageRow[];
+  source: string;
+  subject: string | null;
+  same_as: unknown;
+  also: unknown[];
 }
 
 /** One report, whole, for the owner. Opening a new one marks it read. */
@@ -327,6 +376,10 @@ export async function openReport(id: string): Promise<Report> {
     words: row.words,
     details: detailsOf(row.details),
     messages: conversation({ name: row.name, at: row.created_at, words: row.words, shots }, row.messages ?? []),
+    source: sourceOf(row.source),
+    subject: row.subject ?? null,
+    sameAs: linkOf(row.same_as),
+    also: (row.also ?? []).flatMap((one) => linkOf(one) ?? []),
   };
 }
 
@@ -339,4 +392,27 @@ export async function replyToReport(id: string, body: string): Promise<void> {
 export async function setReportState(id: string, state: 'fixed' | 'open'): Promise<void> {
   const { error } = await supabase.rpc('owner_set_report_state', { p_report: id, p_state: state });
   if (error) throw new Error(humanError(error));
+}
+
+/**
+ * Mark it fixed, with every report folded into it; with `tell`, each sender
+ * gets the note (or a plain "it's fixed") in the app and by email. Answers
+ * how many were fixed and how many people were told.
+ */
+export async function fixReport(id: string, note: string, tell: boolean): Promise<{ fixed: number; told: number }> {
+  const { fixed, told } = await apiPost(`/api/reports/${id}/fixed`, { note: note.trim() || null, tell }, ReportFixResponse);
+  return { fixed, told };
+}
+
+/** Fold it into the report that says the same thing, or (null) take it back out. */
+export async function setSameAs(id: string, main: string | null): Promise<void> {
+  const { error } = await supabase.rpc('owner_same_as', { p_report: id, p_main: main as string });
+  if (error) throw new Error(humanError(error));
+}
+
+/** The reports it might be the same as, newest first: words, or an id's start. */
+export async function sameAsFind(id: string, q: string): Promise<ReportLink[]> {
+  const { data, error } = await supabase.rpc('owner_same_as_find', { p_report: id, p_q: q });
+  if (error) throw new Error(humanError(error));
+  return (data ?? []).map((r) => ({ id: r.id, name: r.name, words: r.words, state: stateOf(r.state) }));
 }

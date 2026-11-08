@@ -176,7 +176,36 @@ it('adds a password in a sheet, for an account with an email address', async () 
   expect(sheet.getByRole('alert')).toHaveTextContent(EMAIL_SIGN_IN_COPY.shortPassword);
   await fireEvent.changeText(sheet.getByTestId('new-password'), 'long enough');
   await fireEvent.press(sheet.getByRole('button', { name: PASSWORD_SETTING_COPY.save }));
-  expect(setPassword).toHaveBeenCalledWith('long enough');
+  expect(setPassword).toHaveBeenCalledWith('long enough', undefined);
+  expect(sheet.getByText(PASSWORD_SETTING_COPY.saved)).toBeOnTheScreen();
+});
+
+it('asks for the authenticator code when the account has one, then saves the password', async () => {
+  const { emailSignIn, setPassword } = jest.requireMock<{ emailSignIn: jest.Mock; setPassword: jest.Mock }>('@/api/email-auth');
+  emailSignIn.mockResolvedValue({ email: 'glyn@example.com', hasPassword: false });
+  setPassword
+    .mockRejectedValueOnce({ code: 'insufficient_aal', status: 401 })
+    .mockRejectedValueOnce({ code: 'authenticator_wrong' })
+    .mockResolvedValueOnce(undefined);
+  await open();
+  const row = await screen.findByTestId('to-password');
+  await fireEvent.press(within(row).getByRole('button'));
+  const sheet = within(screen.getByTestId('password-sheet'));
+  expect(sheet.queryByTestId('password-authenticator')).toBeNull();
+  await fireEvent.changeText(sheet.getByTestId('new-password'), 'long enough');
+  await fireEvent.press(sheet.getByRole('button', { name: PASSWORD_SETTING_COPY.save }));
+  expect(sheet.getByText(PASSWORD_SETTING_COPY.authenticatorBody)).toBeOnTheScreen();
+  expect(sheet.queryByText(PASSWORD_SETTING_COPY.saved)).toBeNull();
+  // Save with no code yet: it asks for all six digits first.
+  await fireEvent.press(sheet.getByRole('button', { name: PASSWORD_SETTING_COPY.save }));
+  expect(setPassword).toHaveBeenCalledTimes(1);
+  await fireEvent.changeText(sheet.getByTestId('password-authenticator'), '111111');
+  await fireEvent.press(sheet.getByRole('button', { name: PASSWORD_SETTING_COPY.save }));
+  expect(setPassword).toHaveBeenLastCalledWith('long enough', '111111');
+  expect(sheet.getByRole('alert')).toHaveTextContent(PASSWORD_SETTING_COPY.wrongAuthenticator);
+  await fireEvent.changeText(sheet.getByTestId('password-authenticator'), '222222');
+  await fireEvent.press(sheet.getByRole('button', { name: PASSWORD_SETTING_COPY.save }));
+  expect(setPassword).toHaveBeenLastCalledWith('long enough', '222222');
   expect(sheet.getByText(PASSWORD_SETTING_COPY.saved)).toBeOnTheScreen();
 });
 

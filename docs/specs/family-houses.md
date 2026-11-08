@@ -145,6 +145,39 @@ their profile, and each John can say how old you have to be for it.
   no year born (parents, kids who sign in) can always be dealt it. If nobody
   is old enough, the John waits, as when nobody is home.
 
+## Step 5: the Family Pass, and open to everyone
+
+- The Pass is the same Pass at the same price. In a family it is called the
+  **Family Pass** (`FAMILY_PASS_COPY`, `passWords`): the House row, the Pass
+  page's title and lead ("Only a parent can buy it, and every kid gets the
+  extras"), and its extras: Pocket money and Pay day, Kid profiles, Photos
+  to check, All your history.
+- Only a parent can buy it: `startCheckout` answers 403 for a kid in a family.
+- The Wall says "Maya joined the family" ("New in the family") where
+  housemates say "moved in".
+- `FAMILY_OPEN` is true: the front door's Housemates / Family switch and
+  Start a house's "Who lives here?" show to everyone.
+
+## The board
+
+A family's shared screen, picked by Glyn on 7 November 2026 (option A). A
+parent opens **The board** from House (under the month card) on the kitchen
+tablet, signed in as themselves, and leaves it open.
+
+- A column for each kid, by first name, with what they've earned this month
+  at its head. In it: their Johns still to do that are due by the end of
+  today (overdue first), then those waiting for a parent's OK, then those
+  done today (`boardColumns`, packages/core/src/family-board.ts).
+- A kid taps the box to tick their own: `board_tick(p_assignment)` checks
+  the caller can OK ticks (a parent) in a family and the John is a kid's,
+  sets it done and makes it wait for an OK, as a tick from the kid's own
+  phone would, and posts "done" (or "late") for the kid on the Wall.
+- A John that needs a photo can't be ticked there ("tick it from their
+  Today"); one in a roll call neither.
+- Tapping a John opens its sheet, where a parent says OK or Not yet.
+- Anyone else, or a house that isn't a family, sees that the board is for a
+  parent on a shared screen.
+
 ## Edge cases
 
 - Until `FAMILY_OPEN`, nobody sees the choice unless a link asks for a
@@ -173,3 +206,39 @@ storage as the session (localStorage on the web, SQLite-backed on phones).
 - [x] A parent adds a child who can't sign in, and ticks for them; it stands without an OK and earns (tests/db/kid-profiles.test.ts).
 - [x] A kid younger than a John's youngest age isn't dealt it.
 - [x] Today's switcher shows a kid's Today to a parent, and ticks as the kid.
+- [x] A family's Pass is the Family Pass, and only a parent can buy it (tests/db/house-pass-billing.test.ts).
+- [x] Anyone can pick Family on the front door and at Start a house.
+
+## Switching a house
+
+Picked by Glyn on 7 November 2026 (the picker "What's left for families"):
+a house you already have can become a family, or go back, without starting
+again and losing the list, the people and the history.
+
+- Rules has **Who lives here** for everyone to read. An admin sees
+  Housemates and Family as radio rows (`KindSwitch`); picking the other one
+  opens a sheet that says what changes, and **Make it a family** /
+  **Make it housemates** does it.
+- `set_house_kind(p_house, p_kind)`: an admin only (`house.settings`).
+  - To a family with no money in it (stake and forfeits all 0): at once.
+  - To a family with money in it: `houses.next_kind` / `next_kind_on`, the
+    1st of next month in the house's time zone. The month is settled up as
+    usual; the Rules row says "Becomes a family on Tue 1 Dec, once November
+    is settled up". Picking Housemates while it waits keeps it as it is.
+  - Back to housemates: at once, refused (`kids_without_sign_in`) while a
+    kid doesn't sign in. Ticks waiting for an OK stand, the housemate check
+    comes back (24 hours), and the stake stays 0 until an admin sets one.
+- `apply_house_kind` makes the change: a family's stake and forfeits go to
+  0, `dispute_hours` to 0, and pocket money starts at 10 a month each.
+- The clock (`tickHouse`, `apply_next_kind(p_house, p_now)`, service only)
+  makes a waiting change once its day has come and the month before it is
+  closed, or a week after the day if that month never closes.
+- Pocket money earned in a family can still be marked Paid after it goes
+  back to housemates (`pay_pocket_money` no longer checks the kind).
+- The Wall says each step (`kind_changed`): "Sam made the house a family
+  from Tue 1 Dec, once this month is settled up.", "The house is a family
+  now.", "Sam kept the house as housemates.", "Sam made the house
+  housemates again."
+
+- [x] An admin switches a house to a family, at once or on the 1st, and back (tests/db/switch-house-kind.test.ts).
+- [x] The board shows each kid's Johns today, and a kid's tick there waits for an OK (tests/db/family-board.test.ts).

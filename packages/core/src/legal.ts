@@ -21,6 +21,7 @@ export const LEGAL = {
   /** When either page last changed in substance. */
   updated: "6 November 2026",
   privacyPath: "/privacy",
+  helpPath: "/help",
   termsPath: "/terms",
   site: "https://jonz.app",
 } as const;
@@ -113,6 +114,7 @@ export const PRIVACY_POLICY: LegalPage = {
       body: [
         "When you report a problem, send an idea or ask a question in Jonz, we keep what you wrote and any screenshots you add. If you leave “Send the details that help” ticked, it also carries the pages you were just on, your app or browser, your house’s name and the last error the app showed, all listed for you to read before you send. Nothing else about your house or your housemates goes with it.",
         "Only you and the person who runs Jonz can read a report. Screenshots are stored privately and shown through links that expire after an hour. A screenshot can show your housemates’ names, so crop it if you’d rather it didn’t. We reply in the app, with a notification, and by email.",
+        `If you email ${LEGAL.email}, we keep your email address, the name your email gives, the subject and what you wrote (not the quoted history under it, and not attachments), and our replies, and answer by email. If the address is the one you sign in to ${APP_NAME} with, the email also shows under Your reports in the app. When we fix something you reported, we tell you, once, in the app and by email.`,
       ],
     },
     {
@@ -123,6 +125,7 @@ export const PRIVACY_POLICY: LegalPage = {
         "• Vercel: hosts the website and the API, mainly in the United States.",
         "• Anthropic, through Vercel: writes Ask Jonz’s answers.",
         "• Resend: sends Jonz’s emails and receives replies to them, in Ireland, EU. It sees your email address and the email, and keeps them for 30 days.",
+        "• Cloudflare Turnstile: checks that whoever signs in or makes an account with an email is a person, not a bot. It sees your browser or phone and its internet address, not your email or password, and doesn’t track you across sites.",
         "• Stripe, and Link (Stripe’s checkout): take payment for the House Pass and handle tax, receipts and refunds as the seller of record. They collect your payment details and billing address under Stripe’s own privacy policy.",
         "• Google, Microsoft and Apple: sign you in, and deliver notifications to your browser or phone (as do Mozilla for Firefox and other browser makers). Notifications say what the reminder is about and nothing else.",
         "We may also share information if the law requires it, to protect people’s safety, or with whoever takes over Jonz, who would be bound by this policy.",

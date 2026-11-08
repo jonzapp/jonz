@@ -44,6 +44,15 @@ describe("balances count work done", () => {
   });
 });
 
+describe("a skipped John", () => {
+  it("counts as neither owed nor done: it comes out of the week", async () => {
+    const { a, other, balances } = await oneJohnLastWeek();
+    await db.from("assignments").update({ outcome: "excused", excused: true, settled_at: new Date().toISOString() }).eq("id", a.id);
+    const b = await balances();
+    expect([b.get(a.user_id), b.get(other.userId)]).toEqual([0, 0]);
+  });
+});
+
 describe("balances remember every week", () => {
   it("still counts a John from half a year ago", async () => {
     const house = await makeHouse(["Ava", "Ben"]);
