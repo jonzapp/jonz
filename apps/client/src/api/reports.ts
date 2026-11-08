@@ -220,7 +220,7 @@ export async function myReports(): Promise<MyReport[]> {
 export async function myReport(id: string): Promise<Report | null> {
   const [{ data: row, error }, { data: rows, error: messagesError }] = await Promise.all([
     supabase.from('reports').select('id, user_id, kind, state, words, details, shots, created_at, source, subject').eq('id', id).maybeSingle(),
-    supabase.from('report_messages').select('from_owner, author_name, body, at').eq('report_id', id).order('at').order('id'),
+    supabase.from('report_messages').select('from_owner, author_name, body, at:created_at').eq('report_id', id).order('created_at').order('id'),
   ]);
   if (error || messagesError) throw new Error(humanError(error ?? messagesError));
   if (!row) return null;
@@ -323,7 +323,7 @@ export async function inboxPage(after: InboxCursor | null, filter: InboxFilter):
       sentAt: r.created_at,
       source: sourceOf(r.source),
       subject: r.subject,
-      folded: r.same_as !== null,
+      folded: r.same_as_report_id !== null,
       also: r.also,
     })),
     more: rows.length > PAGE,

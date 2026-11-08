@@ -20,7 +20,7 @@ export interface AwayView {
 export async function loadAway(houseId: string, zone: string, now: Date): Promise<AwayView> {
   const today = localDate(now, zone);
   const { data, error } = await supabase
-    .from('away')
+    .from('away_periods')
     .select('id, user_id, starts_on, ends_on, note')
     .eq('house_id', houseId)
     .gte('ends_on', addDaysTo(today, -7))

@@ -14,7 +14,7 @@ import type { Caller } from "./disputes";
 export function awayMoves(caller: Caller, houseId: string, today: string, moves: ChatMove[]) {
   const mine = async () => {
     const { data } = await caller.db
-      .from("away")
+      .from("away_periods")
       .select("id, starts_on, ends_on")
       .eq("house_id", houseId)
       .eq("user_id", caller.userId)

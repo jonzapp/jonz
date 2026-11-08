@@ -19,7 +19,7 @@ export async function askSwap(caller: Caller, { mine, theirs }: SwapAskRequest):
 
   // Read through the caller's own session, so this can only reach their house.
   const [{ data: offer }, { data: johns }, { data: me }] = await Promise.all([
-    caller.db.from("swap_offers").select("asked_to").eq("id", offerId).single(),
+    caller.db.from("swap_offers").select("asked_user_id").eq("id", offerId).single(),
     caller.db
       .from("assignments")
       .select(
@@ -33,7 +33,7 @@ export async function askSwap(caller: Caller, { mine, theirs }: SwapAskRequest):
   const taken = johns?.find((j) => j.id === theirs);
   if (!offer || !given?.houses || !taken || !notify) return { offerId };
 
-  await notify([offer.asked_to], {
+  await notify([offer.asked_user_id], {
     url: "/today",
     kind: "checks",
     zone: rulesOf(given.houses).timezone,

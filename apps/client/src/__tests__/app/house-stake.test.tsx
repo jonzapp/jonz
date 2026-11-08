@@ -31,7 +31,7 @@ function entry(
     kind,
     amount_minor: amountMinor,
     month,
-    counterparty: null,
+    counterparty_user_id: null,
     created_at: '2026-10-01T09:00:00Z',
     john: null,
     ...rest,
@@ -54,8 +54,8 @@ const LEDGER = [
     created_at: '2026-10-19T08:00:00Z',
     john: { name: 'Wipe the hob', outcome: 'missed', due_at: '2026-10-18T19:00:00Z' },
   }),
-  entry(3, 'sam', 'payment', 400, '2026-10', { counterparty: 'priya', created_at: '2026-10-12T10:00:00Z' }),
-  entry(2, 'priya', 'payment', -400, '2026-10', { counterparty: 'sam', created_at: '2026-10-12T10:00:00Z' }),
+  entry(3, 'sam', 'payment', 400, '2026-10', { counterparty_user_id: 'priya', created_at: '2026-10-12T10:00:00Z' }),
+  entry(2, 'priya', 'payment', -400, '2026-10', { counterparty_user_id: 'sam', created_at: '2026-10-12T10:00:00Z' }),
   entry(1, 'priya', 'share', 400, '2026-09'),
 ];
 
@@ -110,8 +110,8 @@ it("shows the whole house's, each entry naming whose it is and a payment once", 
 it("keeps the amount of a payment between two others to them", async () => {
   (loadStake as jest.Mock).mockResolvedValue(
     stakeRead([
-      entry(2, 'sam', 'payment', 250, '2026-10', { counterparty: 'ben', created_at: '2026-10-12T10:00:00Z' }),
-      entry(1, 'ben', 'payment', -250, '2026-10', { counterparty: 'sam', created_at: '2026-10-12T10:00:00Z' }),
+      entry(2, 'sam', 'payment', 250, '2026-10', { counterparty_user_id: 'ben', created_at: '2026-10-12T10:00:00Z' }),
+      entry(1, 'ben', 'payment', -250, '2026-10', { counterparty_user_id: 'sam', created_at: '2026-10-12T10:00:00Z' }),
     ]),
   );
   await open();

@@ -35,7 +35,7 @@ describe("recording", () => {
     const { house, a, owner } = await dealtHouse();
     expectOk(await owner.db.rpc("mark_done", { p_assignment: a.id }));
     const [row] = await history(owner, house.id);
-    expect(row).toMatchObject({ kind: "tick", actor: owner.userId, subject: owner.userId, assignment_id: a.id, reach: "own" });
+    expect(row).toMatchObject({ kind: "tick", done_by: owner.userId, subject_user_id: owner.userId, assignment_id: a.id, reach: "own" });
     expect((row.data as { name: string }).name).toBe(a.name);
   });
 
@@ -127,7 +127,7 @@ describe("an admin undoing someone else's", () => {
     expectOk(await owner.db.rpc("mark_done", { p_assignment: a.id }));
     const month = monthOf(new Date(a.due_at), ZONE);
     await db.from("assignments").update({ outcome: "late", settled_at: new Date().toISOString() }).eq("id", a.id);
-    await db.from("ledger").insert({ house_id: house.id, user_id: owner.userId, kind: "forfeit", amount_minor: -100, month, assignment_id: a.id });
+    await db.from("ledger_entries").insert({ house_id: house.id, user_id: owner.userId, kind: "forfeit", amount_minor: -100, month, assignment_id: a.id });
     expect((await history(owner, house.id))[0].reach).toBeNull();
     expect((await history(house.admin, house.id))[0].reach).toBe("admin");
 
@@ -140,7 +140,7 @@ describe("an admin undoing someone else's", () => {
     const [row] = await history(house.admin, house.id);
     expectOk(await house.admin.db.rpc("undo_action", { p_action: row.id }));
     expect(await reread("assignments", a.id)).toMatchObject({ outcome: null, settled_at: null, done_at: null });
-    const { data: forfeits } = await db.from("ledger").select("id").eq("assignment_id", a.id);
+    const { data: forfeits } = await db.from("ledger_entries").select("id").eq("assignment_id", a.id);
     expect(forfeits).toEqual([]);
   });
 

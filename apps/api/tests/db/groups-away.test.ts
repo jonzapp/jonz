@@ -159,7 +159,7 @@ describe("time away", () => {
   }
 
   async function awayFor(houseId: string, userId: string, from: string, to: string) {
-    expectOk(await db.from("away").insert({ house_id: houseId, user_id: userId, starts_on: from, ends_on: to }));
+    expectOk(await db.from("away_periods").insert({ house_id: houseId, user_id: userId, starts_on: from, ends_on: to }));
   }
 
   const sunday = (week: { startsOn: string }) => addDaysTo(week.startsOn, 6);
@@ -245,10 +245,10 @@ describe("time away", () => {
     const nightBefore = new TZDate(y, m - 1, d, 0, 0, 0, ZONE).getTime() - 60_000;
     const moved = await reread("assignments", bathroom.id);
     expect(new Date(moved.due_at as string).getTime()).toBe(nightBefore);
-    expect(new Date(moved.due_moved_from as string).getTime()).toBe(new Date(bathroom.due_at).getTime());
+    expect(new Date(moved.original_due_at as string).getTime()).toBe(new Date(bathroom.due_at).getTime());
     expect((await reread("assignments", bins.id)).due_at).toBe(bins.due_at);
 
-    const { data: trip } = await ava.db.from("away").select("id, note").eq("user_id", ava.userId).single();
+    const { data: trip } = await ava.db.from("away_periods").select("id, note").eq("user_id", ava.userId).single();
     expect(trip!.note).toBe("Lisbon");
     const { data: wall } = await ben.db.from("events").select("kind").eq("house_id", house.id).eq("kind", "away");
     expect(wall).toHaveLength(1);
@@ -257,8 +257,8 @@ describe("time away", () => {
     expectOk(await ava.db.rpc("cancel_away", { p_away: trip!.id }));
     const back = await reread("assignments", bathroom.id);
     expect(new Date(back.due_at as string).getTime()).toBe(new Date(bathroom.due_at).getTime());
-    expect(back.due_moved_from).toBeNull();
-    const { data: gone } = await db.from("away").select("id").eq("id", trip!.id);
+    expect(back.original_due_at).toBeNull();
+    const { data: gone } = await db.from("away_periods").select("id").eq("id", trip!.id);
     expect(gone).toEqual([]);
   });
 
@@ -267,11 +267,11 @@ describe("time away", () => {
     const me = house.admin;
     const today = localDate(new Date(), ZONE);
     expectDenied(
-      await me.db.from("away").insert({ house_id: house.id, user_id: me.userId, starts_on: today, ends_on: today }),
+      await me.db.from("away_periods").insert({ house_id: house.id, user_id: me.userId, starts_on: today, ends_on: today }),
     );
     expectOk(await me.db.rpc("set_away", { p_starts: addDaysTo(today, 1), p_ends: addDaysTo(today, 2) }));
     const stranger = await signedInUser("Zed");
-    const { data } = await stranger.db.from("away").select("id").eq("house_id", house.id);
+    const { data } = await stranger.db.from("away_periods").select("id").eq("house_id", house.id);
     expect(data).toEqual([]);
   });
 });

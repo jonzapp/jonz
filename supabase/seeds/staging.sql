@@ -90,7 +90,7 @@ begin
   values (house, 'Take the bins out', 'bins', 1, 1, this_week, 'on_call', 12, 2);
 
   -- Jo is away Wednesday to Friday next week.
-  insert into public.away (house_id, user_id, starts_on, ends_on, note)
+  insert into public.away_periods (house_id, user_id, starts_on, ends_on, note)
   values (house, ids[4], next_monday + 2, next_monday + 4, 'Visiting family');
 end;
 $seed$;

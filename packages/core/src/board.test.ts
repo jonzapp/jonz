@@ -46,7 +46,7 @@ function john(id: string, overrides: Partial<AssignmentRow> = {}): AssignmentRow
     points: 2,
     needs_photo: false,
     due_at: at(48),
-    due_moved_from: null,
+    original_due_at: null,
     group_name: null,
     done_at: null,
     photo_path: null,
@@ -368,7 +368,7 @@ describe("buildWeekBoard", () => {
   });
 
   it("keeps the dates as dates, and the move made for time away", () => {
-    const [item] = board([john("moved", { due_moved_from: at(72), due_at: at(10) })]).items;
+    const [item] = board([john("moved", { original_due_at: at(72), due_at: at(10) })]).items;
     expect(item.dueAt).toEqual(new Date(at(10)));
     expect(item.movedFrom).toEqual(new Date(at(72)));
   });

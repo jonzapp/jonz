@@ -108,12 +108,12 @@ export async function loadHouse(houseId: string, now: Date): Promise<HouseSnapsh
   const [assignments, carried, disputes, onCall, offers] = week
     ? await Promise.all([
         // With how often each comes round, from the John it was dealt from (the John sheet says so).
-        supabase.from('assignments').select('*, johns(every_weeks, every_months), crew(user_id, helper, points)').eq('week_id', week.id).order('due_at'),
+        supabase.from('assignments').select('*, johns(every_weeks, every_months), crew:crew_members(user_id, helper, points)').eq('week_id', week.id).order('due_at'),
         // A John from last week can still be open (a flag, or one due late on
         // its last day, inside its late window): it stays with whoever had it.
         supabase
           .from('assignments')
-          .select('*, johns(every_weeks, every_months), crew(user_id, helper, points)')
+          .select('*, johns(every_weeks, every_months), crew:crew_members(user_id, helper, points)')
           .eq('house_id', houseId)
           .neq('week_id', week.id)
           .is('outcome', null),
@@ -122,10 +122,10 @@ export async function loadHouse(houseId: string, now: Date): Promise<HouseSnapsh
           .select('id, assignment_id, raised_by, reason, closes_at, photo_path, dispute_votes(user_id, uphold)')
           .eq('house_id', houseId)
           .is('resolution', null),
-        supabase.from('on_call').select('john_id, user_id, johns(name, category, needs_photo, archived_at)').eq('week_id', week.id),
+        supabase.from('on_call_picks').select('john_id, user_id, johns(name, category, needs_photo, archived_at)').eq('week_id', week.id),
         supabase
           .from('swap_offers')
-          .select('id, mine, theirs, asked_by, asked_to, expires_at')
+          .select('id, mine:asker_assignment_id, theirs:asked_assignment_id, asked_by, asked_user_id, expires_at')
           .eq('house_id', houseId)
           .is('answer', null)
           .gt('expires_at', now.toISOString()),

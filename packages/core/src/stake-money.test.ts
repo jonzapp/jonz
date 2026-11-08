@@ -232,13 +232,13 @@ describe("CURRENCY_SYMBOL", () => {
 
 describe("buildStake", () => {
   let id = 0;
-  const entry = (user_id: string, kind: string, amount_minor: number, month: string, counterparty: string | null = null): LedgerRow => ({
+  const entry = (user_id: string, kind: string, amount_minor: number, month: string, counterparty_user_id: string | null = null): LedgerRow => ({
     id: ++id,
     user_id,
     kind,
     amount_minor,
     month,
-    counterparty,
+    counterparty_user_id,
     created_at: `2026-10-${String(10 + (id % 18)).padStart(2, "0")}T12:00:00Z`,
   });
 
@@ -296,7 +296,7 @@ describe("buildStake", () => {
       kind: "forfeit",
       amount: -100,
       month: "2026-08",
-      counterparty: null,
+      counterparty_user_id: null,
       createdAt: ledger[0].created_at,
     });
   });

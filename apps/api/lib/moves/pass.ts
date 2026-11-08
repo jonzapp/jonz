@@ -33,7 +33,7 @@ function passPage(appUrl: string, bought: boolean): string {
 async function houseOf(caller: Caller, houseId: string) {
   const { data } = await caller.db
     .from("houses")
-    .select("id, currency, kind, pass_plan, pass_until, pass_buyer")
+    .select("id, currency, kind, pass_plan, pass_ends_at, pass_bought_by")
     .eq("id", houseId)
     .maybeSingle();
   return data;
@@ -98,7 +98,7 @@ export async function startCheckout(
   // Months free start now, or when the free month ends if that's later.
   const freeMonths = checked?.facts.terms.kind === "trial" ? checked.facts.terms.months : null;
   const firstCharge = plan === "founding" ? null : latest(passFirstCharge(pass, now), freeMonths ? addMonths(now, freeMonths) : null);
-  if (checked && checked.facts.terms.kind !== "trial" && !checked.row.stripe_code) {
+  if (checked && checked.facts.terms.kind !== "trial" && !checked.row.stripe_promotion_code_id) {
     return { status: 409, message: humanError({ message: "offer_ended" }) };
   }
   const url = await stripe.checkout({
@@ -116,7 +116,7 @@ export async function startCheckout(
     trialEnd: firstCharge ? Math.floor(firstCharge.getTime() / 1000) : null,
     successUrl: passPage(appUrl, true),
     cancelUrl: passPage(appUrl, false),
-    promotionCode: checked && checked.facts.terms.kind !== "trial" ? checked.row.stripe_code : null,
+    promotionCode: checked && checked.facts.terms.kind !== "trial" ? checked.row.stripe_promotion_code_id : null,
   });
   return { url };
 }
@@ -140,15 +140,15 @@ function addMonths(from: Date, months: number): Date {
 export async function openBilling(caller: Caller, stripe: PassStripe, houseId: string, appUrl: string): Promise<PassAnswer> {
   const house = await houseOf(caller, houseId);
   if (!house) return NOT_IN_HOUSE;
-  if (house.pass_buyer !== caller.userId) return { status: 403, message: PASS_COPY.notBuyer };
+  if (house.pass_bought_by !== caller.userId) return { status: 403, message: PASS_COPY.notBuyer };
 
   // The Stripe ids are the service role's alone; the house was read as the caller above.
   const { data: billing } = await createAdminClient()
     .from("house_pass_billing")
-    .select("stripe_customer")
+    .select("stripe_customer_id")
     .eq("house_id", house.id)
     .maybeSingle();
   if (!billing) return { status: 404, message: PASS_COPY.nothingToManage };
 
-  return { url: await stripe.portal(billing.stripe_customer, passPage(appUrl, false)) };
+  return { url: await stripe.portal(billing.stripe_customer_id, passPage(appUrl, false)) };
 }

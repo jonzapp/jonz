@@ -37,11 +37,11 @@ export interface HousePass {
 }
 
 /** A house row's Pass. An unknown plan reads as an ended free month, so it never unlocks by mistake. */
-export function passOf(row: { pass_plan: string; pass_until: string | null; pass_buyer: string | null }): HousePass {
+export function passOf(row: { pass_plan: string; pass_ends_at: string | null; pass_bought_by: string | null }): HousePass {
   const plan = (PASS_PLANS as readonly string[]).includes(row.pass_plan) ? (row.pass_plan as PassPlan) : "trial";
-  const until = row.pass_until ? new Date(row.pass_until) : null;
-  if (plan === "founding") return { plan, until: null, buyerId: row.pass_buyer };
-  return { plan, until: until ?? new Date(0), buyerId: row.pass_buyer };
+  const until = row.pass_ends_at ? new Date(row.pass_ends_at) : null;
+  if (plan === "founding") return { plan, until: null, buyerId: row.pass_bought_by };
+  return { plan, until: until ?? new Date(0), buyerId: row.pass_bought_by };
 }
 
 /** Whether the house has the Pass at `now`: Founding, or not yet ended. */

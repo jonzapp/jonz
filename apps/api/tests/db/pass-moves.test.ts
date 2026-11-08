@@ -29,11 +29,11 @@ async function bensPass(
   const sub = `sub_${house.id.slice(0, 8)}`;
   await db
     .from("houses")
-    .update({ pass_plan: plan, pass_until: until?.toISOString() ?? null, pass_buyer: ben.userId })
+    .update({ pass_plan: plan, pass_ends_at: until?.toISOString() ?? null, pass_bought_by: ben.userId })
     .eq("id", house.id);
   await db
     .from("house_pass_billing")
-    .insert({ house_id: house.id, stripe_customer: "cus_ben", stripe_subscription: plan === "founding" ? null : sub });
+    .insert({ house_id: house.id, stripe_customer_id: "cus_ben", stripe_subscription_id: plan === "founding" ? null : sub });
   return { house, ben, until, sub };
 }
 
@@ -49,19 +49,19 @@ async function startHouse(who: Actor, name = `${who.name}'s new place`) {
 }
 
 async function passOf(houseId: string) {
-  const { data } = await db.from("houses").select("pass_plan, pass_until, pass_buyer").eq("id", houseId).single();
+  const { data } = await db.from("houses").select("pass_plan, pass_ends_at, pass_bought_by").eq("id", houseId).single();
   return data!;
 }
 
 async function billingOf(houseId: string) {
-  const { data } = await db.from("house_pass_billing").select("stripe_customer, stripe_subscription").eq("house_id", houseId).maybeSingle();
+  const { data } = await db.from("house_pass_billing").select("stripe_customer_id, stripe_subscription_id").eq("house_id", houseId).maybeSingle();
   return data;
 }
 
 async function moveOf(userId: string) {
   const { data } = await db
-    .from("moved_on")
-    .select("id, pass_plan, pass_until, pass_state, pass_stopped_at")
+    .from("moves")
+    .select("id, pass_plan, pass_ends_at, pass_state, pass_stopped_at")
     .eq("user_id", userId)
     .order("left_at", { ascending: false })
     .limit(1)
@@ -89,17 +89,17 @@ describe("the buyer leaving", () => {
 
     const old = await passOf(house.id);
     expect(old.pass_plan).toBe("trial");
-    expect(old.pass_buyer).toBeNull();
-    const grace = Date.parse(old.pass_until!);
+    expect(old.pass_bought_by).toBeNull();
+    const grace = Date.parse(old.pass_ends_at!);
     expect(grace).toBeGreaterThan(Date.now() + 29 * DAY);
     expect(grace).toBeLessThan(Date.now() + 31 * DAY);
     expect(await billingOf(house.id)).toBeNull();
 
     const move = await moveOf(ben.userId);
     expect(move).toMatchObject({ pass_plan: "yearly", pass_state: "waiting" });
-    expect(Date.parse(move.pass_until!)).toBe(until!.getTime());
-    const { data: bill } = await db.from("moving_pass_billing").select("stripe_customer, stripe_subscription").eq("move_id", move.id).single();
-    expect(bill).toEqual({ stripe_customer: "cus_ben", stripe_subscription: sub });
+    expect(Date.parse(move.pass_ends_at!)).toBe(until!.getTime());
+    const { data: bill } = await db.from("moving_pass_billing").select("stripe_customer_id, stripe_subscription_id").eq("move_id", move.id).single();
+    expect(bill).toEqual({ stripe_customer_id: "cus_ben", stripe_subscription_id: sub });
 
     const { data: posts } = await db.from("events").select("data").eq("house_id", house.id).eq("kind", "moved_out");
     const said = posts![0].data as { who: string; pass_until: string };
@@ -115,20 +115,20 @@ describe("the buyer leaving", () => {
     await leave(house, ben);
     const next = await startHouse(ben);
 
-    expect(await passOf(next)).toEqual({ pass_plan: "yearly", pass_until: expect.any(String), pass_buyer: ben.userId });
-    expect(Date.parse((await passOf(next)).pass_until!)).toBe(until!.getTime());
-    expect(await billingOf(next)).toEqual({ stripe_customer: "cus_ben", stripe_subscription: sub });
+    expect(await passOf(next)).toEqual({ pass_plan: "yearly", pass_ends_at: expect.any(String), pass_bought_by: ben.userId });
+    expect(Date.parse((await passOf(next)).pass_ends_at!)).toBe(until!.getTime());
+    expect(await billingOf(next)).toEqual({ stripe_customer_id: "cus_ben", stripe_subscription_id: sub });
     expect((await moveOf(ben.userId)).pass_state).toBe("moved");
   });
 
   it("waits while the house they join has a Pass of its own", async () => {
     const { house, ben } = await bensPass();
     const other = await makeHouse(["Cal"]);
-    await db.from("houses").update({ pass_plan: "founding", pass_until: null }).eq("id", other.id);
+    await db.from("houses").update({ pass_plan: "founding", pass_ends_at: null }).eq("id", other.id);
     await leave(house, ben);
     expectOk(await ben.db.rpc("join_house", { p_code: other.code }));
 
-    expect((await passOf(other.id)).pass_buyer).toBeNull();
+    expect((await passOf(other.id)).pass_bought_by).toBeNull();
     expect((await moveOf(ben.userId)).pass_state).toBe("waiting");
   });
 
@@ -136,10 +136,10 @@ describe("the buyer leaving", () => {
     const { house, ben } = await bensPass("founding");
     await leave(house, ben);
     const next = await startHouse(ben);
-    expect(await passOf(next)).toEqual({ pass_plan: "founding", pass_until: null, pass_buyer: ben.userId });
+    expect(await passOf(next)).toEqual({ pass_plan: "founding", pass_ends_at: null, pass_bought_by: ben.userId });
 
     const given = await makeHouse(["Dee", "Eve"]);
-    await db.from("houses").update({ pass_plan: "founding", pass_until: null, pass_buyer: null }).eq("id", given.id);
+    await db.from("houses").update({ pass_plan: "founding", pass_ends_at: null, pass_bought_by: null }).eq("id", given.id);
     await leave(given, given.members[0]);
     expect((await passOf(given.id)).pass_plan).toBe("founding");
   });
@@ -153,7 +153,7 @@ describe("the buyer leaving", () => {
     await leave({ ...house, id: next }, ben);
     expectOk(await ben.db.rpc("join_house", { p_code: friend.code }));
 
-    expect((await passOf(next)).pass_buyer).toBe(ben.userId);
+    expect((await passOf(next)).pass_bought_by).toBe(ben.userId);
     expect((await passOf(friend.id)).pass_plan).toBe("trial");
   });
 
@@ -172,9 +172,9 @@ describe("leave_pass", () => {
     await leave(house, ben);
     expectOk(await ben.db.rpc("leave_pass"));
 
-    expect(await passOf(house.id)).toEqual({ pass_plan: "yearly", pass_until: expect.any(String), pass_buyer: ben.userId });
-    expect(Date.parse((await passOf(house.id)).pass_until!)).toBe(until!.getTime());
-    expect(await billingOf(house.id)).toEqual({ stripe_customer: "cus_ben", stripe_subscription: sub });
+    expect(await passOf(house.id)).toEqual({ pass_plan: "yearly", pass_ends_at: expect.any(String), pass_bought_by: ben.userId });
+    expect(Date.parse((await passOf(house.id)).pass_ends_at!)).toBe(until!.getTime());
+    expect(await billingOf(house.id)).toEqual({ stripe_customer_id: "cus_ben", stripe_subscription_id: sub });
     expect((await moveOf(ben.userId)).pass_state).toBe("left");
 
     const { stripe, stopped } = fakeStripe();
@@ -208,12 +208,12 @@ describe("Stripe, while the Pass is on the move", () => {
     const event = { type: "customer.subscription.updated", data: { object: { id: sub } } } as unknown as Stripe.Event;
     expect(await applyPassEvent(db, stripe, event, new Date(), "local")).toBe("carried");
     expect((await passOf(house.id)).pass_plan).toBe("trial");
-    expect(Date.parse((await moveOf(ben.userId)).pass_until!)).toBe(secs(renewed) * 1000);
+    expect(Date.parse((await moveOf(ben.userId)).pass_ends_at!)).toBe(secs(renewed) * 1000);
 
     // On the next house, its renewals land there.
     const next = await startHouse(ben);
     expect(await applyPassEvent(db, stripe, event, new Date(), "local")).toBe("subscription");
-    expect(Date.parse((await passOf(next)).pass_until!)).toBe(secs(renewed) * 1000);
+    expect(Date.parse((await passOf(next)).pass_ends_at!)).toBe(secs(renewed) * 1000);
     expect((await passOf(house.id)).pass_plan).toBe("trial");
   });
 

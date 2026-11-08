@@ -182,14 +182,14 @@ describe("confirm_payment", () => {
     const house = await makeHouse(["Ava", "Ben"]);
     const [ava, ben] = house.everyone;
     await adminClient().from("month_closes").insert({ house_id: house.id, month: "2026-09" });
-    await adminClient().from("ledger").insert([
+    await adminClient().from("ledger_entries").insert([
       { house_id: house.id, user_id: ben.userId, kind: "share", amount_minor: -300, month: "2026-09" },
       { house_id: house.id, user_id: ava.userId, kind: "share", amount_minor: 300, month: "2026-09" },
     ]);
     expectRule(await ben.db.rpc("confirm_payment", { p_house: house.id, p_from: ava.userId, p_amount: 300 }), "more_than_owed");
     expectRule(await ava.db.rpc("confirm_payment", { p_house: house.id, p_from: ben.userId, p_amount: 301 }), "more_than_owed");
     expectOk(await ava.db.rpc("confirm_payment", { p_house: house.id, p_from: ben.userId, p_amount: 300 }));
-    const { data } = await adminClient().from("ledger").select("user_id, amount_minor").eq("house_id", house.id);
+    const { data } = await adminClient().from("ledger_entries").select("user_id, amount_minor").eq("house_id", house.id);
     const sum = (id: string) => data!.filter((r) => r.user_id === id).reduce((s, r) => s + r.amount_minor, 0);
     expect([sum(ava.userId), sum(ben.userId)]).toEqual([0, 0]);
   });
@@ -198,7 +198,7 @@ describe("confirm_payment", () => {
     const house = await makeHouse(["Ava", "Ben"]);
     const [ava, ben] = house.everyone;
     await adminClient().from("month_closes").insert({ house_id: house.id, month: "2026-09" });
-    await adminClient().from("ledger").insert([
+    await adminClient().from("ledger_entries").insert([
       { house_id: house.id, user_id: ben.userId, kind: "share", amount_minor: -401, month: "2026-09" },
       { house_id: house.id, user_id: ava.userId, kind: "share", amount_minor: 401, month: "2026-09" },
       // Ava was late this month, still open: her whole ledger says 301.
@@ -206,7 +206,7 @@ describe("confirm_payment", () => {
     ]);
     expectOk(await ava.db.rpc("confirm_payment", { p_house: house.id, p_from: ben.userId, p_amount: 401 }));
     // And an open month's entries never make a debt of their own.
-    await adminClient().from("ledger").insert({ house_id: house.id, user_id: ben.userId, kind: "forfeit", amount_minor: -300, month: "2099-01" });
+    await adminClient().from("ledger_entries").insert({ house_id: house.id, user_id: ben.userId, kind: "forfeit", amount_minor: -300, month: "2099-01" });
     expectRule(await ava.db.rpc("confirm_payment", { p_house: house.id, p_from: ben.userId, p_amount: 1 }), "more_than_owed");
   });
 
@@ -221,7 +221,7 @@ describe("confirm_payment", () => {
     expect((await adminClient().from("houses").select("settle_in").eq("id", house.id).single()).data!.settle_in).toBe("splitwise");
     expect((await adminClient().from("houses").update({ settle_in: "venmo" }).eq("id", house.id)).error).not.toBeNull();
     await adminClient().from("month_closes").insert({ house_id: house.id, month: "2026-09" });
-    await adminClient().from("ledger").insert([
+    await adminClient().from("ledger_entries").insert([
       { house_id: house.id, user_id: ben.userId, kind: "share", amount_minor: -250, month: "2026-09" },
       { house_id: house.id, user_id: ava.userId, kind: "share", amount_minor: 250, month: "2026-09" },
     ]);
@@ -229,7 +229,7 @@ describe("confirm_payment", () => {
     // Only the person owed, as with money received.
     expectRule(await ben.db.rpc("confirm_payment", { p_house: house.id, p_from: ava.userId, p_amount: 250, p_via: "splitwise" }), "more_than_owed");
     expectOk(await ava.db.rpc("confirm_payment", { p_house: house.id, p_from: ben.userId, p_amount: 250, p_via: "splitwise" }));
-    const { data: ledger } = await adminClient().from("ledger").select("user_id, kind, amount_minor").eq("house_id", house.id).eq("kind", "payment");
+    const { data: ledger } = await adminClient().from("ledger_entries").select("user_id, kind, amount_minor").eq("house_id", house.id).eq("kind", "payment");
     expect(ledger!.map((r) => r.amount_minor).sort((a, b) => a - b)).toEqual([-250, 250]);
     const { data: events } = await adminClient().from("events").select("data").eq("house_id", house.id).eq("kind", "paid");
     expect(events!.map((e) => e.data)).toEqual([{ to: ava.userId, amount: 250, via: "splitwise" }]);

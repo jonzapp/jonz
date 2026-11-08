@@ -344,7 +344,7 @@ describe("forfeitRoom", () => {
         kind: "forfeit",
         amount_minor: -amount,
         month: "2026-10",
-        counterparty: null,
+        counterparty_user_id: null,
         created_at: "2026-10-10T12:00:00Z",
       })),
       closedMonths: [],
@@ -742,7 +742,7 @@ describe("todayPage", () => {
     expect(page({ board: b, mine: [mineNot], members })).toMatchObject({ swap: null, offers: [] });
     const now = new Date(at(0));
     expect(page({ board: b, mine: [mineNot], members, offers: [], now }).swap).toMatchObject({ kind: "suggest", theirs: { id: "theirs" } });
-    const ask = { id: "o1", mine: "theirs", theirs: "next", asked_by: "priya", asked_to: ME, expires_at: at(10).toISOString() };
+    const ask = { id: "o1", mine: "theirs", theirs: "next", asked_by: "priya", asked_user_id: ME, expires_at: at(10).toISOString() };
     expect(page({ board: b, mine: [mineNot], members, offers: [ask], now }).offers).toHaveLength(1);
   });
 
@@ -805,7 +805,7 @@ describe("from a real board", () => {
       points: 1,
       needs_photo: false,
       due_at: at(dueIn).toISOString(),
-      due_moved_from: null,
+      original_due_at: null,
       group_name: null,
       done_at: doneAgo === null ? null : at(-doneAgo).toISOString(),
       photo_path: null,

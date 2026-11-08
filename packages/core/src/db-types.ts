@@ -37,41 +37,44 @@ export type Database = {
       account_deletions: {
         Row: {
           away_ids: string[]
-          delete_after: string
+          created_at: string
+          deletes_at: string
           ended_at: string | null
           id: string
           pass_resumed_at: string | null
           pass_stopped_at: string | null
-          pass_subscription: string | null
           requested_at: string
           requested_by: string
           state: string
+          stripe_subscription_id: string | null
           user_id: string
         }
         Insert: {
           away_ids?: string[]
-          delete_after: string
+          created_at?: string
+          deletes_at: string
           ended_at?: string | null
           id?: string
           pass_resumed_at?: string | null
           pass_stopped_at?: string | null
-          pass_subscription?: string | null
           requested_at?: string
           requested_by: string
           state?: string
+          stripe_subscription_id?: string | null
           user_id: string
         }
         Update: {
           away_ids?: string[]
-          delete_after?: string
+          created_at?: string
+          deletes_at?: string
           ended_at?: string | null
           id?: string
           pass_resumed_at?: string | null
           pass_stopped_at?: string | null
-          pass_subscription?: string | null
           requested_at?: string
           requested_by?: string
           state?: string
+          stripe_subscription_id?: string | null
           user_id?: string
         }
         Relationships: [
@@ -89,8 +92,8 @@ export type Database = {
           action: string
           actor: string | null
           after: Json | null
-          at: string
           before: Json | null
+          created_at: string
           id: number
           reason: string | null
           target_id: string | null
@@ -100,8 +103,8 @@ export type Database = {
           action: string
           actor?: string | null
           after?: Json | null
-          at?: string
           before?: Json | null
+          created_at?: string
           id?: never
           reason?: string | null
           target_id?: string | null
@@ -111,8 +114,8 @@ export type Database = {
           action?: string
           actor?: string | null
           after?: Json | null
-          at?: string
           before?: Json | null
+          created_at?: string
           id?: never
           reason?: string | null
           target_id?: string | null
@@ -123,17 +126,28 @@ export type Database = {
       app_owners: {
         Row: {
           added_at: string
+          created_at: string
           user_id: string
         }
         Insert: {
           added_at?: string
+          created_at?: string
           user_id: string
         }
         Update: {
           added_at?: string
+          created_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "app_owners_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ask_chats: {
         Row: {
@@ -177,25 +191,23 @@ export type Database = {
         Row: {
           absent_at: string | null
           awaits_ok: boolean
-          pay_minor: number
           category: string
           changed_at: string | null
           changed_by: string | null
           closes_at: string | null
-          cover_held_until: string | null
+          cover_hold_ends_at: string | null
           cover_told_at: string | null
           covered_by: string | null
           created_at: string
           dealt: Json | null
           done_at: string | null
           due_at: string
-          due_moved_from: string | null
           excused: boolean
           flagged_at: string | null
           flagged_by: string | null
           group_name: string | null
-          handed_by_away: string | null
-          handed_from: string | null
+          handed_by_away_period_id: string | null
+          handed_from_user_id: string | null
           house_id: string
           id: string
           job_id: string | null
@@ -205,7 +217,9 @@ export type Database = {
           ok_asked_at: string | null
           okayed_at: string | null
           okayed_by: string | null
+          original_due_at: string | null
           outcome: string | null
+          pay_minor: number
           photo_path: string | null
           planned_at: string | null
           points: number
@@ -217,25 +231,23 @@ export type Database = {
         Insert: {
           absent_at?: string | null
           awaits_ok?: boolean
-          pay_minor?: number
           category: string
           changed_at?: string | null
           changed_by?: string | null
           closes_at?: string | null
-          cover_held_until?: string | null
+          cover_hold_ends_at?: string | null
           cover_told_at?: string | null
           covered_by?: string | null
           created_at?: string
           dealt?: Json | null
           done_at?: string | null
           due_at: string
-          due_moved_from?: string | null
           excused?: boolean
           flagged_at?: string | null
           flagged_by?: string | null
           group_name?: string | null
-          handed_by_away?: string | null
-          handed_from?: string | null
+          handed_by_away_period_id?: string | null
+          handed_from_user_id?: string | null
           house_id: string
           id?: string
           job_id?: string | null
@@ -245,7 +257,9 @@ export type Database = {
           ok_asked_at?: string | null
           okayed_at?: string | null
           okayed_by?: string | null
+          original_due_at?: string | null
           outcome?: string | null
+          pay_minor?: number
           photo_path?: string | null
           planned_at?: string | null
           points: number
@@ -257,25 +271,23 @@ export type Database = {
         Update: {
           absent_at?: string | null
           awaits_ok?: boolean
-          pay_minor?: number
           category?: string
           changed_at?: string | null
           changed_by?: string | null
           closes_at?: string | null
-          cover_held_until?: string | null
+          cover_hold_ends_at?: string | null
           cover_told_at?: string | null
           covered_by?: string | null
           created_at?: string
           dealt?: Json | null
           done_at?: string | null
           due_at?: string
-          due_moved_from?: string | null
           excused?: boolean
           flagged_at?: string | null
           flagged_by?: string | null
           group_name?: string | null
-          handed_by_away?: string | null
-          handed_from?: string | null
+          handed_by_away_period_id?: string | null
+          handed_from_user_id?: string | null
           house_id?: string
           id?: string
           job_id?: string | null
@@ -285,7 +297,9 @@ export type Database = {
           ok_asked_at?: string | null
           okayed_at?: string | null
           okayed_by?: string | null
+          original_due_at?: string | null
           outcome?: string | null
+          pay_minor?: number
           photo_path?: string | null
           planned_at?: string | null
           points?: number
@@ -317,6 +331,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "assignments_handed_by_away_period_id_house_id_fkey"
+            columns: ["handed_by_away_period_id", "house_id"]
+            isOneToOne: false
+            referencedRelation: "away_periods"
+            referencedColumns: ["id", "house_id"]
+          },
+          {
+            foreignKeyName: "assignments_handed_from_user_id_fkey"
+            columns: ["handed_from_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "assignments_house_id_fkey"
             columns: ["house_id"]
             isOneToOne: false
@@ -324,10 +352,17 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "assignments_john_id_fkey"
-            columns: ["john_id"]
+            foreignKeyName: "assignments_john_id_house_id_fkey"
+            columns: ["john_id", "house_id"]
             isOneToOne: false
             referencedRelation: "johns"
+            referencedColumns: ["id", "house_id"]
+          },
+          {
+            foreignKeyName: "assignments_okayed_by_fkey"
+            columns: ["okayed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -338,15 +373,15 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "assignments_week_id_fkey"
-            columns: ["week_id"]
+            foreignKeyName: "assignments_week_id_house_id_fkey"
+            columns: ["week_id", "house_id"]
             isOneToOne: false
             referencedRelation: "weeks"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "house_id"]
           },
         ]
       }
-      away: {
+      away_periods: {
         Row: {
           created_at: string
           ends_on: string
@@ -376,7 +411,7 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "away_house_id_user_id_fkey"
+            foreignKeyName: "away_periods_house_id_user_id_fkey"
             columns: ["house_id", "user_id"]
             isOneToOne: false
             referencedRelation: "members"
@@ -384,7 +419,7 @@ export type Database = {
           },
         ]
       }
-      crew: {
+      crew_members: {
         Row: {
           assignment_id: string
           created_at: string
@@ -414,21 +449,21 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "crew_assignment_id_fkey"
-            columns: ["assignment_id"]
+            foreignKeyName: "crew_members_assignment_id_house_id_fkey"
+            columns: ["assignment_id", "house_id"]
             isOneToOne: false
             referencedRelation: "assignments"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "house_id"]
           },
           {
-            foreignKeyName: "crew_house_id_fkey"
+            foreignKeyName: "crew_members_house_id_fkey"
             columns: ["house_id"]
             isOneToOne: false
             referencedRelation: "houses"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "crew_user_id_fkey"
+            foreignKeyName: "crew_members_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -514,11 +549,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "disputes_assignment_id_fkey"
-            columns: ["assignment_id"]
+            foreignKeyName: "disputes_assignment_id_house_id_fkey"
+            columns: ["assignment_id", "house_id"]
             isOneToOne: false
             referencedRelation: "assignments"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "house_id"]
           },
           {
             foreignKeyName: "disputes_house_id_fkey"
@@ -569,11 +604,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "events_assignment_id_fkey"
-            columns: ["assignment_id"]
+            foreignKeyName: "events_assignment_id_house_id_fkey"
+            columns: ["assignment_id", "house_id"]
             isOneToOne: false
             referencedRelation: "assignments"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "house_id"]
           },
           {
             foreignKeyName: "events_house_id_fkey"
@@ -655,57 +690,57 @@ export type Database = {
       }
       house_actions: {
         Row: {
-          actor: string | null
           assignment_id: string | null
           created_at: string
           data: Json
+          done_by: string | null
           house_id: string
           id: string
           kind: string
           ref: string | null
-          subject: string | null
+          subject_user_id: string | null
           undone_at: string | null
           undone_by: string | null
         }
         Insert: {
-          actor?: string | null
           assignment_id?: string | null
           created_at?: string
           data?: Json
+          done_by?: string | null
           house_id: string
           id?: string
           kind: string
           ref?: string | null
-          subject?: string | null
+          subject_user_id?: string | null
           undone_at?: string | null
           undone_by?: string | null
         }
         Update: {
-          actor?: string | null
           assignment_id?: string | null
           created_at?: string
           data?: Json
+          done_by?: string | null
           house_id?: string
           id?: string
           kind?: string
           ref?: string | null
-          subject?: string | null
+          subject_user_id?: string | null
           undone_at?: string | null
           undone_by?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "house_actions_actor_fkey"
-            columns: ["actor"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "house_actions_assignment_id_fkey"
-            columns: ["assignment_id"]
+            foreignKeyName: "house_actions_assignment_id_house_id_fkey"
+            columns: ["assignment_id", "house_id"]
             isOneToOne: false
             referencedRelation: "assignments"
+            referencedColumns: ["id", "house_id"]
+          },
+          {
+            foreignKeyName: "house_actions_done_by_fkey"
+            columns: ["done_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -716,8 +751,8 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "house_actions_subject_fkey"
-            columns: ["subject"]
+            foreignKeyName: "house_actions_subject_user_id_fkey"
+            columns: ["subject_user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -781,21 +816,24 @@ export type Database = {
       }
       house_pass_billing: {
         Row: {
+          created_at: string
           house_id: string
-          stripe_customer: string
-          stripe_subscription: string | null
+          stripe_customer_id: string
+          stripe_subscription_id: string | null
           updated_at: string
         }
         Insert: {
+          created_at?: string
           house_id: string
-          stripe_customer: string
-          stripe_subscription?: string | null
+          stripe_customer_id: string
+          stripe_subscription_id?: string | null
           updated_at?: string
         }
         Update: {
+          created_at?: string
           house_id?: string
-          stripe_customer?: string
-          stripe_subscription?: string | null
+          stripe_customer_id?: string
+          stripe_subscription_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -812,9 +850,6 @@ export type Database = {
         Row: {
           away_makeup: number
           cover_grace_hours: number
-          next_kind: string | null
-          next_kind_on: string | null
-          pocket_cap_minor: number
           created_at: string
           created_by: string | null
           currency: string
@@ -829,9 +864,12 @@ export type Database = {
           late_hours: number
           missed_forfeit_minor: number
           name: string
-          pass_buyer: string | null
+          next_kind: string | null
+          next_kind_on: string | null
+          pass_bought_by: string | null
+          pass_ends_at: string | null
           pass_plan: string
-          pass_until: string | null
+          pocket_cap_minor: number
           settle_in: string
           stake_minor: number
           ticked_at: string | null
@@ -841,9 +879,6 @@ export type Database = {
         Insert: {
           away_makeup?: number
           cover_grace_hours?: number
-          next_kind?: string | null
-          next_kind_on?: string | null
-          pocket_cap_minor?: number
           created_at?: string
           created_by?: string | null
           currency?: string
@@ -858,9 +893,12 @@ export type Database = {
           late_hours?: number
           missed_forfeit_minor?: number
           name: string
-          pass_buyer?: string | null
+          next_kind?: string | null
+          next_kind_on?: string | null
+          pass_bought_by?: string | null
+          pass_ends_at?: string | null
           pass_plan?: string
-          pass_until?: string | null
+          pocket_cap_minor?: number
           settle_in?: string
           stake_minor?: number
           ticked_at?: string | null
@@ -870,9 +908,6 @@ export type Database = {
         Update: {
           away_makeup?: number
           cover_grace_hours?: number
-          next_kind?: string | null
-          next_kind_on?: string | null
-          pocket_cap_minor?: number
           created_at?: string
           created_by?: string | null
           currency?: string
@@ -887,9 +922,12 @@ export type Database = {
           late_hours?: number
           missed_forfeit_minor?: number
           name?: string
-          pass_buyer?: string | null
+          next_kind?: string | null
+          next_kind_on?: string | null
+          pass_bought_by?: string | null
+          pass_ends_at?: string | null
           pass_plan?: string
-          pass_until?: string | null
+          pocket_cap_minor?: number
           settle_in?: string
           stake_minor?: number
           ticked_at?: string | null
@@ -898,8 +936,15 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "houses_pass_buyer_fkey"
-            columns: ["pass_buyer"]
+            foreignKeyName: "houses_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "houses_pass_bought_by_fkey"
+            columns: ["pass_bought_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -922,11 +967,11 @@ export type Database = {
           house_id: string
           id: string
           keep_day: boolean
-          min_age: number | null
-          pay_minor: number
           kind: string
+          min_age: number | null
           name: string
           needs_photo: boolean
+          pay_minor: number
           per_week: number
           points: number
           respond_hours: number
@@ -947,11 +992,11 @@ export type Database = {
           house_id: string
           id?: string
           keep_day?: boolean
-          min_age?: number | null
-          pay_minor?: number
           kind?: string
+          min_age?: number | null
           name: string
           needs_photo?: boolean
+          pay_minor?: number
           per_week?: number
           points?: number
           respond_hours?: number
@@ -972,11 +1017,11 @@ export type Database = {
           house_id?: string
           id?: string
           keep_day?: boolean
-          min_age?: number | null
-          pay_minor?: number
           kind?: string
+          min_age?: number | null
           name?: string
           needs_photo?: boolean
+          pay_minor?: number
           per_week?: number
           points?: number
           respond_hours?: number
@@ -999,11 +1044,11 @@ export type Database = {
           },
         ]
       }
-      ledger: {
+      ledger_entries: {
         Row: {
           amount_minor: number
           assignment_id: string | null
-          counterparty: string | null
+          counterparty_user_id: string | null
           created_at: string
           doers: string[] | null
           house_id: string
@@ -1015,7 +1060,7 @@ export type Database = {
         Insert: {
           amount_minor: number
           assignment_id?: string | null
-          counterparty?: string | null
+          counterparty_user_id?: string | null
           created_at?: string
           doers?: string[] | null
           house_id: string
@@ -1027,7 +1072,7 @@ export type Database = {
         Update: {
           amount_minor?: number
           assignment_id?: string | null
-          counterparty?: string | null
+          counterparty_user_id?: string | null
           created_at?: string
           doers?: string[] | null
           house_id?: string
@@ -1038,28 +1083,28 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "ledger_assignment_id_fkey"
-            columns: ["assignment_id"]
+            foreignKeyName: "ledger_entries_assignment_id_house_id_fkey"
+            columns: ["assignment_id", "house_id"]
             isOneToOne: false
             referencedRelation: "assignments"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "house_id"]
           },
           {
-            foreignKeyName: "ledger_counterparty_fkey"
-            columns: ["counterparty"]
+            foreignKeyName: "ledger_entries_counterparty_user_id_fkey"
+            columns: ["counterparty_user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "ledger_house_id_fkey"
+            foreignKeyName: "ledger_entries_house_id_fkey"
             columns: ["house_id"]
             isOneToOne: false
             referencedRelation: "houses"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "ledger_user_id_fkey"
+            foreignKeyName: "ledger_entries_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -1069,8 +1114,8 @@ export type Database = {
       }
       members: {
         Row: {
-          born_year: number | null
           best_time: string | null
+          born_year: number | null
           house_id: string
           immunity_tokens: number
           joined_at: string
@@ -1084,8 +1129,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          born_year?: number | null
           best_time?: string | null
+          born_year?: number | null
           house_id: string
           immunity_tokens?: number
           joined_at?: string
@@ -1099,8 +1144,8 @@ export type Database = {
           user_id: string
         }
         Update: {
-          born_year?: number | null
           best_time?: string | null
+          born_year?: number | null
           house_id?: string
           immunity_tokens?: number
           joined_at?: string
@@ -1130,115 +1175,22 @@ export type Database = {
           },
         ]
       }
-      moved_on: {
-        Row: {
-          from_house: string
-          how: string | null
-          id: string
-          left_at: string
-          moved_at: string | null
-          pass_placed_at: string | null
-          pass_plan: string | null
-          pass_state: string | null
-          pass_stopped_at: string | null
-          pass_until: string | null
-          reminded_at: string | null
-          to_house: string | null
-          user_id: string
-        }
-        Insert: {
-          from_house: string
-          how?: string | null
-          id?: string
-          left_at?: string
-          moved_at?: string | null
-          pass_placed_at?: string | null
-          pass_plan?: string | null
-          pass_state?: string | null
-          pass_stopped_at?: string | null
-          pass_until?: string | null
-          reminded_at?: string | null
-          to_house?: string | null
-          user_id: string
-        }
-        Update: {
-          from_house?: string
-          how?: string | null
-          id?: string
-          left_at?: string
-          moved_at?: string | null
-          pass_placed_at?: string | null
-          pass_plan?: string | null
-          pass_state?: string | null
-          pass_stopped_at?: string | null
-          pass_until?: string | null
-          reminded_at?: string | null
-          to_house?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "moved_on_from_house_fkey"
-            columns: ["from_house"]
-            isOneToOne: false
-            referencedRelation: "houses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "moved_on_to_house_fkey"
-            columns: ["to_house"]
-            isOneToOne: false
-            referencedRelation: "houses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "moved_on_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      moving_pass_billing: {
-        Row: {
-          move_id: string
-          stripe_customer: string
-          stripe_subscription: string | null
-        }
-        Insert: {
-          move_id: string
-          stripe_customer: string
-          stripe_subscription?: string | null
-        }
-        Update: {
-          move_id?: string
-          stripe_customer?: string
-          stripe_subscription?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "moving_pass_billing_move_id_fkey"
-            columns: ["move_id"]
-            isOneToOne: true
-            referencedRelation: "moved_on"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       month_closes: {
         Row: {
           closed_at: string
+          created_at: string
           house_id: string
           month: string
         }
         Insert: {
           closed_at?: string
+          created_at?: string
           house_id: string
           month: string
         }
         Update: {
           closed_at?: string
+          created_at?: string
           house_id?: string
           month?: string
         }
@@ -1288,17 +1240,413 @@ export type Database = {
           },
         ]
       }
+      moves: {
+        Row: {
+          created_at: string
+          from_house_id: string
+          how: string | null
+          id: string
+          left_at: string
+          moved_at: string | null
+          pass_ends_at: string | null
+          pass_placed_at: string | null
+          pass_plan: string | null
+          pass_state: string | null
+          pass_stopped_at: string | null
+          reminded_at: string | null
+          to_house_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          from_house_id: string
+          how?: string | null
+          id?: string
+          left_at?: string
+          moved_at?: string | null
+          pass_ends_at?: string | null
+          pass_placed_at?: string | null
+          pass_plan?: string | null
+          pass_state?: string | null
+          pass_stopped_at?: string | null
+          reminded_at?: string | null
+          to_house_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          from_house_id?: string
+          how?: string | null
+          id?: string
+          left_at?: string
+          moved_at?: string | null
+          pass_ends_at?: string | null
+          pass_placed_at?: string | null
+          pass_plan?: string | null
+          pass_state?: string | null
+          pass_stopped_at?: string | null
+          reminded_at?: string | null
+          to_house_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moves_from_house_id_fkey"
+            columns: ["from_house_id"]
+            isOneToOne: false
+            referencedRelation: "houses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moves_to_house_id_fkey"
+            columns: ["to_house_id"]
+            isOneToOne: false
+            referencedRelation: "houses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moves_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      moving_pass_billing: {
+        Row: {
+          created_at: string
+          move_id: string
+          stripe_customer_id: string
+          stripe_subscription_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          move_id: string
+          stripe_customer_id: string
+          stripe_subscription_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          move_id?: string
+          stripe_customer_id?: string
+          stripe_subscription_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moving_pass_billing_move_id_fkey"
+            columns: ["move_id"]
+            isOneToOne: true
+            referencedRelation: "moves"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notices: {
+        Row: {
+          body: string
+          created_at: string
+          created_by: string | null
+          ends_at: string | null
+          id: string
+          kind: string
+          link_label: string | null
+          link_url: string | null
+          starts_at: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          ends_at?: string | null
+          id?: string
+          kind: string
+          link_label?: string | null
+          link_url?: string | null
+          starts_at?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          ends_at?: string | null
+          id?: string
+          kind?: string
+          link_label?: string | null
+          link_url?: string | null
+          starts_at?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notices_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_prefs: {
+        Row: {
+          checks: boolean
+          created_at: string
+          deal: boolean
+          flags: boolean
+          quiet_from: number | null
+          quiet_until: number | null
+          reminders: boolean
+          timezone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          checks?: boolean
+          created_at?: string
+          deal?: boolean
+          flags?: boolean
+          quiet_from?: number | null
+          quiet_until?: number | null
+          reminders?: boolean
+          timezone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          checks?: boolean
+          created_at?: string
+          deal?: boolean
+          flags?: boolean
+          quiet_from?: number | null
+          quiet_until?: number | null
+          reminders?: boolean
+          timezone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_prefs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      on_call_picks: {
+        Row: {
+          house_id: string
+          john_id: string
+          user_id: string
+          week_id: string
+        }
+        Insert: {
+          house_id: string
+          john_id: string
+          user_id: string
+          week_id: string
+        }
+        Update: {
+          house_id?: string
+          john_id?: string
+          user_id?: string
+          week_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "on_call_picks_house_id_fkey"
+            columns: ["house_id"]
+            isOneToOne: false
+            referencedRelation: "houses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "on_call_picks_john_id_house_id_fkey"
+            columns: ["john_id", "house_id"]
+            isOneToOne: false
+            referencedRelation: "johns"
+            referencedColumns: ["id", "house_id"]
+          },
+          {
+            foreignKeyName: "on_call_picks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "on_call_picks_week_id_house_id_fkey"
+            columns: ["week_id", "house_id"]
+            isOneToOne: false
+            referencedRelation: "weeks"
+            referencedColumns: ["id", "house_id"]
+          },
+        ]
+      }
+      owner_ask_turns: {
+        Row: {
+          asked_at: string
+          created_at: string
+          id: string
+          input_tokens: number
+          output_tokens: number
+          owner_id: string
+          question: string
+          reply: string | null
+        }
+        Insert: {
+          asked_at?: string
+          created_at?: string
+          id?: string
+          input_tokens?: number
+          output_tokens?: number
+          owner_id?: string
+          question: string
+          reply?: string | null
+        }
+        Update: {
+          asked_at?: string
+          created_at?: string
+          id?: string
+          input_tokens?: number
+          output_tokens?: number
+          owner_id?: string
+          question?: string
+          reply?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_ask_turns_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      owner_message_outbox: {
+        Row: {
+          message_id: string
+          user_id: string
+        }
+        Insert: {
+          message_id: string
+          user_id: string
+        }
+        Update: {
+          message_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_message_outbox_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "owner_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_message_outbox_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      owner_messages: {
+        Row: {
+          audience: string
+          body: string
+          by_email: boolean
+          by_push: boolean
+          by_wall: boolean
+          created_at: string
+          house_id: string | null
+          id: string
+          people: number
+          person_id: string | null
+          sent_at: string
+          sent_by: string | null
+          subject: string
+          walls: number
+        }
+        Insert: {
+          audience: string
+          body: string
+          by_email: boolean
+          by_push: boolean
+          by_wall: boolean
+          created_at?: string
+          house_id?: string | null
+          id?: string
+          people: number
+          person_id?: string | null
+          sent_at?: string
+          sent_by?: string | null
+          subject: string
+          walls?: number
+        }
+        Update: {
+          audience?: string
+          body?: string
+          by_email?: boolean
+          by_push?: boolean
+          by_wall?: boolean
+          created_at?: string
+          house_id?: string | null
+          id?: string
+          people?: number
+          person_id?: string | null
+          sent_at?: string
+          sent_by?: string | null
+          subject?: string
+          walls?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_messages_house_id_fkey"
+            columns: ["house_id"]
+            isOneToOne: false
+            referencedRelation: "houses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_messages_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_messages_sent_by_fkey"
+            columns: ["sent_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       permissions: {
         Row: {
           about: string
+          created_at: string
           name: string
         }
         Insert: {
           about: string
+          created_at?: string
           name: string
         }
         Update: {
           about?: string
+          created_at?: string
           name?: string
         }
         Relationships: []
@@ -1330,11 +1678,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "pocket_earnings_assignment_id_fkey"
-            columns: ["assignment_id"]
-            isOneToOne: true
+            foreignKeyName: "pocket_earnings_assignment_id_house_id_fkey"
+            columns: ["assignment_id", "house_id"]
+            isOneToOne: false
             referencedRelation: "assignments"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "house_id"]
           },
           {
             foreignKeyName: "pocket_earnings_house_id_fkey"
@@ -1404,265 +1752,6 @@ export type Database = {
           },
         ]
       }
-      owner_message_outbox: {
-        Row: {
-          message_id: string
-          user_id: string
-        }
-        Insert: {
-          message_id: string
-          user_id: string
-        }
-        Update: {
-          message_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "owner_message_outbox_message_id_fkey"
-            columns: ["message_id"]
-            isOneToOne: false
-            referencedRelation: "owner_messages"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "owner_message_outbox_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      owner_messages: {
-        Row: {
-          audience: string
-          body: string
-          by_email: boolean
-          by_push: boolean
-          by_wall: boolean
-          house_id: string | null
-          id: string
-          people: number
-          person_id: string | null
-          sent_at: string
-          sent_by: string | null
-          subject: string
-          walls: number
-        }
-        Insert: {
-          audience: string
-          body: string
-          by_email: boolean
-          by_push: boolean
-          by_wall: boolean
-          house_id?: string | null
-          id?: string
-          people: number
-          person_id?: string | null
-          sent_at?: string
-          sent_by?: string | null
-          subject: string
-          walls?: number
-        }
-        Update: {
-          audience?: string
-          body?: string
-          by_email?: boolean
-          by_push?: boolean
-          by_wall?: boolean
-          house_id?: string | null
-          id?: string
-          people?: number
-          person_id?: string | null
-          sent_at?: string
-          sent_by?: string | null
-          subject?: string
-          walls?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "owner_messages_house_id_fkey"
-            columns: ["house_id"]
-            isOneToOne: false
-            referencedRelation: "houses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "owner_messages_person_id_fkey"
-            columns: ["person_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      owner_ask_turns: {
-        Row: {
-          asked_at: string
-          id: string
-          input_tokens: number
-          output_tokens: number
-          owner_id: string
-          question: string
-          reply: string | null
-        }
-        Insert: {
-          asked_at?: string
-          id?: string
-          input_tokens?: number
-          output_tokens?: number
-          owner_id?: string
-          question: string
-          reply?: string | null
-        }
-        Update: {
-          asked_at?: string
-          id?: string
-          input_tokens?: number
-          output_tokens?: number
-          owner_id?: string
-          question?: string
-          reply?: string | null
-        }
-        Relationships: []
-      }
-      notices: {
-        Row: {
-          body: string
-          created_at: string
-          created_by: string | null
-          ends_at: string | null
-          id: string
-          kind: string
-          link_label: string | null
-          link_url: string | null
-          starts_at: string
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          body?: string
-          created_at?: string
-          created_by?: string | null
-          ends_at?: string | null
-          id?: string
-          kind: string
-          link_label?: string | null
-          link_url?: string | null
-          starts_at?: string
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          body?: string
-          created_at?: string
-          created_by?: string | null
-          ends_at?: string | null
-          id?: string
-          kind?: string
-          link_label?: string | null
-          link_url?: string | null
-          starts_at?: string
-          title?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      notification_prefs: {
-        Row: {
-          checks: boolean
-          deal: boolean
-          flags: boolean
-          quiet_from: number | null
-          quiet_until: number | null
-          reminders: boolean
-          timezone: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          checks?: boolean
-          deal?: boolean
-          flags?: boolean
-          quiet_from?: number | null
-          quiet_until?: number | null
-          reminders?: boolean
-          timezone?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Update: {
-          checks?: boolean
-          deal?: boolean
-          flags?: boolean
-          quiet_from?: number | null
-          quiet_until?: number | null
-          reminders?: boolean
-          timezone?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "notification_prefs_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      on_call: {
-        Row: {
-          house_id: string
-          john_id: string
-          user_id: string
-          week_id: string
-        }
-        Insert: {
-          house_id: string
-          john_id: string
-          user_id: string
-          week_id: string
-        }
-        Update: {
-          house_id?: string
-          john_id?: string
-          user_id?: string
-          week_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "on_call_house_id_fkey"
-            columns: ["house_id"]
-            isOneToOne: false
-            referencedRelation: "houses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "on_call_john_id_fkey"
-            columns: ["john_id"]
-            isOneToOne: false
-            referencedRelation: "johns"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "on_call_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "on_call_week_id_fkey"
-            columns: ["week_id"]
-            isOneToOne: false
-            referencedRelation: "weeks"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1689,6 +1778,7 @@ export type Database = {
       }
       promotion_people: {
         Row: {
+          created_at: string
           email: string
           emailed_at: string | null
           opened_at: string | null
@@ -1696,6 +1786,7 @@ export type Database = {
           used_at: string | null
         }
         Insert: {
+          created_at?: string
           email: string
           emailed_at?: string | null
           opened_at?: string | null
@@ -1703,6 +1794,7 @@ export type Database = {
           used_at?: string | null
         }
         Update: {
+          created_at?: string
           email?: string
           emailed_at?: string | null
           opened_at?: string | null
@@ -1721,7 +1813,7 @@ export type Database = {
       }
       promotion_uses: {
         Row: {
-          at: string
+          created_at: string
           email: string
           house_id: string | null
           id: string
@@ -1731,7 +1823,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
-          at?: string
+          created_at?: string
           email: string
           house_id?: string | null
           id?: string
@@ -1741,7 +1833,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
-          at?: string
+          created_at?: string
           email?: string
           house_id?: string | null
           id?: string
@@ -1765,6 +1857,13 @@ export type Database = {
             referencedRelation: "promotions"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "promotion_uses_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       promotions: {
@@ -1772,6 +1871,7 @@ export type Database = {
           amount_off: Json | null
           audience: string
           code: string
+          created_at: string
           duration: string | null
           ends_at: string | null
           id: string
@@ -1786,13 +1886,14 @@ export type Database = {
           plans: string[]
           state: string
           stopped_at: string | null
-          stripe_code: string | null
-          stripe_coupon: string | null
+          stripe_coupon_id: string | null
+          stripe_promotion_code_id: string | null
         }
         Insert: {
           amount_off?: Json | null
           audience: string
           code: string
+          created_at?: string
           duration?: string | null
           ends_at?: string | null
           id?: string
@@ -1807,13 +1908,14 @@ export type Database = {
           plans?: string[]
           state?: string
           stopped_at?: string | null
-          stripe_code?: string | null
-          stripe_coupon?: string | null
+          stripe_coupon_id?: string | null
+          stripe_promotion_code_id?: string | null
         }
         Update: {
           amount_off?: Json | null
           audience?: string
           code?: string
+          created_at?: string
           duration?: string | null
           ends_at?: string | null
           id?: string
@@ -1828,10 +1930,18 @@ export type Database = {
           plans?: string[]
           state?: string
           stopped_at?: string | null
-          stripe_code?: string | null
-          stripe_coupon?: string | null
+          stripe_coupon_id?: string | null
+          stripe_promotion_code_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "promotions_made_by_fkey"
+            columns: ["made_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       push_subscriptions: {
         Row: {
@@ -1906,34 +2016,34 @@ export type Database = {
       }
       report_messages: {
         Row: {
-          at: string
-          author: string | null
           author_name: string | null
           body: string
+          created_at: string
           email_id: string | null
           from_owner: boolean
           id: number
           report_id: string
+          written_by: string | null
         }
         Insert: {
-          at?: string
-          author?: string | null
           author_name?: string | null
           body: string
+          created_at?: string
           email_id?: string | null
           from_owner: boolean
           id?: never
           report_id: string
+          written_by?: string | null
         }
         Update: {
-          at?: string
-          author?: string | null
           author_name?: string | null
           body?: string
+          created_at?: string
           email_id?: string | null
           from_owner?: boolean
           id?: never
           report_id?: string
+          written_by?: string | null
         }
         Relationships: [
           {
@@ -1941,6 +2051,13 @@ export type Database = {
             columns: ["report_id"]
             isOneToOne: false
             referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_messages_written_by_fkey"
+            columns: ["written_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1955,13 +2072,13 @@ export type Database = {
           house_id: string | null
           id: string
           kind: string
-          same_as: string | null
+          last_activity_at: string
+          same_as_report_id: string | null
           seen_at: string
           shots: string[]
           source: string
           state: string
           subject: string | null
-          updated_at: string
           user_id: string | null
           words: string
         }
@@ -1974,13 +2091,13 @@ export type Database = {
           house_id?: string | null
           id?: string
           kind: string
-          same_as?: string | null
+          last_activity_at?: string
+          same_as_report_id?: string | null
           seen_at?: string
           shots?: string[]
           source?: string
           state?: string
           subject?: string | null
-          updated_at?: string
           user_id?: string | null
           words: string
         }
@@ -1993,13 +2110,13 @@ export type Database = {
           house_id?: string | null
           id?: string
           kind?: string
-          same_as?: string | null
+          last_activity_at?: string
+          same_as_report_id?: string | null
           seen_at?: string
           shots?: string[]
           source?: string
           state?: string
           subject?: string | null
-          updated_at?: string
           user_id?: string | null
           words?: string
         }
@@ -2012,24 +2129,34 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "reports_same_as_fkey"
-            columns: ["same_as"]
+            foreignKeyName: "reports_same_as_report_id_fkey"
+            columns: ["same_as_report_id"]
             isOneToOne: false
             referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
       }
       role_permissions: {
         Row: {
+          created_at: string
           permission: string
           role: string
         }
         Insert: {
+          created_at?: string
           permission: string
           role: string
         }
         Update: {
+          created_at?: string
           permission?: string
           role?: string
         }
@@ -2047,40 +2174,47 @@ export type Database = {
         Row: {
           answer: string | null
           answered_at: string | null
+          asked_assignment_id: string
           asked_by: string
-          asked_to: string
+          asked_user_id: string
+          asker_assignment_id: string
           created_at: string
           expires_at: string
           house_id: string
           id: string
-          mine: string
-          theirs: string
         }
         Insert: {
           answer?: string | null
           answered_at?: string | null
+          asked_assignment_id: string
           asked_by: string
-          asked_to: string
+          asked_user_id: string
+          asker_assignment_id: string
           created_at?: string
           expires_at: string
           house_id: string
           id?: string
-          mine: string
-          theirs: string
         }
         Update: {
           answer?: string | null
           answered_at?: string | null
+          asked_assignment_id?: string
           asked_by?: string
-          asked_to?: string
+          asked_user_id?: string
+          asker_assignment_id?: string
           created_at?: string
           expires_at?: string
           house_id?: string
           id?: string
-          mine?: string
-          theirs?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "swap_offers_asked_assignment_id_house_id_fkey"
+            columns: ["asked_assignment_id", "house_id"]
+            isOneToOne: false
+            referencedRelation: "assignments"
+            referencedColumns: ["id", "house_id"]
+          },
           {
             foreignKeyName: "swap_offers_asked_by_fkey"
             columns: ["asked_by"]
@@ -2089,31 +2223,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "swap_offers_asked_to_fkey"
-            columns: ["asked_to"]
+            foreignKeyName: "swap_offers_asked_user_id_fkey"
+            columns: ["asked_user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "swap_offers_asker_assignment_id_house_id_fkey"
+            columns: ["asker_assignment_id", "house_id"]
+            isOneToOne: false
+            referencedRelation: "assignments"
+            referencedColumns: ["id", "house_id"]
           },
           {
             foreignKeyName: "swap_offers_house_id_fkey"
             columns: ["house_id"]
             isOneToOne: false
             referencedRelation: "houses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "swap_offers_mine_fkey"
-            columns: ["mine"]
-            isOneToOne: false
-            referencedRelation: "assignments"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "swap_offers_theirs_fkey"
-            columns: ["theirs"]
-            isOneToOne: false
-            referencedRelation: "assignments"
             referencedColumns: ["id"]
           },
         ]
@@ -2153,11 +2280,11 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "week_shares_week_id_fkey"
-            columns: ["week_id"]
+            foreignKeyName: "week_shares_week_id_house_id_fkey"
+            columns: ["week_id", "house_id"]
             isOneToOne: false
             referencedRelation: "weeks"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "house_id"]
           },
         ]
       }
@@ -2518,7 +2645,7 @@ export type Database = {
       house_history: {
         Args: { p_before?: string; p_house: string; p_limit?: number }
         Returns: {
-          actor: string
+          done_by: string
           assignment_id: string
           created_at: string
           data: Json
@@ -2526,7 +2653,7 @@ export type Database = {
           kind: string
           reach: string
           ref: string
-          subject: string
+          subject_user_id: string
           undone_at: string
           undone_by: string
         }[]
@@ -2546,7 +2673,7 @@ export type Database = {
       moving_on: {
         Args: never
         Returns: {
-          from_house: string
+          from_house_id: string
           house_name: string
           house_pass_until: string | null
           johns: number
@@ -2605,7 +2732,7 @@ export type Database = {
           replies: number
           state: string
           unread: boolean
-          updated_at: string
+          last_activity_at: string
           words: string
         }[]
       }
@@ -2629,7 +2756,7 @@ export type Database = {
       owner_deletions: {
         Args: never
         Returns: {
-          delete_after: string
+          deletes_at: string
           email: string
           house_name: string
           name: string
@@ -2660,7 +2787,7 @@ export type Database = {
           p_q?: string
         }
         Returns: {
-          delete_after: string
+          deletes_at: string
           email: string
           house_name: string
           name: string
@@ -2710,7 +2837,7 @@ export type Database = {
           name: string
           on_time: number
           pass_plan: string
-          pass_until: string | null
+          pass_ends_at: string | null
           people: number
           settled: number
           sort_at: string
@@ -2863,11 +2990,11 @@ export type Database = {
           id: string
           kind: string
           name: string
-          same_as: string
+          same_as_report_id: string
           source: string
           state: string
           subject: string
-          updated_at: string
+          last_activity_at: string
           user_id: string
           words: string
         }[]

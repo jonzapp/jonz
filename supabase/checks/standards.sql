@@ -5,9 +5,8 @@
 -- catalog, so it checks what the migrations actually made, not how they
 -- were typed. It lists every break and fails if there is any.
 --
--- `allowed` holds the only exceptions. Each says why. Rows marked
--- 'until fix PR' are old names and gaps the fix PRs remove; never add a
--- new one of those. A new exception needs a reason a reviewer would accept.
+-- `allowed` holds the only exceptions. Each says why. A new exception
+-- needs a reason a reviewer would accept.
 
 \set ON_ERROR_STOP on
 
@@ -21,88 +20,7 @@ insert into allowed values
   -- Ids that point at nothing on purpose.
   ('uuid has a foreign key', 'admin_audit.actor', 'append-only log: a delete could not clear it'),
   ('uuid has a foreign key', 'assignments.job_id', 'names a shared John''s places; there is no jobs table'),
-  ('uuid has a foreign key', 'house_actions.ref', 'points at different tables by kind'),
-  -- Old names and gaps from before the agreed rules (7 Nov 2026). The fix
-  -- PRs delete these lines as they fix each one. Never add to them.
-  ('has created_at', 'admin_audit', 'until fix PR'),
-  ('has created_at', 'app_owners', 'until fix PR'),
-  ('has created_at', 'report_messages', 'until fix PR'),
-  ('index names', 'account_deletions_due', 'until fix PR'),
-  ('index names', 'account_deletions_one_pending', 'until fix PR'),
-  ('index names', 'admin_audit_at', 'until fix PR'),
-  ('index names', 'ask_chats_mine', 'until fix PR'),
-  ('index names', 'assignments_awaits_ok', 'until fix PR'),
-  ('index names', 'assignments_covered_by', 'until fix PR'),
-  ('index names', 'assignments_house_open', 'until fix PR'),
-  ('index names', 'assignments_job', 'until fix PR'),
-  ('index names', 'assignments_john', 'until fix PR'),
-  ('index names', 'assignments_one_place_each', 'until fix PR'),
-  ('index names', 'assignments_open_flags', 'until fix PR'),
-  ('index names', 'assignments_user', 'until fix PR'),
-  ('index names', 'away_house', 'until fix PR'),
-  ('index names', 'crew_house', 'until fix PR'),
-  ('index names', 'disputes_one_open', 'until fix PR'),
-  ('index names', 'events_house', 'until fix PR'),
-  ('index names', 'house_actions_house', 'until fix PR'),
-  ('index names', 'house_actions_mine', 'until fix PR'),
-  ('index names', 'house_drafts_house_day', 'until fix PR'),
-  ('index names', 'house_drafts_user_day', 'until fix PR'),
-  ('index names', 'johns_house', 'until fix PR'),
-  ('index names', 'ledger_house', 'until fix PR'),
-  ('index names', 'ledger_one_close', 'until fix PR'),
-  ('index names', 'ledger_one_forfeit', 'until fix PR'),
-  ('index names', 'members_one_house', 'until fix PR'),
-  ('index names', 'moved_on_user', 'until fix PR'),
-  ('index names', 'moved_on_waiting', 'until fix PR'),
-  ('index names', 'moving_pass_billing_subscription', 'until fix PR'),
-  ('index names', 'notices_live', 'until fix PR'),
-  ('index names', 'on_call_house', 'until fix PR'),
-  ('index names', 'owner_ask_turns_owner_at', 'until fix PR'),
-  ('index names', 'owner_messages_sent', 'until fix PR'),
-  ('index names', 'pocket_earnings_house', 'until fix PR'),
-  ('index names', 'pocket_pays_house', 'until fix PR'),
-  ('index names', 'report_messages_report', 'until fix PR'),
-  ('index names', 'reports_created', 'until fix PR'),
-  ('index names', 'reports_user', 'until fix PR'),
-  ('index names', 'reports_waiting', 'until fix PR'),
-  ('index names', 'swap_offers_house', 'until fix PR'),
-  ('index names', 'swap_offers_one_open', 'until fix PR'),
-  ('index names', 'week_shares_house', 'until fix PR'),
-  ('plural table', 'away', 'until fix PR'),
-  ('plural table', 'crew', 'until fix PR'),
-  ('plural table', 'ledger', 'until fix PR'),
-  ('plural table', 'moved_on', 'until fix PR'),
-  ('plural table', 'on_call', 'until fix PR'),
-  ('pointer ends _id or _by', 'assignments.handed_by_away', 'until fix PR'),
-  ('pointer ends _id or _by', 'assignments.handed_from', 'until fix PR'),
-  ('pointer ends _id or _by', 'house_actions.actor', 'until fix PR'),
-  ('pointer ends _id or _by', 'house_actions.subject', 'until fix PR'),
-  ('pointer ends _id or _by', 'houses.pass_buyer', 'until fix PR'),
-  ('pointer ends _id or _by', 'ledger.counterparty', 'until fix PR'),
-  ('pointer ends _id or _by', 'moved_on.from_house', 'until fix PR'),
-  ('pointer ends _id or _by', 'moved_on.to_house', 'until fix PR'),
-  ('pointer ends _id or _by', 'swap_offers.asked_to', 'until fix PR'),
-  ('pointer ends _id or _by', 'swap_offers.mine', 'until fix PR'),
-  ('pointer ends _id or _by', 'swap_offers.theirs', 'until fix PR'),
-  ('times named _at / _on', 'account_deletions.delete_after', 'until fix PR'),
-  ('times named _at / _on', 'admin_audit.at', 'until fix PR'),
-  ('times named _at / _on', 'assignments.due_moved_from', 'until fix PR'),
-  ('times named _at / _on', 'houses.pass_until', 'until fix PR'),
-  ('times named _at / _on', 'moved_on.pass_until', 'until fix PR'),
-  ('times named _at / _on', 'report_messages.at', 'until fix PR'),
-  ('updated_at by trigger', 'reports', 'until fix PR'),
-  ('index names', 'assignments_handed_by_away', 'until fix PR'),
-  ('index names', 'assignments_house_done', 'until fix PR'),
-  ('index names', 'assignments_house_due', 'until fix PR'),
-  ('index names', 'events_untold', 'until fix PR'),
-  ('index names', 'promotion_uses_of', 'until fix PR'),
-  ('index names', 'promotions_made', 'until fix PR'),
-  ('index names', 'reports_from_email', 'until fix PR'),
-  ('index names', 'reports_same_as', 'until fix PR'),
-  ('pointer ends _id or _by', 'report_messages.author', 'until fix PR'),
-  ('pointer ends _id or _by', 'reports.same_as', 'until fix PR'),
-  ('times named _at / _on', 'assignments.cover_held_until', 'until fix PR'),
-  ('times named _at / _on', 'promotion_uses.at', 'until fix PR');
+  ('uuid has a foreign key', 'house_actions.ref', 'points at different tables by kind');
 
 -- Server functions signed-in people may call (rule 22). Each one checks,
 -- inside, that the caller may do what it does. Adding one here is a

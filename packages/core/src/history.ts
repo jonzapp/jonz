@@ -73,8 +73,8 @@ export const HISTORY_COPY = {
 export interface ActionRow {
   id: string;
   kind: string;
-  actor: string | null;
-  subject: string | null;
+  done_by: string | null;
+  subject_user_id: string | null;
   assignment_id: string | null;
   ref: string | null;
   data: unknown;
@@ -106,8 +106,8 @@ export function historyItems(rows: readonly ActionRow[]): HistoryItem[] {
       {
         id: r.id,
         kind: r.kind as ActionKind,
-        actor: r.actor,
-        subject: r.subject,
+        actor: r.done_by,
+        subject: r.subject_user_id,
         assignmentId: r.assignment_id,
         ref: r.ref,
         data: (r.data ?? {}) as Record<string, unknown>,

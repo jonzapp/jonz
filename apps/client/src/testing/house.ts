@@ -18,7 +18,7 @@ export function assignment(overrides: Partial<AssignmentRow> = {}): AssignmentRo
     points: 2,
     needs_photo: false,
     due_at: at(48),
-    due_moved_from: null,
+    original_due_at: null,
     group_name: null,
     done_at: null,
     photo_path: null,

@@ -34,7 +34,7 @@ export async function movingOn(): Promise<MovingOn | null> {
   const row = data?.[0];
   return row
     ? {
-        fromHouse: row.from_house,
+        fromHouse: row.from_house_id,
         houseName: row.house_name,
         johns: Number(row.johns),
         pass: (row.pass_state as MovingOn['pass']) ?? null,

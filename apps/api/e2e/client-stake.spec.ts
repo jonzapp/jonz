@@ -33,7 +33,7 @@ test("a closed month's debt is settled once the person paid marks it received", 
   // Last month Ben forfeited £4 and it went to Ava; the month is closed.
   const month = lastMonth();
   const db = admin();
-  const { error } = await db.from("ledger").insert([
+  const { error } = await db.from("ledger_entries").insert([
     { house_id: houseId, user_id: ben, kind: "forfeit", amount_minor: -400, month },
     { house_id: houseId, user_id: ava, kind: "share", amount_minor: 400, month },
   ]);
