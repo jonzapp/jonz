@@ -1,4 +1,4 @@
-import { PassCheckoutRequest, PassRedirect } from "@app/core";
+import { PASS_COPY, PASS_ENFORCED, PassCheckoutRequest, PassRedirect } from "@app/core";
 
 import { requireUser } from "@/lib/auth";
 import { env } from "@/lib/env";
@@ -12,7 +12,9 @@ import { error, json, preflight } from "@/lib/respond";
  * link. Answers Stripe Checkout's URL to send the browser to
  * (lib/moves/pass.ts); the webhook gives the house the Pass once it's paid.
  * 503 while Stripe isn't set up, except for a free Pass's link, which needs
- * no Stripe.
+ * no Stripe. During the beta, while nothing is locked (PASS_ENFORCED off),
+ * a plain purchase is refused too, so nobody pays for what everyone has; a
+ * promotion's link still works.
  */
 export async function POST(request: Request) {
   const auth = await requireUser(request);
@@ -20,6 +22,7 @@ export async function POST(request: Request) {
 
   const body = PassCheckoutRequest.safeParse(await request.json().catch(() => null));
   if (!body.success) return error(request, 400, "Say which house, and which plan.");
+  if (!PASS_ENFORCED && !body.data.offer) return error(request, 503, PASS_COPY.betaFree);
 
   // Null while Stripe isn't set up: then only a free Pass's link works (503 otherwise).
   const answer = await startCheckout(

@@ -130,9 +130,9 @@ export function coverOpensAt(dueAt: Date, graceHours: number, closes: Date): Dat
 
 /**
  * Whether `userId` could cover this John now: someone else's, not ticked,
- * excused or settled, past its due time by the house's grace and not yet
- * missed. The same rule cover_john enforces, read early so a screen only
- * offers what will work.
+ * excused or settled, past its due time by the house's grace, not held by
+ * its owner ("I'm on it", hold_cover) and not yet missed. The same rule
+ * cover_john enforces, read early so a screen only offers what will work.
  */
 export function canCover(
   a: {
@@ -143,11 +143,39 @@ export function canCover(
     dueAt: Date;
     closesAt: Date;
     absentAt?: Date | null;
+    heldUntil?: Date | null;
   },
   userId: string,
   now: Date,
   graceHours: number,
 ): boolean {
   if (a.userId === userId || a.doneAt || a.outcome || a.excused || a.absentAt) return false;
+  if (a.heldUntil && now < a.heldUntil) return false;
+  return now >= coverOpensAt(a.dueAt, graceHours, a.closesAt) && now < a.closesAt;
+}
+
+/**
+ * Whether the viewer can say "I'm on it" on this John (hold_cover): their
+ * own, done by one, still undone, open to covers now, and not held before.
+ * Offered only once covers are open, so the hold is never spent inside the
+ * grace, when nobody could cover it anyway.
+ */
+export function holdable(
+  a: {
+    userId: string;
+    doneAt: Date | null;
+    outcome: Outcome | null;
+    excused?: boolean;
+    dueAt: Date;
+    closesAt: Date;
+    absentAt?: Date | null;
+    heldUntil?: Date | null;
+    jobId?: string | null;
+  },
+  userId: string,
+  now: Date,
+  graceHours: number,
+): boolean {
+  if (a.userId !== userId || a.heldUntil || a.jobId || a.doneAt || a.outcome || a.excused || a.absentAt) return false;
   return now >= coverOpensAt(a.dueAt, graceHours, a.closesAt) && now < a.closesAt;
 }

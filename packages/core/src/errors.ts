@@ -40,6 +40,8 @@ const MESSAGES: Record<string, string> = {
   no_swap: "You don’t have a swap.",
   not_swappable: "Only two open Johns from the same week can be swapped.",
   swap_due: "Only Johns that aren’t due yet can be swapped, yours and theirs.",
+  cover_held: "They said they’re on it. You can cover it once their time is up.",
+  cover_held_once: "You’ve already said you’re on it.",
   more_than_owed: "That’s more than is owed.",
   bad_payment: "That payment doesn’t add up.",
   no_johns: "Add at least one John first.",

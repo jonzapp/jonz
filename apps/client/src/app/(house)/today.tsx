@@ -26,7 +26,7 @@ import { Reading, ReadFailed } from '@/components/read-state';
 import { Columns, Screen, useColumns } from '@/components/screen';
 import { TitleBar, TopLine } from '@/components/title-bar';
 import { MoveInAsk } from '@/components/today/move-in-ask';
-import { NeedsYou } from '@/components/today/needs-you';
+import { CouldCover, NeedsYou } from '@/components/today/needs-you';
 import { NeedsYourOk } from '@/components/today/needs-your-ok';
 import { NextUp } from '@/components/today/next-up';
 import { OnCall } from '@/components/today/on-call';
@@ -177,17 +177,14 @@ function TodayView({
     </>
   );
   // A spot wraps only what's drawn: an empty one would still take a gap on the page.
-  const needsYou = today.toVote.length + today.toCover.length === 0 ? null : (
+  const needsYou = today.toVote.length === 0 ? null : (
     <TourSpot id="today.needsYou">
-    <NeedsYou
-      items={today.toVote}
-      toCover={today.toCover}
-      members={members}
-      userId={userId}
-      zone={rules.timezone}
-      now={now}
-    />
+      <NeedsYou items={today.toVote} members={members} now={now} />
     </TourSpot>
+  );
+  // Housemates' overdue Johns sit low, so covering is never the top task.
+  const couldCover = (
+    <CouldCover items={today.toCover} members={members} userId={userId} zone={rules.timezone} now={now} />
   );
   // In a family, a parent's Needs your OK takes the vote's place (there is no vote).
   const needsOk = today.toOk.length === 0 ? null : (
@@ -272,6 +269,7 @@ function TodayView({
             {needsYou}
             {ask}
             {onCall}
+            {couldCover}
             <WeekGlance view={view} away={away} />
           </>
         }
@@ -288,6 +286,7 @@ function TodayView({
       {needsYou}
       {ask}
       {onCall}
+      {couldCover}
       {rest}
       {lines}
     </>

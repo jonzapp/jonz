@@ -21,7 +21,7 @@ const byCode = houseByCode as jest.Mock;
 const join = joinHouse as jest.Mock;
 const membership = useMembership as jest.Mock;
 const refresh = jest.fn();
-const FLAT = { id: 'h1', name: 'Flat 3', members: 3 };
+const FLAT = { id: 'h1', name: 'Flat 3', members: 3, kind: 'housemates', currency: 'GBP', stakeMinor: 2000, lateMinor: 100, missedMinor: 300 };
 const ME = { user: { id: 'u1' } };
 
 function as(session: object | null, house: { id: string; name: string } | null = null) {
@@ -67,6 +67,8 @@ it('names the house and how many live there, and joins it', async () => {
   expect(await screen.findByRole('header', { name: 'Flat 3' })).toBeOnTheScreen();
   expect(screen.getByText(JOIN_COPY.invited)).toBeOnTheScreen();
   expect(screen.getByText(JOIN_COPY.livesHere(3))).toBeOnTheScreen();
+  // What it plays for, before anyone joins.
+  expect(screen.getByTestId('join-stake')).toHaveTextContent(JOIN_COPY.stake('£20', '£1', '£3'));
   expect(screen.getByTestId('hazard-tape', { includeHiddenElements: true })).toBeOnTheScreen();
   expect(byCode).toHaveBeenCalledWith('AB3DEF7H');
 
@@ -76,6 +78,13 @@ it('names the house and how many live there, and joins it', async () => {
   expect(join).toHaveBeenCalledWith('AB3DEF7H');
   expect(refresh).toHaveBeenCalled();
   expect(screen).toHavePathname('/today');
+});
+
+it("says when a house doesn't play for money", async () => {
+  as(ME);
+  byCode.mockResolvedValue({ ...FLAT, stakeMinor: 0, lateMinor: 0, missedMinor: 0 });
+  await open();
+  expect(await screen.findByTestId('join-stake')).toHaveTextContent(JOIN_COPY.noStake);
 });
 
 it('says what went wrong joining, and stays', async () => {

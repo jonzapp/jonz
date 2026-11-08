@@ -53,7 +53,7 @@ describe("someone outside the house", () => {
     const house = await makeHouse(["Ava"]);
     const newcomer = await signedInUser("Dee");
     const { data } = await newcomer.db.rpc("house_by_code", { p_code: house.code.toLowerCase() });
-    expect(data).toEqual([{ id: house.id, name: "Ava's house", members: 1, kind: "housemates" }]);
+    expect(data).toMatchObject([{ id: house.id, name: "Ava's house", members: 1, kind: "housemates" }]);
     expectOk(await newcomer.db.rpc("join_house", { p_code: house.code }));
     const { data: seen } = await newcomer.db.from("members").select("user_id").eq("house_id", house.id);
     expect(seen).toHaveLength(2);

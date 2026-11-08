@@ -212,6 +212,8 @@ export type AssignmentRow = Pick<
   crew?: CrewRow[] | null;
   /** When its holder planned to do it (Plan it), when read. */
   planned_at?: string | null;
+  /** Until when its owner holds covers off ("I'm on it", hold_cover), when read. */
+  cover_held_until?: string | null;
   /** In a family: a kid's tick waiting for a parent's OK, when read. */
   awaits_ok?: boolean;
   /** In a family: what it earns a kid (pocket money), when read. */
@@ -294,6 +296,8 @@ export interface BoardItem {
   crew?: Crew | null;
   /** When its holder planned to do it (Plan it): they're reminded then. */
   plannedAt?: Date | null;
+  /** Until when its owner holds covers off ("I'm on it"): nobody can cover it before then. Set once. */
+  heldUntil?: Date | null;
 }
 
 export interface WeekBoard {
@@ -403,6 +407,7 @@ export function buildWeekBoard(input: {
         absentAt,
         crew: crews.get(job) ?? null,
         plannedAt: a.planned_at ? new Date(a.planned_at) : null,
+        heldUntil: a.cover_held_until ? new Date(a.cover_held_until) : null,
       };
     });
 

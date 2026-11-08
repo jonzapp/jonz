@@ -19,7 +19,7 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { ApiRequestError } from '@/api/http';
-import { leaveFor, passBillingUrl, passCheckoutOpen, passCheckoutUrl } from '@/api/pass';
+import { leaveFor, passBillingUrl, passCheckoutOpen, passCheckoutUrl, passSelling } from '@/api/pass';
 import { HousePage } from '@/components/house/house-page';
 import { Pair } from '@/components/page-columns';
 import { Row, RowIcon } from '@/components/row';
@@ -35,10 +35,11 @@ import { INSET, SPACE } from '@/theme';
 /**
  * The House Pass, pushed from House: where the house stands, what the Pass
  * gives everyone in it, and the plans. A Founding house sees its thanks in
- * place of the plans. On the web, with EXPO_PUBLIC_PASS_CHECKOUT=on, a plan
- * opens Stripe Checkout and the buyer can manage the plan; everywhere else
- * buying waits for the store release, so the plans are shown, not sold, and
- * the page says so.
+ * place of the plans. On the web, with EXPO_PUBLIC_PASS_CHECKOUT=on and the
+ * extras locked (PASS_ENFORCED), a plan opens Stripe Checkout; a buyer can
+ * manage their plan whenever checkout is on. During the beta (nothing
+ * locked) the plans are shown, not sold, and the page says it's free;
+ * elsewhere buying waits for the store release, and the page says so.
  */
 export default function PassScreen() {
   const { session, house } = useMembership();
@@ -138,10 +139,12 @@ function PassReadOut({
   const words = passWords(house.kind, PASS_FREE_HISTORY_WEEKS);
   const founding = pass.plan === 'founding';
   const buyer = pass.buyerId ? members.find((m) => m.userId === pass.buyerId)?.name : undefined;
-  const selling = passCheckoutOpen();
+  const checkout = passCheckoutOpen();
+  // Nothing is sold while everyone has the extras anyway.
+  const selling = passSelling();
   // Selling, a house sees only what it can buy now: a house on a paid plan changes it from Manage.
   const offers = passOffers(rules.currency).filter((o) => !selling || passPurchaseRefusal(pass, o.plan, now) === null);
-  const canManage = selling && pass.buyerId === userId && (pass.plan === 'monthly' || pass.plan === 'yearly');
+  const canManage = checkout && pass.buyerId === userId && (pass.plan === 'monthly' || pass.plan === 'yearly');
   const firstCharge = selling ? passFirstChargeNote(pass, now, rules.timezone) : null;
   // Only once the free month or a plan has ended, so a new house isn't steered away from paying.
   const askFree = !hasPass(pass, now);
@@ -196,7 +199,9 @@ function PassReadOut({
 
       <View style={styles.words}>
         {firstCharge ? <Meta testID="pass-first-charge">{firstCharge}</Meta> : null}
-        {founding || selling ? null : <Meta testID="pass-soon">{PASS_COPY.buyingSoon}</Meta>}
+        {founding || selling ? null : (
+          <Meta testID="pass-soon">{checkout ? PASS_COPY.betaFree : PASS_COPY.buyingSoon}</Meta>
+        )}
         {selling ? <Meta testID="pass-renewal">{PASS_COPY.renewal}</Meta> : null}
         <Meta>{words.free}</Meta>
         <Meta testID="pass-money">{PASS_COPY.money}</Meta>

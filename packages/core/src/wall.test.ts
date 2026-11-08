@@ -151,6 +151,10 @@ describe("describeEvent", () => {
     expect(line("swap_used", { gave: "Bins", took: "Hob", with: "cal" })).toBe("Ben swapped Bins for Cal’s Hob.");
   });
 
+  it("says who changed the house rules, and what", () => {
+    expect(line("rules", { changes: { missed_forfeit_minor: [300, 0] } })).toBe("Ben changed the missed fine from £3 to £0.");
+  });
+
   it("tells time away, with the Johns it moved", () => {
     expect(line("away", { starts_on: "2026-10-26", ends_on: "2026-10-28", moved: 0 })).toBe("Ben is away 26–28 Oct.");
     expect(line("away", { starts_on: "2026-10-26", ends_on: "2026-10-28", moved: 1 }, "ava")).toBe(
