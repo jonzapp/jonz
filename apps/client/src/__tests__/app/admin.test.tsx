@@ -4,6 +4,7 @@ import {
   DELETION_LIST_COPY,
   LIST_COPY,
   NOTICE_LIST_COPY,
+  ASK_CHATS_COPY,
   NOT_FOUND_COPY,
   OWNER_ASK_COPY,
   OVERVIEW_COPY,
@@ -16,6 +17,7 @@ import { Platform, useWindowDimensions, type ViewStyle } from 'react-native';
 
 import {
   askOwner,
+  ownerChats,
   auditCount,
   auditEntry,
   auditPage,
@@ -49,6 +51,7 @@ import { renderPages, untilRead } from '@/testing/pages';
 jest.mock('@/api/owner', () => ({
   ownerStatus: jest.fn(),
   askOwner: jest.fn(),
+  ownerChats: { key: ['owner-ask-chats'], list: jest.fn(), load: jest.fn(), keep: jest.fn(), remove: jest.fn() },
   verifiedFactor: jest.fn(),
   enrollFactor: jest.fn(),
   checkCode: jest.fn(),
@@ -290,7 +293,7 @@ describe('the owner’s Ask Jonz', () => {
     await renderPages(ROUTES, '/admin/overview');
     await untilRead();
     expect(screen.queryByTestId('owner-ask')).toBeNull();
-    const open = within(screen.getByTestId('title-bar')).getByTestId('owner-ask-open');
+    const open = screen.getByTestId('owner-ask-open');
     expect(open).toHaveAccessibleName(OWNER_ASK_COPY.open);
     await fireEvent.press(open);
     const sheet = screen.getByTestId('owner-ask-sheet');
@@ -301,20 +304,56 @@ describe('the owner’s Ask Jonz', () => {
     expect(askOwner).toHaveBeenCalledWith([{ role: 'user', text: 'What’s waiting?' }]);
     await fireEvent.press(within(sheet).getByTestId('owner-ask-close'));
     expect(screen.getByTestId('owner-ask-sheet', { includeHiddenElements: true })).not.toBeVisible();
-    await fireEvent.press(within(screen.getByTestId('title-bar')).getByTestId('owner-ask-open'));
+    await fireEvent.press(screen.getByTestId('owner-ask-open'));
     expect(within(screen.getByTestId('owner-ask-sheet')).getByText('Two reports are waiting.')).toBeVisible();
+  });
+
+  it('keeps each chat as a housemate’s are: Your chats lists it, opens it again, and New chat starts afresh', async () => {
+    jest.mocked(askOwner).mockResolvedValue({ reply: 'Two reports are waiting.' } as Awaited<ReturnType<typeof askOwner>>);
+    jest.mocked(ownerChats.keep).mockResolvedValue('c1');
+    jest.mocked(ownerChats.list).mockResolvedValue([{ id: 'c1', title: 'What’s waiting?', updatedAt: new Date().toISOString() }]);
+    jest.mocked(ownerChats.load).mockResolvedValue({
+      id: 'c1',
+      title: 'What’s waiting?',
+      turns: [
+        { role: 'user', text: 'What’s waiting?' },
+        { role: 'assistant', text: 'Two reports are waiting.', ask: null, hadCard: false },
+      ],
+    });
+    await renderPages(ROUTES, '/admin/overview');
+    await untilRead();
+    await fireEvent.press(screen.getByTestId('owner-ask-open'));
+    const chat = () => within(screen.getByTestId('owner-ask-sheet'));
+    expect(chat().getByTestId('chat-new')).toBeDisabled();
+    await fireEvent.changeText(chat().getByLabelText(OWNER_ASK_COPY.box), 'What’s waiting?');
+    await fireEvent.press(chat().getByLabelText(OWNER_ASK_COPY.send));
+    expect(await chat().findByText('Two reports are waiting.')).toBeVisible();
+    await waitFor(() =>
+      expect(ownerChats.keep).toHaveBeenCalledWith(null, [
+        { role: 'user', text: 'What’s waiting?' },
+        { role: 'assistant', text: 'Two reports are waiting.', ask: null, hadCard: false },
+      ]),
+    );
+    await fireEvent.press(chat().getByTestId('chat-new'));
+    expect(chat().queryByText('Two reports are waiting.')).toBeNull();
+    await fireEvent.press(chat().getByTestId('chats-open'));
+    expect(chat().getByText(ASK_CHATS_COPY.all)).toBeVisible();
+    expect(await chat().findByText(OWNER_ASK_COPY.chatsNote)).toBeVisible();
+    await fireEvent.press(await chat().findByText('What’s waiting?'));
+    expect(await chat().findByText('Two reports are waiting.')).toBeVisible();
+    expect(ownerChats.load).toHaveBeenCalledWith('c1');
   });
 
   it('docks down the right on a laptop, beside the page and the rail, and the sparkles close it again', async () => {
     (useWindowDimensions as jest.Mock).mockReturnValue(LAPTOP);
     await renderPages(ROUTES, '/admin/notices');
     await untilRead();
-    await fireEvent.press(within(screen.getByTestId('title-bar')).getByTestId('owner-ask-open'));
+    await fireEvent.press(screen.getByTestId('owner-ask-open'));
     expect(within(screen.getByTestId('owner-ask-panel')).getByTestId('owner-ask')).toBeVisible();
     expect(screen.getByTestId('admin-rail')).toBeVisible();
     expect(screen.getByTestId('notices-every')).toBeVisible();
     expect(screen.queryByTestId('owner-ask-sheet')).toBeNull();
-    await fireEvent.press(within(screen.getByTestId('title-bar')).getByTestId('owner-ask-open'));
+    await fireEvent.press(screen.getByTestId('owner-ask-open'));
     expect(screen.getByTestId('owner-ask-panel', { includeHiddenElements: true })).not.toBeVisible();
   });
 });

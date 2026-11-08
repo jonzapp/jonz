@@ -85,6 +85,28 @@ describe("the owner's Ask Jonz", () => {
     expect((await owner.db.from("owner_ask_turns").select("id")).data).toHaveLength(1);
   });
 
+  it("keeps the owner's chats for the owner alone, with their code", async () => {
+    const turns = [{ role: "user", text: "What's waiting?" }, { role: "assistant", text: "Nothing.", ask: null, hadCard: false }];
+    const made = await owner.db.from("owner_ask_chats").insert({ title: "What's waiting?", turns }).select("id, user_id").single();
+    expectOk(made);
+    expect(made.data?.user_id).toBe(owner.userId);
+    const id = made.data!.id;
+    expectOk(await owner.db.from("owner_ask_chats").update({ title: "Still waiting?" }).eq("id", id));
+    const { data: mine } = await owner.db.from("owner_ask_chats").select("title");
+    expect(mine?.map((c) => c.title)).toEqual(["Still waiting?"]);
+    for (const who of [ava, ownerNoCode]) {
+      const { data } = await who.db.from("owner_ask_chats").select("id");
+      expect(data ?? []).toEqual([]);
+      expect((await who.db.from("owner_ask_chats").insert({ title: "Mine now", turns: [] })).error).not.toBeNull();
+      await who.db.from("owner_ask_chats").delete().eq("id", id);
+    }
+    expect((await visitor().from("owner_ask_chats").select("id")).data ?? []).toEqual([]);
+    // Nobody else's delete took it; the owner's does.
+    expect((await db.from("owner_ask_chats").select("id").eq("id", id)).data).toHaveLength(1);
+    expectOk(await owner.db.from("owner_ask_chats").delete().eq("id", id));
+    expect((await db.from("owner_ask_chats").select("id").eq("id", id)).data).toHaveLength(0);
+  });
+
   it("stops at the day's limit", async () => {
     const today = Array.from({ length: OWNER_ASK_TURNS_PER_DAY }, (_, i) => ({ owner_id: owner.userId, question: `Question ${i}` }));
     expectOk(await db.from("owner_ask_turns").insert(today));

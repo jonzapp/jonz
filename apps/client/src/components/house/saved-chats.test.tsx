@@ -6,6 +6,8 @@ import type { ReactNode } from 'react';
 import { deleteChat, listChats } from '@/api/ask-chats';
 import { testQueryClient } from '@/testing/query';
 
+import { houseChats } from '@/hooks/use-ask-chats';
+
 import { AllChats } from './saved-chats';
 
 jest.mock('@/api/ask-chats', () => ({ listChats: jest.fn(), deleteChat: jest.fn(async () => undefined) }));
@@ -30,7 +32,7 @@ beforeEach(() => {
 
 it('lists every chat under Today, Last 7 days and Earlier, and opens one', async () => {
   const open = jest.fn();
-  await render(<AllChats houseId="h1" zone="Europe/London" now={NOW} onOpen={open} onDeleted={jest.fn()} />, { wrapper: House });
+  await render(<AllChats store={houseChats('h1')} zone="Europe/London" now={NOW} onOpen={open} onDeleted={jest.fn()} />, { wrapper: House });
   expect(await screen.findByText('Oven every month')).toBeTruthy();
   expect(screen.getAllByTestId('chats-group')).toHaveLength(3);
   expect(screen.getByText(ASK_CHATS_COPY.lastWeek)).toBeTruthy();
@@ -42,7 +44,7 @@ it('lists every chat under Today, Last 7 days and Earlier, and opens one', async
 it('lists every chat and deletes one only after the sheet says it is gone for good', async () => {
   const deleted = jest.fn();
   await render(
-    <AllChats houseId="h1" zone="Europe/London" now={NOW} onOpen={jest.fn()} onDeleted={deleted} />,
+    <AllChats store={houseChats('h1')} zone="Europe/London" now={NOW} onOpen={jest.fn()} onDeleted={deleted} />,
     { wrapper: House },
   );
   expect(await screen.findByText('Oven every month')).toBeTruthy();
@@ -58,7 +60,7 @@ it('lists every chat and deletes one only after the sheet says it is gone for go
 it('says so when there are no chats', async () => {
   (listChats as jest.Mock).mockResolvedValue([]);
   await render(
-    <AllChats houseId="h1" zone="Europe/London" now={NOW} onOpen={jest.fn()} onDeleted={jest.fn()} />,
+    <AllChats store={houseChats('h1')} zone="Europe/London" now={NOW} onOpen={jest.fn()} onDeleted={jest.fn()} />,
     { wrapper: House },
   );
   expect(await screen.findByText(ASK_CHATS_COPY.none)).toBeTruthy();
