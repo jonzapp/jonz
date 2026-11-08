@@ -115,6 +115,7 @@ const PAGES: [RegExp, string][] = [
   [/^\/house\/new$/, PAGE_TITLE.newHouse],
   [/^\/signin$/, PAGE_TITLE.signIn],
   [/^\/privacy$/, PAGE_TITLE.privacy],
+  [/^\/help$/, PAGE_TITLE.help],
   [/^\/welcome$/, PAGE_TITLE.welcome],
 ];
 

@@ -21,6 +21,7 @@ const INBOX_TABLE: readonly ListColumn[] = [
   { key: 'from', label: REPORT_COPY.from, width: 132 },
   { key: 'what', label: REPORT_COPY.what, flex: 1 },
   { key: 'kind', label: REPORT_COPY.kindColumn, width: 84 },
+  { key: 'by', label: REPORT_COPY.byColumn, width: 64 },
   { key: 'state', label: REPORT_COPY.stateColumn, width: 104 },
   { key: 'when', label: REPORT_COPY.when, width: 64, end: true },
 ];
@@ -66,12 +67,13 @@ function Inbox({ busy }: { busy: BusyList<InboxRow> }) {
           columns={INBOX_TABLE}
           cells={{
             from: report.name ?? REPORT_COPY.gone,
-            what: reportGist(report.words),
+            what: whatOf(report),
             kind: REPORT_COPY.kind[report.kind],
+            by: REPORT_COPY.source[report.source],
             state: <ReportChip state={report.state} owner />,
             when: reportAge(report.sentAt, now),
           }}
-          quiet={['kind', 'when']}
+          quiet={['kind', 'by', 'when']}
           strong={['from']}
           chosen={shownId === report.id}
           onPress={() => setChosen(report.id)}
@@ -84,7 +86,14 @@ function Inbox({ busy }: { busy: BusyList<InboxRow> }) {
           key={report.id}
           leading={<Avatar name={report.name ?? REPORT_COPY.gone} userId={report.userId ?? report.id} />}
           title={report.name ?? REPORT_COPY.gone}
-          meta={`${reportGist(report.words)}\n${REPORT_COPY.kind[report.kind]}, ${report.house ?? REPORT_COPY.noHouse}, ${reportAge(report.sentAt, now)}`}
+          meta={`${whatOf(report)}\n${[
+            REPORT_COPY.kind[report.kind],
+            report.source === 'email' ? REPORT_COPY.byEmail.toLowerCase() : null,
+            report.house ?? (report.source === 'email' ? null : REPORT_COPY.noHouse),
+            reportAge(report.sentAt, now),
+          ]
+            .filter(Boolean)
+            .join(', ')}`}
           metaLines={2}
           trailing={report.state === 'new' ? <ReportChip state={report.state} owner /> : undefined}
           onPress={() => router.push(`/admin/inbox/${report.id}` as never)}
@@ -95,8 +104,15 @@ function Inbox({ busy }: { busy: BusyList<InboxRow> }) {
       empty={{ icon: InboxIcon, title: REPORT_COPY.empty, body: REPORT_COPY.emptyBody }}
     />
   );
-  if (two) return <Columns main={list} side={shownId ? <ReportPanel key={shownId} id={shownId} /> : <View style={styles.none} />} />;
+  // A report the panel leads to (the one it's the same as) may not be in this page of the list.
+  if (two) return <Columns main={list} side={shownId ? <ReportPanel key={shownId} id={shownId} onOpen={setChosen} /> : <View style={styles.none} />} />;
   return list;
+}
+
+/** What they said, short, with how many more reported the same thing. */
+function whatOf(report: InboxRow): string {
+  const gist = reportGist(report.subject && report.source === 'email' ? `${report.subject}: ${report.words}` : report.words);
+  return report.also > 0 ? `${gist} ${REPORT_COPY.also(report.also)}` : gist;
 }
 
 const styles = StyleSheet.create({

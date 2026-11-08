@@ -12,6 +12,9 @@ test.use({ baseURL: CLIENT_URL });
 
 const made: string[] = [];
 test.afterAll(async () => cleanUp(made));
+// A usage read can still be in flight through the stand-in when the test
+// ends (the page asks again as it closes); let it go rather than fail.
+test.afterEach(async ({ page }) => page.unrouteAll({ behavior: "ignoreErrors" }));
 
 async function newHouse(page: Page) {
   await page.goto("/house/new");

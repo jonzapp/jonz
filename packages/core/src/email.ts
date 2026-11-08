@@ -2,6 +2,7 @@ import { APP_NAME } from "./copy";
 import type { Currency } from "./domain";
 import { LEGAL } from "./legal";
 import type { NoticeKind } from "./notices";
+import { refTag } from "./inbound-email";
 import { PROMOTION_COPY, promotionPrices, promotionSentence, promotionTitle, type PromotionTerms } from "./promotions";
 import { type ReportKind, reportGist } from "./reports";
 import { escapeHtml } from "./share";
@@ -282,34 +283,45 @@ export function accountDeletedEmail(args: { name: string | null; deletedOn: stri
 export const reportUrl = (id: string) => `${LEGAL.site}/house/reports/${id}`;
 
 /**
- * A reply to someone's report, to the address they sign in with, beside the
- * push. Replying to the email reaches support@jonz.app.
+ * A reply to someone's report, to the address they sign in with beside the
+ * push, or to the address an emailed one came from. Replying to the email
+ * reaches support@jonz.app, and the "(ref …)" in the subject puts the
+ * answer back on the same report. `url` is where to read it in the app:
+ * none when it came by email from someone without an account. `fixed` is
+ * the "it's fixed" message, sent to everyone who reported it.
  */
 export function reportReplyEmail(args: {
+  id: string;
   name: string | null;
   signed: string | null;
   kind: ReportKind;
   words: string;
+  subject?: string | null;
   reply: string;
-  url: string;
+  url: string | null;
+  fixed?: boolean;
 }): EmailMessage {
   const who = args.signed ? `${args.signed} at ${APP_NAME}` : APP_NAME;
   const paragraphs = args.reply
     .split(/\n\s*\n/)
     .map((p) => p.trim())
     .filter(Boolean);
+  const about = args.subject?.trim() ? args.subject.trim().replace(/^\s*((re|fwd?)\s*:\s*)+/i, "").replace(/\(ref [0-9a-f]{8}\)/gi, "").trim() : "";
+  const topic = about ? reportGist(about, 60) : reportGist(args.words, 60);
   return renderEmail({
-    subject: `Re: ${reportGist(args.words, 60)}`,
+    subject: `${args.fixed ? "Fixed" : "Re"}: ${topic} ${refTag(args.id)}`,
     preheader: reportGist(args.reply, 90),
-    headline: "A reply to you",
-    lead: `${who} replied.`,
+    headline: args.fixed ? "It’s fixed" : "A reply to you",
+    lead: args.fixed ? `${who} fixed what you reported.` : `${who} replied.`,
     blocks: [
       { type: "text", text: hi(args.name) },
       ...paragraphs.map((text) => ({ type: "text" as const, text })),
-      { type: "button", label: "Open it in Jonz", url: args.url },
+      ...(args.url ? [{ type: "button" as const, label: "Open it in Jonz", url: args.url }] : []),
       { type: "small", text: `You wrote: “${reportGist(args.words, 140)}”` },
     ],
-    why: `You sent this ${args.kind} from ${APP_NAME}. Reply to this email, or write back in the app.`,
+    why: args.url
+      ? `You sent this ${args.kind} to ${APP_NAME}. Reply to this email, or write back in the app.`
+      : `You emailed ${EMAIL_ADDRESSES.replyTo}. Reply to this email to write back.`,
   });
 }
 

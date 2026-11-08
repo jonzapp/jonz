@@ -1901,6 +1901,7 @@ export type Database = {
           author: string | null
           author_name: string | null
           body: string
+          email_id: string | null
           from_owner: boolean
           id: number
           report_id: string
@@ -1910,6 +1911,7 @@ export type Database = {
           author?: string | null
           author_name?: string | null
           body: string
+          email_id?: string | null
           from_owner: boolean
           id?: never
           report_id: string
@@ -1919,6 +1921,7 @@ export type Database = {
           author?: string | null
           author_name?: string | null
           body?: string
+          email_id?: string | null
           from_owner?: boolean
           id?: never
           report_id?: string
@@ -1937,12 +1940,18 @@ export type Database = {
         Row: {
           created_at: string
           details: Json | null
+          email_id: string | null
+          from_email: string | null
+          from_name: string | null
           house_id: string | null
           id: string
           kind: string
+          same_as: string | null
           seen_at: string
           shots: string[]
+          source: string
           state: string
+          subject: string | null
           updated_at: string
           user_id: string | null
           words: string
@@ -1950,12 +1959,18 @@ export type Database = {
         Insert: {
           created_at?: string
           details?: Json | null
+          email_id?: string | null
+          from_email?: string | null
+          from_name?: string | null
           house_id?: string | null
           id?: string
           kind: string
+          same_as?: string | null
           seen_at?: string
           shots?: string[]
+          source?: string
           state?: string
+          subject?: string | null
           updated_at?: string
           user_id?: string | null
           words: string
@@ -1963,12 +1978,18 @@ export type Database = {
         Update: {
           created_at?: string
           details?: Json | null
+          email_id?: string | null
+          from_email?: string | null
+          from_name?: string | null
           house_id?: string | null
           id?: string
           kind?: string
+          same_as?: string | null
           seen_at?: string
           shots?: string[]
+          source?: string
           state?: string
+          subject?: string | null
           updated_at?: string
           user_id?: string | null
           words?: string
@@ -1979,6 +2000,13 @@ export type Database = {
             columns: ["house_id"]
             isOneToOne: false
             referencedRelation: "houses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_same_as_fkey"
+            columns: ["same_as"]
+            isOneToOne: false
+            referencedRelation: "reports"
             referencedColumns: ["id"]
           },
         ]
@@ -2793,6 +2821,7 @@ export type Database = {
         Args: {
           p_after?: string
           p_before?: string
+          p_from?: string
           p_kind?: string
           p_q?: string
           p_state?: string
@@ -2805,19 +2834,24 @@ export type Database = {
           p_before?: string
           p_cursor_at?: string
           p_cursor_id?: string
+          p_from?: string
           p_kind?: string
           p_limit?: number
           p_q?: string
           p_state?: string
         }
         Returns: {
+          also: number
           created_at: string
           email: string
           house_name: string
           id: string
           kind: string
           name: string
+          same_as: string
+          source: string
           state: string
+          subject: string
           updated_at: string
           user_id: string
           words: string
@@ -2826,6 +2860,24 @@ export type Database = {
       owner_request_deletion: {
         Args: { p_email: string; p_reason?: string }
         Returns: string
+      }
+      owner_fix_report: {
+        Args: { p_note?: string; p_report: string; p_tell?: boolean }
+        Returns: Json
+      }
+      owner_same_as: {
+        Args: { p_main: string; p_report: string }
+        Returns: string
+      }
+      owner_same_as_find: {
+        Args: { p_q?: string; p_report: string }
+        Returns: {
+          created_at: string
+          id: string
+          name: string
+          state: string
+          words: string
+        }[]
       }
       owner_set_report_state: {
         Args: { p_report: string; p_state: string }
@@ -2857,6 +2909,19 @@ export type Database = {
       }
       raise_flag: { Args: { p_john: string }; Returns: string }
       remove_flag: { Args: { p_assignment: string }; Returns: undefined }
+      receive_email: {
+        Args: {
+          p_body: string
+          p_email_id: string
+          p_from: string
+          p_name: string
+          p_ref: string
+          p_subject: string
+          p_topic: string
+          p_trusted: boolean
+        }
+        Returns: Json
+      }
       recording: { Args: never; Returns: boolean }
       recount_streaks: { Args: { p_house: string }; Returns: undefined }
       remove_member: {

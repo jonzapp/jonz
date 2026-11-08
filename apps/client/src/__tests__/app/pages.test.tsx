@@ -1,22 +1,28 @@
-import { ERROR_COPY, FOCUS_SHELL_COPY, NOT_FOUND_COPY, PRIVACY_POLICY, TERMS } from '@app/core';
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { ERROR_COPY, FOCUS_SHELL_COPY, HELP_PAGE, NOT_FOUND_COPY, PRIVACY_POLICY, REPORT_COPY, TERMS } from '@app/core';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 import { renderRouter, screen as routed } from 'expo-router/testing-library';
 import { Text } from 'react-native';
 
 import NotFound from '@/app/+not-found';
 import { ErrorBoundary } from '@/app/_layout';
+import Help from '@/app/help';
 import Privacy from '@/app/privacy';
 import Terms from '@/app/terms';
+import { sendReport } from '@/api/reports';
+import { supabase } from '@/api/supabase';
 import { useMembership } from '@/hooks/use-membership';
 
 // The root layout's module brings sign-in with it; these pages don't need it.
 jest.mock('@/hooks/use-membership', () => ({ MembershipProvider: ({ children }: { children: unknown }) => children, useMembership: jest.fn() }));
 jest.mock('@/api/account', () => ({ keepAccount: jest.fn() }));
 jest.mock('@/api/auth', () => ({ signOut: jest.fn() }));
+jest.mock('@/api/supabase', () => ({ supabase: { auth: { getSession: jest.fn() } } }));
+jest.mock('@/api/reports', () => ({ ...jest.requireActual<typeof import('@/api/reports')>('@/api/reports'), sendReport: jest.fn() }));
 
 it.each([
   ['the Privacy Policy', Privacy, PRIVACY_POLICY],
   ['the Terms', Terms, TERMS],
+  ['Help', Help, HELP_PAGE],
 ] as const)('shows %s whole, every section under its heading', async (_, Page, page) => {
   await render(<Page />);
   expect(screen.getByRole('header', { name: page.title })).toBeOnTheScreen();
@@ -52,10 +58,33 @@ it('turns a link to nowhere back to the front door when signed out', async () =>
 });
 
 it('says a screen broke, and tries it again', async () => {
+  jest.mocked(supabase.auth.getSession).mockResolvedValue({ data: { session: null }, error: null } as never);
   const retry = jest.fn(async () => {});
   await render(<ErrorBoundary error={new Error('boom')} retry={retry} />);
   expect(screen.getByRole('header', { name: ERROR_COPY.title })).toBeOnTheScreen();
   expect(screen.getByText(ERROR_COPY.body)).toBeOnTheScreen();
   await fireEvent.press(screen.getByRole('button', { name: ERROR_COPY.retry }));
   expect(retry).toHaveBeenCalled();
+});
+
+it('lets someone signed in tell us what happened when a screen broke, with what broke in the details', async () => {
+  jest.mocked(supabase.auth.getSession).mockResolvedValue({ data: { session: { user: { id: 'ava' } } }, error: null } as never);
+  jest.mocked(sendReport).mockResolvedValue('r1');
+  await render(<ErrorBoundary error={new Error('Cannot read the week')} retry={jest.fn(async () => {})} />);
+  await fireEvent.press(await screen.findByTestId('crash-report'));
+  const form = await screen.findByTestId('report-form');
+  expect(within(form).getByTestId('report-send-details')).toHaveTextContent(/Cannot read the week/);
+  await fireEvent.changeText(within(form).getByLabelText(REPORT_COPY.words.problem), 'I opened the Week and it went blank.');
+  await fireEvent.press(within(form).getByTestId('report-send'));
+  await waitFor(() =>
+    expect(sendReport).toHaveBeenCalledWith(expect.objectContaining({ kind: 'problem', details: expect.objectContaining({ error: 'Cannot read the week' }) })),
+  );
+  expect(await screen.findByTestId('crash-report-sent')).toHaveTextContent(ERROR_COPY.told);
+});
+
+it('gives the support address on a broken screen when signed out', async () => {
+  jest.mocked(supabase.auth.getSession).mockResolvedValue({ data: { session: null }, error: null } as never);
+  await render(<ErrorBoundary error={new Error('boom')} retry={jest.fn(async () => {})} />);
+  expect(await screen.findByText(ERROR_COPY.orEmail)).toBeOnTheScreen();
+  expect(screen.queryByTestId('crash-report')).toBeNull();
 });

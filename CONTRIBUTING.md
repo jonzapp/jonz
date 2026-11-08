@@ -1,14 +1,15 @@
 # Contributing
 
 Jonz is a one-person project, built in the open. Bug reports and ideas are
-welcome; code is welcome too, but open an issue first so we can agree on it
-before you spend the time.
+welcome; code is welcome too, but email support@jonz.app first so we can
+agree on it before you spend the time.
 
 ## Reporting a bug or asking for something
 
-Open an [issue](https://github.com/jonzapp/jonz/issues/new/choose) and pick
-**Something's broken** or **An idea**. For anything about security, follow
-[SECURITY.md](SECURITY.md) instead.
+Tell us from inside Jonz (House, then Help: Report a problem or Send an
+idea), or email support@jonz.app. [jonz.app/help](https://jonz.app/help)
+says how; every report lands in one inbox and gets a reply. For anything
+about security, follow [SECURITY.md](SECURITY.md) instead.
 
 ## Working on the code
 

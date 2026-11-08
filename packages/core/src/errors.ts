@@ -104,6 +104,7 @@ const MESSAGES: Record<string, string> = {
   report_shot: "That screenshot didn’t upload. Add it again.",
   report_limit: "That’s a lot for one day. Try again tomorrow, or email support@jonz.app.",
   report_state: "A report can be marked fixed, or opened again.",
+  report_same: "A report can’t be the same as itself.",
   message_audience: "Send it to a person, a house or everyone.",
   message_who: "Pick who it goes to.",
   message_wall_person: "A Wall is the whole house’s, so a message to one person can’t go on it.",

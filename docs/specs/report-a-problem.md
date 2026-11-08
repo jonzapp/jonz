@@ -7,8 +7,10 @@ question from inside the app, without GitHub or an email app. The owner
 answers from the admin Inbox. Glyn picked option A on 31 October 2026, from
 the options page (https://claude.ai/artifact/9MRXJf6wot9i58tDLEydh6).
 
-It comes in three steps. This file describes step 1; the others are below
-under "Later".
+It came in three steps: step 1 (the app's sheet, Your reports and the
+Inbox), step 2 (email both ways, the From filter and jonz.app/help) and
+step 3 (the crash screen, "Same as" and telling everyone when it's fixed).
+What's still to come is under "Later".
 
 ## In the app
 
@@ -80,13 +82,75 @@ something you asked), and quiet hours still make them silent.
 `see_report`, `write_back`, `owner_reports_find` / `_page` / `_count`,
 `owner_open_report`, `owner_reply_report`, `owner_set_report_state`.
 
+## Email both ways (step 2)
+
+- **In.** Resend receives mail for jonz.app and posts `email.received` to
+  `POST /api/email/inbound` (`lib/inbound.ts`), signed the Svix way with
+  `RESEND_WEBHOOK_SECRET`. The event carries only who and what about, so the
+  API reads the email from Resend's Receiving API with
+  `RESEND_RECEIVING_KEY` (the sending key can't read mail). Without both
+  settings it answers 503 and the mail waits in Resend's own inbox.
+- **What's kept.** Only mail to support@ (or hello@, for mail apps that
+  ignore Reply-To). Automatic replies, bounces and Jonz's own mail are left
+  out, so nothing loops. The words are what was written this time: the text
+  part (or the HTML's words), stopping where the quoted history or a
+  signature starts (`emailWords` in `packages/core/src/inbound-email.ts`), up
+  to 2,000 letters. Attachments aren't kept.
+- **New report or write-back.** Every reply email from Jonz carries
+  "(ref 1a2b3c4d)" in its subject. An answer carrying a report's reference,
+  from that report's own sender, writes back on it (and puts it back in
+  Waiting as new). So does an email with the same subject from the same
+  address to an emailed report that isn't fixed, within 30 days. Anything
+  else is a new report, a question. Resend's retries are one report.
+- **Whose it is.** When the email passed DMARC and its address is a Jonz
+  account's, the report is that person's: it shows under their Your reports
+  and replies reach the app too. Otherwise it belongs to the address alone.
+- **Limits.** Ten new reports and thirty write-backs a day from one address.
+- **The Inbox.** A From filter (App or email), a By column on a laptop, the
+  address and subject on the report, and "Reply to Sam by email" when there's
+  no account. The owner hears "Sam emailed support".
+- **Out.** A reply to an emailed report goes back by email, under its
+  subject with the reference, with no app link.
+- **jonz.app/help**, open to anyone: from inside Jonz, by email, your account
+  and data, security problems. The README, CONTRIBUTING and GitHub's new
+  issue page send people there; the issue templates are gone.
+
+## The crash screen, Same as, and fixed (step 3)
+
+- **Tell us what happened.** The screen that says something went wrong has a
+  button that opens the report sheet on a problem, with what broke as its
+  last error. Signed out, it gives the support address instead.
+- **Same as…** On a report, the owner searches for the one it repeats and
+  folds it in. It leaves Waiting; the main one shows "2 more people reported
+  this" with each of them, and the folded one shows "Same as Ava's report"
+  with Not the same. Folding onto a folded report lands on the one it's
+  folded into, and a pile folded into another comes along.
+- **Mark fixed** opens a sheet: what changed (optional) and "Tell all 3
+  people it's fixed" (ticked). It fixes the report and its pile; with the
+  tick, each of them gets the note (or "This is fixed now. Thank you for
+  telling us.") in their conversation, a push "Fixed: the problem you
+  reported" and an email, or the email alone for an emailed report. Each
+  is told once: an already-fixed report isn't told again. The audit log
+  keeps how many were fixed and told, and the note.
+
+## The data, steps 2 and 3
+
+`supabase/migrations/20261115090000_reports_email.sql`: on `reports`,
+`source`, `from_email`, `from_name`, `subject`, `email_id` and `same_as`; on
+`report_messages`, `email_id`; `receive_email` (the server's alone), the
+Inbox's reads with `p_from`, `owner_same_as`, `owner_same_as_find`,
+`owner_fix_report`; and `finish_account_deletion` also forgets an emailed
+report's address and name.
+
+## Setting up email in
+
+Once, in Resend: a webhook for `email.received` to
+`https://api.jonz.app/api/email/inbound`, and an API key with full access.
+Then, on the jonz-api Vercel project (production), `RESEND_WEBHOOK_SECRET`
+(the webhook's signing secret) and `RESEND_RECEIVING_KEY` (that key).
+
 ## Later
 
-- **Step 2, email both ways**: mail to support@jonz.app becomes a report in
-  the Inbox (Resend inbound), a From filter (app or email), a public
-  jonz.app/help, and moving the README and CONTRIBUTING off
-  Gmail and GitHub issues.
-- **Step 3**: "Tell us what happened" on the crash screen, "Same as…" to fold
-  duplicates together, and telling everyone who reported it when it's fixed.
-- After that: the support agent (owner admin PR 5), Ask Jonz filing a report,
-  shake to report in the phone apps, and automatic crash reports.
+- The support agent (owner admin PR 5), Ask Jonz filing a report, shake to
+  report in the phone apps, automatic crash reports, and keeping email
+  attachments.
