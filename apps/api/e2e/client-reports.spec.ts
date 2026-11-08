@@ -63,6 +63,9 @@ test("sends a problem with a screenshot from You, then reads the reply and write
   await expect(thread).toContainText("Glyn at Jonz");
   await expect(thread).toContainText("Thanks Ava, fixed in today's update.");
   await expect(page.getByTestId("your-report-state")).toHaveText(REPORT_COPY.state.replied);
+  // A short conversation leaves the box at the foot of the page, not under the last message.
+  const box = (await page.getByTestId("write-back-box").boundingBox())!;
+  expect(box.y + box.height).toBeGreaterThan(page.viewportSize()!.height * 0.75);
   await page.getByTestId("write-back-input").fill("Thank you!");
   await page.getByTestId("write-back-send").click();
   await expect(thread).toContainText("Thank you!");

@@ -329,7 +329,7 @@ describe('the owner’s Inbox', () => {
     jest.mocked(openReport).mockResolvedValue({ ...BINS, state: 'fixed', userId: null, name: 'Someone who left', email: null });
     await renderPages(ROUTES, '/admin/inbox/r1');
     await screen.findByTestId('report-panel');
-    expect(screen.queryByTestId('report-reply')).toBeNull();
+    expect(screen.queryByTestId('report-reply-box')).toBeNull();
     await fireEvent.press(screen.getByTestId('report-reopen'));
     await waitFor(() => expect(setReportState).toHaveBeenCalledWith('r1', 'open'));
   });

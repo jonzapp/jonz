@@ -158,6 +158,7 @@ function ReportBody({
               await setSupportDraft(fromDraft, 'used').catch(() => undefined);
             }
           }}
+          bare
           testID="report-reply"
         />
       ) : null}
