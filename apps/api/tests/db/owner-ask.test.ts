@@ -1,8 +1,8 @@
-import { OWNER_ASK_TURNS_PER_DAY, type ChatMessage } from "@app/core";
+import { OWNER_ASK_TURNS_PER_DAY, type ChatMessage, type OwnerMove } from "@app/core";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import type { OwnerReads } from "@/lib/ai/owner-ask";
-import { ownerTurn } from "@/lib/moves/owner-ask";
+import { ownerTurn, ownerWrites } from "@/lib/moves/owner-ask";
 import { adminClient, signedInUser, visitor, type Actor } from "@/tests/support/clients";
 import { expectDenied, expectOk } from "@/tests/support/expect";
 import { makeHouse, type House } from "@/tests/support/factories";
@@ -105,6 +105,46 @@ describe("the owner's Ask Jonz", () => {
     expect((await db.from("owner_ask_chats").select("id").eq("id", id)).data).toHaveLength(1);
     expectOk(await owner.db.from("owner_ask_chats").delete().eq("id", id));
     expect((await db.from("owner_ask_chats").select("id").eq("id", id)).data).toHaveLength(0);
+  });
+
+  it("puts the owner's moves on the card from what the admin pages read, as the owner", async () => {
+    const sent = await ava.db.rpc("send_report", { p_kind: "problem", p_words: "Ticks don't save" });
+    expectOk(sent);
+    const reportId = sent.data as string;
+    expectOk(await owner.db.rpc("owner_request_deletion", { p_email: (await db.auth.admin.getUserById(ava.userId)).data.user!.email!, p_reason: "Asked by email" }));
+
+    const result = await ownerTurn({ db: owner.db, userId: owner.userId }, said("Reply to Ava, then keep her account"), new Date(), async (_m, _today, _reads, w) => {
+      expect((await w.replyToReport(reportId, "Thanks, Ava: we're on it.")).ok).toBe(true);
+      expect((await w.markFixed(reportId, "", true)).ok).toBe(true);
+      expect((await w.deletionMove("deletion_stop", ava.userId, "Changed her mind")).ok).toBe(true);
+      expect((await w.sendMessage({ audience: "house", personId: null, houseId: house.id, subject: "Hello", body: "Thanks for trying Jonz.", push: true, wall: false, email: false })).ok).toBe(true);
+      return { ...answer, raw: { ...answer.raw, reply: "On the card." } };
+    });
+    expect(result).toMatchObject({ reply: "On the card.", source: "ai" });
+    const moves = (result as { moves: OwnerMove[] }).moves;
+    expect(moves).toEqual([
+      { kind: "report_reply", reportId, who: "Ava", body: "Thanks, Ava: we're on it." },
+      { kind: "report_fixed", reportId, who: "Ava", note: "", tell: true },
+      { kind: "deletion_stop", userId: ava.userId, who: "Ava", reason: "Changed her mind" },
+      expect.objectContaining({ kind: "message_send", houseId: house.id, to: expect.any(String) }),
+    ]);
+    // Putting them on the card changed nothing.
+    const { data: report } = await db.from("reports").select("state").eq("id", reportId).single();
+    expect(report?.state).not.toBe("fixed");
+    expect((await db.from("account_deletions").select("user_id").eq("user_id", ava.userId).eq("state", "pending")).data).toHaveLength(1);
+  });
+
+  it("can't put anything on a card as someone who isn't the owner with their code", async () => {
+    expectOk(await ava.db.rpc("send_report", { p_kind: "problem", p_words: "Mine" }));
+    for (const who of [ava, ownerNoCode]) {
+      const moves: OwnerMove[] = [];
+      const w = ownerWrites({ db: who.db, userId: who.userId }, "owner", new Date(), moves);
+      // The reads behind each move are the owner's, so nothing is found to act on.
+      const { data } = await db.from("reports").select("id").limit(1);
+      expect((await w.replyToReport(data![0].id, "Hi")).ok).toBe(false);
+      expect((await w.deletionMove("deletion_now", ava.userId, "")).ok).toBe(false);
+      expect(moves).toEqual([]);
+    }
   });
 
   it("stops at the day's limit", async () => {

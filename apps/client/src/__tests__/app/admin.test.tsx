@@ -7,6 +7,7 @@ import {
   ASK_CHATS_COPY,
   NOT_FOUND_COPY,
   OWNER_ASK_COPY,
+  OWNER_MOVES_COPY,
   OVERVIEW_COPY,
   type AuditEntry,
   type Notice,
@@ -342,6 +343,41 @@ describe('the owner’s Ask Jonz', () => {
     await fireEvent.press(await chat().findByText('What’s waiting?'));
     expect(await chat().findByText('Two reports are waiting.')).toBeVisible();
     expect(ownerChats.load).toHaveBeenCalledWith('c1');
+  });
+
+  it('puts what Jonz offers to do on a card, and does only the ticked ones when the owner taps', async () => {
+    const SAM_ID = '44444444-4444-4444-8444-444444444444';
+    const NOTICE_ID = '55555555-5555-4555-8555-555555555555';
+    jest.mocked(askOwner).mockResolvedValue({
+      reply: 'I’ve put these on the card.',
+      ask: null,
+      source: 'ai',
+      moves: [
+        { kind: 'deletion_stop', userId: SAM_ID, who: 'Sam', reason: 'Changed their mind' },
+        { kind: 'notice_end', id: NOTICE_ID, title: 'Jonz is slow right now' },
+        { kind: 'deletion_now', userId: SAM_ID, who: 'Sam', reason: '' },
+      ],
+    });
+    jest.mocked(ownerChats.keep).mockResolvedValue('c1');
+    await renderPages(ROUTES, '/admin/overview');
+    await untilRead();
+    await fireEvent.press(screen.getByTestId('owner-ask-open'));
+    const chat = () => within(screen.getByTestId('owner-ask-sheet'));
+    await fireEvent.changeText(chat().getByLabelText(OWNER_ASK_COPY.box), 'Keep Sam and end the slow notice');
+    await fireEvent.press(chat().getByLabelText(OWNER_ASK_COPY.send));
+    const card = within(await chat().findByTestId('owner-moves-card'));
+    expect(card.getByText('Stop deleting Sam’s account')).toBeVisible();
+    expect(card.getByTestId('owner-move-deletion_now')).toHaveTextContent(new RegExp(OWNER_MOVES_COPY.final));
+    // Nothing happens before the tap.
+    expect(stopDeletion).not.toHaveBeenCalled();
+    await fireEvent.press(card.getByTestId('owner-move-deletion_now'));
+    expect(card.getByTestId('owner-moves-apply')).toHaveTextContent(OWNER_MOVES_COPY.apply(2));
+    await fireEvent.press(card.getByTestId('owner-moves-apply'));
+    expect(await chat().findByText(OWNER_MOVES_COPY.done(2))).toBeVisible();
+    expect(stopDeletion).toHaveBeenCalledWith(SAM_ID, 'Changed their mind');
+    expect(endNotice).toHaveBeenCalledWith(NOTICE_ID);
+    expect(deleteNow).not.toHaveBeenCalled();
+    await waitFor(() => expect(ownerChats.keep).toHaveBeenCalledWith(null, expect.arrayContaining([expect.objectContaining({ hadCard: true })])));
   });
 
   it('docks down the right on a laptop, beside the page and the rail, and the sparkles close it again', async () => {

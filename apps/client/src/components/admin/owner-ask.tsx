@@ -1,4 +1,4 @@
-import { ASK_CHATS_COPY, CHAT_MAX_MESSAGES, MESSAGE_MAX, OWNER_ASK_COPY, type ChatMessage, type SavedTurn } from '@app/core';
+import { ASK_CHATS_COPY, CHAT_MAX_MESSAGES, MESSAGE_MAX, OWNER_ASK_COPY, type ChatMessage, type OwnerMove, type SavedTurn } from '@app/core';
 import { useQueryClient } from '@tanstack/react-query';
 import { HistoryIcon, SquarePenIcon, XIcon } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -7,6 +7,7 @@ import { StyleSheet, View } from 'react-native';
 import type { ChatStore, SavedChat } from '@/api/ask-chats';
 import { askOwner, ownerChats } from '@/api/owner';
 import { ownerZone } from '@/components/admin/audit-entry';
+import { OwnerMovesCard } from '@/components/admin/owner-moves-card';
 import { ownerPieces } from '@/components/admin/owner-pieces';
 import { Alert } from '@/components/alert';
 import { ChatLog, Composer, JonzSaid, Said, UserBubble } from '@/components/chat/chat';
@@ -17,19 +18,23 @@ import { Body } from '@/components/text';
 import { BarEdgeContext, TitleBar } from '@/components/title-bar';
 import { GUTTER, LookContext, SPACE, useTheme } from '@/theme';
 
-/** One turn of the owner's chat: what they asked, or Jonz's answer and how long it thought. */
-export type OwnerTurn = { role: 'user'; text: string } | { role: 'assistant'; text: string; thought?: { seconds: number; steps: string[] } };
+/** One turn of the owner's chat: what they asked, or Jonz's answer, how long it thought, and what it put on the card. */
+export type OwnerTurn =
+  | { role: 'user'; text: string }
+  | { role: 'assistant'; text: string; thought?: { seconds: number; steps: string[] }; moves?: OwnerMove[] };
 
 const PIECES = ownerPieces();
 
-/** A kept chat's turns as the chat shows them (how long Jonz thought isn't kept). */
+/** A kept chat's turns as the chat shows them (how long Jonz thought isn't kept, nor its cards: they were for then). */
 function fromSaved(saved: readonly SavedTurn[]): OwnerTurn[] {
   return saved.flatMap((t): OwnerTurn[] => (t.role === 'user' || t.role === 'assistant' ? [{ role: t.role, text: t.text }] : []));
 }
 
-/** The chat as it's kept: the same turns a housemate's chat keeps, with no cards. */
+/** The chat as it's kept: the same turns a housemate's chat keeps; a card is kept as having been there. */
 function toSaved(turns: readonly OwnerTurn[]): SavedTurn[] {
-  return turns.map((t) => (t.role === 'user' ? { role: 'user', text: t.text } : { role: 'assistant', text: t.text, ask: null, hadCard: false }));
+  return turns.map((t) =>
+    t.role === 'user' ? { role: 'user', text: t.text } : { role: 'assistant', text: t.text, ask: null, hadCard: Boolean(t.moves?.length) },
+  );
 }
 
 /** Which chat is open: a new one, or one kept earlier; `serial` starts the chat afresh on each switch. */
@@ -39,8 +44,9 @@ type Open = { serial: number; saved: SavedChat | null };
  * The owner's Ask Jonz (docs/specs/owner-admin.md, "Ask Jonz, owner"): the
  * same chat pieces as a housemate's, always in Night with Owner under the
  * title on its bar, so it's never mistaken for theirs. It asks /api/admin/ask, which
- * reads what the admin pages show and changes nothing; its chips open a
- * report, an audit entry, an account's log or an admin page.
+ * reads what the admin pages show and puts anything to do on a card (the
+ * house's MovesCard's twin): nothing changes until the owner taps it. Its
+ * chips open a report, an audit entry, an account's log or an admin page.
  *
  * Its chats are kept as a housemate's are, in the owner's own table: the
  * same bar (the clock before the title opens Your chats, the pencil starts a
@@ -209,7 +215,15 @@ function OwnerChat({
       const answer = await askOwner(messages);
       const took = Date.now() - asked;
       unkept.current = true;
-      setTurns([...next, { role: 'assistant', text: answer.reply, thought: { seconds: Math.max(1, Math.round(took / 1000)), steps: stepsShown(steps, took) } }]);
+      setTurns([
+        ...next,
+        {
+          role: 'assistant',
+          text: answer.reply,
+          thought: { seconds: Math.max(1, Math.round(took / 1000)), steps: stepsShown(steps, took) },
+          ...(answer.moves?.length ? { moves: answer.moves } : {}),
+        },
+      ]);
     } catch (reason) {
       // Refused (no code this session, too many today): what was asked goes back in the box.
       setTurns(before);
@@ -244,7 +258,9 @@ function OwnerChat({
           turn.role === 'user' ? (
             <UserBubble key={i} text={turn.text} />
           ) : (
-            <JonzSaid key={i} text={turn.text} thought={turn.thought} pieces={PIECES} />
+            <JonzSaid key={i} text={turn.text} thought={turn.thought} pieces={PIECES}>
+              {turn.moves?.length ? <OwnerMovesCard items={turn.moves} /> : null}
+            </JonzSaid>
           ),
         )}
         {sending ? <Thinking steps={steps} /> : null}

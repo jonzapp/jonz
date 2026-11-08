@@ -21,9 +21,11 @@ const ownerReadsStub: OwnerReads = {
   messages: async () => "messages",
   people: async () => "people",
   houses: async () => "houses",
+  house: async () => "house",
+  promotions: async () => "promotions",
   howItWorks: () => "how",
 };
-const OWNER_TOOLS = ["audit", "deletions", "find_houses", "find_people", "how_it_works", "inbox", "messages", "notices"];
+const OWNER_TOOLS = ["audit", "deletions", "find_houses", "find_people", "house", "how_it_works", "inbox", "messages", "notices", "promotions"];
 
 const houseTools = (): JonzTools => ({
   reads: new Proxy({}, { get: () => async () => "read" }) as JonzTools["reads"],
@@ -61,7 +63,7 @@ const houseCtx: DraftContext = {
 };
 
 describe("two assistants, no shared access", () => {
-  it("gives the owner only reads", () => {
+  it("gives the owner only reads when it isn't given moves", () => {
     expect(Object.keys(ownerToolSet(ownerReadsStub)).sort()).toEqual(OWNER_TOOLS);
   });
 
@@ -77,14 +79,14 @@ describe("two assistants, no shared access", () => {
 
   it("keeps each one's instructions to itself", async () => {
     const owner = answering();
-    await askOwnerClaude([{ role: "user", text: "What's in the inbox?" }], "Friday 6 November 2026 at 09:00", ownerReadsStub, owner);
+    await askOwnerClaude([{ role: "user", text: "What's in the inbox?" }], "Friday 6 November 2026 at 09:00", ownerReadsStub, undefined, owner);
     const ownerSystem = JSON.stringify(owner.doGenerateCalls[0].prompt[0]);
     const house = answering();
     await askClaude(houseCtx, houseTools(), house);
     const houseSystem = JSON.stringify(house.doGenerateCalls[0].prompt[0]);
 
     expect(ownerSystem).toContain("the owner of the whole service");
-    expect(ownerSystem).toContain("You can't change anything");
+    expect(ownerSystem).toContain("They approve every change on a card");
     for (const words of ["owner", "Inbox", "Audit log", "Deletions", "admin pages", "from_people"]) expect(houseSystem).not.toContain(words);
     for (const words of ["list_johns", "house_now", "offer_reset", "Apply on the card", "jonz:john", "::week"]) expect(ownerSystem).not.toContain(words);
   });

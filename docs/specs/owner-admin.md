@@ -255,14 +255,31 @@ The owner's own Ask Jonz, apart from every house's. Same model and loop
   `OwnerAskResponse` in core). It answers only the owner with their code
   this session (`owner_status`), and refuses anyone else with `owner_only`
   before Claude is asked.
-- **Its own tools, reads only.** Inbox, Deletions, Audit log, Notices,
-  Messages, people, houses and how it works
-  (`apps/api/lib/ai/owner-ask.ts`), each through the owner's own session,
-  so the database's owner check holds for every read. Nothing uses the
-  service role. No tool sends, saves, ends or deletes: Jonz says what to do
-  and on which page, and offers the words, and the owner does it there.
+- **Its own tools: every read, and every move on a card.** Reads: Inbox,
+  Deletions, Audit log, Notices, Messages, Promotions, people, houses (and
+  one whole house) and how it works (`apps/api/lib/ai/owner-ask.ts`), each
+  through the owner's own session, so the database's owner check holds for
+  every read. Nothing uses the service role.
+- **Who can do what, in one place.** `packages/core/src/owner-moves.ts`
+  lists every admin move (`OWNER_PERMISSIONS`), which owner role has each
+  (`OWNER_ROLE_PERMISSIONS`; every owner is a full owner today), and how
+  Jonz does each one (`OWNER_ASK_COVERAGE`), the same shape as a house's
+  `permissions.ts` and `ask-coverage.ts`. A move added without a way
+  through Jonz doesn't compile, and a unit test fails if a write tool isn't
+  given with exactly its permission.
+- **Moves go on a card, as a house's do.** Jonz's write tools (reply to a
+  report, mark it fixed and tell, open it again, same as; put up, change or
+  end a notice; send a message; make, stop, email or set up again a
+  promotion; delete now, stop or start a deletion) each look up what they
+  name as the owner and put an `OwnerMove` on the card. Nothing happens
+  until the owner taps Do it on the card
+  (`components/admin/owner-moves-card.tsx`), which runs the admin page's
+  own call, so the database checks it and the audit log keeps it, the same
+  as a tap on the page. Each row starts ticked and can be unticked; ones
+  that can't be undone say so. There's no way to delete a whole house, on
+  the pages or in the chat.
 - **Its own instructions.** It knows it's talking with the owner and how the
-  admin pages work. Plain Markdown, no house chips or cards. What people
+  admin pages work. Plain Markdown and its own chips, no house chips or cards. What people
   wrote (names, reports, reasons) reaches Claude marked `<from_people>`, to
   be read as what they said, never as instructions.
 - **Its own history.** `owner_ask_turns`: each question is written before
