@@ -34,6 +34,7 @@ import { Lead, Meta } from '@/components/text';
 import { TitleBar } from '@/components/title-bar';
 import { useToast } from '@/components/toast';
 import { useNow } from '@/hooks/use-now';
+import { useOwnerMay } from '@/components/admin/use-owner-may';
 import { SPACE } from '@/theme';
 import { AdminSwitch } from '@/components/admin/admin-shell';
 
@@ -81,6 +82,8 @@ export default function NoticesPage() {
 
 function Notices({ busy, chosen, choose }: { busy: BusyList<Notice>; chosen: Chosen; choose: (next: Chosen) => void }) {
   const two = useColumns();
+  // Someone whose app role can't write notices (support) sees the list, with nothing to open.
+  const may = useOwnerMay('notices:write');
   const toast = useToast();
   const queryClient = useQueryClient();
   const done = (message: string, copied: boolean) => {
@@ -113,8 +116,9 @@ function Notices({ busy, chosen, choose }: { busy: BusyList<Notice>; chosen: Cho
       onEnd={editing && noticeState(editing, new Date()) !== 'ended' ? () => end.mutate(editing.id) : undefined}
     />
   );
-  const list = <NoticeList busy={busy} chosen={two ? chosen : null} choose={choose} />;
+  const list = <NoticeList busy={busy} chosen={two ? chosen : null} choose={may ? choose : undefined} />;
 
+  if (!may) return list;
   if (two) {
     return (
       <Columns
@@ -143,7 +147,7 @@ function Notices({ busy, chosen, choose }: { busy: BusyList<Notice>; chosen: Cho
   );
 }
 
-function NoticeList({ busy, chosen, choose }: { busy: BusyList<Notice>; chosen: Chosen; choose: (next: Chosen) => void }) {
+function NoticeList({ busy, chosen, choose }: { busy: BusyList<Notice>; chosen: Chosen; choose?: (next: Chosen) => void }) {
   const now = useNow();
   // What people see comes from the notices on now, whatever the list below is narrowed to.
   const live = useQuery({ queryKey: ['owner-notices', 'live'], queryFn: () => liveNotices() });
@@ -156,9 +160,11 @@ function NoticeList({ busy, chosen, choose }: { busy: BusyList<Notice>; chosen: 
         <Meta>{ADMIN_COPY.onePerScreen}</Meta>
       </Section>
       {/* A new notice starts from what's happening, under what people see, not from a button up in the title bar. */}
-      <Section label={ADMIN_COPY.tellEveryone}>
-        <StartTiles chosen={isNew(chosen) ? chosen.start : null} onStart={(start) => choose({ start })} />
-      </Section>
+      {choose ? (
+        <Section label={ADMIN_COPY.tellEveryone}>
+          <StartTiles chosen={isNew(chosen) ? chosen.start : null} onStart={(start) => choose({ start })} />
+        </Section>
+      ) : null}
       <Section label={NOTICE_LIST_COPY.every} bare testID="notices-every">
         <BusyListView
           busy={busy}
@@ -181,7 +187,7 @@ function NoticeList({ busy, chosen, choose }: { busy: BusyList<Notice>; chosen: 
                 }}
                 quiet={['state', 'starts']}
                 chosen={picked(notice)}
-                onPress={() => choose(notice)}
+                onPress={choose ? () => choose(notice) : undefined}
                 accessibilityLabel={[notice.title, KIND_LABEL[notice.kind], STATE_LABEL[state], noticeWindow(notice, now)].join(', ')}
                 testID={`notice-row-${notice.id}`}
               />
@@ -194,8 +200,8 @@ function NoticeList({ busy, chosen, choose }: { busy: BusyList<Notice>; chosen: 
               meta={noticeLine(notice, now)}
               trailing={<Chip label={KIND_LABEL[notice.kind]} tone={notice.kind === 'status' ? 'hazard' : 'quiet'} />}
               tint={picked(notice)}
-              chevron
-              onPress={() => choose(notice)}
+              chevron={choose !== undefined}
+              onPress={choose ? () => choose(notice) : undefined}
               testID={`notice-row-${notice.id}`}
             />
           )}

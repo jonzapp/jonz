@@ -7,17 +7,21 @@ import { REPORT_LIMITS } from "./reports";
 
 // Who can do what on the owner's admin pages, and how the owner's Ask Jonz
 // does each of it: the same shape as a house's (permissions.ts and
-// ask-coverage.ts). The database checks the owner (is_owner(): in
-// app_owners, with their code this session) in every admin function; this
+// ask-coverage.ts). The database holds the same list (permissions with
+// scope app, and app_role_permissions) and every admin function asks
+// can_app(permission): an app role in app_owners, with their code this session. This
 // list says which moves there are, which role has each, and how Jonz handles
 // each one, so a move added to the admin pages without a way through Jonz
 // doesn't compile.
 
-/** An owner's role. Every owner is a full owner today; a narrower role (support, say) would go here. */
-export const OWNER_ROLES = ["owner"] as const;
+/**
+ * An app role, as `app_owners.role` holds it: an owner may do everything on
+ * the admin pages; support may read them and answer the Inbox.
+ */
+export const OWNER_ROLES = ["owner", "support"] as const;
 export type OwnerRole = (typeof OWNER_ROLES)[number];
 
-/** Every move on the admin pages, in plain words (Jonz reads these). */
+/** Every app-scope permission on the admin pages, in plain words (Jonz reads these). */
 export const OWNER_PERMISSIONS = {
   "admin:read": "See every admin page: Overview, Inbox, Houses, Messages, Notices, Promotions, Deletions and the audit log",
   "reports:write": "Reply to a report (its sender gets a push and an email), mark it fixed or open it again, and fold it into one that says the same thing",
@@ -32,6 +36,7 @@ export const OWNER_PERMISSION_NAMES = Object.keys(OWNER_PERMISSIONS) as OwnerPer
 /** What each owner role may do. */
 export const OWNER_ROLE_PERMISSIONS: Record<OwnerRole, readonly OwnerPermission[]> = {
   owner: OWNER_PERMISSION_NAMES,
+  support: ["admin:read", "reports:write"],
 };
 
 /** Whether an owner with this role (or no role: not an owner, or no code this session) may do it. */

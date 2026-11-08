@@ -94,7 +94,8 @@ export function ListTableRow({
   /** The columns set in bold: who. */
   strong?: readonly string[];
   chosen?: boolean;
-  onPress: () => void;
+  /** Opens the entry; without it the row is only read (someone whose role can't change it). */
+  onPress?: () => void;
   accessibilityLabel: string;
   testID?: string;
 }) {
@@ -105,9 +106,10 @@ export function ListTableRow({
       <Hairline />
       {chosen ? <View aria-hidden pointerEvents="none" style={[styles.edge, { backgroundColor: colors.foreground }]} /> : null}
       <Pressable
-        accessibilityRole="button"
+        accessibilityRole={onPress ? 'button' : undefined}
         accessibilityLabel={accessibilityLabel}
         aria-current={chosen || undefined}
+        disabled={!onPress}
         onPress={onPress}
         onPressIn={() => setPressed(true)}
         onPressOut={() => setPressed(false)}

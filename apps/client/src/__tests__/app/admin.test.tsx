@@ -9,6 +9,7 @@ import {
   OWNER_ASK_COPY,
   OWNER_MOVES_COPY,
   OVERVIEW_COPY,
+  OWNER_PERMISSION_NAMES,
   type AuditEntry,
   type Notice,
 } from '@app/core';
@@ -172,7 +173,7 @@ const ROUTES = {
 
 beforeEach(() => {
   (useWindowDimensions as jest.Mock).mockReturnValue(PHONE);
-  jest.mocked(ownerStatus).mockResolvedValue({ owner: true, mfa: true });
+  jest.mocked(ownerStatus).mockResolvedValue({ owner: true, mfa: true, permissions: [...OWNER_PERMISSION_NAMES] });
   jest.mocked(liveNotices).mockResolvedValue([SLOW]);
   jest.mocked(noticesPage).mockResolvedValue({ notices: [LATER, SLOW, OLD], more: false });
   jest.mocked(noticesCount).mockResolvedValue(3);
@@ -200,7 +201,7 @@ const KIT = { ...SAM, userId: 'kit', name: 'Kit', email: 'kit@example.com', hous
 
 describe('who gets in', () => {
   it('shows anyone who is not the owner the page that is not there', async () => {
-    jest.mocked(ownerStatus).mockResolvedValue({ owner: false, mfa: true });
+    jest.mocked(ownerStatus).mockResolvedValue({ owner: false, mfa: true, permissions: [] });
     await renderPages(ROUTES, '/admin/notices');
     expect(await screen.findByText(NOT_FOUND_COPY.title)).toBeVisible();
     expect(noticesPage).not.toHaveBeenCalled();
@@ -208,7 +209,7 @@ describe('who gets in', () => {
   });
 
   it('asks the owner for their code before anything else', async () => {
-    jest.mocked(ownerStatus).mockResolvedValue({ owner: true, mfa: false });
+    jest.mocked(ownerStatus).mockResolvedValue({ owner: true, mfa: false, permissions: [] });
     jest.mocked(verifiedFactor).mockResolvedValue('f1');
     await renderPages(ROUTES, '/admin/notices');
     expect(await screen.findByTestId('code-gate')).toBeVisible();
@@ -218,7 +219,7 @@ describe('who gets in', () => {
   });
 
   it('checks the code as soon as its sixth digit is in, and a wrong one starts over with the next digit', async () => {
-    jest.mocked(ownerStatus).mockResolvedValue({ owner: true, mfa: false });
+    jest.mocked(ownerStatus).mockResolvedValue({ owner: true, mfa: false, permissions: [] });
     jest.mocked(verifiedFactor).mockResolvedValue('f1');
     jest.mocked(checkCode).mockResolvedValue(false);
     await renderPages(ROUTES, '/admin/notices');
@@ -236,7 +237,7 @@ describe('who gets in', () => {
   });
 
   it('adds the authenticator the first time: Supabase’s QR code drawn to fit its square, and the key to type', async () => {
-    jest.mocked(ownerStatus).mockResolvedValue({ owner: true, mfa: false });
+    jest.mocked(ownerStatus).mockResolvedValue({ owner: true, mfa: false, permissions: [] });
     jest.mocked(verifiedFactor).mockResolvedValue(null);
     supabaseEnrolls(SUPABASE_QR);
     await renderPages(ROUTES, '/admin/notices');
@@ -248,7 +249,7 @@ describe('who gets in', () => {
   });
 
   it('scrolls, so Check the code is in reach under the code to scan, the key and the keyboard', async () => {
-    jest.mocked(ownerStatus).mockResolvedValue({ owner: true, mfa: false });
+    jest.mocked(ownerStatus).mockResolvedValue({ owner: true, mfa: false, permissions: [] });
     jest.mocked(verifiedFactor).mockResolvedValue(null);
     supabaseEnrolls(SUPABASE_QR);
     await renderPages(ROUTES, '/admin/notices');
@@ -262,7 +263,7 @@ describe('who gets in', () => {
   });
 
   it('copies the key without its spaces, and says so', async () => {
-    jest.mocked(ownerStatus).mockResolvedValue({ owner: true, mfa: false });
+    jest.mocked(ownerStatus).mockResolvedValue({ owner: true, mfa: false, permissions: [] });
     jest.mocked(verifiedFactor).mockResolvedValue(null);
     supabaseEnrolls(SUPABASE_QR);
     await renderPages(ROUTES, '/admin/notices');
@@ -272,7 +273,7 @@ describe('who gets in', () => {
   });
 
   it('says to type the key, never a blank, when the QR code can’t be drawn', async () => {
-    jest.mocked(ownerStatus).mockResolvedValue({ owner: true, mfa: false });
+    jest.mocked(ownerStatus).mockResolvedValue({ owner: true, mfa: false, permissions: [] });
     jest.mocked(verifiedFactor).mockResolvedValue(null);
     supabaseEnrolls('<svg width="30" height="30"><path d="M0 0h3v3h-3z"/></svg>');
     await renderPages(ROUTES, '/admin/notices');

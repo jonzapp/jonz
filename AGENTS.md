@@ -167,8 +167,10 @@ see "Design options for Glyn" in the `house-style` skill.
   (`docs/specs/admin-resets.md`);
   a notification's buttons reach `mark_done` and `cast_vote` through the
   service-role-only `push_action`; the owner's admin pages write through
-  `save_notice` / `end_notice`, which check `is_owner()` (a row in the
-  migration-only `app_owners` plus an `aal2` session) and append to the
+  functions such as `save_notice` / `end_notice`, which each ask
+  `can_app('<resource>:<level>')` (the caller's app role in the
+  migration-only `app_owners`, owner or support, must hold that permission
+  in `app_role_permissions`, with an `aal2` session) and append to the
   append-only `admin_audit`, see `docs/specs/owner-admin.md`) or a few column
   grants (house settings and the John list, its group included, for admins;
   your own name, reactions, push subscriptions). Refusals raise `42501` (not

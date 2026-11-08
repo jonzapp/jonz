@@ -1,4 +1,4 @@
-import { PERMISSIONS, ROLE_PERMISSIONS, weekIndex } from "@app/core";
+import { OWNER_PERMISSIONS, OWNER_ROLE_PERMISSIONS, OWNER_ROLES, PERMISSIONS, ROLE_PERMISSIONS, weekIndex } from "@app/core";
 import { describe, expect, it } from "vitest";
 
 import { adminClient, signedInUser } from "@/tests/support/clients";
@@ -16,12 +16,19 @@ const db = adminClient();
 
 describe("the permissions list", () => {
   it("is the same in the database as in packages/core", async () => {
-    const { data: names } = await db.from("permissions").select("name, about").order("name");
-    expect(Object.fromEntries(names!.map((p) => [p.name, p.about]))).toEqual(PERMISSIONS);
+    const { data: names } = await db.from("permissions").select("name, about, scope").order("name");
+    const about = (scope: string) => Object.fromEntries(names!.filter((p) => p.scope === scope).map((p) => [p.name, p.about]));
+    expect(about("house")).toEqual(PERMISSIONS);
+    expect(about("app")).toEqual(OWNER_PERMISSIONS);
     const { data: rows } = await db.from("role_permissions").select("role, permission");
     for (const role of ["admin", "member"] as const) {
       const theirs = rows!.filter((r) => r.role === role).map((r) => r.permission).sort();
       expect(theirs, role).toEqual([...ROLE_PERMISSIONS[role]].sort());
+    }
+    const { data: appRows } = await db.from("app_role_permissions").select("role, permission");
+    for (const role of OWNER_ROLES) {
+      const theirs = appRows!.filter((r) => r.role === role).map((r) => r.permission).sort();
+      expect(theirs, role).toEqual([...OWNER_ROLE_PERMISSIONS[role]].sort());
     }
   });
 

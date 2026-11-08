@@ -129,7 +129,7 @@ describe("ownerReads", () => {
 
 describe("ownerTurn", () => {
   it("refuses anyone who isn't the owner with their code, before Claude or the count", async () => {
-    for (const status of [{ owner: false, mfa: false }, { owner: true, mfa: false }]) {
+    for (const status of [{ owner: false, mfa: false }, { owner: true, mfa: false }, { owner: true, mfa: true, role: null }]) {
       const { caller, asked } = callerAnswering({ owner_status: status });
       const ask = vi.fn();
       expect(await ownerTurn(caller, [{ role: "user", text: "Hi" }], new Date(), ask)).toEqual({ refusal: { code: "42501", message: "owner_only" } });
@@ -139,7 +139,7 @@ describe("ownerTurn", () => {
   });
 
   it("counts the turn, asks, and writes down the answer", async () => {
-    const { caller, asked } = callerAnswering({ owner_status: { owner: true, mfa: true }, claim_owner_ask: "t1", finish_owner_ask: null });
+    const { caller, asked } = callerAnswering({ owner_status: { owner: true, mfa: true, role: "owner" }, claim_owner_ask: "t1", finish_owner_ask: null });
     const result = await ownerTurn(caller, [{ role: "user", text: "Anything waiting?" }], new Date("2026-11-06T09:00:00Z"), async () => ({
       raw: { reply: "Two reports are waiting.", ask: { kind: "none", options: [] } },
       inputTokens: 100,
@@ -150,7 +150,7 @@ describe("ownerTurn", () => {
   });
 
   it("says so when Claude doesn't answer", async () => {
-    const { caller } = callerAnswering({ owner_status: { owner: true, mfa: true }, claim_owner_ask: "t1" });
+    const { caller } = callerAnswering({ owner_status: { owner: true, mfa: true, role: "owner" }, claim_owner_ask: "t1" });
     const result = await ownerTurn(caller, [{ role: "user", text: "Anything waiting?" }], new Date(), async () => {
       throw new Error("gateway down");
     });

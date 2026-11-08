@@ -29,6 +29,7 @@ import { Chip } from '@/components/status-mark';
 import { Body, Meta } from '@/components/text';
 import { TitleBar } from '@/components/title-bar';
 import { useToast } from '@/components/toast';
+import { useOwnerMay } from '@/components/admin/use-owner-may';
 import { FORM_MAX, INSET, SPACE } from '@/theme';
 
 /**
@@ -61,6 +62,8 @@ function Promotion({ p }: { p: PromotionDetail }) {
   const toast = useToast();
   const client = useQueryClient();
   const [stopping, setStopping] = useState(false);
+  // Someone whose app role can't change promotions (support) reads it, with no buttons.
+  const may = useOwnerMay('promotions:write');
   const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const fresh = () => void client.invalidateQueries({ queryKey: PROMOTIONS_KEY });
 
@@ -104,7 +107,7 @@ function Promotion({ p }: { p: PromotionDetail }) {
         <Meta>{promotionWhoSentence(p.audience, emails, p.maxUses, p.terms.endsAt, zone)}</Meta>
         <Meta testID="promotion-used">{`${promotionGives(p.terms)}. ${PROMOTIONS_COPY.usedLine(promotionUsed({ audience: p.audience, people: p.people.length, uses: p.uses, maxUses: p.maxUses }))}.`}</Meta>
       </View>
-      {p.state === 'making' ? (
+      {may && p.state === 'making' ? (
         <View style={styles.group}>
           <Alert message={PROMOTIONS_COPY.notReadyBody} testID="promotion-not-ready" />
           <ButtonRow>
@@ -114,7 +117,7 @@ function Promotion({ p }: { p: PromotionDetail }) {
         </View>
       ) : null}
       {working ? <PromotionLink code={p.code} title={p.name} /> : null}
-      {named && working ? (
+      {may && named && working ? (
         <View style={styles.group}>
           <ButtonRow>
             <Button
@@ -130,7 +133,7 @@ function Promotion({ p }: { p: PromotionDetail }) {
           {email.error ? <Alert message={email.error.message} /> : null}
         </View>
       ) : null}
-      {p.state === 'stopped' ? null : (
+      {!may || p.state === 'stopped' ? null : (
         <Group>
           <Row title={PROMOTIONS_COPY.stop} tone="hazard" onPress={() => setStopping(true)} testID="promotion-stop" />
         </Group>

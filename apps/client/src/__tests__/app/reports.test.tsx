@@ -1,4 +1,4 @@
-import { REPORT_COPY, SUPPORT_DRAFT_COPY } from '@app/core';
+import { OWNER_PERMISSION_NAMES, REPORT_COPY, SUPPORT_DRAFT_COPY } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 import { useWindowDimensions } from 'react-native';
 
@@ -116,7 +116,7 @@ beforeEach(() => {
   (useWindowDimensions as jest.Mock).mockReturnValue(PHONE);
   jest.mocked(loadHouse).mockResolvedValue(snapshot());
   jest.mocked(catchUp).mockResolvedValue(false);
-  jest.mocked(ownerStatus).mockResolvedValue({ owner: true, mfa: true });
+  jest.mocked(ownerStatus).mockResolvedValue({ owner: true, mfa: true, permissions: [...OWNER_PERMISSION_NAMES] });
   jest.mocked(myReports).mockResolvedValue([
     { id: 'r1', kind: 'problem', state: 'replied', words: WORDS, sentAt: BINS.sentAt, replies: 1, unread: true },
     { id: 'r2', kind: 'idea', state: 'new', words: 'Let us pin a note to the Wall', sentAt: ago(2 * 86_400_000), replies: 0, unread: false },

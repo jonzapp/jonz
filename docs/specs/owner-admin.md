@@ -23,9 +23,17 @@ the owner admin viewer (https://claude.ai/artifact/97GEyJDGnrWxB8HTbbrXmo).
 
 - **The owner list.** `app_owners` is changed by migration only. Nobody can
   read or write it through the API, the service role included.
-- **The owner check.** `is_owner()` is true only for someone in `app_owners`
-  whose session has passed a second factor (`aal2`, a TOTP code from an
-  authenticator app). Every owner read and write checks it in the database.
+- **App roles.** Each row in `app_owners` has a role: `owner` (every admin
+  permission) or `support` (`admin:read` and `reports:write`: read the pages
+  and answer the Inbox). `app_role_permissions` lists what each role holds,
+  and `OWNER_ROLE_PERMISSIONS` in `packages/core/src/owner-moves.ts` is the
+  same list for the app; the db tests check the two match.
+- **The permission check.** `can_app('<resource>:<level>')` is true only when
+  the caller's app role holds that permission and their session has passed a
+  second factor (`aal2`, a TOTP code from an authenticator app). Every owner
+  read and write asks it in the database. `is_owner()` means
+  `can_app('admin:read')`. `owner_status()` returns the role and permissions
+  so a page shows only the buttons that person may use.
 - **Anyone else.** They see the app's "Nothing here" page. The owner without a
   code this session sees the code screen. The first time, it adds the
   authenticator with a QR code or a typed key. The QR code is redrawn from

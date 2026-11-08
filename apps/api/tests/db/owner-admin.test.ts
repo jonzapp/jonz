@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { qrShape } from "@app/core";
+import { OWNER_PERMISSION_NAMES, qrShape } from "@app/core";
 
 import { GET as noticesRoute } from "@/app/api/notices/route";
 import { adminClient, signedInUser, visitor, type Actor } from "@/tests/support/clients";
@@ -68,9 +68,9 @@ describe("who the owner is", () => {
   });
 
   it("tells the admin page whether to ask for the code, and tells anyone else nothing", async () => {
-    expect((await owner.db.rpc("owner_status")).data).toEqual({ owner: true, mfa: true });
-    expect((await ownerNoCode.db.rpc("owner_status")).data).toEqual({ owner: true, mfa: false });
-    expect((await housemate.db.rpc("owner_status")).data).toEqual({ owner: false, mfa: true });
+    expect((await owner.db.rpc("owner_status")).data).toEqual({ owner: true, mfa: true, role: "owner", permissions: [...OWNER_PERMISSION_NAMES].sort() });
+    expect((await ownerNoCode.db.rpc("owner_status")).data).toEqual({ owner: true, mfa: false, role: null, permissions: [] });
+    expect((await housemate.db.rpc("owner_status")).data).toEqual({ owner: false, mfa: true, role: null, permissions: [] });
   });
 
   it("can't be read or changed through the API, not even by the owner", async () => {
@@ -93,7 +93,7 @@ describe("adding the authenticator", () => {
     expect(scanQr(qr!)).toBe(data.totp.uri);
 
     expectOk(await ownerNoCode.db.auth.mfa.challengeAndVerify({ factorId: data.id, code: totp(data.totp.secret) }));
-    expect((await ownerNoCode.db.rpc("owner_status")).data).toEqual({ owner: true, mfa: true });
+    expect((await ownerNoCode.db.rpc("owner_status")).data).toMatchObject({ owner: true, mfa: true, role: "owner" });
   });
 });
 

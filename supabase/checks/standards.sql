@@ -29,12 +29,12 @@ create temp table callable (name text primary key);
 insert into callable values
   ('account_deletion_preview'), ('account_deletion_status'),
   ('answer_dispute'), ('answer_swap'), ('answer_tick'), ('board_tick'),
-  ('can'), ('can_upload_proof'), ('cancel_away'), ('cast_vote'),
+  ('can'), ('can_app'), ('can_upload_proof'), ('cancel_away'), ('cast_vote'),
   ('claim_owner_ask'), ('claim_support_draft'), ('confirm_payment'), ('cover_john'),
   ('create_house'), ('delete_group'), ('end_notice'), ('finish_owner_ask'), ('finish_support_draft'),
   ('hand_over'), ('hold_cover'), ('house_by_code'), ('house_history'),
   ('is_member'), ('is_owner'), ('join_house'), ('keep_account'),
-  ('leave_pass'), ('mark_done'), ('moving_on'), ('my_permissions'),
+  ('leave_pass'), ('mark_done'), ('moving_on'), ('my_app_permissions'), ('my_app_role'), ('my_permissions'),
   ('my_reports'), ('offer_swap'), ('owner_delete_now'), ('owner_deletions'),
   ('owner_deletions_count'), ('owner_deletions_page'), ('owner_fix_report'),
   ('owner_house'), ('owner_houses_count'), ('owner_houses_find'),
@@ -226,17 +226,17 @@ select 'callable functions listed', 'stale: ' || name from callable
 where not exists (select 1 from pg_proc p where p.pronamespace = 'public'::regnamespace and p.proname = name
                   and p.prosecdef and has_function_privilege('authenticated', p.oid, 'execute'));
 
--- 21. A permission a function or rule asks about (can / user_can) is on
+-- 21. A permission a function or rule asks about (can / user_can / can_app) is on
 -- the permissions list, and named resource:level (docs/standards/database.md).
 insert into breaks
 select distinct 'permission is listed', x.src || ': ' || x.perm
 from (
   select p.proname as src, m[1] as perm
-  from pg_proc p, regexp_matches(p.prosrc, 'can\((?:[^()'']|\([^()]*\))*?''([^'']+)''', 'g') m
+  from pg_proc p, regexp_matches(p.prosrc, 'can(?:_app)?\((?:[^()'']|\([^()]*\))*?''([^'']+)''', 'g') m
   where p.pronamespace = 'public'::regnamespace
   union all
   select pol.tablename || ': ' || pol.policyname, m[1]
-  from pg_policies pol, regexp_matches(coalesce(pol.qual, '') || ' ' || coalesce(pol.with_check, ''), 'can\((?:[^()'']|\([^()]*\))*?''([^'']+)''', 'g') m
+  from pg_policies pol, regexp_matches(coalesce(pol.qual, '') || ' ' || coalesce(pol.with_check, ''), 'can(?:_app)?\((?:[^()'']|\([^()]*\))*?''([^'']+)''', 'g') m
   where pol.schemaname = 'public'
 ) x
 where not exists (select 1 from public.permissions pm where pm.name = x.perm);
