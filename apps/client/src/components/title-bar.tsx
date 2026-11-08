@@ -1,7 +1,7 @@
 import { FOCUS_SHELL_COPY, HOUSE_DRAFT_COPY, TOUR_COPY } from '@app/core';
 import { useRouter, type Href } from 'expo-router';
 import { ChevronLeftIcon, CircleQuestionMarkIcon, EllipsisIcon, SparklesIcon } from 'lucide-react-native';
-import type { ReactNode } from 'react';
+import { createContext, useContext, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -13,6 +13,13 @@ import { useTour } from '@/components/tour/tour-context';
 import { TourSpot } from '@/components/tour/tour-spot';
 import { useAskJonz, useAskPanelOpen } from '@/hooks/use-ask-jonz';
 import { FONT, GUTTER, INSET, SECTION_GAP, SPACE, TAP, TITLE_BAR, useTheme, WIDE } from '@/theme';
+
+/**
+ * A button a part of the app puts at the edge of every title bar inside it,
+ * where a house's sparkles go: the owner's pages put the sparkles that open
+ * the owner's Ask Jonz there. Nothing elsewhere.
+ */
+export const BarEdgeContext = createContext<ReactNode>(null);
 
 /**
  * The top of every house screen, in place of the old wordmark strip: the
@@ -74,6 +81,7 @@ export function TitleBar({
   const tours = useTour();
   const help = tours != null && back == null && onBack == null;
   const pushed = way != null || onBack != null;
+  const edge = useContext(BarEdgeContext);
   return (
     <View
       testID="title-bar"
@@ -93,7 +101,7 @@ export function TitleBar({
             </Title>
             {sub ? <Meta numberOfLines={1}>{sub}</Meta> : null}
           </View>
-          {right != null || help || ask ? (
+          {right != null || help || ask || edge != null ? (
             // One group at the edge, in a fixed order with no gaps of its own: the
             // screen's button, Help, then the sparkles at the edge.
             <View testID="bar-tools" style={[styles.tools, styles.trail]}>
@@ -103,7 +111,7 @@ export function TitleBar({
                   <IconButton icon={CircleQuestionMarkIcon} label={TOUR_COPY.open} onPress={tours.openHelp} testID="help-button" />
                 </TourSpot>
               ) : null}
-              {ask ? <AskButton /> : null}
+              {ask ? <AskButton /> : edge}
             </View>
           ) : null}
         </View>

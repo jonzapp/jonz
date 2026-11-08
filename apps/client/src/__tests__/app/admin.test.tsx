@@ -5,6 +5,7 @@ import {
   LIST_COPY,
   NOTICE_LIST_COPY,
   NOT_FOUND_COPY,
+  OWNER_ASK_COPY,
   OVERVIEW_COPY,
   type AuditEntry,
   type Notice,
@@ -14,6 +15,7 @@ import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library'
 import { Platform, useWindowDimensions, type ViewStyle } from 'react-native';
 
 import {
+  askOwner,
   auditCount,
   auditEntry,
   auditPage,
@@ -46,6 +48,7 @@ import { renderPages, untilRead } from '@/testing/pages';
 
 jest.mock('@/api/owner', () => ({
   ownerStatus: jest.fn(),
+  askOwner: jest.fn(),
   verifiedFactor: jest.fn(),
   enrollFactor: jest.fn(),
   checkCode: jest.fn(),
@@ -278,6 +281,41 @@ describe('who gets in', () => {
     await renderPages(ROUTES, '/admin');
     expect(await screen.findByTestId('admin-overview')).toBeVisible();
     expect(await screen.findByText(OVERVIEW_COPY.nothingNeeds)).toBeVisible();
+  });
+});
+
+describe('the owner’s Ask Jonz', () => {
+  it('opens from the sparkles on a phone, over the whole screen, and keeps the chat when it’s closed', async () => {
+    jest.mocked(askOwner).mockResolvedValue({ reply: 'Two reports are waiting.' } as Awaited<ReturnType<typeof askOwner>>);
+    await renderPages(ROUTES, '/admin/overview');
+    await untilRead();
+    expect(screen.queryByTestId('owner-ask')).toBeNull();
+    const open = within(screen.getByTestId('title-bar')).getByTestId('owner-ask-open');
+    expect(open).toHaveAccessibleName(OWNER_ASK_COPY.open);
+    await fireEvent.press(open);
+    const sheet = screen.getByTestId('owner-ask-sheet');
+    expect(within(sheet).getByText(OWNER_ASK_COPY.label)).toBeVisible();
+    await fireEvent.changeText(within(sheet).getByLabelText(OWNER_ASK_COPY.box), 'What’s waiting?');
+    await fireEvent.press(within(sheet).getByLabelText(OWNER_ASK_COPY.send));
+    expect(await within(sheet).findByText('Two reports are waiting.')).toBeVisible();
+    expect(askOwner).toHaveBeenCalledWith([{ role: 'user', text: 'What’s waiting?' }]);
+    await fireEvent.press(within(sheet).getByTestId('owner-ask-close'));
+    expect(screen.getByTestId('owner-ask-sheet', { includeHiddenElements: true })).not.toBeVisible();
+    await fireEvent.press(within(screen.getByTestId('title-bar')).getByTestId('owner-ask-open'));
+    expect(within(screen.getByTestId('owner-ask-sheet')).getByText('Two reports are waiting.')).toBeVisible();
+  });
+
+  it('docks down the right on a laptop, beside the page and the rail, and the sparkles close it again', async () => {
+    (useWindowDimensions as jest.Mock).mockReturnValue(LAPTOP);
+    await renderPages(ROUTES, '/admin/notices');
+    await untilRead();
+    await fireEvent.press(within(screen.getByTestId('title-bar')).getByTestId('owner-ask-open'));
+    expect(within(screen.getByTestId('owner-ask-panel')).getByTestId('owner-ask')).toBeVisible();
+    expect(screen.getByTestId('admin-rail')).toBeVisible();
+    expect(screen.getByTestId('notices-every')).toBeVisible();
+    expect(screen.queryByTestId('owner-ask-sheet')).toBeNull();
+    await fireEvent.press(within(screen.getByTestId('title-bar')).getByTestId('owner-ask-open'));
+    expect(screen.getByTestId('owner-ask-panel', { includeHiddenElements: true })).not.toBeVisible();
   });
 });
 

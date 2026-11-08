@@ -272,9 +272,11 @@ The owner's own Ask Jonz, apart from every house's. Same model and loop
 - **Kept apart, tested.** A unit test fails if a housemate's Ask Jonz, even
   an admin's, gets an owner tool or owner words, or the owner's gets a
   house's.
-- **The panel** (after the admin layout): on a laptop, docked on the right
-  like the house's; on a phone, the sparkles in the admin title bar open it
-  full screen. Black, with an Owner label, so it's never mistaken for the
+- **The panel:** the sparkles at the edge of every admin title bar open it
+  (`components/admin/owner-ask-panel.tsx`). On a laptop it docks on the
+  right like the house's; on a phone it covers the screen, tabs and all, and
+  a chip that opens a page puts it away. The chat is kept while the admin
+  pages are open. Black, with an Owner label, so it's never mistaken for the
   housemates' chat.
 
 ## Edge cases

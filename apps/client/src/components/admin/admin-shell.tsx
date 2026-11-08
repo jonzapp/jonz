@@ -51,9 +51,10 @@ export const ADMIN_TAB_BAR = 56;
 /**
  * The owner's pages: a rail down the left from WIDE, as the house's, with
  * the wordmark and an Owner chip so it is never mistaken for a house; on a
- * phone, tabs along the bottom, as the house's tabs are.
+ * phone, tabs along the bottom, as the house's tabs are. `aside` sits
+ * down the right from WIDE (the owner's Ask Jonz, when it's open).
  */
-export function AdminShell({ page, children }: { page: AdminPage; children: ReactNode }) {
+export function AdminShell({ page, aside, children }: { page: AdminPage; aside?: ReactNode; children: ReactNode }) {
   const { colors } = useTheme();
   const wide = useWindowDimensions().width >= WIDE;
   if (!wide) {
@@ -70,6 +71,7 @@ export function AdminShell({ page, children }: { page: AdminPage; children: Reac
       <MainToPanel.Provider value>
         <View style={styles.fill}>{children}</View>
       </MainToPanel.Provider>
+      {aside}
     </View>
   );
 }
