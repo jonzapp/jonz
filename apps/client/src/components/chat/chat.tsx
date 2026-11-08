@@ -1,13 +1,31 @@
-import { withAlpha } from '@app/core';
-import { ArrowUpIcon } from 'lucide-react-native';
-import { useRef, useState, type ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type ScrollViewInstance } from 'react-native';
+import { withAlpha } from "@app/core";
+import { ArrowUpIcon } from "lucide-react-native";
+import { useRef, useState, type ReactNode } from "react";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  type ScrollViewInstance,
+} from "react-native";
 
-import { Alert } from '@/components/alert';
-import { ThoughtFold } from '@/components/house/thinking';
-import { NO_PIECES, Reply, type ReplyPieces } from '@/components/reply/reply';
-import { Body } from '@/components/text';
-import { CONTENT_MAX, GUTTER, RADIUS, SECTION_GAP, SPACE, TAP, useTheme } from '@/theme';
+import { Alert } from "@/components/alert";
+import { ThoughtFold } from "@/components/house/thinking";
+import { NO_PIECES, Reply, type ReplyPieces } from "@/components/reply/reply";
+import { Body } from "@/components/text";
+import {
+  CONTENT_MAX,
+  GUTTER,
+  RADIUS,
+  SECTION_GAP,
+  SPACE,
+  TAP,
+  useTheme,
+} from "@/theme";
 
 // The chat's own pieces, shared by every chat with Jonz: a housemate's Ask
 // Jonz and Describe your house (components/house/setup-chat.tsx) and the
@@ -20,7 +38,8 @@ const LINE = TAP - 2;
 /** The message box at its tallest: five lines, then it scrolls. */
 const BOX_MAX = LINE + 4 * 24;
 /** No focus ring of the browser's own round the words: the bubble round them darkens instead. */
-const NO_RING = Platform.OS === 'web' ? ({ outlineStyle: 'none' } as object) : null;
+const NO_RING =
+  Platform.OS === "web" ? ({ outlineStyle: "none" } as object) : null;
 /** The send arrow's round, and its room from the bubble's edge (the same all round, one line tall). */
 const SEND = 34;
 const SEND_INSET = (LINE - SEND) / 2;
@@ -30,16 +49,27 @@ const SEND_INSET = (LINE - SEND) / 2;
  * at its foot (the message box, or why there isn't one), lifted clear of the
  * keyboard.
  */
-export function ChatLog({ children, foot }: { children: ReactNode; foot?: ReactNode }) {
+export function ChatLog({
+  children,
+  foot,
+}: {
+  children: ReactNode;
+  foot?: ReactNode;
+}) {
   const scroll = useRef<ScrollViewInstance>(null);
   return (
-    <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView
+      style={styles.fill}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
       <ScrollView
         ref={scroll}
         style={styles.fill}
         contentContainerStyle={styles.chat}
         keyboardShouldPersistTaps="handled"
-        onContentSizeChange={() => scroll.current?.scrollToEnd({ animated: true })}
+        onContentSizeChange={() =>
+          scroll.current?.scrollToEnd({ animated: true })
+        }
         testID="chat"
       >
         {children}
@@ -49,18 +79,34 @@ export function ChatLog({ children, foot }: { children: ReactNode; foot?: ReactN
   );
 }
 
-/** What the person said: on the tint, to the right, as a chosen button sits. */
-export function UserBubble({ text }: { text: string }) {
+/** What the person said: on the tint, to the right, as a chosen button sits; `children` go under the words (a report's screenshots). */
+export function UserBubble({
+  text,
+  children,
+}: {
+  text: string;
+  children?: ReactNode;
+}) {
   const { colors } = useTheme();
   return (
-    <View style={[styles.bubble, { backgroundColor: colors.secondary }]} testID="chat-user">
+    <View
+      style={[styles.bubble, { backgroundColor: colors.secondary }]}
+      testID="chat-user"
+    >
       <Body>{text}</Body>
+      {children}
     </View>
   );
 }
 
 /** Jonz's side of the chat: a greeting, or a turn's cards, stacked at the chat's own gap. */
-export function Said({ children, testID }: { children: ReactNode; testID?: string }) {
+export function Said({
+  children,
+  testID,
+}: {
+  children: ReactNode;
+  testID?: string;
+}) {
   return (
     <View style={styles.said} testID={testID}>
       {children}
@@ -87,18 +133,33 @@ export function JonzSaid({
 }) {
   return (
     <Said>
-      {thought ? <ThoughtFold seconds={thought.seconds} steps={thought.steps} /> : null}
-      {text ? <Reply source={text} pieces={pieces} testID="chat-reply" /> : null}
+      {thought ? (
+        <ThoughtFold seconds={thought.seconds} steps={thought.steps} />
+      ) : null}
+      {text ? (
+        <Reply source={text} pieces={pieces} testID="chat-reply" />
+      ) : null}
       {children}
     </Said>
   );
 }
 
 /** The bar at the chat's foot, over the edge of the log, holding the box or what stands for it. */
-export function ComposerBar({ children, testID }: { children: ReactNode; testID?: string }) {
+export function ComposerBar({
+  children,
+  testID,
+}: {
+  children: ReactNode;
+  testID?: string;
+}) {
   const { colors } = useTheme();
   return (
-    <View style={[styles.composer, { borderColor: colors.border, backgroundColor: colors.background }]}>
+    <View
+      style={[
+        styles.composer,
+        { borderColor: colors.border, backgroundColor: colors.background },
+      ]}
+    >
       <View style={styles.composerLine} testID={testID}>
         {children}
       </View>
@@ -122,6 +183,8 @@ export function Composer({
   sendLabel,
   maxLength,
   problem,
+  bare = false,
+  testID = "chat",
 }: {
   value: string;
   onChangeText: (text: string) => void;
@@ -136,21 +199,30 @@ export function Composer({
   maxLength: number;
   /** Why the last message didn't go, over the box. */
   problem?: string | null;
+  /** Without the bar: the box alone, for a page that scrolls with it (the owner's report panel). */
+  bare?: boolean;
+  /** Names the box `<testID>-box`, its words `-input`, the arrow `-send`, the problem `-problem`. */
+  testID?: string;
 }) {
   const { colors, type } = useTheme();
   // How tall the words in the box come out, measured off-screen: the box grows to fit them, up to BOX_MAX.
   const [wordsHeight, setWordsHeight] = useState(0);
   // The bubble shows the focus, not the words inside it.
   const [focused, setFocused] = useState(false);
-  return (
-    <ComposerBar>
-      {problem ? <Alert message={problem} /> : null}
+  const box = (
+    <>
+      {problem ? (
+        <Alert message={problem} testID={`${testID}-problem`} />
+      ) : null}
       <View
         style={[
           styles.box,
-          { borderColor: focused ? colors.foreground : colors.mutedForeground, backgroundColor: colors.card },
+          {
+            borderColor: focused ? colors.foreground : colors.mutedForeground,
+            backgroundColor: colors.card,
+          },
         ]}
-        testID="chat-box"
+        testID={`${testID}-box`}
       >
         <View style={styles.field}>
           {/* The words as the box would wrap them, unseen, so the box can be as tall as they are. */}
@@ -177,22 +249,50 @@ export function Composer({
             scrollEnabled
             style={[
               styles.input,
-              { fontFamily: type.body.fontFamily, fontSize: type.body.fontSize, lineHeight: type.body.lineHeight },
-              { height: value ? Math.min(Math.max(wordsHeight, LINE), BOX_MAX) : LINE },
+              {
+                fontFamily: type.body.fontFamily,
+                fontSize: type.body.fontSize,
+                lineHeight: type.body.lineHeight,
+              },
+              {
+                height: value
+                  ? Math.min(Math.max(wordsHeight, LINE), BOX_MAX)
+                  : LINE,
+              },
               { color: colors.foreground },
               NO_RING,
             ]}
-            testID="chat-input"
+            testID={`${testID}-input`}
           />
         </View>
-        <SendButton label={sendLabel} onPress={onSend} disabled={busy || !value.trim()} />
+        <SendButton
+          label={sendLabel}
+          onPress={onSend}
+          disabled={busy || !value.trim()}
+          testID={`${testID}-send`}
+        />
       </View>
-    </ComposerBar>
+    </>
+  );
+  return bare ? (
+    <View style={styles.bare}>{box}</View>
+  ) : (
+    <ComposerBar>{box}</ComposerBar>
   );
 }
 
 /** The send arrow inside the message box: amber once there's something to send, quiet until then. */
-function SendButton({ label, onPress, disabled }: { label: string; onPress: () => void; disabled: boolean }) {
+function SendButton({
+  label,
+  onPress,
+  disabled,
+  testID,
+}: {
+  label: string;
+  onPress: () => void;
+  disabled: boolean;
+  testID: string;
+}) {
   const { colors } = useTheme();
   return (
     <Pressable
@@ -202,11 +302,20 @@ function SendButton({ label, onPress, disabled }: { label: string; onPress: () =
       disabled={disabled}
       onPress={onPress}
       hitSlop={SEND_INSET}
-      testID="chat-send"
+      testID={testID}
       style={({ pressed }) => [styles.send, pressed && { opacity: 0.85 }]}
     >
-      <View style={[styles.sendDot, { backgroundColor: disabled ? colors.secondary : colors.hivis }]}>
-        <ArrowUpIcon size={18} color={disabled ? colors.mutedForeground : colors.onHivis} aria-hidden />
+      <View
+        style={[
+          styles.sendDot,
+          { backgroundColor: disabled ? colors.secondary : colors.hivis },
+        ]}
+      >
+        <ArrowUpIcon
+          size={18}
+          color={disabled ? colors.mutedForeground : colors.onHivis}
+          aria-hidden
+        />
       </View>
     </Pressable>
   );
@@ -215,31 +324,60 @@ function SendButton({ label, onPress, disabled }: { label: string; onPress: () =
 const styles = StyleSheet.create({
   fill: { flex: 1 },
   chat: {
-    width: '100%',
+    width: "100%",
     maxWidth: CONTENT_MAX,
-    alignSelf: 'center',
+    alignSelf: "center",
     paddingHorizontal: GUTTER,
     paddingTop: GUTTER,
     paddingBottom: SECTION_GAP,
     gap: SPACE.xl,
   },
   said: { gap: SPACE.md },
-  bubble: { alignSelf: 'flex-end', maxWidth: '85%', borderRadius: RADIUS, paddingHorizontal: SPACE.md, paddingVertical: SPACE.sm },
+  bubble: {
+    alignSelf: "flex-end",
+    maxWidth: "85%",
+    borderRadius: RADIUS,
+    paddingHorizontal: SPACE.md,
+    paddingVertical: SPACE.sm,
+    gap: SPACE.xs,
+  },
   composer: { borderTopWidth: StyleSheet.hairlineWidth },
+  bare: { gap: SPACE.sm },
   composerLine: {
-    width: '100%',
+    width: "100%",
     maxWidth: CONTENT_MAX,
-    alignSelf: 'center',
+    alignSelf: "center",
     paddingHorizontal: GUTTER,
     paddingVertical: SPACE.sm,
     gap: SPACE.sm,
   },
   // The bubble: its edge round the words and the send arrow, which stays at its foot as the words grow.
-  box: { flexDirection: 'row', alignItems: 'flex-end', borderWidth: 1, borderRadius: RADIUS * 2, paddingRight: SEND_INSET },
+  box: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    borderWidth: 1,
+    borderRadius: RADIUS * 2,
+    paddingRight: SEND_INSET,
+  },
   field: { flex: 1 },
-  input: { paddingLeft: SPACE.md, paddingRight: SPACE.sm, paddingVertical: SPACE.md - 1 },
-  measure: { position: 'absolute', left: 0, right: 0, opacity: 0 },
+  input: {
+    paddingLeft: SPACE.md,
+    paddingRight: SPACE.sm,
+    paddingVertical: SPACE.md - 1,
+  },
+  measure: { position: "absolute", left: 0, right: 0, opacity: 0 },
   // A thumb-sized target round a round arrow, sitting in the bubble's bottom-right corner.
-  send: { width: SEND, height: LINE, alignItems: 'center', justifyContent: 'center' },
-  sendDot: { width: SEND, height: SEND, borderRadius: SEND / 2, alignItems: 'center', justifyContent: 'center' },
+  send: {
+    width: SEND,
+    height: LINE,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sendDot: {
+    width: SEND,
+    height: SEND,
+    borderRadius: SEND / 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });

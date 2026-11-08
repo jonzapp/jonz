@@ -130,7 +130,7 @@ function ReportBody({
       ) : null}
       {report.also.length > 0 ? <AlsoReported also={report.also} onOpen={onOpen} /> : null}
       {answerable ? (
-        <ReplyBox placeholder={emailOnly ? REPORT_COPY.replyByEmail(first) : REPORT_COPY.replyTo(first)} onSend={onReply} testID="report-reply" />
+        <ReplyBox placeholder={emailOnly ? REPORT_COPY.replyByEmail(first) : REPORT_COPY.replyTo(first)} onSend={onReply} bare testID="report-reply" />
       ) : null}
       <ButtonRow atEdge>
         <Button

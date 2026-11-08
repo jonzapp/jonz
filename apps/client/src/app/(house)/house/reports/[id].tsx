@@ -6,15 +6,24 @@ import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { myReport, seeReport, writeBack, type Report } from '@/api/reports';
+import { ChatLog } from '@/components/chat/chat';
 import { EmptyState } from '@/components/empty-state';
-import { HousePage } from '@/components/house/house-page';
+import { PageTitle } from '@/components/page-title';
+import { Reading, ReadFailed } from '@/components/read-state';
 import { ReplyBox, ReportChip, ReportThread, said } from '@/components/report/report-parts';
 import { Lead, Meta } from '@/components/text';
-import { SECTION_GAP, SPACE } from '@/theme';
+import { TitleBar } from '@/components/title-bar';
+import { GUTTER, SPACE, useTheme } from '@/theme';
 
-/** One of your reports: what it's about and where it's got to, the conversation, and a box to write back. */
+/**
+ * One of your reports, as a chat: what it's about and where it's got to at
+ * the top, the conversation under it, and Ask Jonz's message box at the
+ * foot to write back. Not a HousePage: the conversation scrolls over a box
+ * that stays put above the keyboard.
+ */
 export default function ReportScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { colors } = useTheme();
   const client = useQueryClient();
   const report = useQuery({ queryKey: ['my-report', id], queryFn: () => myReport(id) });
   // Reading it here reads its replies: House stops counting them.
@@ -28,24 +37,25 @@ export default function ReportScreen() {
     await Promise.all([report.refetch(), client.invalidateQueries({ queryKey: ['my-reports'] })]);
   };
   return (
-    <HousePage
-      title={REPORT_COPY.yourReport}
-      back="/house/reports"
-      backLabel={REPORT_COPY.yours}
-      testID="your-report"
-      ready={report.data !== undefined}
-      failed={report.isError}
-      onRetry={() => void report.refetch()}
-    >
-      {() => <YourReport report={report.data!} onSend={send} />}
-    </HousePage>
+    <View style={[styles.screen, { backgroundColor: colors.background }]} testID="your-report">
+      <TitleBar title={REPORT_COPY.yourReport} back="/house/reports" backLabel={REPORT_COPY.yours} />
+      <PageTitle page={REPORT_COPY.yourReport} />
+      {report.data === undefined ? (
+        <View style={styles.reading}>{report.isError ? <ReadFailed onRetry={() => void report.refetch()} /> : <Reading />}</View>
+      ) : report.data === null ? (
+        <View style={styles.reading}>
+          <EmptyState icon={MessagesSquareIcon} title={REPORT_COPY.missing} body={REPORT_COPY.missingBody} />
+        </View>
+      ) : (
+        <YourReport report={report.data} onSend={send} />
+      )}
+    </View>
   );
 }
 
-function YourReport({ report, onSend }: { report: Report | null; onSend: (text: string) => Promise<void> }) {
-  if (!report) return <EmptyState icon={MessagesSquareIcon} title={REPORT_COPY.missing} body={REPORT_COPY.missingBody} />;
+function YourReport({ report, onSend }: { report: Report; onSend: (text: string) => Promise<void> }) {
   return (
-    <View style={styles.page}>
+    <ChatLog foot={<ReplyBox placeholder={REPORT_COPY.writeBack} onSend={onSend} testID="write-back" />}>
       <View style={styles.head}>
         <View style={styles.titleLine}>
           <Lead header style={styles.title}>
@@ -56,13 +66,13 @@ function YourReport({ report, onSend }: { report: Report | null; onSend: (text: 
         <Meta>{REPORT_COPY.sentAt(report.kind, said(report.sentAt))}</Meta>
       </View>
       <ReportThread report={report} viewer="them" />
-      <ReplyBox placeholder={REPORT_COPY.writeBack} onSend={onSend} testID="write-back" />
-    </View>
+    </ChatLog>
   );
 }
 
 const styles = StyleSheet.create({
-  page: { gap: SECTION_GAP },
+  screen: { flex: 1 },
+  reading: { padding: GUTTER },
   head: { gap: SPACE.xs },
   titleLine: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACE.md },
   title: { flex: 1 },
