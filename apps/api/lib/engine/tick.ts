@@ -276,7 +276,7 @@ export async function dealWeek(
   const [groups, awayRows, recent, onCallRows] = await Promise.all([
     db.from("groups").select("id, name, group_members(user_id)").eq("house_id", house.id),
     db
-      .from("away")
+      .from("away_periods")
       .select("id, user_id, starts_on, ends_on, note")
       .eq("house_id", house.id)
       .lte("starts_on", lastAhead)
@@ -290,7 +290,7 @@ export async function dealWeek(
       .order("due_at", { ascending: false })
       .limit(1000),
     db
-      .from("on_call")
+      .from("on_call_picks")
       .select("john_id, user_id, week_id, weeks!inner(starts_on)")
       .in("john_id", johnIds)
       .lt("weeks.starts_on", week.startsOn)
@@ -688,7 +688,7 @@ async function closeWeeks(db: Db, house: HouseRow, members: readonly MemberRow[]
     const rows = must(
       await db
         .from("assignments")
-        .select("id, user_id, points, outcome, covered_by, job_id, absent_at, crew(user_id, helper, points)")
+        .select("id, user_id, points, outcome, covered_by, job_id, absent_at, crew:crew_members(user_id, helper, points)")
         .eq("week_id", week.id),
       "week assignments",
     );
@@ -739,8 +739,8 @@ async function closeMonths(db: Db, house: HouseRow, members: readonly MemberRow[
   const current = monthOf(now, rules.timezone);
   const forfeitRows = must(
     await db
-      .from("ledger")
-      .select("user_id, amount_minor, month, counterparty, doers, kind")
+      .from("ledger_entries")
+      .select("user_id, amount_minor, month, counterparty_user_id, doers, kind")
       .eq("house_id", house.id)
       // A month with only an admin's corrections in it closes too, so they count.
       .in("kind", ["forfeit", "correction"])
@@ -773,7 +773,7 @@ async function closeMonths(db: Db, house: HouseRow, members: readonly MemberRow[
       rules.stakeMinor,
       forfeitRows
         .filter((r) => r.month === month && r.kind === "forfeit")
-        .map((r) => ({ userId: r.user_id, amount: -r.amount_minor, to: r.counterparty ?? r.doers })),
+        .map((r) => ({ userId: r.user_id, amount: -r.amount_minor, to: r.counterparty_user_id ?? r.doers })),
       month,
     );
     const applied = must(
@@ -892,8 +892,8 @@ export async function remindMovers(db: Db, now: Date, notify: Notify) {
   const day = 86_400_000;
   const moves = must(
     await db
-      .from("moved_on")
-      .select("id, user_id, left_at, houses!moved_on_from_house_fkey(timezone)")
+      .from("moves")
+      .select("id, user_id, left_at, houses!moves_from_house_id_fkey(timezone)")
       .is("how", null)
       .is("reminded_at", null)
       .lte("left_at", new Date(now.getTime() - REMIND_AFTER_DAYS * day).toISOString())
@@ -920,7 +920,7 @@ export async function remindMovers(db: Db, now: Date, notify: Notify) {
     // Claim it before sending, so two ticks never both send.
     const claimed = must(
       await db
-        .from("moved_on")
+        .from("moves")
         .update({ reminded_at: now.toISOString() })
         .eq("id", m.id)
         .is("reminded_at", null)

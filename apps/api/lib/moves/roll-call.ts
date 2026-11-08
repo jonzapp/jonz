@@ -32,7 +32,7 @@ export async function rollCall(
   const { data: place } = await caller.db
     .from("assignments")
     .select(
-      "name, job_id, crew(user_id, points), houses(timezone, currency, week_starts, stake_minor, late_forfeit_minor, missed_forfeit_minor, dispute_hours, cover_grace_hours, late_hours, deal_mode, deal_budget)",
+      "name, job_id, crew:crew_members(user_id, points), houses(timezone, currency, week_starts, stake_minor, late_forfeit_minor, missed_forfeit_minor, dispute_hours, cover_grace_hours, late_hours, deal_mode, deal_budget)",
     )
     .eq("id", assignmentId)
     .single();

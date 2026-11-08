@@ -36,7 +36,7 @@ const offer = (over: Partial<SwapOfferRow> = {}): SwapOfferRow => ({
   mine: "a1",
   theirs: "a2",
   asked_by: "me",
-  asked_to: "ada",
+  asked_user_id: "ada",
   expires_at: "2026-11-17T00:00:00Z",
   ...over,
 });

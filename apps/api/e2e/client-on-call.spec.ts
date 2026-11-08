@@ -70,7 +70,7 @@ test("whoever raised a flag can take it down; whoever has it can't", async ({ br
   const db = admin();
   // Hal on call and not an admin, so only Sam (or an admin) can take Sam's flag down.
   const { data: week } = await db.from("weeks").select("id").eq("house_id", houseId).single();
-  await db.from("on_call").update({ user_id: userId }).eq("week_id", week!.id);
+  await db.from("on_call_picks").update({ user_id: userId }).eq("week_id", week!.id);
   await db.from("members").update({ role: "admin" }).eq("house_id", houseId).eq("user_id", samId);
   await db.from("members").update({ role: "member" }).eq("house_id", houseId).eq("user_id", userId);
 

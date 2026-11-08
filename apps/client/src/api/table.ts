@@ -39,7 +39,7 @@ export async function loadTable(
     supabase
       .from('assignments')
       .select(
-        'id, user_id, points, outcome, done_at, due_at, excused, covered_by, flagged_at, closes_at, job_id, absent_at, weeks(ends_at), crew(user_id, helper, points)',
+        'id, user_id, points, outcome, done_at, due_at, excused, covered_by, flagged_at, closes_at, job_id, absent_at, weeks(ends_at), crew:crew_members(user_id, helper, points)',
       )
       .eq('house_id', houseId)
       .gte('due_at', window.startsAt.toISOString())

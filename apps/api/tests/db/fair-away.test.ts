@@ -39,7 +39,7 @@ async function dueSoon(names: string[]) {
 }
 
 async function tripOf(userId: string, from: string) {
-  const { data } = await db.from("away").select("id").eq("user_id", userId).eq("starts_on", from).single();
+  const { data } = await db.from("away_periods").select("id").eq("user_id", userId).eq("starts_on", from).single();
   return data!.id;
 }
 
@@ -55,11 +55,11 @@ describe("a trip booked from today", () => {
     const booked = await bookAway({ db: owner.db, userId: owner.userId }, trip, new Date());
     expect(booked).toEqual({ before: 0, handed: 1, skipped: 0 });
     const handed = await reread("assignments", a.id);
-    expect([handed.user_id, handed.handed_from]).toEqual([ben.userId, owner.userId]);
+    expect([handed.user_id, handed.handed_from_user_id]).toEqual([ben.userId, owner.userId]);
 
     expectOk(await owner.db.rpc("cancel_away", { p_away: await tripOf(owner.userId, trip.from) }));
     const back = await reread("assignments", a.id);
-    expect([back.user_id, back.handed_from, back.handed_by_away, back.excused]).toEqual([owner.userId, null, null, false]);
+    expect([back.user_id, back.handed_from_user_id, back.handed_by_away_period_id, back.excused]).toEqual([owner.userId, null, null, false]);
     const [post] = await awayPost(house.id);
     expect(post.data).toMatchObject({ handed: 1, cancelled: true });
   });

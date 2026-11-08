@@ -6,11 +6,10 @@ The 25 rules every table, column, key and security rule in
 
 `npm run db:standards` checks every rule a machine can check
 (`supabase/checks/standards.sql`). CI runs it right after building the
-database from the migrations, so a PR that breaks a rule fails. Old names
-and gaps from before the rules are listed in that file as exceptions marked
-`until fix PR`; the fix PRs remove them, and nobody adds new ones. The check
-also fails when an exception no longer matches anything, so the list only
-shrinks.
+database from the migrations, so a PR that breaks a rule fails. The few
+things that break a rule on purpose are listed in that file with the
+reason; a new one needs a reason a reviewer accepts. The check also fails
+when an exception no longer matches anything.
 
 Sources, named on each rule:
 

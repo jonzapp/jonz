@@ -142,7 +142,7 @@ beforeEach(() => {
   (loadJohnList as jest.Mock).mockResolvedValue({ johns: [BINS], groups: [] });
   (loadStake as jest.Mock).mockResolvedValue(
     buildStake({
-      ledger: [{ id: 1, user_id: 'sam', kind: 'forfeit', amount_minor: -300, month: '2026-10', counterparty: null, created_at: '2026-10-10T12:00:00Z' }],
+      ledger: [{ id: 1, user_id: 'sam', kind: 'forfeit', amount_minor: -300, month: '2026-10', counterparty_user_id: null, created_at: '2026-10-10T12:00:00Z' }],
       closedMonths: [],
       memberIds: ['priya', 'sam'],
       stakeMinor: 2000,
@@ -252,7 +252,7 @@ describe('Next up', () => {
     const thisMonth = () => monthOf(new Date(Date.now() + HOUR), 'Europe/London');
     (loadStake as jest.Mock).mockResolvedValue(
       buildStake({
-        ledger: [{ id: 1, user_id: 'priya', kind: 'forfeit', amount_minor: -1950, month: thisMonth(), counterparty: null, created_at: at(-1) }],
+        ledger: [{ id: 1, user_id: 'priya', kind: 'forfeit', amount_minor: -1950, month: thisMonth(), counterparty_user_id: null, created_at: at(-1) }],
         closedMonths: [],
         memberIds: ['priya', 'sam'],
         stakeMinor: 2000,
@@ -456,7 +456,7 @@ describe('swapping a John you’d rather not', () => {
   });
 
   it('says once it has asked', async () => {
-    read.mockResolvedValue(house([{ id: 'o1', mine: 'a1', theirs: 'a4', asked_by: 'priya', asked_to: 'sam', expires_at: at(6) }]));
+    read.mockResolvedValue(house([{ id: 'o1', mine: 'a1', theirs: 'a4', asked_by: 'priya', asked_user_id: 'sam', expires_at: at(6) }]));
     await open();
     expect(screen.getByTestId('swap-asked')).toHaveTextContent(STEADY_COPY.asked('Sam'));
     expect(screen.queryByTestId('swap-suggestion')).toBeNull();
@@ -468,7 +468,7 @@ describe('swapping a John you’d rather not', () => {
     read.mockResolvedValue(
       snapshot({
         assignments: base.assignments,
-        offers: [{ id: 'o2', mine: 'a4', theirs: 'a2', asked_by: 'sam', asked_to: 'priya', expires_at: at(6) }],
+        offers: [{ id: 'o2', mine: 'a4', theirs: 'a2', asked_by: 'sam', asked_user_id: 'priya', expires_at: at(6) }],
       }),
     );
     await open();

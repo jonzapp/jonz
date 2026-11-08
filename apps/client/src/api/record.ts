@@ -20,7 +20,7 @@ export async function loadRecord(houseId: string): Promise<RecordRows> {
       .eq('house_id', houseId)
       .order('starts_on', { ascending: false })
       .limit(MOST_WEEKS),
-    supabase.from('away').select('id, user_id, starts_on, ends_on, note').eq('house_id', houseId),
+    supabase.from('away_periods').select('id, user_id, starts_on, ends_on, note').eq('house_id', houseId),
     allPages((from, to) =>
       supabase.from('week_shares').select('week_id, user_id, share').eq('house_id', houseId).order('week_id').range(from, to),
     ),
@@ -35,7 +35,7 @@ export async function loadRecord(houseId: string): Promise<RecordRows> {
     // Who did each John ticked by roll call (crew.ts): their shares and who helped.
     allPages((from, to) =>
       supabase
-        .from('crew')
+        .from('crew_members')
         .select('job_id, assignment_id, user_id, helper, points')
         .eq('house_id', houseId)
         .order('job_id')

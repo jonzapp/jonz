@@ -31,7 +31,7 @@ function row(id: string, overrides: Partial<AssignmentRow> = {}): AssignmentRow 
     points: 2,
     needs_photo: false,
     due_at: new Date(now.getTime() + 9 * HOUR).toISOString(),
-    due_moved_from: null,
+    original_due_at: null,
     group_name: null,
     done_at: null,
     photo_path: null,

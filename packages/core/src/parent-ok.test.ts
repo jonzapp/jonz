@@ -33,7 +33,7 @@ function row(id: string, overrides: Partial<AssignmentRow> = {}): AssignmentRow 
     points: 2,
     needs_photo: false,
     due_at: at(9).toISOString(),
-    due_moved_from: null,
+    original_due_at: null,
     group_name: null,
     done_at: null,
     photo_path: null,

@@ -384,9 +384,9 @@ describe("asking to swap a John you'd rather not", () => {
   it("asks a housemate who'd rather do yours, until tonight, and their yes swaps them", async () => {
     const { house, ava, ben, mine, theirs } = await swapHouse();
     const offer = await ask(ava, mine, theirs);
-    const { data: seen } = await ben.db.from("swap_offers").select("asked_by, asked_to, mine, theirs, expires_at, answer").eq("id", offer);
+    const { data: seen } = await ben.db.from("swap_offers").select("asked_by, asked_user_id, asker_assignment_id, asked_assignment_id, expires_at, answer").eq("id", offer);
     expect(seen).toHaveLength(1);
-    expect(seen![0]).toMatchObject({ asked_by: ava.userId, asked_to: ben.userId, mine: mine.id, theirs: theirs.id, answer: null });
+    expect(seen![0]).toMatchObject({ asked_by: ava.userId, asked_user_id: ben.userId, asker_assignment_id: mine.id, asked_assignment_id: theirs.id, answer: null });
     // Tonight: midnight in the house's zone.
     const expires = new Date(seen![0].expires_at);
     expect(expires.getTime()).toBeGreaterThan(Date.now());
@@ -443,10 +443,10 @@ describe("asking to swap a John you'd rather not", () => {
     expectDenied(
       await ava.db.from("swap_offers").insert({
         house_id: house.id,
-        mine: mine.id,
-        theirs: theirs.id,
+        asker_assignment_id: mine.id,
+        asked_assignment_id: theirs.id,
         asked_by: ava.userId,
-        asked_to: cal.userId,
+        asked_user_id: cal.userId,
         expires_at: new Date().toISOString(),
       }),
     );

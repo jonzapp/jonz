@@ -711,8 +711,8 @@ function historyLine(row: HistoryRow, input: { me: string; whole: boolean; membe
       return { id: row.id, kind: "cap_refund", title: STAKE_HISTORY_COPY.capRefund, meta: whose(day), amount: signed, losing: false };
     case "payment": {
       // Each payment is two rows: + on the payer's side, − on the payee's.
-      const payer = row.amount_minor > 0 ? row.user_id : row.counterparty;
-      const payee = row.amount_minor > 0 ? row.counterparty : row.user_id;
+      const payer = row.amount_minor > 0 ? row.user_id : row.counterparty_user_id;
+      const payee = row.amount_minor > 0 ? row.counterparty_user_id : row.user_id;
       const to = payee === me ? STAKE_HISTORY_COPY.yourself : firstNameMid(members, payee);
       return {
         id: row.id,
@@ -755,7 +755,7 @@ export function stakeHistory(input: {
 }): HistoryMonth[] {
   const { me } = input;
   const mine = (r: HistoryRow) => r.user_id === me;
-  const yours = (r: HistoryRow) => r.user_id === me || r.counterparty === me;
+  const yours = (r: HistoryRow) => r.user_id === me || r.counterparty_user_id === me;
   const rows = input.ledger
     .filter((r) => (input.whole ? r.kind !== "payment" || (yours(r) ? mine(r) : r.amount_minor > 0) : mine(r)))
     .sort((a, b) => Date.parse(happened(b)) - Date.parse(happened(a)) || b.id - a.id);

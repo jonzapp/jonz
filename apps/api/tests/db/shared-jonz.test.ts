@@ -32,7 +32,7 @@ async function gardenTidy(week = thisWeek(), now = new Date()) {
 }
 
 async function crewOf(assignmentId: string) {
-  const { data } = await db.from("crew").select("user_id, helper, points").eq("assignment_id", assignmentId).order("user_id");
+  const { data } = await db.from("crew_members").select("user_id, helper, points").eq("assignment_id", assignmentId).order("user_id");
   return (data ?? []).map((c) => ({ ...c, points: Number(c.points) }));
 }
 
@@ -229,12 +229,12 @@ describe("what the clock does with a roll call", () => {
     const back = new Date(new Date(first.due_at).getTime() - HOUR).toISOString();
     await db.from("assignments").update({ done_at: back }).eq("id", first.id);
     await db.from("assignments").update({ absent_at: back }).eq("id", second.id);
-    await db.from("crew").update({ created_at: back }).eq("assignment_id", first.id);
+    await db.from("crew_members").update({ created_at: back }).eq("assignment_id", first.id);
 
     await tickHouse(db, house.id, new Date(week.endsAt.getTime() + 2 * DAY));
     expect((await reread("assignments", first.id)).outcome).toBe("done");
     expect((await reread("assignments", second.id)).outcome).toBe("missed");
-    const { data: forfeits } = await db.from("ledger").select("user_id, amount_minor, doers").eq("assignment_id", second.id);
+    const { data: forfeits } = await db.from("ledger_entries").select("user_id, amount_minor, doers").eq("assignment_id", second.id);
     expect(forfeits).toEqual([
       { user_id: other.userId, amount_minor: -300, doers: [ticker.userId, spare.userId].sort() },
     ]);
@@ -245,7 +245,7 @@ describe("what the clock does with a roll call", () => {
     expect([credited(ticker), credited(spare), credited(other)]).toEqual([4, 4, 0]);
 
     await tickHouse(db, house.id, new Date(week.endsAt.getTime() + 40 * DAY));
-    const { data: rows } = await db.from("ledger").select("user_id, amount_minor").eq("house_id", house.id).eq("month", month);
+    const { data: rows } = await db.from("ledger_entries").select("user_id, amount_minor").eq("house_id", house.id).eq("month", month);
     const net = (who: Actor) => rows!.filter((r) => r.user_id === who.userId).reduce((s, r) => s + r.amount_minor, 0);
     expect([net(other), net(ticker), net(spare)]).toEqual([-300, 150, 150]);
   });

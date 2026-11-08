@@ -64,7 +64,7 @@ function idOf(customer: string | { id: string } | null): string | null {
 async function writePass(db: AdminClient, houseId: string, pass: HousePass) {
   const { error } = await db
     .from("houses")
-    .update({ pass_plan: pass.plan, pass_until: pass.until?.toISOString() ?? null, pass_buyer: pass.buyerId })
+    .update({ pass_plan: pass.plan, pass_ends_at: pass.until?.toISOString() ?? null, pass_bought_by: pass.buyerId })
     .eq("id", houseId);
   if (error) throw new Error(`Couldn't write the House Pass: ${error.message}`);
 }
@@ -72,7 +72,7 @@ async function writePass(db: AdminClient, houseId: string, pass: HousePass) {
 async function writeBilling(db: AdminClient, houseId: string, customer: string, subscription: string | null) {
   const { error } = await db
     .from("house_pass_billing")
-    .upsert({ house_id: houseId, stripe_customer: customer, stripe_subscription: subscription, updated_at: new Date().toISOString() });
+    .upsert({ house_id: houseId, stripe_customer_id: customer, stripe_subscription_id: subscription, updated_at: new Date().toISOString() });
   if (error) throw new Error(`Couldn't write the House Pass billing: ${error.message}`);
 }
 
@@ -86,8 +86,8 @@ async function giveFounding(db: AdminClient, stripe: PassStripe, session: Stripe
   const customer = idOf(session.customer);
   if (!houseId || !customer) return "ignored";
 
-  const { data: billing } = await db.from("house_pass_billing").select("stripe_subscription").eq("house_id", houseId).maybeSingle();
-  if (billing?.stripe_subscription) await stripe.stopRenewing(billing.stripe_subscription);
+  const { data: billing } = await db.from("house_pass_billing").select("stripe_subscription_id").eq("house_id", houseId).maybeSingle();
+  if (billing?.stripe_subscription_id) await stripe.stopRenewing(billing.stripe_subscription_id);
 
   await writeBilling(db, houseId, customer, null);
   await writePass(db, houseId, { plan: "founding", until: null, buyerId: session.metadata?.buyer ?? null });
@@ -117,7 +117,7 @@ async function syncSubscription(
   const { data: paying } = await db
     .from("house_pass_billing")
     .select("house_id")
-    .eq("stripe_subscription", sub.id)
+    .eq("stripe_subscription_id", sub.id)
     .maybeSingle();
   if (!paying) {
     const carried = await syncCarried(db, sub, plan);
@@ -127,13 +127,13 @@ async function syncSubscription(
   if (!houseId) return "ignored";
 
   const [{ data: house }, { data: billing }] = await Promise.all([
-    db.from("houses").select("created_at, pass_plan, pass_until, pass_buyer").eq("id", houseId).maybeSingle(),
-    db.from("house_pass_billing").select("stripe_subscription").eq("house_id", houseId).maybeSingle(),
+    db.from("houses").select("created_at, pass_plan, pass_ends_at, pass_bought_by").eq("id", houseId).maybeSingle(),
+    db.from("house_pass_billing").select("stripe_subscription_id").eq("house_id", houseId).maybeSingle(),
   ]);
   if (!house) return "ignored";
 
   const live = subscriptionLive(sub.status);
-  if (!live && billing?.stripe_subscription !== sub.id) return "ignored";
+  if (!live && billing?.stripe_subscription_id !== sub.id) return "ignored";
 
   const next = passAfterSubscription(
     passOf(house),
@@ -164,16 +164,16 @@ async function syncSubscription(
 async function syncCarried(db: AdminClient, sub: SubscriptionView, plan: "monthly" | "yearly") {
   const { data: rows, error } = await db
     .from("moving_pass_billing")
-    .select("move_id, moved_on(pass_state)")
-    .eq("stripe_subscription", sub.id);
+    .select("move_id, moves(pass_state)")
+    .eq("stripe_subscription_id", sub.id);
   if (error) throw new Error(`Couldn't read the moving House Pass: ${error.message}`);
   if (!rows?.length) return null;
-  const carrying = rows.find((r) => r.moved_on?.pass_state === "waiting" || r.moved_on?.pass_state === "lapsed");
+  const carrying = rows.find((r) => r.moves?.pass_state === "waiting" || r.moves?.pass_state === "lapsed");
   if (!carrying) return "ignored";
   const until = subscriptionLive(sub.status) ? sub.periodEnd : (sub.endedAt ?? sub.periodEnd);
   const { error: written } = await db
-    .from("moved_on")
-    .update({ pass_plan: plan, pass_until: new Date(until * 1000).toISOString() })
+    .from("moves")
+    .update({ pass_plan: plan, pass_ends_at: new Date(until * 1000).toISOString() })
     .eq("id", carrying.move_id);
   if (written) throw new Error(`Couldn't write the moving House Pass: ${written.message}`);
   return "carried";

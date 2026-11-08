@@ -44,8 +44,8 @@ const HOUSE = {
   first_dealt_at: '2026-10-01T09:00:00Z',
   away_makeup: 100,
   pass_plan: 'trial',
-  pass_until: '2026-11-01T09:00:00Z',
-  pass_buyer: null,
+  pass_ends_at: '2026-11-01T09:00:00Z',
+  pass_bought_by: null,
   timezone: 'Europe/London',
   currency: 'GBP',
   week_starts: 1,
@@ -76,7 +76,7 @@ beforeEach(() => {
   mockRows.weeks = { data: WEEK, error: null };
   mockRows.assignments = { data: [{ id: 'a1' }], error: null };
   mockRows.disputes = { data: [{ id: 'd1' }], error: null };
-  mockRows.on_call = { data: [{ john_id: 'j9', user_id: 'u2', johns: { name: 'Bins', category: 'bins' } }], error: null };
+  mockRows.on_call_picks = { data: [{ john_id: 'j9', user_id: 'u2', johns: { name: 'Bins', category: 'bins' } }], error: null };
   mockRows.swap_offers = { data: [{ id: 'o1' }], error: null };
 });
 
@@ -127,13 +127,13 @@ it("asks for the week that holds now in the house's own zone, and only open disp
     ['house_id', 'h1'],
   ]);
   // How often each John comes round rides along, for the John sheet, and who did it, for a John done together or with help.
-  const read = '*, johns(every_weeks, every_months), crew(user_id, helper, points)';
+  const read = '*, johns(every_weeks, every_months), crew:crew_members(user_id, helper, points)';
   expect(calls('assignments', 'select')).toEqual([[read], [read]]);
   // A John from an earlier week that hasn't settled stays its holder's.
   expect(calls('assignments', 'neq')).toEqual([['week_id', 'w1']]);
   expect(calls('assignments', 'not')).toEqual([]);
   expect(calls('assignments', 'is')).toEqual([['outcome', null]]);
-  expect(calls('on_call', 'eq')).toEqual([['week_id', 'w1']]);
+  expect(calls('on_call_picks', 'eq')).toEqual([['week_id', 'w1']]);
   expect(calls('disputes', 'is')).toEqual([['resolution', null]]);
   // Only asks still open, which RLS keeps to the two people in each.
   expect(calls('swap_offers', 'is')).toEqual([['answer', null]]);
@@ -150,7 +150,7 @@ it("reads no Johns when this week hasn't been dealt", async () => {
   expect(supabase.from).not.toHaveBeenCalledWith('disputes');
 });
 
-it.each(['houses', 'members', 'weeks', 'assignments', 'disputes', 'on_call'])('fails when %s cannot be read', async (table) => {
+it.each(['houses', 'members', 'weeks', 'assignments', 'disputes', 'on_call_picks'])('fails when %s cannot be read', async (table) => {
   mockRows[table] = { data: null, error: new Error(`${table} offline`) };
   await expect(loadHouse('h1', NOW)).rejects.toThrow(`${table} offline`);
 });

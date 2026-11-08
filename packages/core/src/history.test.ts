@@ -18,8 +18,8 @@ function row(overrides: Partial<ActionRow> = {}): ActionRow {
   return {
     id: "h1",
     kind: "tick",
-    actor: "ben",
-    subject: "ben",
+    done_by: "ben",
+    subject_user_id: "ben",
     assignment_id: "a1",
     ref: null,
     data: { name: "Bins" },
@@ -51,7 +51,7 @@ describe("historyItems", () => {
 });
 
 describe("historyFor", () => {
-  const items = historyItems([row({ id: "1", actor: "ava" }), row({ id: "2", actor: "ben" })]);
+  const items = historyItems([row({ id: "1", done_by: "ava" }), row({ id: "2", done_by: "ben" })]);
   it("keeps only yours for Mine, everything otherwise", () => {
     expect(historyFor(items, "ava", true).map((i) => i.id)).toEqual(["1"]);
     expect(historyFor(items, "ava", false).map((i) => i.id)).toEqual(["1", "2"]);

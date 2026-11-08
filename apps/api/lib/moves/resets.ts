@@ -93,9 +93,9 @@ export async function resetHouse(
   const notify = pushNotifier(admin);
   if (notify && done.told.length > 0) {
     const by = (me?.profiles as { display_name: string } | null)?.display_name ?? "An admin";
-    const { data: action } = await admin.from("house_actions").select("subject, data").eq("id", done.action).single();
+    const { data: action } = await admin.from("house_actions").select("subject_user_id, data").eq("id", done.action).single();
     const words = (action?.data ?? {}) as Record<string, unknown>;
-    const subjectId = action?.subject ?? null;
+    const subjectId = action?.subject_user_id ?? null;
     const { data: subject } = subjectId
       ? await admin.from("profiles").select("display_name").eq("id", subjectId).maybeSingle()
       : { data: null };

@@ -52,16 +52,16 @@ export function ownerReads(caller: Caller, now: Date): OwnerReads {
       if (error) throw fail("deletions", error);
       return rows(
         "accounts waiting to be deleted",
-        data.slice(0, ROWS).map((d) => `- ${fromPeople(d.name)} (${d.house_name ?? "no house"}), asked by ${d.requested_by} on ${when(d.requested_at)}, goes ${when(d.delete_after)} [account ${d.user_id}]`),
+        data.slice(0, ROWS).map((d) => `- ${fromPeople(d.name)} (${d.house_name ?? "no house"}), asked by ${d.requested_by} on ${when(d.requested_at)}, goes ${when(d.deletes_at)} [account ${d.user_id}]`),
         data.length > ROWS,
       );
     },
     async audit(q, after, before) {
-      let query = db.from("admin_audit").select("id, at, actor, action, target_kind, target_id, reason");
+      let query = db.from("admin_audit").select("id, at:created_at, actor, action, target_kind, target_id, reason");
       const search = auditSearchFilter(q);
       if (search) query = query.or(search);
-      if (after) query = query.gt("at", after);
-      if (before) query = query.lte("at", before);
+      if (after) query = query.gt("created_at", after);
+      if (before) query = query.lte("created_at", before);
       const { data, error } = await query.order("id", { ascending: false }).limit(ROWS + 1);
       if (error) throw fail("audit", error);
       const who = (actor: string | null) => (actor === null ? "Jonz itself" : actor === caller.userId ? "you" : `someone else (${actor})`);

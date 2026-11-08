@@ -122,12 +122,12 @@ describe("changing one result", () => {
     const { house, a } = await dealtHouse();
     await reset(house.admin, { houseId: house.id, kind: "result", assignment: a.id, outcome: "missed", apply: true });
     expect(await reread("assignments", a.id)).toMatchObject({ outcome: "missed", changed_by: house.admin.userId });
-    const { data: forfeit } = await db.from("ledger").select("amount_minor").eq("assignment_id", a.id).eq("kind", "forfeit");
+    const { data: forfeit } = await db.from("ledger_entries").select("amount_minor").eq("assignment_id", a.id).eq("kind", "forfeit");
     expect(forfeit).toHaveLength(1);
 
     await reset(house.admin, { houseId: house.id, kind: "result", assignment: a.id, outcome: "done", apply: true });
     expect((await reread("assignments", a.id)).outcome).toBe("done");
-    const { data: none } = await db.from("ledger").select("id").eq("assignment_id", a.id).eq("kind", "forfeit");
+    const { data: none } = await db.from("ledger_entries").select("id").eq("assignment_id", a.id).eq("kind", "forfeit");
     expect(none).toEqual([]);
   });
 
@@ -140,7 +140,7 @@ describe("changing one result", () => {
     const preview = await reset(house.admin, { houseId: house.id, kind: "result", assignment: a.id, outcome: "done" });
     expect(preview.body.preview!.correction).toBe(true);
     await reset(house.admin, { houseId: house.id, kind: "result", assignment: a.id, outcome: "done", apply: true });
-    const { data: lines } = await db.from("ledger").select("user_id, amount_minor").eq("assignment_id", a.id).eq("kind", "correction");
+    const { data: lines } = await db.from("ledger_entries").select("user_id, amount_minor").eq("assignment_id", a.id).eq("kind", "correction");
     expect(lines!.reduce((n, l) => n + l.amount_minor, 0)).toBe(0);
     expect(lines!.find((l) => l.user_id === a.user_id)!.amount_minor).toBeGreaterThan(0);
   });
@@ -168,7 +168,7 @@ describe("letting a month off", () => {
     const month = monthOf(new Date(a.due_at), ZONE);
     const applied = await reset(house.admin, { houseId: house.id, kind: "letoff", month, apply: true });
     expect(applied.status).toBe(200);
-    const { data: left } = await db.from("ledger").select("id").eq("house_id", house.id).eq("kind", "forfeit");
+    const { data: left } = await db.from("ledger_entries").select("id").eq("house_id", house.id).eq("kind", "forfeit");
     expect(left).toEqual([]);
     const { data: mark } = await db.from("month_let_offs").select("month").eq("house_id", house.id);
     expect(mark).toEqual([{ month }]);

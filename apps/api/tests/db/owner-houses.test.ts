@@ -109,7 +109,7 @@ describe("Houses", () => {
 
   it("filters by Pass, by how lately it was used, and by when it started", async () => {
     const quiet = await makeHouse(["Cal"]);
-    expectOk(await db.from("houses").update({ name: `${name} Annexe`, pass_plan: "yearly", pass_until: ago(-200) }).eq("id", quiet.id));
+    expectOk(await db.from("houses").update({ name: `${name} Annexe`, pass_plan: "yearly", pass_ends_at: ago(-200) }).eq("id", quiet.id));
     await settle(house.id, [{ outcome: "done", daysAgo: 1 }]);
     const ids = async (args: Record<string, unknown>) => ((await ok(page(owner, args))) ?? []).map((h) => h.id);
 
@@ -123,7 +123,7 @@ describe("Houses", () => {
     expect(await ids({ p_before: ago(1) })).toEqual([]);
 
     // A trial that ran out is no Pass.
-    expectOk(await db.from("houses").update({ pass_until: ago(1) }).eq("id", house.id));
+    expectOk(await db.from("houses").update({ pass_ends_at: ago(1) }).eq("id", house.id));
     expect(await ids({ p_pass: "none" })).toEqual([house.id]);
     const count = await ok(owner.db.rpc("owner_houses_count", { p_q: name }));
     expect(count).toBe(2);
@@ -158,7 +158,7 @@ describe("Houses", () => {
     const today = new Date().toISOString().slice(0, 10);
     const later = new Date(Date.now() + 5 * DAY).toISOString().slice(0, 10);
     const [ava, ben] = house.everyone;
-    expectOk(await db.from("away").insert({ house_id: house.id, user_id: ben.userId, starts_on: ago(2).slice(0, 10), ends_on: later }));
+    expectOk(await db.from("away_periods").insert({ house_id: house.id, user_id: ben.userId, starts_on: ago(2).slice(0, 10), ends_on: later }));
     const data = await ok(owner.db.rpc("owner_house", { p_house: house.id }));
     const one = data as {
       name: string;
@@ -227,7 +227,7 @@ describe("Overview", () => {
       await db.from("account_deletions").insert({
         user_id: ben.userId,
         requested_by: "owner",
-        delete_after: new Date(Date.now() + 3_600_000).toISOString(),
+        deletes_at: new Date(Date.now() + 3_600_000).toISOString(),
       }),
     );
     const data = (await ok(owner.db.rpc("owner_overview", { p_span: "week", p_zone: "UTC" }))) as {

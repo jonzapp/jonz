@@ -27,8 +27,8 @@ const NOW = new Date('2026-10-29T21:00:00Z');
 const row = (overrides: Partial<ActionRow>): ActionRow => ({
   id: 'x',
   kind: 'tick',
-  actor: 'priya',
-  subject: 'priya',
+  done_by: 'priya',
+  subject_user_id: 'priya',
   assignment_id: 'a1',
   ref: null,
   data: { name: 'Bins out' },
@@ -44,12 +44,12 @@ const row = (overrides: Partial<ActionRow>): ActionRow => ({
 // and then took it back.
 const ROWS = [
   row({ id: 'h1' }),
-  row({ id: 'h2', kind: 'flag', actor: 'sam', subject: 'priya', data: { name: 'Recycling' }, created_at: '2026-10-29T19:30:00Z', reach: 'admin' }),
-  row({ id: 'h3', actor: 'sam', subject: 'sam', data: { name: 'Clean the bath' }, created_at: '2026-10-29T09:12:00Z', reach: null }),
+  row({ id: 'h2', kind: 'flag', done_by: 'sam', subject_user_id: 'priya', data: { name: 'Recycling' }, created_at: '2026-10-29T19:30:00Z', reach: 'admin' }),
+  row({ id: 'h3', done_by: 'sam', subject_user_id: 'sam', data: { name: 'Clean the bath' }, created_at: '2026-10-29T09:12:00Z', reach: null }),
   row({
     id: 'h4',
     kind: 'role',
-    subject: 'sam',
+    subject_user_id: 'sam',
     data: { from: 'member', to: 'admin' },
     created_at: '2026-10-28T18:00:00Z',
     undone_at: '2026-10-28T18:01:00Z',

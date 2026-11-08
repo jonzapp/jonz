@@ -92,9 +92,9 @@ test("shows anyone what it gives, and gives the Pass to the person it's for", as
   await page.getByTestId("offer-use").click();
   await expect(page.getByTestId("pass-screen")).toBeVisible();
 
-  const { data: house } = await admin().from("houses").select("pass_plan, pass_until").eq("id", houseId).single();
+  const { data: house } = await admin().from("houses").select("pass_plan, pass_ends_at").eq("id", houseId).single();
   expect(house?.pass_plan).toBe("trial");
-  expect(new Date(house!.pass_until!).getTime()).toBeGreaterThan(Date.now() + 300 * 86_400_000);
+  expect(new Date(house!.pass_ends_at!).getTime()).toBeGreaterThan(Date.now() + 300 * 86_400_000);
 
   // Used: the link says so now, for this house.
   await page.goto(`/offer/${code}`);

@@ -33,7 +33,7 @@ async function onCallHouse(names = ["Ava", "Ben", "Cal"], respondHours = 12) {
     thisWeek(),
   );
   const dealt = await deal(house.id, thisWeek(), new Date());
-  const { data: onCall } = await db.from("on_call").select("user_id").eq("week_id", dealt.weekId).eq("john_id", bins.id);
+  const { data: onCall } = await db.from("on_call_picks").select("user_id").eq("week_id", dealt.weekId).eq("john_id", bins.id);
   const holder = actorFor(house, onCall![0].user_id);
   return { house, bins, holder, ...dealt };
 }
@@ -47,7 +47,7 @@ describe("the deal", () => {
   it("puts one housemate on call, deals no assignment for it, and stores no share for it yet", async () => {
     const { bins, weekId, assignments } = await onCallHouse();
     expect(assignments.map((a) => a.name)).toEqual(["Bathroom"]);
-    const { data: onCall } = await db.from("on_call").select("john_id").eq("week_id", weekId);
+    const { data: onCall } = await db.from("on_call_picks").select("john_id").eq("week_id", weekId);
     expect(onCall!.map((r) => r.john_id)).toEqual([bins.id]);
     const shares = await sharesOf(weekId);
     expect([...shares.values()].reduce((a, b) => a + b, 0)).toBeCloseTo(4, 1);
@@ -101,7 +101,7 @@ describe("raise_flag", () => {
   it("goes to someone home when whoever is on call is away today", async () => {
     const { house, bins, holder } = await onCallHouse(["Ava", "Ben"]);
     const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(new Date());
-    expectOk(await db.from("away").insert({ house_id: house.id, user_id: holder.userId, starts_on: today, ends_on: today }));
+    expectOk(await db.from("away_periods").insert({ house_id: house.id, user_id: holder.userId, starts_on: today, ends_on: today }));
     const { data: flagId } = await holder.db.rpc("raise_flag", { p_john: bins.id });
     const { data: flag } = await db.from("assignments").select("user_id").eq("id", flagId!).single();
     expect(flag!.user_id).toBe(someoneElse(house, holder.userId).userId);
@@ -120,10 +120,10 @@ describe("raise_flag", () => {
   it("keeps on_call out of housemates' hands", async () => {
     const { house, bins, weekId, holder } = await onCallHouse();
     const other = someoneElse(house, holder.userId);
-    const { data: seen } = await other.db.from("on_call").select("user_id").eq("week_id", weekId);
+    const { data: seen } = await other.db.from("on_call_picks").select("user_id").eq("week_id", weekId);
     expect(seen).toHaveLength(1);
     expectDenied(
-      await other.db.from("on_call").insert({ week_id: weekId, house_id: house.id, john_id: bins.id, user_id: other.userId }),
+      await other.db.from("on_call_picks").insert({ week_id: weekId, house_id: house.id, john_id: bins.id, user_id: other.userId }),
     );
     expectDenied(await other.db.rpc("open_flag", { p_john: bins.id, p_at: new Date().toISOString() }));
   });
@@ -133,7 +133,7 @@ describe("raise_flag", () => {
 async function benOnCall() {
   const made = await onCallHouse();
   const [ava, ben, cal] = made.house.everyone;
-  await db.from("on_call").update({ user_id: ben.userId }).eq("week_id", made.weekId).eq("john_id", made.bins.id);
+  await db.from("on_call_picks").update({ user_id: ben.userId }).eq("week_id", made.weekId).eq("john_id", made.bins.id);
   return { ...made, ava, ben, cal };
 }
 
@@ -249,7 +249,7 @@ describe("the clock and flags", () => {
     await tickHouse(db, house.id, later);
     const { data: settled } = await db.from("assignments").select("outcome, user_id").eq("id", flagId!).single();
     expect(settled).toEqual({ outcome: "missed", user_id: holder.userId });
-    const { data: forfeit } = await db.from("ledger").select("user_id, kind").eq("assignment_id", flagId!);
+    const { data: forfeit } = await db.from("ledger_entries").select("user_id, kind").eq("assignment_id", flagId!);
     expect(forfeit).toEqual([{ user_id: holder.userId, kind: "forfeit" }]);
 
     // Opened again only while this week still runs at `later` (not late on a Sunday).
