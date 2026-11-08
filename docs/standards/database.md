@@ -121,8 +121,10 @@ columns read as a fact (`needs_photo`, `awaits_ok`); counts end in
 21. **`security definer` functions set `search_path = ''`** and name every
     table with its schema. *Supabase linter 0011.* Checked.
 22. **Signed-in people may call a `security definer` function only if it
-    checks, inside, that they're allowed.** Each such function is on the
-    `callable` list in the check; adding one is a decision a reviewer sees.
+    checks, inside, that they're allowed.** Each such function is an
+    operation in the registry (`packages/core/src/operations.ts`, written
+    out as `supabase/checks/registry.sql`), and so is every table grant to
+    signed-in or signed-out people; adding one is a decision a reviewer sees.
     Everything else revokes EXECUTE from `public, anon, authenticated`.
     Supabase linter 0029 warns on every callable one; that warning is
     expected for the listed ones. *Ours; Supabase linter 0029.* Checked.

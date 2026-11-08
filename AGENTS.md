@@ -192,6 +192,14 @@ see "Design options for Glyn" in the `house-style` skill.
   `apps/api/tests/unit/permission-checks.test.ts` fails on a hand-written
   role check). Reading the role is fine for a rule of the house (a house
   keeps an admin, parents don't earn pocket money).
+- **Every operation is in the registry**: `OPERATIONS` in
+  `packages/core/src/operations.ts` lists each thing a person can do
+  (database function, API route or both) with its guard, whether it's
+  destructive and the House Pass feature it needs; `TABLES` lists what
+  signed-in people reach directly. A new callable function, table grant or
+  API route fails CI until it's listed (`supabase/checks/registry.sql` is
+  generated from it: `npx vitest run -u` in `packages/core`). See
+  `docs/specs/operation-registry.md`.
 
 ## The clock
 
