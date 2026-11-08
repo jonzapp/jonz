@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { MESSAGE_LIMITS } from "./owner-messages";
-import { NOTICE_KINDS } from "./notices";
+import { NOTICE_COPY, NOTICE_KINDS } from "./notices";
 import { PromotionRequest } from "./promotions";
 import { REPORT_LIMITS } from "./reports";
 
@@ -195,7 +195,7 @@ export const OWNER_MOVES_COPY = {
       case "report_same_as":
         return m.main ? "Fixing that one fixes this one too." : "It stands on its own again.";
       case "notice_save":
-        return words([m.notice, m.body].filter(Boolean).join(": "));
+        return words([NOTICE_COPY.kinds[m.notice], m.body].filter(Boolean).join(": "));
       case "notice_end":
         return "It stops showing now.";
       case "message_send":
