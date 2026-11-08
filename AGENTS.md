@@ -320,11 +320,16 @@ where to next: `docs/specs/moving-on.md`).
 Photos live in the private `proofs` bucket
 at `<house>/<assignment>/<file>`.
 
+- **Before writing a migration, read `docs/standards/database.md`**: how
+  tables, pointers, indexes, times, money and security rules are named and
+  built. `npm run db:standards` checks it, and CI fails a PR that breaks it.
 - Schema changes only through migration files (`supabase migration new
-  <name>`), never by editing the live database. Test with `npm run db:reset`
-  and `npm run test:db`, then regenerate the types with `npm run types`.
+  <name>`), never by editing the live database. Test with `npm run db:reset`,
+  `npm run db:standards` and `npm run test:db`, then regenerate the types
+  with `npm run types`.
 - Migrations must stay additive once anything is deployed, because Vercel
-  and Supabase deploy independently. Applied migrations are never edited.
+  and Supabase deploy independently (a rename follows the steps in
+  `docs/standards/database.md`). Applied migrations are never edited.
 - Every table gets Row Level Security policies in the same migration that
   creates it, and its grants stated for every role, `service_role` included.
   A new function must revoke EXECUTE from `public, anon, authenticated` and

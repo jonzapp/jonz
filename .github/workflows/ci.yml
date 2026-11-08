@@ -81,6 +81,10 @@ jobs:
             echo "ALLOWED_ORIGINS=http://localhost:8205"
           } > apps/api/.env.local
 
+      # Every table, pointer, index and time follows docs/standards/database.md.
+      - name: Database standards
+        run: npm run db:standards
+
       # RLS is the only real enforcement, so the adversarial suites gate.
       - name: Database tests
         run: npm run test:db
