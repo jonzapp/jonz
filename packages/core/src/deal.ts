@@ -20,8 +20,10 @@
  * they have lived there (carryOver). It never forgets a week: a balance that
  * dropped old weeks would drop a debt just as it was being paid back, and
  * the weeks spent catching up would then make the person look ahead. A John counts for whoever did it: done or late, for its
- * holder; covered, for whoever covered it; skipped with immunity or excused,
- * for its holder, since that's the house letting them off. A missed John
+ * holder; covered, for whoever covered it. A John skipped with immunity or
+ * excused counts as neither owed nor done: it comes out of the week, so
+ * everyone's share of that week shrinks by its part, and nobody is credited
+ * with it (keptOfWeek). A missed John
  * counts for nobody, so it comes back to whoever missed it in the next
  * deals, and covering for someone means you're dealt less later. Away is not
  * a holiday from your share: it shows up as a balance below zero, and the
@@ -260,6 +262,8 @@ export interface PastJohn {
   outcome?: string | null;
   /** Who covered it, if a housemate did. */
   coveredBy?: string | null;
+  /** Skipped with immunity, or excused (time away with nobody home). */
+  excused?: boolean;
 }
 
 export interface PastWeek {
@@ -268,27 +272,46 @@ export interface PastWeek {
   assignments: readonly PastJohn[];
 }
 
+/** A John taken out of its week: skipped or excused, and not covered. */
+export function excusedJohn(a: Pick<PastJohn, "outcome" | "coveredBy" | "excused">): boolean {
+  return !a.coveredBy && (a.excused === true || a.outcome === "excused");
+}
+
 /**
- * Who a past John counts for: whoever covered it, nobody if it was missed,
- * otherwise its holder (done, late, excused, or not settled yet, which counts
+ * Who a past John counts for: whoever covered it, nobody if it was missed or
+ * excused, otherwise its holder (done, late, or not settled yet, which counts
  * as theirs until it is).
  */
 export function creditedTo(a: PastJohn): string | null {
   if (a.coveredBy) return a.coveredBy;
-  if (a.outcome === "missed") return null;
+  if (a.outcome === "missed" || excusedJohn(a)) return null;
   return a.userId;
 }
 
 /**
+ * What's left of each share of a week once its excused Johns come out of it:
+ * every share is multiplied by this (house_balances does the same). 1 when
+ * nothing was excused.
+ */
+export function keptOfWeek(totalShares: number, excusedPoints: number): number {
+  return totalShares > 0 ? Math.max(0, 1 - excusedPoints / totalShares) : 1;
+}
+
+/**
  * Each current housemate's balance: the work they did in the weeks given
- * (creditedTo) minus their share of those weeks. Someone who joins part-way
+ * (creditedTo) minus their share of those weeks, less any excused Johns'
+ * part (keptOfWeek). Someone who joins part-way
  * starts at zero, since they had no share of the weeks before them.
  */
 export function carryOver(weeks: readonly PastWeek[], currentMemberIds: readonly string[]): Map<string, number> {
   const balance = new Map(currentMemberIds.map((id) => [id, 0]));
   for (const week of weeks) {
+    const kept = keptOfWeek(
+      week.shares.reduce((sum, s) => sum + s.share, 0),
+      week.assignments.filter(excusedJohn).reduce((sum, a) => sum + a.points, 0),
+    );
     for (const s of week.shares) {
-      if (balance.has(s.userId)) balance.set(s.userId, balance.get(s.userId)! - s.share);
+      if (balance.has(s.userId)) balance.set(s.userId, balance.get(s.userId)! - s.share * kept);
     }
     for (const a of week.assignments) {
       const who = creditedTo(a);

@@ -1241,7 +1241,8 @@ export const WHY_COPY = {
   counts: (whose: string) => `It counts as ${whose} work.`,
   coveredCounts: (who: string, whose: string) => `${who} covered it, so it counts as ${whose} work.`,
   missedCounts: (holder: string) => `It was missed, so it counts for nobody: the work comes back to ${holder} in the next deals.`,
-  excusedCounts: (whose: string) => `It was skipped, so it still counts as ${whose}.`,
+  /** A skip comes out of the week (deal.ts keptOfWeek): nobody is owed it or credited with it. */
+  excusedCounts: "It was skipped, so it counts for nobody: it comes out of everyone’s share this week.",
   You: "You",
   you: "you",
   your: "your",

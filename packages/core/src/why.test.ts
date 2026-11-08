@@ -164,7 +164,7 @@ describe("johnWhy: what's at stake", () => {
       WHY_COPY.coveredCounts("Priya", "Priya’s"),
     );
     expect(why(item(null, { status: "missed", outcome: "missed" })).stakes).toBe(WHY_COPY.missedCounts("you"));
-    expect(why(item(null, { status: "excused", outcome: "excused" })).stakes).toBe(WHY_COPY.excusedCounts("yours"));
+    expect(why(item(null, { status: "excused", outcome: "excused" })).stakes).toBe(WHY_COPY.excusedCounts);
     expect(why(item(null, { status: "disputed" })).stakes).toBeNull();
   });
 });
