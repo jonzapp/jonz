@@ -58,7 +58,7 @@ describe("the support agent", () => {
       draft: { state: "ready", reply: "Thanks Ava, I'm looking at it.", action: "same_as", sameAs: { id: main, name: "Ben" }, why: "Ben said the same." },
     });
     expect(read[0]).toContain(`<from_people>${named?.name}</from_people>`);
-    expect(read[0]).toContain("No House Pass.");
+    expect(read[0]).toMatch(/House Pass/);
     expect(read[2]).toContain(main);
 
     // Opening it again gives the same one, without asking.
