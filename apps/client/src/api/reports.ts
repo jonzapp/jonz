@@ -8,6 +8,8 @@ import {
   ReportFixResponse,
   ReportMessageResponse,
   ReportResponse,
+  SupportDraftResponse,
+  type SupportDraft,
   type ReportDetails,
   type ReportKind,
   type ReportSource,
@@ -21,7 +23,7 @@ import { Platform } from 'react-native';
 import { apiPost } from './http';
 import { supabase } from './supabase';
 
-export type { ReportDetails };
+export type { ReportDetails, SupportDraft };
 
 // Report a problem (docs/specs/report-a-problem.md). The sender's side reads
 // their own reports through RLS and sends through apps/api, which tells the
@@ -415,4 +417,19 @@ export async function sameAsFind(id: string, q: string): Promise<ReportLink[]> {
   const { data, error } = await supabase.rpc('owner_same_as_find', { p_report: id, p_q: q });
   if (error) throw new Error(humanError(error));
   return (data ?? []).map((r) => ({ id: r.id, name: r.name, words: r.words, state: stateOf(r.state) }));
+}
+
+/**
+ * The support agent's suggestion on a report waiting for the owner: written
+ * now (a few seconds) or kept from before. Null when there's none to give.
+ */
+export async function supportDraft(id: string): Promise<SupportDraft | null> {
+  const { draft } = await apiPost(`/api/reports/${id}/draft`, {}, SupportDraftResponse);
+  return draft;
+}
+
+/** The owner used the suggestion (sent it, maybe with its step), or set it aside. */
+export async function setSupportDraft(id: string, state: 'used' | 'dismissed'): Promise<void> {
+  const { error } = await supabase.rpc('owner_set_support_draft', { p_draft: id, p_state: state });
+  if (error) throw new Error(humanError(error));
 }

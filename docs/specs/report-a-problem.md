@@ -149,8 +149,45 @@ Once, in Resend: a webhook for `email.received` to
 Then, on the jonz-api Vercel project (production), `RESEND_WEBHOOK_SECRET`
 (the webhook's signing secret) and `RESEND_RECEIVING_KEY` (that key).
 
+## The support agent
+
+Jonz suggests what to do on each report, and asks before it acts.
+
+- **When.** The owner opens a report that's waiting (new or open, with
+  someone to answer, and the sender spoke last). The report shows Jonz
+  thinking for a few seconds, then a card, "Jonz suggests", above the reply
+  box. Nothing runs before the owner opens it, so there are no new pushes.
+- **What it suggests.** A reply in plain words, written as the owner, and
+  at most one step with it: fold it into the report it repeats ("Same as
+  Ben's report"), or start the 30 days for someone who clearly asked to be
+  deleted. Under it, why, with chips, and what it checked: their House
+  Pass and who pays, the report it repeats. Money (a refund) is never a
+  step: it says to do that in Stripe.
+- **Asks before it acts.** One amber button sends the reply and does the
+  step ("Send, and fold into Ben's"); starting the 30 days asks again on a
+  sheet. "Change it first" puts the words in the reply box. "Not this" sets
+  it aside. The steps are the Inbox's own calls, so the database checks and
+  the audit log are the same as by hand.
+- **As the owner.** `POST /api/reports/:id/draft` answers only the owner
+  with their code this session. Every read goes through their session, as
+  the owner's Ask Jonz does: their house (`owner_house`), their other
+  reports, reports like it (`owner_same_as_find`), Deletions, the Audit log
+  and how it works. Nothing uses the service role. The report's words reach
+  Claude marked `<from_people>`, never as instructions.
+- **The same loop.** `runAgent` in `apps/api/lib/ai/agent.ts` with its own
+  instructions, reads-only tools and answer
+  (`apps/api/lib/ai/support-draft.ts`, `lib/moves/support-draft.ts`). The
+  card draws its reasons with the shared reply pieces and the owner's chips,
+  and the thinking indicator while it writes.
+- **Kept.** `support_drafts`: one for each thing the sender said, so
+  opening it again shows the same one and Claude is asked once; a write-back
+  gets a new one. Only the owner reads it, written only by
+  `claim_support_draft` and `finish_support_draft`, used or set aside with
+  `owner_set_support_draft`. `SUPPORT_DRAFTS_PER_DAY` (200) a day; past it,
+  or without Claude, the report just has its reply box.
+
 ## Later
 
-- The support agent (owner admin PR 5), Ask Jonz filing a report, shake to
+- Support agent suggestions in the background, with a push to approve; Ask Jonz filing a report, shake to
   report in the phone apps, automatic crash reports, and keeping email
   attachments.

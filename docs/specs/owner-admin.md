@@ -14,8 +14,9 @@ problems, ideas and questions people send from the app
 - **Audit log**: everything done on the admin pages, which nobody can change.
 
 **Messages** writes to a person, a house or everyone (see "Messages").
-Later PRs add a support agent that asks before it acts, and an owner Ask
-Jonz. Designs are in
+The support agent, which asks before it acts, is in
+`docs/specs/report-a-problem.md` ("The support agent"); the owner's Ask
+Jonz is below. Designs are in
 the owner admin viewer (https://claude.ai/artifact/97GEyJDGnrWxB8HTbbrXmo).
 
 ## Who gets in

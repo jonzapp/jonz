@@ -2170,6 +2170,54 @@ export type Database = {
           },
         ]
       }
+      support_drafts: {
+        Row: {
+          action: string
+          created_at: string
+          drafted_by: string | null
+          id: string
+          input_tokens: number
+          output_tokens: number
+          reply: string
+          report_id: string
+          report_message_id: number | null
+          same_as_report_id: string | null
+          state: string
+          updated_at: string
+          why: string
+        }
+        Insert: {
+          action?: string
+          created_at?: string
+          drafted_by?: string | null
+          id?: string
+          input_tokens?: number
+          output_tokens?: number
+          reply?: string
+          report_id: string
+          report_message_id?: number | null
+          same_as_report_id?: string | null
+          state?: string
+          updated_at?: string
+          why?: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          drafted_by?: string | null
+          id?: string
+          input_tokens?: number
+          output_tokens?: number
+          reply?: string
+          report_id?: string
+          report_message_id?: number | null
+          same_as_report_id?: string | null
+          state?: string
+          updated_at?: string
+          why?: string
+        }
+        Relationships: []
+      }
       swap_offers: {
         Row: {
           answer: string | null
@@ -2545,6 +2593,10 @@ export type Database = {
         Args: { p_limit: number; p_question: string }
         Returns: string
       }
+      claim_support_draft: {
+        Args: { p_limit: number; p_message: number | null; p_report: string }
+        Returns: Json
+      }
       close_month: {
         Args: { p_entries: Json; p_house: string; p_month: string }
         Returns: boolean
@@ -2748,6 +2800,10 @@ export type Database = {
       finish_owner_ask: {
         Args: { p_input: number; p_output: number; p_reply: string; p_turn: string }
         Returns: undefined
+      }
+      finish_support_draft: {
+        Args: { p_action: string; p_draft: string; p_input: number; p_output: number; p_reply: string; p_same_as: string | null; p_why: string }
+        Returns: Json
       }
       owner_delete_now: {
         Args: { p_reason?: string; p_user: string }
@@ -3023,6 +3079,10 @@ export type Database = {
       }
       owner_set_report_state: {
         Args: { p_report: string; p_state: string }
+        Returns: undefined
+      }
+      owner_set_support_draft: {
+        Args: { p_draft: string; p_state: string }
         Returns: undefined
       }
       owner_status: { Args: never; Returns: Json }

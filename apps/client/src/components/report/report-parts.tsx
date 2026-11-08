@@ -167,13 +167,20 @@ export function ReplyBox({
   onSend,
   bare = false,
   testID = "reply-box",
+  text: held,
+  onChangeText,
 }: {
   placeholder: string;
   onSend: (text: string) => Promise<void>;
   bare?: boolean;
   testID?: string;
+  /** The words, when the page holds them (the support agent's suggestion can fill the box). */
+  text?: string;
+  onChangeText?: (text: string) => void;
 }) {
-  const [text, setText] = useState("");
+  const [own, setOwn] = useState("");
+  const text = held ?? own;
+  const setText = onChangeText ?? setOwn;
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const send = async () => {

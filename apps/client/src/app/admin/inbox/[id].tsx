@@ -2,7 +2,7 @@ import { REPORT_COPY } from '@app/core';
 import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useWindowDimensions } from 'react-native';
 
-import { ReportPanel } from '@/components/report/report-panel';
+import { ReportPanel } from '@/components/admin/report-panel';
 import { Screen } from '@/components/screen';
 import { TitleBar } from '@/components/title-bar';
 import { COLUMNS_MIN, RAIL } from '@/theme';

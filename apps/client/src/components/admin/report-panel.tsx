@@ -4,13 +4,14 @@ import { CheckIcon, CopyIcon, MailIcon, RotateCcwIcon, SearchIcon, UnlinkIcon } 
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
-import { fixReport, openReport, replyToReport, sameAsFind, setReportState, setSameAs, type Report, type ReportLink } from '@/api/reports';
+import { fixReport, openReport, replyToReport, sameAsFind, setReportState, setSameAs, setSupportDraft, type Report, type ReportLink } from '@/api/reports';
 import { Alert } from '@/components/alert';
 import { Button } from '@/components/button';
 import { ButtonRow } from '@/components/button-row';
 import { Field } from '@/components/field';
 import { Group } from '@/components/group';
 import { DetailsList, ReplyBox, ReportChip, ReportThread } from '@/components/report/report-parts';
+import { SupportDraftCard } from '@/components/admin/support-draft';
 import { Row, RowIcon } from '@/components/row';
 import { ChoiceRow } from '@/components/setup/choice-row';
 import { Sheet } from '@/components/sheet';
@@ -71,6 +72,9 @@ function ReportBody({
   const [sheet, setSheet] = useState<'fix' | 'same' | null>(null);
   const [done, setDone] = useState<string | null>(null);
   const [unfolding, setUnfolding] = useState<string | null>(null);
+  // The reply box's words, which the support agent's "Change it first" fills; and which suggestion they came from.
+  const [replyText, setReplyText] = useState('');
+  const [fromDraft, setFromDraft] = useState<string | null>(null);
   const first = report.name?.split(' ')[0] ?? REPORT_COPY.gone;
   const emailOnly = report.source === 'email' && !report.userId;
   const where = emailOnly
@@ -130,7 +134,33 @@ function ReportBody({
       ) : null}
       {report.also.length > 0 ? <AlsoReported also={report.also} onOpen={onOpen} /> : null}
       {answerable ? (
-        <ReplyBox placeholder={emailOnly ? REPORT_COPY.replyByEmail(first) : REPORT_COPY.replyTo(first)} onSend={onReply} bare testID="report-reply" />
+        <SupportDraftCard
+          report={report}
+          queryKey={[...INBOX_KEY, 'report', report.id]}
+          onReply={onReply}
+          onEdit={(text, draftId) => {
+            setReplyText(text);
+            setFromDraft(draftId);
+          }}
+          onDone={refresh}
+        />
+      ) : null}
+      {answerable ? (
+        <ReplyBox
+          placeholder={emailOnly ? REPORT_COPY.replyByEmail(first) : REPORT_COPY.replyTo(first)}
+          text={replyText}
+          onChangeText={setReplyText}
+          onSend={async (text) => {
+            await onReply(text);
+            if (fromDraft) {
+              setFromDraft(null);
+              // The reply went; whether the suggestion is marked used doesn't matter to the person.
+              await setSupportDraft(fromDraft, 'used').catch(() => undefined);
+            }
+          }}
+          bare
+          testID="report-reply"
+        />
       ) : null}
       <ButtonRow atEdge>
         <Button

@@ -5,7 +5,8 @@ import { type RawAsk } from "@app/core";
 import { z } from "zod";
 
 // Every Ask Jonz runs the same way, whoever is asking: a housemate's
-// (house-draft.ts) or the owner's in /admin. Claude reads and proposes
+// (house-draft.ts), the owner's in /admin (owner-ask.ts), or the support
+// agent's on a report (support-draft.ts). Claude reads and proposes
 // through the tools it's given, which already act as the person asking and
 // hold only the moves they may make, then says its last word: a reply in
 // Markdown (packages/core reply-format.ts) and, maybe, a question to tap an
@@ -23,8 +24,8 @@ export const FinalAnswer = z.object({
   ask: z.object({ kind: z.enum(["none", "choices", "day"]), options: z.array(z.string()) }),
 });
 
-export interface AgentAnswer {
-  raw: { reply: string; ask: RawAsk };
+export interface AgentAnswer<T = { reply: string; ask: RawAsk }> {
+  raw: T;
   inputTokens: number;
   outputTokens: number;
 }
@@ -43,24 +44,27 @@ export function canAsk(): boolean {
  * gateway down, a refusal, a cut-off answer); the caller answers without it.
  * `model` is Claude, unless a test stands in for it.
  */
-export async function runAgent({
+export async function runAgent<T = { reply: string; ask: RawAsk }>({
   system,
   messages,
   tools,
   model = AGENT_MODEL,
+  answer,
 }: {
   /** Fixed, so it caches: who Jonz is here and how to use the tools. */
   system: string;
   messages: ModelMessage[];
   tools: ToolSet;
   model?: LanguageModel;
-}): Promise<AgentAnswer> {
+  /** The shape of its last word, when it isn't a chat's reply and question (the support agent's suggestion). */
+  answer?: { schema: z.ZodType<T>; name: string };
+}): Promise<AgentAnswer<T>> {
   const result = await generateText({
     model,
     system,
     messages,
     tools,
-    output: Output.object({ schema: FinalAnswer, name: "jonz_reply" }),
+    output: Output.object({ schema: (answer?.schema ?? FinalAnswer) as z.ZodType<T>, name: answer?.name ?? "jonz_reply" }),
     stopWhen: isStepCount(STEPS_MAX),
     maxOutputTokens: 4000,
     maxRetries: 1,
@@ -68,7 +72,7 @@ export async function runAgent({
   });
   if (result.finishReason !== "stop") throw new Error(`No answer: ${result.finishReason}`);
   return {
-    raw: result.output,
+    raw: result.output as T,
     inputTokens: result.totalUsage.inputTokens ?? 0,
     outputTokens: result.totalUsage.outputTokens ?? 0,
   };

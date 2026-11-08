@@ -10,7 +10,7 @@ import { ListTableRow, type ListColumn } from '@/components/admin/list-table';
 import { Avatar } from '@/components/avatar';
 import { Row } from '@/components/row';
 import { ReportChip } from '@/components/report/report-parts';
-import { INBOX_KEY, ReportPanel } from '@/components/report/report-panel';
+import { INBOX_KEY, ReportPanel } from '@/components/admin/report-panel';
 import { Columns, Screen, useColumns } from '@/components/screen';
 import { TitleBar } from '@/components/title-bar';
 import { SPACE } from '@/theme';
