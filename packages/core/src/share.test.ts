@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { SIGN, SIGN_SMALL, signLegendSize, signParts, signSvg, signWidth } from "./mark";
-import { escapeHtml, joinCodeIn, joinPreview, joinSign, pagePreview, shareHtml } from "./share";
+import { offerCodeIn } from "./promotions";
+import { escapeHtml, joinCodeIn, joinPreview, joinSign, offerPreview, offerSign, pagePreview, shareHtml } from "./share";
 
 describe("a pasted link's card", () => {
   it("names the page, and the front door and anything unknown just Jonz", () => {
@@ -88,5 +89,34 @@ describe("the sign", () => {
     expect(signWidth("The Big Shared House on Wellington Road", "x")).toBe(1056);
     expect(signWidth("J", "x")).toBe(640);
     expect(signLegendSize("Jonz")).toBeGreaterThan(signLegendSize("The Big Shared House on Wellington Road"));
+  });
+});
+
+describe("an offer link's card", () => {
+  const half = { live: true, legend: "Half off", plate: "Your House Pass, a gift from Jonz.", title: "Half off your House Pass", sentence: "Half off your first payment." };
+
+  it("finds the code in the link, upper-cased, and nothing that can't be one", () => {
+    expect(offerCodeIn("/offer/friends2026")).toBe("FRIENDS2026");
+    expect(offerCodeIn("/offer/HALF/")).toBe("HALF");
+    expect(offerCodeIn("/offer/no")).toBeNull();
+    expect(offerCodeIn("/offer/<script>")).toBeNull();
+    expect(offerCodeIn("/offer/HALF/more")).toBeNull();
+    expect(offerCodeIn("/join/HALF")).toBeNull();
+  });
+
+  it("shows the offer on the sign, and Offer ended once it isn't live", () => {
+    expect(offerSign(half)).toEqual({ legend: "Half off", plate: "Your House Pass, a gift from Jonz." });
+    expect(offerSign({ ...half, live: false }).legend).toBe("Offer ended");
+    expect(offerSign(null)).toEqual({ legend: "Offer ended", plate: "Ask for a new link." });
+  });
+
+  it("titles the card with what it gives and points at its own picture", () => {
+    const card = offerPreview("HALF", half);
+    expect(card.title).toBe("Half off your House Pass");
+    expect(card.description).toBe("Half off your first payment.");
+    expect(card.url).toBe("https://jonz.app/offer/HALF");
+    expect(card.image).toBe("https://jonz.app/api/og/offer/HALF");
+    expect(offerPreview("GONE", null).title).toBe("This offer has ended");
+    expect(offerPreview("HALF", { ...half, live: false }).description).toBe("Ask for a new link.");
   });
 });

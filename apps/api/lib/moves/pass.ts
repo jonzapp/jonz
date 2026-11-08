@@ -56,7 +56,8 @@ async function houseOf(caller: Caller, houseId: string) {
  */
 export async function startCheckout(
   caller: Caller & { email: string | undefined },
-  stripe: PassStripe,
+  /** Null while Stripe isn't set up: a free Pass still works, nothing else does. */
+  stripe: PassStripe | null,
   houseId: string,
   plan: PassPurchase,
   appUrl: string,
@@ -90,6 +91,7 @@ export async function startCheckout(
   const refusal = passPurchaseRefusal(pass, plan, now);
   if (refusal) return { status: 409, message: refusal };
 
+  if (!stripe) return { status: 503, message: PASS_COPY.checkoutClosed };
   const price = await stripe.priceId(PASS_LOOKUP_KEYS[plan]);
   if (!price) return { status: 503, message: PASS_COPY.checkoutClosed };
 

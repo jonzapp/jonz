@@ -12,6 +12,7 @@ export const ADMIN_PAGES = [
   { key: "houses", label: "Houses", path: "/admin/houses" },
   { key: "messages", label: "Messages", path: "/admin/messages" },
   { key: "notices", label: "Notices", path: "/admin/notices" },
+  { key: "promotions", label: "Promotions", path: "/admin/promotions" },
   { key: "deletions", label: "Deletions", path: "/admin/deletions" },
   { key: "audit", label: "Audit log", path: "/admin/audit" },
 ] as const;
@@ -27,7 +28,7 @@ export const ADMIN_GROUPS = [
   { key: "overview", label: "Overview", pages: ["overview"] },
   { key: "inbox", label: "Inbox", pages: ["inbox"] },
   { key: "houses", label: "Houses", pages: ["houses"] },
-  { key: "send", label: "Send", pages: ["messages", "notices"] },
+  { key: "send", label: "Send", pages: ["messages", "notices", "promotions"] },
   { key: "records", label: "Records", pages: ["deletions", "audit"] },
 ] as const satisfies readonly { key: string; label: string; pages: readonly AdminPage[] }[];
 export type AdminGroup = (typeof ADMIN_GROUPS)[number]["key"];

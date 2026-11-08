@@ -9,7 +9,7 @@ Please don't open a public issue. Report it privately instead, either way:
 
 - **GitHub:** the repo's [Security tab](https://github.com/jonzapp/jonz/security/advisories/new),
   then **Report a vulnerability**.
-- **Email:** hello@jonz.app, with "Security" in the subject.
+- **Email:** support@jonz.app, with "Security" in the subject.
 
 Say what you found, how to reproduce it, and what someone could do with it.
 You'll hear back within three days, and you'll be told when it's fixed.
