@@ -53,7 +53,7 @@ test("sends a problem with a screenshot from You, then reads the reply and write
 
   // The owner replies (as owner_reply_report would).
   await admin().from("report_messages").insert({ report_id: id, from_owner: true, author_name: "Glyn", body: "Thanks Ava, fixed in today's update." });
-  await admin().from("reports").update({ state: "replied", updated_at: new Date().toISOString() }).eq("id", id);
+  await admin().from("reports").update({ state: "replied", last_activity_at: new Date().toISOString() }).eq("id", id);
 
   // You says a reply is waiting; the report shows it, and writing back sends it to the Inbox as new.
   await page.goto("/house/you");
