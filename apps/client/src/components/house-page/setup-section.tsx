@@ -38,7 +38,7 @@ export function SetupSection({ houseId, userId, view }: { houseId: string; userI
     today: away.data?.today ?? localDate(view.now, view.snapshot.rules.timezone),
     members: view.snapshot.members,
     me: userId,
-    admin: memberCan(view.me, 'johns.add'),
+    admin: memberCan(view.me, 'johns:write'),
   });
 
   return (

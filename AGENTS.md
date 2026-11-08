@@ -178,8 +178,11 @@ see "Design options for Glyn" in the `house-style` skill.
 - **Who can do what** is one list: `PERMISSIONS` and `ROLE_PERMISSIONS` in
   `packages/core/src/permissions.ts`, and the same rows in the
   `permissions` / `role_permissions` tables
-  (`supabase/migrations/20261118090000_permissions.sql`). Every table rule
-  and move asks `public.can(house, 'johns.remove')` (the server asks about
+  (`supabase/migrations/20261118090000_permissions.sql`, renamed in
+  `20261216090000_permission_names.sql`). Permissions are named
+  `resource:level` like Stripe's: `johns:write`, `ticks:write_own`,
+  `house:read` (docs/standards/database.md rule 26). Every table rule
+  and move asks `public.can(house, 'johns:write')` (the server asks about
   someone else with `user_can`); the API asks `permitted()`
   (`apps/api/lib/moves/permitted.ts`); the app asks `memberCan(me, …)`.
   Never compare `role` to `'admin'` to decide whether someone may do

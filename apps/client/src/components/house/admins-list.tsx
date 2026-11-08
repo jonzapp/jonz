@@ -34,7 +34,7 @@ export function AdminsList({ houseId, userId, view }: { houseId: string; userId:
   const { members } = view.snapshot;
   const admins = members.filter((m) => m.role === 'admin');
   const others = members.filter((m) => m.role !== 'admin');
-  const amAdmin = memberCan(view.me, 'people.roles');
+  const amAdmin = memberCan(view.me, 'members:write');
   const ADMINS_COPY = roleCopy(view.snapshot.house.kind).admins;
 
   function change(person: Housemate, to: 'admin' | 'member') {

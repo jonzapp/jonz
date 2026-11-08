@@ -54,7 +54,7 @@ function StakeFor({ houseId, userId }: { houseId: string; userId: string }) {
   const nothingAtAll = stake.data?.ledger.length === 0;
   // The two latest months with forfeits in them, for an admin to let off.
   const forfeitMonths =
-    memberCan(view?.me, 'history.reset') && stake.data
+    memberCan(view?.me, 'history:write') && stake.data
       ? [...new Set(stake.data.ledger.filter((l) => l.kind === 'forfeit').map((l) => l.month))].sort().reverse().slice(0, 2)
       : [];
 

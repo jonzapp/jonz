@@ -35,7 +35,7 @@ export async function resetHouse(
   request: ResetRequest,
   now: Date,
 ): Promise<{ refusal: Refusal } | { preview: ResetPreview } | { action: string }> {
-  const refused = await permitted(caller, request.houseId, "history.reset");
+  const refused = await permitted(caller, request.houseId, "history:write");
   if (refused) return { refusal: refused };
   const own = await ownResult(caller, request);
   if (own) return { refusal: own };

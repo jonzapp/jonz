@@ -46,7 +46,7 @@ function RulesFor({ houseId, userId }: { houseId: string; userId: string }) {
     onRefresh: pull,
   };
 
-  if (view && memberCan(view.me, 'house.settings') && editing) {
+  if (view && memberCan(view.me, 'house:write') && editing) {
     const { snapshot } = view;
     const values = {
       name: snapshot.house.name,
@@ -86,7 +86,7 @@ function RulesFor({ houseId, userId }: { houseId: string; userId: string }) {
  */
 function RulesReadOut({ houseId, userId, view, onEdit }: { houseId: string; userId: string; view: HouseView; onEdit: () => void }) {
   const { snapshot } = view;
-  const isAdmin = memberCan(view.me, 'house.settings');
+  const isAdmin = memberCan(view.me, 'house:write');
   return (
     <Pair
       testID="rules-pair"

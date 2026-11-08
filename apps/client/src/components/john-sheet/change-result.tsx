@@ -18,7 +18,7 @@ import { SheetLines } from './parts';
  */
 export function ChangeResult({ item, context }: { item: BoardItem; context: JohnSheetContext }) {
   const [choice, setChoice] = useState<ResultChoice | null>(null);
-  if (!memberCan(context.me, 'history.reset') || item.dispute) return null;
+  if (!memberCan(context.me, 'history:write') || item.dispute) return null;
   const now = item.outcome === 'covered' ? null : item.outcome;
   return (
     <SheetLines testID="change-result">

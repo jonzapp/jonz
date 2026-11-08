@@ -78,7 +78,7 @@ function PersonFor({ houseId, userId, personId }: { houseId: string; userId: str
           stake={stake}
           away={away}
           admin={
-            memberCan(view.me, 'people.remove') && person.userId !== userId ? (
+            memberCan(view.me, 'members:write') && person.userId !== userId ? (
               <PersonAdmin houseId={houseId} userId={userId} person={person} />
             ) : undefined
           }

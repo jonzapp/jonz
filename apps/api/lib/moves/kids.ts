@@ -23,7 +23,7 @@ export async function addKid(caller: Caller, kid: AddKid): Promise<{ userId: str
     .select("house_id, houses(kind)")
     .eq("user_id", caller.userId)
     .maybeSingle();
-  if (!mine || mine.houses?.kind !== "family" || (await permitted(caller, mine.house_id, "people.kids"))) {
+  if (!mine || mine.houses?.kind !== "family" || (await permitted(caller, mine.house_id, "members:write"))) {
     return { message: "parents_add_kids", code: "42501" };
   }
 

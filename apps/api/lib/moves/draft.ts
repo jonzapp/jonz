@@ -102,7 +102,7 @@ export async function chatTurn(
   const list = johns && johns.length > 0 ? listAsDraft(johns.map(johnDef), (groups ?? []).map(groupDef)) : null;
   if (list && !passUnlocked(passOf(house), now)) return { refusal: { code: "P0001", message: "pass_needed" } };
   const draftNow = current ?? list;
-  const mayEdit = may("johns.add") || may("johns.edit") || may("johns.remove");
+  const mayEdit = may("johns:write");
   const offline = (): ChatResponse =>
     mayEdit ? offlineTurn(messages, draftNow) : { reply: HOUSE_DRAFT_COPY.offlineAsk, ask: null, draft: null, source: "starter" };
 
@@ -146,7 +146,7 @@ export async function chatTurn(
 
   // What the admin might want put right. Without it the chat still drafts.
   let state: ResetState | null = null;
-  if (list && may("history.reset")) {
+  if (list && may("history:write")) {
     try {
       state = await resetState(caller, houseId, now);
     } catch (e) {
@@ -172,13 +172,12 @@ export async function chatTurn(
     listJohns: () => listLines(raw),
     edit(e) {
       // The tool is only offered to someone who may, but a model's call is checked all the same.
-      const need: Permission = e.kind === "add" ? "johns.add" : e.kind === "change" ? "johns.edit" : "johns.remove";
-      if (!may(need)) return { ok: false, said: "That isn't something this person can do." };
+      if (!may("johns:write")) return { ok: false, said: "That isn't something this person can do." };
       const { raw: next, result } = editDraft(raw, e);
       return kept(result, next);
     },
     setGroup(name, groupMembers) {
-      if (!may("groups.edit")) return { ok: false, said: "That isn't something this person can do." };
+      if (!may("groups:write")) return { ok: false, said: "That isn't something this person can do." };
       const named = name.trim();
       if (!named || groupMembers.length === 0) return { ok: false, said: "A group needs a name and someone in it." };
       const there = (list?.groups ?? []).find((g) => g.name.toLocaleLowerCase() === named.toLocaleLowerCase());
@@ -190,7 +189,7 @@ export async function chatTurn(
       return kept({ ok: true, said }, { ...raw, groups: [...others, { name: there?.name ?? named, members: groupMembers }] });
     },
     async offerReset(r) {
-      if (!state || !may("history.reset")) return { ok: false, said: "Resets aren't available here." };
+      if (!state || !may("history:write")) return { ok: false, said: "Resets aren't available here." };
       if (resets.length >= CHAT_RESETS_MAX) return { ok: false, said: `That's ${CHAT_RESETS_MAX} already: offer fewer.` };
       const [offered] = await offerResets(caller, houseId, [r], state, now);
       if (!offered) return { ok: false, said: "That doesn't match anything that can be put right: check the refs in house_now." };
@@ -198,15 +197,15 @@ export async function chatTurn(
       resets.push(offered);
       return { ok: true, said: "On the card." };
     },
-    offerAway: (a) => (may("away.book") ? away.offerAway(a) : Promise.resolve({ ok: false, said: "That isn't something this person can do." })),
-    offerCancelAway: (ref) => (may("away.book") ? away.offerCancelAway(ref) : Promise.resolve({ ok: false, said: "That isn't something this person can do." })),
+    offerAway: (a) => (may("away:write_own") ? away.offerAway(a) : Promise.resolve({ ok: false, said: "That isn't something this person can do." })),
+    offerCancelAway: (ref) => (may("away:write_own") ? away.offerCancelAway(ref) : Promise.resolve({ ok: false, said: "That isn't something this person can do." })),
     may: {
-      add: may("johns.add"),
-      change: may("johns.edit"),
-      remove: may("johns.remove"),
-      groups: may("groups.edit") && (may("johns.add") || may("johns.edit")),
+      add: may("johns:write"),
+      change: may("johns:write"),
+      remove: may("johns:write"),
+      groups: may("groups:write") && may("johns:write"),
       resets: state !== null,
-      away: may("away.book"),
+      away: may("away:write_own"),
     },
   };
 

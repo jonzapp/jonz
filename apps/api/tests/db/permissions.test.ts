@@ -29,8 +29,8 @@ describe("the permissions list", () => {
     const someone = await signedInUser("Reader");
     const { data } = await someone.db.from("role_permissions").select("permission").eq("role", "member");
     expect(data!.length).toBe(ROLE_PERMISSIONS.member.length);
-    await someone.db.from("role_permissions").insert({ role: "member", permission: "johns.remove" });
-    const { data: after } = await db.from("role_permissions").select("permission").eq("role", "member").eq("permission", "johns.remove");
+    await someone.db.from("role_permissions").insert({ role: "member", permission: "johns:write" });
+    const { data: after } = await db.from("role_permissions").select("permission").eq("role", "member").eq("permission", "johns:write");
     expect(after).toEqual([]);
   });
 });
@@ -39,9 +39,9 @@ describe("can and my_permissions", () => {
   it("answer for the person asking, by their role in the house", async () => {
     const house = await makeHouse(["Ava", "Ben"]);
     const [ben] = house.members;
-    expect((await house.admin.db.rpc("can", { h: house.id, perm: "johns.remove" })).data).toBe(true);
-    expect((await ben.db.rpc("can", { h: house.id, perm: "johns.remove" })).data).toBe(false);
-    expect((await ben.db.rpc("can", { h: house.id, perm: "away.book" })).data).toBe(true);
+    expect((await house.admin.db.rpc("can", { h: house.id, perm: "johns:write" })).data).toBe(true);
+    expect((await ben.db.rpc("can", { h: house.id, perm: "johns:write" })).data).toBe(false);
+    expect((await ben.db.rpc("can", { h: house.id, perm: "away:write_own" })).data).toBe(true);
     const { data: mine } = await ben.db.rpc("my_permissions", { h: house.id });
     expect([...mine!].sort()).toEqual([...ROLE_PERMISSIONS.member].sort());
   });
@@ -49,7 +49,7 @@ describe("can and my_permissions", () => {
   it("say nothing outside the house", async () => {
     const house = await makeHouse(["Ava"]);
     const outsider = await signedInUser("Nosy");
-    expect((await outsider.db.rpc("can", { h: house.id, perm: "house.read" })).data).toBe(false);
+    expect((await outsider.db.rpc("can", { h: house.id, perm: "house:read" })).data).toBe(false);
     expect((await outsider.db.rpc("my_permissions", { h: house.id })).data).toEqual([]);
   });
 
@@ -57,15 +57,15 @@ describe("can and my_permissions", () => {
     const house = await makeHouse(["Ava", "Ben"]);
     const [ben] = house.members;
     expectOk(await house.admin.db.rpc("hand_over", { p_house: house.id, p_to: ben.userId }));
-    expect((await ben.db.rpc("can", { h: house.id, perm: "johns.edit" })).data).toBe(true);
-    expect((await house.admin.db.rpc("can", { h: house.id, perm: "johns.edit" })).data).toBe(false);
+    expect((await ben.db.rpc("can", { h: house.id, perm: "johns:write" })).data).toBe(true);
+    expect((await house.admin.db.rpc("can", { h: house.id, perm: "johns:write" })).data).toBe(false);
   });
 
   it("only the server may ask about someone else", async () => {
     const house = await makeHouse(["Ava", "Ben"]);
     const [ben] = house.members;
-    expectDenied(await ben.db.rpc("user_can", { h: house.id, who: house.admin.userId, perm: "johns.remove" }));
-    expect((await db.rpc("user_can", { h: house.id, who: house.admin.userId, perm: "johns.remove" })).data).toBe(true);
+    expectDenied(await ben.db.rpc("user_can", { h: house.id, who: house.admin.userId, perm: "johns:write" }));
+    expect((await db.rpc("user_can", { h: house.id, who: house.admin.userId, perm: "johns:write" })).data).toBe(true);
   });
 });
 

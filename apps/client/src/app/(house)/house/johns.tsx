@@ -55,7 +55,7 @@ function JohnListFor({ houseId, userId }: { houseId: string; userId: string }) {
 }
 
 function JohnListPage({ houseId, userId, view, list }: { houseId: string; userId: string; view: HouseView; list: List }) {
-  const isAdmin = memberCan(view.me, 'johns.edit');
+  const isAdmin = memberCan(view.me, 'johns:write');
   // Groups show to an admin, who makes them, and to everyone once there's one.
   const groups =
     isAdmin || list.groups.length > 0 ? (
