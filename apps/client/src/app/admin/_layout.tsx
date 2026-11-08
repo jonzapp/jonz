@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ownerStatus } from '@/api/owner';
 import { ADMIN_TAB_BAR, AdminShell } from '@/components/admin/admin-shell';
 import { CodeGate } from '@/components/admin/code-gate';
+import { OwnerAskDock, OwnerAskProvider, OwnerAskSheet } from '@/components/admin/owner-ask-panel';
 import { ReadFailed, Reading } from '@/components/read-state';
 import { ToastProvider } from '@/components/toast';
 import { SPACE, useTheme, WIDE } from '@/theme';
@@ -17,7 +18,8 @@ import NotFound from '../+not-found';
  * The owner's pages (docs/specs/owner-admin.md). Anyone who isn't the owner
  * sees the app's Nothing here, as for any page that isn't there; the owner
  * passes their code first. The database checks both again on every read and
- * write, so this is the page being polite, not the lock.
+ * write, so this is the page being polite, not the lock. The sparkles on
+ * every admin title bar open the owner's own Ask Jonz.
  */
 export default function AdminLayout() {
   const { colors } = useTheme();
@@ -32,9 +34,12 @@ export default function AdminLayout() {
   const page = ADMIN_PAGES.find((p) => pathname.startsWith(p.path))?.key ?? 'overview';
   return (
     <ToastProvider bottom={wide ? SPACE.xl : ADMIN_TAB_BAR + insets.bottom + SPACE.lg}>
-      <AdminShell page={page}>
-        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }} />
-      </AdminShell>
+      <OwnerAskProvider>
+        <AdminShell page={page} aside={<OwnerAskDock />}>
+          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }} />
+        </AdminShell>
+        <OwnerAskSheet />
+      </OwnerAskProvider>
     </ToastProvider>
   );
 }
