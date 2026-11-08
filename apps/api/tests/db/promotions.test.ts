@@ -106,8 +106,8 @@ describe("making one", () => {
     expect(made.ready).toBe(true);
     expect(s.calls.offers[0]).toMatchObject({ id: made.id, percentOff: 50, duration: "once", maxRedemptions: 2 });
 
-    const { data: row } = await db.from("promotions").select("state, stripe_code").eq("id", made.id).single();
-    expect(row).toEqual({ state: "live", stripe_code: `promo_${made.id.slice(0, 8)}` });
+    const { data: row } = await db.from("promotions").select("state, stripe_promotion_code_id").eq("id", made.id).single();
+    expect(row).toEqual({ state: "live", stripe_promotion_code_id: `promo_${made.id.slice(0, 8)}` });
     const { data: people } = await db.from("promotion_people").select("email").eq("promotion_id", made.id).order("email");
     expect(people!.map((p) => p.email).sort()).toEqual([ava.email, ben.email].sort());
 
@@ -243,9 +243,9 @@ describe("a free Pass", () => {
     const given = await startCheckout(buyer(ava), s.pass, house.id, "yearly", APP, "local", before, made.code);
     expect(given).toEqual({ url: `${APP}/house/pass?bought=1` });
     expect(s.calls.checkout).toHaveLength(0);
-    const { data: h } = await db.from("houses").select("pass_plan, pass_until").eq("id", house.id).single();
+    const { data: h } = await db.from("houses").select("pass_plan, pass_ends_at").eq("id", house.id).single();
     expect(h!.pass_plan).toBe("trial");
-    expect(new Date(h!.pass_until!).getTime()).toBeGreaterThan(before.getTime() + 12 * MONTH);
+    expect(new Date(h!.pass_ends_at!).getTime()).toBeGreaterThan(before.getTime() + 12 * MONTH);
 
     const other = await makeHouse(["Cal"]);
     const usedUp = await startCheckout(buyer(other.admin), s.pass, other.id, "yearly", APP, "local", new Date(), made.code);
@@ -257,8 +257,8 @@ describe("a free Pass", () => {
     const half = await make({ audience: "anyone" });
     expect(await startCheckout(buyer(ben), null, house.id, "yearly", APP, "local", new Date(), half.code)).toMatchObject({ status: 503 });
     expect(await startCheckout(buyer(ben), null, house.id, "yearly", APP, "local", new Date(), made.code)).toMatchObject({ url: expect.any(String) });
-    const { data: h } = await db.from("houses").select("pass_plan, pass_until, pass_buyer").eq("id", house.id).single();
-    expect(h).toEqual({ pass_plan: "founding", pass_until: null, pass_buyer: null });
+    const { data: h } = await db.from("houses").select("pass_plan, pass_ends_at, pass_bought_by").eq("id", house.id).single();
+    expect(h).toEqual({ pass_plan: "founding", pass_ends_at: null, pass_bought_by: null });
   });
 });
 

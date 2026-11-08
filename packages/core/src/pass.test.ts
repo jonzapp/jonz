@@ -34,7 +34,7 @@ const pass = (plan: HousePass["plan"], until: string | null): HousePass => ({
 
 describe("passOf", () => {
   it("reads a house row", () => {
-    expect(passOf({ pass_plan: "yearly", pass_until: "2027-11-10T12:00:00Z", pass_buyer: "u1" })).toEqual({
+    expect(passOf({ pass_plan: "yearly", pass_ends_at: "2027-11-10T12:00:00Z", pass_bought_by: "u1" })).toEqual({
       plan: "yearly",
       until: at("2027-11-10T12:00:00Z"),
       buyerId: "u1",
@@ -42,14 +42,14 @@ describe("passOf", () => {
   });
 
   it("gives a Founding house no end, whatever the row says", () => {
-    expect(passOf({ pass_plan: "founding", pass_until: "2026-01-01T00:00:00Z", pass_buyer: null }).until).toBeNull();
+    expect(passOf({ pass_plan: "founding", pass_ends_at: "2026-01-01T00:00:00Z", pass_bought_by: null }).until).toBeNull();
   });
 
   it("reads an unknown plan, or a missing end, as ended, so it never unlocks by mistake", () => {
-    const odd = passOf({ pass_plan: "platinum", pass_until: null, pass_buyer: null });
+    const odd = passOf({ pass_plan: "platinum", pass_ends_at: null, pass_bought_by: null });
     expect(odd.plan).toBe("trial");
     expect(hasPass(odd, now)).toBe(false);
-    expect(hasPass(passOf({ pass_plan: "monthly", pass_until: null, pass_buyer: null }), now)).toBe(false);
+    expect(hasPass(passOf({ pass_plan: "monthly", pass_ends_at: null, pass_bought_by: null }), now)).toBe(false);
   });
 });
 

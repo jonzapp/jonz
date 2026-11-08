@@ -34,7 +34,7 @@ export async function bookAway(caller: Caller, draft: AwayDraft, now: Date): Pro
 
   const admin = createAdminClient();
   const { data: trip } = await admin
-    .from("away")
+    .from("away_periods")
     .select("id, house_id")
     .eq("user_id", caller.userId)
     .eq("starts_on", draft.from)
@@ -50,7 +50,7 @@ export async function bookAway(caller: Caller, draft: AwayDraft, now: Date): Pro
   const { data: handed } = await admin
     .from("assignments")
     .select("id, user_id, name, due_at, needs_photo")
-    .eq("handed_by_away", trip.id)
+    .eq("handed_by_away_period_id", trip.id)
     .neq("user_id", caller.userId);
   const notify = handed?.length ? pushNotifier(admin) : null;
   if (notify && handed) {

@@ -91,7 +91,7 @@ export function houseReads(caller: Caller, houseId: string, ctx: ReadsContext): 
         .select("name, user_id, due_at, done_at, outcome, flagged_at, excused, awaits_ok, covered_by, points, group_name")
         .eq("week_id", week.id)
         .order("due_at");
-      const { data: onCall } = await caller.db.from("on_call").select("user_id, johns(name)").eq("week_id", week.id);
+      const { data: onCall } = await caller.db.from("on_call_picks").select("user_id, johns(name)").eq("week_id", week.id);
       const state = week.skipped_at ? " (skipped: it counts for nothing)" : week.closed_at ? " (closed)" : "";
       const lines = (rows ?? []).map(
         (a) =>
@@ -125,7 +125,7 @@ export function houseReads(caller: Caller, houseId: string, ctx: ReadsContext): 
 
     async timeAway() {
       const { data } = await caller.db
-        .from("away")
+        .from("away_periods")
         .select("id, user_id, starts_on, ends_on, note")
         .eq("house_id", houseId)
         .gte("ends_on", addDaysTo(today, -30))
@@ -176,8 +176,8 @@ export function houseReads(caller: Caller, houseId: string, ctx: ReadsContext): 
       const rows: Entry[] = [];
       for (let below: number | null = null; ; ) {
         const query = caller.db
-          .from("ledger")
-          .select("id, user_id, kind, amount_minor, month, counterparty, doers, created_at, assignments(name, outcome, due_at)")
+          .from("ledger_entries")
+          .select("id, user_id, kind, amount_minor, month, counterparty_user_id, doers, created_at, assignments(name, outcome, due_at)")
           .eq("house_id", houseId);
         const { data } = await (below === null ? query : query.lt("id", below)).order("id", { ascending: false }).limit(LEDGER_PAGE);
         const got = (data ?? []) as Entry[];
@@ -197,7 +197,7 @@ export function houseReads(caller: Caller, houseId: string, ctx: ReadsContext): 
         .filter((row) => row.month === month && row.kind === "forfeit")
         .map((row) => {
           const john = row.assignments;
-          const to = row.counterparty ? `, goes to ${nameOf(row.counterparty)} who covered it` : "";
+          const to = row.counterparty_user_id ? `, goes to ${nameOf(row.counterparty_user_id)} who covered it` : "";
           return `- ${nameOf(row.user_id)}: ${money(-row.amount_minor)} for ${john?.name ?? "a John"} (${john?.outcome ?? "forfeit"}, due ${john ? when(john.due_at) : "?"})${to}`;
         });
       const projection = view.projection
@@ -229,7 +229,7 @@ export function houseReads(caller: Caller, houseId: string, ctx: ReadsContext): 
         if (!week) continue;
         const { data: rows } = await caller.db
           .from("assignments")
-          .select("*, johns(every_weeks, every_months), crew(user_id, helper, points)")
+          .select("*, johns(every_weeks, every_months), crew:crew_members(user_id, helper, points)")
           .eq("week_id", week.id)
           .order("due_at");
         const board = buildWeekBoard({

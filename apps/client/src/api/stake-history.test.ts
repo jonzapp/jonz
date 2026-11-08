@@ -45,7 +45,7 @@ const row = (id: number, user_id: string, kind: string, amount_minor: number, mo
   kind,
   amount_minor,
   month,
-  counterparty: null,
+  counterparty_user_id: null,
   created_at: '2026-10-10T12:00:00Z',
 });
 
@@ -57,7 +57,7 @@ beforeEach(() => {
 
 it('keeps the whole ledger, each forfeit with its John, and the closed months', async () => {
   const john = { name: 'Bins out', outcome: 'missed', due_at: '2026-10-08T07:00:00Z' };
-  mockAnswers.ledger = {
+  mockAnswers.ledger_entries = {
     data: [
       { ...row(2, 'ava', 'forfeit', -300, '2026-10'), assignments: john },
       { ...row(1, 'ben', 'share', 400, '2026-09'), assignments: null },
@@ -71,7 +71,7 @@ it('keeps the whole ledger, each forfeit with its John, and the closed months', 
     { ...row(1, 'ben', 'share', 400, '2026-09'), john: null },
   ]);
   expect(stake.closedMonths).toEqual(['2026-09']);
-  expect(mockCalls).toContainEqual(['ledger', 'select', [expect.stringContaining('assignments(name, outcome, due_at)')]]);
+  expect(mockCalls).toContainEqual(['ledger_entries', 'select', [expect.stringContaining('assignments(name, outcome, due_at)')]]);
 });
 
 it('keeps a closed month with nothing in it', async () => {

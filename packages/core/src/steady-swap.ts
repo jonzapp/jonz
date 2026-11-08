@@ -16,7 +16,7 @@ export interface SwapOfferRow {
   mine: string;
   theirs: string;
   asked_by: string;
-  asked_to: string;
+  asked_user_id: string;
   expires_at: string;
 }
 
@@ -69,7 +69,7 @@ export function swapAsk<I extends Swappable>(args: {
 
   for (const item of mine) {
     const asked = open.find((o) => o.asked_by === viewerId && o.mine === item.id);
-    if (asked) return { kind: "asked", mine: item, withUserId: asked.asked_to, note: STEADY_COPY.asked(nameOf(asked.asked_to)) };
+    if (asked) return { kind: "asked", mine: item, withUserId: asked.asked_user_id, note: STEADY_COPY.asked(nameOf(asked.asked_user_id)) };
     const keen = new Set(members.filter((m) => m.userId !== viewerId && m.prefs.rather[item.johnId!] === 1).map((m) => m.userId));
     const theirs = items
       .filter((i) => keen.has(i.userId) && swappable(i) && !(i.johnId && me.prefs.rather[i.johnId] === -1))
@@ -115,7 +115,7 @@ export function swapOffersToYou<I extends Swappable>(args: {
   return args.offers.flatMap((o) => {
     const theirs = byId.get(o.mine);
     const yours = byId.get(o.theirs);
-    if (o.asked_to !== args.viewerId || Date.parse(o.expires_at) <= args.now.getTime()) return [];
+    if (o.asked_user_id !== args.viewerId || Date.parse(o.expires_at) <= args.now.getTime()) return [];
     if (!theirs || !yours || theirs.userId !== o.asked_by || yours.userId !== args.viewerId || !swappable(theirs) || !swappable(yours)) return [];
     return [
       {

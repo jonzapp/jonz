@@ -210,11 +210,11 @@ describe("chatTurn, with Claude stood in for", () => {
     // Days well clear of today, so the house's zone doesn't matter.
     const day = (n: number) => addDaysTo(localDate(now, "UTC"), n);
     const { data: trip } = await db
-      .from("away")
+      .from("away_periods")
       .insert({ house_id: house.id, user_id: house.admin.userId, starts_on: day(20), ends_on: day(22) })
       .select("id")
       .single();
-    await db.from("away").insert({ house_id: house.id, user_id: house.members[0].userId, starts_on: day(30), ends_on: day(31) });
+    await db.from("away_periods").insert({ house_id: house.id, user_id: house.members[0].userId, starts_on: day(30), ends_on: day(31) });
     let listed = "";
     const result = await chatTurn({ db: house.admin.db, userId: house.admin.userId }, house.id, said("Away 10th to 12th, and cancel my later trip"), null, now, async (_ctx, tools) => {
       expect(tools.may.away).toBe(true);
@@ -241,7 +241,7 @@ describe("chatTurn, with Claude stood in for", () => {
       { kind: "cancel_away", awayId: trip!.id, from: day(20), to: day(22) },
       { kind: "away", from: day(21), to: day(25) },
     ]);
-    const { count } = await db.from("away").select("id", { count: "exact", head: true }).eq("house_id", house.id);
+    const { count } = await db.from("away_periods").select("id", { count: "exact", head: true }).eq("house_id", house.id);
     expect(count).toBe(2);
   });
 

@@ -100,7 +100,7 @@ test("make a group, give it a John, and book time away", async ({ browser }) => 
   await openDay(page, today, from, 1);
   await expect(page.getByTestId("away-day-sheet").getByTestId("day-away")).toContainText(SETUP_COPY.you);
   await page.getByTestId("sheet-close").click();
-  const { data: booked } = await db.from("away").select("starts_on, ends_on, note").eq("house_id", houseId);
+  const { data: booked } = await db.from("away_periods").select("starts_on, ends_on, note").eq("house_id", houseId);
   expect(booked).toEqual([{ starts_on: from, ends_on: to, note: "Lisbon" }]);
 
   // Today says so, under the week; Ben sees it on Time away, and can't change the groups.
@@ -125,7 +125,7 @@ test("make a group, give it a John, and book time away", async ({ browser }) => 
   await awayPage.getByTestId("my-trip").getByRole("button", { name: AWAY_COPY.cancel }).click();
   await expect(awayPage.getByTestId("my-trip")).toHaveCount(0);
   await expect(awayPage.getByText(AWAY_COPY.nobody)).toBeVisible();
-  expect((await db.from("away").select("id").eq("house_id", houseId)).data).toEqual([]);
+  expect((await db.from("away_periods").select("id").eq("house_id", houseId)).data).toEqual([]);
 
   await avaContext.close();
   await benContext.close();

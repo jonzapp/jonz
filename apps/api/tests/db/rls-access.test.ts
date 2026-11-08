@@ -17,7 +17,7 @@ async function codeOf(houseId: string) {
 
 const TABLES = [
   "profiles", "houses", "members", "johns", "weeks", "assignments", "disputes",
-  "dispute_votes", "ledger", "month_closes", "events", "reactions", "push_subscriptions",
+  "dispute_votes", "ledger_entries", "month_closes", "events", "reactions", "push_subscriptions",
 ] as const;
 
 describe("a signed-out visitor", () => {
@@ -40,7 +40,7 @@ describe("someone outside the house", () => {
     await addJohns(house.id, [{ name: "Bins" }], thisWeek());
     await deal(house.id, thisWeek(), new Date());
     const outsider = await signedInUser("Nosy");
-    for (const table of ["houses", "members", "johns", "weeks", "assignments", "events", "ledger"] as const) {
+    for (const table of ["houses", "members", "johns", "weeks", "assignments", "events", "ledger_entries"] as const) {
       const { data, error } = await outsider.db.from(table).select("*");
       expect(error).toBeNull();
       expect(data, table).toEqual([]);
@@ -97,7 +97,7 @@ describe("a housemate", () => {
     expectDenied(await me.db.from("assignments").update({ done_at: new Date().toISOString() }).eq("id", mine.id));
     expectDenied(await me.db.from("assignments").delete().eq("id", mine.id));
     expectDenied(
-      await me.db.from("ledger").insert({
+      await me.db.from("ledger_entries").insert({
         house_id: house.id,
         user_id: me.userId,
         kind: "share",

@@ -39,7 +39,7 @@ const IDS = MEMBERS.map((m) => m.userId);
 let nextId = 1;
 function entry(user_id: string, kind: string, amount_minor: number, month: string, extra: Partial<LedgerRow> = {}): LedgerRow {
   const id = nextId++;
-  return { id, user_id, kind, amount_minor, month, counterparty: null, created_at: `${month}-10T12:00:00Z`, ...extra };
+  return { id, user_id, kind, amount_minor, month, counterparty_user_id: null, created_at: `${month}-10T12:00:00Z`, ...extra };
 }
 
 function row(userId: string, points: number, done = 0, late = 0, missed = 0, rank = 1): TableRow {
@@ -195,13 +195,13 @@ describe("owedMonths", () => {
     const ledger = [
       entry("tom", "forfeit", -300, "2026-08"),
       entry("tom", "forfeit", -500, "2026-09"),
-      entry("tom", "payment", 300, "2026-10", { counterparty: "sam" }),
+      entry("tom", "payment", 300, "2026-10", { counterparty_user_id: "sam" }),
     ];
     expect(owedMonths(ledger, closed, "tom")).toEqual(["2026-09"]);
   });
 
   it("keeps a month that's only partly paid", () => {
-    const ledger = [entry("tom", "forfeit", -300, "2026-08"), entry("tom", "payment", 299, "2026-10", { counterparty: "sam" })];
+    const ledger = [entry("tom", "forfeit", -300, "2026-08"), entry("tom", "payment", 299, "2026-10", { counterparty_user_id: "sam" })];
     expect(owedMonths(ledger, closed, "tom")).toEqual(["2026-08"]);
   });
 
@@ -591,8 +591,8 @@ describe("stakeHistory", () => {
   const ledger: HistoryRow[] = [
     h(entry("tom", "forfeit", -100, "2026-10", { created_at: "2026-10-20T21:30:00Z" }), { name: "Descale the kettle", outcome: "late" }),
     h(entry("tom", "forfeit", -300, "2026-10", { created_at: "2026-10-18T09:00:00Z" }), { name: "Bins out", outcome: "missed" }),
-    h(entry("tom", "payment", 266, "2026-10", { counterparty: "megan", created_at: "2026-10-12T10:00:00Z" })),
-    h(entry("megan", "payment", -266, "2026-10", { counterparty: "tom", created_at: "2026-10-12T10:00:00Z" })),
+    h(entry("tom", "payment", 266, "2026-10", { counterparty_user_id: "megan", created_at: "2026-10-12T10:00:00Z" })),
+    h(entry("megan", "payment", -266, "2026-10", { counterparty_user_id: "tom", created_at: "2026-10-12T10:00:00Z" })),
     h(entry("sam", "share", 401, "2026-09", { created_at: "2026-10-01T00:05:00Z" })),
     h(entry("tom", "cap_refund", 300, "2026-09", { created_at: "2026-10-01T00:05:00Z" })),
     h(entry("sam", "forfeit", -100, "2026-09", { created_at: "2026-09-08T08:00:00Z" })),
@@ -646,15 +646,15 @@ describe("stakeHistory", () => {
   it("is empty for an empty ledger, and names a former housemate", () => {
     expect(stakeHistory({ ...input, ledger: [], me: "sam", whole: true })).toEqual([]);
     const gone = [
-      h(entry("ben", "payment", 100, "2026-10", { counterparty: "sam" })),
-      h(entry("sam", "payment", -100, "2026-10", { counterparty: "ben" })),
+      h(entry("ben", "payment", 100, "2026-10", { counterparty_user_id: "sam" })),
+      h(entry("sam", "payment", -100, "2026-10", { counterparty_user_id: "ben" })),
     ];
     expect(stakeHistory({ ...input, ledger: gone, me: "sam", whole: true })[0].lines.map((l) => [l.title, l.amount])).toEqual([
       [`${FOCUS_SHELL_COPY.formerHousemate} paid you`, "£1"],
     ]);
     const paidGone = [
-      h(entry("tom", "payment", 100, "2026-10", { counterparty: "ben" })),
-      h(entry("ben", "payment", -100, "2026-10", { counterparty: "tom" })),
+      h(entry("tom", "payment", 100, "2026-10", { counterparty_user_id: "ben" })),
+      h(entry("ben", "payment", -100, "2026-10", { counterparty_user_id: "tom" })),
     ];
     expect(stakeHistory({ ...input, ledger: paidGone, me: "sam", whole: true })[0].lines.map((l) => [l.title, l.amount])).toEqual([
       ["Tom paid a former housemate", null],

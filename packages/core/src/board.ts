@@ -183,7 +183,7 @@ export type AssignmentRow = Pick<
   | "points"
   | "needs_photo"
   | "due_at"
-  | "due_moved_from"
+  | "original_due_at"
   | "group_name"
   | "done_at"
   | "photo_path"
@@ -213,7 +213,7 @@ export type AssignmentRow = Pick<
   /** When its holder planned to do it (Plan it), when read. */
   planned_at?: string | null;
   /** Until when its owner holds covers off ("I'm on it", hold_cover), when read. */
-  cover_held_until?: string | null;
+  cover_hold_ends_at?: string | null;
   /** In a family: a kid's tick waiting for a parent's OK, when read. */
   awaits_ok?: boolean;
   /** In a family: what it earns a kid (pocket money), when read. */
@@ -385,7 +385,7 @@ export function buildWeekBoard(input: {
         points: a.points,
         needsPhoto: a.needs_photo,
         dueAt,
-        movedFrom: a.due_moved_from ? new Date(a.due_moved_from) : null,
+        movedFrom: a.original_due_at ? new Date(a.original_due_at) : null,
         groupName: a.group_name,
         doneAt,
         photoPath: a.photo_path,
@@ -407,7 +407,7 @@ export function buildWeekBoard(input: {
         absentAt,
         crew: crews.get(job) ?? null,
         plannedAt: a.planned_at ? new Date(a.planned_at) : null,
-        heldUntil: a.cover_held_until ? new Date(a.cover_held_until) : null,
+        heldUntil: a.cover_hold_ends_at ? new Date(a.cover_hold_ends_at) : null,
       };
     });
 

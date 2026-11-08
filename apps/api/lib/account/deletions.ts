@@ -68,12 +68,12 @@ async function stopPasses(db: AdminClient, stripe: PassStripe, now: Date, run: D
       let stoppedSub: string | null = null;
       const { data: houses, error: read } = await db
         .from("houses")
-        .select("id, house_pass_billing(stripe_subscription)")
-        .eq("pass_buyer", row.user_id)
+        .select("id, house_pass_billing(stripe_subscription_id)")
+        .eq("pass_bought_by", row.user_id)
         .in("pass_plan", ["monthly", "yearly"]);
       if (read) throw new Error(read.message);
       for (const house of houses ?? []) {
-        const sub = house.house_pass_billing?.stripe_subscription;
+        const sub = house.house_pass_billing?.stripe_subscription_id;
         if (!sub) continue;
         const view = await stripe.subscription(sub);
         // Already stopping (they cancelled it themselves) or over: nothing to stop, or to start again later.
@@ -84,7 +84,7 @@ async function stopPasses(db: AdminClient, stripe: PassStripe, now: Date, run: D
       }
       const { error: written } = await db
         .from("account_deletions")
-        .update({ pass_stopped_at: now.toISOString(), pass_subscription: stoppedSub })
+        .update({ pass_stopped_at: now.toISOString(), stripe_subscription_id: stoppedSub })
         .eq("id", row.id);
       if (written) throw new Error(written.message);
     } catch (e) {
@@ -96,17 +96,17 @@ async function stopPasses(db: AdminClient, stripe: PassStripe, now: Date, run: D
 async function resumePasses(db: AdminClient, stripe: PassStripe, now: Date, run: DeletionRun) {
   const { data: rows, error } = await db
     .from("account_deletions")
-    .select("id, pass_subscription")
+    .select("id, stripe_subscription_id")
     .eq("state", "kept")
-    .not("pass_subscription", "is", null)
+    .not("stripe_subscription_id", "is", null)
     .is("pass_resumed_at", null);
   if (error) throw new Error(`Couldn't read the accounts kept: ${error.message}`);
   for (const row of rows ?? []) {
     try {
-      const view = await stripe.subscription(row.pass_subscription!);
+      const view = await stripe.subscription(row.stripe_subscription_id!);
       // One that has run out by now can't renew again; there's nothing to start.
       if (view.cancelAtPeriodEnd && ["active", "trialing", "past_due"].includes(view.status)) {
-        await stripe.resumeRenewing(row.pass_subscription!);
+        await stripe.resumeRenewing(row.stripe_subscription_id!);
         run.resumed += 1;
       }
       const { error: written } = await db
@@ -125,8 +125,8 @@ async function finishDue(db: AdminClient, stripe: PassStripe | null, now: Date, 
     .from("account_deletions")
     .select("id, user_id, requested_by")
     .eq("state", "pending")
-    .lte("delete_after", now.toISOString())
-    .order("delete_after")
+    .lte("deletes_at", now.toISOString())
+    .order("deletes_at")
     .limit(50);
   if (error) throw new Error(`Couldn't read the accounts due to go: ${error.message}`);
   for (const row of rows ?? []) {
@@ -210,19 +210,19 @@ async function sendLastLetter(send: SendEmail, last: LastLetter, deletionId: str
 async function stopCarriedPass(db: AdminClient, stripe: PassStripe, userId: string, now: Date) {
   const { data: rows, error } = await db
     .from("moving_pass_billing")
-    .select("move_id, stripe_subscription, moved_on!inner(user_id, pass_state, pass_stopped_at)")
-    .eq("moved_on.user_id", userId)
-    .is("moved_on.pass_stopped_at", null)
-    .in("moved_on.pass_state", ["waiting", "left"])
-    .not("stripe_subscription", "is", null);
+    .select("move_id, stripe_subscription_id, moves!inner(user_id, pass_state, pass_stopped_at)")
+    .eq("moves.user_id", userId)
+    .is("moves.pass_stopped_at", null)
+    .in("moves.pass_state", ["waiting", "left"])
+    .not("stripe_subscription_id", "is", null);
   if (error) throw new Error(error.message);
   for (const row of rows ?? []) {
-    await stripe.stopRenewing(row.stripe_subscription!);
+    await stripe.stopRenewing(row.stripe_subscription_id!);
     const { error: written } = await db
-      .from("moved_on")
+      .from("moves")
       .update({
         pass_stopped_at: now.toISOString(),
-        ...(row.moved_on.pass_state === "waiting" ? { pass_state: "lapsed" } : {}),
+        ...(row.moves.pass_state === "waiting" ? { pass_state: "lapsed" } : {}),
       })
       .eq("id", row.move_id);
     if (written) throw new Error(written.message);

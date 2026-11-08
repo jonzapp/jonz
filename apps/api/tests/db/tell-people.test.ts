@@ -117,7 +117,7 @@ describe("I'm on it (hold_cover)", () => {
     expectRule(await owner.db.rpc("hold_cover", { p_assignment: a.id }), "cover_held_once");
 
     // Once the hold is up, it can be covered.
-    expectOk(await db.from("assignments").update({ cover_held_until: new Date(Date.now() - 1000).toISOString() }).eq("id", a.id));
+    expectOk(await db.from("assignments").update({ cover_hold_ends_at: new Date(Date.now() - 1000).toISOString() }).eq("id", a.id));
     expectOk(await coverer.db.rpc("cover_john", { p_assignment: a.id }));
   });
 

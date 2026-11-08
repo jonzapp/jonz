@@ -222,7 +222,7 @@ async function refreshCopy(): Promise<boolean> {
   }
 }
 
-const AUDIT_COLUMNS = 'id, at, actor, action, target_kind, target_id, reason, before, after';
+const AUDIT_COLUMNS = 'id, at:created_at, actor, action, target_kind, target_id, reason, before, after';
 
 /** What the audit log is narrowed to: the search box, Who (with whose account "You" is), What, and When's window. */
 export interface AuditFilter {
@@ -271,8 +271,8 @@ function narrowed<T extends Narrowable<T>>(query: T, filter: AuditFilter): T {
   if (filter.who === 'jonz') narrow = narrow.is('actor', null);
   const action = AUDIT_WHAT_ACTION[filter.what];
   if (action) narrow = narrow.like('action', `${action}%`);
-  if (filter.after) narrow = narrow.gt('at', filter.after);
-  if (filter.before) narrow = narrow.lte('at', filter.before);
+  if (filter.after) narrow = narrow.gt('created_at', filter.after);
+  if (filter.before) narrow = narrow.lte('created_at', filter.before);
   const search = auditSearchFilter(filter.q);
   if (search) narrow = narrow.or(search);
   return narrow;
@@ -338,7 +338,7 @@ type DeletionRow = {
   email: string | null;
   house_name: string | null;
   requested_at: string;
-  delete_after: string;
+  deletes_at: string;
   requested_by: string;
 };
 
@@ -349,7 +349,7 @@ function deletionFromRow(row: DeletionRow): PendingDeletion {
     email: row.email ?? null,
     house: row.house_name ?? null,
     requestedAt: row.requested_at,
-    deleteAfter: row.delete_after,
+    deleteAfter: row.deletes_at,
     requestedBy: row.requested_by === 'owner' ? 'owner' : 'self',
   };
 }

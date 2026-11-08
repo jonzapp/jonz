@@ -138,7 +138,7 @@ describe("flags", () => {
     const house = await makeHouse(["Ava", "Ben", "Cal"]);
     const [bins] = await addJohns(house.id, [{ name: "Bins", points: 1, onCall: { respondHours } }, { name: "Bathroom", points: 4 }], thisWeek());
     const { weekId } = await deal(house.id, thisWeek(), new Date());
-    const { data: oc } = await db.from("on_call").select("user_id").eq("week_id", weekId).eq("john_id", bins.id).single();
+    const { data: oc } = await db.from("on_call_picks").select("user_id").eq("week_id", weekId).eq("john_id", bins.id).single();
     const holder = actorFor(house, oc!.user_id);
     return { house, bins, holder, flagger: someoneElse(house, holder.userId) };
   }

@@ -55,12 +55,12 @@ type PromotionRow = {
   ends_at: string | null;
   max_uses: number | null;
   state: string;
-  stripe_coupon: string | null;
-  stripe_code: string | null;
+  stripe_coupon_id: string | null;
+  stripe_promotion_code_id: string | null;
 };
 
 const COLUMNS =
-  "id, code, name, note, kind, percent_off, amount_off, duration, months, plans, audience, ends_at, max_uses, state, stripe_coupon, stripe_code";
+  "id, code, name, note, kind, percent_off, amount_off, duration, months, plans, audience, ends_at, max_uses, state, stripe_coupon_id, stripe_promotion_code_id";
 
 /** Makes a promotion and, for money off, sets it up in Stripe. Saved but not ready when Stripe can't be reached. */
 export async function makePromotion(
@@ -232,11 +232,11 @@ export async function giveGift(
   const months = offer.row.months;
   const pass =
     months === null
-      ? { pass_plan: "founding", pass_until: null, pass_buyer: null }
+      ? { pass_plan: "founding", pass_ends_at: null, pass_bought_by: null }
       : {
           pass_plan: "trial",
-          pass_until: addMonths(hasPass(house.pass, now) && house.pass.until ? house.pass.until : now, months).toISOString(),
-          pass_buyer: null,
+          pass_ends_at: addMonths(hasPass(house.pass, now) && house.pass.until ? house.pass.until : now, months).toISOString(),
+          pass_bought_by: null,
         };
   const { error: written } = await db.from("houses").update(pass).eq("id", house.id);
   if (written) throw new Error(`Couldn't write the House Pass: ${written.message}`);
@@ -288,7 +288,7 @@ export async function readOffer(
   let you: OfferView["you"] = null;
   let currency: Currency = "USD";
   if (viewer?.email) {
-    const { data: houses } = await viewer.db.from("houses").select("id, name, currency, pass_plan, pass_until, pass_buyer");
+    const { data: houses } = await viewer.db.from("houses").select("id, name, currency, pass_plan, pass_ends_at, pass_bought_by");
     currency = (houses?.[0]?.currency as Currency | undefined) ?? "USD";
     const plan = facts.terms.kind === "gift" ? null : (facts.terms.plans[0] ?? null);
     you = {

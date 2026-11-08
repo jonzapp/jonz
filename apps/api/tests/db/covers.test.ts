@@ -130,11 +130,11 @@ describe("what the clock does with a cover", () => {
 
     await tickHouse(db, house.id, new Date(week.endsAt.getTime() + 2 * DAY));
     expect((await reread("assignments", a.id)).outcome).toBe("covered");
-    const { data: forfeits } = await db.from("ledger").select("user_id, amount_minor, counterparty").eq("assignment_id", a.id);
-    expect(forfeits).toEqual([{ user_id: a.user_id, amount_minor: -300, counterparty: coverer.userId }]);
+    const { data: forfeits } = await db.from("ledger_entries").select("user_id, amount_minor, counterparty_user_id").eq("assignment_id", a.id);
+    expect(forfeits).toEqual([{ user_id: a.user_id, amount_minor: -300, counterparty_user_id: coverer.userId }]);
 
     await tickHouse(db, house.id, new Date(week.endsAt.getTime() + 40 * DAY));
-    const { data: rows } = await db.from("ledger").select("user_id, amount_minor").eq("house_id", house.id).eq("month", month);
+    const { data: rows } = await db.from("ledger_entries").select("user_id, amount_minor").eq("house_id", house.id).eq("month", month);
     const net = (id: string) => rows!.filter((r) => r.user_id === id).reduce((s, r) => s + r.amount_minor, 0);
     expect([net(a.user_id), net(coverer.userId), net(third.userId)]).toEqual([-300, 300, 0]);
   });

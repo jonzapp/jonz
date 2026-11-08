@@ -161,7 +161,7 @@ describe('the header', () => {
       client.setQueryData(
         stakeKey('h1'),
         buildStake({
-          ledger: [{ id: 1, user_id: 'priya', kind: 'forfeit', amount_minor: -1800, month, counterparty: null, created_at: at(-1) }],
+          ledger: [{ id: 1, user_id: 'priya', kind: 'forfeit', amount_minor: -1800, month, counterparty_user_id: null, created_at: at(-1) }],
           closedMonths: [],
           memberIds: ['priya', 'sam'],
           stakeMinor: 2000,
@@ -571,7 +571,7 @@ describe("covering a housemate's John", () => {
   });
 
   it("says its owner is on it, and holds the cover off until then", async () => {
-    await show(house([binsOut(), samsBath({ due_at: at(-5), cover_held_until: at(1) })]));
+    await show(house([binsOut(), samsBath({ due_at: at(-5), cover_hold_ends_at: at(1) })]));
     const body = await openOn('Open a4');
     expect(within(body).getByTestId('cover-soon')).toHaveTextContent(/^Sam is on it\. Anyone else can cover it from /);
     expect(within(body).queryByRole('button', { name: JOHN_SHEET_COPY.coverIt })).toBeNull();
@@ -591,7 +591,7 @@ describe("covering a housemate's John", () => {
   });
 
   it("says until when the owner's hold lasts", async () => {
-    await show(house([binsOut({ due_at: at(-5), cover_held_until: at(1) })]));
+    await show(house([binsOut({ due_at: at(-5), cover_hold_ends_at: at(1) })]));
     const body = await openOn('Open a1');
     expect(within(body).queryByTestId('on-it')).toBeNull();
     expect(within(body).getByTestId('cover-held')).toHaveTextContent(/^You’re on it\. Covers wait until /);

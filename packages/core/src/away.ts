@@ -83,7 +83,7 @@ export function remaining(period: AwayPeriod, today: string): { from: string; to
 
 /** A period from its `away` row. */
 export function awayPeriod(
-  row: Pick<Database["public"]["Tables"]["away"]["Row"], "id" | "user_id" | "starts_on" | "ends_on" | "note">,
+  row: Pick<Database["public"]["Tables"]["away_periods"]["Row"], "id" | "user_id" | "starts_on" | "ends_on" | "note">,
 ): AwayPeriod {
   return { id: row.id, userId: row.user_id, startsOn: row.starts_on, endsOn: row.ends_on, note: row.note };
 }

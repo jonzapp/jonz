@@ -65,12 +65,12 @@ const checkoutEvent = (object: Record<string, unknown>) =>
   ({ type: "checkout.session.completed", data: { object } }) as unknown as Stripe.Event;
 
 async function passOfHouse(id: string) {
-  const { data } = await db.from("houses").select("created_at, pass_plan, pass_until, pass_buyer").eq("id", id).single();
+  const { data } = await db.from("houses").select("created_at, pass_plan, pass_ends_at, pass_bought_by").eq("id", id).single();
   return data!;
 }
 
 async function billingOf(id: string) {
-  const { data } = await db.from("house_pass_billing").select("stripe_customer, stripe_subscription").eq("house_id", id).maybeSingle();
+  const { data } = await db.from("house_pass_billing").select("stripe_customer_id, stripe_subscription_id").eq("house_id", id).maybeSingle();
   return data;
 }
 
@@ -90,7 +90,7 @@ describe("Checkout", () => {
       currency: "gbp",
       email: "Ben@test.local",
       metadata: { house_id: house.id, plan: "yearly", buyer: house.members[0].userId, stage: "local" },
-      trialEnd: secs(new Date(row.pass_until!)),
+      trialEnd: secs(new Date(row.pass_ends_at!)),
       successUrl: `${APP}/house/pass?bought=1`,
       cancelUrl: `${APP}/house/pass`,
     });
@@ -111,7 +111,7 @@ describe("Checkout", () => {
     const { stripe, calls } = fakeStripe();
     expect(await startCheckout(caller(stranger), stripe, house.id, "yearly", APP, "local", now())).toMatchObject({ status: 403 });
 
-    await db.from("houses").update({ pass_plan: "founding", pass_until: null }).eq("id", house.id);
+    await db.from("houses").update({ pass_plan: "founding", pass_ends_at: null }).eq("id", house.id);
     expect(await startCheckout(caller(house.admin), stripe, house.id, "founding", APP, "local", now())).toMatchObject({ status: 409 });
     expect(calls.checkout).toHaveLength(0);
   });
@@ -137,12 +137,12 @@ describe("Stripe's events", () => {
     expect(done).toBe("subscription");
     const row = await passOfHouse(house.id);
     expect(row.pass_plan).toBe("yearly");
-    expect(Date.parse(row.pass_until!)).toBe(secs(end) * 1000);
-    expect(row.pass_buyer).toBe(house.admin.userId);
-    expect(await billingOf(house.id)).toEqual({ stripe_customer: "cus_test_1", stripe_subscription: "sub_1" });
+    expect(Date.parse(row.pass_ends_at!)).toBe(secs(end) * 1000);
+    expect(row.pass_bought_by).toBe(house.admin.userId);
+    expect(await billingOf(house.id)).toEqual({ stripe_customer_id: "cus_test_1", stripe_subscription_id: "sub_1" });
 
     expectDenied(await house.admin.db.from("house_pass_billing").select("*").eq("house_id", house.id));
-    expectDenied(await house.members[0].db.from("house_pass_billing").insert({ house_id: house.id, stripe_customer: "cus_x" }));
+    expectDenied(await house.members[0].db.from("house_pass_billing").insert({ house_id: house.id, stripe_customer_id: "cus_x" }));
   });
 
   it("waits while a first payment goes through", async () => {
@@ -166,9 +166,9 @@ describe("Stripe's events", () => {
     expect(await applyPassEvent(db, stripe, subscriptionEvent("sub_1", "customer.subscription.deleted"), now(), "local")).toBe("subscription");
     const row = await passOfHouse(house.id);
     expect(row.pass_plan).toBe("trial");
-    expect(Date.parse(row.pass_until!)).toBe(passFreeUntil(created).getTime());
-    expect(row.pass_buyer).toBeNull();
-    expect((await billingOf(house.id))!.stripe_subscription).toBeNull();
+    expect(Date.parse(row.pass_ends_at!)).toBe(passFreeUntil(created).getTime());
+    expect(row.pass_bought_by).toBeNull();
+    expect((await billingOf(house.id))!.stripe_subscription_id).toBeNull();
   });
 
   it("lets an old subscription end without touching the house's new one", async () => {
@@ -182,7 +182,7 @@ describe("Stripe's events", () => {
     expect(await applyPassEvent(db, stripe, subscriptionEvent("sub_old", "customer.subscription.deleted"), now(), "local")).toBe("ignored");
     const row = await passOfHouse(house.id);
     expect(row.pass_plan).toBe("monthly");
-    expect(Date.parse(row.pass_until!)).toBe(secs(end) * 1000);
+    expect(Date.parse(row.pass_ends_at!)).toBe(secs(end) * 1000);
   });
 
   it("makes a house Founding for good, and stops the plan it was paying for renewing", async () => {
@@ -199,7 +199,7 @@ describe("Stripe's events", () => {
     });
     expect(await applyPassEvent(db, stripe, paid, now(), "local")).toBe("founding");
     expect(calls.stopped).toEqual(["sub_1"]);
-    expect(await passOfHouse(house.id)).toMatchObject({ pass_plan: "founding", pass_until: null, pass_buyer: house.members[0].userId });
+    expect(await passOfHouse(house.id)).toMatchObject({ pass_plan: "founding", pass_ends_at: null, pass_bought_by: house.members[0].userId });
 
     // The old plan running out later changes nothing.
     subs.sub_1 = { ...subs.sub_1, status: "canceled", endedAt: secs(new Date()) };

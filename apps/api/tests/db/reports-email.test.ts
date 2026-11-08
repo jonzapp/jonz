@@ -197,8 +197,8 @@ describe("Same as", () => {
     // Folding a pile into another brings the pile along.
     const other = await sent(ava, `${words} other`);
     expectOk(await owner.db.rpc("owner_same_as", { p_report: main, p_main: other }));
-    const { data: rows } = await db.from("reports").select("id, same_as").in("id", [main, second, third]);
-    expect(rows!.every((r) => r.same_as === other)).toBe(true);
+    const { data: rows } = await db.from("reports").select("id, same_as_report_id").in("id", [main, second, third]);
+    expect(rows!.every((r) => r.same_as_report_id === other)).toBe(true);
   });
 
   it("finds the reports it might be, leaving out this one and its pile", async () => {

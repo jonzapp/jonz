@@ -15,20 +15,20 @@ export const CARRY_DAYS = 30;
 export async function stopCarriedPasses(db: AdminClient, stripe: PassStripe, now: Date): Promise<number> {
   const { data: rows, error } = await db
     .from("moving_pass_billing")
-    .select("move_id, stripe_subscription, moved_on!inner(pass_state, left_at, pass_stopped_at)")
-    .not("stripe_subscription", "is", null)
-    .is("moved_on.pass_stopped_at", null)
-    .in("moved_on.pass_state", ["left", "waiting"]);
+    .select("move_id, stripe_subscription_id, moves!inner(pass_state, left_at, pass_stopped_at)")
+    .not("stripe_subscription_id", "is", null)
+    .is("moves.pass_stopped_at", null)
+    .in("moves.pass_state", ["left", "waiting"]);
   if (error) throw new Error(`Couldn't read the moving House Passes: ${error.message}`);
   const waitedSince = now.getTime() - CARRY_DAYS * 86_400_000;
   let stopped = 0;
   for (const row of rows ?? []) {
-    const move = row.moved_on;
+    const move = row.moves;
     const due = move.pass_state === "left" || new Date(move.left_at).getTime() < waitedSince;
-    if (!due || !row.stripe_subscription) continue;
-    await stripe.stopRenewing(row.stripe_subscription);
+    if (!due || !row.stripe_subscription_id) continue;
+    await stripe.stopRenewing(row.stripe_subscription_id);
     const { error: written } = await db
-      .from("moved_on")
+      .from("moves")
       .update({
         pass_stopped_at: now.toISOString(),
         ...(move.pass_state === "waiting" ? { pass_state: "lapsed" } : {}),

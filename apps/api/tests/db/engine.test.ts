@@ -17,7 +17,7 @@ const DAY = 86_400_000;
 const db = adminClient();
 
 async function ledgerOf(houseId: string) {
-  const { data } = await db.from("ledger").select("user_id, kind, amount_minor, month").eq("house_id", houseId);
+  const { data } = await db.from("ledger_entries").select("user_id, kind, amount_minor, month").eq("house_id", houseId);
   return data!;
 }
 

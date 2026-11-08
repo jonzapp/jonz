@@ -57,9 +57,9 @@ async function avasHouse(): Promise<{ house: House; ava: Actor; ben: Actor; cal:
   const sub = `sub_${house.id.slice(0, 8)}`;
   await db
     .from("houses")
-    .update({ pass_plan: "yearly", pass_until: new Date(Date.now() + 200 * DAY).toISOString(), pass_buyer: house.admin.userId })
+    .update({ pass_plan: "yearly", pass_ends_at: new Date(Date.now() + 200 * DAY).toISOString(), pass_bought_by: house.admin.userId })
     .eq("id", house.id);
-  await db.from("house_pass_billing").insert({ house_id: house.id, stripe_customer: "cus_ava", stripe_subscription: sub });
+  await db.from("house_pass_billing").insert({ house_id: house.id, stripe_customer_id: "cus_ava", stripe_subscription_id: sub });
   return { house, ava: house.admin, ben: house.members[0], cal: house.members[1], sub };
 }
 
@@ -75,7 +75,7 @@ async function deletionOf(userId: string) {
 }
 
 async function awayOf(houseId: string, userId: string) {
-  const { data } = await db.from("away").select("starts_on, ends_on").eq("house_id", houseId).eq("user_id", userId).order("starts_on");
+  const { data } = await db.from("away_periods").select("starts_on, ends_on").eq("house_id", houseId).eq("user_id", userId).order("starts_on");
   return data ?? [];
 }
 
@@ -175,7 +175,7 @@ describe("the owner's Deletions", () => {
     const { data: user } = await db.auth.admin.getUserById(cal.userId);
     expectOk(await owner.db.rpc("owner_request_deletion", { p_email: user.user!.email!, p_reason: "Email of 31 Oct" }));
     // Ava's goes tomorrow; the others wait out their 30 days.
-    await db.from("account_deletions").update({ delete_after: new Date(Date.now() + DAY / 2).toISOString() }).eq("user_id", ava.userId);
+    await db.from("account_deletions").update({ deletes_at: new Date(Date.now() + DAY / 2).toISOString() }).eq("user_id", ava.userId);
 
     const count = async (args: Record<string, string>) => (await owner.db.rpc("owner_deletions_count", args)).data;
     const names = async (args: Record<string, string>) => ((await owner.db.rpc("owner_deletions_page", args)).data ?? []).map((r) => r.name);
@@ -200,7 +200,7 @@ describe("the owner's Deletions", () => {
     const { data: next } = await owner.db.rpc("owner_deletions_page", {
       ...ours,
       p_limit: 1,
-      p_cursor_at: first![0].delete_after,
+      p_cursor_at: first![0].deletes_at,
       p_cursor_user: first![0].user_id,
     });
     expect(first!.map((r) => r.name)).toEqual(["Ava"]);
@@ -216,7 +216,7 @@ describe("the owner's Deletions", () => {
     await ava.db.rpc("request_account_deletion");
     await ben.db.rpc("request_account_deletion");
     expectOk(await owner.db.rpc("owner_delete_now", { p_user: ava.userId, p_reason: "Asked by email for it sooner" }));
-    expect(Date.parse((await deletionOf(ava.userId)).delete_after)).toBeLessThanOrEqual(Date.now() + 5_000);
+    expect(Date.parse((await deletionOf(ava.userId)).deletes_at)).toBeLessThanOrEqual(Date.now() + 5_000);
     expectOk(await owner.db.rpc("owner_stop_deletion", { p_user: ben.userId, p_reason: "Changed their mind" }));
     expect((await deletionOf(ben.userId)).state).toBe("kept");
     expectRule(await owner.db.rpc("owner_stop_deletion", { p_user: ben.userId }), "no_deletion");
@@ -224,7 +224,7 @@ describe("the owner's Deletions", () => {
     expect((await auditFor(ava.userId)).at(-1)).toMatchObject({ actor: owner.userId, action: "account.delete_now", reason: "Asked by email for it sooner" });
     expect((await auditFor(ben.userId)).at(-1)).toMatchObject({ actor: owner.userId, action: "account.delete_stop", reason: "Changed their mind" });
     // What the owner did isn't in the house's History.
-    const { data: actions } = await db.from("house_actions").select("id").eq("actor", owner.userId);
+    const { data: actions } = await db.from("house_actions").select("id").eq("done_by", owner.userId);
     expect(actions).toEqual([]);
   });
 
@@ -250,7 +250,7 @@ describe("the clock", () => {
     const first = await runDeletions(db, stripe, new Date());
     expect(first.errors).toEqual([]);
     expect(calls.stopped).toContain(sub);
-    expect(await deletionOf(ava.userId)).toMatchObject({ pass_subscription: sub, pass_stopped_at: expect.any(String) });
+    expect(await deletionOf(ava.userId)).toMatchObject({ stripe_subscription_id: sub, pass_stopped_at: expect.any(String) });
 
     // Told once.
     await runDeletions(db, stripe, new Date());
@@ -268,7 +268,7 @@ describe("the clock", () => {
     const email = user.user!.email!;
     await ava.db.rpc("request_account_deletion");
     // As if the 30 days were up.
-    await db.from("account_deletions").update({ delete_after: new Date(Date.now() - 60_000).toISOString() }).eq("user_id", ava.userId);
+    await db.from("account_deletions").update({ deletes_at: new Date(Date.now() - 60_000).toISOString() }).eq("user_id", ava.userId);
 
     const sent: { to: string; subject: string; text: string; key?: string }[] = [];
     const run = await runDeletions(db, fakeStripe().stripe, new Date(), async (to, message, options) => {
@@ -296,8 +296,8 @@ describe("the clock", () => {
     ]);
     const { data: profile } = await db.from("profiles").select("display_name, avatar_url, deleted_at").eq("id", ava.userId).single();
     expect(profile).toMatchObject({ display_name: "Someone who left", avatar_url: null, deleted_at: expect.any(String) });
-    const { data: pass } = await db.from("houses").select("pass_plan, pass_buyer").eq("id", house.id).single();
-    expect(pass).toEqual({ pass_plan: "yearly", pass_buyer: null });
+    const { data: pass } = await db.from("houses").select("pass_plan, pass_bought_by").eq("id", house.id).single();
+    expect(pass).toEqual({ pass_plan: "yearly", pass_bought_by: null });
     // The Wall still has her joining, under the name that's left.
     const { data: joined } = await db.from("events").select("id").eq("house_id", house.id).eq("user_id", ava.userId).eq("kind", "joined");
     expect(joined).toHaveLength(1);
@@ -317,7 +317,7 @@ describe("the clock", () => {
   it("deletes the account even when the last email can't go", async () => {
     const solo = await makeHouse(["Dee"]);
     await solo.admin.db.rpc("request_account_deletion");
-    await db.from("account_deletions").update({ delete_after: new Date(Date.now() - 60_000).toISOString() }).eq("user_id", solo.admin.userId);
+    await db.from("account_deletions").update({ deletes_at: new Date(Date.now() - 60_000).toISOString() }).eq("user_id", solo.admin.userId);
     const quiet = vi.spyOn(console, "error").mockImplementation(() => {});
     const run = await runDeletions(db, null, new Date(), async () => {
       throw new Error("Resend is down");
@@ -331,7 +331,7 @@ describe("the clock", () => {
   it("leaves a house empty, and closed, when its last member goes", async () => {
     const solo = await makeHouse(["Solo"]);
     await solo.admin.db.rpc("request_account_deletion");
-    await db.from("account_deletions").update({ delete_after: new Date(Date.now() - 60_000).toISOString() }).eq("user_id", solo.admin.userId);
+    await db.from("account_deletions").update({ deletes_at: new Date(Date.now() - 60_000).toISOString() }).eq("user_id", solo.admin.userId);
     const run = await runDeletions(db, null, new Date());
     expect(run.errors).toEqual([]);
     const { data: members } = await db.from("members").select("user_id").eq("house_id", solo.id);

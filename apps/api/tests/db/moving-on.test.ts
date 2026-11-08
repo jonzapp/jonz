@@ -21,7 +21,7 @@ function recorder() {
 }
 
 async function movesOf(userId: string) {
-  const { data } = await db.from("moved_on").select("*").eq("user_id", userId).order("left_at");
+  const { data } = await db.from("moves").select("*").eq("user_id", userId).order("left_at");
   return data!;
 }
 
@@ -83,7 +83,7 @@ describe("leaving", () => {
 
     const moves = await movesOf(ben.userId);
     expect(moves).toHaveLength(1);
-    expect(moves[0]).toMatchObject({ from_house: house.id, to_house: null, how: null, reminded_at: null });
+    expect(moves[0]).toMatchObject({ from_house_id: house.id, to_house_id: null, how: null, reminded_at: null });
     const { data: post } = await db.from("events").select("user_id, data").eq("house_id", house.id).eq("kind", "moved_out");
     expect(post).toEqual([{ user_id: ben.userId, data: { who: "Ben" } }]);
   });
@@ -116,12 +116,12 @@ describe("leaving", () => {
     const house = await makeHouse(["Ava", "Ben"]);
     const ben = house.members[0];
     expectOk(await ben.db.rpc("remove_member", { p_house: house.id, p_user: ben.userId }));
-    const { data: mine } = await ben.db.from("moved_on").select("id");
+    const { data: mine } = await ben.db.from("moves").select("id");
     expect(mine).toHaveLength(1);
-    const { data: theirs } = await house.admin.db.from("moved_on").select("id");
+    const { data: theirs } = await house.admin.db.from("moves").select("id");
     expect(theirs).toEqual([]);
     // And nobody writes one by hand.
-    const { error } = await ben.db.from("moved_on").insert({ user_id: ben.userId, from_house: house.id });
+    const { error } = await ben.db.from("moves").insert({ user_id: ben.userId, from_house_id: house.id });
     expect(error?.code).toBe("42501");
   });
 });
@@ -145,7 +145,7 @@ describe("start_house_from", () => {
     expectOk(await ben.db.rpc("remove_member", { p_house: house.id, p_user: ben.userId }));
 
     const { data: offer } = await ben.db.rpc("moving_on");
-    expect(offer).toMatchObject([{ from_house: house.id, house_name: "Ava's house", johns: 2 }]);
+    expect(offer).toMatchObject([{ from_house_id: house.id, house_name: "Ava's house", johns: 2 }]);
 
     const res = await ben.db.rpc("start_house_from", {
       p_from: house.id,
@@ -166,7 +166,7 @@ describe("start_house_from", () => {
     ]);
     const { data: role } = await db.from("members").select("role").eq("house_id", res.data!).eq("user_id", ben.userId).single();
     expect(role!.role).toBe("admin");
-    expect(await movesOf(ben.userId)).toMatchObject([{ from_house: house.id, to_house: res.data, how: "copied" }]);
+    expect(await movesOf(ben.userId)).toMatchObject([{ from_house_id: house.id, to_house_id: res.data, how: "copied" }]);
     // Moved on: nothing more to offer.
     const { data: after } = await ben.db.rpc("moving_on");
     expect(after).toEqual([]);
@@ -195,8 +195,8 @@ describe("start_house_from", () => {
     const started = await ben.db.rpc("create_house", { p_name: "Ben's", p_timezone: ZONE, p_currency: "GBP", p_week_starts: 1 });
     expectOk(started);
     expectOk(await cal.db.rpc("join_house", { p_code: next.code }));
-    expect(await movesOf(ben.userId)).toMatchObject([{ to_house: started.data, how: "started" }]);
-    expect(await movesOf(cal.userId)).toMatchObject([{ to_house: next.id, how: "joined" }]);
+    expect(await movesOf(ben.userId)).toMatchObject([{ to_house_id: started.data, how: "started" }]);
+    expect(await movesOf(cal.userId)).toMatchObject([{ to_house_id: next.id, how: "joined" }]);
   });
 });
 
@@ -232,7 +232,7 @@ describe("the one reminder", () => {
     // Cal has found a house since.
     expectOk(await cal.db.rpc("create_house", { p_name: "Cal's", p_timezone: ZONE, p_currency: "GBP", p_week_starts: 1 }));
     await db
-      .from("moved_on")
+      .from("moves")
       .update({ left_at: new Date(Date.now() - 15 * DAY).toISOString() })
       .in("user_id", [ben.userId, cal.userId]);
 
@@ -251,7 +251,7 @@ describe("the one reminder", () => {
     const house = await makeHouse(["Ava", "Ben", "Cal"]);
     const [ben, cal] = house.members;
     for (const who of [ben, cal]) expectOk(await who.db.rpc("remove_member", { p_house: house.id, p_user: who.userId }));
-    await db.from("moved_on").update({ left_at: new Date(Date.now() - 31 * DAY).toISOString() }).eq("user_id", cal.userId);
+    await db.from("moves").update({ left_at: new Date(Date.now() - 31 * DAY).toISOString() }).eq("user_id", cal.userId);
     const r = recorder();
     await remindMovers(db, new Date(), r.notify);
     expect(r.sent.filter((s) => s.to.includes(ben.userId) || s.to.includes(cal.userId))).toEqual([]);
@@ -262,7 +262,7 @@ describe("the one reminder", () => {
     const [ben, cal] = house.members;
     for (const who of [ben, cal]) expectOk(await who.db.rpc("remove_member", { p_house: house.id, p_user: who.userId }));
     await db
-      .from("moved_on")
+      .from("moves")
       .update({ left_at: new Date(Date.now() - 15 * DAY).toISOString() })
       .in("user_id", [ben.userId, cal.userId]);
     const now = new Date();
@@ -274,7 +274,7 @@ describe("the one reminder", () => {
     const r = recorder();
     await remindMovers(db, now, r.notify);
     expect(r.sent.filter((s) => s.to.includes(ben.userId) || s.to.includes(cal.userId))).toEqual([]);
-    const moves = await db.from("moved_on").select("user_id, reminded_at").in("user_id", [ben.userId, cal.userId]);
+    const moves = await db.from("moves").select("user_id, reminded_at").in("user_id", [ben.userId, cal.userId]);
     expect(moves.data!.find((m) => m.user_id === ben.userId)!.reminded_at).toBeNull();
     expect(moves.data!.find((m) => m.user_id === cal.userId)!.reminded_at).not.toBeNull();
   });

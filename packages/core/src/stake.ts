@@ -16,7 +16,7 @@ import type { HouseRules, Outcome } from "./domain";
  *
  *   forfeit     written as each late, missed or covered John is settled
  *               (negative); a covered John's names its coverer as the
- *               counterparty, and a no-show's on a John done together names
+ *               counterparty_user_id, and a no-show's on a John done together names
  *               everyone who did it (doers)
  *   cap_refund  at month end, gives back anything forfeited beyond the stake
  *   share       at month end, each person's cut of everyone else's forfeits,
@@ -204,7 +204,7 @@ export interface LedgerRow {
   kind: string;
   amount_minor: number;
   month: string;
-  counterparty: string | null;
+  counterparty_user_id: string | null;
   /** A no-show's forfeit on a John done together: everyone who did it. Absent when not read. */
   doers?: string[] | null;
   created_at: string;
@@ -232,7 +232,7 @@ export interface StakeView {
     kind: string;
     amount: number;
     month: string;
-    counterparty: string | null;
+    counterparty_user_id: string | null;
     createdAt: string;
   }[];
 }
@@ -257,7 +257,7 @@ export function buildStake(input: {
   const { ledger, memberIds, stakeMinor, month } = input;
   const thisMonthForfeits = ledger
     .filter((r) => r.month === month && r.kind === "forfeit")
-    .map((r) => ({ userId: r.user_id, amount: -r.amount_minor, to: r.counterparty ?? r.doers ?? null }));
+    .map((r) => ({ userId: r.user_id, amount: -r.amount_minor, to: r.counterparty_user_id ?? r.doers ?? null }));
   const live = settleMonth(memberIds, stakeMinor, thisMonthForfeits, month);
   const raw = new Map<string, number>();
   for (const f of thisMonthForfeits) raw.set(f.userId, (raw.get(f.userId) ?? 0) + f.amount);
@@ -291,7 +291,7 @@ export function buildStake(input: {
       kind: r.kind,
       amount: r.amount_minor,
       month: r.month,
-      counterparty: r.counterparty,
+      counterparty_user_id: r.counterparty_user_id,
       createdAt: r.created_at,
     })),
   };

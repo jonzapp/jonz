@@ -53,7 +53,7 @@ const row = (id: number, user_id: string, kind: string, amount_minor: number, mo
   kind,
   amount_minor,
   month,
-  counterparty: null,
+  counterparty_user_id: null,
   created_at: '2026-10-10T12:00:00Z',
 });
 
@@ -68,7 +68,7 @@ const ledgerOf = (rows: Row[]) => (read: Read) => ({
 });
 /** The calls a read of the ledger made with one method, in order. */
 const ledgerCalls = (method: string) =>
-  mockCalls.filter(([table, m]) => table === 'ledger' && m === method).map(([, , args]) => args);
+  mockCalls.filter(([table, m]) => table === 'ledger_entries' && m === method).map(([, , args]) => args);
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -78,7 +78,7 @@ beforeEach(() => {
 
 describe('loadStake', () => {
   it("builds the Stake from the house's ledger and its closed months", async () => {
-    mockAnswers.ledger = {
+    mockAnswers.ledger_entries = {
       data: [row(2, 'ava', 'forfeit', -300, '2026-10'), row(1, 'ava', 'forfeit', -400, '2026-09'), row(0, 'ben', 'share', 400, '2026-09')],
       error: null,
     };
@@ -87,14 +87,14 @@ describe('loadStake', () => {
     expect(stake.month).toBe('2026-10');
     expect(stake.projection.find((p) => p.userId === 'ava')).toMatchObject({ forfeited: 300, net: -300 });
     expect(stake.transfers).toEqual([{ from: 'ava', to: 'ben', amount: 400 }]);
-    expect(mockCalls).toContainEqual(['ledger', 'eq', ['house_id', 'h1']]);
-    expect(mockCalls).toContainEqual(['ledger', 'order', ['id', { ascending: false }]]);
+    expect(mockCalls).toContainEqual(['ledger_entries', 'eq', ['house_id', 'h1']]);
+    expect(mockCalls).toContainEqual(['ledger_entries', 'order', ['id', { ascending: false }]]);
   });
 
   it('reads the whole ledger a page at a time, as the database hands back at most 1000 rows a read', async () => {
     // A thousand pennies shared in September, half of them Ben's to Ava (£5), then, on the second page, his £4 forfeit.
     const shares = Array.from({ length: 1000 }, (_, i) => row(2000 - i, i % 2 ? 'ava' : 'ben', 'share', i % 2 ? 1 : -1, '2026-09'));
-    mockAnswers.ledger = ledgerOf([...shares, row(1, 'ben', 'forfeit', -400, '2026-09'), row(0, 'ava', 'share', 400, '2026-09')]);
+    mockAnswers.ledger_entries = ledgerOf([...shares, row(1, 'ben', 'forfeit', -400, '2026-09'), row(0, 'ava', 'share', 400, '2026-09')]);
     mockAnswers.month_closes = { data: [{ month: '2026-09' }], error: null };
     const stake = await loadStake('h1', RULES, ['ava', 'ben'], new Date('2026-10-21T12:00:00Z'));
     expect(stake.ledger).toHaveLength(1002);
@@ -106,7 +106,7 @@ describe('loadStake', () => {
 
   it('asks below the last of exactly 1000 rows, to be sure there are no more', async () => {
     const shares = Array.from({ length: 1000 }, (_, i) => row(1000 - i, i % 2 ? 'ava' : 'ben', 'share', i % 2 ? 1 : -1, '2026-09'));
-    mockAnswers.ledger = ledgerOf(shares);
+    mockAnswers.ledger_entries = ledgerOf(shares);
     mockAnswers.month_closes = { data: [{ month: '2026-09' }], error: null };
     const stake = await loadStake('h1', RULES, ['ava', 'ben'], new Date('2026-10-21T12:00:00Z'));
     expect(stake.ledger).toHaveLength(1000);
@@ -118,7 +118,7 @@ describe('loadStake', () => {
     // 1002 pennies in September: Ben owes Ava £5.01.
     const rows = Array.from({ length: 1002 }, (_, i) => row(1002 - i, i % 2 ? 'ben' : 'ava', 'share', i % 2 ? -1 : 1, '2026-09'));
     const read = ledgerOf(rows);
-    mockAnswers.ledger = (filters) => {
+    mockAnswers.ledger_entries = (filters) => {
       const answer = read(filters);
       // A forfeit lands just after the first page is read: newer than everything, so the next read takes it.
       if (filters.below === undefined) rows.push(row(1003, 'ben', 'forfeit', -300, '2026-10'));
@@ -133,9 +133,9 @@ describe('loadStake', () => {
   });
 
   it('fails when the ledger or the closed months cannot be read', async () => {
-    mockAnswers.ledger = { data: null, error: new Error('offline') };
+    mockAnswers.ledger_entries = { data: null, error: new Error('offline') };
     await expect(loadStake('h1', RULES, ['ava'], new Date())).rejects.toThrow('offline');
-    mockAnswers.ledger = { data: [], error: null };
+    mockAnswers.ledger_entries = { data: [], error: null };
     mockAnswers.month_closes = { data: null, error: new Error('still offline') };
     await expect(loadStake('h1', RULES, ['ava'], new Date())).rejects.toThrow('still offline');
   });

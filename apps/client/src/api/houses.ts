@@ -69,7 +69,7 @@ export async function housesPage(after: HouseCursor | null, filter: HouseFilter)
       joinCode: r.join_code,
       people: Number(r.people),
       passPlan: r.pass_plan as PassPlan,
-      passUntil: r.pass_until,
+      passUntil: r.pass_ends_at,
       lastActive: r.last_active,
       onTime: Number(r.on_time),
       settled: Number(r.settled),
