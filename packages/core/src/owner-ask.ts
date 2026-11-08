@@ -1,12 +1,13 @@
 import { z } from "zod";
 
 import { ChatAsk, ChatMessage, CHAT_MAX_MESSAGES } from "./house-draft";
+import { OwnerMove, OWNER_MOVES_MAX } from "./owner-moves";
 
 // The owner's Ask Jonz in /admin (docs/specs/owner-admin.md, "Ask Jonz,
 // owner"): the same chat as a housemate's, with its own address, tools,
 // instructions and history. It reads what the admin pages read, as the
-// owner's own session with their code, and changes nothing: anything to do
-// is done on the page it names.
+// owner's own session with their code, and puts anything to do on a card
+// (owner-moves.ts): nothing changes until the owner taps it.
 
 /** Questions the owner can ask in a day: plenty for a day's work, few enough that a stuck script can't run up a bill. */
 export const OWNER_ASK_TURNS_PER_DAY = 200;
@@ -21,10 +22,11 @@ export const OwnerAskRequest = z.object({
 });
 export type OwnerAskRequest = z.infer<typeof OwnerAskRequest>;
 
-/** Jonz's answer to the owner: what it says, and what it asks (if anything). `source` is "offline" when Claude wasn't there. */
+/** Jonz's answer to the owner: what it says, what it asks (if anything) and what it put on the card. `source` is "offline" when Claude wasn't there. */
 export const OwnerAskResponse = z.object({
   reply: z.string(),
   ask: ChatAsk.nullable(),
+  moves: z.array(OwnerMove).max(OWNER_MOVES_MAX).optional(),
   source: z.enum(["ai", "offline"]),
 });
 export type OwnerAskResponse = z.infer<typeof OwnerAskResponse>;
@@ -33,8 +35,8 @@ export const OWNER_ASK_COPY = {
   title: "Ask Jonz",
   /** On the bar, so the owner's chat is never mistaken for a housemate's. */
   label: "Owner",
-  greeting: "Ask me about the inbox, accounts waiting to be deleted, the audit log, notices or messages. I read what the admin pages show and change nothing: I'll tell you where to do it.",
-  placeholder: "Ask about the inbox, the log…",
+  greeting: "Ask me about anything on the admin pages, or ask me to do it: reply to a report, put up a notice, send a message, make a promotion, start or stop a deletion. Anything I’d do goes on a card first, and happens when you tap.",
+  placeholder: "Ask, or say what to do…",
   send: "Send",
   box: "Ask Jonz, owner",
   offline: "I can’t reach Claude just now, so I can’t answer. Everything I’d read is on the admin pages.",
