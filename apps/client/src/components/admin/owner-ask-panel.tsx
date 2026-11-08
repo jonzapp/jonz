@@ -113,9 +113,7 @@ function NightGround({ style, children }: { style: StyleProp<ViewStyle>; childre
 /** True from the first time it opens: the chat is made then, and kept (hidden) after it's closed. */
 function useOpened(open: boolean): boolean {
   const [opened, setOpened] = useState(open);
-  useEffect(() => {
-    if (open) setOpened(true);
-  }, [open]);
+  if (open && !opened) setOpened(true);
   return opened || open;
 }
 
