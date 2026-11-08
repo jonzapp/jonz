@@ -117,6 +117,8 @@ const MESSAGES: Record<string, string> = {
   nothing_to_pay: "There’s nothing left to pay for that month.",
   not_pay_day_yet: "Pay day is the 1st, once the month is over.",
   kids_without_sign_in: "A kid without a sign-in can only be in a family. Remove them first.",
+  not_a_kid: "That John isn’t a kid’s.",
+  not_a_family: "The board is only for a family.",
 };
 
 export function humanError(error: { message?: string; code?: string } | null | undefined): string {

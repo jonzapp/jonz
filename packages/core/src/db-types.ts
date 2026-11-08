@@ -2329,6 +2329,7 @@ export type Database = {
         }[]
       }
       owner_stop_promotion: { Args: { p_id: string }; Returns: string }
+      board_tick: { Args: { p_assignment: string }; Returns: undefined }
       pay_pocket_money: {
         Args: { p_house: string; p_kid: string; p_month: string }
         Returns: number

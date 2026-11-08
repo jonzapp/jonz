@@ -81,3 +81,11 @@ export function spendSwap(mine: string, theirs: string): Promise<void> {
 export function removeFlag(assignmentId: string): Promise<void> {
   return call(supabase.rpc('remove_flag', { p_assignment: assignmentId }));
 }
+
+/**
+ * A kid's tick on the board, the family's shared screen signed in as a
+ * parent: it's the kid's, so it waits for a parent's OK (board_tick).
+ */
+export function boardTick(assignmentId: string): Promise<void> {
+  return call(supabase.rpc('board_tick', { p_assignment: assignmentId }));
+}
