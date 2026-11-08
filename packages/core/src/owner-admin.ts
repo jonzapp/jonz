@@ -7,13 +7,41 @@ import { NOTICE_KINDS, type NoticeKind } from "./notices";
 export const ADMIN_PATH = "/admin";
 
 export const ADMIN_PAGES = [
+  { key: "overview", label: "Overview", path: "/admin/overview" },
   { key: "inbox", label: "Inbox", path: "/admin/inbox" },
+  { key: "houses", label: "Houses", path: "/admin/houses" },
   { key: "messages", label: "Messages", path: "/admin/messages" },
   { key: "notices", label: "Notices", path: "/admin/notices" },
+  { key: "promotions", label: "Promotions", path: "/admin/promotions" },
   { key: "deletions", label: "Deletions", path: "/admin/deletions" },
   { key: "audit", label: "Audit log", path: "/admin/audit" },
 ] as const;
 export type AdminPage = (typeof ADMIN_PAGES)[number]["key"];
+
+/**
+ * The owner's pages grouped by job: one tab each on a phone, a small heading
+ * each on the laptop's side list. A tab with more than one page opens its
+ * first, with a switch at the top for the rest. A new page joins a group, so
+ * the bar stays at five.
+ */
+export const ADMIN_GROUPS = [
+  { key: "overview", label: "Overview", pages: ["overview"] },
+  { key: "inbox", label: "Inbox", pages: ["inbox"] },
+  { key: "houses", label: "Houses", pages: ["houses"] },
+  { key: "send", label: "Send", pages: ["messages", "notices", "promotions"] },
+  { key: "records", label: "Records", pages: ["deletions", "audit"] },
+] as const satisfies readonly { key: string; label: string; pages: readonly AdminPage[] }[];
+export type AdminGroup = (typeof ADMIN_GROUPS)[number]["key"];
+
+/** The group a page is in. */
+export function adminGroupOf(page: AdminPage): (typeof ADMIN_GROUPS)[number] {
+  return ADMIN_GROUPS.find((g) => (g.pages as readonly AdminPage[]).includes(page)) ?? ADMIN_GROUPS[0];
+}
+
+/** A page's label and path, by its key. */
+export function adminPage(page: AdminPage): (typeof ADMIN_PAGES)[number] {
+  return ADMIN_PAGES.find((p) => p.key === page) ?? ADMIN_PAGES[0];
+}
 
 export const ADMIN_COPY = {
   owner: "Owner",

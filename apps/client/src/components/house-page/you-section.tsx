@@ -1,4 +1,4 @@
-import { dateRange, DELETE_COPY, EMAIL_SIGN_IN_COPY, emailAuthProblem, HOUSE_COPY, HOUSE_LOWER_COPY, LOOK_LABEL, LOOKS, ME_COPY, MOVING_COPY, PASSWORD_MIN, PASSWORD_SETTING_COPY, passwordProblem, prefsLine, STEADY_COPY } from '@app/core';
+import { codeProblem, dateRange, DELETE_COPY, EMAIL_SIGN_IN_COPY, emailAuthProblem, HOUSE_COPY, HOUSE_LOWER_COPY, LOOK_LABEL, LOOKS, ME_COPY, MOVING_COPY, PASSWORD_MIN, PASSWORD_SETTING_COPY, passwordProblem, prefsLine, STEADY_COPY } from '@app/core';
 import { BellIcon, KeyRoundIcon, LogOutIcon, SlidersHorizontalIcon, SunMoonIcon, Trash2Icon, TruckIcon } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
@@ -11,6 +11,7 @@ import { DeleteAccountForm } from '@/components/account/delete-account';
 import { Alert } from '@/components/alert';
 import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/button';
+import { CodeBoxes } from '@/components/code-boxes';
 import { Field } from '@/components/field';
 import { Reminders } from '@/components/house/reminders';
 import { useHouseWorkspace } from '@/components/house/workspace';
@@ -297,20 +298,30 @@ function PasswordSheet({
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  // Only once Supabase has asked for it: an account with an authenticator app.
+  const [needsCode, setNeedsCode] = useState(false);
+  const [code, setCode] = useState('');
 
   async function save() {
     if (busy) return;
     const short = passwordProblem(value);
     if (short) return setProblem(short);
+    if (needsCode && codeProblem(code)) return setProblem(codeProblem(code));
     setBusy(true);
     setProblem(null);
     try {
-      await setPassword(value);
+      await setPassword(value, needsCode ? code : undefined);
       setSaved(true);
       setValue('');
+      setCode('');
     } catch (reason) {
       console.warn('Saving the password failed', reason);
-      setProblem(emailAuthProblem(reason as { code?: string; status?: number }));
+      const why = (reason as { code?: string }).code;
+      if (why === 'insufficient_aal') setNeedsCode(true);
+      else if (why === 'authenticator_wrong') {
+        setCode('');
+        setProblem(PASSWORD_SETTING_COPY.wrongAuthenticator);
+      } else setProblem(emailAuthProblem(reason as { code?: string; status?: number }));
     } finally {
       setBusy(false);
     }
@@ -347,6 +358,22 @@ function PasswordSheet({
           onSubmitEditing={Platform.OS === 'web' ? undefined : () => void save()}
           testID="new-password"
         />
+        {needsCode ? (
+          <>
+            <Meta>{PASSWORD_SETTING_COPY.authenticatorBody}</Meta>
+            <CodeBoxes
+              label={PASSWORD_SETTING_COPY.authenticator}
+              value={code}
+              onChangeText={(typed) => {
+                setCode(typed);
+                setProblem(null);
+              }}
+              editable={!busy}
+              autoFocus
+              testID="password-authenticator"
+            />
+          </>
+        ) : null}
         {problem ? <Alert message={problem} /> : saved ? <Meta>{PASSWORD_SETTING_COPY.saved}</Meta> : null}
         <Button
           label={busy ? PASSWORD_SETTING_COPY.busy : PASSWORD_SETTING_COPY.save}

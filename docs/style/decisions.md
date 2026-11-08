@@ -6,6 +6,8 @@ pages are private artifacts on claude.ai.
 
 | Date | Decision | Where | Rule |
 | --- | --- | --- | --- |
+| 2026-11-07 | Switching a house you have to a family (or back): Who lives here in Rules, two radio rows for an admin and a sheet saying what changes; with money in it, it waits for the 1st (picker approved 2026-11-07) | this PR | [words](words.md) |
+| 2026-11-07 | A family's board for the kitchen tablet: one page, a column per kid of today's Johns (still to do, waiting for an OK, done today), earned this month at the column's head; a kid's tick there waits for a parent's OK (option A) | this PR | [layout](layout.md) |
 | 2026-11-07 | A button on its own fills its column on a phone (Week's Deal week 1 didn't) and a card on a laptop; its own width on the bare page of a wide laptop column; every Button in a ButtonRow, checked by lint and on the real pages | this PR | [controls](controls.md#kinds-of-button) |
 | 2026-11-07 | Ask Jonz's bar as chat apps lay it out: Your chats (clock) on the leading edge, New chat (pencil) on the trailing edge, icons only; Help leads with Ask Jonz and Read the guide (the guide is the words Jonz reads), tours as Show me around rows | this PR | [layout](layout.md) |
 | 2026-11-06 | Ask Jonz chats are kept until you delete them: the latest three on the chat's start, See all for Your chats with Delete, New chat in the title bar; no expiry | this PR | [lists](lists.md#rows) |
@@ -22,6 +24,7 @@ pages are private artifacts on claude.ai.
 | 2026-11-01 | Help is a question mark in every tab's title bar: the page's tour, the other tours, and Report a problem. Tours are short (five steps at most), started by you, offered once to someone new, and saved as seen | this PR | [layout](layout.md#the-title-bar), [states](states.md#tours) |
 | 2026-11-01 | House's Overview is four figures (your month, the stake, housemates, the John list), then the Table beside the Wall; your settings, help and leaving move to a You page, the seventh in House's list | #95 | [layout](layout.md#navigation) |
 | 2026-11-01 | Ten House pages are six: Groups on Johns, Admins beside Rules, Preferences with Time away as "Days and time away", History beside the Wall; old links land on the merged page | #94 | [layout](layout.md#navigation) |
+| 2026-11-07 | The owner's pages on a laptop use the whole room: the main column reaches the side panel, and a pushed page opens beside its list; no blank room on the right | #104 | [layout](layout.md#laptop-pages) |
 | 2026-11-01 | House's pages on a laptop fill the room beside House's list, our own sections in columns (two at 1440, three at 1920); not names hanging left, one wide column or cards | #93 | [layout](layout.md#laptop-pages) |
 | 2026-11-01 | Making an account with email asks for one name box (what housemates call you, no first and last) and a required tick box for the Terms and being 13 or older; no birthday | this PR | [controls](controls.md#inputs) |
 | 2026-11-01 | Every 6-digit code is six equal boxes edge to edge with the button, filled in for you where a phone or password manager can, and checked on the sixth digit | #90 | [controls](controls.md#inputs) |

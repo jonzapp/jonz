@@ -25,6 +25,7 @@ export const PAGE_TITLE = {
   house: "House",
   privacy: "Privacy",
   terms: "Terms",
+  help: "Help",
   notFound: "Nothing here",
   welcome: "No house yet",
   johnList: "The John list",
@@ -54,8 +55,13 @@ export const NOT_FOUND_COPY = {
 
 export const ERROR_COPY = {
   title: "Something went wrong",
-  body: "It wasn’t you. Try again, and if it keeps happening, tell the house admin.",
+  body: "It wasn’t you. Try again, and if it keeps happening, tell us what happened.",
   retry: "Try again",
+  /** The crash screen's way to report it (docs/specs/report-a-problem.md, step 3). */
+  tell: "Tell us what happened",
+  tellTitle: "What happened?",
+  told: "Sent, thank you. We’ll reply under House, Your reports, and by email.",
+  orEmail: "Or email support@jonz.app.",
   /** Your house couldn't be read, so no screen can be chosen yet. */
   unreachable: "Can’t reach your house",
   unreachableBody: "Check the connection, then try again.",
@@ -167,6 +173,40 @@ export const PARENTS_COPY = {
 } as const;
 
 /**
+ * Rules' Who lives here: an admin switches the house between housemates and
+ * a family (docs/specs/family-houses.md, "Switching a house").
+ */
+export const KIND_SWITCH_COPY = {
+  label: "Who lives here",
+  /** Under a switch that waits for the 1st. */
+  waits: (on: string, month: string) => `Becomes a family on ${on}, once ${month} is settled up.`,
+  keep: "Keep housemates",
+  toFamilyTitle: (house: string) => `Make ${house} a family?`,
+  toFamilyNow: (cap: string) =>
+    `Admins become parents, and everyone else a kid. There’s no stake: a parent says OK to each kid’s tick, and Johns can earn pocket money, up to ${cap} a month each. It changes now, and you can switch back.`,
+  toFamilyLater: (on: string, month: string, cap: string) =>
+    `Admins become parents, and everyone else a kid. ${month} is settled up as usual, then the Stake stops. From ${on} a parent says OK to each kid’s tick, and Johns can earn pocket money, up to ${cap} a month each. You can switch back.`,
+  toFamily: "Make it a family",
+  toHousematesTitle: (house: string) => `Make ${house} housemates again?`,
+  toHousemates:
+    "Parents become admins, and kids housemates. Ticks waiting for an OK stand, and anyone can question a tick again for 24 hours. There’s no stake until an admin sets one. Pocket money already earned can still be marked Paid.",
+  toHousematesConfirm: "Make it housemates",
+  done: { family: "It’s a family now.", housemates: "It’s housemates again.", kept: "Kept as housemates." },
+  later: (on: string) => `It becomes a family on ${on}.`,
+  /** The Wall. */
+  wall: {
+    later: (who: string, on: string) => `${who} made the house a family from ${on}`,
+    kept: (who: string) => `${who} kept the house as housemates`,
+    housemates: (who: string) => `${who} made the house housemates again`,
+    family: (who: string) => `${who} made the house a family`,
+    familyNow: "The house is a family now",
+    laterDetail: "Once this month is settled up",
+    familyDetail: "Parents say OK, and kids earn pocket money",
+    housematesDetail: "Everyone checks each other’s ticks again",
+  },
+} as const;
+
+/**
  * A parent's OK (family step 2): in a family nobody votes on a tick. A kid's
  * tick waits for a parent to say OK, or Not yet, which sends it back.
  */
@@ -229,6 +269,28 @@ export const KIDS_COPY = {
     born: "Give the year they were born, like 2016. Kids are 18 or under.",
     minAge: "Give an age from 2 to 18, or leave it empty.",
   },
+} as const;
+
+/**
+ * The board, a family's shared screen for the kitchen tablet
+ * (docs/specs/family-houses.md, "The board").
+ */
+export const BOARD_COPY = {
+  title: "The board",
+  /** House's row to it, for a parent. */
+  row: "The board",
+  rowMeta: "For the kitchen tablet: kids tick their own",
+  /** Under the title. */
+  intro: "Leave it open on the kitchen tablet. Kids tick their own Johns, and a parent says OK.",
+  note: "Ticks here wait for a parent’s OK. Tap a John to OK it or say Not yet.",
+  /** A kid's column: "£4.50 earned in November". */
+  earned: (money: string, month: string) => `${money} earned in ${month}`,
+  nothing: "Nothing to do today.",
+  tick: (kid: string, john: string) => `Tick ${john} for ${kid}`,
+  waits: "Waits for a parent’s OK",
+  photo: "Needs a photo: tick it from their Today",
+  noKids: "No kids yet. Invite them, or add a child from House.",
+  parentsOnly: "The board is for a parent to open on a shared screen.",
 } as const;
 
 /** Pocket money and Pay day, family step 3: what Johns earn, the month card and Paid. */
@@ -1922,6 +1984,8 @@ export const PASS_COPY = {
   founding: "Founding house",
   trialLeft: (days: number) => `Free month, ${days} ${days === 1 ? "day" : "days"} left`,
   trialEnded: "Free month ended",
+  /** A free month made longer by a promotion. */
+  freeUntil: (day: string) => `Free until ${day}`,
   renews: (plan: string, day: string) => `${plan}, renews ${day}`,
   ended: (day: string) => `Ended ${day}`,
   // The page.

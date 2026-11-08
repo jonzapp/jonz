@@ -4,6 +4,20 @@
  */
 const MESSAGES: Record<string, string> = {
   sign_in_required: "Sign in first.",
+  offer_unknown: "That offer link doesn’t open anything. Check it, or ask for a new one.",
+  offer_ended: "That offer has ended.",
+  offer_used_up: "That offer has been used by as many houses as it allows.",
+  offer_not_yours: "That offer is for someone else. Sign in with the email it was sent to.",
+  offer_used: "That offer has been used already.",
+  offer_plan: "That offer doesn’t work on that plan.",
+  offer_has_pass: "Your house has the House Pass already.",
+  promotion_code_taken: "Another promotion has that code. Pick another.",
+  promotion_needs_people: "Add the emails of the people it’s for.",
+  promotion_too_many: "A promotion can name up to 500 people.",
+  promotion_ends_past: "Pick an end day after today.",
+  promotion_bad_email: "One of those emails isn’t an email.",
+  promotion_bad: "That promotion doesn’t add up. Check what it gives and who it’s for.",
+  promotion_unknown: "That promotion doesn’t exist.",
   already_in_house: "You’re already in a house. Leave it first to join another.",
   unknown_code: "That invite doesn’t open a house. Ask a housemate for theirs, or start your own.",
   unknown_timezone: "That time zone isn’t one we recognise.",
@@ -92,6 +106,7 @@ const MESSAGES: Record<string, string> = {
   report_shot: "That screenshot didn’t upload. Add it again.",
   report_limit: "That’s a lot for one day. Try again tomorrow, or email support@jonz.app.",
   report_state: "A report can be marked fixed, or opened again.",
+  report_same: "A report can’t be the same as itself.",
   message_audience: "Send it to a person, a house or everyone.",
   message_who: "Pick who it goes to.",
   message_wall_person: "A Wall is the whole house’s, so a message to one person can’t go on it.",
@@ -103,6 +118,9 @@ const MESSAGES: Record<string, string> = {
   nothing_to_ok: "That tick has already been answered.",
   nothing_to_pay: "There’s nothing left to pay for that month.",
   not_pay_day_yet: "Pay day is the 1st, once the month is over.",
+  kids_without_sign_in: "A kid without a sign-in can only be in a family. Remove them first.",
+  not_a_kid: "That John isn’t a kid’s.",
+  not_a_family: "The board is only for a family.",
 };
 
 export function humanError(error: { message?: string; code?: string } | null | undefined): string {

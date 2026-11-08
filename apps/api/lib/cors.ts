@@ -19,8 +19,13 @@ export function originAllowed(origin: string | null, allowedOrigins: string[]): 
   });
 }
 
+/**
+ * `Vary: Origin` goes on every answer once any origin is allowed, let in or
+ * not: a cached answer (the notices are kept at the edge) must never be one
+ * made without the CORS headers and then handed to an allowed browser.
+ */
 export function corsHeaders(origin: string | null, allowedOrigins: string[]): Record<string, string> {
-  if (!originAllowed(origin, allowedOrigins)) return {};
+  if (!originAllowed(origin, allowedOrigins)) return allowedOrigins.length > 0 ? { Vary: "Origin" } : {};
   return {
     "Access-Control-Allow-Origin": origin,
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",

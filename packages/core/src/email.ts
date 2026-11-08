@@ -1,6 +1,9 @@
 import { APP_NAME } from "./copy";
+import type { Currency } from "./domain";
 import { LEGAL } from "./legal";
 import type { NoticeKind } from "./notices";
+import { refTag } from "./inbound-email";
+import { PROMOTION_COPY, promotionPrices, promotionSentence, promotionTitle, type PromotionTerms } from "./promotions";
 import { type ReportKind, reportGist } from "./reports";
 import { escapeHtml } from "./share";
 
@@ -280,34 +283,45 @@ export function accountDeletedEmail(args: { name: string | null; deletedOn: stri
 export const reportUrl = (id: string) => `${LEGAL.site}/house/reports/${id}`;
 
 /**
- * A reply to someone's report, to the address they sign in with, beside the
- * push. Replying to the email reaches support@jonz.app.
+ * A reply to someone's report, to the address they sign in with beside the
+ * push, or to the address an emailed one came from. Replying to the email
+ * reaches support@jonz.app, and the "(ref …)" in the subject puts the
+ * answer back on the same report. `url` is where to read it in the app:
+ * none when it came by email from someone without an account. `fixed` is
+ * the "it's fixed" message, sent to everyone who reported it.
  */
 export function reportReplyEmail(args: {
+  id: string;
   name: string | null;
   signed: string | null;
   kind: ReportKind;
   words: string;
+  subject?: string | null;
   reply: string;
-  url: string;
+  url: string | null;
+  fixed?: boolean;
 }): EmailMessage {
   const who = args.signed ? `${args.signed} at ${APP_NAME}` : APP_NAME;
   const paragraphs = args.reply
     .split(/\n\s*\n/)
     .map((p) => p.trim())
     .filter(Boolean);
+  const about = args.subject?.trim() ? args.subject.trim().replace(/^\s*((re|fwd?)\s*:\s*)+/i, "").replace(/\(ref [0-9a-f]{8}\)/gi, "").trim() : "";
+  const topic = about ? reportGist(about, 60) : reportGist(args.words, 60);
   return renderEmail({
-    subject: `Re: ${reportGist(args.words, 60)}`,
+    subject: `${args.fixed ? "Fixed" : "Re"}: ${topic} ${refTag(args.id)}`,
     preheader: reportGist(args.reply, 90),
-    headline: "A reply to you",
-    lead: `${who} replied.`,
+    headline: args.fixed ? "It’s fixed" : "A reply to you",
+    lead: args.fixed ? `${who} fixed what you reported.` : `${who} replied.`,
     blocks: [
       { type: "text", text: hi(args.name) },
       ...paragraphs.map((text) => ({ type: "text" as const, text })),
-      { type: "button", label: "Open it in Jonz", url: args.url },
+      ...(args.url ? [{ type: "button" as const, label: "Open it in Jonz", url: args.url }] : []),
       { type: "small", text: `You wrote: “${reportGist(args.words, 140)}”` },
     ],
-    why: `You sent this ${args.kind} from ${APP_NAME}. Reply to this email, or write back in the app.`,
+    why: args.url
+      ? `You sent this ${args.kind} to ${APP_NAME}. Reply to this email, or write back in the app.`
+      : `You emailed ${EMAIL_ADDRESSES.replyTo}. Reply to this email to write back.`,
   });
 }
 
@@ -367,5 +381,39 @@ export function ownerMessageEmail(args: { name: string | null; subject: string; 
     why: args.test
       ? "A test of a message from Jonz, sent only to you."
       : `A message from ${APP_NAME}. Reply to this email to answer it.`,
+  });
+}
+
+/**
+ * A promotion, to someone it names (Email them on its page): its offer in
+ * the amber panel, the owner's line, what each plan costs with it, and the
+ * one button to its link. The small print says which email it works for.
+ */
+export function offerEmail(args: {
+  name: string | null;
+  email: string;
+  terms: PromotionTerms;
+  note: string | null;
+  currency?: Currency;
+  url: string;
+  zone: string;
+}): EmailMessage {
+  const currency = args.currency ?? "USD";
+  const title = promotionTitle(args.terms, currency);
+  const sentence = promotionSentence({ ...args.terms, endsAt: null }, args.zone, currency);
+  const until = args.terms.endsAt ? new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", timeZone: args.zone }).format(args.terms.endsAt) : null;
+  const rows = promotionPrices(args.terms, currency).map((p) => [p.label, p.then ? `${p.first}, ${p.then}` : p.first] as const);
+  return renderEmail({
+    subject: title,
+    preheader: args.note ?? sentence,
+    panel: { kind: "offer", title: `${title}.`, body: sentence },
+    blocks: [
+      { type: "text", text: hi(args.name) },
+      ...(args.note ? [{ type: "text" as const, text: args.note }] : []),
+      ...(rows.length ? [{ type: "rows" as const, rows }] : []),
+      { type: "button", label: PROMOTION_COPY.useIt, url: args.url },
+      { type: "small", text: PROMOTION_COPY.smallPrint(args.email, until, args.terms.kind === "gift") },
+    ],
+    why: PROMOTION_COPY.emailWhy,
   });
 }

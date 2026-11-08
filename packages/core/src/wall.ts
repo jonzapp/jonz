@@ -117,7 +117,8 @@ export type WallIcon =
   | "bell-ring"
   | "badge-check"
   | "megaphone"
-  | "undo";
+  | "undo"
+  | "home";
 
 export interface WallLine {
   icon: WallIcon;
@@ -233,6 +234,17 @@ export function describeEvent(e: WallEvent, nameOf: (userId: string | null) => s
             parts: [b(was), t(` moved out, and their House Pass went with them. The house keeps the extras until ${dateRange(until, until)}.`)],
           }
         : { icon: "truck", parts: [b(was), t(" moved out.")] };
+    }
+    case "kind_changed": {
+      // Rules' Who lives here: a family now, from the 1st, kept, or housemates again.
+      const on = typeof e.data.on === "string" ? e.data.on : null;
+      const family = e.data.kind === "family";
+      if (on) return { icon: "home", parts: [b(who), t(` made the house a family from ${dateRange(on, on)}, once this month is settled up.`)] };
+      if (e.data.kept) return { icon: "home", parts: [b(who), t(" kept the house as housemates.")] };
+      if (!family) return { icon: "home", parts: [b(who), t(" made the house housemates again.")] };
+      return e.userId
+        ? { icon: "home", parts: [b(who), t(" made the house a family. Parents say OK, and kids earn pocket money.")] }
+        : { icon: "home", parts: [t("The house is a family now. Parents say OK, and kids earn pocket money.")] };
     }
     case "pocket_paid":
       return {

@@ -17,6 +17,7 @@ jest.mock('@/hooks/use-membership', () => ({
 jest.mock('expo-font', () => ({ useFonts: () => [true, null] }));
 jest.mock('@/api/account', () => ({ keepAccount: jest.fn(), deletionStatus: jest.fn() }));
 jest.mock('@/api/auth', () => ({ signOut: jest.fn() }));
+jest.mock('@/api/supabase', () => ({ supabase: { auth: { getSession: jest.fn(async () => ({ data: { session: null } })) } } }));
 // The router reads its options (the old links' redirects among them) from the
 // app's config, which the expo-router plugin fills from app.json in a build.
 // Jest's config has none, so hand it app.json's.

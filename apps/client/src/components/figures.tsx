@@ -15,7 +15,8 @@ export interface Figure {
   note?: string | null;
   /** The figure in green: something good, said in colour as well as words. */
   good?: boolean;
-  href: Href;
+  /** The page it opens; without one it's a figure alone, with no chevron. */
+  href?: Href;
 }
 
 /**
@@ -38,49 +39,60 @@ export function Figures({ figures, label, testID }: { figures: readonly Figure[]
 }
 
 function Cell({ figure, first, top, share }: { figure: Figure; first: boolean; top: boolean; share: `${number}%` }) {
-  const { colors, type } = useTheme();
+  if (!figure.href) {
+    return (
+      <View style={{ flexBasis: share }} testID={`figure-${figure.key}`}>
+        <CellBody figure={figure} first={first} top={top} pressed={false} />
+      </View>
+    );
+  }
   return (
     <Link href={figure.href} asChild>
       <Pressable style={{ flexBasis: share }} accessibilityRole="link" testID={`figure-${figure.key}`}>
-        {({ pressed }) => (
-          <View
-            style={[
-              styles.cell,
-              !first && {
-                borderLeftWidth: StyleSheet.hairlineWidth,
-                borderLeftColor: colors.border,
-              },
-              !top && {
-                borderTopWidth: StyleSheet.hairlineWidth,
-                borderTopColor: colors.border,
-              },
-              pressed && {
-                backgroundColor: withAlpha(colors.foreground, 0.06),
-              },
-            ]}
-          >
-            <View style={styles.line}>
-              {figure.value === null ? (
-                <View aria-hidden style={{ height: type.lead.lineHeight }} />
-              ) : (
-                <Text numberOfLines={1} style={[type.lead, styles.shrink, figure.good && { color: colors.good }]}>
-                  {figure.value}
-                </Text>
-              )}
-              <ChevronRightIcon size={18} color={colors.mutedForeground} aria-hidden />
-            </View>
-            <Text numberOfLines={2} style={type.meta}>
-              {figure.label}
-            </Text>
-            {figure.note ? (
-              <Text numberOfLines={2} style={type.meta}>
-                {figure.note}
-              </Text>
-            ) : null}
-          </View>
-        )}
+        {({ pressed }) => <CellBody figure={figure} first={first} top={top} pressed={pressed} />}
       </Pressable>
     </Link>
+  );
+}
+
+function CellBody({ figure, first, top, pressed }: { figure: Figure; first: boolean; top: boolean; pressed: boolean }) {
+  const { colors, type } = useTheme();
+  return (
+    <View
+      style={[
+        styles.cell,
+        !first && {
+          borderLeftWidth: StyleSheet.hairlineWidth,
+          borderLeftColor: colors.border,
+        },
+        !top && {
+          borderTopWidth: StyleSheet.hairlineWidth,
+          borderTopColor: colors.border,
+        },
+        pressed && {
+          backgroundColor: withAlpha(colors.foreground, 0.06),
+        },
+      ]}
+    >
+      <View style={styles.line}>
+        {figure.value === null ? (
+          <View aria-hidden style={{ height: type.lead.lineHeight }} />
+        ) : (
+          <Text numberOfLines={1} style={[type.lead, styles.shrink, figure.good && { color: colors.good }]}>
+            {figure.value}
+          </Text>
+        )}
+        {figure.href ? <ChevronRightIcon size={18} color={colors.mutedForeground} aria-hidden /> : null}
+      </View>
+      <Text numberOfLines={2} style={type.meta}>
+        {figure.label}
+      </Text>
+      {figure.note ? (
+        <Text numberOfLines={2} style={type.meta}>
+          {figure.note}
+        </Text>
+      ) : null}
+    </View>
   );
 }
 

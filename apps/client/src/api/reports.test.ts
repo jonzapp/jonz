@@ -38,7 +38,9 @@ it('refuses a screenshot over the bucket’s 5 MB before uploading it', async ()
 
 it('opens on what is waiting, and reads the search box’s picks', () => {
   const ask = { q: 'bins', picks: {}, after: null, before: null };
-  expect(inboxFilter(ask)).toEqual({ q: 'bins', state: 'waiting', kind: null, after: null, before: null });
+  expect(inboxFilter(ask)).toEqual({ q: 'bins', state: 'waiting', source: null, kind: null, after: null, before: null });
+  expect(inboxFilter({ ...ask, picks: { source: 'email' } })).toMatchObject({ source: 'email' });
+  expect(inboxFilter({ ...ask, picks: { source: 'any' } })).toMatchObject({ source: null });
   expect(inboxFilter({ ...ask, picks: { state: 'any', kind: 'idea' } })).toMatchObject({ state: null, kind: 'idea' });
   expect(inboxFilter({ ...ask, picks: { state: 'fixed', kind: 'nonsense' } })).toMatchObject({ state: 'fixed', kind: null });
 });

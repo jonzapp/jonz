@@ -5,7 +5,7 @@ import {
   LIST_COPY,
   NOTICE_LIST_COPY,
   NOT_FOUND_COPY,
-  REPORT_COPY,
+  OVERVIEW_COPY,
   type AuditEntry,
   type Notice,
 } from '@app/core';
@@ -39,6 +39,7 @@ import DeletionsPage from '@/app/admin/deletions';
 import InboxPage from '@/app/admin/inbox/index';
 import AdminIndex from '@/app/admin/index';
 import NoticesPage from '@/app/admin/notices';
+import OverviewPage from '@/app/admin/overview';
 import { authStorage } from '@/api/storage';
 import { supabase } from '@/api/supabase';
 import { renderPages, untilRead } from '@/testing/pages';
@@ -69,6 +70,17 @@ jest.mock('@/api/reports', () => ({
   ...jest.requireActual<typeof import('@/api/reports')>('@/api/reports'),
   inboxPage: jest.fn().mockResolvedValue({ items: [], more: false }),
   inboxCount: jest.fn().mockResolvedValue(0),
+}));
+jest.mock('@/api/houses', () => ({
+  ownerOverview: jest.fn().mockResolvedValue({
+    ms: 80,
+    overview: {
+      span: 'week',
+  from: '2026-11-02T00:00:00Z', houses: 0, housesNew: 0, housesNewBefore: 0, people: 0, inHouses: 0, active: 0,
+      passes: { monthly: 0, yearly: 0, founding: 0, trial: 0 }, onTime: { onTime: 0, late: 0, missed: 0 },
+      ask: { turns: 0, failed: 0 }, weeks: [], clock: null, reports: 0, needs: [],
+    },
+  }),
 }));
 jest.mock('@/api/supabase', () => ({ supabase: {} }));
 jest.mock('@/api/http', () => ({ apiPost: jest.fn() }));
@@ -143,6 +155,7 @@ const entry = (id: number, over: Partial<AuditEntry> = {}): AuditEntry => ({
 const ROUTES = {
   'admin/_layout': AdminLayout,
   'admin/index': AdminIndex,
+  'admin/overview': OverviewPage,
   'admin/inbox/index': InboxPage,
   'admin/notices': NoticesPage,
   'admin/deletions': DeletionsPage,
@@ -261,10 +274,10 @@ describe('who gets in', () => {
     expect(screen.getByTestId('admin-key')).toHaveTextContent('JBSW Y3DP EHPK 3PXP');
   });
 
-  it('opens /admin on the Inbox', async () => {
+  it('opens /admin on the Overview', async () => {
     await renderPages(ROUTES, '/admin');
-    expect(await screen.findByTestId('admin-inbox')).toBeVisible();
-    expect(await screen.findByText(REPORT_COPY.empty)).toBeVisible();
+    expect(await screen.findByTestId('admin-overview')).toBeVisible();
+    expect(await screen.findByText(OVERVIEW_COPY.nothingNeeds)).toBeVisible();
   });
 });
 
@@ -359,13 +372,15 @@ describe('notices on a laptop', () => {
 });
 
 describe('deletions', () => {
-  it('lists who is waiting, their email (a line of its own) and house, and how long is left, with a tab of its own', async () => {
+  it('lists who is waiting, their email (a line of its own) and house, and how long is left, under Records', async () => {
     await renderPages(ROUTES, '/admin/deletions');
     await untilRead();
     expect(screen.getByTestId('deletions-count')).toHaveTextContent(/2 people waiting/);
     expect(screen.getByTestId('deletion-sam')).toHaveTextContent(/Sam.*sam@example\.com\sThe Annexe, asked in the app.*Goes in 28 days/);
     expect(screen.getByTestId('deletion-kit')).toHaveTextContent(/kit@example\.com\sin no house, you started it/);
-    expect(screen.getByTestId('admin-tab-deletions')).toBeSelected();
+    expect(screen.getByTestId('admin-tab-records')).toBeSelected();
+    expect(screen.queryByTestId('admin-tab-deletions')).toBeNull();
+    expect(within(screen.getByTestId('admin-switch')).getByText('Audit log')).toBeVisible();
   });
 
   it('is a busy list: the database finds people by their words, who started it, and how soon it goes', async () => {

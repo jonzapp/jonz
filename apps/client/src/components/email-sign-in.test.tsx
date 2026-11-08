@@ -113,6 +113,19 @@ it('resets a forgotten password with an emailed code', async () => {
   expect(resetPassword).toHaveBeenCalledWith('sam@example.com', '654321', 'a new one please');
 });
 
+it('says when a reset could not save the password because the account has an authenticator app', async () => {
+  (sendPasswordReset as jest.Mock).mockResolvedValue(undefined);
+  (resetPassword as jest.Mock).mockRejectedValue({ code: 'insufficient_aal', status: 401 });
+  await render(<EmailSignIn />);
+  await fireEvent.press(screen.getByRole('button', { name: COPY.toForgot }));
+  await type('email-address', 'sam@example.com');
+  await fireEvent.press(screen.getByRole('button', { name: COPY.sendReset }));
+  await type('email-code', '654321');
+  await type('email-password', 'a new one please');
+  await fireEvent.press(screen.getByRole('button', { name: COPY.reset }));
+  expect(screen.getByRole('alert')).toHaveTextContent(COPY.needsAuthenticator);
+});
+
 it('says email sign-in is not open yet, where production still has it off', async () => {
   (signUpWithEmail as jest.Mock).mockRejectedValue({ code: 'signup_disabled', status: 422 });
   await render(<EmailSignIn />);

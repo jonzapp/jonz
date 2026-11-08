@@ -812,6 +812,8 @@ export type Database = {
         Row: {
           away_makeup: number
           cover_grace_hours: number
+          next_kind: string | null
+          next_kind_on: string | null
           pocket_cap_minor: number
           created_at: string
           created_by: string | null
@@ -839,6 +841,8 @@ export type Database = {
         Insert: {
           away_makeup?: number
           cover_grace_hours?: number
+          next_kind?: string | null
+          next_kind_on?: string | null
           pocket_cap_minor?: number
           created_at?: string
           created_by?: string | null
@@ -866,6 +870,8 @@ export type Database = {
         Update: {
           away_makeup?: number
           cover_grace_hours?: number
+          next_kind?: string | null
+          next_kind_on?: string | null
           pocket_cap_minor?: number
           created_at?: string
           created_by?: string | null
@@ -1681,6 +1687,152 @@ export type Database = {
         }
         Relationships: []
       }
+      promotion_people: {
+        Row: {
+          email: string
+          emailed_at: string | null
+          opened_at: string | null
+          promotion_id: string
+          used_at: string | null
+        }
+        Insert: {
+          email: string
+          emailed_at?: string | null
+          opened_at?: string | null
+          promotion_id: string
+          used_at?: string | null
+        }
+        Update: {
+          email?: string
+          emailed_at?: string | null
+          opened_at?: string | null
+          promotion_id?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotion_people_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "promotions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promotion_uses: {
+        Row: {
+          at: string
+          email: string
+          house_id: string | null
+          id: string
+          plan: string | null
+          promotion_id: string
+          session: string | null
+          user_id: string | null
+        }
+        Insert: {
+          at?: string
+          email: string
+          house_id?: string | null
+          id?: string
+          plan?: string | null
+          promotion_id: string
+          session?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          at?: string
+          email?: string
+          house_id?: string | null
+          id?: string
+          plan?: string | null
+          promotion_id?: string
+          session?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotion_uses_house_id_fkey"
+            columns: ["house_id"]
+            isOneToOne: false
+            referencedRelation: "houses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotion_uses_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "promotions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promotions: {
+        Row: {
+          amount_off: Json | null
+          audience: string
+          code: string
+          duration: string | null
+          ends_at: string | null
+          id: string
+          kind: string
+          made_at: string
+          made_by: string | null
+          max_uses: number | null
+          months: number | null
+          name: string
+          note: string | null
+          percent_off: number | null
+          plans: string[]
+          state: string
+          stopped_at: string | null
+          stripe_code: string | null
+          stripe_coupon: string | null
+        }
+        Insert: {
+          amount_off?: Json | null
+          audience: string
+          code: string
+          duration?: string | null
+          ends_at?: string | null
+          id?: string
+          kind: string
+          made_at?: string
+          made_by?: string | null
+          max_uses?: number | null
+          months?: number | null
+          name: string
+          note?: string | null
+          percent_off?: number | null
+          plans?: string[]
+          state?: string
+          stopped_at?: string | null
+          stripe_code?: string | null
+          stripe_coupon?: string | null
+        }
+        Update: {
+          amount_off?: Json | null
+          audience?: string
+          code?: string
+          duration?: string | null
+          ends_at?: string | null
+          id?: string
+          kind?: string
+          made_at?: string
+          made_by?: string | null
+          max_uses?: number | null
+          months?: number | null
+          name?: string
+          note?: string | null
+          percent_off?: number | null
+          plans?: string[]
+          state?: string
+          stopped_at?: string | null
+          stripe_code?: string | null
+          stripe_coupon?: string | null
+        }
+        Relationships: []
+      }
       push_subscriptions: {
         Row: {
           auth: string
@@ -1758,6 +1910,7 @@ export type Database = {
           author: string | null
           author_name: string | null
           body: string
+          email_id: string | null
           from_owner: boolean
           id: number
           report_id: string
@@ -1767,6 +1920,7 @@ export type Database = {
           author?: string | null
           author_name?: string | null
           body: string
+          email_id?: string | null
           from_owner: boolean
           id?: never
           report_id: string
@@ -1776,6 +1930,7 @@ export type Database = {
           author?: string | null
           author_name?: string | null
           body?: string
+          email_id?: string | null
           from_owner?: boolean
           id?: never
           report_id?: string
@@ -1794,12 +1949,18 @@ export type Database = {
         Row: {
           created_at: string
           details: Json | null
+          email_id: string | null
+          from_email: string | null
+          from_name: string | null
           house_id: string | null
           id: string
           kind: string
+          same_as: string | null
           seen_at: string
           shots: string[]
+          source: string
           state: string
+          subject: string | null
           updated_at: string
           user_id: string | null
           words: string
@@ -1807,12 +1968,18 @@ export type Database = {
         Insert: {
           created_at?: string
           details?: Json | null
+          email_id?: string | null
+          from_email?: string | null
+          from_name?: string | null
           house_id?: string | null
           id?: string
           kind: string
+          same_as?: string | null
           seen_at?: string
           shots?: string[]
+          source?: string
           state?: string
+          subject?: string | null
           updated_at?: string
           user_id?: string | null
           words: string
@@ -1820,12 +1987,18 @@ export type Database = {
         Update: {
           created_at?: string
           details?: Json | null
+          email_id?: string | null
+          from_email?: string | null
+          from_name?: string | null
           house_id?: string | null
           id?: string
           kind?: string
+          same_as?: string | null
           seen_at?: string
           shots?: string[]
+          source?: string
           state?: string
+          subject?: string | null
           updated_at?: string
           user_id?: string | null
           words?: string
@@ -1836,6 +2009,13 @@ export type Database = {
             columns: ["house_id"]
             isOneToOne: false
             referencedRelation: "houses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_same_as_fkey"
+            columns: ["same_as"]
+            isOneToOne: false
+            referencedRelation: "reports"
             referencedColumns: ["id"]
           },
         ]
@@ -2073,6 +2253,92 @@ export type Database = {
         Args: { p_assignment: string; p_ok: boolean }
         Returns: string
       }
+      apply_next_kind: { Args: { p_house: string; p_now: string }; Returns: boolean }
+      set_house_kind: {
+        Args: { p_house: string; p_kind: string }
+        Returns: string
+      }
+      owner_make_promotion: {
+        Args: {
+          p_amount: Json | null
+          p_audience: string
+          p_code: string
+          p_duration: string | null
+          p_ends_at: string | null
+          p_kind: string
+          p_max_uses: number | null
+          p_months: number | null
+          p_name: string
+          p_note: string | null
+          p_people: string[]
+          p_percent: number | null
+          p_plans: string[]
+        }
+        Returns: string
+      }
+      owner_promotion: { Args: { p_id: string }; Returns: Json }
+      owner_promotion_emails: {
+        Args: { p_id: string }
+        Returns: {
+          email: string
+          name: string
+        }[]
+      }
+      owner_promotions_count: {
+        Args: { p_q?: string; p_state?: string; p_who?: string }
+        Returns: number
+      }
+      owner_promotions_find: {
+        Args: { p_q?: string; p_state?: string; p_who?: string }
+        Returns: {
+          amount_off: Json
+          audience: string
+          code: string
+          duration: string
+          ends_at: string
+          id: string
+          kind: string
+          made_at: string
+          max_uses: number
+          months: number
+          name: string
+          people: number
+          percent_off: number
+          plans: string[]
+          state: string
+          uses: number
+        }[]
+      }
+      owner_promotions_page: {
+        Args: {
+          p_cursor_at?: string
+          p_cursor_id?: string
+          p_limit?: number
+          p_q?: string
+          p_state?: string
+          p_who?: string
+        }
+        Returns: {
+          amount_off: Json
+          audience: string
+          code: string
+          duration: string
+          ends_at: string
+          id: string
+          kind: string
+          made_at: string
+          max_uses: number
+          months: number
+          name: string
+          people: number
+          percent_off: number
+          plans: string[]
+          state: string
+          uses: number
+        }[]
+      }
+      owner_stop_promotion: { Args: { p_id: string }; Returns: string }
+      board_tick: { Args: { p_assignment: string }; Returns: undefined }
       pay_pocket_money: {
         Args: { p_house: string; p_kid: string; p_month: string }
         Returns: number
@@ -2080,6 +2346,30 @@ export type Database = {
       add_kid: {
         Args: { p_parent: string; p_kid: string; p_born: number }
         Returns: string
+      }
+      promotion_opened: {
+        Args: { p_email: string; p_id: string }
+        Returns: undefined
+      }
+      promotion_ready: {
+        Args: { p_code: string; p_coupon: string; p_id: string }
+        Returns: undefined
+      }
+      promotion_state: {
+        Args: { p: Database["public"]["Tables"]["promotions"]["Row"] }
+        Returns: string
+      }
+      promotion_use: {
+        Args: {
+          p_email: string
+          p_house: string | null
+          p_id: string
+          p_plan: string | null
+          p_session: string | null
+          p_strict: boolean
+          p_user: string | null
+        }
+        Returns: boolean
       }
       runs_for: {
         Args: { p_house: string; p_kid: string }
@@ -2379,12 +2669,51 @@ export type Database = {
           user_id: string
         }[]
       }
+      owner_house: {
+        Args: { p_house: string }
+        Returns: Json
+      }
+      owner_houses_count: {
+        Args: {
+          p_active?: string
+          p_after?: string
+          p_before?: string
+          p_pass?: string
+          p_q?: string
+        }
+        Returns: number
+      }
       owner_houses_find: {
         Args: { p_q: string }
         Returns: {
           id: string
           name: string
           people: number
+        }[]
+      }
+      owner_houses_page: {
+        Args: {
+          p_active?: string
+          p_after?: string
+          p_before?: string
+          p_cursor_at?: string
+          p_cursor_id?: string
+          p_limit?: number
+          p_pass?: string
+          p_q?: string
+        }
+        Returns: {
+          created_at: string
+          id: string
+          join_code: string
+          last_active: string | null
+          name: string
+          on_time: number
+          pass_plan: string
+          pass_until: string | null
+          people: number
+          settled: number
+          sort_at: string
         }[]
       }
       owner_message_people: {
@@ -2456,6 +2785,10 @@ export type Database = {
           walls: number
         }[]
       }
+      owner_overview: {
+        Args: { p_span?: string; p_zone?: string }
+        Returns: Json
+      }
       owner_people_find: {
         Args: { p_q: string }
         Returns: {
@@ -2503,6 +2836,7 @@ export type Database = {
         Args: {
           p_after?: string
           p_before?: string
+          p_from?: string
           p_kind?: string
           p_q?: string
           p_state?: string
@@ -2515,19 +2849,24 @@ export type Database = {
           p_before?: string
           p_cursor_at?: string
           p_cursor_id?: string
+          p_from?: string
           p_kind?: string
           p_limit?: number
           p_q?: string
           p_state?: string
         }
         Returns: {
+          also: number
           created_at: string
           email: string
           house_name: string
           id: string
           kind: string
           name: string
+          same_as: string
+          source: string
           state: string
+          subject: string
           updated_at: string
           user_id: string
           words: string
@@ -2536,6 +2875,24 @@ export type Database = {
       owner_request_deletion: {
         Args: { p_email: string; p_reason?: string }
         Returns: string
+      }
+      owner_fix_report: {
+        Args: { p_note?: string; p_report: string; p_tell?: boolean }
+        Returns: Json
+      }
+      owner_same_as: {
+        Args: { p_main: string; p_report: string }
+        Returns: string
+      }
+      owner_same_as_find: {
+        Args: { p_q?: string; p_report: string }
+        Returns: {
+          created_at: string
+          id: string
+          name: string
+          state: string
+          words: string
+        }[]
       }
       owner_set_report_state: {
         Args: { p_report: string; p_state: string }
@@ -2567,6 +2924,19 @@ export type Database = {
       }
       raise_flag: { Args: { p_john: string }; Returns: string }
       remove_flag: { Args: { p_assignment: string }; Returns: undefined }
+      receive_email: {
+        Args: {
+          p_body: string
+          p_email_id: string
+          p_from: string
+          p_name: string
+          p_ref: string
+          p_subject: string
+          p_topic: string
+          p_trusted: boolean
+        }
+        Returns: Json
+      }
       recording: { Args: never; Returns: boolean }
       recount_streaks: { Args: { p_house: string }; Returns: undefined }
       remove_member: {

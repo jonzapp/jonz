@@ -16,6 +16,7 @@ import type { PassStripe } from "@/lib/pass/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 import type { Caller } from "./disputes";
+import { checkOffer, giveGift } from "./promotions";
 
 /** A refusal with the status to answer it with, or where to send the browser. */
 export type PassAnswer = { url: string } | { status: number; message: string };
@@ -46,15 +47,23 @@ async function houseOf(caller: Caller, houseId: string) {
  * house its Pass once Stripe says it's paid. `stage` goes with the purchase
  * so only this copy's webhook acts on it (staging and production can share a
  * Stripe sandbox).
+ *
+ * With an `offer` (a promotion's code, from its link), Jonz checks it's the
+ * buyer's to use (a named one only for the email they're signed in with)
+ * and only then hands Stripe its promotion code. Months free put the first
+ * charge off further. A free Pass is given here, with no Stripe, and answers
+ * the Pass page.
  */
 export async function startCheckout(
   caller: Caller & { email: string | undefined },
-  stripe: PassStripe,
+  /** Null while Stripe isn't set up: a free Pass still works, nothing else does. */
+  stripe: PassStripe | null,
   houseId: string,
   plan: PassPurchase,
   appUrl: string,
   stage: Stage,
   now: Date,
+  offer: string | null = null,
 ): Promise<PassAnswer> {
   const house = await houseOf(caller, houseId);
   if (!house) return NOT_IN_HOUSE;
@@ -70,24 +79,57 @@ export async function startCheckout(
   }
 
   const pass = passOf(house);
+  const checked = offer ? await checkOffer(createAdminClient(), offer, caller.email, { id: house.id, pass }, plan, now) : null;
+  if (checked && "refusal" in checked) return { status: 409, message: humanError({ message: checked.refusal }) };
+
+  if (checked?.facts.terms.kind === "gift") {
+    const refused = await giveGift(createAdminClient(), checked, { id: house.id, pass }, { userId: caller.userId, email: caller.email ?? "" }, now);
+    if (refused) return { status: 409, message: humanError({ message: refused }) };
+    return { url: passPage(appUrl, true) };
+  }
+
   const refusal = passPurchaseRefusal(pass, plan, now);
   if (refusal) return { status: 409, message: refusal };
 
+  if (!stripe) return { status: 503, message: PASS_COPY.checkoutClosed };
   const price = await stripe.priceId(PASS_LOOKUP_KEYS[plan]);
   if (!price) return { status: 503, message: PASS_COPY.checkoutClosed };
 
-  const firstCharge = plan === "founding" ? null : passFirstCharge(pass, now);
+  // Months free start now, or when the free month ends if that's later.
+  const freeMonths = checked?.facts.terms.kind === "trial" ? checked.facts.terms.months : null;
+  const firstCharge = plan === "founding" ? null : latest(passFirstCharge(pass, now), freeMonths ? addMonths(now, freeMonths) : null);
+  if (checked && checked.facts.terms.kind !== "trial" && !checked.row.stripe_code) {
+    return { status: 409, message: humanError({ message: "offer_ended" }) };
+  }
   const url = await stripe.checkout({
     mode: plan === "founding" ? "payment" : "subscription",
     price,
     currency: house.currency.toLowerCase(),
     email: caller.email,
-    metadata: { house_id: house.id, plan, buyer: caller.userId, stage },
+    metadata: {
+      house_id: house.id,
+      plan,
+      buyer: caller.userId,
+      stage,
+      ...(checked ? { promotion: checked.row.id, offer_email: caller.email ?? "" } : {}),
+    },
     trialEnd: firstCharge ? Math.floor(firstCharge.getTime() / 1000) : null,
     successUrl: passPage(appUrl, true),
     cancelUrl: passPage(appUrl, false),
+    promotionCode: checked && checked.facts.terms.kind !== "trial" ? checked.row.stripe_code : null,
   });
   return { url };
+}
+
+function latest(a: Date | null, b: Date | null): Date | null {
+  if (!a || !b) return a ?? b;
+  return a.getTime() > b.getTime() ? a : b;
+}
+
+function addMonths(from: Date, months: number): Date {
+  const d = new Date(from);
+  d.setUTCMonth(d.getUTCMonth() + months);
+  return d;
 }
 
 /**

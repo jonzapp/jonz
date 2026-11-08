@@ -269,7 +269,8 @@ if (missing.length === 0) {
 // --- 4. Sign-in ---------------------------------------------------------------------
 
 step("Sign-in (Supabase auth settings)");
-const emails = (await loadCore("auth-email.ts")).authEmailTemplates();
+const authEmail = await loadCore("auth-email.ts");
+const emails = { ...authEmail.authEmailTemplates(), ...authEmail.securityNoticeTemplates() };
 // Cloudflare Turnstile's secret (the TURNSTILE_SECRET Actions secret); the site key is in apps/client/src/api/turnstile.ts.
 const captcha = env.TURNSTILE_SECRET?.trim() || null;
 if (captcha) mask(captcha);
