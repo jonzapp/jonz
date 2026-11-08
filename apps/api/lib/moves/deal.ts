@@ -17,7 +17,7 @@ import { permitted } from "./permitted";
  * both call this.
  */
 export async function dealThisWeek(caller: Caller, houseId: string, now: Date): Promise<Refusal | null> {
-  const refused = await permitted(caller, houseId, "week.deal");
+  const refused = await permitted(caller, houseId, "weeks:write");
   if (refused) return refused;
 
   const admin = createAdminClient();

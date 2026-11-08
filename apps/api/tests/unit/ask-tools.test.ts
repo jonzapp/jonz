@@ -39,12 +39,12 @@ describe("jonzToolSet", () => {
 
 // What each tool's switch in JonzTools["may"] stands for (draft.ts sets them from these permissions).
 const MAY_FOR: Record<keyof JonzTools["may"], Permission> = {
-  add: "johns.add",
-  change: "johns.edit",
-  remove: "johns.remove",
-  groups: "groups.edit",
-  resets: "history.reset",
-  away: "away.book",
+  add: "johns:write",
+  change: "johns:write",
+  remove: "johns:write",
+  groups: "groups:write",
+  resets: "history:write",
+  away: "away:write_own",
 };
 
 describe("every permission has a way through Ask Jonz", () => {

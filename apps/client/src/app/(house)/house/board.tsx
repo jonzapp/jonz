@@ -60,7 +60,7 @@ function BoardFor({ houseId, userId }: { houseId: string; userId: string }) {
       {() => {
         const { snapshot, board, now } = view!;
         const { rules, members, house } = snapshot;
-        if (house.kind !== 'family' || !memberCan(view!.me, 'ticks.ok')) {
+        if (house.kind !== 'family' || !memberCan(view!.me, 'ticks:write')) {
           return <EmptyState icon={UsersIcon} title={BOARD_COPY.title} body={BOARD_COPY.parentsOnly} />;
         }
         const kids = members.filter((m) => m.role !== 'admin').map((m) => ({ userId: m.userId, name: firstName(m.name) }));

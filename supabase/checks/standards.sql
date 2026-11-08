@@ -226,7 +226,22 @@ select 'callable functions listed', 'stale: ' || name from callable
 where not exists (select 1 from pg_proc p where p.pronamespace = 'public'::regnamespace and p.proname = name
                   and p.prosecdef and has_function_privilege('authenticated', p.oid, 'execute'));
 
--- 21. Every allowed exception still matches a real break (keeps the list honest).
+-- 21. A permission a function or rule asks about (can / user_can) is on
+-- the permissions list, and named resource:level (docs/standards/database.md).
+insert into breaks
+select distinct 'permission is listed', x.src || ': ' || x.perm
+from (
+  select p.proname as src, m[1] as perm
+  from pg_proc p, regexp_matches(p.prosrc, 'can\((?:[^()'']|\([^()]*\))*?''([^'']+)''', 'g') m
+  where p.pronamespace = 'public'::regnamespace
+  union all
+  select pol.tablename || ': ' || pol.policyname, m[1]
+  from pg_policies pol, regexp_matches(coalesce(pol.qual, '') || ' ' || coalesce(pol.with_check, ''), 'can\((?:[^()'']|\([^()]*\))*?''([^'']+)''', 'g') m
+  where pol.schemaname = 'public'
+) x
+where not exists (select 1 from public.permissions pm where pm.name = x.perm);
+
+-- 22. Every allowed exception still matches a real break (keeps the list honest).
 insert into breaks
 select 'stale exception', a.rule || ': ' || a.item from allowed a
 where not exists (select 1 from breaks b where b.rule = a.rule and b.item = a.item);

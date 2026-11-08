@@ -19,14 +19,12 @@ export type OwnerRole = (typeof OWNER_ROLES)[number];
 
 /** Every move on the admin pages, in plain words (Jonz reads these). */
 export const OWNER_PERMISSIONS = {
-  "admin.read": "See every admin page: Overview, Inbox, Houses, Messages, Notices, Promotions, Deletions and the audit log",
-  "inbox.reply": "Reply to a report: its sender gets a push and an email",
-  "inbox.fix": "Mark a report fixed, telling whoever sent it (or not), or open it again",
-  "inbox.same_as": "Fold a report into one that says the same thing, or take it back out",
-  "notices.edit": "Put up a notice, change one, or end one",
-  "messages.send": "Send a message to a person, a house or everyone, by push, the Wall or email",
-  "promotions.edit": "Make a promotion, stop one, email the people it names, or try its Stripe set-up again",
-  "deletions.edit": "Delete an account now, stop a deletion, or start one for someone who asked by email",
+  "admin:read": "See every admin page: Overview, Inbox, Houses, Messages, Notices, Promotions, Deletions and the audit log",
+  "reports:write": "Reply to a report (its sender gets a push and an email), mark it fixed or open it again, and fold it into one that says the same thing",
+  "notices:write": "Put up a notice, change one, or end one",
+  "messages:write": "Send a message to a person, a house or everyone, by push, the Wall or email",
+  "promotions:write": "Make a promotion, stop one, email the people it names, or try its Stripe set-up again",
+  "deletions:write": "Delete an account now, stop a deletion, or start one for someone who asked by email",
 } as const;
 export type OwnerPermission = keyof typeof OWNER_PERMISSIONS;
 export const OWNER_PERMISSION_NAMES = Object.keys(OWNER_PERMISSIONS) as OwnerPermission[];
@@ -50,14 +48,12 @@ export function ownerCan(role: OwnerRole | null | undefined, permission: OwnerPe
 export type OwnerAskCoverage = { by: "reads" } | { by: "card"; tools: readonly string[] };
 
 export const OWNER_ASK_COVERAGE: Record<OwnerPermission, OwnerAskCoverage> = {
-  "admin.read": { by: "reads" },
-  "inbox.reply": { by: "card", tools: ["reply_to_report"] },
-  "inbox.fix": { by: "card", tools: ["mark_report_fixed", "reopen_report"] },
-  "inbox.same_as": { by: "card", tools: ["set_same_as"] },
-  "notices.edit": { by: "card", tools: ["save_notice", "end_notice"] },
-  "messages.send": { by: "card", tools: ["send_message"] },
-  "promotions.edit": { by: "card", tools: ["make_promotion", "stop_promotion", "email_promotion", "retry_promotion"] },
-  "deletions.edit": { by: "card", tools: ["delete_account_now", "stop_deletion", "start_deletion"] },
+  "admin:read": { by: "reads" },
+  "reports:write": { by: "card", tools: ["reply_to_report", "mark_report_fixed", "reopen_report", "set_same_as"] },
+  "notices:write": { by: "card", tools: ["save_notice", "end_notice"] },
+  "messages:write": { by: "card", tools: ["send_message"] },
+  "promotions:write": { by: "card", tools: ["make_promotion", "stop_promotion", "email_promotion", "retry_promotion"] },
+  "deletions:write": { by: "card", tools: ["delete_account_now", "stop_deletion", "start_deletion"] },
 };
 
 /** The owner's write tools, from OWNER_ASK_COVERAGE. */
@@ -124,20 +120,20 @@ export const OWNER_MOVES_MAX = 6;
 
 /** Which permission each move needs: the card's moves, checked against the owner's role. */
 export const OWNER_MOVE_PERMISSION: Record<OwnerMoveKind, OwnerPermission> = {
-  report_reply: "inbox.reply",
-  report_fixed: "inbox.fix",
-  report_open: "inbox.fix",
-  report_same_as: "inbox.same_as",
-  notice_save: "notices.edit",
-  notice_end: "notices.edit",
-  message_send: "messages.send",
-  promotion_make: "promotions.edit",
-  promotion_stop: "promotions.edit",
-  promotion_email: "promotions.edit",
-  promotion_retry: "promotions.edit",
-  deletion_now: "deletions.edit",
-  deletion_stop: "deletions.edit",
-  deletion_start: "deletions.edit",
+  report_reply: "reports:write",
+  report_fixed: "reports:write",
+  report_open: "reports:write",
+  report_same_as: "reports:write",
+  notice_save: "notices:write",
+  notice_end: "notices:write",
+  message_send: "messages:write",
+  promotion_make: "promotions:write",
+  promotion_stop: "promotions:write",
+  promotion_email: "promotions:write",
+  promotion_retry: "promotions:write",
+  deletion_now: "deletions:write",
+  deletion_stop: "deletions:write",
+  deletion_start: "deletions:write",
 };
 
 /** Moves that can’t be taken back: the card says so under each. */

@@ -80,7 +80,7 @@ function WeekFor({ houseId, userId }: { houseId: string; userId: string }) {
   const away = useAway(houseId, view?.snapshot);
   const shares = useTable(houseId, view?.snapshot);
   // Before the first deal an admin's Week offers it as Today's checklist does, which counts the John list.
-  const forDeal = view?.board.notStarted === true && memberCan(view.me, 'week.deal');
+  const forDeal = view?.board.notStarted === true && memberCan(view.me, 'weeks:write');
   // Once a week is dealt, the list says what's coming up.
   const list = useJohnList(houseId, forDeal || view?.board.week != null);
   useReadOnFocus(away.refetch, { skipFirst: true });
@@ -101,13 +101,13 @@ function WeekFor({ houseId, userId }: { houseId: string; userId: string }) {
                 <MoreButton onPress={() => setMenu(true)} />
               </TourSpot>
             }
-            ask={memberCan(view?.me, 'house.read')}
+            ask={memberCan(view?.me, 'house:read')}
           />
           <WeekMenu
             visible={menu}
             onClose={() => setMenu(false)}
             houseId={houseId}
-            admin={memberCan(view?.me, 'week.deal')}
+            admin={memberCan(view?.me, 'weeks:write')}
             canRedeal={board?.week != null && weekUnticked(board.items)}
             weekId={board?.week?.id ?? null}
             userId={userId}
@@ -163,7 +163,7 @@ function Board({
       <WeekEmpty
         houseId={house.id}
         notStarted={board.notStarted}
-        isAdmin={memberCan(me, 'week.deal')}
+        isAdmin={memberCan(me, 'weeks:write')}
         adminName={whoDeals(members)}
         johns={johns}
         memberCount={members.length}

@@ -49,7 +49,7 @@ export default function HouseLayout() {
   // The Today tab's badge: votes waiting for you, or in a family, kids' ticks waiting for your OK.
   const toVote = (view?.today.toVote.length ?? 0) + (view?.today.toOk.length ?? 0);
   // What a tour's steps depend on, as the tour starts.
-  const admin = memberCan(view?.me, "house.settings");
+  const admin = memberCan(view?.me, "house:write");
   const toCheck = toVote + (view?.today.toCover.length ?? 0) > 0;
   const hasJohns = (view?.today.mine.length ?? 0) > 0;
   const facts = useMemo(
@@ -75,7 +75,7 @@ export default function HouseLayout() {
         >
           <JohnSheetProvider houseId={house!.id} userId={session!.user.id}>
             <AskPanelProvider>
-              <TourProvider facts={facts} canAsk={memberCan(view?.me, "house.read")}>
+              <TourProvider facts={facts} canAsk={memberCan(view?.me, "house:read")}>
               <View style={styles.row}>
                 <View style={styles.page}>
                   <Tabs

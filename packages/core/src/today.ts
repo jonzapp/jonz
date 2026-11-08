@@ -131,7 +131,7 @@ export type NextUpState =
  * name.
  */
 export function whoDeals(members: readonly (Person & { role: string })[]): string {
-  const admin = members.find((m) => can(m.role as HouseRole, "week.deal"));
+  const admin = members.find((m) => can(m.role as HouseRole, "weeks:write"));
   return admin ? firstName(admin.name) : NEXT_UP_COPY.anAdmin;
 }
 
@@ -147,7 +147,7 @@ export function nextUpState(input: {
 }): NextUpState {
   const { board, mine, members } = input;
   if (board.notStarted) {
-    if (members.some((m) => m.userId === input.userId && can(m.role as HouseRole, "week.deal"))) return { kind: "setup" };
+    if (members.some((m) => m.userId === input.userId && can(m.role as HouseRole, "weeks:write"))) return { kind: "setup" };
     return { kind: "waiting", admin: whoDeals(members) };
   }
   if (!board.week) return { kind: "undealt" };

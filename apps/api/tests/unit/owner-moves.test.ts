@@ -47,7 +47,7 @@ describe("every owner move has a way through Jonz", () => {
   });
 
   it("gives an owner who may only look every read and no writes", () => {
-    expect(Object.keys(ownerToolSet(reads, writes({ "admin.read": true }))).sort()).toEqual(READS);
+    expect(Object.keys(ownerToolSet(reads, writes({ "admin:read": true }))).sort()).toEqual(READS);
   });
 
   it("gives each card move's tools with its permission, and only then", () => {

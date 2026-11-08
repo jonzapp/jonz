@@ -150,7 +150,7 @@ export function AskJonz({
           people={view.snapshot.members}
           me={userId}
           passOpen={passUnlocked(view.snapshot.house.pass, view.now)}
-          canChange={memberCan(view.me, 'johns.edit')}
+          canChange={memberCan(view.me, 'johns:write')}
           onOpenList={onOpenList}
           pieces={replyPieces({
             viewerId: userId,

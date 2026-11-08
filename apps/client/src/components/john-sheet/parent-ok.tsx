@@ -25,7 +25,7 @@ export function AwaitsOk({ item, context }: { item: BoardItem; context: JohnShee
   const move = useMove(context.houseId);
   const toast = useToast();
   const parentIds = context.members.filter((m) => m.role === 'admin').map((m) => m.userId);
-  const parent = memberCan(context.me, 'ticks.ok');
+  const parent = memberCan(context.me, 'ticks:write');
 
   async function answer(ok: boolean) {
     // A Together John is answered from any of its places: they share one tick.

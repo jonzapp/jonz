@@ -142,7 +142,7 @@ describe("chatTurn, with Claude stood in for", () => {
     });
     const me = house.admin.name.split(" ")[0];
     expect(told).toMatchObject({ people: [me, house.members[0].name.split(" ")[0]], me: { name: me, role: "admin" }, weekStarts: 1, messages, editing: false });
-    expect(told!.allowed).toContain(PERMISSIONS["johns.remove"]);
+    expect(told!.allowed).toContain(PERMISSIONS["johns:write"]);
     if ("refusal" in result) throw new Error("refused");
     expect(result.source).toBe("ai");
     expect(result.ask).toEqual({ kind: "day" });
@@ -263,7 +263,7 @@ describe("chatTurn, with Claude stood in for", () => {
     let reads: string[] = [];
     const result = await chatTurn({ db: ben.db, userId: ben.userId }, house.id, said("Who's in the house?"), null, new Date(), async (ctx, tools) => {
       expect(ctx.me.role).toBe("member");
-      expect(ctx.allowed).not.toContain(PERMISSIONS["johns.add"]);
+      expect(ctx.allowed).not.toContain(PERMISSIONS["johns:write"]);
       expect(tools.may).toEqual({ add: false, change: false, remove: false, groups: false, resets: false, away: true });
       // Even called, a write it wasn't given is refused.
       expect(tools.edit({ kind: "add", john: { name: "Sneaky" } }).ok).toBe(false);

@@ -27,7 +27,7 @@ export function FlagPart({ item, context }: { item: BoardItem; context: JohnShee
   if (item.flaggedAt === null || item.doneAt !== null || item.outcome !== null) return null;
 
   const raisedByMe = item.flaggedBy === context.userId;
-  if (!raisedByMe && !memberCan(context.me, 'flags.remove_any')) {
+  if (!raisedByMe && !memberCan(context.me, 'flags:write')) {
     if (item.userId !== context.userId) return null;
     return (
       <SheetLines testID="flag-who-can-remove">

@@ -36,7 +36,7 @@ export function KindSwitch({ houseId, view }: { houseId: string; view: HouseView
   const move = useMove(houseId);
   const [asking, setAsking] = useState<HouseKind | null>(null);
   const { house, rules } = view.snapshot;
-  const admin = memberCan(view.me, 'house.settings');
+  const admin = memberCan(view.me, 'house:write');
   const waiting = house.nextKind ?? null;
   const shown: HouseKind = waiting?.kind ?? house.kind;
   const meta = (kind: HouseKind) =>

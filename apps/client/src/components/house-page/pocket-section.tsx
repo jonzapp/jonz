@@ -37,7 +37,7 @@ export function PocketSection({
   pocket: UseQueryResult<PocketView>;
 }) {
   const { rules, members } = view.snapshot;
-  const parent = memberCan(view.me, 'pocket.pay');
+  const parent = memberCan(view.me, 'pocket_money:write');
   const inset = useRowInset();
   if (!pocket.data) {
     return (

@@ -35,6 +35,7 @@ export * from "./moving";
 export * from "./notices";
 export * from "./owner-admin";
 export * from "./permissions";
+export * from "./permission-matrix";
 export * from "./reply-format";
 export * from "./how-it-works";
 export * from "./reply-samples";

@@ -1,6 +1,6 @@
 # Database standards
 
-The 25 rules every table, column, key and security rule in
+The 26 rules every table, column, key and security rule in
 `supabase/migrations` follows. Glyn agreed them on 7 November 2026 (the
 "Jonz database rules" doc). Read this before writing a migration.
 
@@ -140,6 +140,16 @@ columns read as a fact (`needs_photo`, `awaits_ok`); counts end in
     Once real houses are on it, rename in two steps: add the new name beside
     the old, move the app, drop the old name in a later PR. *Ours.*
 25. **Tests never use the real clock**: use a pretend clock. *Ours.*
+
+## Permissions
+
+26. **Permissions are named `resource:level`**, Stripe's way: `read`,
+    `write_own` (only your own rows) or `write` (anyone's), for example
+    `johns:write` or `ticks:write_own`. A role that may write a resource
+    holds the lower levels too, written out in full. Every permission a
+    function or table rule asks `can()` / `user_can()` about is on the
+    `permissions` list. *Stripe restricted keys; OWASP authorization.*
+    Checked.
 
 ## Checking
 
