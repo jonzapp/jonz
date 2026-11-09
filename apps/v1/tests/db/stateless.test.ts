@@ -7,37 +7,21 @@
 
 import { randomBytes, randomUUID } from "node:crypto";
 
-import { OPERATIONS } from "@app/core";
 import { connect, createExecutor, tokenVerifier, type ApiOperation, type Sql } from "@app/server";
 import type { FastifyInstance } from "fastify";
 import { SignJWT } from "jose";
 import postgres from "postgres";
 import { afterAll, beforeAll, expect, it } from "vitest";
-import { z } from "zod";
 
 import { buildApp } from "../../src/app";
+import { apiOperation } from "../../src/operations";
 
 const DB_URL = process.env.DB_URL ?? "postgresql://postgres:postgres@127.0.0.1:54342/postgres";
 const SECRET = randomBytes(32).toString("hex");
 const NOW = new Date(Date.UTC(2027, 0, 4, 9, 30, 0)); // pretend clock
 
-const ops: ApiOperation[] = [
-  {
-    name: "create_house",
-    operation: OPERATIONS.create_house,
-    input: z.object({ name: z.string(), timezone: z.string(), currency: z.string(), weekStarts: z.number(), kind: z.string() }),
-    output: z.uuid(),
-    http: { method: "POST", path: "/v1/houses" },
-  },
-  {
-    name: "my_permissions",
-    operation: OPERATIONS.my_permissions,
-    input: z.object({ houseId: z.uuid() }),
-    output: z.array(z.string()),
-    http: { method: "GET", path: "/v1/houses/{houseId}/permissions" },
-    rpcArgs: (i) => ({ h: i.houseId }),
-  },
-];
+// The registry's own operations, as /v1 serves them.
+const ops: ApiOperation[] = [apiOperation("create_house"), apiOperation("my_permissions"), apiOperation("can")];
 
 let admin: Sql;
 const pools: Sql[] = [];
@@ -97,6 +81,21 @@ it("gives the same answers whichever instance takes each request", async () => {
   expect(reads.map((r) => r.statusCode)).toEqual([200, 200, 200, 429]);
   expect(reads[0].json()).toContain("house:write");
   expect(reads[3].headers["retry-after"]).toBe("60");
+});
+
+it("reads a GET's query by its contract", async () => {
+  const houseId = (await admin`select house_id from public.members where user_id = ${person}::uuid`)[0].house_id;
+  // This minute's reads were spent above, so this runs in the next minute.
+  const at = new Date(NOW.getTime() + 60_000);
+  const sql = pools[0];
+  const verify = tokenVerifier({ supabaseUrl: "http://127.0.0.1:54341", jwtSecret: SECRET, currentDate: at });
+  const app = buildApp({ execute: createExecutor({ sql, verify, operations: ops, now: () => at }), operations: ops });
+  const yes = await app.inject({ method: "GET", url: `/v1/houses/${houseId}/can?permission=house:write`, headers: { authorization: bearer } });
+  expect(yes.statusCode).toBe(200);
+  expect(yes.json()).toBe(true);
+  const no = await app.inject({ method: "GET", url: `/v1/houses/${houseId}/can?permission=nothing:write`, headers: { authorization: bearer } });
+  expect(no.json()).toBe(false);
+  await app.close();
 });
 
 it("turns away a token signed with anything else, on every instance", async () => {

@@ -14,6 +14,7 @@ import { randomUUID } from "node:crypto";
 
 import { asProblem, openApi, pathKeys, Problem, type ApiOperation, type Executor } from "@app/server";
 import Fastify, { type FastifyInstance, type FastifyReply } from "fastify";
+import { z } from "zod";
 
 export interface AppOptions {
   execute: Executor;
@@ -30,6 +31,33 @@ const header = (value: string | string[] | undefined) => (Array.isArray(value) ?
 
 /** "/v1/houses/{houseId}/johns" → "/v1/houses/:houseId/johns" */
 export const fastifyPath = (path: string) => path.replace(/\{([A-Za-z][A-Za-z0-9]*)\}/g, ":$1");
+
+type QueryTypes = Record<string, "number" | "boolean" | "array" | "string">;
+
+/** What each of an operation's inputs is, so a query string's text can be read as the number, yes/no or list it stands for. */
+export function queryTypes(input: z.ZodType): QueryTypes {
+  const schema = z.toJSONSchema(input, { io: "input", unrepresentable: "any" }) as { properties?: Record<string, { type?: string | string[]; anyOf?: { type?: string }[] }> };
+  const types: QueryTypes = {};
+  for (const [key, prop] of Object.entries(schema.properties ?? {})) {
+    const named = [prop.type, ...(prop.anyOf ?? []).map((p) => p.type)].flat().filter(Boolean);
+    types[key] = named.includes("integer") || named.includes("number") ? "number" : named.includes("boolean") ? "boolean" : named.includes("array") ? "array" : "string";
+  }
+  return types;
+}
+
+/** A query string read by its operation's input types; anything that doesn't fit is left for the schema to refuse. */
+export function readQuery(query: Record<string, unknown>, types: QueryTypes): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [key, raw] of Object.entries(query)) {
+    const type = types[key];
+    if (type === "array") out[key] = Array.isArray(raw) ? raw : String(raw).split(",").filter(Boolean);
+    else if (Array.isArray(raw)) out[key] = raw;
+    else if (type === "number" && /^-?\d+(\.\d+)?$/.test(String(raw))) out[key] = Number(raw);
+    else if (type === "boolean" && (raw === "true" || raw === "false")) out[key] = raw === "true";
+    else out[key] = raw;
+  }
+  return out;
+}
 
 function sendProblem(reply: FastifyReply, problem: Problem, requestId: string) {
   for (const [k, v] of Object.entries(problem.headers)) reply.header(k, v);
@@ -69,6 +97,7 @@ export function buildApp(options: AppOptions): FastifyInstance {
 
   for (const op of options.operations) {
     const keys = pathKeys(op.http.path);
+    const types = op.http.method === "GET" ? queryTypes(op.input) : {};
     app.route({
       method: op.http.method,
       url: fastifyPath(op.http.path),
@@ -80,7 +109,7 @@ export function buildApp(options: AppOptions): FastifyInstance {
           if (op.deprecated.link) reply.header("Link", `<${op.deprecated.link}>; rel="deprecation"`);
         }
         const params = req.params as Record<string, string>;
-        const from = op.http.method === "GET" ? (req.query as Record<string, unknown>) : (req.body ?? {});
+        const from = op.http.method === "GET" ? readQuery(req.query as Record<string, unknown>, types) : (req.body ?? {});
         if (typeof from !== "object" || Array.isArray(from)) {
           return sendProblem(reply, new Problem("invalid_input", "Send a JSON object."), req.id);
         }
