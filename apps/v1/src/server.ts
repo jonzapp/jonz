@@ -24,4 +24,7 @@ const stop = async () => {
 process.on("SIGTERM", stop);
 process.on("SIGINT", stop);
 
-await app.listen({ port: config.port, host: config.host });
+app.listen({ port: config.port, host: config.host }).catch((error: unknown) => {
+  app.log.error(error);
+  process.exit(1);
+});
