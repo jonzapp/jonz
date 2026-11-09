@@ -23,6 +23,8 @@ export interface ProblemBody {
   status: number;
   detail: string;
   requestId?: string;
+  /** A connected app's request that can't be undone (forbidden until approved): where the person approves it in Jonz. */
+  approvalUrl?: string;
 }
 
 export class Problem extends Error {
@@ -31,6 +33,8 @@ export class Problem extends Error {
     readonly code: ProblemCode,
     detail: string,
     readonly headers: Record<string, string> = {},
+    /** More for the caller to act on, added to the body (a held request's approvalUrl). */
+    readonly extra: { approvalUrl?: string } = {},
   ) {
     super(detail);
     this.status = PROBLEM_CODES[code];
@@ -42,6 +46,7 @@ export class Problem extends Error {
       title: this.code,
       status: this.status,
       detail: this.message,
+      ...this.extra,
       ...(requestId ? { requestId } : {}),
     };
   }

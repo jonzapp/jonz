@@ -378,14 +378,15 @@ enabled = false
 # Obtain from https://clerk.com/setup/supabase
 # domain = "example.clerk.accounts.dev"
 
-# OAuth server configuration
+# Supabase's OAuth 2.1 server, for apps people connect to Jonz over MCP
+# (docs/specs/operation-registry.md, "MCP"). The consent page is the app's
+# own, at site_url + this path; production's settings are Provision's
+# (scripts/provision/lib.mjs, OAUTH_SERVER). Any MCP client may register
+# itself, as MCP's authorization spec expects.
 [auth.oauth_server]
-# Enable OAuth server functionality
-enabled = false
-# Path for OAuth consent flow UI
+enabled = true
 authorization_url_path = "/oauth/consent"
-# Allow dynamic client registration
-allow_dynamic_registration = false
+allow_dynamic_registration = true
 
 [edge_runtime]
 enabled = true

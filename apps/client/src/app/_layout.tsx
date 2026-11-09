@@ -1,4 +1,4 @@
-import { afterSignIn, DELETE_PATH, ERROR_COPY, SIGN_IN, signedOutTo } from '@app/core';
+import { afterSignIn, APPROVE_PATH, CONSENT_PATH_WITH_ID, DELETE_PATH, ERROR_COPY, SIGN_IN, signedOutTo } from '@app/core';
 import { useFonts } from 'expo-font';
 import { Stack, useGlobalSearchParams, usePathname, type ErrorBoundaryProps } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -76,8 +76,8 @@ function Routes() {
     ? signedOut
       ? SIGN_IN
       : signedOutTo(pathname)
-    : carried === DELETE_PATH
-      ? DELETE_PATH
+    : carried === DELETE_PATH || (carried !== undefined && (APPROVE_PATH.test(carried) || CONSENT_PATH_WITH_ID.test(carried)))
+      ? carried
       : housed
         ? '/today'
         : (carried ?? '/welcome');
@@ -122,6 +122,10 @@ function Routes() {
           <Stack.Screen name="join/[joinCode]" />
           {/* So does an offer's link, signing you in in place too. */}
           <Stack.Screen name="offer/[offerCode]" />
+          {/* And a connected app's request, to approve or decline. */}
+          <Stack.Screen name="approve/[approvalId]" />
+          {/* And a connected app's sign-in, to allow or not. */}
+          <Stack.Screen name="oauth/consent" />
           {/* So do the Privacy Policy, the Terms, Help, deleting an account, and a link to nowhere. */}
           <Stack.Screen name="privacy" />
           <Stack.Screen name="help" />

@@ -109,6 +109,16 @@ describe("auth settings", () => {
     expect(authProblems({ ...SMTP, ...authSettings(CONFIG, GOOGLE, EMAILS), external_google_secret: undefined }, CONFIG, GOOGLE)).toEqual([]);
   });
 
+  it("turns on the OAuth server for connected apps, with Jonz's own consent page, and catches it off", () => {
+    const written = { ...SMTP, ...authSettings(CONFIG, null, EMAILS) };
+    expect(written).toMatchObject({ oauth_server_enabled: true, oauth_server_authorization_path: "/oauth/consent", oauth_server_allow_dynamic_registration: true });
+    expect(authProblems({ ...written, oauth_server_enabled: false }, CONFIG, null, EMAILS)).toEqual(["the OAuth server for connected apps is off"]);
+    expect(authProblems({ ...written, oauth_server_authorization_path: "/consent", oauth_server_allow_dynamic_registration: false }, CONFIG, null, EMAILS)).toEqual([
+      "the OAuth consent page is /consent, not /oauth/consent",
+      "connected apps can't register themselves (dynamic client registration is off)",
+    ]);
+  });
+
   it("catches a client ID that is still an unresolved env() placeholder", () => {
     const read = { ...SMTP, ...authSettings(CONFIG, GOOGLE, EMAILS), external_google_client_id: "env(AUTH_GOOGLE_CLIENT_ID)" };
     expect(authProblems(read, CONFIG, GOOGLE)).toEqual([

@@ -5,10 +5,13 @@ export { tokenVerifier, type Claims, type TokenConfig, type TokenVerifier } from
 export { checkClient, parseClient, CLIENT_PLATFORMS, type ClientInfo, type ClientPlatform, type MinimumBuilds } from "./client";
 export { becomeApi, becomePerson, callFunction, connect, signatures, type Signature, type Sql, type Tx } from "./db";
 export {
+  APPROVAL_TTL_MS,
+  APPROVAL_URL,
   createExecutor,
   defaultRpcArgs,
   fromDatabase,
   HOUSE_FROM,
+  needsApproval,
   IDEMPOTENCY_TTL_MS,
   SUNSET_NOTICE_MS,
   requestHash,

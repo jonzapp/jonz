@@ -123,6 +123,69 @@ export type Database = {
         }
         Relationships: []
       }
+      api_approvals: {
+        Row: {
+          approved_at: string | null
+          client_id: string | null
+          created_at: string
+          declined_at: string | null
+          expires_at: string
+          house_id: string | null
+          id: string
+          input: Json
+          operation: string
+          request_hash: string
+          updated_at: string
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          approved_at?: string | null
+          client_id?: string | null
+          created_at?: string
+          declined_at?: string | null
+          expires_at: string
+          house_id?: string | null
+          id?: string
+          input?: Json
+          operation: string
+          request_hash: string
+          updated_at?: string
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          approved_at?: string | null
+          client_id?: string | null
+          created_at?: string
+          declined_at?: string | null
+          expires_at?: string
+          house_id?: string | null
+          id?: string
+          input?: Json
+          operation?: string
+          request_hash?: string
+          updated_at?: string
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_approvals_house_id_fkey"
+            columns: ["house_id"]
+            isOneToOne: false
+            referencedRelation: "houses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "api_approvals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       app_owners: {
         Row: {
           added_at: string
@@ -2495,6 +2558,8 @@ export type Database = {
         Args: { p_assignment: string; p_ok: boolean }
         Returns: string
       }
+      api_approval: { Args: { p_id: string }; Returns: Json }
+      api_pre_request: { Args: never; Returns: undefined }
       apply_next_kind: { Args: { p_house: string; p_now: string }; Returns: boolean }
       set_house_kind: {
         Args: { p_house: string; p_kind: string }
@@ -2616,6 +2681,10 @@ export type Database = {
       runs_for: {
         Args: { p_house: string; p_kid: string }
         Returns: boolean
+      }
+      answer_api_approval: {
+        Args: { p_approve: boolean; p_id: string }
+        Returns: undefined
       }
       answer_dispute: {
         Args: { p_dispute: string; p_photo_path: string }

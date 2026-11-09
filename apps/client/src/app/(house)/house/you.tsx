@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
 import { HousePage } from '@/components/house/house-page';
+import { ConnectedAppsSection } from '@/components/house-page/connected-apps-section';
 import { LeaveSection } from '@/components/house-page/leave-section';
 import { YouSection } from '@/components/house-page/you-section';
 import { Pair } from '@/components/page-columns';
@@ -64,7 +65,12 @@ function YouBody({ houseId, userId, view }: { houseId: string; userId: string; v
       </View>
       <Pair
         testID="you-pair"
-        start={<YouSection houseId={houseId} userId={userId} view={view} part="account" />}
+        start={
+          <>
+            <YouSection houseId={houseId} userId={userId} view={view} part="account" />
+            <ConnectedAppsSection zone={view.snapshot.rules.timezone} />
+          </>
+        }
         end={
           <>
             <YouSection houseId={houseId} userId={userId} view={view} part="rest" />
