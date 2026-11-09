@@ -40,19 +40,16 @@ function appSources(dir: string): string[] {
 }
 
 describe("the app's own reads and writes", () => {
-  it("only touch tables an operation names, so each has its contract in the registry", () => {
-    const named = new Set(
-      OPERATION_NAMES.flatMap((n) => {
-        const o: Operation = OPERATIONS[n];
-        return o.tables ?? [];
-      }),
+  it("go through /v1 only: no table or database function straight from the app", () => {
+    const files = appSources(join(__dirname, "../../../client/src"));
+    expect(files.length).toBeGreaterThan(20);
+    const direct = files.flatMap((file) =>
+      // A table (not storage's bucket, storage.from(...)) or a database function.
+      [...readFileSync(file, "utf8").matchAll(/(?<!storage)\.from\(\s*'([a-z_]+)'|\.rpc\(\s*'([a-z_]+)'/g)].map(
+        (m) => `${m[1] ?? m[2]} (${relative(join(__dirname, "../../.."), file)})`,
+      ),
     );
-    const used = appSources(join(__dirname, "../../../client/src")).flatMap((file) =>
-      // A table, not storage's bucket (storage.from(...)).
-      [...readFileSync(file, "utf8").matchAll(/(?<!storage)\.from\(\s*'([a-z_]+)'/g)].map((m) => `${m[1]} (${relative(join(__dirname, "../../.."), file)})`),
-    );
-    expect(used.length).toBeGreaterThan(20);
-    expect(used.filter((u) => !named.has(u.split(" ")[0] as never))).toEqual([]);
+    expect(direct).toEqual([]);
   });
 });
 
