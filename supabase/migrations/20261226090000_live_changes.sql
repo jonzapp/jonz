@@ -43,7 +43,13 @@ begin
   if house is null then
     return null;
   end if;
-  insert into public.live_changes (house_id) values (house) returning id into change;
+  -- A house being deleted takes its rows with it: nobody is left to tell.
+  insert into public.live_changes (house_id)
+  select h.id from public.houses h where h.id = house
+  returning id into change;
+  if change is null then
+    return null;
+  end if;
   -- Now and then, forget what's two days old: a stream gone that long reads the house afresh.
   if random() < 0.01 then
     delete from public.live_changes where created_at < now() - interval '2 days';
