@@ -160,6 +160,17 @@ Migration `20261219090000_api_layer.sql` sets up the following:
     turning the Data API off breaks nothing.
 - **C3:** realtime as SSE (`/v1/houses/{houseId}/events`), files by short
   links (`files.jonz.app`), and sign-in through `/v1/auth/*`.
+  - Done: files. /v1 hands out a place to upload a picture
+    (`proof_upload`, `file_upload`) and links to see private ones
+    (`file_links`), asking Storage as the person so the buckets' own rules
+    still decide. The links are on the site, `/files/…`, which passes them
+    to apps/api (`app/files`); Storage's own signed token rides in the link,
+    so the route needs no secret and a link dies when Storage's token does.
+    Your photo is `/files/photo/avatars/<you>/<file>`, which set_my_photo
+    now takes. A picture is at most 4 MB (Vercel's request limit is 4.5).
+    `FILES_URL` points the links elsewhere (staging, whose site passes
+    /files to production). `files.jonz.app` can follow as another name for
+    the same route.
   - **Realtime without a new service.** Each change writes a row to an
     events table and sends it on a private Supabase Realtime Broadcast
     channel. Only the API listens: houses are spread across a fixed set of

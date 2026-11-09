@@ -1,14 +1,10 @@
 import { photoPaths, wallEvents, type ReactionKind, type WallEvent } from '@app/core';
 
 import { snakeKeys } from './base';
-import { supabase } from './supabase';
 import { callV1 } from './v1';
 
 // The Wall: what the house did, and your reactions, on /v1. Receipts are
-// signed links from Storage until files move to files.jonz.app.
-
-/** How long a photo's signed link lasts: long enough to look, short enough not to share. */
-const PHOTO_SECONDS = 3600;
+// links on our own address that work for an hour (file_links).
 
 export interface Wall {
   events: WallEvent[];
@@ -22,7 +18,7 @@ export interface Wall {
 export type WallCursor = string;
 
 /**
- * The latest of the house's events, with their photos signed for an hour.
+ * The latest of the house's events, with their photos linked for an hour.
  * With `before`, the page of events older than that cursor instead.
  */
 export async function loadWall(houseId: string, userId: string, limit = 60, before?: WallCursor): Promise<Wall> {
@@ -30,20 +26,19 @@ export async function loadWall(houseId: string, userId: string, limit = 60, befo
   const paths = photoPaths(events);
   const photos: Record<string, string> = {};
   if (paths.length > 0) {
-    const { data: signed } = await supabase.storage.from('proofs').createSignedUrls(paths, PHOTO_SECONDS);
-    for (const s of signed ?? []) if (s.signedUrl && s.path) photos[s.path] = s.signedUrl;
+    Object.assign(photos, (await callV1('file_links', { kind: 'proof', paths })).links);
   }
   return { events, photos, older };
 }
 
 /**
- * One receipt's link, signed for an hour: a settled John's sheet shows its
+ * One receipt's link, linked for an hour: a settled John's sheet shows its
  * photo with it, whatever the Wall has read.
  */
 export async function signPhoto(path: string): Promise<string> {
-  const { data, error } = await supabase.storage.from('proofs').createSignedUrl(path, PHOTO_SECONDS);
-  if (error) throw error;
-  return data.signedUrl;
+  const link = (await callV1('file_links', { kind: 'proof', paths: [path] })).links[path];
+  if (!link) throw new Error('That photo isn’t there any more.');
+  return link;
 }
 
 /** The latest few of the house's events, with no photos signed: House's Wall never shows them. */

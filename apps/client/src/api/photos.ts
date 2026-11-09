@@ -1,14 +1,14 @@
-import { PROOF_QUALITY, proofPath, proofSize } from '@app/core';
-import { randomUUID } from 'expo-crypto';
+import { PROOF_QUALITY, proofSize } from '@app/core';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import { Platform } from 'react-native';
 
-import { supabase } from './supabase';
+import { putFile } from './files';
+import { callV1 } from './v1';
 
 // Photo receipts: from the camera or the library, shrunk to core's
-// `proofSize` as the web shrinks them, into the private `proofs` bucket at
-// core's `proofPath`. The storage policies and mark_done's path check decide
+// `proofSize` as the web shrinks them, then uploaded where /v1's
+// proof_upload says. The storage policies and mark_done's path check decide
 // who may put what where.
 
 /**
@@ -46,9 +46,7 @@ export async function pickPhoto(source: 'camera' | 'library'): Promise<string | 
 
 /** Upload a receipt for a John; returns its storage path for mark_done. */
 export async function uploadProof(houseId: string, assignmentId: string, uri: string): Promise<string> {
-  const path = proofPath(houseId, assignmentId, randomUUID());
-  const bytes = await (await fetch(uri)).arrayBuffer();
-  const { error } = await supabase.storage.from('proofs').upload(path, bytes, { contentType: 'image/jpeg' });
-  if (error) throw error;
+  const { path, upload } = await callV1('proof_upload', { houseId, assignmentId });
+  await putFile(upload, await (await fetch(uri)).arrayBuffer(), 'image/jpeg');
   return path;
 }

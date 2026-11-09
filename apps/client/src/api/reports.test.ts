@@ -1,36 +1,34 @@
 import { inboxCount, inboxFilter, inboxPage, myReport, openReport, sameAsFind, sendReport, setSameAs, setSupportDraft, supportDraft } from './reports';
-import { supabase } from './supabase';
 import { callV1 } from './v1';
 
 jest.mock('./v1', () => ({ callV1: jest.fn() }));
 jest.mock('./supabase', () => ({ supabase: {} }));
-jest.mock('expo-crypto', () => ({ randomUUID: () => '0b6c8f3e-2f1d-4d33-9a51-6c1b1e0f5a77' }));
 
-const upload = jest.fn().mockResolvedValue({ error: null });
-const createSignedUrls = jest.fn(async (paths: string[]) => ({ data: paths.map((p) => ({ signedUrl: `https://storage.test/${p}?token=t` })), error: null }));
+const PATH = 'ava/0b6c.jpg';
+const UPLOAD = `https://jonz.app/files/up/report-shots/${PATH}?token=t`;
+const linkFor = (p: string) => `https://jonz.app/files/see/report-shots/${p}?token=t`;
 
 beforeEach(() => {
   jest.clearAllMocks();
-  Object.assign(supabase, {
-    auth: { getSession: jest.fn().mockResolvedValue({ data: { session: { user: { id: 'ava' } } } }) },
-    storage: { from: jest.fn(() => ({ upload, createSignedUrls })) },
-  });
-  global.fetch = jest.fn().mockResolvedValue({ arrayBuffer: async () => new ArrayBuffer(1024) }) as unknown as typeof fetch;
-  jest.mocked(callV1).mockResolvedValue({ ok: true, id: 'r9' });
+  global.fetch = jest.fn(async (url: string) => (url === UPLOAD ? { ok: true, status: 204 } : { arrayBuffer: async () => new ArrayBuffer(1024) })) as unknown as typeof fetch;
+  jest.mocked(callV1).mockImplementation((async (name: string, input: { paths?: string[] }) => {
+    if (name === 'file_upload') return { path: PATH, upload: UPLOAD, link: null };
+    if (name === 'file_links') return { links: Object.fromEntries((input.paths ?? []).map((p) => [p, linkFor(p)])) };
+    return { ok: true, id: 'r9' };
+  }) as never);
 });
 
-it('uploads screenshots to the sender’s own folder, then sends the report on /v1', async () => {
+it('uploads screenshots where /v1 says, then sends the report on /v1', async () => {
   const id = await sendReport({ kind: 'problem', words: '  Bins vanished  ', details: { pages: 'Today' }, shots: ['file:///a.jpg'] });
   expect(id).toBe('r9');
-  const path = 'ava/0b6c8f3e-2f1d-4d33-9a51-6c1b1e0f5a77.jpg';
-  expect(upload).toHaveBeenCalledWith(path, expect.any(ArrayBuffer), { contentType: 'image/jpeg' });
-  expect(callV1).toHaveBeenCalledWith('send_report', { kind: 'problem', words: 'Bins vanished', details: { pages: 'Today' }, shots: [path] });
+  expect(callV1).toHaveBeenCalledWith('file_upload', { kind: 'shot', type: 'image/jpeg' });
+  expect(global.fetch).toHaveBeenCalledWith(UPLOAD, { method: 'PUT', headers: { 'Content-Type': 'image/jpeg' }, body: expect.any(ArrayBuffer) });
+  expect(callV1).toHaveBeenCalledWith('send_report', { kind: 'problem', words: 'Bins vanished', details: { pages: 'Today' }, shots: [PATH] });
 });
 
-it('refuses a screenshot over the bucket’s 5 MB before uploading it', async () => {
+it('refuses a screenshot over the limit before uploading it', async () => {
   global.fetch = jest.fn().mockResolvedValue({ arrayBuffer: async () => new ArrayBuffer(6 * 1024 * 1024) }) as unknown as typeof fetch;
   await expect(sendReport({ kind: 'problem', words: 'x', details: null, shots: ['file:///big.jpg'] })).rejects.toThrow(/too big/);
-  expect(upload).not.toHaveBeenCalled();
   expect(callV1).not.toHaveBeenCalled();
 });
 
@@ -46,11 +44,13 @@ it('opens on what is waiting, and reads the search box’s picks', () => {
 it('reads one of yours as a conversation: the first words with their screenshots, then the replies', async () => {
   const report = { id: 'r1', userId: 'ava', kind: 'problem', state: 'replied', words: 'Bins vanished', details: { pages: 'Today' }, shots: ['ava/s.jpg'], createdAt: '2026-10-31T20:00:00Z', source: 'app', subject: null };
   const messages = [{ fromOwner: true, authorName: 'Glyn', body: 'Fixed.', createdAt: '2026-10-31T21:00:00Z' }];
-  jest.mocked(callV1).mockResolvedValue({ report, messages });
+  jest.mocked(callV1).mockImplementation((async (name: string, input: { paths?: string[] }) =>
+    name === 'file_links' ? { links: Object.fromEntries((input.paths ?? []).map((p) => [p, linkFor(p)])) } : { report, messages }) as never);
   const mine = await myReport('r1');
+  expect(callV1).toHaveBeenCalledWith('file_links', { kind: 'shot', paths: ['ava/s.jpg'] });
   expect(callV1).toHaveBeenCalledWith('my_report', { reportId: 'r1' });
   expect(mine?.messages).toEqual([
-    { from: 'them', name: null, at: report.createdAt, text: 'Bins vanished', shots: ['https://storage.test/ava/s.jpg?token=t'] },
+    { from: 'them', name: null, at: report.createdAt, text: 'Bins vanished', shots: [linkFor('ava/s.jpg')] },
     { from: 'jonz', name: 'Glyn', at: messages[0].createdAt, text: 'Fixed.' },
   ]);
   expect(mine?.details).toEqual({ pages: 'Today', app: undefined, house: undefined, error: undefined });

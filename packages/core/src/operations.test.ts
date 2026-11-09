@@ -35,8 +35,8 @@ describe("the operation registry", () => {
     for (const [name, o] of all) if (o.rpc?.server) expect(o.route, name).toBeDefined();
   });
 
-  it("runs every operation somewhere: a database function, a route, or straight on its tables", () => {
-    for (const [name, o] of all) expect(o.rpc ?? o.route ?? o.tables, name).toBeDefined();
+  it("runs every operation somewhere: a database function, a route, the API alone, or straight on its tables", () => {
+    for (const [name, o] of all) expect(o.rpc ?? o.route ?? o.tables ?? o.server, name).toBeDefined();
     // An operation on tables has no route. It may also have a function while
     // the app moves onto /v1 (docs/specs/api.md, C2): /v1 runs the function,
     // and the app still reads the tables until it moves.

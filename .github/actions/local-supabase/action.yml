@@ -53,4 +53,5 @@ runs:
           echo "NEXT_PUBLIC_SITE_URL=http://localhost:3205"
           echo "CRON_SECRET=ci-tick-secret"
           echo "ALLOWED_ORIGINS=http://localhost:8205"
+          echo "APP_URL=http://localhost:8205"
         } > apps/api/.env.local

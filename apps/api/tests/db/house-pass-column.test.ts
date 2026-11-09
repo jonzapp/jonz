@@ -37,8 +37,10 @@ const EXPIRES = Date.UTC(2100, 0, 1) / 1000;
 const NOW = new Date(Date.UTC(2027, 0, 6, 9, 30, 0)); // pretend clock, a Wednesday
 const DAY = 86_400_000;
 
-// Every operation the registry gates behind the Pass, as /mcp serves it (and so /v1: /mcp leaves out only first-party ones).
-const GATED = mcpOperations(withHandlers(V1_HANDLERS)).filter((o) => o.operation.entitlement);
+// Every operation the registry gates behind the Pass, as /v1 serves it, and the ones /mcp serves too (it leaves out only first-party ones).
+const ON_V1 = withHandlers(V1_HANDLERS).filter((o) => o.operation.entitlement);
+const GATED = mcpOperations(ON_V1);
+const FIRST_PARTY = ON_V1.filter((o) => o.operation.firstParty);
 
 interface Fixture {
   house: House;
@@ -58,6 +60,11 @@ const INPUTS: Record<string, (f: Fixture) => { on: Record<string, unknown>; off?
   answer_dispute: (f) => ({ on: { disputeId: f.disputeId, photoPath: f.photoPath } }),
   cover_john: (f) => ({ on: { assignmentId: f.assignmentId, photoPath: f.photoPath }, off: { assignmentId: f.assignmentId } }),
   confirm_payment: (f) => ({ on: { houseId: f.house.id, fromId: f.house.members[0].userId, amount: 500 } }),
+};
+
+/** The app's own gated operations (not on /mcp), with an input in a house. */
+const FIRST_PARTY_INPUTS: Record<string, (f: Fixture) => Record<string, unknown>> = {
+  proof_upload: (f) => ({ houseId: f.house.id, assignmentId: f.assignmentId }),
 };
 
 let admin: Sql;
@@ -94,7 +101,7 @@ async function setPass(houseId: string, has: boolean) {
 
 /** The problem code /v1 answers with, or "ok". */
 async function viaV1(bearer: string, name: string, input: Record<string, unknown>): Promise<string> {
-  const op = GATED.find((o) => o.name === name)!;
+  const op = ON_V1.find((o) => o.name === name)!;
   const { method, path } = op.http;
   const rest = { ...input };
   const url = path.replace(/\{(\w+)\}/g, (_, key: string) => {
@@ -139,8 +146,8 @@ beforeAll(async () => {
   url.password = password;
   pool = connect(url.toString(), 2);
   const verify = tokenVerifier({ supabaseUrl: "http://127.0.0.1:54341", jwtSecret: STACK_SECRET, currentDate: NOW });
-  execute = createExecutor({ sql: pool, verify, operations: GATED, now: () => NOW, passEnforced: true, limits: { read: 1000, write: 1000 } });
-  app = buildApp({ execute, operations: GATED });
+  execute = createExecutor({ sql: pool, verify, operations: ON_V1, now: () => NOW, passEnforced: true, limits: { read: 1000, write: 1000 } });
+  app = buildApp({ execute, operations: ON_V1 });
 });
 
 afterAll(async () => {
@@ -151,8 +158,11 @@ afterAll(async () => {
 });
 
 it("covers every operation the registry gates behind the Pass, and each is served on /v1 and /mcp", () => {
-  const gated = (Object.keys(OPERATIONS) as OperationName[]).filter((n) => (OPERATIONS[n] as { entitlement?: string }).entitlement).sort();
-  expect(GATED.map((o) => o.name).sort()).toEqual(gated);
+  let gated = (Object.keys(OPERATIONS) as OperationName[]).filter((n) => (OPERATIONS[n] as { entitlement?: string }).entitlement).sort();
+  expect(ON_V1.map((o) => o.name).sort()).toEqual(gated);
+  expect([...GATED, ...FIRST_PARTY].map((o) => o.name).sort()).toEqual(gated);
+  expect(Object.keys(FIRST_PARTY_INPUTS).sort()).toEqual(FIRST_PARTY.map((o) => o.name).sort());
+  gated = gated.filter((n) => !(OPERATIONS[n] as { firstParty?: true }).firstParty);
   expect(Object.keys(INPUTS).sort()).toEqual(gated);
   // Where the input that turns the feature on can be left out, there's a case without it.
   const f = { house: { id: randomUUID(), admin: { userId: randomUUID() }, members: [{ userId: randomUUID() }] }, assignmentId: randomUUID(), disputeId: randomUUID(), photoPath: "p" } as unknown as Fixture;
@@ -201,6 +211,15 @@ for (const [transport, call] of Object.entries(transports)) {
     }
   });
 }
+
+it("/v1: without a Pass, a first-party gated operation (the app's own) is refused with pass_required too", async () => {
+  const f = await fixture();
+  await setPass(f.house.id, false);
+  const bearer = `Bearer ${await token(f.house.admin.userId)}`;
+  for (const op of FIRST_PARTY) {
+    expect(await viaV1(bearer, op.name, FIRST_PARTY_INPUTS[op.name](f)), op.name).toBe("pass_required");
+  }
+});
 
 it("asks the person before money is marked paid through /mcp, once the Pass lets it through", async () => {
   const f = await fixture();

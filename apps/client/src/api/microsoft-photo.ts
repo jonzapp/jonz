@@ -1,6 +1,7 @@
 import type { Session } from '@supabase/supabase-js';
 
 import { supabase } from './supabase';
+import { putFile } from './files';
 import { callV1 } from './v1';
 
 // Microsoft hands Supabase no photo, as Google does, so right after a
@@ -44,18 +45,12 @@ export async function keepMicrosoftPhoto(session: Session, token = session.provi
     }
     if (!photo) return;
 
-    const png = photo.headers.get('content-type')?.includes('png') ?? false;
-    const path = `${session.user.id}/microsoft.${png ? 'png' : 'jpg'}`;
+    const type = photo.headers.get('content-type')?.includes('png') ? 'image/png' : 'image/jpeg';
     const bytes = await photo.arrayBuffer();
-    const bucket = supabase.storage.from('avatars');
-    const { error: uploadError } = await bucket.upload(path, bytes, {
-      contentType: png ? 'image/png' : 'image/jpeg',
-      upsert: true,
-    });
-    if (uploadError) throw uploadError;
-    // A new address each time, so nobody is shown the old photo from a cache.
-    const address = `${bucket.getPublicUrl(path).data.publicUrl}?v=${Date.now()}`;
-    await callV1('set_my_photo', { photo: address });
+    // Each photo gets a new address, so nobody is shown the old one from a cache.
+    const { upload, link } = await callV1('file_upload', { kind: 'photo', type });
+    await putFile(upload, bytes, type);
+    if (link) await callV1('set_my_photo', { photo: link });
   } catch (reason) {
     console.warn('Keeping the Microsoft photo failed', reason);
   }

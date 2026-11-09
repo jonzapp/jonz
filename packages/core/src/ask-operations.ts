@@ -26,6 +26,7 @@ export const ASK_NOT_MOVES = {
   ask_house: "It's Ask Jonz itself.",
   undo_latest: "undo_action undoes any of the person's moves, by its ref from history.",
   answer_dispute: "It answers with a photo, which can only be taken in the app.",
+  proof_upload: "It gets a place for a photo's bytes, which only the app has.",
 } as const satisfies Partial<Record<OperationName, string>>;
 
 const houseWrite = (name: OperationName) => {

@@ -25,8 +25,11 @@ export const REPORT_LIMITS = {
   perDay: 5,
   words: 2000,
   shots: 3,
-  /** The bucket refuses anything bigger; the app shrinks screenshots well under it. */
-  shotBytes: 5 * 1024 * 1024,
+  /**
+   * The most a screenshot may be: /files takes 4 MB (Vercel's request limit
+   * is 4.5), under the bucket's 5. The app shrinks screenshots well under it.
+   */
+  shotBytes: 4 * 1024 * 1024,
 } as const;
 
 /** What the app sends with a report when its sender says so: one short line each. */

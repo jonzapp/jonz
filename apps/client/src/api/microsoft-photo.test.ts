@@ -3,19 +3,11 @@ import type { Session } from '@supabase/supabase-js';
 import { keepMicrosoftPhoto, wantsMicrosoftPhoto } from './microsoft-photo';
 import { callV1 } from './v1';
 
-const mockUpload = jest.fn();
 jest.mock('./v1', () => ({ callV1: jest.fn() }));
-jest.mock('./supabase', () => ({
-  supabase: {
-    storage: {
-      from: () => ({
-        upload: mockUpload,
-        getPublicUrl: (path: string) => ({ data: { publicUrl: `https://db.example/storage/v1/object/public/avatars/${path}` } }),
-      }),
-    },
-    auth: { onAuthStateChange: jest.fn() },
-  },
-}));
+jest.mock('./supabase', () => ({ supabase: { auth: { onAuthStateChange: jest.fn() } } }));
+
+const UPLOAD = 'https://jonz.app/files/up/avatars/u1/photo-1.jpg?token=t';
+const LINK = 'https://jonz.app/files/photo/avatars/u1/photo-1.jpg';
 
 const rpc = callV1 as jest.Mock;
 const fetchMock = jest.fn();
@@ -28,8 +20,7 @@ const azure = { provider: 'azure', identity_data: { email: 'a@outlook.com' } };
 beforeEach(() => {
   jest.clearAllMocks();
   global.fetch = fetchMock;
-  mockUpload.mockResolvedValue({ error: null });
-  rpc.mockResolvedValue(null);
+  rpc.mockImplementation(async (name: string) => (name === 'file_upload' ? { path: 'u1/photo-1.jpg', upload: UPLOAD, link: LINK } : null));
   jest.spyOn(console, 'warn').mockImplementation(() => undefined);
 });
 
@@ -42,20 +33,17 @@ describe('wantsMicrosoftPhoto', () => {
 });
 
 describe('keepMicrosoftPhoto', () => {
-  it("copies Graph's photo into your folder and points your profile at it", async () => {
-    fetchMock.mockResolvedValueOnce({
-      ok: true,
-      headers: new Headers({ 'content-type': 'image/jpeg' }),
-      arrayBuffer: async () => new ArrayBuffer(4),
-    });
+  it("copies Graph's photo to a new place of yours and points your profile at it", async () => {
+    fetchMock
+      .mockResolvedValueOnce({ ok: true, headers: new Headers({ 'content-type': 'image/jpeg' }), arrayBuffer: async () => new ArrayBuffer(4) })
+      .mockResolvedValueOnce({ ok: true, status: 204 });
     await keepMicrosoftPhoto(session([azure], 'token-1'));
     expect(fetchMock).toHaveBeenCalledWith('https://graph.microsoft.com/v1.0/me/photos/240x240/$value', {
       headers: { Authorization: 'Bearer token-1' },
     });
-    expect(mockUpload).toHaveBeenCalledWith('u1/microsoft.jpg', expect.any(ArrayBuffer), { contentType: 'image/jpeg', upsert: true });
-    expect(rpc).toHaveBeenCalledWith('set_my_photo', {
-      photo: expect.stringMatching(/^https:\/\/db\.example\/storage\/v1\/object\/public\/avatars\/u1\/microsoft\.jpg\?v=\d+$/),
-    });
+    expect(rpc).toHaveBeenCalledWith('file_upload', { kind: 'photo', type: 'image/jpeg' });
+    expect(fetchMock).toHaveBeenLastCalledWith(UPLOAD, { method: 'PUT', headers: { 'Content-Type': 'image/jpeg' }, body: expect.any(ArrayBuffer) });
+    expect(rpc).toHaveBeenLastCalledWith('set_my_photo', { photo: LINK });
   });
 
   it('leaves the initials when the account has no photo, and tries a token once', async () => {
@@ -63,7 +51,6 @@ describe('keepMicrosoftPhoto', () => {
     await keepMicrosoftPhoto(session([azure], 'token-2'));
     await keepMicrosoftPhoto(session([azure], 'token-2'));
     expect(fetchMock).toHaveBeenCalledTimes(2); // the sized photo, then the original, once
-    expect(mockUpload).not.toHaveBeenCalled();
     expect(rpc).not.toHaveBeenCalled();
   });
 
