@@ -35,12 +35,12 @@ describe("live_changes", () => {
     expect(await since(house.admin.db, house.id, newest)).toBeNull();
   });
 
-  it("tells someone outside the house nothing, and nobody reads the notes straight", async () => {
+  it("refuses someone outside the house, and nobody reads the notes straight", async () => {
     const house = await makeHouse(["Ava", "Ben"]);
     await addJohns(house.id, [{ name: "Bins" }], thisWeek(NOW));
     await deal(house.id, thisWeek(NOW), NOW);
     const stranger = await signedInUser("Zed");
-    expect(await since(stranger.db, house.id)).toBeNull();
+    await expect(since(stranger.db, house.id)).rejects.toMatchObject({ code: "42501" });
 
     const { data, error } = await house.admin.db.from("live_changes" as never).select("id");
     expect(error ?? data).toSatisfy((answer: unknown) => answer !== null && (!Array.isArray(answer) || answer.length === 0));
