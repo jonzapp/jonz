@@ -28,6 +28,8 @@ export type HttpMethod = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
 /** What a server handler gets: the transaction (already the person), who they are, their token, and the checked input. */
 export interface HandlerContext {
   tx: Tx;
+  /** The pool `tx` came from: for reading the catalog, never for the operation's own work. */
+  pool: Sql;
   claims: Claims;
   /** The person's access token, already checked: for a service that acts as them (Supabase Auth, Storage). */
   token: string;
@@ -335,7 +337,7 @@ export function createExecutor(options: ExecutorOptions) {
           await becomePerson(tx, claims);
         }
         const raw = op.handler
-          ? await op.handler({ tx, claims, token: bearerToken(context.authorization), origin: context.origin ?? null, input, now: at })
+          ? await op.handler({ tx, pool: sql, claims, token: bearerToken(context.authorization), origin: context.origin ?? null, input, now: at })
           : await callFunction(tx, signature!, fn!, (op.rpcArgs ?? defaultRpcArgs)(input));
         // Checked before commit: a write whose answer breaks its contract is rolled back, not half-reported.
         // Nothing back where the contract wants something: the row isn't there, or RLS hides it.

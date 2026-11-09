@@ -218,10 +218,17 @@ Migration `20261219090000_api_layer.sql` sets up the following:
     100 ms of today's. A load test checks many open streams across houses.
 - **C4 (done, #154):** MCP (registry PR 6) on the same executor.
 - **C4b:** the server moves and the engine (`apps/api/lib/moves`,
-  `lib/engine`) read and write with postgres.js instead of supabase-js:
-  the person's reads in the handler's transaction, the engine's work as
-  the API's role through database functions. Kids' accounts stay on
-  Supabase Auth's admin API, which isn't the Data API.
+  `lib/engine`) stop going through the Data API. Their supabase-js calls
+  stay as they are; `lib/db/rest.ts` answers them straight from Postgres
+  (one SQL statement each, rows built as JSON in the database as PostgREST
+  builds them, embedded tables followed by foreign key). In a /v1 operation
+  the person's client and the server's run in the operation's own
+  transaction (`lib/db/scope.ts`): the person's as them, the server's as
+  `service_role`, which jonz_api may become (migration api_server_role) and
+  people never can. Outside one (the cron tick, Stripe's webhook) the
+  server's statements come from the API's pool. Every db test drives the
+  engine through it. Kids' accounts stay on Supabase Auth's admin API, and
+  files on Storage, neither of which is the Data API.
 - **C5: lock-down** ("lock it as much as necessary", Glyn, 9 November
   2026). Code first, then Glyn's dashboard steps:
   - Revoke `anon` and `authenticated`'s direct grants on our tables and

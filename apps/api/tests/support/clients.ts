@@ -2,6 +2,10 @@ import type { Database } from "@app/core";
 import { randomUUID } from "node:crypto";
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import postgres from "postgres";
+
+import { poolClient } from "@/lib/db/rest";
+import { BECOME_SERVER } from "@/lib/db/scope";
 
 import { ANON_KEY, SERVICE_ROLE_KEY, SUPABASE_URL } from "./env";
 import { track } from "./scope";
@@ -25,6 +29,26 @@ const PASSWORD = "db-tests-not-a-secret";
  * attack was really blocked, teardown. Never the subject of a test.
  */
 export function adminClient(): Db {
+  pool ??= postgres(DB_URL, {
+    prepare: false,
+    max: 2,
+    idle_timeout: 1,
+    onnotice: () => {},
+  });
+  return poolClient(pool, BECOME_SERVER, serviceRole);
+}
+
+/**
+ * The service role as the engine reaches it in production: straight in
+ * Postgres, past the Data API (lib/db/rest.ts), so every test that drives the
+ * engine checks those queries too. Auth's admin API is still Supabase's.
+ */
+const DB_URL =
+  process.env.DB_URL ??
+  "postgresql://postgres:postgres@127.0.0.1:54342/postgres";
+let pool: postgres.Sql | null = null;
+
+function serviceRole(): Db {
   return createClient<Database>(SUPABASE_URL, SERVICE_ROLE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
@@ -38,7 +62,7 @@ export function adminClient(): Db {
  */
 export async function signedInUser(name: string): Promise<Actor> {
   const email = `db-${randomUUID()}@test.local`;
-  const { data, error } = await adminClient().auth.admin.createUser({
+  const { data, error } = await serviceRole().auth.admin.createUser({
     email,
     password: PASSWORD,
     email_confirm: true,
@@ -49,7 +73,10 @@ export async function signedInUser(name: string): Promise<Actor> {
   track.user(userId);
 
   const db = freshClient();
-  const { error: signInError } = await db.auth.signInWithPassword({ email, password: PASSWORD });
+  const { error: signInError } = await db.auth.signInWithPassword({
+    email,
+    password: PASSWORD,
+  });
   if (signInError) throw signInError;
   return { db, userId, name, email };
 }
