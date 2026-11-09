@@ -1,4 +1,4 @@
-import { RESET_COPY, resetItemLine, toldLine, type ChatReset, type Currency } from '@app/core';
+import { RESET_COPY, resetItemLine, toldLine, type ChatReset, type Currency, BUSY_COPY } from '@app/core';
 import { CheckIcon, RotateCcwIcon, Undo2Icon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -81,7 +81,7 @@ export function ResetsCard({
         {move.problem ? <Alert message={move.problem} /> : null}
         {!undone && done.actions.length > 0 ? (
           <ButtonRow>
-            <Button variant="outline" icon={Undo2Icon} label={RESET_COPY.undoAll} onPress={() => void undo()} disabled={move.pending} testID="resets-undo" />
+            <Button variant="outline" icon={Undo2Icon} label={RESET_COPY.undoAll} onPress={() => void undo()} busy={move.pending} busyLabel={BUSY_COPY.undoing} testID="resets-undo" />
           </ButtonRow>
         ) : null}
       </View>
@@ -115,9 +115,11 @@ export function ResetsCard({
         <Button
           variant="hazard"
           icon={RotateCcwIcon}
-          label={move.pending ? RESET_COPY.applying : RESET_COPY.applyN(keep.length)}
+          label={RESET_COPY.applyN(keep.length)}
+          busyLabel={RESET_COPY.applying}
           onPress={() => void apply()}
-          disabled={move.pending || keep.length === 0}
+          busy={move.pending}
+          disabled={keep.length === 0}
           testID="resets-apply"
         />
       </ButtonRow>

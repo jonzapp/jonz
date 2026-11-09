@@ -32,6 +32,7 @@ export function SignInPanel({ next, failed: failedBefore = false }: { next?: str
   const { scheme } = useTheme();
   const [apple, setApple] = useState(false);
   const [busy, setBusy] = useState<SignInProvider | null>(null);
+  const appleWaits = busy === 'Apple';
   const [failed, setFailed] = useState<SignInProvider | 'return' | null>(failedBefore ? 'return' : null);
 
   useEffect(() => {
@@ -90,8 +91,11 @@ export function SignInPanel({ next, failed: failedBefore = false }: { next?: str
             <Button
               variant="outline"
               icon={GoogleIcon}
-              label={busy === 'Google' ? SIGN_IN_COPY.googleBusy : SIGN_IN_COPY.google}
-              disabled={busy !== null}
+              label={SIGN_IN_COPY.google}
+              busyLabel={SIGN_IN_COPY.googleBusy}
+              busy={busy === 'Google'}
+              // Apple's own button is outside the row: these hold still while it signs in.
+              disabled={appleWaits}
               onPress={() => void attempt('Google', () => signInWithGoogle(googleReturn(next)))}
               testID="google-sign-in"
             />
@@ -99,8 +103,10 @@ export function SignInPanel({ next, failed: failedBefore = false }: { next?: str
             <Button
               variant="outline"
               icon={MicrosoftIcon}
-              label={busy === 'Microsoft' ? SIGN_IN_COPY.microsoftBusy : SIGN_IN_COPY.microsoft}
-              disabled={busy !== null}
+              label={SIGN_IN_COPY.microsoft}
+              busyLabel={SIGN_IN_COPY.microsoftBusy}
+              busy={busy === 'Microsoft'}
+              disabled={appleWaits}
               onPress={() => void attempt('Microsoft', () => signInWithMicrosoft(googleReturn(next)))}
               testID="microsoft-sign-in"
             />

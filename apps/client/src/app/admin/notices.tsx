@@ -111,7 +111,7 @@ function Notices({ busy, chosen, choose }: { busy: BusyList<Notice>; chosen: Cho
       key={editing?.id ?? `new-${kind}`}
       notice={editing}
       kind={kind}
-      saving={save.isPending || end.isPending}
+      waiting={save.isPending ? 'save' : end.isPending ? 'end' : null}
       onSave={(notice) => save.mutate(notice)}
       onEnd={editing && noticeState(editing, new Date()) !== 'ended' ? () => end.mutate(editing.id) : undefined}
     />

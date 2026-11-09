@@ -1,4 +1,4 @@
-import { codeProblem, dateRange, DELETE_COPY, EMAIL_SIGN_IN_COPY, emailAuthProblem, HOUSE_COPY, HOUSE_LOWER_COPY, LOOK_LABEL, LOOKS, ME_COPY, MOVING_COPY, PASSWORD_MIN, PASSWORD_SETTING_COPY, passwordProblem, prefsLine, STEADY_COPY } from '@app/core';
+import { codeProblem, dateRange, DELETE_COPY, EMAIL_SIGN_IN_COPY, emailAuthProblem, HOUSE_COPY, HOUSE_LOWER_COPY, LOOK_LABEL, LOOKS, ME_COPY, MOVING_COPY, PASSWORD_MIN, PASSWORD_SETTING_COPY, passwordProblem, prefsLine, STEADY_COPY, BUSY_COPY } from '@app/core';
 import { BellIcon, KeyRoundIcon, LogOutIcon, SlidersHorizontalIcon, SunMoonIcon, Trash2Icon, TruckIcon } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
@@ -271,7 +271,9 @@ function NameSheet({
       {move.problem ? <Alert message={move.problem} /> : null}
       <Button
         label={HOUSE_LOWER_COPY.save}
-        disabled={move.pending || unchanged}
+        disabled={unchanged}
+        busy={move.pending}
+        busyLabel={BUSY_COPY.saving}
         onPress={() => void save()}
         testID="save-name"
       />
@@ -376,8 +378,10 @@ function PasswordSheet({
         ) : null}
         {problem ? <Alert message={problem} /> : saved ? <Meta>{PASSWORD_SETTING_COPY.saved}</Meta> : null}
         <Button
-          label={busy ? PASSWORD_SETTING_COPY.busy : PASSWORD_SETTING_COPY.save}
-          disabled={busy || value.length === 0}
+          label={PASSWORD_SETTING_COPY.save}
+          busyLabel={PASSWORD_SETTING_COPY.busy}
+          busy={busy}
+          disabled={value.length === 0}
           onPress={() => void save()}
           testID="save-password"
         />

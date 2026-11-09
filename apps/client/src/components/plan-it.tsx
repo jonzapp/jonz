@@ -1,4 +1,4 @@
-import { FOCUS_SHELL_COPY, planChoices, planLabel, STEADY_COPY, type BestTime, type BoardItem, type PlanTime } from '@app/core';
+import { FOCUS_SHELL_COPY, planChoices, planLabel, STEADY_COPY, type BestTime, type BoardItem, type PlanTime, BUSY_COPY } from '@app/core';
 import { BellIcon, CalendarClockIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -137,6 +137,9 @@ function PlanPicker({
   const start = all.find((c) => planned && c.time.at.getTime() === planned.getTime()) ?? all.find((c) => c.time === choices.chosen)!;
   const [day, setDay] = useState(start.day.date);
   const [at, setAt] = useState(start.time.at.getTime());
+  // Clearing waits on the same save: then the button isn't the one busy.
+  const [clearing, setClearing] = useState(false);
+  const clearWaits = clearing && pending;
   const shown = choices.days.find((d) => d.date === day)!;
   const picked = shown.times.find((t) => t.at.getTime() === at) ?? shown.times[shown.times.length - 1];
 
@@ -171,13 +174,25 @@ function PlanPicker({
       </Group>
       <Button
         label={STEADY_COPY.planFor(`${shown.label} ${picked.label}`)}
-        disabled={pending}
-        onPress={() => onPlan(picked.at)}
+        busy={pending && !clearing}
+        busyLabel={BUSY_COPY.planning}
+        disabled={clearWaits}
+        onPress={() => {
+          setClearing(false);
+          onPlan(picked.at);
+        }}
         testID="plan-save"
       />
       {planned || onCancel ? (
         <View style={styles.quiet}>
-          {planned ? <TextButton label={STEADY_COPY.unplan} align="start" disabled={pending} onPress={onClear} testID="plan-clear" /> : null}
+          {planned ? <TextButton label={STEADY_COPY.unplan} align="start"
+              disabled={pending}
+              onPress={() => {
+                setClearing(true);
+                onClear();
+              }}
+              testID="plan-clear"
+            /> : null}
           {onCancel ? <TextButton label={FOCUS_SHELL_COPY.cancel} align="start" onPress={onCancel} testID="plan-cancel" /> : null}
         </View>
       ) : null}

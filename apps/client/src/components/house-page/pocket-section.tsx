@@ -1,4 +1,4 @@
-import { BOARD_COPY, formatMoney, memberCan, payRows, pocketCard, POCKET_COPY, type PayRow, type PocketView } from '@app/core';
+import { BOARD_COPY, formatMoney, memberCan, payRows, pocketCard, POCKET_COPY, type PayRow, type PocketView, BUSY_COPY } from '@app/core';
 import type { UseQueryResult } from '@tanstack/react-query';
 import { CheckIcon } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
@@ -91,7 +91,8 @@ function PayDay({ houseId, row, fullName }: { houseId: string; row: PayRow; full
               variant={row.primary ? 'primary' : 'outline'}
               icon={CheckIcon}
               label={row.action}
-              disabled={move.pending}
+              busy={move.pending}
+              busyLabel={BUSY_COPY.markingPaid}
               onPress={() =>
                 void move
                   .run(() => payPocketMoney(houseId, row.userId, row.month))

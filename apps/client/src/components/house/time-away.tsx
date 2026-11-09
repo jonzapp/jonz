@@ -346,8 +346,10 @@ export function AwayForm({ houseId, today, weekStarts }: { houseId: string; toda
       <ButtonRow atEdge>
         <Button
           icon={PlaneIcon}
-          label={move.pending ? AWAY_COPY.booking : SETUP_COPY.book}
-          disabled={move.pending || !range.from || !range.to}
+          label={SETUP_COPY.book}
+          busyLabel={AWAY_COPY.booking}
+          busy={move.pending}
+          disabled={!range.from || !range.to}
           onPress={() => void book()}
           testID="book-away"
         />

@@ -11,6 +11,7 @@ import {
   wayMeta,
   type MessageAudience,
   type MessageWays,
+  BUSY_COPY,
 } from '@app/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { EyeIcon, SendIcon } from 'lucide-react-native';
@@ -130,10 +131,31 @@ function Messages() {
   };
 
   const preview = <MessagePreview subject={form.subject} body={form.body} push={ways.push || !ways.wall} wall={ways.wall} />;
+  // On a phone the two aren't in one row, so each holds still while the other sends.
+  const testing = send.isPending && send.variables?.audience === 'test';
+  const sendingIt = send.isPending && !testing;
   const sendButton = (
-    <Button label={sendLabel(form.audience, reach.data ?? null, form.picked?.name ?? null)} icon={SendIcon} onPress={onSend} disabled={send.isPending} testID="message-send" />
+    <Button
+      label={sendLabel(form.audience, reach.data ?? null, form.picked?.name ?? null)}
+      icon={SendIcon}
+      onPress={onSend}
+      busy={sendingIt}
+      busyLabel={BUSY_COPY.sending}
+      disabled={testing}
+      testID="message-send"
+    />
   );
-  const testButton = <Button label={MESSAGE_COPY.sendTest} variant="outline" onPress={onTest} disabled={send.isPending} testID="message-test" />;
+  const testButton = (
+    <Button
+      label={MESSAGE_COPY.sendTest}
+      variant="outline"
+      onPress={onTest}
+      busy={testing}
+      busyLabel={BUSY_COPY.sendingTest}
+      disabled={sendingIt}
+      testID="message-test"
+    />
+  );
 
   const formView = (
     <View style={[styles.form, two && styles.capped]} testID="message-form">
@@ -254,6 +276,7 @@ function Messages() {
         confirmLabel={MESSAGE_COPY.confirmSend(reach.data?.people ?? 0)}
         tone="primary"
         busy={send.isPending}
+        busyLabel={BUSY_COPY.sending}
         problem={send.error?.message ?? null}
         onConfirm={() => send.mutate(outgoing('everyone'))}
         onClose={() => setConfirming(false)}

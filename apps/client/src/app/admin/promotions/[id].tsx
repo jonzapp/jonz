@@ -6,6 +6,7 @@ import {
   promotionUsed,
   promotionWhoSentence,
   toEmail,
+  BUSY_COPY,
 } from '@app/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
@@ -113,7 +114,7 @@ function Promotion({ p }: { p: PromotionDetail }) {
         <View style={styles.group}>
           <Alert message={PROMOTIONS_COPY.notReadyBody} testID="promotion-not-ready" />
           <ButtonRow>
-            <Button label={PROMOTIONS_COPY.tryAgain} icon={RefreshCwIcon} onPress={() => retry.mutate()} disabled={retry.isPending} testID="promotion-retry" />
+            <Button label={PROMOTIONS_COPY.tryAgain} icon={RefreshCwIcon} onPress={() => retry.mutate()} busy={retry.isPending} busyLabel={BUSY_COPY.trying} testID="promotion-retry" />
           </ButtonRow>
           {retry.error ? <Alert message={retry.error.message} /> : null}
         </View>
@@ -127,7 +128,9 @@ function Promotion({ p }: { p: PromotionDetail }) {
               icon={MailIcon}
               variant="outline"
               onPress={() => email.mutate()}
-              disabled={waiting === 0 || email.isPending}
+              disabled={waiting === 0}
+              busy={email.isPending}
+              busyLabel={BUSY_COPY.emailing}
               testID="promotion-email"
             />
           </ButtonRow>
@@ -181,6 +184,7 @@ function Promotion({ p }: { p: PromotionDetail }) {
         confirmLabel={PROMOTIONS_COPY.stop}
         tone="hazard"
         busy={stop.isPending}
+        busyLabel={BUSY_COPY.stopping}
         problem={stop.error?.message ?? null}
         onConfirm={() => stop.mutate()}
         onClose={() => setStopping(false)}

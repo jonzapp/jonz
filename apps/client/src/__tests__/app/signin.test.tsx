@@ -69,7 +69,9 @@ describe('sign-in on Android and the web', () => {
     google.mockResolvedValue('redirected');
     await open();
     await fireEvent.press(screen.getByRole('button', { name: SIGN_IN_COPY.google }));
-    expect(screen.getByRole('button', { name: SIGN_IN_COPY.googleBusy })).toBeDisabled();
+    // Busy at once, and says so once the wait shows.
+    expect(screen.getByTestId('google-sign-in')).toBeBusy();
+    expect(await screen.findByRole('button', { name: SIGN_IN_COPY.googleBusy })).toBeDisabled();
   });
 
   it('says so when Google fails, and lets you try again', async () => {
@@ -90,8 +92,8 @@ describe('sign-in on Android and the web', () => {
     await open('/signin?next=%2Fhouse%2Fnew');
     await fireEvent.press(screen.getByRole('button', { name: SIGN_IN_COPY.microsoft }));
     expect(microsoft).toHaveBeenCalledWith('/signin?next=%2Fhouse%2Fnew');
-    expect(screen.getByRole('button', { name: SIGN_IN_COPY.microsoftBusy })).toBeDisabled();
     expect(screen.getByRole('button', { name: SIGN_IN_COPY.google })).toBeDisabled();
+    expect(await screen.findByRole('button', { name: SIGN_IN_COPY.microsoftBusy })).toBeDisabled();
   });
 
   it('says so when Microsoft fails, and lets you try again', async () => {

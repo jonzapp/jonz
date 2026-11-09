@@ -169,14 +169,15 @@ function Ready({
       {problem ? <Alert message={problem} testID="support-draft-problem" /> : null}
       <ButtonRow>
         <Button
-          label={busy ? SUPPORT_DRAFT_COPY.sending : label}
+          label={label}
+          busyLabel={SUPPORT_DRAFT_COPY.sending}
           icon={SendIcon}
-          disabled={busy}
+          busy={busy}
           onPress={() => (draft.action === 'delete' ? setAsking(true) : void approve())}
           testID="support-draft-send"
         />
-        <Button label={SUPPORT_DRAFT_COPY.edit} variant="outline" disabled={busy} onPress={() => onEdit(draft.reply, draft.id)} testID="support-draft-edit" />
-        <Button label={SUPPORT_DRAFT_COPY.dismiss} variant="ghost" disabled={busy} onPress={() => void onDismiss().catch((e) => setProblem(String(e)))} testID="support-draft-dismiss" />
+        <Button label={SUPPORT_DRAFT_COPY.edit} variant="outline" onPress={() => onEdit(draft.reply, draft.id)} testID="support-draft-edit" />
+        <Button label={SUPPORT_DRAFT_COPY.dismiss} variant="ghost" onPress={() => void onDismiss().catch((e) => setProblem(String(e)))} testID="support-draft-dismiss" />
       </ButtonRow>
       <Meta>{SUPPORT_DRAFT_COPY.note}</Meta>
       <Sheet

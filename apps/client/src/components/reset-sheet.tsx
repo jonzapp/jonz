@@ -1,4 +1,4 @@
-import { FOCUS_SHELL_COPY, RESET_COPY, resetSheet, resetTitle, type ResetSheet as ResetSheetWordsOut, type ResetWords } from '@app/core';
+import { FOCUS_SHELL_COPY, RESET_COPY, resetSheet, resetTitle, type ResetSheet as ResetSheetWordsOut, type ResetWords, BUSY_COPY } from '@app/core';
 import { useQuery } from '@tanstack/react-query';
 import { RotateCcwIcon } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
@@ -118,6 +118,7 @@ export function ResetSheet({
       icon={RotateCcwIcon}
       tone="hazard"
       busy={move.pending}
+      busyLabel={BUSY_COPY.resetting}
       problem={move.problem}
       onConfirm={() => void reset.confirm()}
       onClose={onClose}
@@ -155,9 +156,9 @@ export function ResetPanel({
       {move.problem ? <Alert message={move.problem} /> : null}
       <ButtonRow stacked>
         {sheet ? (
-          <Button variant="hazard" icon={RotateCcwIcon} label={sheet.confirm} disabled={move.pending} onPress={() => void reset.confirm()} testID="confirm" />
+          <Button variant="hazard" icon={RotateCcwIcon} label={sheet.confirm} busy={move.pending} busyLabel={BUSY_COPY.resetting} onPress={() => void reset.confirm()} testID="confirm" />
         ) : null}
-        <Button variant="outline" label={FOCUS_SHELL_COPY.cancel} disabled={move.pending} onPress={onClose} testID="cancel" />
+        <Button variant="outline" label={FOCUS_SHELL_COPY.cancel} onPress={onClose} testID="cancel" />
       </ButtonRow>
     </View>
   );

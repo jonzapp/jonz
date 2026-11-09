@@ -226,8 +226,9 @@ export function EmailSignIn() {
           {passwordField(false)}
           {loose}
           <Button
-            label={busy ? COPY.signInBusy : COPY.signIn}
-            disabled={busy}
+            label={COPY.signIn}
+            busyLabel={COPY.signInBusy}
+            busy={busy}
             onPress={() => void signIn()}
             testID="email-sign-in-button"
           />
@@ -254,8 +255,9 @@ export function EmailSignIn() {
           </Group>
           {loose}
           <Button
-            label={busy ? COPY.signUpBusy : COPY.signUp}
-            disabled={busy}
+            label={COPY.signUp}
+            busyLabel={COPY.signUpBusy}
+            busy={busy}
             onPress={() => void signUp()}
             testID="email-sign-up-button"
           />
@@ -270,8 +272,9 @@ export function EmailSignIn() {
           {loose}
           {told}
           <Button
-            label={busy ? COPY.confirmBusy : COPY.confirm}
-            disabled={busy}
+            label={COPY.confirm}
+            busyLabel={COPY.confirmBusy}
+            busy={busy}
             onPress={() => void confirm()}
             testID="email-confirm-button"
           />
@@ -294,8 +297,9 @@ export function EmailSignIn() {
           {emailField}
           {loose}
           <Button
-            label={busy ? COPY.sendResetBusy : COPY.sendReset}
-            disabled={busy}
+            label={COPY.sendReset}
+            busyLabel={COPY.sendResetBusy}
+            busy={busy}
             onPress={() => void forgot()}
             testID="email-forgot-button"
           />
@@ -322,8 +326,9 @@ export function EmailSignIn() {
           {loose}
           {told}
           <Button
-            label={busy ? COPY.resetBusy : COPY.reset}
-            disabled={busy}
+            label={COPY.reset}
+            busyLabel={COPY.resetBusy}
+            busy={busy}
             onPress={() => void reset()}
             testID="email-reset-button"
           />

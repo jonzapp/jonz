@@ -1,4 +1,4 @@
-import { firstName, HISTORY_COPY, PERSON_COPY, RESET_COPY } from '@app/core';
+import { firstName, HISTORY_COPY, PERSON_COPY, RESET_COPY, BUSY_COPY } from '@app/core';
 import { RotateCcwIcon, ShieldCheckIcon, ShieldOffIcon, UserMinusIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -87,6 +87,7 @@ export function PersonAdmin({ houseId, userId, person }: { houseId: string; user
         confirmLabel={PERSON_COPY.removeConfirm(name)}
         icon={UserMinusIcon}
         busy={remove.pending}
+        busyLabel={BUSY_COPY.removing}
         problem={remove.problem}
         onConfirm={() =>
           void remove.run(() => removeMember(houseId, person.userId)).then((done) => {

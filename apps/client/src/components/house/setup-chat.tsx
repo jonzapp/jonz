@@ -638,17 +638,11 @@ function DraftCard({
       {problem ? <Alert message={problem} /> : null}
       <ButtonRow>
         <Button
-          label={
-            pending
-              ? editing
-                ? HOUSE_DRAFT_COPY.applying
-                : HOUSE_DRAFT_COPY.keeping
-              : editing
-                ? HOUSE_DRAFT_COPY.apply(keep.length)
-                : HOUSE_DRAFT_COPY.keep(keep.length)
-          }
+          label={editing ? HOUSE_DRAFT_COPY.apply(keep.length) : HOUSE_DRAFT_COPY.keep(keep.length)}
+          busyLabel={editing ? HOUSE_DRAFT_COPY.applying : HOUSE_DRAFT_COPY.keeping}
           onPress={onKeep}
-          disabled={pending || keep.length === 0}
+          busy={pending}
+          disabled={keep.length === 0}
           testID="describe-keep"
         />
       </ButtonRow>

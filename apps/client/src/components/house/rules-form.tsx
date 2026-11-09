@@ -317,12 +317,14 @@ export function RulesFoot({ form, onCancel }: { form: RulesFormState; onCancel: 
         {form.problems.form ? <Alert message={form.problems.form} /> : null}
         <ButtonRow>
           <Button
-            label={form.pending ? RULES_COPY.saving : RULES_COPY.save}
-            disabled={form.pending || !form.changed}
+            label={RULES_COPY.save}
+            busyLabel={RULES_COPY.saving}
+            busy={form.pending}
+            disabled={!form.changed}
             onPress={() => void form.save()}
             testID="save-rules"
           />
-          <Button variant="outline" label={SETUP_COPY.cancel} disabled={form.pending} onPress={onCancel} testID="cancel-rules" />
+          <Button variant="outline" label={SETUP_COPY.cancel} onPress={onCancel} testID="cancel-rules" />
         </ButtonRow>
       </View>
     </View>

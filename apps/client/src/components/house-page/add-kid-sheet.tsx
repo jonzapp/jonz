@@ -1,4 +1,4 @@
-import { checkKid, KIDS_COPY } from '@app/core';
+import { checkKid, KIDS_COPY, BUSY_COPY } from '@app/core';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -69,7 +69,7 @@ function AddKidForm({ houseId, onDone }: { houseId: string; onDone: () => void }
       <View style={styles.actions}>
         {move.problem ? <Alert message={move.problem} /> : null}
         <ButtonRow>
-          <Button label={KIDS_COPY.submit} disabled={move.pending} onPress={() => void save()} testID="add-kid" />
+          <Button label={KIDS_COPY.submit} busy={move.pending} busyLabel={BUSY_COPY.adding} onPress={() => void save()} testID="add-kid" />
         </ButtonRow>
       </View>
     </View>

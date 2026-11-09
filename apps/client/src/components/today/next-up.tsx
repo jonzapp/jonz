@@ -146,7 +146,6 @@ function NextJohn({
   const tick = useTick(houseId, item.id);
   const [pressed, setPressed] = useState(false);
   const meta = nextUpMeta(item, rules, now, room);
-  const working = tick.pending ? JOHN_COPY.ticking : tick.uploading ? JOHN_COPY.uploading : null;
   const offersCant = cant.immunity || cant.swap;
   // On a small phone the photo button beside Mark done is just its icon, so Mark done keeps to one line.
   const narrow = useWindowDimensions().width < NARROW;
@@ -197,14 +196,24 @@ function NextJohn({
             // eslint-disable-next-line jonz/button-in-row -- Today's one exception (docs/style/controls.md)
             <Button
               icon={CameraIcon}
-              label={working ?? NEXT_UP_COPY.takePhoto}
-              disabled={tick.busy}
+              label={NEXT_UP_COPY.takePhoto}
+              busy={tick.waiting === 'camera'}
+              busyLabel={tick.busyLabel}
+              disabled={tick.held('camera')}
               onPress={() => void tick.tickWithPhoto('camera')}
               testID="mark-done"
             />
           ) : (
             // eslint-disable-next-line jonz/button-in-row -- Today's one exception (docs/style/controls.md)
-            <Button icon={CheckIcon} label={working ?? JOHN_COPY.markDone} disabled={tick.busy} onPress={() => void tick.tick()} testID="mark-done" />
+            <Button
+              icon={CheckIcon}
+              label={JOHN_COPY.markDone}
+              busy={tick.waiting === 'tick'}
+              busyLabel={tick.busyLabel}
+              disabled={tick.held('tick')}
+              onPress={() => void tick.tick()}
+              testID="mark-done"
+            />
           )}
         </View>
         {item.needsPhoto ? (
@@ -213,7 +222,9 @@ function NextJohn({
             icon={ImagesIcon}
             label={NEXT_UP_COPY.library}
             iconOnly={narrow}
-            disabled={tick.busy}
+            busy={tick.waiting === 'library'}
+            busyLabel={tick.busyLabel}
+            disabled={tick.held('library')}
             onPress={() => void tick.tickWithPhoto('library')}
             testID="choose-photo"
           />
@@ -223,7 +234,8 @@ function NextJohn({
             icon={CameraIcon}
             label={NEXT_UP_COPY.photo}
             iconOnly={narrow}
-            disabled={tick.busy}
+            // Its photo goes up as Mark done's: the wide button shows the wait.
+            disabled={tick.waiting !== null}
             onPress={() => void tick.tickWithPhoto('camera')}
             testID="done-with-photo"
           />

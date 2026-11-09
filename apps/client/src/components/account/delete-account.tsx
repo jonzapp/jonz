@@ -1,4 +1,4 @@
-import { confirmsDelete, DELETE_COPY, passDay, withAlpha } from '@app/core';
+import { confirmsDelete, DELETE_COPY, passDay, withAlpha, BUSY_COPY } from '@app/core';
 import { useQuery } from '@tanstack/react-query';
 import { Trash2Icon } from 'lucide-react-native';
 import { useState } from 'react';
@@ -71,7 +71,9 @@ export function DeleteAccountForm({ onKeep }: { onKeep: () => void }) {
             variant="hazard"
             icon={Trash2Icon}
             label={DELETE_COPY.confirm}
-            disabled={!ready || busy}
+            disabled={!ready}
+            busy={busy}
+            busyLabel={BUSY_COPY.deleting}
             onPress={() => void remove()}
             testID="delete-account"
           />

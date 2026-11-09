@@ -8,6 +8,7 @@ import {
   voteTally,
   type BoardItem,
   type DisputeView,
+  BUSY_COPY,
 } from '@app/core';
 import { CameraIcon, CheckIcon, ImagesIcon, ThumbsDownIcon, ThumbsUpIcon } from 'lucide-react-native';
 import { useState } from 'react';
@@ -82,9 +83,12 @@ export function Disputed({ item, context }: { item: BoardItem; context: JohnShee
  */
 function SheetVote({ houseId, dispute, onVoted }: { houseId: string; dispute: DisputeView; onVoted: () => void }) {
   const move = useMove(houseId);
+  // Which vote is waiting: the two share one move.
+  const [upholding, setUpholding] = useState(false);
   const offer = useUndoOffer(houseId);
 
   async function vote(uphold: boolean) {
+    setUpholding(uphold);
     if (await move.run(() => castVote(dispute.id, uphold))) {
       onVoted();
       offer(JOHN_SHEET_COPY.voted, 'vote', dispute.id);
@@ -100,7 +104,8 @@ function SheetVote({ houseId, dispute, onVoted }: { houseId: string; dispute: Di
             chosen={dispute.myVote === false}
             icon={dispute.myVote === false ? CheckIcon : ThumbsUpIcon}
             label={DISPUTE_COPY.done}
-            disabled={move.pending}
+            busy={move.pending && !upholding}
+            busyLabel={BUSY_COPY.voting}
             onPress={() => void vote(false)}
             testID="vote-fine"
           />
@@ -109,7 +114,8 @@ function SheetVote({ houseId, dispute, onVoted }: { houseId: string; dispute: Di
             chosen={dispute.myVote === true}
             icon={dispute.myVote === true ? CheckIcon : ThumbsDownIcon}
             label={DISPUTE_COPY.notDone}
-            disabled={move.pending}
+            busy={move.pending && upholding}
+            busyLabel={BUSY_COPY.voting}
             onPress={() => void vote(true)}
             testID="vote-not-done"
           />
@@ -138,9 +144,11 @@ function AnswerWithPhoto({
   const move = useMove(houseId);
   const [uploading, setUploading] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
+  const [from, setFrom] = useState<'camera' | 'library'>('camera');
 
   async function answer(source: 'camera' | 'library') {
     setProblem(null);
+    setFrom(source);
     let uri: string | null;
     try {
       uri = await pickPhoto(source);
@@ -171,7 +179,8 @@ function AnswerWithPhoto({
             variant="outline"
             icon={CameraIcon}
             label={JOHN_SHEET_COPY.answerPhoto}
-            disabled={busy}
+            busy={busy && from === 'camera'}
+            busyLabel={uploading ? JOHN_COPY.uploading : BUSY_COPY.sending}
             onPress={() => void answer('camera')}
             testID="answer-photo"
           />
@@ -179,7 +188,8 @@ function AnswerWithPhoto({
             variant="outline"
             icon={ImagesIcon}
             label={JOHN_SHEET_COPY.fromLibrary}
-            disabled={busy}
+            busy={busy && from === 'library'}
+            busyLabel={uploading ? JOHN_COPY.uploading : BUSY_COPY.sending}
             onPress={() => void answer('library')}
             testID="answer-library"
           />

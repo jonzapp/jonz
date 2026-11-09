@@ -2,7 +2,6 @@ import {
   CREW_COPY,
   firstName,
   FOCUS_SHELL_COPY,
-  JOHN_COPY,
   JOHN_SHEET_COPY,
   jobPlaces,
   pointsLabel,
@@ -46,7 +45,6 @@ export function RollCall({ item, context, onCancel }: { item: BoardItem; context
   const crew = [...holders, ...helpers].filter((id) => !off.includes(id));
   const plan = rollCallPlan(places, crew);
   const tick = useTick(context.houseId, item.id, { crew });
-  const working = tick.pending ? JOHN_COPY.ticking : tick.uploading ? JOHN_COPY.uploading : null;
   const others = context.members.filter((m) => !holders.includes(m.userId) && !helpers.includes(m.userId));
   const name = (id: string) => (id === context.userId ? JOHN_SHEET_COPY.you : context.nameOf(id));
 
@@ -136,8 +134,10 @@ export function RollCall({ item, context, onCancel }: { item: BoardItem; context
           <>
             <Button
               icon={CameraIcon}
-              label={working ?? CREW_COPY.photoDone}
-              disabled={tick.busy}
+              label={CREW_COPY.photoDone}
+              busy={tick.waiting === 'camera'}
+              busyLabel={tick.busyLabel}
+              disabled={tick.held('camera')}
               onPress={() => void tick.tickWithPhoto('camera')}
               testID="roll-call-done"
             />
@@ -145,20 +145,24 @@ export function RollCall({ item, context, onCancel }: { item: BoardItem; context
               variant="outline"
               icon={ImagesIcon}
               label={JOHN_SHEET_COPY.fromLibrary}
-              disabled={tick.busy}
+              busy={tick.waiting === 'library'}
+              busyLabel={tick.busyLabel}
+              disabled={tick.held('library')}
               onPress={() => void tick.tickWithPhoto('library')}
             />
           </>
         ) : (
           <Button
             icon={CheckIcon}
-            label={working ?? CREW_COPY.markDone}
-            disabled={tick.busy}
+            label={CREW_COPY.markDone}
+            busy={tick.waiting === 'tick'}
+            busyLabel={tick.busyLabel}
+            disabled={tick.held('tick')}
             onPress={() => void tick.tick()}
             testID="roll-call-done"
           />
         )}
-        <Button variant="ghost" label={FOCUS_SHELL_COPY.cancel} disabled={tick.busy} onPress={onCancel} testID="roll-call-cancel" />
+        <Button variant="ghost" label={FOCUS_SHELL_COPY.cancel} disabled={tick.waiting !== null} onPress={onCancel} testID="roll-call-cancel" />
         {tick.problem ? <Alert message={tick.problem} /> : null}
       </SheetLines>
     </>

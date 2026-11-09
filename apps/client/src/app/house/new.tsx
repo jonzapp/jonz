@@ -147,9 +147,11 @@ export default function NewHouse() {
         ) : null}
         {problem ? <Alert message={problem} /> : null}
         <Button
-          label={busy ? NEW_HOUSE_COPY.busy : words.submit}
+          label={words.submit}
+          busyLabel={NEW_HOUSE_COPY.busy}
           onPress={() => void submit()}
-          disabled={busy || !name.trim()}
+          busy={busy}
+          disabled={!name.trim()}
           testID="create-house"
         />
       </Sign>

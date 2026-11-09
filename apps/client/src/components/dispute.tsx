@@ -54,8 +54,10 @@ export function DisputeForm({
       {move.problem ? <Alert message={move.problem} /> : null}
       <ButtonRow>
         <Button
-          label={move.pending ? DISPUTE_COPY.sending : DISPUTE_COPY.send}
-          disabled={move.pending || !reason.trim()}
+          label={DISPUTE_COPY.send}
+          busyLabel={DISPUTE_COPY.sending}
+          busy={move.pending}
+          disabled={!reason.trim()}
           onPress={() => void send()}
           testID="send-dispute"
         />

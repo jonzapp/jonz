@@ -131,9 +131,11 @@ function LiveOffer({ view, signedIn, onSignIn }: { view: OfferView; signedIn: bo
           {use.error ? <Alert message={use.error.message} /> : null}
           <ButtonRow>
             <Button
-              label={use.isPending || use.isSuccess ? OFFER_PAGE_COPY.using : PROMOTION_COPY.useIt}
+              label={PROMOTION_COPY.useIt}
+              busyLabel={OFFER_PAGE_COPY.using}
               onPress={() => use.mutate(mine.id)}
-              disabled={use.isPending || use.isSuccess}
+              // Busy on through the way to checkout, after the server said yes.
+              busy={use.isPending || use.isSuccess}
               testID="offer-use"
             />
           </ButtonRow>

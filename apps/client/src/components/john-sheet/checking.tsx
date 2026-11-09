@@ -8,6 +8,7 @@ import {
   tickedLine,
   undoWarning,
   type BoardItem,
+  BUSY_COPY,
 } from '@app/core';
 import { FlagIcon, Undo2Icon } from 'lucide-react-native';
 import { useState } from 'react';
@@ -50,7 +51,8 @@ export function YoursChecking({ item, context }: { item: BoardItem; context: Joh
               variant="hazard"
               icon={Undo2Icon}
               label={JOHN_SHEET_COPY.undoIt}
-              disabled={move.pending}
+              busy={move.pending}
+              busyLabel={BUSY_COPY.undoing}
               onPress={undo}
               testID="sheet-undo-it"
             />
@@ -62,7 +64,8 @@ export function YoursChecking({ item, context }: { item: BoardItem; context: Joh
           variant="outline"
           icon={Undo2Icon}
           label={JOHN_COPY.undo}
-          disabled={move.pending}
+          busy={move.pending}
+          busyLabel={BUSY_COPY.undoing}
           onPress={warning ? () => setAsking(true) : undo}
           testID="sheet-undo"
         />
