@@ -4756,6 +4756,1076 @@
         }
       }
     },
+    "/v1/events/{eventId}/reactions": {
+      "post": {
+        "operationId": "react",
+        "summary": "React to something on the Wall",
+        "tags": [
+          "house"
+        ],
+        "parameters": [
+          {
+            "name": "eventId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/JonzClient"
+          }
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "x-jonz-effect": "write",
+        "x-jonz-permission": "wall:write_own",
+        "responses": {
+          "201": {
+            "description": "Done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "null"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "nice",
+                      "fire",
+                      "sparkle",
+                      "eyes"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/events/{eventId}/reactions/{kind}": {
+      "delete": {
+        "operationId": "unreact",
+        "summary": "Take back your reaction",
+        "tags": [
+          "house"
+        ],
+        "parameters": [
+          {
+            "name": "eventId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "nice",
+                "fire",
+                "sparkle",
+                "eyes"
+              ]
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/JonzClient"
+          }
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "x-jonz-effect": "write",
+        "x-jonz-permission": "wall:write_own",
+        "responses": {
+          "201": {
+            "description": "Done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "null"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/v1/houses/{houseId}/johns": {
+      "post": {
+        "operationId": "add_john",
+        "summary": "Add a John to the list",
+        "tags": [
+          "house"
+        ],
+        "parameters": [
+          {
+            "name": "houseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/JonzClient"
+          }
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "x-jonz-effect": "write",
+        "x-jonz-permission": "johns:write",
+        "responses": {
+          "201": {
+            "description": "Done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 60
+                  },
+                  "category": {
+                    "type": "string",
+                    "enum": [
+                      "kitchen",
+                      "bathroom",
+                      "bins",
+                      "floors",
+                      "errands",
+                      "other"
+                    ]
+                  },
+                  "points": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 20
+                  },
+                  "everyWeeks": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 26
+                  },
+                  "everyMonths": {
+                    "default": null,
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 60
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "weekOfMonth": {
+                    "default": null,
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 5
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "anchorMonth": {
+                    "default": null,
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "anchorWeek": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "dueDow": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 7
+                  },
+                  "dueTime": {
+                    "type": "string",
+                    "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                  },
+                  "needsPhoto": {
+                    "type": "boolean"
+                  },
+                  "groupId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "when": {
+                    "default": "day",
+                    "type": "string",
+                    "enum": [
+                      "day",
+                      "on_call"
+                    ]
+                  },
+                  "respondHours": {
+                    "default": 12,
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 72
+                  },
+                  "perWeek": {
+                    "default": 2,
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 14
+                  },
+                  "crew": {
+                    "default": 1,
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 6
+                  },
+                  "keepDay": {
+                    "default": false,
+                    "type": "boolean"
+                  },
+                  "payMinor": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 100000
+                  },
+                  "minAge": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 2,
+                        "maximum": 18
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "name",
+                  "category",
+                  "points",
+                  "everyWeeks",
+                  "dueDow",
+                  "dueTime",
+                  "needsPhoto",
+                  "groupId"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/houses/{houseId}/johns/batch": {
+      "post": {
+        "operationId": "add_johns",
+        "summary": "Add several Johns at once, all or none",
+        "tags": [
+          "house"
+        ],
+        "parameters": [
+          {
+            "name": "houseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/JonzClient"
+          }
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "x-jonz-effect": "write",
+        "x-jonz-permission": "johns:write",
+        "responses": {
+          "201": {
+            "description": "Done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "johns": {
+                    "minItems": 1,
+                    "maxItems": 100,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 60
+                        },
+                        "category": {
+                          "type": "string",
+                          "enum": [
+                            "kitchen",
+                            "bathroom",
+                            "bins",
+                            "floors",
+                            "errands",
+                            "other"
+                          ]
+                        },
+                        "points": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 20
+                        },
+                        "everyWeeks": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 26
+                        },
+                        "everyMonths": {
+                          "default": null,
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 60
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "weekOfMonth": {
+                          "default": null,
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 5
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "anchorMonth": {
+                          "default": null,
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "anchorWeek": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "dueDow": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 7
+                        },
+                        "dueTime": {
+                          "type": "string",
+                          "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                        },
+                        "needsPhoto": {
+                          "type": "boolean"
+                        },
+                        "groupId": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "when": {
+                          "default": "day",
+                          "type": "string",
+                          "enum": [
+                            "day",
+                            "on_call"
+                          ]
+                        },
+                        "respondHours": {
+                          "default": 12,
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 72
+                        },
+                        "perWeek": {
+                          "default": 2,
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 14
+                        },
+                        "crew": {
+                          "default": 1,
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 6
+                        },
+                        "keepDay": {
+                          "default": false,
+                          "type": "boolean"
+                        },
+                        "payMinor": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 100000
+                        },
+                        "minAge": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 2,
+                              "maximum": 18
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "category",
+                        "points",
+                        "everyWeeks",
+                        "dueDow",
+                        "dueTime",
+                        "needsPhoto",
+                        "groupId"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "johns"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/johns/{johnId}": {
+      "patch": {
+        "operationId": "change_john",
+        "summary": "Change a John on the list, from the next deal",
+        "tags": [
+          "house"
+        ],
+        "parameters": [
+          {
+            "name": "johnId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/JonzClient"
+          }
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "x-jonz-effect": "write",
+        "x-jonz-permission": "johns:write",
+        "responses": {
+          "201": {
+            "description": "Done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "null"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 60
+                  },
+                  "category": {
+                    "type": "string",
+                    "enum": [
+                      "kitchen",
+                      "bathroom",
+                      "bins",
+                      "floors",
+                      "errands",
+                      "other"
+                    ]
+                  },
+                  "points": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 20
+                  },
+                  "everyWeeks": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 26
+                  },
+                  "everyMonths": {
+                    "default": null,
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 60
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "weekOfMonth": {
+                    "default": null,
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 5
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "anchorMonth": {
+                    "default": null,
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "anchorWeek": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "dueDow": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 7
+                  },
+                  "dueTime": {
+                    "type": "string",
+                    "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                  },
+                  "needsPhoto": {
+                    "type": "boolean"
+                  },
+                  "groupId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "when": {
+                    "default": "day",
+                    "type": "string",
+                    "enum": [
+                      "day",
+                      "on_call"
+                    ]
+                  },
+                  "respondHours": {
+                    "default": 12,
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 72
+                  },
+                  "perWeek": {
+                    "default": 2,
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 14
+                  },
+                  "crew": {
+                    "default": 1,
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 6
+                  },
+                  "keepDay": {
+                    "default": false,
+                    "type": "boolean"
+                  },
+                  "payMinor": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 100000
+                  },
+                  "minAge": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 2,
+                        "maximum": 18
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "name",
+                  "category",
+                  "points",
+                  "everyWeeks",
+                  "dueDow",
+                  "dueTime",
+                  "needsPhoto",
+                  "groupId"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "remove_john",
+        "summary": "Take a John off the list; weeks already dealt keep it",
+        "tags": [
+          "house"
+        ],
+        "parameters": [
+          {
+            "name": "johnId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/JonzClient"
+          }
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "x-jonz-effect": "write",
+        "x-jonz-permission": "johns:write",
+        "responses": {
+          "201": {
+            "description": "Done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "null"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/v1/houses/{houseId}/rules": {
+      "patch": {
+        "operationId": "save_house_rules",
+        "summary": "Change the house's name and rules",
+        "tags": [
+          "house"
+        ],
+        "parameters": [
+          {
+            "name": "houseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/JonzClient"
+          }
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "x-jonz-effect": "write",
+        "x-jonz-permission": "house:write",
+        "responses": {
+          "201": {
+            "description": "Done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "null"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 60
+                  },
+                  "timezone": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "currency": {
+                    "type": "string",
+                    "enum": [
+                      "GBP",
+                      "CAD",
+                      "USD",
+                      "EUR"
+                    ]
+                  },
+                  "weekStarts": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 7
+                  },
+                  "stakeMinor": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 100000
+                  },
+                  "lateForfeitMinor": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 100000
+                  },
+                  "missedForfeitMinor": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 100000
+                  },
+                  "disputeHours": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 72
+                  },
+                  "coverGraceHours": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 48
+                  },
+                  "lateHours": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 72
+                  },
+                  "awayMakeup": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "settleIn": {
+                    "type": "string",
+                    "enum": [
+                      "jonz",
+                      "splitwise"
+                    ]
+                  },
+                  "dealMode": {
+                    "type": "string",
+                    "enum": [
+                      "smart",
+                      "classic"
+                    ]
+                  },
+                  "dealBudget": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "pocketCapMinor": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 100000
+                  }
+                },
+                "required": [
+                  "name",
+                  "timezone",
+                  "currency",
+                  "weekStarts",
+                  "stakeMinor",
+                  "lateForfeitMinor",
+                  "missedForfeitMinor",
+                  "disputeHours",
+                  "awayMakeup"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/houses/{houseId}/deal-mode": {
+      "patch": {
+        "operationId": "set_deal_mode",
+        "summary": "Choose how the house shares its Johns: Smart or Classic",
+        "tags": [
+          "house"
+        ],
+        "parameters": [
+          {
+            "name": "houseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/JonzClient"
+          }
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "x-jonz-effect": "write",
+        "x-jonz-permission": "house:write",
+        "responses": {
+          "201": {
+            "description": "Done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "null"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "smart",
+                      "classic"
+                    ]
+                  }
+                },
+                "required": [
+                  "mode"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/assignments/{assignmentId}/ok": {
       "post": {
         "operationId": "answer_tick",

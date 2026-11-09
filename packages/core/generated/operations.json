@@ -7634,7 +7634,14 @@
       "pathKeys": [
         "eventId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "react",
+        "server": false,
+        "args": {
+          "eventId": "p_event",
+          "kind": "p_kind"
+        }
+      },
       "tables": [
         "reactions"
       ],
@@ -7683,7 +7690,14 @@
         "eventId",
         "kind"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "unreact",
+        "server": false,
+        "args": {
+          "eventId": "p_event",
+          "kind": "p_kind"
+        }
+      },
       "tables": [
         "reactions"
       ],
@@ -7731,7 +7745,32 @@
       "pathKeys": [
         "houseId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "add_john",
+        "server": false,
+        "args": {
+          "name": "p_name",
+          "category": "p_category",
+          "points": "p_points",
+          "everyWeeks": "p_every_weeks",
+          "everyMonths": "p_every_months",
+          "weekOfMonth": "p_week_of_month",
+          "anchorMonth": "p_anchor_month",
+          "anchorWeek": "p_anchor_week",
+          "dueDow": "p_due_dow",
+          "dueTime": "p_due_time",
+          "needsPhoto": "p_needs_photo",
+          "groupId": "p_group",
+          "when": "p_when",
+          "respondHours": "p_respond_hours",
+          "perWeek": "p_per_week",
+          "crew": "p_crew",
+          "keepDay": "p_keep_day",
+          "payMinor": "p_pay_minor",
+          "minAge": "p_min_age",
+          "houseId": "p_house"
+        }
+      },
       "tables": [
         "johns"
       ],
@@ -7918,7 +7957,14 @@
       "pathKeys": [
         "houseId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "add_johns",
+        "server": false,
+        "args": {
+          "houseId": "p_house",
+          "johns": "p_johns"
+        }
+      },
       "tables": [
         "johns"
       ],
@@ -8121,7 +8167,32 @@
       "pathKeys": [
         "johnId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "change_john",
+        "server": false,
+        "args": {
+          "name": "p_name",
+          "category": "p_category",
+          "points": "p_points",
+          "everyWeeks": "p_every_weeks",
+          "everyMonths": "p_every_months",
+          "weekOfMonth": "p_week_of_month",
+          "anchorMonth": "p_anchor_month",
+          "anchorWeek": "p_anchor_week",
+          "dueDow": "p_due_dow",
+          "dueTime": "p_due_time",
+          "needsPhoto": "p_needs_photo",
+          "groupId": "p_group",
+          "when": "p_when",
+          "respondHours": "p_respond_hours",
+          "perWeek": "p_per_week",
+          "crew": "p_crew",
+          "keepDay": "p_keep_day",
+          "payMinor": "p_pay_minor",
+          "minAge": "p_min_age",
+          "johnId": "p_john"
+        }
+      },
       "tables": [
         "johns"
       ],
@@ -8307,7 +8378,13 @@
       "pathKeys": [
         "johnId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "remove_john",
+        "server": false,
+        "args": {
+          "johnId": "p_john"
+        }
+      },
       "tables": [
         "johns"
       ],
@@ -8345,7 +8422,28 @@
       "pathKeys": [
         "houseId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "save_house_rules",
+        "server": false,
+        "args": {
+          "name": "p_name",
+          "timezone": "p_timezone",
+          "currency": "p_currency",
+          "weekStarts": "p_week_starts",
+          "stakeMinor": "p_stake_minor",
+          "lateForfeitMinor": "p_late_forfeit_minor",
+          "missedForfeitMinor": "p_missed_forfeit_minor",
+          "disputeHours": "p_dispute_hours",
+          "coverGraceHours": "p_cover_grace_hours",
+          "lateHours": "p_late_hours",
+          "awayMakeup": "p_away_makeup",
+          "settleIn": "p_settle_in",
+          "dealMode": "p_deal_mode",
+          "dealBudget": "p_deal_budget",
+          "pocketCapMinor": "p_pocket_cap_minor",
+          "houseId": "p_house"
+        }
+      },
       "tables": [
         "houses"
       ],
@@ -8474,7 +8572,14 @@
       "pathKeys": [
         "houseId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "set_deal_mode",
+        "server": false,
+        "args": {
+          "houseId": "p_house",
+          "mode": "p_mode"
+        }
+      },
       "tables": [
         "houses"
       ],
