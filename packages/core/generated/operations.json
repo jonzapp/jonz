@@ -1341,6 +1341,138 @@
       }
     },
     {
+      "name": "file_upload",
+      "about": "Get a link to upload a screenshot or your photo to",
+      "scope": "account",
+      "effect": "write",
+      "guard": {
+        "by": "permission",
+        "permission": "account:write_own"
+      },
+      "entitlement": null,
+      "entitlementWhen": null,
+      "destructive": false,
+      "method": "POST",
+      "path": "/v1/me/files",
+      "pathKeys": [],
+      "rpc": null,
+      "tables": [],
+      "page": null,
+      "input": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "shot",
+              "photo"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "image/jpeg",
+              "image/png"
+            ]
+          }
+        },
+        "required": [
+          "kind",
+          "type"
+        ]
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "upload": {
+            "type": "string",
+            "format": "uri"
+          },
+          "link": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "path",
+          "upload",
+          "link"
+        ]
+      }
+    },
+    {
+      "name": "file_links",
+      "about": "Links to look at photos and screenshots you may see",
+      "scope": "account",
+      "effect": "read",
+      "guard": {
+        "by": "permission",
+        "permission": "account:read"
+      },
+      "entitlement": null,
+      "entitlementWhen": null,
+      "destructive": false,
+      "method": "GET",
+      "path": "/v1/files",
+      "pathKeys": [],
+      "rpc": null,
+      "tables": [],
+      "page": null,
+      "input": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "proof",
+              "shot"
+            ]
+          },
+          "paths": {
+            "minItems": 1,
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 300
+            }
+          }
+        },
+        "required": [
+          "kind",
+          "paths"
+        ]
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "links": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "string",
+              "format": "uri"
+            }
+          }
+        },
+        "required": [
+          "links"
+        ]
+      }
+    },
+    {
       "name": "send_report",
       "about": "Report a problem",
       "scope": "account",
@@ -5841,6 +5973,73 @@
         "required": [
           "earnings",
           "pays"
+        ]
+      }
+    },
+    {
+      "name": "proof_upload",
+      "about": "Get a link to upload a photo receipt for a John",
+      "scope": "house",
+      "effect": "write",
+      "guard": {
+        "by": "permission",
+        "permission": "ticks:write_own"
+      },
+      "entitlement": "photos",
+      "entitlementWhen": null,
+      "destructive": false,
+      "method": "POST",
+      "path": "/v1/houses/{houseId}/assignments/{assignmentId}/proofs",
+      "pathKeys": [
+        "houseId",
+        "assignmentId"
+      ],
+      "rpc": null,
+      "tables": [],
+      "page": null,
+      "input": {
+        "type": "object",
+        "properties": {
+          "houseId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "assignmentId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "houseId",
+          "assignmentId"
+        ]
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "upload": {
+            "type": "string",
+            "format": "uri"
+          },
+          "link": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "path",
+          "upload",
+          "link"
         ]
       }
     },

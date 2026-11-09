@@ -41,6 +41,12 @@ export const env = {
   /** appUrlFor, from the Origin header alone (a /v1 handler has that, not the request). */
   appUrlForOrigin: (origin: string | null) => (originAllowed(origin, env.allowedOrigins()) ? origin : env.appUrl()),
   /**
+   * Where file links point (lib/files.ts): the site, which passes /files on
+   * to this API, unless FILES_URL names another address that serves
+   * /files. Staging's site passes /files to production, so staging sets it.
+   */
+  filesSiteForOrigin: (origin: string | null) => process.env.FILES_URL?.replace(/\/+$/, "") || env.appUrlForOrigin(origin),
+  /**
    * Resend's key for sending email (lib/email.ts), "Sending access" only.
    * Unset locally and on staging, where emails are logged, not sent.
    */

@@ -62,6 +62,11 @@ export interface Operation {
   /** The API route in front of it, as "METHOD /api/path". */
   route?: string;
   /**
+   * Its logic is TypeScript on /v1 alone, with no /api route: it works with
+   * a service the database doesn't reach (Storage), as the caller.
+   */
+  server?: true;
+  /**
    * The tables it reads or changes straight, as the caller, under each
    * table's own rules (TABLES): an operation the app does today with the
    * tables themselves. One with an `rpc` too is served by that function on
@@ -130,6 +135,8 @@ export const OPERATIONS = {
   request_account_deletion: op({ about: "Start deleting your account", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "request_account_deletion" }, destructive: true }),
   keep_account: op({ about: "Stop your account being deleted", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "keep_account" } }),
   my_reports: op({ about: "The problems you've reported, and their replies", scope: "account", effect: "read", guard: ACCOUNT_READ, rpc: { name: "my_reports" } }),
+  file_upload: op({ about: "Get a link to upload a screenshot or your photo to", scope: "account", effect: "write", guard: ACCOUNT_WRITE, server: true, firstParty: true }),
+  file_links: op({ about: "Links to look at photos and screenshots you may see", scope: "account", effect: "read", guard: ACCOUNT_READ, server: true, firstParty: true }),
   send_report: op({ about: "Report a problem", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "send_report" }, route: "POST /api/reports" }),
   write_back: op({ about: "Write back on a problem you reported", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "write_back" }, route: "POST /api/reports/[id]/messages" }),
   see_report: op({ about: "Mark a reply to your report as seen", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "see_report" } }),
@@ -172,6 +179,7 @@ export const OPERATIONS = {
   house_pocket: op({ about: "Pocket money earned and paid", scope: "house", effect: "read", guard: perm("pocket_money:read"), rpc: { name: "house_pocket" }, tables: ["pocket_earnings", "pocket_pays"] }),
 
   // --- A house: your own Johns ----------------------------------------------------------------
+  proof_upload: op({ about: "Get a link to upload a photo receipt for a John", scope: "house", effect: "write", guard: perm("ticks:write_own"), server: true, entitlement: "photos", firstParty: true }),
   mark_done: op({ about: "Tick off a John", scope: "house", effect: "write", guard: perm("ticks:write_own"), rpc: { name: "mark_done" }, entitlement: "photos", entitlementWhen: "photoPath" }),
   undo_done: op({ about: "Take back a tick", scope: "house", effect: "write", guard: perm("ticks:write_own"), rpc: { name: "undo_done" } }),
   plan_john: op({ about: "Say when you'll do a John", scope: "house", effect: "write", guard: perm("ticks:write_own"), rpc: { name: "plan_john" } }),

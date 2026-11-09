@@ -3,7 +3,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Platform } from 'react-native';
 
 import { pickPhoto, uploadProof } from './photos';
-import { supabase } from './supabase';
+import { callV1 } from './v1';
 
 jest.mock('expo-image-picker', () => ({
   requestCameraPermissionsAsync: jest.fn(),
@@ -15,16 +15,12 @@ jest.mock('expo-image-manipulator', () => {
   const mockContext = { resize: jest.fn(), renderAsync: jest.fn() };
   return { ImageManipulator: { manipulate: jest.fn(() => mockContext) }, SaveFormat: { JPEG: 'jpeg' }, __context: mockContext };
 });
-jest.mock('expo-crypto', () => ({ randomUUID: () => 'f0e1d2c3' }));
-jest.mock('./supabase', () => {
-  const mockBucket = { upload: jest.fn() };
-  return { supabase: { storage: { from: jest.fn(() => mockBucket) } }, __bucket: mockBucket };
-});
+jest.mock('./v1', () => ({ callV1: jest.fn() }));
 
 const picker = ImagePicker as unknown as Record<string, jest.Mock>;
 const context = (jest.requireMock('expo-image-manipulator') as { __context: { resize: jest.Mock; renderAsync: jest.Mock } })
   .__context;
-const bucket = (jest.requireMock('./supabase') as { __bucket: { upload: jest.Mock } }).__bucket;
+const call = callV1 as jest.Mock;
 const saveAsync = jest.fn();
 
 function picked(width: number, height: number) {
@@ -83,21 +79,22 @@ describe('pickPhoto', () => {
 
 describe('uploadProof', () => {
   const bytes = new ArrayBuffer(4);
+  const UPLOAD = 'https://jonz.app/files/up/proofs/h1/a1/f0.jpg?token=t';
 
   beforeEach(() => {
-    global.fetch = jest.fn().mockResolvedValue({ arrayBuffer: () => Promise.resolve(bytes) });
+    call.mockResolvedValue({ path: 'h1/a1/f0.jpg', upload: UPLOAD, link: null });
   });
 
-  it("puts the receipt in the proofs bucket under the house and the John, and returns where", async () => {
-    bucket.upload.mockResolvedValue({ data: {}, error: null });
-    await expect(uploadProof('h1', 'a1', 'file:///small.jpg')).resolves.toBe('h1/a1/f0e1d2c3.jpg');
-    expect(global.fetch).toHaveBeenCalledWith('file:///small.jpg');
-    expect(supabase.storage.from).toHaveBeenCalledWith('proofs');
-    expect(bucket.upload).toHaveBeenCalledWith('h1/a1/f0e1d2c3.jpg', bytes, { contentType: 'image/jpeg' });
+  it('asks /v1 where the receipt goes, puts its bytes there, and returns its path', async () => {
+    global.fetch = jest.fn().mockResolvedValueOnce({ arrayBuffer: () => Promise.resolve(bytes) }).mockResolvedValueOnce({ ok: true, status: 204 });
+    await expect(uploadProof('h1', 'a1', 'file:///small.jpg')).resolves.toBe('h1/a1/f0.jpg');
+    expect(call).toHaveBeenCalledWith('proof_upload', { houseId: 'h1', assignmentId: 'a1' });
+    expect(global.fetch).toHaveBeenNthCalledWith(1, 'file:///small.jpg');
+    expect(global.fetch).toHaveBeenNthCalledWith(2, UPLOAD, { method: 'PUT', headers: { 'Content-Type': 'image/jpeg' }, body: bytes });
   });
 
-  it('fails when storage refuses it', async () => {
-    bucket.upload.mockResolvedValue({ data: null, error: new Error('new row violates row-level security policy') });
-    await expect(uploadProof('h1', 'a1', 'file:///small.jpg')).rejects.toThrow('row-level security');
+  it("fails with a sentence when the bytes don't go", async () => {
+    global.fetch = jest.fn().mockResolvedValueOnce({ arrayBuffer: () => Promise.resolve(bytes) }).mockResolvedValueOnce({ ok: false, status: 403 });
+    await expect(uploadProof('h1', 'a1', 'file:///small.jpg')).rejects.toThrow('The picture didn’t upload. Try again.');
   });
 });

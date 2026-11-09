@@ -15,8 +15,8 @@ const SECURITY_HEADERS = [
 /** The site. Everything here that is not the API belongs to it. */
 const SITE = "https://jonz.app";
 
-/** Any other path outside `/api`, `/v1`, `/mcp` and `/.well-known` (MCP sign-in metadata) (the bare origin has its own rule). */
-const NOT_API = "/:path((?!(?:api|v1|mcp|\\.well-known)(?:/|$)).*)";
+/** Any other path outside `/api`, `/v1`, `/files`, `/mcp` and `/.well-known` (MCP sign-in metadata) (the bare origin has its own rule). */
+const NOT_API = "/:path((?!(?:api|v1|files|mcp|\\.well-known)(?:/|$)).*)";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,

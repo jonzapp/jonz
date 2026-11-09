@@ -49,6 +49,21 @@ describe("set_my_photo", () => {
     expect(await photoOf(me.userId)).toBe(address);
   });
 
+  it("takes your photo on our own address too, still only in your folder", async () => {
+    const me = await signedInUser("Ava");
+    const other = await signedInUser("Ben");
+    const address = `https://jonz.app/files/photo/avatars/${me.userId}/photo-1.jpg`;
+    expectOk(await me.db.rpc("set_my_photo", { photo: address }));
+    expect(await photoOf(me.userId)).toBe(address);
+    for (const photo of [
+      `https://jonz.app/files/photo/avatars/${other.userId}/photo-1.jpg`,
+      `https://jonz.app/files/see/proofs/${me.userId}/photo-1.jpg`,
+      `https://jonz.app/files/photo/avatars/${me.userId}/../x.jpg`,
+    ]) {
+      expectRule(await me.db.rpc("set_my_photo", { photo }), "That photo isn't yours.");
+    }
+  });
+
   it("refuses someone else's folder, and anywhere else on the web", async () => {
     const me = await signedInUser("Ava");
     const other = await signedInUser("Ben");

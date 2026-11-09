@@ -24,6 +24,7 @@ import type { Handlers } from "v1";
 
 import { ensureFresh } from "@/lib/engine/fresh";
 import { env } from "@/lib/env";
+import { seeLinks, uploadLink } from "@/lib/files";
 import { houseUsage } from "@/lib/moves/ask-usage";
 import { bookAway } from "@/lib/moves/away";
 import { dealThisWeek } from "@/lib/moves/deal";
@@ -82,8 +83,24 @@ export function passAnswer(answer: PassAnswer): { url: string } {
 
 const houseId = (ctx: HandlerContext) => ctx.input.houseId as string;
 const appUrl = (ctx: HandlerContext) => env.appUrlForOrigin(ctx.origin);
+const filesSite = (ctx: HandlerContext) => env.filesSiteForOrigin(ctx.origin);
 
 export const V1_HANDLERS: Handlers = {
+  async proof_upload(ctx: HandlerContext) {
+    const { assignmentId } = ctx.input as { assignmentId: string };
+    return uploadLink(ctx.token, ctx.claims.sub, filesSite(ctx), "proof", "image/jpeg", { houseId: houseId(ctx), assignmentId });
+  },
+
+  async file_upload(ctx: HandlerContext) {
+    const { kind, type } = ctx.input as { kind: "shot" | "photo"; type: string };
+    return uploadLink(ctx.token, ctx.claims.sub, filesSite(ctx), kind, type);
+  },
+
+  async file_links(ctx: HandlerContext) {
+    const { kind, paths } = ctx.input as { kind: "proof" | "shot"; paths: string[] };
+    return { links: await seeLinks(ctx.token, filesSite(ctx), kind, paths) };
+  },
+
   async ask_usage(ctx: HandlerContext) {
     const result = await houseUsage(callerOf(ctx), houseId(ctx), ctx.now);
     if ("refusal" in result) throw refusal(result.refusal);

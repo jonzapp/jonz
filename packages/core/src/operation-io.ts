@@ -123,6 +123,15 @@ const pageOf = (atField: string, idField = "id", idArg = "p_cursor_id") => ({ at
 /** A list read a page at a time: its rows, whether there are more, and what to pass as `startingAfter` for them. */
 export const pageOutput = <T extends z.ZodType>(row: T) => z.object({ data: z.array(row), hasMore: bool, startingAfter: text.nullable() });
 
+/**
+ * Where a file went and how to put it there: `path` is what an operation
+ * takes after (mark_done, send_report), `upload` takes the bytes in a PUT
+ * for a few minutes, and `link` is where everyone sees it (your photo).
+ */
+const FileUpload = z.object({ path: text, upload: z.url(), link: z.url().nullable() });
+/** The kinds of picture, and what each may be. */
+const IMAGE_TYPE = z.enum(["image/jpeg", "image/png"]);
+
 const sameAsReport = z.object({ id, words: text, state: text, name: text.nullable() });
 const supportDraft = z.object({ id, state: text, reply: text, action: text, why: text, sameAs: sameAsReport.nullable() });
 const report = z.object({
@@ -418,6 +427,12 @@ export const OPERATION_IO = {
     ),
     "GET /v1/me/reports",
   ),
+  file_upload: io(z.object({ kind: z.enum(["shot", "photo"]), type: IMAGE_TYPE }), FileUpload, "POST /v1/me/files"),
+  file_links: io(
+    z.object({ kind: z.enum(["proof", "shot"]), paths: z.array(text.max(300)).min(1).max(100) }),
+    z.object({ links: z.record(text, z.url()) }),
+    "GET /v1/files",
+  ),
   send_report: io(ReportRequest, ReportResponse, "POST /v1/me/reports"),
   write_back: io(ReportMessageRequest.extend({ reportId: id }), ReportMessageResponse, "POST /v1/me/reports/{reportId}/messages"),
   see_report: io(z.object({ reportId: id }), nothing, "POST /v1/me/reports/{reportId}/seen"),
@@ -560,6 +575,7 @@ export const OPERATION_IO = {
   ),
 
   // A house: your own Johns
+  proof_upload: io(z.object({ houseId: id, assignmentId: id }), FileUpload, "POST /v1/houses/{houseId}/assignments/{assignmentId}/proofs"),
   mark_done: io(z.object({ assignmentId: id, photoPath: text.optional() }), nothing, "POST /v1/assignments/{assignmentId}/done"),
   undo_done: io(z.object({ assignmentId: id }), nothing, "POST /v1/assignments/{assignmentId}/undo"),
   plan_john: io(z.object({ assignmentId: id, at: at.nullable() }), nothing, "POST /v1/assignments/{assignmentId}/plan"),

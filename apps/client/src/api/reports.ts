@@ -11,12 +11,11 @@ import {
   type ReportSource,
   type ReportState,
 } from '@app/core';
-import { randomUUID } from 'expo-crypto';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import { Platform } from 'react-native';
 
-import { supabase } from './supabase';
+import { putFile } from './files';
 import { callV1 } from './v1';
 
 export type { ReportDetails, SupportDraft };
@@ -24,12 +23,10 @@ export type { ReportDetails, SupportDraft };
 // Report a problem (docs/specs/report-a-problem.md), on /v1. Sending or
 // writing back tells the owner; the owner's replies tell the sender. The
 // Inbox's operations are the owner's alone. Screenshots live in the private
-// `report-shots` bucket, under the sender's own folder; the app shows them
-// by short-lived signed links.
+// `report-shots` bucket, under the sender's own folder; /v1 hands out a
+// place to upload each one (file_upload) and links that work for an hour
+// (file_links).
 
-const SHOTS = 'report-shots';
-/** How long a screenshot's link works: long enough to read a report. */
-const SHOT_LINK_SECONDS = 60 * 60;
 /** A screenshot's longest side once shrunk, and its JPEG quality: readable, and far under the bucket's 5 MB. */
 const SHOT_EDGE = 1600;
 const SHOT_QUALITY = 0.8;
@@ -128,9 +125,12 @@ function detailsOf(value: unknown): ReportDetails | null {
 
 async function signed(paths: readonly string[]): Promise<string[]> {
   if (paths.length === 0) return [];
-  const { data, error } = await supabase.storage.from(SHOTS).createSignedUrls([...paths], SHOT_LINK_SECONDS);
-  if (error) return [];
-  return (data ?? []).flatMap((d) => (d.signedUrl ? [d.signedUrl] : []));
+  try {
+    const { links } = await callV1('file_links', { kind: 'shot', paths: [...paths] });
+    return paths.flatMap((p) => (links[p] ? [links[p]] : []));
+  } catch {
+    return [];
+  }
 }
 
 interface MessageRow {
@@ -175,17 +175,16 @@ export async function pickScreenshot(): Promise<string | null> {
 
 /** Uploads screenshots to the sender's own folder; answers their paths, for send_report. */
 async function uploadShots(uris: readonly string[]): Promise<string[]> {
-  if (uris.length === 0) return [];
-  const { data } = await supabase.auth.getSession();
-  const me = data.session?.user.id;
-  if (!me) throw new Error('Sign in first.');
   const paths: string[] = [];
   for (const uri of uris.slice(0, REPORT_LIMITS.shots)) {
     const bytes = await (await fetch(uri)).arrayBuffer();
     if (bytes.byteLength > REPORT_LIMITS.shotBytes) throw new Error('That picture is too big. Try a smaller one.');
-    const path = `${me}/${randomUUID()}.jpg`;
-    const { error } = await supabase.storage.from(SHOTS).upload(path, bytes, { contentType: 'image/jpeg' });
-    if (error) throw new Error(humanError({ message: 'report_shot' }));
+    const { path, upload } = await callV1('file_upload', { kind: 'shot', type: 'image/jpeg' });
+    try {
+      await putFile(upload, bytes, 'image/jpeg');
+    } catch {
+      throw new Error(humanError({ message: 'report_shot' }));
+    }
     paths.push(path);
   }
   return paths;
