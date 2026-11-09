@@ -29,6 +29,7 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { makePromotion, PROMOTIONS_KEY, promotionsPage } from '@/api/promotions';
+import { useOwnerMay } from '@/components/admin/use-owner-may';
 import { AdminSwitch } from '@/components/admin/admin-shell';
 import { PromotionPreview } from '@/components/admin/promotion-parts';
 import { Alert } from '@/components/alert';
@@ -61,10 +62,12 @@ const PLAN_LABEL: Record<PassPurchase, string> = { yearly: PASS_COPY.yearly, mon
  * its page, with the link to copy.
  */
 export default function PromotionsPage() {
+  // Someone whose app role can't make promotions (support) sees only the list of them.
+  const may = useOwnerMay('promotions:write');
   return (
     <Screen spreads bar={<TitleBar title={PROMOTIONS_COPY.page} />} testID="admin-promotions">
       <AdminSwitch page="promotions" />
-      <Promotions />
+      {may ? <Promotions /> : <Recent />}
     </Screen>
   );
 }

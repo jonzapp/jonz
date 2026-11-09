@@ -1,4 +1,4 @@
-import { OVERVIEW_COPY, type HouseDetail, type HouseRow, type Overview } from '@app/core';
+import { OVERVIEW_COPY, OWNER_PERMISSION_NAMES, type HouseDetail, type HouseRow, type Overview } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 import { useWindowDimensions } from 'react-native';
 
@@ -103,7 +103,7 @@ const OVERVIEW: Overview = {
 beforeEach(() => {
   jest.clearAllMocks();
   (useWindowDimensions as jest.Mock).mockReturnValue(PHONE);
-  jest.mocked(ownerStatus).mockResolvedValue({ owner: true, mfa: true });
+  jest.mocked(ownerStatus).mockResolvedValue({ owner: true, mfa: true, permissions: [...OWNER_PERMISSION_NAMES] });
   jest.mocked(liveNotices).mockResolvedValue([]);
   jest.mocked(ownerOverview).mockResolvedValue({ overview: OVERVIEW, ms: 120 });
   jest.mocked(housesPage).mockResolvedValue({ items: [ELM, FLAT], more: false });

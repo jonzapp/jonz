@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { HOUSE_MATRIX } from "./permission-matrix";
+import { OWNER_PERMISSION_NAMES, OWNER_ROLES, ownerCan } from "./owner-moves";
+import { HOUSE_MATRIX, OWNER_MATRIX } from "./permission-matrix";
 import { can, HOUSE_ROLES, memberCan, PERMISSION_NAMES } from "./permissions";
 
 describe("the house permission matrix", () => {
@@ -16,6 +17,19 @@ describe("the house permission matrix", () => {
       }
       expect(can(null, permission), `outsider ${permission}`).toBe(false);
       expect(memberCan(null, permission), `outsider ${permission}`).toBe(false);
+    });
+  }
+});
+
+describe("the owner permission matrix", () => {
+  it("has a row for every app permission and nothing else", () => {
+    expect(Object.keys(OWNER_MATRIX).sort()).toEqual([...OWNER_PERMISSION_NAMES].sort());
+  });
+
+  for (const permission of OWNER_PERMISSION_NAMES) {
+    it(`${permission}: each app role gets exactly its cell`, () => {
+      for (const role of OWNER_ROLES) expect(ownerCan(role, permission), `${role} ${permission}`).toBe(OWNER_MATRIX[permission][role]);
+      expect(ownerCan(null, permission), `nobody ${permission}`).toBe(false);
     });
   }
 });

@@ -127,16 +127,19 @@ export type Database = {
         Row: {
           added_at: string
           created_at: string
+          role: string
           user_id: string
         }
         Insert: {
           added_at?: string
           created_at?: string
+          role?: string
           user_id: string
         }
         Update: {
           added_at?: string
           created_at?: string
+          role?: string
           user_id?: string
         }
         Relationships: [
@@ -146,6 +149,32 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      app_role_permissions: {
+        Row: {
+          created_at: string
+          permission: string
+          role: string
+        }
+        Insert: {
+          created_at?: string
+          permission: string
+          role: string
+        }
+        Update: {
+          created_at?: string
+          permission?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_role_permissions_permission_fkey"
+            columns: ["permission"]
+            isOneToOne: false
+            referencedRelation: "permissions"
+            referencedColumns: ["name"]
           },
         ]
       }
@@ -1673,16 +1702,19 @@ export type Database = {
           about: string
           created_at: string
           name: string
+          scope: string
         }
         Insert: {
           about: string
           created_at?: string
           name: string
+          scope?: string
         }
         Update: {
           about?: string
           created_at?: string
           name?: string
+          scope?: string
         }
         Relationships: []
       }
@@ -2594,6 +2626,7 @@ export type Database = {
         Returns: undefined
       }
       can: { Args: { h: string; perm: string }; Returns: boolean }
+      can_app: { Args: { perm: string }; Returns: boolean }
       can_upload_proof: { Args: { object_name: string }; Returns: boolean }
       cancel_away: { Args: { p_away: string }; Returns: undefined }
       cast_vote: {
@@ -2769,6 +2802,8 @@ export type Database = {
           pass_state: string | null
         }[]
       }
+      my_app_permissions: { Args: never; Returns: string[] }
+      my_app_role: { Args: never; Returns: string }
       my_permissions: { Args: { h: string }; Returns: string[] }
       my_open_assignment: {
         Args: { p_assignment: string }

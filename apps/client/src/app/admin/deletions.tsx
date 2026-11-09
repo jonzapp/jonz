@@ -33,6 +33,7 @@ import { TitleBar } from '@/components/title-bar';
 import { useToast } from '@/components/toast';
 import { useNow } from '@/hooks/use-now';
 import { SPACE, TABULAR, useTheme } from '@/theme';
+import { useOwnerMay } from '@/components/admin/use-owner-may';
 import { AdminSwitch } from '@/components/admin/admin-shell';
 
 const KEY = ['owner-deletions'];
@@ -79,10 +80,13 @@ function Deletions({ busy }: { busy: BusyList<PendingDeletion> }) {
   const now = useNow();
   const [chosen, setChosen] = useState<PendingDeletion | null>(null);
   const [byEmail, setByEmail] = useState(false);
+  // Someone whose app role can't run deletions (support) sees the list, with nothing to open.
+  const may = useOwnerMay('deletions:write');
+  const choose = may ? setChosen : undefined;
   const list = (
     <>
       {/* On a laptop the side panel starts one by email, until someone is chosen. */}
-      {two ? null : (
+      {two || !may ? null : (
         <Group>
           <Row leading={<RowIcon icon={MailIcon} />} title={ADMIN_COPY.byEmail} onPress={() => setByEmail(true)} chevron testID="delete-by-email" />
         </Group>
@@ -109,7 +113,7 @@ function Deletions({ busy }: { busy: BusyList<PendingDeletion> }) {
               quiet={['email', 'house', 'asked']}
               strong={['name']}
               chosen={chosen?.userId === person.userId}
-              onPress={() => setChosen(person)}
+              onPress={choose ? () => choose(person) : undefined}
               accessibilityLabel={[
                 person.name,
                 cells.email,
@@ -136,8 +140,8 @@ function Deletions({ busy }: { busy: BusyList<PendingDeletion> }) {
               .join('\n')}
             metaLines={2}
             trailing={<Left iso={person.deleteAfter} now={now} />}
-            onPress={() => setChosen(person)}
-            chevron
+            onPress={choose ? () => choose(person) : undefined}
+            chevron={may}
             testID={`deletion-${person.userId}`}
           />
         )}
@@ -145,6 +149,7 @@ function Deletions({ busy }: { busy: BusyList<PendingDeletion> }) {
       />
     </>
   );
+  if (!may) return list;
   if (two) {
     return (
       <Columns

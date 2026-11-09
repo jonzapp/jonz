@@ -2,9 +2,11 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   OWNER_ASK_COVERAGE,
+  OWNER_MATRIX,
   OWNER_MOVE_PERMISSION,
   OWNER_MOVES_MAX,
   OWNER_PERMISSION_NAMES,
+  OWNER_ROLES,
   OWNER_WRITE_TOOLS,
   OwnerMove,
   type OwnerMove as Move,
@@ -172,8 +174,21 @@ describe("ownerWrites", () => {
     expect(moves).toHaveLength(OWNER_MOVES_MAX);
   });
 
-  it("gives an owner every move", () => {
+  it("gives each app role exactly its column of the owner matrix", () => {
     const { caller: c } = caller({});
-    expect(Object.values(ownerWrites(c, "owner", NOW, []).may).every(Boolean)).toBe(true);
+    for (const role of OWNER_ROLES) {
+      const { may } = ownerWrites(c, role, NOW, []);
+      for (const p of OWNER_PERMISSION_NAMES) expect(may[p], `${role} ${p}`).toBe(OWNER_MATRIX[p][role]);
+    }
+  });
+
+  it("keeps a move the role can't make off the card", async () => {
+    const { caller: c } = caller({}, { id: NOTICE, title: "Down for a bit", ends_at: null });
+    const moves: Move[] = [];
+    const said = await ownerWrites(c, "support", NOW, moves).endNotice(NOTICE);
+    expect(said).toMatchObject({ ok: false, said: expect.stringContaining("your role") });
+    expect(moves).toEqual([]);
+    // The same move an owner may put on the card.
+    expect(await ownerWrites(c, "owner", NOW, moves).endNotice(NOTICE)).toMatchObject({ ok: true });
   });
 });

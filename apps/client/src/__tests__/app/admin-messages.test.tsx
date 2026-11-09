@@ -1,4 +1,4 @@
-import { MESSAGE_COPY } from '@app/core';
+import { MESSAGE_COPY, OWNER_PERMISSION_NAMES } from '@app/core';
 import { act, fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 import { useWindowDimensions } from 'react-native';
 
@@ -53,7 +53,7 @@ const WELCOME: SentRow = {
 beforeEach(() => {
   jest.clearAllMocks();
   (useWindowDimensions as jest.Mock).mockReturnValue(PHONE);
-  jest.mocked(ownerStatus).mockResolvedValue({ owner: true, mfa: true });
+  jest.mocked(ownerStatus).mockResolvedValue({ owner: true, mfa: true, permissions: [...OWNER_PERMISSION_NAMES] });
   jest.mocked(messageReach).mockResolvedValue({ people: 5, push: 4, email: 5, houses: 1 });
   jest.mocked(findHouses).mockResolvedValue([{ id: 'h1', name: 'Elm Street', people: 5 }]);
   jest.mocked(findPeople).mockResolvedValue([{ id: 'u1', name: 'Ava', email: 'ava@example.com', houseName: 'Elm Street' }]);

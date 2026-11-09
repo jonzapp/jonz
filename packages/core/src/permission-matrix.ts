@@ -1,3 +1,4 @@
+import type { OwnerPermission } from "./owner-moves";
 import type { Permission } from "./permissions";
 
 // Who may do what, written out cell by cell: the answer key the permission
@@ -31,4 +32,18 @@ export const HOUSE_MATRIX: Record<Permission, { member: boolean; admin: boolean 
   "ticks:write": { member: false, admin: true },
   "pocket_money:write": { member: false, admin: true },
   "members:write": { member: false, admin: true },
+};
+
+/**
+ * Whether an owner and a support helper may do each app permission, on the
+ * admin pages. Anyone else, or an owner who hasn't given their code this
+ * session, may do none of them.
+ */
+export const OWNER_MATRIX: Record<OwnerPermission, { owner: boolean; support: boolean }> = {
+  "admin:read": { owner: true, support: true },
+  "reports:write": { owner: true, support: true },
+  "notices:write": { owner: true, support: false },
+  "messages:write": { owner: true, support: false },
+  "promotions:write": { owner: true, support: false },
+  "deletions:write": { owner: true, support: false },
 };

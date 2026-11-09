@@ -5,9 +5,11 @@ import {
   DEFAULT_RULES,
   howItWorks,
   OWNER_ASK_COPY,
+  OWNER_MOVE_PERMISSION,
   OWNER_MOVES_MAX,
   OWNER_PERMISSION_NAMES,
   OwnerMove,
+  OWNER_ROLES,
   ownerCan,
   promotionTitle,
   termsOf,
@@ -162,6 +164,9 @@ const isId = (given: string, id: string) => {
 };
 const ONE_OF = (what: string, read: string) => ({ ok: false, said: `No ${what} has that id: ${read} gives it.` }) as EditResult;
 
+/** What Jonz is told when a move needs a permission the person's app role hasn't got. */
+const NOT_YOURS = "That isn't something your role on the admin pages can do.";
+
 /**
  * The moves Jonz can put on the owner's card, into `moves`. Each looks up
  * what it names as the owner first, as the admin page would show it, so the
@@ -176,6 +181,7 @@ export function ownerWrites(caller: Caller, role: OwnerRole, now: Date, moves: O
     const parsed = OwnerMove.safeParse(move);
     if (!parsed.success) return { ok: false, said: `That won't go on the card: ${parsed.error.issues.map((i) => `${i.path.join(".") || "it"} ${i.message}`).join("; ")}.` };
     const m = parsed.data;
+    if (!may[OWNER_MOVE_PERMISSION[m.kind]]) return { ok: false, said: NOT_YOURS };
     if (moves.length >= OWNER_MOVES_MAX) return { ok: false, said: `That's ${OWNER_MOVES_MAX} on the card already.` };
     if (moves.some((o) => JSON.stringify(o) === JSON.stringify(m))) return { ok: true, said: "Already on the card." };
     moves.push(m);
@@ -310,10 +316,11 @@ export async function ownerTurn(
   ask: (messages: readonly ChatMessage[], today: string, reads: OwnerReads, writes: OwnerWrites) => Promise<AgentAnswer> = askOwnerClaude,
 ): Promise<{ refusal: Refusal } | OwnerAskResponse> {
   const { data: status } = await caller.db.rpc("owner_status");
-  const { owner, mfa } = (status ?? {}) as { owner?: boolean; mfa?: boolean };
-  if (!owner || !mfa) return { refusal: { code: "42501", message: "owner_only" } };
-  // Every owner is a full owner today (OWNER_ROLE_PERMISSIONS); the role is what decides Jonz's tools.
-  const role: OwnerRole = "owner";
+  // The app role (owner, or support) decides which of Jonz's write tools it gets (OWNER_ROLE_PERMISSIONS);
+  // owner_status gives it only with the code this session.
+  const { mfa, role: appRole } = (status ?? {}) as { mfa?: boolean; role?: unknown };
+  const role = OWNER_ROLES.find((r) => r === appRole);
+  if (!mfa || !role) return { refusal: { code: "42501", message: "owner_only" } };
 
   const offline: OwnerAskResponse = { reply: OWNER_ASK_COPY.offline, ask: null, source: "offline" };
   if (!canAsk() && ask === askOwnerClaude) return offline;

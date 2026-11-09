@@ -6,6 +6,7 @@ import {
   humanError,
   NOTICE_KINDS,
   noticeFromRow,
+  OWNER_PERMISSION_NAMES,
   OwnerAskResponse,
   noticeSearchFilter,
   qrShape,
@@ -17,6 +18,7 @@ import {
   type ListAsk,
   type Notice,
   type NoticeKind,
+  type OwnerPermission,
   type PendingDeletion,
   type QrShape,
   type SavedTurn,
@@ -30,17 +32,25 @@ import { supabase } from './supabase';
 // here goes through the owner's own session, and the database decides: it
 // answers an owner who has passed their code, and refuses everyone else.
 
-/** Whether this account is the owner, and whether this session has passed the code. */
+/**
+ * Whether this account has an app role (owner, or support), whether this
+ * session has passed the code, and, once it has, what the role may do
+ * (packages/core owner-moves.ts), so the pages offer only that.
+ */
 export interface OwnerStatus {
   owner: boolean;
   mfa: boolean;
+  permissions: OwnerPermission[];
 }
 
 export async function ownerStatus(): Promise<OwnerStatus> {
   const { data, error } = await supabase.rpc('owner_status');
   if (error) throw new Error(humanError(error));
-  const status = data as Partial<OwnerStatus> | null;
-  return { owner: status?.owner === true, mfa: status?.mfa === true };
+  const status = data as { owner?: unknown; mfa?: unknown; permissions?: unknown } | null;
+  const permissions = Array.isArray(status?.permissions)
+    ? status.permissions.filter((p): p is OwnerPermission => (OWNER_PERMISSION_NAMES as readonly unknown[]).includes(p))
+    : [];
+  return { owner: status?.owner === true, mfa: status?.mfa === true, permissions };
 }
 
 /** The account's authenticator, if it has one that has been checked. */

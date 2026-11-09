@@ -36,6 +36,7 @@ import { TextButton } from '@/components/text-button';
 import { TitleBar } from '@/components/title-bar';
 import { useToast } from '@/components/toast';
 import { FORM_MAX, SPACE } from '@/theme';
+import { useOwnerMay } from '@/components/admin/use-owner-may';
 import { AdminSwitch } from '@/components/admin/admin-shell';
 
 const SENT_KEY = ['owner-sent'] as const;
@@ -59,10 +60,12 @@ const START: Form = { audience: 'house', picked: null, subject: '', body: '', wa
  * phone they're under it, and the preview opens as a sheet.
  */
 export default function MessagesPage() {
+  // Someone whose app role can't send (support) sees only what was sent.
+  const may = useOwnerMay('messages:write');
   return (
     <Screen spreads bar={<TitleBar title={MESSAGE_COPY.page} />} testID="admin-messages">
       <AdminSwitch page="messages" />
-      <Messages />
+      {may ? <Messages /> : <RecentlySent />}
     </Screen>
   );
 }
