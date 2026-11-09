@@ -1,0 +1,26 @@
+{
+  "name": "@app/server",
+  "version": "0.0.0",
+  "private": true,
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --project unit",
+    "test:db": "vitest run --project db"
+  },
+  "dependencies": {
+    "@app/core": "*",
+    "jose": "^6.2.16",
+    "postgres": "^4.1.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "eslint": "^9",
+    "typescript": "^5",
+    "typescript-eslint": "^8.46.0",
+    "vitest": "^4.1.9"
+  }
+}

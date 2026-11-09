@@ -1,0 +1,30 @@
+{
+  "name": "v1",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --project unit",
+    "test:db": "vitest run --project db",
+    "openapi": "tsx scripts/openapi.ts"
+  },
+  "dependencies": {
+    "@app/core": "*",
+    "@app/server": "*",
+    "fastify": "^5.12.8",
+    "zod": "^4.4.3",
+    "tsx": "^4.23.15"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "eslint": "^9",
+    "jose": "^6.2.16",
+    "postgres": "^4.1.0",
+    "typescript": "^5",
+    "typescript-eslint": "^8.46.0",
+    "vitest": "^4.1.9"
+  }
+}

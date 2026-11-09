@@ -39,6 +39,20 @@ jobs:
       - name: Unit tests
         run: npm test
 
+      # Within /v1 the contract only grows: nothing removed, renamed, retyped or
+      # newly required (docs/specs/api.md). A break is /v2. The unit tests
+      # already fail if apps/v1/openapi.json is out of date with the code.
+      - name: API contract only adds
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch --depth=1 origin "${{ github.base_ref }}"
+          if ! git show "origin/${{ github.base_ref }}:apps/v1/openapi.json" > /tmp/openapi-base.json 2>/dev/null; then
+            echo "No /v1 contract on ${{ github.base_ref }} yet: nothing to compare."
+            exit 0
+          fi
+          docker run --rm -v /tmp:/base -v "$PWD/apps/v1:/head" tufin/oasdiff:v1.37.0 \
+            breaking /base/openapi-base.json /head/openapi.json --fail-on ERR --format githubactions
+
       # The deal's deliberate breaks still fit its code (running them all takes minutes: npm run breaks -w @app/core).
       - name: Deal breaks fit
         run: npm run breaks -w @app/core -- --check

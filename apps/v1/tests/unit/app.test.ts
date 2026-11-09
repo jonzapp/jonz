@@ -1,0 +1,106 @@
+import { readFileSync } from "node:fs";
+
+import { openApi, Problem, type ApiOperation, type Executor, type RequestContext } from "@app/server";
+import { describe, expect, it } from "vitest";
+import { z } from "zod";
+
+import { buildApp } from "../../src/app";
+import { V1_OPERATIONS } from "../../src/operations";
+
+const read: ApiOperation = {
+  name: "list_johns",
+  operation: { about: "Lists Johns.", scope: "house", effect: "read", guard: { by: "permission", permission: "johns:read" }, rpc: { name: "list_johns" } },
+  input: z.object({ houseId: z.uuid(), limit: z.coerce.number().optional() }),
+  output: z.unknown(),
+  http: { method: "GET", path: "/v1/houses/{houseId}/johns" },
+};
+const write: ApiOperation = {
+  ...read,
+  name: "add_john",
+  operation: { ...read.operation, effect: "write", guard: { by: "permission", permission: "johns:write" }, rpc: { name: "add_john" } },
+  http: { method: "POST", path: "/v1/houses/{houseId}/johns" },
+  deprecated: { since: new Date(Date.UTC(2027, 0, 1)), sunset: new Date(Date.UTC(2027, 6, 1)), link: "https://api.jonz.app/docs/changes" },
+};
+const H = "11111111-1111-4111-8111-111111111111";
+
+/** A stand-in executor that records what the HTTP layer handed it. */
+function stub(answer: (name: string, ctx: RequestContext, input: unknown) => unknown) {
+  const calls: { name: string; ctx: RequestContext; input: unknown }[] = [];
+  const execute: Executor = async (name, ctx, input) => {
+    calls.push({ name, ctx, input });
+    const out = answer(name, ctx, input);
+    if (out instanceof Error) throw out;
+    return out as Awaited<ReturnType<Executor>>;
+  };
+  return { calls, app: buildApp({ execute, operations: [read, write] }) };
+}
+
+describe("/v1 over HTTP", () => {
+  it("hands a read its path and query, and the headers that matter", async () => {
+    const { app, calls } = stub(() => ({ status: 200, body: [{ id: 1 }], requestId: "x" }));
+    const res = await app.inject({ method: "GET", url: `/v1/houses/${H}/johns?limit=5`, headers: { authorization: "Bearer t", "jonz-client": "ios/1.4.2 (57)", "request-id": "req_from_phone_1" } });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual([{ id: 1 }]);
+    expect(res.headers["request-id"]).toBe("req_from_phone_1");
+    expect(calls[0]).toMatchObject({ name: "list_johns", input: { houseId: H, limit: "5" }, ctx: { authorization: "Bearer t", client: "ios/1.4.2 (57)", requestId: "req_from_phone_1", via: "api" } });
+  });
+
+  it("hands a write its body and Idempotency-Key, and says when an answer is replayed", async () => {
+    const { app, calls } = stub(() => ({ status: 201, body: { id: "j1" }, replayed: true, requestId: "x" }));
+    const res = await app.inject({ method: "POST", url: `/v1/houses/${H}/johns`, payload: { name: "Bins" }, headers: { "idempotency-key": "k1" } });
+    expect(res.statusCode).toBe(201);
+    expect(res.headers["idempotent-replayed"]).toBe("true");
+    expect(res.headers["request-id"]).toMatch(/^req_[0-9a-f-]{36}$/);
+    expect(calls[0]).toMatchObject({ name: "add_john", input: { houseId: H, name: "Bins" }, ctx: { idempotencyKey: "k1" } });
+  });
+
+  it("marks a deprecated operation with Deprecation, Sunset and a link", async () => {
+    const { app } = stub(() => ({ status: 201, body: null, requestId: "x" }));
+    const res = await app.inject({ method: "POST", url: `/v1/houses/${H}/johns`, payload: {} });
+    expect(res.headers.deprecation).toBe(`@${Date.UTC(2027, 0, 1) / 1000}`);
+    expect(res.headers.sunset).toBe("Thu, 01 Jul 2027 00:00:00 GMT");
+    expect(res.headers.link).toBe('<https://api.jonz.app/docs/changes>; rel="deprecation"');
+  });
+
+  it("answers every refusal as problem+json with its headers", async () => {
+    const { app } = stub(() => new Problem("rate_limited", "Slow down.", { "Retry-After": "12" }));
+    const res = await app.inject({ method: "GET", url: `/v1/houses/${H}/johns` });
+    expect(res.statusCode).toBe(429);
+    expect(res.headers["content-type"]).toContain("application/problem+json");
+    expect(res.headers["retry-after"]).toBe("12");
+    expect(res.json()).toMatchObject({ title: "rate_limited", status: 429, detail: "Slow down.", requestId: res.headers["request-id"] });
+  });
+
+  it("leaks nothing from an unexpected error", async () => {
+    const { app } = stub(() => new Error("password=hunter2 at db.internal:5432"));
+    const res = await app.inject({ method: "GET", url: `/v1/houses/${H}/johns` });
+    expect(res.statusCode).toBe(500);
+    expect(res.body).not.toContain("hunter2");
+    expect(res.json().detail).toBe("Something went wrong on our side.");
+  });
+
+  it("refuses unknown paths, unreadable bodies and a path key sent twice", async () => {
+    const { app, calls } = stub(() => ({ status: 201, body: null, requestId: "x" }));
+    expect((await app.inject({ method: "GET", url: "/v1/nope" })).json()).toMatchObject({ title: "not_found", status: 404 });
+    const bad = await app.inject({ method: "POST", url: `/v1/houses/${H}/johns`, payload: "{not json", headers: { "content-type": "application/json" } });
+    expect(bad.statusCode).toBe(400);
+    expect(bad.json().title).toBe("invalid_input");
+    const twice = await app.inject({ method: "POST", url: `/v1/houses/${H}/johns`, payload: { houseId: "22222222-2222-4222-8222-222222222222" } });
+    expect(twice.json().title).toBe("invalid_input");
+    const array = await app.inject({ method: "POST", url: `/v1/houses/${H}/johns`, payload: [1] });
+    expect(array.statusCode).toBe(400);
+    expect(calls).toHaveLength(0);
+  });
+
+  it("serves its contract", async () => {
+    const { app } = stub(() => null);
+    const doc = (await app.inject({ method: "GET", url: "/v1/openapi.json" })).json();
+    expect(Object.keys(doc.paths)).toEqual(["/v1/houses/{houseId}/johns"]);
+    expect(doc.paths["/v1/houses/{houseId}/johns"].post.deprecated).toBe(true);
+  });
+
+  it("keeps apps/v1/openapi.json up to date (npm run openapi -w v1)", () => {
+    const committed = JSON.parse(readFileSync(new URL("../../openapi.json", import.meta.url), "utf8"));
+    expect(committed).toEqual(openApi(V1_OPERATIONS));
+  });
+});
