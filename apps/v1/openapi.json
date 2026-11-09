@@ -1941,7 +1941,7 @@
                         ]
                       },
                       "data": {
-                        "$ref": "#/$defs/__schema0"
+                        "$ref": "#/components/schemas/house_history_output___schema0"
                       },
                       "createdAt": {
                         "type": "string",
@@ -1990,39 +1990,6 @@
                       "reach"
                     ],
                     "additionalProperties": false
-                  },
-                  "$defs": {
-                    "__schema0": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "number"
-                        },
-                        {
-                          "type": "boolean"
-                        },
-                        {
-                          "type": "null"
-                        },
-                        {
-                          "type": "array",
-                          "items": {
-                            "$ref": "#/$defs/__schema0"
-                          }
-                        },
-                        {
-                          "type": "object",
-                          "propertyNames": {
-                            "type": "string"
-                          },
-                          "additionalProperties": {
-                            "$ref": "#/$defs/__schema0"
-                          }
-                        }
-                      ]
-                    }
                   }
                 }
               }
@@ -6717,7 +6684,7 @@
                         "amountOff": {
                           "anyOf": [
                             {
-                              "$ref": "#/$defs/__schema0"
+                              "$ref": "#/components/schemas/owner_promotion_output___schema0"
                             },
                             {
                               "type": "null"
@@ -6962,40 +6929,7 @@
                     {
                       "type": "null"
                     }
-                  ],
-                  "$defs": {
-                    "__schema0": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "number"
-                        },
-                        {
-                          "type": "boolean"
-                        },
-                        {
-                          "type": "null"
-                        },
-                        {
-                          "type": "array",
-                          "items": {
-                            "$ref": "#/$defs/__schema0"
-                          }
-                        },
-                        {
-                          "type": "object",
-                          "propertyNames": {
-                            "type": "string"
-                          },
-                          "additionalProperties": {
-                            "$ref": "#/$defs/__schema0"
-                          }
-                        }
-                      ]
-                    }
-                  }
+                  ]
                 }
               }
             }
@@ -7106,7 +7040,7 @@
                       "amountOff": {
                         "anyOf": [
                           {
-                            "$ref": "#/$defs/__schema0"
+                            "$ref": "#/components/schemas/owner_promotions_find_output___schema0"
                           },
                           {
                             "type": "null"
@@ -7210,39 +7144,6 @@
                       "state"
                     ],
                     "additionalProperties": false
-                  },
-                  "$defs": {
-                    "__schema0": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "number"
-                        },
-                        {
-                          "type": "boolean"
-                        },
-                        {
-                          "type": "null"
-                        },
-                        {
-                          "type": "array",
-                          "items": {
-                            "$ref": "#/$defs/__schema0"
-                          }
-                        },
-                        {
-                          "type": "object",
-                          "propertyNames": {
-                            "type": "string"
-                          },
-                          "additionalProperties": {
-                            "$ref": "#/$defs/__schema0"
-                          }
-                        }
-                      ]
-                    }
                   }
                 }
               }
@@ -7376,7 +7277,7 @@
                           "amountOff": {
                             "anyOf": [
                               {
-                                "$ref": "#/$defs/__schema0"
+                                "$ref": "#/components/schemas/owner_promotions_page_output___schema0"
                               },
                               {
                                 "type": "null"
@@ -7497,40 +7398,7 @@
                     "hasMore",
                     "startingAfter"
                   ],
-                  "additionalProperties": false,
-                  "$defs": {
-                    "__schema0": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "number"
-                        },
-                        {
-                          "type": "boolean"
-                        },
-                        {
-                          "type": "null"
-                        },
-                        {
-                          "type": "array",
-                          "items": {
-                            "$ref": "#/$defs/__schema0"
-                          }
-                        },
-                        {
-                          "type": "object",
-                          "propertyNames": {
-                            "type": "string"
-                          },
-                          "additionalProperties": {
-                            "$ref": "#/$defs/__schema0"
-                          }
-                        }
-                      ]
-                    }
-                  }
+                  "additionalProperties": false
                 }
               }
             }
@@ -8721,7 +8589,7 @@
                     "details": {
                       "anyOf": [
                         {
-                          "$ref": "#/$defs/__schema0"
+                          "$ref": "#/components/schemas/owner_open_report_output___schema0"
                         },
                         {
                           "type": "null"
@@ -8887,40 +8755,7 @@
                     "also",
                     "messages"
                   ],
-                  "additionalProperties": false,
-                  "$defs": {
-                    "__schema0": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "number"
-                        },
-                        {
-                          "type": "boolean"
-                        },
-                        {
-                          "type": "null"
-                        },
-                        {
-                          "type": "array",
-                          "items": {
-                            "$ref": "#/$defs/__schema0"
-                          }
-                        },
-                        {
-                          "type": "object",
-                          "propertyNames": {
-                            "type": "string"
-                          },
-                          "additionalProperties": {
-                            "$ref": "#/$defs/__schema0"
-                          }
-                        }
-                      ]
-                    }
-                  }
+                  "additionalProperties": false
                 }
               }
             }
@@ -9874,6 +9709,161 @@
       }
     },
     "schemas": {
+      "house_history_output___schema0": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "number"
+          },
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "null"
+          },
+          {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/house_history_output___schema0"
+            }
+          },
+          {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "$ref": "#/components/schemas/house_history_output___schema0"
+            }
+          }
+        ]
+      },
+      "owner_promotion_output___schema0": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "number"
+          },
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "null"
+          },
+          {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/owner_promotion_output___schema0"
+            }
+          },
+          {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "$ref": "#/components/schemas/owner_promotion_output___schema0"
+            }
+          }
+        ]
+      },
+      "owner_promotions_find_output___schema0": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "number"
+          },
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "null"
+          },
+          {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/owner_promotions_find_output___schema0"
+            }
+          },
+          {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "$ref": "#/components/schemas/owner_promotions_find_output___schema0"
+            }
+          }
+        ]
+      },
+      "owner_promotions_page_output___schema0": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "number"
+          },
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "null"
+          },
+          {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/owner_promotions_page_output___schema0"
+            }
+          },
+          {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "$ref": "#/components/schemas/owner_promotions_page_output___schema0"
+            }
+          }
+        ]
+      },
+      "owner_open_report_output___schema0": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "number"
+          },
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "null"
+          },
+          {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/owner_open_report_output___schema0"
+            }
+          },
+          {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "$ref": "#/components/schemas/owner_open_report_output___schema0"
+            }
+          }
+        ]
+      },
       "Problem": {
         "type": "object",
         "required": [
