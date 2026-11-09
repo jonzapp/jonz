@@ -14,7 +14,9 @@
   },
   "dependencies": {
     "@app/core": "*",
+    "@app/server": "*",
     "@date-fns/tz": "^1.5.0",
+    "@modelcontextprotocol/server": "^2.4.0",
     "@supabase/supabase-js": "^2.110.0",
     "ai": "^7.0.139",
     "next": "16.2.10",
@@ -35,7 +37,9 @@
     "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
+    "jose": "^6.2.16",
     "jsqr": "^1.4.0",
+    "postgres": "^4.1.0",
     "typescript": "^5",
     "vitest": "^4.1.9"
   }

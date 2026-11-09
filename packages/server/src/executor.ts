@@ -3,6 +3,7 @@
 //
 //   client version → token → rate limit → input →
 //   [one transaction] idempotency → [as the person] permission → House Pass →
+//   [as the API] the person's approval, for a connected app's destructive write →
 //   the database function (or the operation's server handler) →
 //   output → [as the API] audit row + idempotency record
 //
@@ -75,6 +76,8 @@ export interface ExecutorOptions {
   /** The clock, for Pass checks, rate-limit windows and key expiry. Tests pass a pretend one. */
   now?: () => Date;
   passEnforced?: boolean;
+  /** Where the person approves a connected app's request, by its id. */
+  approvalUrl?: (id: string) => string;
 }
 
 export interface Result {
@@ -85,6 +88,17 @@ export interface Result {
 }
 
 export const IDEMPOTENCY_TTL_MS = 86_400_000;
+/** How long a connected app's request waits for the person's approval, and an approval for the app's retry. */
+export const APPROVAL_TTL_MS = 15 * 60_000;
+export const APPROVAL_URL = (id: string) => `https://jonz.app/approve/${id}`;
+
+/**
+ * Whether this request needs the person's own approval in Jonz first: a
+ * write that can't be undone (`destructive`), asked by a connected app
+ * (through /mcp, or with an OAuth client's token anywhere).
+ */
+export const needsApproval = (op: Operation, claims: Claims, via: RequestContext["via"]) =>
+  op.destructive === true && (via === "mcp" || typeof claims.client_id === "string");
 /** The least notice before a deprecated operation may go: six months (182 days). */
 export const SUNSET_NOTICE_MS = 182 * 86_400_000;
 
@@ -140,6 +154,7 @@ export function createExecutor(options: ExecutorOptions) {
   const limits = options.limits ?? { read: 300, write: 60 };
   const enforced = options.passEnforced ?? PASS_ENFORCED;
   const signatureOf = signatures(sql);
+  const approvalUrl = options.approvalUrl ?? APPROVAL_URL;
   const byName = new Map(options.operations.map((o) => [o.name, o]));
 
   for (const op of options.operations) {
@@ -211,6 +226,47 @@ export function createExecutor(options: ExecutorOptions) {
     }
   }
 
+  /**
+   * Uses the person's approval of exactly this request, once: true if there
+   * was one. Runs as the API, in the operation's own transaction, so a write
+   * that then fails leaves the approval unused.
+   */
+  async function useApproval(tx: Tx, userId: string, hash: string, at: Date): Promise<boolean> {
+    const [used] = await tx<{ id: string }[]>`
+      update public.api_approvals set used_at = ${at}
+      where id = (
+        select id from public.api_approvals
+        where user_id = ${userId}::uuid and request_hash = ${hash} and approved_at is not null
+          and used_at is null and expires_at > ${at}
+        order by approved_at
+        limit 1
+        for update skip locked)
+      returning id`;
+    return Boolean(used);
+  }
+
+  /** Asks the person: the same waiting request again, or a new one. Throws forbidden with the approvalUrl, or plain forbidden if they said no. */
+  async function askApproval(name: string, input: Record<string, unknown>, claims: Claims, hash: string, house: string | null, at: Date): Promise<never> {
+    const [latest] = await sql<{ id: string; declined_at: Date | null }[]>`
+      select id, declined_at from public.api_approvals
+      where user_id = ${claims.sub}::uuid and request_hash = ${hash} and approved_at is null and expires_at > ${at}
+      order by created_at desc
+      limit 1`;
+    if (latest?.declined_at) throw new Problem("forbidden", "You said no to this in Jonz.");
+    const id =
+      latest?.id ??
+      (
+        await sql<{ id: string }[]>`
+          insert into public.api_approvals (user_id, operation, request_hash, input, house_id, client_id, expires_at, created_at)
+          values (${claims.sub}::uuid, ${name}, ${hash}, ${sql.json(input as postgres.JSONValue)}, ${house}::uuid,
+                  ${typeof claims.client_id === "string" ? claims.client_id.slice(0, 100) : null},
+                  ${new Date(at.getTime() + APPROVAL_TTL_MS)}, ${at})
+          returning id`
+      )[0].id;
+    const url = approvalUrl(id);
+    throw new Problem("forbidden", `This can't be undone, so approve it in Jonz first: ${url}`, {}, { approvalUrl: url });
+  }
+
   async function execute(name: string, context: RequestContext, rawInput: unknown): Promise<Result> {
     const requestId = context.requestId ?? randomUUID();
     try {
@@ -238,7 +294,8 @@ export function createExecutor(options: ExecutorOptions) {
 
     const key = effect === "write" ? context.idempotencyKey?.trim() || null : null;
     if (key && key.length > 255) throw new Problem("invalid_input", "Idempotency-Key is longer than 255 characters.");
-    const hash = key ? requestHash(name, input) : null;
+    const approval = needsApproval(op.operation, claims, context.via);
+    const hash = key || approval ? requestHash(name, input) : null;
     const status = effect === "write" ? 201 : 200;
     const fn = op.operation.rpc?.name;
     const signature = op.handler || !fn ? null : await signatureOf(fn);
@@ -260,6 +317,11 @@ export function createExecutor(options: ExecutorOptions) {
         const house = await houseOf(tx, op, input);
         await guard(tx, op, house);
         await entitlement(tx, op, house, input, at);
+        if (approval) {
+          await becomeApi(tx);
+          if (!(await useApproval(tx, claims.sub, hash!, at))) return { ask: house };
+          await becomePerson(tx, claims);
+        }
         const raw = op.handler
           ? await op.handler({ tx, claims, input, now: at })
           : await callFunction(tx, signature!, fn!, (op.rpcArgs ?? defaultRpcArgs)(input));
@@ -294,8 +356,10 @@ export function createExecutor(options: ExecutorOptions) {
           }
         }
         return { body, replayed: false, status };
-      })) as { body: unknown; replayed: boolean; status: 200 | 201 };
+      })) as { body: unknown; replayed: boolean; status: 200 | 201 } | { ask: string | null };
 
+    // Nothing ran: the person hasn't approved this yet.
+    if ("ask" in outcome) return askApproval(name, input, claims, hash!, outcome.ask, at);
     return outcome.replayed ? { ...outcome, requestId } : { status: outcome.status, body: outcome.body, requestId };
   }
 

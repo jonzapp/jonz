@@ -120,6 +120,7 @@ export function openApi(operations: readonly ApiOperation[], server = "https://a
             status: { type: "integer" },
             detail: { type: "string" },
             requestId: { type: "string" },
+            approvalUrl: { type: "string", format: "uri", description: "A connected app's request that can't be undone: where the person approves it in Jonz, before the app tries again." },
           },
         },
       },

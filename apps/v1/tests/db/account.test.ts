@@ -1,5 +1,5 @@
 // Your account's operations over /v1, each its database function run as
-// you (migration 20261220090000): what the app's own table queries did.
+// you (migration 20261221100000): what the app's own table queries did.
 
 import { randomBytes, randomUUID } from "node:crypto";
 

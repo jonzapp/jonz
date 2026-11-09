@@ -15,13 +15,13 @@ const SECURITY_HEADERS = [
 /** The site. Everything here that is not the API belongs to it. */
 const SITE = "https://jonz.app";
 
-/** Any other path outside `/api`, `/v1` and `/mcp` (the bare origin has its own rule). */
-const NOT_API = "/:path((?!(?:api|v1|mcp)(?:/|$)).*)";
+/** Any other path outside `/api`, `/v1`, `/mcp` and `/.well-known` (MCP sign-in metadata) (the bare origin has its own rule). */
+const NOT_API = "/:path((?!(?:api|v1|mcp|\\.well-known)(?:/|$)).*)";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   // /v1 (apps/v1) runs on Node as it is: Fastify and the Postgres driver aren't bundled.
-  serverExternalPackages: ["fastify", "postgres"],
+  serverExternalPackages: ["fastify", "postgres", "@modelcontextprotocol/server"],
   // The link-preview cards read Overpass off the disk (lib/share/card.tsx).
   outputFileTracingIncludes: { "/api/og/**": ["./assets/fonts/**"] },
   async headers() {

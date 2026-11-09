@@ -382,6 +382,26 @@ export const OPERATION_IO = {
   account_deletion_status: io(none, z.object({ deleteAfter: at, requestedBy: text }).nullable(), "GET /v1/me/deletion"),
   request_account_deletion: io(none, at, "POST /v1/me/deletion"),
   keep_account: io(none, nothing, "DELETE /v1/me/deletion"),
+  api_approval: io(
+    z.object({ approvalId: id }),
+    z
+      .object({
+        id,
+        operation: text,
+        input: z.record(z.string(), z.json()),
+        houseId: id.nullable(),
+        houseName: text.nullable(),
+        createdAt: at,
+        expiresAt: at,
+        approvedAt: at.nullable(),
+        declinedAt: at.nullable(),
+        usedAt: at.nullable(),
+      })
+      .nullable(),
+    "GET /v1/me/approvals/{approvalId}",
+    { args: { approvalId: "p_id" } },
+  ),
+  answer_api_approval: io(z.object({ approvalId: id, approve: z.boolean() }), nothing, "POST /v1/me/approvals/{approvalId}", { args: { approvalId: "p_id" } }),
   my_reports: io(
     none,
     z.array(

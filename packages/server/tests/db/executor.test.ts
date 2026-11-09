@@ -15,7 +15,7 @@ import { z } from "zod";
 
 import type { Claims, TokenVerifier } from "../../src/auth";
 import { connect, type Sql } from "../../src/db";
-import { createExecutor, type ApiOperation, type ExecutorOptions } from "../../src/executor";
+import { createExecutor, needsApproval, type ApiOperation, type ExecutorOptions } from "../../src/executor";
 import { Problem } from "../../src/problem";
 
 const DB_URL = process.env.DB_URL ?? "postgresql://postgres:postgres@127.0.0.1:54342/postgres";
@@ -87,6 +87,8 @@ beforeAll(async () => {
     await admin`insert into auth.users (id, email, raw_user_meta_data) values (${id}::uuid, ${`${name}-${id}@test.jonz.app`}, ${admin.json({ full_name: name })})`;
     tokens[name] = { sub: id, role: "authenticated", aud: "authenticated", aal: "aal1" };
   }
+  // Alice's token as a connected app (an OAuth client) holds it.
+  tokens["alice-app"] = { ...tokens.alice, client_id: "some-app" };
 });
 
 afterAll(async () => {
@@ -238,8 +240,78 @@ describe("the executor", () => {
     await expect(run({ houseId, photoPath: "h/a.jpg" })).rejects.toMatchObject({ code: "pass_required" });
   });
 
+  it("holds a connected app's write that can't be undone until the person approves it in Jonz, then runs it once", async () => {
+    const run = executor({ now: () => minute(10) });
+    const app = { ...as("alice"), via: "mcp" as const };
+    const ask = { houseId, kind: "family" as const };
+    // A house with money in it switches on the 1st: what it will be.
+    const kind = async () => (await admin`select coalesce(next_kind, kind) as kind from public.houses where id = ${houseId}::uuid`)[0].kind;
+    // Only a connected app is held: the person in the app isn't.
+    expect(needsApproval(OPERATIONS.set_house_kind, tokens.alice, "api")).toBe(false);
+    expect(needsApproval(OPERATIONS.set_house_kind, tokens.alice, "mcp")).toBe(true);
+    expect(needsApproval(OPERATIONS.set_house_kind, tokens["alice-app"], "api")).toBe(true);
+    expect(needsApproval(OPERATIONS.my_permissions, tokens.alice, "mcp")).toBe(false);
+
+    // Through MCP: held, and asked of the person; asking again is the same request.
+    const held = await run("set_house_kind", app, ask).catch((e: Problem) => e);
+    expect(held).toMatchObject({ code: "forbidden", status: 403, extra: { approvalUrl: expect.any(String) } });
+    const url = (held as Problem).extra.approvalUrl!;
+    expect(url).toMatch(/^https:\/\/jonz\.app\/approve\/[0-9a-f-]{36}$/);
+    const again = await run("set_house_kind", app, ask).catch((e: Problem) => e);
+    expect((again as Problem).extra.approvalUrl).toBe(url);
+    expect(await kind()).toBe("housemates");
+    const id = url.slice(url.lastIndexOf("/") + 1);
+    const [row] = await admin`select user_id, operation, house_id, input from public.api_approvals where id = ${id}::uuid`;
+    expect(row).toMatchObject({ user_id: people.alice, operation: "set_house_kind", house_id: houseId, input: ask });
+
+    // Someone who can't do it isn't asked at all.
+    await expect(run("set_house_kind", { ...as("carol"), via: "mcp" }, ask)).rejects.toMatchObject({ code: "forbidden" });
+
+    // The connected app's own token can't approve it; nor can anyone else.
+    const answer = (claims: Claims, approve = true) =>
+      admin.begin(async (tx) => {
+        await tx`select set_config('role', 'authenticated', true), set_config('request.jwt.claims', ${JSON.stringify(claims)}, true)`;
+        return tx`select public.answer_api_approval(${id}::uuid, ${approve})`;
+      });
+    await expect(answer({ ...tokens.alice, client_id: "some-app" })).rejects.toMatchObject({ code: "42501" });
+    await expect(answer(tokens.bob)).rejects.toThrow(/isn't there/);
+    // An OAuth client's token is held even outside /mcp.
+    await expect(run("set_house_kind", { ...as("alice"), authorization: "alice-app" }, ask)).rejects.toMatchObject({ code: "forbidden", extra: { approvalUrl: expect.any(String) } });
+
+    // Alice approves it in Jonz: the retry runs, once.
+    await answer(tokens.alice);
+    await expect(answer(tokens.alice)).rejects.toThrow(/already answered/);
+    await expect(run("set_house_kind", app, ask)).resolves.toMatchObject({ status: 201 });
+    expect(await kind()).toBe("family");
+    const [used] = await admin`select used_at from public.api_approvals where id = ${id}::uuid`;
+    expect(used.used_at).toEqual(minute(10));
+    const [audit] = await admin`select via from public.api_audit_entries where user_id = ${people.alice}::uuid and operation = 'set_house_kind'`;
+    expect(audit.via).toBe("mcp");
+    // A different request (back to housemates) needs its own approval.
+    await expect(run("set_house_kind", app, { houseId, kind: "housemates" })).rejects.toMatchObject({ code: "forbidden", extra: { approvalUrl: expect.any(String) } });
+
+    // Declined: said so, and not asked again until it expires.
+    const back = await run("set_house_kind", app, { houseId, kind: "housemates" }).catch((e: Problem) => e);
+    const backId = (back as Problem).extra.approvalUrl!.split("/").pop()!;
+    await admin.begin(async (tx) => {
+      await tx`select set_config('role', 'authenticated', true), set_config('request.jwt.claims', ${JSON.stringify(tokens.alice)}, true)`;
+      await tx`select public.answer_api_approval(${backId}::uuid, false)`;
+    });
+    await expect(run("set_house_kind", app, { houseId, kind: "housemates" })).rejects.toMatchObject({ code: "forbidden", message: "You said no to this in Jonz." });
+    const later = executor({ now: () => new Date(minute(10).getTime() + 16 * 60_000) });
+    const fresh = await later("set_house_kind", app, { houseId, kind: "housemates" }).catch((e: Problem) => e);
+    expect((fresh as Problem).extra.approvalUrl).not.toContain(backId);
+
+    // An approval left too long isn't used.
+    const late = (fresh as Problem).extra.approvalUrl!.split("/").pop()!;
+    await admin`update public.api_approvals set approved_at = ${minute(0)} where id = ${late}::uuid`;
+    const tooLate = executor({ now: () => new Date(minute(10).getTime() + 32 * 60_000) });
+    await expect(tooLate("set_house_kind", app, { houseId, kind: "housemates" })).rejects.toMatchObject({ code: "forbidden", extra: { approvalUrl: expect.any(String) } });
+    expect(await kind()).toBe("family");
+  });
+
   it("keeps its bookkeeping out of people's reach", async () => {
-    for (const table of ["api_audit_entries", "api_idempotency_keys", "api_rate_limits"]) {
+    for (const table of ["api_audit_entries", "api_idempotency_keys", "api_rate_limits", "api_approvals"]) {
       const refused = await api
         .begin(async (tx) => {
           await tx`select set_config('role', 'authenticated', true), set_config('request.jwt.claims', ${JSON.stringify(tokens.alice)}, true)`;

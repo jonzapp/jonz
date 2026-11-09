@@ -121,7 +121,7 @@ Migration `20261219090000_api_layer.sql` sets up the following:
   database function (security invoker, so RLS still decides), and each
   `rpc.server` operation's logic moves from `apps/api` into its handler.
   - Done as database functions: your account (migration
-    `20261220090000`), the house's writes (`20261222090000`), the house's
+    `20261221100000`), the house's writes (`20261222090000`), the house's
     reads (`20261223090000`) and the owner's reads and chats
     (`20261224090000`). Each does what the app's own table queries did.
   - Where core works something out (a John's week and month, a chat's
