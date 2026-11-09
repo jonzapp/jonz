@@ -195,6 +195,18 @@ Migration `20261219090000_api_layer.sql` sets up the following:
     limit. The app opens the next stream just before the old one ends and
     sends `Last-Event-ID`; the API replays what it missed from the events
     table, so no instance remembers anyone.
+  - Server side built. Migration `live_changes` notes each change to a
+    house's events, assignments and disputes (kept two days) and sends
+    `{house, id}` on one of 16 private channels, `live:0` … `live:15`
+    (`live_topic`). With no policies on `realtime.messages`, only the
+    service role can listen. `GET /v1/houses/{houseId}/live` (apps/api,
+    `app/v1/houses/[houseId]/live`) is the stream: it listens first, then
+    asks `house_live` (a member only; also `GET …/live/since`) for the
+    newest change after `Last-Event-ID`, says `change` once if anything
+    was missed, then each new change, pings every 20 s, and ends after
+    280 s. Each `change` only says the house changed; the app reads it
+    again through /v1. `lib/live` keeps one Realtime connection per
+    instance.
   - **Before the app switches,** a test times a tick reaching another
     phone, today's Supabase Realtime against the new path (median and
     95th percentile). It switches only if the new path is within about

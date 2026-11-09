@@ -157,6 +157,7 @@ export const OPERATIONS = {
   live_notices: op({ about: "The notices showing now, at the top of the app", scope: "account", effect: "read", guard: ACCOUNT_READ, rpc: { name: "live_notices" }, tables: ["notices"] }),
 
   // --- A house: reading -----------------------------------------------------------------------
+  house_live: op({ about: "The house's newest change after one the app saw, for its live updates", scope: "house", effect: "read", guard: perm("house:read"), rpc: { name: "house_live_since" }, firstParty: true }),
   house_history: op({ about: "The house's history, a page at a time", scope: "house", effect: "read", guard: perm("history:read"), rpc: { name: "house_history" }, entitlement: "history" }),
   ask_usage: op({ about: "How much of the house's Ask Jonz this month each person has used", scope: "house", effect: "read", guard: perm("house:read"), rpc: { name: "ask_usage_people", server: true }, route: "POST /api/ask/usage" }),
   catch_up: op({ about: "Bring the house up to date: close a finished week, deal the next", scope: "house", effect: "write", guard: perm("house:read"), route: "POST /api/fresh" }),

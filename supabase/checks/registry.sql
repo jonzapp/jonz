@@ -38,6 +38,7 @@ insert into callable values
   ('house_balances'),
   ('house_by_code'),
   ('house_history'),
+  ('house_live_since'),
   ('house_month'),
   ('house_pocket'),
   ('house_record'),
