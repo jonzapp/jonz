@@ -259,6 +259,14 @@ function condition(
       sql = `${left} is ${v}`;
     } else if (op === "in") {
       sql = `${left} = any(${bind(arrayLiteral(value as unknown[]))})`;
+    } else if (op === "cs" || op === "cd" || op === "ov") {
+      // An array column takes Postgres's array literal; an object is JSON.
+      const sym = op === "cs" ? "@>" : op === "cd" ? "<@" : "&&";
+      sql = Array.isArray(value)
+        ? `${left} ${sym} ${bind(arrayLiteral(value))}`
+        : value !== null && typeof value === "object"
+          ? `${left} ${sym} ${bind(value)}::text::jsonb`
+          : `${left} ${sym} ${bind(value)}`;
     } else {
       const sym = OPS[op as keyof typeof OPS];
       if (!sym) throw new Error(`Filter ${op} isn't one we read`);
@@ -446,6 +454,15 @@ export class Builder {
   }
   in(c: string, v: readonly unknown[]) {
     return this.add(c, "in", v);
+  }
+  contains(c: string, v: unknown) {
+    return this.add(c, "cs", v);
+  }
+  containedBy(c: string, v: unknown) {
+    return this.add(c, "cd", v);
+  }
+  overlaps(c: string, v: unknown) {
+    return this.add(c, "ov", v);
   }
   not(c: string, op: string, v: unknown) {
     return this.add(c, op, v, true);

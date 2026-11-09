@@ -186,6 +186,19 @@ describe("restClient", () => {
     ]);
   });
 
+  it("reads contains() as JSON for an object and as an array literal for a list", async () => {
+    const { db, seen } = recording();
+    await db
+      .from("events")
+      .select("id")
+      .contains("data", { message: "m1" })
+      .overlaps("tags", ["a", "b"]);
+    const { text, params } = seen[0];
+    expect(text).toContain(`t0."data" @> $1::text::jsonb`);
+    expect(text).toContain(`t0."tags" && $2`);
+    expect(params).toEqual(['{"message":"m1"}', '{"a","b"}']);
+  });
+
   it("counts without rows for head: true", async () => {
     const { db, seen } = recording([{ n: "3" }]);
     const { count, data } = await db
