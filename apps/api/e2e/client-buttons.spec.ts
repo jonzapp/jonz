@@ -1,5 +1,5 @@
 import { NEXT_UP_COPY } from "@app/core";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page, type Request } from "@playwright/test";
 
 import { CLIENT_URL, cleanUp, dealtHouseInClient, undealtHouseInClient } from "./auth";
 import { expectButtonRules } from "./button-rules";
@@ -19,21 +19,21 @@ const made: string[] = [];
  * The house's live stream (/v1/houses/…/live) stays open by design, so it
  * doesn't count, as "networkidle" would.
  */
-async function readsDone(open: Set<unknown>) {
+async function readsDone(open: Set<Request>) {
   let quietSince = Date.now();
   await expect
     .poll(
       () => {
         if (open.size > 0) quietSince = Date.now();
-        return Date.now() - quietSince >= 500;
+        return Date.now() - quietSince >= 500 ? "quiet" : [...open].map((request) => `${request.method()} ${request.url()}`);
       },
       { timeout: 15_000, intervals: [100] },
     )
-    .toBe(true);
+    .toBe("quiet");
 }
 
-function trackReads(page: Page): Set<unknown> {
-  const open = new Set<unknown>();
+function trackReads(page: Page): Set<Request> {
+  const open = new Set<Request>();
   const counts = (url: string) => !/\/v1\/houses\/[^/]+\/live$/.test(new URL(url).pathname);
   page.on("request", (request) => counts(request.url()) && open.add(request));
   page.on("requestfinished", (request) => open.delete(request));
@@ -96,6 +96,8 @@ test("every page of a dealt house keeps the button rules", async ({ browser }) =
   await expect(page.getByTestId("john-sheet-name")).toHaveText("Bins");
   await expectButtonRules(page, "a John's sheet");
   for (const path of ["/house/johns", "/house/rules", "/house/away", "/house/wall", "/house/you"]) {
+    // What the last page left unanswered went with it.
+    open.clear();
     await page.goto(path);
     await page.waitForLoadState("load");
     await readsDone(open);
