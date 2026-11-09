@@ -22,6 +22,8 @@ module.exports = defineConfig([
       'jonz/no-hand-made-button-row': 'error',
       'jonz/button-in-row': 'error',
       'jonz/no-pressable-in-screens': 'error',
+      'jonz/no-bare-spinner': 'error',
+      'jonz/busy-not-disabled': 'error',
       'jonz/owner-only': 'error',
     },
   },

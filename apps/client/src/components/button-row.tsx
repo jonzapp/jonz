@@ -12,6 +12,10 @@ import { BUTTON_MIN, FORM_MAX, NARROW, SPACE, WIDE } from '@/theme';
 interface RowFit {
   fit: 'share' | 'full' | 'own';
   wrapped: () => void;
+  /** Whether a button in the row is busy, so the others go pale and wait. */
+  busy: boolean;
+  /** How a busy button tells the row it started (true) or finished (false). */
+  setBusy: (busy: boolean) => void;
 }
 
 const RowFitContext = createContext<RowFit | null>(null);
@@ -36,7 +40,8 @@ export function useRowFit(): RowFit | null {
  * or the window is under NARROW, or any button's words would take two
  * lines, they stack at full width, in the order
  * given: put the main action first. Never lay buttons side by side by hand
- * (the lint rule `jonz/no-hand-made-button-row` says so).
+ * (the lint rule `jonz/no-hand-made-button-row` says so). While one of its
+ * buttons is `busy`, the others go pale and can't be pressed.
  */
 export function ButtonRow({
   children,
@@ -73,7 +78,11 @@ export function ButtonRow({
     else setWrapsAt((was) => Math.max(was, at));
   }, []);
   const fit = own ? 'own' : alone || stacked ? 'full' : 'share';
-  const value = useMemo<RowFit>(() => ({ fit, wrapped }), [fit, wrapped]);
+  // How many of its buttons are busy: while any is, the others go pale.
+  const [busyCount, setBusyCount] = useState(0);
+  const setBusy = useCallback((busy: boolean) => setBusyCount((n) => Math.max(0, n + (busy ? 1 : -1))), []);
+  const busy = busyCount > 0;
+  const value = useMemo<RowFit>(() => ({ fit, wrapped, busy, setBusy }), [fit, wrapped, busy, setBusy]);
   return (
     <RowFitContext.Provider value={value}>
       <View

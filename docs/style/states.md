@@ -12,12 +12,50 @@ hazard edge. Today's next John's plate turns hazard once it's overdue.
 
 ## Waiting
 
+Every wait in Jonz looks one way (loading kit, picked 9 Nov). Nothing shows
+for the first third of a second (`WAIT_DELAY`, 300ms), so a fast read never
+flashes; once something shows it stays at least another 300ms (`WAIT_MIN`),
+so it never blinks. Outlines breathe gently, all together, and hold still
+when the phone asks for reduced motion. *Backed by* Nielsen's "visibility of
+system status", NN/g on skeleton screens versus spinners (skeletons for
+whole pages, a spinner only inside the control that is busy), and Material's
+progress indicators (a linear line for a list refreshing in place).
+
+- **A page's first read** shows the page's own shape in outline: its plate,
+  its section labels and groups, rows as soft bars where the avatar, title
+  and meta line will land (`Waiting` with pieces from `outline.tsx`). Never a
+  spinner in empty space.
+- **One part of a page** (the Table, the Wall, the Stake) keeps its real
+  label, and its group holds outline rows until it has read, so the rest of
+  the page can be used and nothing below it jumps.
+- **A panel or a sheet** (an admin panel, Reset, Delete account, Ask Jonz
+  opening) shows its heading, text, rows and buttons in outline, like a page.
+- **A button after a tap** puts a spinner where its icon was and its words
+  say what is happening ("Marking done", "Leaving", "Sending"). It keeps its
+  colour, so it reads as working, not switched off; the other buttons in its
+  row go pale until it's done. It can't be tapped twice. (`Button busy`,
+  `busyLabel`; lint: `jonz/busy-not-disabled`.) The tick box spins the same
+  way.
+- **A long list finding a new search** keeps its old rows, dimmed, with a
+  thin line running under the search box (`SearchLine`, `Dimmed`), so you
+  keep your place and can see it is working. Loading more at the bottom is
+  the list's foot ("Loading more"), unchanged.
+- **A photo** holds its space as a box in the outline's tint, breathing,
+  then fades in over 200ms (`Photo`). Nothing below it moves. An avatar shows
+  its initials, then fades to the photo.
+- **Opening Jonz** shows the J sign in the middle of the page's ground, Day
+  or Night, as the phone apps' splash does: drawn in the web page itself
+  (`public/index.html`) so it shows at once, then by `StartSign` until the
+  app is ready. Never a white page.
+- **An empty state** shows only after a read has finished with nothing in
+  it, never while it is still reading.
 - **Waiting on the AI:** three square ticks fill in turn with a shimmering
   step line, then fold to "Thought for 5s", which opens to the steps.
-  (Thinking A, #69) *Backed by* Nielsen's "visibility of system status".
-- **Loading** shows the page's shape (its groups and rows, blank), not a
-  spinner in empty space. A wait under about a second shows nothing at all.
-  (**New**) *Backed by* NN/g on skeleton screens versus spinners.
+  (Thinking A, #69)
+
+A spinner on its own is only for the kit's pieces (a busy button or tick,
+the list's foot); anywhere else the lint rule `jonz/no-bare-spinner` stops
+it.
 
 ## Mistakes
 
@@ -36,7 +74,9 @@ hazard edge. Today's next John's plate turns hazard once it's overdue.
   before it happens.
 - **An error** says what went wrong and what to do, in one sentence, with Try
   again where trying again can help. Refusals from the database come through
-  `humanError` in core. (AGENTS.md) *Backed by* Nielsen's "help users
+  `humanError` in core, never as the database's own words. A read that fails
+  shows `ReadFailed` (the sentence and Try again) in its place, in a panel or
+  a sheet too. (AGENTS.md; loading kit, 9 Nov) *Backed by* Nielsen's "help users
   recognise, diagnose and recover from errors".
 - A screen that throws shows the root error page with "Try again".
   (AGENTS.md)

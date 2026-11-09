@@ -14,6 +14,10 @@ const RADIUS_KEY = /^border(TopLeft|TopRight|BottomLeft|BottomRight|TopStart|Top
 const BUTTONS = new Set(['Button', 'TextButton', 'IconButton']);
 // Plain layout boxes: a Button straight inside one of these has nothing placing it.
 const LAYOUT = new Set(['View', 'ScrollView', 'KeyboardAvoidingView', 'SafeAreaView']);
+// The kit's files that may draw a spinner (docs/style/states.md, "Waiting").
+const SPINNER_KIT = ['button.tsx', 'tick-box.tsx', 'list-foot.tsx', 'read-state.tsx', 'outline.tsx', 'waiting.tsx', 'style-page/'];
+// What a wait is called in a Button's `disabled`: a mutation's isPending, or busy, sending, saving and the like.
+const WAIT_NAMES = /\b(isPending|pending|busy|sending|saving|loading|working|isLoading|isFetching)\b/i;
 const PRESSABLES = new Set(['Pressable', 'TouchableOpacity', 'TouchableHighlight', 'TouchableWithoutFeedback']);
 
 function keyName(property) {
@@ -195,6 +199,54 @@ module.exports = {
             if (parent.source.value !== 'react-native') return;
             const name = node.imported.name;
             if (PRESSABLES.has(name)) context.report({ node, messageId: 'screen', data: { name } });
+          },
+        };
+      },
+    },
+    'no-bare-spinner': {
+      meta: {
+        type: 'problem',
+        docs: { description: "A wait shows the part's own outline, or a busy button, never a spinner alone (docs/style/states.md)." },
+        messages: {
+          spinner:
+            "Show what's coming while it reads: wrap it in Waiting with its outline (components/waiting.tsx, outline.tsx), or give the Button `busy`; not a spinner on its own (docs/style/states.md, \"Waiting\").",
+        },
+        schema: [],
+      },
+      create(context) {
+        const file = context.filename.replace(/\\/g, '/');
+        // The kit's own pieces draw the spinners that are allowed: a busy button or tick, a list's foot, the style page.
+        if (SPINNER_KIT.some((kit) => file.includes(`/src/components/${kit}`))) return {};
+        return {
+          ImportSpecifier(node) {
+            const source = node.parent.source.value;
+            const name = node.imported.name;
+            const spinner = source === 'react-native' && name === 'ActivityIndicator';
+            const reading = name === 'Reading' && /(^|\/)read-state$/.test(source);
+            if (spinner || reading) context.report({ node, messageId: 'spinner' });
+          },
+        };
+      },
+    },
+    'busy-not-disabled': {
+      meta: {
+        type: 'problem',
+        docs: { description: 'A button waiting on the server is busy, not switched off (docs/style/states.md).' },
+        messages: {
+          busy: 'A Button waiting on the server takes `busy` and a `busyLabel` ("Leaving"), not `disabled`: pale reads as switched off (docs/style/states.md, "Waiting").',
+        },
+        schema: [],
+      },
+      create(context) {
+        return {
+          JSXAttribute(node) {
+            if (node.name.type !== 'JSXIdentifier' || node.name.name !== 'disabled') return;
+            const element = node.parent;
+            if (element.name.type !== 'JSXIdentifier' || element.name.name !== 'Button') return;
+            if (!node.value || node.value.type !== 'JSXExpressionContainer') return;
+            // A wait, by the names a wait goes by: a mutation's isPending, busy, sending, saving.
+            const source = context.sourceCode.getText(node.value.expression);
+            if (WAIT_NAMES.test(source)) context.report({ node, messageId: 'busy' });
           },
         };
       },

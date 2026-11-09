@@ -6,6 +6,7 @@ pages are private artifacts on claude.ai.
 
 | Date | Decision | Where | Rule |
 | --- | --- | --- | --- |
+| 2026-11-09 | One way to wait: nothing for 300ms, then the page's or part's own outline (breathing, still for reduced motion) held at least 300ms; a busy button spins in its icon's place with -ing words while its row's other buttons go pale; lists dim with a search line; photos hold their space and fade in; the J sign while Jonz opens; every failed read gets the sentence and Try again (all eight A picks) | this PR | [states](states.md#waiting) |
 | 2026-11-07 | Switching a house you have to a family (or back): Who lives here in Rules, two radio rows for an admin and a sheet saying what changes; with money in it, it waits for the 1st (picker approved 2026-11-07) | this PR | [words](words.md) |
 | 2026-11-07 | A family's board for the kitchen tablet: one page, a column per kid of today's Johns (still to do, waiting for an OK, done today), earned this month at the column's head; a kid's tick there waits for a parent's OK (option A) | this PR | [layout](layout.md) |
 | 2026-11-07 | A button on its own fills its column on a phone (Week's Deal week 1 didn't) and a card on a laptop; its own width on the bare page of a wide laptop column; every Button in a ButtonRow, checked by lint and on the real pages | this PR | [controls](controls.md#kinds-of-button) |

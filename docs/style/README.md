@@ -47,7 +47,9 @@ The guide stays true only if every design decision lands in it.
 
 - **Lint** (`apps/client/eslint-rules/jonz.js`, part of `npm run lint`):
   no colour, text size, spacing or corner written by hand, no buttons laid
-  side by side outside a `ButtonRow`, no hand-made pressables in screens.
+  side by side outside a `ButtonRow`, no hand-made pressables in screens, no
+  spinner on its own while something reads (`no-bare-spinner`), no button
+  switched off while it waits (`busy-not-disabled`).
   Older code that broke a rule before it existed is listed in
   `apps/client/eslint-suppressions.json`; fix it and run
   `npx eslint src --prune-suppressions` there to shrink the list. Never add

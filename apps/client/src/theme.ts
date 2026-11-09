@@ -115,6 +115,28 @@ export const SECTION_GAP = 32;
 /** From a section's label to its group. */
 export const LABEL_GAP = 8;
 
+/**
+ * Waiting (docs/style/states.md): nothing shows for the first WAIT_DELAY ms of
+ * a read, so a fast one never flashes; once an outline or a busy spinner shows,
+ * it stays at least WAIT_MIN ms, so it never blinks. A photo fades in over
+ * PHOTO_FADE ms. An outline breathes once every PULSE ms, between full and
+ * PULSE_LOW opacity, and holds still when the device asks for reduced motion.
+ */
+export const WAIT_DELAY = 300;
+export const WAIT_MIN = 300;
+export const PHOTO_FADE = 200;
+export const PULSE = 1600;
+export const PULSE_LOW = 0.55;
+/**
+ * An outline's bars, as tall as the words they stand for sit on the line: a
+ * row's title, its meta line, a section's label, a sentence; and their corner.
+ */
+export const OUTLINE = { title: 14, meta: 10, label: 12, line: 10, radius: 3 } as const;
+/** The search line under a list's search box while a new search reads. */
+export const SEARCH_LINE = 3;
+/** The opacity of a list's old rows while a new search reads. */
+export const DIM = 0.5;
+
 /** Figures that line up in columns: Focus sets every number this way. */
 export const TABULAR: TextStyle = { fontVariant: ['tabular-nums'] };
 

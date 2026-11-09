@@ -5,6 +5,7 @@ import {
   CopyIcon,
   EllipsisIcon,
   InboxIcon,
+  LogOutIcon,
   MegaphoneIcon,
   PlusIcon,
   ShieldIcon,
@@ -31,8 +32,11 @@ import { HazardTape } from '@/components/hazard-tape';
 import { IconButton } from '@/components/icon-button';
 import { LidBar } from '@/components/lid';
 import { NoticeView } from '@/components/notice-banner';
-import { Reading, ReadFailed } from '@/components/read-state';
+import { OutlineRows, OutlineText } from '@/components/outline';
+import { Photo } from '@/components/photo';
+import { ReadFailed } from '@/components/read-state';
 import { Row, RowIcon } from '@/components/row';
+import { Dimmed, SearchLine } from '@/components/search-line';
 import { Section } from '@/components/section';
 import { Segmented } from '@/components/segmented';
 import { Chip } from '@/components/status-mark';
@@ -41,7 +45,7 @@ import { Body, Heading, Lead, Meta, RowTitle, Title } from '@/components/text';
 import { TextButton } from '@/components/text-button';
 import { TextLink } from '@/components/text-link';
 import { TickBox, type TickState } from '@/components/tick-box';
-import { SPACE, useTheme } from '@/theme';
+import { RADIUS, SPACE, useTheme } from '@/theme';
 
 const none = () => {};
 
@@ -280,16 +284,33 @@ export function Lists() {
   );
 }
 
-/** While a page reads, and when it couldn't. */
+/** While a page reads, and when it couldn't (docs/style/states.md, "Waiting"). */
 export function Loading() {
   return (
-    <Section label="Reading" testID="style-reading">
-      <Group>
-        <GroupItem>
-          <Reading />
-          <ReadFailed onRetry={none} />
-        </GroupItem>
-      </Group>
+    <Section label="Waiting" testID="style-reading">
+      <View style={styles.stack}>
+        <Group>
+          <OutlineRows count={2} />
+        </Group>
+        <Group>
+          <OutlineRows count={2} lead="square" end />
+          <GroupItem>
+            <OutlineText lines={2} />
+          </GroupItem>
+        </Group>
+        <ButtonRow testID="button-row-busy">
+          <Button label="Leave Bin Street" busyLabel="Leaving" icon={LogOutIcon} variant="hazard" busy onPress={none} />
+          <Button label="Stay" variant="outline" onPress={none} />
+        </ButtonRow>
+        <SearchLine searching label="Searching" />
+        <Dimmed searching>
+          <Group>
+            <Row title="An old row" meta="Dimmed while it searches" />
+          </Group>
+        </Dimmed>
+        <Photo uri={null} label="A photo on its way" style={styles.photo} />
+        <ReadFailed onRetry={none} />
+      </View>
     </Section>
   );
 }
@@ -302,4 +323,5 @@ const styles = StyleSheet.create({
   swatch: { width: 104, gap: SPACE.xs },
   chip: { width: 40, height: 40, borderRadius: SPACE.sm, borderWidth: StyleSheet.hairlineWidth },
   tick: { alignItems: 'center', gap: SPACE.xs, minWidth: 64 },
+  photo: { width: 160, aspectRatio: 4 / 3, borderRadius: RADIUS },
 });
