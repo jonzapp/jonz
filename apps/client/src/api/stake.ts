@@ -1,9 +1,9 @@
 import { buildStake, monthOf, type HistoryRow, type HouseRules, type StakeView } from '@app/core';
 
-import { supabase } from './supabase';
+import { snakeKeys } from './base';
 import { callV1 } from './v1';
 
-// The Stake, read through your own session (RLS decides) and built by core,
+// The Stake, read on /v1 (house_stake) and built by core,
 // as the web builds it. The app never moves money: it only records that a
 // payment arrived, and only the person paid can.
 
@@ -25,13 +25,12 @@ export async function loadStake(
   memberIds: readonly string[],
   now: Date,
 ): Promise<StakeRead> {
-  const [ledger, closes] = await Promise.all([
-    readLedger(houseId),
-    supabase.from('month_closes').select('month').eq('house_id', houseId),
-  ]);
-  if (closes.error) throw closes.error;
-  const rows: HistoryRow[] = ledger.map(({ assignments, ...row }) => ({ ...row, john: assignments ?? null }));
-  const closedMonths = (closes.data ?? []).map((c) => c.month);
+  const stake = await callV1('house_stake', { houseId });
+  const rows: HistoryRow[] = stake.ledger.map(({ john, ...row }) => ({
+    ...(snakeKeys(row) as Omit<HistoryRow, 'john'>),
+    john: john && { name: john.name, outcome: john.outcome, due_at: john.dueAt },
+  }));
+  const { closedMonths } = stake;
   return {
     ...buildStake({
       ledger: rows,
@@ -43,39 +42,6 @@ export async function loadStake(
     ledger: rows,
     closedMonths,
   };
-}
-
-/**
- * PostgREST hands back at most this many rows a read (`max_rows`, 1000 on
- * Supabase and in config.toml), and says nothing when it stops short.
- */
-const PAGE = 1000;
-
-/**
- * The house's whole ledger, newest first, a page at a time: every balance is
- * a sum of all of it, so a long-lived house can't lose its oldest rows. Each
- * page starts below the last id read rather than at a count of rows: the id
- * only grows, so a row written between two pages (a payment, a month
- * closing) lands above them all instead of pushing one onto the next page
- * twice.
- */
-async function readLedger(houseId: string) {
-  const page = (below: number | null) => {
-    const query = supabase
-      .from('ledger_entries')
-      .select('id, user_id, kind, amount_minor, month, counterparty_user_id, doers, created_at, assignments(name, outcome, due_at)')
-      .eq('house_id', houseId);
-    return (below === null ? query : query.lt('id', below)).order('id', { ascending: false }).limit(PAGE);
-  };
-  const rows: NonNullable<Awaited<ReturnType<typeof page>>['data']> = [];
-  for (let below: number | null = null; ; ) {
-    const { data, error } = await page(below);
-    if (error) throw error;
-    const got = data ?? [];
-    rows.push(...got);
-    if (got.length < PAGE) return rows;
-    below = got[got.length - 1].id;
-  }
 }
 
 /**

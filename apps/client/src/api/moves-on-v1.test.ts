@@ -1,8 +1,11 @@
 import { deletionStatus, requestDeletion } from './account';
 import { readApproval } from './approvals';
+import { keepChat, listChats } from './ask-chats';
 import { loadHistory, undoLatest } from './history';
 import { movingOn, startHouseFrom } from './moving';
 import { loadPrefs, savePrefs } from './notification-prefs';
+import { loadPocket } from './pocket';
+import { loadRecord } from './record';
 import { supabase } from './supabase';
 import { callV1 } from './v1';
 
@@ -83,4 +86,38 @@ it('reads and saves your notification settings', async () => {
   call.mockResolvedValue(null);
   await savePrefs('u1', { reminders: true, checks: true, flags: true, deal: true, quietFrom: null, quietUntil: null, timezone: null });
   expect(call).toHaveBeenLastCalledWith('save_notifications', expect.objectContaining({ quietFrom: null, quietUntil: null }));
+});
+
+it('reads pocket money and the track record as core sums them', async () => {
+  call.mockResolvedValue({
+    earnings: [{ userId: 'sam', month: '2026-10', amountMinor: 250 }],
+    pays: [{ userId: 'sam', month: '2026-09', amountMinor: 500, paidBy: 'priya', createdAt: '2026-10-01T10:00:00Z' }],
+  });
+  const pocket = await loadPocket('h1', 'Europe/London', ['sam'], new Date('2026-10-21T12:00:00Z'));
+  expect(call).toHaveBeenCalledWith('house_pocket', { houseId: 'h1' });
+  expect(pocket).toBeTruthy();
+  call.mockResolvedValue({
+    weeks: [{ id: 'w1', startsOn: '2026-10-19', startsAt: '2026-10-18T23:00:00Z', endsAt: '2026-10-25T23:00:00Z', skippedAt: null }],
+    away: [],
+    shares: [{ weekId: 'w1', userId: 'ava', share: 2 }],
+    assignments: [{ id: 'a1', weekId: 'w1', userId: 'ava', name: 'Bins', points: 2, dueAt: '2026-10-20T19:00:00Z', doneAt: null, outcome: null, excused: false, coveredBy: null, changedBy: null, jobId: null, absentAt: null }],
+    crew: [{ jobId: 'j1', assignmentId: 'a1', userId: 'ava', helper: false, points: 2 }],
+  });
+  const record = await loadRecord('h1');
+  expect(record.weeks[0]).toEqual({ id: 'w1', starts_on: '2026-10-19', starts_at: '2026-10-18T23:00:00Z', ends_at: '2026-10-25T23:00:00Z', skipped_at: null });
+  expect(record.shares).toEqual([{ week_id: 'w1', user_id: 'ava', share: 2 }]);
+  expect(record.johns[0]).toMatchObject({ week_id: 'w1', user_id: 'ava', due_at: '2026-10-20T19:00:00Z', covered_by: null });
+  expect(record.crew?.[0]).toEqual({ job_id: 'j1', assignment_id: 'a1', user_id: 'ava', helper: false, points: 2 });
+});
+
+it('lists, keeps and updates your Ask Jonz chats', async () => {
+  call.mockResolvedValue([{ id: 'c1', title: 'Bins', updatedAt: '2026-10-21T12:00:00Z' }]);
+  await expect(listChats('h1')).resolves.toEqual([{ id: 'c1', title: 'Bins', updatedAt: '2026-10-21T12:00:00Z' }]);
+  call.mockResolvedValue('c2');
+  const turns = [{ role: 'user' as const, text: 'Who has the bins?' }];
+  await expect(keepChat('h1', null, turns as never)).resolves.toBe('c2');
+  expect(call).toHaveBeenLastCalledWith('keep_ask_chat', { houseId: 'h1', turns });
+  call.mockResolvedValue(null);
+  await expect(keepChat('h1', 'c2', turns as never)).resolves.toBe('c2');
+  expect(call).toHaveBeenLastCalledWith('update_ask_chat', { chatId: 'c2', turns });
 });

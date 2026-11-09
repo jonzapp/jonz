@@ -27,7 +27,7 @@ async function hold(page: Page, url: string) {
 test("Today shows its outline while the house reads, then the page", async ({ context, page }) => {
   const { userId } = await dealtHouseInClient(context, "Lou Loading", "Flat 30", [{ name: "Bins out", category: "bins" }]);
   made.push(userId);
-  const release = await hold(page, "**/rest/v1/houses?**");
+  const release = await hold(page, "**/v1/houses/*/today");
 
   await page.goto("/");
   await expect(page).toHaveURL(/\/today$/);
@@ -48,11 +48,10 @@ test("a read that fails says so, and Try again reads again", async ({ context, p
   const { userId } = await dealtHouseInClient(context, "Kit Loading", "Flat 31", [{ name: "Bins out", category: "bins" }]);
   made.push(userId);
   let failing = true;
-  // A server error, not a dropped connection: supabase-js tries a dropped
-  // read again on its own (3 times, backing off), which this test isn't about.
-  await page.route("**/rest/v1/houses?**", (route) =>
+  // A server error, as /v1 answers one.
+  await page.route("**/v1/houses/*/today", (route) =>
     failing
-      ? route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ code: "XX000", message: "down" }) })
+      ? route.fulfill({ status: 500, contentType: "application/problem+json", body: JSON.stringify({ title: "internal", status: 500 }) })
       : route.continue(),
   );
 
@@ -72,7 +71,7 @@ for (const scheme of ["light", "dark"] as const) {
     made.push(userId);
     await page.emulateMedia({ colorScheme: scheme });
     // Your house, read at the start: held, so the start stays up.
-    const release = await hold(page, "**/rest/v1/members?**");
+    const release = await hold(page, "**/v1/me/house");
 
     await page.goto("/");
     await expect(page.getByTestId("start-sign")).toBeVisible();

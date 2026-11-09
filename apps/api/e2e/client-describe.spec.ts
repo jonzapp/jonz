@@ -35,7 +35,7 @@ test("describe the house, keep most of the draft, and find it on the list", asyn
   await expect(page.getByRole("heading", { name: PAGE_TITLE.describe })).toBeVisible();
 
   await page.getByTestId("chat-input").fill("Me, my husband and our two kids in a semi. Bins go out Tuesday night.");
-  const answered = page.waitForResponse((r) => r.url().endsWith("/api/setup/draft"));
+  const answered = page.waitForResponse((r) => /\/v1\/houses\/[^/]+\/ask$/.test(r.url()));
   await page.getByTestId("chat-send").click();
   expect((await answered).status()).toBe(200);
 
@@ -86,7 +86,7 @@ test("ask Jonz from Today to change the list, and apply what's ticked", async ({
 
   // There's no gateway here, so Jonz's answer is written in: the first John
   // worth more, the second taken off, and one new.
-  await page.route("**/api/setup/draft", async (route) => {
+  await page.route("**/v1/houses/*/ask", async (route) => {
     const { draft } = route.request().postDataJSON() as { draft: HouseDraft };
     const johns = draft.johns
       .filter((j) => j.name !== couple[1].name)

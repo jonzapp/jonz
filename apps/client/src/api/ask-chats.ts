@@ -1,9 +1,9 @@
-import { CHAT_SAVED_TURNS, chatTitle, humanError, savedTurns, type SavedTurn } from '@app/core';
+import { CHAT_SAVED_TURNS, savedTurns, type SavedTurn } from '@app/core';
 
-import { supabase } from './supabase';
+import { callV1 } from './v1';
 
-// Ask Jonz chats, through your own session: the ask_chats table lets you
-// read, keep and delete only your own, in a house you're in.
+// Ask Jonz chats, on /v1: you read, keep and delete only your own, in a
+// house you're in.
 
 export interface ChatSummary {
   id: string;
@@ -19,41 +19,29 @@ export interface SavedChat {
 
 /** Your chats in this house, the latest first. */
 export async function listChats(houseId: string): Promise<ChatSummary[]> {
-  const { data, error } = await supabase
-    .from('ask_chats')
-    .select('id, title, updated_at')
-    .eq('house_id', houseId)
-    .order('updated_at', { ascending: false })
-    .limit(200);
-  if (error) throw new Error(humanError(error));
-  return (data ?? []).map((c) => ({ id: c.id, title: c.title, updatedAt: c.updated_at }));
+  return callV1('my_ask_chats', { houseId });
 }
 
 /** One of your chats, with its turns. */
 export async function loadChat(id: string): Promise<SavedChat> {
-  const { data, error } = await supabase.from('ask_chats').select('id, title, turns').eq('id', id).single();
-  if (error) throw new Error(humanError(error));
-  return { id: data.id, title: data.title, turns: savedTurns(data.turns) };
+  const chat = await callV1('my_ask_chat', { chatId: id });
+  if (!chat) throw new Error('That chat isn’t there any more.');
+  return { id: chat.id, title: chat.title, turns: savedTurns(chat.turns) };
 }
 
 /** Keep a chat as it now stands: a new one the first time (its id back), then the same row. */
 export async function keepChat(houseId: string, id: string | null, turns: readonly SavedTurn[]): Promise<string> {
   const kept = turns.slice(-CHAT_SAVED_TURNS);
-  const title = chatTitle(turns);
   if (id) {
-    const { error } = await supabase.from('ask_chats').update({ title, turns: kept, updated_at: new Date().toISOString() }).eq('id', id);
-    if (error) throw new Error(humanError(error));
+    await callV1('update_ask_chat', { chatId: id, turns: kept });
     return id;
   }
-  const { data, error } = await supabase.from('ask_chats').insert({ house_id: houseId, title, turns: kept }).select('id').single();
-  if (error) throw new Error(humanError(error));
-  return data.id;
+  return callV1('keep_ask_chat', { houseId, turns: kept });
 }
 
 /** Delete one of your chats for good. */
 export async function deleteChat(id: string): Promise<void> {
-  const { error } = await supabase.from('ask_chats').delete().eq('id', id);
-  if (error) throw new Error(humanError(error));
+  await callV1('delete_ask_chat', { chatId: id });
 }
 
 /**

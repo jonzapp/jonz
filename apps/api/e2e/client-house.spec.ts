@@ -28,9 +28,9 @@ async function expectHouseNamed(page: Page, name: string) {
   await expect(page.getByRole("heading", { name })).toBeVisible();
 }
 
-/** Today asks the API to catch the house up as it opens; this is that call's answer. */
+/** Today asks /v1 to catch the house up as it opens; this is that call's answer. */
 function caughtUp(page: Page) {
-  return page.waitForResponse((r) => r.url().endsWith("/api/fresh") && r.request().method() === "POST");
+  return page.waitForResponse((r) => r.url().endsWith("/catch-up") && r.request().method() === "POST");
 }
 
 test("start a house, and land on it caught up", async ({ context, page }) => {

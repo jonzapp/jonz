@@ -25,8 +25,8 @@ async function newHouse(page: Page) {
 
 /** Answer the usage read with these figures, the rest as the real one gave them. */
 async function usageIs(page: Page, over: Partial<AskUsage>) {
-  await page.unroute("**/api/ask/usage");
-  await page.route("**/api/ask/usage", async (route) => {
+  await page.unroute("**/v1/houses/*/ask/usage");
+  await page.route("**/v1/houses/*/ask/usage", async (route) => {
     const real = (await (await route.fetch()).json()) as AskUsage;
     await route.fulfill({ json: { ...real, ...over } });
   });
