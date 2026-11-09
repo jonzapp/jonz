@@ -80,8 +80,8 @@ describe("every operation's contract, against the database", () => {
       }
       if (io.page) {
         expected.p_limit = { type: "integer", required: false, from: "limit" };
-        expected[io.page.atArg] = { type: "datetime", required: false, from: "startingAfter" };
-        expected[io.page.idArg] = { type: "uuid", required: false, from: "startingAfter" };
+        expected[io.page.atArg ?? "(no cursor argument)"] = { type: "datetime", required: false, from: "startingAfter" };
+        expected[io.page.idArg ?? "(no cursor argument)"] = { type: "uuid", required: false, from: "startingAfter" };
       }
       for (const arg of new Set([...Object.keys(args), ...Object.keys(expected)])) {
         const want = expected[arg];
