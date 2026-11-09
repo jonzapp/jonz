@@ -32,6 +32,7 @@ on:
           - Check only
           - Seed the demo house
           - Time live updates
+          - Load-test live updates
           - Reset the database (wipes staging's data)
         default: Put a PR on staging
       pr:
@@ -117,6 +118,7 @@ jobs:
         run: |
           case "$ACTION" in
             "Time live updates") node scripts/live-latency.mjs ;;
+            "Load-test live updates") node scripts/live-load.mjs ;;
             "Check only") node scripts/staging.mjs --check ;;
             "Seed the demo house") node scripts/staging.mjs --seed ;;
             "Reset the database (wipes staging's data)") node scripts/staging.mjs --reset ;;
