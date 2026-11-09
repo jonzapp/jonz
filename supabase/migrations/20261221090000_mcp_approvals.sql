@@ -13,8 +13,10 @@
 -- - An OAuth client's token can't approve: api_approval and
 --   answer_api_approval refuse a token with a client_id.
 -- - An OAuth client's token can't go around /mcp: PostgREST refuses it on
---   every request (api_pre_request), so the only way in for a connected app
---   is the executor, which asks for approval.
+--   every request (api_pre_request), and Storage won't change a file for it,
+--   so the only way to change anything for a connected app is the executor,
+--   which asks for approval. (Realtime only reads, under each table's own
+--   rules, as /mcp's reads do.)
 
 -- --- Approvals ---------------------------------------------------------------------------
 
@@ -158,6 +160,19 @@ grant execute on function public.api_pre_request() to anon, authenticated, servi
 
 alter role authenticator set pgrst.db_pre_request = 'public.api_pre_request';
 notify pgrst, 'reload config';
+
+-- Storage checks its own rules, not PostgREST's: no uploading, replacing or
+-- deleting files with a connected app's token. Restrictive, so it holds on
+-- top of every rule that lets people change a file.
+create policy "connected apps change no files" on storage.objects
+  as restrictive for insert to authenticated
+  with check (not coalesce((select auth.jwt()) ? 'client_id', false));
+create policy "connected apps replace no files" on storage.objects
+  as restrictive for update to authenticated
+  using (not coalesce((select auth.jwt()) ? 'client_id', false));
+create policy "connected apps delete no files" on storage.objects
+  as restrictive for delete to authenticated
+  using (not coalesce((select auth.jwt()) ? 'client_id', false));
 
 -- --- Tidying ------------------------------------------------------------------------------
 

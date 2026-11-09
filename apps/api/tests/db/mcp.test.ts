@@ -18,7 +18,7 @@ import { afterAll, beforeAll, expect, it } from "vitest";
 import { apiOperation } from "v1";
 
 import { buildMcpServer } from "@/lib/mcp/server";
-import { ANON_KEY, SUPABASE_URL } from "@/tests/support/env";
+import { ANON_KEY, SERVICE_ROLE_KEY, SUPABASE_URL } from "@/tests/support/env";
 
 const DB_URL = process.env.DB_URL ?? "postgresql://postgres:postgres@127.0.0.1:54342/postgres";
 const SECRET = randomBytes(32).toString("hex");
@@ -135,6 +135,21 @@ it("refuses a connected app's token anywhere but /mcp", async () => {
   const refused = await rest({ client_id: randomUUID() });
   expect(refused.status).toBe(403);
   expect(await refused.json()).toMatchObject({ code: "42501", message: "Connected apps reach Jonz through https://api.jonz.app/mcp." });
+
+  // Storage too: the person may put up their own photo; a connected app may not.
+  const upload = async (claims: Record<string, unknown>, file: string) =>
+    fetch(`${SUPABASE_URL}/storage/v1/object/avatars/${person}/${file}`, {
+      method: "POST",
+      headers: { apikey: ANON_KEY, authorization: `Bearer ${await sign(claims)}`, "content-type": "image/png" },
+      body: new Uint8Array([137, 80, 78, 71]),
+    });
+  expect((await upload({}, "mine.png")).status).toBe(200);
+  expect((await upload({ client_id: randomUUID() }, "app.png")).ok).toBe(false);
+  await fetch(`${SUPABASE_URL}/storage/v1/object/avatars`, {
+    method: "DELETE",
+    headers: { apikey: SERVICE_ROLE_KEY, authorization: `Bearer ${SERVICE_ROLE_KEY}`, "content-type": "application/json" },
+    body: JSON.stringify({ prefixes: [`${person}/mine.png`, `${person}/app.png`] }),
+  });
 });
 
 it("refuses a token signed with anything else", async () => {
