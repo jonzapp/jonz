@@ -1,5 +1,5 @@
 import { NEXT_UP_COPY } from "@app/core";
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 import { CLIENT_URL, cleanUp, dealtHouseInClient, undealtHouseInClient } from "./auth";
 import { expectButtonRules } from "./button-rules";
@@ -13,6 +13,33 @@ import { expectButtonRules } from "./button-rules";
 test.use({ baseURL: CLIENT_URL });
 
 const made: string[] = [];
+
+/**
+ * Every read the page made has answered, and nothing new for half a second.
+ * The house's live stream (/v1/houses/…/live) stays open by design, so it
+ * doesn't count, as "networkidle" would.
+ */
+async function readsDone(open: Set<unknown>) {
+  let quietSince = Date.now();
+  await expect
+    .poll(
+      () => {
+        if (open.size > 0) quietSince = Date.now();
+        return Date.now() - quietSince >= 500;
+      },
+      { timeout: 15_000, intervals: [100] },
+    )
+    .toBe(true);
+}
+
+function trackReads(page: Page): Set<unknown> {
+  const open = new Set<unknown>();
+  const counts = (url: string) => !/\/v1\/houses\/[^/]+\/live$/.test(new URL(url).pathname);
+  page.on("request", (request) => counts(request.url()) && open.add(request));
+  page.on("requestfinished", (request) => open.delete(request));
+  page.on("requestfailed", (request) => open.delete(request));
+  return open;
+}
 test.afterAll(async () => cleanUp(made));
 
 test("Week before the first deal: Deal week 1 is across a phone, its own width on a laptop", async ({ browser }) => {
@@ -50,6 +77,7 @@ test("every page of a dealt house keeps the button rules", async ({ browser }) =
   ]);
   made.push(userId, ...housemateIds);
   const page = await context.newPage();
+  const open = trackReads(page);
 
   for (const [path, screen] of [
     ["/today", "today-screen"],
@@ -69,7 +97,8 @@ test("every page of a dealt house keeps the button rules", async ({ browser }) =
   await expectButtonRules(page, "a John's sheet");
   for (const path of ["/house/johns", "/house/rules", "/house/away", "/house/wall", "/house/you"]) {
     await page.goto(path);
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
+    await readsDone(open);
     await expectButtonRules(page, path);
   }
   await context.close();
