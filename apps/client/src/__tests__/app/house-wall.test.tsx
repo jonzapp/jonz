@@ -119,7 +119,7 @@ it('tells what the house did a day at a time, latest first, by the clock', async
 
 it('shows a photo receipt under its tick', async () => {
   await open();
-  const photo = screen.getByTestId('wall-photo');
+  const photo = screen.getByTestId('wall-photo-image', { includeHiddenElements: true });
   expect(photo).toHaveProp('source', { uri: 'https://signed/p' });
   expect(screen.getByLabelText(WALL_COPY.photoOf('Clean the bath'))).toBeOnTheScreen();
 });

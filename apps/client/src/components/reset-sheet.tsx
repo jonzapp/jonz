@@ -8,13 +8,15 @@ import { Alert } from '@/components/alert';
 import { Button } from '@/components/button';
 import { ButtonRow } from '@/components/button-row';
 import { ConfirmSheet } from '@/components/confirm-sheet';
-import { Reading, ReadFailed } from '@/components/read-state';
+import { OutlineBar, OutlineText } from '@/components/outline';
+import { ReadFailed } from '@/components/read-state';
 import { Body, Meta, RowTitle } from '@/components/text';
 import { houseKey } from '@/hooks/keys';
 import { useHouse } from '@/hooks/use-house';
 import { useMove } from '@/hooks/use-move';
 import { useUndoOffer } from '@/hooks/use-undo-offer';
-import { SPACE } from '@/theme';
+import { Waiting } from '@/components/waiting';
+import { OUTLINE, SPACE } from '@/theme';
 
 /** What the sheet needs to say a reset in words, besides the house's own names, money and zone. */
 export type ResetSheetWords = Omit<ResetWords, 'kind' | 'nameOf' | 'viewerId' | 'currency' | 'zone'>;
@@ -77,11 +79,29 @@ function ResetLines({ sheet }: { sheet: ResetSheetWordsOut }) {
   );
 }
 
-function Waiting({ reset }: { reset: ReturnType<typeof useReset> }) {
+/** While the numbers are worked out: ResetLines in outline, or why they couldn't be. */
+function Preview({ reset }: { reset: ReturnType<typeof useReset> }) {
   if (reset.preview.isError) {
     return <ReadFailed message={RESET_COPY.unreadable} onRetry={() => void reset.preview.refetch()} />;
   }
-  return reset.preview.data ? null : <Reading label={RESET_COPY.reading} />;
+  if (reset.preview.data) return null;
+  return (
+    <Waiting
+      ready={false}
+      label={RESET_COPY.reading}
+      outline={
+        <View style={styles.lines}>
+          {[40, 55, 35].map((width) => (
+            <View key={width} style={styles.line}>
+              <OutlineBar width={`${width}%`} height={OUTLINE.meta} />
+              <OutlineBar width={`${width + 25}%`} height={OUTLINE.title} />
+            </View>
+          ))}
+          <OutlineText lines={2} />
+        </View>
+      }
+    />
+  );
 }
 
 /**
@@ -124,7 +144,7 @@ export function ResetSheet({
       onClose={onClose}
       testID={testID}
     >
-      {sheet ? <ResetLines sheet={sheet} /> : <Waiting reset={reset} />}
+      {sheet ? <ResetLines sheet={sheet} /> : <Preview reset={reset} />}
     </ConfirmSheet>
   );
 }
@@ -152,7 +172,7 @@ export function ResetPanel({
     <View style={styles.panel} testID={testID}>
       <RowTitle>{sheet?.title ?? resetTitle(reset.full!)}</RowTitle>
       {sheet ? <Body>{sheet.body}</Body> : preview.data?.nothing ? <Body>{RESET_COPY.nothing}</Body> : null}
-      {sheet ? <ResetLines sheet={sheet} /> : <Waiting reset={reset} />}
+      {sheet ? <ResetLines sheet={sheet} /> : <Preview reset={reset} />}
       {move.problem ? <Alert message={move.problem} /> : null}
       <ButtonRow stacked>
         {sheet ? (

@@ -10,7 +10,10 @@ import { Group } from '@/components/group';
 import { IconButton } from '@/components/icon-button';
 import { Row, RowIcon } from '@/components/row';
 import { Section } from '@/components/section';
+import { OutlineGroup } from '@/components/outline';
+import { ReadFailed } from '@/components/read-state';
 import { Meta } from '@/components/text';
+import { Waiting } from '@/components/waiting';
 import { useToastIfAny } from '@/components/toast';
 import { GUTTER, INSET, SECTION_GAP } from '@/theme';
 
@@ -96,7 +99,20 @@ export function AllChats({
 
   return (
     <ScrollView contentContainerStyle={styles.page} testID="all-chats">
-      {chats.data === undefined ? null : list.length === 0 ? (
+      {chats.data === undefined ? (
+        chats.isError ? (
+          <ReadFailed message={ASK_CHATS_COPY.unreadable} onRetry={() => void chats.refetch()} />
+        ) : (
+          // The chats in outline: a label and a few rows, the way a day's group of them looks.
+          <Waiting
+            ready={false}
+            label={ASK_CHATS_COPY.reading}
+            outline={
+<OutlineGroup rows={4} lead="none" end />
+            }
+          />
+        )
+      ) : list.length === 0 ? (
         <Group>
           <Row title={ASK_CHATS_COPY.none} titleLines={2} testID="chats-none" />
         </Group>

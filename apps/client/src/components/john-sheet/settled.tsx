@@ -1,8 +1,9 @@
 import { WALL_COPY, type BoardItem } from '@app/core';
-import { Image, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 import { usePhoto } from '@/hooks/use-wall';
 import { RADIUS, useTheme } from '@/theme';
+import { Photo } from '@/components/photo';
 
 import type { JohnSheetContext } from './body';
 import { SheetLines } from './parts';
@@ -24,15 +25,10 @@ export function Settled({ item, context }: { item: BoardItem; context: JohnSheet
 function Receipt({ item, path, houseId }: { item: BoardItem; path: string; houseId: string }) {
   const { colors } = useTheme();
   const photo = usePhoto(houseId, path);
-  if (!photo.data) return null;
+  // Its space is held while it's signed and while it loads; gone from storage, nothing.
+  if (photo.isError) return null;
   return (
-    <Image
-      source={{ uri: photo.data }}
-      accessibilityLabel={WALL_COPY.photoOf(item.name)}
-      resizeMode="cover"
-      style={[styles.photo, { borderColor: colors.border }]}
-      testID="sheet-photo"
-    />
+    <Photo uri={photo.data} label={WALL_COPY.photoOf(item.name)} style={[styles.photo, { borderColor: colors.border }]} testID="sheet-photo" />
   );
 }
 

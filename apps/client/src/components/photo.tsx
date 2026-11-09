@@ -28,19 +28,32 @@ interface PhotoProps {
   testID?: string;
 }
 
-function PhotoBox({ uri, label, style, onCard = true, testID }: PhotoProps) {
-  const { colors, scheme } = useTheme();
-  const [state, setState] = useState<'loading' | 'loaded' | 'failed'>('loading');
-  const [fade] = useState(() => new Animated.Value(0));
-
-  const loaded = () => {
-    setState('loaded');
+/**
+ * A photo's opacity, from 0 until `show()` (its onLoad), then up over
+ * PHOTO_FADE ms, or at once when the device asks for reduced motion. Photo
+ * and Avatar fade in the same way.
+ */
+export function useFadeIn(): { opacity: Animated.Value; show: () => void } {
+  const [opacity] = useState(() => new Animated.Value(0));
+  const show = () => {
     void AccessibilityInfo.isReduceMotionEnabled()
       .catch(() => false)
       .then((still) => {
-        if (still) fade.setValue(1);
-        else Animated.timing(fade, { toValue: 1, duration: PHOTO_FADE, useNativeDriver: Platform.OS !== 'web' }).start();
+        if (still) opacity.setValue(1);
+        else Animated.timing(opacity, { toValue: 1, duration: PHOTO_FADE, useNativeDriver: Platform.OS !== 'web' }).start();
       });
+  };
+  return { opacity, show };
+}
+
+function PhotoBox({ uri, label, style, onCard = true, testID }: PhotoProps) {
+  const { colors, scheme } = useTheme();
+  const [state, setState] = useState<'loading' | 'loaded' | 'failed'>('loading');
+  const { opacity: fade, show } = useFadeIn();
+
+  const loaded = () => {
+    setState('loaded');
+    show();
   };
 
   const tint = onCard && scheme !== 'dark' ? colors.secondary : colors.border;

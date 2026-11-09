@@ -10,7 +10,9 @@ import { AllChats } from '@/components/house/saved-chats';
 import { SetupChat } from '@/components/house/setup-chat';
 import { useJohnSheetIfAny } from '@/components/john-sheet';
 import { replyPieces } from '@/components/reply/pieces';
-import { Reading, ReadFailed } from '@/components/read-state';
+import { OutlineButton, OutlineText } from '@/components/outline';
+import { ReadFailed } from '@/components/read-state';
+import { Waiting } from '@/components/waiting';
 import { houseChats } from '@/hooks/use-ask-chats';
 import { useHouse } from '@/hooks/use-house';
 import { useJohnList } from '@/hooks/use-john-list';
@@ -172,7 +174,23 @@ export function AskJonz({
           })}
         />
       ) : (
-        <View style={styles.reading}>{query.isError || list.isError ? <ReadFailed onRetry={retry} /> : <Reading />}</View>
+        <View style={[styles.reading, styles.screen]}>
+          {query.isError || list.isError ? (
+            <ReadFailed onRetry={retry} />
+          ) : (
+            // The chat in outline: Jonz's first words at the top, the box to write in at the foot.
+            <Waiting
+              ready={false}
+              fill
+              outline={
+                <View style={styles.outline}>
+                  <OutlineText lines={3} onCard={false} />
+                  <OutlineButton />
+                </View>
+              }
+            />
+          )}
+        </View>
       )}
     </View>
   );
@@ -181,4 +199,5 @@ export function AskJonz({
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   reading: { padding: GUTTER },
+  outline: { flex: 1, justifyContent: 'space-between' },
 });

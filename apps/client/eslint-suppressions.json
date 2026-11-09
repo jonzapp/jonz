@@ -1,9 +1,4 @@
 {
-  "src/components/account/delete-account.tsx": {
-    "jonz/no-bare-spinner": {
-      "count": 1
-    }
-  },
   "src/components/admin/admin-shell.tsx": {
     "jonz/spacing-from-scale": {
       "count": 3
@@ -57,11 +52,6 @@
       "count": 1
     }
   },
-  "src/components/house/ask-jonz.tsx": {
-    "jonz/no-bare-spinner": {
-      "count": 1
-    }
-  },
   "src/components/house/john-timing.tsx": {
     "jonz/no-raw-type-size": {
       "count": 3
@@ -95,11 +85,6 @@
   },
   "src/components/lid.tsx": {
     "jonz/spacing-from-scale": {
-      "count": 1
-    }
-  },
-  "src/components/reset-sheet.tsx": {
-    "jonz/no-bare-spinner": {
       "count": 1
     }
   },

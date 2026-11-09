@@ -11,7 +11,7 @@ import {
   MessageSquareIcon,
 } from "lucide-react-native";
 import { useState } from "react";
-import { Image, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 import type { Report, ReportDetails } from "@/api/reports";
 import { Composer, UserBubble } from "@/components/chat/chat";
@@ -19,6 +19,7 @@ import { GroupItem } from "@/components/group";
 import { Chip } from "@/components/status-mark";
 import { Body, Meta } from "@/components/text";
 import { RADIUS, SPACE, useTheme } from "@/theme";
+import { Photo } from "@/components/photo";
 
 const zone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
 
@@ -69,12 +70,7 @@ export function Shot({
   const { colors } = useTheme();
   const box = size === "small" ? styles.small : styles.large;
   return (
-    <Image
-      source={{ uri }}
-      style={[box, styles.shot, { borderColor: colors.border }]}
-      resizeMode="cover"
-      accessibilityLabel="Screenshot"
-    />
+    <Photo uri={uri} label={REPORT_COPY.shot} style={[box, styles.shot, { borderColor: colors.border }]} />
   );
 }
 
