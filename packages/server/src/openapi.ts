@@ -16,18 +16,36 @@ export function pathKeys(path: string): string[] {
   return [...path.matchAll(/\{([A-Za-z][A-Za-z0-9]*)\}/g)].map((m) => m[1]);
 }
 
-function schemaOf(type: z.ZodType, io: "input" | "output"): Json {
-  const { $schema: _drop, ...schema } = z.toJSONSchema(type, { io, unrepresentable: "any" }) as Json;
+/**
+ * An operation's schema as OpenAPI holds it. A schema with parts it names
+ * (`$defs`, as for any JSON value) has them moved to components, under the
+ * operation's name, since tools resolve `#/$defs/…` against the document.
+ */
+function schemaOf(type: z.ZodType, io: "input" | "output", name: string, shared: Record<string, Json>): Json {
+  const { $schema: _drop, $defs, ...schema } = z.toJSONSchema(type, { io, unrepresentable: "any" }) as Json & { $defs?: Record<string, Json> };
   void _drop;
-  return schema;
+  if (!$defs) return schema;
+  const renamed = (key: string) => `${name}_${io}_${key.replace(/[^A-Za-z0-9_]/g, "_")}`;
+  const rewrite = (value: unknown): unknown => {
+    if (Array.isArray(value)) return value.map(rewrite);
+    if (value && typeof value === "object") {
+      return Object.fromEntries(
+        Object.entries(value).map(([k, v]) => [k, k === "$ref" && typeof v === "string" && v.startsWith("#/$defs/") ? `#/components/schemas/${renamed(v.slice(8))}` : rewrite(v)]),
+      );
+    }
+    return value;
+  };
+  for (const [key, def] of Object.entries($defs)) shared[renamed(key)] = rewrite(def) as Json;
+  return rewrite(schema) as Json;
 }
 
 const problem = { $ref: "#/components/responses/Problem" };
 
 export function openApi(operations: readonly ApiOperation[], server = "https://api.jonz.app"): Json {
   const paths: Record<string, Record<string, Json>> = {};
+  const shared: Record<string, Json> = {};
   for (const op of operations) {
-    const input = schemaOf(op.input, "input") as { properties?: Record<string, Json>; required?: string[] };
+    const input = schemaOf(op.input, "input", op.name, shared) as { properties?: Record<string, Json>; required?: string[] };
     const inPath = new Set(pathKeys(op.http.path));
     const required = new Set(input.required ?? []);
     const props = Object.entries(input.properties ?? {});
@@ -51,7 +69,7 @@ export function openApi(operations: readonly ApiOperation[], server = "https://a
       ...(op.deprecated ? { deprecated: true, "x-sunset": op.deprecated.sunset.toISOString() } : {}),
       ...(op.operation.entitlement ? { "x-jonz-entitlement": op.operation.entitlement } : {}),
       responses: {
-        [write ? "201" : "200"]: { description: "Done.", content: { "application/json": { schema: schemaOf(op.output, "output") } } },
+        [write ? "201" : "200"]: { description: "Done.", content: { "application/json": { schema: schemaOf(op.output, "output", op.name, shared) } } },
         default: problem,
       },
     };
@@ -92,6 +110,7 @@ export function openApi(operations: readonly ApiOperation[], server = "https://a
         },
       },
       schemas: {
+        ...shared,
         Problem: {
           type: "object",
           required: ["type", "title", "status", "detail"],

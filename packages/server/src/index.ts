@@ -8,6 +8,7 @@ export {
   createExecutor,
   defaultRpcArgs,
   fromDatabase,
+  HOUSE_FROM,
   IDEMPOTENCY_TTL_MS,
   SUNSET_NOTICE_MS,
   requestHash,

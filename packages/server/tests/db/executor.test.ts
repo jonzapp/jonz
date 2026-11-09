@@ -123,6 +123,37 @@ describe("the executor", () => {
     expect(theirs.body).toEqual([]);
   });
 
+  it("finds the house from the row an operation names, as the person sees it", async () => {
+    const [john] = await admin`insert into public.johns (house_id, name, anchor_week) values (${houseId}::uuid, 'Bins', 0) returning id`;
+    const raiseFlag: ApiOperation = {
+      name: "raise_flag",
+      operation: OPERATIONS.raise_flag,
+      input: z.object({ johnId: z.uuid() }),
+      output: z.unknown(),
+      http: { method: "POST", path: "/v1/johns/{johnId}/flags" },
+      rpcArgs: (i) => ({ p_john: i.johnId }),
+    };
+    const undoLatest: ApiOperation = {
+      name: "undo_latest",
+      operation: OPERATIONS.undo_latest,
+      input: z.object({ kind: z.string() }),
+      output: z.unknown(),
+      http: { method: "POST", path: "/v1/me/actions/undo-latest" },
+      rpcArgs: (i) => ({ p_kind: i.kind }),
+    };
+    const run = createExecutor({ sql: api, verify, operations: [raiseFlag, undoLatest], now: () => minute(8) });
+    // Someone outside the house can't see the John, so it isn't there for them.
+    await expect(run("raise_flag", as("bob"), { johnId: john.id })).rejects.toMatchObject({ code: "not_found" });
+    await expect(run("raise_flag", as("alice"), { johnId: randomUUID() })).rejects.toMatchObject({ code: "not_found" });
+    // In the house, the permission is checked against that house and the database has its say.
+    const answer = await run("raise_flag", as("alice"), { johnId: john.id }).catch((e: Problem) => e);
+    expect(answer instanceof Problem ? answer.code : "ok").not.toMatch(/forbidden|invalid_input|not_found/);
+    // No row to go by: the house the person is in, and none if they aren't in one.
+    const undo = await run("undo_latest", as("alice"), { kind: "tick" }).catch((e: Problem) => e);
+    expect(undo instanceof Problem ? undo.code : "ok").not.toMatch(/forbidden|invalid_input/);
+    await expect(run("undo_latest", as("bob"), { kind: "tick" })).rejects.toMatchObject({ code: "invalid_input" });
+  });
+
   it("refuses a permission at the API, and the database refuses it too without the API's check", async () => {
     // Someone outside the house, then a member without house:write.
     await expect(executor()("set_house_kind", as("bob"), { houseId, kind: "family" })).rejects.toMatchObject({ code: "forbidden" });
@@ -192,6 +223,19 @@ describe("the executor", () => {
     await expect(run(true, minute(7))).rejects.toMatchObject({ code: "pass_required", status: 402 });
     await expect(run(false, minute(7))).resolves.toMatchObject({ status: 200 });
     await expect(run(true, new Date(minute(0).getTime() - 60_000))).resolves.toMatchObject({ status: 200 });
+  });
+
+  it("asks for the Pass only when the feature it covers is used", async () => {
+    const op: ApiOperation = {
+      ...myPermissions,
+      name: "my_permissions",
+      input: z.object({ houseId: z.uuid(), photoPath: z.string().optional() }),
+      rpcArgs: (i) => ({ h: i.houseId }),
+      operation: { ...myPermissions.operation, entitlement: "photos", entitlementWhen: "photoPath" },
+    };
+    const run = (input: Record<string, unknown>) => createExecutor({ sql: api, verify, operations: [op], now: () => minute(9), passEnforced: true })("my_permissions", as("alice"), input);
+    await expect(run({ houseId })).resolves.toMatchObject({ status: 200 });
+    await expect(run({ houseId, photoPath: "h/a.jpg" })).rejects.toMatchObject({ code: "pass_required" });
   });
 
   it("keeps its bookkeeping out of people's reach", async () => {

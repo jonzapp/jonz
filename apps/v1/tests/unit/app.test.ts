@@ -4,7 +4,7 @@ import { openApi, Problem, type ApiOperation, type Executor, type RequestContext
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 
-import { buildApp } from "../../src/app";
+import { buildApp, queryTypes, readQuery } from "../../src/app";
 import { V1_OPERATIONS } from "../../src/operations";
 
 const read: ApiOperation = {
@@ -42,7 +42,7 @@ describe("/v1 over HTTP", () => {
     expect(res.statusCode).toBe(200);
     expect(res.json()).toEqual([{ id: 1 }]);
     expect(res.headers["request-id"]).toBe("req_from_phone_1");
-    expect(calls[0]).toMatchObject({ name: "list_johns", input: { houseId: H, limit: "5" }, ctx: { authorization: "Bearer t", client: "ios/1.4.2 (57)", requestId: "req_from_phone_1", via: "api" } });
+    expect(calls[0]).toMatchObject({ name: "list_johns", input: { houseId: H, limit: 5 }, ctx: { authorization: "Bearer t", client: "ios/1.4.2 (57)", requestId: "req_from_phone_1", via: "api" } });
   });
 
   it("hands a write its body and Idempotency-Key, and says when an answer is replayed", async () => {
@@ -102,5 +102,47 @@ describe("/v1 over HTTP", () => {
   it("keeps apps/v1/openapi.json up to date (npm run openapi -w v1)", () => {
     const committed = JSON.parse(readFileSync(new URL("../../openapi.json", import.meta.url), "utf8"));
     expect(committed).toEqual(openApi(V1_OPERATIONS));
+  });
+});
+
+describe("the registry on /v1", () => {
+  it("serves every operation with a database function, each path key an input", async () => {
+    expect(V1_OPERATIONS.length).toBeGreaterThan(90);
+    for (const op of V1_OPERATIONS) {
+      const shape = Object.keys((op.input as z.ZodObject).shape ?? {});
+      for (const key of [...op.http.path.matchAll(/\{(\w+)\}/g)].map((m) => m[1])) expect(shape, `${op.name} ${op.http.path}`).toContain(key);
+    }
+    const app = buildApp({ execute: (async () => ({ status: 200, body: null, requestId: "x" })) as Executor, operations: V1_OPERATIONS });
+    await app.ready();
+    await app.close();
+  });
+
+  it("reads a query string by the operation's input types", () => {
+    const types = queryTypes(z.object({ limit: z.int().optional(), all: z.boolean().optional(), ids: z.array(z.uuid()).optional(), q: z.string().optional() }));
+    expect(readQuery({ limit: "20", all: "true", ids: "a,b", q: "12" }, types)).toEqual({ limit: 20, all: true, ids: ["a", "b"], q: "12" });
+    expect(readQuery({ limit: "twenty", all: "yes" }, types)).toEqual({ limit: "twenty", all: "yes" });
+  });
+});
+
+describe("hosting", () => {
+  it("answers 503 until the API's database is set", async () => {
+    const { handleV1 } = await import("../../src/fetch");
+    const saved = process.env.API_DATABASE_URL;
+    delete process.env.API_DATABASE_URL;
+    const res = await handleV1(new Request("https://api.jonz.app/v1/health"));
+    expect(res.status).toBe(503);
+    expect(res.headers.get("content-type")).toContain("application/problem+json");
+    if (saved !== undefined) process.env.API_DATABASE_URL = saved;
+  });
+
+  it("lets in only listed browser origins, and answers their preflight", async () => {
+    const app = buildApp({ execute: (async () => ({ status: 200, body: [], requestId: "x" })) as Executor, operations: [read], allowedOrigins: ["https://*-glynfincks-projects.vercel.app"] });
+    const ok = await app.inject({ method: "OPTIONS", url: `/v1/houses/${H}/johns`, headers: { origin: "https://jonz-web-git-x-glynfincks-projects.vercel.app" } });
+    expect(ok.statusCode).toBe(204);
+    expect(ok.headers["access-control-allow-origin"]).toBe("https://jonz-web-git-x-glynfincks-projects.vercel.app");
+    expect(String(ok.headers["access-control-allow-headers"])).toContain("Idempotency-Key");
+    const other = await app.inject({ method: "GET", url: `/v1/houses/${H}/johns`, headers: { origin: "https://evil.example" } });
+    expect(other.headers["access-control-allow-origin"]).toBeUndefined();
+    expect(other.headers.vary).toContain("Origin");
   });
 });

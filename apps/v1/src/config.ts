@@ -14,6 +14,7 @@ export interface Config {
   origin: string;
   minimumBuilds: MinimumBuilds;
   poolSize: number;
+  allowedOrigins: string[];
 }
 
 const build = (v: string | undefined) => (v && /^\d+$/.test(v) ? Number(v) : undefined);
@@ -30,5 +31,6 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): Config {
     origin: env.API_ORIGIN ?? "https://api.jonz.app",
     minimumBuilds: { ios: build(env.MIN_IOS_BUILD), android: build(env.MIN_ANDROID_BUILD) },
     poolSize: Number(env.API_POOL_SIZE ?? 10),
+    allowedOrigins: (env.ALLOWED_ORIGINS ?? "").split(",").map((o) => o.trim()).filter(Boolean),
   };
 }
