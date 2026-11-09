@@ -231,7 +231,7 @@ describe("the executor", () => {
       name: "my_permissions",
       input: z.object({ houseId: z.uuid(), photoPath: z.string().optional() }),
       rpcArgs: (i) => ({ h: i.houseId }),
-      operation: { ...myPermissions.operation, entitlement: "photos", entitlementWhen: "photoPath" } as Operation,
+      operation: { ...myPermissions.operation, entitlement: "photos", entitlementWhen: "photoPath" },
     };
     const run = (input: Record<string, unknown>) => createExecutor({ sql: api, verify, operations: [op], now: () => minute(9), passEnforced: true })("my_permissions", as("alice"), input);
     await expect(run({ houseId })).resolves.toMatchObject({ status: 200 });

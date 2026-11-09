@@ -31,9 +31,15 @@ checks, in the same order, for every operation in the registry
      queue on a lock, so two instances can't both run it. A repeat within
      24 hours gets the first answer (`Idempotent-Replayed: true`). The same
      key with a different request is refused (`idempotency_mismatch`).
-   - It becomes the person (`role authenticated` with their claims), then
-     checks the permission (`my_permissions` / `my_app_permissions`) and the
-     House Pass.
+   - It becomes the person (`role authenticated` with their claims) and
+     finds the house: `houseId`, or the house of the row the input names
+     (an assignment, a dispute, a John…, by the registry's `ASK_REFS`),
+     read under RLS so a row they can't see is `404 not_found`; failing
+     those, the one house they're in.
+   - It checks the permission in that house (`my_permissions` /
+     `my_app_permissions`) and the House Pass: always for the operation's
+     `entitlement`, or only when its `entitlementWhen` input is set (a
+     tick is free; a tick with a photo needs the Pass).
    - It runs the database function, or the operation's TypeScript handler for
      `rpc.server` ones, still as the person.
    - It checks the output against its contract. A write with a bad answer is
@@ -100,14 +106,18 @@ Migration `20261219090000_api_layer.sql` sets up the following:
 2. Set the API's settings in Vercel:
    - `API_DATABASE_URL`: the transaction pooler (port 6543) as
      `jonz_api.<project ref>`.
-   - `SUPABASE_URL`.
+   - `SUPABASE_URL` (falls back to `NEXT_PUBLIC_SUPABASE_URL`).
+  - Until `API_DATABASE_URL` is set, `/v1` answers `503`.
    - `MIN_IOS_BUILD` and `MIN_ANDROID_BUILD`, once the phone apps ship.
 
 ## Steps
 
 - **C1 (this):** `@app/server` (the executor), `apps/v1` (the Fastify
   layer), the migration, and the contract check in CI.
-- **C2:** the app moves onto `/v1`. Each table-only operation gets its own
+- **C2:** every registry operation that runs a database function is
+  served (`apps/v1/src/operations.ts`, built from `OPERATION_IO`), and
+  `/v1` is served from jonz-api through `apps/api/app/v1/[...path]/route.ts`.
+  Then the app moves onto `/v1`. Each table-only operation gets its own
   database function (security invoker, so RLS still decides), and each
   `rpc.server` operation's logic moves from `apps/api` into its handler.
 - **C3:** realtime as SSE (`/v1/houses/{houseId}/events`), files by short

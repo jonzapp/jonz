@@ -13,7 +13,7 @@
 
 import { createHash, randomUUID } from "node:crypto";
 
-import { PASS_ENFORCED, passOf, passUnlocked, type Operation } from "@app/core";
+import { ASK_REFS, PASS_ENFORCED, passOf, passUnlocked, type Operation } from "@app/core";
 import type postgres from "postgres";
 import { z } from "zod";
 
@@ -92,17 +92,13 @@ const snake = (key: string) => key.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}
 export const defaultRpcArgs = (input: Record<string, unknown>) =>
   Object.fromEntries(Object.entries(input).map(([k, v]) => [`p_${snake(k)}`, v]));
 
-/** Input keys that name a row under a house, and the table that row is in. */
-export const HOUSE_FROM: readonly (readonly [string, string])[] = [
-  ["assignmentId", "assignments"],
-  ["mine", "assignments"],
-  ["disputeId", "disputes"],
-  ["offerId", "swap_offers"],
-  ["actionId", "house_actions"],
-  ["johnId", "johns"],
-  ["eventId", "events"],
-  ["groupId", "groups"],
-];
+/**
+ * Input keys that name a row under a house, and where that row is: the
+ * registry's own map (ASK_REFS), which Ask Jonz resolves ids by too.
+ */
+export const HOUSE_FROM: readonly (readonly [string, string, string])[] = Object.entries(ASK_REFS)
+  .filter(([, ref]) => !ref.many)
+  .map(([key, ref]) => [key, ref.table, ref.column] as const);
 
 const PG_TO_PROBLEM: Record<string, [Problem["code"], string]> = {
   "42501": ["forbidden", "You can't do that in this house."],
@@ -176,10 +172,10 @@ export function createExecutor(options: ExecutorOptions) {
   async function houseOf(tx: Tx, op: ApiOperation, input: Record<string, unknown>): Promise<string | null> {
     if (op.operation.scope !== "house") return null;
     if (typeof input.houseId === "string") return input.houseId;
-    for (const [key, table] of HOUSE_FROM) {
+    for (const [key, table, column] of HOUSE_FROM) {
       const value = input[key];
       if (typeof value !== "string") continue;
-      const [row] = await tx.unsafe<{ house_id: string }[]>(`select house_id from public.${table} where id = $1::uuid`, [value]);
+      const [row] = await tx.unsafe<{ house_id: string }[]>(`select house_id from public.${table} where ${column} = $1::uuid limit 1`, [value]);
       if (!row) throw new Problem("not_found", "That isn't there, or isn't yours to see.");
       return row.house_id;
     }
@@ -206,7 +202,7 @@ export function createExecutor(options: ExecutorOptions) {
   async function entitlement(tx: Tx, op: ApiOperation, house: string | null, input: Record<string, unknown>, at: Date) {
     const feature = op.operation.entitlement;
     if (!feature || !enforced || !house) return;
-    const when = (op.operation as { entitlementWhen?: string }).entitlementWhen;
+    const when = op.operation.entitlementWhen;
     if (when && (input[when] === undefined || input[when] === null || input[when] === "")) return;
     const [row] = await tx<{ pass_plan: string; pass_ends_at: string | null; pass_bought_by: string | null }[]>`
       select pass_plan, pass_ends_at, pass_bought_by from public.houses where id = ${house}::uuid`;
