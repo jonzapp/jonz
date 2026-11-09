@@ -198,8 +198,10 @@ see "Design options for Glyn" in the `house-style` skill.
   destructive and the House Pass feature it needs; `TABLES` lists what
   signed-in people reach directly. A new callable function, table grant or
   API route fails CI until it's listed (`supabase/checks/registry.sql` is
-  generated from it: `npx vitest run -u` in `packages/core`). See
-  `docs/specs/operation-registry.md`.
+  generated from it: `npx vitest run -u` in `packages/core`). Each one's
+  input, output and /v1 route are in `OPERATION_IO`
+  (`packages/core/src/operation-io.ts`), held to the database's own
+  arguments and answers. See `docs/specs/operation-registry.md`.
 
 ## The clock
 

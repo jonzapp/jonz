@@ -86,4 +86,5 @@ export * from "./owner-moves";
 export * from "./support-draft";
 export * from "./draft-edits";
 export type * from "./db-types";
+export * from "./operation-io";
 export * from "./operations";
