@@ -37,10 +37,9 @@ export const env = {
    * it's one of ALLOWED_ORIGINS (staging, or a preview of the web build),
    * otherwise APP_URL. Production lists no origins, so it is always APP_URL.
    */
-  appUrlFor: (request: Request) => {
-    const origin = request.headers.get("origin");
-    return originAllowed(origin, env.allowedOrigins()) ? origin : env.appUrl();
-  },
+  appUrlFor: (request: Request) => env.appUrlForOrigin(request.headers.get("origin")),
+  /** appUrlFor, from the Origin header alone (a /v1 handler has that, not the request). */
+  appUrlForOrigin: (origin: string | null) => (originAllowed(origin, env.allowedOrigins()) ? origin : env.appUrl()),
   /**
    * Resend's key for sending email (lib/email.ts), "Sending access" only.
    * Unset locally and on staging, where emails are logged, not sent.

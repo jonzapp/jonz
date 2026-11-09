@@ -3,36 +3,43 @@
 // executor and the Fastify app are made once per instance, on the first
 // request, and reused; nothing about any request is kept.
 
-import { connect, createExecutor, Problem, tokenVerifier, type Executor, type Sql } from "@app/server";
+import { connect, createExecutor, Problem, tokenVerifier, type ApiOperation, type Executor, type Sql } from "@app/server";
 import type { FastifyInstance } from "fastify";
 
 import { buildApp } from "./app";
 import { readConfig } from "./config";
-import { V1_OPERATIONS } from "./operations";
+import { withHandlers, type Handlers } from "./operations";
 
 interface Instance {
   sql: Sql;
   execute: Executor;
   app: FastifyInstance;
+  /** What this instance serves: the database operations and the server ones it was given handlers for. */
+  operations: readonly ApiOperation[];
 }
 
 let instance: Promise<Instance> | null = null;
 
-/** The pool and executor this instance shares between /v1 and /mcp. Null until API_DATABASE_URL is set. */
-export function v1Instance(env: NodeJS.ProcessEnv = process.env): Promise<Instance> | null {
+/**
+ * The pool and executor this instance shares between /v1 and /mcp. Null
+ * until API_DATABASE_URL is set. `handlers` run the server operations; the
+ * first call's are the ones kept, so every caller in a host passes the same.
+ */
+export function v1Instance(env: NodeJS.ProcessEnv = process.env, handlers: Handlers = {}): Promise<Instance> | null {
   if (!env.API_DATABASE_URL) return null;
   instance ??= (async () => {
+    const operations = withHandlers(handlers);
     const config = readConfig({ ...env, SUPABASE_URL: env.SUPABASE_URL ?? env.NEXT_PUBLIC_SUPABASE_URL });
     const sql = connect(config.databaseUrl, config.poolSize);
     const execute = createExecutor({
       sql,
       verify: tokenVerifier({ supabaseUrl: config.supabaseUrl, jwtSecret: config.jwtSecret }),
-      operations: V1_OPERATIONS,
+      operations,
       minimumBuilds: config.minimumBuilds,
     });
-    const app = buildApp({ execute, operations: V1_OPERATIONS, origin: config.origin, allowedOrigins: config.allowedOrigins });
+    const app = buildApp({ execute, operations, origin: config.origin, allowedOrigins: config.allowedOrigins });
     await app.ready();
-    return { sql, execute, app };
+    return { sql, execute, app, operations };
   })();
   instance.catch(() => (instance = null));
   return instance;
@@ -40,9 +47,14 @@ export function v1Instance(env: NodeJS.ProcessEnv = process.env): Promise<Instan
 
 const DROP = new Set(["host", "connection", "content-length", "transfer-encoding"]);
 
-/** Answers one /v1 request. */
-export async function handleV1(request: Request): Promise<Response> {
-  const ready = v1Instance();
+/** Answers one /v1 request, running server operations with `handlers`. */
+export const createV1Handler = (handlers: Handlers) => (request: Request) => answer(request, handlers);
+
+/** Answers one /v1 request, serving the database operations only. */
+export const handleV1 = createV1Handler({});
+
+async function answer(request: Request, handlers: Handlers): Promise<Response> {
+  const ready = v1Instance(process.env, handlers);
   if (!ready) {
     const problem = new Problem("internal", "The API isn't set up here yet.");
     return Response.json({ ...problem.body(), status: 503 }, { status: 503, headers: { "content-type": "application/problem+json" } });

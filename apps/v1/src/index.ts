@@ -2,5 +2,5 @@
 // through the same executor), and src/server.ts on its own.
 
 export { buildApp, fastifyPath, type AppOptions } from "./app";
-export { handleV1, v1Instance } from "./fetch";
-export { apiOperation, SERVED, V1_OPERATIONS } from "./operations";
+export { createV1Handler, handleV1, v1Instance } from "./fetch";
+export { apiOperation, CONTRACT_OPERATIONS, HANDLED, SERVED, V1_OPERATIONS, withHandlers, type Handler, type Handlers } from "./operations";

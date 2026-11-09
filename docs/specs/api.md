@@ -128,9 +128,27 @@ Migration `20261219090000_api_layer.sql` sets up the following:
     title), the SQL does the same sums and a test checks the two agree.
   - Path keys and a GET's query are read by their input type, so a
     number in the path (an audit entry) arrives as a number.
+  - Done: the server operations (ask_usage, catch_up, deal_week,
+    reset_house, add_kid, ask_house, pass_checkout, pass_billing,
+    ask_owner, write_notice_copy, retry_promotion). Each has a handler in
+    `apps/api/lib/v1/handlers.ts` that runs the move its `/api` route ran,
+    after the executor's checks; apps/api hands them to apps/v1
+    (`createV1Handler`, `v1Instance`), so /v1 and /mcp both serve them. A
+    move's refusal becomes the Problem a database function's would, and a
+    Pass answer's 503 is `unavailable`.
+  - Those moves still read and write through supabase-js (the person's
+    session, or the service role for the engine, Stripe set-up and new
+    kids' accounts), which goes through the Data API. Before C5 they move
+    onto the handler's own transaction and postgres.js (C4b below), so
+    turning the Data API off breaks nothing.
 - **C3:** realtime as SSE (`/v1/houses/{houseId}/events`), files by short
   links (`files.jonz.app`), and sign-in through `/v1/auth/*`.
 - **C4:** MCP (registry PR 6) on the same executor.
+- **C4b:** the server moves and the engine (`apps/api/lib/moves`,
+  `lib/engine`) read and write with postgres.js instead of supabase-js:
+  the person's reads in the handler's transaction, the engine's work as
+  the API's role through database functions. Kids' accounts stay on
+  Supabase Auth's admin API, which isn't the Data API.
 - **C5:** revoke the direct grants and turn the Data API off.
 - **C6:** the phone version gate goes live.
 

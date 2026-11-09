@@ -6,6 +6,8 @@ import { randomUUID } from "node:crypto";
 import { V1_OPERATIONS, v1Instance } from "v1";
 import { asProblem, type ApiOperation, type Executor } from "@app/server";
 
+import { V1_HANDLERS } from "@/lib/v1/handlers";
+
 // Jonz over MCP (docs/specs/operation-registry.md, "MCP"): one tool per
 // operation /v1 serves, made from the registry, run through the same
 // executor as /v1 with via "mcp" — the same token check, rate limit,
@@ -115,9 +117,9 @@ export async function handleMcp(request: Request): Promise<Response> {
       "WWW-Authenticate": `Bearer resource_metadata="${metadataUrl()}"`,
     });
   }
-  const ready = v1Instance();
+  const ready = v1Instance(process.env, V1_HANDLERS);
   if (!ready) return problem(503, "internal", "The API isn't set up here yet.");
-  const { execute } = await ready;
-  const handler = createMcpHandler(() => buildMcpServer(execute, authorization));
+  const { execute, operations } = await ready;
+  const handler = createMcpHandler(() => buildMcpServer(execute, authorization, mcpOperations(operations)));
   return handler.fetch(request);
 }

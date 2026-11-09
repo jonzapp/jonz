@@ -132,6 +132,7 @@ export function buildApp(options: AppOptions): FastifyInstance {
               authorization: header(req.headers.authorization),
               client: header(req.headers["jonz-client"]),
               idempotencyKey: header(req.headers["idempotency-key"]),
+              origin: header(req.headers.origin),
               requestId: req.id,
               via: "api",
             },

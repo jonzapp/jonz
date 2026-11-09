@@ -25,10 +25,14 @@ import { Problem } from "./problem";
 
 export type HttpMethod = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
 
-/** What a server handler gets: the transaction (already the person), who they are, and the checked input. */
+/** What a server handler gets: the transaction (already the person), who they are, their token, and the checked input. */
 export interface HandlerContext {
   tx: Tx;
   claims: Claims;
+  /** The person's access token, already checked: for a service that acts as them (Supabase Auth, Storage). */
+  token: string;
+  /** The page that sent the request (its Origin header), if a browser sent it: where to send the browser back to. */
+  origin: string | null;
   input: Record<string, unknown>;
   now: Date;
 }
@@ -43,8 +47,9 @@ export interface ApiOperation {
   /** The database function's arguments for an input. Default: camelCase keys as p_snake_case. */
   rpcArgs?: (input: Record<string, unknown>) => Record<string, unknown>;
   /**
-   * For operations whose logic lives in TypeScript (`rpc.server`): runs in
-   * place of the database function, after the same checks, as the person.
+   * For operations whose logic lives in TypeScript (`rpc.server`, or no
+   * database function at all): runs in place of the database function,
+   * after the same checks, as the person.
    */
   handler?: (context: HandlerContext) => Promise<unknown>;
   /** Turns the function's answer into the contract's shape (camelCase keys, a page). Default: as it comes. */
@@ -62,6 +67,8 @@ export interface RequestContext {
   client?: string | null;
   idempotencyKey?: string | null;
   requestId?: string;
+  /** The request's Origin header, for a handler that sends a browser back to the page that asked. */
+  origin?: string | null;
   /** Who is calling: "api", "mcp" or "ask". Written to the audit row. */
   via?: "api" | "mcp" | "ask";
 }
@@ -121,6 +128,9 @@ const PG_TO_PROBLEM: Record<string, [Problem["code"], string]> = {
   "40P01": ["conflict", "Someone else changed this at the same moment. Try again."],
 };
 
+/** The token in `Authorization: Bearer <token>`, which `verify` has already checked. */
+const bearerToken = (authorization?: string | null) => authorization?.match(/^Bearer\s+(\S+)$/i)?.[1] ?? "";
+
 /** A database error as a Problem. Only errors a function raised on purpose pass their words on. */
 export function fromDatabase(error: unknown): Problem {
   const e = error as { code?: string; message?: string };
@@ -159,7 +169,8 @@ export function createExecutor(options: ExecutorOptions) {
 
   for (const op of options.operations) {
     if (!op.handler && !op.operation.rpc?.name) throw new Error(`${op.name} has neither a database function nor a handler`);
-    if (op.handler && !op.operation.rpc?.server) throw new Error(`${op.name} has a handler but its rpc isn't marked server`);
+    if (op.handler && op.operation.rpc && !op.operation.rpc.server) throw new Error(`${op.name} has a handler but its rpc isn't marked server`);
+    if (!op.handler && op.operation.rpc?.server) throw new Error(`${op.name} runs on the server but has no handler`);
     if (op.deprecated && op.deprecated.sunset.getTime() - op.deprecated.since.getTime() < SUNSET_NOTICE_MS) {
       throw new Error(`${op.name} sunsets less than six months after it was deprecated`);
     }
@@ -323,7 +334,7 @@ export function createExecutor(options: ExecutorOptions) {
           await becomePerson(tx, claims);
         }
         const raw = op.handler
-          ? await op.handler({ tx, claims, input, now: at })
+          ? await op.handler({ tx, claims, token: bearerToken(context.authorization), origin: context.origin ?? null, input, now: at })
           : await callFunction(tx, signature!, fn!, (op.rpcArgs ?? defaultRpcArgs)(input));
         // Checked before commit: a write whose answer breaks its contract is rolled back, not half-reported.
         // Nothing back where the contract wants something: the row isn't there, or RLS hides it.
