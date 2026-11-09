@@ -166,10 +166,47 @@ jobs:
         run: npm run build
 
       # The system libraries come from Ubuntu's mirror, which has been slow
-      # (11.5 minutes once); each job asks only for its own browser's.
+      # (12.5 minutes for WebKit's once), so the .deb files are cached. The
+      # key holds the runner image's version: a new image starts a new cache,
+      # so the cached packages always match what the image already has.
+      - name: Browser system libraries cache key
+        id: apt-key
+        run: echo "key=apt-${ImageOS}-${ImageVersion}-${{ matrix.browser }}-pw$(node -p "require('playwright-core/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Restore browser system libraries
+        id: apt-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/apt-debs
+          key: ${{ steps.apt-key.outputs.key }}
+
       - name: Install browser system libraries
         timeout-minutes: 15
-        run: npx playwright install-deps ${{ matrix.browser }}
+        run: |
+          debs="$HOME/apt-debs"
+          if [ "${{ steps.apt-cache.outputs.cache-hit }}" = "true" ] && ls "$debs"/*.deb > /dev/null 2>&1; then
+            if sudo DEBIAN_FRONTEND=noninteractive dpkg -i "$debs"/*.deb > /tmp/dpkg.log 2>&1; then
+              echo "Installed $(ls "$debs"/*.deb | wc -l) cached packages."
+              exit 0
+            fi
+            tail -20 /tmp/dpkg.log
+            echo "::warning title=Cached libraries::dpkg could not install the cache; fetching from the mirror"
+          fi
+          # Keep every package apt downloads, in a folder the cache can save.
+          mkdir -p "$debs/partial"
+          echo "Dir::Cache::Archives \"$debs/\";" | sudo tee /etc/apt/apt.conf.d/99-ci-keep-debs > /dev/null
+          npx playwright install-deps ${{ matrix.browser }}
+          sudo rm -rf "$debs/partial" "$debs/lock"
+          sudo chown -R "$USER" "$debs"
+          echo "Fetched $(ls "$debs"/*.deb 2>/dev/null | wc -l) packages from the mirror."
+
+      # Saved now, not at job end, so a red test run still keeps it.
+      - name: Save browser system libraries
+        if: steps.apt-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/apt-debs
+          key: ${{ steps.apt-key.outputs.key }}
 
       - name: Install browser
         run: |
