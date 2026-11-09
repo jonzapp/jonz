@@ -14,7 +14,7 @@ const execute = createExecutor({
   operations: V1_OPERATIONS,
   minimumBuilds: config.minimumBuilds,
 });
-const app = buildApp({ execute, operations: V1_OPERATIONS, origin: config.origin, logger: true });
+const app = buildApp({ execute, operations: V1_OPERATIONS, origin: config.origin, allowedOrigins: config.allowedOrigins, logger: true });
 
 const stop = async () => {
   await app.close();

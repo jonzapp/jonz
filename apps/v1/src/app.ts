@@ -12,6 +12,7 @@
 
 import { randomUUID } from "node:crypto";
 
+import { corsHeaders } from "./cors";
 import { asProblem, openApi, pathKeys, Problem, type ApiOperation, type Executor } from "@app/server";
 import Fastify, { type FastifyInstance, type FastifyReply } from "fastify";
 import { z } from "zod";
@@ -24,6 +25,8 @@ export interface AppOptions {
   logger?: boolean;
   /** Most bytes a request body may have. */
   bodyLimit?: number;
+  /** Web origins that may call from a browser elsewhere (ALLOWED_ORIGINS). */
+  allowedOrigins?: readonly string[];
 }
 
 const REQUEST_ID = /^[A-Za-z0-9._:-]{8,100}$/;
@@ -77,8 +80,11 @@ export function buildApp(options: AppOptions): FastifyInstance {
     routerOptions: { ignoreTrailingSlash: true },
   });
 
+  const allowed = options.allowedOrigins ?? [];
   app.addHook("onRequest", async (req, reply) => {
     reply.header("Request-Id", req.id);
+    for (const [k, v] of Object.entries(corsHeaders(header(req.headers.origin), allowed))) reply.header(k, v);
+    if (req.method === "OPTIONS") return reply.code(204).send();
   });
 
   app.setNotFoundHandler((req, reply) => sendProblem(reply, new Problem("not_found", "There's no such path in /v1."), req.id));

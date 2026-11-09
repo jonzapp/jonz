@@ -123,3 +123,26 @@ describe("the registry on /v1", () => {
     expect(readQuery({ limit: "twenty", all: "yes" }, types)).toEqual({ limit: "twenty", all: "yes" });
   });
 });
+
+describe("hosting", () => {
+  it("answers 503 until the API's database is set", async () => {
+    const { handleV1 } = await import("../../src/fetch");
+    const saved = process.env.API_DATABASE_URL;
+    delete process.env.API_DATABASE_URL;
+    const res = await handleV1(new Request("https://api.jonz.app/v1/health"));
+    expect(res.status).toBe(503);
+    expect(res.headers.get("content-type")).toContain("application/problem+json");
+    if (saved !== undefined) process.env.API_DATABASE_URL = saved;
+  });
+
+  it("lets in only listed browser origins, and answers their preflight", async () => {
+    const app = buildApp({ execute: (async () => ({ status: 200, body: [], requestId: "x" })) as Executor, operations: [read], allowedOrigins: ["https://*-glynfincks-projects.vercel.app"] });
+    const ok = await app.inject({ method: "OPTIONS", url: `/v1/houses/${H}/johns`, headers: { origin: "https://jonz-web-git-x-glynfincks-projects.vercel.app" } });
+    expect(ok.statusCode).toBe(204);
+    expect(ok.headers["access-control-allow-origin"]).toBe("https://jonz-web-git-x-glynfincks-projects.vercel.app");
+    expect(String(ok.headers["access-control-allow-headers"])).toContain("Idempotency-Key");
+    const other = await app.inject({ method: "GET", url: `/v1/houses/${H}/johns`, headers: { origin: "https://evil.example" } });
+    expect(other.headers["access-control-allow-origin"]).toBeUndefined();
+    expect(other.headers.vary).toContain("Origin");
+  });
+});
