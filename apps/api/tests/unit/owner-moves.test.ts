@@ -39,6 +39,7 @@ const writes = (may: Partial<Record<OwnerPermission, boolean>>): OwnerWrites => 
   promotionMove: ok,
   deletionMove: ok,
   startDeletion: ok,
+  deleteHouse: ok,
   may: { ...(Object.fromEntries(OWNER_PERMISSION_NAMES.map((p) => [p, false])) as Record<OwnerPermission, boolean>), ...may },
 });
 const everything = Object.fromEntries(OWNER_PERMISSION_NAMES.map((p) => [p, true]));

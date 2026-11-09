@@ -1,8 +1,11 @@
 import { randomUUID } from "node:crypto";
 
 import type { Overview } from "@app/core";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { deleteHouse } from "@/lib/moves/houses";
+import type { MessageOutbox } from "@/lib/moves/messages";
+import type { PassStripe, SubscriptionView } from "@/lib/pass/stripe";
 import { adminClient, signedInUser, visitor, type Actor } from "@/tests/support/clients";
 import { expectDenied, expectOk } from "@/tests/support/expect";
 import { addJohns, deal, makeHouse, weeksAgo, type House } from "@/tests/support/factories";
@@ -239,5 +242,78 @@ describe("Overview", () => {
     for (const n of data.needs) expect(["report", "deletion"]).toContain(n.kind);
     expect(data.needs.filter((n) => n.kind === "report").length).toBeLessThanOrEqual(3);
     expect(data.needs.filter((n) => n.kind === "deletion").length).toBeLessThanOrEqual(3);
+  });
+});
+
+describe("deleting a house", () => {
+  const stripeWith = (subs: Record<string, SubscriptionView>) => {
+    const stopped: string[] = [];
+    const stripe = {
+      subscription: async (id: string) => subs[id],
+      stopRenewing: async (id: string) => void stopped.push(id),
+    } as unknown as PassStripe;
+    return { stripe, stopped };
+  };
+  const outbox = () => {
+    const told: string[][] = [];
+    const emails: string[] = [];
+    const out = {
+      db,
+      notify: async (to: string[]) => void told.push(to),
+      email: vi.fn(async (to: string) => (emails.push(to), { sent: true as const, id: "test" })),
+    } as unknown as MessageOutbox;
+    return { out, told, emails };
+  };
+
+  it("lets the owner with their code delete it: everyone told, its Pass stopped, logged, and its people kept", async () => {
+    expectOk(await db.from("houses").update({ pass_plan: "yearly", pass_ends_at: ago(-200) }).eq("id", house.id));
+    expectOk(await db.from("house_pass_billing").upsert({ house_id: house.id, stripe_customer_id: "cus_1", stripe_subscription_id: "sub_1" }));
+    const { stripe, stopped } = stripeWith({ sub_1: { status: "active", cancelAtPeriodEnd: false } as SubscriptionView });
+    const { out, told, emails } = outbox();
+
+    const result = await deleteHouse({ db: owner.db, userId: owner.userId }, house.id, { reason: "Test house", tell: true }, stripe, out);
+    expect(result).toEqual({ name, people: 2, told: 2, passStopped: true });
+    expect(stopped).toEqual(["sub_1"]);
+    expect(told.flat().sort()).toEqual(house.everyone.map((p) => p.userId).sort());
+    expect(emails).toHaveLength(2);
+
+    expect((await db.from("houses").select("id").eq("id", house.id)).data).toEqual([]);
+    expect((await db.from("members").select("user_id").eq("house_id", house.id)).data).toEqual([]);
+    expect((await db.from("house_pass_billing").select("house_id").eq("house_id", house.id)).data).toEqual([]);
+    // Everyone keeps their account, in no house.
+    const { data: people } = await db.from("profiles").select("id, deleted_at").in("id", house.everyone.map((p) => p.userId));
+    expect(people?.map((p) => p.deleted_at)).toEqual([null, null]);
+
+    const { data: audit } = await db.from("admin_audit").select("actor, action, reason, before").eq("target_id", house.id);
+    expect(audit).toEqual([
+      expect.objectContaining({ actor: owner.userId, action: "house.delete", reason: "Test house", before: expect.objectContaining({ name, people: 2, subscription: "sub_1" }) }),
+    ]);
+  });
+
+  it("deletes one with no Pass, telling nobody when asked not to", async () => {
+    const { out, told } = outbox();
+    const result = await deleteHouse({ db: owner.db, userId: owner.userId }, house.id, { reason: "", tell: false }, null, out);
+    expect(result).toEqual({ name, people: 2, told: 0, passStopped: null });
+    expect(told).toEqual([]);
+    expect((await db.from("houses").select("id").eq("id", house.id)).data).toEqual([]);
+  });
+
+  it("says when the Pass couldn't be stopped, and the house is gone anyway", async () => {
+    expectOk(await db.from("house_pass_billing").upsert({ house_id: house.id, stripe_customer_id: "cus_2", stripe_subscription_id: "sub_2" }));
+    const result = await deleteHouse({ db: owner.db, userId: owner.userId }, house.id, { reason: "", tell: false }, null, outbox().out);
+    expect(result).toMatchObject({ passStopped: false });
+    expect((await db.from("houses").select("id").eq("id", house.id)).data).toEqual([]);
+  });
+
+  it("refuses everyone else: a member of it, an owner without their code, a support helper, anyone signed out", async () => {
+    const support = await signedInUser("Support helper");
+    expectOk(await db.from("app_owners").insert({ user_id: support.userId, role: "support" }));
+    await passSecondFactor(support);
+    for (const who of [house.everyone[0], ownerNoCode, support]) {
+      expectDenied(await who.db.rpc("owner_delete_house", { p_house: house.id }));
+    }
+    expect((await visitor().rpc("owner_delete_house", { p_house: house.id })).error).not.toBeNull();
+    expect((await db.from("houses").select("id").eq("id", house.id)).data).toHaveLength(1);
+    expect((await db.from("admin_audit").select("id").eq("target_id", house.id)).data).toEqual([]);
   });
 });

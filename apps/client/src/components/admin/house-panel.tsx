@@ -1,22 +1,33 @@
-import { HOUSES_COPY, houseFacts, houseLead, passDetail, personMeta, type HouseDetail } from '@app/core';
-import { useQuery } from '@tanstack/react-query';
+import { DELETE_HOUSE_COPY, FOCUS_SHELL_COPY, HOUSES_COPY, houseFacts, houseLead, passDetail, personMeta, type HouseDetail } from '@app/core';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { router } from 'expo-router';
+import { MegaphoneIcon } from 'lucide-react-native';
+import { useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
-import { ownerHouse } from '@/api/houses';
+import { deleteHouse, ownerHouse } from '@/api/houses';
+import { useOwnerMay } from '@/components/admin/use-owner-may';
 import { Alert } from '@/components/alert';
 import { Avatar } from '@/components/avatar';
-import { Row } from '@/components/row';
+import { Button } from '@/components/button';
+import { ButtonRow } from '@/components/button-row';
+import { Field } from '@/components/field';
+import { Row, RowIcon } from '@/components/row';
 import { Section } from '@/components/section';
+import { ChoiceRow } from '@/components/setup/choice-row';
+import { Sheet } from '@/components/sheet';
 import { Lead, Meta } from '@/components/text';
+import { useToast } from '@/components/toast';
 import { SPACE, useTheme } from '@/theme';
 
 /** The Houses list's reads, so the panel and the list share their cache. */
 export const HOUSES_KEY = ['owner-houses'] as const;
 
 /**
- * One house, read only: when it started and its admins, each person with
- * how they're doing and any time away, its Pass and who pays, and the
- * settings that help with a support email. Nothing here changes the house.
+ * One house: when it started and its admins, each person with how they're
+ * doing and any time away, its Pass and who pays, and the settings that
+ * help with a support email. The one thing that changes it is Delete house,
+ * for an owner who may (houses:write).
  */
 export function HousePanel({ id }: { id: string }) {
   const { colors } = useTheme();
@@ -52,8 +63,63 @@ function HouseBody({ house }: { house: HouseDetail }) {
       <Section label={HOUSES_COPY.details}>
         <Row title={houseFacts(house)} titleLines={2} testID="house-facts" />
       </Section>
-      <Meta>{HOUSES_COPY.readOnly}</Meta>
+      <DeleteHouse house={house} />
     </View>
+  );
+}
+
+/**
+ * Delete house, at the foot of the house: a sheet that says what goes, asks
+ * why (for the audit log) and whether to tell everyone, and only deletes once
+ * the house's name is typed. Then it's back to Houses.
+ */
+function DeleteHouse({ house }: { house: HouseDetail }) {
+  const may = useOwnerMay('houses:write');
+  const toast = useToast();
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState('');
+  const [tell, setTell] = useState(true);
+  const [typed, setTyped] = useState('');
+  const remove = useMutation({
+    mutationFn: () => deleteHouse(house.id, reason, tell),
+    onSuccess: (done) => {
+      toast.show(done.passStopped === false ? `${DELETE_HOUSE_COPY.done(done.name)} ${DELETE_HOUSE_COPY.passNotStopped}` : DELETE_HOUSE_COPY.done(done.name));
+      void queryClient.invalidateQueries();
+      setOpen(false);
+      router.replace('/admin/houses');
+    },
+  });
+  if (!may) return <Meta>{HOUSES_COPY.readOnly}</Meta>;
+  const named = typed.trim().toLowerCase() === house.name.trim().toLowerCase();
+  return (
+    <>
+      <ButtonRow>
+        <Button variant="hazard" label={DELETE_HOUSE_COPY.button} onPress={() => setOpen(true)} testID="house-delete" />
+      </ButtonRow>
+      <Sheet
+        visible={open}
+        title={DELETE_HOUSE_COPY.title(house.name)}
+        description={DELETE_HOUSE_COPY.body}
+        onClose={() => setOpen(false)}
+        testID="house-delete-sheet"
+      >
+        <Field label={DELETE_HOUSE_COPY.reason} value={reason} onChangeText={setReason} maxLength={500} testID="house-delete-reason" />
+        <ChoiceRow role="checkbox" leading={<RowIcon icon={MegaphoneIcon} />} label={DELETE_HOUSE_COPY.tell} checked={tell} onPress={() => setTell(!tell)} testID="house-delete-tell" />
+        <Field label={DELETE_HOUSE_COPY.confirm} value={typed} onChangeText={setTyped} placeholder={house.name} testID="house-delete-name" />
+        {remove.error ? <Alert message={remove.error.message} /> : null}
+        <ButtonRow stacked>
+          <Button
+            variant="hazard"
+            label={remove.isPending ? DELETE_HOUSE_COPY.deleting : DELETE_HOUSE_COPY.delete}
+            disabled={!named || remove.isPending}
+            onPress={() => remove.mutate()}
+            testID="house-delete-confirm"
+          />
+          <Button variant="outline" label={FOCUS_SHELL_COPY.cancel} disabled={remove.isPending} onPress={() => setOpen(false)} testID="house-delete-cancel" />
+        </ButtonRow>
+      </Sheet>
+    </>
   );
 }
 

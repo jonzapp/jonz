@@ -46,4 +46,5 @@ export const OWNER_MATRIX: Record<OwnerPermission, { owner: boolean; support: bo
   "messages:write": { owner: true, support: false },
   "promotions:write": { owner: true, support: false },
   "deletions:write": { owner: true, support: false },
+  "houses:write": { owner: true, support: false },
 };

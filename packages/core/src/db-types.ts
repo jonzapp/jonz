@@ -2875,6 +2875,15 @@ export type Database = {
         Args: { p_action: string; p_draft: string; p_input: number; p_output: number; p_reply: string; p_same_as: string | null; p_why: string }
         Returns: Json
       }
+      owner_delete_house: {
+        Args: {
+          p_body?: string
+          p_house: string
+          p_reason?: string
+          p_subject?: string
+        }
+        Returns: Json
+      }
       owner_delete_now: {
         Args: { p_reason?: string; p_user: string }
         Returns: undefined

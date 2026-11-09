@@ -2,6 +2,7 @@ import { OWNER_MOVES_COPY, OWNER_MOVES_FINAL, type OwnerMove, type OwnerMoveKind
 import { useQueryClient } from '@tanstack/react-query';
 import {
   BanIcon,
+  HouseIcon,
   CheckIcon,
   CircleCheckIcon,
   Link2Icon,
@@ -20,6 +21,7 @@ import {
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { deleteHouse } from '@/api/houses';
 import { deleteByEmail, deleteNow, endNotice, saveNotice, stopDeletion } from '@/api/owner';
 import { emailPromotion, makePromotion, retryPromotion, stopPromotion } from '@/api/promotions';
 import { fixReport, replyToReport, setReportState, setSameAs } from '@/api/reports';
@@ -47,6 +49,7 @@ const ICON: Record<OwnerMoveKind, LucideIcon> = {
   deletion_now: Trash2Icon,
   deletion_stop: RotateCcwIcon,
   deletion_start: UserXIcon,
+  house_delete: HouseIcon,
 };
 
 /** Does one move through the admin page's own call, as the owner: the database checks it and the audit log keeps it. */
@@ -96,6 +99,9 @@ export async function doOwnerMove(m: OwnerMove): Promise<void> {
       return stopDeletion(m.userId, m.reason);
     case 'deletion_start':
       return deleteByEmail(m.email, m.reason);
+    case 'house_delete':
+      await deleteHouse(m.houseId, m.reason, m.tell);
+      return;
   }
 }
 
