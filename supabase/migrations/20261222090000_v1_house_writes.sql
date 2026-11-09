@@ -3,6 +3,29 @@
 -- the app's own table writes do today, and is security invoker, so Row Level
 -- Security and the column grants still decide.
 
+-- --- Who may ---------------------------------------------------------------------------------
+-- Each function asks its operation's permission first (the registry's guard,
+-- packages/core/src/operations.ts), so the database refuses as the API does:
+-- someone outside the house is not_in_house, a member without it admins_only.
+-- Row Level Security still decides every row after that.
+create function public.check_can(p_house uuid, p_perm text)
+returns void
+language plpgsql
+stable
+security invoker
+set search_path = ''
+as $$
+begin
+  if p_house is null or not public.is_member(p_house) then
+    raise exception 'not_in_house' using errcode = '42501';
+  end if;
+  if not public.can(p_house, p_perm) then
+    raise exception 'admins_only' using errcode = '42501';
+  end if;
+end;
+$$;
+comment on function public.check_can(uuid, text) is 'Refuses (42501) unless you hold a permission in a house: not_in_house, or admins_only.';
+
 -- --- When a John comes round ----------------------------------------------------------------
 -- The same sums as packages/core (week.ts weekIndex/weekWindow, repeat.ts
 -- repeatColumns/startMonths); apps/v1/tests/db/house-writes.test.ts checks
@@ -76,6 +99,7 @@ language sql
 security invoker
 set search_path = ''
 as $$
+  select public.check_can((select e.house_id from public.events e where e.id = p_event), 'wall:write_own');
   insert into public.reactions (event_id, kind) values (p_event, p_kind)
   on conflict do nothing;
 $$;
@@ -87,6 +111,7 @@ language sql
 security invoker
 set search_path = ''
 as $$
+  select public.check_can((select e.house_id from public.events e where e.id = p_event), 'wall:write_own');
   delete from public.reactions where event_id = p_event and user_id = (select auth.uid()) and kind = p_kind;
 $$;
 comment on function public.unreact(uuid, text) is 'Take back your reaction.';
@@ -146,6 +171,7 @@ declare
   c jsonb;
   new_id uuid;
 begin
+  perform public.check_can(p_house, 'johns:write');
   for j in select value from jsonb_array_elements(p_johns) with ordinality order by ordinality loop
     c := public.john_columns(p_house, j, now());
     if c is null then
@@ -236,6 +262,7 @@ as $$
 declare
   c jsonb;
 begin
+  perform public.check_can((select j.house_id from public.johns j where j.id = p_john), 'johns:write');
   select public.john_columns(j.house_id, jsonb_build_object(
     'name', p_name, 'category', p_category, 'points', p_points, 'everyWeeks', p_every_weeks,
     'everyMonths', p_every_months, 'weekOfMonth', p_week_of_month, 'anchorMonth', p_anchor_month,
@@ -280,6 +307,7 @@ security invoker
 set search_path = ''
 as $$
 begin
+  perform public.check_can((select j.house_id from public.johns j where j.id = p_john), 'johns:write');
   update public.johns set archived_at = now() where id = p_john and archived_at is null;
   if not found then
     raise exception 'admins_only' using errcode = '42501';
@@ -315,6 +343,7 @@ security invoker
 set search_path = ''
 as $$
 begin
+  perform public.check_can(p_house, 'house:write');
   update public.houses
   set name = p_name,
       timezone = p_timezone,
@@ -346,6 +375,7 @@ security invoker
 set search_path = ''
 as $$
 begin
+  perform public.check_can(p_house, 'house:write');
   update public.houses set deal_mode = p_mode where id = p_house;
   if not found then
     raise exception 'admins_only' using errcode = '42501';
@@ -356,6 +386,7 @@ comment on function public.set_deal_mode(uuid, text) is 'Choose how the house sh
 
 -- --- Who can call them ------------------------------------------------------------------------
 
+revoke all on function public.check_can(uuid, text) from public, anon;
 revoke all on function public.week_starts_on(timestamptz, text, smallint) from public, anon;
 revoke all on function public.week_index_at(timestamptz, text, smallint) from public, anon;
 revoke all on function public.first_john_month(timestamptz, text, smallint, smallint, smallint) from public, anon;
@@ -369,6 +400,7 @@ revoke all on function public.remove_john(uuid) from public, anon;
 revoke all on function public.save_house_rules(uuid, text, text, text, smallint, integer, integer, integer, smallint, smallint, smallint, smallint, text, text, smallint, integer) from public, anon;
 revoke all on function public.set_deal_mode(uuid, text) from public, anon;
 
+grant execute on function public.check_can(uuid, text) to authenticated;
 grant execute on function public.week_starts_on(timestamptz, text, smallint) to authenticated;
 grant execute on function public.week_index_at(timestamptz, text, smallint) to authenticated;
 grant execute on function public.first_john_month(timestamptz, text, smallint, smallint, smallint) to authenticated;

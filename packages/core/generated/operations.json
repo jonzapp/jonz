@@ -2232,130 +2232,137 @@
         ]
       },
       "output": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "title": {
-            "type": "string"
-          },
-          "turns": {
-            "type": "array",
-            "items": {
-              "oneOf": [
-                {
-                  "type": "object",
-                  "properties": {
-                    "role": {
-                      "type": "string",
-                      "const": "user"
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "title": {
+                "type": "string"
+              },
+              "turns": {
+                "type": "array",
+                "items": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "role": {
+                          "type": "string",
+                          "const": "user"
+                        },
+                        "text": {
+                          "type": "string",
+                          "maxLength": 4000
+                        }
+                      },
+                      "required": [
+                        "role",
+                        "text"
+                      ]
                     },
-                    "text": {
-                      "type": "string",
-                      "maxLength": 4000
-                    }
-                  },
-                  "required": [
-                    "role",
-                    "text"
-                  ]
-                },
-                {
-                  "type": "object",
-                  "properties": {
-                    "role": {
-                      "type": "string",
-                      "const": "assistant"
-                    },
-                    "text": {
-                      "type": "string",
-                      "maxLength": 20000
-                    },
-                    "ask": {
-                      "anyOf": [
-                        {
-                          "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "role": {
+                          "type": "string",
+                          "const": "assistant"
+                        },
+                        "text": {
+                          "type": "string",
+                          "maxLength": 20000
+                        },
+                        "ask": {
+                          "anyOf": [
                             {
-                              "type": "object",
-                              "properties": {
-                                "kind": {
-                                  "type": "string",
-                                  "const": "choices"
+                              "oneOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "const": "choices"
+                                    },
+                                    "options": {
+                                      "minItems": 1,
+                                      "maxItems": 5,
+                                      "type": "array",
+                                      "items": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 40
+                                      }
+                                    }
+                                  },
+                                  "required": [
+                                    "kind",
+                                    "options"
+                                  ]
                                 },
-                                "options": {
-                                  "minItems": 1,
-                                  "maxItems": 5,
-                                  "type": "array",
-                                  "items": {
-                                    "type": "string",
-                                    "minLength": 1,
-                                    "maxLength": 40
-                                  }
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "const": "day"
+                                    }
+                                  },
+                                  "required": [
+                                    "kind"
+                                  ]
                                 }
-                              },
-                              "required": [
-                                "kind",
-                                "options"
                               ]
                             },
                             {
-                              "type": "object",
-                              "properties": {
-                                "kind": {
-                                  "type": "string",
-                                  "const": "day"
-                                }
-                              },
-                              "required": [
-                                "kind"
-                              ]
+                              "type": "null"
                             }
                           ]
                         },
-                        {
-                          "type": "null"
+                        "hadCard": {
+                          "type": "boolean"
                         }
+                      },
+                      "required": [
+                        "role",
+                        "text",
+                        "ask",
+                        "hadCard"
                       ]
                     },
-                    "hadCard": {
-                      "type": "boolean"
+                    {
+                      "type": "object",
+                      "properties": {
+                        "role": {
+                          "type": "string",
+                          "const": "done"
+                        },
+                        "added": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "role",
+                        "added"
+                      ]
                     }
-                  },
-                  "required": [
-                    "role",
-                    "text",
-                    "ask",
-                    "hadCard"
-                  ]
-                },
-                {
-                  "type": "object",
-                  "properties": {
-                    "role": {
-                      "type": "string",
-                      "const": "done"
-                    },
-                    "added": {
-                      "type": "integer",
-                      "minimum": 0,
-                      "maximum": 9007199254740991
-                    }
-                  },
-                  "required": [
-                    "role",
-                    "added"
                   ]
                 }
-              ]
-            }
+              }
+            },
+            "required": [
+              "id",
+              "title",
+              "turns"
+            ]
+          },
+          {
+            "type": "null"
           }
-        },
-        "required": [
-          "id",
-          "title",
-          "turns"
         ]
       }
     },
@@ -16189,130 +16196,137 @@
         ]
       },
       "output": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "title": {
-            "type": "string"
-          },
-          "turns": {
-            "type": "array",
-            "items": {
-              "oneOf": [
-                {
-                  "type": "object",
-                  "properties": {
-                    "role": {
-                      "type": "string",
-                      "const": "user"
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "title": {
+                "type": "string"
+              },
+              "turns": {
+                "type": "array",
+                "items": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "role": {
+                          "type": "string",
+                          "const": "user"
+                        },
+                        "text": {
+                          "type": "string",
+                          "maxLength": 4000
+                        }
+                      },
+                      "required": [
+                        "role",
+                        "text"
+                      ]
                     },
-                    "text": {
-                      "type": "string",
-                      "maxLength": 4000
-                    }
-                  },
-                  "required": [
-                    "role",
-                    "text"
-                  ]
-                },
-                {
-                  "type": "object",
-                  "properties": {
-                    "role": {
-                      "type": "string",
-                      "const": "assistant"
-                    },
-                    "text": {
-                      "type": "string",
-                      "maxLength": 20000
-                    },
-                    "ask": {
-                      "anyOf": [
-                        {
-                          "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "role": {
+                          "type": "string",
+                          "const": "assistant"
+                        },
+                        "text": {
+                          "type": "string",
+                          "maxLength": 20000
+                        },
+                        "ask": {
+                          "anyOf": [
                             {
-                              "type": "object",
-                              "properties": {
-                                "kind": {
-                                  "type": "string",
-                                  "const": "choices"
+                              "oneOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "const": "choices"
+                                    },
+                                    "options": {
+                                      "minItems": 1,
+                                      "maxItems": 5,
+                                      "type": "array",
+                                      "items": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 40
+                                      }
+                                    }
+                                  },
+                                  "required": [
+                                    "kind",
+                                    "options"
+                                  ]
                                 },
-                                "options": {
-                                  "minItems": 1,
-                                  "maxItems": 5,
-                                  "type": "array",
-                                  "items": {
-                                    "type": "string",
-                                    "minLength": 1,
-                                    "maxLength": 40
-                                  }
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "const": "day"
+                                    }
+                                  },
+                                  "required": [
+                                    "kind"
+                                  ]
                                 }
-                              },
-                              "required": [
-                                "kind",
-                                "options"
                               ]
                             },
                             {
-                              "type": "object",
-                              "properties": {
-                                "kind": {
-                                  "type": "string",
-                                  "const": "day"
-                                }
-                              },
-                              "required": [
-                                "kind"
-                              ]
+                              "type": "null"
                             }
                           ]
                         },
-                        {
-                          "type": "null"
+                        "hadCard": {
+                          "type": "boolean"
                         }
+                      },
+                      "required": [
+                        "role",
+                        "text",
+                        "ask",
+                        "hadCard"
                       ]
                     },
-                    "hadCard": {
-                      "type": "boolean"
+                    {
+                      "type": "object",
+                      "properties": {
+                        "role": {
+                          "type": "string",
+                          "const": "done"
+                        },
+                        "added": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "role",
+                        "added"
+                      ]
                     }
-                  },
-                  "required": [
-                    "role",
-                    "text",
-                    "ask",
-                    "hadCard"
-                  ]
-                },
-                {
-                  "type": "object",
-                  "properties": {
-                    "role": {
-                      "type": "string",
-                      "const": "done"
-                    },
-                    "added": {
-                      "type": "integer",
-                      "minimum": 0,
-                      "maximum": 9007199254740991
-                    }
-                  },
-                  "required": [
-                    "role",
-                    "added"
                   ]
                 }
-              ]
-            }
+              }
+            },
+            "required": [
+              "id",
+              "title",
+              "turns"
+            ]
+          },
+          {
+            "type": "null"
           }
-        },
-        "required": [
-          "id",
-          "title",
-          "turns"
         ]
       }
     },

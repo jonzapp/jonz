@@ -105,8 +105,10 @@ describe("your account on /v1", () => {
       expect((await call("me", "PATCH", `/v1/me/ask-chats/${chatId}`, { turns })).statusCode).toBe(201);
       expect((await call("me", "GET", `/v1/me/ask-chats/${chatId}`)).json()).toMatchObject({ id: chatId, title: chatTitle(turns) });
     }
-    // Not someone else's to read.
-    expect((await call("other", "GET", `/v1/me/ask-chats/${chatId}`)).json()).toMatchObject({ title: "not_found", status: 404 });
+    // Not someone else's to read: to them there's no such chat.
+    const theirs = await call("other", "GET", `/v1/me/ask-chats/${chatId}`);
+    expect(theirs.statusCode).toBe(200);
+    expect(theirs.json()).toBeNull();
     expect((await call("me", "DELETE", `/v1/me/ask-chats/${chatId}`)).statusCode).toBe(201);
     list = (await call("me", "GET", `/v1/houses/${houseId}/me/ask-chats`)).json();
     expect(list).toEqual([]);

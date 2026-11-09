@@ -130,11 +130,16 @@ describe("the owner's reads on /v1", () => {
     for (const who of ["ownerNoCode", "person"] as const) {
       expect((await call(who, "GET", `/v1/admin/audit?q=${tag}`)).json().title).toBe("forbidden");
     }
-    const seen = await admin.begin(async (tx) => {
-      await tx`select set_config('role', 'authenticated', true), set_config('request.jwt.claims', ${JSON.stringify(claims.person)}, true)`;
-      return tx`select count(*)::int as n from public.owner_audit_page(${tag})`;
-    });
-    expect(seen[0].n).toBe(0);
+    // Taken away the API's check, the database refuses them too.
+    for (const who of ["ownerNoCode", "person"] as const) {
+      const refused = await admin
+        .begin(async (tx) => {
+          await tx`select set_config('role', 'authenticated', true), set_config('request.jwt.claims', ${JSON.stringify(claims[who])}, true)`;
+          await tx`select count(*) from public.owner_audit_page(${tag})`;
+        })
+        .then(() => null, (e: Error) => e.message);
+      expect(refused).toBe("owner_only");
+    }
   });
 });
 

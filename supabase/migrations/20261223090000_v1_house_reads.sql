@@ -1,8 +1,9 @@
 -- The house's reads as database functions (docs/specs/api.md, step C2): one
 -- call each for what the app reads today with several table queries. Each is
 -- security invoker, so Row Level Security still decides every row: a row the
--- person can't see is left out, as it was from the app's own queries. A house
--- they can't see answers null (404 on /v1).
+-- person can't see is left out, as it was from the app's own queries. Each
+-- first asks its operation's permission (check_can), so someone without it
+-- is refused (42501), as the API refuses them.
 
 -- --- Today: the house, its people and this week ---------------------------------------------
 
@@ -13,6 +14,7 @@ stable
 security invoker
 set search_path = ''
 as $$
+  select public.check_can(p_house, 'house:read');
   with h as (
     select * from public.houses where id = p_house
   ),
@@ -99,6 +101,7 @@ stable
 security invoker
 set search_path = ''
 as $$
+  select public.check_can(p_house, 'johns:read');
   select jsonb_build_object(
     'johns', coalesce((
       select jsonb_agg(jsonb_build_object(
@@ -148,6 +151,7 @@ stable
 security invoker
 set search_path = ''
 as $$
+  select public.check_can(p_house, 'wall:read');
   select e.id, e.kind, e.user_id, e.assignment_id, e.data, e.created_at, a.photo_path,
          coalesce((
            select jsonb_agg(jsonb_build_object('user_id', r.user_id, 'kind', r.kind) order by r.created_at, r.user_id)
@@ -172,6 +176,7 @@ stable
 security invoker
 set search_path = ''
 as $$
+  select public.check_can(p_house, 'away:read');
   select jsonb_build_object('id', a.id, 'user_id', a.user_id, 'starts_on', a.starts_on, 'ends_on', a.ends_on, 'note', a.note)
   from public.away_periods a
   where a.house_id = p_house and a.ends_on >= p_from
@@ -188,6 +193,7 @@ stable
 security invoker
 set search_path = ''
 as $$
+  select public.check_can(p_house, 'weeks:read');
   with h as (
     select h.timezone, h.week_starts,
            (to_date(p_month, 'YYYY-MM')::timestamp at time zone h.timezone) as month_starts,
@@ -237,6 +243,7 @@ stable
 security invoker
 set search_path = ''
 as $$
+  select public.check_can(p_house, 'weeks:read');
   select jsonb_build_object(
     'weeks', coalesce((
       select jsonb_agg(jsonb_build_object('id', wk.id, 'starts_on', wk.starts_on, 'starts_at', wk.starts_at, 'ends_at', wk.ends_at, 'skipped_at', wk.skipped_at)
@@ -279,6 +286,7 @@ stable
 security invoker
 set search_path = ''
 as $$
+  select public.check_can(p_house, 'payments:read');
   select jsonb_build_object(
     'ledger', coalesce((
       select jsonb_agg(jsonb_build_object(
@@ -305,6 +313,7 @@ stable
 security invoker
 set search_path = ''
 as $$
+  select public.check_can(p_house, 'pocket_money:read');
   select jsonb_build_object(
     'earnings', coalesce((
       select jsonb_agg(jsonb_build_object('user_id', e.user_id, 'month', e.month, 'amount_minor', e.amount_minor) order by e.month, e.user_id)

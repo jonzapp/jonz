@@ -3,6 +3,23 @@
 -- owner's Ask Jonz chats. Each is security invoker, so the tables' rules
 -- (the owner, with their second factor, by can_app) still decide.
 
+-- Each function asks its operation's permission first (admin:read, the
+-- registry's guard), so the database refuses as the API does: owner_only.
+create function public.check_can_app(p_perm text)
+returns void
+language plpgsql
+stable
+security invoker
+set search_path = ''
+as $$
+begin
+  if not public.can_app(p_perm) then
+    raise exception 'owner_only' using errcode = '42501';
+  end if;
+end;
+$$;
+comment on function public.check_can_app(text) is 'Refuses (42501, owner_only) unless you hold an app permission, with your second factor.';
+
 -- What the search box typed, kept to letters, digits, spaces and @ . _ ' -
 -- so nothing typed can change a filter itself (core admin-list.ts searchWords),
 -- and made safe inside a LIKE pattern.
@@ -75,6 +92,7 @@ stable
 security invoker
 set search_path = ''
 as $$
+  select public.check_can_app('admin:read');
   select n.id, n.kind, n.title, n.body, n.link_label, n.link_url, n.starts_at, n.ends_at
   from public.owner_notices_matching(p_q, p_kind, p_state, p_after, p_before) n
   where p_cursor_at is null or (n.starts_at, n.id) < (p_cursor_at, p_cursor_id)
@@ -96,6 +114,7 @@ stable
 security invoker
 set search_path = ''
 as $$
+  select public.check_can_app('admin:read');
   select count(*)::int from public.owner_notices_matching(p_q, p_kind, p_state, p_after, p_before);
 $$;
 comment on function public.owner_notices_count(text, text, text, timestamptz, timestamptz) is 'How many notices a filter matches.';
@@ -159,6 +178,7 @@ stable
 security invoker
 set search_path = ''
 as $$
+  select public.check_can_app('admin:read');
   select a.id, a.created_at, a.actor, a.action, a.target_kind, a.target_id, a.reason, a.before, a.after
   from public.owner_audit_matching(p_q, p_who, p_what, p_after, p_before) a
   where p_cursor_at is null or (a.created_at, a.id) < (p_cursor_at, p_cursor_id)
@@ -180,6 +200,7 @@ stable
 security invoker
 set search_path = ''
 as $$
+  select public.check_can_app('admin:read');
   select count(*)::int from public.owner_audit_matching(p_q, p_who, p_what, p_after, p_before);
 $$;
 comment on function public.owner_audit_count(text, text, text, timestamptz, timestamptz) is 'How many audit entries a filter matches.';
@@ -191,6 +212,7 @@ stable
 security invoker
 set search_path = ''
 as $$
+  select public.check_can_app('admin:read');
   select jsonb_build_object('id', a.id, 'created_at', a.created_at, 'actor', a.actor, 'action', a.action, 'target_kind', a.target_kind,
                             'target_id', a.target_id, 'reason', a.reason, 'before', a.before, 'after', a.after)
   from public.admin_audit a
@@ -207,6 +229,7 @@ stable
 security invoker
 set search_path = ''
 as $$
+  select public.check_can_app('admin:read');
   select coalesce(jsonb_agg(jsonb_build_object('id', c.id, 'title', c.title, 'updated_at', c.updated_at) order by c.updated_at desc), '[]'::jsonb)
   from (select id, title, updated_at from public.owner_ask_chats order by updated_at desc limit 200) c;
 $$;
@@ -219,6 +242,7 @@ stable
 security invoker
 set search_path = ''
 as $$
+  select public.check_can_app('admin:read');
   select jsonb_build_object('id', c.id, 'title', c.title, 'turns', c.turns) from public.owner_ask_chats c where c.id = p_chat;
 $$;
 comment on function public.owner_ask_chat(uuid) is 'One of your owner Ask Jonz chats, with its turns.';
@@ -229,6 +253,7 @@ language sql
 security invoker
 set search_path = ''
 as $$
+  select public.check_can_app('admin:read');
   insert into public.owner_ask_chats (title, turns)
   values (public.chat_title_of(p_turns), public.chat_turns_kept(p_turns))
   returning id;
@@ -241,6 +266,7 @@ language sql
 security invoker
 set search_path = ''
 as $$
+  select public.check_can_app('admin:read');
   update public.owner_ask_chats
   set title = public.chat_title_of(p_turns), turns = public.chat_turns_kept(p_turns)
   where id = p_chat;
@@ -253,6 +279,7 @@ language sql
 security invoker
 set search_path = ''
 as $$
+  select public.check_can_app('admin:read');
   delete from public.owner_ask_chats where id = p_chat;
 $$;
 comment on function public.delete_owner_ask_chat(uuid) is 'Delete one of your owner Ask Jonz chats for good.';
@@ -260,7 +287,7 @@ comment on function public.delete_owner_ask_chat(uuid) is 'Delete one of your ow
 -- --- Who can call them ------------------------------------------------------------------------
 
 revoke execute on function
-  public.search_words(text), public.like_escaped(text),
+  public.check_can_app(text), public.search_words(text), public.like_escaped(text),
   public.owner_notices_matching(text, text, text, timestamptz, timestamptz),
   public.owner_notices_page(text, text, text, timestamptz, timestamptz, integer, timestamptz, uuid),
   public.owner_notices_count(text, text, text, timestamptz, timestamptz),
@@ -272,7 +299,7 @@ revoke execute on function
   public.update_owner_ask_chat(uuid, jsonb), public.delete_owner_ask_chat(uuid)
 from public, anon;
 grant execute on function
-  public.search_words(text), public.like_escaped(text),
+  public.check_can_app(text), public.search_words(text), public.like_escaped(text),
   public.owner_notices_matching(text, text, text, timestamptz, timestamptz),
   public.owner_notices_page(text, text, text, timestamptz, timestamptz, integer, timestamptz, uuid),
   public.owner_notices_count(text, text, text, timestamptz, timestamptz),
