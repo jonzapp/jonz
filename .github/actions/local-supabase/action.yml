@@ -1,0 +1,45 @@
+name: Local Supabase
+description: >
+  Start this repo's local Supabase stack, fresh, and point apps/api at it.
+  Every CI job that needs a database runs this, so each one has its own
+  clean stack and no job sees another's rows.
+
+runs:
+  using: composite
+  steps:
+    # Pinned, as in pub-golf: the CLI version decides what a fresh database
+    # hands a table before any migration runs. Bump it deliberately.
+    - uses: supabase/setup-cli@v1
+      with:
+        version: 2.114.0
+
+    - name: Start local Supabase
+      shell: bash
+      run: |
+        supabase start -x studio,edge-runtime,logflare,vector,imgproxy,mailpit,supavisor
+        supabase db reset
+
+    # The Next app reads its settings from its own directory.
+    - name: Point the app at local Supabase
+      shell: bash
+      run: |
+        STATUS=$(supabase status -o json)
+        API_URL=$(jq -r '.API_URL // empty' <<<"$STATUS")
+        ANON=$(jq -r '.ANON_KEY // .PUBLISHABLE_KEY // empty' <<<"$STATUS")
+        SERVICE=$(jq -r '.SERVICE_ROLE_KEY // .SECRET_KEY // empty' <<<"$STATUS")
+        missing=""
+        [ -n "$API_URL" ] || missing="$missing API_URL"
+        [ -n "$ANON" ]    || missing="$missing ANON_KEY"
+        [ -n "$SERVICE" ] || missing="$missing SERVICE_ROLE_KEY"
+        if [ -n "$missing" ]; then
+          echo "::error title=Supabase status is missing keys::$missing"
+          exit 1
+        fi
+        {
+          echo "NEXT_PUBLIC_SUPABASE_URL=$API_URL"
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON"
+          echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE"
+          echo "NEXT_PUBLIC_SITE_URL=http://localhost:3205"
+          echo "CRON_SECRET=ci-tick-secret"
+          echo "ALLOWED_ORIGINS=http://localhost:8205"
+        } > apps/api/.env.local
