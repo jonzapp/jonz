@@ -38,7 +38,6 @@ export default function InboxPage() {
     when: REPORT_WHEN,
     rows: (cursor: InboxCursor | null, ask: ListAsk) => inboxPage(cursor, inboxFilter(ask)),
     count: (ask) => inboxCount(inboxFilter(ask)),
-    cursor: (report: InboxRow) => ({ at: report.sentAt, id: report.id }),
   });
   return (
     <Screen spreads bar={<TitleBar title={REPORT_COPY.inbox} />} onNearEnd={busy.onNearEnd} testID="admin-inbox">

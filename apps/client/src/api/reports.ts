@@ -5,10 +5,6 @@ import {
   REPORT_LIMITS,
   REPORT_STATES,
   REPORT_SOURCES,
-  ReportFixResponse,
-  ReportMessageResponse,
-  ReportResponse,
-  SupportDraftResponse,
   type SupportDraft,
   type ReportDetails,
   type ReportKind,
@@ -20,15 +16,14 @@ import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import { Platform } from 'react-native';
 
-import { apiPost } from './http';
 import { supabase } from './supabase';
+import { callV1 } from './v1';
 
 export type { ReportDetails, SupportDraft };
 
-// Report a problem (docs/specs/report-a-problem.md). The sender's side reads
-// their own reports through RLS and sends through apps/api, which tells the
-// owner. The owner's Inbox reads through owner-only functions and replies
-// through apps/api, which tells the sender. Screenshots live in the private
+// Report a problem (docs/specs/report-a-problem.md), on /v1. Sending or
+// writing back tells the owner; the owner's replies tell the sender. The
+// Inbox's operations are the owner's alone. Screenshots live in the private
 // `report-shots` bucket, under the sender's own folder; the app shows them
 // by short-lived signed links.
 
@@ -139,8 +134,8 @@ async function signed(paths: readonly string[]): Promise<string[]> {
 }
 
 interface MessageRow {
-  from_owner: boolean;
-  author_name: string | null;
+  fromOwner: boolean;
+  authorName: string | null;
   body: string;
   at: string;
 }
@@ -148,7 +143,7 @@ interface MessageRow {
 function conversation(first: { name: string | null; at: string; words: string; shots: string[] }, rows: readonly MessageRow[]): ReportMessage[] {
   return [
     { from: 'them', name: first.name, at: first.at, text: first.words, ...(first.shots.length ? { shots: first.shots } : {}) },
-    ...rows.map((m) => ({ from: m.from_owner ? ('jonz' as const) : ('them' as const), name: m.from_owner ? m.author_name : first.name, at: m.at, text: m.body })),
+    ...rows.map((m) => ({ from: m.fromOwner ? ('jonz' as const) : ('them' as const), name: m.fromOwner ? m.authorName : first.name, at: m.at, text: m.body })),
   ];
 }
 
@@ -199,20 +194,19 @@ async function uploadShots(uris: readonly string[]): Promise<string[]> {
 /** Sends a report, screenshots first. Answers its id. */
 export async function sendReport(report: { kind: ReportKind; words: string; details: ReportDetails | null; shots: readonly string[] }): Promise<string> {
   const shots = await uploadShots(report.shots);
-  const { id } = await apiPost('/api/reports', { kind: report.kind, words: report.words.trim(), details: report.details, shots }, ReportResponse);
+  const { id } = await callV1('send_report', { kind: report.kind, words: report.words.trim(), details: report.details, shots });
   return id;
 }
 
 /** Your reports, newest first. */
 export async function myReports(): Promise<MyReport[]> {
-  const { data, error } = await supabase.rpc('my_reports');
-  if (error) throw new Error(humanError(error));
-  return (data ?? []).map((r) => ({
+  const rows = await callV1('my_reports', {});
+  return rows.map((r) => ({
     id: r.id,
-    kind: kindOf(r.kind),
-    state: stateOf(r.state),
+    kind: r.kind,
+    state: r.state,
     words: r.words,
-    sentAt: r.created_at,
+    sentAt: r.createdAt,
     replies: r.replies,
     unread: r.unread,
   }));
@@ -220,26 +214,26 @@ export async function myReports(): Promise<MyReport[]> {
 
 /** One of yours, with the conversation; null when it isn't there (or isn't yours). */
 export async function myReport(id: string): Promise<Report | null> {
-  const [{ data: row, error }, { data: rows, error: messagesError }] = await Promise.all([
-    supabase.from('reports').select('id, user_id, kind, state, words, details, shots, created_at, source, subject').eq('id', id).maybeSingle(),
-    supabase.from('report_messages').select('from_owner, author_name, body, at:created_at').eq('report_id', id).order('created_at').order('id'),
-  ]);
-  if (error || messagesError) throw new Error(humanError(error ?? messagesError));
-  if (!row) return null;
+  const found = await callV1('my_report', { reportId: id });
+  if (!found) return null;
+  const { report: row, messages } = found;
   const shots = await signed(row.shots);
   return {
     id: row.id,
     kind: kindOf(row.kind),
     state: stateOf(row.state),
-    userId: row.user_id,
+    userId: row.userId,
     name: null,
     email: null,
     house: null,
     role: null,
-    sentAt: row.created_at,
+    sentAt: row.createdAt,
     words: row.words,
     details: detailsOf(row.details),
-    messages: conversation({ name: null, at: row.created_at, words: row.words, shots }, rows ?? []),
+    messages: conversation(
+      { name: null, at: row.createdAt, words: row.words, shots },
+      messages.map((m) => ({ fromOwner: m.fromOwner, authorName: m.authorName, body: m.body, at: m.createdAt })),
+    ),
     source: sourceOf(row.source),
     subject: row.subject,
     sameAs: null,
@@ -249,13 +243,12 @@ export async function myReport(id: string): Promise<Report | null> {
 
 /** You've read it: its replies stop counting as new. */
 export async function seeReport(id: string): Promise<void> {
-  const { error } = await supabase.rpc('see_report', { p_report: id });
-  if (error) throw new Error(humanError(error));
+  await callV1('see_report', { reportId: id });
 }
 
 /** Write back on your own report. */
 export async function writeBack(id: string, body: string): Promise<void> {
-  await apiPost(`/api/reports/${id}/messages`, { body: body.trim() }, ReportMessageResponse);
+  await callV1('write_back', { reportId: id, body: body.trim() });
 }
 
 // --- The owner's Inbox ----------------------------------------------------------------
@@ -285,115 +278,75 @@ export function inboxFilter(ask: ListAsk): InboxFilter {
   };
 }
 
-/** Where a page of the Inbox starts: after the last one shown, newest first. */
-export interface InboxCursor {
-  at: string;
-  id: string;
-}
+/** Where a page of the Inbox starts: what /v1 answered with the last one. */
+export type InboxCursor = string;
 
 const PAGE = 50;
 
-const filterArgs = (filter: InboxFilter) => ({
-  p_q: filter.q,
-  p_state: filter.state ?? undefined,
-  p_kind: filter.kind ?? undefined,
-  p_from: filter.source ?? undefined,
-  p_after: filter.after ?? undefined,
-  p_before: filter.before ?? undefined,
-});
+/** The Inbox's filter as /v1 takes it: where it came from is `from`. */
+const filterArgs = ({ source, ...filter }: InboxFilter) => ({ ...filter, from: source });
 
 /** A page of reports, newest first, narrowed by the database. */
-export async function inboxPage(after: InboxCursor | null, filter: InboxFilter): Promise<{ items: InboxRow[]; more: boolean }> {
-  const { data, error } = await supabase.rpc('owner_reports_page', {
-    ...filterArgs(filter),
-    p_cursor_at: after?.at,
-    p_cursor_id: after?.id,
-    p_limit: PAGE + 1,
-  });
-  if (error) throw new Error(humanError(error));
-  const rows = data ?? [];
+export async function inboxPage(after: InboxCursor | null, filter: InboxFilter): Promise<{ items: InboxRow[]; more: boolean; next: InboxCursor | null }> {
+  const page = await callV1('owner_reports_page', { ...filterArgs(filter), limit: PAGE, startingAfter: after ?? undefined });
   return {
-    items: rows.slice(0, PAGE).map((r) => ({
+    items: page.data.map((r) => ({
       id: r.id,
-      userId: r.user_id,
+      userId: r.userId,
       name: r.name,
       email: r.email,
-      house: r.house_name,
-      kind: kindOf(r.kind),
-      state: stateOf(r.state),
+      house: r.houseName,
+      kind: r.kind,
+      state: r.state,
       words: r.words,
-      sentAt: r.created_at,
+      sentAt: r.createdAt,
       source: sourceOf(r.source),
       subject: r.subject,
-      folded: r.same_as_report_id !== null,
+      folded: r.sameAsReportId !== null,
       also: r.also,
     })),
-    more: rows.length > PAGE,
+    more: page.hasMore,
+    next: page.startingAfter,
   };
 }
 
 /** How many match. */
 export async function inboxCount(filter: InboxFilter): Promise<number> {
-  const { data, error } = await supabase.rpc('owner_reports_count', filterArgs(filter));
-  if (error) throw new Error(humanError(error));
-  return Number(data ?? 0);
-}
-
-interface OpenedRow {
-  id: string;
-  user_id: string | null;
-  name: string | null;
-  email: string | null;
-  house_name: string | null;
-  role: string | null;
-  kind: string;
-  state: string;
-  words: string;
-  details: unknown;
-  shots: string[];
-  created_at: string;
-  messages: MessageRow[];
-  source: string;
-  subject: string | null;
-  same_as: unknown;
-  also: unknown[];
+  return callV1('owner_reports_count', filterArgs(filter));
 }
 
 /** One report, whole, for the owner. Opening a new one marks it read. */
 export async function openReport(id: string): Promise<Report> {
-  const { data, error } = await supabase.rpc('owner_open_report', { p_report: id });
-  if (error) throw new Error(humanError(error));
-  const row = data as unknown as OpenedRow;
-  const shots = await signed(row.shots ?? []);
+  const row = await callV1('owner_open_report', { reportId: id });
+  const shots = await signed(row.shots);
   return {
     id: row.id,
-    kind: kindOf(row.kind),
-    state: stateOf(row.state),
-    userId: row.user_id,
+    kind: row.kind,
+    state: row.state,
+    userId: row.userId,
     name: row.name,
     email: row.email,
-    house: row.house_name,
+    house: row.houseName,
     role: row.role,
-    sentAt: row.created_at,
+    sentAt: row.createdAt,
     words: row.words,
     details: detailsOf(row.details),
-    messages: conversation({ name: row.name, at: row.created_at, words: row.words, shots }, row.messages ?? []),
+    messages: conversation({ name: row.name, at: row.createdAt, words: row.words, shots }, row.messages),
     source: sourceOf(row.source),
-    subject: row.subject ?? null,
-    sameAs: linkOf(row.same_as),
-    also: (row.also ?? []).flatMap((one) => linkOf(one) ?? []),
+    subject: row.subject,
+    sameAs: linkOf(row.sameAs),
+    also: row.also.flatMap((one) => linkOf(one) ?? []),
   };
 }
 
 /** Reply, as the owner: its sender gets a push and an email. */
 export async function replyToReport(id: string, body: string): Promise<void> {
-  await apiPost(`/api/reports/${id}/reply`, { body: body.trim() }, ReportMessageResponse);
+  await callV1('owner_reply_report', { reportId: id, body: body.trim() });
 }
 
 /** Mark it fixed, or open it again. */
 export async function setReportState(id: string, state: 'fixed' | 'open'): Promise<void> {
-  const { error } = await supabase.rpc('owner_set_report_state', { p_report: id, p_state: state });
-  if (error) throw new Error(humanError(error));
+  await callV1('owner_set_report_state', { reportId: id, state });
 }
 
 /**
@@ -402,21 +355,19 @@ export async function setReportState(id: string, state: 'fixed' | 'open'): Promi
  * how many were fixed and how many people were told.
  */
 export async function fixReport(id: string, note: string, tell: boolean): Promise<{ fixed: number; told: number }> {
-  const { fixed, told } = await apiPost(`/api/reports/${id}/fixed`, { note: note.trim() || null, tell }, ReportFixResponse);
+  const { fixed, told } = await callV1('owner_fix_report', { reportId: id, note: note.trim() || null, tell });
   return { fixed, told };
 }
 
 /** Fold it into the report that says the same thing, or (null) take it back out. */
 export async function setSameAs(id: string, main: string | null): Promise<void> {
-  const { error } = await supabase.rpc('owner_same_as', { p_report: id, p_main: main as string });
-  if (error) throw new Error(humanError(error));
+  await callV1('owner_same_as', { reportId: id, mainId: main });
 }
 
 /** The reports it might be the same as, newest first: words, or an id's start. */
 export async function sameAsFind(id: string, q: string): Promise<ReportLink[]> {
-  const { data, error } = await supabase.rpc('owner_same_as_find', { p_report: id, p_q: q });
-  if (error) throw new Error(humanError(error));
-  return (data ?? []).map((r) => ({ id: r.id, name: r.name, words: r.words, state: stateOf(r.state) }));
+  const rows = await callV1('owner_same_as_find', { reportId: id, q });
+  return rows.map((r) => ({ id: r.id, name: r.name, words: r.words, state: stateOf(r.state) }));
 }
 
 /**
@@ -424,12 +375,11 @@ export async function sameAsFind(id: string, q: string): Promise<ReportLink[]> {
  * now (a few seconds) or kept from before. Null when there's none to give.
  */
 export async function supportDraft(id: string): Promise<SupportDraft | null> {
-  const { draft } = await apiPost(`/api/reports/${id}/draft`, {}, SupportDraftResponse);
+  const { draft } = await callV1('claim_support_draft', { reportId: id });
   return draft;
 }
 
 /** The owner used the suggestion (sent it, maybe with its step), or set it aside. */
 export async function setSupportDraft(id: string, state: 'used' | 'dismissed'): Promise<void> {
-  const { error } = await supabase.rpc('owner_set_support_draft', { p_draft: id, p_state: state });
-  if (error) throw new Error(humanError(error));
+  await callV1('owner_set_support_draft', { draftId: id, state });
 }
