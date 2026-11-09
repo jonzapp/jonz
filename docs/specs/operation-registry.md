@@ -43,6 +43,7 @@ Every input and output turns into JSON Schema (`z.toJSONSchema`), for the API's 
 ## How it's held to the truth
 
 - `supabase/checks/registry.sql` is generated from the registry. A core test keeps it equal; refresh it with `npx vitest run -u` in `packages/core`.
+- `packages/core/generated/operations.json` is the registry as plain JSON, for code that isn't TypeScript (a Go service generates its types from it): each operation's about, scope, effect, guard, entitlement, destructive, method, path, database function and argument names, tables, page cursor, and input and output as JSON Schema 2020-12. `operations-json.test.ts` keeps it equal; refresh it the same way.
 - The database standards check (`npm run db:standards`, run in CI) fails if:
   - a function signed-in people may call isn't listed;
   - a listed function is gone;
