@@ -58,7 +58,7 @@ beforeEach(() => {
   jest.mocked(findHouses).mockResolvedValue([{ id: 'h1', name: 'Elm Street', people: 5 }]);
   jest.mocked(findPeople).mockResolvedValue([{ id: 'u1', name: 'Ava', email: 'ava@example.com', houseName: 'Elm Street' }]);
   jest.mocked(sendMessage).mockResolvedValue({ ok: true, id: 'm9', people: 5, walls: 1, sent: 5 });
-  jest.mocked(sentPage).mockResolvedValue({ items: [WELCOME], more: false });
+  jest.mocked(sentPage).mockResolvedValue({ items: [WELCOME], more: false, next: null });
   jest.mocked(sentCount).mockResolvedValue(1);
 });
 

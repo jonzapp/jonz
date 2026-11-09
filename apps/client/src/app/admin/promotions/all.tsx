@@ -30,7 +30,6 @@ export default function AllPromotionsPage() {
     facets: PROMOTION_FACETS,
     rows: (cursor: PromotionCursor | null, ask: ListAsk) => promotionsPage(cursor, promotionFilter(ask)),
     count: (ask) => promotionsCount(promotionFilter(ask)),
-    cursor: (row: PromotionRow) => ({ at: row.madeAt, id: row.id }),
   });
   const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const open = (p: PromotionRow) => `/admin/promotions/${p.id}` as never;
