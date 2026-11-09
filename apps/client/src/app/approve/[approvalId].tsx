@@ -10,11 +10,13 @@ import { Button } from '@/components/button';
 import { ButtonRow } from '@/components/button-row';
 import { Door, Sign, SignHeading } from '@/components/front-door/door';
 import { PageTitle } from '@/components/page-title';
-import { ReadFailed, Reading } from '@/components/read-state';
+import { ReadFailed } from '@/components/read-state';
 import { SignInPanel } from '@/components/sign-in-panel';
 import { Body, Meta } from '@/components/text';
 import { useMembership } from '@/hooks/use-membership';
 import { SPACE } from '@/theme';
+import { Waiting } from '@/components/waiting';
+import { DoorOutline } from '@/components/page-outlines';
 
 /**
  * jonz.app/approve/<id>: an app the person connected to Jonz (over MCP)
@@ -38,7 +40,7 @@ export default function Approve() {
       {!session ? (
         <SignInPanel next={approvePath(approvalId)} failed={Boolean(error)} />
       ) : read.isPending ? (
-        <Reading />
+        <Waiting ready={false} outline={<DoorOutline />} />
       ) : read.isError ? (
         <Sign>
           <SignHeading title={APPROVE_COPY.page} />
@@ -100,16 +102,18 @@ function Request({ row }: { row: ApprovalRow }) {
           {answering.error ? <Alert message={answering.error.message} /> : null}
           <ButtonRow>
             <Button
-              label={answering.isPending && answer === true ? APPROVE_COPY.approving : APPROVE_COPY.approve}
+              label={APPROVE_COPY.approve}
+              busy={answering.isPending && answer === true}
+              busyLabel={APPROVE_COPY.approving}
               onPress={() => answering.mutate(true)}
-              disabled={answering.isPending}
               testID="approve-yes"
             />
             <Button
-              label={answering.isPending && answer === false ? APPROVE_COPY.declining : APPROVE_COPY.decline}
+              label={APPROVE_COPY.decline}
+              busy={answering.isPending && answer === false}
+              busyLabel={APPROVE_COPY.declining}
               variant="outline"
               onPress={() => answering.mutate(false)}
-              disabled={answering.isPending}
               testID="approve-no"
             />
           </ButtonRow>

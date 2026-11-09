@@ -10,11 +10,12 @@ import { Button } from '@/components/button';
 import { ButtonRow } from '@/components/button-row';
 import { Door, Sign, SignHeading } from '@/components/front-door/door';
 import { PageTitle } from '@/components/page-title';
-import { Reading } from '@/components/read-state';
 import { SignInPanel } from '@/components/sign-in-panel';
 import { Meta } from '@/components/text';
 import { useMembership } from '@/hooks/use-membership';
 import { SPACE } from '@/theme';
+import { Waiting } from '@/components/waiting';
+import { DoorOutline } from '@/components/page-outlines';
 
 /**
  * jonz.app/oauth/consent?authorization_id=…: where Supabase's OAuth server
@@ -65,7 +66,7 @@ export default function Consent() {
           <Button href="/" variant="outline" label={CONSENT_COPY.goHome} />
         </Sign>
       ) : !details ? (
-        <Reading />
+        <Waiting ready={false} outline={<DoorOutline />} />
       ) : (
         <Sign testID="consent-ask">
           <SignHeading title={CONSENT_COPY.heading(details.client.name)} body={CONSENT_COPY.body(details.client.name)} />
@@ -77,16 +78,20 @@ export default function Consent() {
           {answer.error ? <Alert message={answer.error.message} /> : null}
           <ButtonRow>
             <Button
-              label={answer.isPending && allowing === true ? CONSENT_COPY.allowing : CONSENT_COPY.allow}
+              label={CONSENT_COPY.allow}
+              busy={answer.isPending && allowing === true}
+              busyLabel={CONSENT_COPY.allowing}
               onPress={() => answer.mutate(true)}
-              disabled={answer.isPending || answer.isSuccess}
+              disabled={answer.isSuccess}
               testID="consent-allow"
             />
             <Button
-              label={answer.isPending && allowing === false ? CONSENT_COPY.denying : CONSENT_COPY.deny}
+              label={CONSENT_COPY.deny}
+              busy={answer.isPending && allowing === false}
+              busyLabel={CONSENT_COPY.denying}
               variant="outline"
               onPress={() => answer.mutate(false)}
-              disabled={answer.isPending || answer.isSuccess}
+              disabled={answer.isSuccess}
               testID="consent-deny"
             />
           </ButtonRow>

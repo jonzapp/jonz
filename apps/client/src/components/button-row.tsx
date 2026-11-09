@@ -12,10 +12,12 @@ import { BUTTON_MIN, FORM_MAX, NARROW, SPACE, WIDE } from '@/theme';
 interface RowFit {
   fit: 'share' | 'full' | 'own';
   wrapped: () => void;
-  /** Whether a button in the row is busy, so the others go pale and wait. */
+  /** Whether a button in the row is busy, so the others can't be pressed. */
   busy: boolean;
-  /** How a busy button tells the row it started (true) or finished (false). */
-  setBusy: (busy: boolean) => void;
+  /** Whether a busy button in the row looks busy (after WAIT_DELAY), so the others go pale. */
+  busyShown: boolean;
+  /** How a busy button tells the row it started (true) or finished (false), and when it looks busy. */
+  setBusy: (busy: boolean, shown: boolean) => void;
 }
 
 const RowFitContext = createContext<RowFit | null>(null);
@@ -80,9 +82,15 @@ export function ButtonRow({
   const fit = own ? 'own' : alone || stacked ? 'full' : 'share';
   // How many of its buttons are busy: while any is, the others go pale.
   const [busyCount, setBusyCount] = useState(0);
-  const setBusy = useCallback((busy: boolean) => setBusyCount((n) => Math.max(0, n + (busy ? 1 : -1))), []);
+  const [shownCount, setShownCount] = useState(0);
+  const setBusy = useCallback((on: boolean, shown: boolean) => {
+    const step = (n: number) => Math.max(0, n + (on ? 1 : -1));
+    if (shown) setShownCount(step);
+    else setBusyCount(step);
+  }, []);
   const busy = busyCount > 0;
-  const value = useMemo<RowFit>(() => ({ fit, wrapped, busy, setBusy }), [fit, wrapped, busy, setBusy]);
+  const busyShown = shownCount > 0;
+  const value = useMemo<RowFit>(() => ({ fit, wrapped, busy, busyShown, setBusy }), [fit, wrapped, busy, busyShown, setBusy]);
   return (
     <RowFitContext.Provider value={value}>
       <View
