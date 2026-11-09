@@ -569,7 +569,8 @@ describe('the small marks', () => {
     );
     const image = screen.getByTestId('avatar-photo', HIDDEN);
     expect(image.props.source).toEqual({ uri: photo });
-    expect(screen.queryByText('PP', HIDDEN)).toBeNull();
+    // The initials hold the plate under it, and it fades in over them once loaded.
+    expect(screen.getByText('PP', HIDDEN)).toBeTruthy();
     expect(screen.getByText('SC', HIDDEN)).toBeTruthy();
 
     await fireEvent(image, 'error');

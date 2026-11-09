@@ -37,7 +37,7 @@ import {
   type LucideIcon,
 } from 'lucide-react-native';
 import type { ReactNode } from 'react';
-import { Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Alert } from '@/components/alert';
 import { Avatar } from '@/components/avatar';
@@ -45,6 +45,7 @@ import { GroupItem } from '@/components/group';
 import { Row } from '@/components/row';
 import { STATUS_ICON } from '@/components/status-mark';
 import { Meta } from '@/components/text';
+import { Photo } from '@/components/photo';
 import type { HouseView } from '@/hooks/use-house';
 import { FONT, INSET, LEADING, RADIUS, ROW_GAP, SPACE, TABULAR, TAP, useTheme, type Theme } from '@/theme';
 
@@ -391,16 +392,9 @@ export function ReactButton({ onPress, compact = false }: { onPress: () => void;
 
 /** A tick's photo receipt, under its row and in line with its words. */
 export function WallPhoto({ uri, john }: { uri: string; john: string | null }) {
-  const { colors } = useTheme();
   return (
     <View style={styles.photoRow}>
-      <Image
-        source={{ uri }}
-        accessibilityLabel={WALL_COPY.photoOf(john ?? WALL_FEED_COPY.theJohn)}
-        resizeMode="cover"
-        style={[styles.photo, { backgroundColor: colors.secondary }]}
-        testID="wall-photo"
-      />
+      <Photo uri={uri} label={WALL_COPY.photoOf(john ?? WALL_FEED_COPY.theJohn)} style={styles.photo} onCard={false} testID="wall-photo" />
     </View>
   );
 }

@@ -1,7 +1,8 @@
 import { initials } from '@app/core';
 import { useState } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Animated, Image, StyleSheet, Text, View } from 'react-native';
 
+import { useFadeIn } from '@/components/photo';
 import { useOnTint } from '@/components/row';
 import { usePhoto } from '@/hooks/photos';
 import { useTheme } from '@/theme';
@@ -50,21 +51,28 @@ export function Avatar({
         },
       ]}
     >
-      {showPhoto ? (
-        <Image
-          testID="avatar-photo"
-          source={{ uri: photo }}
-          // Google's photo addresses refuse some pages that send a referrer.
-          referrerPolicy="no-referrer"
-          onError={() => setBroken(photo)}
-          style={{ width: size, height: size, borderRadius: size / 2 }}
-        />
-      ) : (
-        <Text style={[type.initials, styles.letters, { color: me ? colors.card : colors.secondaryForeground }]}>
-          {initials(name)}
-        </Text>
-      )}
+      {/* The initials hold the plate until the photo has loaded and faded in over them. */}
+      <Text style={[type.initials, styles.letters, { color: me ? colors.card : colors.secondaryForeground }]}>{initials(name)}</Text>
+      {showPhoto ? <FadingPhoto key={photo} uri={photo} size={size} onError={() => setBroken(photo)} /> : null}
     </View>
+  );
+}
+
+/** The plate's photo, over the initials, fading in once it has loaded (`useFadeIn`). */
+function FadingPhoto({ uri, size, onError }: { uri: string; size: number; onError: () => void }) {
+  const { opacity, show } = useFadeIn();
+  return (
+    <Animated.View style={[StyleSheet.absoluteFill, { opacity }]}>
+      <Image
+        testID="avatar-photo"
+        source={{ uri }}
+        // Google's photo addresses refuse some pages that send a referrer.
+        referrerPolicy="no-referrer"
+        onLoad={show}
+        onError={onError}
+        style={{ width: size, height: size, borderRadius: size / 2 }}
+      />
+    </Animated.View>
   );
 }
 

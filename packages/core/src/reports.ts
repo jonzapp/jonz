@@ -89,6 +89,8 @@ export const REPORT_PUSH = {
 } as const;
 
 export const REPORT_COPY = {
+  /** A screenshot sent with a report, for a screen reader. */
+  shot: "Screenshot",
   help: "Help",
   report: "Report a problem",
   idea: "Send an idea",

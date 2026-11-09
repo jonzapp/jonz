@@ -9,9 +9,10 @@ import { Alert } from '@/components/alert';
 import { Button } from '@/components/button';
 import { ButtonRow } from '@/components/button-row';
 import { Field } from '@/components/field';
-import { Reading } from '@/components/read-state';
+import { OutlineText } from '@/components/outline';
 import { Body } from '@/components/text';
 import { TextButton } from '@/components/text-button';
+import { Waiting } from '@/components/waiting';
 import { useMembership } from '@/hooks/use-membership';
 import { FONT, RADIUS, SPACE, useTheme } from '@/theme';
 
@@ -49,7 +50,8 @@ export function DeleteAccountForm({ onKeep }: { onKeep: () => void }) {
   return (
     <View style={styles.form} testID="delete-account-form">
       <Said lead={DELETE_COPY.goesLead} words={DELETE_COPY.goes} />
-      {preview.isPending ? <Reading label={DELETE_COPY.reading} /> : null}
+      {/* What stays with your house, in outline while it's read: a sentence's lines. */}
+      {preview.isPending ? <Waiting ready={false} label={DELETE_COPY.reading} outline={<OutlineText lines={2} />} /> : null}
       {house ? <Said lead={DELETE_COPY.staysLead(house)} words={DELETE_COPY.stays} testID="delete-stays" /> : null}
       {passUntil ? <Said lead={DELETE_COPY.passLead} words={DELETE_COPY.pass(passDay(passUntil))} testID="delete-pass" /> : null}
       <Note>{DELETE_COPY.wait}</Note>

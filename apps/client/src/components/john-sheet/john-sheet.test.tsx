@@ -702,7 +702,7 @@ describe('a settled John', () => {
     );
     const body = await openOn('Open a3');
     expect(within(body).getByTestId('john-sheet-when')).toHaveTextContent(/^You did it on time, .+\.$/);
-    const photo = await within(body).findByTestId('sheet-photo');
+    const photo = await within(body).findByTestId('sheet-photo-image', { includeHiddenElements: true });
     expect(photo.props.source).toEqual({ uri: 'https://photos.test/a3.jpg' });
     expect(signPhoto).toHaveBeenCalledWith('h1/a3.jpg');
     // Only an admin's Change result, which every John has.

@@ -81,6 +81,9 @@ export function chatGroups<T extends { updatedAt: string }>(
 
 export const ASK_CHATS_COPY = {
   all: "Your chats",
+  /** While your chats are read, to a screen reader. */
+  reading: "Reading your chats",
+  unreadable: "Couldn’t read your chats.",
   /** Ask Jonz's leading button, to a screen reader. */
   open: "Your chats",
   lastWeek: "Last 7 days",
