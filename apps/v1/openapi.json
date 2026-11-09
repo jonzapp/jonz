@@ -1,0 +1,108 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Jonz API",
+    "version": "1",
+    "description": "Every Jonz operation, for the app, MCP and scripts. Changes within /v1 only add."
+  },
+  "servers": [
+    {
+      "url": "https://api.jonz.app"
+    }
+  ],
+  "paths": {},
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "A Supabase Auth access token."
+      }
+    },
+    "parameters": {
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "maxLength": 255
+        },
+        "description": "Send the same key to retry a write safely for 24 hours."
+      },
+      "JonzClient": {
+        "name": "Jonz-Client",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "examples": [
+            "ios/1.4.2 (57)"
+          ]
+        }
+      }
+    },
+    "responses": {
+      "Problem": {
+        "description": "Refused or failed (RFC 9457).",
+        "headers": {
+          "Request-Id": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Problem": {
+        "type": "object",
+        "required": [
+          "type",
+          "title",
+          "status",
+          "detail"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "format": "uri"
+          },
+          "title": {
+            "type": "string",
+            "enum": [
+              "unauthenticated",
+              "pass_required",
+              "forbidden",
+              "not_found",
+              "conflict",
+              "idempotency_mismatch",
+              "invalid_input",
+              "rejected",
+              "client_too_old",
+              "rate_limited",
+              "internal"
+            ]
+          },
+          "status": {
+            "type": "integer"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "requestId": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

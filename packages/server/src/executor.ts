@@ -1,0 +1,266 @@
+// One way in for every caller (the /v1 API, MCP, Ask Jonz cards): the same
+// checks, in the same order, for every operation in the registry.
+//
+//   client version → token → rate limit → input →
+//   [one transaction] idempotency → [as the person] permission → House Pass →
+//   the database function (or the operation's server handler) →
+//   output → [as the API] audit row + idempotency record
+//
+// The database checks again (RLS, can()), so a gap here is still refused there.
+// Nothing is kept in this process between requests: any instance can serve any
+// request, and two requests with one Idempotency-Key on two instances queue on
+// a database lock, so the second gets the first one's answer.
+
+import { createHash, randomUUID } from "node:crypto";
+
+import { PASS_ENFORCED, passOf, passUnlocked, type Operation, type PassFeature } from "@app/core";
+import type postgres from "postgres";
+import { z } from "zod";
+
+import type { Claims, TokenVerifier } from "./auth";
+import { checkClient, type ClientInfo, type MinimumBuilds } from "./client";
+import { becomeApi, becomePerson, callFunction, signatures, type Sql, type Tx } from "./db";
+import { Problem } from "./problem";
+
+export type HttpMethod = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
+
+/** What a server handler gets: the transaction (already the person), who they are, and the checked input. */
+export interface HandlerContext {
+  tx: Tx;
+  claims: Claims;
+  input: Record<string, unknown>;
+  now: Date;
+}
+
+/** An operation as the API serves it: the registry entry plus its contract. */
+export interface ApiOperation {
+  name: string;
+  operation: Operation;
+  input: z.ZodType<Record<string, unknown>>;
+  output: z.ZodType;
+  http: { method: HttpMethod; path: string };
+  /** The database function's arguments for an input. Default: camelCase keys as p_snake_case. */
+  rpcArgs?: (input: Record<string, unknown>) => Record<string, unknown>;
+  /**
+   * For operations whose logic lives in TypeScript (`rpc.server`): runs in
+   * place of the database function, after the same checks, as the person.
+   */
+  handler?: (context: HandlerContext) => Promise<unknown>;
+  /**
+   * Being retired: answered with Deprecation (RFC 9745) and Sunset (RFC 8594)
+   * headers from `since`, and removed no sooner than `sunset`, at least six
+   * months later. `link` is the page that says what to use instead.
+   */
+  deprecated?: { since: Date; sunset: Date; link?: string };
+}
+
+export interface RequestContext {
+  authorization?: string | null;
+  client?: string | null;
+  idempotencyKey?: string | null;
+  requestId?: string;
+  /** Who is calling: "api", "mcp" or "ask". Written to the audit row. */
+  via?: "api" | "mcp" | "ask";
+}
+
+export interface ExecutorOptions {
+  sql: Sql;
+  verify: TokenVerifier;
+  operations: readonly ApiOperation[];
+  minimumBuilds?: MinimumBuilds;
+  /** Requests per person per minute: reads, and writes. */
+  limits?: { read: number; write: number };
+  /** The clock, for Pass checks, rate-limit windows and key expiry. Tests pass a pretend one. */
+  now?: () => Date;
+  passEnforced?: boolean;
+}
+
+export interface Result {
+  status: 200 | 201;
+  body: unknown;
+  replayed?: boolean;
+  requestId: string;
+}
+
+export const IDEMPOTENCY_TTL_MS = 86_400_000;
+/** The least notice before a deprecated operation may go: six months (182 days). */
+export const SUNSET_NOTICE_MS = 182 * 86_400_000;
+
+const snake = (key: string) => key.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
+export const defaultRpcArgs = (input: Record<string, unknown>) =>
+  Object.fromEntries(Object.entries(input).map(([k, v]) => [`p_${snake(k)}`, v]));
+
+const PG_TO_PROBLEM: Record<string, [Problem["code"], string]> = {
+  "42501": ["forbidden", "You can't do that in this house."],
+  "23505": ["conflict", "That's already been done."],
+  "40001": ["conflict", "Someone else changed this at the same moment. Try again."],
+  "40P01": ["conflict", "Someone else changed this at the same moment. Try again."],
+};
+
+/** A database error as a Problem. Only errors a function raised on purpose pass their words on. */
+export function fromDatabase(error: unknown): Problem {
+  const e = error as { code?: string; message?: string };
+  const known = e.code ? PG_TO_PROBLEM[e.code] : undefined;
+  if (known) return new Problem(known[0], known[1]);
+  // raise exception '…' (P0001), or a data or constraint error (classes 22, 23): its words are for people.
+  if (e.code && (e.code === "P0001" || e.code.startsWith("22") || e.code.startsWith("23"))) {
+    return new Problem("rejected", e.message ?? "That can't be done.");
+  }
+  return new Problem("internal", "Something went wrong on our side.");
+}
+
+/** The fingerprint an Idempotency-Key is tied to: the operation and its checked input. */
+export function requestHash(name: string, input: unknown): string {
+  return createHash("sha256").update(`${name}\n${stableJson(input)}`).digest("hex");
+}
+
+function stableJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(stableJson).join(",")}]`;
+  if (value && typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>).filter(([, v]) => v !== undefined);
+    entries.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+    return `{${entries.map(([k, v]) => `${JSON.stringify(k)}:${stableJson(v)}`).join(",")}}`;
+  }
+  return JSON.stringify(value ?? null);
+}
+
+export function createExecutor(options: ExecutorOptions) {
+  const { sql, verify } = options;
+  const now = options.now ?? (() => new Date());
+  const limits = options.limits ?? { read: 300, write: 60 };
+  const enforced = options.passEnforced ?? PASS_ENFORCED;
+  const signatureOf = signatures(sql);
+  const byName = new Map(options.operations.map((o) => [o.name, o]));
+
+  for (const op of options.operations) {
+    if (!op.handler && !op.operation.rpc?.name) throw new Error(`${op.name} has neither a database function nor a handler`);
+    if (op.handler && !op.operation.rpc?.server) throw new Error(`${op.name} has a handler but its rpc isn't marked server`);
+    if (op.deprecated && op.deprecated.sunset.getTime() - op.deprecated.since.getTime() < SUNSET_NOTICE_MS) {
+      throw new Error(`${op.name} sunsets less than six months after it was deprecated`);
+    }
+  }
+
+  async function rateLimit(userId: string, effect: "read" | "write", at: Date) {
+    const window = new Date(Math.floor(at.getTime() / 60_000) * 60_000);
+    const [row] = await sql<{ hits: number }[]>`
+      insert into public.api_rate_limits (bucket, window_started_at, hits)
+      values (${`${userId}:${effect}`}, ${window}, 1)
+      on conflict (bucket, window_started_at) do update set hits = public.api_rate_limits.hits + 1
+      returning hits`;
+    if (row.hits > limits[effect]) {
+      const retry = Math.max(1, Math.ceil((window.getTime() + 60_000 - at.getTime()) / 1000));
+      throw new Problem("rate_limited", "That's a lot of requests. Wait a moment and try again.", { "Retry-After": String(retry) });
+    }
+  }
+
+  async function guard(tx: Tx, op: ApiOperation, input: Record<string, unknown>) {
+    const g = op.operation.guard;
+    if (g.by !== "permission") return;
+    const permission = g.permission;
+    if (op.operation.scope === "house") {
+      const house = input.houseId;
+      if (typeof house !== "string") throw new Problem("invalid_input", "Which house? houseId is missing.");
+      const rows = await tx<{ p: string }[]>`select p from public.my_permissions(${house}::uuid) p`;
+      if (!rows.some((r) => r.p === permission)) throw new Problem("forbidden", `You need ${permission} in this house.`);
+    } else if (op.operation.scope === "app") {
+      const [row] = await tx<{ p: string[] | null }[]>`select public.my_app_permissions() as p`;
+      if (!(row.p ?? []).includes(permission)) throw new Problem("forbidden", `You need ${permission}.`);
+    }
+    // Account operations: being signed in is the permission; the function only touches your own rows.
+  }
+
+  async function entitlement(tx: Tx, feature: PassFeature | undefined, input: Record<string, unknown>, at: Date) {
+    if (!feature || !enforced || typeof input.houseId !== "string") return;
+    const [house] = await tx<{ pass_plan: string; pass_ends_at: string | null; pass_bought_by: string | null }[]>`
+      select pass_plan, pass_ends_at, pass_bought_by from public.houses where id = ${input.houseId}::uuid`;
+    if (!house || !passUnlocked(passOf(house as Parameters<typeof passOf>[0]), at, enforced)) {
+      throw new Problem("pass_required", "This needs a House Pass.");
+    }
+  }
+
+  async function execute(name: string, context: RequestContext, rawInput: unknown): Promise<Result> {
+    const requestId = context.requestId ?? randomUUID();
+    try {
+      return await run(name, context, rawInput, requestId);
+    } catch (error) {
+      if (error instanceof Problem) throw error;
+      const problem = fromDatabase(error);
+      if (problem.code === "internal") console.error(`[${requestId}] ${name} failed`, error);
+      throw problem;
+    }
+  }
+
+  async function run(name: string, context: RequestContext, rawInput: unknown, requestId: string): Promise<Result> {
+    const op = byName.get(name);
+    if (!op) throw new Problem("not_found", "There's no such operation.");
+    const client: ClientInfo | null = checkClient(context.client, options.minimumBuilds ?? {});
+    const claims: Claims = await verify(context.authorization);
+    const at = now();
+    const effect = op.operation.effect;
+    await rateLimit(claims.sub, effect, at);
+
+    const parsed = op.input.safeParse(rawInput ?? {});
+    if (!parsed.success) throw new Problem("invalid_input", z.prettifyError(parsed.error));
+    const input = parsed.data;
+
+    const key = effect === "write" ? context.idempotencyKey?.trim() || null : null;
+    if (key && key.length > 255) throw new Problem("invalid_input", "Idempotency-Key is longer than 255 characters.");
+    const hash = key ? requestHash(name, input) : null;
+    const status = effect === "write" ? 201 : 200;
+    const fn = op.operation.rpc?.name;
+    const signature = op.handler || !fn ? null : await signatureOf(fn);
+
+    const outcome = (await sql.begin(async (tx) => {
+        if (key) {
+          // Same person, same key: one at a time, on any instance, until this transaction ends.
+          await tx`select pg_advisory_xact_lock(hashtextextended(${`${claims.sub}:${key}`}, 0))`;
+          const [seen] = await tx<{ request_hash: string; status: number; response: unknown }[]>`
+            select request_hash, status, response from public.api_idempotency_keys
+            where user_id = ${claims.sub}::uuid and key = ${key} and created_at > ${new Date(at.getTime() - IDEMPOTENCY_TTL_MS)}`;
+          if (seen) {
+            if (seen.request_hash !== hash) throw new Problem("idempotency_mismatch", "That Idempotency-Key was already used for a different request.");
+            return { body: seen.response, replayed: true, status: seen.status as 200 | 201 };
+          }
+        }
+
+        await becomePerson(tx, claims);
+        await guard(tx, op, input);
+        await entitlement(tx, op.operation.entitlement, input, at);
+        const raw = op.handler
+          ? await op.handler({ tx, claims, input, now: at })
+          : await callFunction(tx, signature!, fn!, (op.rpcArgs ?? defaultRpcArgs)(input));
+        // Checked before commit: a write whose answer breaks its contract is rolled back, not half-reported.
+        const out = op.output.safeParse(raw);
+        if (!out.success) {
+          console.error(`[${requestId}] ${name} returned a shape its contract doesn't allow`, z.prettifyError(out.error));
+          throw new Problem("internal", "Something went wrong on our side.");
+        }
+        const body = out.data;
+
+        if (effect === "write") {
+          await becomeApi(tx);
+          await tx`
+            insert into public.api_audit_entries (user_id, operation, house_id, via, client, request_id)
+            values (${claims.sub}::uuid, ${name}, ${typeof input.houseId === "string" ? input.houseId : null}::uuid,
+                    ${context.via ?? "api"}, ${client ? `${client.platform}/${client.version} (${client.build})` : null}, ${requestId})`;
+          if (key) {
+            const response = sql.json((body ?? null) as postgres.JSONValue);
+            // An expired record for this key is replaced; a live one can't exist here (we hold the lock and looked).
+            await tx`
+              insert into public.api_idempotency_keys (user_id, key, operation, request_hash, status, response, created_at)
+              values (${claims.sub}::uuid, ${key}, ${name}, ${hash}, ${status}, ${response}, ${at})
+              on conflict (user_id, key) do update
+                set operation = excluded.operation, request_hash = excluded.request_hash, status = excluded.status,
+                    response = excluded.response, created_at = excluded.created_at`;
+          }
+        }
+        return { body, replayed: false, status };
+      })) as { body: unknown; replayed: boolean; status: 200 | 201 };
+
+    return outcome.replayed ? { ...outcome, requestId } : { status: outcome.status, body: outcome.body, requestId };
+  }
+
+  return execute;
+}
+
+export type Executor = ReturnType<typeof createExecutor>;
