@@ -68,9 +68,8 @@ export default function NoticesPage() {
     facets: NOTICE_FACETS,
     when: NOTICE_WHEN,
     rows: (cursor: NoticeCursor | null, ask) =>
-      noticesPage(cursor, noticeFilter(ask)).then((page) => ({ items: page.notices, more: page.more })),
+      noticesPage(cursor, noticeFilter(ask)).then((page) => ({ items: page.notices, more: page.more, next: page.next })),
     count: (ask) => noticesCount(noticeFilter(ask)),
-    cursor: (notice: Notice) => ({ at: notice.startsAt, id: notice.id }),
   });
   return (
     <Screen spreads bar={<TitleBar title="Notices" />} onNearEnd={busy.onNearEnd} testID="admin-notices">

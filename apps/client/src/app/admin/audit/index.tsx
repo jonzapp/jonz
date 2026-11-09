@@ -27,9 +27,9 @@ export default function AuditPage() {
   const busy = useBusyList({
     key: ['owner-audit', ownerId],
     facets: AUDIT_FACETS,
-    rows: (cursor: number | null, ask) => auditPage(cursor, auditFilter(ask, ownerId)).then((page) => ({ items: page.entries, more: page.more })),
+    rows: (cursor: string | null, ask) =>
+      auditPage(cursor, auditFilter(ask, ownerId)).then((page) => ({ items: page.entries, more: page.more, next: page.next })),
     count: (ask) => auditCount(auditFilter(ask, ownerId)),
-    cursor: (entry: AuditEntry) => entry.id,
   });
   return (
     <Screen spreads bar={<TitleBar title="Audit log" />} onNearEnd={busy.onNearEnd} testID="admin-audit">
