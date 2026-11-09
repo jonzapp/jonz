@@ -26,6 +26,36 @@ function routesOnDisk(): string[] {
   });
 }
 
+/** Every source file of the app, tests aside. */
+function appSources(dir: string): string[] {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
+    e.isDirectory()
+      ? e.name === "node_modules" || e.name === "__tests__"
+        ? []
+        : appSources(join(dir, e.name))
+      : /\.tsx?$/.test(e.name) && !/\.test\.tsx?$/.test(e.name)
+        ? [join(dir, e.name)]
+        : [],
+  );
+}
+
+describe("the app's own reads and writes", () => {
+  it("only touch tables an operation names, so each has its contract in the registry", () => {
+    const named = new Set(
+      OPERATION_NAMES.flatMap((n) => {
+        const o: Operation = OPERATIONS[n];
+        return o.tables ?? [];
+      }),
+    );
+    const used = appSources(join(__dirname, "../../../client/src")).flatMap((file) =>
+      // A table, not storage's bucket (storage.from(...)).
+      [...readFileSync(file, "utf8").matchAll(/(?<!storage)\.from\(\s*'([a-z_]+)'/g)].map((m) => `${m[1]} (${relative(join(__dirname, "../../.."), file)})`),
+    );
+    expect(used.length).toBeGreaterThan(20);
+    expect(used.filter((u) => !named.has(u.split(" ")[0] as never))).toEqual([]);
+  });
+});
+
 describe("the API's routes", () => {
   it("are each an operation's route or a system route, and nothing listed is missing", () => {
     const listed = [

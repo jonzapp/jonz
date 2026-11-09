@@ -35,8 +35,14 @@ describe("the operation registry", () => {
     for (const [name, o] of all) if (o.rpc?.server) expect(o.route, name).toBeDefined();
   });
 
-  it("runs every operation somewhere: a database function, a route or both", () => {
-    for (const [name, o] of all) expect(o.rpc ?? o.route, name).toBeDefined();
+  it("runs every operation somewhere: a database function, a route, or straight on its tables", () => {
+    for (const [name, o] of all) expect(o.rpc ?? o.route ?? o.tables, name).toBeDefined();
+    // An operation on tables has nothing else to run.
+    expect(all.filter(([, o]) => o.tables && (o.rpc || o.route)).map(([n]) => n)).toEqual([]);
+  });
+
+  it("marks only reads as a screen's", () => {
+    expect(all.filter(([, o]) => o.screen && o.effect !== "read").map(([n]) => n)).toEqual([]);
   });
 
   it("lists each route once, as an operation's or a system one", () => {
