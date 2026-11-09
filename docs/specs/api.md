@@ -144,6 +144,15 @@ Migration `20261219090000_api_layer.sql` sets up the following:
     move's refusal becomes the Problem a database function's would, and
     "Stripe isn't open" is `rejected` (the refusal codes don't grow within
     /v1: a new one breaks clients).
+  - Done: the operations whose /api route tells people after the database
+    function (a push, an email, Stripe): set_away, send_report,
+    write_back, roll_call, offer_swap, raise_flag, raise_dispute,
+    cast_vote, answer_tick, owner_reply_report, owner_fix_report,
+    claim_support_draft, owner_send_message, owner_make_promotion,
+    owner_stop_promotion, owner_promotion_emails, owner_delete_house. Each
+    has a handler running its route's move, so /v1 and MCP tell people
+    exactly as the app's button does. An operation with a `route` always
+    needs its host's handler.
   - Those moves still read and write through supabase-js (the person's
     session, or the service role for the engine, Stripe set-up and new
     kids' accounts), which goes through the Data API. Before C5 they move

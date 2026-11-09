@@ -3,10 +3,10 @@
 // output, method and path, argument names, paging). Nothing here is
 // written by hand, so /v1, MCP and Ask Jonz can't disagree on an operation.
 //
-// Served: every operation that runs a database function, and every
-// operation whose logic is TypeScript (`rpc.server`, or a route with no
-// database function), once its host hands in a handler for it
-// (`withHandlers`). apps/api does, with the logic it already had.
+// Served: every operation that runs a database function alone, and every
+// operation that needs the server (`rpc.server`, no database function, or an
+// /api route that tells people afterwards), once its host hands in a handler
+// for it (`withHandlers`). apps/api does, with the moves its routes run.
 //
 // An operation, once served, only gains optional inputs and new output
 // fields; anything else is /v2 (CI's oasdiff step refuses it).
@@ -29,9 +29,14 @@ export function apiOperation(name: OperationName): ApiOperation {
 }
 
 const NAMES = Object.keys(OPERATIONS) as OperationName[];
+/**
+ * Whether an operation needs its host's handler: its logic is TypeScript, or
+ * it has an /api route that tells people after its database function (a
+ * push, an email, Stripe), which /v1 and MCP must send too.
+ */
 const runsOnServer = (name: OperationName) => {
-  const rpc = (OPERATIONS[name] as Operation).rpc;
-  return !rpc || !!rpc.server;
+  const op = OPERATIONS[name] as Operation;
+  return !op.rpc || !!op.rpc.server || !!op.route;
 };
 
 /** Operations served by their database function alone. */
@@ -47,8 +52,8 @@ export type Handlers = Partial<Record<OperationName, Handler>>;
 /** Operations served by their database function alone. */
 export const V1_OPERATIONS: readonly ApiOperation[] = SERVED.map(apiOperation);
 
-/** Every operation in the contract (the OpenAPI document): the database ones and the server ones. */
-export const CONTRACT_OPERATIONS: readonly ApiOperation[] = [...SERVED, ...HANDLED].map(apiOperation);
+/** Every operation in the contract (the OpenAPI document), in the registry's order, so moving one between kinds doesn't reorder it. */
+export const CONTRACT_OPERATIONS: readonly ApiOperation[] = NAMES.map(apiOperation);
 
 /** The database ones, plus each server one this host has a handler for. */
 export function withHandlers(handlers: Handlers): readonly ApiOperation[] {
