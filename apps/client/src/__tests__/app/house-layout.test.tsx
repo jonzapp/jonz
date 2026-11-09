@@ -26,14 +26,13 @@ jest.mock('@/api/supabase', () => {
   const mockChannel = { on: jest.fn(), subscribe: jest.fn() };
   mockChannel.on.mockReturnValue(mockChannel);
   mockChannel.subscribe.mockReturnValue(mockChannel);
-  return {
-    supabase: {
-      auth: { getSession: jest.fn(() => Promise.resolve({ data: { session: null } })) },
-      realtime: { setAuth: jest.fn() },
-      channel: jest.fn(() => mockChannel),
-      removeChannel: jest.fn(),
-    },
+  const client = {
+    auth: { getSession: jest.fn(() => Promise.resolve({ data: { session: null } })) },
+    realtime: { setAuth: jest.fn() },
+    channel: jest.fn(() => mockChannel),
+    removeChannel: jest.fn(),
   };
+  return { supabase: client, live: client };
 });
 jest.mock('@/hooks/use-membership', () => ({
   useMembership: () => ({ session: { user: { id: 'priya' } }, house: { id: 'h1', name: 'Flat 3' } }),

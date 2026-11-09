@@ -5,7 +5,7 @@ import { useCallback, useEffect } from 'react';
 
 import { loadHouse, type Housemate, type HouseSnapshot } from '@/api/board';
 import { catchUp } from '@/api/house';
-import { supabase } from '@/api/supabase';
+import { live, supabase } from '@/api/supabase';
 import { houseKey } from '@/hooks/keys';
 import { useNow } from '@/hooks/use-now';
 
@@ -66,14 +66,14 @@ export function useLiveHouse(houseId: string) {
       clearTimeout(timer);
       timer = setTimeout(() => void client.invalidateQueries({ queryKey: houseKey(houseId) }), 400);
     };
-    let channel: ReturnType<typeof supabase.channel> | undefined;
+    let channel: ReturnType<typeof live.channel> | undefined;
     let cancelled = false;
 
     void supabase.auth.getSession().then(({ data }) => {
       if (cancelled) return;
-      if (data.session) void supabase.realtime.setAuth(data.session.access_token);
+      if (data.session) void live.realtime.setAuth(data.session.access_token);
       const filter = `house_id=eq.${houseId}`;
-      channel = supabase
+      channel = live
         .channel(`house:${houseId}`)
         // What supabase_realtime publishes, as the web listens: a tick, a
         // dispute, and the Wall's events (a week closing, a token earned).
@@ -86,7 +86,7 @@ export function useLiveHouse(houseId: string) {
     return () => {
       cancelled = true;
       clearTimeout(timer);
-      if (channel) void supabase.removeChannel(channel);
+      if (channel) void live.removeChannel(channel);
     };
   }, [client, houseId]);
 }

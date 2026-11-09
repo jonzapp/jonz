@@ -16,6 +16,13 @@ export const env = {
   supabaseUrl: () => required("NEXT_PUBLIC_SUPABASE_URL"),
   supabaseAnonKey: () => required("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
   /**
+   * Supabase's secret key ("sb_secret_…"), for sign-in on our own address
+   * (app/auth): with it, and IP Address Forwarding on, Supabase Auth limits
+   * each person by their own address. Unset, sign-in still passes through
+   * on the anon key, and everyone shares the API's addresses' limits.
+   */
+  supabaseSecretKey: () => process.env.SUPABASE_SECRET_KEY || null,
+  /**
    * Web origins allowed to call /api/* from another origin, comma-separated:
    * the Expo app's web build on 8205 locally. The phones send no Origin, and
    * once the Expo web build serves jonz.app it calls the API from the

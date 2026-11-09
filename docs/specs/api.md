@@ -171,6 +171,19 @@ Migration `20261219090000_api_layer.sql` sets up the following:
     `FILES_URL` points the links elsewhere (staging, whose site passes
     /files to production). `files.jonz.app` can follow as another name for
     the same route.
+  - Sign-in (decided 9 November 2026: pass-through, not our own
+    endpoints). The app's auth client points at `/auth/v1` on our address
+    (the site passes it to apps/api, `app/auth/v1`), which passes each
+    request to Supabase Auth as it came: only the paths a person signs in,
+    up and out with (never `/admin`), the person's own `Authorization`, and
+    Supabase's answer back, redirects and all. With `SUPABASE_SECRET_KEY`
+    and IP Address Forwarding on, Supabase limits each person by their own
+    address (`Sb-Forwarded-For`); without, everyone shares the API's. The
+    app switches with `EXPO_PUBLIC_AUTH_THROUGH_API=1` (the e2e run with it
+    on) and keeps the session under Supabase's own name, so nobody is signed
+    out. Google and Microsoft still send the browser back to Supabase's own
+    callback, which is Supabase talking to them, not the app. MCP's sign-in
+    metadata still names Supabase's address for third-party clients.
   - **Realtime without a new service.** Each change writes a row to an
     events table and sends it on a private Supabase Realtime Broadcast
     channel. Only the API listens: houses are spread across a fixed set of

@@ -12,13 +12,14 @@
     { "source": "/api/:path*", "destination": "https://api.jonz.app/api/:path*" },
     { "source": "/v1/:path*", "destination": "https://api.jonz.app/v1/:path*" },
     { "source": "/files/:path*", "destination": "https://api.jonz.app/files/:path*" },
+    { "source": "/auth/v1/:path*", "destination": "https://api.jonz.app/auth/v1/:path*" },
     {
       "source": "/",
       "has": [{ "type": "header", "key": "user-agent", "value": ".*(facebookexternalhit|Facebot|Twitterbot|WhatsApp|Slackbot|TelegramBot|Discordbot|LinkedInBot|SkypeUriPreview|Snapchat|Pinterestbot|redditbot|Embedly|Iframely|Viber|Bluesky|Mastodon|vkShare|Google-PageRenderer).*" }],
       "destination": "https://api.jonz.app/api/share"
     },
     {
-      "source": "/:path((?!api/|v1/|files/|_expo/)[^.]*)",
+      "source": "/:path((?!api/|v1/|files/|auth/v1/|_expo/)[^.]*)",
       "has": [{ "type": "header", "key": "user-agent", "value": ".*(facebookexternalhit|Facebot|Twitterbot|WhatsApp|Slackbot|TelegramBot|Discordbot|LinkedInBot|SkypeUriPreview|Snapchat|Pinterestbot|redditbot|Embedly|Iframely|Viber|Bluesky|Mastodon|vkShare|Google-PageRenderer).*" }],
       "destination": "https://api.jonz.app/api/share/:path"
     },
@@ -43,6 +44,7 @@
     { "source": "/api/:path*", "headers": [{ "key": "x-vercel-enable-rewrite-caching", "value": "0" }] },
     { "source": "/v1/:path*", "headers": [{ "key": "x-vercel-enable-rewrite-caching", "value": "0" }] },
     { "source": "/files/:path*", "headers": [{ "key": "x-vercel-enable-rewrite-caching", "value": "0" }] },
+    { "source": "/auth/v1/:path*", "headers": [{ "key": "x-vercel-enable-rewrite-caching", "value": "0" }] },
     { "source": "/sw.js", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] },
     {
       "source": "/_expo/static/(.*)",
