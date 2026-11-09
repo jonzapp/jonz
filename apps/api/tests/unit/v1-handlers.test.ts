@@ -20,6 +20,7 @@ describe("/v1 server operations", () => {
     expect(refusal({ code: "42501", message: "admins_only" })).toMatchObject({ code: "forbidden" });
     expect(refusal({ code: "P0001", message: "week_started" })).toMatchObject({ code: "rejected", message: "week_started" });
     expect(refusal({ message: "promotion_unknown" })).toMatchObject({ code: "rejected", message: "promotion_unknown" });
+    expect(refusal({ message: "JWT issued at future" })).toMatchObject({ code: "internal", message: "Something went wrong on our side." });
   });
 
   it("gives a Pass answer's status as its Problem", () => {

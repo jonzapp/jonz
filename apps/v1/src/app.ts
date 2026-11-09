@@ -10,10 +10,9 @@
 // Stateless: nothing is kept between requests, so any number of instances can
 // sit behind the load balancer.
 
-import { randomUUID } from "node:crypto";
 
 import { corsHeaders } from "./cors";
-import { asProblem, openApi, pathKeys, Problem, type ApiOperation, type Executor } from "@app/server";
+import { asProblem, newRequestId, openApi, pathKeys, Problem, PROBLEM_MEDIA_TYPE, type ApiOperation, type Executor } from "@app/server";
 import Fastify, { type FastifyInstance, type FastifyReply } from "fastify";
 import { z } from "zod";
 
@@ -64,7 +63,7 @@ export function readQuery(query: Record<string, unknown>, types: QueryTypes): Re
 
 function sendProblem(reply: FastifyReply, problem: Problem, requestId: string) {
   for (const [k, v] of Object.entries(problem.headers)) reply.header(k, v);
-  return reply.code(problem.status).type("application/problem+json").send(problem.body(requestId));
+  return reply.code(problem.status).type(PROBLEM_MEDIA_TYPE).send(problem.body(requestId));
 }
 
 export function buildApp(options: AppOptions): FastifyInstance {
@@ -74,7 +73,7 @@ export function buildApp(options: AppOptions): FastifyInstance {
     // Our own Request-Id, honouring a caller's when it looks like one (so a phone's retry shares its id).
     genReqId: (req) => {
       const given = header(req.headers["request-id"]);
-      return given && REQUEST_ID.test(given) ? given : `req_${randomUUID()}`;
+      return given && REQUEST_ID.test(given) ? given : newRequestId();
     },
     // Path and query are taken as written; the operation's schema decides what they mean.
     routerOptions: { ignoreTrailingSlash: true },

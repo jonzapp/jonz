@@ -6,7 +6,7 @@ import { tokenVerifier } from "./auth";
 import { checkClient, parseClient } from "./client";
 import { defaultRpcArgs, fromDatabase, requestHash, type ApiOperation } from "./executor";
 import { openApi, pathKeys } from "./openapi";
-import { Problem } from "./problem";
+import { answersSafely, Problem, problemResponse } from "./problem";
 
 const SECRET = "a-test-secret-that-is-at-least-32-characters-long";
 const NOW = 1_800_000_000; // a fixed moment, in seconds: tests never read the real clock
@@ -81,6 +81,32 @@ describe("arguments and errors", () => {
     expect(fromDatabase({ code: "40001" }).code).toBe("conflict");
     expect(fromDatabase({ code: "XX000", message: "internal detail" })).toMatchObject({ code: "internal", message: "Something went wrong on our side." });
     expect(fromDatabase(new Error("connection refused")).code).toBe("internal");
+    expect(fromDatabase({ code: "22023", message: "Pick a day of the week." }).message).toBe("Pick a day of the week.");
+    expect(fromDatabase({ code: "23514", message: 'new row for relation "houses" violates check constraint "houses_name_check"' })).toMatchObject({ code: "rejected", message: "That doesn't fit with what's already saved." });
+    expect(fromDatabase({ code: "22P02", message: 'invalid input syntax for type uuid: "x"' }).message).toBe("That value isn't allowed.");
+  });
+
+  it("answers anything a web handler throws as problem+json, leaking nothing", async () => {
+    const safe = answersSafely("/test", async () => {
+      throw new Error("password=hunter2 at db.internal:5432");
+    });
+    const res = await safe(new Request("https://api.jonz.app/x"));
+    expect(res.status).toBe(500);
+    expect(res.headers.get("content-type")).toBe("application/problem+json");
+    const text = await res.text();
+    expect(text).not.toContain("hunter2");
+    expect(JSON.parse(text)).toMatchObject({ title: "internal", detail: "Something went wrong on our side.", requestId: res.headers.get("request-id") });
+    const refused = await answersSafely("/test", async () => {
+      throw new Problem("rate_limited", "Slow down.", { "Retry-After": "3" });
+    })(new Request("https://api.jonz.app/x"));
+    expect(refused.status).toBe(429);
+    expect(refused.headers.get("retry-after")).toBe("3");
+  });
+
+  it("can answer a problem with another status, for a 503", async () => {
+    const res = problemResponse(new Problem("internal", "Not set up."), { status: 503 });
+    expect(res.status).toBe(503);
+    expect(await res.json()).toMatchObject({ status: 503, detail: "Not set up." });
   });
 
   it("writes problems as RFC 9457", () => {

@@ -145,6 +145,24 @@ describe("hosting", () => {
     if (saved !== undefined) process.env.API_DATABASE_URL = saved;
   });
 
+  it("answers problem+json, and leaks nothing, when it fails before reaching an operation", async () => {
+    const { handleV1 } = await import("../../src/fetch");
+    const saved = process.env.API_DATABASE_URL;
+    process.env.API_DATABASE_URL = "postgres://u:hunter2@127.0.0.1:1/db";
+    const savedUrl = process.env.SUPABASE_URL;
+    delete process.env.SUPABASE_URL; // a setting missing: starting up fails
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const res = await handleV1(new Request("https://api.jonz.app/v1/health"));
+    expect(res.status).toBe(500);
+    expect(res.headers.get("content-type")).toContain("application/problem+json");
+    const body = await res.text();
+    expect(body).not.toContain("hunter2");
+    expect(JSON.parse(body)).toMatchObject({ title: "internal", detail: "Something went wrong on our side.", requestId: res.headers.get("request-id") });
+    if (saved === undefined) delete process.env.API_DATABASE_URL;
+    else process.env.API_DATABASE_URL = saved;
+    if (savedUrl !== undefined) process.env.SUPABASE_URL = savedUrl;
+  });
+
   it("lets in only listed browser origins, and answers their preflight", async () => {
     const app = buildApp({ execute: (async () => ({ status: 200, body: [], requestId: "x" })) as Executor, operations: [read], allowedOrigins: ["https://*-glynfincks-projects.vercel.app"] });
     const ok = await app.inject({ method: "OPTIONS", url: `/v1/houses/${H}/johns`, headers: { origin: "https://jonz-web-git-x-glynfincks-projects.vercel.app" } });

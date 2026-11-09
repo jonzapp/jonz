@@ -30,8 +30,20 @@ import { userClient } from "@/lib/supabase/user";
 /** The person, as the moves take them: a client that acts as them, and who they are. */
 const callerOf = (ctx: HandlerContext): Caller => ({ db: userClient(ctx.token), userId: ctx.claims.sub });
 
-/** A move's refusal, as the Problem a database function raising it would give. */
-export const refusal = (r: Refusal): Problem => fromDatabase({ code: r.code ?? "P0001", message: r.message });
+/** A refusal word a move chose ("not_found", "promotion_unknown"), as opposed to an error's text. */
+const REFUSAL_WORD = /^[a-z][a-z_]*$/;
+
+/**
+ * A move's refusal, as the Problem a database function raising it would give.
+ * One without a code is the move's own word only when it looks like one; any
+ * other text came from an error, and stays in the logs.
+ */
+export const refusal = (r: Refusal): Problem => {
+  if (r.code) return fromDatabase(r);
+  if (r.message && REFUSAL_WORD.test(r.message)) return fromDatabase({ code: "P0001", message: r.message });
+  console.error("refusal with no code", r.message);
+  return fromDatabase({});
+};
 
 const STATUS_PROBLEM: Record<number, Problem["code"]> = { 403: "forbidden", 404: "not_found", 409: "rejected", 503: "rejected" };
 

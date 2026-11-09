@@ -3,7 +3,7 @@
 // executor and the Fastify app are made once per instance, on the first
 // request, and reused; nothing about any request is kept.
 
-import { connect, createExecutor, Problem, tokenVerifier, type ApiOperation, type Executor, type Sql } from "@app/server";
+import { answersSafely, connect, createExecutor, notSetUpProblem, problemResponse, tokenVerifier, type ApiOperation, type Executor, type Sql } from "@app/server";
 import type { FastifyInstance } from "fastify";
 
 import { buildApp } from "./app";
@@ -47,18 +47,18 @@ export function v1Instance(env: NodeJS.ProcessEnv = process.env, handlers: Handl
 
 const DROP = new Set(["host", "connection", "content-length", "transfer-encoding"]);
 
-/** Answers one /v1 request, running server operations with `handlers`. */
-export const createV1Handler = (handlers: Handlers) => (request: Request) => answer(request, handlers);
+/** Answers one /v1 request, running server operations with `handlers`. Anything that fails before Fastify answers problem+json too. */
+export const createV1Handler = (handlers: Handlers) => {
+  const answer = answersSafely("/v1", forward);
+  return (request: Request) => answer(request, handlers);
+};
 
 /** Answers one /v1 request, serving the database operations only. */
 export const handleV1 = createV1Handler({});
 
-async function answer(request: Request, handlers: Handlers): Promise<Response> {
+async function forward(request: Request, handlers: Handlers): Promise<Response> {
   const ready = v1Instance(process.env, handlers);
-  if (!ready) {
-    const problem = new Problem("internal", "The API isn't set up here yet.");
-    return Response.json({ ...problem.body(), status: 503 }, { status: 503, headers: { "content-type": "application/problem+json" } });
-  }
+  if (!ready) return problemResponse(notSetUpProblem(), { status: 503 });
   const { app } = await ready;
   const url = new URL(request.url);
   const headers: Record<string, string> = {};
