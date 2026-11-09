@@ -28,7 +28,17 @@ export type PermissionLevel = (typeof PERMISSION_LEVELS)[number];
  */
 export const PERMISSIONS = {
   // Everyone in the house.
-  "house:read": "See the house: its Johns, the week, the Wall, history, balances, time away and people",
+  "house:read": "See the house itself: its name, rules and settings",
+  "johns:read": "See the John list",
+  "weeks:read": "See the weeks: who has which John, shares, who is on call and who helped",
+  "away:read": "See who is away",
+  "disputes:read": "See questioned ticks and their votes",
+  "wall:read": "See the Wall and its reactions",
+  "groups:read": "See the groups and who is in them",
+  "history:read": "See the house's history",
+  "payments:read": "See money owed and paid, and closed months",
+  "pocket_money:read": "See pocket money earned and paid",
+  "members:read": "See who lives in the house, and their roles",
   "ticks:write_own": "Tick off your own Johns, and take a tick back",
   "away:write_own": "Book and cancel your own time away",
   "swaps:write_own": "Ask someone to swap a John, answer a swap ask, and cover someone else's overdue John",
@@ -38,6 +48,9 @@ export const PERMISSIONS = {
   "perks:write_own": "Use an immunity or a swap token",
   "profile:write_own": "Change your own name, photo, notification settings and preferences",
   "members:write_own": "Leave the house",
+  "history:write_own": "Undo your own moves from History",
+  "payments:write_own": "Mark money paid between housemates",
+  "billing:write_own": "Buy the House Pass, and open billing for one you bought",
   // Admins (Parents in a family).
   "house:write": "Change the house's name and rules, and make a new join code",
   "johns:write": "Add Johns to the list, change them, and take them off",
@@ -64,6 +77,16 @@ export function permissionLevel(permission: string): PermissionLevel {
 
 const EVERYONE: Permission[] = [
   "house:read",
+  "johns:read",
+  "weeks:read",
+  "away:read",
+  "disputes:read",
+  "wall:read",
+  "groups:read",
+  "history:read",
+  "payments:read",
+  "pocket_money:read",
+  "members:read",
   "ticks:write_own",
   "away:write_own",
   "swaps:write_own",
@@ -73,6 +96,9 @@ const EVERYONE: Permission[] = [
   "perks:write_own",
   "profile:write_own",
   "members:write_own",
+  "history:write_own",
+  "payments:write_own",
+  "billing:write_own",
 ];
 
 /** What each role may do. An admin may do everything a member may. */
@@ -80,6 +106,18 @@ export const ROLE_PERMISSIONS: Record<HouseRole, readonly Permission[]> = {
   member: EVERYONE,
   admin: PERMISSION_NAMES,
 };
+
+/**
+ * What anyone signed in may do about their own account, wherever they are:
+ * no house role is needed, and the database checks it is their own row
+ * (auth.uid()). They have names so an outside app (an MCP client) can ask
+ * for them like any other permission.
+ */
+export const ACCOUNT_PERMISSIONS = {
+  "account:read": "See your own account: your reports, moving on, and whether it's being deleted",
+  "account:write_own": "Change your own account: start or join a house, your photo, time away, moving out, reports, and deleting your account",
+} as const;
+export type AccountPermission = keyof typeof ACCOUNT_PERMISSIONS;
 
 /** Whether someone with this role (or no role: not in the house) may do it. */
 export function can(role: HouseRole | null | undefined, permission: Permission): boolean {

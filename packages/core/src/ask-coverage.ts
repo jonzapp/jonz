@@ -22,6 +22,16 @@ export type AskCoverage =
 
 export const ASK_COVERAGE: Record<Permission, AskCoverage> = {
   "house:read": { by: "reads" },
+  "johns:read": { by: "reads" },
+  "weeks:read": { by: "reads" },
+  "away:read": { by: "reads" },
+  "disputes:read": { by: "reads" },
+  "wall:read": { by: "reads" },
+  "groups:read": { by: "reads" },
+  "history:read": { by: "reads" },
+  "payments:read": { by: "reads" },
+  "pocket_money:read": { by: "reads" },
+  "members:read": { by: "reads" },
   "ticks:write_own": { by: "page", page: "today", where: "their John on Today" },
   "away:write_own": { by: "card", tools: ["book_away", "cancel_away"] },
   "swaps:write_own": { by: "page", page: "today", where: "the John on Today (Ask to swap, or cover an overdue one), or the ask on Today to answer it" },
@@ -31,6 +41,9 @@ export const ASK_COVERAGE: Record<Permission, AskCoverage> = {
   "perks:write_own": { by: "page", page: "today", where: "the John on Today" },
   "profile:write_own": { by: "page", page: "you", where: "You" },
   "members:write_own": { by: "page", page: "house", where: "the bottom of the House page" },
+  "history:write_own": { by: "page", page: "history", where: "the move on History" },
+  "payments:write_own": { by: "page", page: "stake", where: "the Stake page" },
+  "billing:write_own": { by: "page", page: "pass", where: "the House Pass page" },
   "house:write": { by: "page", page: "rules", where: "House rules (a new code: Invite on the House page)" },
   "johns:write": { by: "card", tools: ["add_john", "change_john", "remove_john"] },
   // Making a group and changing who's in one; deleting one is on Groups (Jonz's instructions say so).

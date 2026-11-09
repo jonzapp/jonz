@@ -18,13 +18,11 @@ One list of everything a person can do on Jonz, whichever way they reach it: the
   - `destructive`: it can't be undone, or it reaches people (push, email, notice), so an MCP client needs the person's approval in Jonz first;
   - `entitlement`: the House Pass feature it needs once the Pass is enforced. That is a plan feature, not a permission.
 - `guard` is one of:
-  - `permission`: a named `resource:level`, asked with `can()` or `can_app()`;
-  - `member`: anyone in the house;
-  - `own`: the caller's own row;
-  - `signed_in`: anyone, about their own account;
-  - `check`: a yes/no helper.
+  - `permission`: a named `resource:level`, asked with `can()` (house) or `can_app()` (admin pages);
+  - `check`: a yes/no helper;
+  - `member` or `own`, for a table only: anyone you share a house with, or your own rows.
 
-  `member` and `own` are the ones still to name. Step 3 gives each a permission, and `unnamedGuards()` falls to zero.
+  Every operation names a permission or is a check; the `OperationGuard` type allows nothing else. Account permissions (`account:read`, `account:write_own`) are anyone signed in, about their own rows. `member` and `own` remain only for a few tables: profiles (people you share a house with) and own-row tables.
 - `TABLES`: every table signed-in people reach directly, its grants, and who may read and change it.
 - `SYSTEM_ROUTES`: API routes that aren't one person's operation (cron, webhooks, push buttons, public pages), each with how it proves who is calling.
 
@@ -54,4 +52,6 @@ Same on every platform: it's the server's list.
 
 - [x] Every callable function, table grant and API route is listed, and CI fails on one that isn't.
 - [x] Every guarded operation refuses people it isn't for, against the real database.
-- [ ] Step 3: every `member` and `own` guard is a named permission.
+- [x] Step 3: every operation names its permission, and the database asks it (a test takes each one away from members and checks they're refused).
+- [x] Step 3: reading a house is one permission per resource (`johns:read`, `wall:read`, `payments:read`…), and each table rule asks its own.
+- [x] Supabase's security and performance advisors run in CI (`npm run db:advisors`); any warning fails.
