@@ -12,6 +12,7 @@ import { ReportChip, said } from '@/components/report/report-parts';
 import { Row, RowIcon } from '@/components/row';
 import { Meta } from '@/components/text';
 import { INSET, SPACE } from '@/theme';
+import { ListPageOutline } from '@/components/page-outlines';
 
 const KIND_ICON = { problem: BugIcon, idea: LightbulbIcon, question: CircleHelpIcon } as const;
 
@@ -19,7 +20,7 @@ const KIND_ICON = { problem: BugIcon, idea: LightbulbIcon, question: CircleHelpI
 export default function ReportsScreen() {
   const mine = useQuery({ queryKey: ['my-reports'], queryFn: myReports });
   return (
-    <HousePage title={REPORT_COPY.yours} testID="your-reports" ready={!!mine.data} failed={mine.isError} onRetry={() => void mine.refetch()}>
+    <HousePage title={REPORT_COPY.yours} testID="your-reports" outline={<ListPageOutline sections={[4]} lead="circle" />} ready={!!mine.data} failed={mine.isError} onRetry={() => void mine.refetch()}>
       {() => <YourReports reports={mine.data!} />}
     </HousePage>
   );

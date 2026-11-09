@@ -20,19 +20,24 @@ import type { StakeRead } from '@/api/stake';
 import type { TableSnapshot } from '@/api/table';
 import { GroupItem } from '@/components/group';
 import { PersonLines } from '@/components/person/person-lines';
-import { Reading, ReadFailed } from '@/components/read-state';
+import { ReadFailed } from '@/components/read-state';
 import { Flow, type FlowItem } from '@/components/page-columns';
 import { Section } from '@/components/section';
 import { Body } from '@/components/text';
 import type { HouseView } from '@/hooks/use-house';
+import { Waiting } from '@/components/waiting';
+import { OutlineRows } from '@/components/outline';
 
-/** A section's rows once what they need is read, or the read on its way, or why it failed. */
-function Pending({ query, label, unreadable }: { query: UseQueryResult<unknown>; label: string; unreadable: string }) {
-  return (
-    <GroupItem>
-      {query.isError ? <ReadFailed message={unreadable} onRetry={() => void query.refetch()} /> : <Reading label={label} />}
-    </GroupItem>
-  );
+/** A section's rows while what they need is read (in outline), or why the read failed. */
+function Pending({ query, label, unreadable, rows = 2 }: { query: UseQueryResult<unknown>; label: string; unreadable: string; rows?: number }) {
+  if (query.isError) {
+    return (
+      <GroupItem>
+        <ReadFailed message={unreadable} onRetry={() => void query.refetch()} />
+      </GroupItem>
+    );
+  }
+  return <Waiting ready={false} label={label} outline={<OutlineRows count={rows} lead="none" end />} />;
 }
 
 /** Their time away from today on, or a sentence saying there's none (as an empty group says it anywhere). */

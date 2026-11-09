@@ -21,7 +21,7 @@ import { useJohnSheet } from '@/components/john-sheet';
 import { ListFoot, nearEnd, type ListMore } from '@/components/list-foot';
 import { Pair, useSideBySide } from '@/components/page-columns';
 import { PageTitle } from '@/components/page-title';
-import { Reading, ReadFailed } from '@/components/read-state';
+import { ReadFailed } from '@/components/read-state';
 import { Screen } from '@/components/screen';
 import { Section } from '@/components/section';
 import { Segmented } from '@/components/segmented';
@@ -35,6 +35,8 @@ import { useMembership } from '@/hooks/use-membership';
 import { usePull } from '@/hooks/use-refresh';
 import { useReact, useWallFeed, wallPages } from '@/hooks/use-wall';
 import { INSET } from '@/theme';
+import { Waiting } from '@/components/waiting';
+import { WallOutline } from '@/components/page-outlines';
 
 type Shown = 'wall' | 'history';
 
@@ -122,7 +124,7 @@ function WallFor({ houseId, userId }: { houseId: string; userId: string }) {
           }}
         />
       ) : (
-        <Reading label={WALL_FEED_COPY.reading} />
+        <Waiting ready={false} label={WALL_FEED_COPY.reading} outline={<WallOutline />} />
       );
   } else if (rows.length === 0) {
     body = <EmptyState icon={MegaphoneIcon} title={WALL_FEED_COPY.emptyTitle} body={WALL_COPY.empty} testID="wall-empty" />;
@@ -165,7 +167,7 @@ function WallFor({ houseId, userId }: { houseId: string; userId: string }) {
           }}
         />
       ) : (
-        <Reading label={HISTORY_COPY.reading} />
+        <Waiting ready={false} label={HISTORY_COPY.reading} outline={<WallOutline />} />
       );
   } else {
     const names = new Map(view.snapshot.members.map((m) => [m.userId, m.name]));

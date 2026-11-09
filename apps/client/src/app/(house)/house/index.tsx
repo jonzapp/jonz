@@ -23,7 +23,7 @@ import { WallSection } from '@/components/house-page/wall-section';
 import { useHouseWorkspace } from '@/components/house/workspace';
 import { Pair } from '@/components/page-columns';
 import { PageTitle } from '@/components/page-title';
-import { Reading, ReadFailed } from '@/components/read-state';
+import { ReadFailed } from '@/components/read-state';
 import { Row } from '@/components/row';
 import { Screen } from '@/components/screen';
 import { Section } from '@/components/section';
@@ -36,6 +36,8 @@ import { usePocket } from '@/hooks/use-pocket';
 import { usePull, useReadOnFocus } from '@/hooks/use-refresh';
 import { useStake } from '@/hooks/use-stake';
 import { useTable } from '@/hooks/use-table';
+import { Waiting } from '@/components/waiting';
+import { HouseOutline } from '@/components/page-outlines';
 
 /**
  * House, the third tab: the house's Overview. Four figures, then settling
@@ -70,15 +72,9 @@ function HouseFor({ houseId, userId }: { houseId: string; userId: string }) {
   return (
     <Screen bar={bar} fills refreshing={refreshing} onRefresh={pull} testID="house-screen">
       <PageTitle page={PAGE_TITLE.house} />
-      {!view ? (
-        query.isError ? (
-          <ReadFailed onRetry={() => void query.refetch()} />
-        ) : (
-          <Reading />
-        )
-      ) : (
-        <HouseSections houseId={houseId} userId={userId} view={view} table={table} stake={stake} away={away} pocket={pocket} />
-      )}
+      <Waiting ready={view != null} failed={query.isError} onRetry={() => void query.refetch()} outline={<HouseOutline />}>
+        {() => <HouseSections houseId={houseId} userId={userId} view={view!} table={table} stake={stake} away={away} pocket={pocket} />}
+      </Waiting>
     </Screen>
   );
 }

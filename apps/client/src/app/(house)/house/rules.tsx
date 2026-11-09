@@ -16,6 +16,7 @@ import { useMembership } from '@/hooks/use-membership';
 import { usePull, useReadOnFocus } from '@/hooks/use-refresh';
 import { SECTION_GAP } from '@/theme';
 import { TourSpot } from '@/components/tour/tour-spot';
+import { SettingsOutline } from '@/components/page-outlines';
 
 /**
  * The house rules, pushed from House: the stake, the forfeits, disputes,
@@ -74,7 +75,7 @@ function RulesFor({ houseId, userId }: { houseId: string; userId: string }) {
   }
 
   return (
-    <HousePage {...page} testID="rules-screen" fills>
+    <HousePage {...page} testID="rules-screen" fills outline={<SettingsOutline sections={[4, 3, 2]} />}>
       {() => <RulesReadOut houseId={houseId} userId={userId} view={view!} onEdit={() => setEditing(true)} />}
     </HousePage>
   );

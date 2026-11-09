@@ -7,6 +7,7 @@ import { Card } from '@/components/card';
 import { Group } from '@/components/group';
 import { Row, RowIcon } from '@/components/row';
 import { useColumns } from '@/components/screen';
+import { TodayOutline } from '@/components/page-outlines';
 import { Section } from '@/components/section';
 import { Chip } from '@/components/status-mark';
 import { Body, Meta, RowTitle } from '@/components/text';
@@ -65,6 +66,15 @@ export function TodaySample() {
           onPress={none}
         />
       </Group>
+    </Section>
+  );
+}
+
+/** Today while it first reads: the page's own shape in outline (page-outlines.tsx), as Waiting shows it. */
+export function TodayReadingSample() {
+  return (
+    <Section label="Sample: Today, while it reads" bare testID="sample-today-reading">
+      <TodayOutline stacked />
     </Section>
   );
 }

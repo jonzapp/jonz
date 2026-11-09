@@ -7,7 +7,7 @@ import { EmptyState } from '@/components/empty-state';
 import { Group } from '@/components/group';
 import { StakeHistory } from '@/components/house-page/stake-history';
 import { PageTitle } from '@/components/page-title';
-import { Reading, ReadFailed } from '@/components/read-state';
+import { ReadFailed } from '@/components/read-state';
 import { ResetSheet } from '@/components/reset-sheet';
 import { Row, RowIcon } from '@/components/row';
 import { Screen } from '@/components/screen';
@@ -18,6 +18,8 @@ import { useMembership } from '@/hooks/use-membership';
 import { usePull } from '@/hooks/use-refresh';
 import { useStake } from '@/hooks/use-stake';
 import { INSET } from '@/theme';
+import { Waiting } from '@/components/waiting';
+import { StakeOutline } from '@/components/page-outlines';
 
 /**
  * Stake history, pushed from House's first figure: the ledger by month, every
@@ -98,7 +100,7 @@ function StakeFor({ houseId, userId }: { houseId: string; userId: string }) {
             onRetry={() => void Promise.all([query.refetch(), stake.refetch()])}
           />
         ) : (
-          <Reading label={HOUSE_PAGE_COPY.readingStake} />
+          <Waiting ready={false} label={HOUSE_PAGE_COPY.readingStake} outline={<StakeOutline />} />
         )
       ) : nothingAtAll ? (
         <EmptyState icon={CoinsIcon} title={STAKE_HISTORY_COPY.empty} body={STAKE_HISTORY_COPY.emptyBody} />

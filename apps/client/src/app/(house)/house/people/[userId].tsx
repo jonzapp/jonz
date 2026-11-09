@@ -6,7 +6,6 @@ import { EmptyState } from '@/components/empty-state';
 import { PageTitle } from '@/components/page-title';
 import { PersonAdmin } from '@/components/person/person-admin';
 import { PersonSections } from '@/components/person/person-sections';
-import { Reading, ReadFailed } from '@/components/read-state';
 import { Screen } from '@/components/screen';
 import { TitleBar } from '@/components/title-bar';
 import { useAway } from '@/hooks/use-away';
@@ -16,6 +15,8 @@ import { usePull, useReadOnFocus } from '@/hooks/use-refresh';
 import { useStake } from '@/hooks/use-stake';
 import { useTable } from '@/hooks/use-table';
 import { useRoleCopy } from '@/hooks/use-kind';
+import { Waiting } from '@/components/waiting';
+import { PersonOutline } from '@/components/page-outlines';
 
 /**
  * A housemate's page, pushed from a row of House's Table: their record,
@@ -62,11 +63,7 @@ function PersonFor({ houseId, userId, personId }: { houseId: string; userId: str
     >
       <PageTitle page={title} />
       {!view ? (
-        query.isError ? (
-          <ReadFailed onRetry={() => void query.refetch()} />
-        ) : (
-          <Reading />
-        )
+        <Waiting ready={false} failed={query.isError} onRetry={() => void query.refetch()} outline={<PersonOutline />} />
       ) : !person ? (
         <EmptyState icon={UserRoundXIcon} title={FOCUS_SHELL_COPY.gone} />
       ) : (

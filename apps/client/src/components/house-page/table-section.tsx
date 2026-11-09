@@ -26,12 +26,14 @@ import { InviteSheet } from '@/components/house-page/invite-sheet';
 import { MetaLine, Money } from '@/components/house-page/money';
 import { RulesSheet } from '@/components/house-page/rules-sheet';
 import { PickMenu } from '@/components/pick-menu';
-import { Reading, ReadFailed } from '@/components/read-state';
+import { ReadFailed } from '@/components/read-state';
 import { Row, RowIcon } from '@/components/row';
 import { useContentWidth } from '@/components/screen';
 import { Section } from '@/components/section';
 import type { HouseView } from '@/hooks/use-house';
 import { TourSpot } from '@/components/tour/tour-spot';
+import { Waiting } from '@/components/waiting';
+import { OutlineRows } from '@/components/outline';
 
 type Span = 'week' | 'month';
 
@@ -114,13 +116,14 @@ export function TableSection({
           {lines ? (
             lines.map((line) => <Standing key={line.userId} line={line} />)
           ) : (
-            <GroupItem>
-              {table.isError ? (
+            table.isError ? (
+              <GroupItem>
                 <ReadFailed message={HOUSE_PAGE_COPY.tableUnreadable} onRetry={() => void table.refetch()} />
-              ) : (
-                <Reading label={HOUSE_PAGE_COPY.readingTable} />
-              )}
-            </GroupItem>
+              </GroupItem>
+            ) : (
+              // A row for each housemate, in outline, so nothing below moves when the Table arrives.
+              <Waiting ready={false} label={HOUSE_PAGE_COPY.readingTable} outline={<OutlineRows count={snapshot.members.length} end />} />
+            )
           )}
           {family && parent ? (
             <Row

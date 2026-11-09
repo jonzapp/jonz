@@ -11,6 +11,7 @@ import { useHouse, type HouseView } from '@/hooks/use-house';
 import { useJohnList } from '@/hooks/use-john-list';
 import { useMembership } from '@/hooks/use-membership';
 import { usePull, useReadOnFocus } from '@/hooks/use-refresh';
+import { ListPageOutline } from '@/components/page-outlines';
 
 /**
  * The John list, pushed from House: every John by kind, how often and how
@@ -41,7 +42,7 @@ function JohnListFor({ houseId, userId }: { houseId: string; userId: string }) {
   return (
     <HousePage
       title={PAGE_TITLE.johnList}
-      testID="johns-screen"
+      testID="johns-screen" outline={<ListPageOutline />}
       fills
       ready={view !== null && list.data !== undefined}
       failed={query.isError || list.isError}

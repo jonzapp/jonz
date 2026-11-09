@@ -2,13 +2,14 @@ import { ASK_USAGE_COPY, SECTION_LABEL } from '@app/core';
 
 import { UsageDetail } from '@/components/chat/ask-usage';
 import { PageTitle } from '@/components/page-title';
-import { Reading, ReadFailed } from '@/components/read-state';
 import { Screen } from '@/components/screen';
 import { TitleBar } from '@/components/title-bar';
 import { useAskUsage } from '@/hooks/use-ask-usage';
 import { useHouse } from '@/hooks/use-house';
 import { useMembership } from '@/hooks/use-membership';
 import { usePull } from '@/hooks/use-refresh';
+import { Waiting } from '@/components/waiting';
+import { ListPageOutline } from '@/components/page-outlines';
 
 /**
  * Ask Jonz usage, pushed from the chat's warning and notice and from House's
@@ -39,10 +40,13 @@ function AskUsageFor({ houseId, userId }: { houseId: string; userId: string }) {
       <PageTitle page={ASK_USAGE_COPY.title} />
       {usage.data && view ? (
         <UsageDetail usage={usage.data} zone={view.snapshot.rules.timezone} me={userId} nameOf={nameOf} />
-      ) : usage.isError || query.isError ? (
-        <ReadFailed onRetry={() => void Promise.all([query.refetch(), usage.refetch()])} />
       ) : (
-        <Reading />
+        <Waiting
+          ready={false}
+          failed={usage.isError || query.isError}
+          onRetry={() => void Promise.all([query.refetch(), usage.refetch()])}
+          outline={<ListPageOutline sections={[2, 4]} lead="none" />}
+        />
       )}
     </Screen>
   );

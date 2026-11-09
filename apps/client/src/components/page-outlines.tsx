@@ -19,8 +19,9 @@ function TopLineBar({ width = 88 }: { width?: number }) {
 }
 
 /** A spreading page in outline: two columns on a laptop, one after the other on a phone. */
-function Spread({ main, side }: { main: ReactNode; side: ReactNode }) {
-  if (useColumns()) return <Columns main={<OutlineStack>{main}</OutlineStack>} side={<OutlineStack>{side}</OutlineStack>} />;
+function Spread({ main, side, stacked = false }: { main: ReactNode; side: ReactNode; stacked?: boolean }) {
+  const two = useColumns();
+  if (two && !stacked) return <Columns main={<OutlineStack>{main}</OutlineStack>} side={<OutlineStack>{side}</OutlineStack>} />;
   return (
     <OutlineStack>
       {main}
@@ -42,10 +43,15 @@ function CardOutline({ lines = 2, button = true }: { lines?: number; button?: bo
   );
 }
 
-/** Today: the day, Next up's card, the rest of your week; beside it on a laptop, what the house wants and its week. */
-export function TodayOutline() {
+/**
+ * Today: the day, Next up's card, the rest of your week; beside it on a
+ * laptop, what the house wants and its week. `stacked` keeps one column
+ * (the style page's sample, already in a column).
+ */
+export function TodayOutline({ stacked = false }: { stacked?: boolean }) {
   return (
     <Spread
+      stacked={stacked}
       main={
         <>
           <View style={{ gap: SPACE.sm }}>

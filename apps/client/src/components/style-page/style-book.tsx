@@ -13,7 +13,7 @@ import { Body, Lead, Title } from '@/components/text';
 import { GUTTER, PANEL, SECTION_GAP, SPACE, useTheme, WIDE } from '@/theme';
 
 import { Buttons, Choosing, Colours, Lists, Loading, Marks, Words } from './kit';
-import { AdminListSample, HouseSample, TodaySample, WeekSample } from './samples';
+import { AdminListSample, HouseSample, TodayReadingSample, TodaySample, WeekSample } from './samples';
 
 const none = () => {};
 
@@ -65,6 +65,7 @@ function Pages() {
   const samples = (
     <>
       <TodaySample />
+      <TodayReadingSample />
       <WeekSample />
       <HouseSample />
     </>

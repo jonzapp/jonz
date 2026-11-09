@@ -2,6 +2,7 @@ import { ASK_USAGE_COPY, FOCUS_SHELL_COPY, HOUSE_LOWER_COPY, houseSetupValues, l
 import { GaugeIcon, ListTodoIcon, PlaneIcon, ScrollTextIcon } from 'lucide-react-native';
 import { View } from 'react-native';
 
+import { OutlineBar } from '@/components/outline';
 import { Row, RowIcon } from '@/components/row';
 import { Section } from '@/components/section';
 import type { HouseView } from '@/hooks/use-house';
@@ -9,7 +10,7 @@ import { useAskUsage } from '@/hooks/use-ask-usage';
 import { useAway } from '@/hooks/use-away';
 import { useJohnList } from '@/hooks/use-john-list';
 import { useReadOnFocus } from '@/hooks/use-refresh';
-import { useTheme } from '@/theme';
+import { OUTLINE, useTheme } from '@/theme';
 import { TourSpot } from '@/components/tour/tour-spot';
 
 /**
@@ -82,11 +83,15 @@ export function SetupSection({ houseId, userId, view }: { houseId: string; userI
 }
 
 /**
- * A meta line's room while its value is still being read: an empty line as
- * tall as Meta's, so a row is as tall before its read lands as after it and
- * nothing below it moves.
+ * A meta line's room while its value is still being read: a meta bar in
+ * outline on a line as tall as Meta's, so a row is as tall before its read
+ * lands as after it and nothing below it moves.
  */
 export function PendingMeta() {
   const { type } = useTheme();
-  return <View aria-hidden style={{ height: type.meta.lineHeight }} />;
+  return (
+    <View aria-hidden style={{ height: type.meta.lineHeight, justifyContent: 'center' }}>
+      <OutlineBar width="40%" height={OUTLINE.meta} />
+    </View>
+  );
 }

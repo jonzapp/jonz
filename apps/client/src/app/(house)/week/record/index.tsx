@@ -11,7 +11,6 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
 import { PageTitle } from '@/components/page-title';
-import { Reading, ReadFailed } from '@/components/read-state';
 import { Screen } from '@/components/screen';
 import { Section } from '@/components/section';
 import { Segmented } from '@/components/segmented';
@@ -23,6 +22,8 @@ import { useMembership } from '@/hooks/use-membership';
 import { usePull } from '@/hooks/use-refresh';
 import { useRecord } from '@/hooks/use-record';
 import { INSET, SPACE } from '@/theme';
+import { Waiting } from '@/components/waiting';
+import { RecordOutline } from '@/components/page-outlines';
 
 /** The key's marks, in the order they read. */
 const KEY: readonly RecordMark[] = ['clean', 'late', 'missed', 'covered', 'skipped', 'away', 'open'];
@@ -89,10 +90,13 @@ function RecordFor({ houseId, userId, span }: { houseId: string; userId: string;
             <RecordKey marks={shown} changed={record.rows.some((r) => r.cells.some((c) => c.changed))} />
           ) : null}
         </>
-      ) : query.isError || rows.isError ? (
-        <ReadFailed onRetry={() => void Promise.all([query.refetch(), rows.refetch()])} />
       ) : (
-        <Reading />
+        <Waiting
+          ready={false}
+          failed={query.isError || rows.isError}
+          onRetry={() => void Promise.all([query.refetch(), rows.refetch()])}
+          outline={<RecordOutline />}
+        />
       )}
     </Screen>
   );

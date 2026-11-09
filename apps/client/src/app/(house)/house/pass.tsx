@@ -31,6 +31,7 @@ import { useHouse, type HouseView } from '@/hooks/use-house';
 import { useMembership } from '@/hooks/use-membership';
 import { usePull, useReadOnFocus } from '@/hooks/use-refresh';
 import { INSET, SPACE } from '@/theme';
+import { SettingsOutline } from '@/components/page-outlines';
 
 /**
  * The House Pass, pushed from House: where the house stands, what the Pass
@@ -88,7 +89,7 @@ function PassFor({ houseId, userId }: { houseId: string; userId: string }) {
   return (
     <HousePage
       title={view?.snapshot.house.kind === 'family' ? FAMILY_PASS_COPY.title : PAGE_TITLE.pass}
-      testID="pass-screen"
+      testID="pass-screen" outline={<SettingsOutline card />}
       fills
       ready={view !== null}
       failed={query.isError}

@@ -9,6 +9,7 @@ import { Body } from '@/components/text';
 import { useHouse } from '@/hooks/use-house';
 import { useMembership } from '@/hooks/use-membership';
 import { INSET, SECTION_GAP } from '@/theme';
+import { ListPageOutline } from '@/components/page-outlines';
 
 /**
  * The guide, from Help's Read the guide (and House's Help): how Jonz works,
@@ -24,6 +25,7 @@ export default function GuideScreen() {
     <HousePage
       title={GUIDE_COPY.title}
       testID="guide"
+      outline={<ListPageOutline sections={[4, 3]} />}
       ready={view !== null}
       failed={query.isError}
       onRetry={() => void query.refetch()}

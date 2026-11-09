@@ -8,6 +8,7 @@ import { Reply } from '@/components/reply/reply';
 import { useHouse } from '@/hooks/use-house';
 import { useMembership } from '@/hooks/use-membership';
 import { INSET, SECTION_GAP } from '@/theme';
+import { ArticleOutline } from '@/components/page-outlines';
 
 import NotFound from '../../../+not-found';
 
@@ -25,7 +26,7 @@ export default function GuideTopicScreen() {
   return (
     <HousePage
       title={GUIDE_TOPIC[topic].title}
-      testID="guide-page"
+      testID="guide-page" outline={<ArticleOutline />}
       back="/house/guide"
       backLabel={GUIDE_COPY.title}
       ready={view !== null}

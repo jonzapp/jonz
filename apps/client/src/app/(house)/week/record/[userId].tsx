@@ -13,7 +13,6 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { PageTitle } from '@/components/page-title';
-import { Reading, ReadFailed } from '@/components/read-state';
 import { Row } from '@/components/row';
 import { Screen } from '@/components/screen';
 import { Section } from '@/components/section';
@@ -26,6 +25,8 @@ import { usePull } from '@/hooks/use-refresh';
 import { useRecord } from '@/hooks/use-record';
 import { useTable } from '@/hooks/use-table';
 import { INSET, SPACE } from '@/theme';
+import { Waiting } from '@/components/waiting';
+import { RecordOutline } from '@/components/page-outlines';
 
 /**
  * One person's track record, pushed from a row of it: where their points
@@ -100,10 +101,13 @@ function PersonRecord({ houseId, userId, personId, span }: { houseId: string; us
             </Section>
           ) : null}
         </>
-      ) : query.isError || rows.isError ? (
-        <ReadFailed onRetry={() => void Promise.all([query.refetch(), rows.refetch()])} />
       ) : (
-        <Reading />
+        <Waiting
+          ready={false}
+          failed={query.isError || rows.isError}
+          onRetry={() => void Promise.all([query.refetch(), rows.refetch()])}
+          outline={<RecordOutline />}
+        />
       )}
     </Screen>
   );

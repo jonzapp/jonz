@@ -7,10 +7,12 @@ import { Alert } from '@/components/alert';
 import { Button } from '@/components/button';
 import { Door, Sign, SignHeading } from '@/components/front-door/door';
 import { PageTitle } from '@/components/page-title';
-import { ReadFailed, Reading } from '@/components/read-state';
+import { ReadFailed } from '@/components/read-state';
 import { SignInPanel } from '@/components/sign-in-panel';
 import { Body } from '@/components/text';
 import { useMembership } from '@/hooks/use-membership';
+import { Waiting } from '@/components/waiting';
+import { DoorOutline } from '@/components/page-outlines';
 
 /**
  * A join link: /join/CODE on the web, jonz://join/CODE on a phone, the same
@@ -76,7 +78,7 @@ export default function Join() {
           <ReadFailed onRetry={readAgain} />
         </Sign>
       ) : invite === undefined ? (
-        <Reading label={FRONT_DOOR_COPY.lookingUp} />
+        <Waiting ready={false} label={FRONT_DOOR_COPY.lookingUp} outline={<DoorOutline />} />
       ) : !invite ? (
         <Sign>
           <SignHeading title={JOIN_COPY.badLink} body={JOIN_COPY.badLinkBody} />

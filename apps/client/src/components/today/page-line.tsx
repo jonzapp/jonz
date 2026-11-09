@@ -3,8 +3,10 @@ import { ChevronRightIcon } from 'lucide-react-native';
 import { useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { OutlineBar } from '@/components/outline';
 import { Body } from '@/components/text';
-import { INSET, TAP, useTheme } from '@/theme';
+import { Waiting } from '@/components/waiting';
+import { INSET, OUTLINE, TAP, useTheme } from '@/theme';
 
 /**
  * One tappable line on the page, onward to where it's about: where you
@@ -44,6 +46,17 @@ export function PageLine({
         <ChevronRightIcon size={16} color={colors.foreground} aria-hidden />
       </Pressable>
     </Link>
+  );
+}
+
+/**
+ * A page line still being read (where you stand, your time away): a bar in
+ * outline where its words will be, after WAIT_DELAY, so the line doesn't
+ * pop in from nothing.
+ */
+export function PendingLine({ label }: { label: string }) {
+  return (
+    <Waiting ready={false} label={label} outline={<View style={styles.line}><OutlineBar width={240} height={OUTLINE.line} onCard={false} /></View>} />
   );
 }
 
