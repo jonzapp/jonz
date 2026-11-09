@@ -3165,6 +3165,71 @@
       }
     },
     {
+      "name": "house_live",
+      "about": "The house's newest change after one the app saw, for its live updates",
+      "scope": "house",
+      "effect": "read",
+      "guard": {
+        "by": "permission",
+        "permission": "house:read"
+      },
+      "entitlement": null,
+      "entitlementWhen": null,
+      "destructive": false,
+      "method": "GET",
+      "path": "/v1/houses/{houseId}/live/since",
+      "pathKeys": [
+        "houseId"
+      ],
+      "rpc": {
+        "name": "house_live_since",
+        "server": false,
+        "args": {
+          "houseId": "p_house",
+          "after": "p_after"
+        }
+      },
+      "tables": [],
+      "page": null,
+      "input": {
+        "type": "object",
+        "properties": {
+          "houseId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "after": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "houseId"
+        ]
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "latest": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "latest"
+        ]
+      }
+    },
+    {
       "name": "house_history",
       "about": "The house's history, a page at a time",
       "scope": "house",

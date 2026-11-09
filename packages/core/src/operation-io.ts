@@ -464,6 +464,7 @@ export const OPERATION_IO = {
   live_notices: io(none, z.array(Notice), "GET /v1/notices"),
 
   // A house: reading
+  house_live: io(z.object({ houseId: id, after: z.int().min(0).optional() }), z.object({ latest: z.int().nullable() }), "GET /v1/houses/{houseId}/live/since"),
   house_history: io(z.object({ houseId: id, before: at.optional(), limit: z.int().min(1).max(200).optional() }), z.array(historyRow), "GET /v1/houses/{houseId}/history"),
   ask_usage: io(z.object({ houseId: id }), AskUsage, "GET /v1/houses/{houseId}/ask/usage"),
   catch_up: io(FreshRequest, FreshResponse, "POST /v1/houses/{houseId}/catch-up"),
