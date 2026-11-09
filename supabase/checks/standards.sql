@@ -22,40 +22,10 @@ insert into allowed values
   ('uuid has a foreign key', 'assignments.job_id', 'names a shared John''s places; there is no jobs table'),
   ('uuid has a foreign key', 'house_actions.ref', 'points at different tables by kind');
 
--- Server functions signed-in people may call (rule 22). Each one checks,
--- inside, that the caller may do what it does. Adding one here is a
--- decision a reviewer should see.
-create temp table callable (name text primary key);
-insert into callable values
-  ('account_deletion_preview'), ('account_deletion_status'),
-  ('answer_dispute'), ('answer_swap'), ('answer_tick'), ('board_tick'),
-  ('can'), ('can_app'), ('can_upload_proof'), ('cancel_away'), ('cast_vote'),
-  ('claim_owner_ask'), ('claim_support_draft'), ('confirm_payment'), ('cover_john'),
-  ('create_house'), ('delete_group'), ('end_notice'), ('finish_owner_ask'), ('finish_support_draft'),
-  ('hand_over'), ('hold_cover'), ('house_by_code'), ('house_history'),
-  ('is_member'), ('is_owner'), ('join_house'), ('keep_account'),
-  ('leave_pass'), ('mark_done'), ('moving_on'), ('my_app_permissions'), ('my_app_role'), ('my_permissions'),
-  ('my_reports'), ('offer_swap'), ('owner_delete_house'), ('owner_delete_now'), ('owner_deletions'),
-  ('owner_deletions_count'), ('owner_deletions_page'), ('owner_fix_report'),
-  ('owner_house'), ('owner_houses_count'), ('owner_houses_find'),
-  ('owner_houses_page'), ('owner_make_promotion'), ('owner_message_reach'),
-  ('owner_messages_count'), ('owner_messages_find'),
-  ('owner_messages_page'), ('owner_open_report'), ('owner_overview'),
-  ('owner_people_find'), ('owner_promotion'), ('owner_promotion_emails'),
-  ('owner_promotions_count'), ('owner_promotions_find'),
-  ('owner_promotions_page'), ('owner_reply_report'),
-  ('owner_reports_count'), ('owner_reports_page'),
-  ('owner_request_deletion'), ('owner_same_as'), ('owner_same_as_find'),
-  ('owner_send_message'), ('owner_set_report_state'), ('owner_set_support_draft'), ('owner_status'),
-  ('owner_stop_deletion'), ('owner_stop_promotion'), ('pay_pocket_money'),
-  ('plan_john'), ('raise_dispute'), ('raise_flag'), ('remove_flag'),
-  ('remove_member'), ('request_account_deletion'), ('reset_join_code'),
-  ('roll_call'), ('runs_for'), ('save_group'), ('save_notice'),
-  ('save_prefs'), ('see_report'), ('send_report'), ('set_away'),
-  ('set_house_kind'), ('set_member_role'), ('set_moving_out'),
-  ('set_my_photo'), ('shares_house'), ('start_house_from'), ('undo_action'),
-  ('undo_cover'), ('undo_done'), ('undo_latest'), ('use_immunity'),
-  ('use_swap'), ('write_back');
+-- What signed-in people may call and reach directly: the operation
+-- registry (packages/core/src/operations.ts), written out as SQL. Adding to
+-- it is a decision a reviewer should see.
+\ir registry.sql
 
 create temp table breaks (rule text, item text);
 
@@ -225,6 +195,28 @@ insert into breaks
 select 'callable functions listed', 'stale: ' || name from callable
 where not exists (select 1 from pg_proc p where p.pronamespace = 'public'::regnamespace and p.proname = name
                   and p.prosecdef and has_function_privilege('authenticated', p.oid, 'execute'));
+
+-- 20b. Signed-in and signed-out people reach tables only as the registry
+-- says (rule 22): every grant, on the whole table or some columns, is listed.
+insert into breaks
+select 'table grants listed', g.tbl || ': ' || g.grantee || ' ' || g.privilege
+from (
+  select c.relname as tbl, r.grantee, lower(p.privilege) as privilege
+  from pg_class c,
+       (values ('authenticated'), ('anon')) r(grantee),
+       (values ('SELECT'), ('INSERT'), ('UPDATE'), ('DELETE')) p(privilege)
+  where c.relnamespace = 'public'::regnamespace and c.relkind in ('r', 'p', 'v')
+    and (has_table_privilege(r.grantee, c.oid, p.privilege)
+         or (p.privilege <> 'DELETE' and has_any_column_privilege(r.grantee, c.oid, p.privilege)))
+) g
+where not exists (select 1 from table_grants t where t.tbl = g.tbl and t.grantee = g.grantee and t.privilege = g.privilege);
+insert into breaks
+select 'table grants listed', 'stale: ' || t.tbl || ': ' || t.grantee || ' ' || t.privilege from table_grants t
+where not exists (
+  select 1 from pg_class c
+  where c.relnamespace = 'public'::regnamespace and c.relname = t.tbl
+    and (has_table_privilege(t.grantee, c.oid, upper(t.privilege))
+         or (t.privilege <> 'delete' and has_any_column_privilege(t.grantee, c.oid, upper(t.privilege)))));
 
 -- 21. A permission a function or rule asks about (can / user_can / can_app) is on
 -- the permissions list, and named resource:level (docs/standards/database.md).

@@ -3,8 +3,8 @@
 // (supabase/migrations/20261118090000_permissions.sql) and enforces it with
 // `public.can(house, permission)`; a database test checks the two lists
 // match, so change both together. Roles are per house: an admin (a Parent
-// in a family) and a member (a Kid in a family). The app's owners are a
-// separate thing, checked by `is_owner()` (their list is owner-moves.ts).
+// in a family) and a member (a Kid in a family). The admin pages have their
+// own roles and permissions, checked by `can_app()` (owner-moves.ts).
 
 /** A house role, as `members.role` holds it. */
 export const HOUSE_ROLES = ["admin", "member"] as const;
