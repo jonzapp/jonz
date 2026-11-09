@@ -1,6 +1,7 @@
 import type { Database } from "@app/core";
 import {
   callFunction,
+  functionCall,
   signatures,
   type Signature,
   type Sql,
@@ -866,18 +867,27 @@ async function alone<T>(
 ): Promise<T> {
   savepoints += 1;
   const name = `rest_${savepoints}`;
+  // postgres.js sends a query when it's first awaited, so each is sent
+  // here, in order, before the next: the savepoint and role, then `work`'s
+  // query (sent as `work` starts), then the way back.
+  const send = (text: string) => tx.unsafe(text).execute();
   const sent: Promise<unknown>[] = [];
-  if (contained) sent.push(tx.unsafe(`savepoint ${name}`));
-  if (before) sent.push(tx.unsafe(before));
-  const result = work();
+  if (contained) sent.push(send(`savepoint ${name}`));
+  if (before) sent.push(send(before));
+  let result: Promise<T>;
+  try {
+    result = work();
+  } catch (e) {
+    result = Promise.reject(e);
+  }
   sent.push(result);
-  if (after) sent.push(tx.unsafe(after));
-  if (contained) sent.push(tx.unsafe(`release savepoint ${name}`));
+  if (after) sent.push(send(after));
+  if (contained) sent.push(send(`release savepoint ${name}`));
   // Every statement settles before this returns, so none is left failing
   // with nobody listening, and the next turn starts on a quiet connection.
   const settled = await Promise.allSettled(sent);
   const failed = settled.find((s) => s.status === "rejected");
-  if (!failed) return result;
+  if (!failed) return (settled[sent.indexOf(result)] as PromiseFulfilledResult<T>).value;
   // Back to before the savepoint: the role and claims too, as set_config(…, true) is undone with it.
   if (contained) await tx.unsafe(`rollback to savepoint ${name}`);
   throw (failed as PromiseRejectedResult).reason;
@@ -905,7 +915,7 @@ export function txClient(
           roles?.become ?? null,
           roles?.back ?? null,
           () =>
-            tx.unsafe(text, params as never[]) as unknown as Promise<
+            tx.unsafe(text, params as never[]).execute() as unknown as Promise<
               Record<string, unknown>[]
             >,
         ),
@@ -913,7 +923,10 @@ export function txClient(
         cached(signatureCache, pool, () => signatures(pool))(name),
       call: (signature, name, args) =>
         inside(tx, true, roles?.become ?? null, roles?.back ?? null, () =>
-          callFunction(tx, signature, name, args),
+          // Sent now, not when awaited, so it goes before the way back.
+          functionCall(tx, signature, name, args)
+            .execute()
+            .then(([row]) => row.r),
         ),
       meta: () => cached(metaCache, pool, () => readMeta(pool)),
     },

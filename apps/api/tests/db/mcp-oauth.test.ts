@@ -16,6 +16,7 @@ import { apiOperation } from "v1";
 import { buildMcpServer } from "@/lib/mcp/server";
 import { signedInUser } from "@/tests/support/clients";
 import { ANON_KEY, SUPABASE_URL } from "@/tests/support/env";
+import { restoreApiRole } from "../support/api-role";
 
 const DB_URL = process.env.DB_URL ?? "postgresql://postgres:postgres@127.0.0.1:54342/postgres";
 const BACK = "http://localhost:9999/callback";
@@ -35,7 +36,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await admin.unsafe(`alter role jonz_api password null`);
+  await restoreApiRole(admin);
   await pool.end();
   await admin.end();
 });

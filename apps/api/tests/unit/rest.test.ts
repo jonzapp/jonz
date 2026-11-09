@@ -259,16 +259,36 @@ describe("restClient", () => {
 
 describe("txClient", () => {
   it("takes turns in one transaction, so no query runs under another's role or savepoint", async () => {
-    // A transaction that answers each statement a little later, and logs it.
+    // A transaction like postgres.js's: a query is sent when it's executed
+    // or first awaited, not when it's made, and answered a little later.
     const log: string[] = [];
-    const later = (text: string) =>
-      new Promise<Record<string, unknown>[]>((resolve) =>
-        setTimeout(() => {
+    const query = (text: string) => {
+      let sent: Promise<Record<string, unknown>[]> | null = null;
+      const send = () => {
+        if (!sent) {
           log.push(text);
-          resolve(text.startsWith("select jsonb") ? [{ j: { id: "a" } }] : []);
-        }, 1),
-      );
-    const tx = { unsafe: (text: string) => later(text) } as unknown as Tx;
+          sent = new Promise((resolve) =>
+            setTimeout(
+              () => resolve(text.startsWith("select jsonb") ? [{ j: { id: "a" } }] : []),
+              1,
+            ),
+          );
+        }
+        return sent;
+      };
+      const q = {
+        execute: () => {
+          send();
+          return q;
+        },
+        then: (
+          ok: (rows: Record<string, unknown>[]) => unknown,
+          fail: (e: unknown) => unknown,
+        ) => send().then(ok, fail),
+      };
+      return q;
+    };
+    const tx = { unsafe: (text: string) => query(text) } as unknown as Tx;
     // The catalog: no keys, so plain selects need nothing from it.
     const pool = Object.assign(async () => [], {}) as unknown as Sql;
     const db = txClient(tx, pool, {

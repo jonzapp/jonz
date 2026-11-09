@@ -1,4 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
+import postgres from "postgres";
+
+import { restoreApiRole } from "../support/api-role";
 
 /**
  * One clear error when the stack is down, instead of N opaque ECONNREFUSEDs
@@ -15,6 +18,18 @@ export default async function setup() {
         "NEXT_PUBLIC_SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY in " +
         "apps/api/.env.local — run `supabase start`.",
     );
+  }
+
+  // The server's own client logs in as jonz_api with API_DATABASE_URL's
+  // password. Other suites run before this one on the same stack and leave
+  // the role with none, so it gets it back first.
+  if (process.env.API_DATABASE_URL) {
+    const sql = postgres(process.env.DB_URL ?? "postgresql://postgres:postgres@127.0.0.1:54342/postgres", { max: 1, onnotice: () => {} });
+    try {
+      await restoreApiRole(sql);
+    } finally {
+      await sql.end();
+    }
   }
 
   const admin = createClient(url, service, {

@@ -29,6 +29,7 @@ import { buildApp, withHandlers } from "v1";
 import { buildMcpServer, mcpOperations } from "@/lib/mcp/server";
 import { V1_HANDLERS } from "@/lib/v1/handlers";
 import { addJohns, deal, makeHouse, ZONE, type House } from "@/tests/support/factories";
+import { restoreApiRole } from "../support/api-role";
 
 const DB_URL = process.env.DB_URL ?? "postgresql://postgres:postgres@127.0.0.1:54342/postgres";
 const STACK_SECRET = process.env.SUPABASE_JWT_SECRET ?? "super-secret-jwt-token-with-at-least-32-characters-long";
@@ -151,7 +152,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await admin.unsafe(`alter role jonz_api password null`);
+  await restoreApiRole(admin);
   await app.close();
   await pool.end();
   await admin.end();
