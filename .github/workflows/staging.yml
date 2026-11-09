@@ -9,6 +9,8 @@ name: Staging
 # - "Put a PR on staging": staging becomes main with that PR merged in, so
 #   its migrations reach staging's database (and only staging's) before it
 #   merges. It stays there until the next merge to main.
+# - "Time live updates": scripts/live-latency.mjs, a tick reaching another
+#   screen through Supabase Realtime and through our API's stream.
 # - "Set up and check", "Seed the demo house", "Reset the database":
 #   scripts/staging.mjs, with these repository secrets:
 #     SUPABASE_ACCESS_TOKEN, VERCEL_TOKEN        always
@@ -29,6 +31,7 @@ on:
           - Set up and check
           - Check only
           - Seed the demo house
+          - Time live updates
           - Reset the database (wipes staging's data)
         default: Put a PR on staging
       pr:
@@ -106,8 +109,14 @@ jobs:
           AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
           ACTION: ${{ inputs.action }}
+          # Staging's public address and publishable key, as its web build has them.
+          SUPABASE_URL: https://twnxdsxvudfodcbdgxpp.supabase.co
+          SUPABASE_PUBLISHABLE_KEY: sb_publishable_iouGLV5o1pfXR-psMy9oDw_P_5mH8-Z
+          API_URL: https://api.staging.jonz.app
+          DEMO_PASSWORD: ${{ secrets.STAGING_DEMO_PASSWORD }}
         run: |
           case "$ACTION" in
+            "Time live updates") node scripts/live-latency.mjs ;;
             "Check only") node scripts/staging.mjs --check ;;
             "Seed the demo house") node scripts/staging.mjs --seed ;;
             "Reset the database (wipes staging's data)") node scripts/staging.mjs --reset ;;
