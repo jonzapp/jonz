@@ -264,6 +264,10 @@ export function createExecutor(options: ExecutorOptions) {
           ? await op.handler({ tx, claims, input, now: at })
           : await callFunction(tx, signature!, fn!, (op.rpcArgs ?? defaultRpcArgs)(input));
         // Checked before commit: a write whose answer breaks its contract is rolled back, not half-reported.
+        // Nothing back where the contract wants something: the row isn't there, or RLS hides it.
+        if ((raw === null || raw === undefined) && !op.output.safeParse(null).success) {
+          throw new Problem("not_found", "That isn't there, or isn't yours to see.");
+        }
         const out = op.output.safeParse(op.fromResult ? op.fromResult(raw, input) : raw);
         if (!out.success) {
           console.error(`[${requestId}] ${name} returned a shape its contract doesn't allow`, z.prettifyError(out.error));

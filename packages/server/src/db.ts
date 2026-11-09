@@ -72,9 +72,14 @@ function bind(type: string, index: number): string {
   return `$${index}::${type}`;
 }
 
-function value(type: string, v: unknown): string | null {
+/**
+ * A JSON or array argument goes as the value itself: the driver sees the
+ * parameter is jsonb (from its cast) and encodes it once. Anything else goes
+ * as text.
+ */
+function value(type: string, v: unknown): unknown {
   if (v === null || v === undefined) return null;
-  if (type.endsWith("[]") || type === "json" || type === "jsonb") return JSON.stringify(v);
+  if (type.endsWith("[]") || type === "json" || type === "jsonb") return v;
   return typeof v === "object" ? JSON.stringify(v) : String(v);
 }
 
@@ -85,7 +90,7 @@ export async function callFunction(tx: Tx, signature: Signature, name: string, a
     if (!(a in signature.args)) throw new Error(`public.${name} has no argument ${a}`);
   }
   const call = `public.${name}(${names.map((a, i) => `${a} => ${bind(signature.args[a], i + 1)}`).join(", ")})`;
-  const params = names.map((a) => value(signature.args[a], args[a]));
+  const params = names.map((a) => value(signature.args[a], args[a])) as postgres.ParameterOrJSON<never>[];
   const query = signature.returnsVoid
     ? `select null::jsonb as r from (select ${call}) _`
     : signature.returnsSet

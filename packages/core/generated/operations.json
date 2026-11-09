@@ -1562,7 +1562,13 @@
       "pathKeys": [
         "reportId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "my_report",
+        "server": false,
+        "args": {
+          "reportId": "p_report"
+        }
+      },
       "tables": [
         "reports",
         "report_messages"
@@ -1747,7 +1753,11 @@
       "method": "GET",
       "path": "/v1/me/house",
       "pathKeys": [],
-      "rpc": null,
+      "rpc": {
+        "name": "my_house",
+        "server": false,
+        "args": {}
+      },
       "tables": [
         "members",
         "houses"
@@ -1804,7 +1814,13 @@
       "method": "PATCH",
       "path": "/v1/me/name",
       "pathKeys": [],
-      "rpc": null,
+      "rpc": {
+        "name": "set_my_name",
+        "server": false,
+        "args": {
+          "name": "p_name"
+        }
+      },
       "tables": [
         "profiles"
       ],
@@ -1841,7 +1857,11 @@
       "method": "GET",
       "path": "/v1/me/notifications",
       "pathKeys": [],
-      "rpc": null,
+      "rpc": {
+        "name": "my_notifications",
+        "server": false,
+        "args": {}
+      },
       "tables": [
         "notification_prefs"
       ],
@@ -1929,7 +1949,19 @@
       "method": "PATCH",
       "path": "/v1/me/notifications",
       "pathKeys": [],
-      "rpc": null,
+      "rpc": {
+        "name": "save_notifications",
+        "server": false,
+        "args": {
+          "reminders": "p_reminders",
+          "checks": "p_checks",
+          "flags": "p_flags",
+          "deal": "p_deal",
+          "quietFrom": "p_quiet_from",
+          "quietUntil": "p_quiet_until",
+          "timezone": "p_timezone"
+        }
+      },
       "tables": [
         "notification_prefs"
       ],
@@ -2014,7 +2046,15 @@
       "method": "POST",
       "path": "/v1/me/push-devices",
       "pathKeys": [],
-      "rpc": null,
+      "rpc": {
+        "name": "add_push_device",
+        "server": false,
+        "args": {
+          "endpoint": "p_endpoint",
+          "p256dh": "p_p256dh",
+          "auth": "p_auth"
+        }
+      },
       "tables": [
         "push_subscriptions"
       ],
@@ -2058,7 +2098,13 @@
       "method": "DELETE",
       "path": "/v1/me/push-devices",
       "pathKeys": [],
-      "rpc": null,
+      "rpc": {
+        "name": "remove_push_device",
+        "server": false,
+        "args": {
+          "endpoint": "p_endpoint"
+        }
+      },
       "tables": [
         "push_subscriptions"
       ],
@@ -2096,7 +2142,13 @@
       "pathKeys": [
         "houseId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "my_ask_chats",
+        "server": false,
+        "args": {
+          "houseId": "p_house"
+        }
+      },
       "tables": [
         "ask_chats"
       ],
@@ -2156,7 +2208,13 @@
       "pathKeys": [
         "chatId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "my_ask_chat",
+        "server": false,
+        "args": {
+          "chatId": "p_chat"
+        }
+      },
       "tables": [
         "ask_chats"
       ],
@@ -2318,7 +2376,14 @@
       "pathKeys": [
         "houseId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "keep_ask_chat",
+        "server": false,
+        "args": {
+          "houseId": "p_house",
+          "turns": "p_turns"
+        }
+      },
       "tables": [
         "ask_chats"
       ],
@@ -2469,7 +2534,14 @@
       "pathKeys": [
         "chatId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "update_ask_chat",
+        "server": false,
+        "args": {
+          "chatId": "p_chat",
+          "turns": "p_turns"
+        }
+      },
       "tables": [
         "ask_chats"
       ],
@@ -2619,7 +2691,13 @@
       "pathKeys": [
         "chatId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "delete_ask_chat",
+        "server": false,
+        "args": {
+          "chatId": "p_chat"
+        }
+      },
       "tables": [
         "ask_chats"
       ],
@@ -2655,7 +2733,11 @@
       "method": "GET",
       "path": "/v1/notices",
       "pathKeys": [],
-      "rpc": null,
+      "rpc": {
+        "name": "live_notices",
+        "server": false,
+        "args": {}
+      },
       "tables": [
         "notices"
       ],

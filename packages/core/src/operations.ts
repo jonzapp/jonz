@@ -64,7 +64,8 @@ export interface Operation {
   /**
    * The tables it reads or changes straight, as the caller, under each
    * table's own rules (TABLES): an operation the app does today with the
-   * tables themselves, with no function or route of its own.
+   * tables themselves. One with an `rpc` too is served by that function on
+   * /v1 while the app still reads the tables, until it moves (C2).
    */
   tables?: readonly TableName[];
   /** A read of everything one screen shows at once, in place of several: one round trip. */
@@ -126,19 +127,19 @@ export const OPERATIONS = {
   send_report: op({ about: "Report a problem", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "send_report" }, route: "POST /api/reports" }),
   write_back: op({ about: "Write back on a problem you reported", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "write_back" }, route: "POST /api/reports/[id]/messages" }),
   see_report: op({ about: "Mark a reply to your report as seen", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "see_report" } }),
-  my_report: op({ about: "One of the problems you've reported, with its replies", scope: "account", effect: "read", guard: ACCOUNT_READ, tables: ["reports", "report_messages"] }),
-  my_house: op({ about: "The house you're in, if any", scope: "account", effect: "read", guard: ACCOUNT_READ, tables: ["members", "houses"] }),
-  set_my_name: op({ about: "Change the name you go by", scope: "account", effect: "write", guard: ACCOUNT_WRITE, tables: ["profiles"] }),
-  my_notifications: op({ about: "Which notifications you get, and your quiet hours", scope: "account", effect: "read", guard: ACCOUNT_READ, tables: ["notification_prefs"] }),
-  save_notifications: op({ about: "Change which notifications you get, and your quiet hours", scope: "account", effect: "write", guard: ACCOUNT_WRITE, tables: ["notification_prefs"] }),
-  add_push_device: op({ about: "Get pushes on this device", scope: "account", effect: "write", guard: ACCOUNT_WRITE, tables: ["push_subscriptions"] }),
-  remove_push_device: op({ about: "Stop pushes on this device", scope: "account", effect: "write", guard: ACCOUNT_WRITE, tables: ["push_subscriptions"] }),
-  my_ask_chats: op({ about: "Your saved Ask Jonz chats in a house, the latest first", scope: "account", effect: "read", guard: ACCOUNT_READ, tables: ["ask_chats"] }),
-  my_ask_chat: op({ about: "One of your saved Ask Jonz chats, with its turns", scope: "account", effect: "read", guard: ACCOUNT_READ, tables: ["ask_chats"] }),
-  keep_ask_chat: op({ about: "Save a new Ask Jonz chat", scope: "account", effect: "write", guard: ACCOUNT_WRITE, tables: ["ask_chats"] }),
-  update_ask_chat: op({ about: "Save an Ask Jonz chat as it now stands", scope: "account", effect: "write", guard: ACCOUNT_WRITE, tables: ["ask_chats"] }),
-  delete_ask_chat: op({ about: "Delete one of your saved Ask Jonz chats", scope: "account", effect: "write", guard: ACCOUNT_WRITE, tables: ["ask_chats"], destructive: true }),
-  live_notices: op({ about: "The notices showing now, at the top of the app", scope: "account", effect: "read", guard: ACCOUNT_READ, tables: ["notices"] }),
+  my_report: op({ about: "One of the problems you've reported, with its replies", scope: "account", effect: "read", guard: ACCOUNT_READ, rpc: { name: "my_report" }, tables: ["reports", "report_messages"] }),
+  my_house: op({ about: "The house you're in, if any", scope: "account", effect: "read", guard: ACCOUNT_READ, rpc: { name: "my_house" }, tables: ["members", "houses"] }),
+  set_my_name: op({ about: "Change the name you go by", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "set_my_name" }, tables: ["profiles"] }),
+  my_notifications: op({ about: "Which notifications you get, and your quiet hours", scope: "account", effect: "read", guard: ACCOUNT_READ, rpc: { name: "my_notifications" }, tables: ["notification_prefs"] }),
+  save_notifications: op({ about: "Change which notifications you get, and your quiet hours", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "save_notifications" }, tables: ["notification_prefs"] }),
+  add_push_device: op({ about: "Get pushes on this device", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "add_push_device" }, tables: ["push_subscriptions"] }),
+  remove_push_device: op({ about: "Stop pushes on this device", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "remove_push_device" }, tables: ["push_subscriptions"] }),
+  my_ask_chats: op({ about: "Your saved Ask Jonz chats in a house, the latest first", scope: "account", effect: "read", guard: ACCOUNT_READ, rpc: { name: "my_ask_chats" }, tables: ["ask_chats"] }),
+  my_ask_chat: op({ about: "One of your saved Ask Jonz chats, with its turns", scope: "account", effect: "read", guard: ACCOUNT_READ, rpc: { name: "my_ask_chat" }, tables: ["ask_chats"] }),
+  keep_ask_chat: op({ about: "Save a new Ask Jonz chat", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "keep_ask_chat" }, tables: ["ask_chats"] }),
+  update_ask_chat: op({ about: "Save an Ask Jonz chat as it now stands", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "update_ask_chat" }, tables: ["ask_chats"] }),
+  delete_ask_chat: op({ about: "Delete one of your saved Ask Jonz chats", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "delete_ask_chat" }, tables: ["ask_chats"], destructive: true }),
+  live_notices: op({ about: "The notices showing now, at the top of the app", scope: "account", effect: "read", guard: ACCOUNT_READ, rpc: { name: "live_notices" }, tables: ["notices"] }),
 
   // --- A house: reading -----------------------------------------------------------------------
   house_history: op({ about: "The house's history, a page at a time", scope: "house", effect: "read", guard: perm("history:read"), rpc: { name: "house_history" }, entitlement: "history" }),
