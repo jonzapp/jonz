@@ -1,4 +1,4 @@
-import { OPERATIONS } from "@app/core";
+import { OPERATIONS, type Operation } from "@app/core";
 import { Problem, type Executor } from "@app/server";
 import { createMcpHandler } from "@modelcontextprotocol/server";
 import { describe, expect, it, vi } from "vitest";
@@ -45,7 +45,7 @@ describe("/mcp", () => {
     expect(V1_OPERATIONS.map((o) => o.name)).toContain("answer_api_approval");
     const read = tools.find((t) => OPERATIONS[t.name as keyof typeof OPERATIONS].effect === "read");
     expect(read?.annotations?.readOnlyHint).toBe(true);
-    for (const t of tools) expect(t.annotations?.destructiveHint ?? false, t.name).toBe(OPERATIONS[t.name as keyof typeof OPERATIONS].destructive === true);
+    for (const t of tools) expect(t.annotations?.destructiveHint ?? false, t.name).toBe((OPERATIONS[t.name as keyof typeof OPERATIONS] as Operation).destructive === true);
   });
 
   const A = "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d";

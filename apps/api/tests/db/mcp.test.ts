@@ -55,7 +55,8 @@ async function call(execute: Executor, bearer: string, name: string, args: Recor
     result: { isError?: boolean; structuredContent?: Record<string, unknown>; content: { text: string }[] };
     error?: { code: number; message: string; data?: { elicitations?: { mode: string; url: string; elicitationId: string }[] } };
   };
-  return message.error ? { isError: true, error: message.error, content: [{ text: message.error.message }] } : message.result;
+  type Answer = (typeof message)["result"] & { error?: NonNullable<(typeof message)["error"]> };
+  return (message.error ? { isError: true, error: message.error, content: [{ text: message.error.message }] } : message.result) as Answer;
 }
 
 beforeAll(async () => {
@@ -109,7 +110,7 @@ it("holds a change that can't be undone until the person approves it in Jonz, th
   // MCP 2025: the urlElicitationRequired error, with the page to open.
   const held = await call(executors[0], mine, "set_house_kind", ask);
   expect(held.isError).toBe(true);
-  const error = (held as { error?: { code: number; data?: { elicitations?: { mode: string; url: string; elicitationId: string }[] } } }).error;
+  const error = held.error;
   expect(error?.code).toBe(-32042);
   const [elicitation] = error?.data?.elicitations ?? [];
   expect(elicitation).toMatchObject({ mode: "url", url: expect.stringMatching(/^https:\/\/jonz\.app\/approve\/[0-9a-f-]{36}$/) });

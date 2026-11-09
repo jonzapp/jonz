@@ -1877,7 +1877,7 @@
                             "type": "string"
                           },
                           "additionalProperties": {
-                            "$ref": "#/$defs/__schema0"
+                            "$ref": "#/components/schemas/api_approval_output___schema0"
                           }
                         },
                         "houseId": {
@@ -1962,40 +1962,7 @@
                     {
                       "type": "null"
                     }
-                  ],
-                  "$defs": {
-                    "__schema0": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "number"
-                        },
-                        {
-                          "type": "boolean"
-                        },
-                        {
-                          "type": "null"
-                        },
-                        {
-                          "type": "array",
-                          "items": {
-                            "$ref": "#/$defs/__schema0"
-                          }
-                        },
-                        {
-                          "type": "object",
-                          "propertyNames": {
-                            "type": "string"
-                          },
-                          "additionalProperties": {
-                            "$ref": "#/$defs/__schema0"
-                          }
-                        }
-                      ]
-                    }
-                  }
+                  ]
                 }
               }
             }
@@ -9957,6 +9924,37 @@
       }
     },
     "schemas": {
+      "api_approval_output___schema0": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "number"
+          },
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "null"
+          },
+          {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/api_approval_output___schema0"
+            }
+          },
+          {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "$ref": "#/components/schemas/api_approval_output___schema0"
+            }
+          }
+        ]
+      },
       "house_history_output___schema0": {
         "anyOf": [
           {
