@@ -1,6 +1,7 @@
 import { DELETE_HOUSE_COPY, FOCUS_SHELL_COPY, HOUSES_COPY, houseFacts, houseLead, passDetail, personMeta, type HouseDetail } from '@app/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
+import { MegaphoneIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
@@ -11,7 +12,7 @@ import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/button';
 import { ButtonRow } from '@/components/button-row';
 import { Field } from '@/components/field';
-import { Row } from '@/components/row';
+import { Row, RowIcon } from '@/components/row';
 import { Section } from '@/components/section';
 import { ChoiceRow } from '@/components/setup/choice-row';
 import { Sheet } from '@/components/sheet';
@@ -104,7 +105,7 @@ function DeleteHouse({ house }: { house: HouseDetail }) {
         testID="house-delete-sheet"
       >
         <Field label={DELETE_HOUSE_COPY.reason} value={reason} onChangeText={setReason} maxLength={500} testID="house-delete-reason" />
-        <ChoiceRow role="checkbox" label={DELETE_HOUSE_COPY.tell} checked={tell} onPress={() => setTell(!tell)} testID="house-delete-tell" />
+        <ChoiceRow role="checkbox" leading={<RowIcon icon={MegaphoneIcon} />} label={DELETE_HOUSE_COPY.tell} checked={tell} onPress={() => setTell(!tell)} testID="house-delete-tell" />
         <Field label={DELETE_HOUSE_COPY.confirm} value={typed} onChangeText={setTyped} placeholder={house.name} testID="house-delete-name" />
         {remove.error ? <Alert message={remove.error.message} /> : null}
         <ButtonRow stacked>
