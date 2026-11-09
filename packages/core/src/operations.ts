@@ -203,6 +203,7 @@ export const OPERATIONS = {
   owner_delete_now: op({ about: "Delete an account now", scope: "app", effect: "write", guard: perm("deletions:write"), rpc: { name: "owner_delete_now" }, destructive: true }),
   owner_request_deletion: op({ about: "Start deleting an account for someone who asked by email", scope: "app", effect: "write", guard: perm("deletions:write"), rpc: { name: "owner_request_deletion" }, destructive: true }),
   owner_stop_deletion: op({ about: "Stop an account being deleted", scope: "app", effect: "write", guard: perm("deletions:write"), rpc: { name: "owner_stop_deletion" } }),
+  owner_delete_house: op({ about: "Delete a whole house, telling its people why", scope: "app", effect: "write", guard: perm("houses:write"), rpc: { name: "owner_delete_house" }, route: "POST /api/admin/houses/[id]/delete", destructive: true }),
 } as const satisfies Record<string, Operation>;
 
 export type OperationName = keyof typeof OPERATIONS;

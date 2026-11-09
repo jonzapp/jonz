@@ -1,8 +1,8 @@
-import { OVERVIEW_COPY, OWNER_PERMISSION_NAMES, type HouseDetail, type HouseRow, type Overview } from '@app/core';
+import { DELETE_HOUSE_COPY, HOUSES_COPY, OVERVIEW_COPY, OWNER_PERMISSION_NAMES, type HouseDetail, type HouseRow, type Overview } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 import { useWindowDimensions } from 'react-native';
 
-import { housesCount, housesPage, ownerHouse, ownerOverview } from '@/api/houses';
+import { deleteHouse, housesCount, housesPage, ownerHouse, ownerOverview } from '@/api/houses';
 import { liveNotices, ownerStatus } from '@/api/owner';
 import AdminLayout from '@/app/admin/_layout';
 import HousePage from '@/app/admin/houses/[id]';
@@ -24,6 +24,7 @@ jest.mock('@/api/houses', () => ({
   housesPage: jest.fn(),
   housesCount: jest.fn(),
   ownerHouse: jest.fn(),
+  deleteHouse: jest.fn(),
 }));
 jest.mock('@/api/supabase', () => ({ supabase: {} }));
 jest.mock('@/api/http', () => ({ apiPost: jest.fn() }));
@@ -155,6 +156,31 @@ describe('Houses', () => {
     expect(screen.getByTestId('house-person-p')).toHaveTextContent(/Priya.*admin, 6 of 7 on time/);
     expect(screen.getByTestId('house-person-j')).toHaveTextContent(/Jo.*away until 2 Nov/);
     expect(screen.getByText('Started 3 Sep, Priya is the admin')).toBeVisible();
+  });
+
+  it('deletes a house only once its name is typed, telling everyone by default, then goes back to Houses', async () => {
+    jest.mocked(deleteHouse).mockResolvedValue({ ok: true, name: 'Elm Street', people: 2, told: 2, passStopped: true });
+    await renderPages(ROUTES, '/admin/houses/h1');
+    await untilRead();
+    await fireEvent.press(await screen.findByTestId('house-delete'));
+    const sheet = within(await screen.findByTestId('house-delete-sheet'));
+    expect(sheet.getByText(DELETE_HOUSE_COPY.title('Elm Street'))).toBeVisible();
+    expect(sheet.getByTestId('house-delete-confirm')).toBeDisabled();
+    await fireEvent.changeText(sheet.getByTestId('house-delete-reason'), 'Test house');
+    await fireEvent.changeText(sheet.getByTestId('house-delete-name'), 'elm street');
+    expect(sheet.getByTestId('house-delete-confirm')).toBeEnabled();
+    await fireEvent.press(sheet.getByTestId('house-delete-confirm'));
+    await waitFor(() => expect(deleteHouse).toHaveBeenCalledWith('h1', 'Test house', true));
+    expect(await screen.findByText(DELETE_HOUSE_COPY.done('Elm Street'))).toBeVisible();
+    expect(await screen.findByTestId('house-h2')).toBeVisible();
+  });
+
+  it('offers no Delete house to a support helper, who may only read it', async () => {
+    jest.mocked(ownerStatus).mockResolvedValue({ owner: true, mfa: true, permissions: ['admin:read', 'reports:write'] });
+    await renderPages(ROUTES, '/admin/houses/h1');
+    await untilRead();
+    expect(await screen.findByText(HOUSES_COPY.readOnly)).toBeVisible();
+    expect(screen.queryByTestId('house-delete')).toBeNull();
   });
 
   it('is a busy list: the database finds houses by words and filters by Pass', async () => {

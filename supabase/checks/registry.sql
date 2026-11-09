@@ -40,6 +40,7 @@ insert into callable values
   ('my_permissions'),
   ('my_reports'),
   ('offer_swap'),
+  ('owner_delete_house'),
   ('owner_delete_now'),
   ('owner_deletions'),
   ('owner_deletions_count'),

@@ -29,6 +29,7 @@ export const OWNER_PERMISSIONS = {
   "messages:write": "Send a message to a person, a house or everyone, by push, the Wall or email",
   "promotions:write": "Make a promotion, stop one, email the people it names, or try its Stripe set-up again",
   "deletions:write": "Delete an account now, stop a deletion, or start one for someone who asked by email",
+  "houses:write": "Delete a whole house: everyone in it is told, its Pass stops renewing, and it can't be undone",
 } as const;
 export type OwnerPermission = keyof typeof OWNER_PERMISSIONS;
 export const OWNER_PERMISSION_NAMES = Object.keys(OWNER_PERMISSIONS) as OwnerPermission[];
@@ -59,6 +60,7 @@ export const OWNER_ASK_COVERAGE: Record<OwnerPermission, OwnerAskCoverage> = {
   "messages:write": { by: "card", tools: ["send_message"] },
   "promotions:write": { by: "card", tools: ["make_promotion", "stop_promotion", "email_promotion", "retry_promotion"] },
   "deletions:write": { by: "card", tools: ["delete_account_now", "stop_deletion", "start_deletion"] },
+  "houses:write": { by: "card", tools: ["delete_house"] },
 };
 
 /** The owner's write tools, from OWNER_ASK_COVERAGE. */
@@ -116,6 +118,7 @@ export const OwnerMove = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("deletion_now"), userId: z.uuid(), who: Label, reason: Reason }),
   z.object({ kind: z.literal("deletion_stop"), userId: z.uuid(), who: Label, reason: Reason }),
   z.object({ kind: z.literal("deletion_start"), email: z.email(), reason: Reason }),
+  z.object({ kind: z.literal("house_delete"), houseId: z.uuid(), name: Label, people: z.number().int().min(0), reason: Reason, tell: z.boolean() }),
 ]);
 export type OwnerMove = z.infer<typeof OwnerMove>;
 export type OwnerMoveKind = OwnerMove["kind"];
@@ -139,10 +142,11 @@ export const OWNER_MOVE_PERMISSION: Record<OwnerMoveKind, OwnerPermission> = {
   deletion_now: "deletions:write",
   deletion_stop: "deletions:write",
   deletion_start: "deletions:write",
+  house_delete: "houses:write",
 };
 
 /** Moves that can’t be taken back: the card says so under each. */
-export const OWNER_MOVES_FINAL: readonly OwnerMoveKind[] = ["deletion_now", "message_send", "promotion_email", "report_reply", "promotion_stop"];
+export const OWNER_MOVES_FINAL: readonly OwnerMoveKind[] = ["deletion_now", "message_send", "promotion_email", "report_reply", "promotion_stop", "house_delete"];
 
 const ways = (m: { push: boolean; wall: boolean; email: boolean }) =>
   [m.push && "push", m.wall && "the Wall", m.email && "email"].filter(Boolean).join(", ");
@@ -183,6 +187,8 @@ export const OWNER_MOVES_COPY = {
         return `Stop deleting ${m.who}’s account`;
       case "deletion_start":
         return `Start deleting ${m.email}’s account`;
+      case "house_delete":
+        return `Delete the house ${m.name}`;
     }
   },
   meta: (m: OwnerMove): string => {
@@ -215,9 +221,48 @@ export const OWNER_MOVES_COPY = {
         return `As if they’d tapped Keep my account.${m.reason ? ` ${words(m.reason, 80)}` : ""}`;
       case "deletion_start":
         return `They have 30 days to change their mind.${m.reason ? ` ${words(m.reason, 80)}` : ""}`;
+      case "house_delete":
+        return `${DELETE_HOUSE_COPY.gone(m.people, m.tell)}${m.reason ? ` ${words(m.reason, 80)}` : ""}`;
     }
   },
   apply: (n: number) => (n === 0 ? "Pick at least one" : n === 1 ? "Do 1 thing" : `Do ${n} things`),
   applying: "Doing it…",
   done: (n: number) => (n === 1 ? "Done." : `All ${n} done.`),
 } as const;
+
+/** Deleting a whole house (houses:write): the Houses page's sheet, the card's lines, and what its people are told. */
+export const DELETE_HOUSE_COPY = {
+  button: "Delete house",
+  title: (name: string) => `Delete ${name}?`,
+  body: "Its Johns, weeks, Wall, history and Stake go for good. Everyone in it keeps their account, in no house. A House Pass it pays for stops renewing; any refund is yours to give in Stripe.",
+  reason: "Why (for the audit log)",
+  tell: "Tell everyone in it, by push and email",
+  confirm: "Type the house’s name to delete it",
+  delete: "Delete for good",
+  deleting: "Deleting…",
+  gone: (people: number, tell: boolean) =>
+    `Gone for good, with everything in it. ${people === 1 ? "The 1 person" : `The ${people} people`} in it keep their accounts${tell ? " and are told" : ""}; any House Pass stops renewing.`,
+  done: (name: string) => `${name} is deleted.`,
+  passNotStopped: "Its House Pass couldn’t be stopped in Stripe: stop it there so it doesn’t renew.",
+  /** What everyone in it gets, by push and email. */
+  subject: (name: string) => `${name} has been closed`,
+  message: (name: string) =>
+    `We've closed ${name} on Jonz, so its Johns and history are gone. Your account is still here: start a new house or join one any time. Questions? Reply to this email.`,
+} as const;
+
+/** POST /api/admin/houses/[id]/delete: why, and whether to tell everyone in it. */
+export const DeleteHouseRequest = z.object({
+  reason: Reason.default(""),
+  tell: z.boolean(),
+});
+export type DeleteHouseRequest = z.infer<typeof DeleteHouseRequest>;
+
+/** What deleting it did: how many lived there, how many were told, and whether its Pass was stopped (null: it had none). */
+export const DeleteHouseResponse = z.object({
+  ok: z.literal(true),
+  name: z.string(),
+  people: z.number(),
+  told: z.number(),
+  passStopped: z.boolean().nullable(),
+});
+export type DeleteHouseResponse = z.infer<typeof DeleteHouseResponse>;

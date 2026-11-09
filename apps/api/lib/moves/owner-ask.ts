@@ -294,6 +294,12 @@ export function ownerWrites(caller: Caller, role: OwnerRole, now: Date, moves: O
       if (!found) return { ok: false, said: "No account waiting to be deleted has that id: deletions gives it." };
       return add({ kind, userId: found.user_id, who: found.name ?? found.email, reason });
     },
+    async deleteHouse(id, reason, tell) {
+      const { data } = await db.rpc("owner_houses_find", { p_q: id.trim() });
+      const found = (data ?? []).filter((h) => isId(id, h.id));
+      if (found.length !== 1) return ONE_OF("house", "find_houses");
+      return add({ kind: "house_delete", houseId: found[0].id, name: found[0].name, people: Number(found[0].people), reason, tell });
+    },
     async startDeletion(email, reason) {
       const e = email.trim().toLowerCase();
       if (!(await person(e)).some((p) => p.email.toLowerCase() === e)) return { ok: false, said: "Nobody has that email: find_people looks them up." };
