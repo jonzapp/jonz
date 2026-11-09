@@ -5,6 +5,7 @@ import { useCallback, useEffect } from 'react';
 
 import { loadHouse, type Housemate, type HouseSnapshot } from '@/api/board';
 import { catchUp } from '@/api/house';
+import { liveThroughApi, openLiveStream } from '@/api/live-stream';
 import { live, supabase } from '@/api/supabase';
 import { houseKey } from '@/hooks/keys';
 import { useNow } from '@/hooks/use-now';
@@ -54,7 +55,8 @@ export function useHouse(houseId: string, userId: string): { query: UseQueryResu
 /**
  * When a housemate ticks, votes or disputes, every screen on the house
  * follows. Realtime applies the same RLS as a query, so the socket carries
- * the user's token; bursts fold into one refetch. The socket is a hint, not
+ * the user's token; bursts fold into one refetch. With
+ * EXPO_PUBLIC_LIVE_THROUGH_API on, the API's own stream says so instead. The socket is a hint, not
  * a contract: coming back to the app refetches anyway (QueryProvider).
  */
 export function useLiveHouse(houseId: string) {
@@ -66,6 +68,15 @@ export function useLiveHouse(houseId: string) {
       clearTimeout(timer);
       timer = setTimeout(() => void client.invalidateQueries({ queryKey: houseKey(houseId) }), 400);
     };
+    if (liveThroughApi) {
+      const stop = openLiveStream(houseId, soon, {
+        token: async () => (await supabase.auth.getSession()).data.session?.access_token ?? null,
+      });
+      return () => {
+        clearTimeout(timer);
+        stop();
+      };
+    }
     let channel: ReturnType<typeof live.channel> | undefined;
     let cancelled = false;
 

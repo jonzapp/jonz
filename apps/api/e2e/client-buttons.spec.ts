@@ -67,9 +67,18 @@ test("every page of a dealt house keeps the button rules", async ({ browser }) =
   await page.getByTestId("week-screen").getByRole("button", { name: "Bins" }).first().click();
   await expect(page.getByTestId("john-sheet-name")).toHaveText("Bins");
   await expectButtonRules(page, "a John's sheet");
-  for (const path of ["/house/johns", "/house/rules", "/house/away", "/house/wall", "/house/you"]) {
+  // Each page once what it reads has arrived. Not "networkidle": the house's
+  // live stream stays open for as long as the page does.
+  for (const [path, screen] of [
+    ["/house/johns", "johns-screen"],
+    ["/house/rules", "rules-screen"],
+    ["/house/away", "away-screen"],
+    ["/house/wall", "wall-screen"],
+    ["/house/you", "you-screen"],
+  ] as const) {
     await page.goto(path);
-    await page.waitForLoadState("networkidle");
+    await expect(page.getByTestId(screen)).toBeVisible();
+    await expect(page.getByTestId(screen).getByRole("progressbar")).toHaveCount(0);
     await expectButtonRules(page, path);
   }
   await context.close();

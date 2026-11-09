@@ -207,6 +207,11 @@ Migration `20261219090000_api_layer.sql` sets up the following:
     280 s. Each `change` only says the house changed; the app reads it
     again through /v1. `lib/live` keeps one Realtime connection per
     instance.
+  - App side built, off until the check below: with
+    `EXPO_PUBLIC_LIVE_THROUGH_API=1` the app reads that stream
+    (`apps/client/src/api/live-stream.ts`, over XMLHttpRequest so it can
+    send the token on the web and on a phone) instead of Supabase
+    Realtime. The e2e runs with it on.
   - **Before the app switches,** a test times a tick reaching another
     phone, today's Supabase Realtime against the new path (median and
     95th percentile). It switches only if the new path is within about
