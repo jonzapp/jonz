@@ -12,6 +12,7 @@ import { useHouse, type HouseView } from '@/hooks/use-house';
 import { useMembership } from '@/hooks/use-membership';
 import { usePull, useReadOnFocus } from '@/hooks/use-refresh';
 import { INSET, SPACE } from '@/theme';
+import { SettingsOutline } from '@/components/page-outlines';
 
 /** How big your picture is at the top of the page. */
 const PHOTO = 64;
@@ -38,7 +39,7 @@ function YouFor({ houseId, userId }: { houseId: string; userId: string }) {
   return (
     <HousePage
       title={PAGE_TITLE.you}
-      testID="you-screen"
+      testID="you-screen" outline={<SettingsOutline sections={[1, 3, 2]} />}
       fills
       ready={!!view?.me}
       failed={query.isError}

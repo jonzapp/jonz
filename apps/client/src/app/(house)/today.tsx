@@ -14,6 +14,7 @@ import {
   type PocketView,
   type StakeView,
   KIDS_COPY,
+  FOCUS_SHELL_COPY,
   switchChoices,
 } from '@app/core';
 import { useState } from 'react';
@@ -22,7 +23,7 @@ import type { AwayView } from '@/api/away';
 import type { JohnList } from '@/api/settings';
 import { PageTitle } from '@/components/page-title';
 import { PickMenu } from '@/components/pick-menu';
-import { Reading, ReadFailed } from '@/components/read-state';
+import { TodayOutline } from '@/components/page-outlines';
 import { Columns, Screen, useColumns } from '@/components/screen';
 import { TitleBar, TopLine } from '@/components/title-bar';
 import { MoveInAsk } from '@/components/today/move-in-ask';
@@ -30,13 +31,14 @@ import { CouldCover, NeedsYou } from '@/components/today/needs-you';
 import { NeedsYourOk } from '@/components/today/needs-your-ok';
 import { NextUp } from '@/components/today/next-up';
 import { OnCall } from '@/components/today/on-call';
-import { PageLine, PageLines } from '@/components/today/page-line';
+import { PageLine, PageLines, PendingLine } from '@/components/today/page-line';
 import { RestOfWeek } from '@/components/today/rest-of-week';
 import { SetupCard } from '@/components/today/setup-card';
 import { SwapOfferCard, SwapSuggestion } from '@/components/today/swap-ask';
 import { WeekGlance } from '@/components/today/week-glance';
 import { TourOffer } from '@/components/tour/tour-offer';
 import { TourSpot } from '@/components/tour/tour-spot';
+import { Waiting } from '@/components/waiting';
 import { useAway } from '@/hooks/use-away';
 import { useHouse, type HouseView } from '@/hooks/use-house';
 import { useJohnList } from '@/hooks/use-john-list';
@@ -98,31 +100,33 @@ function TodayFor({ houseId, userId: me }: { houseId: string; userId: string }) 
       testID="today-screen"
     >
       <PageTitle page={PAGE_TITLE.today} />
-      {view ? (
-        <TodayView
-          view={view}
-          away={away.data ?? null}
-          stake={stake.data ?? null}
-          list={list.data ?? null}
-          pocket={pocket.data ?? null}
-        />
-      ) : query.isError ? (
-        <ReadFailed onRetry={() => void query.refetch()} />
-      ) : (
-        <Reading />
-      )}
+      <Waiting ready={view != null} failed={query.isError} onRetry={() => void query.refetch()} outline={<TodayOutline />} fill>
+        {() => (
+          <TodayView
+            view={view!}
+            reading={away.isLoading || stake.isLoading || pocket.isLoading}
+            away={away.data ?? null}
+            stake={stake.data ?? null}
+            list={list.data ?? null}
+            pocket={pocket.data ?? null}
+          />
+        )}
+      </Waiting>
     </Screen>
   );
 }
 
 function TodayView({
   view,
+  reading,
   away,
   stake,
   list,
   pocket,
 }: {
   view: HouseView;
+  /** Where you stand, your time away or what you've earned is still being read: its line waits in outline. */
+  reading: boolean;
   away: AwayView | null;
   stake: StakeView | null;
   list: JohnList | null;
@@ -226,7 +230,7 @@ function TodayView({
     <MoveInAsk houseName={house.name} joinCode={house.joinCode} />
   ) : null;
   const lines =
-    standing || page.away || moving ? (
+    standing || page.away || moving || reading ? (
       // The page's quiet lines sit together, under the week.
       <PageLines>
         {standing ? (
@@ -244,6 +248,7 @@ function TodayView({
           // On the day it's time to leave, from the foot of House; before it, the date can change.
           <PageLine text={moving} href={mover && mover <= localToday ? '/house' : '/house/moving'} testID="moving-line" />
         ) : null}
+        {reading && !standing && !page.away ? <PendingLine label={FOCUS_SHELL_COPY.reading} /> : null}
       </PageLines>
     ) : null;
 

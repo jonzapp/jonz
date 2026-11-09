@@ -10,6 +10,7 @@ import { useHouse } from '@/hooks/use-house';
 import { useMembership } from '@/hooks/use-membership';
 import { usePocket } from '@/hooks/use-pocket';
 import { usePull } from '@/hooks/use-refresh';
+import { ListPageOutline } from '@/components/page-outlines';
 
 /**
  * Pocket money history, pushed from a family's month card: each month,
@@ -28,7 +29,7 @@ function PocketFor({ houseId, userId }: { houseId: string; userId: string }) {
   return (
     <HousePage
       title={POCKET_COPY.history}
-      testID="pocket-screen"
+      testID="pocket-screen" outline={<ListPageOutline sections={[3, 3]} lead="none" />}
       ready={view !== null && pocket.data !== undefined}
       failed={query.isError || pocket.isError}
       onRetry={() => void Promise.all([query.refetch(), pocket.refetch()])}

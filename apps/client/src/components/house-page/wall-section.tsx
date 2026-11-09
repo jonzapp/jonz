@@ -1,6 +1,6 @@
 import { WALL_COPY, WALL_FEED_COPY, wallFeedRow } from '@app/core';
 import { useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { View } from 'react-native';
 
 import { GroupItem } from '@/components/group';
 import { useJohnSheet } from '@/components/john-sheet';
@@ -12,8 +12,9 @@ import { WallEventSheet } from '@/components/wall/event-sheet';
 import { WallEventRow, wallScene } from '@/components/wall/wall-row';
 import type { HouseView } from '@/hooks/use-house';
 import { useReact, useWallLatest } from '@/hooks/use-wall';
-import { useTheme } from '@/theme';
 import { TourSpot } from '@/components/tour/tour-spot';
+import { Waiting } from '@/components/waiting';
+import { OutlineRows } from '@/components/outline';
 
 /** How many of the Wall's events House shows. */
 const LATEST = 4;
@@ -26,7 +27,6 @@ const LATEST = 4;
  * Holding a row down shows it with all four reactions.
  */
 export function WallSection({ houseId, userId, view }: { houseId: string; userId: string; view: HouseView }) {
-  const { colors } = useTheme();
   const johnSheet = useJohnSheet();
   const latest = useWallLatest(houseId, userId, LATEST);
   const { react, problem, problemAt, clear } = useReact(houseId, userId);
@@ -62,13 +62,13 @@ export function WallSection({ houseId, userId, view }: { houseId: string; userId
       <View testID="wall-section">
         <Section label={WALL_COPY.title} right={seeAll}>
           {!latest.data ? (
-            <GroupItem>
-              {latest.isError ? (
+            latest.isError ? (
+              <GroupItem>
                 <ReadFailed message={WALL_FEED_COPY.unreadable} onRetry={() => void latest.refetch()} />
-              ) : (
-                <ActivityIndicator color={colors.foreground} accessibilityLabel={WALL_FEED_COPY.reading} />
-              )}
-            </GroupItem>
+              </GroupItem>
+            ) : (
+              <Waiting ready={false} label={WALL_FEED_COPY.reading} outline={<OutlineRows count={LATEST} />} />
+            )
           ) : rows.length === 0 ? (
             <GroupItem>
               <Body>{WALL_COPY.empty}</Body>

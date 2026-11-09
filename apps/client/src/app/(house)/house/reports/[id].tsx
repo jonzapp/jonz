@@ -9,11 +9,12 @@ import { myReport, seeReport, writeBack, type Report } from '@/api/reports';
 import { ChatLog } from '@/components/chat/chat';
 import { EmptyState } from '@/components/empty-state';
 import { PageTitle } from '@/components/page-title';
-import { Reading, ReadFailed } from '@/components/read-state';
 import { ReplyBox, ReportChip, ReportThread, said } from '@/components/report/report-parts';
 import { Lead, Meta } from '@/components/text';
 import { TitleBar } from '@/components/title-bar';
 import { GUTTER, SPACE, useTheme } from '@/theme';
+import { Waiting } from '@/components/waiting';
+import { ArticleOutline } from '@/components/page-outlines';
 
 /**
  * One of your reports, as a chat: what it's about and where it's got to at
@@ -41,7 +42,9 @@ export default function ReportScreen() {
       <TitleBar title={REPORT_COPY.yourReport} back="/house/reports" backLabel={REPORT_COPY.yours} />
       <PageTitle page={REPORT_COPY.yourReport} />
       {report.data === undefined ? (
-        <View style={styles.reading}>{report.isError ? <ReadFailed onRetry={() => void report.refetch()} /> : <Reading />}</View>
+        <View style={styles.reading}>
+          <Waiting ready={false} failed={report.isError} onRetry={() => void report.refetch()} outline={<ArticleOutline />} />
+        </View>
       ) : report.data === null ? (
         <View style={styles.reading}>
           <EmptyState icon={MessagesSquareIcon} title={REPORT_COPY.missing} body={REPORT_COPY.missingBody} />

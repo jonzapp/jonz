@@ -28,6 +28,7 @@ import { useMembership } from '@/hooks/use-membership';
 import { useMove } from '@/hooks/use-move';
 import { usePocket } from '@/hooks/use-pocket';
 import { usePull } from '@/hooks/use-refresh';
+import { ListPageOutline } from '@/components/page-outlines';
 
 /**
  * The board (docs/specs/family-houses.md, "The board"): a family's shared
@@ -49,7 +50,7 @@ function BoardFor({ houseId, userId }: { houseId: string; userId: string }) {
   return (
     <HousePage
       title={BOARD_COPY.title}
-      testID="board-screen"
+      testID="board-screen" outline={<ListPageOutline sections={[4]} />}
       ready={view !== null}
       failed={query.isError}
       onRetry={() => void query.refetch()}

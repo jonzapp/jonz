@@ -19,6 +19,7 @@ import { useMembership } from '@/hooks/use-membership';
 import { useMove } from '@/hooks/use-move';
 import { usePull } from '@/hooks/use-refresh';
 import { INSET, SECTION_GAP, SPACE } from '@/theme';
+import { SettingsOutline } from '@/components/page-outlines';
 
 /**
  * Moving out, pushed from House, You: the day you move out, picked from the
@@ -43,7 +44,7 @@ function MovingFor({ houseId, userId }: { houseId: string; userId: string }) {
   return (
     <HousePage
       title={PAGE_TITLE.moving}
-      testID="moving-screen"
+      testID="moving-screen" outline={<SettingsOutline card />}
       fills
       ready={me !== undefined && today !== null}
       failed={query.isError}

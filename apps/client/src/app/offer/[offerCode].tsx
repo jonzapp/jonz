@@ -11,12 +11,14 @@ import { Button } from '@/components/button';
 import { ButtonRow } from '@/components/button-row';
 import { Door, Sign, SignHeading } from '@/components/front-door/door';
 import { PageTitle } from '@/components/page-title';
-import { ReadFailed, Reading } from '@/components/read-state';
+import { ReadFailed } from '@/components/read-state';
 import { Row } from '@/components/row';
 import { SignInPanel } from '@/components/sign-in-panel';
 import { Body, Meta } from '@/components/text';
 import { useMembership } from '@/hooks/use-membership';
 import { SPACE } from '@/theme';
+import { Waiting } from '@/components/waiting';
+import { DoorOutline } from '@/components/page-outlines';
 
 /**
  * An offer's link: /offer/CODE. Open to anyone, like a join link, on a taped
@@ -42,7 +44,7 @@ export default function Offer() {
       {!session && signingIn ? (
         <SignInPanel next={`/offer/${offerCode}`} failed={Boolean(error)} />
       ) : read.isPending ? (
-        <Reading />
+        <Waiting ready={false} outline={<DoorOutline />} />
       ) : read.isError ? (
         <Sign>
           <SignHeading title={OFFER_PAGE_COPY.page} />

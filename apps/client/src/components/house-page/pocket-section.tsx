@@ -9,7 +9,6 @@ import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/button';
 import { ButtonRow } from '@/components/button-row';
 import { GroupItem, useRowInset } from '@/components/group';
-import { Reading, ReadFailed } from '@/components/read-state';
 import { Row } from '@/components/row';
 import { Section } from '@/components/section';
 import { Lead, Meta } from '@/components/text';
@@ -17,6 +16,9 @@ import { useToastIfAny } from '@/components/toast';
 import type { HouseView } from '@/hooks/use-house';
 import { useMove } from '@/hooks/use-move';
 import { SPACE } from '@/theme';
+import { ReadFailed } from '@/components/read-state';
+import { Waiting } from '@/components/waiting';
+import { OutlineRows } from '@/components/outline';
 
 /**
  * A family's month card, on House in place of the Stake: what the kids have
@@ -42,9 +44,13 @@ export function PocketSection({
   if (!pocket.data) {
     return (
       <Section label={POCKET_COPY.card} testID="pocket">
-        <GroupItem>
-          {pocket.isError ? <ReadFailed onRetry={() => void pocket.refetch()} /> : <Reading />}
-        </GroupItem>
+        {pocket.isError ? (
+          <GroupItem>
+            <ReadFailed onRetry={() => void pocket.refetch()} />
+          </GroupItem>
+        ) : (
+          <Waiting ready={false} outline={<OutlineRows count={2} lead="none" end />} />
+        )}
       </Section>
     );
   }

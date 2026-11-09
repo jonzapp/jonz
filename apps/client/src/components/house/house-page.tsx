@@ -3,15 +3,17 @@ import type { Href } from 'expo-router';
 import type { ReactNode } from 'react';
 
 import { PageTitle } from '@/components/page-title';
-import { Reading, ReadFailed } from '@/components/read-state';
 import { Screen } from '@/components/screen';
 import { TitleBar } from '@/components/title-bar';
+import { Waiting } from '@/components/waiting';
 
 /**
  * A page House pushes (the John list, the rules, time away, groups, a
  * housemate): its title bar with the way back, the browser tab's title,
- * and its first read. `children` is called once `ready`, so it can use
- * what was read without checking again.
+ * and its first read: `outline`, the page's shape in blank, while it reads
+ * (page-outlines.tsx), or the sentence and Try again if it can't.
+ * `children` is called once `ready`, so it can use what was read without
+ * checking again.
  */
 export function HousePage({
   title,
@@ -24,6 +26,8 @@ export function HousePage({
   back = '/house',
   backLabel = SECTION_LABEL.house,
   fills = false,
+  outline,
+  label,
   children,
 }: {
   title: string;
@@ -38,6 +42,10 @@ export function HousePage({
   backLabel?: string;
   /** On a laptop the page fills the room beside House's list, its sections in columns (Pair, Flow). */
   fills?: boolean;
+  /** The page's shape while it first reads (page-outlines.tsx); rows in groups if none. */
+  outline?: ReactNode;
+  /** What a screen reader hears while it reads: "Reading the house" if none. */
+  label?: string;
   children: () => ReactNode;
 }) {
   return (
@@ -49,7 +57,9 @@ export function HousePage({
       testID={testID}
     >
       <PageTitle page={title} />
-      {ready ? children() : failed ? <ReadFailed onRetry={onRetry} /> : <Reading />}
+      <Waiting ready={ready} failed={failed} onRetry={onRetry} outline={outline} label={label}>
+        {children}
+      </Waiting>
     </Screen>
   );
 }

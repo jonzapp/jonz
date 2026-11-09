@@ -30,7 +30,7 @@ import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { JohnRow, type JohnRowContext } from '@/components/john-row';
 import { PageTitle } from '@/components/page-title';
-import { Reading, ReadFailed } from '@/components/read-state';
+import { WeekOutline } from '@/components/page-outlines';
 import { Columns, Screen, useColumns } from '@/components/screen';
 import { Section } from '@/components/section';
 import { Chip } from '@/components/status-mark';
@@ -46,6 +46,7 @@ import { WeekEmpty } from '@/components/week/week-empty';
 import { WeekMenu } from '@/components/week/week-menu';
 import { WeekTable } from '@/components/week/week-table';
 import { TourSpot } from '@/components/tour/tour-spot';
+import { Waiting } from '@/components/waiting';
 import { useAway } from '@/hooks/use-away';
 import { useHouse, type HouseView } from '@/hooks/use-house';
 import { useJohnList } from '@/hooks/use-john-list';
@@ -120,13 +121,18 @@ function WeekFor({ houseId, userId }: { houseId: string; userId: string }) {
       testID="week-screen"
     >
       <PageTitle page={PAGE_TITLE.week} />
-      {view ? (
-        <Board view={view} wide={wide} away={away} shares={shares} johns={forDeal ? (list.data?.johns ?? null) : null} list={list.data?.johns ?? null} />
-      ) : query.isError ? (
-        <ReadFailed onRetry={() => void query.refetch()} />
-      ) : (
-        <Reading />
-      )}
+      <Waiting ready={view != null} failed={query.isError} onRetry={() => void query.refetch()} outline={<WeekOutline />} fill>
+        {() => (
+          <Board
+            view={view!}
+            wide={wide}
+            away={away}
+            shares={shares}
+            johns={forDeal ? (list.data?.johns ?? null) : null}
+            list={list.data?.johns ?? null}
+          />
+        )}
+      </Waiting>
     </Screen>
   );
 }

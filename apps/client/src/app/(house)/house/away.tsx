@@ -12,6 +12,7 @@ import { useHouse, type HouseView } from '@/hooks/use-house';
 import { useJohnList } from '@/hooks/use-john-list';
 import { useMembership } from '@/hooks/use-membership';
 import { usePull, useReadOnFocus } from '@/hooks/use-refresh';
+import { RecordOutline } from '@/components/page-outlines';
 
 /**
  * Days and time away, pushed from House: your days, best time and the
@@ -41,7 +42,7 @@ function AwayFor({ houseId, userId }: { houseId: string; userId: string }) {
   return (
     <HousePage
       title={PAGE_TITLE.away}
-      testID="away-screen"
+      testID="away-screen" outline={<RecordOutline />}
       fills
       ready={view !== null && away.data !== undefined && prefs !== null && list.data !== undefined}
       failed={query.isError || away.isError || list.isError}
