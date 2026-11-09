@@ -15,7 +15,7 @@ create index live_changes_house_id_idx on public.live_changes (house_id, id);
 create index live_changes_created_at_idx on public.live_changes (created_at);
 
 comment on table public.live_changes is
-  'Each change to what a house''s screens show, for the API''s live streams (house_live_since). Kept two days.';
+  'Server only: each change to what a house''s screens show, for the API''s live streams (house_live_since). Kept two days.';
 
 alter table public.live_changes enable row level security;
 -- No policies: nobody reads it straight; house_live_since does, for a member.
