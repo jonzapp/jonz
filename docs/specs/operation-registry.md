@@ -15,6 +15,8 @@ One list of everything a person can do on Jonz, whichever way they reach it: the
   - `guard`: how the database decides who may do it;
   - `rpc`: the database function it runs (`server` when only the API's service role may call it, after the route checks);
   - `route`: the API route in front of it;
+  - `tables`: for an operation the app does today straight on the tables (the John list, the Wall, saved chats…), which ones, read or changed as the caller under each table's rules. It has no function or route of its own; under API-only, the /v1 server runs it;
+  - `screen`: a read of everything one screen shows at once (Today, the Table, Track record, the Stake), in one round trip where the app makes several today;
   - `destructive`: it can't be undone, or it reaches people (push, email, notice), so an MCP client needs the person's approval in Jonz first;
   - `entitlement`: the House Pass feature it needs once the Pass is enforced. That is a plan feature, not a permission.
 - `guard` is one of:
@@ -34,6 +36,8 @@ One list of everything a person can do on Jonz, whichever way they reach it: the
 - `page`: a list read a page at a time takes `limit` and `startingAfter` and answers `{ data, hasMore, startingAfter }`; pass the last as `startingAfter` for the next page (`fromPage`, `pageCursor`).
 - `toRequest`: for an operation behind an API route whose request names things differently (a reset's `week`, `user`, `assignment`), the route's request from the input.
 
+Outputs are made from `TABLE_ROWS` (`packages/core/src/table-rows.ts`): a row of each registry table, camelCase, written from the database's own description of its columns. `apps/api/tests/db/table-rows.test.ts` keeps it equal to the database; after a migration that changes a table, refresh it with `npx vitest run --project db tests/db/table-rows.test.ts -u` in `apps/api`.
+
 Every input and output turns into JSON Schema (`z.toJSONSchema`), for the API's OpenAPI document and MCP's tool definitions.
 
 ## How it's held to the truth
@@ -43,7 +47,7 @@ Every input and output turns into JSON Schema (`z.toJSONSchema`), for the API's 
   - a function signed-in people may call isn't listed;
   - a listed function is gone;
   - a table grant (whole table or some columns, signed in or out) isn't listed.
-- `apps/api/tests/unit/operations.test.ts` fails on an API route that is in neither list.
+- `apps/api/tests/unit/operations.test.ts` fails on an API route that is in neither list, and on a table the app reads or changes (`.from('…')`) that no operation names.
 - `packages/core/src/operation-io.test.ts`: one /v1 route each, GET only for reads, every id a path names is in the input, admin pages only under /v1/admin, ids end in `Id`, and every schema turns into JSON Schema.
 - `apps/api/tests/db/operation-io.test.ts` holds each contract to the database:
   - an operation that runs its function straight takes exactly its arguments, by name, type and whether they can be left out, as PostgREST describes them;
@@ -70,5 +74,5 @@ Same on every platform: it's the server's list.
 - [x] Step 3: reading a house is one permission per resource (`johns:read`, `wall:read`, `payments:read`…), and each table rule asks its own.
 - [x] Supabase's security and performance advisors run in CI (`npm run db:advisors`); any warning fails.
 - [x] Step 4: every operation has its input, output and /v1 route, held to the database.
-- [ ] Step 4: the app's direct table reads and writes are operations too.
+- [x] Step 4: the app's direct table reads and writes are operations too.
 - [ ] Step 4: Ask Jonz's tools, the house's and the owner's, are built from the registry, and every house permission can be done from the chat.

@@ -194,7 +194,7 @@ where p.pronamespace = 'public'::regnamespace and p.prosecdef
 insert into breaks
 select 'callable functions listed', 'stale: ' || name from callable
 where not exists (select 1 from pg_proc p where p.pronamespace = 'public'::regnamespace and p.proname = name
-                  and p.prosecdef and has_function_privilege('authenticated', p.oid, 'execute'));
+                  and has_function_privilege('authenticated', p.oid, 'execute'));
 
 -- 20b. Signed-in and signed-out people reach tables only as the registry
 -- says (rule 22): every grant, on the whole table or some columns, is listed.

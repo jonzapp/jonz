@@ -26,6 +26,7 @@ insert into callable values
   ('finish_support_draft'),
   ('hand_over'),
   ('hold_cover'),
+  ('house_balances'),
   ('house_by_code'),
   ('house_history'),
   ('is_member'),

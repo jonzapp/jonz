@@ -1,9 +1,12 @@
 import { z } from "zod";
 
-import { HOUSE_KINDS, CURRENCIES, BEST_TIMES } from "./domain";
+import { AUDIT_WHAT, AUDIT_WHO } from "./admin-list";
+import { CHAT_SAVED_TURNS, SavedTurn } from "./ask-chats";
+import { BEST_TIMES, CURRENCIES, DEAL_MODES, HOUSE_KINDS } from "./domain";
 import { AskUsage, ChatRequest, ChatResponse } from "./house-draft";
 import { AddKid, AddKidResponse } from "./kids";
-import { NOTICE_KINDS } from "./notices";
+import { Notice, NOTICE_KINDS } from "./notices";
+import { NotificationPrefsDraft } from "./notify";
 import type { OperationName } from "./operations";
 import { OwnerAskRequest, OwnerAskResponse } from "./owner-ask";
 import { MESSAGE_AUDIENCES, OwnerMessageRequest, OwnerMessageResponse } from "./owner-messages";
@@ -17,6 +20,10 @@ import {
   AwayResponse,
   CastVote,
   DealRequest,
+  DisplayName,
+  HouseSettings,
+  JohnFields,
+  johnMonthly,
   FlagResponse,
   FreshRequest,
   FreshResponse,
@@ -32,6 +39,8 @@ import {
   SwapAskResponse,
 } from "./schemas";
 import { SupportDraftResponse } from "./support-draft";
+import { TABLE_ROWS as T } from "./table-rows";
+import { REACTIONS } from "./wall";
 
 // What every operation in the registry (operations.ts) takes and gives, and
 // where it lives in the versioned API: the contract /v1, MCP and Ask Jonz's
@@ -72,8 +81,8 @@ export interface OperationIo {
    * differently: the route's request from this input.
    */
   toRequest?: (input: never) => unknown;
-  /** A list read a page at a time: which of a row's fields the cursor holds, and which arguments take them. */
-  page?: { at: string; id: string; atArg: string; idArg: string };
+  /** A list read a page at a time: which of a row's fields the cursor holds, and (for a function) which arguments take them. */
+  page?: { at: string; id: string; atArg?: string; idArg?: string };
 }
 
 // --- Pieces ------------------------------------------------------------------------------------
@@ -267,6 +276,38 @@ const historyRow = z.object({
   reach: text,
 });
 
+// The rows the table operations answer with (table-rows.ts is each table as the database has it).
+const crew = z.array(T.crew_members.pick({ userId: true, helper: true, points: true }));
+const awayRow = T.away_periods.pick({ id: true, userId: true, startsOn: true, endsOn: true, note: true });
+const balanceRow = z.object({ userId: id, owed: z.number(), credited: z.number() });
+const chatSummary = z.object({ id, title: text, updatedAt: at });
+const savedChat = z.object({ id, title: text, turns: z.array(SavedTurn) });
+const turns = z.array(SavedTurn).max(CHAT_SAVED_TURNS);
+const noticeFilter = { q, kind: z.enum(NOTICE_KINDS).nullable().optional(), state: z.enum(["live", "scheduled", "ended"]).nullable().optional(), ...span };
+const auditFilter = { q, who: z.enum(AUDIT_WHO).optional(), what: z.enum(AUDIT_WHAT).optional(), ...span };
+const auditEntry = T.admin_audit.pick({ id: true, createdAt: true, actor: true, action: true, targetKind: true, targetId: true, reason: true, before: true, after: true });
+const today = z.object({
+  house: T.houses,
+  members: z.array(
+    T.members
+      .pick({ userId: true, role: true, streak: true, immunityTokens: true, swapTokens: true, suitsDays: true, bestTime: true, rather: true, movingOutOn: true, signsIn: true, bornYear: true })
+      .extend({ name: text.nullable(), photo: text.nullable() }),
+  ),
+  week: T.weeks.pick({ id: true, startsOn: true, startsAt: true, endsAt: true, waiting: true, ahead: true }).nullable(),
+  /** This week's, and any still open from before. */
+  assignments: z.array(T.assignments.extend({ everyWeeks: int.nullable(), everyMonths: int.nullable(), crew })),
+  disputes: z.array(
+    T.disputes
+      .pick({ id: true, assignmentId: true, raisedBy: true, reason: true, closesAt: true, photoPath: true })
+      .extend({ votes: z.array(T.dispute_votes.pick({ userId: true, uphold: true })) }),
+  ),
+  onCall: z.array(
+    T.on_call_picks.pick({ johnId: true, userId: true }).extend({ john: T.johns.pick({ name: true, category: true, needsPhoto: true, archivedAt: true }).nullable() }),
+  ),
+  offers: z.array(z.object({ id, mine: id, theirs: id, askedBy: id, askedUserId: id, expiresAt: at })),
+  moves: z.object({ lastMovedOut: at.nullable(), lastJoined: at.nullable() }),
+});
+
 // --- Every operation ---------------------------------------------------------------------------
 
 export const OPERATION_IO = {
@@ -354,11 +395,143 @@ export const OPERATION_IO = {
   send_report: io(ReportRequest, ReportResponse, "POST /v1/me/reports"),
   write_back: io(ReportMessageRequest.extend({ reportId: id }), ReportMessageResponse, "POST /v1/me/reports/{reportId}/messages"),
   see_report: io(z.object({ reportId: id }), nothing, "POST /v1/me/reports/{reportId}/seen"),
+  my_report: io(
+    z.object({ reportId: id }),
+    z
+      .object({
+        report: T.reports.pick({ id: true, userId: true, kind: true, state: true, words: true, details: true, shots: true, createdAt: true, source: true, subject: true }),
+        messages: z.array(T.report_messages.pick({ fromOwner: true, authorName: true, body: true, createdAt: true })),
+      })
+      .nullable(),
+    "GET /v1/me/reports/{reportId}",
+  ),
+  my_house: io(none, z.object({ houseId: id, name: text, kind: z.enum(HOUSE_KINDS) }).nullable(), "GET /v1/me/house"),
+  set_my_name: io(z.object({ name: DisplayName }), nothing, "PATCH /v1/me/name"),
+  my_notifications: io(
+    none,
+    T.notification_prefs.pick({ reminders: true, checks: true, flags: true, deal: true, quietFrom: true, quietUntil: true, timezone: true }).nullable(),
+    "GET /v1/me/notifications",
+  ),
+  save_notifications: io(NotificationPrefsDraft, nothing, "PATCH /v1/me/notifications"),
+  add_push_device: io(z.object({ endpoint: z.url(), p256dh: text, auth: text }), nothing, "POST /v1/me/push-devices"),
+  remove_push_device: io(z.object({ endpoint: z.url() }), nothing, "DELETE /v1/me/push-devices"),
+  my_ask_chats: io(z.object({ houseId: id }), z.array(chatSummary), "GET /v1/houses/{houseId}/me/ask-chats"),
+  my_ask_chat: io(z.object({ chatId: id }), savedChat, "GET /v1/me/ask-chats/{chatId}"),
+  keep_ask_chat: io(z.object({ houseId: id, turns }), id, "POST /v1/houses/{houseId}/me/ask-chats"),
+  update_ask_chat: io(z.object({ chatId: id, turns }), nothing, "PATCH /v1/me/ask-chats/{chatId}"),
+  delete_ask_chat: io(z.object({ chatId: id }), nothing, "DELETE /v1/me/ask-chats/{chatId}"),
+  live_notices: io(none, z.array(Notice), "GET /v1/notices"),
 
   // A house: reading
   house_history: io(z.object({ houseId: id, before: at.optional(), limit: z.int().min(1).max(200).optional() }), z.array(historyRow), "GET /v1/houses/{houseId}/history"),
   ask_usage: io(z.object({ houseId: id }), AskUsage, "GET /v1/houses/{houseId}/ask/usage"),
   catch_up: io(FreshRequest, FreshResponse, "POST /v1/houses/{houseId}/catch-up"),
+  house_today: io(z.object({ houseId: id }), today, "GET /v1/houses/{houseId}/today"),
+  john_list: io(
+    z.object({ houseId: id }),
+    z.object({
+      johns: z.array(
+        T.johns.pick({
+          id: true,
+          name: true,
+          category: true,
+          points: true,
+          everyWeeks: true,
+          everyMonths: true,
+          weekOfMonth: true,
+          anchorMonth: true,
+          anchorWeek: true,
+          dueDow: true,
+          dueTime: true,
+          needsPhoto: true,
+          groupId: true,
+          kind: true,
+          respondHours: true,
+          perWeek: true,
+          crew: true,
+          keepDay: true,
+          payMinor: true,
+          minAge: true,
+        }),
+      ),
+      groups: z.array(z.object({ id, name: text, members: z.array(id) })),
+    }),
+    "GET /v1/houses/{houseId}/johns",
+  ),
+  house_wall: io(
+    z.object({ houseId: id, ...pageInput }),
+    pageOutput(
+      T.events
+        .pick({ id: true, kind: true, userId: true, assignmentId: true, data: true, createdAt: true })
+        .extend({ photoPath: text.nullable(), reactions: z.array(T.reactions.pick({ userId: true, kind: true })) }),
+    ),
+    "GET /v1/houses/{houseId}/wall",
+    { page: { at: "createdAt", id: "id" } },
+  ),
+  house_away: io(z.object({ houseId: id, from: day }), z.array(awayRow), "GET /v1/houses/{houseId}/away"),
+  house_month: io(
+    z.object({ houseId: id, month }),
+    z.object({
+      assignments: z.array(
+        T.assignments
+          .pick({ id: true, userId: true, points: true, outcome: true, doneAt: true, dueAt: true, excused: true, coveredBy: true, flaggedAt: true, closesAt: true, jobId: true, absentAt: true })
+          .extend({ weekEndsAt: at, crew }),
+      ),
+      /** The usual weeks before this one: each person's share of each. */
+      recentShares: z.array(T.week_shares.pick({ userId: true, share: true })),
+      /** Every week before this one, summed. */
+      totals: z.array(balanceRow),
+    }),
+    "GET /v1/houses/{houseId}/month/{month}",
+  ),
+  house_balances: io(z.object({ houseId: id, before: day }), z.array(balanceRow), "GET /v1/houses/{houseId}/balances"),
+  house_record: io(
+    z.object({ houseId: id }),
+    z.object({
+      weeks: z.array(T.weeks.pick({ id: true, startsOn: true, startsAt: true, endsAt: true, skippedAt: true })),
+      away: z.array(awayRow),
+      shares: z.array(T.week_shares.pick({ weekId: true, userId: true, share: true })),
+      assignments: z.array(
+        T.assignments.pick({
+          id: true,
+          weekId: true,
+          userId: true,
+          name: true,
+          points: true,
+          dueAt: true,
+          doneAt: true,
+          outcome: true,
+          excused: true,
+          coveredBy: true,
+          changedBy: true,
+          jobId: true,
+          absentAt: true,
+        }),
+      ),
+      crew: z.array(T.crew_members.pick({ jobId: true, assignmentId: true, userId: true, helper: true, points: true })),
+    }),
+    "GET /v1/houses/{houseId}/record",
+  ),
+  house_stake: io(
+    z.object({ houseId: id }),
+    z.object({
+      ledger: z.array(
+        T.ledger_entries
+          .pick({ id: true, userId: true, kind: true, amountMinor: true, month: true, counterpartyUserId: true, doers: true, createdAt: true })
+          .extend({ john: T.assignments.pick({ name: true, outcome: true, dueAt: true }).nullable() }),
+      ),
+      closedMonths: z.array(text),
+    }),
+    "GET /v1/houses/{houseId}/stake",
+  ),
+  house_pocket: io(
+    z.object({ houseId: id }),
+    z.object({
+      earnings: z.array(T.pocket_earnings.pick({ userId: true, month: true, amountMinor: true })),
+      pays: z.array(T.pocket_pays.pick({ userId: true, month: true, amountMinor: true, paidBy: true, createdAt: true })),
+    }),
+    "GET /v1/houses/{houseId}/pocket-money",
+  ),
 
   // A house: your own Johns
   mark_done: io(z.object({ assignmentId: id, photoPath: text.optional() }), nothing, "POST /v1/assignments/{assignmentId}/done"),
@@ -390,7 +563,16 @@ export const OPERATION_IO = {
   pass_checkout: io(PassCheckoutRequest, PassRedirect, "POST /v1/houses/{houseId}/pass/checkout"),
   pass_billing: io(PassManageRequest, PassRedirect, "POST /v1/houses/{houseId}/pass/billing"),
 
+  react: io(z.object({ eventId: id, kind: z.enum(REACTIONS) }), nothing, "POST /v1/events/{eventId}/reactions"),
+  unreact: io(z.object({ eventId: id, kind: z.enum(REACTIONS) }), nothing, "DELETE /v1/events/{eventId}/reactions/{kind}"),
+
   // A house: admins (Parents)
+  add_john: io(JohnFields.extend({ houseId: id }).refine(...johnMonthly), id, "POST /v1/houses/{houseId}/johns"),
+  add_johns: io(z.object({ houseId: id, johns: z.array(JohnFields.refine(...johnMonthly)).min(1).max(100) }), z.array(id), "POST /v1/houses/{houseId}/johns/batch"),
+  change_john: io(JohnFields.extend({ johnId: id }).refine(...johnMonthly), nothing, "PATCH /v1/johns/{johnId}"),
+  remove_john: io(z.object({ johnId: id }), nothing, "DELETE /v1/johns/{johnId}"),
+  save_house_rules: io(HouseSettings.extend({ houseId: id }), nothing, "PATCH /v1/houses/{houseId}/rules"),
+  set_deal_mode: io(z.object({ houseId: id, mode: z.enum(DEAL_MODES) }), nothing, "PATCH /v1/houses/{houseId}/deal-mode"),
   answer_tick: io(AnswerTick.extend({ assignmentId: id }), MoveResponse, "POST /v1/assignments/{assignmentId}/ok"),
   board_tick: io(z.object({ assignmentId: id }), nothing, "POST /v1/assignments/{assignmentId}/board-tick"),
   remove_flag: io(z.object({ assignmentId: id }), nothing, "DELETE /v1/assignments/{assignmentId}/flag"),
@@ -506,6 +688,16 @@ export const OPERATION_IO = {
   owner_delete_now: io(z.object({ userId: id, reason: text.optional() }), nothing, "DELETE /v1/admin/people/{userId}"),
   owner_request_deletion: io(z.object({ email: z.email(), reason: text.optional() }), id, "POST /v1/admin/deletions"),
   owner_stop_deletion: io(z.object({ userId: id, reason: text.optional() }), nothing, "DELETE /v1/admin/deletions/{userId}"),
+  owner_notices_page: io(z.object({ ...noticeFilter, ...pageInput }), pageOutput(Notice), "GET /v1/admin/notices", { page: { at: "startsAt", id: "id" } }),
+  owner_notices_count: io(z.object(noticeFilter), count, "GET /v1/admin/notices/count"),
+  owner_audit_page: io(z.object({ ...auditFilter, ...pageInput }), pageOutput(auditEntry), "GET /v1/admin/audit", { page: { at: "createdAt", id: "id" } }),
+  owner_audit_count: io(z.object(auditFilter), count, "GET /v1/admin/audit/count"),
+  owner_audit_entry: io(z.object({ entryId: z.int().min(1) }), auditEntry.nullable(), "GET /v1/admin/audit/{entryId}"),
+  owner_ask_chats: io(none, z.array(chatSummary), "GET /v1/admin/ask-chats"),
+  owner_ask_chat: io(z.object({ chatId: id }), savedChat, "GET /v1/admin/ask-chats/{chatId}"),
+  keep_owner_ask_chat: io(z.object({ turns }), id, "POST /v1/admin/ask-chats"),
+  update_owner_ask_chat: io(z.object({ chatId: id, turns }), nothing, "PATCH /v1/admin/ask-chats/{chatId}"),
+  delete_owner_ask_chat: io(z.object({ chatId: id }), nothing, "DELETE /v1/admin/ask-chats/{chatId}"),
 } as const satisfies Record<OperationName, OperationIo>;
 
 // --- Turning it into calls ---------------------------------------------------------------------
@@ -536,7 +728,7 @@ export function rpcArgs(name: OperationName, input: Record<string, unknown>): Re
     // One more than asked for says whether there's another page.
     args.p_limit = limit + 1;
     const cursor = typeof input.startingAfter === "string" ? readCursor(input.startingAfter) : null;
-    if (cursor) {
+    if (cursor && io.page.atArg && io.page.idArg) {
       args[io.page.atArg] = cursor.at;
       args[io.page.idArg] = cursor.id;
     }
