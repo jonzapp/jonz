@@ -1,7 +1,7 @@
-import { addDaysTo, AwayDraft, awayPeriod, AwayResponse, humanError, localDate, type AwayPeriod } from '@app/core';
+import { addDaysTo, AwayDraft, awayPeriod, localDate, type AwayPeriod } from '@app/core';
 
-import { apiPost } from './http';
 import { supabase } from './supabase';
+import { callV1 } from './v1';
 
 // Time away, read through your own session. Booking goes through apps/api
 // (POST /api/away, which calls set_away as you and pushes whoever it hands a
@@ -40,12 +40,11 @@ export interface Booked {
 export async function setAway(draft: AwayDraft): Promise<Booked> {
   const parsed = AwayDraft.safeParse(draft);
   if (!parsed.success) throw new Error(parsed.error.issues[0].message);
-  const { before, handed, skipped } = await apiPost('/api/away', parsed.data, AwayResponse);
+  const { before, handed, skipped } = await callV1('set_away', parsed.data);
   return { before, handed, skipped };
 }
 
 /** Cancel time away, or come back early from it. The Johns it moved go back to when they were due, and any it handed on that are still open come back to you. */
 export async function cancelAway(awayId: string): Promise<void> {
-  const { error } = await supabase.rpc('cancel_away', { p_away: awayId });
-  if (error) throw new Error(humanError(error));
+  await callV1('cancel_away', { awayId });
 }

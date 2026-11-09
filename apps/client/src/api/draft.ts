@@ -11,9 +11,9 @@ import {
   type HouseRules,
 } from '@app/core';
 
-import { apiPost, ApiRequestError } from './http';
-import { addJohns, archiveJohn, saveGroup, saveJohn, type JohnList } from './settings';
-import { supabase } from './supabase';
+import { ApiRequestError } from './base';
+import { addJohns, archiveJohn, loadJohnList, saveGroup, saveJohn, type JohnList } from './settings';
+import { callV1 } from './v1';
 
 // Ask Jonz and Describe your house: one turn of the chat with apps/api
 // (Claude, or a starter list when Claude isn't there), then apply the changes
@@ -30,7 +30,7 @@ import { supabase } from './supabase';
  */
 export async function sendChat(houseId: string, messages: readonly ChatMessage[], draft: HouseDraft | null): Promise<ChatResponse> {
   try {
-    return await apiPost('/api/setup/draft', { houseId, messages, draft }, ChatResponse);
+    return await callV1('ask_house', { houseId, messages: [...messages], draft });
   } catch (e) {
     if (e instanceof ApiRequestError && e.status >= 400 && e.status < 500 && e.status !== 404) throw e;
     return offlineTurn(messages, draft);
@@ -73,9 +73,7 @@ export async function applyDraft(
   for (const group of plan.makeGroups) await saveGroup(houseId, group);
   let ids = new Map(list.groups.map((g) => [g.name, g.id]));
   if (plan.makeGroups.length > 0) {
-    const { data, error } = await supabase.from('groups').select('id, name').eq('house_id', houseId);
-    if (error) throw error;
-    ids = new Map((data ?? []).map((g) => [g.name, g.id]));
+    ids = new Map((await loadJohnList(houseId)).groups.map((g) => [g.name, g.id]));
   }
   // draftPlan keeps the draft's order, so its Johns line up with `at`.
   const planned = new Map(at.map((i, n) => [i, plan.johns[n]]));
@@ -110,5 +108,5 @@ export async function applyDraft(
 
 /** The week's Ask Jonz: what's left of theirs, the house's and each person's use, and when it's back. */
 export async function askUsageOf(houseId: string): Promise<AskUsage> {
-  return apiPost('/api/ask/usage', { houseId }, AskUsage);
+  return callV1('ask_usage', { houseId });
 }

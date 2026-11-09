@@ -20,6 +20,7 @@ import {
 
 import type { ChatStore } from './ask-chats';
 import { supabase } from './supabase';
+import { snakeKeys } from './base';
 import { callV1 } from './v1';
 
 // The owner's admin page (docs/specs/owner-admin.md), on /v1. The database
@@ -210,12 +211,6 @@ export async function auditEntry(id: number): Promise<AuditEntry | null> {
   const entry = await callV1('owner_audit_entry', { entryId: id });
   return entry ? entryFrom(entry) : null;
 }
-
-/** /v1 names every key in camelCase, the changed fields too; the log's "What changed" reads the columns' own names. */
-const snakeKeys = (value: unknown): unknown =>
-  value !== null && typeof value === 'object' && !Array.isArray(value)
-    ? Object.fromEntries(Object.entries(value).map(([k, v]) => [k.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`), v]))
-    : value;
 
 function entryFrom(row: {
   id: number;

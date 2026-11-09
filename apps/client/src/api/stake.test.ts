@@ -2,6 +2,9 @@ import type { HouseRules } from '@app/core';
 
 import { confirmPayment, loadStake } from './stake';
 import { supabase } from './supabase';
+import { callV1 } from './v1';
+
+jest.mock('./v1', () => ({ callV1: jest.fn() }));
 
 type Answer = { data: unknown; error: unknown };
 /** A read's filters: the id it starts below, and how many rows it asks for. */
@@ -143,14 +146,15 @@ describe('loadStake', () => {
 
 describe('confirmPayment', () => {
   it('records the payment through confirm_payment, and says why when refused', async () => {
-    rpc.mockResolvedValue({ data: null, error: null });
+    const call = callV1 as jest.Mock;
+    call.mockResolvedValue(null);
     await confirmPayment('h1', 'ava', 400);
-    expect(rpc).toHaveBeenCalledWith('confirm_payment', { p_house: 'h1', p_from: 'ava', p_amount: 400 });
+    expect(call).toHaveBeenCalledWith('confirm_payment', { houseId: 'h1', fromId: 'ava', amount: 400, via: undefined });
     // Added in Splitwise instead: the same payment, saying so.
     await confirmPayment('h1', 'ava', 400, 'splitwise');
-    expect(rpc).toHaveBeenLastCalledWith('confirm_payment', { p_house: 'h1', p_from: 'ava', p_amount: 400, p_via: 'splitwise' });
+    expect(call).toHaveBeenLastCalledWith('confirm_payment', { houseId: 'h1', fromId: 'ava', amount: 400, via: 'splitwise' });
 
-    rpc.mockResolvedValue({ data: null, error: { message: 'more_than_owed', code: 'P0001' } });
-    await expect(confirmPayment('h1', 'ava', 9999)).rejects.toThrow("That’s more than is owed.");
+    call.mockRejectedValue(new Error('That’s more than is owed.'));
+    await expect(confirmPayment('h1', 'ava', 9999)).rejects.toThrow('That’s more than is owed.');
   });
 });

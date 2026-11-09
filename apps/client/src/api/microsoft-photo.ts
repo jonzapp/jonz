@@ -1,6 +1,7 @@
 import type { Session } from '@supabase/supabase-js';
 
 import { supabase } from './supabase';
+import { callV1 } from './v1';
 
 // Microsoft hands Supabase no photo, as Google does, so right after a
 // Microsoft sign-in, while the session still carries Microsoft's token, the
@@ -54,8 +55,7 @@ export async function keepMicrosoftPhoto(session: Session, token = session.provi
     if (uploadError) throw uploadError;
     // A new address each time, so nobody is shown the old photo from a cache.
     const address = `${bucket.getPublicUrl(path).data.publicUrl}?v=${Date.now()}`;
-    const { error } = await supabase.rpc('set_my_photo', { photo: address });
-    if (error) throw error;
+    await callV1('set_my_photo', { photo: address });
   } catch (reason) {
     console.warn('Keeping the Microsoft photo failed', reason);
   }

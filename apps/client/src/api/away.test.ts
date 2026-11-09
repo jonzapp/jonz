@@ -1,8 +1,8 @@
 import { cancelAway, loadAway, setAway } from './away';
-import { apiPost } from './http';
 import { supabase } from './supabase';
+import { callV1 } from './v1';
 
-jest.mock('./http', () => ({ apiPost: jest.fn() }));
+jest.mock('./v1', () => ({ callV1: jest.fn() }));
 
 const mockCalls: [string, unknown[]][] = [];
 let mockAnswer: { data: unknown; error: unknown } = { data: [], error: null };
@@ -26,7 +26,7 @@ jest.mock('./supabase', () => ({
 }));
 
 const rpc = supabase.rpc as unknown as jest.Mock;
-const post = apiPost as unknown as jest.Mock;
+const post = callV1 as unknown as jest.Mock;
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -57,10 +57,10 @@ describe('loadAway', () => {
 });
 
 describe('setAway', () => {
-  it('books through the API, which tells whoever it hands a John to, and says what it did to your Johns', async () => {
+  it('books on /v1, which tells whoever it hands a John to, and says what it did to your Johns', async () => {
     post.mockResolvedValue({ ok: true, before: 1, handed: 1, skipped: 0 });
     expect(await setAway({ from: '2026-10-26', to: '2026-10-28', note: ' Lisbon ' })).toEqual({ before: 1, handed: 1, skipped: 0 });
-    expect(post).toHaveBeenCalledWith('/api/away', { from: '2026-10-26', to: '2026-10-28', note: 'Lisbon' }, expect.anything());
+    expect(post).toHaveBeenCalledWith('set_away', { from: '2026-10-26', to: '2026-10-28', note: 'Lisbon' });
     expect(rpc).not.toHaveBeenCalled();
   });
 
@@ -73,11 +73,11 @@ describe('setAway', () => {
 });
 
 describe('cancelAway', () => {
-  it('cancels through cancel_away, in words when refused', async () => {
-    rpc.mockResolvedValue({ data: null, error: null });
+  it('cancels on /v1, passing on a refusal', async () => {
+    post.mockResolvedValue(null);
     await cancelAway('p1');
-    expect(rpc).toHaveBeenCalledWith('cancel_away', { p_away: 'p1' });
-    rpc.mockResolvedValue({ data: null, error: { code: 'P0001', message: 'away_over' } });
+    expect(post).toHaveBeenCalledWith('cancel_away', { awayId: 'p1' });
+    post.mockRejectedValue(new Error('That time away has already finished.'));
     await expect(cancelAway('p1')).rejects.toThrow('That time away has already finished.');
   });
 });

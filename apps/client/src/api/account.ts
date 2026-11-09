@@ -1,16 +1,15 @@
-import { humanError, previewFromRow, statusFromRow, type DeletionPreview, type DeletionStatus } from '@app/core';
+import type { DeletionPreview, DeletionStatus } from '@app/core';
 
 import { supabase } from './supabase';
+import { callV1 } from './v1';
 
-// Deleting your account (supabase/migrations/*_delete_account.sql): asked
-// for here, it waits 30 days, in which Keep my account stops it. Everything
-// goes through your own session; the clock does the rest.
+// Deleting your account (supabase/migrations/*_delete_account.sql), on /v1:
+// asked for here, it waits 30 days, in which Keep my account stops it. The
+// clock does the rest.
 
 /** What the Delete sheet says: your house, until when a Pass you pay for lasts, and the day it would go. */
 export async function deletionPreview(): Promise<DeletionPreview> {
-  const { data, error } = await supabase.rpc('account_deletion_preview');
-  if (error) throw new Error(humanError(error));
-  return previewFromRow(data);
+  return callV1('account_deletion_preview', {});
 }
 
 /**
@@ -18,22 +17,19 @@ export async function deletionPreview(): Promise<DeletionPreview> {
  * being-deleted screen says when it goes. Says when.
  */
 export async function requestDeletion(): Promise<string> {
-  const { data, error } = await supabase.rpc('request_account_deletion');
-  if (error) throw new Error(humanError(error));
+  const deleteAfter = await callV1('request_account_deletion', {});
   // Other phones and laptops signed in as you: signed out, so nobody carries on there.
   await supabase.auth.signOut({ scope: 'others' }).catch(() => undefined);
-  return data;
+  return deleteAfter;
 }
 
 /** Keep my account: the 30 days stop. */
 export async function keepAccount(): Promise<void> {
-  const { error } = await supabase.rpc('keep_account');
-  if (error) throw new Error(humanError(error));
+  await callV1('keep_account', {});
 }
 
 /** Yours while it waits; null when your account isn't being deleted. */
 export async function deletionStatus(): Promise<DeletionStatus | null> {
-  const { data, error } = await supabase.rpc('account_deletion_status');
-  if (error) throw new Error(humanError(error));
-  return statusFromRow(data);
+  const status = await callV1('account_deletion_status', {});
+  return status && { deleteAfter: status.deleteAfter, requestedBy: status.requestedBy === 'owner' ? 'owner' : 'self' };
 }

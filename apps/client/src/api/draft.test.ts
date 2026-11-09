@@ -1,25 +1,15 @@
 import { HOUSE_DRAFT_COPY, listAsDraft, NEW_JOHN, starterDraft, tidyDraft, type HouseRules, type JohnDef } from '@app/core';
 
 import { applyDraft, keepDraft, sendChat } from './draft';
-import { apiPost, ApiRequestError } from './http';
-import { addJohns, archiveJohn, saveGroup, saveJohn } from './settings';
-import { supabase } from './supabase';
+import { ApiRequestError } from './base';
+import { addJohns, archiveJohn, loadJohnList, saveGroup, saveJohn } from './settings';
+import { callV1 } from './v1';
 
-jest.mock('./http', () => {
-  class ApiRequestError extends Error {
-    status: number;
-    constructor(message: string, code: number) {
-      super(message);
-      this.status = code;
-    }
-  }
-  return { apiPost: jest.fn(), ApiRequestError };
-});
-jest.mock('./settings', () => ({ addJohns: jest.fn(), archiveJohn: jest.fn(), saveGroup: jest.fn(), saveJohn: jest.fn() }));
-jest.mock('./supabase', () => ({ supabase: { from: jest.fn() } }));
+jest.mock('./v1', () => ({ callV1: jest.fn() }));
+jest.mock('./settings', () => ({ addJohns: jest.fn(), archiveJohn: jest.fn(), loadJohnList: jest.fn(), saveGroup: jest.fn(), saveJohn: jest.fn() }));
 
-const post = apiPost as jest.Mock;
-const from = supabase.from as jest.Mock;
+const post = callV1 as jest.Mock;
+const from = loadJohnList as jest.Mock;
 const HOUSE = 'c4ca4238-a0b9-4382-8dcc-509a6f75849b';
 const ME = '00000000-0000-4000-8000-000000000001';
 const RULES: HouseRules = {
@@ -46,11 +36,7 @@ describe('sendChat', () => {
     const answer = { reply: 'Here you go.', ask: null, draft: starterDraft('couple'), source: 'ai' };
     post.mockResolvedValue(answer);
     await expect(sendChat(HOUSE, said('Me and my partner in a flat'), null)).resolves.toBe(answer);
-    expect(post).toHaveBeenCalledWith(
-      '/api/setup/draft',
-      { houseId: HOUSE, messages: said('Me and my partner in a flat'), draft: null },
-      expect.anything(),
-    );
+    expect(post).toHaveBeenCalledWith('ask_house', { houseId: HOUSE, messages: said('Me and my partner in a flat'), draft: null });
   });
 
   it("passes on the API's refusal", async () => {
@@ -86,9 +72,7 @@ describe('keepDraft', () => {
   );
 
   it('makes the groups the kept Johns need, then adds them with their group', async () => {
-    from.mockReturnValue({
-      select: () => ({ eq: () => Promise.resolve({ data: [{ id: 'g1', name: 'Upstairs' }], error: null }) }),
-    });
+    from.mockResolvedValue({ johns: [], groups: [{ id: 'g1', name: 'Upstairs', memberIds: [ME] }] });
     await expect(keepDraft(HOUSE, RULES, draft, [0, 1], [], NOW)).resolves.toBe(2);
     expect(saveGroup).toHaveBeenCalledWith(HOUSE, { name: 'Upstairs', members: [ME] });
     const [, , johns] = (addJohns as jest.Mock).mock.calls[0];

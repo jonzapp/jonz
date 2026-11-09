@@ -25,3 +25,13 @@ export class ApiRequestError extends Error {
     this.name = 'ApiRequestError';
   }
 }
+
+/**
+ * /v1 names every key in camelCase, inside stored JSON too. A record whose
+ * keys are its columns' own names (an audit diff, a History move's details)
+ * gets them back with this: one level, the values left as they are.
+ */
+export const snakeKeys = (value: unknown): unknown =>
+  value !== null && typeof value === 'object' && !Array.isArray(value)
+    ? Object.fromEntries(Object.entries(value).map(([k, v]) => [k.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`), v]))
+    : value;

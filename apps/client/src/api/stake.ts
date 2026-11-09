@@ -1,6 +1,7 @@
-import { buildStake, humanError, monthOf, type HistoryRow, type HouseRules, type StakeView } from '@app/core';
+import { buildStake, monthOf, type HistoryRow, type HouseRules, type StakeView } from '@app/core';
 
 import { supabase } from './supabase';
+import { callV1 } from './v1';
 
 // The Stake, read through your own session (RLS decides) and built by core,
 // as the web builds it. The app never moves money: it only records that a
@@ -82,11 +83,5 @@ async function readLedger(houseId: string) {
  * instead: only the person owed can (confirm_payment checks).
  */
 export async function confirmPayment(houseId: string, fromUserId: string, amountMinor: number, via?: 'splitwise'): Promise<void> {
-  const { error } = await supabase.rpc('confirm_payment', {
-    p_house: houseId,
-    p_from: fromUserId,
-    p_amount: amountMinor,
-    ...(via ? { p_via: via } : {}),
-  });
-  if (error) throw new Error(humanError(error));
+  await callV1('confirm_payment', { houseId, fromId: fromUserId, amount: amountMinor, via });
 }

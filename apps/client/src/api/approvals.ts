@@ -1,6 +1,6 @@
-import { ApprovalRow, humanError } from '@app/core';
+import type { ApprovalRow } from '@app/core';
 
-import { supabase } from './supabase';
+import { callV1 } from './v1';
 
 // A connected app's request to do something that can't be undone
 // (supabase/migrations/*_mcp_approvals.sql): read and answered with your own
@@ -8,13 +8,24 @@ import { supabase } from './supabase';
 
 /** The request, or null when it isn't yours or isn't there. */
 export async function readApproval(id: string): Promise<ApprovalRow | null> {
-  const { data, error } = await supabase.rpc('api_approval', { p_id: id });
-  if (error) throw new Error(humanError(error));
-  return data === null ? null : ApprovalRow.parse(data);
+  const row = await callV1('api_approval', { approvalId: id });
+  return (
+    row && {
+      id: row.id,
+      operation: row.operation,
+      input: row.input,
+      house_id: row.houseId,
+      house_name: row.houseName,
+      created_at: row.createdAt,
+      expires_at: row.expiresAt,
+      approved_at: row.approvedAt,
+      declined_at: row.declinedAt,
+      used_at: row.usedAt,
+    }
+  );
 }
 
 /** Approve or decline it, once. */
 export async function answerApproval(id: string, approve: boolean): Promise<void> {
-  const { error } = await supabase.rpc('answer_api_approval', { p_id: id, p_approve: approve });
-  if (error) throw new Error(humanError(error));
+  await callV1('answer_api_approval', { approvalId: id, approve });
 }

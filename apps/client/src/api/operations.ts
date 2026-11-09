@@ -80,7 +80,7 @@ export const CARD_OPERATIONS: { [N in AskCardOperation]: (input: Input<N>, ctx: 
   set_house_kind: (i) => setHouseKind(i.houseId, i.kind),
   deal_week: (i) => dealThisWeek(i.houseId),
   pay_pocket_money: (i) => payPocketMoney(i.houseId, i.kidId, i.month),
-  add_kid: (i) => addKid(i.name, i.bornYear),
+  add_kid: (i) => addKid(i.houseId, i.name, i.bornYear),
   remove_member: (i) => removeMember(i.houseId, i.userId),
   set_member_role: (i) => setRole(i.houseId, i.userId, i.role),
   hand_over: (i) => handOver(i.houseId, i.toId),

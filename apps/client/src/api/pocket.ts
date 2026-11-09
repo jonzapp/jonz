@@ -1,6 +1,7 @@
-import { humanError, monthOf, pocketView, type PocketView } from '@app/core';
+import { monthOf, pocketView, type PocketView } from '@app/core';
 
 import { supabase } from './supabase';
+import { callV1 } from './v1';
 
 // Pocket money, in a family: what each kid earned and what a parent marked
 // paid, read through your own session (RLS lets anyone in the house read
@@ -19,7 +20,5 @@ export async function loadPocket(houseId: string, zone: string, kids: readonly s
 
 /** A parent paid a kid what they earned in a month that's over (outside Jonz). Returns the amount. */
 export async function payPocketMoney(houseId: string, kid: string, month: string): Promise<number> {
-  const { data, error } = await supabase.rpc('pay_pocket_money', { p_house: houseId, p_kid: kid, p_month: month });
-  if (error) throw new Error(humanError(error));
-  return data ?? 0;
+  return callV1('pay_pocket_money', { houseId, kidId: kid, month });
 }

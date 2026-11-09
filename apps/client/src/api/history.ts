@@ -1,6 +1,7 @@
-import { historyItems, humanError, type ActionKind, type HistoryItem } from '@app/core';
+import { historyItems, type ActionKind, type HistoryItem } from '@app/core';
 
-import { supabase } from './supabase';
+import { snakeKeys } from './base';
+import { callV1 } from './v1';
 
 // History and Undo. house_history says, for each move, who may undo it now;
 // undo_action and undo_latest check that again and put it back. The rules
@@ -11,19 +12,28 @@ export const HISTORY_PAGE = 60;
 
 /** A page of History, newest first: before `before`, when given. */
 export async function loadHistory(houseId: string, before?: Date): Promise<HistoryItem[]> {
-  const { data, error } = await supabase.rpc('house_history', {
-    p_house: houseId,
-    p_before: before?.toISOString(),
-    p_limit: HISTORY_PAGE,
-  });
-  if (error) throw new Error(humanError(error));
-  return historyItems(data ?? []);
+  const rows = await callV1('house_history', { houseId, before: before?.toISOString(), limit: HISTORY_PAGE });
+  return historyItems(
+    rows.map((r) => ({
+      id: r.id,
+      kind: r.kind,
+      done_by: r.doneBy,
+      subject_user_id: r.subjectUserId,
+      assignment_id: r.assignmentId,
+      ref: r.ref,
+      // A move's details read in their own names ("starts_on").
+      data: snakeKeys(r.data),
+      created_at: r.createdAt,
+      undone_at: r.undoneAt,
+      undone_by: r.undoneBy,
+      reach: r.reach,
+    })),
+  );
 }
 
 /** Undo one move from History. */
 export async function undoAction(actionId: string): Promise<void> {
-  const { error } = await supabase.rpc('undo_action', { p_action: actionId });
-  if (error) throw new Error(humanError(error));
+  await callV1('undo_action', { actionId });
 }
 
 /**
@@ -32,6 +42,5 @@ export async function undoAction(actionId: string): Promise<void> {
  * whatever its id.
  */
 export async function undoLatest(kind: ActionKind, about?: string): Promise<void> {
-  const { error } = await supabase.rpc('undo_latest', { p_kind: kind, p_about: about });
-  if (error) throw new Error(humanError(error));
+  await callV1('undo_latest', { kind, aboutId: about });
 }
