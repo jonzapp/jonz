@@ -3,13 +3,15 @@ import "server-only";
 import { tool, type LanguageModel, type ToolSet } from "ai";
 import {
   APP_NAME,
-  ASK_ELSEWHERE_GUIDE,
+  askToolInput,
   CATEGORIES,
   DOW_LABEL,
   HOW_TOPICS,
   RESET_KINDS,
   REPLY_FORMAT_GUIDE,
+  OPERATIONS,
   RESULT_CHOICES,
+  type AskCardOperation,
   type ChatMessage,
   type DraftEdit,
   type EditResult,
@@ -79,6 +81,10 @@ export interface JonzTools {
   offerAway(a: { from: string; to: string; note: string | null }): Promise<EditResult>;
   /** Put cancelling some of the person's own time away on the card, by its ref from time_away. */
   offerCancelAway(ref: string): Promise<EditResult>;
+  /** Put any other house write on the card (lib/moves/ask-operations.ts): its input in refs, and Jonz's words for it. */
+  offerOperation(name: AskCardOperation, given: Record<string, unknown> & { say: string }): Promise<EditResult>;
+  /** The house writes this person may make, each offered as a tool of its own. */
+  operations: readonly AskCardOperation[];
   may: { add: boolean; change: boolean; remove: boolean; groups: boolean; resets: boolean; away: boolean };
 }
 
@@ -119,11 +125,11 @@ How ${APP_NAME} works:
 - The app already handles time away, fairness, swaps and reminders, so never add Johns for those.
 
 Your tools:
-- Look things up before you answer: list_johns for the John list (with refs), week for who has what this week, last week or next, people, time_away, history, balances (fair shares), stake (the money), why_john (why a John went to someone), how_it_works (how a part of the app works, with this house's numbers), house_rules. Reads are free and need no permission; use as many as you need. Never guess what you could look up.
-- Changes are proposals. add_john, change_john and remove_john change a draft of the list, one John per call; set_group makes a new group, or changes who's in one the house has (give everyone who should be in it, not just who's joining); offer_reset offers a fix (only when house_now is given); book_away and cancel_away put the person's own time away on a card (read time_away first: their periods have refs, and a booking can't overlap one). Each tool says whether it worked; if it didn't, fix the call or tell the person. Nothing changes until they tap Apply on the card, so never say something is done: say what you've put on the card.
-- Only the tools for moves this person may make are there. If they ask for something that's for an admin (a parent in a family), say so plainly. Deleting a group is on [Groups](jonz:page/groups).
-- These moves aren't on the card yet. If they ask for one they may make, say you can't do it from the chat yet and give where it's done, with its chip:
-${ASK_ELSEWHERE_GUIDE}
+- Look things up before you answer: list_johns for the John list (with refs), week for who has what this week, last week or next, people, time_away, history, balances (fair shares), stake (the money), why_john (why a John went to someone), wall, disputes (questioned ticks), swaps (swap asks waiting), how_it_works (how a part of the app works, with this house's numbers), house_rules. Reads are free and need no permission; use as many as you need. Never guess what you could look up.
+- Changes are proposals. add_john, change_john and remove_john change a draft of the list, one John per call; set_group makes a new group, or changes who's in one the house has (give everyone who should be in it, not just who's joining); offer_reset offers a fix (only when house_now is given); book_away and cancel_away put the person's own time away on a card (read time_away first: their periods have refs, and a booking can't overlap one).
+- Every other move they may make is a tool named after it (mark_done to tick a John, offer_swap, cast_vote, react, remove_member and so on), each described by what it does. It puts that move on the card. Name things by their refs (the first 8 characters of an id), as week, people, history, wall, disputes and swaps show them: read first, never make a ref up. Give "say": a few words for the card, like "Tick off Bins out". A John that needs a photo is ticked in the app, where the photo is taken.
+- Each tool says whether it worked; if it didn't, fix the call or tell the person. Nothing changes until they tap the card, so never say something is done: say what you've put on the card.
+- Only the tools for moves this person may make are there. If they ask for something that's for an admin (a parent in a family), say so plainly.
 
 Changing the John list:
 - Change only what they ask for. Use change_john with only the fields that change; use the ref from list_johns. Use remove_john to take one off. To change many (or the whole list), make one call per John.
@@ -219,6 +225,21 @@ export function jonzToolSet(t: JonzTools): ToolSet {
       inputSchema: z.object({ topic: z.enum(HOW_TOPICS) }),
       execute: async ({ topic }) => t.reads.howItWorks(topic),
     }),
+    wall: tool({
+      description: "The Wall's latest posts, newest first, with who reacted how and each post's ref.",
+      inputSchema: z.object({}),
+      execute: async () => t.reads.wall(),
+    }),
+    disputes: tool({
+      description: "Questioned ticks still open: whose John, who questioned it and why, when the vote closes, the votes so far, and each one's ref.",
+      inputSchema: z.object({}),
+      execute: async () => t.reads.disputes(),
+    }),
+    swaps: tool({
+      description: "Swap asks still waiting for an answer: who asks whom, which Johns, until when, and each one's ref.",
+      inputSchema: z.object({}),
+      execute: async () => t.reads.swaps(),
+    }),
     house_rules: tool({
       description: "The house's rules: the Stake and forfeits, when a John is late or missed, how the deal works.",
       inputSchema: z.object({}),
@@ -270,6 +291,13 @@ export function jonzToolSet(t: JonzTools): ToolSet {
       description: "Offer a fix for something filled in wrong, in house_now's refs. Unused fields are null. The card shows it with its numbers.",
       inputSchema: ResetInput,
       execute: async (r) => said(await t.offerReset(r)),
+    });
+  }
+  for (const name of t.operations) {
+    set[name] = tool({
+      description: `${OPERATIONS[name].about}. Puts it on the card.`,
+      inputSchema: askToolInput(name).extend({ say: z.string().describe("A few words for the card: what this does, by name.") }),
+      execute: async (given) => said(await t.offerOperation(name, given as Record<string, unknown> & { say: string })),
     });
   }
   return set;

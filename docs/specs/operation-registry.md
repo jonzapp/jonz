@@ -40,6 +40,20 @@ Outputs are made from `TABLE_ROWS` (`packages/core/src/table-rows.ts`): a row of
 
 Every input and output turns into JSON Schema (`z.toJSONSchema`), for the API's OpenAPI document and MCP's tool definitions.
 
+## Ask Jonz's card
+
+Every house write is something Ask Jonz can do, built from the registry (`packages/core/src/ask-operations.ts`). Each house write is exactly one of:
+
+- on the generic card (`ASK_CARD_OPERATIONS`): a tool named after the operation, its input the operation's own (`askToolInput`) except that
+  - an id is a ref (`ASK_REFS`: the first 8 characters of the id, as Jonz's reads show it, and which table it's in),
+  - a record keyed by ids (preferences' `rather`) is keyed by refs (`ASK_REF_RECORDS`),
+  - the house is the chat's and a photo is the app's to take (`ASK_FILLED_KEYS`),
+  - a whole row of settings (house rules, your preferences) takes only what changes, and the rest is read from the row as it is now (`ASK_KEEP_CURRENT`);
+- one with a tool of its own that builds a richer card (`ASK_OWN_TOOLS`: the John list, groups, resets);
+- not a move someone asks for (`ASK_NOT_MOVES`, with why: catch-up, Ask Jonz itself, an answer that needs a photo).
+
+A tool is given only to someone with the operation's permission. When Jonz calls one, the API (`apps/api/lib/moves/ask-operations.ts`) finds the one row each ref stands for in this house, as the person, so a ref only reaches what they can see, and checks the whole input against `OPERATION_IO` before the move goes on the card with the names of what it touches. Nothing is done before they tap; the card (`MovesCard`, `apps/client/src/api/operations.ts`) makes the same call the app's own button does, which checks again. That map is exhaustive, so a new house write doesn't build until it says which call does it. Every permission says how Ask Jonz handles it (`ASK_COVERAGE`): by reading, or on the card.
+
 ## How it's held to the truth
 
 - `supabase/checks/registry.sql` is generated from the registry. A core test keeps it equal; refresh it with `npx vitest run -u` in `packages/core`.
@@ -49,6 +63,7 @@ Every input and output turns into JSON Schema (`z.toJSONSchema`), for the API's 
   - a listed function is gone;
   - a table grant (whole table or some columns, signed in or out) isn't listed.
 - `apps/api/tests/unit/operations.test.ts` fails on an API route that is in neither list, and on a table the app reads or changes (`.from('…')`) that no operation names.
+- `packages/core/src/ask-coverage.test.ts`: every house write is in exactly one of the card's three lists, every id a card operation takes has a ref or is filled in, no card operation needs a photo, and kept settings are columns their row has. `apps/api/tests/db/ask-card-operations.test.ts` puts moves on the card against a real house: refs become this house's ids, unchanged settings come from the row, a ref from another house or a move the person may not make is refused, and nothing is written.
 - `packages/core/src/operation-io.test.ts`: one /v1 route each, GET only for reads, every id a path names is in the input, admin pages only under /v1/admin, ids end in `Id`, and every schema turns into JSON Schema.
 - `apps/api/tests/db/operation-io.test.ts` holds each contract to the database:
   - an operation that runs its function straight takes exactly its arguments, by name, type and whether they can be left out, as PostgREST describes them;
@@ -76,4 +91,5 @@ Same on every platform: it's the server's list.
 - [x] Supabase's security and performance advisors run in CI (`npm run db:advisors`); any warning fails.
 - [x] Step 4: every operation has its input, output and /v1 route, held to the database.
 - [x] Step 4: the app's direct table reads and writes are operations too.
-- [ ] Step 4: Ask Jonz's tools, the house's and the owner's, are built from the registry, and every house permission can be done from the chat.
+- [x] Step 4: Ask Jonz's house tools are built from the registry, and every house permission can be done from the chat.
+- [ ] Step 4: the owner's Ask Jonz tools are built from the registry.

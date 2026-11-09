@@ -203,7 +203,11 @@ see "Design options for Glyn" in the `house-style` skill.
   Schema for code in other languages). Each one's
   input, output and /v1 route are in `OPERATION_IO`
   (`packages/core/src/operation-io.ts`), held to the database's own
-  arguments and answers. See `docs/specs/operation-registry.md`.
+  arguments and answers. A new house write is on Ask Jonz's card by
+  itself: give it a call in `apps/client/src/api/operations.ts` (the app
+  doesn't build without one), and if it takes a new kind of id, its ref in
+  `ASK_REFS` (`packages/core/src/ask-operations.ts`). See
+  `docs/specs/operation-registry.md`.
 
 ## The clock
 

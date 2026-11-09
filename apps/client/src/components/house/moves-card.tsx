@@ -1,9 +1,10 @@
 import { CHAT_MOVES_COPY, type ChatMove } from '@app/core';
-import { CalendarCheckIcon, CalendarXIcon, CheckIcon } from 'lucide-react-native';
+import { CalendarCheckIcon, CalendarXIcon, CheckIcon, ZapIcon, type LucideIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { cancelAway, setAway } from '@/api/away';
+import { runCardOperation } from '@/api/operations';
 import { Alert } from '@/components/alert';
 import { Button } from '@/components/button';
 import { ButtonRow } from '@/components/button-row';
@@ -13,13 +14,16 @@ import { ChoiceRow } from '@/components/setup/choice-row';
 import { useMove } from '@/hooks/use-move';
 import { SPACE } from '@/theme';
 
+const ICON: Record<ChatMove['kind'], LucideIcon> = { away: CalendarCheckIcon, cancel_away: CalendarXIcon, operation: ZapIcon };
+
 /**
  * Ask Jonz's card for moves that aren't changes to the John list (time
- * away): each row starts ticked and can be unticked, and nothing happens
- * before the button. It does them through the same calls the app's own pages
- * make, as the person, so they're checked the same way.
+ * away, and any of the house's writes: core ask-operations.ts): each row
+ * starts ticked and can be unticked, and nothing happens before the button.
+ * It does them through the same calls the app's own pages make, as the
+ * person, so they're checked the same way.
  */
-export function MovesCard({ houseId, items }: { houseId: string; items: readonly ChatMove[] }) {
+export function MovesCard({ houseId, me, items }: { houseId: string; me: string; items: readonly ChatMove[] }) {
   const move = useMove(houseId);
   const [keep, setKeep] = useState<number[]>(() => items.map((_, at) => at));
   const [done, setDone] = useState<number | null>(null);
@@ -30,7 +34,8 @@ export function MovesCard({ houseId, items }: { houseId: string; items: readonly
       for (const at of keep) {
         const m = items[at];
         if (m.kind === 'away') await setAway({ from: m.from, to: m.to, note: m.note });
-        else await cancelAway(m.awayId);
+        else if (m.kind === 'cancel_away') await cancelAway(m.awayId);
+        else await runCardOperation(m.operation, m.input, { userId: me });
         count += 1;
       }
     });
@@ -57,12 +62,12 @@ export function MovesCard({ houseId, items }: { houseId: string; items: readonly
             role="checkbox"
             label={CHAT_MOVES_COPY.title(item)}
             meta={CHAT_MOVES_COPY.meta(item)}
-            leading={<RowIcon icon={item.kind === 'away' ? CalendarCheckIcon : CalendarXIcon} />}
+            leading={<RowIcon icon={ICON[item.kind]} />}
             checked={keep.includes(at)}
             onPress={() => toggle(at)}
             disabled={move.pending}
             metaLines={2}
-            testID={`move-${item.kind}`}
+            testID={item.kind === 'operation' ? `move-${item.operation}` : `move-${item.kind}`}
           />
         ))}
       </Section>

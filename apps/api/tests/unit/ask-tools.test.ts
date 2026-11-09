@@ -1,18 +1,31 @@
 import { MockLanguageModelV4 } from "ai/test";
 import { describe, expect, it } from "vitest";
 
-import { ASK_COVERAGE, ASK_ELSEWHERE_GUIDE, ASK_WRITE_TOOLS, PERMISSION_NAMES, PERMISSIONS, REPLY_FORMAT_GUIDE, REPLY_SAMPLES, tidyReply, type Permission } from "@app/core";
+import {
+  ASK_CARD_OPERATIONS,
+  ASK_COVERAGE,
+  ASK_WRITE_TOOLS,
+  askOperationsFor,
+  operationPermission,
+  PERMISSION_NAMES,
+  REPLY_FORMAT_GUIDE,
+  REPLY_SAMPLES,
+  tidyReply,
+  type AskCardOperation,
+  type Permission,
+} from "@app/core";
 
 import { askClaude, jonzToolSet, type DraftContext, type JonzTools } from "@/lib/ai/house-draft";
 
 /** Ask Jonz's tools: every read for everyone, a write only for a move the person may make. */
 const asked: unknown[][] = [];
 const reads = {
-  ...Object.fromEntries(["week", "people", "timeAway", "history", "balances", "rules", "stake"].map((k) => [k, async () => k])),
+  ...Object.fromEntries(["week", "people", "timeAway", "history", "balances", "rules", "stake", "wall", "disputes", "swaps"].map((k) => [k, async () => k])),
   whyJohn: async (...args: unknown[]) => (asked.push(["whyJohn", ...args]), "Dealt to you: furthest behind."),
   howItWorks: (topic: string) => (asked.push(["howItWorks", topic]), `How ${topic} works.`),
 } as unknown as JonzTools["reads"];
-const tools = (may: Partial<JonzTools["may"]>): JonzTools => ({
+const offered: unknown[][] = [];
+const tools = (may: Partial<JonzTools["may"]>, operations: readonly AskCardOperation[] = []): JonzTools => ({
   reads,
   listJohns: () => "The list is empty.",
   edit: () => ({ ok: true, said: "ok" }),
@@ -20,9 +33,11 @@ const tools = (may: Partial<JonzTools["may"]>): JonzTools => ({
   offerReset: async () => ({ ok: true, said: "ok" }),
   offerAway: async () => ({ ok: true, said: "ok" }),
   offerCancelAway: async () => ({ ok: true, said: "ok" }),
+  offerOperation: async (name, given) => (offered.push([name, given]), { ok: true, said: "On the card." }),
+  operations,
   may: { add: false, change: false, remove: false, groups: false, resets: false, away: false, ...may },
 });
-const READS = ["balances", "history", "house_rules", "how_it_works", "list_johns", "people", "stake", "time_away", "week", "why_john"];
+const READS = ["balances", "disputes", "history", "house_rules", "how_it_works", "list_johns", "people", "stake", "swaps", "time_away", "wall", "week", "why_john"];
 
 describe("jonzToolSet", () => {
   it("gives someone who can only look every read and no writes", () => {
@@ -34,6 +49,15 @@ describe("jonzToolSet", () => {
     expect(Object.keys(jonzToolSet(tools({ add: true, change: true, remove: true, groups: true, resets: true, away: true }))).sort()).toEqual(
       [...READS, "add_john", "change_john", "remove_john", "set_group", "offer_reset", "book_away", "cancel_away"].sort(),
     );
+  });
+
+  it("adds a tool for each card operation the person may make, which puts it on the card", async () => {
+    const set = jonzToolSet(tools({}, ["mark_done", "react"]));
+    expect(Object.keys(set).sort()).toEqual([...READS, "mark_done", "react"].sort());
+    const run = set.mark_done.execute as (input: unknown, options: unknown) => Promise<unknown>;
+    const said = await run({ assignmentId: "1a2b3c4d", say: "Tick off Bins out" }, { toolCallId: "1", messages: [], context: {} });
+    expect(said).toBe("On the card.");
+    expect(offered.at(-1)).toEqual(["mark_done", { assignmentId: "1a2b3c4d", say: "Tick off Bins out" }]);
   });
 });
 
@@ -48,7 +72,7 @@ const MAY_FOR: Record<keyof JonzTools["may"], Permission> = {
 };
 
 describe("every permission has a way through Ask Jonz", () => {
-  const all = Object.keys(jonzToolSet(tools({ add: true, change: true, remove: true, groups: true, resets: true, away: true })));
+  const all = Object.keys(jonzToolSet(tools({ add: true, change: true, remove: true, groups: true, resets: true, away: true }, ASK_CARD_OPERATIONS)));
   const writes = all.filter((t) => !READS.includes(t));
 
   it("says how Jonz handles each one", () => {
@@ -60,6 +84,13 @@ describe("every permission has a way through Ask Jonz", () => {
     for (const [perm, c] of Object.entries(ASK_COVERAGE)) {
       if (c.by !== "card") continue;
       for (const name of c.tools) {
+        if ((ASK_CARD_OPERATIONS as readonly string[]).includes(name)) {
+          // A card operation is offered to someone who holds its permission, and only then.
+          const op = name as AskCardOperation;
+          expect(askOperationsFor((p) => p === operationPermission(op)), name).toContain(op);
+          expect(askOperationsFor((p) => p !== operationPermission(op)), name).not.toContain(op);
+          continue;
+        }
         expect(all, `${perm} needs ${name}`).toContain(name);
         // The one switch that takes the tool away is the permission's own.
         const off = (Object.keys(MAY_FOR) as (keyof JonzTools["may"])[]).filter((k) => !(name in jonzToolSet(tools({ ...on, [k]: false }))));
@@ -74,25 +105,8 @@ describe("every permission has a way through Ask Jonz", () => {
     expect([...writes].sort()).toEqual([...ASK_WRITE_TOOLS].sort());
   });
 
-  it("tells Jonz where every other move is done, with a page chip", async () => {
-    const model = new MockLanguageModelV4({
-      doGenerate: {
-        content: [{ type: "text", text: JSON.stringify({ reply: "Ok.", ask: { kind: "none", options: [] } }) }],
-        finishReason: { unified: "stop", raw: "end_turn" },
-        usage: { inputTokens: { total: 1, noCache: 1, cacheRead: 0, cacheWrite: 0 }, outputTokens: { total: 1, text: 1, reasoning: 0 } },
-        warnings: [],
-      },
-    });
-    await askClaude(
-      { people: [], me: { name: "Ava", role: "member" }, houseName: "Elm", family: false, weekStarts: 1, today: "Friday", allowed: [], messages: [{ role: "user", text: "Hi" }], editing: true, now: null },
-      tools({}),
-      model,
-    );
-    const system = JSON.stringify(model.doGenerateCalls[0].prompt[0]);
-    expect(system).toContain(JSON.stringify(ASK_ELSEWHERE_GUIDE).slice(1, -1));
-    for (const [perm, c] of Object.entries(ASK_COVERAGE)) {
-      if (c.by === "page") expect(ASK_ELSEWHERE_GUIDE).toContain(`${PERMISSIONS[perm as Permission]}: ${c.where}, [`);
-    }
+  it("leaves no permission without a tool: every move someone may make is on the card", () => {
+    for (const p of PERMISSION_NAMES) if (!p.endsWith(":read")) expect(ASK_COVERAGE[p].by, p).toBe("card");
   });
 });
 
