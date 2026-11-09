@@ -7,7 +7,11 @@ import { Button } from '@/components/button';
 import { ButtonRow } from '@/components/button-row';
 import { SPACE, useTheme } from '@/theme';
 
-/** A screen's first read on its way: a spinner, named for a screen reader. */
+/**
+ * The old way to show a first read on its way: a bare spinner, named for a
+ * screen reader. Use `Waiting` (waiting.tsx) with the part's outline instead;
+ * the lint rule `jonz/no-bare-spinner` lists what still uses this.
+ */
 export function Reading({ label = FOCUS_SHELL_COPY.reading }: { label?: string }) {
   const { colors } = useTheme();
   return <ActivityIndicator color={colors.foreground} accessibilityLabel={label} style={styles.reading} />;

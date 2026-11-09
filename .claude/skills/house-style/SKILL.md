@@ -35,6 +35,13 @@ the checklist that goes with them. Work through it for every UI change.
   at a time. Short choices are a `PickMenu`.
 - Lists: one `Row`, urgent first, finished things folded, long lists load as
   you scroll with the shared foot, a designed empty state.
+- Waiting (`states.md`, "Waiting"): a first read shows its own outline in
+  `Waiting` (pieces in `outline.tsx`), never a bare spinner (lint
+  `jonz/no-bare-spinner`); a button waiting on the server is `busy` with a
+  `busyLabel`, never `disabled`; a list's new search uses `SearchLine` and
+  `Dimmed`; a photo is a `Photo`; a failed read is `ReadFailed` with Try
+  again, never the database's own message; an empty state only after the
+  read.
 - Words: the six text roles, caps only for the page title and short grid
   labels, commas not " · ", plain international English, no emoji, no
   exclamation marks. A chore is a John.

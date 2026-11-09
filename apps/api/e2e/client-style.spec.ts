@@ -35,6 +35,9 @@ async function open(page: Page, width: number, path: string, colorScheme: "light
   await page.emulateMedia({ colorScheme, reducedMotion: "reduce" });
   await page.goto(path);
   await expect(page.getByTestId("style-page")).toBeVisible();
+  // The waiting kit looks busy only after its delay (WAIT_DELAY): wait for it, so every picture has it.
+  await expect(page.getByText("Leaving").first()).toBeVisible();
+  await expect(page.locator('[data-testid="search-line"][aria-busy="true"]').first()).toBeAttached();
   await page.evaluate(() => document.fonts.ready);
 }
 

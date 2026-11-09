@@ -142,8 +142,11 @@ permanent once a store has seen them.
   `TextButton`, `TextLink`,
   `Field`, `SignInForm` and `HiddenUsername` (sign-in and password boxes
   as a real form on the web, for password managers), `Alert`, `Segmented`,
-  `EmptyState`, `Reading` and `ReadFailed`
-  (a first read on its way, or "Try again"), toasts, and the brand pieces
+  `EmptyState`, `Waiting` (a first read on its way: its outline, built
+  from `outline.tsx`, after 300ms and for at least 300ms) and `ReadFailed`
+  ("Try again"), `Photo` (holds its space, fades in), `SearchLine` and
+  `Dimmed` (a list's new search), `StartSign` (the J sign while the app
+  starts), toasts, and the brand pieces
   (`Wordmark`, `HazardTape`, `SignInPanel`). `john-row.tsx` is a John as a
   row wherever one is drawn (Today, Week's groups and its table): core's
   `johnRow` decides the circle, the meta line and the one trailing item for

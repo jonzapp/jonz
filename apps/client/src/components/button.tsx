@@ -1,9 +1,10 @@
 import { withAlpha } from '@app/core';
 import { Link, type Href } from 'expo-router';
-import { useState, type ComponentType } from 'react';
-import { Platform, Pressable, StyleSheet, Text } from 'react-native';
+import { useEffect, useState, type ComponentType } from 'react';
+import { ActivityIndicator, Platform, Pressable, StyleSheet, Text } from 'react-native';
 
 import { useRowFit } from '@/components/button-row';
+import { useWaitShown } from '@/hooks/use-wait-shown';
 import { ICON, ICON_ONLY, RADIUS, SPACE, TAP, useTheme } from '@/theme';
 
 type Variant = 'primary' | 'outline' | 'ghost' | 'hazard';
@@ -31,6 +32,14 @@ export type ButtonIcon = ComponentType<{ size?: number; color?: string; 'aria-hi
  * width when the row stacks or it is on its own; its words wrap rather
  * than get cut. Screens never restyle a button: a `ButtonRow` places every
  * one, alone or together (the lint rule `jonz/button-in-row`).
+ *
+ * `busy` is for after a tap, while the server answers (docs/style/states.md,
+ * "Waiting"): a spinner takes the icon's place, the words become
+ * `busyLabel` (what is happening: "Marking done", "Leaving"), it keeps its
+ * colour rather than going pale, and it can't be pressed again. The other
+ * buttons in its row go pale until it's done. A screen reader hears that
+ * it's busy. Never `disabled` for a wait: that reads as switched off
+ * (the lint rule `jonz/busy-not-disabled`).
  */
 export function Button({
   label,
@@ -45,6 +54,8 @@ export function Button({
   spoken,
   expanded,
   ink,
+  busy = false,
+  busyLabel,
   testID,
 }: {
   label: string;
@@ -63,12 +74,30 @@ export function Button({
   expanded?: boolean;
   /** A ghost button's icon and words on a coloured band: a colour from the theme. */
   ink?: string;
+  /** Waiting on the server after a tap: a spinner and `busyLabel`, its own colour, not pressable. */
+  busy?: boolean;
+  /** What a busy button says is happening: "Marking done", "Leaving", "Sending". */
+  busyLabel?: string;
   testID?: string;
 }) {
   const { colors, type } = useTheme();
   const [pressed, setPressed] = useState(false);
   const row = useRowFit();
   const fit = row?.fit ?? null;
+  // It can't be pressed again from the tap, but looks busy only after
+  // WAIT_DELAY (and then for at least WAIT_MIN), so a fast answer never flashes.
+  const showing = useWaitShown(busy);
+  // Tell the row this one is busy, so the others go pale and wait.
+  const setRowBusy = row?.setBusy;
+  useEffect(() => {
+    if (!showing || !setRowBusy) return;
+    setRowBusy(true);
+    return () => setRowBusy(false);
+  }, [showing, setRowBusy]);
+  // Pale: switched off, or waiting while another button in the row is busy.
+  const pale = disabled || (!showing && row?.busy === true);
+  const off = pale || busy || showing;
+  const words = showing && busyLabel ? busyLabel : label;
   const base = chosen
     ? { background: colors.secondary, ink: colors.foreground, edge: colors.foreground, icon: colors.foreground }
     : {
@@ -89,12 +118,13 @@ export function Button({
   const button = (
     <Pressable
       accessibilityRole={href ? 'link' : 'button'}
-      aria-disabled={disabled}
+      aria-disabled={off}
+      aria-busy={busy || showing}
       {...chosenState}
       {...expandedState}
       {...placed}
-      accessibilityLabel={iconOnly ? label : spoken}
-      disabled={disabled}
+      accessibilityLabel={iconOnly ? words : showing ? undefined : spoken}
+      disabled={off}
       onPress={onPress}
       onPressIn={() => setPressed(true)}
       onPressOut={() => setPressed(false)}
@@ -109,11 +139,16 @@ export function Button({
         {
           backgroundColor: pressed && look.background === 'transparent' ? withAlpha(colors.foreground, 0.06) : look.background,
           borderColor: look.edge,
-          opacity: disabled ? 0.5 : pressed && look.background !== 'transparent' ? 0.85 : 1,
+          opacity: pale ? 0.5 : pressed && !off && look.background !== 'transparent' ? 0.85 : 1,
         },
       ])}
     >
-      {Icon && !iconAfter ? <Icon size={iconOnly ? ICON_ONLY : ICON} color={look.icon} aria-hidden /> : null}
+      {showing ? (
+        // The spinner in the icon's place (before the words, even for an icon after them).
+        <ActivityIndicator size={iconOnly ? ICON_ONLY : ICON} color={look.icon} aria-hidden testID="button-busy" />
+      ) : Icon && !iconAfter ? (
+        <Icon size={iconOnly ? ICON_ONLY : ICON} color={look.icon} aria-hidden />
+      ) : null}
       {iconOnly ? null : (
         <Text
           style={[type.rowTitle, styles.words, { color: look.ink }]}
@@ -126,10 +161,10 @@ export function Button({
               : undefined
           }
         >
-          {label}
+          {words}
         </Text>
       )}
-      {Icon && iconAfter ? <Icon size={ICON} color={look.icon} aria-hidden /> : null}
+      {Icon && iconAfter && !showing ? <Icon size={ICON} color={look.icon} aria-hidden /> : null}
     </Pressable>
   );
   return href ? (

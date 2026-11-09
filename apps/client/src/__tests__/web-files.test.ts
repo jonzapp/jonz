@@ -1,6 +1,8 @@
-import { APP_NAME, BIN_NIGHT, TAGLINE } from '@app/core';
+import { APP_NAME, BIN_NIGHT, SIGN, TAGLINE, TILE_RADIUS, signParts } from '@app/core';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+
+import { START_SIGN } from '@/components/start-sign';
 
 // public/ is served as it is, so it can't import the tokens: these keep its
 // colours and words equal to core's, and its links pointing at real files.
@@ -30,6 +32,26 @@ describe('the page template', () => {
     for (const file of ['favicon.ico', 'favicon.svg', 'apple-touch-icon.png', 'og.png']) {
       expect(existsSync(join(PUBLIC, file))).toBe(true);
     }
+  });
+
+  it('starts on the ground of each look, never white, with the J sign in the middle', () => {
+    expect(html).toContain(`body { background-color: ${BIN_NIGHT.light.background}; }`);
+    expect(html).toContain(`:root:not([data-look='light']) body { background-color: ${BIN_NIGHT.dark.background}; }`);
+    expect(html).toContain(`:root[data-look='dark'] body { background-color: ${BIN_NIGHT.dark.background}; }`);
+    // The sign as SignMark draws it (wordmark.tsx): ink on the amber tile by day, amber on the ground at night.
+    const { frame, j } = signParts(SIGN);
+    expect(html).toContain(`<rect width="512" height="512" rx="${TILE_RADIUS}" fill="${BIN_NIGHT.light.hivis}"/>`);
+    for (const ink of [BIN_NIGHT.light.onHivis, BIN_NIGHT.dark.hivis]) {
+      expect(html).toContain(
+        `<rect x="${frame.x}" y="${frame.y}" width="${frame.size}" height="${frame.size}" rx="${frame.radius}" fill="none" stroke="${ink}" stroke-width="${frame.stroke}"/>`,
+      );
+      expect(html).toContain(`<path transform="${j.transform}" d="${j.d}" fill="none" stroke="${ink}" stroke-width="${j.stroke}"`);
+    }
+    // At night the frame alone fills the box, less a hair, as SignMark crops it.
+    const from = frame.x - frame.stroke / 2 - 12;
+    expect(html).toContain(`viewBox="${from} ${from} ${512 - 2 * from} ${512 - 2 * from}"`);
+    // As big as the phone apps' splash draws it.
+    expect(html).toContain(`.start svg { width: ${START_SIGN}px; height: ${START_SIGN}px; }`);
   });
 
   it('is installable, and fits under a notch', () => {

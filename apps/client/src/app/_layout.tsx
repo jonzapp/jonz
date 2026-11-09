@@ -15,6 +15,7 @@ import { ButtonRow } from '@/components/button-row';
 import { CrashReport } from '@/components/report/crash-report';
 import { NoticeBand } from '@/components/notice-banner';
 import { StagingRibbon } from '@/components/staging-ribbon';
+import { StartSign } from '@/components/start-sign';
 import { Body, Heading } from '@/components/text';
 import { LookProvider } from '@/hooks/look';
 import { QueryProvider } from '@/hooks/query';
@@ -60,7 +61,8 @@ function Routes() {
     notePage(pathname);
   }, [pathname]);
 
-  if (!ready) return null;
+  // The J sign on the page's ground, where the web's page template drew it before any script ran.
+  if (!ready) return <StartSign />;
   if (failed) return <Unreachable onRetry={refresh} />;
 
   const signedIn = session !== null;

@@ -51,10 +51,41 @@
         flex: 1;
       }
     </style>
+    <!-- While Jonz starts: the page's ground in the chosen look and the J sign
+         in the middle, as the phone apps' splash and the app's StartSign
+         (start-sign.tsx) draw it, so the start never flashes white. The
+         look comes from the device's setting, or the one chosen in Jonz
+         (hooks/look.tsx keeps it under "theme"). A test keeps these
+         colours equal to Bin Night's and the sign equal to the app's. -->
+    <script>
+      try {
+        var look = localStorage.getItem('theme');
+        if (look === 'light' || look === 'dark') document.documentElement.setAttribute('data-look', look);
+      } catch (e) {}
+    </script>
+    <style id="jonz-start">
+      body { background-color: #e7e9e5; }
+      .start { flex: 1; display: flex; align-items: center; justify-content: center; }
+      .start svg { width: 96px; height: 96px; }
+      .start .night { display: none; }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-look='light']) body { background-color: #111315; }
+        :root:not([data-look='light']) .start .day { display: none; }
+        :root:not([data-look='light']) .start .night { display: block; }
+      }
+      :root[data-look='dark'] body { background-color: #111315; }
+      :root[data-look='dark'] .start .day { display: none; }
+      :root[data-look='dark'] .start .night { display: block; }
+    </style>
   </head>
 
   <body>
     <noscript>Jonz needs JavaScript.</noscript>
-    <div id="root"></div>
+    <div id="root">
+      <div class="start" role="progressbar" aria-busy="true" aria-label="Jonz">
+        <svg class="day" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" rx="112" fill="#f6b800"/><rect x="104" y="104" width="304" height="304" rx="40" fill="none" stroke="#16181a" stroke-width="30"/><path transform="translate(47.325 23.525) scale(0.85)" d="M300 162 V300 C300 344 276 362 246 362 C214 362 196 344 190 314" fill="none" stroke="#16181a" stroke-width="54.118" stroke-linejoin="round"/></svg>
+        <svg class="night" xmlns="http://www.w3.org/2000/svg" viewBox="77 77 358 358" aria-hidden="true"><rect x="104" y="104" width="304" height="304" rx="40" fill="none" stroke="#ffc21a" stroke-width="30"/><path transform="translate(47.325 23.525) scale(0.85)" d="M300 162 V300 C300 344 276 362 246 362 C214 362 196 344 190 314" fill="none" stroke="#ffc21a" stroke-width="54.118" stroke-linejoin="round"/></svg>
+      </div>
+    </div>
   </body>
 </html>

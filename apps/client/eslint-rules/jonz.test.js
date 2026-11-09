@@ -104,6 +104,47 @@ describe('keeps hand-made pressables out of screens', () => {
   });
 });
 
+describe('shows an outline or a busy button while waiting, not a spinner alone', () => {
+  tester.run('no-bare-spinner', jonz.rules['no-bare-spinner'], {
+    valid: [
+      { code: "import { ActivityIndicator } from 'react-native';", filename: '/repo/apps/client/src/components/button.tsx' },
+      { code: "import { ActivityIndicator } from 'react-native';", filename: '/repo/apps/client/src/components/list-foot.tsx' },
+      { code: "import { Reading } from '@/components/read-state';", filename: '/repo/apps/client/src/components/style-page/kit.tsx' },
+      { code: "import { ReadFailed } from '@/components/read-state';", filename: '/repo/apps/client/src/app/(tabs)/today.tsx' },
+      { code: "import { Waiting } from '@/components/waiting';", filename: '/repo/apps/client/src/app/(tabs)/today.tsx' },
+    ],
+    invalid: [
+      {
+        code: "import { ActivityIndicator, View } from 'react-native';",
+        filename: '/repo/apps/client/src/components/admin/house-panel.tsx',
+        errors: [{ messageId: 'spinner' }],
+      },
+      {
+        code: "import { Reading, ReadFailed } from '@/components/read-state';",
+        filename: '/repo/apps/client/src/app/(tabs)/today.tsx',
+        errors: [{ messageId: 'spinner' }],
+      },
+      // An icon button is not the Button.
+      { code: "import { ActivityIndicator } from 'react-native';", filename: '/repo/apps/client/src/components/icon-button.tsx', errors: [{ messageId: 'spinner' }] },
+    ],
+  });
+});
+
+describe('makes a button waiting on the server busy, not pale', () => {
+  tester.run('busy-not-disabled', jonz.rules['busy-not-disabled'], {
+    valid: [
+      'const x = <Button label="Leave" busy={leave.isPending} busyLabel="Leaving" />;',
+      // Switched off for a reason that isn't a wait.
+      'const x = <Button label="Save" disabled={!name.trim()} />;',
+      'const x = <TickBox state="open" disabled={busy} />;',
+    ],
+    invalid: [
+      { code: 'const x = <Button label="Leave" disabled={leave.isPending} />;', errors: [{ messageId: 'busy' }] },
+      { code: 'const x = <Button label="Send" disabled={!text || sending} />;', errors: [{ messageId: 'busy' }] },
+    ],
+  });
+});
+
 describe("keeps the owner's pieces on the owner's pages", () => {
   tester.run('owner-only', jonz.rules['owner-only'], {
     valid: [
