@@ -125,6 +125,9 @@ describe("the registry on /v1", () => {
     expect(served.find((o) => o.name === "deal_week")?.handler).toBe(handler);
     expect(served.map((o) => o.name)).not.toContain("ask_house");
     expect(CONTRACT_OPERATIONS).toHaveLength(V1_OPERATIONS.length + HANDLED.length);
+    // An operation whose /api route tells people afterwards needs the host's move, so /v1 and MCP tell them too.
+    expect(HANDLED).toEqual(expect.arrayContaining(["raise_flag", "roll_call", "offer_swap", "raise_dispute", "owner_send_message", "owner_delete_house"]));
+    expect(V1_OPERATIONS.map((o) => o.name)).not.toContain("raise_flag");
   });
 
   it("reads a query string by the operation's input types", () => {

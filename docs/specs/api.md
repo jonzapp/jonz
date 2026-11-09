@@ -68,8 +68,15 @@ when the executor's check is taken away.
   stable `title` code (`unauthenticated`, `forbidden`, `pass_required`,
   `invalid_input`, `rejected`, `conflict`, `idempotency_mismatch`,
   `rate_limited`, `client_too_old`, `not_found`, `internal`). Only words a
-  database function raised on purpose reach people; anything unexpected is
-  a plain 500.
+  database function raised on purpose (`P0001`, `22023`) or a move's own
+  refusal word reach people. Postgres's own data and constraint errors get
+  plain words; anything unexpected is a plain 500 "Something went wrong on
+  our side." with its Request-Id, and the cause only in the logs.
+- **One error path.** `@app/server` owns every error answer
+  (`internalProblem`, `problemResponse`, `PROBLEM_MEDIA_TYPE`,
+  `newRequestId`). `answersSafely` wraps `/v1` and `/mcp` as handlers, so
+  a failure before an operation runs (start-up, a library) answers the same
+  way; Fastify's error handler covers everything inside.
 - **Request-Id.** It is on every response. A caller's own id is kept when it
   looks like one.
 - **Inputs.**
@@ -137,6 +144,15 @@ Migration `20261219090000_api_layer.sql` sets up the following:
     move's refusal becomes the Problem a database function's would, and
     "Stripe isn't open" is `rejected` (the refusal codes don't grow within
     /v1: a new one breaks clients).
+  - Done: the operations whose /api route tells people after the database
+    function (a push, an email, Stripe): set_away, send_report,
+    write_back, roll_call, offer_swap, raise_flag, raise_dispute,
+    cast_vote, answer_tick, owner_reply_report, owner_fix_report,
+    claim_support_draft, owner_send_message, owner_make_promotion,
+    owner_stop_promotion, owner_promotion_emails, owner_delete_house. Each
+    has a handler running its route's move, so /v1 and MCP tell people
+    exactly as the app's button does. An operation with a `route` always
+    needs its host's handler.
   - Those moves still read and write through supabase-js (the person's
     session, or the service role for the engine, Stripe set-up and new
     kids' accounts), which goes through the Data API. Before C5 they move
@@ -144,13 +160,42 @@ Migration `20261219090000_api_layer.sql` sets up the following:
     turning the Data API off breaks nothing.
 - **C3:** realtime as SSE (`/v1/houses/{houseId}/events`), files by short
   links (`files.jonz.app`), and sign-in through `/v1/auth/*`.
-- **C4:** MCP (registry PR 6) on the same executor.
+  - **Realtime without a new service.** Each change writes a row to an
+    events table and sends it on a private Supabase Realtime Broadcast
+    channel. Only the API listens: houses are spread across a fixed set of
+    shard channels (Supabase allows 100 channels per connection), and each
+    API instance passes an event only to that house's open streams. No
+    Redis (decided 9 November 2026). Supabase counts our instances as its
+    connections, not phones.
+  - **Streams on Vercel.** A stream lives until the function's time
+    limit. The app opens the next stream just before the old one ends and
+    sends `Last-Event-ID`; the API replays what it missed from the events
+    table, so no instance remembers anyone.
+  - **Before the app switches,** a test times a tick reaching another
+    phone, today's Supabase Realtime against the new path (median and
+    95th percentile). It switches only if the new path is within about
+    100 ms of today's. A load test checks many open streams across houses.
+- **C4 (done, #154):** MCP (registry PR 6) on the same executor.
 - **C4b:** the server moves and the engine (`apps/api/lib/moves`,
   `lib/engine`) read and write with postgres.js instead of supabase-js:
   the person's reads in the handler's transaction, the engine's work as
   the API's role through database functions. Kids' accounts stay on
   Supabase Auth's admin API, which isn't the Data API.
-- **C5:** revoke the direct grants and turn the Data API off.
+- **C5: lock-down** ("lock it as much as necessary", Glyn, 9 November
+  2026). Code first, then Glyn's dashboard steps:
+  - Revoke `anon` and `authenticated`'s direct grants on our tables and
+    functions; turn the Data API off.
+  - Realtime: channels private (RLS on `realtime.messages`), and only the
+    API's role may listen.
+  - Storage: every bucket private; files only through the API's short
+    links.
+  - Keys: move to the new publishable and secret keys, switch off the
+    legacy anon and service-role keys, and change the database password.
+  - Network: Vercel Static IPs on jonz-api, and Supabase Network
+    Restrictions allow only those addresses (and staging's) to reach the
+    database. Enforce SSL.
+  - Supabase Auth stays reachable: Google, Microsoft and email sign-up and
+    sign-in all go through it.
 - **C6:** the phone version gate goes live.
 
 ## Done when
@@ -158,3 +203,7 @@ Migration `20261219090000_api_layer.sql` sets up the following:
 - [ ] Every operation the app uses is served by `/v1` and passes the same
       checks in the API and the database.
 - [ ] The Data API is off and the app still works on iOS, Android and web.
+- [ ] Live updates reach another phone within about 100 ms of today's
+      (median and 95th percentile), and hold up under a load test.
+- [ ] Only jonz-api's addresses can reach the database, Realtime channels
+      and buckets are private, and the legacy keys are off.

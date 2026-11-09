@@ -1,20 +1,47 @@
 import "server-only";
 
-import { bornYearOk, KIDS_COPY, PASS_COPY, PASS_ENFORCED, type ChatRequest, type OwnerAskRequest, type PassCheckoutRequest } from "@app/core";
+import {
+  bornYearOk,
+  KIDS_COPY,
+  PASS_COPY,
+  PASS_ENFORCED,
+  promotionProblems,
+  type AwayDraft,
+  type ChatRequest,
+  type DeleteHouseRequest,
+  type OwnerAskRequest,
+  type OwnerMessageRequest,
+  type PassCheckoutRequest,
+  type PromotionRequest,
+  type ReportFixRequest,
+  type ReportMessageRequest,
+  type ReportRequest,
+  type RollCallRequest,
+  type SwapAskRequest,
+} from "@app/core";
 import { fromDatabase, Problem, type HandlerContext } from "@app/server";
 import type { Handlers } from "v1";
 
 import { ensureFresh } from "@/lib/engine/fresh";
 import { env } from "@/lib/env";
 import { houseUsage } from "@/lib/moves/ask-usage";
+import { bookAway } from "@/lib/moves/away";
 import { dealThisWeek } from "@/lib/moves/deal";
-import type { Caller, Refusal } from "@/lib/moves/disputes";
+import { castVote, raiseDispute, type Caller, type Refusal } from "@/lib/moves/disputes";
 import { chatTurn } from "@/lib/moves/draft";
+import { raiseFlag } from "@/lib/moves/flags";
+import { deleteHouse } from "@/lib/moves/houses";
 import { addKid } from "@/lib/moves/kids";
+import { sendMessage } from "@/lib/moves/messages";
+import { answerTick } from "@/lib/moves/oks";
 import { ownerTurn } from "@/lib/moves/owner-ask";
 import { openBilling, startCheckout, type PassAnswer } from "@/lib/moves/pass";
-import { retryPromotion } from "@/lib/moves/promotions";
+import { emailPromotion, makePromotion, retryPromotion, stopPromotion } from "@/lib/moves/promotions";
+import { fixReport, replyToReport, sendReport, writeBack } from "@/lib/moves/reports";
 import { resetHouse } from "@/lib/moves/resets";
+import { rollCall } from "@/lib/moves/roll-call";
+import { supportDraft } from "@/lib/moves/support-draft";
+import { askSwap } from "@/lib/moves/swap-ask";
 import { copyNotices } from "@/lib/notices/copy";
 import { offerStripe, passStripe } from "@/lib/pass/stripe";
 import { userClient } from "@/lib/supabase/user";
@@ -132,4 +159,108 @@ export const V1_HANDLERS: Handlers = {
     if ("refusal" in result) throw refusal(result.refusal);
     return { ok: true, ready: result.ready };
   },
+
+  // The operations that run a database function and then tell people (a
+  // push, an email, Stripe): the same move their /api route runs, so /v1 and
+  // MCP send what the app's button sends. `refusal` throws a move's no.
+
+  async set_away(ctx: HandlerContext) {
+    return { ok: true, ...(await done(bookAway(callerOf(ctx), body<AwayDraft>(ctx), ctx.now))) };
+  },
+
+  async send_report(ctx: HandlerContext) {
+    return { ok: true, id: (await done(sendReport(callerOf(ctx), body<ReportRequest>(ctx)))).id };
+  },
+
+  async write_back(ctx: HandlerContext) {
+    await none(writeBack(callerOf(ctx), id(ctx, "reportId"), body<ReportMessageRequest>(ctx)));
+    return { ok: true };
+  },
+
+  async roll_call(ctx: HandlerContext) {
+    return { ok: true, people: (await done(rollCall(callerOf(ctx), ctx.input as RollCallRequest))).people };
+  },
+
+  async offer_swap(ctx: HandlerContext) {
+    return { ok: true, offerId: (await done(askSwap(callerOf(ctx), ctx.input as SwapAskRequest))).offerId };
+  },
+
+  async raise_flag(ctx: HandlerContext) {
+    return { ok: true, assignmentId: (await done(raiseFlag(callerOf(ctx), id(ctx, "johnId"), ctx.now))).assignmentId };
+  },
+
+  async raise_dispute(ctx: HandlerContext) {
+    await none(raiseDispute(callerOf(ctx), id(ctx, "assignmentId"), ctx.input.reason as string, ctx.now));
+    return { ok: true };
+  },
+
+  async cast_vote(ctx: HandlerContext) {
+    await none(castVote(callerOf(ctx), id(ctx, "disputeId"), ctx.input.uphold as boolean, ctx.now));
+    return { ok: true };
+  },
+
+  async answer_tick(ctx: HandlerContext) {
+    await none(answerTick(callerOf(ctx), id(ctx, "assignmentId"), ctx.input.ok as boolean, ctx.now));
+    return { ok: true };
+  },
+
+  async owner_reply_report(ctx: HandlerContext) {
+    await none(replyToReport(callerOf(ctx), id(ctx, "reportId"), body<ReportMessageRequest>(ctx)));
+    return { ok: true };
+  },
+
+  async owner_fix_report(ctx: HandlerContext) {
+    return { ok: true, ...(await done(fixReport(callerOf(ctx), id(ctx, "reportId"), body<ReportFixRequest>(ctx)))) };
+  },
+
+  async claim_support_draft(ctx: HandlerContext) {
+    return done(supportDraft(callerOf(ctx), id(ctx, "reportId"), ctx.now));
+  },
+
+  async owner_send_message(ctx: HandlerContext) {
+    return { ok: true, ...(await done(sendMessage(callerOf(ctx), ctx.input as OwnerMessageRequest))) };
+  },
+
+  async owner_make_promotion(ctx: HandlerContext) {
+    const draft = ctx.input as PromotionRequest;
+    const problem = Object.values(promotionProblems(draft, ctx.now))[0];
+    if (problem) throw new Problem("invalid_input", problem);
+    return { ok: true, ...(await done(makePromotion(callerOf(ctx), offerStripe(), draft))) };
+  },
+
+  async owner_stop_promotion(ctx: HandlerContext) {
+    await none(stopPromotion(callerOf(ctx), offerStripe(), id(ctx, "promotionId")));
+    return { ok: true };
+  },
+
+  async owner_promotion_emails(ctx: HandlerContext) {
+    return { ok: true, sent: (await done(emailPromotion(callerOf(ctx), id(ctx, "promotionId")))).sent };
+  },
+
+  async owner_delete_house(ctx: HandlerContext) {
+    return { ok: true, ...(await done(deleteHouse(callerOf(ctx), houseId(ctx), body<DeleteHouseRequest>(ctx), passStripe()))) };
+  },
 };
+
+/** A path key from the input. */
+const id = (ctx: HandlerContext, key: string) => ctx.input[key] as string;
+
+/** The input without its path keys: the body the move's /api route took. */
+function body<T>(ctx: HandlerContext): T {
+  const out = { ...ctx.input };
+  for (const key of ["reportId", "promotionId", "houseId", "disputeId"]) delete out[key];
+  return out as T;
+}
+
+/** A move's answer, or its refusal thrown as a Problem. */
+async function done<T extends object>(result: Promise<{ refusal: Refusal } | T>): Promise<T> {
+  const answer = await result;
+  if ("refusal" in answer) throw refusal(answer.refusal);
+  return answer as T;
+}
+
+/** A move that answers only a refusal, or nothing. */
+async function none(result: Promise<Refusal | null>): Promise<void> {
+  const refused = await result;
+  if (refused) throw refusal(refused);
+}

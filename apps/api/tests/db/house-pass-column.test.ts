@@ -7,8 +7,11 @@
 // - an operation that needs the Pass only for one input (a tick is free, a
 //   tick with a photo isn't) is free without that input.
 //
-// The executor runs on a pretend clock, and tokens are signed with a test
-// secret, as apps/v1's own database tests do. Whether the operation then
+// The executor runs on a pretend clock. Operations with a handler (a roll
+// call tells the crew) are served with apps/api's handlers, as production
+// serves them; their moves read through PostgREST, so tokens are signed with
+// the local stack's secret, issued in 2020 and lasting to 2100 (PostgREST
+// checks them by the real clock). Whether the operation then
 // succeeds (a tick outside the database's own week is refused) is tested where it lives;
 // here only the Pass decides.
 
@@ -21,18 +24,21 @@ import type { FastifyInstance } from "fastify";
 import { SignJWT } from "jose";
 import postgres from "postgres";
 import { afterAll, beforeAll, expect, it } from "vitest";
-import { buildApp } from "v1";
+import { buildApp, withHandlers } from "v1";
 
 import { buildMcpServer, mcpOperations } from "@/lib/mcp/server";
+import { V1_HANDLERS } from "@/lib/v1/handlers";
 import { addJohns, deal, makeHouse, ZONE, type House } from "@/tests/support/factories";
 
 const DB_URL = process.env.DB_URL ?? "postgresql://postgres:postgres@127.0.0.1:54342/postgres";
-const SECRET = randomBytes(32).toString("hex");
+const STACK_SECRET = process.env.SUPABASE_JWT_SECRET ?? "super-secret-jwt-token-with-at-least-32-characters-long";
+const ISSUED = Date.UTC(2020, 0, 1) / 1000;
+const EXPIRES = Date.UTC(2100, 0, 1) / 1000;
 const NOW = new Date(Date.UTC(2027, 0, 6, 9, 30, 0)); // pretend clock, a Wednesday
 const DAY = 86_400_000;
 
 // Every operation the registry gates behind the Pass, as /mcp serves it (and so /v1: /mcp leaves out only first-party ones).
-const GATED = mcpOperations().filter((o) => o.operation.entitlement);
+const GATED = mcpOperations(withHandlers(V1_HANDLERS)).filter((o) => o.operation.entitlement);
 
 interface Fixture {
   house: House;
@@ -62,9 +68,9 @@ let app: FastifyInstance;
 const token = (sub: string) =>
   new SignJWT({ sub, role: "authenticated", aud: "authenticated" })
     .setProtectedHeader({ alg: "HS256" })
-    .setIssuedAt(Math.floor(NOW.getTime() / 1000))
-    .setExpirationTime(Math.floor(NOW.getTime() / 1000) + 3600)
-    .sign(new TextEncoder().encode(SECRET));
+    .setIssuedAt(ISSUED)
+    .setExpirationTime(EXPIRES)
+    .sign(new TextEncoder().encode(STACK_SECRET));
 
 /** A house with a dealt week, a John of the admin's, and a question about its tick. */
 async function fixture(): Promise<Fixture> {
@@ -132,7 +138,7 @@ beforeAll(async () => {
   url.username = "jonz_api";
   url.password = password;
   pool = connect(url.toString(), 2);
-  const verify = tokenVerifier({ supabaseUrl: "http://127.0.0.1:54341", jwtSecret: SECRET, currentDate: NOW });
+  const verify = tokenVerifier({ supabaseUrl: "http://127.0.0.1:54341", jwtSecret: STACK_SECRET, currentDate: NOW });
   execute = createExecutor({ sql: pool, verify, operations: GATED, now: () => NOW, passEnforced: true, limits: { read: 1000, write: 1000 } });
   app = buildApp({ execute, operations: GATED });
 });
