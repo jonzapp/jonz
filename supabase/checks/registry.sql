@@ -6,9 +6,11 @@ create temp table callable (name text primary key);
 insert into callable values
   ('account_deletion_preview'),
   ('account_deletion_status'),
+  ('answer_api_approval'),
   ('answer_dispute'),
   ('answer_swap'),
   ('answer_tick'),
+  ('api_approval'),
   ('board_tick'),
   ('can'),
   ('can_app'),

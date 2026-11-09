@@ -58,11 +58,22 @@ A tool is given only to someone with the operation's permission. When Jonz calls
 
 `api.jonz.app/mcp` (`apps/api/lib/mcp/server.ts`, served by `app/mcp/route.ts`) is Jonz for MCP clients, on the MCP TypeScript SDK v2 (`@modelcontextprotocol/server`).
 
-- One tool per operation /v1 serves (`V1_OPERATIONS`), named after it, its input the operation's own, its description the registry's `about`. Reads are marked read-only.
+- One tool per operation /v1 serves (`V1_OPERATIONS`), named after it, its input the operation's own, its description the registry's `about`. Reads are marked read-only, and `destructive` operations destructive. The two `firstParty` operations (approving, below) aren't offered: they're for the person in Jonz itself.
 - Each call runs through the same executor as /v1 (`v1Instance()`, one pool per instance), with `via: "mcp"`: the same token check, rate limit, permission, House Pass and audit row. A refusal is a tool error starting with its problem code (`forbidden: …`).
 - Stateless: each request gets a fresh server instance and nothing is kept between requests, so any instance answers any request.
 - Signing in: with no bearer token it answers 401 with `WWW-Authenticate: Bearer resource_metadata=…`, and `/.well-known/oauth-protected-resource/mcp` names Supabase Auth as the authorization server and the permission strings as scopes (RFC 9728).
-- Operations marked `destructive` aren't offered yet: they'll need the person's approval in Jonz first (URL elicitation), which comes next.
+- A connected app's tokens come from Supabase's OAuth server and carry a `client_id` claim. PostgREST refuses any request with one (`api_pre_request`, run before every request), so a connected app reaches Jonz only through /mcp.
+
+### Approvals: what can't be undone waits for the person
+
+An operation marked `destructive` (it can't be undone, or it reaches people outside the caller's screen) doesn't run for a connected app until the person approves that exact request in Jonz. The executor holds it whenever the call comes by MCP or the token has a `client_id` (`needsApproval`); the person using the app is never asked.
+
+1. The executor runs the usual checks first, as the person: the house, the permission, the Pass. Someone who couldn't do it anyway is refused, not asked.
+2. It looks for an approved, unused, unexpired approval of the same request: the same person, operation and checked input (`requestHash`). Finding one, it marks it used and runs the operation in the same transaction, so a write that fails leaves the approval unused.
+3. Otherwise it writes a pending row to `api_approvals` (or finds the one already waiting for the same request) and refuses with `approval_required` (403) and `approvalUrl`, `https://jonz.app/approve/<id>`. A request declined within the last 15 minutes is refused with `forbidden` ("You said no to this in Jonz.").
+4. /mcp sends the person to that page by URL elicitation (MCP 2025-11-25): on the 2026-07-28 revision as an `input_required` result when the client declares `elicitation.url`; on 2025 revisions as the `urlElicitationRequired` error (-32042); otherwise as a tool error carrying the link, which any client can show.
+5. At jonz.app/approve/<id> (`apps/client/src/app/approve/[approvalId].tsx`, open to anyone, signing in in place), the person sees what the app asked in the registry's words, the house and the details, and approves or declines (`api_approval`, `answer_api_approval`). Both functions refuse a token with a `client_id`, so an app can't approve its own request.
+6. The client retries, and step 2 finds the approval. A request waits 15 minutes (`APPROVAL_TTL_MS`), and the approval is good until then; rows are cleared after a day.
 
 ## How it's held to the truth
 
@@ -74,7 +85,8 @@ A tool is given only to someone with the operation's permission. When Jonz calls
   - a table grant (whole table or some columns, signed in or out) isn't listed.
 - `apps/api/tests/unit/operations.test.ts` fails on an API route that is in neither list, and on a table the app reads or changes (`.from('…')`) that no operation names.
 - `packages/core/src/ask-coverage.test.ts`: every house write is in exactly one of the card's three lists, every id a card operation takes has a ref or is filled in, no card operation needs a photo, and kept settings are columns their row has. `apps/api/tests/db/ask-card-operations.test.ts` puts moves on the card against a real house: refs become this house's ids, unchanged settings come from the row, a ref from another house or a move the person may not make is refused, and nothing is written.
-- `apps/api/tests/unit/mcp.test.ts`: one MCP tool per served operation and none that's destructive, a call reaching the executor as the caller by MCP, input checked first, a refusal as a tool error, and the sign-in challenge. `apps/api/tests/db/mcp.test.ts` runs MCP calls on two instances with their own pools against the real database.
+- `apps/api/tests/unit/mcp.test.ts`: one MCP tool per served operation but approving, destructive ones marked, a call reaching the executor as the caller by MCP, input checked first, a refusal as a tool error, an approval asked for in each MCP revision's way, and the sign-in challenge. `apps/api/tests/db/mcp.test.ts` runs MCP calls on two instances with their own pools against the real database: a destructive one held, approved as the person, then run from the other instance; and PostgREST refusing a connected app's token.
+- `packages/server/tests/db/executor.test.ts` holds approvals to the database: only a connected app is held, someone who can't do it isn't asked, the app's own token and other people can't approve, an approval is used once and only for the same request, a decline is said, and an approval left too long isn't used. `apps/client/src/__tests__/app/approve.test.tsx` covers the page.
 - `packages/core/src/operation-io.test.ts`: one /v1 route each, GET only for reads, every id a path names is in the input, admin pages only under /v1/admin, ids end in `Id`, and every schema turns into JSON Schema.
 - `apps/api/tests/db/operation-io.test.ts` holds each contract to the database:
   - an operation that runs its function straight takes exactly its arguments, by name, type and whether they can be left out, as PostgREST describes them;
@@ -104,3 +116,5 @@ Same on every platform: it's the server's list.
 - [x] Step 4: the app's direct table reads and writes are operations too.
 - [x] Step 4: Ask Jonz's house tools are built from the registry, and every house permission can be done from the chat.
 - [x] Step 4: the owner's Ask Jonz tools are built from the registry: every admin write is on the owner's card or says why it isn't a move (`owner-ask-operations.ts`).
+- [x] Step 6: /mcp serves every /v1 operation as a tool through the same executor, stateless, with sign-in by Supabase's OAuth server.
+- [x] Step 6: what can't be undone waits for the person's approval in Jonz (URL elicitation), and a connected app's token can't go around /mcp.

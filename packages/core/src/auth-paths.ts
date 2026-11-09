@@ -1,4 +1,5 @@
 import { DELETE_COPY, DELETE_PATH } from "./account-deletion";
+import { APPROVE_COPY } from "./approvals";
 
 /**
  * Where sign-in sends people, and where it is allowed to send them back to.
@@ -57,5 +58,6 @@ export function signInReason(next?: string | null): string {
   if (target.startsWith("/offer")) return "Sign in to use your offer.";
   if (target.startsWith("/stake")) return "Sign in to see who owes what.";
   if (target === DELETE_PATH) return DELETE_COPY.signInReason;
+  if (target.startsWith("/approve/")) return APPROVE_COPY.signInReason;
   return "Your house’s Johns are kept with the account you sign in with.";
 }
