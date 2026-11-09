@@ -112,7 +112,7 @@ jobs:
       # `npm run test:db` locally runs the same three workspaces in one go.
       - name: Database tests
         run: |
-          R="$GITHUB_WORKSPACE/.ci-reports"
+          R="$GITHUB_WORKSPACE/db-reports"
           mkdir -p "$R"
           db() { (cd "$1" && npx vitest run --project db --reporter=default --reporter=json --outputFile.json="$R/$2.json" "${@:3}"); }
           if [ "${{ matrix.shard }}" = 1 ]; then
@@ -121,12 +121,13 @@ jobs:
           fi
           db apps/api api-${{ matrix.shard }} --shard=${{ matrix.shard }}/2
 
+      # Not a dot-folder: upload-artifact leaves hidden paths out.
       - name: Upload test counts
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: db-results-${{ matrix.shard }}
-          path: .ci-reports/
+          path: db-reports/
           retention-days: 7
 
   # Both web apps, once per device in playwright.config.ts: the Next app, and
