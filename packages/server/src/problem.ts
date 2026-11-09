@@ -52,7 +52,45 @@ export class Problem extends Error {
   }
 }
 
+export const PROBLEM_MEDIA_TYPE = "application/problem+json";
+
+/** The only words a caller ever gets for something we didn't expect. */
+export const internalProblem = () => new Problem("internal", "Something went wrong on our side.");
+
+/** /v1 and /mcp on a host whose database isn't set: a 503 (the status, not a new code, so the contract holds). */
+export const notSetUpProblem = () => new Problem("internal", "The API isn't set up here yet.");
+
 /** Any thrown value as a Problem; anything unexpected is a plain 500 that leaks nothing. */
 export function asProblem(error: unknown): Problem {
-  return error instanceof Problem ? error : new Problem("internal", "Something went wrong on our side.");
+  return error instanceof Problem ? error : internalProblem();
+}
+
+/** A new request id, in the one shape every answer and log line uses. */
+export const newRequestId = () => `req_${crypto.randomUUID()}`;
+
+/** A Problem as a web-standard Response (problem+json, its headers, and the request id). `status` overrides the code's, for a 503. */
+export function problemResponse(problem: Problem, options: { requestId?: string; status?: number } = {}): Response {
+  const status = options.status ?? problem.status;
+  const { requestId } = options;
+  return Response.json(
+    { ...problem.body(requestId), status },
+    { status, headers: { "content-type": PROBLEM_MEDIA_TYPE, ...problem.headers, ...(requestId ? { "request-id": requestId } : {}) } },
+  );
+}
+
+/**
+ * Wraps a web-standard handler (/v1, /mcp) so anything it throws answers
+ * problem+json: what went wrong goes to the logs with a request id, never to
+ * the caller.
+ */
+export function answersSafely<A extends unknown[]>(name: string, handler: (request: Request, ...rest: A) => Promise<Response>) {
+  return async (request: Request, ...rest: A): Promise<Response> => {
+    try {
+      return await handler(request, ...rest);
+    } catch (error) {
+      const requestId = newRequestId();
+      if (!(error instanceof Problem)) console.error(`[${requestId}] ${name} failed`, error);
+      return problemResponse(asProblem(error), { requestId });
+    }
+  };
 }

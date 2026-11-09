@@ -5,7 +5,7 @@
 import { z } from "zod";
 
 import type { ApiOperation } from "./executor";
-import { PROBLEM_CODES } from "./problem";
+import { PROBLEM_CODES, PROBLEM_MEDIA_TYPE } from "./problem";
 
 type Json = Record<string, unknown>;
 
@@ -106,7 +106,7 @@ export function openApi(operations: readonly ApiOperation[], server = "https://a
         Problem: {
           description: "Refused or failed (RFC 9457).",
           headers: { "Request-Id": { schema: { type: "string" } } },
-          content: { "application/problem+json": { schema: { $ref: "#/components/schemas/Problem" } } },
+          content: { [PROBLEM_MEDIA_TYPE]: { schema: { $ref: "#/components/schemas/Problem" } } },
         },
       },
       schemas: {

@@ -4,7 +4,7 @@ import { ACCOUNT_PERMISSIONS, OWNER_PERMISSION_NAMES, PERMISSION_NAMES } from "@
 import { CLIENT_CAPABILITIES_META_KEY, createMcpHandler, inputRequired, McpServer, UrlElicitationRequiredError } from "@modelcontextprotocol/server";
 import { randomUUID } from "node:crypto";
 import { V1_OPERATIONS, v1Instance } from "v1";
-import { asProblem, type ApiOperation, type Executor } from "@app/server";
+import { answersSafely, asProblem, notSetUpProblem, Problem, problemResponse, type ApiOperation, type Executor } from "@app/server";
 
 import { V1_HANDLERS } from "@/lib/v1/handlers";
 
@@ -105,21 +105,18 @@ export function protectedResource(origin: string, supabaseUrl: string) {
 const origin = () => process.env.API_ORIGIN ?? "https://api.jonz.app";
 const metadataUrl = () => `${origin()}/.well-known/oauth-protected-resource/mcp`;
 
-const problem = (status: number, code: string, detail: string, headers: Record<string, string> = {}) =>
-  Response.json({ type: `https://api.jonz.app/problems/${code}`, title: code, status, detail }, { status, headers: { "content-type": "application/problem+json", ...headers } });
-
-/** Answers one /mcp request. */
-export async function handleMcp(request: Request): Promise<Response> {
+/** Answers one /mcp request. Anything it throws answers problem+json, with the cause only in the logs. */
+export const handleMcp = answersSafely("/mcp", async (request: Request): Promise<Response> => {
   const authorization = request.headers.get("authorization");
   if (!authorization?.toLowerCase().startsWith("bearer ")) {
     // Tells the client where to sign in (MCP authorization, RFC 9728 §5.1).
-    return problem(401, "unauthenticated", "Sign in to Jonz to use this.", {
-      "WWW-Authenticate": `Bearer resource_metadata="${metadataUrl()}"`,
-    });
+    return problemResponse(
+      new Problem("unauthenticated", "Sign in to Jonz to use this.", { "WWW-Authenticate": `Bearer resource_metadata="${metadataUrl()}"` }),
+    );
   }
   const ready = v1Instance(process.env, V1_HANDLERS);
-  if (!ready) return problem(503, "internal", "The API isn't set up here yet.");
+  if (!ready) return problemResponse(notSetUpProblem(), { status: 503 });
   const { execute, operations } = await ready;
   const handler = createMcpHandler(() => buildMcpServer(execute, authorization, mcpOperations(operations)));
   return handler.fetch(request);
-}
+});

@@ -24,4 +24,16 @@ export {
   type Result,
 } from "./executor";
 export { API_VERSION, openApi, pathKeys } from "./openapi";
-export { asProblem, Problem, PROBLEM_CODES, type ProblemBody, type ProblemCode } from "./problem";
+export {
+  answersSafely,
+  asProblem,
+  internalProblem,
+  newRequestId,
+  notSetUpProblem,
+  Problem,
+  PROBLEM_CODES,
+  PROBLEM_MEDIA_TYPE,
+  problemResponse,
+  type ProblemBody,
+  type ProblemCode,
+} from "./problem";

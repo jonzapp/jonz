@@ -21,7 +21,7 @@ import { z } from "zod";
 import type { Claims, TokenVerifier } from "./auth";
 import { checkClient, type ClientInfo, type MinimumBuilds } from "./client";
 import { becomeApi, becomePerson, callFunction, signatures, type Sql, type Tx } from "./db";
-import { Problem } from "./problem";
+import { internalProblem, Problem } from "./problem";
 
 export type HttpMethod = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
 
@@ -141,7 +141,7 @@ export function fromDatabase(error: unknown): Problem {
   // Postgres's own data and constraint errors name columns and constraints: say what, not where.
   if (e.code?.startsWith("22")) return new Problem("rejected", "That value isn't allowed.");
   if (e.code?.startsWith("23")) return new Problem("rejected", "That doesn't fit with what's already saved.");
-  return new Problem("internal", "Something went wrong on our side.");
+  return internalProblem();
 }
 
 /** The fingerprint an Idempotency-Key is tied to: the operation and its checked input. */
@@ -345,7 +345,7 @@ export function createExecutor(options: ExecutorOptions) {
         const out = op.output.safeParse(op.fromResult ? op.fromResult(raw, input) : raw);
         if (!out.success) {
           console.error(`[${requestId}] ${name} returned a shape its contract doesn't allow`, z.prettifyError(out.error));
-          throw new Problem("internal", "Something went wrong on our side.");
+          throw internalProblem();
         }
         const body = out.data;
 
