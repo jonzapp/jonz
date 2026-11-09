@@ -51,7 +51,7 @@ export type OperationContext = { userId: string };
 export const CARD_OPERATIONS: { [N in AskCardOperation]: (input: Input<N>, ctx: OperationContext) => Promise<unknown> } = {
   mark_done: (i) => markDone(i.assignmentId, i.photoPath),
   undo_done: (i) => undoDone(i.assignmentId),
-  plan_john: (i) => planJohn(i.assignmentId, new Date(i.at)),
+  plan_john: (i) => planJohn(i.assignmentId, i.at ? new Date(i.at) : null),
   roll_call: (i) => rollCall(i.assignmentId, i.crew, i.photoPath),
   save_prefs: (i) => saveMyPrefs(i.houseId, { days: i.days, bestTime: i.bestTime, rather: i.rather }),
   use_immunity: (i) => spendImmunity(i.assignmentId),

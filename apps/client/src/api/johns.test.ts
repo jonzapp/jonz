@@ -1,77 +1,66 @@
-import { apiPost } from './http';
-import { answerSwap, askSwap, markDone, planJohn, rollCall, spendImmunity, spendSwap, undoDone } from './johns';
-import { supabase } from './supabase';
+import {
+  answerSwap,
+  askSwap,
+  boardTick,
+  coverJohn,
+  holdCover,
+  markDone,
+  planJohn,
+  removeFlag,
+  rollCall,
+  spendImmunity,
+  spendSwap,
+  undoCover,
+  undoDone,
+} from './johns';
+import { callV1 } from './v1';
 
-jest.mock('./supabase', () => ({ supabase: { rpc: jest.fn() } }));
-jest.mock('./http', () => ({ apiPost: jest.fn() }));
+jest.mock('./v1', () => ({ callV1: jest.fn() }));
 
-const rpc = supabase.rpc as unknown as jest.Mock;
-const post = apiPost as jest.Mock;
+const call = callV1 as jest.Mock;
+const A1 = '00000000-0000-4000-8000-0000000000a1';
+const A2 = '00000000-0000-4000-8000-0000000000a2';
+const OFFER = '00000000-0000-4000-8000-0000000000f1';
 
 beforeEach(() => {
   jest.clearAllMocks();
-  rpc.mockResolvedValue({ data: null, error: null });
+  call.mockResolvedValue(null);
 });
 
-it('ticks a John through mark_done, with or without a photo', async () => {
-  await markDone('a1');
-  expect(rpc).toHaveBeenCalledWith('mark_done', { p_assignment: 'a1', p_photo_path: undefined });
-  await markDone('a1', 'h1/a1/receipt.jpg');
-  expect(rpc).toHaveBeenLastCalledWith('mark_done', { p_assignment: 'a1', p_photo_path: 'h1/a1/receipt.jpg' });
+it.each([
+  ['mark_done', () => markDone(A1), { assignmentId: A1, photoPath: undefined }],
+  ['mark_done', () => markDone(A1, 'h1/a1/receipt.jpg'), { assignmentId: A1, photoPath: 'h1/a1/receipt.jpg' }],
+  ['undo_done', () => undoDone(A1), { assignmentId: A1 }],
+  ['cover_john', () => coverJohn(A1, 'h1/a1/c.jpg'), { assignmentId: A1, photoPath: 'h1/a1/c.jpg' }],
+  ['hold_cover', () => holdCover(A1), { assignmentId: A1 }],
+  ['undo_cover', () => undoCover(A1), { assignmentId: A1 }],
+  ['use_immunity', () => spendImmunity(A1), { assignmentId: A1 }],
+  ['use_swap', () => spendSwap(A1, A2), { mine: A1, theirs: A2 }],
+  ['answer_swap', () => answerSwap(OFFER, true), { offerId: OFFER, accept: true }],
+  ['remove_flag', () => removeFlag(A1), { assignmentId: A1 }],
+  ['board_tick', () => boardTick(A1), { assignmentId: A1 }],
+  ['plan_john', () => planJohn(A1, new Date('2026-11-07T10:00:00Z')), { assignmentId: A1, at: '2026-11-07T10:00:00.000Z' }],
+  ['plan_john', () => planJohn(A1, null), { assignmentId: A1, at: null }],
+])('runs %s on /v1', async (name, run, input) => {
+  await run();
+  expect(call).toHaveBeenCalledWith(name, input);
 });
 
-it('ticks a John with who did it through the roll call route, which tells them', async () => {
-  const crew = ['00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000002'];
-  post.mockResolvedValue({ ok: true, people: 2 });
-  await expect(rollCall('00000000-0000-4000-8000-0000000000a1', crew)).resolves.toBe(2);
-  expect(post).toHaveBeenCalledWith('/api/roll-call', { assignmentId: '00000000-0000-4000-8000-0000000000a1', crew }, expect.anything());
-  await rollCall('00000000-0000-4000-8000-0000000000a1', crew, 'h1/a1/receipt.jpg');
-  expect(post).toHaveBeenLastCalledWith(
-    '/api/roll-call',
-    { assignmentId: '00000000-0000-4000-8000-0000000000a1', crew, photoPath: 'h1/a1/receipt.jpg' },
-    expect.anything(),
-  );
+it('ticks a John with who did it, and answers how many were told', async () => {
+  call.mockResolvedValue({ ok: true, people: 2 });
+  await expect(rollCall(A1, [A1, A2])).resolves.toBe(2);
+  expect(call).toHaveBeenCalledWith('roll_call', { assignmentId: A1, crew: [A1, A2] });
+  await rollCall(A1, [A1], 'h1/a1/receipt.jpg');
+  expect(call).toHaveBeenLastCalledWith('roll_call', { assignmentId: A1, crew: [A1], photoPath: 'h1/a1/receipt.jpg' });
 });
 
-it('takes a tick back, and uses a skip, through their own functions', async () => {
-  await undoDone('a1');
-  expect(rpc).toHaveBeenCalledWith('undo_done', { p_assignment: 'a1' });
-  await spendImmunity('a1');
-  expect(rpc).toHaveBeenLastCalledWith('use_immunity', { p_assignment: 'a1' });
+it("asks to swap, answering the ask's id", async () => {
+  call.mockResolvedValue({ ok: true, offerId: OFFER });
+  await expect(askSwap(A1, A2)).resolves.toBe(OFFER);
+  expect(call).toHaveBeenCalledWith('offer_swap', { mine: A1, theirs: A2 });
 });
 
-it('swaps one of yours for a housemate\'s through use_swap', async () => {
-  await spendSwap('a1', 'a2');
-  expect(rpc).toHaveBeenCalledWith('use_swap', { p_mine: 'a1', p_theirs: 'a2' });
-  rpc.mockResolvedValue({ data: null, error: { message: 'no_swap', code: 'P0001' } });
-  await expect(spendSwap('a1', 'a2')).rejects.toThrow("You don’t have a swap.");
-});
-
-it('asks to swap through the swaps route, which tells them, and answers through answer_swap', async () => {
-  const [mine, theirs, offerId] = ['00000000-0000-4000-8000-0000000000a1', '00000000-0000-4000-8000-0000000000a2', '00000000-0000-4000-8000-0000000000f1'];
-  post.mockResolvedValue({ ok: true, offerId });
-  await expect(askSwap(mine, theirs)).resolves.toBe(offerId);
-  expect(post).toHaveBeenCalledWith('/api/swaps', { mine, theirs }, expect.anything());
-  await answerSwap(offerId, true);
-  expect(rpc).toHaveBeenCalledWith('answer_swap', { p_offer: offerId, p_accept: true });
-  rpc.mockResolvedValue({ data: null, error: { message: 'swap_gone', code: 'P0001' } });
-  await expect(answerSwap(offerId, false)).rejects.toThrow(/^That ask has run out/);
-});
-
-it('plans a John through plan_john, and clears the plan with null', async () => {
-  await planJohn('a1', new Date('2026-11-07T10:00:00Z'));
-  expect(rpc).toHaveBeenCalledWith('plan_john', { p_assignment: 'a1', p_at: '2026-11-07T10:00:00.000Z' });
-  await planJohn('a1', null);
-  expect(rpc).toHaveBeenLastCalledWith('plan_john', { p_assignment: 'a1', p_at: null });
-  rpc.mockResolvedValue({ data: null, error: { message: 'plan_time', code: 'P0001' } });
-  await expect(planJohn('a1', new Date())).rejects.toThrow('Pick a time from now until the end of this week.');
-});
-
-it("says the database's refusal in words", async () => {
-  rpc.mockResolvedValue({ data: null, error: { message: 'photo_required', code: 'P0001' } });
-  await expect(markDone('a1')).rejects.toThrow('This John needs a photo with the tick.');
-  rpc.mockResolvedValue({ data: null, error: { message: 'under_dispute', code: 'P0001' } });
-  await expect(undoDone('a1')).rejects.toThrow("Someone’s disputing this tick, so it can’t be undone now.");
-  rpc.mockResolvedValue({ data: null, error: { message: 'permission denied', code: '42501' } });
-  await expect(spendImmunity('a1')).rejects.toThrow("You can’t do that.");
+it("passes on the API's refusal", async () => {
+  call.mockRejectedValue(new Error('This John needs a photo with the tick.'));
+  await expect(markDone(A1)).rejects.toThrow('This John needs a photo with the tick.');
 });
