@@ -13,7 +13,7 @@
 
 import { createHash, randomUUID } from "node:crypto";
 
-import { PASS_ENFORCED, passOf, passUnlocked, type Operation, type PassFeature } from "@app/core";
+import { PASS_ENFORCED, passOf, passUnlocked, type Operation } from "@app/core";
 import type postgres from "postgres";
 import { z } from "zod";
 
@@ -46,6 +46,8 @@ export interface ApiOperation {
    * place of the database function, after the same checks, as the person.
    */
   handler?: (context: HandlerContext) => Promise<unknown>;
+  /** Turns the function's answer into the contract's shape (camelCase keys, a page). Default: as it comes. */
+  fromResult?: (raw: unknown, input: Record<string, unknown>) => unknown;
   /**
    * Being retired: answered with Deprecation (RFC 9745) and Sunset (RFC 8594)
    * headers from `since`, and removed no sooner than `sunset`, at least six
@@ -89,6 +91,18 @@ export const SUNSET_NOTICE_MS = 182 * 86_400_000;
 const snake = (key: string) => key.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
 export const defaultRpcArgs = (input: Record<string, unknown>) =>
   Object.fromEntries(Object.entries(input).map(([k, v]) => [`p_${snake(k)}`, v]));
+
+/** Input keys that name a row under a house, and the table that row is in. */
+export const HOUSE_FROM: readonly (readonly [string, string])[] = [
+  ["assignmentId", "assignments"],
+  ["mine", "assignments"],
+  ["disputeId", "disputes"],
+  ["offerId", "swap_offers"],
+  ["actionId", "house_actions"],
+  ["johnId", "johns"],
+  ["eventId", "events"],
+  ["groupId", "groups"],
+];
 
 const PG_TO_PROBLEM: Record<string, [Problem["code"], string]> = {
   "42501": ["forbidden", "You can't do that in this house."],
@@ -153,13 +167,32 @@ export function createExecutor(options: ExecutorOptions) {
     }
   }
 
-  async function guard(tx: Tx, op: ApiOperation, input: Record<string, unknown>) {
+  /**
+   * The house a house operation acts in: its houseId, or the house of the
+   * row it names (an assignment, a dispute…), read as the person so RLS
+   * decides whether they can see it. Failing those, the house they're in
+   * (a person is in one house at a time). Null for other scopes.
+   */
+  async function houseOf(tx: Tx, op: ApiOperation, input: Record<string, unknown>): Promise<string | null> {
+    if (op.operation.scope !== "house") return null;
+    if (typeof input.houseId === "string") return input.houseId;
+    for (const [key, table] of HOUSE_FROM) {
+      const value = input[key];
+      if (typeof value !== "string") continue;
+      const [row] = await tx.unsafe<{ house_id: string }[]>(`select house_id from public.${table} where id = $1::uuid`, [value]);
+      if (!row) throw new Problem("not_found", "That isn't there, or isn't yours to see.");
+      return row.house_id;
+    }
+    const rows = await tx<{ house_id: string }[]>`select house_id from public.members where user_id = (select auth.uid()) limit 2`;
+    if (rows.length !== 1) throw new Problem("invalid_input", "Which house? Name it with houseId.");
+    return rows[0].house_id;
+  }
+
+  async function guard(tx: Tx, op: ApiOperation, house: string | null) {
     const g = op.operation.guard;
     if (g.by !== "permission") return;
     const permission = g.permission;
     if (op.operation.scope === "house") {
-      const house = input.houseId;
-      if (typeof house !== "string") throw new Problem("invalid_input", "Which house? houseId is missing.");
       const rows = await tx<{ p: string }[]>`select p from public.my_permissions(${house}::uuid) p`;
       if (!rows.some((r) => r.p === permission)) throw new Problem("forbidden", `You need ${permission} in this house.`);
     } else if (op.operation.scope === "app") {
@@ -169,11 +202,15 @@ export function createExecutor(options: ExecutorOptions) {
     // Account operations: being signed in is the permission; the function only touches your own rows.
   }
 
-  async function entitlement(tx: Tx, feature: PassFeature | undefined, input: Record<string, unknown>, at: Date) {
-    if (!feature || !enforced || typeof input.houseId !== "string") return;
-    const [house] = await tx<{ pass_plan: string; pass_ends_at: string | null; pass_bought_by: string | null }[]>`
-      select pass_plan, pass_ends_at, pass_bought_by from public.houses where id = ${input.houseId}::uuid`;
-    if (!house || !passUnlocked(passOf(house as Parameters<typeof passOf>[0]), at, enforced)) {
+  /** The House Pass, when the operation needs it: always, or only when the input that turns its feature on is set. */
+  async function entitlement(tx: Tx, op: ApiOperation, house: string | null, input: Record<string, unknown>, at: Date) {
+    const feature = op.operation.entitlement;
+    if (!feature || !enforced || !house) return;
+    const when = (op.operation as { entitlementWhen?: string }).entitlementWhen;
+    if (when && (input[when] === undefined || input[when] === null || input[when] === "")) return;
+    const [row] = await tx<{ pass_plan: string; pass_ends_at: string | null; pass_bought_by: string | null }[]>`
+      select pass_plan, pass_ends_at, pass_bought_by from public.houses where id = ${house}::uuid`;
+    if (!row || !passUnlocked(passOf(row), at, enforced)) {
       throw new Problem("pass_required", "This needs a House Pass.");
     }
   }
@@ -224,13 +261,14 @@ export function createExecutor(options: ExecutorOptions) {
         }
 
         await becomePerson(tx, claims);
-        await guard(tx, op, input);
-        await entitlement(tx, op.operation.entitlement, input, at);
+        const house = await houseOf(tx, op, input);
+        await guard(tx, op, house);
+        await entitlement(tx, op, house, input, at);
         const raw = op.handler
           ? await op.handler({ tx, claims, input, now: at })
           : await callFunction(tx, signature!, fn!, (op.rpcArgs ?? defaultRpcArgs)(input));
         // Checked before commit: a write whose answer breaks its contract is rolled back, not half-reported.
-        const out = op.output.safeParse(raw);
+        const out = op.output.safeParse(op.fromResult ? op.fromResult(raw, input) : raw);
         if (!out.success) {
           console.error(`[${requestId}] ${name} returned a shape its contract doesn't allow`, z.prettifyError(out.error));
           throw new Problem("internal", "Something went wrong on our side.");
@@ -239,9 +277,10 @@ export function createExecutor(options: ExecutorOptions) {
 
         if (effect === "write") {
           await becomeApi(tx);
+          const auditHouse = house ?? (typeof input.houseId === "string" ? input.houseId : null);
           await tx`
             insert into public.api_audit_entries (user_id, operation, house_id, via, client, request_id)
-            values (${claims.sub}::uuid, ${name}, ${typeof input.houseId === "string" ? input.houseId : null}::uuid,
+            values (${claims.sub}::uuid, ${name}, ${auditHouse}::uuid,
                     ${context.via ?? "api"}, ${client ? `${client.platform}/${client.version} (${client.build})` : null}, ${requestId})`;
           if (key) {
             const response = sql.json((body ?? null) as postgres.JSONValue);
