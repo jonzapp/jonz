@@ -5,7 +5,8 @@
 //
 // Tokens are signed with the local stack's secret, so PostgREST takes them
 // too: a handler's move reads through the person's own session. The clock is
-// a pretend one; the token lasts long past it.
+// a pretend one. PostgREST checks the token by the real clock, so it is
+// issued in 2020 and lasts to 2100: good for both, whatever day the tests run.
 
 import { randomBytes, randomUUID } from "node:crypto";
 
@@ -20,7 +21,8 @@ import { V1_HANDLERS } from "@/lib/v1/handlers";
 const DB_URL = process.env.DB_URL ?? "postgresql://postgres:postgres@127.0.0.1:54342/postgres";
 const STACK_SECRET = process.env.SUPABASE_JWT_SECRET ?? "super-secret-jwt-token-with-at-least-32-characters-long";
 const NOW = new Date(Date.UTC(2027, 0, 4, 9, 30, 0));
-const LONG = 50 * 365 * 24 * 3600;
+const ISSUED = Date.UTC(2020, 0, 1) / 1000;
+const EXPIRES = Date.UTC(2100, 0, 1) / 1000;
 
 let admin: Sql;
 let api: Sql;
@@ -33,8 +35,8 @@ const stranger = randomUUID();
 const bearer = async (sub: string) =>
   `Bearer ${await new SignJWT({ sub, role: "authenticated", aud: "authenticated", email: `h-${sub}@test.jonz.app` })
     .setProtectedHeader({ alg: "HS256" })
-    .setIssuedAt(Math.floor(NOW.getTime() / 1000))
-    .setExpirationTime(Math.floor(NOW.getTime() / 1000) + LONG)
+    .setIssuedAt(ISSUED)
+    .setExpirationTime(EXPIRES)
     .sign(new TextEncoder().encode(STACK_SECRET))}`;
 
 const run = async (who: string, name: string, input: Record<string, unknown>) =>
