@@ -53,7 +53,7 @@ test("start a house, and land on it caught up", async ({ context, page }) => {
   await expect(page).toHaveURL(/\/today$/);
   await expect(page.getByRole("heading", { name: PAGE_TITLE.today })).toBeVisible();
   const answer = await fresh;
-  expect(answer.status()).toBe(200);
+  expect(answer.status()).toBe(201);
   expect(await answer.json()).toEqual({ ticked: true });
   await expectHouseNamed(page, name);
 });
@@ -81,7 +81,7 @@ test("a join link signs you in on the spot, then joins", async ({ context, page 
   await joiner.getByRole("button", { name: FRONT_DOOR_COPY.join }).click();
   await expect(joiner).toHaveURL(/\/today$/);
   await expect(joiner.getByRole("heading", { name: PAGE_TITLE.today })).toBeVisible();
-  expect((await catching).status()).toBe(200);
+  expect((await catching).status()).toBe(201);
   await expectHouseNamed(joiner, "Number 9");
 });
 

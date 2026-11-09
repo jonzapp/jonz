@@ -35,9 +35,9 @@ test("describe the house, keep most of the draft, and find it on the list", asyn
   await expect(page.getByRole("heading", { name: PAGE_TITLE.describe })).toBeVisible();
 
   await page.getByTestId("chat-input").fill("Me, my husband and our two kids in a semi. Bins go out Tuesday night.");
-  const answered = page.waitForResponse((r) => /\/v1\/houses\/[^/]+\/ask$/.test(r.url()));
+  const answered = page.waitForResponse((r) => /\/v1\/houses\/[^/]+\/ask$/.test(r.url()) && r.request().method() === "POST");
   await page.getByTestId("chat-send").click();
-  expect((await answered).status()).toBe(200);
+  expect((await answered).status()).toBe(201);
 
   // No gateway here, so the family starter list stands in, and says so.
   await expect(page.getByText(HOUSE_DRAFT_COPY.offline)).toBeVisible();
