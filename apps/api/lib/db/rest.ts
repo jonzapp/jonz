@@ -679,7 +679,7 @@ export class Builder {
       const columns = Object.keys(values).filter(
         (k) => values[k] !== undefined,
       );
-      const record = `jsonb_populate_record(null::${table}, ${bind(values)}::jsonb)`;
+      const record = `jsonb_populate_record(null::${table}, ${bind(values)}::text::jsonb)`;
       const where = filtersOn("", base);
       statement =
         columns.length === 1
@@ -697,7 +697,7 @@ export class Builder {
         ),
       ];
       const list = columns.map(ident).join(", ");
-      statement = `insert into ${table} as ${base} (${list}) select ${list} from jsonb_populate_recordset(null::${table}, ${bind(rows)}::jsonb)`;
+      statement = `insert into ${table} as ${base} (${list}) select ${list} from jsonb_populate_recordset(null::${table}, ${bind(rows)}::text::jsonb)`;
       if (w.kind === "upsert") {
         const target = w.onConflict
           ? w.onConflict.split(",").map((c) => c.trim())
@@ -829,8 +829,35 @@ function cached<T>(cache: WeakMap<object, T>, key: object, make: () => T): T {
 
 let savepoints = 0;
 
+/**
+ * What each transaction is running now. A transaction is one connection, and
+ * each statement here comes with its own role switch and savepoint around it,
+ * so two at once would interleave: one's query could run under the other's
+ * role, or release the other's savepoint. They take turns instead.
+ */
+const turns = new WeakMap<object, Promise<unknown>>();
+
 /** One statement inside `tx`, under a savepoint when a failure mustn't end the transaction. Pipelined: one round trip. */
-async function inside<T>(
+function inside<T>(
+  tx: Tx,
+  contained: boolean,
+  before: string | null,
+  after: string | null,
+  work: () => Promise<T>,
+): Promise<T> {
+  const previous = turns.get(tx) ?? Promise.resolve();
+  const mine = previous.then(
+    () => alone(tx, contained, before, after, work),
+    () => alone(tx, contained, before, after, work),
+  );
+  turns.set(
+    tx,
+    mine.catch(() => undefined),
+  );
+  return mine;
+}
+
+async function alone<T>(
   tx: Tx,
   contained: boolean,
   before: string | null,

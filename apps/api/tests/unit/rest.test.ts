@@ -3,11 +3,13 @@
 // runs every engine test through it against the real stack; these pin the
 // SQL itself, with no database.
 
+import type { Sql, Tx } from "@app/server";
 import { describe, expect, it } from "vitest";
 
 import {
   parseSelect,
   restClient,
+  txClient,
   type Backend,
   type LooseDb,
   type Meta,
@@ -231,7 +233,7 @@ describe("restClient", () => {
     await db.from("disputes").delete().eq("id", "d1");
     const texts = seen.map((s) => s.text);
     expect(texts[0]).toContain(
-      `set "ticked_at" = (select r."ticked_at" from jsonb_populate_record(null::public."houses", $1::jsonb) r) where t0."id" = $2`,
+      `set "ticked_at" = (select r."ticked_at" from jsonb_populate_record(null::public."houses", $1::text::jsonb) r) where t0."id" = $2`,
     );
     expect(texts[1]).toContain(
       `set ("name", "timezone") = (select r."name", r."timezone" from`,
@@ -252,5 +254,41 @@ describe("restClient", () => {
     const { db } = recording();
     const { data } = await db.rpc("house_balances", { p_house: "h1" });
     expect(data).toEqual({ name: "house_balances", args: { p_house: "h1" } });
+  });
+});
+
+describe("txClient", () => {
+  it("takes turns in one transaction, so no query runs under another's role or savepoint", async () => {
+    // A transaction that answers each statement a little later, and logs it.
+    const log: string[] = [];
+    const later = (text: string) =>
+      new Promise<Record<string, unknown>[]>((resolve) =>
+        setTimeout(() => {
+          log.push(text);
+          resolve(text.startsWith("select jsonb") ? [{ j: { id: "a" } }] : []);
+        }, 1),
+      );
+    const tx = { unsafe: (text: string) => later(text) } as unknown as Tx;
+    // The catalog: no keys, so plain selects need nothing from it.
+    const pool = Object.assign(async () => [], {}) as unknown as Sql;
+    const db = txClient(tx, pool, {
+      become: "become server",
+      back: "back to person",
+    }) as unknown as LooseDb;
+    await Promise.all([
+      db.from("houses").update({ name: "x" }).eq("id", "h1"),
+      db.from("houses").update({ name: "y" }).eq("id", "h2"),
+    ]);
+    const steps = log.map((t) =>
+      t.startsWith("savepoint")
+        ? "savepoint"
+        : t.startsWith("release")
+          ? "release"
+          : t.startsWith("update") || t.startsWith("with")
+            ? "query"
+            : t,
+    );
+    const one = ["savepoint", "become server", "query", "back to person", "release"];
+    expect(steps).toEqual([...one, ...one]);
   });
 });
