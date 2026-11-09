@@ -27,6 +27,7 @@ import {
   type ChatResponse,
   type EditResult,
   type HouseDraft,
+  askOperationsFor,
   type Permission,
   type RawDraft,
 } from "@app/core";
@@ -36,6 +37,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 import { houseReads } from "./ask-reads";
 import { awayMoves } from "./ask-away";
+import { operationMoves } from "./ask-operations";
 import { askWeek, usageNow } from "./ask-usage";
 import { offerResets, resetState, type ResetState } from "./ask-resets";
 import type { Caller, Refusal } from "./disputes";
@@ -160,6 +162,7 @@ export async function chatTurn(
   const resets: ChatReset[] = [];
   const moves: ChatMove[] = [];
   const away = awayMoves(caller, houseId, localDate(now, rules.timezone), moves);
+  const cardMoves = operationMoves(caller, houseId, may, everyone, moves);
   const kept = (result: EditResult, next: RawDraft): EditResult => {
     if (result.ok) {
       raw = next;
@@ -199,6 +202,8 @@ export async function chatTurn(
     },
     offerAway: (a) => (may("away:write_own") ? away.offerAway(a) : Promise.resolve({ ok: false, said: "That isn't something this person can do." })),
     offerCancelAway: (ref) => (may("away:write_own") ? away.offerCancelAway(ref) : Promise.resolve({ ok: false, said: "That isn't something this person can do." })),
+    offerOperation: (name, given) => cardMoves.offer(name, given),
+    operations: askOperationsFor(may),
     may: {
       add: may("johns:write"),
       change: may("johns:write"),

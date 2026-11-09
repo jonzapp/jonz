@@ -1,3 +1,4 @@
+import { ASK_CARD_OPERATIONS } from "@app/core";
 import { MockLanguageModelV4 } from "ai/test";
 import { describe, expect, it, vi } from "vitest";
 
@@ -67,6 +68,8 @@ describe("the support agent's walls", () => {
       offerReset: async () => ({ ok: true, said: "ok" }),
       offerAway: async () => ({ ok: true, said: "ok" }),
       offerCancelAway: async () => ({ ok: true, said: "ok" }),
+  offerOperation: async () => ({ ok: true, said: "ok" }),
+  operations: ASK_CARD_OPERATIONS,
       may: { add: true, change: true, remove: true, groups: true, resets: true, away: true },
     };
     const house = Object.keys(jonzToolSet(houseTools));
@@ -98,7 +101,7 @@ describe("the support agent's walls", () => {
       editing: true,
       now: null,
     };
-    await askClaude(ctx, { ...({} as JonzTools), reads: new Proxy({}, { get: () => async () => "" }) as JonzTools["reads"], listJohns: () => "", may: { add: false, change: false, remove: false, groups: false, resets: false, away: false } } as JonzTools, house);
+    await askClaude(ctx, { ...({} as JonzTools), reads: new Proxy({}, { get: () => async () => "" }) as JonzTools["reads"], listJohns: () => "", operations: [], may: { add: false, change: false, remove: false, groups: false, resets: false, away: false } } as JonzTools, house);
     const houseSystem = JSON.stringify(house.doGenerateCalls[0].prompt[0]);
     for (const words of ["support agent", "their_house", "similar_reports", "Stripe"]) expect(houseSystem).not.toContain(words);
   });

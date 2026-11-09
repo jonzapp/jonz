@@ -37,6 +37,8 @@ function zodKind(schema: z.ZodType): Kind {
     if (s.format === "date-time") return "datetime";
     if (s.type === "string") return "text";
     if (s.type === "integer") return "integer";
+    // A choice of whole numbers (z.literal([1, 2, 3])) is an integer to the database.
+    if (s.type === "number" && Array.isArray(s.enum) && s.enum.every(Number.isInteger)) return "integer";
     if (s.type === "number") return "number";
     if (s.type === "boolean") return "boolean";
     return "json";

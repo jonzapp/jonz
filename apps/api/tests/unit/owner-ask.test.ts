@@ -1,3 +1,4 @@
+import { ASK_CARD_OPERATIONS } from "@app/core";
 import { MockLanguageModelV4 } from "ai/test";
 import { describe, expect, it, vi } from "vitest";
 
@@ -35,6 +36,8 @@ const houseTools = (): JonzTools => ({
   offerReset: async () => ({ ok: true, said: "ok" }),
   offerAway: async () => ({ ok: true, said: "ok" }),
   offerCancelAway: async () => ({ ok: true, said: "ok" }),
+  offerOperation: async () => ({ ok: true, said: "ok" }),
+  operations: ASK_CARD_OPERATIONS,
   // Everything a house's admin may do: the most a housemate's Ask Jonz is ever given.
   may: { add: true, change: true, remove: true, groups: true, resets: true, away: true },
 });

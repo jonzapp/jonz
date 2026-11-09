@@ -97,9 +97,10 @@ on Today, Week and House (not while a parent is acting for a kid).
   no Johns); the card lists that under Changing as "before → after", and
   Apply saves it with `save_group` (`groupChanges` in core). Every
   permission says how Jonz handles it (`ASK_COVERAGE` in
-  `packages/core/src/ask-coverage.ts`): by reading, on the card with named
-  tools, or, not on the card yet, by a chip to the page where it's done,
-  which Jonz's instructions list. A test fails if a permission is left
+  `packages/core/src/ask-coverage.ts`): by reading, or on the card with named
+  tools. Every house write the John list, groups and resets don't cover is
+  a card tool of its own, built from the registry (docs/specs/operation-registry.md,
+  "Ask Jonz's card"). A test fails if a permission is left
   out, a card tool is missing or switched by another permission, or a write
   tool isn't on the list. Moves that aren't list changes go on their own
   card under the answer (`ChatMove` in `packages/core/src/chat-moves.ts`,

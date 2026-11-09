@@ -418,7 +418,7 @@ export function SetupChat({
             {turn.resets && turn.resets.length > 0 ? (
               <ResetsCard houseId={houseId} items={turn.resets} me={me} nameOf={nameOf} currency={rules.currency} zone={rules.timezone} />
             ) : null}
-            {turn.moves && turn.moves.length > 0 ? <MovesCard houseId={houseId} items={turn.moves} /> : null}
+            {turn.moves && turn.moves.length > 0 ? <MovesCard houseId={houseId} me={me} items={turn.moves} /> : null}
           </JonzSaid>
         );
       })}

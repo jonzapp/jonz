@@ -5674,9 +5674,16 @@
           "days": {
             "type": "array",
             "items": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 7
+              "type": "number",
+              "enum": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7
+              ]
             }
           },
           "bestTime": {
@@ -5697,12 +5704,15 @@
           "rather": {
             "type": "object",
             "propertyNames": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             },
             "additionalProperties": {
-              "type": "integer",
-              "minimum": -9007199254740991,
-              "maximum": 9007199254740991
+              "type": "number",
+              "enum": [
+                1,
+                -1
+              ]
             }
           }
         },
@@ -7163,6 +7173,79 @@
                     "from",
                     "to"
                   ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "operation"
+                    },
+                    "operation": {
+                      "type": "string",
+                      "enum": [
+                        "mark_done",
+                        "undo_done",
+                        "plan_john",
+                        "roll_call",
+                        "save_prefs",
+                        "use_immunity",
+                        "use_swap",
+                        "offer_swap",
+                        "answer_swap",
+                        "undo_action",
+                        "cover_john",
+                        "hold_cover",
+                        "undo_cover",
+                        "raise_flag",
+                        "raise_dispute",
+                        "cast_vote",
+                        "confirm_payment",
+                        "pass_checkout",
+                        "react",
+                        "unreact",
+                        "save_house_rules",
+                        "set_deal_mode",
+                        "answer_tick",
+                        "board_tick",
+                        "remove_flag",
+                        "delete_group",
+                        "reset_join_code",
+                        "set_house_kind",
+                        "deal_week",
+                        "pay_pocket_money",
+                        "add_kid",
+                        "remove_member",
+                        "set_member_role",
+                        "hand_over"
+                      ]
+                    },
+                    "input": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "$ref": "#/$defs/__schema0"
+                      }
+                    },
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    },
+                    "meta": {
+                      "type": "string",
+                      "maxLength": 300
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "operation",
+                    "input",
+                    "title",
+                    "meta"
+                  ]
                 }
               ]
             }
@@ -7238,7 +7321,40 @@
           "ask",
           "draft",
           "source"
-        ]
+        ],
+        "$defs": {
+          "__schema0": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/__schema0"
+                }
+              },
+              {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "$ref": "#/$defs/__schema0"
+                }
+              }
+            ]
+          }
+        }
       }
     },
     {

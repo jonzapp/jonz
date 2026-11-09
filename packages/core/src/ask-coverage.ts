@@ -1,5 +1,6 @@
-import { PERMISSIONS, type Permission } from "./permissions";
-import { PAGES, type PageName } from "./reply-format";
+import { ASK_CARD_OPERATIONS, ASK_OWN_TOOLS, operationPermission } from "./ask-operations";
+import { OPERATION_NAMES } from "./operations";
+import { PERMISSION_NAMES, type Permission } from "./permissions";
 
 /**
  * How Ask Jonz handles every permission, so nothing someone may do is left
@@ -9,66 +10,37 @@ import { PAGES, type PageName } from "./reply-format";
  * - "card": Jonz proposes it with these tools, and the person approves it
  *   on the card. The API's tests check each tool is given with the
  *   permission and only then.
- * - "page": not from the chat yet. Jonz says so and gives a chip to the page
- *   where it's done, built from this list into Jonz's instructions.
  *
- * It's a Record over every permission, so adding a permission without
- * saying how Jonz handles it doesn't compile.
+ * Every write permission is on the card: its tools are the house writes
+ * that ask for it (ask-operations.ts), so a new write is covered as soon as
+ * it's in the registry. core's test fails if one is left with none.
  */
-export type AskCoverage =
-  | { by: "reads" }
-  | { by: "card"; tools: readonly string[] }
-  | { by: "page"; page: PageName; where: string };
+export type AskCoverage = { by: "reads" } | { by: "card"; tools: readonly string[] };
 
-export const ASK_COVERAGE: Record<Permission, AskCoverage> = {
-  "house:read": { by: "reads" },
-  "johns:read": { by: "reads" },
-  "weeks:read": { by: "reads" },
-  "away:read": { by: "reads" },
-  "disputes:read": { by: "reads" },
-  "wall:read": { by: "reads" },
-  "groups:read": { by: "reads" },
-  "history:read": { by: "reads" },
-  "payments:read": { by: "reads" },
-  "pocket_money:read": { by: "reads" },
-  "members:read": { by: "reads" },
-  "ticks:write_own": { by: "page", page: "today", where: "their John on Today" },
-  "away:write_own": { by: "card", tools: ["book_away", "cancel_away"] },
-  "swaps:write_own": { by: "page", page: "today", where: "the John on Today (Ask to swap, or cover an overdue one), or the ask on Today to answer it" },
-  "flags:write_own": { by: "page", page: "today", where: "the on-call John on Today" },
-  "disputes:write_own": { by: "page", page: "week", where: "the ticked John on the Week" },
-  "wall:write_own": { by: "page", page: "wall", where: "the Wall" },
-  "perks:write_own": { by: "page", page: "today", where: "the John on Today" },
-  "profile:write_own": { by: "page", page: "you", where: "You" },
-  "members:write_own": { by: "page", page: "house", where: "the bottom of the House page" },
-  "history:write_own": { by: "page", page: "history", where: "the move on History" },
-  "payments:write_own": { by: "page", page: "stake", where: "the Stake page" },
-  "billing:write_own": { by: "page", page: "pass", where: "the House Pass page" },
-  "house:write": { by: "page", page: "rules", where: "House rules (a new code: Invite on the House page)" },
-  "johns:write": { by: "card", tools: ["add_john", "change_john", "remove_john"] },
-  // Making a group and changing who's in one; deleting one is on Groups (Jonz's instructions say so).
-  "groups:write": { by: "card", tools: ["set_group"] },
-  "weeks:write": { by: "page", page: "week", where: "the Week's menu" },
-  "history:write": { by: "card", tools: ["offer_reset"] },
-  "flags:write": { by: "page", page: "today", where: "the flagged John on Today" },
-  "ticks:write": { by: "page", page: "today", where: "the kid's ticked John on Today" },
-  "pocket_money:write": { by: "page", page: "house", where: "Pocket money on the House page" },
-  "members:write": { by: "page", page: "house", where: "the person's page (remove, make admin), Admins, or Add a child, on the House page" },
+/**
+ * Card tools a permission gives that its house writes don't name: time away
+ * is the person's own (an account write) but asks for away:write_own, and
+ * remove_flag removes anyone's flag for someone with flags:write.
+ */
+const OTHER_TOOLS: Partial<Record<Permission, readonly string[]>> = {
+  "away:write_own": ["book_away", "cancel_away"],
+  "flags:write": ["remove_flag"],
 };
+
+function toolsFor(p: Permission): string[] {
+  const own = OPERATION_NAMES.flatMap((n) => {
+    const tool = (ASK_OWN_TOOLS as Partial<Record<string, string>>)[n];
+    return tool && operationPermission(n) === p ? [tool] : [];
+  });
+  const card = ASK_CARD_OPERATIONS.filter((n) => operationPermission(n) === p);
+  return [...new Set([...(OTHER_TOOLS[p] ?? []), ...own, ...card])];
+}
+
+export const ASK_COVERAGE: Record<Permission, AskCoverage> = Object.fromEntries(
+  PERMISSION_NAMES.map((p) => [p, p.endsWith(":read") ? { by: "reads" } : { by: "card", tools: toolsFor(p) }]),
+) as Record<Permission, AskCoverage>;
 
 /** The tools that carry out writes, from ASK_COVERAGE. */
 export const ASK_WRITE_TOOLS: readonly string[] = [
   ...new Set(Object.values(ASK_COVERAGE).flatMap((c) => (c.by === "card" ? c.tools : []))),
 ];
-
-/**
- * For Jonz's instructions: each move that isn't on the card yet, and the
- * page chip that does it, so Jonz always says where.
- */
-export const ASK_ELSEWHERE_GUIDE = (Object.keys(ASK_COVERAGE) as Permission[])
-  .flatMap((p) => {
-    const c = ASK_COVERAGE[p];
-    if (c.by !== "page") return [];
-    return [`- ${PERMISSIONS[p]}: ${c.where}, [${PAGES[c.page].label}](jonz:page/${c.page}).`];
-  })
-  .join("\n");

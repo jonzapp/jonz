@@ -24,6 +24,7 @@ jest.mock('@/api/resets', () => ({ applyReset: jest.fn() }));
 jest.mock('@/api/away', () => ({ setAway: jest.fn(), cancelAway: jest.fn() }));
 jest.mock('@/api/settings', () => ({ saveDealMode: jest.fn() }));
 jest.mock('@/api/supabase', () => ({ supabase: {} }));
+jest.mock('@/api/operations', () => ({ runCardOperation: jest.fn() }));
 jest.mock('expo-router', () => ({ ...jest.requireActual('expo-router'), router: { dismissTo: jest.fn() } }));
 
 const chat = sendChat as jest.Mock;

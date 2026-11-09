@@ -1,6 +1,7 @@
 import "server-only";
 
 import {
+  askRef,
   actionLine,
   addDaysTo,
   buildStake,
@@ -43,6 +44,12 @@ export interface HouseReads {
   whyJohn(name: string, who: string | null): Promise<string>;
   /** How part of the app works, with this house's numbers (core how-it-works.ts). */
   howItWorks(topic: HowTopic): string;
+  /** The Wall's latest posts, with refs and who reacted how. */
+  wall(): Promise<string>;
+  /** Questioned ticks still open, with refs and the votes so far. */
+  disputes(): Promise<string>;
+  /** Swap asks still waiting for an answer, with refs. */
+  swaps(): Promise<string>;
 }
 
 /** PostgREST's most rows a read (max_rows); the ledger is read in pages of it. */
@@ -88,16 +95,16 @@ export function houseReads(caller: Caller, houseId: string, ctx: ReadsContext): 
       if (!week) return `The week from ${startsOn} hasn't been dealt${which === "next" ? " yet: it's dealt when it starts" : ""}.`;
       const { data: rows } = await caller.db
         .from("assignments")
-        .select("name, user_id, due_at, done_at, outcome, flagged_at, excused, awaits_ok, covered_by, points, group_name")
+        .select("id, name, user_id, due_at, done_at, outcome, flagged_at, excused, awaits_ok, covered_by, points, group_name")
         .eq("week_id", week.id)
         .order("due_at");
-      const { data: onCall } = await caller.db.from("on_call_picks").select("user_id, johns(name)").eq("week_id", week.id);
+      const { data: onCall } = await caller.db.from("on_call_picks").select("user_id, john_id, johns(name)").eq("week_id", week.id);
       const state = week.skipped_at ? " (skipped: it counts for nothing)" : week.closed_at ? " (closed)" : "";
       const lines = (rows ?? []).map(
         (a) =>
-          `${a.name}: ${nameOf(a.user_id)}${a.covered_by ? `, covered by ${nameOf(a.covered_by)}` : ""}, due ${when(a.due_at)}, ${a.points} pts, ${status(a)}`,
+          `${a.name}: ${nameOf(a.user_id)}${a.covered_by ? `, covered by ${nameOf(a.covered_by)}` : ""}, due ${when(a.due_at)}, ${a.points} pts, ${status(a)}, ref ${askRef(a.id)}`,
       );
-      for (const o of onCall ?? []) lines.push(`${(o.johns as { name: string } | null)?.name ?? "An on-call John"}: ${nameOf(o.user_id)} is on call`);
+      for (const o of onCall ?? []) lines.push(`${(o.johns as { name: string } | null)?.name ?? "An on-call John"}: ${nameOf(o.user_id)} is on call (John ref ${askRef(o.john_id)}, to flag it)`);
       return [`Week from ${startsOn}${state}:`, ...(lines.length ? lines : ["Nothing dealt to anyone."])].join("\n");
     },
 
@@ -116,10 +123,10 @@ export function houseReads(caller: Caller, houseId: string, ctx: ReadsContext): 
           m.born_year ? `born ${m.born_year}` : null,
           m.streak ? `streak ${m.streak}` : null,
         ].filter(Boolean);
-        return `${nameOf(m.user_id)}${m.user_id === caller.userId ? "" : ` (${ctx.people.find((p) => p.userId === m.user_id)?.name ?? ""})`}: ${role}, joined ${m.joined_at.slice(0, 10)}${extra.length ? `, ${extra.join(", ")}` : ""}`;
+        return `${nameOf(m.user_id)}${m.user_id === caller.userId ? "" : ` (${ctx.people.find((p) => p.userId === m.user_id)?.name ?? ""})`}: ${role}, joined ${m.joined_at.slice(0, 10)}${extra.length ? `, ${extra.join(", ")}` : ""}, ref ${askRef(m.user_id)}`;
       });
-      const { data: groups } = await caller.db.from("groups").select("name, group_members(user_id)").eq("house_id", houseId).order("name");
-      for (const g of groups ?? []) lines.push(`Group ${g.name}: ${(g.group_members ?? []).map((m) => nameOf(m.user_id)).join(", ")}`);
+      const { data: groups } = await caller.db.from("groups").select("id, name, group_members(user_id)").eq("house_id", houseId).order("name");
+      for (const g of groups ?? []) lines.push(`Group ${g.name} (ref ${askRef(g.id)}): ${(g.group_members ?? []).map((m) => nameOf(m.user_id)).join(", ")}`);
       return lines.join("\n") || "Nobody.";
     },
 
@@ -140,9 +147,54 @@ export function houseReads(caller: Caller, houseId: string, ctx: ReadsContext): 
       const { data: rows } = await caller.db.rpc("house_history", { p_house: houseId, p_limit: 40 });
       const lines = historyItems(rows ?? []).map((item) => {
         const who = item.actor === caller.userId ? "You" : nameOf(item.actor);
-        return `${when(item.at.toISOString())}: ${actionLine(item.kind, item.data, who, nameOf(item.subject), ctx.rules.currency)}${item.undoneAt ? " (undone)" : ""}`;
+        return `${when(item.at.toISOString())}: ${actionLine(item.kind, item.data, who, nameOf(item.subject), ctx.rules.currency)}${item.undoneAt ? " (undone)" : ""}, ref ${askRef(item.id)}`;
       });
       return lines.join("\n") || "Nothing in History yet.";
+    },
+
+    async wall() {
+      const { data } = await caller.db
+        .from("events")
+        .select("id, kind, user_id, created_at, assignments(name), reactions(user_id, kind)")
+        .eq("house_id", houseId)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      const lines = (data ?? []).map((e) => {
+        const john = (e.assignments as { name: string } | null)?.name;
+        const reacted = (e.reactions ?? []).map((r) => `${nameOf(r.user_id)} ${r.kind}`);
+        return `${when(e.created_at)}: ${e.user_id ? `${nameOf(e.user_id)}, ` : ""}${e.kind.replaceAll("_", " ")}${john ? ` (${john})` : ""}${reacted.length ? `; reactions: ${reacted.join(", ")}` : ""}, ref ${askRef(e.id)}`;
+      });
+      return lines.join("\n") || "Nothing on the Wall yet.";
+    },
+
+    async disputes() {
+      const { data } = await caller.db
+        .from("disputes")
+        .select("id, reason, raised_by, closes_at, assignments(name, user_id), dispute_votes(user_id, uphold)")
+        .eq("house_id", houseId)
+        .is("resolved_at", null)
+        .order("closes_at");
+      const lines = (data ?? []).map((d) => {
+        const a = d.assignments as { name: string; user_id: string } | null;
+        const votes = (d.dispute_votes ?? []).map((v) => `${nameOf(v.user_id)} ${v.uphold ? "upholds the question" : "backs the tick"}`);
+        return `${a?.name ?? "A John"} ticked by ${nameOf(a?.user_id ?? null)}, questioned by ${nameOf(d.raised_by)}: ${d.reason}. Votes close ${when(d.closes_at)}${votes.length ? `; ${votes.join(", ")}` : "; no votes yet"}, ref ${askRef(d.id)}`;
+      });
+      return lines.join("\n") || "No questioned ticks open.";
+    },
+
+    async swaps() {
+      const { data } = await caller.db
+        .from("swap_offers")
+        .select("id, asked_by, asked_user_id, expires_at, asker:assignments!swap_offers_asker_assignment_id_house_id_fkey(name), asked:assignments!swap_offers_asked_assignment_id_house_id_fkey(name)")
+        .eq("house_id", houseId)
+        .is("answer", null)
+        .order("expires_at");
+      const lines = (data ?? []).map((o) => {
+        const mine = (o.asker as { name: string } | null)?.name ?? "a John";
+        const theirs = (o.asked as { name: string } | null)?.name ?? "a John";
+        return `${nameOf(o.asked_by)} asks ${nameOf(o.asked_user_id)} to swap ${mine} for ${theirs}, until ${when(o.expires_at)}, ref ${askRef(o.id)}`;
+      });
+      return lines.join("\n") || "No swap asks waiting.";
     },
 
     async balances() {

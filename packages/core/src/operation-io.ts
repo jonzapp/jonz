@@ -103,7 +103,12 @@ const none = z.object({});
 const role = z.enum(["admin", "member"]);
 const plan = z.enum(PASS_PLANS);
 
-const io = (input: z.ZodObject, output: z.ZodType, http: HttpRoute, more: Omit<OperationIo, "input" | "output" | "http"> = {}): OperationIo => ({
+const io = <I extends z.ZodObject, O extends z.ZodType>(
+  input: I,
+  output: O,
+  http: HttpRoute,
+  more: Omit<OperationIo, "input" | "output" | "http"> = {},
+): OperationIo & { input: I; output: O } => ({
   input,
   output,
   http,
@@ -540,7 +545,13 @@ export const OPERATION_IO = {
   plan_john: io(z.object({ assignmentId: id, at }), nothing, "POST /v1/assignments/{assignmentId}/plan"),
   roll_call: io(RollCallRequest, RollCallResponse, "POST /v1/assignments/{assignmentId}/roll-call"),
   save_prefs: io(
-    z.object({ houseId: id, days: z.array(z.int().min(1).max(7)), bestTime: z.enum(BEST_TIMES).nullable(), rather: z.record(z.string(), z.int()) }),
+    z.object({
+      houseId: id,
+      days: z.array(z.literal([1, 2, 3, 4, 5, 6, 7])),
+      bestTime: z.enum(BEST_TIMES).nullable(),
+      /** John id → 1 rather do, −1 rather not. */
+      rather: z.record(id, z.literal([1, -1])),
+    }),
     nothing,
     "PATCH /v1/houses/{houseId}/me/prefs",
   ),
