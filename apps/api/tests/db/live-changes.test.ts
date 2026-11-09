@@ -13,7 +13,7 @@ const db = adminClient();
 const NOW = new Date("2026-01-07T12:00:00Z");
 
 const since = async (client: Db, houseId: string, after?: number) => {
-  const { data, error } = await client.rpc("house_live_since" as never, { p_house_id: houseId, ...(after === undefined ? {} : { p_after: after }) } as never);
+  const { data, error } = await client.rpc("house_live_since" as never, { p_house: houseId, ...(after === undefined ? {} : { p_after: after }) } as never);
   if (error) throw error;
   return (data as unknown as { latest: number | string | null }).latest;
 };

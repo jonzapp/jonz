@@ -201,7 +201,7 @@ Migration `20261219090000_api_layer.sql` sets up the following:
     (`live_topic`). With no policies on `realtime.messages`, only the
     service role can listen. `GET /v1/houses/{houseId}/live` (apps/api,
     `app/v1/houses/[houseId]/live`) is the stream: it listens first, then
-    asks `house_live` (a member only; also `GET …/live/since`) for the
+    asks `house_live` (house:read only; also `GET …/live/since`) for the
     newest change after `Last-Event-ID`, says `change` once if anything
     was missed, then each new change, pings every 20 s, and ends after
     280 s. Each `change` only says the house changed; the app reads it

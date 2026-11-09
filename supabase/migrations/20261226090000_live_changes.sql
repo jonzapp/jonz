@@ -76,18 +76,23 @@ create trigger live_change after insert or update or delete on public.assignment
 create trigger live_change after insert or update or delete on public.disputes
   for each row execute function public.note_live_change();
 
--- The house's newest change after p_after ({"latest": null} when none): for a member only.
-create function public.house_live_since(p_house_id uuid, p_after bigint default null)
+-- The house's newest change after p_after ({"latest": null} when none): for
+-- someone who may read the house, and refused to anyone else.
+create function public.house_live_since(p_house uuid, p_after bigint default null)
 returns jsonb
-language sql
+language plpgsql
 stable
 security definer set search_path = ''
 as $$
-  select jsonb_build_object('latest', max(c.id))
-  from public.live_changes c
-  where c.house_id = p_house_id
-    and public.is_member(p_house_id)
-    and c.id > coalesce(p_after, 0);
+begin
+  if not public.can(p_house, 'house:read') then
+    raise exception 'not_in_house' using errcode = '42501';
+  end if;
+  return jsonb_build_object('latest', (
+    select max(c.id) from public.live_changes c
+    where c.house_id = p_house and c.id > coalesce(p_after, 0)
+  ));
+end;
 $$;
 
 revoke execute on function public.live_topic(uuid), public.note_live_change(), public.house_live_since(uuid, bigint)
