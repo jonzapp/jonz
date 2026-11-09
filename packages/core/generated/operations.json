@@ -3158,7 +3158,13 @@
       "pathKeys": [
         "houseId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "house_today",
+        "server": false,
+        "args": {
+          "houseId": "p_house"
+        }
+      },
       "tables": [
         "houses",
         "members",
@@ -4208,7 +4214,13 @@
       "pathKeys": [
         "houseId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "john_list",
+        "server": false,
+        "args": {
+          "houseId": "p_house"
+        }
+      },
       "tables": [
         "johns",
         "groups",
@@ -4433,7 +4445,13 @@
       "pathKeys": [
         "houseId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "house_wall",
+        "server": false,
+        "args": {
+          "houseId": "p_house"
+        }
+      },
       "tables": [
         "events",
         "assignments",
@@ -4442,8 +4460,8 @@
       "page": {
         "at": "createdAt",
         "id": "id",
-        "atArg": null,
-        "idArg": null
+        "atArg": "p_cursor_at",
+        "idArg": "p_cursor_id"
       },
       "input": {
         "type": "object",
@@ -4616,7 +4634,14 @@
       "pathKeys": [
         "houseId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "house_away",
+        "server": false,
+        "args": {
+          "houseId": "p_house",
+          "from": "p_from"
+        }
+      },
       "tables": [
         "away_periods"
       ],
@@ -4697,7 +4722,14 @@
         "houseId",
         "month"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "house_month",
+        "server": false,
+        "args": {
+          "houseId": "p_house",
+          "month": "p_month"
+        }
+      },
       "tables": [
         "assignments",
         "crew_members",
@@ -5010,7 +5042,13 @@
       "pathKeys": [
         "houseId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "house_record",
+        "server": false,
+        "args": {
+          "houseId": "p_house"
+        }
+      },
       "tables": [
         "weeks",
         "away_periods",
@@ -5317,7 +5355,13 @@
       "pathKeys": [
         "houseId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "house_stake",
+        "server": false,
+        "args": {
+          "houseId": "p_house"
+        }
+      },
       "tables": [
         "ledger_entries",
         "assignments",
@@ -5469,7 +5513,13 @@
       "pathKeys": [
         "houseId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "house_pocket",
+        "server": false,
+        "args": {
+          "houseId": "p_house"
+        }
+      },
       "tables": [
         "pocket_earnings",
         "pocket_pays"

@@ -8,7 +8,20 @@
 -- repeatColumns/startMonths); apps/v1/tests/db/house-writes.test.ts checks
 -- the two agree across time zones, week starts and months.
 
--- weekIndex of the week `p_at` falls in, in the house's time zone: weeks since Monday 5 January 1970.
+-- The local date the week `p_at` falls in starts on, in a time zone and with a week start: core weekWindow(...).startsOn.
+create function public.week_starts_on(p_at timestamptz, p_zone text, p_week_starts smallint)
+returns date
+language sql
+stable
+security invoker
+set search_path = ''
+as $$
+  select d - ((extract(isodow from d)::int - p_week_starts + 7) % 7)
+  from (select (p_at at time zone p_zone)::date as d) local;
+$$;
+comment on function public.week_starts_on(timestamptz, text, smallint) is 'The local date a moment''s week starts on, in a time zone and with a week start: core weekWindow(...).startsOn.';
+
+-- weekIndex of the week `p_at` falls in: weeks since Monday 5 January 1970.
 create function public.week_index_at(p_at timestamptz, p_zone text, p_week_starts smallint)
 returns integer
 language sql
@@ -16,8 +29,7 @@ stable
 security invoker
 set search_path = ''
 as $$
-  select floor(((d - ((extract(isodow from d)::int - p_week_starts + 7) % 7)) - date '1970-01-05')::numeric / 7)::int
-  from (select (p_at at time zone p_zone)::date as d) local;
+  select floor((public.week_starts_on(p_at, p_zone, p_week_starts) - date '1970-01-05')::numeric / 7)::int;
 $$;
 comment on function public.week_index_at(timestamptz, text, smallint) is 'Which week (weeks since 5 Jan 1970) a moment falls in, in a time zone and with a week start: core weekIndex(weekWindow(...)).';
 
@@ -38,8 +50,7 @@ security invoker
 set search_path = ''
 as $$
   with this_week as (
-    select d - ((extract(isodow from d)::int - p_week_starts + 7) % 7) as starts_on
-    from (select (p_at at time zone p_zone)::date as d) local
+    select public.week_starts_on(p_at, p_zone, p_week_starts) as starts_on
   ),
   days as (
     select w, (starts_on + 7 + w * 7 + ((p_due_dow - p_week_starts + 7) % 7))::date as day
@@ -345,6 +356,7 @@ comment on function public.set_deal_mode(uuid, text) is 'Choose how the house sh
 
 -- --- Who can call them ------------------------------------------------------------------------
 
+revoke all on function public.week_starts_on(timestamptz, text, smallint) from public, anon;
 revoke all on function public.week_index_at(timestamptz, text, smallint) from public, anon;
 revoke all on function public.first_john_month(timestamptz, text, smallint, smallint, smallint) from public, anon;
 revoke all on function public.john_columns(uuid, jsonb, timestamptz) from public, anon;
@@ -357,6 +369,7 @@ revoke all on function public.remove_john(uuid) from public, anon;
 revoke all on function public.save_house_rules(uuid, text, text, text, smallint, integer, integer, integer, smallint, smallint, smallint, smallint, text, text, smallint, integer) from public, anon;
 revoke all on function public.set_deal_mode(uuid, text) from public, anon;
 
+grant execute on function public.week_starts_on(timestamptz, text, smallint) to authenticated;
 grant execute on function public.week_index_at(timestamptz, text, smallint) to authenticated;
 grant execute on function public.first_john_month(timestamptz, text, smallint, smallint, smallint) to authenticated;
 grant execute on function public.john_columns(uuid, jsonb, timestamptz) to authenticated;

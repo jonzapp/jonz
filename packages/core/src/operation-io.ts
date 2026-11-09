@@ -472,7 +472,7 @@ export const OPERATION_IO = {
         .extend({ photoPath: text.nullable(), reactions: z.array(T.reactions.pick({ userId: true, kind: true })) }),
     ),
     "GET /v1/houses/{houseId}/wall",
-    { page: { at: "createdAt", id: "id" } },
+    { page: pageOf("createdAt") },
   ),
   house_away: io(z.object({ houseId: id, from: day }), z.array(awayRow), "GET /v1/houses/{houseId}/away"),
   house_month: io(
