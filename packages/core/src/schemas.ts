@@ -93,8 +93,8 @@ export const HouseSettings = z.object({
 export type HouseSettings = z.infer<typeof HouseSettings>;
 
 /** One John on the house's list, as an admin adds or edits it. `id` is absent for a new one. */
-export const JohnDraft = z.object({
-  id: z.uuid().optional(),
+/** A John's fields, before their one check across fields (johnMonthly). */
+export const JohnFields = z.object({
   name: z.string().trim().min(1, "Name the John.").max(60),
   category: z.enum(CATEGORIES),
   points: z.coerce.number().int().min(1).max(20),
@@ -127,7 +127,12 @@ export const JohnDraft = z.object({
   // In a family (johns.min_age): the youngest a kid can be to be dealt it,
   // or null for anyone. Absent leaves the John's as it is.
   minAge: z.number().int().min(2, "Give an age from 2 to 18.").max(18, "Give an age from 2 to 18.").nullable().optional(),
-}).refine((j) => (j.everyMonths === null) === (j.weekOfMonth === null), "Say which week of the month it lands in.");
+});
+
+/** A John that repeats in months says which week of the month; one in weeks says neither. */
+export const johnMonthly = [(j: { everyMonths: number | null; weekOfMonth: number | null }) => (j.everyMonths === null) === (j.weekOfMonth === null), "Say which week of the month it lands in."] as const;
+
+export const JohnDraft = JohnFields.extend({ id: z.uuid().optional() }).refine(...johnMonthly);
 export type JohnDraft = z.infer<typeof JohnDraft>;
 /** A JohnDraft before it is checked: the monthly fields may be left out (a weekly John). */
 export type JohnDraftInput = z.input<typeof JohnDraft>;

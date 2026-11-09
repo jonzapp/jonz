@@ -1,13 +1,10 @@
-import { randomUUID } from "node:crypto";
-
 import { HOUSE_MATRIX, OPERATIONS, OPERATION_NAMES, OWNER_ROLE_PERMISSIONS, TABLES, type Operation, type Permission, type TableAccess, type TableName } from "@app/core";
 import { describe, expect, it } from "vitest";
 
 import { adminClient, signedInUser, type Actor } from "@/tests/support/clients";
 import { expectOk } from "@/tests/support/expect";
-import { addJohns, deal, makeHouse, thisWeek } from "@/tests/support/factories";
 import { passSecondFactor } from "@/tests/support/mfa";
-import { ANON_KEY, SUPABASE_URL } from "@/tests/support/env";
+import { aHouse, signatures, valueFor, type Ids } from "@/tests/support/operations";
 
 /**
  * Every operation in the registry (packages/core/src/operations.ts), called
@@ -22,65 +19,6 @@ import { ANON_KEY, SUPABASE_URL } from "@/tests/support/env";
  * so a refusal is the guard and not a missing row. Which roles may do each
  * one is tested in the permission matrix (permission-matrix.test.ts).
  */
-
-type Schema = { properties?: Record<string, { format?: string; type?: string }>; required?: string[] };
-type Ids = Record<string, string>;
-
-type Param = { in: string; name: string; format?: string; type?: string; schema?: Schema; $ref?: string };
-type OpenApi = { paths: Record<string, { get?: { parameters?: Param[] }; post?: { parameters?: Param[] } }>; parameters: Record<string, Param> };
-
-/**
- * Each function a signed-in person may call, with its arguments by name and
- * Postgres type, as PostgREST describes it to them: a write's arguments are
- * its body, a read's are query parameters.
- */
-async function signatures(who: Actor): Promise<Record<string, Record<string, string>>> {
-  const { data } = await who.db.auth.getSession();
-  const token = data.session!.access_token;
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/`, { headers: { apikey: ANON_KEY, authorization: `Bearer ${token}` } });
-  const doc = (await res.json()) as OpenApi;
-  const argsOf = (item: OpenApi["paths"][string]): [string, string][] => {
-    const body = item.post?.parameters?.find((p) => p.in === "body")?.schema;
-    if (body) return Object.entries(body.properties ?? {}).map(([name, p]) => [name, p.format ?? p.type ?? "text"]);
-    return (item.get?.parameters ?? [])
-      .map((p) => (p.$ref ? doc.parameters[p.$ref.split("/").pop()!] : p))
-      .filter((p) => p?.in === "query" && !/^(select|order|limit|offset|on_conflict|columns)$/.test(p.name))
-      .map((p) => [p.name, p.format ?? p.type ?? "text"]);
-  };
-  return Object.fromEntries(
-    Object.entries(doc.paths)
-      .filter(([path]) => path.startsWith("/rpc/"))
-      .map(([path, item]) => [path.slice("/rpc/".length), Object.fromEntries(argsOf(item))]),
-  );
-}
-
-/** A value for one argument: the house's real row for an id it names, else something well formed. */
-function valueFor(name: string, type: string, ids: Ids): unknown {
-  if (type === "uuid") return ids[name] ?? randomUUID();
-  if (type.endsWith("[]")) return type === "uuid[]" ? [ids.p_user] : [];
-  if (type === "boolean") return true;
-  if (/^(int|integer|smallint|bigint|numeric)/.test(type)) return 1;
-  if (type === "date") return "2030-01-07";
-  if (type.startsWith("timestamp")) return "2030-01-07T09:00:00.000Z";
-  if (type === "jsonb" || type === "json") return {};
-  return name === "p_month" ? "2030-01" : "x";
-}
-
-async function aHouse() {
-  const house = await makeHouse(["Ava", "Ben"]);
-  const week = thisWeek();
-  const [john] = await addJohns(house.id, [{ name: "Bins" }], week);
-  const { assignments } = await deal(house.id, week, new Date(week.startsOn));
-  const assignment = assignments[0].id;
-  const group = (await house.admin.db.rpc("save_group", { p_house: house.id, p_group: null as unknown as string, p_name: "Upstairs", p_members: [house.admin.userId] })).data as string;
-  const ben = house.members[0].userId;
-  const ids: Ids = {
-    h: house.id, p_house: house.id, p_from: house.id,
-    p_john: john.id, p_assignment: assignment, p_mine: assignment, p_theirs: assignment,
-    p_group: group, p_user: ben, p_kid: ben, p_to: ben, other: ben,
-  };
-  return { house, ids };
-}
 
 /**
  * Operations this test can't bring to their permission check: with nothing
