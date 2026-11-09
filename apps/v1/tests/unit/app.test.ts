@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { z } from "zod";
 
 import { buildApp, queryTypes, readQuery } from "../../src/app";
-import { V1_OPERATIONS } from "../../src/operations";
+import { CONTRACT_OPERATIONS, HANDLED, V1_OPERATIONS, withHandlers } from "../../src/operations";
 
 const read: ApiOperation = {
   name: "list_johns",
@@ -101,7 +101,7 @@ describe("/v1 over HTTP", () => {
 
   it("keeps apps/v1/openapi.json up to date (npm run openapi -w v1)", () => {
     const committed = JSON.parse(readFileSync(new URL("../../openapi.json", import.meta.url), "utf8"));
-    expect(committed).toEqual(openApi(V1_OPERATIONS));
+    expect(committed).toEqual(openApi(CONTRACT_OPERATIONS));
   });
 });
 
@@ -115,6 +115,16 @@ describe("the registry on /v1", () => {
     const app = buildApp({ execute: (async () => ({ status: 200, body: null, requestId: "x" })) as Executor, operations: V1_OPERATIONS });
     await app.ready();
     await app.close();
+  });
+
+  it("serves a server operation only once its host hands in a handler", () => {
+    expect(HANDLED).toEqual(expect.arrayContaining(["ask_usage", "catch_up", "deal_week", "reset_house", "add_kid", "ask_house", "pass_checkout", "pass_billing", "ask_owner", "write_notice_copy", "retry_promotion"]));
+    expect(V1_OPERATIONS.map((o) => o.name)).not.toContain("deal_week");
+    const handler = async () => ({ ok: true });
+    const served = withHandlers({ deal_week: handler });
+    expect(served.find((o) => o.name === "deal_week")?.handler).toBe(handler);
+    expect(served.map((o) => o.name)).not.toContain("ask_house");
+    expect(CONTRACT_OPERATIONS).toHaveLength(V1_OPERATIONS.length + HANDLED.length);
   });
 
   it("reads a query string by the operation's input types", () => {

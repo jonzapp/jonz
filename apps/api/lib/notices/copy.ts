@@ -1,4 +1,5 @@
-import { Notice, type Notice as NoticeT } from "@app/core";
+import { Notice, noticeFromRow, noticeState, type Database, type Notice as NoticeT } from "@app/core";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
 // The copy of the notices kept outside Supabase, in Vercel Global Config
@@ -59,4 +60,25 @@ export async function writeCopy(notices: NoticeT[], now: Date): Promise<void> {
     signal: AbortSignal.timeout(5000),
   });
   if (!response.ok) throw new Error(`Global Config refused the notices copy (${response.status})`);
+}
+
+/**
+ * Brings the copy up to date from the database, read as the owner (who reads
+ * every notice): the ones on now or starting later, newest first. "closed"
+ * when there is no store to write to; throws when it can't be read or saved.
+ */
+export async function copyNotices(db: SupabaseClient<Database>, now: Date): Promise<"copied" | "closed"> {
+  if (!canWriteCopy()) return "closed";
+  const { data, error } = await db
+    .from("notices")
+    .select("id, kind, title, body, link_label, link_url, starts_at, ends_at")
+    .order("starts_at", { ascending: false })
+    .limit(50);
+  if (error || !data) throw new Error("The notices couldn't be read. Try again.");
+  const notices = data
+    .map(noticeFromRow)
+    .filter((notice): notice is NoticeT => notice !== null && noticeState(notice, now) !== "ended")
+    .slice(0, 20);
+  await writeCopy(notices, now);
+  return "copied";
 }

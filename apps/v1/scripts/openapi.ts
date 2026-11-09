@@ -5,6 +5,6 @@ import { writeFileSync } from "node:fs";
 
 import { openApi } from "@app/server";
 
-import { V1_OPERATIONS } from "../src/operations";
+import { CONTRACT_OPERATIONS } from "../src/operations";
 
-writeFileSync(new URL("../openapi.json", import.meta.url), `${JSON.stringify(openApi(V1_OPERATIONS), null, 2)}\n`);
+writeFileSync(new URL("../openapi.json", import.meta.url), `${JSON.stringify(openApi(CONTRACT_OPERATIONS), null, 2)}\n`);
