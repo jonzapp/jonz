@@ -180,6 +180,41 @@ export function ArticleOutline() {
   );
 }
 
+/** The owner's Overview: what needs you and the numbers; beside them on a laptop, how things are right now. */
+export function OverviewOutline() {
+  return (
+    <Spread
+      main={
+        <>
+          <OutlineGroup rows={3} lead="square" />
+          <OutlinePlate height={2 * (ROW_MIN + SPACE.xl)} />
+        </>
+      }
+      side={<OutlineGroup rows={4} lead="none" end />}
+    />
+  );
+}
+
+/**
+ * A side panel or a sheet (an owner's house or report, Reset, Delete
+ * account): its heading and lead line, then its sections of rows, and its
+ * button when it has one.
+ */
+export function PanelOutline({ sections = [3, 2], button = false }: { sections?: readonly number[]; button?: boolean }) {
+  return (
+    <OutlineStack gap={SPACE.xl}>
+      <View style={{ gap: SPACE.sm }}>
+        <OutlineBar width="50%" height={OUTLINE.title + SPACE.sm} onCard={false} />
+        <OutlineBar width="70%" height={OUTLINE.meta} onCard={false} />
+      </View>
+      {sections.map((rows, i) => (
+        <OutlineGroup key={i} rows={rows} />
+      ))}
+      {button ? <OutlineButton /> : null}
+    </OutlineStack>
+  );
+}
+
 /** The front door's sign for a link (a join or offer link): the sign, a sentence, the way in. */
 export function DoorOutline() {
   return (

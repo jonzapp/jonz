@@ -21,7 +21,7 @@ import { ButtonRow } from '@/components/button-row';
 import { ConfirmSheet } from '@/components/confirm-sheet';
 import { EmptyState } from '@/components/empty-state';
 import { Group } from '@/components/group';
-import { ReadFailed, Reading } from '@/components/read-state';
+import { ReadFailed } from '@/components/read-state';
 import { Row } from '@/components/row';
 import { Columns, Screen, useColumns } from '@/components/screen';
 import { Section } from '@/components/section';
@@ -31,6 +31,8 @@ import { TitleBar } from '@/components/title-bar';
 import { useToast } from '@/components/toast';
 import { useOwnerMay } from '@/components/admin/use-owner-may';
 import { FORM_MAX, INSET, SPACE } from '@/theme';
+import { Waiting } from '@/components/waiting';
+import { PanelOutline } from '@/components/page-outlines';
 
 /**
  * One promotion: what it gives and who can use it, its link to copy or
@@ -45,7 +47,7 @@ export default function PromotionPage() {
   return (
     <Screen spreads bar={<TitleBar title={title} back={'/admin/promotions' as never} backLabel={PROMOTIONS_COPY.page} />} testID="admin-promotion">
       {read.isPending ? (
-        <Reading />
+        <Waiting ready={false} outline={<PanelOutline sections={[3, 2]} button />} />
       ) : read.isError ? (
         <ReadFailed onRetry={() => void read.refetch()} />
       ) : read.data === null ? (

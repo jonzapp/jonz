@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { AccessibilityInfo, Animated, Easing, Platform, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, Animated, Easing, Platform, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { useWaitShown } from '@/hooks/use-wait-shown';
 import { DIM, PULSE, SEARCH_LINE, useTheme } from '@/theme';
@@ -64,10 +64,21 @@ export function SearchLine({ searching, label, testID = 'search-line' }: { searc
  * A list's old rows while a new search reads: dimmed, after WAIT_DELAY, so
  * they don't pass for the answer; you keep your place.
  */
-export function Dimmed({ searching, children, testID }: { searching: boolean; children: ReactNode; testID?: string }) {
+export function Dimmed({
+  searching,
+  children,
+  style,
+  testID,
+}: {
+  searching: boolean;
+  children: ReactNode;
+  /** How it lays out what it holds (a list's gap), as the parent did. */
+  style?: StyleProp<ViewStyle>;
+  testID?: string;
+}) {
   const shown = useWaitShown(searching);
   return (
-    <View testID={testID} style={shown ? styles.dim : undefined}>
+    <View testID={testID} style={[style, shown ? styles.dim : undefined]}>
       {children}
     </View>
   );

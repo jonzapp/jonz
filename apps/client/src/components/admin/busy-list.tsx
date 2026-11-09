@@ -23,11 +23,14 @@ import { SmartSearch } from '@/components/admin/smart-search';
 import { EmptyState } from '@/components/empty-state';
 import { Group } from '@/components/group';
 import { ListFoot, nearEnd, type ListMore } from '@/components/list-foot';
-import { ReadFailed, Reading } from '@/components/read-state';
+import { OutlineBar, OutlineRows } from '@/components/outline';
+import { ReadFailed } from '@/components/read-state';
 import { useColumns } from '@/components/screen';
+import { Dimmed, SearchLine } from '@/components/search-line';
 import { Meta } from '@/components/text';
 import { TextButton } from '@/components/text-button';
-import { SPACE, useTheme } from '@/theme';
+import { Waiting } from '@/components/waiting';
+import { OUTLINE, SPACE, useTheme } from '@/theme';
 
 /** A page of a busy list, and whether there's another after it. */
 export interface ListPage<T> {
@@ -96,6 +99,8 @@ export function useBusyList<T, C>(source: BusyListSource<T, C>) {
     list,
     items: list.data?.pages.flatMap((page) => page.items) ?? [],
     count: count.data ?? null,
+    /** A new search or filter is reading: the last one's rows and count are still shown. */
+    searching: list.isPlaceholderData || count.isPlaceholderData,
     more,
     narrowed: listQueryIsSet(query, defaultWhen),
     /** The Screen's onNearEnd, once the first page is in. */
@@ -143,25 +148,47 @@ export function BusyListView<T>({
   const table = wide && !busy.list.isPending && !busy.list.isError && busy.items.length > 0;
   const head = (
     <>
-      <SmartSearch
-        query={busy.query}
-        facets={busy.facets}
-        onChange={busy.setQuery}
-        placeholder={placeholder}
-        recentKey={`admin-recent-${name}`}
-        defaultWhen={busy.defaultWhen}
-        when={busy.when}
-        testID={`${name}-search`}
-      />
+      {/* The search box with its line under it, as one: the line takes no gap of its own. */}
+      <View>
+        <SmartSearch
+          query={busy.query}
+          facets={busy.facets}
+          onChange={busy.setQuery}
+          placeholder={placeholder}
+          recentKey={`admin-recent-${name}`}
+          defaultWhen={busy.defaultWhen}
+          when={busy.when}
+          testID={`${name}-search`}
+        />
+        <SearchLine searching={busy.searching} label={LIST_COPY.searching} testID={`${name}-search-line`} />
+      </View>
       <View style={styles.count} testID={`${name}-count`}>
-        <Meta>{busy.count === null ? ' ' : noun(listCount(busy.count, false))}</Meta>
+        {busy.count === null ? (
+          // The count's room while it's first read, in outline.
+          <OutlineBar width={120} height={OUTLINE.meta} onCard={false} />
+        ) : (
+          <Dimmed searching={busy.searching}>
+            <Meta>{noun(listCount(busy.count, false))}</Meta>
+          </Dimmed>
+        )}
         {busy.narrowed ? <TextButton label={LIST_COPY.clear} onPress={() => busy.show({})} testID={`${name}-clear`} /> : null}
       </View>
     </>
   );
 
   let body: ReactNode;
-  if (busy.list.isPending) body = <Reading />;
+  if (busy.list.isPending)
+    body = (
+      <Waiting
+        ready={false}
+        label={LIST_COPY.reading}
+        outline={
+          <Group>
+            <OutlineRows count={8} lead={wide ? 'none' : 'circle'} end={wide} />
+          </Group>
+        }
+      />
+    );
   else if (busy.list.isError) body = <ReadFailed onRetry={() => void busy.list.refetch()} />;
   else if (busy.items.length === 0)
     body = busy.narrowed ? (
@@ -194,7 +221,10 @@ export function BusyListView<T>({
         {head}
         {table ? <ListTableHead columns={columns} testID={`${name}-table-head`} /> : null}
       </View>
-      {table ? <View style={styles.joined}>{body}</View> : body}
+      {/* A new search's rows on their way: the last ones dimmed, so they don't pass for the answer. */}
+      <Dimmed searching={busy.searching} style={styles.list}>
+        {table ? <View style={styles.joined}>{body}</View> : body}
+      </Dimmed>
     </View>
   );
 }

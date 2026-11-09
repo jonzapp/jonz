@@ -4,16 +4,6 @@
       "count": 1
     }
   },
-  "src/app/admin/_layout.tsx": {
-    "jonz/no-bare-spinner": {
-      "count": 1
-    }
-  },
-  "src/app/admin/audit/[id].tsx": {
-    "jonz/no-bare-spinner": {
-      "count": 1
-    }
-  },
   "src/app/admin/deletions.tsx": {
     "jonz/busy-not-disabled": {
       "count": 3
@@ -24,17 +14,9 @@
       "count": 2
     }
   },
-  "src/app/admin/overview.tsx": {
-    "jonz/no-bare-spinner": {
-      "count": 1
-    }
-  },
   "src/app/admin/promotions/[id].tsx": {
     "jonz/busy-not-disabled": {
       "count": 2
-    },
-    "jonz/no-bare-spinner": {
-      "count": 1
     }
   },
   "src/app/admin/promotions/index.tsx": {
@@ -75,15 +57,7 @@
       "count": 1
     }
   },
-  "src/components/admin/busy-list.tsx": {
-    "jonz/no-bare-spinner": {
-      "count": 1
-    }
-  },
   "src/components/admin/code-gate.tsx": {
-    "jonz/no-bare-spinner": {
-      "count": 1
-    },
     "jonz/no-raw-type-size": {
       "count": 2
     },
@@ -94,9 +68,6 @@
   "src/components/admin/house-panel.tsx": {
     "jonz/busy-not-disabled": {
       "count": 2
-    },
-    "jonz/no-bare-spinner": {
-      "count": 1
     }
   },
   "src/components/admin/list-table.tsx": {
@@ -117,9 +88,6 @@
   "src/components/admin/report-panel.tsx": {
     "jonz/busy-not-disabled": {
       "count": 2
-    },
-    "jonz/no-bare-spinner": {
-      "count": 1
     }
   },
   "src/components/admin/smart-search.tsx": {

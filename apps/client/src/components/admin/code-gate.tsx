@@ -10,12 +10,15 @@ import Svg, { Path } from 'react-native-svg';
 import { checkCode, enrollFactor, verifiedFactor } from '@/api/owner';
 import { Button } from '@/components/button';
 import { CodeBoxes } from '@/components/code-boxes';
-import { ReadFailed, Reading } from '@/components/read-state';
+import { ReadFailed } from '@/components/read-state';
 import { Chip } from '@/components/status-mark';
 import { Body, Meta, Title } from '@/components/text';
 import { TextButton } from '@/components/text-button';
 import { Wordmark } from '@/components/wordmark';
 import { CONTENT_MAX, FONT, GUTTER, INSET, SPACE, TABULAR, useTheme } from '@/theme';
+import { Waiting } from '@/components/waiting';
+import { OutlinePlate } from '@/components/outline';
+import { DoorOutline } from '@/components/page-outlines';
 
 /**
  * The second lock on the admin page: the owner's code from an authenticator
@@ -25,7 +28,7 @@ import { CONTENT_MAX, FONT, GUTTER, INSET, SPACE, TABULAR, useTheme } from '@/th
  */
 export function CodeGate({ onPassed }: { onPassed: () => void }) {
   const factor = useQuery({ queryKey: ['owner-factor'], queryFn: verifiedFactor, staleTime: Infinity });
-  if (factor.isPending) return <Reading />;
+  if (factor.isPending) return <Waiting ready={false} outline={<DoorOutline />} />;
   if (factor.isError) return <ReadFailed onRetry={() => void factor.refetch()} />;
   return factor.data ? <EnterCode factorId={factor.data} onPassed={onPassed} /> : <AddAuthenticator onPassed={onPassed} />;
 }
@@ -104,7 +107,7 @@ function AddAuthenticator({ onPassed }: { onPassed: () => void }) {
   const factor = useQuery({ queryKey: ['owner-enroll'], queryFn: enrollFactor, staleTime: Infinity, gcTime: 0 });
   return (
     <Frame title={ADMIN_COPY.lockTitle} body={ADMIN_COPY.lockBody}>
-      {factor.isPending ? <Reading /> : null}
+      {factor.isPending ? <Waiting ready={false} outline={<OutlinePlate height={QR_SIZE} />} /> : null}
       {factor.isError ? <ReadFailed onRetry={() => void factor.refetch()} /> : null}
       {factor.data ? (
         <>

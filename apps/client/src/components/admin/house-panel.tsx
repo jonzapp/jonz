@@ -1,9 +1,9 @@
-import { DELETE_HOUSE_COPY, FOCUS_SHELL_COPY, HOUSES_COPY, houseFacts, houseLead, passDetail, personMeta, type HouseDetail } from '@app/core';
+import { humanError, DELETE_HOUSE_COPY, FOCUS_SHELL_COPY, HOUSES_COPY, houseFacts, houseLead, passDetail, personMeta, type HouseDetail } from '@app/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { MegaphoneIcon } from 'lucide-react-native';
 import { useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { deleteHouse, ownerHouse } from '@/api/houses';
 import { useOwnerMay } from '@/components/admin/use-owner-may';
@@ -15,10 +15,13 @@ import { Field } from '@/components/field';
 import { Row, RowIcon } from '@/components/row';
 import { Section } from '@/components/section';
 import { ChoiceRow } from '@/components/setup/choice-row';
+import { PanelOutline } from '@/components/page-outlines';
+import { ReadFailed } from '@/components/read-state';
 import { Sheet } from '@/components/sheet';
 import { Lead, Meta } from '@/components/text';
 import { useToast } from '@/components/toast';
-import { SPACE, useTheme } from '@/theme';
+import { Waiting } from '@/components/waiting';
+import { SPACE } from '@/theme';
 
 /** The Houses list's reads, so the panel and the list share their cache. */
 export const HOUSES_KEY = ['owner-houses'] as const;
@@ -30,10 +33,9 @@ export const HOUSES_KEY = ['owner-houses'] as const;
  * for an owner who may (houses:write).
  */
 export function HousePanel({ id }: { id: string }) {
-  const { colors } = useTheme();
   const house = useQuery({ queryKey: [...HOUSES_KEY, 'house', id], queryFn: () => ownerHouse(id) });
-  if (house.isPending) return <ActivityIndicator color={colors.mutedForeground} style={styles.wait} />;
-  if (house.isError) return <Alert message={house.error.message} testID="house-panel-problem" />;
+  if (house.isPending) return <Waiting ready={false} outline={<PanelOutline sections={[4, 3]} button />} />;
+  if (house.isError) return <ReadFailed message={humanError(house.error)} onRetry={() => void house.refetch()} testID="house-panel-problem" />;
   if (!house.data) return <Meta>{HOUSES_COPY.gone}</Meta>;
   return <HouseBody house={house.data} />;
 }
@@ -124,7 +126,6 @@ function DeleteHouse({ house }: { house: HouseDetail }) {
 }
 
 const styles = StyleSheet.create({
-  wait: { marginTop: SPACE.xl },
   panel: { gap: SPACE.xl },
   head: { gap: SPACE.xs },
 });

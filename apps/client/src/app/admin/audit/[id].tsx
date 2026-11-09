@@ -4,11 +4,13 @@ import { router, useLocalSearchParams } from 'expo-router';
 
 import { auditEntry } from '@/api/owner';
 import { AuditDetail } from '@/components/admin/audit-entry';
-import { ReadFailed, Reading } from '@/components/read-state';
+import { ReadFailed } from '@/components/read-state';
 import { Screen } from '@/components/screen';
 import { Meta } from '@/components/text';
 import { TitleBar } from '@/components/title-bar';
 import { useMembership } from '@/hooks/use-membership';
+import { Waiting } from '@/components/waiting';
+import { PanelOutline } from '@/components/page-outlines';
 
 /** One audit entry as its own page: a phone's way in from the log. */
 export default function AuditEntryPage() {
@@ -18,7 +20,7 @@ export default function AuditEntryPage() {
   return (
     <Screen bar={<TitleBar title={ADMIN_COPY.entry} back="/admin/audit" backLabel="Audit log" />} testID="admin-audit-entry">
       {entry.isPending ? (
-        <Reading />
+        <Waiting ready={false} outline={<PanelOutline sections={[4]} />} />
       ) : entry.isError ? (
         <ReadFailed onRetry={() => void entry.refetch()} />
       ) : entry.data ? (
