@@ -87,16 +87,22 @@ export function Button({
   // It can't be pressed again from the tap, but looks busy only after
   // WAIT_DELAY (and then for at least WAIT_MIN), so a fast answer never flashes.
   const showing = useWaitShown(busy);
-  // Tell the row this one is busy, so the others go pale and wait.
+  // Tell the row this one is busy, so the others can't be pressed at once, and go pale once it looks busy.
   const setRowBusy = row?.setBusy;
   useEffect(() => {
+    if (!busy || !setRowBusy) return;
+    setRowBusy(true, false);
+    return () => setRowBusy(false, false);
+  }, [busy, setRowBusy]);
+  useEffect(() => {
     if (!showing || !setRowBusy) return;
-    setRowBusy(true);
-    return () => setRowBusy(false);
+    setRowBusy(true, true);
+    return () => setRowBusy(false, true);
   }, [showing, setRowBusy]);
-  // Pale: switched off, or waiting while another button in the row is busy.
-  const pale = disabled || (!showing && row?.busy === true);
-  const off = pale || busy || showing;
+  // Pale: switched off, or waiting while another button in the row looks busy.
+  const mine = busy || showing;
+  const pale = disabled || (!mine && row?.busyShown === true);
+  const off = pale || mine || row?.busy === true;
   const words = showing && busyLabel ? busyLabel : label;
   const base = chosen
     ? { background: colors.secondary, ink: colors.foreground, edge: colors.foreground, icon: colors.foreground }

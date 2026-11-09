@@ -39,6 +39,10 @@ describe('a button waiting on the server', () => {
   it('keeps its colour while the other buttons in its row go pale', async () => {
     const cancel = jest.fn();
     await render(<Pair busy onCancel={cancel} />);
+    // From the tap, nothing else in the row can be pressed, though it isn't pale yet.
+    expect(opacity('cancel')).toBe(1);
+    await fireEvent.press(screen.getByTestId('cancel'));
+    expect(cancel).not.toHaveBeenCalled();
     await act(() => jest.advanceTimersByTime(WAIT_DELAY));
     expect(opacity('leave')).toBe(1);
     expect(opacity('cancel')).toBe(0.5);
