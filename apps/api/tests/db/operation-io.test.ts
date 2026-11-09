@@ -31,7 +31,11 @@ function zodKind(schema: z.ZodType): Kind {
       const kinds = [...new Set(any.filter((x) => x.type !== "null").map(describe))];
       return kinds.length === 1 ? kinds[0] : "json";
     }
-    if (s.type === "array") return `${describe(s.items as Record<string, unknown>)}[]`;
+    if (s.type === "array") {
+      // A list of objects goes as one json value (jsonb), not a Postgres array.
+      const item = describe(s.items as Record<string, unknown>);
+      return item === "json" ? "json" : `${item}[]`;
+    }
     if (s.format === "uuid") return "uuid";
     if (s.format === "date") return "date";
     if (s.format === "date-time") return "datetime";

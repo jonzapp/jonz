@@ -129,7 +129,7 @@ comment on function public.john_list(uuid) is 'The house''s list of Johns, oldes
 -- Newest first, a page at a time: rows after the cursor (p_cursor_at, p_cursor_id).
 create function public.house_wall(
   p_house uuid,
-  p_limit integer,
+  p_limit integer default 50,
   p_cursor_at timestamptz default null,
   p_cursor_id uuid default null
 )
