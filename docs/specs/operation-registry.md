@@ -54,6 +54,16 @@ Every house write is something Ask Jonz can do, built from the registry (`packag
 
 A tool is given only to someone with the operation's permission. When Jonz calls one, the API (`apps/api/lib/moves/ask-operations.ts`) finds the one row each ref stands for in this house, as the person, so a ref only reaches what they can see, and checks the whole input against `OPERATION_IO` before the move goes on the card with the names of what it touches. Nothing is done before they tap; the card (`MovesCard`, `apps/client/src/api/operations.ts`) makes the same call the app's own button does, which checks again. That map is exhaustive, so a new house write doesn't build until it says which call does it. Every permission says how Ask Jonz handles it (`ASK_COVERAGE`): by reading, or on the card.
 
+## MCP
+
+`api.jonz.app/mcp` (`apps/api/lib/mcp/server.ts`, served by `app/mcp/route.ts`) is Jonz for MCP clients, on the MCP TypeScript SDK v2 (`@modelcontextprotocol/server`).
+
+- One tool per operation /v1 serves (`V1_OPERATIONS`), named after it, its input the operation's own, its description the registry's `about`. Reads are marked read-only.
+- Each call runs through the same executor as /v1 (`v1Instance()`, one pool per instance), with `via: "mcp"`: the same token check, rate limit, permission, House Pass and audit row. A refusal is a tool error starting with its problem code (`forbidden: …`).
+- Stateless: each request gets a fresh server instance and nothing is kept between requests, so any instance answers any request.
+- Signing in: with no bearer token it answers 401 with `WWW-Authenticate: Bearer resource_metadata=…`, and `/.well-known/oauth-protected-resource/mcp` names Supabase Auth as the authorization server and the permission strings as scopes (RFC 9728).
+- Operations marked `destructive` aren't offered yet: they'll need the person's approval in Jonz first (URL elicitation), which comes next.
+
 ## How it's held to the truth
 
 - `supabase/checks/registry.sql` is generated from the registry. A core test keeps it equal; refresh it with `npx vitest run -u` in `packages/core`.
@@ -64,6 +74,7 @@ A tool is given only to someone with the operation's permission. When Jonz calls
   - a table grant (whole table or some columns, signed in or out) isn't listed.
 - `apps/api/tests/unit/operations.test.ts` fails on an API route that is in neither list, and on a table the app reads or changes (`.from('…')`) that no operation names.
 - `packages/core/src/ask-coverage.test.ts`: every house write is in exactly one of the card's three lists, every id a card operation takes has a ref or is filled in, no card operation needs a photo, and kept settings are columns their row has. `apps/api/tests/db/ask-card-operations.test.ts` puts moves on the card against a real house: refs become this house's ids, unchanged settings come from the row, a ref from another house or a move the person may not make is refused, and nothing is written.
+- `apps/api/tests/unit/mcp.test.ts`: one MCP tool per served operation and none that's destructive, a call reaching the executor as the caller by MCP, input checked first, a refusal as a tool error, and the sign-in challenge. `apps/api/tests/db/mcp.test.ts` runs MCP calls on two instances with their own pools against the real database.
 - `packages/core/src/operation-io.test.ts`: one /v1 route each, GET only for reads, every id a path names is in the input, admin pages only under /v1/admin, ids end in `Id`, and every schema turns into JSON Schema.
 - `apps/api/tests/db/operation-io.test.ts` holds each contract to the database:
   - an operation that runs its function straight takes exactly its arguments, by name, type and whether they can be left out, as PostgREST describes them;
