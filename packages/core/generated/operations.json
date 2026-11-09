@@ -11,6 +11,7 @@
         "by": "check"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/houses/{houseId}/can",
@@ -56,6 +57,7 @@
         "by": "check"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/houses/{houseId}/permissions",
@@ -99,6 +101,7 @@
         "by": "check"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/houses/{houseId}/member",
@@ -139,6 +142,7 @@
         "by": "check"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/people/{userId}/shares-house",
@@ -179,6 +183,7 @@
         "by": "check"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/houses/{houseId}/kids/{kidId}/runs-for",
@@ -226,6 +231,7 @@
         "by": "check"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/proofs/can-upload",
@@ -263,6 +269,7 @@
         "by": "check"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/admin/can",
@@ -300,6 +307,7 @@
         "by": "check"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/admin/owner",
@@ -328,6 +336,7 @@
         "by": "check"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/admin/role",
@@ -367,6 +376,7 @@
         "by": "check"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/admin/permissions",
@@ -398,6 +408,7 @@
         "by": "check"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/admin/status",
@@ -461,6 +472,7 @@
         "permission": "account:write_own"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "POST",
       "path": "/v1/houses",
@@ -531,6 +543,7 @@
         "permission": "account:write_own"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "POST",
       "path": "/v1/houses/{fromId}/next",
@@ -601,6 +614,7 @@
         "permission": "account:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/houses/by-code/{code}",
@@ -699,6 +713,7 @@
         "permission": "account:write_own"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "POST",
       "path": "/v1/houses/by-code/{code}/join",
@@ -740,6 +755,7 @@
         "permission": "account:write_own"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "PATCH",
       "path": "/v1/me/photo",
@@ -781,6 +797,7 @@
         "permission": "account:write_own"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "POST",
       "path": "/v1/me/away",
@@ -858,6 +875,7 @@
         "permission": "account:write_own"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "DELETE",
       "path": "/v1/me/away/{awayId}",
@@ -899,6 +917,7 @@
         "permission": "account:write_own"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "PATCH",
       "path": "/v1/me/moving-out",
@@ -946,6 +965,7 @@
         "permission": "account:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/me/moving-on",
@@ -1040,6 +1060,7 @@
         "permission": "account:write_own"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": true,
       "method": "POST",
       "path": "/v1/me/pass/leave",
@@ -1069,6 +1090,7 @@
         "permission": "account:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/me/deletion/preview",
@@ -1128,6 +1150,7 @@
         "permission": "account:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/me/deletion",
@@ -1178,6 +1201,7 @@
         "permission": "account:write_own"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": true,
       "method": "POST",
       "path": "/v1/me/deletion",
@@ -1209,6 +1233,7 @@
         "permission": "account:write_own"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "DELETE",
       "path": "/v1/me/deletion",
@@ -1238,6 +1263,7 @@
         "permission": "account:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/me/reports",
@@ -1324,6 +1350,7 @@
         "permission": "account:write_own"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "POST",
       "path": "/v1/me/reports",
@@ -1428,6 +1455,7 @@
         "permission": "account:write_own"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "POST",
       "path": "/v1/me/reports/{reportId}/messages",
@@ -1485,6 +1513,7 @@
         "permission": "account:write_own"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "POST",
       "path": "/v1/me/reports/{reportId}/seen",
@@ -1526,6 +1555,7 @@
         "permission": "account:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/me/reports/{reportId}",
@@ -1712,6 +1742,7 @@
         "permission": "account:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/me/house",
@@ -1768,6 +1799,7 @@
         "permission": "account:write_own"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "PATCH",
       "path": "/v1/me/name",
@@ -1804,6 +1836,7 @@
         "permission": "account:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/me/notifications",
@@ -1891,6 +1924,7 @@
         "permission": "account:write_own"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "PATCH",
       "path": "/v1/me/notifications",
@@ -1975,6 +2009,7 @@
         "permission": "account:write_own"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "POST",
       "path": "/v1/me/push-devices",
@@ -2018,6 +2053,7 @@
         "permission": "account:write_own"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "DELETE",
       "path": "/v1/me/push-devices",
@@ -2053,6 +2089,7 @@
         "permission": "account:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/houses/{houseId}/me/ask-chats",
@@ -2112,6 +2149,7 @@
         "permission": "account:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/me/ask-chats/{chatId}",
@@ -2273,6 +2311,7 @@
         "permission": "account:write_own"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "POST",
       "path": "/v1/houses/{houseId}/me/ask-chats",
@@ -2423,6 +2462,7 @@
         "permission": "account:write_own"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "PATCH",
       "path": "/v1/me/ask-chats/{chatId}",
@@ -2572,6 +2612,7 @@
         "permission": "account:write_own"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": true,
       "method": "DELETE",
       "path": "/v1/me/ask-chats/{chatId}",
@@ -2609,6 +2650,7 @@
         "permission": "account:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/notices",
@@ -2689,6 +2731,7 @@
         "permission": "history:read"
       },
       "entitlement": "history",
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/houses/{houseId}/history",
@@ -2878,6 +2921,7 @@
         "permission": "house:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/houses/{houseId}/ask/usage",
@@ -2981,6 +3025,7 @@
         "permission": "house:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "POST",
       "path": "/v1/houses/{houseId}/catch-up",
@@ -3024,6 +3069,7 @@
         "permission": "house:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/houses/{houseId}/today",
@@ -4073,6 +4119,7 @@
         "permission": "johns:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/houses/{houseId}/johns",
@@ -4297,6 +4344,7 @@
         "permission": "wall:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/houses/{houseId}/wall",
@@ -4479,6 +4527,7 @@
         "permission": "away:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/houses/{houseId}/away",
@@ -4558,6 +4607,7 @@
         "permission": "weeks:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/houses/{houseId}/month/{month}",
@@ -4802,6 +4852,7 @@
         "permission": "weeks:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/houses/{houseId}/balances",
@@ -4870,6 +4921,7 @@
         "permission": "weeks:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/houses/{houseId}/record",
@@ -5176,6 +5228,7 @@
         "permission": "payments:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/houses/{houseId}/stake",
@@ -5327,6 +5380,7 @@
         "permission": "pocket_money:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/houses/{houseId}/pocket-money",
@@ -5439,6 +5493,7 @@
         "permission": "ticks:write_own"
       },
       "entitlement": "photos",
+      "entitlementWhen": "photoPath",
       "destructive": false,
       "method": "POST",
       "path": "/v1/assignments/{assignmentId}/done",
@@ -5484,6 +5539,7 @@
         "permission": "ticks:write_own"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "POST",
       "path": "/v1/assignments/{assignmentId}/undo",
@@ -5525,6 +5581,7 @@
         "permission": "ticks:write_own"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "POST",
       "path": "/v1/assignments/{assignmentId}/plan",
@@ -5573,6 +5630,7 @@
         "permission": "ticks:write_own"
       },
       "entitlement": "photos",
+      "entitlementWhen": "photoPath",
       "destructive": false,
       "method": "POST",
       "path": "/v1/assignments/{assignmentId}/roll-call",
@@ -5646,6 +5704,7 @@
         "permission": "profile:write_own"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "PATCH",
       "path": "/v1/houses/{houseId}/me/prefs",
@@ -5737,6 +5796,7 @@
         "permission": "perks:write_own"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "POST",
       "path": "/v1/assignments/{assignmentId}/immunity",
@@ -5778,6 +5838,7 @@
         "permission": "perks:write_own"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "POST",
       "path": "/v1/assignments/{mine}/swap-token",
@@ -5825,6 +5886,7 @@
         "permission": "swaps:write_own"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "POST",
       "path": "/v1/swaps",
@@ -5884,6 +5946,7 @@
         "permission": "swaps:write_own"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "POST",
       "path": "/v1/swaps/{offerId}/answer",
@@ -5930,6 +5993,7 @@
         "permission": "disputes:write_own"
       },
       "entitlement": "photos",
+      "entitlementWhen": "photoPath",
       "destructive": false,
       "method": "POST",
       "path": "/v1/disputes/{disputeId}/answer",
@@ -5976,6 +6040,7 @@
         "permission": "history:write_own"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "POST",
       "path": "/v1/actions/{actionId}/undo",
@@ -6017,6 +6082,7 @@
         "permission": "history:write_own"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "POST",
       "path": "/v1/me/actions/undo-latest",
@@ -6068,6 +6134,7 @@
         "permission": "swaps:write_own"
       },
       "entitlement": "photos",
+      "entitlementWhen": "photoPath",
       "destructive": false,
       "method": "POST",
       "path": "/v1/assignments/{assignmentId}/cover",
@@ -6113,6 +6180,7 @@
         "permission": "swaps:write_own"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "POST",
       "path": "/v1/assignments/{assignmentId}/cover/hold",
@@ -6156,6 +6224,7 @@
         "permission": "swaps:write_own"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "DELETE",
       "path": "/v1/assignments/{assignmentId}/cover",
@@ -6197,6 +6266,7 @@
         "permission": "flags:write_own"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "POST",
       "path": "/v1/johns/{johnId}/flags",
@@ -6252,6 +6322,7 @@
         "permission": "disputes:write_own"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "POST",
       "path": "/v1/assignments/{assignmentId}/disputes",
@@ -6309,6 +6380,7 @@
         "permission": "disputes:write_own"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "POST",
       "path": "/v1/disputes/{disputeId}/votes",
@@ -6364,6 +6436,7 @@
         "permission": "payments:write_own"
       },
       "entitlement": "stake",
+      "entitlementWhen": null,
       "destructive": true,
       "method": "POST",
       "path": "/v1/houses/{houseId}/payments",
@@ -6422,6 +6495,7 @@
         "permission": "house:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "POST",
       "path": "/v1/houses/{houseId}/ask",
@@ -7367,6 +7441,7 @@
         "permission": "billing:write_own"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "POST",
       "path": "/v1/houses/{houseId}/pass/checkout",
@@ -7425,6 +7500,7 @@
         "permission": "billing:write_own"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "POST",
       "path": "/v1/houses/{houseId}/pass/billing",
@@ -7469,6 +7545,7 @@
         "permission": "wall:write_own"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "POST",
       "path": "/v1/events/{eventId}/reactions",
@@ -7516,6 +7593,7 @@
         "permission": "wall:write_own"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "DELETE",
       "path": "/v1/events/{eventId}/reactions/{kind}",
@@ -7564,6 +7642,7 @@
         "permission": "johns:write"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "POST",
       "path": "/v1/houses/{houseId}/johns",
@@ -7750,6 +7829,7 @@
         "permission": "johns:write"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "POST",
       "path": "/v1/houses/{houseId}/johns/batch",
@@ -7952,6 +8032,7 @@
         "permission": "johns:write"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "PATCH",
       "path": "/v1/johns/{johnId}",
@@ -8137,6 +8218,7 @@
         "permission": "johns:write"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "DELETE",
       "path": "/v1/johns/{johnId}",
@@ -8174,6 +8256,7 @@
         "permission": "house:write"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "PATCH",
       "path": "/v1/houses/{houseId}/rules",
@@ -8302,6 +8385,7 @@
         "permission": "house:write"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "PATCH",
       "path": "/v1/houses/{houseId}/deal-mode",
@@ -8347,6 +8431,7 @@
         "permission": "ticks:write"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "POST",
       "path": "/v1/assignments/{assignmentId}/ok",
@@ -8402,6 +8487,7 @@
         "permission": "ticks:write"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "POST",
       "path": "/v1/assignments/{assignmentId}/board-tick",
@@ -8443,6 +8529,7 @@
         "permission": "flags:write_own"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "DELETE",
       "path": "/v1/assignments/{assignmentId}/flag",
@@ -8484,6 +8571,7 @@
         "permission": "groups:write"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "POST",
       "path": "/v1/houses/{houseId}/groups",
@@ -8553,6 +8641,7 @@
         "permission": "groups:write"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": true,
       "method": "DELETE",
       "path": "/v1/groups/{groupId}",
@@ -8594,6 +8683,7 @@
         "permission": "house:write"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": true,
       "method": "POST",
       "path": "/v1/houses/{houseId}/join-code",
@@ -8635,6 +8725,7 @@
         "permission": "house:write"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": true,
       "method": "PATCH",
       "path": "/v1/houses/{houseId}/kind",
@@ -8694,6 +8785,7 @@
         "permission": "weeks:write"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "POST",
       "path": "/v1/houses/{houseId}/deal",
@@ -8744,6 +8836,7 @@
         "permission": "history:write"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": true,
       "method": "POST",
       "path": "/v1/houses/{houseId}/resets",
@@ -8947,6 +9040,7 @@
         "permission": "pocket_money:write"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": true,
       "method": "POST",
       "path": "/v1/houses/{houseId}/kids/{kidId}/pocket-money",
@@ -9003,6 +9097,7 @@
         "permission": "members:write"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "POST",
       "path": "/v1/houses/{houseId}/kids",
@@ -9067,6 +9162,7 @@
         "permission": "members:write_own"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": true,
       "method": "DELETE",
       "path": "/v1/houses/{houseId}/members/{userId}",
@@ -9115,6 +9211,7 @@
         "permission": "members:write"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": true,
       "method": "PATCH",
       "path": "/v1/houses/{houseId}/members/{userId}",
@@ -9172,6 +9269,7 @@
         "permission": "members:write"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": true,
       "method": "POST",
       "path": "/v1/houses/{houseId}/members/{toId}/hand-over",
@@ -9220,6 +9318,7 @@
         "permission": "admin:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/admin/overview",
@@ -9487,6 +9586,7 @@
         "permission": "admin:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/admin/houses/find",
@@ -9547,6 +9647,7 @@
         "permission": "admin:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/admin/houses",
@@ -9775,6 +9876,7 @@
         "permission": "admin:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/admin/houses/count",
@@ -9871,6 +9973,7 @@
         "permission": "admin:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/admin/houses/{houseId}",
@@ -10099,6 +10202,7 @@
         "permission": "admin:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/admin/people/find",
@@ -10182,6 +10286,7 @@
         "permission": "admin:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/admin/reports",
@@ -10416,6 +10521,7 @@
         "permission": "admin:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/admin/reports/count",
@@ -10510,6 +10616,7 @@
         "permission": "admin:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/admin/reports/{reportId}/same-as",
@@ -10589,6 +10696,7 @@
         "permission": "admin:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/admin/messages/find",
@@ -10732,6 +10840,7 @@
         "permission": "admin:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/admin/messages",
@@ -10908,6 +11017,7 @@
         "permission": "admin:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/admin/messages/count",
@@ -10986,6 +11096,7 @@
         "permission": "admin:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/admin/messages/reach",
@@ -11082,6 +11193,7 @@
         "permission": "admin:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/admin/promotions/{promotionId}",
@@ -11439,6 +11551,7 @@
         "permission": "admin:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/admin/promotions/find",
@@ -11668,6 +11781,7 @@
         "permission": "admin:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/admin/promotions",
@@ -11930,6 +12044,7 @@
         "permission": "admin:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/admin/promotions/count",
@@ -11982,6 +12097,7 @@
         "permission": "admin:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/admin/deletions/all",
@@ -12060,6 +12176,7 @@
         "permission": "admin:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/admin/deletions",
@@ -12218,6 +12335,7 @@
         "permission": "admin:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/admin/deletions/count",
@@ -12296,6 +12414,7 @@
         "permission": "admin:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "POST",
       "path": "/v1/admin/ask/turns",
@@ -12342,6 +12461,7 @@
         "permission": "admin:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "PATCH",
       "path": "/v1/admin/ask/turns/{turnId}",
@@ -12402,6 +12522,7 @@
         "permission": "admin:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "POST",
       "path": "/v1/admin/ask",
@@ -13201,6 +13322,7 @@
         "permission": "reports:write"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": true,
       "method": "POST",
       "path": "/v1/admin/reports/{reportId}/reply",
@@ -13258,6 +13380,7 @@
         "permission": "reports:write"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": true,
       "method": "POST",
       "path": "/v1/admin/reports/{reportId}/fixed",
@@ -13326,7 +13449,7 @@
     },
     {
       "name": "owner_open_report",
-      "about": "Open a report again",
+      "about": "Read a report in full, marking a new one open",
       "scope": "app",
       "effect": "write",
       "guard": {
@@ -13334,6 +13457,7 @@
         "permission": "reports:write"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "POST",
       "path": "/v1/admin/reports/{reportId}/open",
@@ -13650,6 +13774,7 @@
         "permission": "reports:write"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "PATCH",
       "path": "/v1/admin/reports/{reportId}",
@@ -13702,6 +13827,7 @@
         "permission": "reports:write"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "PATCH",
       "path": "/v1/admin/reports/{reportId}/same-as",
@@ -13764,6 +13890,7 @@
         "permission": "reports:write"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "POST",
       "path": "/v1/admin/reports/{reportId}/draft",
@@ -13898,6 +14025,7 @@
         "permission": "reports:write"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "PATCH",
       "path": "/v1/admin/drafts/{draftId}",
@@ -14046,6 +14174,7 @@
         "permission": "reports:write"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "PATCH",
       "path": "/v1/admin/drafts/{draftId}/state",
@@ -14092,6 +14221,7 @@
         "permission": "notices:write"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": true,
       "method": "POST",
       "path": "/v1/admin/notices",
@@ -14203,6 +14333,7 @@
         "permission": "notices:write"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "DELETE",
       "path": "/v1/admin/notices/{noticeId}",
@@ -14244,6 +14375,7 @@
         "permission": "notices:write"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "POST",
       "path": "/v1/admin/notices/copy",
@@ -14277,6 +14409,7 @@
         "permission": "messages:write"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": true,
       "method": "POST",
       "path": "/v1/admin/messages",
@@ -14401,6 +14534,7 @@
         "permission": "promotions:write"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": true,
       "method": "POST",
       "path": "/v1/admin/promotions",
@@ -14609,6 +14743,7 @@
         "permission": "promotions:write"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "POST",
       "path": "/v1/admin/promotions/{promotionId}/retry",
@@ -14657,6 +14792,7 @@
         "permission": "promotions:write"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": true,
       "method": "POST",
       "path": "/v1/admin/promotions/{promotionId}/stop",
@@ -14707,6 +14843,7 @@
         "permission": "promotions:write"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": true,
       "method": "POST",
       "path": "/v1/admin/promotions/{promotionId}/email",
@@ -14761,6 +14898,7 @@
         "permission": "deletions:write"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": true,
       "method": "DELETE",
       "path": "/v1/admin/people/{userId}",
@@ -14806,6 +14944,7 @@
         "permission": "deletions:write"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": true,
       "method": "POST",
       "path": "/v1/admin/deletions",
@@ -14851,6 +14990,7 @@
         "permission": "deletions:write"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "DELETE",
       "path": "/v1/admin/deletions/{userId}",
@@ -14896,6 +15036,7 @@
         "permission": "houses:write"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": true,
       "method": "DELETE",
       "path": "/v1/admin/houses/{houseId}",
@@ -14976,6 +15117,7 @@
         "permission": "admin:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/admin/notices",
@@ -15148,6 +15290,7 @@
         "permission": "admin:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/admin/notices/count",
@@ -15236,6 +15379,7 @@
         "permission": "admin:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/admin/audit",
@@ -15450,6 +15594,7 @@
         "permission": "admin:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/admin/audit/count",
@@ -15525,6 +15670,7 @@
         "permission": "admin:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/admin/audit/{entryId}",
@@ -15675,6 +15821,7 @@
         "permission": "admin:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/admin/ask-chats",
@@ -15724,6 +15871,7 @@
         "permission": "admin:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "GET",
       "path": "/v1/admin/ask-chats/{chatId}",
@@ -15885,6 +16033,7 @@
         "permission": "admin:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "POST",
       "path": "/v1/admin/ask-chats",
@@ -16028,6 +16177,7 @@
         "permission": "admin:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": false,
       "method": "PATCH",
       "path": "/v1/admin/ask-chats/{chatId}",
@@ -16177,6 +16327,7 @@
         "permission": "admin:read"
       },
       "entitlement": null,
+      "entitlementWhen": null,
       "destructive": true,
       "method": "DELETE",
       "path": "/v1/admin/ask-chats/{chatId}",

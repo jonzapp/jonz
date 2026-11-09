@@ -7,6 +7,7 @@ import {
   MESSAGE_LIMITS,
   NOTICE_KINDS,
   OWNER_ASK_COVERAGE,
+  ownerToolAbout,
   OWNER_PERMISSIONS,
   OWNER_REPLY_GUIDE,
   PASS_PURCHASES,
@@ -163,80 +164,82 @@ export type PromotionInput = z.infer<typeof PromotionInput>;
 /** Every write tool, by name: OWNER_ASK_COVERAGE says which permission gives each. */
 function writeTools(w: OwnerWrites): Record<string, ToolSet[string]> {
   const said = (r: EditResult) => r.said;
+  // Each starts with what its operation does, in the registry's words.
+  const about = (tool: string, more: string) => `${ownerToolAbout(tool)}. ${more}`;
   return {
     reply_to_report: tool({
-      description: "Put a reply to a report on the card: its sender gets it by push and email. Read the report first.",
+      description: about("reply_to_report", "Put a reply to a report on the card: its sender gets it by push and email. Read the report first."),
       inputSchema: z.object({ id: Id, body: z.string() }),
       execute: async ({ id, body }) => said(await w.replyToReport(id, body)),
     }),
     mark_report_fixed: tool({
-      description: "Put marking a report fixed on the card, with every report folded into it. tell: whoever sent them hears it's fixed, with the note.",
+      description: about("mark_report_fixed", "Put marking a report fixed on the card, with every report folded into it. tell: whoever sent them hears it's fixed, with the note."),
       inputSchema: z.object({ id: Id, note: z.string().describe("What was fixed, for them; may be empty."), tell: z.boolean() }),
       execute: async ({ id, note, tell }) => said(await w.markFixed(id, note, tell)),
     }),
     reopen_report: tool({
-      description: "Put opening a fixed report again on the card.",
+      description: about("reopen_report", "Put opening a fixed report again on the card."),
       inputSchema: z.object({ id: Id }),
       execute: async ({ id }) => said(await w.reopenReport(id)),
     }),
     set_same_as: tool({
-      description: "Put folding a report into the one that says the same thing on the card (mainId), or taking it back out (mainId null).",
+      description: about("set_same_as", "Put folding a report into the one that says the same thing on the card (mainId), or taking it back out (mainId null)."),
       inputSchema: z.object({ id: Id, mainId: z.string().nullable() }),
       execute: async ({ id, mainId }) => said(await w.sameAs(id, mainId)),
     }),
     save_notice: tool({
-      description: "Put a new notice, or a change to one, on the card.",
+      description: about("save_notice", "Put a new notice, or a change to one, on the card."),
       inputSchema: NoticeInput,
       execute: async (n) => said(await w.saveNotice(n)),
     }),
     end_notice: tool({
-      description: "Put ending a notice now on the card.",
+      description: about("end_notice", "Put ending a notice now on the card."),
       inputSchema: z.object({ id: Id }),
       execute: async ({ id }) => said(await w.endNotice(id)),
     }),
     send_message: tool({
-      description: "Put a message to a person, a house or everyone on the card, by push, the Wall and/or email.",
+      description: about("send_message", "Put a message to a person, a house or everyone on the card, by push, the Wall and/or email."),
       inputSchema: MessageInput,
       execute: async (m) => said(await w.sendMessage(m)),
     }),
     make_promotion: tool({
-      description: "Put a new promotion on the card. Its code must be new.",
+      description: about("make_promotion", "Put a new promotion on the card. Its code must be new."),
       inputSchema: PromotionInput,
       execute: async (p) => said(await w.makePromotion(p)),
     }),
     stop_promotion: tool({
-      description: "Put stopping a promotion on the card: nobody new can use it.",
+      description: about("stop_promotion", "Put stopping a promotion on the card: nobody new can use it."),
       inputSchema: z.object({ id: Id }),
       execute: async ({ id }) => said(await w.promotionMove("promotion_stop", id)),
     }),
     email_promotion: tool({
-      description: "Put emailing a named promotion's link to each person it names on the card.",
+      description: about("email_promotion", "Put emailing a named promotion's link to each person it names on the card."),
       inputSchema: z.object({ id: Id }),
       execute: async ({ id }) => said(await w.promotionMove("promotion_email", id)),
     }),
     retry_promotion: tool({
-      description: "Put trying a promotion's Stripe set-up again on the card, for one that isn't live yet.",
+      description: about("retry_promotion", "Put trying a promotion's Stripe set-up again on the card, for one that isn't live yet."),
       inputSchema: z.object({ id: Id }),
       execute: async ({ id }) => said(await w.promotionMove("promotion_retry", id)),
     }),
     delete_account_now: tool({
-      description: "Put deleting an account now on the card, without waiting out its 30 days: gone for good within ten minutes. Only for an account already waiting to be deleted (deletions).",
+      description: about("delete_account_now", "Put deleting an account now on the card, without waiting out its 30 days: gone for good within ten minutes. Only for an account already waiting to be deleted (deletions)."),
       inputSchema: z.object({ userId: Id, reason: Reason }),
       execute: async ({ userId, reason }) => said(await w.deletionMove("deletion_now", userId, reason)),
     }),
     stop_deletion: tool({
-      description: "Put stopping a deletion on the card, as if they'd tapped Keep my account.",
+      description: about("stop_deletion", "Put stopping a deletion on the card, as if they'd tapped Keep my account."),
       inputSchema: z.object({ userId: Id, reason: Reason }),
       execute: async ({ userId, reason }) => said(await w.deletionMove("deletion_stop", userId, reason)),
     }),
     start_deletion: tool({
-      description: "Put starting the 30 days on the card for whoever has this email, when they asked by email.",
+      description: about("start_deletion", "Put starting the 30 days on the card for whoever has this email, when they asked by email."),
       inputSchema: z.object({ email: z.string(), reason: Reason }),
       execute: async ({ email, reason }) => said(await w.startDeletion(email, reason)),
     }),
     delete_house: tool({
       description:
-        "Put deleting a whole house on the card, by its id from find_houses: its Johns, weeks, Wall, history and Stake go for good, its people keep their accounts in no house, and its House Pass stops renewing. tell: everyone in it gets a push and an email saying it's closed. Only when the owner asks for that house to go.",
+        about("delete_house", "Put deleting a whole house on the card, by its id from find_houses: its Johns, weeks, Wall, history and Stake go for good, its people keep their accounts in no house, and its House Pass stops renewing. tell: everyone in it gets a push and an email saying it's closed. Only when the owner asks for that house to go."),
       inputSchema: z.object({ id: Id, reason: Reason, tell: z.boolean() }),
       execute: async ({ id, reason, tell }) => said(await w.deleteHouse(id, reason, tell)),
     }),

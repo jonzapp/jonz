@@ -57,7 +57,7 @@ A tool is given only to someone with the operation's permission. When Jonz calls
 ## How it's held to the truth
 
 - `supabase/checks/registry.sql` is generated from the registry. A core test keeps it equal; refresh it with `npx vitest run -u` in `packages/core`.
-- `packages/core/generated/operations.json` is the registry as plain JSON, for code that isn't TypeScript (a Go service generates its types from it): each operation's about, scope, effect, guard, entitlement, destructive, method, path, database function and argument names, tables, page cursor, and input and output as JSON Schema 2020-12. `operations-json.test.ts` keeps it equal; refresh it the same way.
+- `packages/core/generated/operations.json` is the registry as plain JSON, for code that isn't TypeScript (a Go service generates its types from it): each operation's about, scope, effect, guard, entitlement (and `entitlementWhen`, the input key that turns it on: a tick is free, a tick with a photo needs the Pass), destructive, method, path, database function and argument names, tables, page cursor, and input and output as JSON Schema 2020-12. `operations-json.test.ts` keeps it equal; refresh it the same way.
 - The database standards check (`npm run db:standards`, run in CI) fails if:
   - a function signed-in people may call isn't listed;
   - a listed function is gone;
@@ -92,4 +92,4 @@ Same on every platform: it's the server's list.
 - [x] Step 4: every operation has its input, output and /v1 route, held to the database.
 - [x] Step 4: the app's direct table reads and writes are operations too.
 - [x] Step 4: Ask Jonz's house tools are built from the registry, and every house permission can be done from the chat.
-- [ ] Step 4: the owner's Ask Jonz tools are built from the registry.
+- [x] Step 4: the owner's Ask Jonz tools are built from the registry: every admin write is on the owner's card or says why it isn't a move (`owner-ask-operations.ts`).

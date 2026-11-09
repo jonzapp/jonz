@@ -19,6 +19,8 @@ export interface OperationJson {
   guard: Operation["guard"];
   /** The House Pass feature it needs once the Pass is enforced. */
   entitlement: string | null;
+  /** The input key that turns the entitlement on; null: always. */
+  entitlementWhen: string | null;
   /** It can't be taken back, or reaches people outside the caller's screen: an outside client needs the person's approval. */
   destructive: boolean;
   method: string;
@@ -61,6 +63,7 @@ function entry(name: OperationName): OperationJson {
     effect: o.effect,
     guard: o.guard,
     entitlement: o.entitlement ?? null,
+    entitlementWhen: o.entitlementWhen ?? null,
     destructive: o.destructive === true,
     method,
     path,
