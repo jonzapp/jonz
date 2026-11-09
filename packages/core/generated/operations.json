@@ -1784,7 +1784,13 @@
       "pathKeys": [
         "reportId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "my_report",
+        "server": false,
+        "args": {
+          "reportId": "p_report"
+        }
+      },
       "tables": [
         "reports",
         "report_messages"
@@ -1969,7 +1975,11 @@
       "method": "GET",
       "path": "/v1/me/house",
       "pathKeys": [],
-      "rpc": null,
+      "rpc": {
+        "name": "my_house",
+        "server": false,
+        "args": {}
+      },
       "tables": [
         "members",
         "houses"
@@ -2026,7 +2036,13 @@
       "method": "PATCH",
       "path": "/v1/me/name",
       "pathKeys": [],
-      "rpc": null,
+      "rpc": {
+        "name": "set_my_name",
+        "server": false,
+        "args": {
+          "name": "p_name"
+        }
+      },
       "tables": [
         "profiles"
       ],
@@ -2063,7 +2079,11 @@
       "method": "GET",
       "path": "/v1/me/notifications",
       "pathKeys": [],
-      "rpc": null,
+      "rpc": {
+        "name": "my_notifications",
+        "server": false,
+        "args": {}
+      },
       "tables": [
         "notification_prefs"
       ],
@@ -2151,7 +2171,19 @@
       "method": "PATCH",
       "path": "/v1/me/notifications",
       "pathKeys": [],
-      "rpc": null,
+      "rpc": {
+        "name": "save_notifications",
+        "server": false,
+        "args": {
+          "reminders": "p_reminders",
+          "checks": "p_checks",
+          "flags": "p_flags",
+          "deal": "p_deal",
+          "quietFrom": "p_quiet_from",
+          "quietUntil": "p_quiet_until",
+          "timezone": "p_timezone"
+        }
+      },
       "tables": [
         "notification_prefs"
       ],
@@ -2236,7 +2268,15 @@
       "method": "POST",
       "path": "/v1/me/push-devices",
       "pathKeys": [],
-      "rpc": null,
+      "rpc": {
+        "name": "add_push_device",
+        "server": false,
+        "args": {
+          "endpoint": "p_endpoint",
+          "p256dh": "p_p256dh",
+          "auth": "p_auth"
+        }
+      },
       "tables": [
         "push_subscriptions"
       ],
@@ -2280,7 +2320,13 @@
       "method": "DELETE",
       "path": "/v1/me/push-devices",
       "pathKeys": [],
-      "rpc": null,
+      "rpc": {
+        "name": "remove_push_device",
+        "server": false,
+        "args": {
+          "endpoint": "p_endpoint"
+        }
+      },
       "tables": [
         "push_subscriptions"
       ],
@@ -2318,7 +2364,13 @@
       "pathKeys": [
         "houseId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "my_ask_chats",
+        "server": false,
+        "args": {
+          "houseId": "p_house"
+        }
+      },
       "tables": [
         "ask_chats"
       ],
@@ -2378,7 +2430,13 @@
       "pathKeys": [
         "chatId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "my_ask_chat",
+        "server": false,
+        "args": {
+          "chatId": "p_chat"
+        }
+      },
       "tables": [
         "ask_chats"
       ],
@@ -2396,130 +2454,137 @@
         ]
       },
       "output": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "title": {
-            "type": "string"
-          },
-          "turns": {
-            "type": "array",
-            "items": {
-              "oneOf": [
-                {
-                  "type": "object",
-                  "properties": {
-                    "role": {
-                      "type": "string",
-                      "const": "user"
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "title": {
+                "type": "string"
+              },
+              "turns": {
+                "type": "array",
+                "items": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "role": {
+                          "type": "string",
+                          "const": "user"
+                        },
+                        "text": {
+                          "type": "string",
+                          "maxLength": 4000
+                        }
+                      },
+                      "required": [
+                        "role",
+                        "text"
+                      ]
                     },
-                    "text": {
-                      "type": "string",
-                      "maxLength": 4000
-                    }
-                  },
-                  "required": [
-                    "role",
-                    "text"
-                  ]
-                },
-                {
-                  "type": "object",
-                  "properties": {
-                    "role": {
-                      "type": "string",
-                      "const": "assistant"
-                    },
-                    "text": {
-                      "type": "string",
-                      "maxLength": 20000
-                    },
-                    "ask": {
-                      "anyOf": [
-                        {
-                          "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "role": {
+                          "type": "string",
+                          "const": "assistant"
+                        },
+                        "text": {
+                          "type": "string",
+                          "maxLength": 20000
+                        },
+                        "ask": {
+                          "anyOf": [
                             {
-                              "type": "object",
-                              "properties": {
-                                "kind": {
-                                  "type": "string",
-                                  "const": "choices"
+                              "oneOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "const": "choices"
+                                    },
+                                    "options": {
+                                      "minItems": 1,
+                                      "maxItems": 5,
+                                      "type": "array",
+                                      "items": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 40
+                                      }
+                                    }
+                                  },
+                                  "required": [
+                                    "kind",
+                                    "options"
+                                  ]
                                 },
-                                "options": {
-                                  "minItems": 1,
-                                  "maxItems": 5,
-                                  "type": "array",
-                                  "items": {
-                                    "type": "string",
-                                    "minLength": 1,
-                                    "maxLength": 40
-                                  }
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "const": "day"
+                                    }
+                                  },
+                                  "required": [
+                                    "kind"
+                                  ]
                                 }
-                              },
-                              "required": [
-                                "kind",
-                                "options"
                               ]
                             },
                             {
-                              "type": "object",
-                              "properties": {
-                                "kind": {
-                                  "type": "string",
-                                  "const": "day"
-                                }
-                              },
-                              "required": [
-                                "kind"
-                              ]
+                              "type": "null"
                             }
                           ]
                         },
-                        {
-                          "type": "null"
+                        "hadCard": {
+                          "type": "boolean"
                         }
+                      },
+                      "required": [
+                        "role",
+                        "text",
+                        "ask",
+                        "hadCard"
                       ]
                     },
-                    "hadCard": {
-                      "type": "boolean"
+                    {
+                      "type": "object",
+                      "properties": {
+                        "role": {
+                          "type": "string",
+                          "const": "done"
+                        },
+                        "added": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "role",
+                        "added"
+                      ]
                     }
-                  },
-                  "required": [
-                    "role",
-                    "text",
-                    "ask",
-                    "hadCard"
-                  ]
-                },
-                {
-                  "type": "object",
-                  "properties": {
-                    "role": {
-                      "type": "string",
-                      "const": "done"
-                    },
-                    "added": {
-                      "type": "integer",
-                      "minimum": 0,
-                      "maximum": 9007199254740991
-                    }
-                  },
-                  "required": [
-                    "role",
-                    "added"
                   ]
                 }
-              ]
-            }
+              }
+            },
+            "required": [
+              "id",
+              "title",
+              "turns"
+            ]
+          },
+          {
+            "type": "null"
           }
-        },
-        "required": [
-          "id",
-          "title",
-          "turns"
         ]
       }
     },
@@ -2540,7 +2605,14 @@
       "pathKeys": [
         "houseId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "keep_ask_chat",
+        "server": false,
+        "args": {
+          "houseId": "p_house",
+          "turns": "p_turns"
+        }
+      },
       "tables": [
         "ask_chats"
       ],
@@ -2691,7 +2763,14 @@
       "pathKeys": [
         "chatId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "update_ask_chat",
+        "server": false,
+        "args": {
+          "chatId": "p_chat",
+          "turns": "p_turns"
+        }
+      },
       "tables": [
         "ask_chats"
       ],
@@ -2841,7 +2920,13 @@
       "pathKeys": [
         "chatId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "delete_ask_chat",
+        "server": false,
+        "args": {
+          "chatId": "p_chat"
+        }
+      },
       "tables": [
         "ask_chats"
       ],
@@ -2877,7 +2962,11 @@
       "method": "GET",
       "path": "/v1/notices",
       "pathKeys": [],
-      "rpc": null,
+      "rpc": {
+        "name": "live_notices",
+        "server": false,
+        "args": {}
+      },
       "tables": [
         "notices"
       ],
@@ -3298,7 +3387,13 @@
       "pathKeys": [
         "houseId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "house_today",
+        "server": false,
+        "args": {
+          "houseId": "p_house"
+        }
+      },
       "tables": [
         "houses",
         "members",
@@ -4348,7 +4443,13 @@
       "pathKeys": [
         "houseId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "john_list",
+        "server": false,
+        "args": {
+          "houseId": "p_house"
+        }
+      },
       "tables": [
         "johns",
         "groups",
@@ -4573,7 +4674,13 @@
       "pathKeys": [
         "houseId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "house_wall",
+        "server": false,
+        "args": {
+          "houseId": "p_house"
+        }
+      },
       "tables": [
         "events",
         "assignments",
@@ -4582,8 +4689,8 @@
       "page": {
         "at": "createdAt",
         "id": "id",
-        "atArg": null,
-        "idArg": null
+        "atArg": "p_cursor_at",
+        "idArg": "p_cursor_id"
       },
       "input": {
         "type": "object",
@@ -4756,7 +4863,14 @@
       "pathKeys": [
         "houseId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "house_away",
+        "server": false,
+        "args": {
+          "houseId": "p_house",
+          "from": "p_from"
+        }
+      },
       "tables": [
         "away_periods"
       ],
@@ -4837,7 +4951,14 @@
         "houseId",
         "month"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "house_month",
+        "server": false,
+        "args": {
+          "houseId": "p_house",
+          "month": "p_month"
+        }
+      },
       "tables": [
         "assignments",
         "crew_members",
@@ -5150,7 +5271,13 @@
       "pathKeys": [
         "houseId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "house_record",
+        "server": false,
+        "args": {
+          "houseId": "p_house"
+        }
+      },
       "tables": [
         "weeks",
         "away_periods",
@@ -5457,7 +5584,13 @@
       "pathKeys": [
         "houseId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "house_stake",
+        "server": false,
+        "args": {
+          "houseId": "p_house"
+        }
+      },
       "tables": [
         "ledger_entries",
         "assignments",
@@ -5609,7 +5742,13 @@
       "pathKeys": [
         "houseId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "house_pocket",
+        "server": false,
+        "args": {
+          "houseId": "p_house"
+        }
+      },
       "tables": [
         "pocket_earnings",
         "pocket_pays"
@@ -7774,7 +7913,14 @@
       "pathKeys": [
         "eventId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "react",
+        "server": false,
+        "args": {
+          "eventId": "p_event",
+          "kind": "p_kind"
+        }
+      },
       "tables": [
         "reactions"
       ],
@@ -7823,7 +7969,14 @@
         "eventId",
         "kind"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "unreact",
+        "server": false,
+        "args": {
+          "eventId": "p_event",
+          "kind": "p_kind"
+        }
+      },
       "tables": [
         "reactions"
       ],
@@ -7871,7 +8024,32 @@
       "pathKeys": [
         "houseId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "add_john",
+        "server": false,
+        "args": {
+          "name": "p_name",
+          "category": "p_category",
+          "points": "p_points",
+          "everyWeeks": "p_every_weeks",
+          "everyMonths": "p_every_months",
+          "weekOfMonth": "p_week_of_month",
+          "anchorMonth": "p_anchor_month",
+          "anchorWeek": "p_anchor_week",
+          "dueDow": "p_due_dow",
+          "dueTime": "p_due_time",
+          "needsPhoto": "p_needs_photo",
+          "groupId": "p_group",
+          "when": "p_when",
+          "respondHours": "p_respond_hours",
+          "perWeek": "p_per_week",
+          "crew": "p_crew",
+          "keepDay": "p_keep_day",
+          "payMinor": "p_pay_minor",
+          "minAge": "p_min_age",
+          "houseId": "p_house"
+        }
+      },
       "tables": [
         "johns"
       ],
@@ -8058,7 +8236,14 @@
       "pathKeys": [
         "houseId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "add_johns",
+        "server": false,
+        "args": {
+          "houseId": "p_house",
+          "johns": "p_johns"
+        }
+      },
       "tables": [
         "johns"
       ],
@@ -8261,7 +8446,32 @@
       "pathKeys": [
         "johnId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "change_john",
+        "server": false,
+        "args": {
+          "name": "p_name",
+          "category": "p_category",
+          "points": "p_points",
+          "everyWeeks": "p_every_weeks",
+          "everyMonths": "p_every_months",
+          "weekOfMonth": "p_week_of_month",
+          "anchorMonth": "p_anchor_month",
+          "anchorWeek": "p_anchor_week",
+          "dueDow": "p_due_dow",
+          "dueTime": "p_due_time",
+          "needsPhoto": "p_needs_photo",
+          "groupId": "p_group",
+          "when": "p_when",
+          "respondHours": "p_respond_hours",
+          "perWeek": "p_per_week",
+          "crew": "p_crew",
+          "keepDay": "p_keep_day",
+          "payMinor": "p_pay_minor",
+          "minAge": "p_min_age",
+          "johnId": "p_john"
+        }
+      },
       "tables": [
         "johns"
       ],
@@ -8447,7 +8657,13 @@
       "pathKeys": [
         "johnId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "remove_john",
+        "server": false,
+        "args": {
+          "johnId": "p_john"
+        }
+      },
       "tables": [
         "johns"
       ],
@@ -8485,7 +8701,28 @@
       "pathKeys": [
         "houseId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "save_house_rules",
+        "server": false,
+        "args": {
+          "name": "p_name",
+          "timezone": "p_timezone",
+          "currency": "p_currency",
+          "weekStarts": "p_week_starts",
+          "stakeMinor": "p_stake_minor",
+          "lateForfeitMinor": "p_late_forfeit_minor",
+          "missedForfeitMinor": "p_missed_forfeit_minor",
+          "disputeHours": "p_dispute_hours",
+          "coverGraceHours": "p_cover_grace_hours",
+          "lateHours": "p_late_hours",
+          "awayMakeup": "p_away_makeup",
+          "settleIn": "p_settle_in",
+          "dealMode": "p_deal_mode",
+          "dealBudget": "p_deal_budget",
+          "pocketCapMinor": "p_pocket_cap_minor",
+          "houseId": "p_house"
+        }
+      },
       "tables": [
         "houses"
       ],
@@ -8614,7 +8851,14 @@
       "pathKeys": [
         "houseId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "set_deal_mode",
+        "server": false,
+        "args": {
+          "houseId": "p_house",
+          "mode": "p_mode"
+        }
+      },
       "tables": [
         "houses"
       ],
@@ -15344,15 +15588,25 @@
       "method": "GET",
       "path": "/v1/admin/notices",
       "pathKeys": [],
-      "rpc": null,
+      "rpc": {
+        "name": "owner_notices_page",
+        "server": false,
+        "args": {
+          "q": "p_q",
+          "kind": "p_kind",
+          "state": "p_state",
+          "after": "p_after",
+          "before": "p_before"
+        }
+      },
       "tables": [
         "notices"
       ],
       "page": {
         "at": "startsAt",
         "id": "id",
-        "atArg": null,
-        "idArg": null
+        "atArg": "p_cursor_at",
+        "idArg": "p_cursor_id"
       },
       "input": {
         "type": "object",
@@ -15517,7 +15771,17 @@
       "method": "GET",
       "path": "/v1/admin/notices/count",
       "pathKeys": [],
-      "rpc": null,
+      "rpc": {
+        "name": "owner_notices_count",
+        "server": false,
+        "args": {
+          "q": "p_q",
+          "kind": "p_kind",
+          "state": "p_state",
+          "after": "p_after",
+          "before": "p_before"
+        }
+      },
       "tables": [
         "notices"
       ],
@@ -15606,15 +15870,25 @@
       "method": "GET",
       "path": "/v1/admin/audit",
       "pathKeys": [],
-      "rpc": null,
+      "rpc": {
+        "name": "owner_audit_page",
+        "server": false,
+        "args": {
+          "q": "p_q",
+          "who": "p_who",
+          "what": "p_what",
+          "after": "p_after",
+          "before": "p_before"
+        }
+      },
       "tables": [
         "admin_audit"
       ],
       "page": {
         "at": "createdAt",
         "id": "id",
-        "atArg": null,
-        "idArg": null
+        "atArg": "p_cursor_at",
+        "idArg": "p_cursor_id"
       },
       "input": {
         "type": "object",
@@ -15821,7 +16095,17 @@
       "method": "GET",
       "path": "/v1/admin/audit/count",
       "pathKeys": [],
-      "rpc": null,
+      "rpc": {
+        "name": "owner_audit_count",
+        "server": false,
+        "args": {
+          "q": "p_q",
+          "who": "p_who",
+          "what": "p_what",
+          "after": "p_after",
+          "before": "p_before"
+        }
+      },
       "tables": [
         "admin_audit"
       ],
@@ -15899,7 +16183,13 @@
       "pathKeys": [
         "entryId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "owner_audit_entry",
+        "server": false,
+        "args": {
+          "entryId": "p_entry"
+        }
+      },
       "tables": [
         "admin_audit"
       ],
@@ -16048,7 +16338,11 @@
       "method": "GET",
       "path": "/v1/admin/ask-chats",
       "pathKeys": [],
-      "rpc": null,
+      "rpc": {
+        "name": "owner_ask_chats",
+        "server": false,
+        "args": {}
+      },
       "tables": [
         "owner_ask_chats"
       ],
@@ -16100,7 +16394,13 @@
       "pathKeys": [
         "chatId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "owner_ask_chat",
+        "server": false,
+        "args": {
+          "chatId": "p_chat"
+        }
+      },
       "tables": [
         "owner_ask_chats"
       ],
@@ -16118,130 +16418,137 @@
         ]
       },
       "output": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "title": {
-            "type": "string"
-          },
-          "turns": {
-            "type": "array",
-            "items": {
-              "oneOf": [
-                {
-                  "type": "object",
-                  "properties": {
-                    "role": {
-                      "type": "string",
-                      "const": "user"
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "title": {
+                "type": "string"
+              },
+              "turns": {
+                "type": "array",
+                "items": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "role": {
+                          "type": "string",
+                          "const": "user"
+                        },
+                        "text": {
+                          "type": "string",
+                          "maxLength": 4000
+                        }
+                      },
+                      "required": [
+                        "role",
+                        "text"
+                      ]
                     },
-                    "text": {
-                      "type": "string",
-                      "maxLength": 4000
-                    }
-                  },
-                  "required": [
-                    "role",
-                    "text"
-                  ]
-                },
-                {
-                  "type": "object",
-                  "properties": {
-                    "role": {
-                      "type": "string",
-                      "const": "assistant"
-                    },
-                    "text": {
-                      "type": "string",
-                      "maxLength": 20000
-                    },
-                    "ask": {
-                      "anyOf": [
-                        {
-                          "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "role": {
+                          "type": "string",
+                          "const": "assistant"
+                        },
+                        "text": {
+                          "type": "string",
+                          "maxLength": 20000
+                        },
+                        "ask": {
+                          "anyOf": [
                             {
-                              "type": "object",
-                              "properties": {
-                                "kind": {
-                                  "type": "string",
-                                  "const": "choices"
+                              "oneOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "const": "choices"
+                                    },
+                                    "options": {
+                                      "minItems": 1,
+                                      "maxItems": 5,
+                                      "type": "array",
+                                      "items": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 40
+                                      }
+                                    }
+                                  },
+                                  "required": [
+                                    "kind",
+                                    "options"
+                                  ]
                                 },
-                                "options": {
-                                  "minItems": 1,
-                                  "maxItems": 5,
-                                  "type": "array",
-                                  "items": {
-                                    "type": "string",
-                                    "minLength": 1,
-                                    "maxLength": 40
-                                  }
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "const": "day"
+                                    }
+                                  },
+                                  "required": [
+                                    "kind"
+                                  ]
                                 }
-                              },
-                              "required": [
-                                "kind",
-                                "options"
                               ]
                             },
                             {
-                              "type": "object",
-                              "properties": {
-                                "kind": {
-                                  "type": "string",
-                                  "const": "day"
-                                }
-                              },
-                              "required": [
-                                "kind"
-                              ]
+                              "type": "null"
                             }
                           ]
                         },
-                        {
-                          "type": "null"
+                        "hadCard": {
+                          "type": "boolean"
                         }
+                      },
+                      "required": [
+                        "role",
+                        "text",
+                        "ask",
+                        "hadCard"
                       ]
                     },
-                    "hadCard": {
-                      "type": "boolean"
+                    {
+                      "type": "object",
+                      "properties": {
+                        "role": {
+                          "type": "string",
+                          "const": "done"
+                        },
+                        "added": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "role",
+                        "added"
+                      ]
                     }
-                  },
-                  "required": [
-                    "role",
-                    "text",
-                    "ask",
-                    "hadCard"
-                  ]
-                },
-                {
-                  "type": "object",
-                  "properties": {
-                    "role": {
-                      "type": "string",
-                      "const": "done"
-                    },
-                    "added": {
-                      "type": "integer",
-                      "minimum": 0,
-                      "maximum": 9007199254740991
-                    }
-                  },
-                  "required": [
-                    "role",
-                    "added"
                   ]
                 }
-              ]
-            }
+              }
+            },
+            "required": [
+              "id",
+              "title",
+              "turns"
+            ]
+          },
+          {
+            "type": "null"
           }
-        },
-        "required": [
-          "id",
-          "title",
-          "turns"
         ]
       }
     },
@@ -16260,7 +16567,13 @@
       "method": "POST",
       "path": "/v1/admin/ask-chats",
       "pathKeys": [],
-      "rpc": null,
+      "rpc": {
+        "name": "keep_owner_ask_chat",
+        "server": false,
+        "args": {
+          "turns": "p_turns"
+        }
+      },
       "tables": [
         "owner_ask_chats"
       ],
@@ -16406,7 +16719,14 @@
       "pathKeys": [
         "chatId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "update_owner_ask_chat",
+        "server": false,
+        "args": {
+          "chatId": "p_chat",
+          "turns": "p_turns"
+        }
+      },
       "tables": [
         "owner_ask_chats"
       ],
@@ -16556,7 +16876,13 @@
       "pathKeys": [
         "chatId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "delete_owner_ask_chat",
+        "server": false,
+        "args": {
+          "chatId": "p_chat"
+        }
+      },
       "tables": [
         "owner_ask_chats"
       ],

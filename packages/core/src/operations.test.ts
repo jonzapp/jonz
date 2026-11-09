@@ -37,8 +37,10 @@ describe("the operation registry", () => {
 
   it("runs every operation somewhere: a database function, a route, or straight on its tables", () => {
     for (const [name, o] of all) expect(o.rpc ?? o.route ?? o.tables, name).toBeDefined();
-    // An operation on tables has nothing else to run.
-    expect(all.filter(([, o]) => o.tables && (o.rpc || o.route)).map(([n]) => n)).toEqual([]);
+    // An operation on tables has no route. It may also have a function while
+    // the app moves onto /v1 (docs/specs/api.md, C2): /v1 runs the function,
+    // and the app still reads the tables until it moves.
+    expect(all.filter(([, o]) => o.tables && o.route).map(([n]) => n)).toEqual([]);
   });
 
   it("marks only reads as a screen's", () => {

@@ -64,7 +64,8 @@ export interface Operation {
   /**
    * The tables it reads or changes straight, as the caller, under each
    * table's own rules (TABLES): an operation the app does today with the
-   * tables themselves, with no function or route of its own.
+   * tables themselves. One with an `rpc` too is served by that function on
+   * /v1 while the app still reads the tables, until it moves (C2).
    */
   tables?: readonly TableName[];
   /** A read of everything one screen shows at once, in place of several: one round trip. */
@@ -134,19 +135,19 @@ export const OPERATIONS = {
   see_report: op({ about: "Mark a reply to your report as seen", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "see_report" } }),
   api_approval: op({ about: "A connected app's request to do something that can't be undone, for you to approve", scope: "account", effect: "read", guard: ACCOUNT_READ, rpc: { name: "api_approval" }, firstParty: true }),
   answer_api_approval: op({ about: "Approve or decline a connected app's request", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "answer_api_approval" }, firstParty: true }),
-  my_report: op({ about: "One of the problems you've reported, with its replies", scope: "account", effect: "read", guard: ACCOUNT_READ, tables: ["reports", "report_messages"] }),
-  my_house: op({ about: "The house you're in, if any", scope: "account", effect: "read", guard: ACCOUNT_READ, tables: ["members", "houses"] }),
-  set_my_name: op({ about: "Change the name you go by", scope: "account", effect: "write", guard: ACCOUNT_WRITE, tables: ["profiles"] }),
-  my_notifications: op({ about: "Which notifications you get, and your quiet hours", scope: "account", effect: "read", guard: ACCOUNT_READ, tables: ["notification_prefs"] }),
-  save_notifications: op({ about: "Change which notifications you get, and your quiet hours", scope: "account", effect: "write", guard: ACCOUNT_WRITE, tables: ["notification_prefs"] }),
-  add_push_device: op({ about: "Get pushes on this device", scope: "account", effect: "write", guard: ACCOUNT_WRITE, tables: ["push_subscriptions"] }),
-  remove_push_device: op({ about: "Stop pushes on this device", scope: "account", effect: "write", guard: ACCOUNT_WRITE, tables: ["push_subscriptions"] }),
-  my_ask_chats: op({ about: "Your saved Ask Jonz chats in a house, the latest first", scope: "account", effect: "read", guard: ACCOUNT_READ, tables: ["ask_chats"] }),
-  my_ask_chat: op({ about: "One of your saved Ask Jonz chats, with its turns", scope: "account", effect: "read", guard: ACCOUNT_READ, tables: ["ask_chats"] }),
-  keep_ask_chat: op({ about: "Save a new Ask Jonz chat", scope: "account", effect: "write", guard: ACCOUNT_WRITE, tables: ["ask_chats"] }),
-  update_ask_chat: op({ about: "Save an Ask Jonz chat as it now stands", scope: "account", effect: "write", guard: ACCOUNT_WRITE, tables: ["ask_chats"] }),
-  delete_ask_chat: op({ about: "Delete one of your saved Ask Jonz chats", scope: "account", effect: "write", guard: ACCOUNT_WRITE, tables: ["ask_chats"], destructive: true }),
-  live_notices: op({ about: "The notices showing now, at the top of the app", scope: "account", effect: "read", guard: ACCOUNT_READ, tables: ["notices"] }),
+  my_report: op({ about: "One of the problems you've reported, with its replies", scope: "account", effect: "read", guard: ACCOUNT_READ, rpc: { name: "my_report" }, tables: ["reports", "report_messages"] }),
+  my_house: op({ about: "The house you're in, if any", scope: "account", effect: "read", guard: ACCOUNT_READ, rpc: { name: "my_house" }, tables: ["members", "houses"] }),
+  set_my_name: op({ about: "Change the name you go by", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "set_my_name" }, tables: ["profiles"] }),
+  my_notifications: op({ about: "Which notifications you get, and your quiet hours", scope: "account", effect: "read", guard: ACCOUNT_READ, rpc: { name: "my_notifications" }, tables: ["notification_prefs"] }),
+  save_notifications: op({ about: "Change which notifications you get, and your quiet hours", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "save_notifications" }, tables: ["notification_prefs"] }),
+  add_push_device: op({ about: "Get pushes on this device", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "add_push_device" }, tables: ["push_subscriptions"] }),
+  remove_push_device: op({ about: "Stop pushes on this device", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "remove_push_device" }, tables: ["push_subscriptions"] }),
+  my_ask_chats: op({ about: "Your saved Ask Jonz chats in a house, the latest first", scope: "account", effect: "read", guard: ACCOUNT_READ, rpc: { name: "my_ask_chats" }, tables: ["ask_chats"] }),
+  my_ask_chat: op({ about: "One of your saved Ask Jonz chats, with its turns", scope: "account", effect: "read", guard: ACCOUNT_READ, rpc: { name: "my_ask_chat" }, tables: ["ask_chats"] }),
+  keep_ask_chat: op({ about: "Save a new Ask Jonz chat", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "keep_ask_chat" }, tables: ["ask_chats"] }),
+  update_ask_chat: op({ about: "Save an Ask Jonz chat as it now stands", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "update_ask_chat" }, tables: ["ask_chats"] }),
+  delete_ask_chat: op({ about: "Delete one of your saved Ask Jonz chats", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "delete_ask_chat" }, tables: ["ask_chats"], destructive: true }),
+  live_notices: op({ about: "The notices showing now, at the top of the app", scope: "account", effect: "read", guard: ACCOUNT_READ, rpc: { name: "live_notices" }, tables: ["notices"] }),
 
   // --- A house: reading -----------------------------------------------------------------------
   house_history: op({ about: "The house's history, a page at a time", scope: "house", effect: "read", guard: perm("history:read"), rpc: { name: "house_history" }, entitlement: "history" }),
@@ -157,17 +158,18 @@ export const OPERATIONS = {
     scope: "house",
     effect: "read",
     guard: perm("house:read"),
+    rpc: { name: "house_today" },
     tables: ["houses", "members", "profiles", "weeks", "assignments", "johns", "crew_members", "disputes", "dispute_votes", "on_call_picks", "swap_offers", "events"],
     screen: true,
   }),
-  john_list: op({ about: "The house's John list, oldest first, and its groups", scope: "house", effect: "read", guard: perm("johns:read"), tables: ["johns", "groups", "group_members"] }),
-  house_wall: op({ about: "The Wall, newest first, a page at a time, with reactions", scope: "house", effect: "read", guard: perm("wall:read"), tables: ["events", "assignments", "reactions"] }),
-  house_away: op({ about: "The house's time away from a day on", scope: "house", effect: "read", guard: perm("away:read"), tables: ["away_periods"] }),
-  house_month: op({ about: "This month's Johns and the recent weeks' shares: the Table's standings", scope: "house", effect: "read", guard: perm("weeks:read"), tables: ["assignments", "crew_members", "weeks", "week_shares"], screen: true }),
+  john_list: op({ about: "The house's John list, oldest first, and its groups", scope: "house", effect: "read", guard: perm("johns:read"), rpc: { name: "john_list" }, tables: ["johns", "groups", "group_members"] }),
+  house_wall: op({ about: "The Wall, newest first, a page at a time, with reactions", scope: "house", effect: "read", guard: perm("wall:read"), rpc: { name: "house_wall" }, tables: ["events", "assignments", "reactions"] }),
+  house_away: op({ about: "The house's time away from a day on", scope: "house", effect: "read", guard: perm("away:read"), rpc: { name: "house_away" }, tables: ["away_periods"] }),
+  house_month: op({ about: "This month's Johns and the recent weeks' shares: the Table's standings", scope: "house", effect: "read", guard: perm("weeks:read"), rpc: { name: "house_month" }, tables: ["assignments", "crew_members", "weeks", "week_shares"], screen: true }),
   house_balances: op({ about: "Each person's points owed and done over every week before one", scope: "house", effect: "read", guard: perm("weeks:read"), rpc: { name: "house_balances" } }),
-  house_record: op({ about: "Every week's Johns, shares and time away: the Track record", scope: "house", effect: "read", guard: perm("weeks:read"), tables: ["weeks", "away_periods", "week_shares", "assignments", "crew_members"], screen: true }),
-  house_stake: op({ about: "The house's money: every forfeit, payment and closed month", scope: "house", effect: "read", guard: perm("payments:read"), tables: ["ledger_entries", "assignments", "month_closes"], screen: true }),
-  house_pocket: op({ about: "Pocket money earned and paid", scope: "house", effect: "read", guard: perm("pocket_money:read"), tables: ["pocket_earnings", "pocket_pays"] }),
+  house_record: op({ about: "Every week's Johns, shares and time away: the Track record", scope: "house", effect: "read", guard: perm("weeks:read"), rpc: { name: "house_record" }, tables: ["weeks", "away_periods", "week_shares", "assignments", "crew_members"], screen: true }),
+  house_stake: op({ about: "The house's money: every forfeit, payment and closed month", scope: "house", effect: "read", guard: perm("payments:read"), rpc: { name: "house_stake" }, tables: ["ledger_entries", "assignments", "month_closes"], screen: true }),
+  house_pocket: op({ about: "Pocket money earned and paid", scope: "house", effect: "read", guard: perm("pocket_money:read"), rpc: { name: "house_pocket" }, tables: ["pocket_earnings", "pocket_pays"] }),
 
   // --- A house: your own Johns ----------------------------------------------------------------
   mark_done: op({ about: "Tick off a John", scope: "house", effect: "write", guard: perm("ticks:write_own"), rpc: { name: "mark_done" }, entitlement: "photos", entitlementWhen: "photoPath" }),
@@ -195,16 +197,16 @@ export const OPERATIONS = {
   pass_checkout: op({ about: "Buy the House Pass", scope: "house", effect: "write", guard: perm("billing:write_own"), route: "POST /api/pass/checkout" }),
   pass_billing: op({ about: "Open billing for a House Pass you bought", scope: "house", effect: "read", guard: perm("billing:write_own"), route: "POST /api/pass/manage" }),
 
-  react: op({ about: "React to something on the Wall", scope: "house", effect: "write", guard: perm("wall:write_own"), tables: ["reactions"] }),
-  unreact: op({ about: "Take back your reaction", scope: "house", effect: "write", guard: perm("wall:write_own"), tables: ["reactions"] }),
+  react: op({ about: "React to something on the Wall", scope: "house", effect: "write", guard: perm("wall:write_own"), rpc: { name: "react" }, tables: ["reactions"] }),
+  unreact: op({ about: "Take back your reaction", scope: "house", effect: "write", guard: perm("wall:write_own"), rpc: { name: "unreact" }, tables: ["reactions"] }),
 
   // --- A house: admins (Parents) --------------------------------------------------------------
-  add_john: op({ about: "Add a John to the list", scope: "house", effect: "write", guard: perm("johns:write"), tables: ["johns"] }),
-  add_johns: op({ about: "Add several Johns at once, all or none", scope: "house", effect: "write", guard: perm("johns:write"), tables: ["johns"] }),
-  change_john: op({ about: "Change a John on the list, from the next deal", scope: "house", effect: "write", guard: perm("johns:write"), tables: ["johns"] }),
-  remove_john: op({ about: "Take a John off the list; weeks already dealt keep it", scope: "house", effect: "write", guard: perm("johns:write"), tables: ["johns"] }),
-  save_house_rules: op({ about: "Change the house's name and rules", scope: "house", effect: "write", guard: perm("house:write"), tables: ["houses"] }),
-  set_deal_mode: op({ about: "Choose how the house shares its Johns: Smart or Classic", scope: "house", effect: "write", guard: perm("house:write"), tables: ["houses"] }),
+  add_john: op({ about: "Add a John to the list", scope: "house", effect: "write", guard: perm("johns:write"), rpc: { name: "add_john" }, tables: ["johns"] }),
+  add_johns: op({ about: "Add several Johns at once, all or none", scope: "house", effect: "write", guard: perm("johns:write"), rpc: { name: "add_johns" }, tables: ["johns"] }),
+  change_john: op({ about: "Change a John on the list, from the next deal", scope: "house", effect: "write", guard: perm("johns:write"), rpc: { name: "change_john" }, tables: ["johns"] }),
+  remove_john: op({ about: "Take a John off the list; weeks already dealt keep it", scope: "house", effect: "write", guard: perm("johns:write"), rpc: { name: "remove_john" }, tables: ["johns"] }),
+  save_house_rules: op({ about: "Change the house's name and rules", scope: "house", effect: "write", guard: perm("house:write"), rpc: { name: "save_house_rules" }, tables: ["houses"] }),
+  set_deal_mode: op({ about: "Choose how the house shares its Johns: Smart or Classic", scope: "house", effect: "write", guard: perm("house:write"), rpc: { name: "set_deal_mode" }, tables: ["houses"] }),
   answer_tick: op({ about: "OK a kid's tick, or send it back", scope: "house", effect: "write", guard: perm("ticks:write"), rpc: { name: "answer_tick" }, route: "POST /api/oks/[id]" }),
   board_tick: op({ about: "Tick a kid's John from the kitchen board", scope: "house", effect: "write", guard: perm("ticks:write"), rpc: { name: "board_tick" } }),
   remove_flag: op({ about: "Remove a flag: your own, or anyone's with flags:write", scope: "house", effect: "write", guard: perm("flags:write_own"), rpc: { name: "remove_flag" } }),
@@ -264,16 +266,16 @@ export const OPERATIONS = {
   owner_request_deletion: op({ about: "Start deleting an account for someone who asked by email", scope: "app", effect: "write", guard: perm("deletions:write"), rpc: { name: "owner_request_deletion" }, destructive: true }),
   owner_stop_deletion: op({ about: "Stop an account being deleted", scope: "app", effect: "write", guard: perm("deletions:write"), rpc: { name: "owner_stop_deletion" } }),
   owner_delete_house: op({ about: "Delete a whole house, telling its people why", scope: "app", effect: "write", guard: perm("houses:write"), rpc: { name: "owner_delete_house" }, route: "POST /api/admin/houses/[id]/delete", destructive: true }),
-  owner_notices_page: op({ about: "Every notice, a page at a time", scope: "app", effect: "read", guard: perm("admin:read"), tables: ["notices"] }),
-  owner_notices_count: op({ about: "How many notices match", scope: "app", effect: "read", guard: perm("admin:read"), tables: ["notices"] }),
-  owner_audit_page: op({ about: "The audit log, a page at a time", scope: "app", effect: "read", guard: perm("admin:read"), tables: ["admin_audit"] }),
-  owner_audit_count: op({ about: "About how many audit log entries match", scope: "app", effect: "read", guard: perm("admin:read"), tables: ["admin_audit"] }),
-  owner_audit_entry: op({ about: "One audit log entry in full, with what it changed", scope: "app", effect: "read", guard: perm("admin:read"), tables: ["admin_audit"] }),
-  owner_ask_chats: op({ about: "The owner's saved Ask Jonz chats, the latest first", scope: "app", effect: "read", guard: perm("admin:read"), tables: ["owner_ask_chats"] }),
-  owner_ask_chat: op({ about: "One of the owner's saved Ask Jonz chats, with its turns", scope: "app", effect: "read", guard: perm("admin:read"), tables: ["owner_ask_chats"] }),
-  keep_owner_ask_chat: op({ about: "Save a new owner Ask Jonz chat", scope: "app", effect: "write", guard: perm("admin:read"), tables: ["owner_ask_chats"] }),
-  update_owner_ask_chat: op({ about: "Save an owner Ask Jonz chat as it now stands", scope: "app", effect: "write", guard: perm("admin:read"), tables: ["owner_ask_chats"] }),
-  delete_owner_ask_chat: op({ about: "Delete one of the owner's saved Ask Jonz chats", scope: "app", effect: "write", guard: perm("admin:read"), tables: ["owner_ask_chats"], destructive: true }),
+  owner_notices_page: op({ about: "Every notice, a page at a time", scope: "app", effect: "read", guard: perm("admin:read"), rpc: { name: "owner_notices_page" }, tables: ["notices"] }),
+  owner_notices_count: op({ about: "How many notices match", scope: "app", effect: "read", guard: perm("admin:read"), rpc: { name: "owner_notices_count" }, tables: ["notices"] }),
+  owner_audit_page: op({ about: "The audit log, a page at a time", scope: "app", effect: "read", guard: perm("admin:read"), rpc: { name: "owner_audit_page" }, tables: ["admin_audit"] }),
+  owner_audit_count: op({ about: "About how many audit log entries match", scope: "app", effect: "read", guard: perm("admin:read"), rpc: { name: "owner_audit_count" }, tables: ["admin_audit"] }),
+  owner_audit_entry: op({ about: "One audit log entry in full, with what it changed", scope: "app", effect: "read", guard: perm("admin:read"), rpc: { name: "owner_audit_entry" }, tables: ["admin_audit"] }),
+  owner_ask_chats: op({ about: "The owner's saved Ask Jonz chats, the latest first", scope: "app", effect: "read", guard: perm("admin:read"), rpc: { name: "owner_ask_chats" }, tables: ["owner_ask_chats"] }),
+  owner_ask_chat: op({ about: "One of the owner's saved Ask Jonz chats, with its turns", scope: "app", effect: "read", guard: perm("admin:read"), rpc: { name: "owner_ask_chat" }, tables: ["owner_ask_chats"] }),
+  keep_owner_ask_chat: op({ about: "Save a new owner Ask Jonz chat", scope: "app", effect: "write", guard: perm("admin:read"), rpc: { name: "keep_owner_ask_chat" }, tables: ["owner_ask_chats"] }),
+  update_owner_ask_chat: op({ about: "Save an owner Ask Jonz chat as it now stands", scope: "app", effect: "write", guard: perm("admin:read"), rpc: { name: "update_owner_ask_chat" }, tables: ["owner_ask_chats"] }),
+  delete_owner_ask_chat: op({ about: "Delete one of the owner's saved Ask Jonz chats", scope: "app", effect: "write", guard: perm("admin:read"), rpc: { name: "delete_owner_ask_chat" }, tables: ["owner_ask_chats"], destructive: true }),
 } as const satisfies Record<string, Operation>;
 
 export type OperationName = keyof typeof OPERATIONS;

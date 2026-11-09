@@ -103,7 +103,8 @@ export function buildApp(options: AppOptions): FastifyInstance {
 
   for (const op of options.operations) {
     const keys = pathKeys(op.http.path);
-    const types = op.http.method === "GET" ? queryTypes(op.input) : {};
+    // A path key and a GET's query are text: read each by its input type (an audit entry's number, say).
+    const types = queryTypes(op.input);
     app.route({
       method: op.http.method,
       url: fastifyPath(op.http.path),
@@ -114,7 +115,7 @@ export function buildApp(options: AppOptions): FastifyInstance {
           reply.header("Sunset", op.deprecated.sunset.toUTCString());
           if (op.deprecated.link) reply.header("Link", `<${op.deprecated.link}>; rel="deprecation"`);
         }
-        const params = req.params as Record<string, string>;
+        const params = readQuery(req.params as Record<string, unknown>, types);
         const from = op.http.method === "GET" ? readQuery(req.query as Record<string, unknown>, types) : (req.body ?? {});
         if (typeof from !== "object" || Array.isArray(from)) {
           return sendProblem(reply, new Problem("invalid_input", "Send a JSON object."), req.id);

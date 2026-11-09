@@ -31,7 +31,11 @@ function zodKind(schema: z.ZodType): Kind {
       const kinds = [...new Set(any.filter((x) => x.type !== "null").map(describe))];
       return kinds.length === 1 ? kinds[0] : "json";
     }
-    if (s.type === "array") return `${describe(s.items as Record<string, unknown>)}[]`;
+    if (s.type === "array") {
+      // A list of objects goes as one json value (jsonb), not a Postgres array.
+      const item = describe(s.items as Record<string, unknown>);
+      return item === "json" ? "json" : `${item}[]`;
+    }
     if (s.format === "uuid") return "uuid";
     if (s.format === "date") return "date";
     if (s.format === "date-time") return "datetime";
@@ -83,7 +87,10 @@ describe("every operation's contract, against the database", () => {
       if (io.page) {
         expected.p_limit = { type: "integer", required: false, from: "limit" };
         expected[io.page.atArg ?? "(no cursor argument)"] = { type: "datetime", required: false, from: "startingAfter" };
-        expected[io.page.idArg ?? "(no cursor argument)"] = { type: "uuid", required: false, from: "startingAfter" };
+        // The cursor's id is the row's own: a uuid, or a number for a table counted by identity.
+        const row = ((io.output as z.ZodObject).shape.data as z.ZodArray<z.ZodObject>).element;
+        const idKind = zodKind(row.shape[io.page.id] as z.ZodType) === "integer" ? "integer" : "uuid";
+        expected[io.page.idArg ?? "(no cursor argument)"] = { type: idKind, required: false, from: "startingAfter" };
       }
       for (const arg of new Set([...Object.keys(args), ...Object.keys(expected)])) {
         const want = expected[arg];
