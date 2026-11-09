@@ -53,12 +53,30 @@ export const createV1Handler = (handlers: Handlers) => (request: Request) => ans
 /** Answers one /v1 request, serving the database operations only. */
 export const handleV1 = createV1Handler({});
 
+const problemResponse = (status: number, detail: string, requestId?: string) =>
+  Response.json(
+    { ...new Problem("internal", detail).body(requestId), status },
+    { status, headers: { "content-type": "application/problem+json", ...(requestId ? { "request-id": requestId } : {}) } },
+  );
+
+/**
+ * Anything that fails outside Fastify (starting up, or handing the request
+ * over) answers the same problem+json as inside it: what went wrong goes to
+ * the logs, never to the caller.
+ */
 async function answer(request: Request, handlers: Handlers): Promise<Response> {
-  const ready = v1Instance(process.env, handlers);
-  if (!ready) {
-    const problem = new Problem("internal", "The API isn't set up here yet.");
-    return Response.json({ ...problem.body(), status: 503 }, { status: 503, headers: { "content-type": "application/problem+json" } });
+  try {
+    return await forward(request, handlers);
+  } catch (error) {
+    const requestId = `req_${crypto.randomUUID()}`;
+    console.error(`[${requestId}] /v1 failed before reaching an operation`, error);
+    return problemResponse(500, "Something went wrong on our side.", requestId);
   }
+}
+
+async function forward(request: Request, handlers: Handlers): Promise<Response> {
+  const ready = v1Instance(process.env, handlers);
+  if (!ready) return problemResponse(503, "The API isn't set up here yet.");
   const { app } = await ready;
   const url = new URL(request.url);
   const headers: Record<string, string> = {};

@@ -136,10 +136,11 @@ export function fromDatabase(error: unknown): Problem {
   const e = error as { code?: string; message?: string };
   const known = e.code ? PG_TO_PROBLEM[e.code] : undefined;
   if (known) return new Problem(known[0], known[1]);
-  // raise exception '…' (P0001), or a data or constraint error (classes 22, 23): its words are for people.
-  if (e.code && (e.code === "P0001" || e.code.startsWith("22") || e.code.startsWith("23"))) {
-    return new Problem("rejected", e.message ?? "That can't be done.");
-  }
+  // Our functions raise on purpose with P0001 or 22023: those words are for people.
+  if (e.code === "P0001" || e.code === "22023") return new Problem("rejected", e.message ?? "That can't be done.");
+  // Postgres's own data and constraint errors name columns and constraints: say what, not where.
+  if (e.code?.startsWith("22")) return new Problem("rejected", "That value isn't allowed.");
+  if (e.code?.startsWith("23")) return new Problem("rejected", "That doesn't fit with what's already saved.");
   return new Problem("internal", "Something went wrong on our side.");
 }
 

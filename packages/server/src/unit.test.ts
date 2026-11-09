@@ -81,6 +81,9 @@ describe("arguments and errors", () => {
     expect(fromDatabase({ code: "40001" }).code).toBe("conflict");
     expect(fromDatabase({ code: "XX000", message: "internal detail" })).toMatchObject({ code: "internal", message: "Something went wrong on our side." });
     expect(fromDatabase(new Error("connection refused")).code).toBe("internal");
+    expect(fromDatabase({ code: "22023", message: "Pick a day of the week." }).message).toBe("Pick a day of the week.");
+    expect(fromDatabase({ code: "23514", message: 'new row for relation "houses" violates check constraint "houses_name_check"' })).toMatchObject({ code: "rejected", message: "That doesn't fit with what's already saved." });
+    expect(fromDatabase({ code: "22P02", message: 'invalid input syntax for type uuid: "x"' }).message).toBe("That value isn't allowed.");
   });
 
   it("writes problems as RFC 9457", () => {
