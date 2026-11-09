@@ -18,18 +18,19 @@ import { SPACE } from '@/theme';
  */
 export function DemoSignIn() {
   const [password, setPassword] = useState(savedStagingPassword);
-  const [busy, setBusy] = useState<string | null>(null);
+  // Whose sign-in is waiting on the server.
+  const [signingIn, setSigningIn] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
 
   async function signIn(who: DemoHousemate) {
-    setBusy(who.email);
+    setSigningIn(who.email);
     setFailed(false);
     try {
       await signInAsDemo(who.email, password);
     } catch (reason) {
       console.warn('demo sign-in failed', reason);
       setFailed(true);
-      setBusy(null);
+      setSigningIn(null);
     }
   }
 
@@ -53,8 +54,11 @@ export function DemoSignIn() {
           key={who.email}
           variant="outline"
           icon={UserIcon}
-          label={busy === who.email ? STAGING_COPY.busy : STAGING_COPY.as(who.name)}
-          disabled={busy !== null || password.length === 0}
+          label={STAGING_COPY.as(who.name)}
+          busyLabel={STAGING_COPY.busy}
+          busy={signingIn === who.email}
+          // Not one row: the others hold still while one signs in.
+          disabled={(signingIn !== null && signingIn !== who.email) || password.length === 0}
           onPress={() => void signIn(who)}
           testID={`demo-${who.name.toLowerCase()}`}
         />

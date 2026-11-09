@@ -1,4 +1,4 @@
-import { firstName, FOCUS_SHELL_COPY, HOUSE_LOWER_COPY, leaveBar, leaveCost, roleCopy } from '@app/core';
+import { firstName, FOCUS_SHELL_COPY, HOUSE_LOWER_COPY, leaveBar, leaveCost, roleCopy, BUSY_COPY } from '@app/core';
 import { useQueryClient } from '@tanstack/react-query';
 import { DoorOpenIcon, RefreshCwIcon } from 'lucide-react-native';
 import { useState } from 'react';
@@ -106,6 +106,7 @@ export function LeaveSection({ houseId, userId, view }: { houseId: string; userI
         confirmLabel={bar === 'last-admin' ? (heirName ? roles.handOver(heirName) : null) : HOUSE_LOWER_COPY.leaveConfirm}
         icon={DoorOpenIcon}
         busy={busy}
+        busyLabel={bar === 'last-admin' ? BUSY_COPY.handingOver : BUSY_COPY.leaving}
         problem={problem}
         onConfirm={() => void leave()}
         onClose={() => setAsking(false)}

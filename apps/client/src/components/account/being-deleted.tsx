@@ -1,4 +1,4 @@
-import { DELETE_COPY, deletionDay, PAGE_TITLE, type DeletionStatus } from '@app/core';
+import { DELETE_COPY, deletionDay, PAGE_TITLE, type DeletionStatus, BUSY_COPY } from '@app/core';
 import { useState } from 'react';
 
 import { keepAccount } from '@/api/account';
@@ -17,28 +17,28 @@ import { useMembership } from '@/hooks/use-membership';
  */
 export function BeingDeleted({ deletion }: { deletion: DeletionStatus }) {
   const { house, refresh } = useMembership();
-  const [busy, setBusy] = useState(false);
+  const [waiting, setWaiting] = useState<'keep' | 'out' | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
 
   async function keep() {
-    setBusy(true);
+    setWaiting('keep');
     setProblem(null);
     try {
       await keepAccount();
       await refresh();
     } catch (reason) {
       setProblem(reason instanceof Error ? reason.message : String(reason));
-      setBusy(false);
+      setWaiting(null);
     }
   }
 
   async function out() {
-    setBusy(true);
+    setWaiting('out');
     try {
       await signOut();
     } catch (reason) {
       console.warn('Sign out failed', reason);
-      setBusy(false);
+      setWaiting(null);
     }
   }
 
@@ -49,8 +49,24 @@ export function BeingDeleted({ deletion }: { deletion: DeletionStatus }) {
       <Sign>
         <SignHeading title={DELETE_COPY.beingDeleted} body={body} />
         {problem ? <Alert message={problem} /> : null}
-        <Button label={DELETE_COPY.keep} disabled={busy} onPress={() => void keep()} testID="keep-account" />
-        <Button variant="outline" label={DELETE_COPY.signOut} disabled={busy} onPress={() => void out()} testID="deleted-sign-out" />
+        {/* Not one row, so each holds still while the other waits. */}
+        <Button
+          label={DELETE_COPY.keep}
+          busy={waiting === 'keep'}
+          busyLabel={BUSY_COPY.keeping}
+          disabled={waiting === 'out'}
+          onPress={() => void keep()}
+          testID="keep-account"
+        />
+        <Button
+          variant="outline"
+          label={DELETE_COPY.signOut}
+          busy={waiting === 'out'}
+          busyLabel={BUSY_COPY.signingOut}
+          disabled={waiting === 'keep'}
+          onPress={() => void out()}
+          testID="deleted-sign-out"
+        />
       </Sign>
     </Door>
   );

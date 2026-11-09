@@ -14,6 +14,8 @@ import { useUndoOffer } from '@/hooks/use-undo-offer';
  * `crew`, it's ticked with who did it (the roll call, crew.ts). A tick that
  * lands offers Undo in a toast.
  */
+export type TickVia = 'tick' | 'camera' | 'library';
+
 export function useTick(
   houseId: string,
   assignmentId: string,
@@ -30,9 +32,12 @@ export function useTick(
   const offer = useUndoOffer(houseId);
   const [uploading, setUploading] = useState(false);
   const [photoProblem, setPhotoProblem] = useState<string | null>(null);
+  // The way the latest tick went, so only the button tapped looks busy.
+  const [via, setVia] = useState<TickVia>('tick');
 
   async function tickWithPhoto(source: 'camera' | 'library') {
     setPhotoProblem(null);
+    setVia(source);
     let uri: string | null;
     try {
       uri = await pickPhoto(source);
@@ -60,6 +65,7 @@ export function useTick(
 
   async function tick() {
     setPhotoProblem(null);
+    setVia('tick');
     const ok = await move.run(() => done(assignmentId));
     if (ok) offered();
     return ok;
@@ -69,6 +75,12 @@ export function useTick(
     pending: move.pending,
     uploading,
     busy: move.pending || uploading,
+    /** Which way is waiting on the server, if one is: the button to show busy. */
+    waiting: move.pending || uploading ? via : null,
+    /** Whether another way is waiting, so this way's button holds still (the sheet's buttons aren't one row). */
+    held: (way: TickVia) => (move.pending || uploading) && via !== way,
+    /** What a busy button says: ticking, or sending the photo first. */
+    busyLabel: uploading ? JOHN_COPY.uploading : JOHN_COPY.ticking,
     problem: photoProblem ?? move.problem,
     tick,
     tickWithPhoto,

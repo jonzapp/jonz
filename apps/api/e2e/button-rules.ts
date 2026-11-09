@@ -15,7 +15,9 @@ import { expect, type Page } from "@playwright/test";
 // - "icon": an icon alone, a square anywhere.
 //
 // And at most one amber (primary) button shows at once (the style page,
-// which shows every kind, says not to count).
+// which shows every kind, says not to count). A button waiting on the server
+// (aria-busy) keeps its own colour: pale reads as switched off
+// (docs/style/states.md, "Waiting").
 
 /** What breaks the button rules on the page as it is now, in words. Empty when nothing does. */
 export async function buttonBreaks(page: Page, { oneAmber = true }: { oneAmber?: boolean } = {}): Promise<string[]> {
@@ -70,6 +72,9 @@ export async function buttonBreaks(page: Page, { oneAmber = true }: { oneAmber?:
         if (column && !across(column) && Math.abs(span - room(column)) > 1) {
           breaks.push(`${name(button)} should span its column (${Math.round(span)} of ${Math.round(room(column))})`);
         }
+      }
+      if (button.getAttribute("aria-busy") === "true" && parseFloat(getComputedStyle(button).opacity) < 1) {
+        breaks.push(`${name(button)} is busy but pale: a busy button keeps its own colour`);
       }
       if (placed === "own" && !wide) breaks.push(`${name(button)} keeps its own width below a laptop`);
       if (placed === "loose") {

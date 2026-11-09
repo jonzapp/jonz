@@ -1,4 +1,5 @@
-import { STEADY_COPY, type BoardItem, type SwapAsk, type SwapOfferToYou } from '@app/core';
+import { STEADY_COPY, type BoardItem, type SwapAsk, type SwapOfferToYou, BUSY_COPY } from '@app/core';
+import { useState } from 'react';
 import { RepeatIcon } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
@@ -43,7 +44,8 @@ export function SwapSuggestion({ houseId, ask, nameOf }: { houseId: string; ask:
               variant="outline"
               icon={RepeatIcon}
               label={ask.button}
-              disabled={move.pending}
+              busy={move.pending}
+              busyLabel={BUSY_COPY.asking}
               onPress={async () => {
                 if (await move.run(() => askSwap(ask.mine.id, ask.theirs.id))) toast?.show(STEADY_COPY.asked(nameOf(ask.withUserId)));
               }}
@@ -66,7 +68,10 @@ export function SwapSuggestion({ houseId, ask, nameOf }: { houseId: string; ask:
 export function SwapOfferCard({ houseId, offer, nameOf }: { houseId: string; offer: SwapOfferToYou<BoardItem>; nameOf: (id: string) => string }) {
   const move = useMove(houseId);
   const toast = useToastIfAny();
+  // Which answer is waiting: the two share one move.
+  const [accepting, setAccepting] = useState(true);
   const answer = async (accept: boolean) => {
+    setAccepting(accept);
     if (await move.run(() => answerSwap(offer.id, accept))) toast?.show(accept ? STEADY_COPY.swapped : STEADY_COPY.declined);
   };
   return (
@@ -74,8 +79,8 @@ export function SwapOfferCard({ houseId, offer, nameOf }: { houseId: string; off
       <GroupItem>
         <Body>{offer.body}</Body>
         <ButtonRow>
-          <Button icon={RepeatIcon} label={STEADY_COPY.accept} disabled={move.pending} onPress={() => void answer(true)} testID="accept-swap" />
-          <Button variant="ghost" label={STEADY_COPY.decline} disabled={move.pending} onPress={() => void answer(false)} testID="decline-swap" />
+          <Button icon={RepeatIcon} label={STEADY_COPY.accept} busy={move.pending && accepting} busyLabel={BUSY_COPY.accepting} onPress={() => void answer(true)} testID="accept-swap" />
+          <Button variant="ghost" label={STEADY_COPY.decline} busy={move.pending && !accepting} busyLabel={BUSY_COPY.declining} onPress={() => void answer(false)} testID="decline-swap" />
         </ButtonRow>
         {move.problem ? <Alert message={move.problem} /> : null}
       </GroupItem>

@@ -1,4 +1,4 @@
-import { humanError, REPORT_COPY, REPORT_LIMITS, reportGist } from '@app/core';
+import { humanError, REPORT_COPY, REPORT_LIMITS, reportGist, BUSY_COPY } from '@app/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CheckIcon, CopyIcon, MailIcon, RotateCcwIcon, SearchIcon, UnlinkIcon } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
@@ -169,7 +169,8 @@ function ReportBody({
           label={fixed ? REPORT_COPY.reopen : REPORT_COPY.markFixed}
           icon={fixed ? RotateCcwIcon : CheckIcon}
           variant="outline"
-          disabled={reopen.isPending}
+          busy={reopen.isPending}
+          busyLabel={BUSY_COPY.reopening}
           onPress={() => {
             setDone(null);
             if (fixed) reopen.mutate();
@@ -285,7 +286,7 @@ function FixForm({ report, onDone }: { report: Report; onDone: (said: string) =>
       </Group>
       {problem ? <Alert message={problem} testID="report-fix-problem" /> : null}
       <ButtonRow>
-        <Button label={busy ? REPORT_COPY.sending : REPORT_COPY.fixSend} icon={tell ? MailIcon : CheckIcon} disabled={busy} onPress={() => void send()} testID="report-fix-send" />
+        <Button label={REPORT_COPY.fixSend} busyLabel={REPORT_COPY.sending} icon={tell ? MailIcon : CheckIcon} busy={busy} onPress={() => void send()} testID="report-fix-send" />
       </ButtonRow>
     </View>
   );

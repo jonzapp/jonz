@@ -68,9 +68,10 @@ export function ConnectedAppsSection({ zone }: { zone: string }) {
       <ConfirmSheet
         visible={leaving !== null}
         title={CONNECTED_APPS_COPY.confirm(leaving?.name ?? '')}
-        confirmLabel={busy ? CONNECTED_APPS_COPY.disconnecting : CONNECTED_APPS_COPY.disconnect}
+        confirmLabel={CONNECTED_APPS_COPY.disconnect}
         icon={PlugIcon}
         busy={busy}
+        busyLabel={CONNECTED_APPS_COPY.disconnecting}
         problem={problem}
         onConfirm={() => void disconnect()}
         onClose={() => setLeaving(null)}

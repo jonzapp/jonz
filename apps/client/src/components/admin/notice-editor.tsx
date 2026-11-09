@@ -13,6 +13,7 @@ import {
   type NoticeDraft,
   type NoticeEnds,
   type NoticeKind,
+  BUSY_COPY,
 } from '@app/core';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -66,14 +67,15 @@ function formFor(notice: Notice | null, kind: NoticeKind, now: Date): Form {
 export function NoticeEditor({
   notice,
   kind = 'status',
-  saving,
+  waiting,
   onSave,
   onEnd,
 }: {
   notice: Notice | null;
   /** A new notice's kind to start with: the tile it was started from. */
   kind?: NoticeKind;
-  saving: boolean;
+  /** Which of its buttons is waiting on the server. */
+  waiting: 'save' | 'end' | null;
   onSave: (saved: SavedNotice) => void;
   onEnd?: () => void;
 }) {
@@ -186,8 +188,8 @@ export function NoticeEditor({
       </View>
       <View style={styles.actions}>
         <ButtonRow stacked>
-          <Button label={notice === null && form.starts === 'now' ? ADMIN_COPY.saveAndShow : ADMIN_COPY.save} onPress={save} disabled={saving} testID="notice-save" />
-          {onEnd ? <Button label={ADMIN_COPY.endNow} variant="hazard" onPress={onEnd} disabled={saving} testID="notice-end" /> : null}
+          <Button label={notice === null && form.starts === 'now' ? ADMIN_COPY.saveAndShow : ADMIN_COPY.save} onPress={save} busy={waiting === 'save'} busyLabel={BUSY_COPY.saving} testID="notice-save" />
+          {onEnd ? <Button label={ADMIN_COPY.endNow} variant="hazard" onPress={onEnd} busy={waiting === 'end'} busyLabel={BUSY_COPY.ending} testID="notice-end" /> : null}
         </ButtonRow>
       </View>
       <Meta>{ADMIN_COPY.auditNote}</Meta>

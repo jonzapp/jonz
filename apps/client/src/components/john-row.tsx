@@ -15,6 +15,7 @@ import {
   type HouseRules,
   type JohnRowPlan,
   type StakeView,
+  BUSY_COPY,
 } from '@app/core';
 import { ClockIcon, ShieldIcon, Undo2Icon } from 'lucide-react-native';
 import { useState, type ReactNode } from 'react';
@@ -112,6 +113,7 @@ export function useJohnRow(item: BoardItem, context: JohnRowContext) {
         confirmLabel={JOHN_SHEET_COPY.undoIt}
         icon={Undo2Icon}
         busy={undo.pending}
+        busyLabel={BUSY_COPY.undoing}
         problem={undo.problem}
         onConfirm={() => void undoNow()}
         onClose={() => setAsking(false)}

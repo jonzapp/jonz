@@ -1,4 +1,4 @@
-import { RESET_COPY, WEEK_SUMMARY_COPY, type ResetKind } from '@app/core';
+import { RESET_COPY, WEEK_SUMMARY_COPY, type ResetKind, BUSY_COPY } from '@app/core';
 import { useRouter } from 'expo-router';
 import { CircleSlashIcon, ListTodoIcon, PlaneIcon, RotateCcwIcon, ShuffleIcon } from 'lucide-react-native';
 import { useState } from 'react';
@@ -91,6 +91,7 @@ export function WeekMenu({
         icon={ShuffleIcon}
         tone="primary"
         busy={deal.pending}
+        busyLabel={BUSY_COPY.dealing}
         problem={asked ? deal.problem : null}
         onConfirm={() => void redeal()}
         onClose={() => setConfirming(false)}

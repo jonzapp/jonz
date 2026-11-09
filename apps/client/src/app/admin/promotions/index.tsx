@@ -303,11 +303,11 @@ function Promotions() {
       <View style={styles.group}>
         {two ? (
           <ButtonRow>
-            <Button label={make.isPending ? PROMOTIONS_COPY.making : PROMOTIONS_COPY.make} icon={SparklesIcon} onPress={onMake} disabled={make.isPending} testID="promotion-make" />
+            <Button label={PROMOTIONS_COPY.make} busyLabel={PROMOTIONS_COPY.making} icon={SparklesIcon} onPress={onMake} busy={make.isPending} testID="promotion-make" />
           </ButtonRow>
         ) : (
           <ButtonRow stacked>
-            <Button label={make.isPending ? PROMOTIONS_COPY.making : PROMOTIONS_COPY.make} icon={SparklesIcon} onPress={onMake} disabled={make.isPending} testID="promotion-make" />
+            <Button label={PROMOTIONS_COPY.make} busyLabel={PROMOTIONS_COPY.making} icon={SparklesIcon} onPress={onMake} busy={make.isPending} testID="promotion-make" />
             <Button label={PROMOTIONS_COPY.see} variant="outline" icon={EyeIcon} onPress={() => setPreviewing(true)} testID="promotion-preview-open" />
           </ButtonRow>
         )}

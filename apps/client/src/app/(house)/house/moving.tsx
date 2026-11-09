@@ -1,4 +1,4 @@
-import { dateRange, localDate, MOVING_COPY, PAGE_TITLE, type IsoDow } from '@app/core';
+import { dateRange, localDate, MOVING_COPY, PAGE_TITLE, type IsoDow, BUSY_COPY } from '@app/core';
 import { CalendarXIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -121,7 +121,9 @@ function MovingForm({
                 <ButtonRow atEdge>
                   <Button
                     label={picked ? MOVING_COPY.save(dateRange(picked, picked)) : MOVING_COPY.pick}
-                    disabled={!picked || !changed || move.pending}
+                    disabled={!picked || !changed}
+                    busy={move.pending}
+                    busyLabel={BUSY_COPY.saving}
                     onPress={() => void move.run(() => setMovingOut(picked))}
                     testID="moving-save"
                   />

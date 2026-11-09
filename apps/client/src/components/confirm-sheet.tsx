@@ -28,6 +28,7 @@ export function ConfirmSheet({
   icon,
   tone = 'hazard',
   busy = false,
+  busyLabel,
   problem,
   onConfirm,
   onClose,
@@ -40,7 +41,9 @@ export function ConfirmSheet({
   confirmLabel: string | null;
   icon?: ButtonIcon;
   tone?: 'primary' | 'hazard';
+  /** Waiting on the server after Confirm: it shows a spinner and `busyLabel` ("Deleting"), and Cancel holds still. */
   busy?: boolean;
+  busyLabel?: string;
   problem?: string | null;
   onConfirm: () => void;
   onClose: () => void;
@@ -54,9 +57,9 @@ export function ConfirmSheet({
       <View style={styles.buttons}>
         <ButtonRow stacked>
           {confirmLabel === null ? null : (
-            <Button variant={tone} icon={icon} label={confirmLabel} disabled={busy} onPress={onConfirm} testID="confirm" />
+            <Button variant={tone} icon={icon} label={confirmLabel} busy={busy} busyLabel={busyLabel} onPress={onConfirm} testID="confirm" />
           )}
-          <Button variant="outline" label={FOCUS_SHELL_COPY.cancel} disabled={busy} onPress={onClose} testID="cancel" />
+          <Button variant="outline" label={FOCUS_SHELL_COPY.cancel} onPress={onClose} testID="cancel" />
         </ButtonRow>
       </View>
     </Sheet>

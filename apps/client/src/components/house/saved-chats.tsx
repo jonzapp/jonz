@@ -1,4 +1,4 @@
-import { ASK_CHATS_COPY, chatGroups, chatWhen } from '@app/core';
+import { ASK_CHATS_COPY, chatGroups, chatWhen, BUSY_COPY } from '@app/core';
 import { MessagesSquareIcon, Trash2Icon } from 'lucide-react-native';
 import { useState, type ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -131,6 +131,7 @@ export function AllChats({
         confirmLabel={ASK_CHATS_COPY.delete}
         icon={Trash2Icon}
         busy={pending}
+        busyLabel={BUSY_COPY.deleting}
         problem={problem}
         onConfirm={() => void remove()}
         onClose={() => setDoomed(null)}

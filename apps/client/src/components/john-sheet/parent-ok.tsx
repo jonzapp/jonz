@@ -1,4 +1,5 @@
-import { memberCan, okWho, PARENT_OK_COPY, pocketMoney, POCKET_COPY, tickedLine, type BoardItem } from '@app/core';
+import { memberCan, okWho, PARENT_OK_COPY, pocketMoney, POCKET_COPY, tickedLine, type BoardItem, BUSY_COPY } from '@app/core';
+import { useState } from 'react';
 import { ThumbsDownIcon, ThumbsUpIcon } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
@@ -23,11 +24,14 @@ import { SheetLines } from './parts';
  */
 export function AwaitsOk({ item, context }: { item: BoardItem; context: JohnSheetContext }) {
   const move = useMove(context.houseId);
+  // Which answer is waiting: the two share one move.
+  const [said, setSaid] = useState(true);
   const toast = useToast();
   const parentIds = context.members.filter((m) => m.role === 'admin').map((m) => m.userId);
   const parent = memberCan(context.me, 'ticks:write');
 
   async function answer(ok: boolean) {
+    setSaid(ok);
     // A Together John is answered from any of its places: they share one tick.
     if (await move.run(() => answerTick(item.id, ok))) {
       context.close();
@@ -48,7 +52,8 @@ export function AwaitsOk({ item, context }: { item: BoardItem; context: JohnShee
                 icon={ThumbsUpIcon}
                 // A John that earns says so: "OK, pay 20p".
                 label={item.payMinor ? POCKET_COPY.okPay(pocketMoney(item.payMinor, context.rules.currency)) : PARENT_OK_COPY.ok}
-                disabled={move.pending}
+                busy={move.pending && said}
+                busyLabel={BUSY_COPY.approving}
                 onPress={() => void answer(true)}
                 testID="ok-it"
               />
@@ -56,7 +61,8 @@ export function AwaitsOk({ item, context }: { item: BoardItem; context: JohnShee
                 variant="outline"
                 icon={ThumbsDownIcon}
                 label={PARENT_OK_COPY.notYet}
-                disabled={move.pending}
+                busy={move.pending && !said}
+                busyLabel={BUSY_COPY.sending}
                 onPress={() => void answer(false)}
                 testID="not-yet"
               />

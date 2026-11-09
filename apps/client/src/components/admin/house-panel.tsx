@@ -113,12 +113,14 @@ function DeleteHouse({ house }: { house: HouseDetail }) {
         <ButtonRow stacked>
           <Button
             variant="hazard"
-            label={remove.isPending ? DELETE_HOUSE_COPY.deleting : DELETE_HOUSE_COPY.delete}
-            disabled={!named || remove.isPending}
+            label={DELETE_HOUSE_COPY.delete}
+            busyLabel={DELETE_HOUSE_COPY.deleting}
+            disabled={!named}
+            busy={remove.isPending}
             onPress={() => remove.mutate()}
             testID="house-delete-confirm"
           />
-          <Button variant="outline" label={FOCUS_SHELL_COPY.cancel} disabled={remove.isPending} onPress={() => setOpen(false)} testID="house-delete-cancel" />
+          <Button variant="outline" label={FOCUS_SHELL_COPY.cancel} onPress={() => setOpen(false)} testID="house-delete-cancel" />
         </ButtonRow>
       </Sheet>
     </>

@@ -1,4 +1,4 @@
-import { firstName, GROUPS_COPY, membersLine, SETUP_COPY, type GroupDef } from '@app/core';
+import { firstName, GROUPS_COPY, membersLine, SETUP_COPY, type GroupDef, BUSY_COPY } from '@app/core';
 import { PlusIcon, Trash2Icon, UsersIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -105,6 +105,8 @@ function GroupForm({
   onDone: () => void;
 }) {
   const move = useMove(houseId);
+  // Which of the two buttons is waiting: they share one move.
+  const [doing, setDoing] = useState<'save' | 'remove'>('save');
   const [name, setName] = useState(initial.name);
   const [picked, setPicked] = useState(() => new Set(initial.memberIds));
   const toggle = (id: string) =>
@@ -116,10 +118,12 @@ function GroupForm({
     });
 
   async function save() {
+    setDoing('save');
     if (await move.run(() => saveGroup(houseId, { id: initial.id, name, members: [...picked] }))) onDone();
   }
 
   async function remove() {
+    setDoing('remove');
     if (initial.id && (await move.run(() => deleteGroup(initial.id!)))) onDone();
   }
 
@@ -153,13 +157,15 @@ function GroupForm({
         {move.problem ? <Alert message={move.problem} /> : null}
         <ButtonRow stacked>
           <Button
-            label={move.pending ? GROUPS_COPY.saving : initial.id ? GROUPS_COPY.save : GROUPS_COPY.create}
-            disabled={move.pending || picked.size === 0 || !name.trim()}
+            label={initial.id ? GROUPS_COPY.save : GROUPS_COPY.create}
+            busyLabel={GROUPS_COPY.saving}
+            busy={move.pending && doing === 'save'}
+            disabled={picked.size === 0 || !name.trim()}
             onPress={() => void save()}
             testID="save-group"
           />
           {initial.id ? (
-            <Button variant="hazard" icon={Trash2Icon} label={GROUPS_COPY.remove} disabled={move.pending} onPress={() => void remove()} />
+            <Button variant="hazard" icon={Trash2Icon} label={GROUPS_COPY.remove} busy={move.pending && doing === 'remove'} busyLabel={BUSY_COPY.removing} onPress={() => void remove()} />
           ) : null}
         </ButtonRow>
       </View>

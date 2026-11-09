@@ -8,6 +8,7 @@ import {
   FOCUS_SHELL_COPY,
   SHELL_COPY,
   type PendingDeletion,
+  BUSY_COPY,
 } from '@app/core';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { MailIcon, UserXIcon } from 'lucide-react-native';
@@ -269,11 +270,12 @@ function ChosenSheet({ person, inline = false, onClose }: { person: PendingDelet
             <Button
               variant={asking === 'now' ? 'hazard' : 'primary'}
               label={asking === 'now' ? ADMIN_COPY.deleteNow : ADMIN_COPY.stop}
-              disabled={busy}
+              busy={busy}
+              busyLabel={asking === 'now' ? BUSY_COPY.deleting : BUSY_COPY.stopping}
               onPress={() => (asking === 'now' ? now : stop).mutate(person.userId)}
               testID="deletion-confirm"
             />
-            <Button variant="outline" label={FOCUS_SHELL_COPY.cancel} disabled={busy} onPress={() => setAsking(null)} testID="deletion-cancel" />
+            <Button variant="outline" label={FOCUS_SHELL_COPY.cancel} onPress={() => setAsking(null)} testID="deletion-cancel" />
           </ButtonRow>
         )}
         {inline && asking === null ? <TextButton label={SHELL_COPY.close} onPress={onClose} testID="deletion-close" /> : null}
@@ -328,7 +330,9 @@ function ByEmailSheet({ visible, inline = false, onClose }: { visible: boolean; 
       {start.error ? <Alert message={start.error.message} /> : null}
       <Button
         label={ADMIN_COPY.startDeleting}
-        disabled={!email.includes('@') || start.isPending}
+        disabled={!email.includes('@')}
+        busy={start.isPending}
+        busyLabel={BUSY_COPY.starting}
         onPress={() => start.mutate()}
         testID="deletion-start"
       />

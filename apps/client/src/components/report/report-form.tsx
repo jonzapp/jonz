@@ -107,9 +107,11 @@ export function ReportForm({ start, house, onSent }: { start: ReportKind; house:
         {problem ? <Alert message={problem} testID="report-problem" /> : null}
         <ButtonRow>
           <Button
-            label={busy ? REPORT_COPY.sending : REPORT_COPY.send[kind]}
+            label={REPORT_COPY.send[kind]}
+            busyLabel={REPORT_COPY.sending}
             icon={SendIcon}
-            disabled={busy || !text.trim()}
+            busy={busy}
+            disabled={!text.trim()}
             onPress={() => void submit()}
             testID="report-send"
           />

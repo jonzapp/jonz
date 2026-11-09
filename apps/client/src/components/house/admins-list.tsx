@@ -1,4 +1,4 @@
-import { firstName, HISTORY_COPY, memberCan, roleCopy } from '@app/core';
+import { firstName, HISTORY_COPY, memberCan, roleCopy, BUSY_COPY } from '@app/core';
 import { ShieldCheckIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -96,6 +96,7 @@ export function AdminsList({ houseId, userId, view }: { houseId: string; userId:
         icon={ShieldCheckIcon}
         tone="primary"
         busy={role.pending}
+        busyLabel={BUSY_COPY.saving}
         problem={role.problem}
         onConfirm={() =>
           void change(chosen!, 'admin').then((done) => {

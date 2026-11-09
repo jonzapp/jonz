@@ -114,9 +114,10 @@ function SettleUp({ houseId, row }: { houseId: string; row: SettleRow }) {
             <Button
               variant={row.primary ? 'primary' : 'outline'}
               icon={CheckIcon}
-              label={move.pending ? HOUSE_PAGE_COPY.marking : row.action}
-              spoken={move.pending ? undefined : (row.spoken ?? undefined)}
-              disabled={move.pending}
+              label={row.action}
+              busyLabel={HOUSE_PAGE_COPY.marking}
+              spoken={row.spoken ?? undefined}
+              busy={move.pending}
               onPress={() =>
                 void move
                   .run(() =>

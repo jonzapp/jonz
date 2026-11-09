@@ -26,6 +26,7 @@ import {
   type GroupDef,
   type HouseRules,
   type JohnDef,
+  BUSY_COPY,
 } from '@app/core';
 import { ListTodoIcon, PlusIcon, SparklesIcon, Trash2Icon } from 'lucide-react-native';
 import { useState } from 'react';
@@ -281,6 +282,8 @@ function JohnForm({
   onDone: () => void;
 }) {
   const move = useMove(houseId);
+  // Which of the two buttons is waiting: they share one move.
+  const [doing, setDoing] = useState<'save' | 'remove'>('save');
   const [v, setV] = useState(initial);
   // In a family, what it earns a kid, as typed.
   const [pay, setPay] = useState(() => moneyInput(initial.payMinor ?? 0));
@@ -299,6 +302,7 @@ function JohnForm({
   const together = line ? `${line}. ${CREW_COPY.hint}` : null;
 
   async function save() {
+    setDoing('save');
     const payMinor = family ? parseMoney(pay) : undefined;
     if (payMinor === null || (payMinor !== undefined && payMinor < 0)) {
       setPayProblem(RULES_COPY.badAmount);
@@ -313,6 +317,7 @@ function JohnForm({
   }
 
   async function remove() {
+    setDoing('remove');
     if (v.id && (await move.run(() => archiveJohn(houseId, v.id!, new Date())))) onDone();
   }
 
@@ -422,13 +427,15 @@ function JohnForm({
         {move.problem ? <Alert message={move.problem} /> : null}
         <ButtonRow stacked>
           <Button
-            label={move.pending ? JOHN_LIST_COPY.saving : v.id ? JOHN_LIST_COPY.save : JOHN_LIST_COPY.create}
-            disabled={move.pending || !v.name.trim()}
+            label={v.id ? JOHN_LIST_COPY.save : JOHN_LIST_COPY.create}
+            busyLabel={JOHN_LIST_COPY.saving}
+            busy={move.pending && doing === 'save'}
+            disabled={!v.name.trim()}
             onPress={() => void save()}
             testID="save-john"
           />
           {v.id ? (
-            <Button variant="hazard" icon={Trash2Icon} label={JOHN_LIST_COPY.remove} disabled={move.pending} onPress={() => void remove()} />
+            <Button variant="hazard" icon={Trash2Icon} label={JOHN_LIST_COPY.remove} busy={move.pending && doing === 'remove'} busyLabel={BUSY_COPY.removing} onPress={() => void remove()} />
           ) : null}
         </ButtonRow>
       </View>

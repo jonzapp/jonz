@@ -175,9 +175,11 @@ export function OwnerMovesCard({ items, run = doOwnerMove }: { items: readonly O
       {problem ? <Alert message={problem} /> : null}
       <ButtonRow>
         <Button
-          label={pending ? OWNER_MOVES_COPY.applying : OWNER_MOVES_COPY.apply(keep.length)}
+          label={OWNER_MOVES_COPY.apply(keep.length)}
+          busyLabel={OWNER_MOVES_COPY.applying}
           onPress={() => void apply()}
-          disabled={pending || keep.length === 0}
+          disabled={keep.length === 0}
+          busy={pending}
           testID="owner-moves-apply"
         />
       </ButtonRow>

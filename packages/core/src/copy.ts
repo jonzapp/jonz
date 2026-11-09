@@ -1040,6 +1040,7 @@ export const JOHN_SHEET_COPY = {
   skipSentence: (john: string, left: number) =>
     `Skip ${john} this week? No forfeit, and ${left <= 0 ? "that’s your last skip" : `you’ll have ${left} left`}.`,
   skipIt: "Skip it",
+  skipping: "Skipping…",
   swap: "Swap this John",
   swapMeta: "You topped a week, one swap",
   swapFor: "Their open Johns",
@@ -1535,6 +1536,43 @@ export const STAKE_HISTORY_COPY = {
  * Houses), the same everywhere: more loads as you near the end, and the foot
  * says how far back you are, that it's reading, or that there's no more.
  */
+/**
+ * What a button says while it waits on the server, in place of its own
+ * words (docs/style/states.md, "Waiting"): what is happening, as -ing words,
+ * no dots. A button with its own (PROMOTIONS_COPY.making) uses that.
+ */
+export const BUSY_COPY = {
+  saving: "Saving",
+  deleting: "Deleting",
+  stopping: "Stopping",
+  starting: "Starting",
+  sending: "Sending",
+  sendingTest: "Sending the test",
+  trying: "Trying again",
+  emailing: "Emailing",
+  keeping: "Keeping it",
+  signingOut: "Signing out",
+  removing: "Removing",
+  reopening: "Reopening",
+  adding: "Adding",
+  resetting: "Resetting",
+  undoing: "Undoing",
+  ending: "Ending",
+  dealing: "Dealing",
+  turningOn: "Turning on",
+  turningOff: "Turning off",
+  markingPaid: "Marking paid",
+  accepting: "Accepting",
+  declining: "Declining",
+  voting: "Voting",
+  asking: "Asking",
+  approving: "Approving",
+  planning: "Planning",
+  leaving: "Leaving",
+  handingOver: "Handing over",
+  switching: "Switching",
+} as const;
+
 export const LIST_COPY = {
   loading: "Loading more",
   /** For a keyboard, a screen reader, or a page too short to scroll. */

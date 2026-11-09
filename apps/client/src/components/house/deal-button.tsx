@@ -44,8 +44,9 @@ export function DealButton({
         <Button
           variant={variant ?? (started ? 'outline' : 'primary')}
           icon={ShuffleIcon}
-          label={move.pending ? DEAL_COPY.dealing : (label ?? (started ? DEAL_COPY.again : NEXT_UP_COPY.dealWeek1))}
-          disabled={move.pending}
+          label={label ?? (started ? DEAL_COPY.again : NEXT_UP_COPY.dealWeek1)}
+          busyLabel={DEAL_COPY.dealing}
+          busy={move.pending}
           onPress={() => void move.run(() => dealThisWeek(houseId))}
           testID="deal-week"
         />

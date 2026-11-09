@@ -55,7 +55,6 @@ export function YoursOpen({ item, context, onRollCall }: { item: BoardItem; cont
   const cant = cantOptions(item, context.board, context.me);
   const atCant = context.focus === 'cant' && cant !== null;
   const [swapping, setSwapping] = useState(context.focus === 'swap' || (atCant && cant.immunity === 0));
-  const working = tick.pending ? JOHN_COPY.ticking : tick.uploading ? JOHN_COPY.uploading : null;
 
   // The swap list follows the house: if every other John goes, so does the swap.
   if (swapping && cant && cant.swapFor.length > 0) {
@@ -76,16 +75,20 @@ export function YoursOpen({ item, context, onRollCall }: { item: BoardItem; cont
           <>
             <Button
               icon={CameraIcon}
-              label={working ?? NEXT_UP_COPY.takePhoto}
-              disabled={tick.busy}
+label={NEXT_UP_COPY.takePhoto}
+              busy={tick.waiting === 'camera'}
+              busyLabel={tick.busyLabel}
+              disabled={tick.held('camera')}
               onPress={() => void tick.tickWithPhoto('camera')}
               testID="sheet-mark-done"
             />
             <Button
               variant="outline"
               icon={ImagesIcon}
-              label={JOHN_SHEET_COPY.fromLibrary}
-              disabled={tick.busy}
+label={JOHN_SHEET_COPY.fromLibrary}
+              busy={tick.waiting === 'library'}
+              busyLabel={tick.busyLabel}
+              disabled={tick.held('library')}
               onPress={() => void tick.tickWithPhoto('library')}
             />
           </>
@@ -93,22 +96,26 @@ export function YoursOpen({ item, context, onRollCall }: { item: BoardItem; cont
           <>
             <Button
               icon={CheckIcon}
-              label={working ?? JOHN_COPY.markDone}
-              disabled={tick.busy}
+label={JOHN_COPY.markDone}
+              busy={tick.waiting === 'tick'}
+              busyLabel={tick.busyLabel}
+              disabled={tick.held('tick')}
               onPress={() => void tick.tick()}
               testID="sheet-mark-done"
             />
             <Button
               variant="outline"
               icon={CameraIcon}
-              label={JOHN_SHEET_COPY.addPhoto}
-              disabled={tick.busy}
+label={JOHN_SHEET_COPY.addPhoto}
+              busy={tick.waiting === 'camera'}
+              busyLabel={tick.busyLabel}
+              disabled={tick.held('camera')}
               onPress={() => void tick.tickWithPhoto('camera')}
             />
           </>
         )}
         {item.jobId ? null : (
-          <Button variant="ghost" icon={UsersIcon} label={CREW_COPY.withHelp} disabled={tick.busy} onPress={onRollCall} testID="done-with-help" />
+          <Button variant="ghost" icon={UsersIcon} label={CREW_COPY.withHelp} disabled={tick.waiting !== null} onPress={onRollCall} testID="done-with-help" />
         )}
         {tick.problem ? <Alert message={tick.problem} /> : null}
         <OnIt item={item} context={context} />
@@ -200,7 +207,8 @@ function IfYouCant({
                     variant="outline"
                     icon={ShieldIcon}
                     label={JOHN_SHEET_COPY.skipIt}
-                    disabled={move.pending}
+                    busy={move.pending}
+                    busyLabel={JOHN_SHEET_COPY.skipping}
                     onPress={() =>
                       void move.run(() => spendImmunity(item.id)).then((done) => {
                         if (done) offer(HISTORY_COPY.immunity, 'immunity', item.id);
@@ -293,9 +301,11 @@ function SwapPicker({
       </SheetSection>
       <SheetLines>
         <Button
-          label={move.pending ? SWAP_COPY.swapping : SWAP_COPY.swap}
+          label={SWAP_COPY.swap}
+          busyLabel={SWAP_COPY.swapping}
           icon={RepeatIcon}
-          disabled={!picked || move.pending}
+          busy={move.pending}
+          disabled={!picked}
           onPress={() => void swap()}
           testID="swap-them"
         />
@@ -374,7 +384,6 @@ export function TheirsOpen({ item, context }: { item: BoardItem; context: JohnSh
 /** Covering a housemate's John: what it means, then the sheet's one amber, as ticking your own looks. */
 function Cover({ item, context, body }: { item: BoardItem; context: JohnSheetContext; body: string }) {
   const tick = useTick(context.houseId, item.id, { cover: true });
-  const working = tick.pending ? JOHN_COPY.ticking : tick.uploading ? JOHN_COPY.uploading : null;
   return (
     <>
       <Body testID="cover-body">{body}</Body>
@@ -382,24 +391,30 @@ function Cover({ item, context, body }: { item: BoardItem; context: JohnSheetCon
         <>
           <Button
             icon={CameraIcon}
-            label={working ?? JOHN_SHEET_COPY.coverPhoto}
-            disabled={tick.busy}
+label={JOHN_SHEET_COPY.coverPhoto}
+            busy={tick.waiting === 'camera'}
+            busyLabel={tick.busyLabel}
+            disabled={tick.held('camera')}
             onPress={() => void tick.tickWithPhoto('camera')}
             testID="sheet-cover"
           />
           <Button
             variant="outline"
             icon={ImagesIcon}
-            label={JOHN_SHEET_COPY.fromLibrary}
-            disabled={tick.busy}
+label={JOHN_SHEET_COPY.fromLibrary}
+            busy={tick.waiting === 'library'}
+            busyLabel={tick.busyLabel}
+            disabled={tick.held('library')}
             onPress={() => void tick.tickWithPhoto('library')}
           />
         </>
       ) : (
         <Button
           icon={CheckIcon}
-          label={working ?? JOHN_SHEET_COPY.coverIt}
-          disabled={tick.busy}
+label={JOHN_SHEET_COPY.coverIt}
+          busy={tick.waiting === 'tick'}
+          busyLabel={tick.busyLabel}
+          disabled={tick.held('tick')}
           onPress={() => void tick.tick()}
           testID="sheet-cover"
         />

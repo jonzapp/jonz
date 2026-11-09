@@ -74,9 +74,11 @@ export function MovesCard({ houseId, me, items }: { houseId: string; me: string;
       {move.problem ? <Alert message={move.problem} /> : null}
       <ButtonRow>
         <Button
-          label={move.pending ? CHAT_MOVES_COPY.applying : CHAT_MOVES_COPY.apply(keep.length)}
+          label={CHAT_MOVES_COPY.apply(keep.length)}
+          busyLabel={CHAT_MOVES_COPY.applying}
           onPress={() => void apply()}
-          disabled={move.pending || keep.length === 0}
+          busy={move.pending}
+          disabled={keep.length === 0}
           testID="moves-apply"
         />
       </ButtonRow>
