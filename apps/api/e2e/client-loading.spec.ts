@@ -48,11 +48,17 @@ test("a read that fails says so, and Try again reads again", async ({ context, p
   const { userId } = await dealtHouseInClient(context, "Kit Loading", "Flat 31", [{ name: "Bins out", category: "bins" }]);
   made.push(userId);
   let failing = true;
-  await page.route("**/rest/v1/houses?**", (route) => (failing ? route.abort("failed") : route.continue()));
+  // A server error, not a dropped connection: supabase-js tries a dropped
+  // read again on its own (3 times, backing off), which this test isn't about.
+  await page.route("**/rest/v1/houses?**", (route) =>
+    failing
+      ? route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ code: "XX000", message: "down" }) })
+      : route.continue(),
+  );
 
   await page.goto("/today");
   const today = page.getByTestId("today-screen");
-  await expect(today.getByText(FOCUS_SHELL_COPY.unreadable)).toBeVisible({ timeout: 15_000 });
+  await expect(today.getByText(FOCUS_SHELL_COPY.unreadable)).toBeVisible();
   await expect(today.getByTestId("next-up")).toHaveCount(0);
 
   failing = false;
