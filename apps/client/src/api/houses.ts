@@ -1,9 +1,10 @@
-import { humanError, type HouseDetail, type HouseRow, type ListAsk, type Overview, type OverviewSpan, type PassPlan } from '@app/core';
+import { DeleteHouseResponse, humanError, type HouseDetail, type HouseRow, type ListAsk, type Overview, type OverviewSpan, type PassPlan } from '@app/core';
 
+import { apiPost } from './http';
 import { supabase } from './supabase';
 
 // The owner's Overview and Houses (docs/specs/owner-admin.md): one read for
-// the Overview, and every house as a busy list, read only.
+// the Overview, every house as a busy list, and deleting one (houses:write).
 
 /** The Overview for this week or this month in the owner's zone, and how long the read took. */
 export async function ownerOverview(span: OverviewSpan, zone: string): Promise<{ overview: Overview; ms: number }> {
@@ -92,4 +93,9 @@ export async function ownerHouse(id: string): Promise<HouseDetail | null> {
   const { data, error } = await supabase.rpc('owner_house', { p_house: id });
   if (error) throw new Error(humanError(error));
   return (data as unknown as HouseDetail | null) ?? null;
+}
+
+/** Deletes the whole house, for good (houses:write): answers how many lived there, how many were told, and whether its Pass was stopped. */
+export function deleteHouse(id: string, reason: string, tell: boolean): Promise<DeleteHouseResponse> {
+  return apiPost(`/api/admin/houses/${id}/delete`, { reason: reason.trim(), tell }, DeleteHouseResponse);
 }

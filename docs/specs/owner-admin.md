@@ -97,7 +97,7 @@ answers it, again every minute while the page is open.
 
 ## Houses
 
-Find a house and look at it, read only. A busy list (`owner_houses_page`,
+Find a house, look at it, and (an owner only) delete it. A busy list (`owner_houses_page`,
 `owner_houses_count`), most recently active first and never-used houses
 last:
 
@@ -111,8 +111,22 @@ last:
   with their role, on time over four weeks, time away now and a move-out
   date, its Pass and who pays, and its zone, currency, join code and number
   of Johns. In the side panel on a laptop, its own page on a phone
-  (`/admin/houses/[id]`). Nothing here changes a house, so nothing goes in
-  the audit log. Opening the house as its people see it is left for later.
+  (`/admin/houses/[id]`). Opening the house as its people see it is left
+  for later.
+- **Delete house** (`houses:write`, the owner role only; a support helper
+  sees the house read only). At the foot of the house, a sheet says what
+  goes, asks why (for the audit log) and whether to tell everyone in it
+  (on by default), and deletes only once the house's name is typed.
+  `POST /api/admin/houses/[id]/delete` calls the owner's own
+  `owner_delete_house` (migration `20261218090000`), which leaves the
+  message to everyone in it in the outbox, writes `house.delete` in the
+  audit log with what the house was, and deletes it: its Johns, weeks, Wall,
+  history, Stake and billing go; its people keep their accounts, in no
+  house; reports, messages and promotion uses that named it keep their
+  rows. The API then sends the message (push and email; the clock sends
+  any left) and stops the House Pass it paid with renewing in Stripe. A
+  refund is the owner's to give in Stripe. If Stripe can't be reached the
+  house is still gone, and the owner is told to stop the Pass there.
 - **Tabs by job.** The pages sit in five groups (`ADMIN_GROUPS`): Overview,
   Inbox, Houses, Send (Messages, Notices) and Records (Deletions, Audit
   log). On a phone each group is a tab; a tab with more than one page opens
@@ -278,14 +292,13 @@ The owner's own Ask Jonz, apart from every house's. Same model and loop
 - **Moves go on a card, as a house's do.** Jonz's write tools (reply to a
   report, mark it fixed and tell, open it again, same as; put up, change or
   end a notice; send a message; make, stop, email or set up again a
-  promotion; delete now, stop or start a deletion) each look up what they
+  promotion; delete now, stop or start a deletion; delete a house) each look up what they
   name as the owner and put an `OwnerMove` on the card. Nothing happens
   until the owner taps Do it on the card
   (`components/admin/owner-moves-card.tsx`), which runs the admin page's
   own call, so the database checks it and the audit log keeps it, the same
   as a tap on the page. Each row starts ticked and can be unticked; ones
-  that can't be undone say so. There's no way to delete a whole house, on
-  the pages or in the chat.
+  that can't be undone say so.
 - **Its own instructions.** It knows it's talking with the owner and how the
   admin pages work. Plain Markdown and its own chips, no house chips or cards. What people
   wrote (names, reports, reasons) reaches Claude marked `<from_people>`, to

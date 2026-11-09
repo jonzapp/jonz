@@ -35,7 +35,7 @@ insert into callable values
   ('hand_over'), ('hold_cover'), ('house_by_code'), ('house_history'),
   ('is_member'), ('is_owner'), ('join_house'), ('keep_account'),
   ('leave_pass'), ('mark_done'), ('moving_on'), ('my_app_permissions'), ('my_app_role'), ('my_permissions'),
-  ('my_reports'), ('offer_swap'), ('owner_delete_now'), ('owner_deletions'),
+  ('my_reports'), ('offer_swap'), ('owner_delete_house'), ('owner_delete_now'), ('owner_deletions'),
   ('owner_deletions_count'), ('owner_deletions_page'), ('owner_fix_report'),
   ('owner_house'), ('owner_houses_count'), ('owner_houses_find'),
   ('owner_houses_page'), ('owner_make_promotion'), ('owner_message_reach'),
