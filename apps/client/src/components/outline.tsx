@@ -30,6 +30,8 @@ import {
 // ---------------------------------------------------------------- the pulse
 
 const pulse = new Animated.Value(1);
+// Fixed once: a value driven natively can't later be driven from JavaScript.
+const NATIVE = Platform.OS !== 'web';
 let breathing: Animated.CompositeAnimation | null = null;
 let users = 0;
 let still = false;
@@ -37,11 +39,10 @@ let listening = false;
 
 function breathe() {
   if (breathing || still || users === 0) return;
-  const native = Platform.OS !== 'web';
   breathing = Animated.loop(
     Animated.sequence([
-      Animated.timing(pulse, { toValue: PULSE_LOW, duration: PULSE / 2, useNativeDriver: native }),
-      Animated.timing(pulse, { toValue: 1, duration: PULSE / 2, useNativeDriver: native }),
+      Animated.timing(pulse, { toValue: PULSE_LOW, duration: PULSE / 2, useNativeDriver: NATIVE }),
+      Animated.timing(pulse, { toValue: 1, duration: PULSE / 2, useNativeDriver: NATIVE }),
     ]),
   );
   breathing.start();

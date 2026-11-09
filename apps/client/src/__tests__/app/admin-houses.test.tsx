@@ -195,6 +195,19 @@ describe('Houses', () => {
     expect(housesCount).toHaveBeenLastCalledWith(expect.objectContaining({ pass: 'paid' }));
   });
 
+  it('keeps the old houses in view under the search line while a search reads', async () => {
+    await renderPages(ROUTES, '/admin/houses');
+    await untilRead();
+    // The next read never comes back, so the list stays mid-search.
+    jest.mocked(housesPage).mockReturnValue(new Promise(() => {}));
+    const box = screen.getByLabelText('House, person, email or join code');
+    await fireEvent(box, 'focus');
+    await fireEvent.changeText(box, 'paid');
+    await fireEvent.press(screen.getByTestId('houses-search-suggestion-pass-paid'));
+    await waitFor(() => expect(screen.getByTestId('houses-search-line')).toBeBusy());
+    expect(screen.getByTestId('house-h1')).toBeOnTheScreen();
+  });
+
   it('shows a table on a laptop with the first house beside it', async () => {
     (useWindowDimensions as jest.Mock).mockReturnValue(LAPTOP);
     await renderPages(ROUTES, '/admin/houses');

@@ -1,4 +1,4 @@
-import { clockState, databaseState, needRow, noticeToShow, OVERVIEW_COPY, ownerFigures, overviewRange, type Overview, type OverviewSpan } from '@app/core';
+import { clockState, humanError, databaseState, needRow, noticeToShow, OVERVIEW_COPY, ownerFigures, overviewRange, type Overview, type OverviewSpan } from '@app/core';
 import { useQuery } from '@tanstack/react-query';
 import { CheckIcon, TriangleAlertIcon } from 'lucide-react-native';
 import { useState } from 'react';
@@ -11,16 +11,18 @@ import { WeekChart } from '@/components/admin/week-chart';
 import { Figures, type Figure } from '@/components/figures';
 import { Group } from '@/components/group';
 import { NoticePreview } from '@/components/notice-banner';
-import { ReadFailed, Reading } from '@/components/read-state';
+import { ReadFailed } from '@/components/read-state';
 import { Row } from '@/components/row';
 import { Columns, Screen, useColumns } from '@/components/screen';
 import { Section } from '@/components/section';
 import { Segmented } from '@/components/segmented';
 import { Chip } from '@/components/status-mark';
-import { Meta } from '@/components/text';
+import { OutlinePlate } from '@/components/outline';
 import { TextButton } from '@/components/text-button';
 import { TitleBar } from '@/components/title-bar';
-import { SPACE } from '@/theme';
+import { ROW_MIN, SPACE } from '@/theme';
+import { Waiting } from '@/components/waiting';
+import { OverviewOutline } from '@/components/page-outlines';
 
 const MONTH = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const day = (iso: string) => `${new Date(iso).getDate()} ${MONTH[new Date(iso).getMonth()]}`;
@@ -52,8 +54,8 @@ function OverviewBody() {
   const [span, setSpan] = useState<OverviewSpan>('week');
   const zone = ownerZone();
   const read = useQuery({ queryKey: ['owner-overview', span, zone], queryFn: () => ownerOverview(span, zone), refetchInterval: 60_000 });
-  if (read.isPending) return <Reading />;
-  if (read.isError) return <ReadFailed message={read.error.message} onRetry={() => void read.refetch()} />;
+  if (read.isPending) return <Waiting ready={false} outline={<OverviewOutline />} fill />;
+  if (read.isError) return <ReadFailed message={humanError(read.error)} onRetry={() => void read.refetch()} />;
   const { overview, ms } = read.data;
   const now = new Date();
   const needs = <NeedsYou overview={overview} now={now} />;
@@ -165,9 +167,18 @@ function InTheApp() {
   const showing = live.data ? noticeToShow(live.data, {}, new Date()) : null;
   return (
     <Section label={OVERVIEW_COPY.inTheApp} bare testID="overview-notice">
-      {showing ? <NoticePreview notice={showing} /> : <Group><Row title={OVERVIEW_COPY.noNotice} /></Group>}
+      {live.isError ? (
+        <ReadFailed message={humanError(live.error)} onRetry={() => void live.refetch()} />
+      ) : live.isPending ? (
+        <Waiting ready={false} outline={<OutlinePlate height={ROW_MIN} />} />
+      ) : showing ? (
+        <NoticePreview notice={showing} />
+      ) : (
+        <Group>
+          <Row title={OVERVIEW_COPY.noNotice} />
+        </Group>
+      )}
       <TextButton label={OVERVIEW_COPY.changeNotice} href={'/admin/notices' as never} align="start" testID="overview-notices" />
-      {live.isError ? <Meta>{live.error.message}</Meta> : null}
     </Section>
   );
 }

@@ -1,16 +1,17 @@
 import { ADMIN_PAGES } from '@app/core';
 import { useQuery } from '@tanstack/react-query';
 import { Stack, usePathname } from 'expo-router';
-import { useWindowDimensions } from 'react-native';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ownerStatus } from '@/api/owner';
 import { ADMIN_TAB_BAR, AdminShell } from '@/components/admin/admin-shell';
 import { CodeGate } from '@/components/admin/code-gate';
 import { OwnerAskDock, OwnerAskProvider, OwnerAskSheet } from '@/components/admin/owner-ask-panel';
-import { ReadFailed, Reading } from '@/components/read-state';
+import { OutlinePage } from '@/components/outline';
 import { ToastProvider } from '@/components/toast';
-import { SPACE, useTheme, WIDE } from '@/theme';
+import { Waiting } from '@/components/waiting';
+import { CONTENT_MAX, GUTTER, SPACE, useTheme, WIDE } from '@/theme';
 
 import NotFound from '../+not-found';
 
@@ -27,8 +28,14 @@ export default function AdminLayout() {
   const wide = useWindowDimensions().width >= WIDE;
   const pathname = usePathname();
   const status = useQuery({ queryKey: ['owner-status'], queryFn: ownerStatus, staleTime: 60_000 });
-  if (status.isPending) return <Reading />;
-  if (status.isError) return <ReadFailed onRetry={() => void status.refetch()} />;
+  // Before the shell: whether you're an owner, on the page's ground, the page in outline while it's asked.
+  if (status.isPending || status.isError) {
+    return (
+      <View style={[styles.gate, { backgroundColor: colors.background, paddingTop: insets.top + SPACE.xl }]}>
+        <Waiting ready={false} failed={status.isError} onRetry={() => void status.refetch()} outline={<OutlinePage />} />
+      </View>
+    );
+  }
   if (!status.data.owner) return <NotFound />;
   if (!status.data.mfa) return <CodeGate onPassed={() => void status.refetch()} />;
   const page = ADMIN_PAGES.find((p) => pathname.startsWith(p.path))?.key ?? 'overview';
@@ -43,3 +50,7 @@ export default function AdminLayout() {
     </ToastProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  gate: { flex: 1, paddingHorizontal: GUTTER, width: '100%', maxWidth: CONTENT_MAX, alignSelf: 'center' },
+});

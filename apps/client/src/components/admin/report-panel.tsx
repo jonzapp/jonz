@@ -1,8 +1,8 @@
-import { REPORT_COPY, REPORT_LIMITS, reportGist } from '@app/core';
+import { humanError, REPORT_COPY, REPORT_LIMITS, reportGist } from '@app/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CheckIcon, CopyIcon, MailIcon, RotateCcwIcon, SearchIcon, UnlinkIcon } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { fixReport, openReport, replyToReport, sameAsFind, setReportState, setSameAs, setSupportDraft, type Report, type ReportLink } from '@/api/reports';
 import { Alert } from '@/components/alert';
@@ -14,9 +14,12 @@ import { DetailsList, ReplyBox, ReportChip, ReportThread } from '@/components/re
 import { SupportDraftCard } from '@/components/admin/support-draft';
 import { Row, RowIcon } from '@/components/row';
 import { ChoiceRow } from '@/components/setup/choice-row';
+import { PanelOutline } from '@/components/page-outlines';
+import { ReadFailed } from '@/components/read-state';
 import { Sheet } from '@/components/sheet';
 import { Lead, Meta } from '@/components/text';
-import { SPACE, useTheme } from '@/theme';
+import { Waiting } from '@/components/waiting';
+import { SPACE } from '@/theme';
 
 /** The Inbox's reads, so a reply or a fix can refresh the list, the count and the report together. */
 export const INBOX_KEY = ['owner-inbox'] as const;
@@ -29,7 +32,6 @@ export const INBOX_KEY = ['owner-inbox'] as const;
  * again, and Same as… to fold it into another. Opening a new one marks it read.
  */
 export function ReportPanel({ id, onOpen }: { id: string; onOpen?: (id: string) => void }) {
-  const { colors } = useTheme();
   const client = useQueryClient();
   const report = useQuery({ queryKey: [...INBOX_KEY, 'report', id], queryFn: () => openReport(id) });
   // Opening it may have marked it read: the list's chip says so too.
@@ -40,8 +42,8 @@ export function ReportPanel({ id, onOpen }: { id: string; onOpen?: (id: string) 
   const refresh = () => client.invalidateQueries({ queryKey: INBOX_KEY });
   const reopen = useMutation({ mutationFn: () => setReportState(id, 'open'), onSuccess: refresh });
 
-  if (report.isPending) return <ActivityIndicator color={colors.mutedForeground} style={styles.wait} />;
-  if (report.isError) return <Alert message={report.error.message} testID="report-panel-problem" />;
+  if (report.isPending) return <Waiting ready={false} outline={<PanelOutline sections={[2, 3]} button />} />;
+  if (report.isError) return <ReadFailed message={humanError(report.error)} onRetry={() => void report.refetch()} testID="report-panel-problem" />;
   return (
     <ReportBody
       report={report.data}
@@ -307,7 +309,7 @@ function SameAsForm({ report, onDone }: { report: Report; onDone: () => Promise<
     <View style={styles.form} testID="report-same-form">
       <Field label={REPORT_COPY.sameAsSearch} value={q} onChangeText={setQ} autoFocus testID="report-same-search" />
       {problem ? <Alert message={problem} /> : null}
-      {found.isError ? <Alert message={found.error.message} /> : null}
+      {found.isError ? <ReadFailed message={humanError(found.error)} onRetry={() => void found.refetch()} /> : null}
       {found.data && found.data.length === 0 ? <Meta>{REPORT_COPY.sameAsNone}</Meta> : null}
       {found.data && found.data.length > 0 ? (
         <Group>
@@ -336,5 +338,4 @@ const styles = StyleSheet.create({
   name: { flex: 1 },
   also: { gap: SPACE.sm },
   form: { gap: SPACE.lg },
-  wait: { marginTop: SPACE.xl },
 });

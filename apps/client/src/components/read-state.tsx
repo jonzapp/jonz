@@ -18,9 +18,17 @@ export function Reading({ label = FOCUS_SHELL_COPY.reading }: { label?: string }
 }
 
 /** A read that failed (offline, say): the sentence, and "Try again". */
-export function ReadFailed({ message = FOCUS_SHELL_COPY.unreadable, onRetry }: { message?: string; onRetry: () => void }) {
+export function ReadFailed({
+  message = FOCUS_SHELL_COPY.unreadable,
+  onRetry,
+  testID,
+}: {
+  message?: string;
+  onRetry: () => void;
+  testID?: string;
+}) {
   return (
-    <View style={styles.failed}>
+    <View style={styles.failed} testID={testID}>
       <Alert message={message} />
       <ButtonRow atEdge>
         <Button variant="outline" icon={RefreshCwIcon} label={FOCUS_SHELL_COPY.retry} onPress={onRetry} />

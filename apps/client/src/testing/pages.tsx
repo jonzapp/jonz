@@ -44,7 +44,10 @@ export async function renderPages(routes: Record<string, ComponentType>, initial
   return client;
 }
 
-/** Until the page's first read is in: its spinner has gone. */
+/** Until the page's first read is in: nothing on it is still waiting (whatever its label). */
 export async function untilRead() {
-  await waitFor(() => expect(screen.queryByLabelText(FOCUS_SHELL_COPY.reading)).toBeNull());
+  await waitFor(() => {
+    expect(screen.queryByLabelText(FOCUS_SHELL_COPY.reading)).toBeNull();
+    expect(screen.queryAllByTestId('waiting', { includeHiddenElements: true })).toHaveLength(0);
+  });
 }

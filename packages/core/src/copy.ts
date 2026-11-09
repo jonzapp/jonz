@@ -1550,6 +1550,10 @@ export const LIST_COPY = {
   clear: "Clear",
   noMatch: "Nothing matches",
   noMatchBody: "Try other words, or clear the filters.",
+  /** What a screen reader hears while a new search or filter reads. */
+  searching: "Searching",
+  /** While a list's first page reads. */
+  reading: "Reading the list",
 } as const;
 
 /** The whole Wall, by day. */
