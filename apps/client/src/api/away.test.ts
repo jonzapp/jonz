@@ -1,67 +1,33 @@
 import { cancelAway, loadAway, setAway } from './away';
-import { apiPost } from './http';
-import { supabase } from './supabase';
+import { callV1 } from './v1';
 
-jest.mock('./http', () => ({ apiPost: jest.fn() }));
+jest.mock('./v1', () => ({ callV1: jest.fn() }));
 
-const mockCalls: [string, unknown[]][] = [];
-let mockAnswer: { data: unknown; error: unknown } = { data: [], error: null };
+const post = callV1 as unknown as jest.Mock;
 
-jest.mock('./supabase', () => ({
-  supabase: {
-    rpc: jest.fn(),
-    from: jest.fn(() => {
-      const builder: Record<string, unknown> = {};
-      for (const method of ['select', 'eq', 'gte', 'order']) {
-        builder[method] = jest.fn((...args: unknown[]) => {
-          mockCalls.push([method, args]);
-          return builder;
-        });
-      }
-      builder.then = (resolve: (v: unknown) => unknown, reject: (e: unknown) => unknown) =>
-        Promise.resolve(mockAnswer).then(resolve, reject);
-      return builder;
-    }),
-  },
-}));
-
-const rpc = supabase.rpc as unknown as jest.Mock;
-const post = apiPost as unknown as jest.Mock;
-
-beforeEach(() => {
-  jest.clearAllMocks();
-  mockCalls.length = 0;
-  mockAnswer = { data: [], error: null };
-});
+beforeEach(() => jest.clearAllMocks());
 
 describe('loadAway', () => {
   it("reads the house's time away from a week ago, with today in the house's zone", async () => {
-    mockAnswer = {
-      data: [{ id: 'p1', user_id: 'ben', starts_on: '2026-10-26', ends_on: '2026-10-28', note: 'Lisbon' }],
-      error: null,
-    };
+    const period = { id: 'p1', userId: 'ben', startsOn: '2026-10-26', endsOn: '2026-10-28', note: 'Lisbon' };
+    post.mockResolvedValue([period]);
     // 23:30 on the 25th in London is already the 26th in Auckland.
     const away = await loadAway('h1', 'Pacific/Auckland', new Date('2026-10-25T23:30:00Z'));
-    expect(away).toEqual({
-      today: '2026-10-26',
-      periods: [{ id: 'p1', userId: 'ben', startsOn: '2026-10-26', endsOn: '2026-10-28', note: 'Lisbon' }],
-    });
-    expect(mockCalls).toContainEqual(['eq', ['house_id', 'h1']]);
-    expect(mockCalls).toContainEqual(['gte', ['ends_on', '2026-10-19']]);
+    expect(away).toEqual({ today: '2026-10-26', periods: [period] });
+    expect(post).toHaveBeenCalledWith('house_away', { houseId: 'h1', from: '2026-10-19' });
   });
 
-  it('throws what the database said', async () => {
-    mockAnswer = { data: null, error: { message: 'offline' } };
-    await expect(loadAway('h1', 'Europe/London', new Date())).rejects.toEqual({ message: 'offline' });
+  it('passes on a refusal', async () => {
+    post.mockRejectedValue(new Error('offline'));
+    await expect(loadAway('h1', 'Europe/London', new Date('2026-10-25T12:00:00Z'))).rejects.toThrow('offline');
   });
 });
 
 describe('setAway', () => {
-  it('books through the API, which tells whoever it hands a John to, and says what it did to your Johns', async () => {
+  it('books on /v1, which tells whoever it hands a John to, and says what it did to your Johns', async () => {
     post.mockResolvedValue({ ok: true, before: 1, handed: 1, skipped: 0 });
     expect(await setAway({ from: '2026-10-26', to: '2026-10-28', note: ' Lisbon ' })).toEqual({ before: 1, handed: 1, skipped: 0 });
-    expect(post).toHaveBeenCalledWith('/api/away', { from: '2026-10-26', to: '2026-10-28', note: 'Lisbon' }, expect.anything());
-    expect(rpc).not.toHaveBeenCalled();
+    expect(post).toHaveBeenCalledWith('set_away', { from: '2026-10-26', to: '2026-10-28', note: 'Lisbon' });
   });
 
   it("says what's wrong before asking, and the API's refusal after", async () => {
@@ -73,11 +39,11 @@ describe('setAway', () => {
 });
 
 describe('cancelAway', () => {
-  it('cancels through cancel_away, in words when refused', async () => {
-    rpc.mockResolvedValue({ data: null, error: null });
+  it('cancels on /v1, passing on a refusal', async () => {
+    post.mockResolvedValue(null);
     await cancelAway('p1');
-    expect(rpc).toHaveBeenCalledWith('cancel_away', { p_away: 'p1' });
-    rpc.mockResolvedValue({ data: null, error: { code: 'P0001', message: 'away_over' } });
+    expect(post).toHaveBeenCalledWith('cancel_away', { awayId: 'p1' });
+    post.mockRejectedValue(new Error('That time away has already finished.'));
     await expect(cancelAway('p1')).rejects.toThrow('That time away has already finished.');
   });
 });

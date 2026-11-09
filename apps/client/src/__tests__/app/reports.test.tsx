@@ -126,7 +126,7 @@ beforeEach(() => {
   jest.mocked(writeBack).mockResolvedValue(undefined);
   jest.mocked(sendReport).mockResolvedValue('r9');
   jest.mocked(pickScreenshot).mockResolvedValue('file:///shot-1.jpg');
-  jest.mocked(inboxPage).mockResolvedValue({ items: [ROW, { ...ROW, id: 'r2', name: 'Sam Okafor', kind: 'question', state: 'open', words: 'I think I paid twice?' }], more: false });
+  jest.mocked(inboxPage).mockResolvedValue({ items: [ROW, { ...ROW, id: 'r2', name: 'Sam Okafor', kind: 'question', state: 'open', words: 'I think I paid twice?' }], more: false, next: null });
   jest.mocked(inboxCount).mockResolvedValue(2);
   jest.mocked(openReport).mockResolvedValue({ ...BINS, state: 'open' });
   jest.mocked(replyToReport).mockResolvedValue(undefined);
@@ -320,6 +320,7 @@ describe('the owner’s Inbox', () => {
     jest.mocked(inboxPage).mockResolvedValue({
       items: [{ ...ROW, name: 'Sam Lee', userId: null, house: null, kind: 'question', source: 'email', subject: 'Paying the Stake', also: 2 }],
       more: false,
+      next: null,
     });
     await renderPages(ROUTES, '/admin/inbox');
     expect(await screen.findByTestId('inbox-r1')).toHaveTextContent(/Sam Lee.*Paying the Stake: The bins John.*\+2.*Question, by email, 4 min/);

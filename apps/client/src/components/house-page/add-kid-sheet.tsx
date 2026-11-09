@@ -41,7 +41,7 @@ function AddKidForm({ houseId, onDone }: { houseId: string; onDone: () => void }
     }
     setProblems({});
     const { kid } = checked;
-    if (await move.run(() => addKid(kid.name, kid.bornYear))) {
+    if (await move.run(() => addKid(houseId, kid.name, kid.bornYear))) {
       toasts?.show(KIDS_COPY.added(kid.name.split(' ')[0]));
       onDone();
     }

@@ -1,11 +1,11 @@
 import { Platform } from 'react-native';
 
-import { apiPost } from './http';
 import { passBillingUrl, passCheckoutOpen, passCheckoutUrl } from './pass';
+import { callV1 } from './v1';
 
-jest.mock('./http', () => ({ apiPost: jest.fn() }));
+jest.mock('./v1', () => ({ callV1: jest.fn() }));
 
-const post = apiPost as jest.Mock;
+const post = callV1 as jest.Mock;
 const HOUSE = '8f14e45f-ceea-467f-a8f5-2fbf7c2d9b1a';
 const saved = { os: Platform.OS, flag: process.env.EXPO_PUBLIC_PASS_CHECKOUT };
 
@@ -33,11 +33,11 @@ describe('passCheckoutOpen', () => {
 });
 
 describe('passCheckoutUrl and passBillingUrl', () => {
-  it('ask the API for the house and the plan, and answer where to go', async () => {
+  it('ask /v1 for the house and the plan, and answer where to go', async () => {
     await expect(passCheckoutUrl(HOUSE, 'yearly')).resolves.toBe('https://checkout.stripe.com/c/pay/cs_test_1');
-    expect(post).toHaveBeenCalledWith('/api/pass/checkout', { houseId: HOUSE, plan: 'yearly' }, expect.anything());
+    expect(post).toHaveBeenCalledWith('pass_checkout', { houseId: HOUSE, plan: 'yearly' });
     await passBillingUrl(HOUSE);
-    expect(post).toHaveBeenCalledWith('/api/pass/manage', { houseId: HOUSE }, expect.anything());
+    expect(post).toHaveBeenCalledWith('pass_billing', { houseId: HOUSE });
   });
 
   it('never sends a plan that isn’t for sale', async () => {

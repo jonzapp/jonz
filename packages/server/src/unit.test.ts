@@ -37,6 +37,7 @@ describe("tokens", () => {
       await token({ sub: "x", role: "authenticated", aud: "other" }),
       await token({ sub: "x", role: "authenticated", aud: "authenticated" }, NOW - 1),
       (await token({ sub: "x", role: "authenticated", aud: "authenticated" })).slice(0, -2) + "xx",
+      "not-a-token",
     ];
     for (const t of tokens) await expect(verify(`Bearer ${t}`)).rejects.toMatchObject({ code: "unauthenticated" });
   });

@@ -76,7 +76,7 @@ jest.mock('@/api/owner', () => ({
 }));
 jest.mock('@/api/reports', () => ({
   ...jest.requireActual<typeof import('@/api/reports')>('@/api/reports'),
-  inboxPage: jest.fn().mockResolvedValue({ items: [], more: false }),
+  inboxPage: jest.fn().mockResolvedValue({ items: [], more: false, next: null }),
   inboxCount: jest.fn().mockResolvedValue(0),
 }));
 jest.mock('@/api/houses', () => ({
@@ -175,14 +175,14 @@ beforeEach(() => {
   (useWindowDimensions as jest.Mock).mockReturnValue(PHONE);
   jest.mocked(ownerStatus).mockResolvedValue({ owner: true, mfa: true, permissions: [...OWNER_PERMISSION_NAMES] });
   jest.mocked(liveNotices).mockResolvedValue([SLOW]);
-  jest.mocked(noticesPage).mockResolvedValue({ notices: [LATER, SLOW, OLD], more: false });
+  jest.mocked(noticesPage).mockResolvedValue({ notices: [LATER, SLOW, OLD], more: false, next: null });
   jest.mocked(noticesCount).mockResolvedValue(3);
   jest.mocked(saveNotice).mockResolvedValue({ id: 'n9', copied: true });
   jest.mocked(endNotice).mockResolvedValue({ copied: true });
-  jest.mocked(auditPage).mockResolvedValue({ entries: [entry(2), entry(1, { before: null, actor: 'someone-else' })], more: false });
+  jest.mocked(auditPage).mockResolvedValue({ entries: [entry(2), entry(1, { before: null, actor: 'someone-else' })], more: false, next: null });
   jest.mocked(auditCount).mockResolvedValue(2);
   jest.mocked(auditEntry).mockResolvedValue(entry(2));
-  jest.mocked(deletionsPage).mockResolvedValue({ people: [SAM, KIT], more: false });
+  jest.mocked(deletionsPage).mockResolvedValue({ people: [SAM, KIT], more: false, next: null });
   jest.mocked(deletionsCount).mockResolvedValue(2);
   for (const move of [deleteNow, stopDeletion, deleteByEmail]) jest.mocked(move).mockResolvedValue(undefined);
 });
@@ -514,14 +514,14 @@ describe('deletions', () => {
 
   it('reads the next 50 from the last one shown, soonest first', async () => {
     jest.mocked(deletionsPage).mockImplementation(async (after) =>
-      after === null ? { people: [SAM], more: true } : { people: [KIT], more: false },
+      after === null ? { people: [SAM], more: true, next: 'c-sam' } : { people: [KIT], more: false, next: null },
     );
     await renderPages(ROUTES, '/admin/deletions');
     await untilRead();
     await fireEvent.scroll(screen.getByTestId('page-scroll'), {
       nativeEvent: { contentOffset: { y: 300 }, contentSize: { height: 1200 }, layoutMeasurement: { height: 800 } },
     });
-    await waitFor(() => expect(deletionsPage).toHaveBeenLastCalledWith({ at: SAM.deleteAfter, userId: 'sam' }, expect.anything()));
+    await waitFor(() => expect(deletionsPage).toHaveBeenLastCalledWith('c-sam', expect.anything()));
     expect(await screen.findByTestId('deletion-kit')).toBeVisible();
   });
 
@@ -542,7 +542,7 @@ describe('deletions', () => {
   });
 
   it('says so when nobody is waiting', async () => {
-    jest.mocked(deletionsPage).mockResolvedValue({ people: [], more: false });
+    jest.mocked(deletionsPage).mockResolvedValue({ people: [], more: false, next: null });
     jest.mocked(deletionsCount).mockResolvedValue(0);
     await renderPages(ROUTES, '/admin/deletions');
     expect(await screen.findByTestId('deletions-empty')).toBeVisible();
@@ -661,7 +661,7 @@ describe('the audit log', () => {
 
   it('says when nothing matches, and Clear brings everything back', async () => {
     jest.mocked(auditPage).mockImplementation(async (_before, filter) =>
-      filter?.q ? { entries: [], more: false } : { entries: [entry(2)], more: false },
+      filter?.q ? { entries: [], more: false, next: null } : { entries: [entry(2)], more: false, next: null },
     );
     jest.mocked(auditCount).mockImplementation(async (filter) => (filter?.q ? 0 : 1));
     await renderPages(ROUTES, '/admin/audit?q=nothing');
@@ -698,7 +698,7 @@ describe('the audit log', () => {
 
   it('reads older entries as you scroll near the end, from the last one shown', async () => {
     jest.mocked(auditPage).mockImplementation(async (before) =>
-      before === null ? { entries: [entry(80), entry(79)], more: true } : { entries: [entry(12)], more: false },
+      before === null ? { entries: [entry(80), entry(79)], more: true, next: 'c-79' } : { entries: [entry(12)], more: false, next: null },
     );
     jest.mocked(auditCount).mockResolvedValue(3);
     await renderPages(ROUTES, '/admin/audit');
@@ -707,7 +707,7 @@ describe('the audit log', () => {
     await fireEvent.scroll(screen.getByTestId('page-scroll'), {
       nativeEvent: { contentOffset: { y: 300 }, contentSize: { height: 1200 }, layoutMeasurement: { height: 800 } },
     });
-    await waitFor(() => expect(auditPage).toHaveBeenLastCalledWith(79, expect.objectContaining({ who: 'anyone' })));
+    await waitFor(() => expect(auditPage).toHaveBeenLastCalledWith('c-79', expect.objectContaining({ who: 'anyone' })));
     expect(await screen.findByTestId('audit-row-12')).toBeVisible();
     expect(screen.getByTestId('audit-foot')).toHaveTextContent(LIST_COPY.everything);
     expect(screen.queryByTestId('audit-foot-more')).toBeNull();

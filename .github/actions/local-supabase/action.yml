@@ -27,16 +27,27 @@ runs:
         API_URL=$(jq -r '.API_URL // empty' <<<"$STATUS")
         ANON=$(jq -r '.ANON_KEY // .PUBLISHABLE_KEY // empty' <<<"$STATUS")
         SERVICE=$(jq -r '.SERVICE_ROLE_KEY // .SECRET_KEY // empty' <<<"$STATUS")
+        DB_URL=$(jq -r '.DB_URL // empty' <<<"$STATUS")
+        JWT_SECRET=$(jq -r '.JWT_SECRET // empty' <<<"$STATUS")
         missing=""
         [ -n "$API_URL" ] || missing="$missing API_URL"
         [ -n "$ANON" ]    || missing="$missing ANON_KEY"
         [ -n "$SERVICE" ] || missing="$missing SERVICE_ROLE_KEY"
+        [ -n "$DB_URL" ]  || missing="$missing DB_URL"
         if [ -n "$missing" ]; then
           echo "::error title=Supabase status is missing keys::$missing"
           exit 1
         fi
+        # /v1 logs in as the API's own role (docs/specs/api.md), as in
+        # production; a test stack gives it a throwaway password.
+        API_PASSWORD=$(openssl rand -hex 18)
+        psql "$DB_URL" -v ON_ERROR_STOP=1 -q -c "alter role jonz_api password '$API_PASSWORD'"
+        API_DB_URL=$(sed -E "s#^postgresql://[^@]+@#postgresql://jonz_api:$API_PASSWORD@#" <<<"$DB_URL")
         {
           echo "NEXT_PUBLIC_SUPABASE_URL=$API_URL"
+          echo "SUPABASE_URL=$API_URL"
+          echo "SUPABASE_JWT_SECRET=$JWT_SECRET"
+          echo "API_DATABASE_URL=$API_DB_URL"
           echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON"
           echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE"
           echo "NEXT_PUBLIC_SITE_URL=http://localhost:3205"

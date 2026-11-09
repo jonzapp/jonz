@@ -1,6 +1,6 @@
-import { humanError, type MyPrefs } from '@app/core';
+import type { MyPrefs } from '@app/core';
 
-import { supabase } from './supabase';
+import { callV1 } from './v1';
 
 // Your preferences in a house: days that suit you, your best time, and the
 // Johns you'd rather do or not (members.suits_days, best_time, rather).
@@ -8,11 +8,5 @@ import { supabase } from './supabase';
 
 /** Save them all at once. */
 export async function saveMyPrefs(houseId: string, prefs: MyPrefs): Promise<void> {
-  const { error } = await supabase.rpc('save_prefs', {
-    p_house: houseId,
-    p_days: prefs.days,
-    p_best_time: prefs.bestTime as string,
-    p_rather: prefs.rather,
-  });
-  if (error) throw new Error(humanError(error));
+  await callV1('save_prefs', { houseId, days: prefs.days, bestTime: prefs.bestTime, rather: prefs.rather });
 }

@@ -32,10 +32,11 @@ import { TextButton } from '@/components/text-button';
 import { Waiting } from '@/components/waiting';
 import { OUTLINE, SPACE, useTheme } from '@/theme';
 
-/** A page of a busy list, and whether there's another after it. */
-export interface ListPage<T> {
+/** A page of a busy list, whether there's another after it, and (from /v1) where that one starts. */
+export interface ListPage<T, C = unknown> {
   items: T[];
   more: boolean;
+  next?: C | null;
 }
 
 /** What a busy list reads, from its own corner of the database. */
@@ -47,11 +48,11 @@ export interface BusyListSource<T, C> {
   /** What the list calls When (Deletions: Asked), and whether a moment starts it. */
   when?: ListWhen;
   /** A page of rows after `cursor` (null for the first), narrowed as `ask` says. */
-  rows: (cursor: C | null, ask: ListAsk) => Promise<ListPage<T>>;
+  rows: (cursor: C | null, ask: ListAsk) => Promise<ListPage<T, C>>;
   /** How many rows match `ask`. */
   count: (ask: ListAsk) => Promise<number>;
-  /** Where the next page starts: the last row's cursor. */
-  cursor: (last: T) => C;
+  /** Where the next page starts, when the page doesn't say: the last row's cursor. */
+  cursor?: (last: T) => C;
 }
 
 /**
@@ -74,7 +75,11 @@ export function useBusyList<T, C>(source: BusyListSource<T, C>) {
     queryKey: [...source.key, 'rows', key],
     queryFn: ({ pageParam }) => source.rows(pageParam as C | null, ask),
     initialPageParam: null as C | null,
-    getNextPageParam: (last: ListPage<T>) => (last.more && last.items.length > 0 ? source.cursor(last.items[last.items.length - 1]) : null),
+    getNextPageParam: (last: ListPage<T, C>): C | null => {
+      if (!last.more) return null;
+      if (last.next !== undefined) return last.next;
+      return last.items.length > 0 && source.cursor ? source.cursor(last.items[last.items.length - 1]) : null;
+    },
     // While a new search reads, the last one's rows stay, so the list doesn't blink as you type.
     placeholderData: keepPreviousData,
   });

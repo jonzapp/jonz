@@ -4,17 +4,10 @@ import { Platform } from 'react-native';
 
 import { appleSignInAvailable, signInWithApple, signInWithGoogle, signOut } from './auth';
 import { supabase } from './supabase';
+import { callV1 } from './v1';
 
-jest.mock('./supabase', () => {
-  const update = { eq: jest.fn() };
-  return {
-    supabase: {
-      auth: { signInWithIdToken: jest.fn(), signOut: jest.fn() },
-      from: jest.fn(() => ({ update: jest.fn(() => update) })),
-      __update: update,
-    },
-  };
-});
+jest.mock('./supabase', () => ({ supabase: { auth: { signInWithIdToken: jest.fn(), signOut: jest.fn() } } }));
+jest.mock('./v1', () => ({ callV1: jest.fn() }));
 
 jest.mock('./nonce', () => ({
   appleNonce: jest.fn(async () => ({ raw: 'raw-nonce', hashed: 'hashed-nonce' })),
@@ -36,10 +29,9 @@ jest.mock('expo-apple-authentication', () => ({
 type MockGoogle = Record<'configure' | 'hasPlayServices' | 'signIn' | 'signOut', jest.Mock>;
 
 const auth = supabase.auth as unknown as { signInWithIdToken: jest.Mock; signOut: jest.Mock };
-const from = supabase.from as unknown as jest.Mock;
 const google = GoogleSignin as unknown as MockGoogle;
 const apple = AppleAuthentication as unknown as Record<'isAvailableAsync' | 'signInAsync', jest.Mock>;
-const nameWrite = (supabase as unknown as { __update: { eq: jest.Mock } }).__update.eq;
+const nameWrite = callV1 as jest.Mock;
 
 const WEB = 'web-123.apps.googleusercontent.com';
 const IOS = 'ios-456.apps.googleusercontent.com';
@@ -53,7 +45,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   auth.signInWithIdToken.mockResolvedValue({ data: { user: { id: 'user-1' } }, error: null });
   auth.signOut.mockResolvedValue({ error: null });
-  nameWrite.mockResolvedValue({ error: null });
+  nameWrite.mockResolvedValue(null);
 });
 
 /** google.ts loaded afresh, unconfigured, with its own mocks to inspect. */
@@ -154,10 +146,7 @@ describe('signInWithApple', () => {
   it('keeps the name Apple sends on the first sign-in', async () => {
     apple.signInAsync.mockResolvedValue(credential());
     await signInWithApple();
-    expect(from).toHaveBeenCalledWith('profiles');
-    const update = from.mock.results[0].value.update as jest.Mock;
-    expect(update).toHaveBeenCalledWith({ display_name: 'Priya Shah' });
-    expect(nameWrite).toHaveBeenCalledWith('id', 'user-1');
+    expect(nameWrite).toHaveBeenCalledWith('set_my_name', { name: 'Priya Shah' });
   });
 
   it("leaves the name alone when Apple doesn't send one", async () => {
@@ -165,7 +154,7 @@ describe('signInWithApple', () => {
     await signInWithApple();
     apple.signInAsync.mockResolvedValue(credential({ fullName: { givenName: null, middleName: null, familyName: null } }));
     await signInWithApple();
-    expect(from).not.toHaveBeenCalled();
+    expect(nameWrite).not.toHaveBeenCalled();
   });
 
   it('still signs you in when the name cannot be kept', async () => {
@@ -189,7 +178,7 @@ describe('signInWithApple', () => {
     apple.signInAsync.mockResolvedValueOnce(credential());
     auth.signInWithIdToken.mockResolvedValueOnce({ data: {}, error: new Error('Nonces mismatch') });
     await expect(signInWithApple()).rejects.toThrow('Nonces mismatch');
-    expect(from).not.toHaveBeenCalled();
+    expect(nameWrite).not.toHaveBeenCalled();
   });
 });
 

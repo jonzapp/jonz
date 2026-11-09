@@ -43,15 +43,16 @@ describe("jonz.app's web build on Vercel", () => {
     });
   });
 
-  it("passes /api/* on to apps/api before anything else, so the clock's URL and the app's calls stay put", () => {
-    expect(config.rewrites[0]).toEqual({
-      source: '/api/:path*',
-      destination: 'https://api.jonz.app/api/:path*',
-    });
+  it("passes /api/* and /v1/* on to apps/api before anything else, so the clock's URL and the app's calls stay put", () => {
+    expect(config.rewrites.slice(0, 2)).toEqual([
+      { source: '/api/:path*', destination: 'https://api.jonz.app/api/:path*' },
+      { source: '/v1/:path*', destination: 'https://api.jonz.app/v1/:path*' },
+    ]);
   });
 
   it('never caches what the API answers', () => {
     expect(headersFor('/api/:path*')).toContainEqual({ key: 'x-vercel-enable-rewrite-caching', value: '0' });
+    expect(headersFor('/v1/:path*')).toContainEqual({ key: 'x-vercel-enable-rewrite-caching', value: '0' });
   });
 
   it("sends the old Wall, Stake and Table links on to their places under House, as the app's router does", () => {
@@ -71,13 +72,13 @@ describe("jonz.app's web build on Vercel", () => {
     // The app draws itself in the browser, and the bots that make a chat's
     // link cards don't run it, so they're sent to apps/api's page of card tags
     // (packages/core/src/share.ts) by their user agent. People get the app.
-    const [root, page] = config.rewrites.slice(1, 3);
+    const [root, page] = config.rewrites.slice(2, 4);
     const bots = new RegExp(`^${root.has![0].value}$`);
 
     it('sends the chat apps\' bots, and only them, to the card page, front door and every page alike', () => {
       expect(root).toMatchObject({ source: '/', destination: 'https://api.jonz.app/api/share' });
       expect(page).toMatchObject({
-        source: '/:path((?!api/|_expo/)[^.]*)',
+        source: '/:path((?!api/|v1/|_expo/)[^.]*)',
         destination: 'https://api.jonz.app/api/share/:path',
       });
       expect(page.has).toEqual(root.has);
@@ -111,7 +112,7 @@ describe("jonz.app's web build on Vercel", () => {
 
   it('opens any other path on the app, which draws its own not-found', () => {
     expect(config.rewrites.at(-1)).toEqual({ source: '/(.*)', destination: '/index.html' });
-    expect(config.rewrites).toHaveLength(4);
+    expect(config.rewrites).toHaveLength(5);
   });
 
   it('sends the headers the Next app sends (apps/api/next.config.ts)', () => {

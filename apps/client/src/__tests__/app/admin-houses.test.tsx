@@ -107,7 +107,7 @@ beforeEach(() => {
   jest.mocked(ownerStatus).mockResolvedValue({ owner: true, mfa: true, permissions: [...OWNER_PERMISSION_NAMES] });
   jest.mocked(liveNotices).mockResolvedValue([]);
   jest.mocked(ownerOverview).mockResolvedValue({ overview: OVERVIEW, ms: 120 });
-  jest.mocked(housesPage).mockResolvedValue({ items: [ELM, FLAT], more: false });
+  jest.mocked(housesPage).mockResolvedValue({ items: [ELM, FLAT], more: false, next: null });
   jest.mocked(housesCount).mockResolvedValue(2);
   jest.mocked(ownerHouse).mockResolvedValue(ELM_DETAIL);
 });

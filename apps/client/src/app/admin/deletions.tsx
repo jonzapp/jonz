@@ -64,9 +64,8 @@ export default function DeletionsPage() {
     facets: DELETION_FACETS,
     when: DELETION_WHEN,
     rows: (cursor: DeletionCursor | null, ask) =>
-      deletionsPage(cursor, deletionFilter(ask)).then((page) => ({ items: page.people, more: page.more })),
+      deletionsPage(cursor, deletionFilter(ask)).then((page) => ({ items: page.people, more: page.more, next: page.next })),
     count: (ask) => deletionsCount(deletionFilter(ask)),
-    cursor: (person: PendingDeletion) => ({ at: person.deleteAfter, userId: person.userId }),
   });
   return (
     <Screen spreads bar={<TitleBar title="Deletions" />} onNearEnd={busy.onNearEnd} testID="admin-deletions">

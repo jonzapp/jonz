@@ -1,12 +1,12 @@
 import type { Session } from '@supabase/supabase-js';
 
 import { keepMicrosoftPhoto, wantsMicrosoftPhoto } from './microsoft-photo';
-import { supabase } from './supabase';
+import { callV1 } from './v1';
 
 const mockUpload = jest.fn();
+jest.mock('./v1', () => ({ callV1: jest.fn() }));
 jest.mock('./supabase', () => ({
   supabase: {
-    rpc: jest.fn(),
     storage: {
       from: () => ({
         upload: mockUpload,
@@ -17,7 +17,7 @@ jest.mock('./supabase', () => ({
   },
 }));
 
-const rpc = supabase.rpc as jest.Mock;
+const rpc = callV1 as jest.Mock;
 const fetchMock = jest.fn();
 
 function session(identities: { provider: string; identity_data?: Record<string, unknown> }[], token: string | null = 'ms'): Session {
@@ -29,7 +29,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   global.fetch = fetchMock;
   mockUpload.mockResolvedValue({ error: null });
-  rpc.mockResolvedValue({ error: null });
+  rpc.mockResolvedValue(null);
   jest.spyOn(console, 'warn').mockImplementation(() => undefined);
 });
 

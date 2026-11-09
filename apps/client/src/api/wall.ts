@@ -1,9 +1,11 @@
-import { humanError, photoPaths, wallEvents, type ReactionKind, type WallEvent } from '@app/core';
+import { photoPaths, wallEvents, type ReactionKind, type WallEvent } from '@app/core';
 
+import { snakeKeys } from './base';
 import { supabase } from './supabase';
+import { callV1 } from './v1';
 
-// The Wall: what the house did, read through your own session (RLS decides),
-// and your reactions, written as your own rows.
+// The Wall: what the house did, and your reactions, on /v1. Receipts are
+// signed links from Storage until files move to files.jonz.app.
 
 /** How long a photo's signed link lasts: long enough to look, short enough not to share. */
 const PHOTO_SECONDS = 3600;
@@ -16,15 +18,8 @@ export interface Wall {
   older: WallCursor | null;
 }
 
-/**
- * The last event on a page, as the database has it: older events come
- * strictly before it. The id breaks a tie between events written in the
- * same instant (a week closing writes several).
- */
-export interface WallCursor {
-  createdAt: string;
-  id: string;
-}
+/** Where the page of older events starts: what /v1 answered with the last page. */
+export type WallCursor = string;
 
 /**
  * The latest of the house's events, with their photos signed for an hour.
@@ -63,34 +58,22 @@ async function readEvents(
   limit: number,
   before?: WallCursor,
 ): Promise<Pick<Wall, 'events' | 'older'>> {
-  let query = supabase
-    .from('events')
-    .select('id, kind, user_id, assignment_id, data, created_at, assignments(photo_path), reactions(user_id, kind)')
-    .eq('house_id', houseId)
-    .neq('kind', 'week_dealt');
-  if (before) {
-    // Quoted: a timestamp's dots and colons would otherwise read as PostgREST's own.
-    const at = `"${before.createdAt}"`;
-    query = query.or(`created_at.lt.${at},and(created_at.eq.${at},id.lt.${before.id})`);
-  }
-  const { data, error } = await query
-    .order('created_at', { ascending: false })
-    .order('id', { ascending: false })
-    .limit(limit);
-  if (error) throw error;
-  const rows = data ?? [];
-  const last = rows[rows.length - 1];
-  return {
-    events: wallEvents(rows, userId),
-    older: last && rows.length === limit ? { createdAt: last.created_at, id: last.id } : null,
-  };
+  const page = await callV1('house_wall', { houseId, limit, startingAfter: before });
+  const rows = page.data.map((e) => ({
+    id: e.id,
+    kind: e.kind,
+    user_id: e.userId,
+    assignment_id: e.assignmentId,
+    // What happened, in its own names ("starts_on").
+    data: snakeKeys(e.data),
+    created_at: e.createdAt,
+    assignments: { photo_path: e.photoPath },
+    reactions: e.reactions.map((r) => ({ user_id: r.userId, kind: r.kind })),
+  }));
+  return { events: wallEvents(rows, userId), older: page.hasMore ? page.startingAfter : null };
 }
 
 /** React to an event, or take your reaction back. */
-export async function setReaction(eventId: string, userId: string, kind: ReactionKind, on: boolean): Promise<void> {
-  const { error } = on
-    ? await supabase.from('reactions').insert({ event_id: eventId, kind })
-    : await supabase.from('reactions').delete().eq('event_id', eventId).eq('user_id', userId).eq('kind', kind);
-  // A second tap that raced the first is already what was asked for.
-  if (error && !error.message.includes('duplicate')) throw new Error(humanError(error));
+export async function setReaction(eventId: string, _userId: string, kind: ReactionKind, on: boolean): Promise<void> {
+  await callV1(on ? 'react' : 'unreact', { eventId, kind });
 }

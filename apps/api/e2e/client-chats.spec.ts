@@ -29,7 +29,7 @@ test("a chat is kept, comes back from Your chats, and can be deleted", async ({ 
   await expect(page.getByTestId("chat-open-list")).toBeVisible();
 
   // No gateway here, so Jonz's answer is written in: a John added, which comes with a card.
-  await page.route("**/api/setup/draft", async (route) => {
+  await page.route("**/v1/houses/*/ask", async (route) => {
     const { draft } = route.request().postDataJSON() as { draft: HouseDraft };
     const windows = { ...draft.johns[0], id: undefined, name: "Windows", why: "" };
     await route.fulfill({ json: { reply: "Here’s windows.", ask: null, draft: { ...draft, johns: [...draft.johns, windows] }, source: "ai" } });
@@ -42,7 +42,7 @@ test("a chat is kept, comes back from Your chats, and can be deleted", async ({ 
 
   const said = "Add windows every month";
   await here.getByTestId("chat-input").fill(said);
-  const kept = page.waitForResponse((r) => r.url().includes("/rest/v1/ask_chats") && r.request().method() === "POST");
+  const kept = page.waitForResponse((r) => r.url().endsWith("/me/ask-chats") && r.request().method() === "POST");
   await here.getByTestId("chat-send").click();
   await expect(here.getByTestId("draft-card")).toBeVisible();
   expect((await kept).status()).toBe(201);

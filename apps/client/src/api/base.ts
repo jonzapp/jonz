@@ -5,7 +5,7 @@ import { Platform } from 'react-native';
 
 /**
  * Where apps/api answers. Unset on the web, it's the page's own origin:
- * jonz.app passes /api/* on to apps/api (apps/client/vercel.json), so
+ * jonz.app passes /api/* and /v1/* on to apps/api (apps/client/vercel.json), so
  * the browser needs no CORS. A phone has no origin, so there it must be set.
  */
 export function apiBase(): string {
@@ -14,3 +14,24 @@ export function apiBase(): string {
   if (Platform.OS === 'web') return '';
   throw new Error('Missing EXPO_PUBLIC_API_URL. Copy .env.example to .env.local and fill it in.');
 }
+
+/** A refusal from the API, with a sentence fit to show. */
+export class ApiRequestError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+    this.name = 'ApiRequestError';
+  }
+}
+
+/**
+ * /v1 names every key in camelCase, inside stored JSON too. A record whose
+ * keys are its columns' own names (an audit diff, a History move's details)
+ * gets them back with this: one level, the values left as they are.
+ */
+export const snakeKeys = (value: unknown): unknown =>
+  value !== null && typeof value === 'object' && !Array.isArray(value)
+    ? Object.fromEntries(Object.entries(value).map(([k, v]) => [k.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`), v]))
+    : value;

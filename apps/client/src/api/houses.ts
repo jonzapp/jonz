@@ -1,17 +1,16 @@
-import { DeleteHouseResponse, humanError, type HouseDetail, type HouseRow, type ListAsk, type Overview, type OverviewSpan, type PassPlan } from '@app/core';
+import { type DeleteHouseResponse, type HouseDetail, type HouseRow, type ListAsk, type Overview, type OverviewSpan, type PassPlan } from '@app/core';
 
-import { apiPost } from './http';
-import { supabase } from './supabase';
+import { callV1 } from './v1';
 
-// The owner's Overview and Houses (docs/specs/owner-admin.md): one read for
-// the Overview, every house as a busy list, and deleting one (houses:write).
+// The owner's Overview and Houses (docs/specs/owner-admin.md), on /v1: one
+// read for the Overview, every house as a busy list, and deleting one
+// (houses:write).
 
 /** The Overview for this week or this month in the owner's zone, and how long the read took. */
 export async function ownerOverview(span: OverviewSpan, zone: string): Promise<{ overview: Overview; ms: number }> {
   const started = Date.now();
-  const { data, error } = await supabase.rpc('owner_overview', { p_span: span, p_zone: zone });
-  if (error) throw new Error(humanError(error));
-  return { overview: data as unknown as Overview, ms: Date.now() - started };
+  const overview = await callV1('owner_overview', { span, zone });
+  return { overview: overview as unknown as Overview, ms: Date.now() - started };
 }
 
 export interface HouseFilter {
@@ -38,64 +37,44 @@ export function houseFilter(ask: ListAsk): HouseFilter {
   };
 }
 
-export interface HouseCursor {
-  at: string;
-  id: string;
-}
+/** Where the next page starts: what /v1 answered with the last one. */
+export type HouseCursor = string;
 
 const PAGE = 50;
 
-const filterArgs = (filter: HouseFilter) => ({
-  p_q: filter.q,
-  p_pass: filter.pass ?? undefined,
-  p_active: filter.active ?? undefined,
-  p_after: filter.after ?? undefined,
-  p_before: filter.before ?? undefined,
-});
-
 /** A page of houses, most recently active first, narrowed by the database. */
-export async function housesPage(after: HouseCursor | null, filter: HouseFilter): Promise<{ items: HouseRow[]; more: boolean }> {
-  const { data, error } = await supabase.rpc('owner_houses_page', {
-    ...filterArgs(filter),
-    p_cursor_at: after?.at,
-    p_cursor_id: after?.id,
-    p_limit: PAGE + 1,
-  });
-  if (error) throw new Error(humanError(error));
-  const rows = data ?? [];
+export async function housesPage(after: HouseCursor | null, filter: HouseFilter): Promise<{ items: HouseRow[]; more: boolean; next: HouseCursor | null }> {
+  const page = await callV1('owner_houses_page', { ...filter, limit: PAGE, startingAfter: after ?? undefined });
   return {
-    items: rows.slice(0, PAGE).map((r) => ({
+    items: page.data.map((r) => ({
       id: r.id,
       name: r.name,
-      joinCode: r.join_code,
-      people: Number(r.people),
-      passPlan: r.pass_plan as PassPlan,
-      passUntil: r.pass_ends_at,
-      lastActive: r.last_active,
-      onTime: Number(r.on_time),
-      settled: Number(r.settled),
-      createdAt: r.created_at,
-      sortAt: r.sort_at,
+      joinCode: r.joinCode,
+      people: r.people,
+      passPlan: r.passPlan as PassPlan,
+      passUntil: r.passEndsAt,
+      lastActive: r.lastActive,
+      onTime: r.onTime,
+      settled: r.settled,
+      createdAt: r.createdAt,
+      sortAt: r.sortAt,
     })),
-    more: rows.length > PAGE,
+    more: page.hasMore,
+    next: page.startingAfter,
   };
 }
 
 /** How many houses match. */
 export async function housesCount(filter: HouseFilter): Promise<number> {
-  const { data, error } = await supabase.rpc('owner_houses_count', filterArgs(filter));
-  if (error) throw new Error(humanError(error));
-  return Number(data ?? 0);
+  return callV1('owner_houses_count', { ...filter });
 }
 
 /** One house, read only; null when it's gone. */
 export async function ownerHouse(id: string): Promise<HouseDetail | null> {
-  const { data, error } = await supabase.rpc('owner_house', { p_house: id });
-  if (error) throw new Error(humanError(error));
-  return (data as unknown as HouseDetail | null) ?? null;
+  return ((await callV1('owner_house', { houseId: id })) as unknown as HouseDetail | null) ?? null;
 }
 
 /** Deletes the whole house, for good (houses:write): answers how many lived there, how many were told, and whether its Pass was stopped. */
 export function deleteHouse(id: string, reason: string, tell: boolean): Promise<DeleteHouseResponse> {
-  return apiPost(`/api/admin/houses/${id}/delete`, { reason: reason.trim(), tell }, DeleteHouseResponse);
+  return callV1('owner_delete_house', { houseId: id, reason: reason.trim(), tell });
 }

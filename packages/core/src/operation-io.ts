@@ -562,7 +562,7 @@ export const OPERATION_IO = {
   // A house: your own Johns
   mark_done: io(z.object({ assignmentId: id, photoPath: text.optional() }), nothing, "POST /v1/assignments/{assignmentId}/done"),
   undo_done: io(z.object({ assignmentId: id }), nothing, "POST /v1/assignments/{assignmentId}/undo"),
-  plan_john: io(z.object({ assignmentId: id, at }), nothing, "POST /v1/assignments/{assignmentId}/plan"),
+  plan_john: io(z.object({ assignmentId: id, at: at.nullable() }), nothing, "POST /v1/assignments/{assignmentId}/plan"),
   roll_call: io(RollCallRequest, RollCallResponse, "POST /v1/assignments/{assignmentId}/roll-call"),
   save_prefs: io(
     z.object({

@@ -1,25 +1,9 @@
 // The web build's reminders, with the browser's push pieces stood in for:
 // Jest runs as a phone, so this loads push.web.ts by name.
 
-const mockCalls: [string, string, unknown[]][] = [];
-let mockInsert: { error: unknown } = { error: null };
+const mockCall = jest.fn();
 
-jest.mock('./supabase', () => ({
-  supabase: {
-    from: jest.fn((table: string) => {
-      const builder: Record<string, unknown> = {};
-      for (const method of ['delete', 'insert', 'eq']) {
-        builder[method] = jest.fn((...args: unknown[]) => {
-          mockCalls.push([table, method, args]);
-          return builder;
-        });
-      }
-      builder.then = (resolve: (v: unknown) => unknown) =>
-        Promise.resolve(mockCalls.some(([, m]) => m === 'insert') ? mockInsert : { error: null }).then(resolve);
-      return builder;
-    }),
-  },
-}));
+jest.mock('./v1', () => ({ callV1: (...args: unknown[]) => mockCall(...args) }));
 
 const KEY = 'BElgmKkqVZ9w0b2u4SWyR3cBfJ9L8i0n4b-Q_aXv8FfQ2Ay3xlNkUvO1sYQ9u0g5O1mF3a2-PlS6qA7ZbV9h1eQ';
 
@@ -53,8 +37,7 @@ const Notification = { requestPermission: jest.fn(async () => 'granted') };
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockCalls.length = 0;
-  mockInsert = { error: null };
+  mockCall.mockResolvedValue(null);
   Object.defineProperty(globalThis, 'navigator', { value: { serviceWorker }, configurable: true });
   Object.assign(globalThis, { window: globalThis, PushManager: function PushManager() {}, Notification });
 });
@@ -93,23 +76,19 @@ describe('turnRemindersOn', () => {
     expect(await push.turnRemindersOn('ava')).toBe('on');
     expect(serviceWorker.register).toHaveBeenCalledWith('/sw.js');
     expect(pushManager.subscribe).toHaveBeenCalledWith({ userVisibleOnly: true, applicationServerKey: push.keyBytes(KEY) });
-    expect(mockCalls).toEqual([
-      ['push_subscriptions', 'delete', []],
-      ['push_subscriptions', 'eq', ['endpoint', 'https://push.example/abc']],
-      ['push_subscriptions', 'insert', [{ user_id: 'ava', endpoint: 'https://push.example/abc', p256dh: 'p-key', auth: 'a-key' }]],
-    ]);
+    expect(mockCall.mock.calls).toEqual([['add_push_device', { endpoint: 'https://push.example/abc', p256dh: 'p-key', auth: 'a-key' }]]);
   });
 
   it('stops when the browser is told no', async () => {
     Notification.requestPermission.mockResolvedValueOnce('denied');
     expect(await load().turnRemindersOn('ava')).toBe('blocked');
     expect(pushManager.subscribe).not.toHaveBeenCalled();
-    expect(mockCalls).toEqual([]);
+    expect(mockCall).not.toHaveBeenCalled();
   });
 
-  it("throws when the database won't keep it", async () => {
-    mockInsert = { error: { code: '42501', message: 'denied' } };
-    await expect(load().turnRemindersOn('ava')).rejects.toThrow("You can’t do that.");
+  it("throws when /v1 won't keep it", async () => {
+    mockCall.mockRejectedValue(new Error('You can’t do that.'));
+    await expect(load().turnRemindersOn('ava')).rejects.toThrow('You can’t do that.');
   });
 });
 
@@ -123,18 +102,15 @@ describe('remindersOn and turnRemindersOff', () => {
     expect(await push.remindersOn()).toBe(false);
   });
 
-  it('forgets the subscription in the database, then in the browser', async () => {
+  it('forgets the subscription on /v1, then in the browser', async () => {
     pushManager.getSubscription.mockResolvedValueOnce(subscription);
     await load().turnRemindersOff();
-    expect(mockCalls).toEqual([
-      ['push_subscriptions', 'delete', []],
-      ['push_subscriptions', 'eq', ['endpoint', 'https://push.example/abc']],
-    ]);
+    expect(mockCall.mock.calls).toEqual([['remove_push_device', { endpoint: 'https://push.example/abc' }]]);
     expect(subscription.unsubscribe).toHaveBeenCalled();
   });
 
   it('has nothing to do when there is no subscription', async () => {
     await load().turnRemindersOff();
-    expect(mockCalls).toEqual([]);
+    expect(mockCall).not.toHaveBeenCalled();
   });
 });

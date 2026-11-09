@@ -3,7 +3,7 @@
 // shared secret where a stack still signs with one (the local stack and CI).
 // Keys are cached per instance, which is safe to repeat on every instance.
 
-import { createRemoteJWKSet, jwtVerify, type JWTPayload } from "jose";
+import { createRemoteJWKSet, decodeProtectedHeader, jwtVerify, type JWTPayload } from "jose";
 
 import { Problem } from "./problem";
 
@@ -17,7 +17,7 @@ export interface Claims extends JWTPayload {
 export interface TokenConfig {
   /** https://<project>.supabase.co, or the local stack's URL. */
   supabaseUrl: string;
-  /** The legacy shared secret, for stacks that still sign with HS256. */
+  /** The legacy shared secret, for stacks that still sign with HS256. Tokens signed with the keys are still checked against the JWKS. */
   jwtSecret?: string;
   /** Tests only: the moment to check expiry against. */
   currentDate?: Date;
@@ -35,7 +35,9 @@ export function tokenVerifier(config: TokenConfig): TokenVerifier {
     if (!token) throw new Problem("unauthenticated", "Sign in first.");
     try {
       const options = { audience: "authenticated", currentDate: config.currentDate };
-      const { payload } = secret
+      // A stack with the secret may still sign some tokens with its keys (the
+      // local stack does both): the token's header says which.
+      const { payload } = secret && decodeProtectedHeader(token).alg === "HS256"
         ? await jwtVerify(token, secret, { ...options, algorithms: ["HS256"] })
         : await jwtVerify(token, jwks, { ...options, issuer, algorithms: ["ES256", "RS256"] });
       if (typeof payload.sub !== "string" || payload.role !== "authenticated") throw new Error("not a person's token");

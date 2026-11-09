@@ -1,6 +1,5 @@
-import { humanError } from '@app/core';
 
-import { supabase } from './supabase';
+import { callV1 } from './v1';
 
 // Reminders on this device, in a browser: a push subscription with the web's
 // VAPID public key and its service worker (/sw.js, from public/), saved as
@@ -38,7 +37,7 @@ export async function remindersOn(): Promise<boolean> {
  * Ask the browser, subscribe, and save the subscription as yours. "blocked"
  * when the person (or the browser) said no; anything else that fails throws.
  */
-export async function turnRemindersOn(userId: string): Promise<'on' | 'blocked'> {
+export async function turnRemindersOn(_userId: string): Promise<'on' | 'blocked'> {
   if ((await Notification.requestPermission()) !== 'granted') return 'blocked';
   const registration = await navigator.serviceWorker.register(WORKER);
   await navigator.serviceWorker.ready;
@@ -47,15 +46,8 @@ export async function turnRemindersOn(userId: string): Promise<'on' | 'blocked'>
     applicationServerKey: keyBytes(VAPID_PUBLIC_KEY),
   });
   const { keys } = subscription.toJSON();
-  // A browser that subscribes again keeps its endpoint: replace the row rather than add one.
-  await supabase.from('push_subscriptions').delete().eq('endpoint', subscription.endpoint);
-  const { error } = await supabase.from('push_subscriptions').insert({
-    user_id: userId,
-    endpoint: subscription.endpoint,
-    p256dh: keys?.p256dh ?? '',
-    auth: keys?.auth ?? '',
-  });
-  if (error) throw new Error(humanError(error));
+  // A browser that subscribes again keeps its endpoint: add_push_device replaces its row rather than add one.
+  await callV1('add_push_device', { endpoint: subscription.endpoint, p256dh: keys?.p256dh ?? '', auth: keys?.auth ?? '' });
   return 'on';
 }
 
@@ -63,6 +55,6 @@ export async function turnRemindersOn(userId: string): Promise<'on' | 'blocked'>
 export async function turnRemindersOff(): Promise<void> {
   const subscription = await current();
   if (!subscription) return;
-  await supabase.from('push_subscriptions').delete().eq('endpoint', subscription.endpoint);
+  await callV1('remove_push_device', { endpoint: subscription.endpoint });
   await subscription.unsubscribe();
 }

@@ -1,8 +1,8 @@
-import { ApiError, OfferView, PassCheckoutRequest, PassRedirect, type PassPurchase } from '@app/core';
+import { ApiError, OfferView, PassCheckoutRequest, type PassPurchase } from '@app/core';
 
 import { getAccessToken } from './auth';
-import { apiBase } from './base';
-import { apiPost, ApiRequestError } from './http';
+import { apiBase, ApiRequestError } from './base';
+import { callV1 } from './v1';
 
 // An offer's link (docs/specs/promotions.md): what it gives, read by anyone
 // with the link, and, signed in, whether it's theirs; then Use it, which is
@@ -29,6 +29,6 @@ export async function readOffer(code: string): Promise<OfferView | null> {
  * the offer on it.
  */
 export async function takeOffer(houseId: string, plan: PassPurchase, offer: string): Promise<string> {
-  const { url } = await apiPost('/api/pass/checkout', PassCheckoutRequest.parse({ houseId, plan, offer }), PassRedirect);
+  const { url } = await callV1('pass_checkout', PassCheckoutRequest.parse({ houseId, plan, offer }));
   return url;
 }

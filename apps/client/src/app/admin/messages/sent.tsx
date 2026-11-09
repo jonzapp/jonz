@@ -31,7 +31,6 @@ export default function SentPage() {
     when: MESSAGE_WHEN,
     rows: (cursor: SentCursor | null, ask: ListAsk) => sentPage(cursor, sentFilter(ask)),
     count: (ask) => sentCount(sentFilter(ask)),
-    cursor: (row: SentRow) => ({ at: row.sentAt, id: row.id }),
   });
   const [open, setOpen] = useState<SentRow | null>(null);
   const now = new Date();

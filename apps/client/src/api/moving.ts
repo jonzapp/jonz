@@ -1,6 +1,6 @@
-import { CreateHouse, humanError } from '@app/core';
+import { CreateHouse } from '@app/core';
 
-import { supabase } from './supabase';
+import { callV1 } from './v1';
 
 // Bring Jonz to your next house (docs/specs/moving-on.md): your moving-out
 // date, and once you've left, starting your next house from the old list.
@@ -8,8 +8,7 @@ import { supabase } from './supabase';
 
 /** Say the day you move out (the house's local date), or null for staying after all. */
 export async function setMovingOut(on: string | null) {
-  const { error } = await supabase.rpc('set_moving_out', { p_on: on });
-  if (error) throw new Error(humanError(error));
+  await callV1('set_moving_out', { on });
 }
 
 /** The house you left most recently, while it can still come with you: its name and how many Johns it has. */
@@ -29,37 +28,27 @@ export interface MovingOn {
 
 /** What the Moving on screen offers, or null when you haven't just left a house. */
 export async function movingOn(): Promise<MovingOn | null> {
-  const { data, error } = await supabase.rpc('moving_on');
-  if (error) throw error;
-  const row = data?.[0];
+  const [row] = await callV1('moving_on', {});
   return row
     ? {
-        fromHouse: row.from_house_id,
-        houseName: row.house_name,
-        johns: Number(row.johns),
-        pass: (row.pass_state as MovingOn['pass']) ?? null,
-        houseKeepsUntil: row.house_pass_until,
+        fromHouse: row.fromHouseId,
+        houseName: row.houseName,
+        johns: row.johns,
+        pass: (row.passState as MovingOn['pass']) ?? null,
+        houseKeepsUntil: row.housePassUntil,
       }
     : null;
 }
 
 /** Leave the House Pass you're carrying with the house you left: it runs to the end of what was paid. */
 export async function leavePass() {
-  const { error } = await supabase.rpc('leave_pass');
-  if (error) throw new Error(humanError(error));
+  await callV1('leave_pass', {});
 }
 
 /** A new house with the John list of the one you left, with you as its admin. */
 export async function startHouseFrom(fromHouse: string, input: CreateHouse): Promise<string> {
   const parsed = CreateHouse.safeParse(input);
   if (!parsed.success) throw new Error(parsed.error.issues[0].message);
-  const { data, error } = await supabase.rpc('start_house_from', {
-    p_from: fromHouse,
-    p_name: parsed.data.name,
-    p_timezone: parsed.data.timezone,
-    p_currency: parsed.data.currency,
-    p_week_starts: parsed.data.weekStarts,
-  });
-  if (error) throw new Error(humanError(error));
-  return data;
+  const { name, timezone, currency, weekStarts } = parsed.data;
+  return callV1('start_house_from', { fromId: fromHouse, name, timezone, currency, weekStarts });
 }

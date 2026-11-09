@@ -1,7 +1,7 @@
-import { PASS_ENFORCED, PassCheckoutRequest, PassManageRequest, PassRedirect, type PassPurchase } from '@app/core';
+import { PASS_ENFORCED, PassCheckoutRequest, PassManageRequest, type PassPurchase } from '@app/core';
 import { Platform } from 'react-native';
 
-import { apiPost } from './http';
+import { callV1 } from './v1';
 
 // Buying the House Pass on the web: apps/api opens Stripe Checkout or the
 // billing page, and the browser goes there. Stripe's webhook gives the house
@@ -29,12 +29,12 @@ export function leaveFor(url: string): void {
 
 /** Stripe Checkout's URL for this plan, for this house. */
 export async function passCheckoutUrl(houseId: string, plan: PassPurchase): Promise<string> {
-  const { url } = await apiPost('/api/pass/checkout', PassCheckoutRequest.parse({ houseId, plan }), PassRedirect);
+  const { url } = await callV1('pass_checkout', PassCheckoutRequest.parse({ houseId, plan }));
   return url;
 }
 
 /** Stripe's billing page, for the housemate who bought the Pass. */
 export async function passBillingUrl(houseId: string): Promise<string> {
-  const { url } = await apiPost('/api/pass/manage', PassManageRequest.parse({ houseId }), PassRedirect);
+  const { url } = await callV1('pass_billing', PassManageRequest.parse({ houseId }));
   return url;
 }

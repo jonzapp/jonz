@@ -1,47 +1,46 @@
 import {
-  humanError,
-  MoveResponse,
-  PromotionEmailed,
-  PromotionMade,
-  PromotionReady,
   termsOf,
   type ListAsk,
   type PromotionAudience,
+  type PromotionMade,
   type PromotionPerson,
   type PromotionRequest,
   type PromotionRow,
   type PromotionState,
   type PromotionTerms,
 } from '@app/core';
-import { apiPost } from './http';
-import { supabase } from './supabase';
+
+import { callV1 } from './v1';
 
 /** Where the owner's promotions sit in the cache. */
 export const PROMOTIONS_KEY = ['owner-promotions'] as const;
 
-// The owner's Promotions (docs/specs/promotions.md): making one, its Stripe
-// set-up tried again, stopping it and emailing the people it names go
-// through apps/api; reading them is the owner_ functions, which check it's
-// the owner with their code.
+// The owner's Promotions (docs/specs/promotions.md), on /v1: making one, its
+// Stripe set-up tried again, stopping it and emailing the people it names,
+// and reading them, each checked as the owner with their code.
 
 /** Makes it; answers its id, and whether Stripe has it yet. */
 export function makePromotion(request: PromotionRequest): Promise<PromotionMade> {
-  return apiPost('/api/admin/promotions', request, PromotionMade);
+  return callV1('owner_make_promotion', request);
 }
 
 /** Try again: sets money off up in Stripe; answers whether it's live now. */
 export async function retryPromotion(id: string): Promise<boolean> {
-  return (await apiPost(`/api/admin/promotions/${id}/retry`, {}, PromotionReady)).ready;
+  return (await callV1('retry_promotion', { promotionId: id })).ready;
 }
 
 export async function stopPromotion(id: string): Promise<void> {
-  await apiPost(`/api/admin/promotions/${id}/stop`, {}, MoveResponse);
+  await callV1('owner_stop_promotion', { promotionId: id });
 }
 
 /** Email them: answers how many it went to now. */
 export async function emailPromotion(id: string): Promise<number> {
-  return (await apiPost(`/api/admin/promotions/${id}/email`, {}, PromotionEmailed)).sent;
+  return (await callV1('owner_promotion_emails', { promotionId: id })).sent;
 }
+
+/** A promotion's money off, as /v1 names it, in the shape termsOf reads. */
+const terms = (r: { kind: string; percentOff: number | null; amountOff: unknown; duration: string | null; months: number | null; plans: readonly string[] | null; endsAt: string | null }) =>
+  termsOf({ kind: r.kind, percent_off: r.percentOff, amount_off: r.amountOff, duration: r.duration, months: r.months, plans: r.plans, ends_at: r.endsAt });
 
 // --- Every promotion: a busy list -------------------------------------------------------
 
@@ -65,48 +64,40 @@ export function promotionFilter(ask: ListAsk): PromotionFilter {
   };
 }
 
-export interface PromotionCursor {
-  at: string;
-  id: string;
-}
+/** Where the next page starts: what /v1 answered with the last one. */
+export type PromotionCursor = string;
 
 const PAGE = 50;
-
-const filterArgs = (f: PromotionFilter) => ({ p_q: f.q, p_who: f.who ?? undefined, p_state: f.state ?? undefined });
 
 const stateOf = (s: string): PromotionState => (STATES.includes(s) ? (s as PromotionState) : 'live');
 
 /** A page of promotions, newest first. */
-export async function promotionsPage(after: PromotionCursor | null, filter: PromotionFilter, size = PAGE): Promise<{ items: PromotionRow[]; more: boolean }> {
-  const { data, error } = await supabase.rpc('owner_promotions_page', {
-    ...filterArgs(filter),
-    p_cursor_at: after?.at,
-    p_cursor_id: after?.id,
-    p_limit: size + 1,
-  });
-  if (error) throw new Error(humanError(error));
-  const rows = data ?? [];
+export async function promotionsPage(
+  after: PromotionCursor | null,
+  filter: PromotionFilter,
+  size = PAGE,
+): Promise<{ items: PromotionRow[]; more: boolean; next: PromotionCursor | null }> {
+  const page = await callV1('owner_promotions_page', { ...filter, limit: size, startingAfter: after ?? undefined });
   return {
-    items: rows.slice(0, size).map((r) => ({
+    items: page.data.map((r) => ({
       id: r.id,
-      madeAt: r.made_at,
+      madeAt: r.madeAt,
       code: r.code,
       name: r.name,
-      terms: termsOf(r),
+      terms: terms(r),
       audience: r.audience === 'named' ? 'named' : 'anyone',
-      people: Number(r.people),
-      uses: Number(r.uses),
-      maxUses: r.max_uses,
+      people: r.people,
+      uses: r.uses,
+      maxUses: r.maxUses,
       state: stateOf(r.state),
     })),
-    more: rows.length > size,
+    more: page.hasMore,
+    next: page.startingAfter,
   };
 }
 
 export async function promotionsCount(filter: PromotionFilter): Promise<number> {
-  const { data, error } = await supabase.rpc('owner_promotions_count', filterArgs(filter));
-  if (error) throw new Error(humanError(error));
-  return Number(data ?? 0);
+  return callV1('owner_promotions_count', { ...filter });
 }
 
 // --- One promotion ------------------------------------------------------------------------
@@ -133,45 +124,22 @@ export interface PromotionDetail {
   recent: PromotionUse[];
 }
 
-interface Raw {
-  id: string;
-  code: string;
-  name: string;
-  note: string | null;
-  kind: string;
-  percent_off: number | null;
-  amount_off: unknown;
-  duration: string | null;
-  months: number | null;
-  plans: string[] | null;
-  ends_at: string | null;
-  audience: string;
-  max_uses: number | null;
-  state: string;
-  uses: number;
-  made_at: string;
-  people: { email: string; name: string | null; opened_at: string | null; emailed_at: string | null; used_at: string | null }[];
-  recent: { house: string | null; house_id: string | null; plan: string | null; at: string }[];
-}
-
 /** One promotion, with its people and its last 20 uses; null when it isn't there. */
 export async function promotion(id: string): Promise<PromotionDetail | null> {
-  const { data, error } = await supabase.rpc('owner_promotion', { p_id: id });
-  if (error) throw new Error(humanError(error));
-  if (!data) return null;
-  const r = data as unknown as Raw;
+  const r = await callV1('owner_promotion', { promotionId: id });
+  if (!r) return null;
   return {
     id: r.id,
     code: r.code,
     name: r.name,
     note: r.note,
-    terms: termsOf(r),
+    terms: terms(r),
     audience: r.audience === 'named' ? 'named' : 'anyone',
-    maxUses: r.max_uses,
+    maxUses: r.maxUses,
     state: stateOf(r.state),
-    uses: Number(r.uses),
-    madeAt: r.made_at,
-    people: (r.people ?? []).map((p) => ({ email: p.email, name: p.name, openedAt: p.opened_at, emailedAt: p.emailed_at, usedAt: p.used_at })),
-    recent: (r.recent ?? []).map((u) => ({ house: u.house, houseId: u.house_id, plan: u.plan, at: u.at })),
+    uses: r.uses,
+    madeAt: r.madeAt,
+    people: r.people,
+    recent: r.recent,
   };
 }

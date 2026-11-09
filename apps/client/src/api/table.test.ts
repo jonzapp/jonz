@@ -1,33 +1,11 @@
-import { monthWindow, weekWindow, type HouseRules } from '@app/core';
+import type { HouseRules } from '@app/core';
 
-import { supabase } from './supabase';
 import { loadTable } from './table';
+import { callV1 } from './v1';
 
-// Each table answers with what the test sets; the chain records its calls.
-const mockAnswers: Record<string, { data: unknown; error: unknown }[]> = {};
-const mockCalls: [string, string, unknown[]][] = [];
+jest.mock('./v1', () => ({ callV1: jest.fn() }));
 
-jest.mock('./supabase', () => ({
-  supabase: {
-    rpc: jest.fn((fn: string, args: unknown) => {
-      mockCalls.push([fn, 'rpc', [args]]);
-      return Promise.resolve(mockAnswers[fn]?.shift() ?? { data: [], error: null });
-    }),
-    from: jest.fn((table: string) => {
-      const answer = () => Promise.resolve(mockAnswers[table]?.shift() ?? { data: [], error: null });
-      const builder: Record<string, unknown> = {};
-      for (const method of ['select', 'eq', 'gte', 'lt', 'order', 'limit', 'in']) {
-        builder[method] = jest.fn((...args: unknown[]) => {
-          mockCalls.push([table, method, args]);
-          return builder;
-        });
-      }
-      builder.then = (resolve: (v: unknown) => unknown, reject: (e: unknown) => unknown) => answer().then(resolve, reject);
-      return builder;
-    }),
-  },
-}));
-
+const call = callV1 as jest.Mock;
 const RULES: HouseRules = {
   timezone: 'Europe/London',
   currency: 'GBP',
@@ -42,77 +20,55 @@ const RULES: HouseRules = {
   dealBudget: 4,
 };
 const NOW = new Date('2026-10-21T12:00:00Z');
+const read = (over: Record<string, unknown> = {}) => ({ assignments: [], recentShares: [], totals: [], ...over });
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockCalls.length = 0;
-  for (const key of Object.keys(mockAnswers)) delete mockAnswers[key];
+  call.mockResolvedValue(read());
 });
 
 it("scores the house's month, from the Johns due in it", async () => {
-  mockAnswers.assignments = [
-    {
-      data: [
-        { user_id: 'ava', points: 4, outcome: 'done', done_at: '2026-10-05T10:00:00Z', due_at: '2026-10-05T19:00:00Z', excused: false, weeks: { ends_at: '2026-10-11T23:00:00Z' } },
-        { user_id: 'ben', points: 2, outcome: 'missed', done_at: null, due_at: '2026-10-06T19:00:00Z', excused: false, weeks: { ends_at: '2026-10-11T23:00:00Z' } },
+  call.mockResolvedValue(
+    read({
+      assignments: [
+        { id: 'a1', userId: 'ava', points: 4, outcome: 'done', doneAt: '2026-10-05T10:00:00Z', dueAt: '2026-10-05T19:00:00Z', excused: false, coveredBy: null, flaggedAt: null, closesAt: null, jobId: null, absentAt: null, weekEndsAt: '2026-10-11T23:00:00Z', crew: [] },
+        { id: 'a2', userId: 'ben', points: 2, outcome: 'missed', doneAt: null, dueAt: '2026-10-06T19:00:00Z', excused: false, coveredBy: null, flaggedAt: null, closesAt: null, jobId: null, absentAt: null, weekEndsAt: '2026-10-11T23:00:00Z', crew: [] },
       ],
-      error: null,
-    },
-  ];
+    }),
+  );
   const table = await loadTable('h1', RULES, ['ava', 'ben'], NOW);
+  expect(call).toHaveBeenCalledWith('house_month', { houseId: 'h1', month: '2026-10' });
   expect(table.month).toBe('2026-10');
   expect(table.monthTable.map((r) => [r.userId, r.points, r.missed])).toEqual([
     ['ava', 4, 0],
     ['ben', 0, 1],
   ]);
-  const { startsAt, endsAt } = monthWindow('2026-10', 'Europe/London');
-  expect(mockCalls).toContainEqual(['assignments', 'gte', ['due_at', startsAt.toISOString()]]);
-  expect(mockCalls).toContainEqual(['assignments', 'lt', ['due_at', endsAt.toISOString()]]);
 });
 
 it('balances everyone against everything they owed, over every week before this one', async () => {
-  mockAnswers.house_balances = [
-    {
-      data: [
-        { user_id: 'ava', owed: 40, credited: 38 },
-        { user_id: 'ben', owed: '40', credited: '42' },
+  call.mockResolvedValue(
+    read({
+      totals: [
+        { userId: 'ava', owed: 40, credited: 38 },
+        { userId: 'ben', owed: 40, credited: 42 },
       ],
-      error: null,
-    },
-  ];
-  mockAnswers.weeks = [{ data: [{ id: 'w2' }, { id: 'w1' }], error: null }];
-  mockAnswers.week_shares = [
-    {
-      data: [
-        { user_id: 'ava', share: 2 },
-        { user_id: 'ava', share: 4 },
-        { user_id: 'ben', share: 2 },
+      recentShares: [
+        { userId: 'ava', share: 2 },
+        { userId: 'ava', share: 4 },
+        { userId: 'ben', share: 2 },
       ],
-      error: null,
-    },
-  ];
+    }),
+  );
   const table = await loadTable('h1', RULES, ['ava', 'ben'], NOW);
   // Ava is 2 behind; at half her usual 3-point week extra, that's 2 weeks to even.
   expect(table.balances).toEqual([
     { userId: 'ava', balance: -2, weeksToEven: 2 },
     { userId: 'ben', balance: 2, weeksToEven: 0 },
   ]);
-  const { startsOn } = weekWindow(NOW, 'Europe/London', 1);
-  expect(mockCalls).toContainEqual(['house_balances', 'rpc', [{ p_house: 'h1', p_before: startsOn }]]);
-  expect(mockCalls).toContainEqual(['weeks', 'lt', ['starts_on', startsOn]]);
-  expect(mockCalls).toContainEqual(['weeks', 'limit', [12]]);
-  expect(mockCalls).toContainEqual(['week_shares', 'in', ['week_id', ['w2', 'w1']]]);
 });
 
-it('reads no shares for a house with no weeks behind it, and is level', async () => {
-  const table = await loadTable('h1', RULES, ['ava'], NOW);
-  expect(supabase.from).not.toHaveBeenCalledWith('week_shares');
-  expect(table.balances).toEqual([{ userId: 'ava', balance: 0, weeksToEven: 0 }]);
-});
-
-it('fails when any of it cannot be read', async () => {
-  mockAnswers.weeks = [{ data: null, error: new Error('offline') }];
+it('is level for a house with no weeks behind it, and fails when it cannot read', async () => {
+  expect((await loadTable('h1', RULES, ['ava'], NOW)).balances).toEqual([{ userId: 'ava', balance: 0, weeksToEven: 0 }]);
+  call.mockRejectedValue(new Error('offline'));
   await expect(loadTable('h1', RULES, ['ava'], NOW)).rejects.toThrow('offline');
-  mockAnswers.house_balances = [{ data: null, error: new Error('no balances') }];
-  await expect(loadTable('h1', RULES, ['ava'], NOW)).rejects.toThrow('no balances');
 });

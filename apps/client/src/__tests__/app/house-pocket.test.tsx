@@ -153,7 +153,7 @@ describe('adding a child', () => {
     expect(addKid).not.toHaveBeenCalled();
     await fireEvent.changeText(form.getByTestId('kid-born'), String(new Date().getFullYear() - 7));
     await fireEvent.press(form.getByTestId('add-kid'));
-    await waitFor(() => expect(addKid).toHaveBeenCalledWith('Kit Park', new Date().getFullYear() - 7));
+    await waitFor(() => expect(addKid).toHaveBeenCalledWith(expect.any(String), 'Kit Park', new Date().getFullYear() - 7));
   });
 
   it("isn't offered to a kid", async () => {

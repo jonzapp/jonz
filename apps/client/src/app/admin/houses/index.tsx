@@ -42,7 +42,6 @@ export default function HousesPage() {
     when: HOUSE_WHEN,
     rows: (cursor: HouseCursor | null, ask: ListAsk) => housesPage(cursor, houseFilter(ask)),
     count: (ask) => housesCount(houseFilter(ask)),
-    cursor: (house: HouseRow) => ({ at: house.sortAt, id: house.id }),
   });
   return (
     <Screen spreads bar={<TitleBar title={HOUSES_COPY.page} />} onNearEnd={busy.onNearEnd} testID="admin-houses">
