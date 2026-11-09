@@ -7,6 +7,17 @@ import { OPERATION_NAMES, OPERATIONS, type Operation, type OperationName } from 
 const each = OPERATION_NAMES.map((n) => [n, OPERATIONS[n] as Operation, OPERATION_IO[n] as OperationIo] as const);
 
 describe("every operation's contract", () => {
+  it("turns its Pass feature on by a key of its own input, and only with a feature", () => {
+    for (const [n, o, io] of each) {
+      if (!o.entitlementWhen) continue;
+      expect(o.entitlement, n).toBeDefined();
+      expect(Object.keys(io.input.shape), n).toContain(o.entitlementWhen);
+    }
+    // A tick is free; a tick with a photo needs the Pass.
+    expect(OPERATIONS.mark_done).toMatchObject({ entitlement: "photos", entitlementWhen: "photoPath" });
+    expect((OPERATIONS.confirm_payment as Operation).entitlementWhen).toBeUndefined();
+  });
+
   it("has one /v1 route each", () => {
     const routes = each.map(([, , io]) => io.http);
     expect(routes.filter((r, i) => routes.indexOf(r) !== i)).toEqual([]);

@@ -11,8 +11,8 @@ import { REPORT_LIMITS } from "./reports";
 // scope app, and app_role_permissions) and every admin function asks
 // can_app(permission): an app role in app_owners, with their code this session. This
 // list says which moves there are, which role has each, and how Jonz handles
-// each one, so a move added to the admin pages without a way through Jonz
-// doesn't compile.
+// each one (owner-ask-operations.ts, from the registry), so a move added to
+// the admin pages without a way through Jonz doesn't compile.
 
 /**
  * An app role, as `app_owners.role` holds it: an owner may do everything on
@@ -45,28 +45,8 @@ export function ownerCan(role: OwnerRole | null | undefined, permission: OwnerPe
   return role != null && OWNER_ROLE_PERMISSIONS[role].includes(permission);
 }
 
-/**
- * How the owner's Ask Jonz handles each move: it reads it, or it puts it on
- * a card with these tools for the owner to tap. A Record over every
- * permission, as ASK_COVERAGE is, and every one is in the chat: none is
- * left for the owner to go and do on a page.
- */
+/** How the owner's Ask Jonz handles a permission (OWNER_ASK_COVERAGE, owner-ask-operations.ts): it reads it, or puts it on a card with these tools. */
 export type OwnerAskCoverage = { by: "reads" } | { by: "card"; tools: readonly string[] };
-
-export const OWNER_ASK_COVERAGE: Record<OwnerPermission, OwnerAskCoverage> = {
-  "admin:read": { by: "reads" },
-  "reports:write": { by: "card", tools: ["reply_to_report", "mark_report_fixed", "reopen_report", "set_same_as"] },
-  "notices:write": { by: "card", tools: ["save_notice", "end_notice"] },
-  "messages:write": { by: "card", tools: ["send_message"] },
-  "promotions:write": { by: "card", tools: ["make_promotion", "stop_promotion", "email_promotion", "retry_promotion"] },
-  "deletions:write": { by: "card", tools: ["delete_account_now", "stop_deletion", "start_deletion"] },
-  "houses:write": { by: "card", tools: ["delete_house"] },
-};
-
-/** The owner's write tools, from OWNER_ASK_COVERAGE. */
-export const OWNER_WRITE_TOOLS: readonly string[] = [
-  ...new Set(Object.values(OWNER_ASK_COVERAGE).flatMap((c) => (c.by === "card" ? c.tools : []))),
-];
 
 const Reason = z.string().trim().max(500);
 /** Who or what a move is about, as the admin pages name it: the card's words, never something Jonz is told to do. */
@@ -125,25 +105,6 @@ export type OwnerMoveKind = OwnerMove["kind"];
 
 /** The most moves one answer puts on the owner's card. */
 export const OWNER_MOVES_MAX = 6;
-
-/** Which permission each move needs: the card's moves, checked against the owner's role. */
-export const OWNER_MOVE_PERMISSION: Record<OwnerMoveKind, OwnerPermission> = {
-  report_reply: "reports:write",
-  report_fixed: "reports:write",
-  report_open: "reports:write",
-  report_same_as: "reports:write",
-  notice_save: "notices:write",
-  notice_end: "notices:write",
-  message_send: "messages:write",
-  promotion_make: "promotions:write",
-  promotion_stop: "promotions:write",
-  promotion_email: "promotions:write",
-  promotion_retry: "promotions:write",
-  deletion_now: "deletions:write",
-  deletion_stop: "deletions:write",
-  deletion_start: "deletions:write",
-  house_delete: "houses:write",
-};
 
 /** Moves that can’t be taken back: the card says so under each. */
 export const OWNER_MOVES_FINAL: readonly OwnerMoveKind[] = ["deletion_now", "message_send", "promotion_email", "report_reply", "promotion_stop", "house_delete"];

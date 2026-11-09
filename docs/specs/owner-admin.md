@@ -286,9 +286,13 @@ The owner's own Ask Jonz, apart from every house's. Same model and loop
   lists every admin move (`OWNER_PERMISSIONS`), which owner role has each
   (`OWNER_ROLE_PERMISSIONS`; every owner is a full owner today), and how
   Jonz does each one (`OWNER_ASK_COVERAGE`), the same shape as a house's
-  `permissions.ts` and `ask-coverage.ts`. A move added without a way
-  through Jonz doesn't compile, and a unit test fails if a write tool isn't
-  given with exactly its permission.
+  `permissions.ts` and `ask-coverage.ts`. That's made from the operation
+  registry (`packages/core/src/owner-ask-operations.ts`): every admin write
+  is a card move, with the tool that puts it there, or isn't a move someone
+  asks for, with why. A move's permission is its operation's own, and each
+  tool's description starts with its operation's words. An admin write added
+  without a way through Jonz doesn't compile, and a unit test fails if a
+  write tool isn't given with exactly its permission.
 - **Moves go on a card, as a house's do.** Jonz's write tools (reply to a
   report, mark it fixed and tell, open it again, same as; put up, change or
   end a notice; send a message; make, stop, email or set up again a

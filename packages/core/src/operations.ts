@@ -77,6 +77,12 @@ export interface Operation {
   destructive?: true;
   /** The House Pass feature it needs once the Pass is enforced (`PASS_ENFORCED`). */
   entitlement?: PassFeature;
+  /**
+   * The input key that turns the feature on: the Pass is needed only when
+   * it's given (a tick is free; a tick with a photo needs `photos`). Absent,
+   * the operation always needs it.
+   */
+  entitlementWhen?: string;
 }
 
 const op = <T extends Operation>(o: T) => o;
@@ -156,21 +162,21 @@ export const OPERATIONS = {
   house_pocket: op({ about: "Pocket money earned and paid", scope: "house", effect: "read", guard: perm("pocket_money:read"), tables: ["pocket_earnings", "pocket_pays"] }),
 
   // --- A house: your own Johns ----------------------------------------------------------------
-  mark_done: op({ about: "Tick off a John", scope: "house", effect: "write", guard: perm("ticks:write_own"), rpc: { name: "mark_done" }, entitlement: "photos" }),
+  mark_done: op({ about: "Tick off a John", scope: "house", effect: "write", guard: perm("ticks:write_own"), rpc: { name: "mark_done" }, entitlement: "photos", entitlementWhen: "photoPath" }),
   undo_done: op({ about: "Take back a tick", scope: "house", effect: "write", guard: perm("ticks:write_own"), rpc: { name: "undo_done" } }),
   plan_john: op({ about: "Say when you'll do a John", scope: "house", effect: "write", guard: perm("ticks:write_own"), rpc: { name: "plan_john" } }),
-  roll_call: op({ about: "Tick off a shared John, with who helped", scope: "house", effect: "write", guard: perm("ticks:write_own"), rpc: { name: "roll_call" }, route: "POST /api/roll-call", entitlement: "photos" }),
+  roll_call: op({ about: "Tick off a shared John, with who helped", scope: "house", effect: "write", guard: perm("ticks:write_own"), rpc: { name: "roll_call" }, route: "POST /api/roll-call", entitlement: "photos", entitlementWhen: "photoPath" }),
   save_prefs: op({ about: "Change which days and times suit you, and Johns you'd rather", scope: "house", effect: "write", guard: perm("profile:write_own"), rpc: { name: "save_prefs" } }),
   use_immunity: op({ about: "Use an immunity on a John", scope: "house", effect: "write", guard: perm("perks:write_own"), rpc: { name: "use_immunity" } }),
   use_swap: op({ about: "Use a swap token to swap a John", scope: "house", effect: "write", guard: perm("perks:write_own"), rpc: { name: "use_swap" } }),
   offer_swap: op({ about: "Ask someone to swap a John with you", scope: "house", effect: "write", guard: perm("swaps:write_own"), rpc: { name: "offer_swap" }, route: "POST /api/swaps" }),
   answer_swap: op({ about: "Say yes or no to a swap ask", scope: "house", effect: "write", guard: perm("swaps:write_own"), rpc: { name: "answer_swap" } }),
-  answer_dispute: op({ about: "Answer a question about your tick, with a photo", scope: "house", effect: "write", guard: perm("disputes:write_own"), rpc: { name: "answer_dispute" }, entitlement: "photos" }),
+  answer_dispute: op({ about: "Answer a question about your tick, with a photo", scope: "house", effect: "write", guard: perm("disputes:write_own"), rpc: { name: "answer_dispute" }, entitlement: "photos", entitlementWhen: "photoPath" }),
   undo_action: op({ about: "Undo a move from History", scope: "house", effect: "write", guard: perm("history:write_own"), rpc: { name: "undo_action" } }),
   undo_latest: op({ about: "Undo your latest move of a kind", scope: "house", effect: "write", guard: perm("history:write_own"), rpc: { name: "undo_latest" } }),
 
   // --- A house: anyone in it ------------------------------------------------------------------
-  cover_john: op({ about: "Do someone else's overdue John", scope: "house", effect: "write", guard: perm("swaps:write_own"), rpc: { name: "cover_john" }, entitlement: "photos" }),
+  cover_john: op({ about: "Do someone else's overdue John", scope: "house", effect: "write", guard: perm("swaps:write_own"), rpc: { name: "cover_john" }, entitlement: "photos", entitlementWhen: "photoPath" }),
   hold_cover: op({ about: "Say you're on someone else's overdue John", scope: "house", effect: "write", guard: perm("swaps:write_own"), rpc: { name: "hold_cover" } }),
   undo_cover: op({ about: "Take back a cover", scope: "house", effect: "write", guard: perm("swaps:write_own"), rpc: { name: "undo_cover" } }),
   raise_flag: op({ about: "Flag an on-call John that needs doing", scope: "house", effect: "write", guard: perm("flags:write_own"), rpc: { name: "raise_flag" }, route: "POST /api/flags" }),
@@ -232,7 +238,7 @@ export const OPERATIONS = {
   ask_owner: op({ about: "Ask Jonz on the admin pages, or ask it to do something", scope: "app", effect: "write", guard: perm("admin:read"), route: "POST /api/admin/ask" }),
   owner_reply_report: op({ about: "Reply to a report (its sender gets a push and an email)", scope: "app", effect: "write", guard: perm("reports:write"), rpc: { name: "owner_reply_report" }, route: "POST /api/reports/[id]/reply", destructive: true }),
   owner_fix_report: op({ about: "Mark a report fixed, and tell everyone who sent it", scope: "app", effect: "write", guard: perm("reports:write"), rpc: { name: "owner_fix_report" }, route: "POST /api/reports/[id]/fixed", destructive: true }),
-  owner_open_report: op({ about: "Open a report again", scope: "app", effect: "write", guard: perm("reports:write"), rpc: { name: "owner_open_report" } }),
+  owner_open_report: op({ about: "Read a report in full, marking a new one open", scope: "app", effect: "write", guard: perm("reports:write"), rpc: { name: "owner_open_report" } }),
   owner_set_report_state: op({ about: "Change a report's state", scope: "app", effect: "write", guard: perm("reports:write"), rpc: { name: "owner_set_report_state" } }),
   owner_same_as: op({ about: "Fold a report into one that says the same thing", scope: "app", effect: "write", guard: perm("reports:write"), rpc: { name: "owner_same_as" } }),
   claim_support_draft: op({ about: "Start the support agent's draft reply to a report", scope: "app", effect: "write", guard: perm("reports:write"), rpc: { name: "claim_support_draft" }, route: "POST /api/reports/[id]/draft" }),
