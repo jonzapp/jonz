@@ -21,13 +21,16 @@ jest.mock('@/api/supabase', () => {
   const mockChannel = { on: jest.fn(), subscribe: jest.fn() };
   mockChannel.on.mockReturnValue(mockChannel);
   mockChannel.subscribe.mockReturnValue(mockChannel);
+  const client = {
+    auth: { getSession: jest.fn() },
+    realtime: { setAuth: jest.fn() },
+    channel: jest.fn(() => mockChannel),
+    removeChannel: jest.fn(),
+  };
+  // Sign-in on Supabase's own address: live updates ride the same client.
   return {
-    supabase: {
-      auth: { getSession: jest.fn() },
-      realtime: { setAuth: jest.fn() },
-      channel: jest.fn(() => mockChannel),
-      removeChannel: jest.fn(),
-    },
+    supabase: client,
+    live: client,
     __channel: mockChannel,
   };
 });

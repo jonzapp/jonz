@@ -15,10 +15,35 @@ if (!url || !publishableKey) {
   );
 }
 
+/**
+ * Sign-in on our own address (docs/specs/api.md, C3): with
+ * EXPO_PUBLIC_AUTH_THROUGH_API=1 the auth client talks to apps/api's
+ * /auth/v1, which passes each request to Supabase Auth, so the app never
+ * talks to Supabase. The API's address (EXPO_PUBLIC_API_URL), or on the web
+ * the page's own origin, which passes /auth/v1 on.
+ */
+export const authThroughApi = process.env.EXPO_PUBLIC_AUTH_THROUGH_API === '1';
+
+function authBase(): string {
+  if (!authThroughApi) return url!;
+  const api = process.env.EXPO_PUBLIC_API_URL?.replace(/\/+$/, '');
+  if (api) return api;
+  if (Platform.OS === 'web' && typeof window !== 'undefined') return window.location.origin;
+  return url!;
+}
+
+/**
+ * Where the session is kept: Supabase's own name for it, from its address,
+ * whichever address the client talks to, so nobody is signed out when sign-in
+ * moves to ours.
+ */
+export const AUTH_STORAGE_KEY = `sb-${new URL(url).hostname.split('.')[0]}-auth-token`;
+
 // Only the public URL and publishable key belong in the app. Row Level Security protects the data.
-export const supabase = createClient<Database>(url, publishableKey, {
+export const supabase = createClient<Database>(authBase(), publishableKey, {
   auth: {
     storage: authStorage,
+    storageKey: AUTH_STORAGE_KEY,
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: Platform.OS === 'web',
@@ -26,6 +51,17 @@ export const supabase = createClient<Database>(url, publishableKey, {
     flowType: Platform.OS === 'web' ? 'pkce' : 'implicit',
   },
 });
+
+/**
+ * Live updates (hooks/use-house.ts) until they move to the API's own stream:
+ * Supabase Realtime, carrying the signed-in person's token. When sign-in
+ * goes through the API, a client of its own on Supabase's address.
+ */
+export const live = authThroughApi
+  ? createClient<Database>(url, publishableKey, {
+      accessToken: async () => (await supabase.auth.getSession()).data.session?.access_token ?? null,
+    })
+  : supabase;
 
 // On iOS and Android, only refresh the session while the app is in the foreground.
 if (Platform.OS !== 'web') {
