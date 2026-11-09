@@ -10,6 +10,7 @@ import { NotificationPrefsDraft } from "./notify";
 import type { OperationName } from "./operations";
 import { OwnerAskRequest, OwnerAskResponse } from "./owner-ask";
 import { MESSAGE_AUDIENCES, OwnerMessageRequest, OwnerMessageResponse } from "./owner-messages";
+import { DeleteHouseRequest, DeleteHouseResponse } from "./owner-moves";
 import { PASS_PLANS } from "./pass";
 import { PROMOTION_AUDIENCES, PROMOTION_DURATIONS, PROMOTION_KINDS, PromotionEmailed, PromotionMade, PromotionRequest } from "./promotions";
 import { REPORT_KINDS, REPORT_STATES, ReportFixRequest, ReportFixResponse, ReportMessageRequest, ReportMessageResponse, ReportRequest, ReportResponse } from "./reports";
@@ -688,6 +689,7 @@ export const OPERATION_IO = {
   owner_delete_now: io(z.object({ userId: id, reason: text.optional() }), nothing, "DELETE /v1/admin/people/{userId}"),
   owner_request_deletion: io(z.object({ email: z.email(), reason: text.optional() }), id, "POST /v1/admin/deletions"),
   owner_stop_deletion: io(z.object({ userId: id, reason: text.optional() }), nothing, "DELETE /v1/admin/deletions/{userId}"),
+  owner_delete_house: io(DeleteHouseRequest.extend({ houseId: id }), DeleteHouseResponse, "DELETE /v1/admin/houses/{houseId}"),
   owner_notices_page: io(z.object({ ...noticeFilter, ...pageInput }), pageOutput(Notice), "GET /v1/admin/notices", { page: { at: "startsAt", id: "id" } }),
   owner_notices_count: io(z.object(noticeFilter), count, "GET /v1/admin/notices/count"),
   owner_audit_page: io(z.object({ ...auditFilter, ...pageInput }), pageOutput(auditEntry), "GET /v1/admin/audit", { page: { at: "createdAt", id: "id" } }),
