@@ -1,14 +1,15 @@
 import { Platform } from 'react-native';
 
-import { getAccessToken } from './auth';
-import { ApiRequestError } from './http';
+import { ApiRequestError } from './base';
+import { supabase } from './supabase';
 import { callV1, problemSentence, v1Request } from './v1';
 
-jest.mock('./auth', () => ({ getAccessToken: jest.fn() }));
+jest.mock('./supabase', () => ({ supabase: { auth: { getSession: jest.fn() } } }));
 jest.mock('expo-crypto', () => ({ randomUUID: () => 'idem-1' }));
 jest.mock('expo-constants', () => ({ __esModule: true, default: { expoConfig: { version: '1.4.2', ios: { buildNumber: '57' }, android: { versionCode: 57 } } } }));
 
-const token = getAccessToken as jest.Mock;
+const getSession = supabase.auth.getSession as jest.Mock;
+const token = { mockResolvedValue: (t: string | null) => getSession.mockResolvedValue({ data: { session: t ? { access_token: t } : null } }) };
 const fetchMock = jest.fn();
 const HOUSE = '8f14e45f-ceea-467f-a8f5-2fbf7c2d9b1a';
 const DISPUTE = 'c4ca4238-a0b9-4382-8dcc-509a6f75849b';
@@ -35,7 +36,7 @@ describe('v1Request', () => {
   });
 
   it("puts a GET's other inputs in the query, leaving out what isn't set", () => {
-    const { method, url, body } = v1Request('house_history', { houseId: HOUSE, limit: 20, startingAfter: undefined });
+    const { method, url, body } = v1Request('house_history', { houseId: HOUSE, limit: 20, startingAfter: undefined, before: null });
     expect(method).toBe('GET');
     expect(url).toMatch(new RegExp(`/v1/houses/${HOUSE}/[a-z-/]+\\?limit=20$`));
     expect(body).toBeUndefined();

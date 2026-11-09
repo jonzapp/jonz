@@ -14,3 +14,14 @@ export function apiBase(): string {
   if (Platform.OS === 'web') return '';
   throw new Error('Missing EXPO_PUBLIC_API_URL. Copy .env.example to .env.local and fill it in.');
 }
+
+/** A refusal from the API, with a sentence fit to show. */
+export class ApiRequestError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+    this.name = 'ApiRequestError';
+  }
+}

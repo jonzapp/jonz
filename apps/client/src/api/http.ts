@@ -1,23 +1,12 @@
 import { ApiError } from '@app/core';
 
 import { getAccessToken } from './auth';
-import { apiBase } from './base';
+import { apiBase, ApiRequestError } from './base';
 
-export { apiBase };
+export { apiBase, ApiRequestError };
 
 // Calls to apps/api, for the few moves that need a server (AGENTS.md lists
 // them). Everything else goes straight to Supabase through RLS.
-
-/** A refusal from the API, with a sentence fit to show. */
-export class ApiRequestError extends Error {
-  constructor(
-    message: string,
-    readonly status: number,
-  ) {
-    super(message);
-    this.name = 'ApiRequestError';
-  }
-}
 
 /**
  * POSTs to apps/api as the signed-in user (their Supabase access token as a

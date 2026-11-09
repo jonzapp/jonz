@@ -4,9 +4,8 @@ import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import type { z } from 'zod';
 
-import { getAccessToken } from './auth';
-import { apiBase } from './base';
-import { ApiRequestError } from './http';
+import { apiBase, ApiRequestError } from './base';
+import { supabase } from './supabase';
 
 // The app's one way to the data: /v1 (docs/specs/api.md), one operation at a
 // time, by its name in the registry. Method, path, input and answer all come
@@ -41,7 +40,7 @@ export function clientHeader(): string {
   return Number.isFinite(build) ? `${platform}/${version} (${build})` : `${platform}/${version}`;
 }
 
-/** The operation's URL, method and body, from its route: path keys into the path, a GET's other inputs into the query. */
+/** The operation's URL, method and body, from its route: path keys into the path, a GET's other set inputs into the query. */
 export function v1Request(name: OperationName, input: Record<string, unknown>): { method: string; url: string; body?: string } {
   const route = OPERATION_IO[name].http;
   const [method, template] = route.split(' ') as [string, string];
@@ -50,8 +49,10 @@ export function v1Request(name: OperationName, input: Record<string, unknown>): 
   const path = template.replace(/\{([A-Za-z]+)\}/g, (_, key: string) => encodeURIComponent(String(input[key])));
   const fields = Object.entries(rest).filter(([, v]) => v !== undefined);
   if (method === 'GET') {
+    // A query has no null: a filter left empty is left out, which its schema takes as none.
     const query = new URLSearchParams();
     for (const [key, value] of fields) {
+      if (value === null) continue;
       for (const one of Array.isArray(value) ? value : [value]) query.append(key, String(one));
     }
     const qs = query.toString();
@@ -69,7 +70,9 @@ export function v1Request(name: OperationName, input: Record<string, unknown>): 
 export async function callV1<N extends OperationName>(name: N, input: V1Input<N>): Promise<V1Output<N>> {
   const io = OPERATION_IO[name];
   const checked = io.input.parse(input) as Record<string, unknown>;
-  const token = await getAccessToken();
+  // The session straight from Supabase Auth, not auth.ts: a call needs no sign-in modules.
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
   if (!token) throw new ApiRequestError('Sign in first.', 401);
 
   const { method, url, body } = v1Request(name, checked);
