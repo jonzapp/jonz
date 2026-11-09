@@ -114,7 +114,7 @@ export const OPERATIONS = {
   see_report: op({ about: "Mark a reply to your report as seen", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "see_report" } }),
 
   // --- A house: reading -----------------------------------------------------------------------
-  house_history: op({ about: "The house's history, a page at a time", scope: "house", effect: "read", guard: perm("house:read"), rpc: { name: "house_history" }, entitlement: "history" }),
+  house_history: op({ about: "The house's history, a page at a time", scope: "house", effect: "read", guard: perm("history:read"), rpc: { name: "house_history" }, entitlement: "history" }),
   ask_usage: op({ about: "How much of the house's Ask Jonz this month each person has used", scope: "house", effect: "read", guard: perm("house:read"), rpc: { name: "ask_usage_people", server: true }, route: "POST /api/ask/usage" }),
   catch_up: op({ about: "Bring the house up to date: close a finished week, deal the next", scope: "house", effect: "write", guard: perm("house:read"), route: "POST /api/fresh" }),
 
@@ -248,7 +248,7 @@ export interface TableAccess {
   public?: true;
 }
 
-const reads = (about: string, read: Guard = MEMBER): TableAccess => ({ about, grants: ["select"], read });
+const reads = (about: string, read: Guard): TableAccess => ({ about, grants: ["select"], read });
 
 /**
  * Every table signed-in people can reach directly
@@ -256,34 +256,34 @@ const reads = (about: string, read: Guard = MEMBER): TableAccess => ({ about, gr
  * go through an operation above unless a table says `write`.
  */
 export const TABLES = {
-  houses: { about: "Houses: name, rules and settings", grants: ["select", "update"], read: MEMBER, write: perm("house:write") },
-  johns: { about: "The John list", grants: ["select", "insert", "update"], read: MEMBER, write: perm("johns:write") },
+  houses: { about: "Houses: name, rules and settings", grants: ["select", "update"], read: perm("house:read"), write: perm("house:write") },
+  johns: { about: "The John list", grants: ["select", "insert", "update"], read: perm("johns:read"), write: perm("johns:write") },
   profiles: { about: "People's names and photos", grants: ["select", "update"], read: MEMBER, write: OWN },
   notification_prefs: { about: "Each person's notification settings", grants: ["select", "insert", "update"], read: OWN, write: OWN },
   push_subscriptions: { about: "Each person's devices for pushes", grants: ["select", "insert", "delete"], read: OWN, write: OWN },
-  reactions: { about: "Reactions on the Wall", grants: ["select", "insert", "delete"], read: MEMBER, write: OWN },
+  reactions: { about: "Reactions on the Wall", grants: ["select", "insert", "delete"], read: perm("wall:read"), write: OWN },
   ask_chats: { about: "Saved Ask Jonz chats", grants: ["select", "insert", "update", "delete"], read: OWN, write: OWN },
   owner_ask_chats: { about: "The owner's saved Ask Jonz chats", grants: ["select", "insert", "update", "delete"], read: perm("admin:read"), write: perm("admin:read") },
-  members: reads("Who is in each house, and their role"),
-  assignments: reads("Who has which John each week"),
-  away_periods: reads("Time away"),
-  crew_members: reads("Who helped with a shared John"),
-  disputes: reads("Questioned ticks"),
-  dispute_votes: reads("Votes on questioned ticks"),
-  events: reads("The Wall and the house's history"),
-  groups: reads("Groups"),
-  group_members: reads("Who is in each group"),
-  house_actions: reads("Moves that can be undone"),
-  ledger_entries: reads("Money owed and paid"),
-  month_closes: reads("Closed months"),
-  month_let_offs: reads("Forfeits let off"),
-  moves: reads("Moving on between houses"),
-  on_call_picks: reads("Who is on call"),
-  pocket_earnings: reads("Pocket money earned"),
-  pocket_pays: reads("Pocket money paid"),
-  swap_offers: reads("Swap asks"),
-  week_shares: reads("Each person's share of a week"),
-  weeks: reads("Weeks"),
+  members: reads("Who is in each house, and their role", perm("members:read")),
+  assignments: reads("Who has which John each week", perm("weeks:read")),
+  away_periods: reads("Time away", perm("away:read")),
+  crew_members: reads("Who helped with a shared John", perm("weeks:read")),
+  disputes: reads("Questioned ticks", perm("disputes:read")),
+  dispute_votes: reads("Votes on questioned ticks", perm("disputes:read")),
+  events: reads("The Wall and the house's history", perm("wall:read")),
+  groups: reads("Groups", perm("groups:read")),
+  group_members: reads("Who is in each group", perm("groups:read")),
+  house_actions: reads("Moves that can be undone", perm("history:read")),
+  ledger_entries: reads("Money owed and paid", perm("payments:read")),
+  month_closes: reads("Closed months", perm("payments:read")),
+  month_let_offs: reads("Forfeits let off", perm("payments:read")),
+  moves: reads("Your own moves between houses", OWN),
+  on_call_picks: reads("Who is on call", perm("weeks:read")),
+  pocket_earnings: reads("Pocket money earned", perm("pocket_money:read")),
+  pocket_pays: reads("Pocket money paid", perm("pocket_money:read")),
+  swap_offers: reads("Swap asks, seen by the two people in them", OWN),
+  week_shares: reads("Each person's share of a week", perm("weeks:read")),
+  weeks: reads("Weeks", perm("weeks:read")),
   reports: reads("Problems people reported", OWN),
   report_messages: reads("Replies on reported problems", OWN),
   notices: { ...reads("Notices that are on (and every notice, for the admin pages)", ACCOUNT_READ), public: true },

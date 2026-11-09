@@ -28,7 +28,17 @@ export type PermissionLevel = (typeof PERMISSION_LEVELS)[number];
  */
 export const PERMISSIONS = {
   // Everyone in the house.
-  "house:read": "See the house: its Johns, the week, the Wall, history, balances, time away and people",
+  "house:read": "See the house itself: its name, rules and settings",
+  "johns:read": "See the John list",
+  "weeks:read": "See the weeks: who has which John, shares, who is on call and who helped",
+  "away:read": "See who is away",
+  "disputes:read": "See questioned ticks and their votes",
+  "wall:read": "See the Wall and its reactions",
+  "groups:read": "See the groups and who is in them",
+  "history:read": "See the house's history",
+  "payments:read": "See money owed and paid, and closed months",
+  "pocket_money:read": "See pocket money earned and paid",
+  "members:read": "See who lives in the house, and their roles",
   "ticks:write_own": "Tick off your own Johns, and take a tick back",
   "away:write_own": "Book and cancel your own time away",
   "swaps:write_own": "Ask someone to swap a John, answer a swap ask, and cover someone else's overdue John",
@@ -67,6 +77,16 @@ export function permissionLevel(permission: string): PermissionLevel {
 
 const EVERYONE: Permission[] = [
   "house:read",
+  "johns:read",
+  "weeks:read",
+  "away:read",
+  "disputes:read",
+  "wall:read",
+  "groups:read",
+  "history:read",
+  "payments:read",
+  "pocket_money:read",
+  "members:read",
   "ticks:write_own",
   "away:write_own",
   "swaps:write_own",

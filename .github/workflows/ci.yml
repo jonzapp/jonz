@@ -85,6 +85,10 @@ jobs:
       - name: Database standards
         run: npm run db:standards
 
+      # Supabase's own security and performance advisors: any warning fails.
+      - name: Database advisors
+        run: npm run db:advisors
+
       # RLS is the only real enforcement, so the adversarial suites gate.
       - name: Database tests
         run: npm run test:db

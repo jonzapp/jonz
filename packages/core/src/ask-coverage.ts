@@ -22,6 +22,16 @@ export type AskCoverage =
 
 export const ASK_COVERAGE: Record<Permission, AskCoverage> = {
   "house:read": { by: "reads" },
+  "johns:read": { by: "reads" },
+  "weeks:read": { by: "reads" },
+  "away:read": { by: "reads" },
+  "disputes:read": { by: "reads" },
+  "wall:read": { by: "reads" },
+  "groups:read": { by: "reads" },
+  "history:read": { by: "reads" },
+  "payments:read": { by: "reads" },
+  "pocket_money:read": { by: "reads" },
+  "members:read": { by: "reads" },
   "ticks:write_own": { by: "page", page: "today", where: "their John on Today" },
   "away:write_own": { by: "card", tools: ["book_away", "cancel_away"] },
   "swaps:write_own": { by: "page", page: "today", where: "the John on Today (Ask to swap, or cover an overdue one), or the ask on Today to answer it" },

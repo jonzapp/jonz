@@ -1,13 +1,14 @@
 -- A named permission on every house operation (step 3 of the operation
 -- registry; packages/core/src/operations.ts).
 --
--- Until now 20 house functions asked only "is this person in the house?"
+-- Until now 19 house functions asked only "is this person in the house?"
 -- (is_member) or "is this their own row?". Each now asks can(house,
 -- '<resource>:<level>') for what it does, so the role list decides, as it
 -- does for the admin ones. Three permissions are new, held by both roles:
 -- history:write_own (undo your own moves), payments:write_own (mark money
 -- paid between housemates) and billing:write_own (buy the House Pass, open
--- billing for one you bought).
+-- billing for one you bought). (House history asks its own read, history:read,
+-- from the next migration, with the other reads.)
 --
 -- Nobody's access changes: every member already holds every *_own
 -- permission, and each function keeps its own-row checks. Safe to run twice.
@@ -84,7 +85,6 @@ insert into operation_checks (fn, perm, how) values
   ('confirm_payment', 'payments:write_own', 'member_check'),
   ('cover_john', 'swaps:write_own', 'member_check'),
   ('hold_cover', 'swaps:write_own', 'member_check'),
-  ('house_history', 'house:read', 'member_check'),
   ('raise_flag', 'flags:write_own', 'member_check'),
   ('remove_flag', 'flags:write_own', 'member_check'),
   ('board_tick', 'ticks:write', 'member_check'),

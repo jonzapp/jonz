@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { HOUSE_MATRIX, OPERATIONS, OPERATION_NAMES, OWNER_ROLE_PERMISSIONS, type Operation, type Permission } from "@app/core";
+import { HOUSE_MATRIX, OPERATIONS, OPERATION_NAMES, OWNER_ROLE_PERMISSIONS, TABLES, type Operation, type Permission, type TableAccess, type TableName } from "@app/core";
 import { describe, expect, it } from "vitest";
 
 import { adminClient, signedInUser, type Actor } from "@/tests/support/clients";
@@ -164,5 +164,29 @@ describe("every operation refuses people it isn't for", () => {
       }
     }
     expect(allowed).toEqual([]);
+  });
+
+  it("a house table shows a member nothing without its read, and their house with it", async () => {
+    const { house } = await aHouse();
+    const ben = house.members[0];
+    const db = adminClient();
+    const leaks: string[] = [];
+    const shownWith: string[] = [];
+    for (const table of Object.keys(TABLES) as TableName[]) {
+      const access: TableAccess = TABLES[table];
+      if (access.read.by !== "permission" || !(access.read.permission in HOUSE_MATRIX)) continue;
+      const permission = access.read.permission as Permission;
+      const rows = async () => (await ben.db.from(table).select("*", { count: "exact", head: true })).count ?? 0;
+      if ((await rows()) > 0) shownWith.push(table);
+      expectOk(await db.from("role_permissions").delete().eq("role", "member").eq("permission", permission));
+      try {
+        if ((await rows()) > 0) leaks.push(`${table} (${permission})`);
+      } finally {
+        expectOk(await db.from("role_permissions").insert({ role: "member", permission }));
+      }
+    }
+    expect(leaks).toEqual([]);
+    // The house this test makes has rows in these, so their "nothing" above is the rule, not an empty table.
+    expect(shownWith).toEqual(expect.arrayContaining(["houses", "johns", "assignments", "weeks", "members", "groups", "group_members"]));
   });
 });
