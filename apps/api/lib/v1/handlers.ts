@@ -24,7 +24,8 @@ import { userClient } from "@/lib/supabase/user";
 // rate limit, input, house, permission, House Pass), and its answer is checked
 // against the operation's contract. A move's refusal becomes the Problem a
 // database function's would (fromDatabase); a Pass answer's HTTP status, its
-// matching Problem.
+// matching Problem. /v1's refusal codes are a fixed list (adding one breaks
+// clients), so "Stripe isn't open" is `rejected`, in its own words.
 
 /** The person, as the moves take them: a client that acts as them, and who they are. */
 const callerOf = (ctx: HandlerContext): Caller => ({ db: userClient(ctx.token), userId: ctx.claims.sub });
@@ -32,7 +33,7 @@ const callerOf = (ctx: HandlerContext): Caller => ({ db: userClient(ctx.token), 
 /** A move's refusal, as the Problem a database function raising it would give. */
 export const refusal = (r: Refusal): Problem => fromDatabase({ code: r.code ?? "P0001", message: r.message });
 
-const STATUS_PROBLEM: Record<number, Problem["code"]> = { 403: "forbidden", 404: "not_found", 409: "rejected", 503: "unavailable" };
+const STATUS_PROBLEM: Record<number, Problem["code"]> = { 403: "forbidden", 404: "not_found", 409: "rejected", 503: "rejected" };
 
 /** A Pass move's answer: the page to send the browser to, or the Problem its status means. */
 export function passAnswer(answer: PassAnswer): { url: string } {
@@ -88,7 +89,7 @@ export const V1_HANDLERS: Handlers = {
 
   async pass_checkout(ctx: HandlerContext) {
     const { plan, offer } = ctx.input as PassCheckoutRequest;
-    if (!PASS_ENFORCED && !offer) throw new Problem("unavailable", PASS_COPY.betaFree);
+    if (!PASS_ENFORCED && !offer) throw new Problem("rejected", PASS_COPY.betaFree);
     const email = typeof ctx.claims.email === "string" ? ctx.claims.email : undefined;
     const answer = await startCheckout({ ...callerOf(ctx), email }, passStripe(), houseId(ctx), plan, appUrl(ctx), env.stage(), ctx.now, offer ?? null);
     return passAnswer(answer);
@@ -96,7 +97,7 @@ export const V1_HANDLERS: Handlers = {
 
   async pass_billing(ctx: HandlerContext) {
     const stripe = passStripe();
-    if (!stripe) throw new Problem("unavailable", PASS_COPY.checkoutClosed);
+    if (!stripe) throw new Problem("rejected", PASS_COPY.checkoutClosed);
     return passAnswer(await openBilling(callerOf(ctx), stripe, houseId(ctx), appUrl(ctx)));
   },
 
@@ -110,7 +111,7 @@ export const V1_HANDLERS: Handlers = {
     try {
       return { copied: (await copyNotices(callerOf(ctx).db, ctx.now)) === "copied" };
     } catch {
-      throw new Problem("unavailable", "The notice saved, but its copy for outages didn't. Try again.");
+      throw new Problem("conflict", "The notice saved, but its copy for outages didn't. Try again.");
     }
   },
 

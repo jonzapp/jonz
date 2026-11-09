@@ -19250,8 +19250,7 @@
               "rejected",
               "client_too_old",
               "rate_limited",
-              "internal",
-              "unavailable"
+              "internal"
             ]
           },
           "status": {

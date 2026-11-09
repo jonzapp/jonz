@@ -134,8 +134,9 @@ Migration `20261219090000_api_layer.sql` sets up the following:
     `apps/api/lib/v1/handlers.ts` that runs the move its `/api` route ran,
     after the executor's checks; apps/api hands them to apps/v1
     (`createV1Handler`, `v1Instance`), so /v1 and /mcp both serve them. A
-    move's refusal becomes the Problem a database function's would, and a
-    Pass answer's 503 is `unavailable`.
+    move's refusal becomes the Problem a database function's would, and
+    "Stripe isn't open" is `rejected` (the refusal codes don't grow within
+    /v1: a new one breaks clients).
   - Those moves still read and write through supabase-js (the person's
     session, or the service role for the engine, Stripe set-up and new
     kids' accounts), which goes through the Data API. Before C5 they move

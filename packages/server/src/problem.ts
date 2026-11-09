@@ -13,7 +13,6 @@ export const PROBLEM_CODES = {
   client_too_old: 426,
   rate_limited: 429,
   internal: 500,
-  unavailable: 503,
 } as const;
 
 export type ProblemCode = keyof typeof PROBLEM_CODES;

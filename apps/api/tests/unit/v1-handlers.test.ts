@@ -34,6 +34,6 @@ describe("/v1 server operations", () => {
     expect(thrown(403)).toMatchObject({ code: "forbidden", status: 403, message: "No." });
     expect(thrown(404)).toMatchObject({ code: "not_found" });
     expect(thrown(409)).toMatchObject({ code: "rejected" });
-    expect(thrown(503)).toMatchObject({ code: "unavailable", status: 503 });
+    expect(thrown(503)).toMatchObject({ code: "rejected", message: "No." });
   });
 });
