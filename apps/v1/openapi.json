@@ -10129,7 +10129,6 @@
               "unauthenticated",
               "pass_required",
               "forbidden",
-              "approval_required",
               "not_found",
               "conflict",
               "idempotency_mismatch",
@@ -10148,6 +10147,11 @@
           },
           "requestId": {
             "type": "string"
+          },
+          "approvalUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "A connected app's request that can't be undone: where the person approves it in Jonz, before the app tries again."
           }
         }
       }

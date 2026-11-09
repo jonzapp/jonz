@@ -254,7 +254,7 @@ describe("the executor", () => {
 
     // Through MCP: held, and asked of the person; asking again is the same request.
     const held = await run("set_house_kind", app, ask).catch((e: Problem) => e);
-    expect(held).toMatchObject({ code: "approval_required", status: 403 });
+    expect(held).toMatchObject({ code: "forbidden", status: 403, extra: { approvalUrl: expect.any(String) } });
     const url = (held as Problem).extra.approvalUrl!;
     expect(url).toMatch(/^https:\/\/jonz\.app\/approve\/[0-9a-f-]{36}$/);
     const again = await run("set_house_kind", app, ask).catch((e: Problem) => e);
@@ -276,7 +276,7 @@ describe("the executor", () => {
     await expect(answer({ ...tokens.alice, client_id: "some-app" })).rejects.toMatchObject({ code: "42501" });
     await expect(answer(tokens.bob)).rejects.toThrow(/isn't there/);
     // An OAuth client's token is held even outside /mcp.
-    await expect(run("set_house_kind", { ...as("alice"), authorization: "alice-app" }, ask)).rejects.toMatchObject({ code: "approval_required" });
+    await expect(run("set_house_kind", { ...as("alice"), authorization: "alice-app" }, ask)).rejects.toMatchObject({ code: "forbidden", extra: { approvalUrl: expect.any(String) } });
 
     // Alice approves it in Jonz: the retry runs, once.
     await answer(tokens.alice);
@@ -288,7 +288,7 @@ describe("the executor", () => {
     const [audit] = await admin`select via from public.api_audit_entries where user_id = ${people.alice}::uuid and operation = 'set_house_kind'`;
     expect(audit.via).toBe("mcp");
     // A different request (back to housemates) needs its own approval.
-    await expect(run("set_house_kind", app, { houseId, kind: "housemates" })).rejects.toMatchObject({ code: "approval_required" });
+    await expect(run("set_house_kind", app, { houseId, kind: "housemates" })).rejects.toMatchObject({ code: "forbidden", extra: { approvalUrl: expect.any(String) } });
 
     // Declined: said so, and not asked again until it expires.
     const back = await run("set_house_kind", app, { houseId, kind: "housemates" }).catch((e: Problem) => e);
@@ -306,7 +306,7 @@ describe("the executor", () => {
     const late = (fresh as Problem).extra.approvalUrl!.split("/").pop()!;
     await admin`update public.api_approvals set approved_at = ${minute(0)} where id = ${late}::uuid`;
     const tooLate = executor({ now: () => new Date(minute(10).getTime() + 32 * 60_000) });
-    await expect(tooLate("set_house_kind", app, { houseId, kind: "housemates" })).rejects.toMatchObject({ code: "approval_required" });
+    await expect(tooLate("set_house_kind", app, { houseId, kind: "housemates" })).rejects.toMatchObject({ code: "forbidden", extra: { approvalUrl: expect.any(String) } });
     expect(await kind()).toBe("family");
   });
 

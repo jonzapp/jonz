@@ -245,7 +245,7 @@ export function createExecutor(options: ExecutorOptions) {
     return Boolean(used);
   }
 
-  /** Asks the person: the same waiting request again, or a new one. Throws approval_required, or forbidden if they said no. */
+  /** Asks the person: the same waiting request again, or a new one. Throws forbidden with the approvalUrl, or plain forbidden if they said no. */
   async function askApproval(name: string, input: Record<string, unknown>, claims: Claims, hash: string, house: string | null, at: Date): Promise<never> {
     const [latest] = await sql<{ id: string; declined_at: Date | null }[]>`
       select id, declined_at from public.api_approvals
@@ -264,7 +264,7 @@ export function createExecutor(options: ExecutorOptions) {
           returning id`
       )[0].id;
     const url = approvalUrl(id);
-    throw new Problem("approval_required", `This can't be undone, so approve it in Jonz first: ${url}`, {}, { approvalUrl: url });
+    throw new Problem("forbidden", `This can't be undone, so approve it in Jonz first: ${url}`, {}, { approvalUrl: url });
   }
 
   async function execute(name: string, context: RequestContext, rawInput: unknown): Promise<Result> {

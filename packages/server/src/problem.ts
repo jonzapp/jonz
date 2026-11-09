@@ -5,7 +5,6 @@ export const PROBLEM_CODES = {
   unauthenticated: 401,
   pass_required: 402,
   forbidden: 403,
-  approval_required: 403,
   not_found: 404,
   conflict: 409,
   idempotency_mismatch: 422,
@@ -24,7 +23,7 @@ export interface ProblemBody {
   status: number;
   detail: string;
   requestId?: string;
-  /** approval_required only: where the person approves this request in Jonz. */
+  /** A connected app's request that can't be undone (forbidden until approved): where the person approves it in Jonz. */
   approvalUrl?: string;
 }
 
@@ -34,7 +33,7 @@ export class Problem extends Error {
     readonly code: ProblemCode,
     detail: string,
     readonly headers: Record<string, string> = {},
-    /** More for the caller to act on, added to the body (approval_required's approvalUrl). */
+    /** More for the caller to act on, added to the body (a held request's approvalUrl). */
     readonly extra: { approvalUrl?: string } = {},
   ) {
     super(detail);

@@ -79,7 +79,7 @@ export function buildMcpServer(execute: Executor, authorization: string | null, 
           return { content: [{ type: "text" as const, text: JSON.stringify(body ?? null) }], structuredContent: structured };
         } catch (error) {
           const p = asProblem(error);
-          if (p.code === "approval_required" && p.extra.approvalUrl) return askToApprove(p.extra.approvalUrl, p.message, ctx);
+          if (p.extra.approvalUrl) return askToApprove(p.extra.approvalUrl, p.message, ctx);
           return { isError: true, content: [{ type: "text" as const, text: `${p.code}: ${p.message}` }] };
         }
       },

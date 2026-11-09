@@ -78,7 +78,7 @@ describe("/mcp", () => {
   it("sends the person to Jonz to approve a change that can't be undone", async () => {
     const url = "https://jonz.app/approve/1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d";
     const execute = vi.fn(async () => {
-      throw new Problem("approval_required", `This can't be undone, so approve it in Jonz first: ${url}`, {}, { approvalUrl: url });
+      throw new Problem("forbidden", `This can't be undone, so approve it in Jonz first: ${url}`, {}, { approvalUrl: url });
     }) as unknown as Executor;
     expect(OPERATIONS.set_house_kind.destructive).toBe(true);
     const { error } = await rpc(execute, "tools/call", { name: "set_house_kind", arguments: { houseId: A, kind: "family" } });
@@ -89,7 +89,7 @@ describe("/mcp", () => {
   it("on MCP's 2026 revision, asks for the approval as an input request, or says where if the client can't open one", async () => {
     const url = "https://jonz.app/approve/1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d";
     const execute = vi.fn(async () => {
-      throw new Problem("approval_required", `This can't be undone, so approve it in Jonz first: ${url}`, {}, { approvalUrl: url });
+      throw new Problem("forbidden", `This can't be undone, so approve it in Jonz first: ${url}`, {}, { approvalUrl: url });
     }) as unknown as Executor;
     const call = async (capabilities: Record<string, unknown>) => {
       const res = await createMcpHandler(() => buildMcpServer(execute, TOKEN)).fetch(
