@@ -1,5 +1,5 @@
 import { NEXT_UP_COPY } from "@app/core";
-import { expect, test, type Page, type Request } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 import { CLIENT_URL, cleanUp, dealtHouseInClient, undealtHouseInClient } from "./auth";
 import { expectButtonRules } from "./button-rules";
@@ -13,33 +13,6 @@ import { expectButtonRules } from "./button-rules";
 test.use({ baseURL: CLIENT_URL });
 
 const made: string[] = [];
-
-/**
- * Every read the page made has answered, and nothing new for half a second.
- * The house's live stream (/v1/houses/…/live) stays open by design, so it
- * doesn't count, as "networkidle" would.
- */
-async function readsDone(open: Set<Request>) {
-  let quietSince = Date.now();
-  await expect
-    .poll(
-      () => {
-        if (open.size > 0) quietSince = Date.now();
-        return Date.now() - quietSince >= 500 ? "quiet" : [...open].map((request) => `${request.method()} ${request.url()}`);
-      },
-      { timeout: 15_000, intervals: [100] },
-    )
-    .toBe("quiet");
-}
-
-function trackReads(page: Page): Set<Request> {
-  const open = new Set<Request>();
-  const counts = (url: string) => !/\/v1\/houses\/[^/]+\/live$/.test(new URL(url).pathname);
-  page.on("request", (request) => counts(request.url()) && open.add(request));
-  page.on("requestfinished", (request) => open.delete(request));
-  page.on("requestfailed", (request) => open.delete(request));
-  return open;
-}
 test.afterAll(async () => cleanUp(made));
 
 test("Week before the first deal: Deal week 1 is across a phone, its own width on a laptop", async ({ browser }) => {
@@ -77,7 +50,6 @@ test("every page of a dealt house keeps the button rules", async ({ browser }) =
   ]);
   made.push(userId, ...housemateIds);
   const page = await context.newPage();
-  const open = trackReads(page);
 
   for (const [path, screen] of [
     ["/today", "today-screen"],
@@ -95,12 +67,18 @@ test("every page of a dealt house keeps the button rules", async ({ browser }) =
   await page.getByTestId("week-screen").getByRole("button", { name: "Bins" }).first().click();
   await expect(page.getByTestId("john-sheet-name")).toHaveText("Bins");
   await expectButtonRules(page, "a John's sheet");
-  for (const path of ["/house/johns", "/house/rules", "/house/away", "/house/wall", "/house/you"]) {
-    // What the last page left unanswered went with it.
-    open.clear();
+  // Each page once what it reads has arrived. Not "networkidle": the house's
+  // live stream stays open for as long as the page does.
+  for (const [path, screen] of [
+    ["/house/johns", "johns-screen"],
+    ["/house/rules", "rules-screen"],
+    ["/house/away", "away-screen"],
+    ["/house/wall", "wall-screen"],
+    ["/house/you", "you-screen"],
+  ] as const) {
     await page.goto(path);
-    await page.waitForLoadState("load");
-    await readsDone(open);
+    await expect(page.getByTestId(screen)).toBeVisible();
+    await expect(page.getByTestId(screen).getByRole("progressbar")).toHaveCount(0);
     await expectButtonRules(page, path);
   }
   await context.close();
