@@ -378,6 +378,13 @@ at `<house>/<assignment>/<file>`.
   negatives, rounding, dates and time zones.
 - `npm run test:db` and `npm run test:e2e`: see `apps/api/AGENTS.md`. The
   e2e covers both the web app and the Expo app's web build.
+- CI (`.github/workflows/ci.yml`) runs these side by side: `checks` (lint,
+  typecheck, unit), `db` in two shards and `e2e` once per device, each with
+  its own fresh local Supabase, then `verify`, the required check. `verify`
+  runs `scripts/ci/count-guard.mjs`, which fails if any database test file
+  or any listed end-to-end test (every device) ran in no job. A new device
+  in `playwright.config.ts` needs a row in the `e2e` matrix too, or the guard
+  fails.
 - Never use floating-point maths for money: integer minor units (pence,
   cents).
 - When a bug is fixed, add a test that would have caught it.

@@ -29,7 +29,12 @@ export default defineConfig({
   retries: 0,
   maxFailures: process.env.CI ? 3 : 0,
   workers: 1,
-  reporter: process.env.CI ? [["list"], ["github"], ["html", { open: "never" }]] : "list",
+  // On CI each device runs in its own job; e2e-results.json is what the
+  // `verify` job's count guard (scripts/ci/count-guard.mjs) reads to prove
+  // every test ran somewhere.
+  reporter: process.env.CI
+    ? [["list"], ["github"], ["html", { open: "never" }], ["json", { outputFile: "e2e-results.json" }]]
+    : "list",
   use: {
     baseURL: `http://localhost:${PORT}`,
     trace: "retain-on-failure",
