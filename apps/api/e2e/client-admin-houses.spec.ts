@@ -45,7 +45,9 @@ test("opens on the Overview, then finds a house and shows it, read only", async 
   await expect(overview.getByTestId("overview-figures")).toBeVisible();
   await expect(overview.getByTestId("health-database")).toBeVisible();
   await expect(overview.getByTestId("overview-chart")).toBeVisible();
-  await expect(overview.getByText(OVERVIEW_COPY.needsYou)).toBeVisible();
+  // The section's heading, not its words: on a stack where nothing needs the
+  // owner yet, the empty row ("Nothing needs you") holds the same words.
+  await expect(overview.getByRole("heading", { name: OVERVIEW_COPY.needsYou, exact: true })).toBeVisible();
   await shoot(page, "overview");
 
   await page.goto("/admin/houses");
