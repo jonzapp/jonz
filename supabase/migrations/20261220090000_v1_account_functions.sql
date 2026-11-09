@@ -141,74 +141,69 @@ comment on function public.my_ask_chat(uuid) is 'One of your Ask Jonz chats, wit
 -- Keeping a chat stores its last 200 turns (CHAT_SAVED_TURNS), titled by the
 -- first thing you asked on one line, cut at a word to 44 characters with an
 -- ellipsis (chatTitle in packages/core/src/ask-chats.ts; the two are tested
--- to agree in apps/v1/tests/db).
-create function public.keep_ask_chat(p_house uuid, p_turns jsonb)
-returns uuid
+-- to agree in apps/v1/tests/db). Owners' chats keep the same way.
+create function public.chat_title_of(p_turns jsonb)
+returns text
 language plpgsql
+immutable
 security invoker
 set search_path = ''
 as $$
 declare
-  kept jsonb;
   line text;
   cut text;
   space_at int;
-  chat_title text;
-  new_id uuid;
 begin
-  select coalesce(jsonb_agg(t order by n), '[]'::jsonb) into kept
-  from (select t, n from jsonb_array_elements(coalesce(p_turns, '[]'::jsonb)) with ordinality as e(t, n) order by n desc limit 200) last_turns;
   select regexp_replace(t ->> 'text', '\s+', ' ', 'g') into line
   from jsonb_array_elements(coalesce(p_turns, '[]'::jsonb)) with ordinality as e(t, n)
   where t ->> 'role' = 'user' order by n limit 1;
   line := btrim(coalesce(line, ''));
   if line = '' then
-    chat_title := 'A chat with Jonz';
+    return 'A chat with Jonz';
   elsif char_length(line) <= 44 then
-    chat_title := line;
-  else
-    cut := left(line, 43);
-    space_at := char_length(cut) - strpos(reverse(cut), ' ') + 1;
-    if strpos(cut, ' ') > 0 and space_at - 1 > 22 then cut := left(cut, space_at - 1); end if;
-    chat_title := regexp_replace(cut, '[\s,.;:–-]+$', '') || '…';
+    return line;
   end if;
-  insert into public.ask_chats (house_id, title, turns) values (p_house, chat_title, kept) returning id into new_id;
-  return new_id;
+  cut := left(line, 43);
+  space_at := char_length(cut) - strpos(reverse(cut), ' ') + 1;
+  if strpos(cut, ' ') > 0 and space_at - 1 > 22 then cut := left(cut, space_at - 1); end if;
+  return regexp_replace(cut, '[\s,.;:–-]+$', '') || '…';
 end;
+$$;
+comment on function public.chat_title_of(jsonb) is 'A saved chat''s title from its turns: core chatTitle.';
+
+create function public.chat_turns_kept(p_turns jsonb)
+returns jsonb
+language sql
+immutable
+security invoker
+set search_path = ''
+as $$
+  select coalesce(jsonb_agg(t order by n), '[]'::jsonb)
+  from (select t, n from jsonb_array_elements(coalesce(p_turns, '[]'::jsonb)) with ordinality as e(t, n) order by n desc limit 200) last_turns;
+$$;
+comment on function public.chat_turns_kept(jsonb) is 'The last 200 turns of a chat (core CHAT_SAVED_TURNS), the ones a saved chat keeps.';
+
+create function public.keep_ask_chat(p_house uuid, p_turns jsonb)
+returns uuid
+language sql
+security invoker
+set search_path = ''
+as $$
+  insert into public.ask_chats (house_id, title, turns)
+  values (p_house, public.chat_title_of(p_turns), public.chat_turns_kept(p_turns))
+  returning id;
 $$;
 comment on function public.keep_ask_chat(uuid, jsonb) is 'Keep a new Ask Jonz chat in a house; its id.';
 
 create function public.update_ask_chat(p_chat uuid, p_turns jsonb)
 returns void
-language plpgsql
+language sql
 security invoker
 set search_path = ''
 as $$
-declare
-  kept jsonb;
-  line text;
-  cut text;
-  space_at int;
-  chat_title text;
-begin
-  select coalesce(jsonb_agg(t order by n), '[]'::jsonb) into kept
-  from (select t, n from jsonb_array_elements(coalesce(p_turns, '[]'::jsonb)) with ordinality as e(t, n) order by n desc limit 200) last_turns;
-  select regexp_replace(t ->> 'text', '\s+', ' ', 'g') into line
-  from jsonb_array_elements(coalesce(p_turns, '[]'::jsonb)) with ordinality as e(t, n)
-  where t ->> 'role' = 'user' order by n limit 1;
-  line := btrim(coalesce(line, ''));
-  if line = '' then
-    chat_title := 'A chat with Jonz';
-  elsif char_length(line) <= 44 then
-    chat_title := line;
-  else
-    cut := left(line, 43);
-    space_at := char_length(cut) - strpos(reverse(cut), ' ') + 1;
-    if strpos(cut, ' ') > 0 and space_at - 1 > 22 then cut := left(cut, space_at - 1); end if;
-    chat_title := regexp_replace(cut, '[\s,.;:–-]+$', '') || '…';
-  end if;
-  update public.ask_chats set title = chat_title, turns = kept, updated_at = now() where id = p_chat;
-end;
+  update public.ask_chats
+  set title = public.chat_title_of(p_turns), turns = public.chat_turns_kept(p_turns)
+  where id = p_chat;
 $$;
 comment on function public.update_ask_chat(uuid, jsonb) is 'Keep an Ask Jonz chat as it now stands.';
 
@@ -243,6 +238,7 @@ revoke execute on function
   public.my_house(), public.set_my_name(text), public.my_notifications(),
   public.save_notifications(boolean, boolean, boolean, boolean, smallint, smallint, text),
   public.add_push_device(text, text, text), public.remove_push_device(text), public.my_report(uuid),
+  public.chat_title_of(jsonb), public.chat_turns_kept(jsonb),
   public.my_ask_chats(uuid), public.my_ask_chat(uuid), public.keep_ask_chat(uuid, jsonb),
   public.update_ask_chat(uuid, jsonb), public.delete_ask_chat(uuid), public.live_notices()
 from public, anon;
@@ -250,6 +246,7 @@ grant execute on function
   public.my_house(), public.set_my_name(text), public.my_notifications(),
   public.save_notifications(boolean, boolean, boolean, boolean, smallint, smallint, text),
   public.add_push_device(text, text, text), public.remove_push_device(text), public.my_report(uuid),
+  public.chat_title_of(jsonb), public.chat_turns_kept(jsonb),
   public.my_ask_chats(uuid), public.my_ask_chat(uuid), public.keep_ask_chat(uuid, jsonb),
   public.update_ask_chat(uuid, jsonb), public.delete_ask_chat(uuid), public.live_notices()
 to authenticated;

@@ -701,9 +701,9 @@ export const OPERATION_IO = {
   owner_request_deletion: io(z.object({ email: z.email(), reason: text.optional() }), id, "POST /v1/admin/deletions"),
   owner_stop_deletion: io(z.object({ userId: id, reason: text.optional() }), nothing, "DELETE /v1/admin/deletions/{userId}"),
   owner_delete_house: io(DeleteHouseRequest.extend({ houseId: id }), DeleteHouseResponse, "DELETE /v1/admin/houses/{houseId}"),
-  owner_notices_page: io(z.object({ ...noticeFilter, ...pageInput }), pageOutput(Notice), "GET /v1/admin/notices", { page: { at: "startsAt", id: "id" } }),
+  owner_notices_page: io(z.object({ ...noticeFilter, ...pageInput }), pageOutput(Notice), "GET /v1/admin/notices", { page: pageOf("startsAt") }),
   owner_notices_count: io(z.object(noticeFilter), count, "GET /v1/admin/notices/count"),
-  owner_audit_page: io(z.object({ ...auditFilter, ...pageInput }), pageOutput(auditEntry), "GET /v1/admin/audit", { page: { at: "createdAt", id: "id" } }),
+  owner_audit_page: io(z.object({ ...auditFilter, ...pageInput }), pageOutput(auditEntry), "GET /v1/admin/audit", { page: pageOf("createdAt") }),
   owner_audit_count: io(z.object(auditFilter), count, "GET /v1/admin/audit/count"),
   owner_audit_entry: io(z.object({ entryId: z.int().min(1) }), auditEntry.nullable(), "GET /v1/admin/audit/{entryId}"),
   owner_ask_chats: io(none, z.array(chatSummary), "GET /v1/admin/ask-chats"),
@@ -752,7 +752,8 @@ export function rpcArgs(name: OperationName, input: Record<string, unknown>): Re
 const readCursor = (cursor: string): { at: string; id: string } | null => {
   try {
     const parsed = JSON.parse(atob(cursor.replace(/-/g, "+").replace(/_/g, "/"))) as unknown;
-    const ok = z.object({ at: text, id: text }).safeParse(parsed);
+    // An id is a uuid, or a number for a table counted by identity (admin_audit).
+    const ok = z.object({ at: text, id: z.union([text, z.number()]).transform(String) }).safeParse(parsed);
     return ok.success ? ok.data : null;
   } catch {
     return null;

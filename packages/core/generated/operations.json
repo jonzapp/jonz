@@ -15359,15 +15359,25 @@
       "method": "GET",
       "path": "/v1/admin/notices",
       "pathKeys": [],
-      "rpc": null,
+      "rpc": {
+        "name": "owner_notices_page",
+        "server": false,
+        "args": {
+          "q": "p_q",
+          "kind": "p_kind",
+          "state": "p_state",
+          "after": "p_after",
+          "before": "p_before"
+        }
+      },
       "tables": [
         "notices"
       ],
       "page": {
         "at": "startsAt",
         "id": "id",
-        "atArg": null,
-        "idArg": null
+        "atArg": "p_cursor_at",
+        "idArg": "p_cursor_id"
       },
       "input": {
         "type": "object",
@@ -15532,7 +15542,17 @@
       "method": "GET",
       "path": "/v1/admin/notices/count",
       "pathKeys": [],
-      "rpc": null,
+      "rpc": {
+        "name": "owner_notices_count",
+        "server": false,
+        "args": {
+          "q": "p_q",
+          "kind": "p_kind",
+          "state": "p_state",
+          "after": "p_after",
+          "before": "p_before"
+        }
+      },
       "tables": [
         "notices"
       ],
@@ -15621,15 +15641,25 @@
       "method": "GET",
       "path": "/v1/admin/audit",
       "pathKeys": [],
-      "rpc": null,
+      "rpc": {
+        "name": "owner_audit_page",
+        "server": false,
+        "args": {
+          "q": "p_q",
+          "who": "p_who",
+          "what": "p_what",
+          "after": "p_after",
+          "before": "p_before"
+        }
+      },
       "tables": [
         "admin_audit"
       ],
       "page": {
         "at": "createdAt",
         "id": "id",
-        "atArg": null,
-        "idArg": null
+        "atArg": "p_cursor_at",
+        "idArg": "p_cursor_id"
       },
       "input": {
         "type": "object",
@@ -15836,7 +15866,17 @@
       "method": "GET",
       "path": "/v1/admin/audit/count",
       "pathKeys": [],
-      "rpc": null,
+      "rpc": {
+        "name": "owner_audit_count",
+        "server": false,
+        "args": {
+          "q": "p_q",
+          "who": "p_who",
+          "what": "p_what",
+          "after": "p_after",
+          "before": "p_before"
+        }
+      },
       "tables": [
         "admin_audit"
       ],
@@ -15914,7 +15954,13 @@
       "pathKeys": [
         "entryId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "owner_audit_entry",
+        "server": false,
+        "args": {
+          "entryId": "p_entry"
+        }
+      },
       "tables": [
         "admin_audit"
       ],
@@ -16063,7 +16109,11 @@
       "method": "GET",
       "path": "/v1/admin/ask-chats",
       "pathKeys": [],
-      "rpc": null,
+      "rpc": {
+        "name": "owner_ask_chats",
+        "server": false,
+        "args": {}
+      },
       "tables": [
         "owner_ask_chats"
       ],
@@ -16115,7 +16165,13 @@
       "pathKeys": [
         "chatId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "owner_ask_chat",
+        "server": false,
+        "args": {
+          "chatId": "p_chat"
+        }
+      },
       "tables": [
         "owner_ask_chats"
       ],
@@ -16275,7 +16331,13 @@
       "method": "POST",
       "path": "/v1/admin/ask-chats",
       "pathKeys": [],
-      "rpc": null,
+      "rpc": {
+        "name": "keep_owner_ask_chat",
+        "server": false,
+        "args": {
+          "turns": "p_turns"
+        }
+      },
       "tables": [
         "owner_ask_chats"
       ],
@@ -16421,7 +16483,14 @@
       "pathKeys": [
         "chatId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "update_owner_ask_chat",
+        "server": false,
+        "args": {
+          "chatId": "p_chat",
+          "turns": "p_turns"
+        }
+      },
       "tables": [
         "owner_ask_chats"
       ],
@@ -16571,7 +16640,13 @@
       "pathKeys": [
         "chatId"
       ],
-      "rpc": null,
+      "rpc": {
+        "name": "delete_owner_ask_chat",
+        "server": false,
+        "args": {
+          "chatId": "p_chat"
+        }
+      },
       "tables": [
         "owner_ask_chats"
       ],
