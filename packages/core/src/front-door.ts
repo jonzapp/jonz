@@ -1,5 +1,5 @@
 import { DELETE_PATH } from "./account-deletion";
-import { APPROVE_PATH } from "./approvals";
+import { APPROVE_PATH, CONSENT_PATH_WITH_ID } from "./approvals";
 import { safeNext, signInPath, signInReason } from "./auth-paths";
 import { FRONT_DOOR_COPY, POCKET_COPY, SIGN_IN_COPY } from "./copy";
 import { CURRENCIES, type Currency, DEFAULT_RULES, DOW_LABEL, FAMILY_POCKET_CAP, type HouseKind, type IsoDow } from "./domain";
@@ -19,13 +19,13 @@ const JOIN_PATH = /^\/join\/[^/?#]+$/;
  * Where signing in leads, when sign-in was carrying somewhere (`next`): for
  * someone with no house yet, the front door's choice (naming the house, or
  * pasting the invite) or a join link; for anyone, jonz.app/delete or a
- * connected app's request to approve. Undefined
+ * connected app's request to approve or its sign-in to allow. Undefined
  * for anything else, safe or not, so the root layout's own rule decides and
  * no `next` can send anyone round in circles.
  */
 export function afterSignIn(next: string | null | undefined): string | undefined {
   const target = safeNext(next);
-  if (target === DOOR.start || target === DOOR.startFamily || target === DOOR.invite || target === DELETE_PATH || JOIN_PATH.test(target) || APPROVE_PATH.test(target)) return target;
+  if (target === DOOR.start || target === DOOR.startFamily || target === DOOR.invite || target === DELETE_PATH || JOIN_PATH.test(target) || APPROVE_PATH.test(target) || CONSENT_PATH_WITH_ID.test(target)) return target;
   return undefined;
 }
 
@@ -41,14 +41,14 @@ export function signedOutTo(pathname: string): string {
 }
 
 /**
- * Where Google sends the web back to. A join link, or a request to approve,
- * comes back to itself: it's open to anyone, so the link survives. Anything else comes back to sign-in,
+ * Where Google sends the web back to. A join link, a request to approve, or
+ * a connected app's sign-in comes back to itself: it's open to anyone, so the link survives. Anything else comes back to sign-in,
  * still carrying where it leads, so a refusal is said where sign-in was tried
  * and the front door's choice isn't lost on the way.
  */
 export function googleReturn(next: string | null | undefined): string {
   const target = afterSignIn(next);
-  return target !== undefined && (JOIN_PATH.test(target) || APPROVE_PATH.test(target)) ? target : signInPath(target);
+  return target !== undefined && (JOIN_PATH.test(target) || APPROVE_PATH.test(target) || CONSENT_PATH_WITH_ID.test(target)) ? target : signInPath(target);
 }
 
 /**

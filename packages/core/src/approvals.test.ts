@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { approvalAsk, approvalDetails, approvalState, APPROVE_COPY, APPROVE_PATH, approvePath, type ApprovalRow } from "./approvals";
+import { approvalAsk, approvalDetails, approvalState, APPROVE_COPY, APPROVE_PATH, approvePath, CONSENT_COPY, consentPath, type ApprovalRow } from "./approvals";
 import { signInReason } from "./auth-paths";
 import { afterSignIn, googleReturn } from "./front-door";
 import { OPERATIONS } from "./operations";
@@ -42,5 +42,14 @@ describe("approving a connected app's request", () => {
     expect(afterSignIn(path)).toBe(path);
     expect(googleReturn(path)).toBe(path);
     expect(signInReason(path)).toBe(APPROVE_COPY.signInReason);
+  });
+
+  it("brings sign-in back to a connected app's consent page, from Google too, and nowhere it shouldn't", () => {
+    const path = consentPath("abc_123-XYZ");
+    expect(path).toBe("/oauth/consent?authorization_id=abc_123-XYZ");
+    expect(afterSignIn(path)).toBe(path);
+    expect(googleReturn(path)).toBe(path);
+    expect(signInReason(path)).toBe(CONSENT_COPY.signInReason);
+    expect(afterSignIn("/oauth/consent?authorization_id=x&next=//evil.example")).toBeUndefined();
   });
 });

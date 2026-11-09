@@ -16,6 +16,31 @@ export const EMAIL_AUTH = {
   emailsPerHour: 100,
 };
 
+/**
+ * Supabase's OAuth 2.1 server, for apps people connect to Jonz over MCP
+ * (docs/specs/operation-registry.md, "MCP"): on, any MCP client may register
+ * itself (dynamic client registration, as MCP's authorization spec expects),
+ * and the consent page is the app's own, jonz.app/oauth/consent.
+ */
+export const OAUTH_SERVER = {
+  oauth_server_enabled: true,
+  oauth_server_authorization_path: "/oauth/consent",
+  oauth_server_allow_dynamic_registration: true,
+};
+
+/** What is wrong with the OAuth server's settings as read back. */
+export function oauthServerProblems(actual) {
+  const problems = [];
+  if (!actual.oauth_server_enabled) problems.push("the OAuth server for connected apps is off");
+  else {
+    if (actual.oauth_server_authorization_path !== OAUTH_SERVER.oauth_server_authorization_path) {
+      problems.push(`the OAuth consent page is ${actual.oauth_server_authorization_path || "unset"}, not ${OAUTH_SERVER.oauth_server_authorization_path}`);
+    }
+    if (!actual.oauth_server_allow_dynamic_registration) problems.push("connected apps can't register themselves (dynamic client registration is off)");
+  }
+  return problems;
+}
+
 /** The SMTP fields Supabase must have to send through Resend (the password, a Resend key, is pasted in the dashboard). */
 export const EMAIL_SMTP = { host: "smtp.resend.com", port: "465", user: "resend", sender: (c) => `hello@${c.domain}` };
 
@@ -59,6 +84,7 @@ export function authSettings(c, google, templates, captchaSecret = null) {
     password_min_length: EMAIL_AUTH.passwordMin,
     rate_limit_email_sent: EMAIL_AUTH.emailsPerHour,
     ...mailerFields(templates),
+    ...OAUTH_SERVER,
   };
   // Cloudflare Turnstile on sign-in, sign-up and reset emails; the app sends
   // the token (apps/client's bot-check). Without the secret it's left alone.
@@ -109,6 +135,7 @@ export function authProblems(actual, c, google, templates, captchaSecret = null)
     problems.push("the Turnstile bot check is off");
   }
   if (actual.site_url !== siteUrl(c)) problems.push(`site URL is ${actual.site_url || "unset"}, not ${siteUrl(c)}`);
+  problems.push(...oauthServerProblems(actual));
   const allowed = String(actual.uri_allow_list ?? "")
     .split(",")
     .map((s) => s.trim());
@@ -393,6 +420,7 @@ export function stagingAuthSettings(c, { google, azure }) {
     external_email_enabled: true,
     mailer_autoconfirm: false,
     disable_signup: false,
+    ...OAUTH_SERVER,
   };
   if (google) {
     body.external_google_enabled = true;
@@ -413,6 +441,7 @@ export function stagingAuthSettings(c, { google, azure }) {
 export function stagingAuthProblems(actual, c, { google, azure }) {
   const problems = [];
   if (actual.site_url !== stagingUrl(c)) problems.push(`site URL is ${actual.site_url || "unset"}, not ${stagingUrl(c)}`);
+  problems.push(...oauthServerProblems(actual));
   const allowed = String(actual.uri_allow_list ?? "")
     .split(",")
     .map((s) => s.trim());

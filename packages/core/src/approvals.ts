@@ -55,6 +55,40 @@ export function approvalDetails(row: ApprovalRow): { label: string; value: strin
     }));
 }
 
+/** Supabase's OAuth server sends a connected app's sign-in here, with its authorization_id. */
+export const CONSENT_PATH = "/oauth/consent";
+export const CONSENT_PATH_WITH_ID = /^\/oauth\/consent\?authorization_id=[A-Za-z0-9_-]+$/;
+export const consentPath = (authorizationId: string) => `${CONSENT_PATH}?authorization_id=${encodeURIComponent(authorizationId)}`;
+
+/** The consent page: an app asking to use Jonz as you. */
+export const CONSENT_COPY = {
+  page: "Connect an app",
+  heading: (app: string) => `Let ${app} use ${APP_NAME}?`,
+  body: (app: string) =>
+    `${app} will see your house and can do what you can do in it, as you. Anything that can’t be undone still waits for you to approve it here.`,
+  website: (uri: string) => `From ${uri}.`,
+  backTo: (uri: string) => `You’ll go back to ${uri}.`,
+  allow: "Allow",
+  deny: "Don’t allow",
+  allowing: "Allowing…",
+  denying: "Going back…",
+  gone: "This sign-in link has expired",
+  goneBody: "Go back to the app and connect again.",
+  signInReason: "Sign in to connect an app to Jonz.",
+  signedInAs: (email: string) => `Signed in as ${email}.`,
+  goHome: `Go to ${APP_NAME}`,
+} as const;
+
+/** Connected apps, on You: what each can do and how to stop it. */
+export const CONNECTED_APPS_COPY = {
+  heading: "Connected apps",
+  none: "No apps are connected. An app you connect to Jonz over MCP shows here.",
+  since: (date: string) => `Connected ${date}.`,
+  disconnect: "Disconnect",
+  disconnecting: "Disconnecting…",
+  confirm: (app: string) => `Disconnect ${app}? It signs out at once and has to ask again to come back.`,
+} as const;
+
 export const APPROVE_COPY = {
   page: "Approve a request",
   heading: "Approve this?",
