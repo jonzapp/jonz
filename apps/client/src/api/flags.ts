@@ -1,12 +1,10 @@
-import { FlagResponse, RaiseFlag } from '@app/core';
+import { callV1 } from './v1';
 
-import { apiPost } from './http';
-
-// On-call Johns. Flagging goes through apps/api, which runs raise_flag as you
-// and then tells whoever is on call (lib/moves/flags.ts there).
+// On-call Johns. Flagging runs raise_flag as you on /v1, and then tells
+// whoever is on call (apps/api lib/moves/flags.ts).
 
 /** Say an on-call John needs doing. Answers the flag's id: the one already open, if it is. */
 export async function raiseFlag(johnId: string): Promise<string> {
-  const { assignmentId } = await apiPost('/api/flags', RaiseFlag.parse({ johnId }), FlagResponse);
+  const { assignmentId } = await callV1('raise_flag', { johnId });
   return assignmentId;
 }

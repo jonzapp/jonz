@@ -1,56 +1,48 @@
-import { answerDispute, castVote, raiseDispute } from './disputes';
-import { apiPost } from './http';
-import { supabase } from './supabase';
+import { answerDispute, answerTick, castVote, raiseDispute } from './disputes';
+import { callV1 } from './v1';
 
-jest.mock('./supabase', () => ({ supabase: { rpc: jest.fn() } }));
-jest.mock('./http', () => ({ apiPost: jest.fn() }));
+jest.mock('./v1', () => ({ callV1: jest.fn() }));
 
-const rpc = supabase.rpc as unknown as jest.Mock;
-
-const post = apiPost as jest.Mock;
+const call = callV1 as jest.Mock;
 const JOHN = '8f14e45f-ceea-467f-a8f5-2fbf7c2d9b1a';
+const DISPUTE = 'c4ca4238-a0b9-4382-8dcc-509a6f75849b';
 
 beforeEach(() => {
   jest.clearAllMocks();
-  post.mockResolvedValue({ ok: true });
+  call.mockResolvedValue({ ok: true });
 });
 
 describe('raiseDispute', () => {
-  it('sends the John and the tidied reason to the API', async () => {
+  it('sends the John and the tidied reason', async () => {
     await raiseDispute(JOHN, '  Still full  ');
-    expect(post).toHaveBeenCalledWith('/api/disputes', { assignmentId: JOHN, reason: 'Still full' }, expect.anything());
+    expect(call).toHaveBeenCalledWith('raise_dispute', { assignmentId: JOHN, reason: 'Still full' });
   });
 
   it("says what's wrong before asking the API", async () => {
-    await expect(raiseDispute(JOHN, '   ')).rejects.toThrow("Say what’s wrong with it.");
+    await expect(raiseDispute(JOHN, '   ')).rejects.toThrow('Say what’s wrong with it.');
     await expect(raiseDispute(JOHN, 'x'.repeat(281))).rejects.toThrow('Keep it under 280 characters.');
-    expect(post).not.toHaveBeenCalled();
+    expect(call).not.toHaveBeenCalled();
   });
 
   it("passes on the API's refusal", async () => {
-    post.mockRejectedValue(new Error("Someone’s already disputing that tick."));
-    await expect(raiseDispute(JOHN, 'Still full')).rejects.toThrow("Someone’s already disputing that tick.");
+    call.mockRejectedValue(new Error('Someone’s already disputing that tick.'));
+    await expect(raiseDispute(JOHN, 'Still full')).rejects.toThrow('Someone’s already disputing that tick.');
   });
 });
 
-describe('castVote', () => {
-  it("votes on the dispute's own route", async () => {
-    await castVote('d1', true);
-    expect(post).toHaveBeenCalledWith('/api/disputes/d1/votes', { uphold: true }, expect.anything());
-    await castVote('d1', false);
-    expect(post).toHaveBeenLastCalledWith('/api/disputes/d1/votes', { uphold: false }, expect.anything());
+describe('castVote and answerTick', () => {
+  it('vote on the dispute, and answer the tick', async () => {
+    await castVote(DISPUTE, true);
+    expect(call).toHaveBeenCalledWith('cast_vote', { disputeId: DISPUTE, uphold: true });
+    await answerTick(JOHN, false);
+    expect(call).toHaveBeenLastCalledWith('answer_tick', { assignmentId: JOHN, ok: false });
   });
 });
 
 describe('answerDispute', () => {
   it('answers with the uploaded photo, and says whether that settled it', async () => {
-    rpc.mockResolvedValue({ data: true, error: null });
-    await expect(answerDispute('d1', 'house/john/x.jpg')).resolves.toBe(true);
-    expect(rpc).toHaveBeenCalledWith('answer_dispute', { p_dispute: 'd1', p_photo_path: 'house/john/x.jpg' });
-  });
-
-  it("says the database's refusal as a sentence", async () => {
-    rpc.mockResolvedValue({ data: null, error: { message: 'vote_closed' } });
-    await expect(answerDispute('d1', 'house/john/x.jpg')).rejects.toThrow('Voting on that has closed.');
+    call.mockResolvedValue(true);
+    await expect(answerDispute(DISPUTE, 'house/john/x.jpg')).resolves.toBe(true);
+    expect(call).toHaveBeenCalledWith('answer_dispute', { disputeId: DISPUTE, photoPath: 'house/john/x.jpg' });
   });
 });
