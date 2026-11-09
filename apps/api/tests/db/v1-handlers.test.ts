@@ -17,6 +17,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { apiOperation, withHandlers } from "v1";
 
 import { V1_HANDLERS } from "@/lib/v1/handlers";
+import { restoreApiRole } from "../support/api-role";
 
 const DB_URL = process.env.DB_URL ?? "postgresql://postgres:postgres@127.0.0.1:54342/postgres";
 const STACK_SECRET = process.env.SUPABASE_JWT_SECRET ?? "super-secret-jwt-token-with-at-least-32-characters-long";
@@ -71,7 +72,7 @@ beforeAll(async () => {
 afterAll(async () => {
   await admin`delete from public.houses where id = ${houseId}::uuid`;
   await admin`delete from auth.users where id in ${admin([parent, housemate, stranger])}`;
-  await admin.unsafe(`alter role jonz_api password null`);
+  await restoreApiRole(admin);
   await api.end();
   await admin.end();
 });

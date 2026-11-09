@@ -3,7 +3,7 @@
 
 export { tokenVerifier, type Claims, type TokenConfig, type TokenVerifier } from "./auth";
 export { checkClient, parseClient, CLIENT_PLATFORMS, type ClientInfo, type ClientPlatform, type MinimumBuilds } from "./client";
-export { becomeApi, becomePerson, callFunction, connect, signatures, type Signature, type Sql, type Tx } from "./db";
+export { becomeApi, becomePerson, callFunction, connect, functionCall, signatures, type Signature, type Sql, type Tx } from "./db";
 export {
   APPROVAL_TTL_MS,
   APPROVAL_URL,

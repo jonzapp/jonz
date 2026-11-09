@@ -85,6 +85,12 @@ function value(type: string, v: unknown): unknown {
 
 /** Calls public.<name> with named arguments and returns its result as JSON. */
 export async function callFunction(tx: Tx, signature: Signature, name: string, args: Record<string, unknown>): Promise<unknown> {
+  const [row] = await functionCall(tx, signature, name, args);
+  return row.r;
+}
+
+/** The query that calls a function, not yet sent: its one row's `r` is the result. */
+export function functionCall(tx: Tx, signature: Signature, name: string, args: Record<string, unknown>) {
   const names = Object.keys(args).filter((a) => args[a] !== undefined);
   for (const a of names) {
     if (!(a in signature.args)) throw new Error(`public.${name} has no argument ${a}`);
@@ -96,6 +102,5 @@ export async function callFunction(tx: Tx, signature: Signature, name: string, a
     : signature.returnsSet
       ? `select coalesce(jsonb_agg(t), '[]'::jsonb) as r from ${call} t`
       : `select to_jsonb(${call}) as r`;
-  const [row] = await tx.unsafe<{ r: unknown }[]>(query, params);
-  return row.r;
+  return tx.unsafe<{ r: unknown }[]>(query, params);
 }

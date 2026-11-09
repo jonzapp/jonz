@@ -22,6 +22,7 @@ import {
 import { fromDatabase, Problem, type HandlerContext } from "@app/server";
 import type { Handlers } from "v1";
 
+import { inOperation } from "@/lib/db/scope";
 import { ensureFresh } from "@/lib/engine/fresh";
 import { env } from "@/lib/env";
 import { seeLinks, uploadLink } from "@/lib/files";
@@ -85,7 +86,7 @@ const houseId = (ctx: HandlerContext) => ctx.input.houseId as string;
 const appUrl = (ctx: HandlerContext) => env.appUrlForOrigin(ctx.origin);
 const filesSite = (ctx: HandlerContext) => env.filesSiteForOrigin(ctx.origin);
 
-export const V1_HANDLERS: Handlers = {
+const HANDLERS: Handlers = {
   async proof_upload(ctx: HandlerContext) {
     const { assignmentId } = ctx.input as { assignmentId: string };
     return uploadLink(ctx.token, ctx.claims.sub, filesSite(ctx), "proof", "image/jpeg", { houseId: houseId(ctx), assignmentId });
@@ -258,6 +259,14 @@ export const V1_HANDLERS: Handlers = {
     return { ok: true, ...(await done(deleteHouse(callerOf(ctx), houseId(ctx), body<DeleteHouseRequest>(ctx), passStripe()))) };
   },
 };
+
+/**
+ * Each handler with its operation's transaction as where its queries go
+ * (lib/db/scope.ts): the person's client and the server's both run in it.
+ */
+export const V1_HANDLERS: Handlers = Object.fromEntries(
+  Object.entries(HANDLERS).map(([name, handler]) => [name, (ctx: HandlerContext) => inOperation(ctx.tx, ctx.pool, ctx.claims, () => Promise.resolve(handler!(ctx)))]),
+) as Handlers;
 
 /** A path key from the input. */
 const id = (ctx: HandlerContext, key: string) => ctx.input[key] as string;
