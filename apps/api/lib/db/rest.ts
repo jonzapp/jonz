@@ -866,25 +866,21 @@ async function alone<T>(
 ): Promise<T> {
   savepoints += 1;
   const name = `rest_${savepoints}`;
-  const first = [
-    contained ? tx.unsafe(`savepoint ${name}`) : null,
-    before ? tx.unsafe(before) : null,
-  ].filter(Boolean);
+  const sent: Promise<unknown>[] = [];
+  if (contained) sent.push(tx.unsafe(`savepoint ${name}`));
+  if (before) sent.push(tx.unsafe(before));
   const result = work();
-  const last = [
-    after ? tx.unsafe(after) : null,
-    contained ? tx.unsafe(`release savepoint ${name}`) : null,
-  ].filter(Boolean);
-  try {
-    await Promise.all(first);
-    const value = await result;
-    await Promise.all(last);
-    return value;
-  } catch (e) {
-    await Promise.allSettled(last);
-    if (contained) await tx.unsafe(`rollback to savepoint ${name}`);
-    throw e;
-  }
+  sent.push(result);
+  if (after) sent.push(tx.unsafe(after));
+  if (contained) sent.push(tx.unsafe(`release savepoint ${name}`));
+  // Every statement settles before this returns, so none is left failing
+  // with nobody listening, and the next turn starts on a quiet connection.
+  const settled = await Promise.allSettled(sent);
+  const failed = settled.find((s) => s.status === "rejected");
+  if (!failed) return result;
+  // Back to before the savepoint: the role and claims too, as set_config(…, true) is undone with it.
+  if (contained) await tx.unsafe(`rollback to savepoint ${name}`);
+  throw (failed as PromiseRejectedResult).reason;
 }
 
 /**
@@ -900,10 +896,12 @@ export function txClient(
 ): Db {
   return restClient(
     {
-      run: (text, params, contained) =>
+      // Reads too: a failed read must not end the operation's transaction,
+      // as it didn't through supabase-js.
+      run: (text, params) =>
         inside(
           tx,
-          contained,
+          true,
           roles?.become ?? null,
           roles?.back ?? null,
           () =>
@@ -913,8 +911,8 @@ export function txClient(
         ),
       signature: (name) =>
         cached(signatureCache, pool, () => signatures(pool))(name),
-      call: (signature, name, args, contained) =>
-        inside(tx, contained, roles?.become ?? null, roles?.back ?? null, () =>
+      call: (signature, name, args) =>
+        inside(tx, true, roles?.become ?? null, roles?.back ?? null, () =>
           callFunction(tx, signature, name, args),
         ),
       meta: () => cached(metaCache, pool, () => readMeta(pool)),
