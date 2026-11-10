@@ -29,6 +29,20 @@ async function topOf(box: Locator): Promise<number> {
   return (await box.boundingBox())?.y ?? Number.NaN;
 }
 
+/** Where a box's bottom edge is on the page. */
+async function bottomOf(box: Locator): Promise<number> {
+  const b = await box.boundingBox();
+  return b ? b.y + b.height : Number.NaN;
+}
+
+/** Today's Next up runs across the whole of the column it heads, edge to edge, never a phone's width of it. */
+async function acrossTheColumn(nextUp: Locator, column: Locator) {
+  const card = await nextUp.boundingBox();
+  const room = await column.boundingBox();
+  expect(Math.abs((card?.x ?? 0) - (room?.x ?? 0))).toBeLessThan(2);
+  expect(Math.abs(rightOf(card) - rightOf(room))).toBeLessThan(2);
+}
+
 /** A section's group of rows: the last of its two children, under its header. */
 function groupOf(section: Locator): Locator {
   return section.locator(":scope > div").last();
@@ -116,21 +130,23 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   // The columns share a top edge: Next up's card and the group beside it, under the day's line and its label.
   expect(await topOf(today.getByTestId("next-up"))).toBeCloseTo(await topOf(groupOf(today.getByTestId("week-glance"))), 0);
   await holdsTheEdges(page, today, today.getByTestId("next-up"));
-  // Next up beside the rest of your week, the two sharing a top edge, in a main column that runs to the panel.
-  await expect(today.getByTestId("today-pair-start").getByTestId("next-up")).toBeVisible();
-  await expect(today.getByTestId("today-pair-end").getByTestId("rest-of-week")).toBeVisible();
-  expect(await topOf(today.getByTestId("today-pair-start"))).toBeCloseTo(await topOf(today.getByTestId("today-pair-end")), 0);
+  // Next up runs across a main column that runs to the panel, with the rest of your week under it.
+  await expect(today.getByTestId("today-pair")).toHaveCount(0);
+  await acrossTheColumn(today.getByTestId("next-up"), today.getByTestId("column-main"));
+  await expect(today.getByTestId("column-main").getByTestId("rest-of-week")).toBeVisible();
+  expect(await topOf(today.getByTestId("rest-of-week"))).toBeGreaterThan(await bottomOf(today.getByTestId("next-up")));
   await runsToThePanel(today);
   await shoot(page, "today");
   // Beside the chat with Jonz there's no room for the panel, but the page still fills the room up to the chat: Next up
-  // beside the rest of your week and the week, never one phone-wide column with the room blank beside it.
+  // across it, then the rest of your week beside the week, never one phone-wide column with the room blank beside it.
   await today.getByTestId("ask-jonz").click();
   const chat = page.getByTestId("ask-panel");
   await expect(chat).toBeVisible();
   await expect(today.getByTestId("columns")).toHaveCount(0);
-  await expect(today.getByTestId("today-pair-start").getByTestId("next-up")).toBeVisible();
-  await expect(today.getByTestId("today-pair-end").getByTestId("rest-of-week")).toBeVisible();
+  await expect(today.getByTestId("today-pair").getByTestId("next-up")).toHaveCount(0);
+  await expect(today.getByTestId("today-pair-start").getByTestId("rest-of-week")).toBeVisible();
   await expect(today.getByTestId("today-pair-end").getByTestId("week-glance")).toBeVisible();
+  await acrossTheColumn(today.getByTestId("next-up"), today.getByTestId("today-pair"));
   const chatEdge = (await chat.boundingBox())?.x ?? 0;
   expect(Math.abs(rightOf(await today.getByTestId("today-pair-end").boundingBox()) - (chatEdge - 16))).toBeLessThan(2);
   await shoot(page, "today-ask");
@@ -161,7 +177,7 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   await shoot(page, "week-wide");
   await page.getByRole("tab", { name: SECTION_LABEL.today }).click();
   await runsToThePanel(today);
-  await expect(today.getByTestId("today-pair-end").getByTestId("rest-of-week")).toBeVisible();
+  await acrossTheColumn(today.getByTestId("next-up"), today.getByTestId("column-main"));
   await shoot(page, "today-wide");
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.getByRole("tab", { name: SECTION_LABEL.week }).click();

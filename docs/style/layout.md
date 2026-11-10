@@ -102,13 +102,13 @@ still look right stretched (content capped, nothing pinned to far edges).
   (Option C, #59; Laptop width B, 10 Nov; beside the chat, 10 Nov) *Backed
   by* Material's list-detail and supporting-pane layouts and the HIG's split
   view.
-- **Today on a laptop:** Next up (under the day's line) beside the rest of
-  your week (`Pair`), the two sharing a top edge; what the house wants of
-  you (Needs you, On call, This week) in the panel. Where the main column
-  has no room for two, they stack as on a phone. With no room for the
-  panel (beside the chat with Jonz), Next up and what the house wants of
-  you sit beside the rest of your week and This week. (Laptop width B,
-  10 Nov)
+- **Today on a laptop:** Next up (under the day's line) runs across the
+  whole main column, its plate and Mark done edge to edge, with the rest of
+  your week and the page's quiet lines under it; what the house wants of
+  you (Needs you, On call, This week) is in the panel. With no room for the
+  panel (beside the chat with Jonz), Next up runs across the page and the
+  rest of your week sits beside what the house wants of you and This week
+  (`Pair`). (Laptop width B, 10 Nov; Today on a laptop A, 10 Nov)
 - **The owner's pages use the whole room:** their lists are tables, so the
   main column running to the panel suits them. (Owner admin, 7 Nov; Laptop
   width B, 10 Nov)

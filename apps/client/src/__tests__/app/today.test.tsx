@@ -869,13 +869,16 @@ describe('on a laptop', () => {
   beforeEach(() => (useWindowDimensions as jest.Mock).mockReturnValue(LAPTOP));
   afterEach(() => (useWindowDimensions as jest.Mock).mockReturnValue({ width: 412, height: 915, scale: 1, fontScale: 1 }));
 
-  it('keeps your Johns in the main column and puts the house’s week beside them', async () => {
+  it('runs Next up across the main column over the rest of your week, and puts the house’s week beside them', async () => {
     await open();
     const main = within(screen.getByTestId('column-main'));
     const side = within(screen.getByTestId('column-side'));
     // The day's line heads the main column, a section label's height, so Next up lines up with the first group beside it.
     expect(main.getByTestId('top-line')).toBeOnTheScreen();
     expect(main.getByTestId('next-up')).toBeOnTheScreen();
+    // Under it, not beside it: the main column is one stack, Next up first.
+    expect(screen.queryByTestId('today-pair')).toBeNull();
+    expect(main.getByTestId('rest-of-week')).toBeOnTheScreen();
     const glance = side.getByTestId('week-glance');
     expect(within(glance).getByTestId('week-bar')).toBeOnTheScreen();
     // The glance's parts are one line, not Week's filters.
@@ -884,12 +887,14 @@ describe('on a laptop', () => {
     expect(within(glance).getByRole('link', { name: new RegExp(words('today.page.seeWeek')) })).toBeOnTheScreen();
   });
 
-  it('still fills the room with no space for the panel: Next up beside the rest of your week and the week', async () => {
+  it('still fills the room with no space for the panel: Next up across it, the rest of your week beside the week', async () => {
     (useWindowDimensions as jest.Mock).mockReturnValue({ ...LAPTOP, width: 1100 });
     await open();
     expect(screen.queryByTestId('columns')).toBeNull();
-    expect(within(screen.getByTestId('today-pair-start')).getByTestId('next-up')).toBeOnTheScreen();
-    expect(within(screen.getByTestId('today-pair-end')).getByTestId('rest-of-week')).toBeOnTheScreen();
+    // Next up runs across the page, over the pair.
+    expect(within(screen.getByTestId('today-pair')).queryByTestId('next-up')).toBeNull();
+    expect(screen.getByTestId('next-up')).toBeOnTheScreen();
+    expect(within(screen.getByTestId('today-pair-start')).getByTestId('rest-of-week')).toBeOnTheScreen();
     expect(within(screen.getByTestId('today-pair-end')).getByTestId('week-glance')).toBeOnTheScreen();
   });
 });

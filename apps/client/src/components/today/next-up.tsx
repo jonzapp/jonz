@@ -24,7 +24,7 @@ import { Lead, Meta, SectionLabel } from '@/components/text';
 import { TextButton } from '@/components/text-button';
 import { useWords } from '@/hooks/use-words';
 import { useTick } from '@/hooks/use-tick';
-import { CONTENT_MAX, GUTTER, INSET, NARROW, SPACE, TAP, useTheme } from '@/theme';
+import { INSET, NARROW, SPACE, TAP, useTheme } from '@/theme';
 
 /** What the card shows beside a John: the tokens you hold that can skip or swap it. */
 export interface CantHeld {
@@ -123,7 +123,8 @@ export function NextUpCard({ lead, body, children }: { lead: string; body?: stri
  * it (a photo John leads with the camera), and, while you hold a token, the
  * way to skip or swap it. The plate says it's next, so there's no "Next up"
  * over it to read, only to hear. Overdue, the plate's border turns hazard
- * and a line of its own says since when.
+ * and a line of its own says since when. On a laptop it runs across the
+ * page's main column, over everything else on it.
  */
 function NextJohn({
   houseId,
@@ -267,8 +268,8 @@ function NextJohn({
 
 const styles = StyleSheet.create({
   // Where a card would be, without one: the plate and the buttons span it,
-  // no wider than a phone's page, so neither runs the width of a laptop's main column.
-  posted: { alignSelf: 'stretch', maxWidth: CONTENT_MAX - 2 * GUTTER },
+  // across the whole of a laptop's main column, as the first thing on the page.
+  posted: { alignSelf: 'stretch' },
   // The lines under the plate start where its words do, on the page's leading edge.
   words: { paddingHorizontal: INSET },
   underPlate: { paddingHorizontal: INSET, marginTop: SPACE.md },
