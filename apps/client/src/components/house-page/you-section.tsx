@@ -1,4 +1,4 @@
-import { codeProblem, dateRange, DELETE_COPY, EMAIL_SIGN_IN_COPY, emailAuthProblem, LOOK_LABEL, LOOKS, MOVING_COPY, PASSWORD_MIN, PASSWORD_SETTING_COPY, passwordProblem, prefsLine, BUSY_COPY } from '@app/core';
+import { codeProblem, dateRange, DELETE_COPY, emailAuthProblem, LOOK_LABEL, LOOKS, PASSWORD_MIN, passwordProblem, prefsLine, BUSY_COPY } from '@app/core';
 import { BellIcon, KeyRoundIcon, LogOutIcon, SlidersHorizontalIcon, SunMoonIcon, Trash2Icon, TruckIcon } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
@@ -124,8 +124,8 @@ export function YouSection({
           {email ? (
             <Row
               leading={<RowIcon icon={KeyRoundIcon} />}
-              title={PASSWORD_SETTING_COPY.label}
-              meta={hasPassword ? PASSWORD_SETTING_COPY.change : PASSWORD_SETTING_COPY.add}
+              title={words('door.password.label')}
+              meta={hasPassword ? words('door.password.change') : words('door.password.add')}
               onPress={() => {
                 setOpened((n) => n + 1);
                 setSheet('password');
@@ -151,8 +151,8 @@ export function YouSection({
           <Section label={DELETE_COPY.leave}>
             <Row
               leading={<RowIcon icon={TruckIcon} />}
-              title={MOVING_COPY.row}
-              meta={movingOutOn ? dateRange(movingOutOn, movingOutOn) : MOVING_COPY.notPlanned}
+              title={words('house.moving.row')}
+              meta={movingOutOn ? dateRange(movingOutOn, movingOutOn) : words('house.moving.notPlanned')}
               href="/house/moving"
               chevron
               testID="to-moving"
@@ -299,6 +299,7 @@ function PasswordSheet({
   hasPassword: boolean;
   onClose: () => void;
 }) {
+  const words = useWords();
   const [value, setValue] = useState('');
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
@@ -309,9 +310,9 @@ function PasswordSheet({
 
   async function save() {
     if (busy) return;
-    const short = passwordProblem(value);
+    const short = passwordProblem(value, words);
     if (short) return setProblem(short);
-    if (needsCode && codeProblem(code)) return setProblem(codeProblem(code));
+    if (needsCode && codeProblem(code, words)) return setProblem(codeProblem(code, words));
     setBusy(true);
     setProblem(null);
     try {
@@ -325,8 +326,8 @@ function PasswordSheet({
       if (why === 'insufficient_aal') setNeedsCode(true);
       else if (why === 'authenticator_wrong') {
         setCode('');
-        setProblem(PASSWORD_SETTING_COPY.wrongAuthenticator);
-      } else setProblem(emailAuthProblem(reason as { code?: string; status?: number }));
+        setProblem(words('door.password.wrongAuthenticator'));
+      } else setProblem(emailAuthProblem(reason as { code?: string; status?: number }, words));
     } finally {
       setBusy(false);
     }
@@ -335,16 +336,16 @@ function PasswordSheet({
   return (
     <Sheet
       visible={visible}
-      title={hasPassword ? PASSWORD_SETTING_COPY.change : PASSWORD_SETTING_COPY.add}
+      title={hasPassword ? words('door.password.change') : words('door.password.add')}
       onClose={onClose}
       testID="password-sheet"
     >
-      <Meta>{hasPassword ? PASSWORD_SETTING_COPY.changeBody(email) : PASSWORD_SETTING_COPY.addBody(email)}</Meta>
+      <Meta>{hasPassword ? words('door.password.changeBody', { email }) : words('door.password.addBody', { email })}</Meta>
       <SignInForm onSubmit={() => void save()} style={styles.leave}>
         <HiddenUsername email={email} />
         <Field
-          label={EMAIL_SIGN_IN_COPY.newPassword}
-          hint={EMAIL_SIGN_IN_COPY.passwordHint}
+          label={words('door.email.newPassword')}
+          hint={words("door.email.passwordHint", { min: PASSWORD_MIN })}
           value={value}
           onChangeText={(text) => {
             setValue(text);
@@ -365,9 +366,9 @@ function PasswordSheet({
         />
         {needsCode ? (
           <>
-            <Meta>{PASSWORD_SETTING_COPY.authenticatorBody}</Meta>
+            <Meta>{words('door.password.authenticatorBody')}</Meta>
             <CodeBoxes
-              label={PASSWORD_SETTING_COPY.authenticator}
+              label={words('door.password.authenticator')}
               value={code}
               onChangeText={(typed) => {
                 setCode(typed);
@@ -379,10 +380,10 @@ function PasswordSheet({
             />
           </>
         ) : null}
-        {problem ? <Alert message={problem} /> : saved ? <Meta>{PASSWORD_SETTING_COPY.saved}</Meta> : null}
+        {problem ? <Alert message={problem} /> : saved ? <Meta>{words('door.password.saved')}</Meta> : null}
         <Button
-          label={PASSWORD_SETTING_COPY.save}
-          busyLabel={PASSWORD_SETTING_COPY.busy}
+          label={words('door.password.save')}
+          busyLabel={words('door.password.busy')}
           busy={busy}
           disabled={value.length === 0}
           onPress={() => void save()}

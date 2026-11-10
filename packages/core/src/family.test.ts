@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { FRONT_DOOR, JOIN_COPY, PAGE_TITLE } from "./copy";
+import { PAGE_TITLE } from "./copy";
 import { DEFAULT_RULES, houseKind } from "./domain";
 import { familyHides, frontDoorWords, joinLine, kindParam, newHouseWords, roleCopy } from "./family";
 import { afterSignIn, DOOR, houseDefaults, signInLine } from "./front-door";
@@ -35,7 +35,7 @@ describe("the kind of house", () => {
 
 describe("the front door and Start a house, for a family", () => {
   it("has its own headline, sentences and Start", () => {
-    expect(frontDoorWords("housemates", words).headline).toBe(FRONT_DOOR.headline);
+    expect(frontDoorWords("housemates", words).headline).toBe(words('door.front.headline'));
     const family = frontDoorWords("family", words);
     expect(family.headline).toBe("Jonz: chores that earn pocket money.");
     expect(family.points.map((p) => p.key)).toEqual(["list", "share", "stake"]);
@@ -54,7 +54,7 @@ describe("the front door and Start a house, for a family", () => {
 
   it("carries a family's Start through sign-in, as it does a house's", () => {
     expect(afterSignIn(DOOR.startFamily)).toBe("/house/new?kind=family");
-    expect(signInLine(DOOR.startFamily)).toBe(signInLine(DOOR.start));
+    expect(signInLine(DOOR.startFamily, words)).toBe(signInLine(DOOR.start, words));
     // Anything else on the way stays plain sign-in.
     expect(afterSignIn("/house/new?kind=commune")).toBeUndefined();
   });
@@ -67,7 +67,7 @@ describe("the front door and Start a house, for a family", () => {
 
   it("says a family on its join link", () => {
     expect(joinLine("family", 4, words)).toBe("4 people are in this family. Join and you’re dealt Johns from next week.");
-    expect(joinLine("housemates", 4, words)).toBe(JOIN_COPY.livesHere(4));
+    expect(joinLine("housemates", 4, words)).toBe(words('door.join.livesHere', { people: 4 }));
   });
 });
 

@@ -1,4 +1,4 @@
-import { dateRange, localDate, MOVING_COPY, PAGE_TITLE, type IsoDow, BUSY_COPY } from '@app/core';
+import { dateRange, localDate, PAGE_TITLE, type IsoDow, BUSY_COPY } from '@app/core';
 import { CalendarXIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -20,6 +20,7 @@ import { useMove } from '@/hooks/use-move';
 import { usePull } from '@/hooks/use-refresh';
 import { INSET, SECTION_GAP, SPACE } from '@/theme';
 import { SettingsOutline } from '@/components/page-outlines';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * Moving out, pushed from House, You: the day you move out, picked from the
@@ -69,6 +70,7 @@ function MovingForm({
   today: string;
   weekStarts: IsoDow;
 }) {
+  const words = useWords();
   const move = useMove(houseId);
   const [picked, setPicked] = useState<string | null>(saved);
   // One day, not a run of them: whichever day was tapped last.
@@ -77,25 +79,25 @@ function MovingForm({
 
   // On a laptop what moving out does sits beside the day you pick; on a phone, the note under the calendar.
   const beside = useSideBySide();
-  const note = <Meta style={styles.note}>{MOVING_COPY.afterward}</Meta>;
+  const note = <Meta style={styles.note}>{words('house.moving.afterward')}</Meta>;
   return (
     <Pair
       testID="moving-pair"
       ratio={0.8}
       start={
         <View style={beside ? styles.words : styles.page}>
-          <Body style={styles.intro}>{MOVING_COPY.intro}</Body>
+          <Body style={styles.intro}>{words('house.moving.intro')}</Body>
           {beside ? note : null}
         </View>
       }
       end={
         <View style={styles.page}>
           {saved ? (
-            <Section label={MOVING_COPY.title}>
+            <Section label={words('house.moving.title')}>
               <GroupItem>
-                <Body testID="moving-saved">{MOVING_COPY.saved(dateRange(saved, saved))}</Body>
+                <Body testID="moving-saved">{words('house.moving.saved', { day: dateRange(saved, saved) })}</Body>
                 <TextButton
-                  label={MOVING_COPY.staying}
+                  label={words('house.moving.staying')}
                   icon={CalendarXIcon}
                   align="start"
                   disabled={move.pending}
@@ -108,7 +110,7 @@ function MovingForm({
               </GroupItem>
             </Section>
           ) : null}
-          <Section label={saved ? MOVING_COPY.change : MOVING_COPY.pick}>
+          <Section label={saved ? words('house.moving.change') : words('house.moving.pick')}>
             <GroupItem>
               <AwayDates
                 today={today}
@@ -120,7 +122,7 @@ function MovingForm({
               <View style={styles.action}>
                 <ButtonRow atEdge>
                   <Button
-                    label={picked ? MOVING_COPY.save(dateRange(picked, picked)) : MOVING_COPY.pick}
+                    label={picked ? words('house.moving.save', { day: dateRange(picked, picked) }) : words('house.moving.pick')}
                     disabled={!picked || !changed}
                     busy={move.pending}
                     busyLabel={BUSY_COPY.saving}

@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import { askWhosMovingIn, movingLine, movingOutAway, remindMoverNow, stillHere } from "./moving";
+import { wordsFor } from "./words-for";
+
+const words = wordsFor("en", "housemates");
 
 const sam = { userId: "sam", movingOutOn: "2026-11-11" };
 const ada = { userId: "ada", movingOutOn: null };
@@ -46,16 +49,16 @@ describe("movingOutAway", () => {
 
 describe("movingLine", () => {
   it("says the day ahead", () => {
-    expect(movingLine("2026-11-11", "2026-11-01", "Flat 4")).toBe("You move out on Wed 11 Nov");
+    expect(movingLine("2026-11-11", "2026-11-01", "Flat 4", words)).toBe("You move out on Wed 11 Nov");
   });
 
   it("says it's moving day on the day and after", () => {
-    expect(movingLine("2026-11-11", "2026-11-11", "Flat 4")).toBe("Moving day. Leave Flat 4 from House when you’re ready");
-    expect(movingLine("2026-11-11", "2026-11-20", "Flat 4")).toMatch(/^Moving day/);
+    expect(movingLine("2026-11-11", "2026-11-11", "Flat 4", words)).toBe("Moving day. Leave Flat 4 from House when you’re ready");
+    expect(movingLine("2026-11-11", "2026-11-20", "Flat 4", words)).toMatch(/^Moving day/);
   });
 
   it("says nothing with no date", () => {
-    expect(movingLine(null, "2026-11-01", "Flat 4")).toBeNull();
+    expect(movingLine(null, "2026-11-01", "Flat 4", words)).toBeNull();
   });
 });
 

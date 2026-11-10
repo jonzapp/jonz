@@ -1,4 +1,4 @@
-import { REPORT_COPY, TOUR_COPY, type ReportKind } from '@app/core';
+import { REPORT_COPY, type ReportKind } from '@app/core';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { BookOpenIcon, BugIcon, CompassIcon, LightbulbIcon, MessagesSquareIcon } from 'lucide-react-native';
@@ -14,6 +14,7 @@ import { Sheet } from '@/components/sheet';
 import { Meta } from '@/components/text';
 import { useTour } from '@/components/tour/tour-context';
 import { INSET, SPACE } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * Help, on House between You and Leave: Read the guide, the tours (Show me
@@ -23,6 +24,7 @@ import { INSET, SPACE } from '@/theme';
  * Under it, the support address for anyone who'd rather email.
  */
 export function HelpSection({ house }: { house: string }) {
+  const words = useWords();
   const client = useQueryClient();
   const tours = useTour();
   const [open, setOpen] = useState<ReportKind | null>(null);
@@ -39,8 +41,8 @@ export function HelpSection({ house }: { house: string }) {
       <Section label={REPORT_COPY.help}>
         <Row
           leading={<RowIcon icon={BookOpenIcon} />}
-          title={TOUR_COPY.guide}
-          meta={TOUR_COPY.guideMeta}
+          title={words('door.tour.guide')}
+          meta={words('door.tour.guideMeta')}
           href="/house/guide"
           chevron
           testID="to-guide"
@@ -48,8 +50,8 @@ export function HelpSection({ house }: { house: string }) {
         {tours ? (
           <Row
             leading={<RowIcon icon={CompassIcon} />}
-            title={TOUR_COPY.guidesRow}
-            meta={TOUR_COPY.guidesMeta}
+            title={words('door.tour.guidesRow')}
+            meta={words('door.tour.guidesMeta')}
             onPress={tours.openHelp}
             chevron
             testID="to-guides"

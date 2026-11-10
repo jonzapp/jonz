@@ -1,4 +1,4 @@
-import { dateRange, DOOR, FRONT_DOOR_COPY, inviteCode, MOVING_COPY, NO_HOUSE_COPY, PAGE_TITLE, SIGN_IN_COPY } from '@app/core';
+import { dateRange, DOOR, inviteCode, PAGE_TITLE } from '@app/core';
 import { router } from 'expo-router';
 import { LogOutIcon, TicketXIcon, TruckIcon } from 'lucide-react-native';
 import { useState } from 'react';
@@ -15,6 +15,7 @@ import { Meta, SectionLabel } from '@/components/text';
 import { TextButton } from '@/components/text-button';
 import { useMovingOn } from '@/hooks/use-moving-on';
 import { SPACE } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * Signed in, in no house: the fallback, and where "I've got an invite"
@@ -28,6 +29,7 @@ import { SPACE } from '@/theme';
  * and the invite field sits under "I have an invite".
  */
 export default function Welcome() {
+  const words = useWords();
   const movingOn = useMovingOn();
   const moving = movingOn.data ?? null;
   const [invite, setInvite] = useState('');
@@ -36,7 +38,7 @@ export default function Welcome() {
   function open() {
     const code = inviteCode(invite);
     if (!code) {
-      setProblem(FRONT_DOOR_COPY.badInvite);
+      setProblem(words('door.welcome.badInvite'));
       return;
     }
     router.push(`/join/${code}`);
@@ -48,24 +50,24 @@ export default function Welcome() {
       <Sign>
         {moving ? (
           <>
-            <SignHeading title={MOVING_COPY.heading} body={MOVING_COPY.body(moving.houseName, moving.johns)} />
+            <SignHeading title={words('house.moving.heading')} body={words('house.moving.body', { house: moving.houseName, johns: moving.johns })} />
             <Button
-              label={MOVING_COPY.start}
+              label={words('house.moving.start')}
               icon={TruckIcon}
               href={`${DOOR.start}?from=${moving.fromHouse}`}
               testID="start-from"
             />
             <PassNote moving={moving} onChanged={() => void movingOn.refetch()} />
             <View style={styles.invite}>
-              <SectionLabel>{MOVING_COPY.invite}</SectionLabel>
+              <SectionLabel>{words('house.moving.invite')}</SectionLabel>
             </View>
           </>
         ) : (
-          <SignHeading title={NO_HOUSE_COPY.heading} body={FRONT_DOOR_COPY.welcome} />
+          <SignHeading title={words('door.noHouse.heading')} body={words('door.welcome.welcome')} />
         )}
         <Field
-          label={FRONT_DOOR_COPY.paste}
-          hint={FRONT_DOOR_COPY.pasteHint}
+          label={words('door.welcome.paste')}
+          hint={words('door.welcome.pasteHint')}
           problem={problem}
           value={invite}
           onChangeText={(text) => {
@@ -80,7 +82,7 @@ export default function Welcome() {
           testID="invite"
         />
         <Button
-          label={FRONT_DOOR_COPY.open}
+          label={words('door.welcome.open')}
           onPress={open}
           disabled={!invite.trim()}
           variant={moving ? 'outline' : 'primary'}
@@ -88,8 +90,8 @@ export default function Welcome() {
         />
       </Sign>
       <DoorFoot>
-        <TextButton href={DOOR.start} label={FRONT_DOOR_COPY.startInstead} chevron align="start" />
-        <TextButton icon={LogOutIcon} label={SIGN_IN_COPY.signOut} onPress={() => void signOut()} align="start" />
+        <TextButton href={DOOR.start} label={words('door.welcome.startInstead')} chevron align="start" />
+        <TextButton icon={LogOutIcon} label={words('door.signIn.signOut')} onPress={() => void signOut()} align="start" />
       </DoorFoot>
     </Door>
   );
@@ -101,17 +103,18 @@ export default function Welcome() {
  * once left, what happens to it there.
  */
 function PassNote({ moving, onChanged }: { moving: MovingOn; onChanged: () => void }) {
+  const words = useWords();
   const [pending, setPending] = useState(false);
   const [problem, setProblem] = useState<string | undefined>();
-  if (moving.pass === 'left') return <Meta testID="pass-left">{MOVING_COPY.passLeft(moving.houseName)}</Meta>;
+  if (moving.pass === 'left') return <Meta testID="pass-left">{words('house.moving.passLeft', { house: moving.houseName })}</Meta>;
   if (moving.pass !== 'waiting') return null;
   const until = moving.houseKeepsUntil ? dateRange(moving.houseKeepsUntil, moving.houseKeepsUntil) : null;
   return (
     <View style={styles.pass}>
-      <Meta testID="pass-comes">{MOVING_COPY.passComes(moving.houseName, until)}</Meta>
+      <Meta testID="pass-comes">{until ? words('house.moving.passComesUntil', { house: moving.houseName, until }) : words('house.moving.passComes')}</Meta>
       <TextButton
         icon={TicketXIcon}
-        label={MOVING_COPY.leavePass(moving.houseName)}
+        label={words('house.moving.leavePass', { house: moving.houseName })}
         align="start"
         disabled={pending}
         onPress={() => {
