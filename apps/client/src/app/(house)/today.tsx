@@ -17,10 +17,11 @@ import {
   FOCUS_SHELL_COPY,
   switchChoices,
 } from '@app/core';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 
 import type { AwayView } from '@/api/away';
 import type { JohnList } from '@/api/settings';
+import { Pair, useSideBySide } from '@/components/page-columns';
 import { PageTitle } from '@/components/page-title';
 import { PickMenu } from '@/components/pick-menu';
 import { TodayOutline } from '@/components/page-outlines';
@@ -252,22 +253,14 @@ function TodayView({
       </PageLines>
     ) : null;
 
-  // On a laptop your own Johns keep the main column; what the house wants of you sits beside them, over its week.
-  // The day's line heads the main column, a section label's height, so Next up's card and the first group beside
-  // it share a top edge.
+  // On a laptop your own Johns keep the main column, Next up beside the rest of your week where there's room for
+  // both; what the house wants of you sits in the panel beside them, over its week. The day's line heads the main
+  // column, a section label's height, so Next up's card, the rest of your week and the first group in the panel
+  // share a top edge.
   if (two) {
     return (
       <Columns
-        main={
-          <>
-            {day}
-            {offer}
-            {next}
-            {swap}
-            {rest}
-            {lines}
-          </>
-        }
+        main={<TodayMain day={day} offer={offer} next={next} swap={swap} rest={rest} lines={lines} />}
         side={
           <>
             {needsOk}
@@ -295,5 +288,55 @@ function TodayView({
       {rest}
       {lines}
     </>
+  );
+}
+
+/**
+ * Today's main column on a laptop: Next up (with the day's line over it, and
+ * the quiet lines under it) beside the rest of your week, where the column
+ * has room for two (Pair); otherwise one after the other, as on a phone.
+ */
+function TodayMain({
+  day,
+  offer,
+  next,
+  swap,
+  rest,
+  lines,
+}: {
+  day: ReactNode;
+  offer: ReactNode;
+  next: ReactNode;
+  swap: ReactNode;
+  rest: ReactNode;
+  lines: ReactNode;
+}) {
+  const beside = useSideBySide() && rest !== null;
+  if (!beside) {
+    return (
+      <>
+        {day}
+        {offer}
+        {next}
+        {swap}
+        {rest}
+        {lines}
+      </>
+    );
+  }
+  return (
+    <Pair
+      testID="today-pair"
+      start={
+        <>
+          {day}
+          {offer}
+          {next}
+          {swap}
+          {lines}
+        </>
+      }
+      end={rest}
+    />
   );
 }
