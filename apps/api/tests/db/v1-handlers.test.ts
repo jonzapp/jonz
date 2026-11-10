@@ -32,16 +32,17 @@ let houseId: string;
 const parent = randomUUID();
 const housemate = randomUUID();
 const stranger = randomUUID();
+const owner = randomUUID();
 
-const bearer = async (sub: string) =>
-  `Bearer ${await new SignJWT({ sub, role: "authenticated", aud: "authenticated", email: `h-${sub}@test.jonz.app` })
+const bearer = async (sub: string, extra: Record<string, unknown> = {}) =>
+  `Bearer ${await new SignJWT({ sub, role: "authenticated", aud: "authenticated", email: `h-${sub}@test.jonz.app`, ...extra })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt(ISSUED)
     .setExpirationTime(EXPIRES)
     .sign(new TextEncoder().encode(STACK_SECRET))}`;
 
-const run = async (who: string, name: string, input: Record<string, unknown>) =>
-  execute(name, { authorization: await bearer(who), via: "api" }, input).then(
+const run = async (who: string, name: string, input: Record<string, unknown>, extra: Record<string, unknown> = {}) =>
+  execute(name, { authorization: await bearer(who, extra), via: "api" }, input).then(
     (r) => ({ ok: true as const, body: r.body as Record<string, unknown> }),
     (e: unknown) => ({ ok: false as const, problem: e as Problem }),
   );
@@ -54,7 +55,7 @@ beforeAll(async () => {
   url.username = "jonz_api";
   url.password = password;
   api = connect(url.toString(), 2);
-  for (const id of [parent, housemate, stranger]) await admin`insert into auth.users (id, email) values (${id}::uuid, ${`h-${id}@test.jonz.app`})`;
+  for (const id of [parent, housemate, stranger, owner]) await admin`insert into auth.users (id, email) values (${id}::uuid, ${`h-${id}@test.jonz.app`})`;
   const operations = [apiOperation("create_house"), ...withHandlers(V1_HANDLERS).filter((o) => o.handler)];
   execute = createExecutor({
     sql: api,
@@ -71,7 +72,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await admin`delete from public.houses where id = ${houseId}::uuid`;
-  await admin`delete from auth.users where id in ${admin([parent, housemate, stranger])}`;
+  await admin`delete from auth.users where id in ${admin([parent, housemate, stranger, owner])}`;
   await restoreApiRole(admin);
   await api.end();
   await admin.end();
@@ -107,5 +108,33 @@ describe("/v1 server operations", () => {
     const refused = await run(parent, "retry_promotion", { promotionId: randomUUID() });
     expect(refused.ok).toBe(false);
     if (!refused.ok) expect(refused.problem.code).toBe("forbidden");
+  });
+
+  it("lets the owner delete a house through the API, even one someone moved into", async () => {
+    // A house someone started after leaving the first one: their move points at it.
+    const made = await run(housemate, "create_house", { name: "Moved-into house", timezone: "Europe/London", currency: "GBP", weekStarts: 1 });
+    if (!made.ok) throw made.problem;
+    const movedInto = made.body as unknown as string;
+    const [move] = await admin<{ id: string }[]>`
+      insert into public.moves (user_id, from_house_id, to_house_id, how, moved_at)
+      values (${housemate}::uuid, ${houseId}::uuid, ${movedInto}::uuid, 'started', now()) returning id`;
+    await admin`insert into public.app_owners (user_id) values (${owner}::uuid)`;
+    try {
+      const gone = await run(owner, "owner_delete_house", { houseId: movedInto, reason: "Test house", tell: false }, { aal: "aal2" });
+      expect(gone.ok, gone.ok ? "" : gone.problem.message).toBe(true);
+      if (gone.ok) expect(gone.body).toMatchObject({ ok: true, name: "Moved-into house", passStopped: null });
+
+      expect(await admin`select id from public.houses where id = ${movedInto}::uuid`).toHaveLength(0);
+      // They still moved: only where to is forgotten, so nothing waits on them again.
+      const [kept] = await admin<{ to_house_id: string | null; how: string | null }[]>`select to_house_id, how from public.moves where id = ${move.id}::uuid`;
+      expect(kept).toEqual({ to_house_id: null, how: "started" });
+      // The API's own audit entry is kept, without the house that's gone.
+      const audit = await admin<{ house_id: string | null }[]>`
+        select house_id from public.api_audit_entries where user_id = ${owner}::uuid and operation = 'owner_delete_house'`;
+      expect(audit).toEqual([{ house_id: null }]);
+    } finally {
+      await admin`delete from public.app_owners where user_id = ${owner}::uuid`;
+      await admin`delete from public.moves where id = ${move.id}::uuid`;
+    }
   });
 });
