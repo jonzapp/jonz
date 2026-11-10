@@ -17,11 +17,16 @@ name: CI
 # Every job that needs a database starts its own fresh local stack
 # (.github/actions/local-supabase), so no job sees another's rows, exactly as
 # when everything ran on one machine one step at a time.
+#
+# It runs on pull requests only, not again after a merge. main requires
+# `verify` and requires the branch to be up to date with main before it can
+# merge, so the merged commit is exactly what was just proved; a second run
+# on main would prove it twice (it used to be about a third of all CI
+# minutes). Run it by hand (Actions, CI, Run workflow) to re-check a branch.
 on:
-  push:
-    branches: [main, preview]
   pull_request:
     branches: [main, preview]
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}

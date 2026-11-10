@@ -390,7 +390,8 @@ at `<house>/<assignment>/<file>`.
   runs `scripts/ci/count-guard.mjs`, which fails if any database test file
   or any listed end-to-end test (every device) ran in no job. A new device
   in `playwright.config.ts` needs a row in the `e2e` matrix too, or the guard
-  fails.
+  fails. CI runs on pull requests only (and by hand), never again after a
+  merge: main requires `verify` on a branch that is up to date with main.
 - Never use floating-point maths for money: integer minor units (pence,
   cents).
 - When a bug is fixed, add a test that would have caught it.
