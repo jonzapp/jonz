@@ -23,6 +23,9 @@ import {
   passUnlocked,
   type HousePass,
 } from "./pass";
+import { wordsFor } from "./words-for";
+
+const words = wordsFor("en", "housemates");
 
 const now = new Date("2026-11-10T12:00:00Z");
 const at = (iso: string) => new Date(iso);
@@ -96,26 +99,26 @@ describe("passDaysLeft", () => {
 
 describe("passLine", () => {
   it("says each state in a few words", () => {
-    expect(passLine(pass("founding", null), now, "Europe/London")).toBe("Founding house");
-    expect(passLine(pass("trial", "2026-11-22T12:00:00Z"), now, "Europe/London")).toBe("Free month, 12 days left");
-    expect(passLine(pass("trial", "2026-11-11T00:00:00Z"), now, "Europe/London")).toBe("Free month, 1 day left");
-    expect(passLine(pass("trial", "2026-11-01T00:00:00Z"), now, "Europe/London")).toBe("Free month ended");
-    expect(passLine(pass("yearly", "2027-11-12T12:00:00Z"), now, "Europe/London")).toBe("Yearly, renews 12 Nov");
-    expect(passLine(pass("monthly", "2026-12-12T12:00:00Z"), now, "Europe/London")).toBe("Monthly, renews 12 Dec");
-    expect(passLine(pass("monthly", "2026-11-02T12:00:00Z"), now, "Europe/London")).toBe("Ended 2 Nov");
+    expect(passLine(pass("founding", null), now, "Europe/London", words)).toBe("Founding house");
+    expect(passLine(pass("trial", "2026-11-22T12:00:00Z"), now, "Europe/London", words)).toBe("Free month, 12 days left");
+    expect(passLine(pass("trial", "2026-11-11T00:00:00Z"), now, "Europe/London", words)).toBe("Free month, 1 day left");
+    expect(passLine(pass("trial", "2026-11-01T00:00:00Z"), now, "Europe/London", words)).toBe("Free month ended");
+    expect(passLine(pass("yearly", "2027-11-12T12:00:00Z"), now, "Europe/London", words)).toBe("Yearly, renews 12 Nov");
+    expect(passLine(pass("monthly", "2026-12-12T12:00:00Z"), now, "Europe/London", words)).toBe("Monthly, renews 12 Dec");
+    expect(passLine(pass("monthly", "2026-11-02T12:00:00Z"), now, "Europe/London", words)).toBe("Ended 2 Nov");
   });
 
   it("names the day in the house's zone", () => {
     // 04:00 on the 13th in London is still the 12th in Vancouver.
     const late = pass("yearly", "2027-11-13T04:00:00Z");
-    expect(passLine(late, now, "Europe/London")).toBe("Yearly, renews 13 Nov");
-    expect(passLine(late, now, "America/Vancouver")).toBe("Yearly, renews 12 Nov");
+    expect(passLine(late, now, "Europe/London", words)).toBe("Yearly, renews 13 Nov");
+    expect(passLine(late, now, "America/Vancouver", words)).toBe("Yearly, renews 12 Nov");
   });
 });
 
 describe("passOffers", () => {
   it("puts Yearly first, with what it works out at a month", () => {
-    const offers = passOffers("USD");
+    const offers = passOffers("USD", words);
     expect(offers.map((o) => o.plan)).toEqual(["yearly", "monthly", "founding"]);
     expect(offers[0].price).toBe("$49.99 a year");
     expect(offers[0].meta).toBe("About $4.17 a month");
@@ -129,7 +132,7 @@ describe("passOffers", () => {
       for (const minor of [p.yearly, p.monthly, p.founding]) expect(Number.isInteger(minor) && minor > 0).toBe(true);
       expect(p.yearly).toBeLessThan(p.monthly * 12);
       expect(p.founding).toBeGreaterThan(p.yearly);
-      expect(passOffers(currency)).toHaveLength(3);
+      expect(passOffers(currency, words)).toHaveLength(3);
     }
   });
 });
@@ -169,31 +172,31 @@ describe("passFirstCharge", () => {
   });
 
   it("says when, in the house's zone", () => {
-    expect(passFirstChargeNote(pass("trial", "2026-11-22T12:00:00Z"), now, "Europe/London")).toBe(
+    expect(passFirstChargeNote(pass("trial", "2026-11-22T12:00:00Z"), now, "Europe/London", words)).toBe(
       "Nothing to pay until your free month ends on 22 Nov.",
     );
-    expect(passFirstChargeNote(pass("trial", "2026-11-12T12:00:00Z"), now, "Europe/London")).toBeNull();
+    expect(passFirstChargeNote(pass("trial", "2026-11-12T12:00:00Z"), now, "Europe/London", words)).toBeNull();
   });
 });
 
 describe("passPurchaseRefusal", () => {
   it("lets a house in or after its free month buy any plan", () => {
     for (const plan of PASS_PURCHASES) {
-      expect(passPurchaseRefusal(pass("trial", "2026-11-22T12:00:00Z"), plan, now)).toBeNull();
-      expect(passPurchaseRefusal(pass("trial", "2026-11-01T00:00:00Z"), plan, now)).toBeNull();
-      expect(passPurchaseRefusal(pass("yearly", "2026-11-01T00:00:00Z"), plan, now)).toBeNull();
+      expect(passPurchaseRefusal(pass("trial", "2026-11-22T12:00:00Z"), plan, now, words)).toBeNull();
+      expect(passPurchaseRefusal(pass("trial", "2026-11-01T00:00:00Z"), plan, now, words)).toBeNull();
+      expect(passPurchaseRefusal(pass("yearly", "2026-11-01T00:00:00Z"), plan, now, words)).toBeNull();
     }
   });
 
   it("sends a house on a paid plan to Manage, except for Founding", () => {
     const paid = pass("monthly", "2026-12-01T00:00:00Z");
-    expect(passPurchaseRefusal(paid, "yearly", now)).toMatch(/Manage plan/);
-    expect(passPurchaseRefusal(paid, "monthly", now)).toMatch(/Manage plan/);
-    expect(passPurchaseRefusal(paid, "founding", now)).toBeNull();
+    expect(passPurchaseRefusal(paid, "yearly", now, words)).toMatch(/Manage plan/);
+    expect(passPurchaseRefusal(paid, "monthly", now, words)).toMatch(/Manage plan/);
+    expect(passPurchaseRefusal(paid, "founding", now, words)).toBeNull();
   });
 
   it("has nothing to sell a Founding house", () => {
-    expect(passPurchaseRefusal(pass("founding", null), "founding", now)).toMatch(/for life/);
+    expect(passPurchaseRefusal(pass("founding", null), "founding", now, words)).toMatch(/for life/);
   });
 });
 

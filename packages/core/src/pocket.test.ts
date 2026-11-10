@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import { buildWeekBoard, type AssignmentRow } from "./board";
-import { POCKET_COPY } from "./copy";
 import { DEFAULT_RULES } from "./domain";
 import { payRows, pocketCard, pocketHistory, pocketMoney, pocketRules, pocketView } from "./pocket";
 import { checkRules, rulesDraft, rulesRows } from "./setup";
@@ -107,7 +106,7 @@ describe("the month's pocket money", () => {
       { userId: "leo", month: "2026-09", amount: 500 },
       { userId: "maya", month: "2026-09", amount: 650 },
     ]);
-    expect(pocketCard(view, "GBP")).toEqual({
+    expect(pocketCard(view, "GBP", words)).toEqual({
       label: "October so far",
       title: "£7.20 earned so far",
       payDay: "Pay day is 1 Nov",
@@ -121,18 +120,18 @@ describe("the month's pocket money", () => {
 
   it("gives a parent Paid for each kid, the first amber, and a kid only their own", () => {
     const view = pocketView({ earnings, pays: [], kids: KIDS, month: "2026-10" });
-    const parent = payRows({ owed: view.owed, members: PEOPLE, me: "sam", parent: true, currency: "GBP" });
+    const parent = payRows({ owed: view.owed, members: PEOPLE, me: "sam", parent: true, currency: "GBP" }, words);
     expect(parent.map((r) => [r.title, r.action, r.primary])).toEqual([
       ["Pay Leo £5 for September", "Paid Leo £5", true],
       ["Pay Maya £6.50 for September", "Paid Maya £6.50", false],
     ]);
-    const kid = payRows({ owed: view.owed, members: PEOPLE, me: "maya", parent: false, currency: "GBP" });
+    const kid = payRows({ owed: view.owed, members: PEOPLE, me: "maya", parent: false, currency: "GBP" }, words);
     expect(kid.map((r) => [r.title, r.action])).toEqual([["£6.50 for September on its way", null]]);
   });
 
   it("keeps a history, newest month first", () => {
     const view = pocketView({ earnings, pays: [paid], kids: KIDS, month: "2026-10" });
-    const months = pocketHistory({ view, members: PEOPLE, currency: "GBP", zone: "Europe/London" });
+    const months = pocketHistory({ view, members: PEOPLE, currency: "GBP", zone: "Europe/London" }, words);
     expect(months.map((m) => m.label)).toEqual(["October 2026", "September 2026"]);
     expect(months[0].lines.map((l) => [l.name, l.value, l.meta])).toEqual([
       ["Leo", "£2.70", "So far"],
@@ -154,8 +153,8 @@ describe("the month's pocket money", () => {
 describe("a family's rules", () => {
   it("say the cap in place of the stake", () => {
     const rows = rulesRows(RULES, 100, words, "jonz", "family", 1000);
-    expect(rows.find((r) => r.label === POCKET_COPY.rulesLabel)?.value).toBe("Up to £10 a month each");
-    expect(pocketRules(1000, "GBP")[0].body).toContain("up to £10 a month");
+    expect(rows.find((r) => r.label === words('house.pocket.rulesLabel'))?.value).toBe("Up to £10 a month each");
+    expect(pocketRules(1000, "GBP", words)[0].body).toContain("up to £10 a month");
   });
 
   it("let a parent change the cap, as money", () => {

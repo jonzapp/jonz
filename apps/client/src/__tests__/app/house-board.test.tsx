@@ -1,4 +1,4 @@
-import { BOARD_COPY, pocketView } from '@app/core';
+import { pocketView, wordsFor } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 import { useWindowDimensions } from 'react-native';
 
@@ -9,6 +9,8 @@ import { loadPocket } from '@/api/pocket';
 import BoardScreen from '@/app/(house)/house/board';
 import { assignment, snapshot } from '@/testing/house';
 import { renderPages, untilRead } from '@/testing/pages';
+
+const words = wordsFor('en', 'housemates');
 
 jest.mock('@/api/board', () => ({ loadHouse: jest.fn() }));
 jest.mock('@/api/house', () => ({ catchUp: jest.fn() }));
@@ -71,14 +73,14 @@ describe('the board', () => {
     const [sam, maya] = columns.map((c) => within(c));
     expect(sam.getByText('Sam')).toBeOnTheScreen();
     expect(sam.getByText('Feed the fish')).toBeOnTheScreen();
-    expect(sam.getByText(BOARD_COPY.waits)).toBeOnTheScreen();
-    expect(maya.getByText(BOARD_COPY.photo)).toBeOnTheScreen();
+    expect(sam.getByText(words('today.board.waits'))).toBeOnTheScreen();
+    expect(maya.getByText(words('today.board.photo'))).toBeOnTheScreen();
     expect(screen.queryByText('Cook tea')).toBeNull();
   });
 
   it("ticks a kid's John from the box, and opens its sheet from the row", async () => {
     await open();
-    await fireEvent.press(await screen.findByRole('checkbox', { name: BOARD_COPY.tick('Sam', 'Feed the fish') }));
+    await fireEvent.press(await screen.findByRole('checkbox', { name: words('today.board.tick', { kid: 'Sam', john: 'Feed the fish' }) }));
     await waitFor(() => expect(boardTick).toHaveBeenCalledWith('s1'));
     await fireEvent.press(screen.getByText('Lay the table'));
     expect(mockOpen).toHaveBeenCalledWith('m1');
@@ -87,7 +89,7 @@ describe('the board', () => {
   it("is a parent's, in a family", async () => {
     mockMe = 'sam';
     await open();
-    expect(await screen.findByText(BOARD_COPY.parentsOnly)).toBeOnTheScreen();
+    expect(await screen.findByText(words('today.board.parentsOnly'))).toBeOnTheScreen();
     expect(screen.queryByTestId('board-kid')).toBeNull();
   });
 });

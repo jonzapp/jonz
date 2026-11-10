@@ -14,6 +14,7 @@ import { Body, Meta } from '@/components/text';
 import { useMembership } from '@/hooks/use-membership';
 import { Waiting } from '@/components/waiting';
 import { DoorOutline } from '@/components/page-outlines';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * A join link: /join/CODE on the web, jonz://join/CODE on a phone, the same
@@ -28,6 +29,7 @@ import { DoorOutline } from '@/components/page-outlines';
  * comes back with a `?code=` of its own, and a refusal with `?error=`.)
  */
 export default function Join() {
+  const words = useWords();
   const { joinCode, error } = useLocalSearchParams<{ joinCode: string; error?: string }>();
   const { session, house, refresh } = useMembership();
   const [invite, setInvite] = useState<Invite | null | undefined>(undefined);
@@ -106,7 +108,7 @@ export default function Join() {
           />
         ) : (
           <Sign testID="invite-first">
-            <SignHeading above={JOIN_COPY.invited} title={preview.name} body={joinLine(preview.kind, preview.members)} />
+            <SignHeading above={JOIN_COPY.invited} title={preview.name} body={joinLine(preview.kind, preview.members, words)} />
             <ButtonRow>
               <Button label={FRONT_DOOR_COPY.join} onPress={() => setSigningIn(true)} testID="invite-join" />
             </ButtonRow>
@@ -137,7 +139,7 @@ export default function Join() {
         </Sign>
       ) : (
         <Sign>
-          <SignHeading above={JOIN_COPY.invited} title={invite.name} body={joinLine(invite.kind, invite.members)} />
+          <SignHeading above={JOIN_COPY.invited} title={invite.name} body={joinLine(invite.kind, invite.members, words)} />
           {invite.kind === 'family' ? null : (
             <Body testID="join-stake">
               {invite.stakeMinor > 0 || invite.lateMinor > 0 || invite.missedMinor > 0

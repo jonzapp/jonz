@@ -1,15 +1,4 @@
-import {
-  FAMILY_COPY,
-  familyWaits,
-  formatMoney,
-  HOUSE_KINDS,
-  KIND_SWITCH_COPY,
-  memberCan,
-  nextFirst,
-  switchWords,
-  type HouseKind,
-  BUSY_COPY,
-} from '@app/core';
+import { familyWaits, formatMoney, HOUSE_KINDS, memberCan, nextFirst, switchWords, type HouseKind, BUSY_COPY } from '@app/core';
 import { HouseIcon } from 'lucide-react-native';
 import { useState } from 'react';
 
@@ -23,6 +12,7 @@ import { useToast } from '@/components/toast';
 import type { HouseView } from '@/hooks/use-house';
 import { useMove } from '@/hooks/use-move';
 import { useNow } from '@/hooks/use-now';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * Rules' Who lives here (docs/specs/family-houses.md, "Switching a house"):
@@ -32,6 +22,7 @@ import { useNow } from '@/hooks/use-now';
  * row says so until then, and picking housemates keeps it as it is.
  */
 export function KindSwitch({ houseId, view }: { houseId: string; view: HouseView }) {
+  const words = useWords();
   const toast = useToast();
   const now = useNow();
   const move = useMove(houseId);
@@ -42,13 +33,13 @@ export function KindSwitch({ houseId, view }: { houseId: string; view: HouseView
   const shown: HouseKind = waiting?.kind ?? house.kind;
   const meta = (kind: HouseKind) =>
     waiting && waiting.kind === kind
-      ? KIND_SWITCH_COPY.waits(switchWords(waiting.on).day, switchWords(waiting.on).month)
-      : FAMILY_COPY.kindBody[kind];
+      ? words('house.kindSwitch.waits', { on: switchWords(waiting.on).day, month: switchWords(waiting.on).month })
+      : words(`house.family.kindBody.${kind}` as const);
 
   function done(kind: HouseKind, on: string | null) {
     setAsking(null);
-    if (on) toast.show(KIND_SWITCH_COPY.later(switchWords(on).day));
-    else toast.show(KIND_SWITCH_COPY.done[kind]);
+    if (on) toast.show(words('house.kindSwitch.later', { on: switchWords(on).day }));
+    else toast.show(words(`house.kindSwitch.done.${kind}` as const));
   }
 
   function pick(kind: HouseKind) {
@@ -56,7 +47,7 @@ export function KindSwitch({ houseId, view }: { houseId: string; view: HouseView
     // Picking what the house still is drops a change that was waiting: nothing to ask.
     if (waiting && kind === house.kind) {
       void move.run(() => setHouseKind(houseId, kind)).then((ok) => {
-        if (ok) toast.show(KIND_SWITCH_COPY.done.kept);
+        if (ok) toast.show(words('house.kindSwitch.done.kept'));
       });
       return;
     }
@@ -68,25 +59,25 @@ export function KindSwitch({ houseId, view }: { houseId: string; view: HouseView
   const sheet =
     asking === 'family'
       ? {
-          title: KIND_SWITCH_COPY.toFamilyTitle(house.name),
-          body: later ? KIND_SWITCH_COPY.toFamilyLater(later.day, later.month, cap) : KIND_SWITCH_COPY.toFamilyNow(cap),
-          confirm: KIND_SWITCH_COPY.toFamily,
+          title: words('house.kindSwitch.toFamilyTitle', { house: house.name }),
+          body: later ? words('house.kindSwitch.toFamilyLater', { on: later.day, month: later.month, cap }) : words('house.kindSwitch.toFamilyNow', { cap }),
+          confirm: words('house.kindSwitch.toFamily'),
         }
       : {
-          title: KIND_SWITCH_COPY.toHousematesTitle(house.name),
-          body: KIND_SWITCH_COPY.toHousemates,
-          confirm: KIND_SWITCH_COPY.toHousematesConfirm,
+          title: words('house.kindSwitch.toHousematesTitle', { house: house.name }),
+          body: words('house.kindSwitch.toHousemates'),
+          confirm: words('house.kindSwitch.toHousematesConfirm'),
         };
 
   return (
-    <Section label={KIND_SWITCH_COPY.label} testID="kind-switch">
+    <Section label={words('house.kindSwitch.label')} testID="kind-switch">
       {admin ? (
         <Group>
           {HOUSE_KINDS.map((kind) => (
             <ChoiceRow
               key={kind}
               role="radio"
-              label={FAMILY_COPY.kinds[kind]}
+              label={words(`house.family.kinds.${kind}` as const)}
               meta={meta(kind)}
               metaLines={2}
               checked={kind === shown}
@@ -98,7 +89,7 @@ export function KindSwitch({ houseId, view }: { houseId: string; view: HouseView
         </Group>
       ) : (
         <Group>
-          <Row title={FAMILY_COPY.kinds[shown]} meta={meta(shown)} metaLines={2} testID="kind-now" />
+          <Row title={words(`house.family.kinds.${shown}` as const)} meta={meta(shown)} metaLines={2} testID="kind-now" />
         </Group>
       )}
       <ConfirmSheet

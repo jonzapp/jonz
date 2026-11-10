@@ -15,6 +15,9 @@ import {
   signInLine,
   timeZoneName,
 } from "./front-door";
+import { wordsFor } from "./words-for";
+
+const words = wordsFor("en", "housemates");
 
 describe("afterSignIn", () => {
   it("leads to where the front door's choice or a join link said", () => {
@@ -143,7 +146,7 @@ describe("timeZoneName", () => {
 
 describe("houseDefaults", () => {
   it("says the stake, the week and the zone, in that order", () => {
-    expect(houseDefaults({ currency: "GBP", weekStarts: 1, timezone: "Europe/London" })).toEqual([
+    expect(houseDefaults({ currency: "GBP", weekStarts: 1, timezone: "Europe/London", words })).toEqual([
       "GBP 20 a month each",
       "weeks start Monday",
       "Europe/London",
@@ -151,7 +154,7 @@ describe("houseDefaults", () => {
   });
 
   it("follows the currency, the day and the zone as they change", () => {
-    expect(houseDefaults({ currency: "CAD", weekStarts: 7, timezone: "America/St_Johns" })).toEqual([
+    expect(houseDefaults({ currency: "CAD", weekStarts: 7, timezone: "America/St_Johns", words })).toEqual([
       "CAD 20 a month each",
       "weeks start Sunday",
       "America/St Johns",
@@ -159,11 +162,11 @@ describe("houseDefaults", () => {
   });
 
   it("shows pence only when there are some, and a stake of nothing as 0", () => {
-    expect(houseDefaults({ currency: "EUR", weekStarts: 3, timezone: "Europe/Dublin", stakeMinor: 2050 })[0]).toBe(
+    expect(houseDefaults({ currency: "EUR", weekStarts: 3, timezone: "Europe/Dublin", stakeMinor: 2050, words })[0]).toBe(
       "EUR 20.50 a month each",
     );
-    expect(houseDefaults({ currency: "USD", weekStarts: 1, timezone: "UTC", stakeMinor: 0 })[0]).toBe("USD 0 a month each");
-    expect(houseDefaults({ currency: "USD", weekStarts: 1, timezone: "UTC", stakeMinor: 5 })[0]).toBe("USD 0.05 a month each");
+    expect(houseDefaults({ currency: "USD", weekStarts: 1, timezone: "UTC", stakeMinor: 0, words })[0]).toBe("USD 0 a month each");
+    expect(houseDefaults({ currency: "USD", weekStarts: 1, timezone: "UTC", stakeMinor: 5, words })[0]).toBe("USD 0.05 a month each");
   });
 });
 

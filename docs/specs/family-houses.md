@@ -148,7 +148,7 @@ their profile, and each John can say how old you have to be for it.
 ## Step 5: the Family Pass, and open to everyone
 
 - The Pass is the same Pass at the same price. In a family it is called the
-  **Family Pass** (`FAMILY_PASS_COPY`, `passWords`): the House row, the Pass
+  **Family Pass** (`house.familyPass.*` in the words files, `passWords`): the House row, the Pass
   page's title and lead ("Only a parent can buy it, and every kid gets the
   extras"), and its extras: Pocket money and Pay day, Kid profiles, Photos
   to check, All your history.

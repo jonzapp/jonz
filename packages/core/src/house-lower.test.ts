@@ -59,7 +59,7 @@ function event(overrides: Partial<WallRow> = {}): WallEvent {
   )[0];
 }
 
-const row = (overrides: Partial<WallRow> = {}, at: Partial<WallScene> = {}) => wallFeedRow(event(overrides), scene(at));
+const row = (overrides: Partial<WallRow> = {}, at: Partial<WallScene> = {}) => wallFeedRow(event(overrides), scene(at), words);
 
 describe("wallAge", () => {
   const ago = (ms: number) => new Date(NOW.getTime() - ms);
@@ -135,11 +135,11 @@ describe("wallFeedRow", () => {
     const earlier = event({ id: "e3", kind: "upheld", user_id: null, created_at: "2026-10-14T10:00:00Z" });
     const struck = struckAt([verdict, earlier, event({ id: "e4", kind: "upheld", assignment_id: null })]);
     expect(struck).toEqual(new Map([["a1", new Date("2026-10-15T10:00:00Z")]]));
-    expect(wallFeedRow(tick, scene({ struck })).detail).toBe(WALL_FEED_COPY.struck);
+    expect(wallFeedRow(tick, scene({ struck }), words).detail).toBe(WALL_FEED_COPY.struck);
     const again = event({ created_at: "2026-10-15T12:00:00Z" });
-    expect(wallFeedRow(again, scene({ struck })).detail).toBe(WALL_FEED_COPY.onTime);
+    expect(wallFeedRow(again, scene({ struck }), words).detail).toBe(WALL_FEED_COPY.onTime);
     // This week's board knows better.
-    expect(wallFeedRow(tick, scene({ struck, statusOf: () => "checking" })).detail).toBe(WALL_FEED_COPY.checking);
+    expect(wallFeedRow(tick, scene({ struck, statusOf: () => "checking" }), words).detail).toBe(WALL_FEED_COPY.checking);
     expect(struckAt([])).toEqual(new Map());
   });
 
@@ -409,7 +409,7 @@ describe("wallFeedRow on flags, undos and resets", () => {
 
 describe("wallDays", () => {
   const at = (iso: string, overrides: Partial<WallRow> = {}): WallFeedRow =>
-    wallFeedRow(event({ id: iso, created_at: iso, ...overrides }), scene({ clock: true }));
+    wallFeedRow(event({ id: iso, created_at: iso, ...overrides }), scene({ clock: true }), words);
 
   it("is nothing for an empty Wall", () => {
     expect(wallDays([], ZONE, NOW)).toEqual([]);

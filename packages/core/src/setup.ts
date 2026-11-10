@@ -1,7 +1,7 @@
 // House setup's pages: the rules as label and value, the Johns by category, a John's schedule line and the admins' names.
 import { isoDayOf, shiftMonth, type AwayPeriod } from "./away";
 import type { BoardItem, JohnDef } from "./board";
-import { FOCUS_SHELL_COPY, PARENT_OK_COPY, POCKET_COPY } from "./copy";
+import { FOCUS_SHELL_COPY } from "./copy";
 import { MAKEUP_LABEL } from "./deal";
 import { CATEGORIES, CATEGORY_LABEL, DOW_LABEL, type Category, type Currency, type DealMode, type HouseKind, type HouseRules, type IsoDow, type SettleIn } from "./domain";
 import { familyHides } from "./family";
@@ -140,8 +140,8 @@ export function rulesRows(
     // Nor a vote: the check window's row says who OKs a kid's tick instead.
     const rows = rulesRows(rules, awayMakeup, words)
       .filter((row) => row.label !== words('house.setup.stake') && row.label !== words('house.setup.late') && row.label !== words('house.setup.missed'))
-      .map((row) => (row.label === words('house.setup.disputes') ? { label: PARENT_OK_COPY.rulesLabel, value: PARENT_OK_COPY.rulesValue } : row));
-    rows.splice(2, 0, { label: POCKET_COPY.rulesLabel, value: POCKET_COPY.rulesValue(formatMoney(pocketCapMinor, rules.currency)) });
+      .map((row) => (row.label === words('house.setup.disputes') ? { label: words('today.parentOk.rulesLabel'), value: words('today.parentOk.rulesValue') } : row));
+    rows.splice(2, 0, { label: words('house.pocket.rulesLabel'), value: words('house.pocket.rulesValue', { cap: formatMoney(pocketCapMinor, rules.currency) }) });
     return rows;
   }
   const rows: LabelValue[] = [

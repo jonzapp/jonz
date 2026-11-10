@@ -1,4 +1,4 @@
-import { buildStake, KIDS_COPY, POCKET_COPY, pocketView } from '@app/core';
+import { buildStake, pocketView, wordsFor } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 import { Text, useWindowDimensions } from 'react-native';
 
@@ -14,6 +14,8 @@ import HouseScreen from '@/app/(house)/house';
 import PocketScreen from '@/app/(house)/house/pocket';
 import { snapshot } from '@/testing/house';
 import { renderPages, untilRead } from '@/testing/pages';
+
+const words = wordsFor('en', 'housemates');
 
 jest.mock('@/api/away', () => ({ loadAway: jest.fn() }));
 jest.mock('@/api/board', () => ({ loadHouse: jest.fn() }));
@@ -136,7 +138,7 @@ describe("a family's House", () => {
     const rows = table.getAllByTestId('standing');
     expect(rows.map((r) => within(r).queryByText('£2.70') ?? within(r).queryByText('£4.50'))).not.toContain(null);
     expect(table.queryByText('Priya')).toBeNull();
-    expect(table.getByText(POCKET_COPY.howItWorks)).toBeOnTheScreen();
+    expect(table.getByText(words('house.pocket.howItWorks'))).toBeOnTheScreen();
   });
 });
 
@@ -149,7 +151,7 @@ describe('adding a child', () => {
     await fireEvent.changeText(form.getByTestId('kid-name'), 'Kit Park');
     await fireEvent.changeText(form.getByTestId('kid-born'), '20');
     await fireEvent.press(form.getByTestId('add-kid'));
-    expect(form.getByText(KIDS_COPY.problems.born)).toBeOnTheScreen();
+    expect(form.getByText(words('people.kids.problems.born'))).toBeOnTheScreen();
     expect(addKid).not.toHaveBeenCalled();
     await fireEvent.changeText(form.getByTestId('kid-born'), String(new Date().getFullYear() - 7));
     await fireEvent.press(form.getByTestId('add-kid'));

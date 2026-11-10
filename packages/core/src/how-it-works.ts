@@ -7,7 +7,7 @@
  * tool, then walks the person through it with their numbers from the other
  * reads (balances, stake, why_john).
  */
-import { APP_NAME, PASS_COPY } from "./copy";
+import { APP_NAME } from "./copy";
 import type { HouseRules } from "./domain";
 import { formatMoney } from "./money";
 import { PASS_ENFORCED, PASS_PRICES, PASS_TRIAL_DAYS } from "./pass";
@@ -134,12 +134,12 @@ export function howItWorks(
       ].join("\n");
     case "house_pass":
       return [
-        `${PASS_COPY.lead}`,
-        `What it adds: ${PASS_COPY.stake} (${PASS_COPY.stakeMeta.toLowerCase()}), ${PASS_COPY.table} (${PASS_COPY.tableMeta.toLowerCase()}), ${PASS_COPY.photos} (${PASS_COPY.photosMeta.toLowerCase()}), ${PASS_COPY.history.toLowerCase()}, and changing the John list with Ask Jonz.`,
-        PASS_COPY.free,
+        `${words('house.pass.lead')}`,
+        `What it adds: ${words('house.pass.stake')} (${words('house.pass.stakeMeta').toLowerCase()}), ${words('house.pass.table')} (${words('house.pass.tableMeta').toLowerCase()}), ${words('house.pass.photos')} (${words('house.pass.photosMeta').toLowerCase()}), ${words('house.pass.history').toLowerCase()}, and changing the John list with Ask Jonz.`,
+        words('house.pass.free'),
         `Prices: ${formatMoney(prices.yearly, rules.currency)} a year (about ${formatMoney(Math.round(prices.yearly / 12), rules.currency)} a month), or ${formatMoney(prices.monthly, rules.currency)} a month; Founding houses ${formatMoney(prices.founding, rules.currency)} once, for life. Every new house gets a free month (${PASS_TRIAL_DAYS} days) first.`,
-        `Why it costs anything: ${PASS_COPY.money.replace("Where the money goes: ", "")}`,
-        PASS_COPY.hardship,
+        `Why it costs anything: ${words('house.pass.money').replace("Where the money goes: ", "")}`,
+        words('house.pass.hardship'),
         PASS_ENFORCED
           ? ""
           : "Right now nothing is locked: every house keeps everything while the Pass is new.",

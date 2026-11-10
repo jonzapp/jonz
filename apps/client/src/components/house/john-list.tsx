@@ -1,4 +1,4 @@
-import { CATEGORIES, CATEGORY_LABEL, CREW_CHOICES, crewLine, CURRENCY_SYMBOL, johnFacts, johnsByKind, listLine, moneyInput, NEW_JOHN, KIDS_COPY, parseMinAge, parseMoney, pocketMoney, POCKET_COPY, pointsLabel, weeklyEffort, type Category, type GroupDef, type HouseRules, type JohnDef, BUSY_COPY } from '@app/core';
+import { CATEGORIES, CATEGORY_LABEL, CREW_CHOICES, crewLine, CURRENCY_SYMBOL, johnFacts, johnsByKind, listLine, moneyInput, NEW_JOHN, parseMinAge, parseMoney, pocketMoney, pointsLabel, weeklyEffort, type Category, type GroupDef, type HouseRules, type JohnDef, BUSY_COPY } from '@app/core';
 import { ListTodoIcon, PlusIcon, SparklesIcon, Trash2Icon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -168,8 +168,8 @@ export function JohnList({
                   <Section label={CATEGORY_LABEL[kind.category]} right={String(kind.johns.length)} testID={`kind-${kind.category}`}>
                     {kind.johns.map((j) => {
                       const schedule = listLine(j, words, groupName(j.groupId));
-                      const earns = family && j.payMinor ? POCKET_COPY.earns(pocketMoney(j.payMinor, rules.currency)) : null;
-                      const aged = family && j.minAge ? KIDS_COPY.minAgeLine(j.minAge) : null;
+                      const earns = family && j.payMinor ? words('house.pocket.earns', { money: pocketMoney(j.payMinor, rules.currency) }) : null;
+                      const aged = family && j.minAge ? words('people.kids.minAgeLine', { age: j.minAge }) : null;
                       // Whether it keeps its day is in its own sheet, with the rest of its details.
                       const line = [schedule, j.crew === 1 ? null : words('john.crew.choice', { crew: j.crew }), earns, aged]
                         .filter(Boolean)
@@ -289,7 +289,7 @@ function JohnForm({
     }
     const minAge = family ? parseMinAge(age) : undefined;
     if (family && minAge === undefined) {
-      setAgeProblem(KIDS_COPY.problems.minAge);
+      setAgeProblem(words('people.kids.problems.minAge'));
       return;
     }
     if (await move.run(() => saveJohn(houseId, rules, family ? { ...v, payMinor, minAge } : v, new Date()))) onDone();
@@ -341,14 +341,14 @@ function JohnForm({
           {family ? (
             <GroupItem>
               <Field
-                label={`${POCKET_COPY.johnField} (${CURRENCY_SYMBOL[rules.currency]})`}
+                label={`${words('house.pocket.johnField')} (${CURRENCY_SYMBOL[rules.currency]})`}
                 value={pay}
                 onChangeText={(text) => {
                   setPay(text);
                   setPayProblem(null);
                 }}
                 keyboardType="decimal-pad"
-                hint={POCKET_COPY.johnFieldMeta}
+                hint={words('house.pocket.johnFieldMeta')}
                 problem={payProblem ?? undefined}
                 testID="john-pay"
               />
@@ -357,7 +357,7 @@ function JohnForm({
           {family ? (
             <GroupItem>
               <Field
-                label={KIDS_COPY.minAgeField}
+                label={words('people.kids.minAgeField')}
                 value={age}
                 onChangeText={(text) => {
                   setAge(text);
@@ -365,7 +365,7 @@ function JohnForm({
                 }}
                 keyboardType="number-pad"
                 maxLength={2}
-                hint={KIDS_COPY.minAgeMeta}
+                hint={words('people.kids.minAgeMeta')}
                 problem={ageProblem ?? undefined}
                 testID="john-min-age"
               />

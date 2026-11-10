@@ -1,4 +1,4 @@
-import { humanError, OFFER_PAGE_COPY, PASS_COPY, PROMOTION_COPY, type OfferView, type PassPurchase } from '@app/core';
+import { humanError, OFFER_PAGE_COPY, PROMOTION_COPY, type OfferView, type PassPurchase } from '@app/core';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
@@ -19,6 +19,7 @@ import { useMembership } from '@/hooks/use-membership';
 import { SPACE } from '@/theme';
 import { Waiting } from '@/components/waiting';
 import { DoorOutline } from '@/components/page-outlines';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * An offer's link: /offer/CODE. Open to anyone, like a join link, on a taped
@@ -68,6 +69,7 @@ export default function Offer() {
 }
 
 function LiveOffer({ view, signedIn, onSignIn }: { view: OfferView; signedIn: boolean; onSignIn: () => void }) {
+  const words = useWords();
   const { house } = useMembership();
   const gift = view.kind === 'gift';
   const [plan, setPlan] = useState<PassPurchase | null>(view.prices[0]?.plan ?? null);
@@ -125,7 +127,7 @@ function LiveOffer({ view, signedIn, onSignIn }: { view: OfferView; signedIn: bo
           </ButtonRow>
         </View>
       ) : !canBuy ? (
-        <Meta testID="offer-web-only">{Platform.OS === 'web' ? PASS_COPY.checkoutClosed : OFFER_PAGE_COPY.webOnly}</Meta>
+        <Meta testID="offer-web-only">{Platform.OS === 'web' ? words('house.pass.checkoutClosed') : OFFER_PAGE_COPY.webOnly}</Meta>
       ) : (
         <View style={styles.group}>
           {use.error ? <Alert message={use.error.message} /> : null}

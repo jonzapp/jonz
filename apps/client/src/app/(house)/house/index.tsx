@@ -1,4 +1,4 @@
-import { familyHides, memberCan, monthOf, overviewFigures, PAGE_TITLE, PASS_COPY, passUnlocked, type OverviewFigure } from '@app/core';
+import { familyHides, memberCan, monthOf, overviewFigures, PAGE_TITLE, passUnlocked, type OverviewFigure } from '@app/core';
 import type { Href } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -165,7 +165,7 @@ function HouseSections({
           {stake.data ? <SettleUpSection houseId={houseId} userId={userId} view={view} stake={stake.data} /> : null}
         </>
       ) : (
-        <PassLocked label={PASS_COPY.stake} feature={PASS_COPY.stake} testID="stake-locked" />
+        <PassLocked label={words('house.pass.stake')} feature={words('house.pass.stake')} testID="stake-locked" />
       )}
       <Pair
         testID="house-pair"
@@ -173,7 +173,7 @@ function HouseSections({
           unlocked ? (
             <TableSection userId={userId} view={view} table={table} stake={stake} away={away} pocket={pocket} />
           ) : (
-            <PassLocked label={PASS_COPY.table} feature={PASS_COPY.table} testID="table-locked" />
+            <PassLocked label={words('house.pass.table')} feature={words('house.pass.table')} testID="table-locked" />
           )
         }
         end={<WallSection houseId={houseId} userId={userId} view={view} />}

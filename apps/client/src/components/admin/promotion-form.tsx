@@ -1,26 +1,4 @@
-import {
-  draftProblems,
-  draftRequest,
-  draftTerms,
-  formatDay,
-  GIFT_LENGTHS,
-  newPromotionCode,
-  parsePeople,
-  PASS_PURCHASES,
-  planPrice,
-  PROMOTION_AUDIENCES,
-  PROMOTION_DRAFT,
-  PROMOTION_DURATIONS,
-  PROMOTION_ENDS,
-  PROMOTION_KINDS,
-  PROMOTION_LIMITS,
-  promotionProblems,
-  PROMOTIONS_COPY,
-  PASS_COPY,
-  type PassPurchase,
-  type PromotionDraft,
-  type PromotionMade,
-} from '@app/core';
+import { draftProblems, draftRequest, draftTerms, formatDay, GIFT_LENGTHS, newPromotionCode, parsePeople, PASS_PURCHASES, planPrice, PROMOTION_AUDIENCES, PROMOTION_DRAFT, PROMOTION_DURATIONS, PROMOTION_ENDS, PROMOTION_KINDS, PROMOTION_LIMITS, promotionProblems, PROMOTIONS_COPY, type PassPurchase, type PromotionDraft, type PromotionMade, wordsFor } from '@app/core';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { EyeIcon, SparklesIcon } from 'lucide-react-native';
@@ -41,7 +19,9 @@ import { Meta } from '@/components/text';
 import { useToast } from '@/components/toast';
 import { SPACE } from '@/theme';
 
-const PLAN_LABEL: Record<PassPurchase, string> = { yearly: PASS_COPY.yearly, monthly: PASS_COPY.monthly, founding: PASS_COPY.foundingPlan };
+// The owner's pages are in English for now (translation 6).
+const english = wordsFor('en', 'housemates');
+const PLAN_LABEL: Record<PassPurchase, string> = { yearly: english('house.pass.yearly'), monthly: english('house.pass.monthly'), founding: english('house.pass.foundingPlan') };
 
 /**
  * A new promotion, to fill in and make: money off the House Pass, some

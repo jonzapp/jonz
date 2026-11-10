@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { buildWeekBoard, todayView, type AssignmentRow, type BoardItem, type WeekBoard } from "./board";
-import { FOCUS_SHELL_COPY, PARENT_OK_COPY } from "./copy";
+import { FOCUS_SHELL_COPY } from "./copy";
 import { DEFAULT_RULES } from "./domain";
 import { familyHides } from "./family";
 import { settleOutcome } from "./outcome";
@@ -71,7 +71,7 @@ describe("a tick waiting for an OK", () => {
   it("is being checked, with no time it stands", () => {
     const item = boardOf([row("Feed the fish", { done_at: at(-2).toISOString(), awaits_ok: true })]).items[0];
     expect(item).toMatchObject({ status: "checking", awaitsOk: true, standsAt: null });
-    expect(tickedLine(item, PEOPLE, "sam", RULES, now, words)).toBe(`Leo ticked this at 10:00, ${PARENT_OK_COPY.waiting}`);
+    expect(tickedLine(item, PEOPLE, "sam", RULES, now, words)).toBe(`Leo ticked this at 10:00, ${words('today.parentOk.waiting')}`);
   });
 });
 
@@ -94,7 +94,7 @@ describe("Needs your OK", () => {
   it("says who did what, when, and who can answer", () => {
     const fish = board.items.find((i) => i.name === "Feed the fish") as BoardItem;
     expect(okTitle(fish, PEOPLE, words)).toBe("Leo did Feed the fish");
-    expect(okMeta(fish, now)).toBe("Ticked 2h ago");
+    expect(okMeta(fish, now, words)).toBe("Ticked 2h ago");
     expect(okWho(fish, PEOPLE, ["sam", "alex"], "alex", words)).toBe("You or Sam can OK it. Not yet sends it back to Leo.");
     expect(okWho(fish, PEOPLE, ["sam"], "maya", words)).toBe("Sam can OK it. Not yet sends it back to Leo.");
   });
@@ -106,7 +106,7 @@ describe("a family's rules and words", () => {
     expect(familyHides("housemates").vote).toBe(false);
     const rows = rulesRows({ ...RULES, stakeMinor: 0, lateForfeitMinor: 0, missedForfeitMinor: 0 }, 100, words, "jonz", "family");
     expect(rows.map((r) => r.label)).not.toContain(words('house.setup.disputes'));
-    expect(rows).toContainEqual({ label: PARENT_OK_COPY.rulesLabel, value: PARENT_OK_COPY.rulesValue });
+    expect(rows).toContainEqual({ label: words('today.parentOk.rulesLabel'), value: words('today.parentOk.rulesValue') });
   });
 
   it("puts a parent's answer on the Wall", () => {

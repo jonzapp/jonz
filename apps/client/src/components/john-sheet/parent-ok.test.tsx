@@ -1,4 +1,4 @@
-import { PARENT_OK_COPY , wordsFor } from '@app/core';
+import { wordsFor } from '@app/core';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { Pressable, Text } from 'react-native';
@@ -73,9 +73,9 @@ describe("a kid's tick in the John sheet", () => {
   it('offers a parent OK it and Not yet, never a dispute', async () => {
     await openAs('priya');
     expect(await screen.findByTestId('ok-who')).toHaveTextContent('You can OK it. Not yet sends it back to Sam.');
-    expect(screen.getByTestId('ticked-line')).toHaveTextContent(PARENT_OK_COPY.waiting, { exact: false });
+    expect(screen.getByTestId('ticked-line')).toHaveTextContent(words('today.parentOk.waiting'), { exact: false });
     expect(screen.queryByRole('button', { name: words('john.dispute.open') })).toBeNull();
-    await fireEvent.press(screen.getByRole('button', { name: PARENT_OK_COPY.ok }));
+    await fireEvent.press(screen.getByRole('button', { name: words('today.parentOk.ok') }));
     await waitFor(() => expect(answerTick).toHaveBeenCalledWith('a4', true));
   });
 
@@ -87,14 +87,14 @@ describe("a kid's tick in the John sheet", () => {
 
   it('sends it back on Not yet', async () => {
     await openAs('priya');
-    await fireEvent.press(await screen.findByRole('button', { name: PARENT_OK_COPY.notYet }));
+    await fireEvent.press(await screen.findByRole('button', { name: words('today.parentOk.notYet') }));
     await waitFor(() => expect(answerTick).toHaveBeenCalledWith('a4', false));
   });
 
   it('tells the kid it waits, and leaves them Undo', async () => {
     await openAs('sam');
-    expect(await screen.findByTestId('ticked-line')).toHaveTextContent(PARENT_OK_COPY.waiting, { exact: false });
-    expect(screen.queryByRole('button', { name: PARENT_OK_COPY.ok })).toBeNull();
+    expect(await screen.findByTestId('ticked-line')).toHaveTextContent(words('today.parentOk.waiting'), { exact: false });
+    expect(screen.queryByRole('button', { name: words('today.parentOk.ok') })).toBeNull();
     expect(screen.getByTestId('sheet-undo')).toBeOnTheScreen();
   });
 });

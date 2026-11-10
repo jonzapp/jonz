@@ -1,18 +1,4 @@
-import {
-  FAMILY_PASS_COPY,
-  hasPass,
-  LEGAL,
-  PAGE_TITLE,
-  PASS_COPY,
-  passWords,
-  type PassExtra,
-  PASS_FREE_HISTORY_WEEKS,
-  passFirstChargeNote,
-  passLine,
-  passOffers,
-  passPurchaseRefusal,
-  type PassPurchase,
-} from '@app/core';
+import { hasPass, LEGAL, PAGE_TITLE, passWords, type Words, type PassExtra, PASS_FREE_HISTORY_WEEKS, passFirstChargeNote, passLine, passOffers, passPurchaseRefusal, type PassPurchase } from '@app/core';
 import { useLocalSearchParams } from 'expo-router';
 import { CameraIcon, CoinsIcon, CreditCardIcon, HistoryIcon, TrophyIcon, UserRoundIcon, type LucideIcon } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
@@ -32,6 +18,7 @@ import { useMembership } from '@/hooks/use-membership';
 import { usePull, useReadOnFocus } from '@/hooks/use-refresh';
 import { INSET, SPACE } from '@/theme';
 import { SettingsOutline } from '@/components/page-outlines';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * The House Pass, pushed from House: where the house stands, what the Pass
@@ -53,6 +40,7 @@ const BOUGHT_READ_MS = 3000;
 const BOUGHT_READS = 10;
 
 function PassFor({ houseId, userId }: { houseId: string; userId: string }) {
+  const words = useWords();
   const { query, view } = useHouse(houseId, userId);
   // A purchase lands from the store's webhook, not over Realtime.
   useReadOnFocus(query.refetch);
@@ -82,13 +70,13 @@ function PassFor({ houseId, userId }: { houseId: string; userId: string }) {
       leaveFor(await url());
     } catch (e) {
       setLeaving(false);
-      toast.show(e instanceof ApiRequestError ? e.message : PASS_COPY.checkoutClosed);
+      toast.show(e instanceof ApiRequestError ? e.message : words('house.pass.checkoutClosed'));
     }
   }
 
   return (
     <HousePage
-      title={view?.snapshot.house.kind === 'family' ? FAMILY_PASS_COPY.title : PAGE_TITLE.pass}
+      title={view?.snapshot.house.kind === 'family' ? words('house.familyPass.title') : PAGE_TITLE.pass}
       testID="pass-screen" outline={<SettingsOutline card />}
       fills
       ready={view !== null}
@@ -133,49 +121,50 @@ function PassReadOut({
   onBuy: (plan: PassPurchase) => void;
   onManage: () => void;
 }) {
+  const words = useWords();
   const { house, rules, members } = view.snapshot;
   const { now } = view;
   const { pass } = house;
   // A family's Pass is the Family Pass, with a family's extras.
-  const words = passWords(house.kind, PASS_FREE_HISTORY_WEEKS);
+  const sign = passWords(house.kind, PASS_FREE_HISTORY_WEEKS, words);
   const founding = pass.plan === 'founding';
   const buyer = pass.buyerId ? members.find((m) => m.userId === pass.buyerId)?.name : undefined;
   const checkout = passCheckoutOpen();
   // Nothing is sold while everyone has the extras anyway.
   const selling = passSelling();
   // Selling, a house sees only what it can buy now: a house on a paid plan changes it from Manage.
-  const offers = passOffers(rules.currency).filter((o) => !selling || passPurchaseRefusal(pass, o.plan, now) === null);
+  const offers = passOffers(rules.currency, words).filter((o) => !selling || passPurchaseRefusal(pass, o.plan, now, words) === null);
   const canManage = checkout && pass.buyerId === userId && (pass.plan === 'monthly' || pass.plan === 'yearly');
-  const firstCharge = selling ? passFirstChargeNote(pass, now, rules.timezone) : null;
+  const firstCharge = selling ? passFirstChargeNote(pass, now, rules.timezone, words) : null;
   // Only once the free month or a plan has ended, so a new house isn't steered away from paying.
   const askFree = !hasPass(pass, now);
   return (
     <>
       <View style={styles.words}>
-        <Body testID="pass-lead">{founding ? words.foundingLead : words.lead}</Body>
+        <Body testID="pass-lead">{founding ? sign.foundingLead : sign.lead}</Body>
         <Meta testID="pass-line">
-          {buyer ? `${passLine(pass, now, rules.timezone)}, ${PASS_COPY.boughtBy(buyer)}` : passLine(pass, now, rules.timezone)}
+          {buyer ? `${passLine(pass, now, rules.timezone, words)}, ${words('house.pass.boughtBy', { name: buyer })}` : passLine(pass, now, rules.timezone, words)}
         </Meta>
-        {waiting ? <Meta testID="pass-bought">{words.bought}</Meta> : null}
+        {waiting ? <Meta testID="pass-bought">{sign.bought}</Meta> : null}
       </View>
 
       <Pair
         testID="pass-pair"
         start={
-          <Section label={words.includes}>
-            {words.extras.map((extra) => (
+          <Section label={sign.includes}>
+            {sign.extras.map((extra) => (
               <Row key={extra.key} leading={<RowIcon icon={EXTRA_ICON[extra.key]} />} title={extra.title} meta={extra.meta} />
             ))}
           </Section>
         }
         end={
           founding ? null : (
-            <Section label={PASS_COPY.plans} testID="pass-plans">
+            <Section label={words('house.pass.plans')} testID="pass-plans">
               {canManage ? (
                 <Row
                   leading={<RowIcon icon={CreditCardIcon} />}
-                  title={PASS_COPY.manage}
-                  meta={PASS_COPY.manageMeta}
+                  title={words('house.pass.manage')}
+                  meta={words('house.pass.manageMeta')}
                   onPress={onManage}
                   disabled={leaving}
                   chevron
@@ -201,18 +190,18 @@ function PassReadOut({
       <View style={styles.words}>
         {firstCharge ? <Meta testID="pass-first-charge">{firstCharge}</Meta> : null}
         {founding || selling ? null : (
-          <Meta testID="pass-soon">{checkout ? PASS_COPY.betaFree : PASS_COPY.buyingSoon}</Meta>
+          <Meta testID="pass-soon">{checkout ? words('house.pass.betaFree') : words('house.pass.buyingSoon')}</Meta>
         )}
-        {selling ? <Meta testID="pass-renewal">{PASS_COPY.renewal}</Meta> : null}
-        <Meta>{words.free}</Meta>
-        <Meta testID="pass-money">{PASS_COPY.money}</Meta>
+        {selling ? <Meta testID="pass-renewal">{words('house.pass.renewal')}</Meta> : null}
+        <Meta>{sign.free}</Meta>
+        <Meta testID="pass-money">{words('house.pass.money')}</Meta>
         {askFree ? (
           <>
-            <Meta testID="pass-hardship">{PASS_COPY.hardship}</Meta>
-            <TextLink href={ASK_FREE} label={PASS_COPY.askFree} muted testID="pass-ask-free" />
+            <Meta testID="pass-hardship">{words('house.pass.hardship')}</Meta>
+            <TextLink href={askFreeLink(words)} label={words('house.pass.askFree')} muted testID="pass-ask-free" />
           </>
         ) : null}
-        <TextLink href="/terms" label={PASS_COPY.terms} muted testID="pass-terms" />
+        <TextLink href="/terms" label={words('house.pass.terms')} muted testID="pass-terms" />
       </View>
     </>
   );
@@ -228,7 +217,7 @@ const EXTRA_ICON: Record<PassExtra['key'], LucideIcon> = {
 };
 
 /** An email to whoever runs Jonz, for a house that can't pay. */
-const ASK_FREE = `mailto:${LEGAL.email}?subject=${encodeURIComponent(PASS_COPY.askFreeSubject)}` as const;
+const askFreeLink = (words: Words) => `mailto:${LEGAL.email}?subject=${encodeURIComponent(words('house.pass.askFreeSubject'))}`;
 
 const styles = StyleSheet.create({
   // On the leading edge, where the sections' labels start.
