@@ -39,6 +39,16 @@ function rightOf(box: { x: number; width: number } | null): number {
   return (box?.x ?? 0) + (box?.width ?? 0);
 }
 
+/**
+ * A page in two columns runs its main column to the side panel at any width,
+ * a section gap short of its hairline, so no room is left blank between them.
+ */
+async function runsToThePanel(screen: Locator) {
+  const main = await screen.getByTestId("column-main").boundingBox();
+  const side = await screen.getByTestId("column-side").boundingBox();
+  expect(Math.abs((side?.x ?? 0) - rightOf(main) - 32)).toBeLessThan(2);
+}
+
 /** A House page that fills the room runs its last column out to the window's gutter, short of FILL_MAX. */
 async function fillsTheRoom(page: Page, lastColumn: Locator) {
   const window = page.viewportSize()?.width ?? 0;
@@ -106,6 +116,11 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   // The columns share a top edge: Next up's card and the group beside it, under the day's line and its label.
   expect(await topOf(today.getByTestId("next-up"))).toBeCloseTo(await topOf(groupOf(today.getByTestId("week-glance"))), 0);
   await holdsTheEdges(page, today, today.getByTestId("next-up"));
+  // Next up beside the rest of your week, the two sharing a top edge, in a main column that runs to the panel.
+  await expect(today.getByTestId("today-pair-start").getByTestId("next-up")).toBeVisible();
+  await expect(today.getByTestId("today-pair-end").getByTestId("rest-of-week")).toBeVisible();
+  expect(await topOf(today.getByTestId("today-pair-start"))).toBeCloseTo(await topOf(today.getByTestId("today-pair-end")), 0);
+  await runsToThePanel(today);
   await shoot(page, "today");
 
   await page.getByRole("tab", { name: SECTION_LABEL.week }).click();
@@ -116,7 +131,20 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   // The summary heads the board in the main column, with the Table in the panel beside it.
   await expect(week.getByTestId("column-main").getByTestId("week-summary")).toBeVisible();
   await holdsTheEdges(page, week, week.getByTestId("week-summary"));
+  await runsToThePanel(week);
   await shoot(page, "week");
+
+  // On a big screen the main column still runs to the panel, on Week and on Today.
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await runsToThePanel(week);
+  await shoot(page, "week-wide");
+  await page.getByRole("tab", { name: SECTION_LABEL.today }).click();
+  await runsToThePanel(today);
+  await expect(today.getByTestId("today-pair-end").getByTestId("rest-of-week")).toBeVisible();
+  await shoot(page, "today-wide");
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.getByRole("tab", { name: SECTION_LABEL.week }).click();
+  await expect(page.getByRole("heading", { name: PAGE_TITLE.week })).toBeVisible();
 
   // The Table shows the week or the month from the menu in its header, dropped from its words.
   const span = week.getByTestId("table-span");

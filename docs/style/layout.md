@@ -73,16 +73,22 @@ still look right stretched (content capped, nothing pinned to far edges).
 
 ## Laptop pages
 
-- **The docked side panel:** main content up to `MAIN_MAX` (1040) from the
-  left, and a side panel docked at the window's right edge behind a hairline
-  (`Columns`). Nothing floats centred in empty space; a one-column page sits
-  at the left. (Option C, #59) *Backed by* Material's list-detail and
-  supporting-pane layouts and the HIG's split view.
-- **The owner's pages use the whole room** (`MainToPanel`, set by
-  `AdminShell`): the main column runs to the side panel at any width, not
-  stopping at `MAIN_MAX`, since its lists are tables. A page a phone pushes
-  (a house, a report) opens beside its list on a laptop instead, never in
-  one column with the room blank beside it. (Owner admin, 7 Nov)
+- **The docked side panel:** a main column from the left, and a side panel
+  docked at the window's right edge behind a hairline (`Columns`). The main
+  column runs to the panel at any width (Today, Week and the owner's pages
+  alike), so no room is left blank between them on a big screen, and a
+  `Pair` or `Flow` in it shares that width out as on a page that fills the
+  room. Nothing floats centred in empty space; a one-column page sits at
+  the left. (Option C, #59; Laptop width B, 10 Nov) *Backed by* Material's
+  list-detail and supporting-pane layouts and the HIG's split view.
+- **Today on a laptop:** Next up (under the day's line) beside the rest of
+  your week (`Pair`), the two sharing a top edge; what the house wants of
+  you (Needs you, On call, This week) in the panel. Where the main column
+  has no room for two, they stack as on a phone. (Laptop width B, 10 Nov)
+- **The owner's pages use the whole room:** their lists are tables, so the
+  main column running to the panel suits them. A page a phone pushes (a
+  house, a report) opens beside its list on a laptop instead, never in one
+  column with the room blank beside it. (Owner admin, 7 Nov)
 - Things side by side share a top edge: the page's first line sits in the
   main column so a bare card in main lines up with the side's first group.
   (#48)
@@ -96,7 +102,7 @@ still look right stretched (content capped, nothing pinned to far edges).
   `fills`), up to `FILL_MAX` (1600), with our own sections (the name above
   a grey group) side by side. `Flow` shares out a page's sections of one
   kind (the John list's kinds, a housemate's record) into as many columns
-  of at least `COLUMN_MIN` (360) as fit, two on a 1440 laptop and three on
+  of at least `COLUMN_MIN` (352) as fit, two on a 1440 laptop and three on
   a 1920 screen, each to the shortest column so the columns end near each
   other. `Pair` puts two stacks side by side: what a page gives or explains
   beside what you choose. A page's own tools sit at the top right over the

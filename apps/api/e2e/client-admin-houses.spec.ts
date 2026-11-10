@@ -69,5 +69,12 @@ test("opens on the Overview, then finds a house and shows it, read only", async 
   await expect(panel.getByTestId(`house-person-${housemate}`)).toContainText("Mia Elm");
   await expect(panel.getByTestId("house-pass")).toContainText("The free month");
   await shoot(page, "houses");
+  if (wide) {
+    // On a big screen the list still runs to the panel, a section gap short of its hairline.
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    const main = await houses.getByTestId("column-main").boundingBox();
+    const side = await houses.getByTestId("column-side").boundingBox();
+    expect(Math.abs((side?.x ?? 0) - ((main?.x ?? 0) + (main?.width ?? 0)) - 32)).toBeLessThan(2);
+  }
   await context.close();
 });

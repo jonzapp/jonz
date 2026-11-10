@@ -17,7 +17,6 @@ import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { MainToPanel } from '@/components/screen';
 import { Segmented } from '@/components/segmented';
 import { Wordmark } from '@/components/wordmark';
 import { Chip } from '@/components/status-mark';
@@ -68,9 +67,7 @@ export function AdminShell({ page, aside, children }: { page: AdminPage; aside?:
   return (
     <View style={[styles.row, { backgroundColor: colors.background }]}>
       <AdminRail page={page} />
-      <MainToPanel.Provider value>
-        <View style={styles.fill}>{children}</View>
-      </MainToPanel.Provider>
+      <View style={styles.fill}>{children}</View>
       {aside}
     </View>
   );

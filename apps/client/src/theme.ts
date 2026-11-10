@@ -84,12 +84,6 @@ export const ROW_GAP = 12;
 export const GROUP_RADIUS = 10;
 /** The widest a screen's content gets, on every tab. */
 export const CONTENT_MAX = 680;
-/**
- * The widest the main column of a page in two columns gets (Today, Week,
- * House on a laptop): it grows with the window up to this, and past it the
- * room falls between it and the side panel.
- */
-export const MAIN_MAX = 1040;
 /** The side panel of a page in two columns: its content, inside a GUTTER each side. */
 export const ASIDE = 380;
 /** The page's own width from which a page that spreads goes to two columns. */
@@ -106,8 +100,11 @@ export const PANEL = 400;
  * columns (`Pair`, `Flow`). Past it the room is left at the right.
  */
 export const FILL_MAX = 1600;
-/** The narrowest column a filled page's sections go into: two on a 1440 laptop, three on a 1920 screen. */
-export const COLUMN_MIN = 360;
+/**
+ * The narrowest column a filled page's sections go into: two on a 1440 laptop, three on a 1920 screen, and two
+ * in the main column beside a docked panel on a 1440 laptop (Today's Next up beside the rest of your week).
+ */
+export const COLUMN_MIN = 352;
 /** The narrowest a figure gets in a row of `Figures` before the row goes two to a line, as on a phone. */
 export const FIGURE_MIN = 180;
 /** Between one section and the next. */

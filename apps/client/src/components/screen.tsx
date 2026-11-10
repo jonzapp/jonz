@@ -13,17 +13,13 @@ import {
 
 import { useHouseWorkspace } from '@/components/house/workspace';
 import { TourScrollContext } from '@/components/tour/tour-spot';
-import { ASIDE, COLUMNS_MIN, CONTENT_MAX, FILL_MAX, GUTTER, HOUSE_NAV, MAIN_MAX, RAIL, SECTION_GAP, useTheme, WIDE } from '@/theme';
+import { ASIDE, COLUMNS_MIN, CONTENT_MAX, FILL_MAX, GUTTER, HOUSE_NAV, RAIL, SECTION_GAP, useTheme, WIDE } from '@/theme';
 
 const ContentWidth = createContext(CONTENT_MAX);
 const TwoColumns = createContext(false);
 const Filled = createContext<number | null>(null);
-/**
- * Whether a page's main column in `Columns` runs all the way to the side
- * panel instead of stopping at MAIN_MAX: the owner's pages, whose lists are
- * tables that use the room (AdminShell sets it).
- */
-export const MainToPanel = createContext(false);
+/** The page's own width, for `Columns` to share out before its main column has measured itself. */
+const PageWidth = createContext<number | null>(null);
 
 /** What scrolling the page does, handed to the main column when two columns each scroll on their own. */
 interface PageScroll {
@@ -32,6 +28,9 @@ interface PageScroll {
   onRefresh?: () => void;
 }
 const PageScrollContext = createContext<PageScroll>({});
+
+/** The docked side panel's width: ASIDE inside a GUTTER each side. */
+const SIDE = ASIDE + 2 * GUTTER;
 
 /** Calls `onNearEnd` once a scroll comes within a screen of the end, where a timeline reads its next page. */
 function nearEnd(onNearEnd?: () => void) {
@@ -54,8 +53,9 @@ export function useColumns(): boolean {
 
 /**
  * The content's width when the page fills the room on a laptop (a Screen
- * that `fills`, from WIDE), for `Pair` and `Flow` to share out in columns;
- * null anywhere else, where a page is one column.
+ * that `fills`, from WIDE, or the main column of `Columns`), for `Pair` and
+ * `Flow` to share out in columns; null anywhere else, where a page is one
+ * column.
  */
 export function useFilled(): number | null {
   return useContext(Filled);
@@ -115,31 +115,33 @@ export function Screen({
   // A tour scrolls a spot on this page into view through it.
   const scroll = useRef<ScrollViewInstance>(null);
   return (
-    <ContentWidth.Provider value={max ?? MAIN_MAX}>
+    <ContentWidth.Provider value={max ?? CONTENT_MAX}>
       <TwoColumns.Provider value={two}>
-        <Filled.Provider value={filling ? Math.min(width - 2 * GUTTER, FILL_MAX) : null}>
-          <View testID={testID} onLayout={onLayout} style={[styles.screen, { backgroundColor: colors.background }]}>
-            {bar}
-            <ScrollView
-              ref={scroll}
-              testID="page-scroll"
-              style={styles.scroll}
-              scrollEventThrottle={onNearEnd ? 200 : undefined}
-              onScroll={nearEnd(onNearEnd)}
-              contentContainerStyle={[styles.page, { maxWidth: max }, windowWidth >= WIDE && styles.leading, two && styles.filled]}
-              refreshControl={
-                // In two columns the main column pulls to refresh, as it's the one that scrolls.
-                onRefresh && !two ? (
-                  <RefreshControl refreshing={refreshing ?? false} onRefresh={onRefresh} tintColor={colors.foreground} />
-                ) : undefined
-              }
-            >
-              <TourScrollContext.Provider value={scroll}>
-                <PageScrollContext.Provider value={{ onNearEnd, refreshing, onRefresh }}>{children}</PageScrollContext.Provider>
-              </TourScrollContext.Provider>
-            </ScrollView>
-          </View>
-        </Filled.Provider>
+        <PageWidth.Provider value={two ? width : null}>
+          <Filled.Provider value={filling ? Math.min(width - 2 * GUTTER, FILL_MAX) : null}>
+            <View testID={testID} onLayout={onLayout} style={[styles.screen, { backgroundColor: colors.background }]}>
+              {bar}
+              <ScrollView
+                ref={scroll}
+                testID="page-scroll"
+                style={styles.scroll}
+                scrollEventThrottle={onNearEnd ? 200 : undefined}
+                onScroll={nearEnd(onNearEnd)}
+                contentContainerStyle={[styles.page, { maxWidth: max }, windowWidth >= WIDE && styles.leading, two && styles.filled]}
+                refreshControl={
+                  // In two columns the main column pulls to refresh, as it's the one that scrolls.
+                  onRefresh && !two ? (
+                    <RefreshControl refreshing={refreshing ?? false} onRefresh={onRefresh} tintColor={colors.foreground} />
+                  ) : undefined
+                }
+              >
+                <TourScrollContext.Provider value={scroll}>
+                  <PageScrollContext.Provider value={{ onNearEnd, refreshing, onRefresh }}>{children}</PageScrollContext.Provider>
+                </TourScrollContext.Provider>
+              </ScrollView>
+            </View>
+          </Filled.Provider>
+        </PageWidth.Provider>
       </TwoColumns.Provider>
     </ContentWidth.Provider>
   );
@@ -148,7 +150,9 @@ export function Screen({
 /**
  * A page in two columns: what you act on in `main`, what you glance at in
  * `side`, each keeping SECTION_GAP between its sections. The main column
- * grows with the window up to MAIN_MAX. The side is a panel docked to the
+ * runs to the panel at any width, leaving no room blank between them, and a
+ * `Pair` or `Flow` in it shares that width out in columns as it does on a
+ * page that fills the room. The side is a panel docked to the
  * window's right edge, the page's whole height under the title bar, with a
  * hairline down its leading side, as House's list of its pages is docked on
  * the left: ASIDE wide inside a GUTTER each side. Only for a page in two
@@ -167,7 +171,11 @@ export function Columns({ main, side }: { main: ReactNode; side: ReactNode }) {
   const scroll = useContext(PageScrollContext);
   const mainRef = useRef<ScrollViewInstance>(null);
   const sideRef = useRef<ScrollViewInstance>(null);
-  const toPanel = useContext(MainToPanel);
+  // The main column's width, for a Pair or Flow in it: what's left of the page beside the panel until it has
+  // measured itself, so a page opens in its columns rather than switching to them.
+  const page = useContext(PageWidth);
+  const [measured, setMeasured] = useState<number | null>(null);
+  const width = measured ?? (page === null ? null : page - SIDE - GUTTER - SECTION_GAP);
   return (
     <View style={styles.columns} testID="columns">
       <ScrollView
@@ -185,9 +193,11 @@ export function Columns({ main, side }: { main: ReactNode; side: ReactNode }) {
       >
         <ContentWidth.Provider value={CONTENT_MAX}>
           <TourScrollContext.Provider value={mainRef}>
-            <View style={[styles.main, toPanel && styles.mainToPanel]} testID="column-main">
-              {main}
-            </View>
+            <Filled.Provider value={width}>
+              <View style={styles.main} onLayout={(e) => setMeasured(e.nativeEvent.layout.width)} testID="column-main">
+                {main}
+              </View>
+            </Filled.Provider>
           </TourScrollContext.Provider>
         </ContentWidth.Provider>
       </ScrollView>
@@ -223,13 +233,11 @@ const styles = StyleSheet.create({
   filled: { paddingRight: 0, paddingBottom: 0 },
   // Over the whole page, from the title bar's hairline to the foot: the page's padding is the columns' own.
   columns: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, flexDirection: 'row', alignItems: 'stretch' },
-  // The main column's scroll reaches the panel, so its bar sits by the hairline and the room past MAIN_MAX
-  // scrolls it too; the words keep to MAIN_MAX.
+  // The main column runs to the panel at any width, its scroll bar by the hairline.
   mainScroll: { flex: 1, minWidth: 0 },
   mainPage: { paddingLeft: GUTTER, paddingRight: SECTION_GAP, paddingTop: GUTTER, paddingBottom: SECTION_GAP },
-  main: { width: '100%', maxWidth: MAIN_MAX, gap: SECTION_GAP },
-  mainToPanel: { maxWidth: undefined },
+  main: { width: '100%', gap: SECTION_GAP },
   // Docked to the right edge, the page's whole height under the title bar.
-  side: { flexGrow: 0, flexShrink: 0, width: ASIDE + 2 * GUTTER, borderLeftWidth: StyleSheet.hairlineWidth },
+  side: { flexGrow: 0, flexShrink: 0, width: SIDE, borderLeftWidth: StyleSheet.hairlineWidth },
   sidePage: { paddingTop: GUTTER, paddingHorizontal: GUTTER, paddingBottom: SECTION_GAP, gap: SECTION_GAP },
 });

@@ -2,7 +2,7 @@ import { BIN_NIGHT } from '@app/core';
 import { fireEvent, renderRouter, screen, within } from 'expo-router/testing-library';
 import { StyleSheet, Text, useWindowDimensions } from 'react-native';
 
-import { ASIDE, CONTENT_MAX, GUTTER, MAIN_MAX } from '@/theme';
+import { ASIDE, CONTENT_MAX, GUTTER } from '@/theme';
 
 import { Columns, Screen } from './screen';
 import { TitleBar } from './title-bar';
@@ -56,7 +56,8 @@ it('fills the page with two columns, the side a panel docked to the right edge',
   await renderRouter(routes, { initialUrl: '/today' });
   expect(page().maxWidth).toBeUndefined();
   expect(page()).toMatchObject({ paddingRight: 0, paddingBottom: 0 });
-  expect(screen.getByTestId('column-main')).toHaveStyle({ maxWidth: MAIN_MAX });
+  // The main column runs to the panel at any width: nothing holds it short, leaving the room between them blank.
+  expect(StyleSheet.flatten(screen.getByTestId('column-main').props.style).maxWidth).toBeUndefined();
   expect(screen.getByTestId('column-side')).toHaveStyle({
     width: ASIDE + 2 * GUTTER,
     borderLeftWidth: StyleSheet.hairlineWidth,
