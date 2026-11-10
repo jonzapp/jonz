@@ -1,10 +1,12 @@
-import { TELL_COPY } from "@app/core";
 import { describe, expect, it } from "vitest";
 
 import { tickHouse, type PushMessage } from "@/lib/engine/tick";
 import { adminClient } from "@/tests/support/clients";
 import { expectOk, expectRule } from "@/tests/support/expect";
 import { actorFor, addJohns, deal, makeHouse, reread, someoneElse, thisWeek } from "@/tests/support/factories";
+import { wordsFor } from '@app/core';
+
+const words = wordsFor('en', 'housemates');
 
 /**
  * Telling people (20261210090000_tell_people.sql, docs/specs/tell-people.md):
@@ -77,14 +79,14 @@ describe("the clock's pushes", () => {
     expectOk(await house.admin.db.from("houses").update({ late_forfeit_minor: 200 }).eq("id", house.id));
     const first = recorder();
     await tickHouse(db, house.id, new Date(), first.notify);
-    const covered = first.sent.find((s) => s.message.title === TELL_COPY.coveredTitle("Bins"));
+    const covered = first.sent.find((s) => s.message.title === words('wall.tell.coveredTitle', { john: "Bins" }));
     expect(covered?.to).toEqual([owner.userId]);
-    const rules = first.sent.find((s) => s.message.title === TELL_COPY.rulesTitle);
+    const rules = first.sent.find((s) => s.message.title === words('wall.tell.rulesTitle'));
     expect(rules?.to.sort()).toEqual(house.everyone.map((m) => m.userId).filter((id) => id !== house.admin.userId).sort());
 
     const again = recorder();
     await tickHouse(db, house.id, new Date(), again.notify);
-    expect(again.sent.filter((s) => s.message.title === TELL_COPY.coveredTitle("Bins") || s.message.title === TELL_COPY.rulesTitle)).toEqual(
+    expect(again.sent.filter((s) => s.message.title === words('wall.tell.coveredTitle', { john: "Bins" }) || s.message.title === words('wall.tell.rulesTitle'))).toEqual(
       [],
     );
   });
@@ -93,16 +95,16 @@ describe("the clock's pushes", () => {
     const early = await overdueJohn(1);
     const before = recorder();
     await tickHouse(db, early.house.id, new Date(), before.notify);
-    expect(before.sent.filter((s) => s.message.title === TELL_COPY.coverOpenTitle("Bins"))).toEqual([]);
+    expect(before.sent.filter((s) => s.message.title === words('wall.tell.coverOpenTitle', { john: "Bins" }))).toEqual([]);
 
     const { house, a, owner } = await overdueJohn(4);
     const first = recorder();
     await tickHouse(db, house.id, new Date(), first.notify);
-    expect(first.sent.filter((s) => s.message.title === TELL_COPY.coverOpenTitle("Bins")).map((s) => s.to)).toEqual([[owner.userId]]);
+    expect(first.sent.filter((s) => s.message.title === words('wall.tell.coverOpenTitle', { john: "Bins" })).map((s) => s.to)).toEqual([[owner.userId]]);
     expect((await reread("assignments", a.id)).cover_told_at).not.toBeNull();
     const again = recorder();
     await tickHouse(db, house.id, new Date(), again.notify);
-    expect(again.sent.filter((s) => s.message.title === TELL_COPY.coverOpenTitle("Bins"))).toEqual([]);
+    expect(again.sent.filter((s) => s.message.title === words('wall.tell.coverOpenTitle', { john: "Bins" }))).toEqual([]);
   });
 });
 

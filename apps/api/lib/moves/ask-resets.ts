@@ -3,6 +3,7 @@ import "server-only";
 import {
   actionLine,
   houseKind,
+  wordsFor,
   CHAT_RESETS_MAX,
   firstName,
   historyItems,
@@ -116,7 +117,7 @@ export async function resetState(caller: Caller, houseId: string, now: Date): Pr
     if (item.undoneAt || !item.reach || history.size >= HISTORY_SHOWN) continue;
     const ref = `h${history.size + 1}`;
     const who = item.actor === caller.userId ? "You" : nameOf(item.actor);
-    const line = actionLine(item.kind, item.data, who, nameOf(item.subject), rules.currency, houseKind(house.kind));
+    const line = actionLine(item.kind, item.data, who, nameOf(item.subject), rules.currency, wordsFor("en", houseKind(house.kind)));
     history.set(ref, { id: item.id, line, actor: item.actor });
     undoable.push(`${ref} ${line} (${item.at.toISOString().slice(0, 10)})`);
   }

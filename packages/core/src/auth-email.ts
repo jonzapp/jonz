@@ -1,6 +1,9 @@
-import { APP_NAME } from "./copy";
 import { renderEmail, type EmailBlock } from "./email";
 import { LEGAL } from "./legal";
+import { wordsFor } from "./words-for";
+
+// In English: Supabase sends one template to everyone, whatever their language.
+const words = wordsFor("en", "housemates");
 
 // Supabase Auth's own emails (sign-up code, password reset, email change,
 // reauthentication) in Jonz's look. Supabase fills in Go template tags such
@@ -21,8 +24,6 @@ export type AuthEmailName = "confirmation" | "recovery" | "magic_link" | "email_
 
 const TOKEN = "{{ .Token }}";
 
-const minutes = (n: number) => `The code works for ${n} minutes.`;
-
 function template(args: {
   subject: string;
   preheader: string;
@@ -40,56 +41,25 @@ export const AUTH_CODE_MINUTES = 60;
 
 /** Every Supabase Auth email, ready for the Management API. */
 export function authEmailTemplates(): Record<AuthEmailName, AuthEmailTemplate> {
-  const notYou = { type: "small", text: "If this wasn’t you, ignore this email. Nothing changes without the code." } as const;
+  const notYou = { type: "small", text: words("email.auth.notYou") } as const;
+  const lasts = { type: "small", text: words("email.auth.minutes", { n: AUTH_CODE_MINUTES }) } as const;
+  const code = { type: "code", code: TOKEN } as const;
+  // Each email's words, by its id in email.json: email.auth.<name>.*.
+  const coded = (name: "confirmation" | "magicLink" | "recovery" | "emailChange" | "reauthentication", last: EmailBlock) =>
+    template({
+      subject: words(`email.auth.${name}.subject`, { code: TOKEN }),
+      preheader: words(`email.auth.${name}.preheader`),
+      headline: words(`email.auth.${name}.headline`),
+      lead: words(`email.auth.${name}.lead`),
+      blocks: [code, lasts, last],
+      why: words(`email.auth.${name}.why`),
+    });
   return {
-    confirmation: template({
-      subject: `Your ${APP_NAME} code is ${TOKEN}`,
-      preheader: "Type it in to finish making your account.",
-      headline: "Your code",
-      lead: "Type it into Jonz to finish making your account.",
-      blocks: [{ type: "code", code: TOKEN }, { type: "small", text: minutes(AUTH_CODE_MINUTES) }, notYou],
-      why: "You asked for this when you made a Jonz account with this email address.",
-    }),
-    magic_link: template({
-      subject: `Your ${APP_NAME} code is ${TOKEN}`,
-      preheader: "Type it in to sign in.",
-      headline: "Your code",
-      lead: "Type it into Jonz to sign in.",
-      blocks: [{ type: "code", code: TOKEN }, { type: "small", text: minutes(AUTH_CODE_MINUTES) }, notYou],
-      why: "You asked for this when you signed in to Jonz with this email address.",
-    }),
-    recovery: template({
-      subject: `Reset your ${APP_NAME} password: ${TOKEN}`,
-      preheader: "Type the code in to choose a new password.",
-      headline: "Reset your password",
-      lead: "Type this code into Jonz, then choose a new password.",
-      blocks: [
-        { type: "code", code: TOKEN },
-        { type: "small", text: minutes(AUTH_CODE_MINUTES) },
-        { type: "small", text: "If you didn’t ask to reset it, ignore this email. Your password stays as it is." },
-      ],
-      why: "You asked to reset the password for this email address on Jonz.",
-    }),
-    email_change: template({
-      subject: `Confirm your new ${APP_NAME} email: ${TOKEN}`,
-      preheader: "Type the code in to move your account to this address.",
-      headline: "Confirm this address",
-      lead: "Type this code into Jonz to move your account here.",
-      blocks: [
-        { type: "code", code: TOKEN },
-        { type: "small", text: minutes(AUTH_CODE_MINUTES) },
-        { type: "small", text: "If you didn’t ask for this, ignore this email. Your account stays where it is." },
-      ],
-      why: "Someone asked to move a Jonz account to this email address.",
-    }),
-    reauthentication: template({
-      subject: `Your ${APP_NAME} code is ${TOKEN}`,
-      preheader: "Type it in to confirm it’s you.",
-      headline: "Confirm it’s you",
-      lead: "Type this code into Jonz to carry on.",
-      blocks: [{ type: "code", code: TOKEN }, { type: "small", text: minutes(AUTH_CODE_MINUTES) }, notYou],
-      why: "You asked for this while changing your sign-in on Jonz.",
-    }),
+    confirmation: coded("confirmation", notYou),
+    magic_link: coded("magicLink", notYou),
+    recovery: coded("recovery", { type: "small", text: words("email.auth.recovery.notYou") }),
+    email_change: coded("emailChange", { type: "small", text: words("email.auth.emailChange.notYou") }),
+    reauthentication: coded("reauthentication", notYou),
   };
 }
 
@@ -109,48 +79,21 @@ export type SecurityNoticeName =
 /** Every security notice, in Jonz's look: what changed, and what to do if it wasn't you. */
 export function securityNoticeTemplates(): Record<SecurityNoticeName, AuthEmailTemplate> {
   const support = LEGAL.email;
-  const reset = { type: "button", label: "Reset your password", url: `${LEGAL.site}/signin` } as const;
-  const fine = { type: "text", text: "If this was you, there’s nothing to do." } as const;
-  const notYou = (step: string) => ({ type: "small", text: `If it wasn’t you, ${step}, then write to ${support} so we can help.` }) as const;
-  const why = "We send this whenever the way you sign in to Jonz changes.";
-  const notice = (subject: string, headline: string, lead: string, blocks: EmailBlock[]) =>
-    template({ subject, preheader: lead, headline, lead, blocks, why });
+  const reset = { type: "button", label: words("email.security.reset"), url: `${LEGAL.site}/signin` } as const;
+  const fine = { type: "text", text: words("email.security.wasYou") } as const;
+  const resetNow = { type: "small", text: words("email.security.notYouReset", { support }) } as const;
+  const why = words("email.security.why");
+  // Each notice's words, by its id in email.json: email.security.<name>.*.
+  const notice = (name: "password" | "email" | "mfaAdded" | "mfaRemoved" | "identityAdded" | "identityRemoved", blocks: EmailBlock[]) => {
+    const lead = words(`email.security.${name}.lead`);
+    return template({ subject: words(`email.security.${name}.subject`), preheader: lead, headline: words(`email.security.${name}.headline`), lead, blocks, why });
+  };
   return {
-    password_changed_notification: notice(
-      `Your ${APP_NAME} password was changed`,
-      "Password changed",
-      "The password on your Jonz account was just added or changed.",
-      [fine, notYou("reset your password straight away"), reset],
-    ),
-    email_changed_notification: notice(
-      `Your ${APP_NAME} email address was changed`,
-      "Email changed",
-      "Your Jonz account was just moved to a different email address.",
-      [fine, { type: "small", text: `If it wasn’t you, write to ${support} straight away so we can help.` }],
-    ),
-    mfa_factor_enrolled_notification: notice(
-      `An authenticator app was added to your ${APP_NAME} account`,
-      "Authenticator added",
-      "An authenticator app was just added to your Jonz account.",
-      [fine, notYou("reset your password straight away"), reset],
-    ),
-    mfa_factor_unenrolled_notification: notice(
-      `An authenticator app was removed from your ${APP_NAME} account`,
-      "Authenticator removed",
-      "An authenticator app was just removed from your Jonz account.",
-      [fine, notYou("reset your password straight away"), reset],
-    ),
-    identity_linked_notification: notice(
-      `A new way to sign in was added to your ${APP_NAME} account`,
-      "Sign-in added",
-      "A new way to sign in, like Google or Microsoft, was just added to your Jonz account.",
-      [fine, notYou("reset your password straight away"), reset],
-    ),
-    identity_unlinked_notification: notice(
-      `A way to sign in was removed from your ${APP_NAME} account`,
-      "Sign-in removed",
-      "A way to sign in, like Google or Microsoft, was just removed from your Jonz account.",
-      [fine, notYou("reset your password straight away"), reset],
-    ),
+    password_changed_notification: notice("password", [fine, resetNow, reset]),
+    email_changed_notification: notice("email", [fine, { type: "small", text: words("email.security.notYouWrite", { support }) }]),
+    mfa_factor_enrolled_notification: notice("mfaAdded", [fine, resetNow, reset]),
+    mfa_factor_unenrolled_notification: notice("mfaRemoved", [fine, resetNow, reset]),
+    identity_linked_notification: notice("identityAdded", [fine, resetNow, reset]),
+    identity_unlinked_notification: notice("identityRemoved", [fine, resetNow, reset]),
   };
 }

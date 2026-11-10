@@ -267,7 +267,6 @@ describe("STAKE_HISTORY_COPY", () => {
 
 describe("Focus’s word objects", () => {
   const FOCUS = [
-    "WALL_FEED_COPY",
     "FRONT_DOOR_COPY",
   ];
 
@@ -307,7 +306,7 @@ describe("every word in copy.ts", () => {
   const said = Object.values(copy).flatMap(spoken);
 
   it("is there to check", () => {
-    expect(all.length).toBeGreaterThan(50);
+    expect(all.length).toBeGreaterThan(40);
   });
 
   it("never calls it a rota or a chore app", () => {
@@ -319,7 +318,7 @@ describe("every word in copy.ts", () => {
   });
 
   it("writes every apostrophe curly, in the sentences that take names too", () => {
-    expect(said.length).toBeGreaterThan(50);
+    expect(said.length).toBeGreaterThan(40);
     for (const text of [...all, ...said]) expect(text).not.toContain("'");
   });
 });

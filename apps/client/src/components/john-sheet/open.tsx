@@ -1,16 +1,4 @@
-import {
-  cantOptions,
-  coverOffer,
-  firstName,
-  dueInLine,
-  FOCUS_SHELL_COPY,
-  HISTORY_COPY,
-  holdable,
-  plannable,
-  swapChoice,
-  type BoardItem,
-  type CantOptions,
-} from '@app/core';
+import { cantOptions, coverOffer, firstName, dueInLine, FOCUS_SHELL_COPY, holdable, plannable, swapChoice, type BoardItem, type CantOptions } from '@app/core';
 import { CameraIcon, CheckIcon, HandIcon, ImagesIcon, RepeatIcon, ShieldIcon, UsersIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -210,7 +198,7 @@ function IfYouCant({
                     busyLabel={words('john.sheet.skipping')}
                     onPress={() =>
                       void move.run(() => spendImmunity(item.id)).then((done) => {
-                        if (done) offer(HISTORY_COPY.immunity, 'immunity', item.id);
+                        if (done) offer(words('wall.history.immunity'), 'immunity', item.id);
                       })
                     }
                     testID="skip-it"
@@ -275,7 +263,7 @@ function SwapPicker({
   async function swap() {
     if (picked && (await move.run(() => spendSwap(item.id, picked)))) {
       context.close();
-      offer(HISTORY_COPY.swapped, 'swap', picked);
+      offer(words('wall.history.swapped'), 'swap', picked);
     }
   }
 

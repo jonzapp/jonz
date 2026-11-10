@@ -1,14 +1,4 @@
-import {
-  dayLabel,
-  HISTORY_COPY,
-  LIST_COPY,
-  SECTION_LABEL,
-  WALL_COPY,
-  WALL_FEED_COPY,
-  wallDays,
-  wallFeedRow,
-  type WallFeedRow,
-} from '@app/core';
+import { dayLabel, LIST_COPY, SECTION_LABEL, wallDays, wallFeedRow, type WallFeedRow } from '@app/core';
 import { useLocalSearchParams } from 'expo-router';
 import { MegaphoneIcon } from 'lucide-react-native';
 import { useEffect, useState, type ReactNode } from 'react';
@@ -120,19 +110,19 @@ function WallFor({ houseId, userId }: { houseId: string; userId: string }) {
     body =
       feed.isError || query.isError ? (
         <ReadFailed
-          message={WALL_FEED_COPY.unreadable}
+          message={words('wall.feed.unreadable')}
           onRetry={() => {
             if (feed.isError) void feed.refetch();
             if (query.isError) void query.refetch();
           }}
         />
       ) : (
-        <Waiting ready={false} label={WALL_FEED_COPY.reading} outline={<WallOutline />} />
+        <Waiting ready={false} label={words('wall.feed.reading')} outline={<WallOutline />} />
       );
   } else if (rows.length === 0) {
-    body = <EmptyState icon={MegaphoneIcon} title={WALL_FEED_COPY.emptyTitle} body={WALL_COPY.empty} testID="wall-empty" />;
+    body = <EmptyState icon={MegaphoneIcon} title={words('wall.feed.emptyTitle')} body={words('wall.page.empty')} testID="wall-empty" />;
   } else {
-    const days = wallDays(rows, scene.zone, scene.now);
+    const days = wallDays(rows, scene.zone, scene.now, words);
     body = (
       <>
         {days.map((day) => (
@@ -165,14 +155,14 @@ function WallFor({ houseId, userId }: { houseId: string; userId: string }) {
     historyBody =
       history.isError || query.isError ? (
         <ReadFailed
-          message={HISTORY_COPY.unreadable}
+          message={words('wall.history.unreadable')}
           onRetry={() => {
             if (history.isError) void history.refetch();
             if (query.isError) void query.refetch();
           }}
         />
       ) : (
-        <Waiting ready={false} label={HISTORY_COPY.reading} outline={<WallOutline />} />
+        <Waiting ready={false} label={words('wall.history.reading')} outline={<WallOutline />} />
       );
   } else {
     const names = new Map(view.snapshot.members.map((m) => [m.userId, m.name]));
@@ -183,8 +173,8 @@ function WallFor({ houseId, userId }: { houseId: string; userId: string }) {
       currency: view.snapshot.rules.currency,
       kind: view.snapshot.house.kind,
       now: view.now,
-      nameOf: (id) => (id === userId ? 'You' : ((id && names.get(id)) ?? HISTORY_COPY.someone)),
-      fullName: (id) => (id && names.get(id)) ?? HISTORY_COPY.someone,
+      nameOf: (id) => (id === userId ? 'You' : ((id && names.get(id)) ?? words('wall.history.someone'))),
+      fullName: (id) => (id && names.get(id)) ?? words('wall.history.someone'),
     };
     historyBody = <HistoryList items={history.data.pages.flat()} scene={historyScene} more={historyMore} />;
   }
@@ -193,7 +183,7 @@ function WallFor({ houseId, userId }: { houseId: string; userId: string }) {
   const historyNear = nearEnd(historyMore);
   return (
     <Screen
-      bar={<TitleBar title={WALL_COPY.title} back="/house" backLabel={SECTION_LABEL.house} />}
+      bar={<TitleBar title={words('wall.page.title')} back="/house" backLabel={SECTION_LABEL.house} />}
       refreshing={refreshing}
       onRefresh={pull}
       onNearEnd={() => {
@@ -203,7 +193,7 @@ function WallFor({ houseId, userId }: { houseId: string; userId: string }) {
       fills
       testID="wall-screen"
     >
-      <PageTitle page={WALL_COPY.title} />
+      <PageTitle page={words('wall.page.title')} />
       <WallAndHistory wall={body} history={historyBody} shown={shown} onShow={setShown} onBeside={setBeside} />
       <WallEventSheet
         row={openRow ?? null}
@@ -233,6 +223,7 @@ function WallAndHistory({
   onShow: (shown: Shown) => void;
   onBeside: (beside: boolean) => void;
 }) {
+  const words = useWords();
   const beside = useSideBySide();
   useEffect(() => onBeside(beside), [beside, onBeside]);
   if (beside) {
@@ -242,7 +233,7 @@ function WallAndHistory({
         ratio={1.25}
         start={wall}
         end={
-          <Section label={HISTORY_COPY.title} right={HISTORY_COPY.meta} bare testID="history-section">
+          <Section label={words('wall.history.title')} right={words('wall.history.meta')} bare testID="history-section">
             {history}
           </Section>
         }
@@ -254,12 +245,12 @@ function WallAndHistory({
       <View style={styles.pick}>
         <Segmented
           options={[
-            { value: 'wall', label: WALL_COPY.title },
-            { value: 'history', label: HISTORY_COPY.title },
+            { value: 'wall', label: words('wall.page.title') },
+            { value: 'history', label: words('wall.history.title') },
           ]}
           value={shown}
           onChange={onShow}
-          label={HISTORY_COPY.show}
+          label={words('wall.history.show')}
           testID="wall-shows"
         />
       </View>

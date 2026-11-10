@@ -6,6 +6,11 @@ import { refTag } from "./inbound-email";
 import { PROMOTION_COPY, promotionPrices, promotionSentence, promotionTitle, type PromotionTerms } from "./promotions";
 import { type ReportKind, reportGist } from "./reports";
 import { escapeHtml } from "./share";
+import { wordsFor } from "./words-for";
+
+// The emails' words (locales/en/email.json), in English until each person
+// picks their language (translation step 7).
+const words = wordsFor("en", "housemates");
 
 // Jonz's emails, drawn once for every sender: the API sends them through
 // Resend, and Supabase's sign-in emails are written from the same parts.
@@ -181,7 +186,7 @@ function blockText(block: EmailBlock): string {
 
 /** The words at the foot of every email. */
 export const EMAIL_FOOT = {
-  tagline: `${APP_NAME}, fair shares of the housework.`,
+  tagline: words("email.foot.tagline"),
   site: "jonz.app",
 };
 
@@ -259,23 +264,23 @@ ${spec.blocks.map(blockHtml).join("\n")}
 /** Hi, by first name when there is one. */
 const hi = (name: string | null | undefined) => {
   const first = name?.trim().split(/\s+/)[0];
-  return first ? `Hi ${first},` : "Hi,";
+  return first ? words("email.hi", { name: first }) : words("email.hiAnon");
 };
 
 /** When an account is deleted, to the address it had. Sent once, after the delete has finished. */
 export function accountDeletedEmail(args: { name: string | null; deletedOn: string }): EmailMessage {
   return renderEmail({
-    subject: `Your ${APP_NAME} account is deleted`,
-    preheader: "Your profile, photo and sign-in are gone.",
-    headline: "Account deleted",
-    lead: `We deleted your account on ${args.deletedOn}.`,
+    subject: words("email.deleted.subject"),
+    preheader: words("email.deleted.preheader"),
+    headline: words("email.deleted.headline"),
+    lead: words("email.deleted.lead", { date: args.deletedOn }),
     blocks: [
       { type: "text", text: hi(args.name) },
-      { type: "text", text: `As you asked, your ${APP_NAME} account is deleted. Your name, photo, email address and sign-in are gone.` },
-      { type: "text", text: "You can sign up again any time, but this account can’t come back." },
-      { type: "small", text: "If you didn’t ask for this, reply to this email today." },
+      { type: "text", text: words("email.deleted.gone") },
+      { type: "text", text: words("email.deleted.again") },
+      { type: "small", text: words("email.deleted.notYou") },
     ],
-    why: "This is the last email this address gets from Jonz.",
+    why: words("email.deleted.why"),
   });
 }
 
@@ -301,7 +306,7 @@ export function reportReplyEmail(args: {
   url: string | null;
   fixed?: boolean;
 }): EmailMessage {
-  const who = args.signed ? `${args.signed} at ${APP_NAME}` : APP_NAME;
+  const who = args.signed ? words("email.report.signed", { name: args.signed }) : APP_NAME;
   const paragraphs = args.reply
     .split(/\n\s*\n/)
     .map((p) => p.trim())
@@ -309,27 +314,25 @@ export function reportReplyEmail(args: {
   const about = args.subject?.trim() ? args.subject.trim().replace(/^\s*((re|fwd?)\s*:\s*)+/i, "").replace(/\(ref [0-9a-f]{8}\)/gi, "").trim() : "";
   const topic = about ? reportGist(about, 60) : reportGist(args.words, 60);
   return renderEmail({
-    subject: `${args.fixed ? "Fixed" : "Re"}: ${topic} ${refTag(args.id)}`,
+    subject: words("email.report.subject", { fixed: Boolean(args.fixed), topic, ref: refTag(args.id) }),
     preheader: reportGist(args.reply, 90),
-    headline: args.fixed ? "It’s fixed" : "A reply to you",
-    lead: args.fixed ? `${who} fixed what you reported.` : `${who} replied.`,
+    headline: args.fixed ? words("email.report.headlineFixed") : words("email.report.headline"),
+    lead: args.fixed ? words("email.report.leadFixed", { who }) : words("email.report.lead", { who }),
     blocks: [
       { type: "text", text: hi(args.name) },
       ...paragraphs.map((text) => ({ type: "text" as const, text })),
-      ...(args.url ? [{ type: "button" as const, label: "Open it in Jonz", url: args.url }] : []),
-      { type: "small", text: `You wrote: “${reportGist(args.words, 140)}”` },
+      ...(args.url ? [{ type: "button" as const, label: words("email.report.open"), url: args.url }] : []),
+      { type: "small", text: words("email.report.youWrote", { words: reportGist(args.words, 140) }) },
     ],
-    why: args.url
-      ? `You sent this ${args.kind} to ${APP_NAME}. Reply to this email, or write back in the app.`
-      : `You emailed ${EMAIL_ADDRESSES.replyTo}. Reply to this email to write back.`,
+    why: args.url ? words("email.report.why", { about: args.kind }) : words("email.report.whyEmailed", { address: EMAIL_ADDRESSES.replyTo }),
   });
 }
 
 /** Who gets a notice by email: a status goes to everyone, offers and news only to those who said yes. */
 export const NOTICE_EMAIL_WHY = {
-  status: "Service notices go to everyone on Jonz.",
-  offer: "You said yes to offers and news from Jonz.",
-  news: "You said yes to offers and news from Jonz.",
+  status: words("email.notice.whyStatus"),
+  offer: words("email.notice.whyNews"),
+  news: words("email.notice.whyNews"),
 } satisfies Record<NoticeKind, string>;
 
 /**
@@ -355,7 +358,7 @@ export function noticeEmail(args: {
     blocks,
     why: NOTICE_EMAIL_WHY[args.kind],
     unsubscribe:
-      args.kind !== "status" && args.unsubscribeUrl ? { label: "Stop offers and news", url: args.unsubscribeUrl } : undefined,
+      args.kind !== "status" && args.unsubscribeUrl ? { label: words("email.notice.stop"), url: args.unsubscribeUrl } : undefined,
   });
 }
 
@@ -370,17 +373,15 @@ export function ownerMessageEmail(args: { name: string | null; subject: string; 
     .map((p) => p.trim())
     .filter(Boolean);
   return renderEmail({
-    subject: args.test ? `Test: ${args.subject}` : args.subject,
+    subject: args.test ? words("email.message.testSubject", { subject: args.subject }) : args.subject,
     preheader: args.body.slice(0, 90),
     headline: args.subject,
     blocks: [
       { type: "text", text: hi(args.name) },
       ...paragraphs.map((text) => ({ type: "text" as const, text })),
-      { type: "button", label: "Open Jonz", url: args.url },
+      { type: "button", label: words("email.message.open"), url: args.url },
     ],
-    why: args.test
-      ? "A test of a message from Jonz, sent only to you."
-      : `A message from ${APP_NAME}. Reply to this email to answer it.`,
+    why: args.test ? words("email.message.whyTest") : words("email.message.why"),
   });
 }
 

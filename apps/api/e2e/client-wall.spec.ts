@@ -1,4 +1,4 @@
-import { firstName, REACTION_LABEL, SECTION_LABEL, WALL_COPY, WALL_FEED_COPY, wordsFor } from "@app/core";
+import { firstName, REACTION_LABEL, SECTION_LABEL, wordsFor } from "@app/core";
 import { expect, test, type BrowserContext } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, dealtHouseInClient } from "./auth";
@@ -44,7 +44,7 @@ test("ticks land on the Wall with their photos, and take reactions", async ({ br
   await wall.getByRole("tab", { name: SECTION_LABEL.house }).click();
   await wall.getByTestId("house-screen").getByTestId("to-wall").getByRole("link").click();
   await expect(wall).toHaveURL(/\/house\/wall$/);
-  await expect(wall.getByRole("heading", { name: WALL_COPY.title })).toBeVisible();
+  await expect(wall.getByRole("heading", { name: words('wall.page.title') })).toBeVisible();
   // (House stays laid out under the pushed page, with its own latest rows: look on the Wall's.)
   const events = wall.getByTestId("wall-screen").getByTestId("wall-event");
   await expect(events.filter({ hasText: words("wall.feed.joined", { who: them }) })).toBeVisible();
@@ -56,18 +56,18 @@ test("ticks land on the Wall with their photos, and take reactions", async ({ br
   const hobNext = hobPage.getByTestId("today-screen").getByTestId("next-up");
   await expect(hobNext.getByTestId("next-up-name")).toHaveText(hob.name);
   await hobNext.getByRole("button", { name: words('john.row.markDone'), exact: true }).click();
-  const hobTick = events.filter({ hasText: WALL_FEED_COPY.ticked(them, hob.name) });
+  const hobTick = events.filter({ hasText: words('wall.feed.ticked', { who: them, john: hob.name }) });
   await expect(hobTick).toBeVisible();
 
   // The watcher gives it a "Nice one"; it shows at once and stays after a reload.
   await hobTick.getByRole("button", { name: REACTION_LABEL.nice, exact: true }).click();
-  const nice = hobTick.getByRole("button", { name: WALL_FEED_COPY.tally(REACTION_LABEL.nice, 1) });
+  const nice = hobTick.getByRole("button", { name: words('wall.feed.tally', { label: REACTION_LABEL.nice, count: 1 }) });
   await expect(nice).toHaveText("1");
   // A browser hears that it's theirs: pressed, as the web's reactions say.
-  await expect(hobTick.getByRole("button", { name: WALL_FEED_COPY.tally(REACTION_LABEL.nice, 1), pressed: true })).toBeVisible();
+  await expect(hobTick.getByRole("button", { name: words('wall.feed.tally', { label: REACTION_LABEL.nice, count: 1 }), pressed: true })).toBeVisible();
   await wall.reload();
   await expect(nice).toHaveText("1");
-  await expect(hobTick.getByRole("button", { name: WALL_FEED_COPY.tally(REACTION_LABEL.nice, 1), pressed: true })).toBeVisible();
+  await expect(hobTick.getByRole("button", { name: words('wall.feed.tally', { label: REACTION_LABEL.nice, count: 1 }), pressed: true })).toBeVisible();
 
   // The bath needs a photo: the watcher's Next up asks for it. Once ticked, the Wall shows it.
   const bathPage = await contexts[watcher].newPage();
@@ -77,7 +77,7 @@ test("ticks land on the Wall with their photos, and take reactions", async ({ br
   const chooser = bathPage.waitForEvent("filechooser");
   await bathNext.getByTestId("mark-done").click();
   await (await chooser).setFiles({ name: "receipt.png", mimeType: "image/png", buffer: photo() });
-  const bathTick = events.filter({ hasText: WALL_FEED_COPY.ticked(WALL_FEED_COPY.you, bath.name) });
+  const bathTick = events.filter({ hasText: words('wall.feed.ticked', { who: words('wall.feed.you'), john: bath.name }) });
   await expect(bathTick).toBeVisible();
-  await expect(wall.getByTestId("wall-screen").getByRole("img", { name: WALL_COPY.photoOf(bath.name) })).toBeVisible();
+  await expect(wall.getByTestId("wall-screen").getByRole("img", { name: words('wall.page.photoOf', { john: bath.name }) })).toBeVisible();
 });

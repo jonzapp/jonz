@@ -1,4 +1,4 @@
-import { WALL_COPY, WALL_FEED_COPY, wallFeedRow } from '@app/core';
+import { wallFeedRow } from '@app/core';
 import { useState } from 'react';
 import { View } from 'react-native';
 
@@ -50,8 +50,8 @@ export function WallSection({ houseId, userId, view }: { houseId: string; userId
   const seeAll = (
     <View testID="to-wall">
       <TextButton
-        label={WALL_FEED_COPY.seeAll}
-        accessibilityLabel={WALL_FEED_COPY.seeAllOf(WALL_COPY.title)}
+        label={words('wall.feed.seeAll')}
+        accessibilityLabel={words('wall.feed.seeAllOf', { wall: words('wall.page.title') })}
         href="/house/wall"
         align="end"
       />
@@ -62,18 +62,18 @@ export function WallSection({ houseId, userId, view }: { houseId: string; userId
     // Round the section, not inside it: tests and layouts reach its children.
     <TourSpot id="house.wall">
       <View testID="wall-section">
-        <Section label={WALL_COPY.title} right={seeAll}>
+        <Section label={words('wall.page.title')} right={seeAll}>
           {!latest.data ? (
             latest.isError ? (
               <GroupItem>
-                <ReadFailed message={WALL_FEED_COPY.unreadable} onRetry={() => void latest.refetch()} />
+                <ReadFailed message={words('wall.feed.unreadable')} onRetry={() => void latest.refetch()} />
               </GroupItem>
             ) : (
-              <Waiting ready={false} label={WALL_FEED_COPY.reading} outline={<OutlineRows count={LATEST} />} />
+              <Waiting ready={false} label={words('wall.feed.reading')} outline={<OutlineRows count={LATEST} />} />
             )
           ) : rows.length === 0 ? (
             <GroupItem>
-              <Body>{WALL_COPY.empty}</Body>
+              <Body>{words('wall.page.empty')}</Body>
             </GroupItem>
           ) : (
             rows.map((row) => (

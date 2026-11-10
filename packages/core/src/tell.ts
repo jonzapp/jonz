@@ -2,6 +2,7 @@ import type { Currency } from "./domain";
 import { formatMoney } from "./money";
 import type { PushKind } from "./notify";
 import { REDO_HOURS } from "./dispute";
+import type { Words } from "./words-for";
 
 /**
  * Telling people what happened to their Johns and their house, once each
@@ -26,52 +27,26 @@ export interface Telling {
   tag?: string;
 }
 
-export const TELL_COPY = {
-  coveredTitle: (john: string) => `${john} was covered`,
-  coveredBody: (who: string) => `${who} did it for you, so it isn’t missed. They get its points.`,
-  swappedTitle: (took: string) => `${took} went in a swap`,
-  swappedBody: (who: string, gave: string, took: string) => `${who} used a swap token: you have ${gave} now, and they have ${took}.`,
-  struckTitle: (john: string) => `${john}: the house says not done`,
-  struckBody: `Your tick was struck. You have ${REDO_HOURS} hours to do it again.`,
-  stoodTitle: (john: string) => `${john}: your tick stands`,
-  stoodBody: "The house checked it, and it counts.",
-  rulesTitle: "The house rules changed",
-  rulesBody: (who: string, changes: string) => `${who} changed ${changes}.`,
-  /** Covering opens on your overdue John: the one chance to hold it off. */
-  coverOpenTitle: (john: string) => `${john} is overdue`,
-  coverOpenBody: "Others can cover it now and take its points. On it? Say so and covers wait 2 hours.",
+const RULE_IDS = {
+  stake_minor: "wall.tell.rule.stake",
+  late_forfeit_minor: "wall.tell.rule.lateFine",
+  missed_forfeit_minor: "wall.tell.rule.missedFine",
+  dispute_hours: "wall.tell.rule.checkHours",
+  late_hours: "wall.tell.rule.lateHours",
+  cover_grace_hours: "wall.tell.rule.coverWait",
 } as const;
+const MONEY_RULES: readonly string[] = ["stake_minor", "late_forfeit_minor", "missed_forfeit_minor"];
 
-/** One rule's change in words: "the stake from £20 to £10". */
-function ruleChange(rule: string, from: number, to: number, currency: Currency): string | null {
-  const money = (n: number) => formatMoney(n, currency);
-  const hours = (n: number) => `${n} ${n === 1 ? "hour" : "hours"}`;
-  switch (rule) {
-    case "stake_minor":
-      return `the stake from ${money(from)} to ${money(to)} a month`;
-    case "late_forfeit_minor":
-      return `the late fine from ${money(from)} to ${money(to)}`;
-    case "missed_forfeit_minor":
-      return `the missed fine from ${money(from)} to ${money(to)}`;
-    case "dispute_hours":
-      return `the time to check a tick from ${hours(from)} to ${hours(to)}`;
-    case "late_hours":
-      return `the time to do a John late from ${hours(from)} to ${hours(to)}`;
-    case "cover_grace_hours":
-      return `the wait before covering from ${hours(from)} to ${hours(to)}`;
-    default:
-      return null;
-  }
-}
-
-/** A rule post's changes as one phrase: "the stake from £20 to £10 a month and the late fine from £1 to £2". */
-export function ruleChanges(data: Record<string, unknown>, currency: Currency): string {
+/** A rule post's changes as one phrase: "the stake from £20 to £10 a month and the late forfeit from £1 to £2". */
+export function ruleChanges(data: Record<string, unknown>, currency: Currency, words: Words): string {
   const changes = (data.changes ?? {}) as Record<string, [number, number]>;
-  const said = Object.entries(changes)
-    .map(([rule, [from, to]]) => ruleChange(rule, Number(from), Number(to), currency))
-    .filter((s): s is string => Boolean(s));
-  if (said.length <= 1) return said[0] ?? "the house rules";
-  return `${said.slice(0, -1).join(", ")} and ${said[said.length - 1]}`;
+  const said = Object.entries(changes).flatMap(([rule, [from, to]]) => {
+    if (!(rule in RULE_IDS)) return [];
+    const say = (n: number) => (MONEY_RULES.includes(rule) ? formatMoney(n, currency) : Number(n));
+    return [words(RULE_IDS[rule as keyof typeof RULE_IDS], { from: say(Number(from)), to: say(Number(to)) })];
+  });
+  if (said.length <= 1) return said[0] ?? words("wall.tell.rule.none");
+  return words("wall.feed.namesAnd", { first: said.slice(0, -1).join(", "), last: said[said.length - 1] });
 }
 
 /**
@@ -83,8 +58,9 @@ export function tellOf(
   nameOf: (userId: string | null) => string,
   members: readonly string[],
   currency: Currency,
+  words: Words,
 ): Telling | null {
-  const john = String(e.data.name ?? "a John");
+  const john = String(e.data.name ?? words("wall.feed.aJohn"));
   const here = (ids: (string | null | undefined)[]) =>
     ids.filter((id): id is string => typeof id === "string" && id !== e.userId && members.includes(id));
   const tag = e.assignmentId ? `john:${e.assignmentId}` : undefined;
@@ -92,15 +68,15 @@ export function tellOf(
     case "covered": {
       const to = here(Array.isArray(e.data.for_all) ? (e.data.for_all as string[]) : [e.data.for as string]);
       return to.length
-        ? { to, title: TELL_COPY.coveredTitle(john), body: TELL_COPY.coveredBody(nameOf(e.userId)), url: "/today", kind: "checks", tag }
+        ? { to, title: words('wall.tell.coveredTitle', { john }), body: words('wall.tell.coveredBody', { who: nameOf(e.userId) }), url: "/today", kind: "checks", tag }
         : null;
     }
     case "swap_used": {
       const to = here([e.data.with as string]);
-      const gave = String(e.data.gave ?? "a John");
-      const took = String(e.data.took ?? "a John");
+      const gave = String(e.data.gave ?? words("wall.feed.aJohn"));
+      const took = String(e.data.took ?? words("wall.feed.aJohn"));
       return to.length
-        ? { to, title: TELL_COPY.swappedTitle(took), body: TELL_COPY.swappedBody(nameOf(e.userId), gave, took), url: "/today", kind: "deal", tag }
+        ? { to, title: words('wall.tell.swappedTitle', { took }), body: words('wall.tell.swappedBody', { who: nameOf(e.userId), gave, took }), url: "/today", kind: "deal", tag }
         : null;
     }
     case "upheld":
@@ -108,13 +84,13 @@ export function tellOf(
       const to = here([e.data.against as string]);
       if (!to.length) return null;
       return e.kind === "upheld"
-        ? { to, title: TELL_COPY.struckTitle(john), body: TELL_COPY.struckBody, url: "/today", kind: "checks", tag }
-        : { to, title: TELL_COPY.stoodTitle(john), body: TELL_COPY.stoodBody, url: "/today", kind: "checks", tag };
+        ? { to, title: words('wall.tell.struckTitle', { john }), body: words("wall.tell.struckBody", { hours: REDO_HOURS }), url: "/today", kind: "checks", tag }
+        : { to, title: words('wall.tell.stoodTitle', { john }), body: words('wall.tell.stoodBody'), url: "/today", kind: "checks", tag };
     }
     case "rules": {
       const to = here([...members]);
       return to.length
-        ? { to, title: TELL_COPY.rulesTitle, body: TELL_COPY.rulesBody(nameOf(e.userId), ruleChanges(e.data, currency)), url: "/house/rules", kind: "deal" }
+        ? { to, title: words('wall.tell.rulesTitle'), body: words('wall.tell.rulesBody', { who: nameOf(e.userId), changes: ruleChanges(e.data, currency, words) }), url: "/house/rules", kind: "deal" }
         : null;
     }
     default:

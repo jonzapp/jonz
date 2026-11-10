@@ -1,14 +1,4 @@
-import {
-  closesAt,
-  coverOpensAt,
-  firstName,
-  rulesOf,
-  TELL_COPY,
-  TOLD_KINDS,
-  tellOf,
-  type Currency,
-  type Database,
-} from "@app/core";
+import { closesAt, coverOpensAt, firstName, houseKind, rulesOf, TOLD_KINDS, tellOf, wordsFor, type Currency, type Database } from "@app/core";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Notify } from "./tick";
@@ -30,6 +20,8 @@ function ok<T>(result: { data: T | null; error: { message: string } | null }, wh
 
 /** Push what's new since the last tick. Answers how many pushes it sent. */
 export async function tellHouse(db: Db, house: HouseRow, memberIds: readonly string[], now: Date, notify: Notify): Promise<number> {
+  // The house's words; each person's own language comes with translation step 7.
+  const words = wordsFor("en", houseKind(house.kind));
   const zone = rulesOf(house).timezone;
   const profiles = ok(await db.from("profiles").select("id, display_name").in("id", [...memberIds]), "profiles");
   const nameOf = (id: string | null) => {
@@ -55,6 +47,7 @@ export async function tellHouse(db: Db, house: HouseRow, memberIds: readonly str
       nameOf,
       memberIds,
       house.currency as Currency,
+      words,
     );
     if (!told) continue;
     await notify(told.to, { title: told.title, body: told.body, url: told.url, kind: told.kind, zone, tag: told.tag });
@@ -102,8 +95,8 @@ export async function tellHouse(db: Db, house: HouseRow, memberIds: readonly str
     opened.push(a.id);
     if (!memberIds.includes(a.user_id)) continue;
     await notify([a.user_id], {
-      title: TELL_COPY.coverOpenTitle(a.name),
-      body: TELL_COPY.coverOpenBody,
+      title: words('wall.tell.coverOpenTitle', { john: a.name }),
+      body: words('wall.tell.coverOpenBody'),
       url: "/today",
       kind: "reminders",
       zone,

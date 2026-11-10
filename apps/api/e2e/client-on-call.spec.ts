@@ -1,4 +1,4 @@
-import { HISTORY_COPY, wordsFor } from "@app/core";
+import { wordsFor } from "@app/core";
 import { expect, test, type Page } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, dealtHouseInClient } from "./auth";
@@ -37,11 +37,11 @@ test("Done it counts once, and Undo takes the flag with it", async ({ context, p
   await expect(section.getByTestId("on-call-done-it")).toBeVisible();
   await expect(section.getByTestId("on-call-done")).toHaveCount(0);
   const toast = page.getByTestId("toast");
-  await expect(toast).toContainText(HISTORY_COPY.doneIt);
+  await expect(toast).toContainText(words('wall.history.doneIt'));
   expect(await flagsOf(houseId)).toHaveLength(1);
 
   // The toast's Undo: the flag goes too, so nothing is left to do.
-  await toast.getByRole("button", { name: HISTORY_COPY.undo }).click();
+  await toast.getByRole("button", { name: words('wall.history.undo') }).click();
   await expect(section.getByTestId("on-call-done")).toBeVisible();
   await expect(section.getByTestId("on-call-flagged")).toHaveCount(0);
   await expect.poll(() => flagsOf(houseId)).toEqual([]);

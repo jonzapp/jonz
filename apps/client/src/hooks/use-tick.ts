@@ -1,4 +1,3 @@
-import { HISTORY_COPY } from '@app/core';
 import { useState } from 'react';
 
 import { coverJohn, markDone, rollCall } from '@/api/johns';
@@ -62,7 +61,7 @@ export function useTick(
   }
 
   function offered() {
-    offer(cover ? HISTORY_COPY.covered : HISTORY_COPY.ticked, cover ? 'cover' : 'tick', assignmentId);
+    offer(cover ? words('wall.history.covered') : words('wall.history.ticked'), cover ? 'cover' : 'tick', assignmentId);
   }
 
   async function tick() {
