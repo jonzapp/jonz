@@ -1,5 +1,6 @@
 import { apiBase } from './base';
 import { clientHeader } from './v1';
+import { markTooOld } from './too-old';
 
 /**
  * Live updates through our own server (docs/specs/api.md, C3), once
@@ -87,6 +88,11 @@ export function openLiveStream(houseId: string, onChange: () => void, { token, r
       read();
       // A stream that ran its course opens the next straight away; one
       // refused or unreachable waits a little longer each time.
+      // A build the API no longer takes stops listening, and the app turns to Update Jonz.
+      if (current.status === 426) {
+        markTooOld();
+        return;
+      }
       if (current.status === 200 && heard) {
         failures = 0;
         again(retryMs);
