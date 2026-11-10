@@ -7,12 +7,8 @@ import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import { AskJonz } from '@/components/house/ask-jonz';
 import { TitleBar } from '@/components/title-bar';
 import { IconButton } from '@/components/icon-button';
-import { AskPanelContext } from '@/hooks/use-ask-jonz';
+import { AskPanelContext, askPanelWidth } from '@/hooks/use-ask-jonz';
 import { useTheme, WIDE } from '@/theme';
-
-/** The panel's width beside the page; a little less on a narrow laptop so the page keeps its room. */
-const PANEL = 400;
-const PANEL_SHARE = 0.36;
 
 /**
  * The chat with Jonz down the right of the window, from WIDE, while it's
@@ -28,7 +24,7 @@ export function AskPanel({ houseId, userId }: { houseId: string; userId: string 
   const close = () => panel.setOpen(false);
   return (
     <View
-      style={[styles.panel, { width: Math.min(PANEL, width * PANEL_SHARE), borderLeftColor: colors.border }]}
+      style={[styles.panel, { width: askPanelWidth(width), borderLeftColor: colors.border }]}
       testID="ask-panel"
     >
       <AskJonz

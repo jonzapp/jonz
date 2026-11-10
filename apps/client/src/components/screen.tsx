@@ -32,6 +32,15 @@ const PageScrollContext = createContext<PageScroll>({});
 /** The docked side panel's width: ASIDE inside a GUTTER each side. */
 const SIDE = ASIDE + 2 * GUTTER;
 
+/**
+ * A page's width before it has measured itself: from WIDE, the window less
+ * the rail (and House's list, where House's pages are `listed` beside it);
+ * on a phone, the window.
+ */
+export function roomFor(windowWidth: number, listed: boolean): number {
+  return windowWidth >= WIDE ? windowWidth - RAIL - (listed ? HOUSE_NAV : 0) : windowWidth;
+}
+
 /** Calls `onNearEnd` once a scroll comes within a screen of the end, where a timeline reads its next page. */
 function nearEnd(onNearEnd?: () => void) {
   return onNearEnd
@@ -107,7 +116,7 @@ export function Screen({
   // Until the page has measured itself, the window less the rail (and House's list, beside House's pages).
   const [measured, setMeasured] = useState<number | null>(null);
   const { listed } = useHouseWorkspace();
-  const width = measured ?? (windowWidth >= WIDE ? windowWidth - RAIL - (listed ? HOUSE_NAV : 0) : windowWidth);
+  const width = measured ?? roomFor(windowWidth, listed);
   const two = spreads && width >= COLUMNS_MIN;
   const filling = fills && !spreads && windowWidth >= WIDE;
   const max = two ? undefined : filling ? FILL_MAX : maxWidth;

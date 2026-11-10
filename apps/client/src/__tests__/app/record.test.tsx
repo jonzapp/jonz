@@ -1,5 +1,6 @@
 import { FOCUS_SHELL_COPY, RECORD_COPY, SECTION_LABEL } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
+import { useWindowDimensions } from 'react-native';
 
 import { loadHouse } from '@/api/board';
 import { catchUp } from '@/api/house';
@@ -15,6 +16,10 @@ jest.mock('@/api/house', () => ({ catchUp: jest.fn() }));
 jest.mock('@/api/record', () => ({ loadRecord: jest.fn() }));
 jest.mock('@/api/table', () => ({ loadTable: jest.fn() }));
 jest.mock('@/api/supabase', () => ({ supabase: {} }));
+jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({ __esModule: true, default: jest.fn() }));
+
+const PHONE = { width: 390, height: 844, scale: 1, fontScale: 1 };
+const LAPTOP = { width: 1440, height: 900, scale: 1, fontScale: 1 };
 jest.mock('@/hooks/use-membership', () => ({
   useMembership: () => ({ session: { user: { id: 'priya' } }, house: { id: 'h1', name: 'Flat 3' } }),
 }));
@@ -60,6 +65,7 @@ function rows(): RecordRows {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  (useWindowDimensions as jest.Mock).mockReturnValue(PHONE);
   (loadHouse as jest.Mock).mockResolvedValue(snapshot({ assignments: [] }));
   (catchUp as jest.Mock).mockResolvedValue(false);
   (loadRecord as jest.Mock).mockResolvedValue(rows());
@@ -125,4 +131,33 @@ it("opens a person's breakdown, which adds up and opens onto its Johns", async (
   expect(breakdown.getByTestId('record-john')).toHaveTextContent(new RegExp(RECORD_COPY.coveredIt(RECORD_COPY.you('Priya')).replace(/[()]/g, '\\$&')));
 
   expect(await screen.findByTestId('record-next')).toHaveTextContent(/2 points behind their share/);
+});
+
+it('on a laptop, opens your breakdown beside the grid, then whoever you click, on the same page', async () => {
+  (useWindowDimensions as jest.Mock).mockReturnValue(LAPTOP);
+  await renderPages(PAGES, '/week/record?span=all');
+  await untilRead();
+  const beside = within(await screen.findByTestId('record-pair-end'));
+  expect(await beside.findByTestId('record-breakdown')).toHaveTextContent(/Priya \(you\)/);
+  expect(beside.getByTestId('record-total')).toHaveTextContent(new RegExp(`^${RECORD_COPY.totalYou}`));
+  const [priya, sam] = within(screen.getByTestId('record-pair-start')).getAllByTestId('record-row');
+  expect(priya.props['aria-current']).toBe(true);
+
+  await fireEvent.press(sam);
+  await waitFor(() => expect(beside.getByTestId('record-total')).toHaveTextContent(/−2$/));
+  expect(beside.getByTestId('record-breakdown')).toHaveTextContent(/Sam/);
+  expect(screen.getByTestId('record-screen')).toBeOnTheScreen();
+  expect(screen.queryByTestId('record-person-screen')).toBeNull();
+  const rows = screen.getAllByTestId('record-row');
+  expect(rows[1].props['aria-current']).toBe(true);
+  expect(rows[0].props['aria-current']).toBeUndefined();
+});
+
+it("on a laptop, a link to someone's page opens them beside the grid", async () => {
+  (useWindowDimensions as jest.Mock).mockReturnValue(LAPTOP);
+  await renderPages(PAGES, '/week/record/sam?span=all');
+  await untilRead();
+  expect(await screen.findByTestId('record-screen')).toBeOnTheScreen();
+  expect(await within(screen.getByTestId('record-pair-end')).findByTestId('record-total')).toHaveTextContent(/−2$/);
+  expect(screen.queryByTestId('record-person-screen')).toBeNull();
 });

@@ -43,6 +43,14 @@ test("makes a free year for three people, then opens it with its link", async ({
   await page.goto("/admin/promotions");
   const form = page.getByTestId("promotion-form");
   await expect(form).toBeVisible();
+  // On a laptop, what it gives beside who gets it and its code, the two sharing a top edge.
+  if ((page.viewportSize()?.width ?? 0) >= 1024) {
+    await expect(form.getByTestId("promotion-form-start").getByTestId("promotion-name")).toBeVisible();
+    await expect(form.getByTestId("promotion-form-end").getByTestId("promotion-code")).toBeVisible();
+    const start = await form.getByTestId("promotion-form-start").boundingBox();
+    const end = await form.getByTestId("promotion-form-end").boundingBox();
+    expect(start?.y ?? 0).toBeCloseTo(end?.y ?? 1, 0);
+  }
   await shoot(page, "promotions-start");
 
   await form.getByTestId("promotion-name").fill("A free year for friends");

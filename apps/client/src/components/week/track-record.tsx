@@ -56,24 +56,36 @@ export function Square({ mark, changed = false }: { mark: RecordMark; changed?: 
 /**
  * The track record's grid: one row per person, their on-time share as the
  * figure, their squares under their name, and what they add up to under
- * those. A row opens that person's breakdown.
+ * those. A row opens that person's breakdown: on a phone as a page of its
+ * own, on a laptop beside the grid, where `chosenId`'s row is on the tint
+ * with an ink edge.
  */
 export function RecordGrid({
   rows,
   viewerId,
   nameOf,
   onOpen,
+  chosenId = null,
 }: {
   rows: readonly RecordRow[];
   viewerId: string;
   /** Anyone's name by id. */
   nameOf: (userId: string) => string;
   onOpen: (userId: string) => void;
+  /** Whose breakdown is open beside the grid, on a laptop. */
+  chosenId?: string | null;
 }) {
   return (
     <Group testID="record-grid">
       {rows.map((row) => (
-        <RecordLine key={row.userId} row={row} you={row.userId === viewerId} name={nameOf(row.userId)} onOpen={onOpen} />
+        <RecordLine
+          key={row.userId}
+          row={row}
+          you={row.userId === viewerId}
+          name={nameOf(row.userId)}
+          onOpen={onOpen}
+          chosen={row.userId === chosenId}
+        />
       ))}
     </Group>
   );
@@ -84,11 +96,13 @@ function RecordLine({
   you,
   name,
   onOpen,
+  chosen,
 }: {
   row: RecordRow;
   you: boolean;
   name: string;
   onOpen: (userId: string) => void;
+  chosen: boolean;
 }) {
   const { colors, type } = useTheme();
   const inset = useRowInset();
@@ -100,13 +114,15 @@ function RecordLine({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`${title}, ${pct} ${RECORD_COPY.onTime.toLowerCase()}, ${counts}`}
+      aria-current={chosen || undefined}
       onPress={() => onOpen(row.userId)}
       onPressIn={() => setPressed(true)}
       onPressOut={() => setPressed(false)}
       testID="record-row"
-      style={[styles.row, { paddingHorizontal: inset }, pressed && { backgroundColor: colors.secondary }]}
+      style={[styles.row, { paddingHorizontal: inset }, (pressed || chosen) && { backgroundColor: colors.secondary }]}
     >
       <Hairline />
+      {chosen ? <View aria-hidden pointerEvents="none" style={[styles.chosen, { backgroundColor: colors.foreground }]} /> : null}
       <View style={styles.head}>
         <Avatar name={name} userId={row.userId} me={you} size={24} />
         <RowTitle numberOfLines={1} style={styles.name}>
@@ -146,6 +162,8 @@ export function RecordKey({ marks, changed = false }: { marks: readonly RecordMa
 
 const styles = StyleSheet.create({
   row: { paddingVertical: SPACE.md, gap: SPACE.sm },
+  // The open one's ink edge, as on a chosen row of an owner's table.
+  chosen: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 3 },
   head: { flexDirection: 'row', alignItems: 'center', gap: ROW_GAP },
   name: { flex: 1, minWidth: 0 },
   pct: { flexShrink: 0 },
