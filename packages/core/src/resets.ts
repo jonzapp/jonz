@@ -4,6 +4,8 @@ import type { Currency } from "./domain";
 import { firstName, monthLabel, weekRange } from "./format";
 import { formatMoney } from "./money";
 import { signedPoints } from "./record";
+import { whomOf, whoseOf } from "./word-keys";
+import type { Words } from "./words-for";
 
 // Resets: an admin fixing a week that went wrong. The database works out
 // what each would change (admin_reset, 20261101100000_admin_resets.sql) and
@@ -347,23 +349,23 @@ export function toldLine(ids: readonly string[], nameOf: (id: string) => string)
 }
 
 /** History's and the Wall's words for a reset: "reset Sam’s week", "marked Bins done". */
-export function resetWhat(data: Record<string, unknown>, subject: string): string {
-  const name = String(data.name ?? "a John");
-  const possessive = subject === "You" ? "your" : `${subject}’s`;
+export function resetWhat(data: Record<string, unknown>, subject: string, words: Words): string {
+  const john = String(data.name ?? words("wall.feed.aJohn"));
+  const whose = whoseOf(subject, words);
   switch (data.what) {
     case "result":
-      return data.outcome === "excused" ? `let ${subject === "You" ? "you" : subject} off ${name}` : `marked ${possessive} ${name} ${RESULT_WORDS[String(data.outcome)] ?? "changed"}`;
+      return data.outcome === "excused"
+        ? words("wall.history.reset.excused", { whom: whomOf(subject, words), john })
+        : words("wall.history.reset.result", { whose, john, outcome: String(data.outcome) });
     case "person_week":
-      return `reset ${possessive} week`;
+      return words("wall.history.reset.personWeek", { whose });
     case "week":
-      return "reset the week";
     case "redeal":
-      return "re-dealt the week";
     case "skip":
-      return "skipped the week";
+      return words(`wall.history.reset.${data.what}`);
     case "letoff":
-      return `let everyone off ${data.month ? monthOnly(String(data.month)) : "a month"}’s forfeits`;
+      return data.month ? words("wall.history.reset.letoff", { month: monthOnly(String(data.month)) }) : words("wall.history.reset.letoffAny");
     default:
-      return "reset something";
+      return words("wall.history.reset.other");
   }
 }

@@ -1,4 +1,4 @@
-import { HISTORY_COPY, wordsFor } from '@app/core';
+import { wordsFor } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 
 import { planJohn } from '@/api/johns';
@@ -41,7 +41,7 @@ it('plans it in one tap for your best time on the latest day it fits, with Undo'
   expect(screen.getByTestId('toast')).toHaveTextContent(words('week.steady.plannedToast', { when: 'Sat 09:00' }), { exact: false });
   await fireEvent.press(screen.getByTestId('toast-action'));
   expect(planJohn).toHaveBeenLastCalledWith('a1', null);
-  await waitFor(() => expect(screen.getByTestId('toast')).toHaveTextContent(HISTORY_COPY.wasUndone));
+  await waitFor(() => expect(screen.getByTestId('toast')).toHaveTextContent(words('wall.history.wasUndone')));
 });
 
 it('says when it is planned for, and changes it in a sheet of days and times', async () => {

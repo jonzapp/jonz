@@ -1,4 +1,4 @@
-import { FOCUS_SHELL_COPY, okMeta, okTitle, PARENT_OK_COPY, tickerOf, type BoardItem } from '@app/core';
+import { FOCUS_SHELL_COPY, okMeta, okTitle, tickerOf, type BoardItem } from '@app/core';
 
 import type { Housemate } from '@/api/board';
 import { Avatar } from '@/components/avatar';
@@ -18,7 +18,7 @@ export function NeedsYourOk({ items, members, now }: { items: BoardItem[]; membe
   const sheet = useJohnSheet();
   if (items.length === 0) return null;
   return (
-    <Section label={PARENT_OK_COPY.needsYourOk} count={items.length} testID="needs-your-ok">
+    <Section label={words('today.parentOk.needsYourOk')} count={items.length} testID="needs-your-ok">
       {items.map((item) => {
         const kid = tickerOf(item);
         return (
@@ -28,7 +28,7 @@ export function NeedsYourOk({ items, members, now }: { items: BoardItem[]; membe
             title={okTitle(item, members, words)}
             // The John's name is never cut short.
             titleLines={2}
-            meta={okMeta(item, now)}
+            meta={okMeta(item, now, words)}
             chevron
             onPress={() => sheet.open(item.id)}
             testID="ok-row"

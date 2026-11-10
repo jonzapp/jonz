@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { wordsFor } from "./words-for";
 
-import { WALL_FEED_COPY } from "./copy";
 import { STATUS_MARK } from "./format";
 import {
   houseSetupValues,
@@ -59,29 +58,29 @@ function event(overrides: Partial<WallRow> = {}): WallEvent {
   )[0];
 }
 
-const row = (overrides: Partial<WallRow> = {}, at: Partial<WallScene> = {}) => wallFeedRow(event(overrides), scene(at));
+const row = (overrides: Partial<WallRow> = {}, at: Partial<WallScene> = {}) => wallFeedRow(event(overrides), scene(at), words);
 
 describe("wallAge", () => {
   const ago = (ms: number) => new Date(NOW.getTime() - ms);
 
   it("says just now under a minute, and for a clock a little ahead", () => {
-    expect(wallAge(ago(59_000), NOW, ZONE)).toBe("just now");
-    expect(wallAge(new Date(NOW.getTime() + 30_000), NOW, ZONE)).toBe("just now");
+    expect(wallAge(ago(59_000), NOW, ZONE, words)).toBe("just now");
+    expect(wallAge(new Date(NOW.getTime() + 30_000), NOW, ZONE, words)).toBe("just now");
   });
 
   it("counts whole minutes, then whole hours, rounding down", () => {
-    expect(wallAge(ago(60_000), NOW, ZONE)).toBe("1 min");
-    expect(wallAge(ago(59 * 60_000 + 59_000), NOW, ZONE)).toBe("59 min");
-    expect(wallAge(ago(60 * 60_000), NOW, ZONE)).toBe("1h");
-    expect(wallAge(ago(3 * 3_600_000 + 59 * 60_000), NOW, ZONE)).toBe("3h");
-    expect(wallAge(ago(23 * 3_600_000 + 59 * 60_000), NOW, ZONE)).toBe("23h");
+    expect(wallAge(ago(60_000), NOW, ZONE, words)).toBe("1 min");
+    expect(wallAge(ago(59 * 60_000 + 59_000), NOW, ZONE, words)).toBe("59 min");
+    expect(wallAge(ago(60 * 60_000), NOW, ZONE, words)).toBe("1h");
+    expect(wallAge(ago(3 * 3_600_000 + 59 * 60_000), NOW, ZONE, words)).toBe("3h");
+    expect(wallAge(ago(23 * 3_600_000 + 59 * 60_000), NOW, ZONE, words)).toBe("23h");
   });
 
   it("then days, then the date in the house's zone", () => {
-    expect(wallAge(ago(24 * 3_600_000), NOW, ZONE)).toBe("1 day");
-    expect(wallAge(ago(6 * 24 * 3_600_000), NOW, ZONE)).toBe("6 days");
-    expect(wallAge(new Date("2026-10-12T23:30:00Z"), NOW, ZONE)).toBe("13 Oct");
-    expect(wallAge(new Date("2026-10-12T23:30:00Z"), NOW, "UTC")).toBe("12 Oct");
+    expect(wallAge(ago(24 * 3_600_000), NOW, ZONE, words)).toBe("1 day");
+    expect(wallAge(ago(6 * 24 * 3_600_000), NOW, ZONE, words)).toBe("6 days");
+    expect(wallAge(new Date("2026-10-12T23:30:00Z"), NOW, ZONE, words)).toBe("13 Oct");
+    expect(wallAge(new Date("2026-10-12T23:30:00Z"), NOW, "UTC", words)).toBe("12 Oct");
   });
 });
 
@@ -117,16 +116,16 @@ describe("wallFeedRow", () => {
 
   it("tells where a tick has got to from this week's board", () => {
     const status = (s: string) => () => s as never;
-    expect(row({}, { statusOf: status("checking") }).detail).toBe(WALL_FEED_COPY.checking);
-    expect(row({}, { statusOf: status("disputed") }).detail).toBe(WALL_FEED_COPY.disputedTick);
-    expect(row({}, { statusOf: status("done") }).detail).toBe(WALL_FEED_COPY.onTime);
+    expect(row({}, { statusOf: status("checking") }).detail).toBe(words('wall.feed.checking'));
+    expect(row({}, { statusOf: status("disputed") }).detail).toBe(words('wall.feed.disputedTick'));
+    expect(row({}, { statusOf: status("done") }).detail).toBe(words('wall.feed.onTime'));
     for (const open of ["upcoming", "due-soon", "overdue", "missed"]) {
-      expect(row({}, { statusOf: status(open) }).detail).toBe(WALL_FEED_COPY.struck);
+      expect(row({}, { statusOf: status(open) }).detail).toBe(words('wall.feed.struck'));
     }
     // Off this week's board, it went as the event says.
-    expect(row().detail).toBe(WALL_FEED_COPY.onTime);
-    expect(row({ kind: "late" }).detail).toBe(WALL_FEED_COPY.late);
-    expect(row({ kind: "late" }, { statusOf: status("checking") }).detail).toBe(WALL_FEED_COPY.late);
+    expect(row().detail).toBe(words('wall.feed.onTime'));
+    expect(row({ kind: "late" }).detail).toBe(words('wall.feed.late'));
+    expect(row({ kind: "late" }, { statusOf: status("checking") }).detail).toBe(words('wall.feed.late'));
   });
 
   it("tells an older tick the house struck out, but not one ticked again after", () => {
@@ -135,11 +134,11 @@ describe("wallFeedRow", () => {
     const earlier = event({ id: "e3", kind: "upheld", user_id: null, created_at: "2026-10-14T10:00:00Z" });
     const struck = struckAt([verdict, earlier, event({ id: "e4", kind: "upheld", assignment_id: null })]);
     expect(struck).toEqual(new Map([["a1", new Date("2026-10-15T10:00:00Z")]]));
-    expect(wallFeedRow(tick, scene({ struck })).detail).toBe(WALL_FEED_COPY.struck);
+    expect(wallFeedRow(tick, scene({ struck }), words).detail).toBe(words('wall.feed.struck'));
     const again = event({ created_at: "2026-10-15T12:00:00Z" });
-    expect(wallFeedRow(again, scene({ struck })).detail).toBe(WALL_FEED_COPY.onTime);
+    expect(wallFeedRow(again, scene({ struck }), words).detail).toBe(words('wall.feed.onTime'));
     // This week's board knows better.
-    expect(wallFeedRow(tick, scene({ struck, statusOf: () => "checking" })).detail).toBe(WALL_FEED_COPY.checking);
+    expect(wallFeedRow(tick, scene({ struck, statusOf: () => "checking" }), words).detail).toBe(words('wall.feed.checking'));
     expect(struckAt([])).toEqual(new Map());
   });
 
@@ -151,7 +150,7 @@ describe("wallFeedRow", () => {
     expect(row().mark).toBeNull();
     expect(row({}, { statusOf: status("checking") }).mark).toBeNull();
     const missed = row({ kind: "missed", data: { name: "Bins out" } });
-    expect(missed.detail).toBe(WALL_FEED_COPY.missedWord);
+    expect(missed.detail).toBe(words('wall.feed.missedWord'));
     expect(missed.mark).toBe(STATUS_MARK.missed.icon);
     expect(missed.label).toBe("Megan missed Bins out, Missed, 3h");
     expect(row({ kind: "joined" }).mark).toBeNull();
@@ -188,14 +187,14 @@ describe("wallFeedRow", () => {
     );
     const closed = row({ kind: "month_closed", user_id: null, data: { month: "2026-09" } });
     expect(closed.title).toBe("September is closed");
-    expect(closed.detail).toBe(WALL_FEED_COPY.sharedOut);
+    expect(closed.detail).toBe(words('wall.feed.sharedOut'));
     expect(closed.actor).toBeNull();
   });
 
   it("says who is away, and what that moved", () => {
     const away = { kind: "away", data: { starts_on: "2026-10-29", ends_on: "2026-11-01", moved: 0 } };
     expect(row(away).title).toBe("Megan is away 29 Oct–1 Nov");
-    expect(row(away).detail).toBe(WALL_FEED_COPY.timeAway);
+    expect(row(away).detail).toBe(words('wall.feed.timeAway'));
     expect(row({ ...away, user_id: "sam", data: { ...away.data, moved: 1 } }).title).toBe("You’re away 29 Oct–1 Nov");
     expect(row({ ...away, user_id: "sam", data: { ...away.data, moved: 1 } }).detail).toBe(
       "Time away. 1 John due before you go",
@@ -239,7 +238,7 @@ describe("wallFeedRow", () => {
     it("shows its amount to whoever was paid, and to whoever paid", () => {
       expect(row(paid).title).toBe("Tom paid you £1.34");
       expect(row(paid, { me: "tom" }).title).toBe("You paid Sam £1.34");
-      expect(row(paid).detail).toBe(WALL_FEED_COPY.settled);
+      expect(row(paid).detail).toBe(words('wall.feed.settled'));
     });
 
     it("tells everyone else only that it was paid", () => {
@@ -294,7 +293,7 @@ describe("wallFeedRow", () => {
   });
 
   it("names a John or a month the event leaves out, rather than failing", () => {
-    expect(row({ data: {} }).title).toBe(`Megan ticked ${WALL_FEED_COPY.aJohn}`);
+    expect(row({ data: {} }).title).toBe(`Megan ticked ${words('wall.feed.aJohn')}`);
     expect(row({ data: {} }).john).toBeNull();
     for (const data of [{}, { month: "" }, { month: "2026-13" }, { month: "soon" }]) {
       expect(row({ kind: "month_closed", user_id: null, data }).title).toBe("The month is closed");
@@ -409,10 +408,10 @@ describe("wallFeedRow on flags, undos and resets", () => {
 
 describe("wallDays", () => {
   const at = (iso: string, overrides: Partial<WallRow> = {}): WallFeedRow =>
-    wallFeedRow(event({ id: iso, created_at: iso, ...overrides }), scene({ clock: true }));
+    wallFeedRow(event({ id: iso, created_at: iso, ...overrides }), scene({ clock: true }), words);
 
   it("is nothing for an empty Wall", () => {
-    expect(wallDays([], ZONE, NOW)).toEqual([]);
+    expect(wallDays([], ZONE, NOW, words)).toEqual([]);
   });
 
   it("groups by the house's day, latest first, naming today and yesterday", () => {
@@ -425,7 +424,7 @@ describe("wallDays", () => {
       ],
       ZONE,
       NOW,
-    );
+     words);
     expect(days.map((d) => [d.date, d.label, d.sub, d.items.length])).toEqual([
       ["2026-10-26", "Today", "Mon 26 Oct", 1],
       ["2026-10-25", "Yesterday", "Sun 25 Oct", 1],
@@ -449,7 +448,7 @@ describe("wallDays", () => {
       ],
       ZONE,
       NOW,
-    );
+     words);
     const [today, yesterday] = days;
     expect(today.items.map((item) => ("fold" in item ? item.fold.label : item.row.title))).toEqual([
       "Megan ticked Wipe down the kitchen",
@@ -480,7 +479,7 @@ describe("wallDays", () => {
       ],
       ZONE,
       NOW,
-    );
+     words);
     expect(day.items.map((item) => ("fold" in item ? item.fold.label : item.row.title))).toEqual([
       "Megan ticked 2 Johns",
       "Tom ticked Wipe down the kitchen",
@@ -497,7 +496,7 @@ describe("wallDays", () => {
       ],
       ZONE,
       NOW,
-    );
+     words);
     expect(day.items.map((item) => ("fold" in item ? item.fold.label : item.row.title))).toEqual([
       "Tom missed 2 Johns",
       "Megan moved in",

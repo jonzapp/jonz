@@ -1,9 +1,11 @@
-import { BIN_NIGHT, FAMILY_COPY, FRONT_DOOR_COPY, MOVING_COPY, NEW_HOUSE_COPY } from '@app/core';
+import { BIN_NIGHT, FRONT_DOOR_COPY, MOVING_COPY, NEW_HOUSE_COPY, wordsFor } from '@app/core';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
 import { createHouse } from '@/api/house';
 import { startHouseFrom } from '@/api/moving';
 import NewHouse from '@/app/house/new';
+
+const words = wordsFor('en', 'housemates');
 
 const mockRefresh = jest.fn();
 jest.mock('@/api/house', () => ({ createHouse: jest.fn() }));
@@ -27,7 +29,7 @@ beforeEach(() => {
   mockKind = undefined;
 });
 
-const kindName = (kind: 'family' | 'housemates') => `${FAMILY_COPY.kinds[kind]}, ${FAMILY_COPY.kindBody[kind]}`;
+const kindName = (kind: 'family' | 'housemates') => `${words(`house.family.kinds.${kind}` as const)}, ${words(`house.family.kindBody.${kind}` as const)}`;
 
 it('asks for one thing, the name, with the defaults in a line', async () => {
   await render(<NewHouse />);
@@ -39,7 +41,7 @@ it('asks for one thing, the name, with the defaults in a line', async () => {
   expect(defaults).toHaveProp('numberOfLines', 2);
   expect(screen.getByTestId('change-defaults')).toHaveTextContent(FRONT_DOOR_COPY.change, { exact: false });
   // Who lives here: Housemates or Family, housemates picked.
-  expect(screen.getByText(FAMILY_COPY.whoLivesHere)).toBeOnTheScreen();
+  expect(screen.getByText(words('house.family.whoLivesHere'))).toBeOnTheScreen();
   expect(screen.getByRole('radio', { name: kindName('housemates') })).toBeChecked();
   const submit = screen.getByRole('button', { name: FRONT_DOOR_COPY.submit });
   expect(submit).toBeDisabled();
@@ -114,15 +116,15 @@ describe('a family', () => {
   it('asks who lives here, with Family picked from the front door, and starts a family', async () => {
     create.mockResolvedValue('h1');
     await render(<NewHouse />);
-    expect(screen.getByRole('header', { name: FAMILY_COPY.newHeading })).toBeOnTheScreen();
-    expect(screen.getByText(FAMILY_COPY.whoLivesHere)).toBeOnTheScreen();
+    expect(screen.getByRole('header', { name: words('house.family.newHeading') })).toBeOnTheScreen();
+    expect(screen.getByText(words('house.family.whoLivesHere'))).toBeOnTheScreen();
     expect(screen.getByRole('radio', { name: kindName('family') })).toBeChecked();
     // A family has no stake: the line starts with pocket money.
     expect(screen.getByTestId('house-defaults')).toHaveTextContent(
       line('Pocket money up to CAD 10 a month each', 'weeks start Monday', 'America/St Johns'),
     );
     await fireEvent.changeText(screen.getByLabelText(FRONT_DOOR_COPY.name), 'The Parks');
-    await fireEvent.press(screen.getByRole('button', { name: FAMILY_COPY.submit }));
+    await fireEvent.press(screen.getByRole('button', { name: words('house.family.submit') }));
     expect(create).toHaveBeenCalledWith({ name: 'The Parks', timezone: 'America/St_Johns', currency: 'CAD', weekStarts: 1, kind: 'family' });
   });
 
@@ -139,7 +141,7 @@ describe('a family', () => {
   it('is asked of everyone, now families are open', async () => {
     mockKind = undefined;
     await render(<NewHouse />);
-    expect(screen.getByText(FAMILY_COPY.whoLivesHere)).toBeOnTheScreen();
+    expect(screen.getByText(words('house.family.whoLivesHere'))).toBeOnTheScreen();
   });
 });
 

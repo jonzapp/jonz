@@ -3,7 +3,6 @@ import { format } from "date-fns";
 import { z } from "zod";
 
 import type { ListFacet } from "./admin-list";
-import { PASS_COPY } from "./copy";
 import { formatMoney } from "./money";
 import { PASS_PRICES, type PassPurchase } from "./pass";
 import {
@@ -16,6 +15,10 @@ import {
   type PromotionState,
   type PromotionTerms,
 } from "./promotions";
+import { wordsFor } from "./words-for";
+
+// The owner's pages are in English for now (translation 6).
+const words = wordsFor("en", "housemates");
 
 // The owner's Promotions page (docs/specs/promotions.md): the form's words,
 // the form as typed made into a request, and how a promotion reads in the
@@ -193,7 +196,7 @@ export function promotionWhoSentence(audience: PromotionAudience, emails: readon
 /** What a plan costs without a promotion, for the form's plan rows. */
 export function planPrice(plan: PassPurchase): string {
   const price = formatMoney(PASS_PRICES.USD[plan], "USD");
-  return plan === "yearly" ? PASS_COPY.perYear(price) : plan === "monthly" ? PASS_COPY.perMonth(price) : PASS_COPY.once(price);
+  return plan === "yearly" ? words('house.pass.perYear', { price }) : plan === "monthly" ? words('house.pass.perMonth', { price }) : words('house.pass.once', { price });
 }
 
 /** Where someone named on it is: used it, opened the link, sent the email, or nothing yet. */

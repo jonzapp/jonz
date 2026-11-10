@@ -2,10 +2,11 @@ import { tz } from "@date-fns/tz";
 import { format } from "date-fns";
 import { z } from "zod";
 
-import { APP_NAME, PASS_COPY } from "./copy";
+import { APP_NAME } from "./copy";
 import { CURRENCIES, type Currency } from "./domain";
 import { formatMoney } from "./money";
 import { hasPass, PASS_PRICES, PASS_PURCHASES, type HousePass, type PassPurchase } from "./pass";
+import { wordsFor } from "./words-for";
 
 // Promotions (docs/specs/promotions.md): money off a House Pass, some months
 // free, or a free Pass, given out by the owner with one link. A promotion is
@@ -112,7 +113,11 @@ export function termsOf(row: {
   };
 }
 
-const PLAN_LABEL: Record<PassPurchase, string> = { yearly: PASS_COPY.yearly, monthly: PASS_COPY.monthly, founding: PASS_COPY.foundingPlan };
+// A promotion's sign is in English for now; the owner's admin pages come in translation 6.
+const words = wordsFor("en", "housemates");
+
+/** A plan's name, as the Pass page says it. */
+const planLabel = (plan: PassPurchase) => words(`house.pass.${plan === "founding" ? "foundingPlan" : plan}`);
 
 const months = (n: number) => (n === 1 ? "1 month" : `${n} months`);
 
@@ -174,7 +179,7 @@ export function promotionSentence(t: PromotionTerms, zone: string, currency: Cur
       : t.duration === "months"
         ? `${legend} for ${months(t.months ?? 1)}`
         : `${legend} the first payment`);
-  const plans = t.kind === "gift" ? "" : `, on ${orList(t.plans.map((p) => PLAN_LABEL[p]))}`;
+  const plans = t.kind === "gift" ? "" : `, on ${orList(t.plans.map((p) => planLabel(p)))}`;
   const by = t.endsAt ? ` Use it by ${format(t.endsAt, "d MMMM", { in: tz(zone) })}.` : "";
   return `${off}${plans}, for your whole house.${by}`;
 }
@@ -196,20 +201,20 @@ export function promotionPrice(t: PromotionTerms, plan: PassPurchase, currency: 
   if (t.kind === "gift" || !t.plans.includes(plan)) return null;
   const price = PASS_PRICES[currency][plan];
   const money = (m: number) => formatMoney(m, currency);
-  const per = plan === "yearly" ? PASS_COPY.perYear : PASS_COPY.perMonth;
+  const per = (price: string) => (plan === "yearly" ? words("house.pass.perYear", { price }) : words("house.pass.perMonth", { price }));
   const then = plan === "founding" ? null : `then ${per(money(price))}`;
-  if (t.kind === "trial") return { plan, label: PLAN_LABEL[plan], first: `Free for ${months(t.months ?? 1)}`, then, firstMinor: 0 };
+  if (t.kind === "trial") return { plan, label: planLabel(plan), first: `Free for ${months(t.months ?? 1)}`, then, firstMinor: 0 };
   const off = t.kind === "percent" ? Math.round((price * (t.percentOff ?? 0)) / 100) : Math.min(price, t.amountOff?.[currency] ?? 0);
   const cut = price - off;
-  if (plan === "founding") return { plan, label: PLAN_LABEL[plan], first: PASS_COPY.once(money(cut)), then: null, firstMinor: cut };
-  if (t.duration === "always") return { plan, label: PLAN_LABEL[plan], first: per(money(cut)), then: null, firstMinor: cut };
+  if (plan === "founding") return { plan, label: planLabel(plan), first: words('house.pass.once', { price: money(cut) }), then: null, firstMinor: cut };
+  if (t.duration === "always") return { plan, label: planLabel(plan), first: per(money(cut)), then: null, firstMinor: cut };
   const span =
     plan === "yearly"
       ? (t.duration === "months" && (t.months ?? 1) > 12 ? "the first 2 years" : "the first year")
       : t.duration === "months" && (t.months ?? 1) > 1
         ? `a month for ${months(t.months!)}`
         : "the first month";
-  return { plan, label: PLAN_LABEL[plan], first: `${money(cut)} ${span}`, then, firstMinor: cut };
+  return { plan, label: planLabel(plan), first: `${money(cut)} ${span}`, then, firstMinor: cut };
 }
 
 /** Every plan it's on, with its price, in the Pass page's order. */

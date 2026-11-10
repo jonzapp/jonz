@@ -1,4 +1,4 @@
-import { KIDS_COPY, localDate, monthOf, monthWord, pocketMoney, POCKET_COPY, tableLines, type PocketView, type TableLine } from '@app/core';
+import { localDate, monthOf, monthWord, pocketMoney, tableLines, type PocketView, type TableLine } from '@app/core';
 import type { UseQueryResult } from '@tanstack/react-query';
 import { InfoIcon, UserRoundPlusIcon, UserPlusIcon } from 'lucide-react-native';
 import { useState } from 'react';
@@ -118,7 +118,7 @@ export function TableSection({
           {family && parent ? (
             <Row
               leading={<RowIcon icon={UserRoundPlusIcon} />}
-              title={KIDS_COPY.add}
+              title={words('people.kids.add')}
               onPress={() => setSheet('kid')}
               chevron
               testID="add-a-child"
@@ -136,7 +136,7 @@ export function TableSection({
           )}
           <Row
             leading={<RowIcon icon={InfoIcon} />}
-            title={family ? POCKET_COPY.howItWorks : words('house.page.rules')}
+            title={family ? words('house.pocket.howItWorks') : words('house.page.rules')}
             // Whole on the narrowest phone, rather than cut at "How points and the…".
             titleLines={2}
             onPress={() => setSheet('rules')}

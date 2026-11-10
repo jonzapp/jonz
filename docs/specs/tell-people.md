@@ -24,7 +24,7 @@ Makes sure nobody is surprised by what happened to their John, by the house's ru
 - `assignments.cover_told_at`: when the owner was told covering opened. `assignments.cover_held_until`: set by `hold_cover`.
 - `hold_cover(p_assignment uuid) returns timestamptz`: the owner only. Errors: `not_yours`, `already_done`, `cover_held_once`.
 - `cover_john` refuses `cover_held` while the hold lasts.
-- Core: `tell.ts` (`TOLD_KINDS`, `tellOf`, `ruleChanges`, `TELL_COPY`), `holdable` and `canCover` (respects `heldUntil`) in `outcome.ts`.
+- Core: `tell.ts` (`TOLD_KINDS`, `tellOf`, `ruleChanges`; the words are `wall.tell.*` in `locales/en/wall.json`), `holdable` and `canCover` (respects `heldUntil`) in `outcome.ts`.
 
 ## Edge cases
 

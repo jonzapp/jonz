@@ -1,4 +1,4 @@
-import { memberCan, okWho, PARENT_OK_COPY, pocketMoney, POCKET_COPY, tickedLine, type BoardItem, BUSY_COPY } from '@app/core';
+import { memberCan, okWho, pocketMoney, tickedLine, type BoardItem, BUSY_COPY } from '@app/core';
 import { useState } from 'react';
 import { ThumbsDownIcon, ThumbsUpIcon } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
@@ -37,7 +37,7 @@ export function AwaitsOk({ item, context }: { item: BoardItem; context: JohnShee
     // A Together John is answered from any of its places: they share one tick.
     if (await move.run(() => answerTick(item.id, ok))) {
       context.close();
-      toast.show(ok ? PARENT_OK_COPY.okayed : PARENT_OK_COPY.sentBack);
+      toast.show(ok ? words('today.parentOk.okayed') : words('today.parentOk.sentBack'));
     }
   }
 
@@ -53,7 +53,7 @@ export function AwaitsOk({ item, context }: { item: BoardItem; context: JohnShee
                 variant="outline"
                 icon={ThumbsUpIcon}
                 // A John that earns says so: "OK, pay 20p".
-                label={item.payMinor ? POCKET_COPY.okPay(pocketMoney(item.payMinor, context.rules.currency)) : PARENT_OK_COPY.ok}
+                label={item.payMinor ? words('house.pocket.okPay', { money: pocketMoney(item.payMinor, context.rules.currency) }) : words('today.parentOk.ok')}
                 busy={move.pending && said}
                 busyLabel={BUSY_COPY.approving}
                 onPress={() => void answer(true)}
@@ -62,7 +62,7 @@ export function AwaitsOk({ item, context }: { item: BoardItem; context: JohnShee
               <Button
                 variant="outline"
                 icon={ThumbsDownIcon}
-                label={PARENT_OK_COPY.notYet}
+                label={words('today.parentOk.notYet')}
                 busy={move.pending && !said}
                 busyLabel={BUSY_COPY.sending}
                 onPress={() => void answer(false)}

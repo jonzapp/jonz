@@ -3,7 +3,7 @@ import { differenceInCalendarDays, format } from "date-fns";
 
 import { currentOrNext, type AwayPeriod } from "./away";
 import { byDoneLatest, isOpen, TODAY_ORDER, type BoardItem, type DisputeView, type WeekBoard } from "./board";
-import { FOCUS_SHELL_COPY, PARENT_OK_COPY, POCKET_COPY } from "./copy";
+import { FOCUS_SHELL_COPY } from "./copy";
 import { andNames } from "./crew";
 import type { Currency, HouseRules } from "./domain";
 import { dateRange, dueInLine, firstName, pointsLabel, relative, sinceLabel, STATUS_LABEL, STATUS_MARK } from "./format";
@@ -237,7 +237,7 @@ export function nextUpMeta(item: BoardItem, rules: HouseRules, now: Date, words:
   const { late, missed } = forfeits(rules, room);
   const cost = late ? words('today.nextUp.ifLate', { amount: late }) : missed ? words('today.nextUp.ifMissed', { amount: missed }) : null;
   // A kid's John in a family says what it earns instead (there's nothing to lose).
-  const earns = item.payMinor ? POCKET_COPY.earns(pocketMoney(item.payMinor, rules.currency)) : null;
+  const earns = item.payMinor ? words('house.pocket.earns', { money: pocketMoney(item.payMinor, rules.currency) }) : null;
   return { kind, due: [due, cost ?? earns].filter(Boolean).join(", "), overdue: null };
 }
 
@@ -335,12 +335,12 @@ export function voteTally(dispute: DisputeView, now: Date, words: Words): string
 
 /** Needs your OK's title for a kid's tick: "Leo did Feed the fish". */
 export function okTitle(item: Pick<BoardItem, "userId" | "name"> & Partial<Pick<BoardItem, "coveredBy" | "crew">>, people: readonly Person[], words: Words): string {
-  return PARENT_OK_COPY.rowTitle(called(people, tickerOf(item), words), item.name);
+  return words('today.parentOk.rowTitle', { kid: called(people, tickerOf(item), words), john: item.name });
 }
 
 /** Its meta line: "Ticked 2h ago". */
-export function okMeta(item: Pick<BoardItem, "doneAt">, now: Date): string {
-  return PARENT_OK_COPY.rowMeta(relative(item.doneAt ?? now, now));
+export function okMeta(item: Pick<BoardItem, "doneAt">, now: Date, words: Words): string {
+  return words('today.parentOk.rowMeta', { ago: relative(item.doneAt ?? now, now) });
 }
 
 /**
@@ -358,7 +358,7 @@ export function okWho(
     .sort((a, b) => (a === viewerId ? -1 : b === viewerId ? 1 : 0))
     .map((id) => (id === viewerId ? words('john.sheet.you') : called(people, id, words)));
   const parents = names.length <= 1 ? (names[0] ?? "") : `${names.slice(0, -1).join(", ")} or ${names[names.length - 1]}`;
-  return PARENT_OK_COPY.who(parents, called(people, tickerOf(item), words));
+  return words('today.parentOk.who', { parents, kid: called(people, tickerOf(item), words) });
 }
 
 /** What the John sheet offers, from whose John it is and where it has got to. */
@@ -491,7 +491,7 @@ export function tickedLine(item: BoardItem, people: readonly Person[], viewerId:
       ? words('john.crew.without', { who, when: tickedAt(item.absentAt, now, rules.timezone, words), whom })
       : null;
   const stands = item.awaitsOk
-    ? PARENT_OK_COPY.waiting
+    ? words('today.parentOk.waiting')
     : item.standsAt === null
       ? null
       : item.standsAt.getTime() > now.getTime()

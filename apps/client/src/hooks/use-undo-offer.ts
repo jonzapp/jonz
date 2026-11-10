@@ -1,10 +1,11 @@
-import { HISTORY_COPY, type ActionKind } from '@app/core';
+import { type ActionKind } from '@app/core';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 
 import { undoAction, undoLatest } from '@/api/history';
 import { useToastIfAny } from '@/components/toast';
 import { houseKey } from '@/hooks/keys';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * After a move: say it was done, with Undo for the toast's ten seconds.
@@ -14,17 +15,18 @@ import { houseKey } from '@/hooks/keys';
  * one of your own moves on a John, passes its action instead.
  */
 export function useUndoOffer(houseId: string) {
+  const words = useWords();
   const toast = useToastIfAny();
   const client = useQueryClient();
   return useCallback(
     (message: string, kind: ActionKind | { action: string }, about?: string) => {
       toast?.show(message, {
-        label: HISTORY_COPY.undo,
+        label: words('wall.history.undo'),
         onPress: () => {
           (typeof kind === 'string' ? undoLatest(kind, about) : undoAction(kind.action)).then(
             () => {
               void client.invalidateQueries({ queryKey: houseKey(houseId) });
-              toast.show(HISTORY_COPY.wasUndone);
+              toast.show(words('wall.history.wasUndone'));
             },
             (reason: unknown) => toast.show(reason instanceof Error ? reason.message : String(reason)),
           );

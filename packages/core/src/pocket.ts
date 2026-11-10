@@ -1,11 +1,11 @@
 import { tz } from "@date-fns/tz";
 import { format } from "date-fns";
 
-import { POCKET_COPY } from "./copy";
 import type { Currency } from "./domain";
 import { monthWord, shareOutDay } from "./house-page";
 import { firstName, monthLabel } from "./format";
 import { formatMoney } from "./money";
+import type { Words } from "./words-for";
 
 /**
  * Pocket money, family step 3 (docs/specs/family-houses.md): each John a
@@ -114,11 +114,11 @@ export function pocketView(input: {
 }
 
 /** The month card's top: "November so far", "£7.20 earned so far", "Pay day is 1 Dec". */
-export function pocketCard(view: Pick<PocketView, "month" | "soFar">, currency: Currency) {
+export function pocketCard(view: Pick<PocketView, "month" | "soFar">, currency: Currency, words: Words) {
   return {
-    label: POCKET_COPY.monthSoFar(monthWord(view.month)),
-    title: POCKET_COPY.earnedSoFar(pocketMoney(view.soFar, currency)),
-    payDay: POCKET_COPY.payDay(shareOutDay(view.month)),
+    label: words('house.pocket.monthSoFar', { month: monthWord(view.month) }),
+    title: words('house.pocket.earnedSoFar', { money: pocketMoney(view.soFar, currency) }),
+    payDay: words('house.pocket.payDay', { day: shareOutDay(view.month) }),
   };
 }
 
@@ -146,7 +146,7 @@ export function payRows(input: {
   me: string;
   parent: boolean;
   currency: Currency;
-}): PayRow[] {
+}, words: Words): PayRow[] {
   const { members, me, parent, currency } = input;
   const owed = parent ? input.owed : input.owed.filter((o) => o.userId === me);
   return owed.map((o, i) => {
@@ -158,20 +158,20 @@ export function payRows(input: {
       userId: o.userId,
       month: o.month,
       name,
-      title: parent ? POCKET_COPY.pay(name, money, month) : POCKET_COPY.owedYou(money, month),
-      meta: parent ? POCKET_COPY.payHow : POCKET_COPY.payDayKid,
-      action: parent ? POCKET_COPY.paid(name, money) : null,
+      title: parent ? words('house.pocket.pay', { kid: name, money, month }) : words('house.pocket.owedYou', { money, month }),
+      meta: parent ? words('house.pocket.payHow') : words('house.pocket.payDayKid'),
+      action: parent ? words('house.pocket.paid', { kid: name, money }) : null,
       primary: parent && i === 0,
     };
   });
 }
 
 /** How pocket money works, in plain words with the family's own cap: the Table's sheet in a family. */
-export function pocketRules(capMinor: number, currency: Currency): { label: string; body: string }[] {
+export function pocketRules(capMinor: number, currency: Currency, words: Words): { label: string; body: string }[] {
   return [
-    { label: POCKET_COPY.earningLabel, body: POCKET_COPY.earningBody(formatMoney(capMinor, currency)) },
-    { label: POCKET_COPY.payDayLabel, body: POCKET_COPY.payDayBody },
-    { label: POCKET_COPY.pointsLabel, body: POCKET_COPY.pointsBody },
+    { label: words('house.pocket.earningLabel'), body: words('house.pocket.earningBody', { cap: formatMoney(capMinor, currency) }) },
+    { label: words('house.pocket.payDayLabel'), body: words('house.pocket.payDayBody') },
+    { label: words('house.pocket.pointsLabel'), body: words('house.pocket.pointsBody') },
   ];
 }
 
@@ -192,9 +192,9 @@ export function pocketHistory(input: {
   members: readonly { userId: string; name: string }[];
   currency: Currency;
   zone: string;
-}): { month: string; label: string; lines: PocketHistoryLine[] }[] {
+}, words: Words): { month: string; label: string; lines: PocketHistoryLine[] }[] {
   const { view, members, currency, zone } = input;
-  const nameOf = (userId: string | null) => firstName(members.find((m) => m.userId === userId)?.name ?? POCKET_COPY.someone);
+  const nameOf = (userId: string | null) => firstName(members.find((m) => m.userId === userId)?.name ?? words('house.pocket.someone'));
   return view.history.map((m) => ({
     month: m.month,
     label: monthLabel(m.month),
@@ -203,12 +203,12 @@ export function pocketHistory(input: {
       const last = k.pays.at(-1);
       const meta =
         m.month >= view.month
-          ? POCKET_COPY.historySoFar
+          ? words('house.pocket.historySoFar')
           : owed > 0
-            ? POCKET_COPY.historyOwed(pocketMoney(owed, currency))
+            ? words('house.pocket.historyOwed', { money: pocketMoney(owed, currency) })
             : last
-              ? POCKET_COPY.historyPaid(nameOf(last.paidBy), format(new Date(last.at), "d MMM", { in: tz(zone) }))
-              : POCKET_COPY.historySoFar;
+              ? words('house.pocket.historyPaid', { parent: nameOf(last.paidBy), day: format(new Date(last.at), "d MMM", { in: tz(zone) }) })
+              : words('house.pocket.historySoFar');
       return { key: `${m.month} ${k.userId}`, userId: k.userId, name: nameOf(k.userId), value: pocketMoney(k.earned, currency), meta };
     }),
   }));

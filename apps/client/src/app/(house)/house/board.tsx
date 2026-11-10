@@ -1,15 +1,4 @@
-import {
-  BOARD_COPY,
-  boardColumns,
-  firstName,
-  johnRow,
-  memberCan,
-  monthWord,
-  pocketMoney,
-  type BoardColumn,
-  type BoardItem,
-  type Currency,
-} from '@app/core';
+import { boardColumns, firstName, johnRow, memberCan, monthWord, pocketMoney, type BoardColumn, type BoardItem, type Currency } from '@app/core';
 import { UsersIcon } from 'lucide-react-native';
 
 import { boardTick } from '@/api/johns';
@@ -45,12 +34,13 @@ export default function BoardScreen() {
 }
 
 function BoardFor({ houseId, userId }: { houseId: string; userId: string }) {
+  const words = useWords();
   const { query, view } = useHouse(houseId, userId);
   const pocket = usePocket(houseId, query.data);
   const { refreshing, pull } = usePull(houseId, () => Promise.all([query.refetch(), pocket.refetch()]));
   return (
     <HousePage
-      title={BOARD_COPY.title}
+      title={words('today.board.title')}
       testID="board-screen" outline={<ListPageOutline sections={[4]} />}
       ready={view !== null}
       failed={query.isError}
@@ -63,15 +53,15 @@ function BoardFor({ houseId, userId }: { houseId: string; userId: string }) {
         const { snapshot, board, now } = view!;
         const { rules, members, house } = snapshot;
         if (house.kind !== 'family' || !memberCan(view!.me, 'ticks:write')) {
-          return <EmptyState icon={UsersIcon} title={BOARD_COPY.title} body={BOARD_COPY.parentsOnly} />;
+          return <EmptyState icon={UsersIcon} title={words('today.board.title')} body={words('today.board.parentsOnly')} />;
         }
         const kids = members.filter((m) => m.role !== 'admin').map((m) => ({ userId: m.userId, name: firstName(m.name) }));
-        if (kids.length === 0) return <EmptyState icon={UsersIcon} title={BOARD_COPY.title} body={BOARD_COPY.noKids} />;
+        if (kids.length === 0) return <EmptyState icon={UsersIcon} title={words('today.board.title')} body={words('today.board.noKids')} />;
         const columns = boardColumns(board.items, kids, now, rules.timezone);
         const month = pocket.data ? monthWord(pocket.data.month) : null;
         return (
           <>
-            <Meta>{BOARD_COPY.intro}</Meta>
+            <Meta>{words('today.board.intro')}</Meta>
             <Flow
               testID="board"
               items={columns.map((column) => ({
@@ -83,7 +73,7 @@ function BoardFor({ houseId, userId }: { houseId: string; userId: string }) {
                     column={column}
                     earned={
                       pocket.data && month
-                        ? BOARD_COPY.earned(pocketMoney(pocket.data.earned[column.userId] ?? 0, rules.currency), month)
+                        ? words('today.board.earned', { money: pocketMoney(pocket.data.earned[column.userId] ?? 0, rules.currency), month })
                         : undefined
                     }
                     now={now}
@@ -93,7 +83,7 @@ function BoardFor({ houseId, userId }: { houseId: string; userId: string }) {
                 ),
               }))}
             />
-            <Meta>{BOARD_COPY.note}</Meta>
+            <Meta>{words('today.board.note')}</Meta>
           </>
         );
       }}
@@ -116,11 +106,12 @@ function KidColumn({
   zone: string;
   currency: Currency;
 }) {
+  const words = useWords();
   return (
     <Section label={column.name} right={earned} testID="board-kid">
       <Group>
         {column.items.length === 0 ? (
-          <Row title={BOARD_COPY.nothing} testID="board-nothing" />
+          <Row title={words('today.board.nothing')} testID="board-nothing" />
         ) : (
           column.items.map((item) => (
             <BoardRow key={item.id} houseId={houseId} item={item} kid={column.name} now={now} zone={zone} currency={currency} />
@@ -153,12 +144,12 @@ function BoardRow({
   // Planned as the kid sees it: whether it's still to do, and its line.
   const plan = johnRow(item, item.userId, now, zone, () => kid, words);
   const waits = item.awaitsOk === true && item.doneAt !== null;
-  const meta = waits ? BOARD_COPY.waits : item.needsPhoto && plan.ticks ? BOARD_COPY.photo : plan.meta;
+  const meta = waits ? words('today.board.waits') : item.needsPhoto && plan.ticks ? words('today.board.photo') : plan.meta;
   const leading =
     plan.ticks && !item.needsPhoto ? (
       <TickBox
         state={move.pending ? 'busy' : 'open'}
-        label={BOARD_COPY.tick(kid, item.name)}
+        label={words('today.board.tick', { kid, john: item.name })}
         onPress={() => void move.run(() => boardTick(item.id))}
       />
     ) : (

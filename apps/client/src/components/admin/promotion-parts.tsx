@@ -1,18 +1,4 @@
-import {
-  PASS_COPY,
-  PASS_PURCHASES,
-  personStage,
-  promotionPersonMeta,
-  promotionPrice,
-  promotionSentence,
-  promotionTitle,
-  promotionWhoSentence,
-  PROMOTIONS_COPY,
-  planPrice,
-  type PromotionAudience,
-  type PromotionPerson,
-  type PromotionTerms,
-} from '@app/core';
+import { PASS_PURCHASES, personStage, promotionPersonMeta, promotionPrice, promotionSentence, promotionTitle, promotionWhoSentence, PROMOTIONS_COPY, planPrice, type PromotionAudience, type PromotionPerson, type PromotionTerms } from '@app/core';
 import { CheckIcon, CopyIcon, Share2Icon, TicketIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { Platform, Share, StyleSheet, View } from 'react-native';
@@ -26,6 +12,7 @@ import { Chip } from '@/components/status-mark';
 import { Body, Lead, Meta } from '@/components/text';
 import { SITE_URL } from '@/links';
 import { INSET, SPACE } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 const ZONE = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
 
@@ -53,6 +40,7 @@ export function PromotionPreview({
   /** False in a sheet whose own title already says What they get. */
   titled?: boolean;
 }) {
+  const words = useWords();
   const zone = ZONE();
   const gift = terms.kind === 'gift';
   const card = (
@@ -83,7 +71,7 @@ export function PromotionPreview({
           ) : (
             PASS_PURCHASES.map((plan) => {
               const price = promotionPrice(terms, plan, 'USD');
-              const label = plan === 'yearly' ? PASS_COPY.yearly : plan === 'monthly' ? PASS_COPY.monthly : PASS_COPY.foundingPlan;
+              const label = plan === 'yearly' ? words('house.pass.yearly') : plan === 'monthly' ? words('house.pass.monthly') : words('house.pass.foundingPlan');
               return price ? (
                 <Row key={plan} title={price.label} meta={price.then ?? undefined} trailing={price.first} testID={`promotion-price-${plan}`} />
               ) : (

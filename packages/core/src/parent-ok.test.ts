@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import { buildWeekBoard, todayView, type AssignmentRow, type BoardItem, type WeekBoard } from "./board";
-import { FOCUS_SHELL_COPY, PARENT_OK_COPY } from "./copy";
+import { FOCUS_SHELL_COPY } from "./copy";
 import { DEFAULT_RULES } from "./domain";
 import { familyHides } from "./family";
 import { settleOutcome } from "./outcome";
 import { rulesRows } from "./setup";
 import { okMeta, okTitle, okWho, tickedLine } from "./today";
-import { describeEvent, type WallEvent } from "./wall";
+import { wallFeedRow } from "./house-lower";
+import { wallEvents } from "./wall";
 import { wordsFor } from "./words-for";
 
 const words = wordsFor("en", "housemates");
@@ -71,7 +72,7 @@ describe("a tick waiting for an OK", () => {
   it("is being checked, with no time it stands", () => {
     const item = boardOf([row("Feed the fish", { done_at: at(-2).toISOString(), awaits_ok: true })]).items[0];
     expect(item).toMatchObject({ status: "checking", awaitsOk: true, standsAt: null });
-    expect(tickedLine(item, PEOPLE, "sam", RULES, now, words)).toBe(`Leo ticked this at 10:00, ${PARENT_OK_COPY.waiting}`);
+    expect(tickedLine(item, PEOPLE, "sam", RULES, now, words)).toBe(`Leo ticked this at 10:00, ${words('today.parentOk.waiting')}`);
   });
 });
 
@@ -94,7 +95,7 @@ describe("Needs your OK", () => {
   it("says who did what, when, and who can answer", () => {
     const fish = board.items.find((i) => i.name === "Feed the fish") as BoardItem;
     expect(okTitle(fish, PEOPLE, words)).toBe("Leo did Feed the fish");
-    expect(okMeta(fish, now)).toBe("Ticked 2h ago");
+    expect(okMeta(fish, now, words)).toBe("Ticked 2h ago");
     expect(okWho(fish, PEOPLE, ["sam", "alex"], "alex", words)).toBe("You or Sam can OK it. Not yet sends it back to Leo.");
     expect(okWho(fish, PEOPLE, ["sam"], "maya", words)).toBe("Sam can OK it. Not yet sends it back to Leo.");
   });
@@ -106,24 +107,18 @@ describe("a family's rules and words", () => {
     expect(familyHides("housemates").vote).toBe(false);
     const rows = rulesRows({ ...RULES, stakeMinor: 0, lateForfeitMinor: 0, missedForfeitMinor: 0 }, 100, words, "jonz", "family");
     expect(rows.map((r) => r.label)).not.toContain(words('house.setup.disputes'));
-    expect(rows).toContainEqual({ label: PARENT_OK_COPY.rulesLabel, value: PARENT_OK_COPY.rulesValue });
+    expect(rows).toContainEqual({ label: words('today.parentOk.rulesLabel'), value: words('today.parentOk.rulesValue') });
   });
 
   it("puts a parent's answer on the Wall", () => {
-    const event = (kind: string): WallEvent => ({
-      id: kind,
-      kind,
-      userId: "sam",
-      assignmentId: "a1",
-      data: { name: "Feed the fish", against: "leo" },
-      createdAt: now,
-      photoPath: null,
-      reactions: { nice: { count: 0, mine: false }, fire: { count: 0, mine: false }, sparkle: { count: 0, mine: false }, eyes: { count: 0, mine: false } },
-    });
-    const nameOf = (id: string | null) => PEOPLE.find((p) => p.userId === id)?.name.split(" ")[0] ?? "?";
-    const words = (kind: string) => describeEvent(event(kind), nameOf, "GBP").parts.map((p) => p.text).join("");
-    expect(words("okayed")).toBe("Sam OK’d Leo’s Feed the fish.");
-    expect(words("not_yet")).toBe("Sam sent Leo’s Feed the fish back. It’s open again.");
+    const post = (kind: string) =>
+      wallFeedRow(
+        wallEvents([{ id: kind, kind, user_id: "sam", assignment_id: "a1", data: { name: "Feed the fish", against: "leo" }, created_at: now.toISOString(), assignments: null, reactions: [] }], "maya")[0],
+        { me: "maya", members: PEOPLE.map((p) => ({ userId: p.userId, name: p.name })), currency: "GBP", zone: "Europe/London", now },
+        wordsFor("en", "family"),
+      );
+    expect(post("okayed").title).toBe("Sam OK’d Leo’s Feed the fish");
+    expect(post("not_yet")).toMatchObject({ title: "Sam sent Leo’s Feed the fish back", detail: "Open again", family: "trouble" });
   });
 
   it("speaks the Today tab's badge as OKs in a family", () => {

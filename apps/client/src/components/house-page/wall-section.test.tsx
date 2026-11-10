@@ -1,4 +1,4 @@
-import { REACTION_LABEL, WALL_COPY, WALL_FEED_COPY, wallEvents, type WallRow } from '@app/core';
+import { REACTION_LABEL, wallEvents, type WallRow } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 import { Text } from 'react-native';
 
@@ -9,6 +9,9 @@ import { assignment, snapshot } from '@/testing/house';
 import { renderPages } from '@/testing/pages';
 
 import { WallSection } from './wall-section';
+import { wordsFor } from '@app/core';
+
+const words = wordsFor('en', 'housemates');
 
 jest.mock('@/api/board', () => ({ loadHouse: jest.fn() }));
 jest.mock('@/api/house', () => ({ catchUp: jest.fn() }));
@@ -97,7 +100,7 @@ beforeEach(() => {
 it('reads only the latest four, under its label and See all', async () => {
   await open();
   const section = within(screen.getByTestId('wall-section'));
-  expect(section.getByRole('header', { name: WALL_COPY.title })).toBeOnTheScreen();
+  expect(section.getByRole('header', { name: words('wall.page.title') })).toBeOnTheScreen();
   await rows();
   // House never shows a photo, so none is signed.
   expect(loadWallEvents).toHaveBeenCalledWith('h1', 'priya', 4);
@@ -121,7 +124,7 @@ it("gives a housemate's tick its Nice one, selected once it's yours, and takes i
   await open();
   const [bath] = await rows();
   const nice = within(bath).getByTestId('nice-one');
-  expect(nice).toHaveAccessibleName(WALL_FEED_COPY.tally(REACTION_LABEL.nice, 1));
+  expect(nice).toHaveAccessibleName(words('wall.feed.tally', { label: REACTION_LABEL.nice, count: 1 }));
   expect(nice).toBeSelected();
   await fireEvent.press(nice);
   expect(setReaction).toHaveBeenCalledWith('e1', 'priya', 'nice', false);
@@ -174,7 +177,7 @@ it('opens anything else in full, none of it cut short, with all four reactions w
   await fireEvent.press(target(hob));
   sheet = within(screen.getByTestId('wall-sheet'));
   expect(sheet.getByRole('header', { name: 'You ticked Wipe the hob' })).toBeOnTheScreen();
-  expect(sheet.getByRole('button', { name: WALL_FEED_COPY.reactionCount(REACTION_LABEL.fire, 1) })).not.toBeSelected();
+  expect(sheet.getByRole('button', { name: words('wall.feed.reactionCount', { label: REACTION_LABEL.fire, count: 1 }) })).not.toBeSelected();
   expect(mockOpen).not.toHaveBeenCalled();
 });
 
@@ -182,7 +185,7 @@ it('shows what the house gave your own tick, a way to all four', async () => {
   await open();
   const [, dispute, hob] = await rows();
   expect(within(hob).queryByTestId('nice-one')).toBeNull();
-  await fireEvent.press(within(hob).getByRole('button', { name: WALL_FEED_COPY.tally(REACTION_LABEL.fire, 1) }));
+  await fireEvent.press(within(hob).getByRole('button', { name: words('wall.feed.tally', { label: REACTION_LABEL.fire, count: 1 }) }));
   expect(screen.getByTestId('wall-sheet')).toBeOnTheScreen();
   // A dispute takes no reactions: just its own press.
   expect(within(dispute).getAllByRole('button')).toHaveLength(1);
@@ -196,7 +199,7 @@ it("offers a way to react on this week's tick of yours with none yet, since a ta
   });
   await open();
   const tick = await screen.findByTestId('wall-event');
-  await fireEvent.press(within(tick).getByRole('button', { name: WALL_FEED_COPY.react }));
+  await fireEvent.press(within(tick).getByRole('button', { name: words('wall.feed.react') }));
   expect(within(screen.getByTestId('wall-sheet')).getByRole('header', { name: 'You ticked Bins out' })).toBeOnTheScreen();
 });
 
@@ -210,7 +213,7 @@ it('shows the event with all four reactions, by name, when a row is held down', 
   for (const kind of ['fire', 'sparkle', 'eyes'] as const) {
     expect(sheet.getByRole('button', { name: REACTION_LABEL[kind] })).not.toBeSelected();
   }
-  expect(sheet.getByRole('button', { name: WALL_FEED_COPY.reactionCount(REACTION_LABEL.nice, 1) })).toBeSelected();
+  expect(sheet.getByRole('button', { name: words('wall.feed.reactionCount', { label: REACTION_LABEL.nice, count: 1 }) })).toBeSelected();
   await fireEvent.press(sheet.getByTestId('react-fire'));
   expect(setReaction).toHaveBeenCalledWith('e1', 'priya', 'fire', true);
 });
@@ -248,20 +251,20 @@ it('says why in the sheet, when the reaction was made there', async () => {
 it('says what lands here before anything has', async () => {
   (loadWallEvents as jest.Mock).mockResolvedValue({ events: [], photos: {}, older: null });
   await open();
-  expect(await screen.findByText(WALL_COPY.empty)).toBeOnTheScreen();
+  expect(await screen.findByText(words('wall.page.empty'))).toBeOnTheScreen();
 });
 
 it("says when it can't read the Wall, and tries again", async () => {
   (loadWallEvents as jest.Mock).mockRejectedValueOnce(new Error('offline'));
   await open();
-  expect(await screen.findByRole('alert')).toHaveTextContent(WALL_FEED_COPY.unreadable);
+  expect(await screen.findByRole('alert')).toHaveTextContent(words('wall.feed.unreadable'));
   await fireEvent.press(screen.getByRole('button', { name: /try again/i }));
   await waitFor(() => expect(screen.getAllByTestId('wall-event')).toHaveLength(4));
 });
 
 it('leads to the whole Wall', async () => {
   await open();
-  await fireEvent.press(screen.getByRole('link', { name: WALL_FEED_COPY.seeAllOf(WALL_COPY.title) }));
+  await fireEvent.press(screen.getByRole('link', { name: words('wall.feed.seeAllOf', { wall: words('wall.page.title') }) }));
   expect(screen).toHavePathname('/house/wall');
   expect(screen.getByText('Wall page')).toBeOnTheScreen();
 });

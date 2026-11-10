@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ADMINS_COPY, FAMILY_COPY, FRONT_DOOR, JOIN_COPY, PAGE_TITLE } from "./copy";
+import { FRONT_DOOR, JOIN_COPY, PAGE_TITLE } from "./copy";
 import { DEFAULT_RULES, houseKind } from "./domain";
 import { familyHides, frontDoorWords, joinLine, kindParam, newHouseWords, roleCopy } from "./family";
 import { afterSignIn, DOOR, houseDefaults, signInLine } from "./front-door";
@@ -35,21 +35,21 @@ describe("the kind of house", () => {
 
 describe("the front door and Start a house, for a family", () => {
   it("has its own headline, sentences and Start", () => {
-    expect(frontDoorWords("housemates").headline).toBe(FRONT_DOOR.headline);
-    const family = frontDoorWords("family");
+    expect(frontDoorWords("housemates", words).headline).toBe(FRONT_DOOR.headline);
+    const family = frontDoorWords("family", words);
     expect(family.headline).toBe("Jonz: chores that earn pocket money.");
     expect(family.points.map((p) => p.key)).toEqual(["list", "share", "stake"]);
     expect(family.start).toBe("Start a family");
   });
 
   it("sets up a family with its own heading and button", () => {
-    expect(newHouseWords("family")).toEqual({
+    expect(newHouseWords("family", words)).toEqual({
       title: PAGE_TITLE.newFamily,
       heading: "Start your family",
-      intro: FAMILY_COPY.newIntro,
+      intro: words('house.family.newIntro'),
       submit: "Start the family",
     });
-    expect(newHouseWords("housemates").submit).toBe("Start the house");
+    expect(newHouseWords("housemates", words).submit).toBe("Start the house");
   });
 
   it("carries a family's Start through sign-in, as it does a house's", () => {
@@ -60,21 +60,21 @@ describe("the front door and Start a house, for a family", () => {
   });
 
   it("puts pocket money in place of the stake on a family's defaults line", () => {
-    const base = { currency: "GBP", weekStarts: 1, timezone: "Europe/London" } as const;
+    const base = { currency: "GBP", weekStarts: 1, timezone: "Europe/London", words } as const;
     expect(houseDefaults(base)[0]).toBe("GBP 20 a month each");
     expect(houseDefaults({ ...base, kind: "family" })).toEqual(["Pocket money up to GBP 10 a month each", ...houseDefaults(base).slice(1)]);
   });
 
   it("says a family on its join link", () => {
-    expect(joinLine("family", 4)).toBe("4 people are in this family. Join and you’re dealt Johns from next week.");
-    expect(joinLine("housemates", 4)).toBe(JOIN_COPY.livesHere(4));
+    expect(joinLine("family", 4, words)).toBe("4 people are in this family. Join and you’re dealt Johns from next week.");
+    expect(joinLine("housemates", 4, words)).toBe(JOIN_COPY.livesHere(4));
   });
 });
 
 describe("roleCopy", () => {
   it("calls an admin a parent and everyone else a kid in a family", () => {
     const family = roleCopy(wordsFor("en", "family"));
-    expect(family.admins.addBody).toBe(ADMINS_COPY.addBody);
+    expect(family.admins.addBody).toBe(words('house.adminsList.addBody'));
     expect(family.admins.title).toBe("Parents");
     expect(family.sub(true, false)).toBe("Parent");
     expect(family.sub(false, false)).toBe("Kid");
@@ -86,7 +86,7 @@ describe("roleCopy", () => {
 
   it("keeps the housemates' words as they were", () => {
     const house = roleCopy(wordsFor("en", "housemates"));
-    expect(house.admins).toMatchObject({ ...ADMINS_COPY, title: "Admins", add: "Add an admin" });
+    expect(house.admins).toMatchObject({ addBody: "They can change the list and the rules, and fix anyone’s mistakes.", remove: "Remove", title: "Admins", add: "Add an admin" });
     expect(house.admins.make("Sam")).toBe("Make Sam admin");
     expect(house.sub(true, true)).toBe("You, admin");
     expect(house.sub(false, false)).toBe("Housemate");

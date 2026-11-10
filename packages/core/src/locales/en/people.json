@@ -55,5 +55,22 @@
   "people.person.remove": "Remove {name} from the house",
   "people.person.removeTitle": "Remove {name} from the house?",
   "people.person.removeBody": "{name} won’t be in the house any more. Their history stays on the Wall and in Stake history. The code changes, so they’d need a new invite to join again.",
-  "people.person.removeConfirm": "Remove {name}"
+  "people.person.removeConfirm": "Remove {name}",
+  "people.kids.add": "Add a child",
+  "people.kids.addTitle": "Add a child",
+  "people.kids.addBody": "For a child without their own phone. They don’t sign in: a parent picks them at the top of Today and ticks for them.",
+  "people.kids.name": "Name",
+  "people.kids.born": "Year they were born",
+  "people.kids.bornMeta": "So they’re only dealt Johns they’re old enough for.",
+  "people.kids.submit": "Add them",
+  "people.kids.added": "{name} is in. They’re dealt Johns from next week.",
+  "people.kids.switchLabel": "Whose Today",
+  "people.kids.you": "You",
+  "people.kids.noSignIn": "No sign-in, a parent ticks for them",
+  "people.kids.minAgeField": "Youngest age",
+  "people.kids.minAgeMeta": "Kids younger than this aren’t dealt it. Leave it empty for anyone.",
+  "people.kids.minAgeLine": "{age} and up",
+  "people.kids.problems.name": "Give their name.",
+  "people.kids.problems.born": "Give the year they were born, like 2016. Kids are 18 or under.",
+  "people.kids.problems.minAge": "Give an age from 2 to 18, or leave it empty."
 }
