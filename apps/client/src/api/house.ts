@@ -1,5 +1,6 @@
 import { CreateHouse, type Currency, type HouseKind, humanError, JoinCode } from '@app/core';
 
+import { apiBase } from './base';
 import { callV1 } from './v1';
 
 /** The house you're in, as the app needs to know it before any screen. */
@@ -27,6 +28,35 @@ export interface Invite {
   stakeMinor: number;
   lateMinor: number;
   missedMinor: number;
+}
+
+/** A house as its join link shows it to someone who hasn't signed in: no more than the link's card in a chat. */
+export interface InvitePreview {
+  name: string;
+  members: number;
+  kind: HouseKind;
+}
+
+/**
+ * The house a join link opens, before signing in. `null` for a code that
+ * opens nothing; `undefined` when the house isn't to be named (or the read
+ * failed), so the page goes straight to signing in, as it always did.
+ */
+export async function invitePreview(code: string): Promise<InvitePreview | null | undefined> {
+  const parsed = JoinCode.safeParse(code);
+  if (!parsed.success) return null;
+  try {
+    const response = await fetch(`${apiBase()}/api/invites/${encodeURIComponent(parsed.data)}`);
+    if (!response.ok) return undefined;
+    const payload = (await response.json()) as { names?: boolean; invite?: InvitePreview | null };
+    if (!payload.names) return undefined;
+    const invite = payload.invite;
+    if (!invite) return null;
+    if (typeof invite.name !== 'string' || typeof invite.members !== 'number') return undefined;
+    return { name: invite.name, members: invite.members, kind: invite.kind === 'family' ? 'family' : 'housemates' };
+  } catch {
+    return undefined;
+  }
 }
 
 /** The house a join code opens, or null for a code that matches none (or can't be one). */

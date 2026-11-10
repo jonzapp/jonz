@@ -28,7 +28,16 @@ import { RADIUS, SPACE, TAP, useTheme } from '@/theme';
  * already turned the web back once, which the page can't tell apart. On
  * staging, the demo house's housemates follow (DemoSignIn).
  */
-export function SignInPanel({ next, failed: failedBefore = false }: { next?: string; failed?: boolean }) {
+export function SignInPanel({
+  next,
+  failed: failedBefore = false,
+  reason,
+}: {
+  next?: string;
+  failed?: boolean;
+  /** The line under the heading, in place of the usual one: an invite names its house ("Sign in to join Flat 3."). */
+  reason?: string;
+}) {
   const { scheme } = useTheme();
   const [apple, setApple] = useState(false);
   const [busy, setBusy] = useState<SignInProvider | null>(null);
@@ -65,7 +74,8 @@ export function SignInPanel({ next, failed: failedBefore = false }: { next?: str
       <Sign testID="sign-in-panel">
         <SignHeading
           title={SIGN_IN_COPY.heading}
-          body={signInLine(next, apple)}
+          // Apple's line about which account to use still comes first.
+          body={reason && !apple ? reason : signInLine(next, apple)}
         />
 
         {failed ? <Alert message={failed === 'return' ? SIGN_IN_COPY.returnFailed : SIGN_IN_COPY.failed(failed)} /> : null}
