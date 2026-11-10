@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { buildWeekBoard, todayView, type AssignmentRow, type BoardItem, type WeekBoard } from "./board";
-import { FOCUS_SHELL_COPY, PARENT_OK_COPY, SETUP_COPY } from "./copy";
+import { FOCUS_SHELL_COPY, PARENT_OK_COPY } from "./copy";
 import { DEFAULT_RULES } from "./domain";
 import { familyHides } from "./family";
 import { settleOutcome } from "./outcome";
@@ -104,8 +104,8 @@ describe("a family's rules and words", () => {
   it("hides the vote, and its rules say a parent OKs each kid's tick", () => {
     expect(familyHides("family").vote).toBe(true);
     expect(familyHides("housemates").vote).toBe(false);
-    const rows = rulesRows({ ...RULES, stakeMinor: 0, lateForfeitMinor: 0, missedForfeitMinor: 0 }, 100, "jonz", "family");
-    expect(rows.map((r) => r.label)).not.toContain(SETUP_COPY.disputes);
+    const rows = rulesRows({ ...RULES, stakeMinor: 0, lateForfeitMinor: 0, missedForfeitMinor: 0 }, 100, words, "jonz", "family");
+    expect(rows.map((r) => r.label)).not.toContain(words('house.setup.disputes'));
     expect(rows).toContainEqual({ label: PARENT_OK_COPY.rulesLabel, value: PARENT_OK_COPY.rulesValue });
   });
 

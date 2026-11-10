@@ -1,4 +1,4 @@
-import { DEAL_COPY, SETUP_COPY, BUSY_COPY } from '@app/core';
+import { BUSY_COPY } from '@app/core';
 import { ShuffleIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -12,6 +12,7 @@ import { Meta } from '@/components/text';
 import { useToast } from '@/components/toast';
 import { useMove } from '@/hooks/use-move';
 import { INSET, SPACE } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * The deal at the foot of the John list, for an admin: what it does in a
@@ -23,6 +24,7 @@ import { INSET, SPACE } from '@/theme';
  * admin asking, and its refusal shows where the move was made.
  */
 export function DealFoot({ houseId, started, canRedeal = true }: { houseId: string; started: boolean; canRedeal?: boolean }) {
+  const words = useWords();
   const move = useMove(houseId);
   const toast = useToast();
   const [confirming, setConfirming] = useState(false);
@@ -33,7 +35,7 @@ export function DealFoot({ houseId, started, canRedeal = true }: { houseId: stri
     setAsked(true);
     if (await move.run(() => dealThisWeek(houseId))) {
       setConfirming(false);
-      toast.show(SETUP_COPY.redealt);
+      toast.show(words('house.setup.redealt'));
     }
   }
 
@@ -41,13 +43,13 @@ export function DealFoot({ houseId, started, canRedeal = true }: { houseId: stri
 
   return (
     <View style={styles.foot} testID="deal">
-      <Meta>{started ? DEAL_COPY.againBody : DEAL_COPY.firstBody}</Meta>
+      <Meta>{started ? words('house.deal.againBody') : words('house.deal.firstBody')}</Meta>
       {started ? (
         <ButtonRow atEdge>
           <Button
             variant="outline"
             icon={ShuffleIcon}
-            label={DEAL_COPY.again}
+            label={words('house.deal.again')}
             onPress={() => {
               setAsked(false);
               setConfirming(true);
@@ -60,9 +62,9 @@ export function DealFoot({ houseId, started, canRedeal = true }: { houseId: stri
       )}
       <ConfirmSheet
         visible={confirming}
-        title={SETUP_COPY.redealTitle}
-        body={SETUP_COPY.redealBody}
-        confirmLabel={DEAL_COPY.again}
+        title={words('house.setup.redealTitle')}
+        body={words('house.setup.redealBody')}
+        confirmLabel={words('house.deal.again')}
         icon={ShuffleIcon}
         tone="primary"
         busy={move.pending}

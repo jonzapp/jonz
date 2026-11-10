@@ -1,4 +1,4 @@
-import { firstName, memberCan, ON_CALL_COPY, type BoardItem } from '@app/core';
+import { firstName, memberCan, type BoardItem } from '@app/core';
 import { FlagOffIcon } from 'lucide-react-native';
 
 import { removeFlag } from '@/api/johns';
@@ -42,17 +42,17 @@ export function FlagPart({ item, context }: { item: BoardItem; context: JohnShee
     void move.run(() => removeFlag(item.id)).then((done) => {
       if (!done) return;
       context.close();
-      toast?.show(ON_CALL_COPY.removed);
+      toast?.show(words('today.onCall.removed'));
     });
   return (
     <SheetLines testID="flag-remove">
       <Body>
-        {item.userId === context.userId ? ON_CALL_COPY.removeBodyYours : ON_CALL_COPY.removeBody(firstName(context.nameOf(item.userId)))}
+        {item.userId === context.userId ? words('today.onCall.removeBodyYours') : words('today.onCall.removeBody', { holder: firstName(context.nameOf(item.userId)) })}
       </Body>
       <Group>
         <Row
           leading={<FlagOffIcon size={24} color={colors.hazard} aria-hidden />}
-          title={move.pending ? ON_CALL_COPY.removing : ON_CALL_COPY.removeFlag}
+          title={move.pending ? words('today.onCall.removing') : words('today.onCall.removeFlag')}
           tone="hazard"
           disabled={move.pending}
           onPress={remove}

@@ -37,7 +37,7 @@ export function AdminsList({ houseId, userId, view }: { houseId: string; userId:
   const others = members.filter((m) => m.role !== 'admin');
   const amAdmin = memberCan(view.me, 'members:write');
   const say = useWords(view.snapshot.house.kind);
-  const words = roleCopy(say).admins;
+  const copy = roleCopy(say).admins;
 
   function change(person: Housemate, to: 'admin' | 'member') {
     const name = firstName(person.name);
@@ -55,12 +55,12 @@ export function AdminsList({ houseId, userId, view }: { houseId: string; userId:
           <Row
             key={m.userId}
             leading={<Avatar name={m.name} me={m.userId === userId} />}
-            title={m.userId === userId ? words.you(m.name) : m.name}
+            title={m.userId === userId ? copy.you(m.name) : m.name}
             trailing={
               amAdmin && admins.length > 1 && m.userId !== userId ? (
                 <TextButton
-                  label={words.remove}
-                  accessibilityLabel={words.removeLabel(firstName(m.name))}
+                  label={copy.remove}
+                  accessibilityLabel={copy.removeLabel(firstName(m.name))}
                   disabled={role.pending}
                   onPress={() => void change(m, 'member')}
                   testID="remove-admin"
@@ -73,8 +73,8 @@ export function AdminsList({ houseId, userId, view }: { houseId: string; userId:
         {amAdmin ? (
           <Row
             leading={<RowIcon icon={ShieldCheckIcon} />}
-            title={words.add}
-            meta={others.length === 0 ? words.everyoneIs : undefined}
+            title={copy.add}
+            meta={others.length === 0 ? copy.everyoneIs : undefined}
             disabled={others.length === 0}
             onPress={() => {
               setPick(null);
@@ -89,12 +89,12 @@ export function AdminsList({ houseId, userId, view }: { houseId: string; userId:
           </GroupItem>
         ) : null}
       </Group>
-      <Meta style={styles.note}>{admins.length === 1 && amAdmin ? `${words.note} ${words.onlyAdmin}` : words.note}</Meta>
+      <Meta style={styles.note}>{admins.length === 1 && amAdmin ? `${copy.note} ${copy.onlyAdmin}` : copy.note}</Meta>
       <ConfirmSheet
         visible={adding}
-        title={words.add}
-        body={words.addBody}
-        confirmLabel={chosen ? words.make(firstName(chosen.name)) : null}
+        title={copy.add}
+        body={copy.addBody}
+        confirmLabel={chosen ? copy.make(firstName(chosen.name)) : null}
         icon={ShieldCheckIcon}
         tone="primary"
         busy={role.pending}

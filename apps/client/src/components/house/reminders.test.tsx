@@ -1,9 +1,11 @@
-import { ME_COPY, REMINDERS_COPY } from '@app/core';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
 import { reminderSupport, remindersOn, turnRemindersOff, turnRemindersOn } from '@/api/push';
 
 import { Reminders } from './reminders';
+import { wordsFor } from '@app/core';
+
+const words = wordsFor('en', 'housemates');
 
 jest.mock('@/api/notification-prefs', () => ({
   loadPrefs: jest.fn(async () => (jest.requireActual('@app/core') as typeof import('@app/core')).DEFAULT_PREFS),
@@ -36,47 +38,47 @@ it('shows nothing where there is nothing to offer yet (a phone, or no key)', asy
 
 it('heads itself, unless something round it already says Reminders', async () => {
   const { rerender } = await render(<Reminders userId="ava" />);
-  expect(screen.getByText(ME_COPY.reminders)).toBeOnTheScreen();
+  expect(screen.getByText(words('people.me.reminders'))).toBeOnTheScreen();
   await rerender(<Reminders userId="ava" labelled={false} />);
-  expect(screen.queryByText(ME_COPY.reminders)).toBeNull();
-  expect(await screen.findByRole('button', { name: REMINDERS_COPY.on })).toBeOnTheScreen();
+  expect(screen.queryByText(words('people.me.reminders'))).toBeNull();
+  expect(await screen.findByRole('button', { name: words('house.reminders.on') })).toBeOnTheScreen();
 });
 
 it('says what an iPhone needs first, in a browser without notifications', async () => {
   support.mockReturnValue('unsupported');
   await render(<Reminders userId="ava" />);
-  expect(screen.getByText(REMINDERS_COPY.unsupported)).toBeOnTheScreen();
-  expect(screen.queryByRole('button', { name: REMINDERS_COPY.on })).toBeNull();
+  expect(screen.getByText(words('house.reminders.unsupported'))).toBeOnTheScreen();
+  expect(screen.queryByRole('button', { name: words('house.reminders.on') })).toBeNull();
 });
 
 it('turns reminders on, and says so', async () => {
   await render(<Reminders userId="ava" />);
-  await fireEvent.press(await screen.findByRole('button', { name: REMINDERS_COPY.on }));
+  await fireEvent.press(await screen.findByRole('button', { name: words('house.reminders.on') }));
   expect(turnRemindersOn).toHaveBeenCalledWith('ava');
-  expect(await screen.findByText(REMINDERS_COPY.turnedOn)).toBeOnTheScreen();
-  expect(screen.getByRole('button', { name: REMINDERS_COPY.off })).toBeOnTheScreen();
+  expect(await screen.findByText(words('house.reminders.turnedOn'))).toBeOnTheScreen();
+  expect(screen.getByRole('button', { name: words('house.reminders.off') })).toBeOnTheScreen();
 });
 
 it('says when the browser blocked them, or it failed', async () => {
   (turnRemindersOn as jest.Mock).mockResolvedValueOnce('blocked').mockRejectedValueOnce(new Error('no push service'));
   await render(<Reminders userId="ava" />);
-  await fireEvent.press(await screen.findByRole('button', { name: REMINDERS_COPY.on }));
-  expect(await screen.findByRole('alert')).toHaveTextContent(REMINDERS_COPY.blocked);
-  await fireEvent.press(screen.getByRole('button', { name: REMINDERS_COPY.on }));
-  expect(await screen.findByRole('alert')).toHaveTextContent(REMINDERS_COPY.failed);
+  await fireEvent.press(await screen.findByRole('button', { name: words('house.reminders.on') }));
+  expect(await screen.findByRole('alert')).toHaveTextContent(words('house.reminders.blocked'));
+  await fireEvent.press(screen.getByRole('button', { name: words('house.reminders.on') }));
+  expect(await screen.findByRole('alert')).toHaveTextContent(words('house.reminders.failed'));
 });
 
 it('turns them off on a device that has them', async () => {
   isOn.mockResolvedValue(true);
   await render(<Reminders userId="ava" />);
-  await fireEvent.press(await screen.findByRole('button', { name: REMINDERS_COPY.off }));
+  await fireEvent.press(await screen.findByRole('button', { name: words('house.reminders.off') }));
   expect(turnRemindersOff).toHaveBeenCalled();
-  expect(await screen.findByRole('button', { name: REMINDERS_COPY.on })).toBeOnTheScreen();
+  expect(await screen.findByRole('button', { name: words('house.reminders.on') })).toBeOnTheScreen();
 });
 
 it('offers what to send once reminders are on, and not before', async () => {
   await render(<Reminders userId="ava" />);
-  await screen.findByRole('button', { name: REMINDERS_COPY.on });
+  await screen.findByRole('button', { name: words('house.reminders.on') });
   expect(screen.queryByTestId('notification-settings')).toBeNull();
   isOn.mockResolvedValue(true);
   await render(<Reminders userId="ava" />);

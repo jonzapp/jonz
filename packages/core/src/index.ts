@@ -16,6 +16,7 @@ export * from "./bin-night";
 export * from "./board";
 export * from "./copy";
 export * from "./words-for";
+export * from "./word-keys";
 export * from "./crew";
 export * from "./deal";
 export * from "./dispute";

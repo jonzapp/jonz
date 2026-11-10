@@ -68,6 +68,7 @@ export function SharesCard({
 
 /** ::johns: Johns from the list, as the John list page writes them. */
 export function JohnsCard({ johns, groupOf, href }: { johns: JohnDef[]; groupOf: (groupId: string | null) => string | null; href?: Href }) {
+  const words = useWords();
   return (
     <Section label={REPLY_COPY.johns} count={johns.length || undefined}>
       {johns.length > 0 ? (
@@ -78,7 +79,7 @@ export function JohnsCard({ johns, groupOf, href }: { johns: JohnDef[]; groupOf:
               title={j.name}
               titleLines={2}
               lid={j.category}
-              meta={[scheduleLine(j, groupOf(j.groupId)), pointsLabel(j.points)].join(', ')}
+              meta={[scheduleLine(j, words, groupOf(j.groupId)), pointsLabel(j.points)].join(', ')}
               metaLines={2}
               href={href}
               chevron={href !== undefined}

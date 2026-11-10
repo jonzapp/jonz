@@ -5,6 +5,9 @@ import { GUIDE_TOPIC, guideMarkdown, guideSections, HOW_TOPICS, howItWorks, isHo
 import { TOURS } from "./tours";
 import { formatMoney } from "./money";
 import { PASS_PRICES } from "./pass";
+import { wordsFor } from "./words-for";
+
+const words = wordsFor("en", "housemates");
 
 const rules: HouseRules = {
   ...DEFAULT_RULES,
@@ -24,7 +27,7 @@ describe("howItWorks", () => {
                 rules: { ...rules, currency, stakeMinor },
                 family,
                 awayMakeup,
-              });
+              }, words);
               expect(said.length, topic).toBeGreaterThan(30);
               expect(said, topic).not.toMatch(/undefined|NaN|null|\[object/);
             }
@@ -39,19 +42,19 @@ describe("howItWorks", () => {
       lateHours: 12,
       coverGraceHours: 2,
     };
-    const stake = howItWorks("stake", { ...facts, rules: own });
+    const stake = howItWorks("stake", { ...facts, rules: own }, words);
     for (const m of [1500, 50, 200, 250])
       expect(stake).toContain(formatMoney(m, "GBP"));
-    const late = howItWorks("late_and_missed", { ...facts, rules: own });
+    const late = howItWorks("late_and_missed", { ...facts, rules: own }, words);
     expect(late).toContain("12 hours");
     expect(late).toContain("2 hours");
   });
 
   it("says there is nothing to pay in a house with no Stake", () => {
     const none = { ...facts, rules: { ...rules, stakeMinor: 0 } };
-    expect(howItWorks("stake", none)).toMatch(/no Stake/);
-    expect(howItWorks("late_and_missed", none)).not.toMatch(/£/);
-    expect(howItWorks("covering", none)).not.toMatch(/forfeit/);
+    expect(howItWorks("stake", none, words)).toMatch(/no Stake/);
+    expect(howItWorks("late_and_missed", none, words)).not.toMatch(/£/);
+    expect(howItWorks("covering", none, words)).not.toMatch(/forfeit/);
   });
 
   it("gives the Pass's real prices in the house's currency", () => {
@@ -59,7 +62,7 @@ describe("howItWorks", () => {
       const said = howItWorks("house_pass", {
         ...facts,
         rules: { ...rules, currency },
-      });
+      }, words);
       expect(said).toContain(
         formatMoney(PASS_PRICES[currency].yearly, currency),
       );
@@ -71,17 +74,17 @@ describe("howItWorks", () => {
   });
 
   it("says how time away is made up, as the house has it", () => {
-    expect(howItWorks("time_away", { ...facts, awayMakeup: 0 })).toContain(
+    expect(howItWorks("time_away", { ...facts, awayMakeup: 0 }, words)).toContain(
       "not at all",
     );
-    expect(howItWorks("fair_shares", { ...facts, awayMakeup: 50 })).toContain(
+    expect(howItWorks("fair_shares", { ...facts, awayMakeup: 50 }, words)).toContain(
       "by half",
     );
   });
 
   it("only talks about parents and kids in a family", () => {
-    expect(howItWorks("family", facts)).toMatch(/not a family/);
-    expect(howItWorks("family", { ...facts, family: true })).toMatch(
+    expect(howItWorks("family", facts, words)).toMatch(/not a family/);
+    expect(howItWorks("family", { ...facts, family: true }, words)).toMatch(
       /parent's OK/,
     );
   });
@@ -100,13 +103,13 @@ describe("the guide", () => {
   });
 
   it("reads each page from its tour, so the guide and the tour say the same", () => {
-    const today = howItWorks("today", facts);
+    const today = howItWorks("today", facts, words);
     for (const step of TOURS.today.steps) expect(today).toContain(step.body);
-    expect(howItWorks("house", facts)).toContain(TOURS.setUp.steps[0].body);
+    expect(howItWorks("house", facts, words)).toContain(TOURS.setUp.steps[0].body);
   });
 
   it("never talks about the tools Jonz reads with", () => {
-    for (const t of HOW_TOPICS) expect(howItWorks(t, facts), t).not.toMatch(/\bread\b gives|why_john|settle_up\)|\(see /);
+    for (const t of HOW_TOPICS) expect(howItWorks(t, facts, words), t).not.toMatch(/\bread\b gives|why_john|settle_up\)|\(see /);
   });
 
   it("writes a piece as paragraphs and lists", () => {

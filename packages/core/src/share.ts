@@ -1,8 +1,11 @@
-import { APP_NAME, PAGE_TITLE, RECORD_COPY, SHARE_COPY, STAKE_HISTORY_COPY, pageTitle } from "./copy";
+import { APP_NAME, PAGE_TITLE, SHARE_COPY, pageTitle } from "./copy";
 import type { HouseKind } from "./domain";
 import { HISTORY_COPY } from "./history";
 import { WALL_COPY } from "./wall";
 import { wordsFor } from "./words-for";
+
+/** A link preview has no reader, so its words are English. */
+const PREVIEW_WORDS = wordsFor("en", "housemates");
 
 /**
  * What a pasted jonz.app link shows in a chat (iMessage, WhatsApp, Slack,
@@ -90,10 +93,10 @@ export interface SharePreview {
 const PAGES: [RegExp, string][] = [
   [/^\/today$/, PAGE_TITLE.today],
   [/^\/week$/, PAGE_TITLE.week],
-  [/^\/week\/record(\/[^/]+)?$/, RECORD_COPY.title],
+  [/^\/week\/record(\/[^/]+)?$/, PREVIEW_WORDS('week.record.title')],
   [/^\/house$/, PAGE_TITLE.house],
   [/^\/house\/wall$/, WALL_COPY.title],
-  [/^\/house\/stake$/, STAKE_HISTORY_COPY.title],
+  [/^\/house\/stake$/, PREVIEW_WORDS('house.stake.title')],
   [/^\/house\/history$/, HISTORY_COPY.title],
   [/^\/house\/johns$/, PAGE_TITLE.johnList],
   [/^\/house\/rules$/, PAGE_TITLE.rules],

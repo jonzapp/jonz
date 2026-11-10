@@ -23,23 +23,23 @@ const nameOf = (id: string) => ({ me: "Glyn Finck", ada: "Ada Lovelace" })[id] ?
 
 describe("waitingRows", () => {
   it("lists every John waiting, longest first, with when its turn comes", () => {
-    const rows = waitingRows(LIST, { waiting: { garbage: 1, recycling: 2, mop: 3 }, ahead: AHEAD.slice(0, 1) });
+    const rows = waitingRows(LIST, { waiting: { garbage: 1, recycling: 2, mop: 3 }, ahead: AHEAD.slice(0, 1) }, words);
     expect(rows.map((r) => [r.name, r.meta])).toEqual([
       ["Mopping", "Floors, waiting 3 weeks"],
       ["Recycling", "Bins, waiting 2 weeks"],
       ["Garbage", "Bins, next week"],
     ]);
-    expect(waitingRows(LIST, { waiting: { recycling: 1 }, ahead: AHEAD })[0].meta).toBe("Bins, week of 16 Nov");
+    expect(waitingRows(LIST, { waiting: { recycling: 1 }, ahead: AHEAD }, words)[0].meta).toBe("Bins, week of 16 Nov");
   });
 
   it("is nothing when nothing waits", () => {
-    expect(waitingRows(LIST, { waiting: {}, ahead: AHEAD })).toEqual([]);
+    expect(waitingRows(LIST, { waiting: {}, ahead: AHEAD }, words)).toEqual([]);
   });
 });
 
 describe("turnRows", () => {
   it("says whose turn is next for the Johns not out this week, soonest first", () => {
-    const rows = turnRows(LIST, { waiting: {}, ahead: AHEAD }, new Set(["garbage"]), "me", nameOf);
+    const rows = turnRows(LIST, { waiting: {}, ahead: AHEAD }, new Set(["garbage"]), "me", nameOf, words);
     expect(rows.map((r) => [r.name, r.meta])).toEqual([
       ["Kitchen", "Kitchen, your turn, next week"],
       ["Mopping", "Floors, your turn, week of 16 Nov"],
@@ -48,7 +48,7 @@ describe("turnRows", () => {
   });
 
   it("leaves out waiting Johns, on call and Johns done together", () => {
-    const rows = turnRows(LIST, { waiting: { kitchen: 1 }, ahead: AHEAD }, new Set(), "me", nameOf);
+    const rows = turnRows(LIST, { waiting: { kitchen: 1 }, ahead: AHEAD }, new Set(), "me", nameOf, words);
     expect(rows.map((r) => r.johnId)).toEqual(["garbage", "mop", "recycling"]);
   });
 });
@@ -88,7 +88,7 @@ describe("weekLookAhead", () => {
   };
 
   it("in Smart: the waiting, whose turn next, and the rest still coming up", () => {
-    const shown = weekLookAhead({ ...args, mode: "smart" });
+    const shown = weekLookAhead({ ...args, mode: "smart" }, words);
     expect(shown.waiting.map((r) => r.johnId)).toEqual(["recycling"]);
     // Kitchen carried from last week isn't out this week.
     expect(shown.turns.map((r) => r.johnId)).toEqual(["kitchen", "mop"]);
@@ -97,7 +97,7 @@ describe("weekLookAhead", () => {
   });
 
   it("in Classic: the next two weeks, and nothing coming up that they name", () => {
-    const shown = weekLookAhead({ ...args, mode: "classic" });
+    const shown = weekLookAhead({ ...args, mode: "classic" }, words);
     expect(shown.turns).toEqual([]);
     expect(shown.weeks.map((w) => w.label)).toEqual(["Next week", "Week of 16 Nov"]);
     expect(shown.comingUp).toEqual([]);

@@ -1,19 +1,20 @@
 import {
   GOOGLE_LIMITED_USE,
   HELP_PAGE,
-  HOUSE_LOWER_COPY,
   LEGAL_COPY,
   LOOK_LABEL,
   NOT_FOUND_COPY,
   PRIVACY_POLICY,
-  REMINDERS_COPY,
   SECTION_LABEL,
   SIGN_IN_COPY,
   TERMS,
+  wordsFor,
 } from "@app/core";
 import { expect, test } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, dealtHouseInClient } from "./auth";
+
+const words = wordsFor("en", "housemates");
 
 // What the web app has beyond its screens, on the Expo app's web build: the
 // pages anyone can open, the tab titles, the look, reminders, and the files a
@@ -160,20 +161,20 @@ test("tab titles, the look, and reminders on this device", async ({ browser }) =
   const db = admin();
   const rows = async () => (await db.from("push_subscriptions").select("user_id, endpoint, p256dh, auth").eq("user_id", userId)).data;
   const remindersRow = house.getByTestId("to-reminders");
-  await expect(remindersRow).toContainText(HOUSE_LOWER_COPY.off);
+  await expect(remindersRow).toContainText(words('house.lower.off'));
   await remindersRow.click();
   // The sheet is a modal, outside the page.
   const reminders = page.getByTestId("reminders-sheet");
   await reminders.getByTestId("enable-push").click();
-  await expect(reminders.getByText(REMINDERS_COPY.turnedOn)).toBeVisible();
+  await expect(reminders.getByText(words('house.reminders.turnedOn'))).toBeVisible();
   expect(await rows()).toEqual([
     { user_id: userId, endpoint: "https://fcm.googleapis.com/fcm/send/e2e-device", p256dh: "e2e-p256dh", auth: "e2e-auth" },
   ]);
   await reminders.getByTestId("sheet-close").click();
   await expect(reminders).toBeHidden();
-  await expect(remindersRow).toContainText(HOUSE_LOWER_COPY.on);
+  await expect(remindersRow).toContainText(words('house.lower.on'));
   await remindersRow.click();
-  await reminders.getByRole("button", { name: REMINDERS_COPY.off }).click();
+  await reminders.getByRole("button", { name: words('house.reminders.off') }).click();
   await expect(reminders.getByTestId("enable-push")).toBeVisible();
   expect(await rows()).toEqual([]);
 

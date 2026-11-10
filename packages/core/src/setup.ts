@@ -1,7 +1,7 @@
 // House setup's pages: the rules as label and value, the Johns by category, a John's schedule line and the admins' names.
 import { isoDayOf, shiftMonth, type AwayPeriod } from "./away";
 import type { BoardItem, JohnDef } from "./board";
-import { FOCUS_SHELL_COPY, GROUPS_COPY, JOHN_LIST_COPY, PARENT_OK_COPY, POCKET_COPY, RULES_COPY, SETUP_COPY, STEADY_COPY } from "./copy";
+import { FOCUS_SHELL_COPY, PARENT_OK_COPY, POCKET_COPY } from "./copy";
 import { MAKEUP_LABEL } from "./deal";
 import { CATEGORIES, CATEGORY_LABEL, DOW_LABEL, type Category, type Currency, type DealMode, type HouseKind, type HouseRules, type IsoDow, type SettleIn } from "./domain";
 import { familyHides } from "./family";
@@ -12,6 +12,7 @@ import { HouseSettings } from "./schemas";
 import type { Words } from "./words-for";
 import { dueWords, oftenWords, placeWord } from "./repeat";
 import { addDaysTo } from "./week";
+import { makeupKey } from "./word-keys";
 
 const capitalise = (word: string) => word.charAt(0).toLocaleUpperCase() + word.slice(1);
 
@@ -29,33 +30,33 @@ export interface JohnKind {
 }
 
 /** The John list by kind, in the kinds' usual order, each kind's Johns as the list has them. Kinds with none are left out. */
-export function johnsByKind(johns: readonly JohnDef[]): JohnKind[] {
+export function johnsByKind(johns: readonly JohnDef[], words: Words): JohnKind[] {
   return CATEGORIES.flatMap((category) => {
     const mine = johns.filter((j) => j.category === category);
-    return mine.length === 0 ? [] : [{ category, label: SETUP_COPY.kind(CATEGORY_LABEL[category], mine.length), johns: mine }];
+    return mine.length === 0 ? [] : [{ category, label: words('house.setup.kind', { label: CATEGORY_LABEL[category], count: mine.length }), johns: mine }];
   });
 }
 
 /** "Every 2 weeks", "Every 3 months", "Twice a year": how often a John comes round. */
-function cadence(john: Pick<JohnDef, "everyWeeks"> & Partial<Pick<JohnDef, "everyMonths">>): string {
-  return oftenWords({ everyWeeks: john.everyWeeks, everyMonths: john.everyMonths ?? null });
+function cadence(john: Pick<JohnDef, "everyWeeks"> & Partial<Pick<JohnDef, "everyMonths">>, words: Words): string {
+  return oftenWords({ everyWeeks: john.everyWeeks, everyMonths: john.everyMonths ?? null }, words);
 }
 
 /** When it's due: "Sun 21:00", or "first Sat 21:00" for a John that repeats in months. */
-function dueLine(john: Pick<JohnDef, "dueDow" | "dueTime"> & Partial<Pick<JohnDef, "weekOfMonth">>): string {
-  return dueWords({ weekOfMonth: john.weekOfMonth ?? null }, john.dueTime, DOW_LABEL[john.dueDow].slice(0, 3));
+function dueLine(john: Pick<JohnDef, "dueDow" | "dueTime"> & Partial<Pick<JohnDef, "weekOfMonth">>, words: Words): string {
+  return dueWords({ weekOfMonth: john.weekOfMonth ?? null }, john.dueTime, DOW_LABEL[john.dueDow].slice(0, 3), words);
 }
 
 /** A John's meta line on the list: "Every week, Sun 21:00, photo", then the group that shares it, if one does. */
 export function scheduleLine(
   john: Pick<JohnDef, "everyWeeks" | "dueDow" | "dueTime" | "needsPhoto"> &
     Partial<Pick<JohnDef, "when" | "respondHours" | "perWeek" | "everyMonths" | "weekOfMonth">>,
-  groupName?: string | null,
+  words: Words, groupName?: string | null,
 ): string {
   const onCall = john.when === "on_call";
   return [
-    ...(onCall ? [JOHN_LIST_COPY.onCallWhen(john.respondHours ?? 12, john.perWeek ?? 1)] : [cadence(john), dueLine(john)]),
-    john.needsPhoto ? SETUP_COPY.photo : null,
+    ...(onCall ? [words('house.johns.onCallWhen', { hours: john.respondHours ?? 12, perWeek: john.perWeek ?? 1 })] : [cadence(john, words), dueLine(john, words)]),
+    john.needsPhoto ? words('house.setup.photo') : null,
     groupName || null,
   ]
     .filter(Boolean)
@@ -70,15 +71,15 @@ export function scheduleLine(
 export function listLine(
   john: Pick<JohnDef, "everyWeeks" | "dueDow" | "dueTime" | "needsPhoto"> &
     Partial<Pick<JohnDef, "when" | "respondHours" | "everyMonths" | "weekOfMonth">>,
-  groupName?: string | null,
+  words: Words, groupName?: string | null,
 ): string {
-  const often = cadence(john);
+  const often = cadence(john, words);
   const weekly = john.everyWeeks === 1 && !john.everyMonths;
   return [
     ...(john.when === "on_call"
-      ? [JOHN_LIST_COPY.onCallWithin(john.respondHours ?? 12)]
-      : [dueLine(john), weekly ? null : often.charAt(0).toLowerCase() + often.slice(1)]),
-    john.needsPhoto ? SETUP_COPY.photo : null,
+      ? [words('house.johns.onCallWithin', { hours: john.respondHours ?? 12 })]
+      : [dueLine(john, words), weekly ? null : often.charAt(0).toLowerCase() + often.slice(1)]),
+    john.needsPhoto ? words('house.setup.photo') : null,
     groupName || null,
   ]
     .filter(Boolean)
@@ -88,29 +89,29 @@ export function listLine(
 /** A John as a housemate who can't edit it reads it: kind, who shares it, effort, how often, when, and the photo. */
 export function johnFacts(john: JohnDef, groupName: string | null | undefined, words: Words): LabelValue[] {
   return [
-    { label: SETUP_COPY.kindLabel, value: CATEGORY_LABEL[john.category] },
-    { label: JOHN_LIST_COPY.sharedBy, value: groupName || JOHN_LIST_COPY.everyone },
-    { label: JOHN_LIST_COPY.effort, value: pointsLabel(john.points) },
+    { label: words('house.setup.kindLabel'), value: CATEGORY_LABEL[john.category] },
+    { label: words('house.johns.sharedBy'), value: groupName || words('house.johns.everyone') },
+    { label: words('house.johns.effort'), value: pointsLabel(john.points) },
     ...(john.crew === 1 ? [] : [{ label: words('john.crew.doneBy'), value: words('john.crew.choice', { crew: john.crew }) }]),
     ...(john.when === "on_call"
       ? [
-          { label: JOHN_LIST_COPY.whenLabel, value: JOHN_LIST_COPY.onCall },
-          { label: JOHN_LIST_COPY.respond, value: JOHN_LIST_COPY.respondHours(john.respondHours) },
-          { label: JOHN_LIST_COPY.timesAWeek, value: JOHN_LIST_COPY.perWeekLabel(john.perWeek) },
+          { label: words('house.johns.whenLabel'), value: words('house.johns.onCall') },
+          { label: words('house.johns.respond'), value: words('house.johns.respondHours', { hours: john.respondHours }) },
+          { label: words('house.johns.timesAWeek'), value: words('house.johns.perWeekLabel', { n: john.perWeek }) },
         ]
       : [
-          { label: JOHN_LIST_COPY.often, value: cadence(john) },
+          { label: words('house.johns.often'), value: cadence(john, words) },
           {
-            label: JOHN_LIST_COPY.due,
+            label: words('house.johns.due'),
             value:
               john.weekOfMonth === null
                 ? `${DOW_LABEL[john.dueDow]} ${john.dueTime}`
-                : `${capitalise(placeWord(john.weekOfMonth))} ${DOW_LABEL[john.dueDow]} ${john.dueTime}`,
+                : `${capitalise(placeWord(john.weekOfMonth, words))} ${DOW_LABEL[john.dueDow]} ${john.dueTime}`,
           },
         ]),
     // Only said when it does: the list's rows leave it to here.
-    ...(john.keepDay ? [{ label: STEADY_COPY.keepDay, value: STEADY_COPY.keepDayYes }] : []),
-    { label: SETUP_COPY.photoLabel, value: john.needsPhoto ? SETUP_COPY.photoNeeded : SETUP_COPY.photoNot },
+    ...(john.keepDay ? [{ label: words('week.steady.keepDay'), value: words('week.steady.keepDayYes') }] : []),
+    { label: words('house.setup.photoLabel'), value: john.needsPhoto ? words('house.setup.photoNeeded') : words('house.setup.photoNot') },
   ];
 }
 
@@ -121,15 +122,15 @@ export function zonePlace(timezone: string): string {
 }
 
 /** A forfeit as the rules show it: "−£1", or nothing at all. */
-function forfeit(minor: number, currency: Currency): string {
-  return minor === 0 ? SETUP_COPY.nothing : formatSigned(-minor, currency);
+function forfeit(minor: number, currency: Currency, words: Words): string {
+  return minor === 0 ? words('house.setup.nothing') : formatSigned(-minor, currency);
 }
 
 /** The house rules in plain words, one line each, as everyone reads them. */
 export function rulesRows(
   rules: HouseRules,
   awayMakeup: number,
-  settleIn?: SettleIn,
+  words: Words, settleIn?: SettleIn,
   kind: HouseKind = "housemates",
   /** In a family: the most each kid can earn in a month. */
   pocketCapMinor = 0,
@@ -137,60 +138,60 @@ export function rulesRows(
   // A family has no stake, so it reads none of the money's rows: pocket money in their place.
   if (familyHides(kind).stake) {
     // Nor a vote: the check window's row says who OKs a kid's tick instead.
-    const rows = rulesRows(rules, awayMakeup)
-      .filter((row) => row.label !== SETUP_COPY.stake && row.label !== SETUP_COPY.late && row.label !== SETUP_COPY.missed)
-      .map((row) => (row.label === SETUP_COPY.disputes ? { label: PARENT_OK_COPY.rulesLabel, value: PARENT_OK_COPY.rulesValue } : row));
+    const rows = rulesRows(rules, awayMakeup, words)
+      .filter((row) => row.label !== words('house.setup.stake') && row.label !== words('house.setup.late') && row.label !== words('house.setup.missed'))
+      .map((row) => (row.label === words('house.setup.disputes') ? { label: PARENT_OK_COPY.rulesLabel, value: PARENT_OK_COPY.rulesValue } : row));
     rows.splice(2, 0, { label: POCKET_COPY.rulesLabel, value: POCKET_COPY.rulesValue(formatMoney(pocketCapMinor, rules.currency)) });
     return rows;
   }
   const rows: LabelValue[] = [
-    { label: STEADY_COPY.mode, value: STEADY_COPY.modeName[rules.dealMode] },
-    { label: STEADY_COPY.budget, value: STEADY_COPY.budgetEach(rules.dealBudget) },
+    { label: words('week.steady.mode'), value: words(`week.steady.modeName.${rules.dealMode}`) },
+    { label: words('week.steady.budget'), value: words('week.steady.budgetEach', { budget: rules.dealBudget }) },
     {
-      label: SETUP_COPY.stake,
-      value: rules.stakeMinor === 0 ? SETUP_COPY.noStake : SETUP_COPY.perMonth(formatMoney(rules.stakeMinor, rules.currency)),
+      label: words('house.setup.stake'),
+      value: rules.stakeMinor === 0 ? words('house.setup.noStake') : words('house.setup.perMonth', { amount: formatMoney(rules.stakeMinor, rules.currency) }),
     },
-    { label: SETUP_COPY.late, value: forfeit(rules.lateForfeitMinor, rules.currency) },
-    { label: SETUP_COPY.missed, value: forfeit(rules.missedForfeitMinor, rules.currency) },
-    { label: SETUP_COPY.disputes, value: SETUP_COPY.disputeWindow(rules.disputeHours) },
-    { label: SETUP_COPY.lateWindow, value: SETUP_COPY.lateFor(rules.lateHours) },
-    { label: SETUP_COPY.cover, value: SETUP_COPY.coverWindow(rules.coverGraceHours) },
-    { label: SETUP_COPY.away, value: SETUP_COPY.makeup[awayMakeup] ?? MAKEUP_LABEL[awayMakeup] ?? SETUP_COPY.makeupPercent(awayMakeup) },
-    { label: SETUP_COPY.weekStarts, value: SETUP_COPY.weekStartsAt(DOW_LABEL[rules.weekStarts], zonePlace(rules.timezone)) },
+    { label: words('house.setup.late'), value: forfeit(rules.lateForfeitMinor, rules.currency, words) },
+    { label: words('house.setup.missed'), value: forfeit(rules.missedForfeitMinor, rules.currency, words) },
+    { label: words('house.setup.disputes'), value: words('house.setup.disputeWindow', { hours: rules.disputeHours }) },
+    { label: words('house.setup.lateWindow'), value: words('house.setup.lateFor', { hours: rules.lateHours }) },
+    { label: words('house.setup.cover'), value: words('house.setup.coverWindow', { hours: rules.coverGraceHours }) },
+    { label: words('house.setup.away'), value: (awayMakeup === 100 || awayMakeup === 50 || awayMakeup === 0 ? words(`house.setup.makeup.${makeupKey(awayMakeup)}`) : null) ?? MAKEUP_LABEL[awayMakeup] ?? words('house.setup.makeupPercent', { percent: awayMakeup }) },
+    { label: words('house.setup.weekStarts'), value: words('house.setup.weekStartsAt', { day: DOW_LABEL[rules.weekStarts], place: zonePlace(rules.timezone) }) },
   ];
   // After the money it's about, when it's known.
-  if (settleIn) rows.splice(5, 0, { label: SETUP_COPY.settleIn, value: SETUP_COPY.settleInValue[settleIn] });
+  if (settleIn) rows.splice(5, 0, { label: words('house.setup.settleIn'), value: words(`house.setup.settleInValue.${settleIn}`) });
   return rows;
 }
 
 /** "Sam and Priya", "Sam, Priya and Tom". */
-function listed(names: readonly string[]): string {
-  return names.length <= 1 ? (names[0] ?? "") : `${names.slice(0, -1).join(", ")} ${SETUP_COPY.and} ${names[names.length - 1]}`;
+function listed(names: readonly string[], words: Words): string {
+  return names.length <= 1 ? (names[0] ?? "") : `${names.slice(0, -1).join(", ")} ${words('house.setup.and')} ${names[names.length - 1]}`;
 }
 
 type Member = { userId: string; name: string; role: string };
 
 /** The admins by first name, "You" first when you're one. */
-function adminNames(members: readonly Member[], me: string): string[] {
+function adminNames(members: readonly Member[], me: string, words: Words): string[] {
   const admins = members.filter((m) => m.role === "admin");
   return [
-    ...admins.filter((m) => m.userId === me).map(() => SETUP_COPY.you),
+    ...admins.filter((m) => m.userId === me).map(() => words('house.setup.you')),
     ...admins.filter((m) => m.userId !== me).map((m) => firstName(m.name)),
   ];
 }
 
 /** Who can change the rules, under the read-out: "Sam (admin) can change these.", "You and Priya (admins) can change these." */
-export function adminsLine(members: readonly Member[], me: string, w: Words): string {
-  const names = adminNames(members, me);
+export function adminsLine(members: readonly Member[], me: string, w: Words, words: Words): string {
+  const names = adminNames(members, me, words);
   if (names.length === 0) return w("house.setup.adminsNobody");
-  if (names.length === 1 && names[0] === SETUP_COPY.you) return SETUP_COPY.youCanChange;
-  return w("house.setup.canChange", { names: listed(names), count: names.length });
+  if (names.length === 1 && names[0] === words('house.setup.you')) return words('house.setup.youCanChange');
+  return w("house.setup.canChange", { names: listed(names, words), count: names.length });
 }
 
 /** An empty John list, to a housemate who can't add to it: who will. "Sam will add the Johns." */
-export function johnsComing(members: readonly Member[], me: string, w: Words): string {
-  const names = adminNames(members, me).filter((n) => n !== SETUP_COPY.you);
-  return names.length === 0 ? w("house.setup.johnsComingAdmin") : SETUP_COPY.johnsComing(listed(names));
+export function johnsComing(members: readonly Member[], me: string, w: Words, words: Words): string {
+  const names = adminNames(members, me, words).filter((n) => n !== words('house.setup.you'));
+  return names.length === 0 ? w("house.setup.johnsComingAdmin") : words('house.setup.johnsComing', { names: listed(names, words) });
 }
 
 /**
@@ -202,19 +203,19 @@ export function canRedeal(board: { week: unknown; items: readonly Pick<BoardItem
 }
 
 /** Who's in a group, first names and "You" first: "You, Sam and Megan", or that nobody is. */
-export function membersLine(memberIds: readonly string[], people: readonly { userId: string; name: string }[], me: string): string {
-  if (memberIds.length === 0) return GROUPS_COPY.nobody;
+export function membersLine(memberIds: readonly string[], people: readonly { userId: string; name: string }[], me: string, words: Words): string {
+  if (memberIds.length === 0) return words('house.groups.nobody');
   const name = (id: string) => {
     const person = people.find((p) => p.userId === id);
     return person ? firstName(person.name) : FOCUS_SHELL_COPY.formerHousemate;
   };
   const ordered = [
-    ...memberIds.filter((id) => id === me).map(() => SETUP_COPY.you),
+    ...memberIds.filter((id) => id === me).map(() => words('house.setup.you')),
     ...people.filter((p) => p.userId !== me && memberIds.includes(p.userId)).map((p) => name(p.userId)),
     ...memberIds.filter((id) => id !== me && !people.some((p) => p.userId === id)).map(name),
   ];
   // "Sam and a former housemate": only the first name in the line keeps its capital.
-  return listed(ordered.map((n, i) => (i > 0 && n === FOCUS_SHELL_COPY.formerHousemate ? n[0].toLowerCase() + n.slice(1) : n)));
+  return listed(ordered.map((n, i) => (i > 0 && n === FOCUS_SHELL_COPY.formerHousemate ? n[0].toLowerCase() + n.slice(1) : n)), words);
 }
 
 /** Whether a trip has begun by `today` (a local date): it can then only be ended, not cancelled. */
@@ -233,8 +234,8 @@ export function myTrips(periods: readonly AwayPeriod[], userId: string, today: s
 }
 
 /** Your own trip's meta line under its dates: whether you're away now, and where. */
-export function tripMeta(period: AwayPeriod, today: string): string {
-  return [tripStarted(period, today) ? SETUP_COPY.awayNow : null, period.note || null].filter(Boolean).join(", ");
+export function tripMeta(period: AwayPeriod, today: string, words: Words): string {
+  return [tripStarted(period, today) ? words('house.setup.awayNow') : null, period.note || null].filter(Boolean).join(", ");
 }
 
 /** A housemate's time away as a meta line: "28–31 Oct, Mum's 60th in Cork". */
@@ -367,13 +368,13 @@ export function rulesChanged(draft: RulesDraft, from: RulesDraft): boolean {
  * database still decides.
  */
 export function checkRules(
-  draft: RulesDraft,
+  draft: RulesDraft, words: Words,
 ): { settings: HouseSettings; problems: null } | { settings: null; problems: Partial<Record<RulesField, string>> } {
   const problems: Partial<Record<RulesField, string>> = {};
   const amounts = { stake: amountOf(draft.stake), late: amountOf(draft.late), missed: amountOf(draft.missed) };
-  for (const key of ["stake", "late", "missed"] as const) if (amounts[key] === null) problems[key] = RULES_COPY.badAmount;
+  for (const key of ["stake", "late", "missed"] as const) if (amounts[key] === null) problems[key] = words('house.rules.badAmount');
   const pocket = draft.pocket === undefined ? undefined : amountOf(draft.pocket);
-  if (pocket === null) problems.pocket = RULES_COPY.badAmount;
+  if (pocket === null) problems.pocket = words('house.rules.badAmount');
   const parsed = HouseSettings.safeParse({
     name: draft.name,
     timezone: draft.timezone,
@@ -402,7 +403,7 @@ export function checkRules(
   if (!parsed.success) {
     for (const issue of parsed.error.issues) {
       const key = field[String(issue.path[0])] ?? "form";
-      if (!problems[key]) problems[key] = key === "form" ? RULES_COPY.check : issue.message;
+      if (!problems[key]) problems[key] = key === "form" ? words('house.rules.check') : issue.message;
     }
   }
   if (!parsed.success || Object.keys(problems).length > 0) return { settings: null, problems };

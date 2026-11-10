@@ -1,4 +1,4 @@
-import { ASK_USAGE_COPY, FOCUS_SHELL_COPY, HOUSE_LOWER_COPY, KID_HOUSE_COPY, PAGE_TITLE, PASS_COPY, WALL_COPY } from '@app/core';
+import { ASK_USAGE_COPY, FOCUS_SHELL_COPY, PAGE_TITLE, PASS_COPY, WALL_COPY, type Words } from '@app/core';
 import { usePathname, useRouter, type Href } from 'expo-router';
 import {
   GaugeIcon,
@@ -44,6 +44,7 @@ import {
   WIDE,
   WORKSPACE_MIN,
 } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /** What a panel down the right shows: its title, an optional line under it, and its content. */
 export interface PanelContent {
@@ -129,20 +130,20 @@ export function HouseWorkspace({ children, kid = false }: { children: ReactNode;
 }
 
 /** House's pages in the list, in House's order: its top and the Wall, then its setup, then the Pass and you. */
-const PAGES: { group: string | null; items: { href: Href; label: string; icon: LucideIcon; testID: string }[] }[] = [
+const pages = (words: Words): { group: string | null; items: { href: Href; label: string; icon: LucideIcon; testID: string }[] }[] => [
   {
     group: null,
     items: [
-      { href: '/house', label: HOUSE_LOWER_COPY.overview, icon: HouseIcon, testID: 'nav-overview' },
+      { href: '/house', label: words('house.lower.overview'), icon: HouseIcon, testID: 'nav-overview' },
       { href: '/house/wall', label: WALL_COPY.title, icon: MessageSquareIcon, testID: 'nav-wall' },
     ],
   },
   {
     group: FOCUS_SHELL_COPY.setup,
     items: [
-      { href: '/house/johns', label: HOUSE_LOWER_COPY.johns, icon: ListTodoIcon, testID: 'nav-johns' },
-      { href: '/house/rules', label: HOUSE_LOWER_COPY.rules, icon: ScrollTextIcon, testID: 'nav-rules' },
-      { href: '/house/away', label: HOUSE_LOWER_COPY.away, icon: PlaneIcon, testID: 'nav-away' },
+      { href: '/house/johns', label: words('house.lower.johns'), icon: ListTodoIcon, testID: 'nav-johns' },
+      { href: '/house/rules', label: words('house.lower.rules'), icon: ScrollTextIcon, testID: 'nav-rules' },
+      { href: '/house/away', label: words('house.lower.away'), icon: PlaneIcon, testID: 'nav-away' },
       { href: '/house/ask-usage', label: ASK_USAGE_COPY.title, icon: GaugeIcon, testID: 'nav-ask-usage' },
     ],
   },
@@ -160,20 +161,21 @@ const KID_HIDES = new Set(['nav-ask-usage', 'nav-pass']);
 
 /** The list of House's pages, the one you're on marked; any other page under House (a housemate's) marks none. */
 function HouseNav({ kid }: { kid: boolean }) {
+  const words = useWords();
   const { colors } = useTheme();
   const pathname = usePathname();
   const atTop = pathname === '/house';
   return (
     <View
       accessibilityRole="navigation"
-      accessibilityLabel={HOUSE_LOWER_COPY.pages}
+      accessibilityLabel={words('house.lower.pages')}
       testID="house-nav"
       style={[styles.nav, { borderRightColor: colors.border }]}
     >
       <ScrollView contentContainerStyle={styles.navList}>
-        {PAGES.map((part, i) => (
+        {pages(words).map((part, i) => (
           <View key={i} style={styles.navGroup}>
-            {part.group ? <SectionLabel style={styles.navLabel}>{kid ? KID_HOUSE_COPY.setup : part.group}</SectionLabel> : null}
+            {part.group ? <SectionLabel style={styles.navLabel}>{kid ? words('house.kid.setup') : part.group}</SectionLabel> : null}
             {part.items.filter((item) => !kid || !KID_HIDES.has(item.testID)).map((item) => (
               <NavItem key={item.testID} {...item} current={pathname === item.href} replace={!atTop} />
             ))}
@@ -233,6 +235,7 @@ function NavItem({
  * which scrolls. Escape closes it on the web, as it closes a sheet.
  */
 function SidePanel({ content, onClose, border }: { content: PanelContent; onClose: () => void; border: string }) {
+  const words = useWords();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   useEffect(() => {
@@ -256,7 +259,7 @@ function SidePanel({ content, onClose, border }: { content: PanelContent; onClos
         </Lead>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={HOUSE_LOWER_COPY.closePanel}
+          accessibilityLabel={words('house.lower.closePanel')}
           onPress={onClose}
           testID="side-panel-close"
           style={({ pressed }) => [styles.close, pressed && styles.pressed]}

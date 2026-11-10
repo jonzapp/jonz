@@ -21,6 +21,7 @@ import {
   tidyReply,
   type ChatMessage,
   type OwnerAskResponse,
+  wordsFor,
 } from "@app/core";
 
 import { canAsk, type AgentAnswer } from "@/lib/ai/agent";
@@ -152,7 +153,7 @@ export function ownerReads(caller: Caller, now: Date): OwnerReads {
       );
     },
     howItWorks(topic, family) {
-      return howItWorks(topic, { rules: { ...DEFAULT_RULES, timezone: OWNER_TZ, currency: "GBP" }, family, awayMakeup: 100 });
+      return howItWorks(topic, { rules: { ...DEFAULT_RULES, timezone: OWNER_TZ, currency: "GBP" }, family, awayMakeup: 100 }, wordsFor("en", family ? "family" : "housemates"));
     },
   };
 }

@@ -320,7 +320,7 @@ export function houseReads(caller: Caller, houseId: string, ctx: ReadsContext): 
     },
 
     howItWorks(topic) {
-      return howItWorks(topic, { rules: ctx.rules, family: ctx.house.kind === "family", awayMakeup: ctx.house.awayMakeup });
+      return howItWorks(topic, { rules: ctx.rules, family: ctx.house.kind === "family", awayMakeup: ctx.house.awayMakeup }, wordsFor("en", houseKind(ctx.house.kind)));
     },
   };
 }
