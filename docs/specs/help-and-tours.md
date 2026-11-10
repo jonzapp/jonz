@@ -40,7 +40,7 @@ once, on Today; Not now puts it away for good.
   tour say the same.
 - Every guide page ends with Ask Jonz about this (when you may ask), and
   Jonz can point to the Guide with a page chip.
-- Adding a topic: add it to `HOW_TOPICS`, `howItWorks`, `GUIDE_TOPIC` and a
+- Adding a topic: add it to `HOW_TOPICS`, `howItWorks`, its `door.guide.topic.<topic>` words and a
   section in `GUIDE_SECTIONS`; the core tests check every topic is listed.
 
 ## Adding a tour

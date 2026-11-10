@@ -1,4 +1,4 @@
-import { offersTour, TOUR_COPY } from '@app/core';
+import { offersTour } from '@app/core';
 import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
@@ -8,6 +8,7 @@ import { Body, RowTitle } from '@/components/text';
 import { useTour } from '@/components/tour/tour-context';
 import { useMembership } from '@/hooks/use-membership';
 import { INSET, SPACE } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * Today's one-time offer of its tour, for someone new (`offersTour`): Show
@@ -17,6 +18,7 @@ import { INSET, SPACE } from '@/theme';
  * tour is already playing.
  */
 export function TourOffer({ now }: { now: Date }) {
+  const words = useWords();
   const tours = useTour();
   const { session } = useMembership();
   const signedUp = session?.user.created_at ? new Date(session.user.created_at) : null;
@@ -24,11 +26,11 @@ export function TourOffer({ now }: { now: Date }) {
   return (
     <Group testID="tour-offer">
       <View style={styles.offer}>
-        <RowTitle>{TOUR_COPY.offerTitle}</RowTitle>
-        <Body>{TOUR_COPY.offerBody}</Body>
+        <RowTitle>{words('door.tour.offerTitle')}</RowTitle>
+        <Body>{words('door.tour.offerBody')}</Body>
         <ButtonRow>
-          <Button label={TOUR_COPY.offerYes} variant="outline" onPress={() => tours.start('today')} testID="tour-offer-yes" />
-          <Button label={TOUR_COPY.offerNo} variant="ghost" onPress={tours.dismissOffer} testID="tour-offer-no" />
+          <Button label={words('door.tour.offerYes')} variant="outline" onPress={() => tours.start('today')} testID="tour-offer-yes" />
+          <Button label={words('door.tour.offerNo')} variant="ghost" onPress={tours.dismissOffer} testID="tour-offer-no" />
         </ButtonRow>
       </View>
     </Group>

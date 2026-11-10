@@ -1,8 +1,10 @@
-import { FRONT_DOOR_COPY, HOUSE_DRAFT_COPY, NOT_FOUND_COPY, PAGE_TITLE, SECTION_LABEL } from "@app/core";
+import { HOUSE_DRAFT_COPY, PAGE_TITLE, SECTION_LABEL, wordsFor } from "@app/core";
 import { expect, test, type Page } from "@playwright/test";
 
 import { CLIENT_URL, cleanUp, dealtHouseInClient, signInToClient } from "./auth";
 import { backToHouse, showHouseOverview, toHousePage } from "./house-pages";
+
+const words = wordsFor("en", "housemates");
 
 // The Expo app's web build, walked as a housemate walks it: every way into a
 // House page (its row on House, a card on Today, a link opened cold, a
@@ -69,7 +71,7 @@ async function tapBack(page: Page, label: string) {
 
 async function newHouse(page: Page, name: string) {
   await page.goto("/house/new");
-  await page.getByLabel(FRONT_DOOR_COPY.name).fill(name);
+  await page.getByLabel(words('door.welcome.name')).fill(name);
   await page.getByTestId("create-house").click();
   await expect(page).toHaveURL(/\/today$/);
 }
@@ -284,7 +286,7 @@ test.describe("outside a house", () => {
     await newHouse(page, `Lost ${Date.now() % 100_000}`);
     await page.goto("/house/nope");
     await expect(page.getByRole("heading", { name: PAGE_TITLE.notFound })).toBeVisible();
-    await page.getByRole("link", { name: NOT_FOUND_COPY.back }).click();
+    await page.getByRole("link", { name: words('door.notFound.back') }).click();
     await expect(page).toHaveURL(/\/today$/);
   });
 });

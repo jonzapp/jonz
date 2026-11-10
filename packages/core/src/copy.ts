@@ -41,116 +41,12 @@ export const PAGE_TITLE = {
   deleteAccount: "Delete your account",
 } as const;
 
-/** A page that isn't there, and a page that broke. */
-export const NOT_FOUND_COPY = {
-  title: "Nothing here",
-  body: "That page isn’t on the list.",
-  back: "Back to your Johns",
-  /** Signed out, there are no Johns to go back to. */
-  backToDoor: "Back to the front door",
-} as const;
-
-export const ERROR_COPY = {
-  title: "Something went wrong",
-  body: "It wasn’t you. Try again, and if it keeps happening, tell us what happened.",
-  retry: "Try again",
-  /** The crash screen's way to report it (docs/specs/report-a-problem.md, step 3). */
-  tell: "Tell us what happened",
-  tellTitle: "What happened?",
-  told: "Sent, thank you. We’ll reply under House, Your reports, and by email.",
-  orEmail: "Or email support@jonz.app.",
-  /** Your house couldn't be read, so no screen can be chosen yet. */
-  unreachable: "Can’t reach your house",
-  unreachableBody: "Check the connection, then try again.",
-} as const;
-
-export const FRONT_DOOR = {
-  headline: "Jonz: who’s on what this week.",
-  signIn: "Sign in",
-} as const;
-
 export type SignInProvider = "Google" | "Apple" | "Microsoft";
-
-/**
- * The sign-in screen's words. The reason line under the heading comes from
- * `signInReason` (auth-paths.ts); iOS also offers Apple, so it says
- * `eitherAccount` instead (Hide My Email makes a new person). Every screen
- * offers more than one account, so `sameAccount` warns that a second one
- * starts with no house.
- */
-export const SIGN_IN_COPY = {
-  heading: "Sign in",
-  google: "Continue with Google",
-  googleBusy: "Opening Google…",
-  microsoft: "Continue with Microsoft",
-  microsoftBusy: "Opening Microsoft…",
-  eitherAccount: "Your house’s Johns are kept with the account you sign in with.",
-  sameAccount: "Already in a house? Use the account you joined with.",
-  terms: "By continuing you agree to the Terms and the Privacy Policy, and to the rules of the house you join, and say you’re 13 or older.",
-  privacy: "Privacy",
-  termsLink: "Terms",
-  failed: (provider: SignInProvider) => `${provider} didn’t finish signing you in. Try again.`,
-  /** The web came back from Google or Microsoft with an error, and can't tell which. */
-  returnFailed: "That sign-in didn’t finish. Try again.",
-  signOut: "Sign out",
-} as const;
-
-/** Setting up a house: the web's /house/new and the app's. */
-export const NEW_HOUSE_COPY = {
-  heading: "Start your house",
-  intro: "You’ll be its admin. Next you add the Johns and send the house an invite.",
-  name: "What do you call the house?",
-  namePlaceholder: "Flat 3",
-  currency: "Currency",
-  weekStarts: "The week starts on",
-  timezone: "Time zone",
-  busy: "Setting up…",
-} as const;
 
 /** The words for the two roles, by kind of house: what an admin and everyone else are called. */
 export const ROLE_WORDS = {
   housemates: { admin: "admin", admins: "admins", member: "housemate", Admin: "Admin", Admins: "Admins", Member: "Housemate", anAdmin: "an admin", aMember: "a housemate" },
   family: { admin: "parent", admins: "parents", member: "kid", Admin: "Parent", Admins: "Parents", Member: "Kid", anAdmin: "a parent", aMember: "a kid" },
-} as const;
-
-/** An invite: the web's /join/[code] and the app's. */
-export const JOIN_COPY = {
-  badLink: "That link doesn’t work",
-  /** A mistyped or cut-off code, or a house everyone has left (it closes behind the last one out). */
-  badLinkBody: "It may be mistyped, or everyone has left that house. Ask whoever sent it for the link on their House screen, or start your own.",
-  alreadyIn: (house: string) => `You’re already in ${house}`,
-  goToJohns: "Go to your Johns",
-  otherHouse: "You’re in another house",
-  otherHouseBody: "Jonz keeps you in one house at a time. Leave your current one from its House screen first.",
-  yourHouse: "Your house",
-  invited: "You’re invited",
-  livesHere: (people: number) =>
-    `${people} ${people === 1 ? "person lives" : "people live"} here. Join and you’re dealt Johns from next week.`,
-  join: (house: string) => `Join ${house}`,
-  /** Before joining: what the house plays for, so nobody joins a money game without knowing. */
-  stake: (stake: string, late: string, missed: string) =>
-    `This house plays for money: ${stake} a month each, ${late} for a late John and ${missed} for a missed one, split between everyone else.`,
-  noStake: "This house doesn’t play for money: it keeps score in points.",
-  joining: "Joining…",
-  back: "Back",
-  /** The invite, before signing in: what comes next, under its button. */
-  nextSignIn: "Next you sign in or make an account. Nothing is joined until you say so.",
-  /** Signing in from an invite: under "Sign in", in place of the usual line. */
-  signInFor: (house: string) => `Sign in to join ${house}.`,
-} as const;
-
-/** Signed in with no house: the app's way to start one or join by code. */
-export const NO_HOUSE_COPY = {
-  heading: "No house yet",
-} as const;
-
-/** The invite, ready for the group chat. */
-export const INVITE_COPY = {
-  copied: "Link copied",
-  shareTitle: (house: string) => `Join ${house} on Jonz`,
-  /** Admins only: a fresh code, for when a link has gone somewhere it shouldn't. */
-  newCode: "New code",
-  newCodeNote: "The old link and code stop working. Removing someone changes the code too.",
 } as const;
 
 /** A house's screens, in the order the tabs and the sidebar show them. */
@@ -282,44 +178,6 @@ export const LIST_COPY = {
   reading: "Reading the list",
 } as const;
 
-/** The front door, starting a house and welcome. */
-export const FRONT_DOOR_COPY = {
-  /** The front door's three plain sentences, in place of the old feature cards. */
-  points: [
-    { key: "list", body: "List your house’s chores. We call them Johns." },
-    { key: "share", body: "Each week Jonz deals them out fairly." },
-    {
-      key: "stake",
-      body: "Everyone puts in the same each month. Miss a John and part of your stake goes to the ones who did theirs.",
-    },
-  ],
-  start: "Start a house",
-  invite: "I’ve got an invite",
-  /** Under "Sign in", when the front door's choice came with it. */
-  startReason: "Sign in to start your house.",
-  inviteReason: "Sign in to use your invite.",
-  // Starting a house: one field, and the defaults in one line with Change for the rest.
-  name: "Name your house",
-  stakeEach: (amount: string) => `${amount} a month each`,
-  weekStarts: (day: string) => `weeks start ${day}`,
-  change: "Change",
-  /** In place of Change while the currency and the week are open. */
-  done: "Done",
-  changeSpoken: "The currency and the day weeks start",
-  zoneNote: (zone: string) => `The time zone is this phone’s, ${zone}. Change it later from House.`,
-  submit: "Start the house",
-  // Welcome: signed in with no house, the fallback.
-  welcome: "Paste the invite someone sent you, or start a house of your own.",
-  paste: "Paste your invite link or code",
-  pasteHint: "The whole link, or just the eight letters and numbers at its end.",
-  badInvite: "That isn’t an invite link or code. Check it against the one you were sent.",
-  open: "Open the invite",
-  startInstead: "Start a house instead",
-  // A join link, signed in.
-  join: "Join the house",
-  lookingUp: "Looking up the house",
-} as const;
-
 /** Describe your house: Claude drafts the John list, or a starter list does, and an admin keeps what they want. */
 export const HOUSE_DRAFT_COPY = {
   title: "Describe your house",
@@ -446,59 +304,6 @@ export const ASK_USAGE_COPY = {
   outMineNote: (backOn: string) => `Back ${backOn}. Nobody can use more than half, so the others still have theirs.`,
   seeUsage: "See usage",
   getPass: "Get the House Pass",
-} as const;
-
-/**
- * Bring Jonz to your next house (moving.ts, docs/specs/moving-on.md): your
- * moving-out date, the Moving on screen once you've left, the one reminder,
- * and the prompt for the people who stay. Dates arrive formatted.
- */
-export const MOVING_COPY = {
-  // House, You, and its page.
-  row: "Moving out",
-  notPlanned: "Not planned",
-  title: "Moving out",
-  intro: "Say the day you move out. From then the deal stops giving you Johns, so your last week stays fair, and the house sees the date on the Wall.",
-  pick: "The day you move out",
-  save: (day: string) => `Moving out ${day}`,
-  saved: (day: string) => `You move out on ${day}.`,
-  change: "Change the date",
-  staying: "I’m staying after all",
-  afterward: "When the day comes, leave the house from the foot of House. You can start Jonz in your new place from there.",
-  // Today.
-  youMoveOut: (day: string) => `You move out on ${day}`,
-  movingDay: (house: string) => `Moving day. Leave ${house} from House when you’re ready`,
-  // The Wall.
-  movesOut: (who: string, day: string) => `${who} ${who === "You" ? "move" : "moves"} out on ${day}`,
-  stayingAfterAll: (who: string) => `${who} ${who === "You" ? "are" : "is"} staying after all`,
-  movedOut: (who: string) => `${who} moved out`,
-  movingDetail: "Moving out",
-  // For the people who stay, with the join card.
-  askTitle: "Someone moving in?",
-  askBody: (house: string) => `Send them the invite, so ${house} keeps going.`,
-  askButton: "Send the invite",
-  // The Moving on screen: where leaving lands.
-  heading: "Moving on",
-  body: (house: string, johns: number) =>
-    johns > 0
-      ? `Start Jonz in your new place with ${house}’s ${johns} ${johns === 1 ? "John" : "Johns"} already on the list, or join a house that’s invited you.`
-      : "Start Jonz in your new place, or join a house that’s invited you.",
-  start: "Start Jonz in my new place",
-  invite: "I have an invite",
-  // Starting from the old list.
-  newHeading: "Your new place",
-  newIntro: (house: string, johns: number) =>
-    `${johns} ${johns === 1 ? "John" : "Johns"} from ${house} come with you. Tidy the list in Describe your house before you share the invite.`,
-  // The House Pass, when its buyer leaves (it moves with them).
-  passComes: (house: string, until: string | null) =>
-    until
-      ? `Your House Pass comes with you, onto the next house you start or join. ${house} keeps the extras until ${until}.`
-      : "Your House Pass comes with you, onto the next house you start or join.",
-  leavePass: (house: string) => `Leave it for ${house} instead`,
-  passLeft: (house: string) => `You left your House Pass with ${house}. It runs to the end of what you paid, then stops renewing.`,
-  // The one reminder, two weeks after leaving.
-  reminderTitle: "Settled into your new place?",
-  reminderBody: `Bring ${APP_NAME} with you.`,
 } as const;
 
 /** What a pasted link's card says (share.ts draws it). */

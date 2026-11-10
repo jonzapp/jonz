@@ -1,4 +1,4 @@
-import { addDaysTo, dateRange, dayName, FOCUS_SHELL_COPY, localDate, MOVING_COPY, PAGE_TITLE, SECTION_LABEL } from '@app/core';
+import { addDaysTo, dateRange, dayName, FOCUS_SHELL_COPY, localDate, PAGE_TITLE, SECTION_LABEL, wordsFor } from '@app/core';
 import { fireEvent, screen, within } from 'expo-router/testing-library';
 
 import { loadHouse } from '@/api/board';
@@ -7,6 +7,8 @@ import { setMovingOut } from '@/api/moving';
 import MovingScreen from '@/app/(house)/house/moving';
 import { snapshot } from '@/testing/house';
 import { renderPages, untilRead } from '@/testing/pages';
+
+const words = wordsFor('en', 'housemates');
 
 jest.mock('@/api/board', () => ({ loadHouse: jest.fn() }));
 jest.mock('@/api/house', () => ({ catchUp: jest.fn() }));
@@ -42,8 +44,8 @@ it('sits under a title bar with the way back to House', async () => {
   const bar = within(screen.getByTestId('title-bar'));
   expect(bar.getByRole('header', { name: PAGE_TITLE.moving })).toBeOnTheScreen();
   expect(bar.getByRole('button', { name: FOCUS_SHELL_COPY.backTo(SECTION_LABEL.house) })).toBeOnTheScreen();
-  expect(screen.getByText(MOVING_COPY.intro)).toBeOnTheScreen();
-  expect(screen.getByText(MOVING_COPY.afterward)).toBeOnTheScreen();
+  expect(screen.getByText(words('house.moving.intro'))).toBeOnTheScreen();
+  expect(screen.getByText(words('house.moving.afterward'))).toBeOnTheScreen();
 });
 
 it('saves the one day you tap, whichever you tapped last', async () => {
@@ -51,7 +53,7 @@ it('saves the one day you tap, whichever you tapped last', async () => {
   expect(screen.getByTestId('moving-save')).toBeDisabled();
   await fireEvent.press(screen.getByRole('button', { name: dayName(tomorrow) }));
   await fireEvent.press(screen.getByRole('button', { name: dayName(nextDay) }));
-  const save = screen.getByRole('button', { name: MOVING_COPY.save(dateRange(nextDay, nextDay)) });
+  const save = screen.getByRole('button', { name: words('house.moving.save', { day: dateRange(nextDay, nextDay) }) });
   await fireEvent.press(save);
   expect(setMovingOut).toHaveBeenCalledWith(nextDay);
 });
@@ -59,10 +61,10 @@ it('saves the one day you tap, whichever you tapped last', async () => {
 it('says the date once set, and lets you stay after all', async () => {
   (loadHouse as jest.Mock).mockResolvedValue(movingOn(tomorrow));
   await open();
-  expect(screen.getByTestId('moving-saved')).toHaveTextContent(MOVING_COPY.saved(dateRange(tomorrow, tomorrow)));
+  expect(screen.getByTestId('moving-saved')).toHaveTextContent(words('house.moving.saved', { day: dateRange(tomorrow, tomorrow) }));
   // The same day again is nothing to save.
   expect(screen.getByTestId('moving-save')).toBeDisabled();
-  await fireEvent.press(screen.getByRole('button', { name: MOVING_COPY.staying }));
+  await fireEvent.press(screen.getByRole('button', { name: words('house.moving.staying') }));
   expect(setMovingOut).toHaveBeenCalledWith(null);
 });
 

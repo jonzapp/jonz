@@ -1,4 +1,3 @@
-import { ERROR_COPY } from '@app/core';
 import { MessageSquareWarningIcon } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -11,6 +10,7 @@ import { ReportForm } from '@/components/report/report-form';
 import { Sheet } from '@/components/sheet';
 import { Meta } from '@/components/text';
 import { SPACE } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * "Tell us what happened", on the screen that says something broke
@@ -20,6 +20,7 @@ import { SPACE } from '@/theme';
  * reads the session itself; signed out, it gives the support address.
  */
 export function CrashReport({ error }: { error: Error }) {
+  const words = useWords();
   const [signedIn, setSignedIn] = useState(false);
   const [open, setOpen] = useState(false);
   const [sent, setSent] = useState(false);
@@ -35,13 +36,13 @@ export function CrashReport({ error }: { error: Error }) {
       live = false;
     };
   }, []);
-  if (sent) return <Meta testID="crash-report-sent">{ERROR_COPY.told}</Meta>;
-  if (!signedIn) return <Meta>{ERROR_COPY.orEmail}</Meta>;
+  if (sent) return <Meta testID="crash-report-sent">{words('door.error.told')}</Meta>;
+  if (!signedIn) return <Meta>{words('door.error.orEmail')}</Meta>;
   return (
     <View style={styles.stack}>
       <ButtonRow>
         <Button
-          label={ERROR_COPY.tell}
+          label={words('door.error.tell')}
           icon={MessageSquareWarningIcon}
           variant="outline"
           onPress={() => {
@@ -51,7 +52,7 @@ export function CrashReport({ error }: { error: Error }) {
           testID="crash-report"
         />
       </ButtonRow>
-      <Sheet visible={open} title={ERROR_COPY.tellTitle} onClose={() => setOpen(false)} testID="crash-report-sheet">
+      <Sheet visible={open} title={words('door.error.tellTitle')} onClose={() => setOpen(false)} testID="crash-report-sheet">
         {open ? (
           <ReportForm
             start="problem"

@@ -1,7 +1,9 @@
-import { ASK_USAGE_COPY, FRONT_DOOR_COPY, type AskUsage } from "@app/core";
+import { ASK_USAGE_COPY, type AskUsage, wordsFor } from "@app/core";
 import { expect, test, type Page } from "@playwright/test";
 
 import { CLIENT_URL, cleanUp, signInToClient } from "./auth";
+
+const words = wordsFor("en", "housemates");
 
 // The week's Ask Jonz: the chat says nothing while there's plenty, warns
 // over the box once under a quarter is left, and puts a notice in the box's
@@ -18,7 +20,7 @@ test.afterEach(async ({ page }) => page.unrouteAll({ behavior: "ignoreErrors" })
 
 async function newHouse(page: Page) {
   await page.goto("/house/new");
-  await page.getByLabel(FRONT_DOOR_COPY.name).fill(`Usage ${Date.now() % 10_000}`);
+  await page.getByLabel(words('door.welcome.name')).fill(`Usage ${Date.now() % 10_000}`);
   await page.getByTestId("create-house").click();
   await expect(page).toHaveURL(/\/today$/);
 }

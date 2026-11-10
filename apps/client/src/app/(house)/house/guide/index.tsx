@@ -1,4 +1,4 @@
-import { GUIDE_COPY, GUIDE_TOPIC, guideSections, type HowTopic } from '@app/core';
+import { guideTopic, guideSections, type HowTopic } from '@app/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
@@ -13,6 +13,7 @@ import { useHouse, type HouseView } from '@/hooks/use-house';
 import { useMembership } from '@/hooks/use-membership';
 import { INSET, SECTION_GAP } from '@/theme';
 import { ListPageOutline } from '@/components/page-outlines';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * The guide, from Help's Read the guide (and House's Help): how Jonz works,
@@ -24,13 +25,14 @@ import { ListPageOutline } from '@/components/page-outlines';
  * Jonz about this under its words.
  */
 export default function GuideScreen() {
+  const words = useWords();
   const { session, house } = useMembership();
   const { topic } = useLocalSearchParams<{ topic?: string }>();
   // The layout's guard only shows the house's screens with a house and a session.
   const { query, view } = useHouse(house!.id, session!.user.id);
   return (
     <HousePage
-      title={GUIDE_COPY.title}
+      title={words('door.guide.title')}
       testID="guide"
       outline={<ListPageOutline sections={[4, 3]} />}
       ready={view !== null}
@@ -44,20 +46,21 @@ export default function GuideScreen() {
 }
 
 function Guide({ view, open }: { view: HouseView; open: string | null }) {
+  const words = useWords();
   const beside = useSideBySide();
   const sections = guideSections(view.snapshot.house.kind === 'family');
   // A topic this house's guide doesn't have (a family's, in a house of housemates) opens the first.
   const chosen: HowTopic = sections.flatMap((s) => s.topics).find((t) => t === open) ?? sections[0].topics[0];
   const list = (
     <View style={styles.stack}>
-      <Body style={styles.lead}>{GUIDE_COPY.lead}</Body>
+      <Body style={styles.lead}>{words('door.guide.lead')}</Body>
       {sections.map((section) => (
         <Section key={section.label} label={section.label}>
           {section.topics.map((topic) => (
             <Row
               key={topic}
-              title={GUIDE_TOPIC[topic].title}
-              meta={GUIDE_TOPIC[topic].meta}
+              title={guideTopic(topic, words).title}
+              meta={guideTopic(topic, words).meta}
               {...(beside
                 ? { onPress: () => router.setParams({ topic }), current: topic === chosen }
                 : { href: `/house/guide/${topic}` as never, chevron: true })}
@@ -66,7 +69,7 @@ function Guide({ view, open }: { view: HouseView; open: string | null }) {
           ))}
         </Section>
       ))}
-      {beside ? null : <AskRow me={view.me} title={GUIDE_COPY.ask} />}
+      {beside ? null : <AskRow me={view.me} title={words('door.guide.ask')} />}
     </View>
   );
   if (!beside) return list;
@@ -76,10 +79,10 @@ function Guide({ view, open }: { view: HouseView; open: string | null }) {
       start={list}
       end={
         <View style={styles.stack} testID="guide-open">
-          <Section label={GUIDE_TOPIC[chosen].title} bare>
+          <Section label={guideTopic(chosen, words).title} bare>
             <TopicWords key={chosen} topic={chosen} view={view} />
           </Section>
-          <AskRow me={view.me} title={GUIDE_COPY.askAbout} />
+          <AskRow me={view.me} title={words('door.guide.askAbout')} />
         </View>
       }
     />

@@ -187,25 +187,9 @@ export function howItWorks(
  * the house's own numbers. Each topic's title and a line on what it covers;
  * Help's Read the guide opens the list, grouped as here.
  */
-export const GUIDE_TOPIC: Record<HowTopic, { title: string; meta: string }> = {
-  today: { title: "Today", meta: "Your next John, and what needs you" },
-  week: { title: "The week", meta: "Everyone's Johns, and is it fair" },
-  house: { title: "House", meta: "The Table, the Wall and setting up" },
-  deal: { title: "How Johns are dealt", meta: "Smart and Classic, every week" },
-  points: { title: "Points", meta: "How effort is counted" },
-  fair_shares: { title: "Fair shares", meta: "Who's ahead and who's behind" },
-  ticks_and_questions: { title: "Ticking and questioning", meta: "Marking done, and checking a tick" },
-  late_and_missed: { title: "Late and missed", meta: "What happens after the due time" },
-  covering: { title: "Covering for someone", meta: "Doing an overdue John for them" },
-  swaps: { title: "Swaps", meta: "Swapping a John with someone" },
-  on_call: { title: "On-call Johns", meta: "Done when they're needed" },
-  time_away: { title: "Time away", meta: "Being left out of the deal" },
-  history_and_resets: { title: "History and fixing mistakes", meta: "Undo, and resets for admins" },
-  stake: { title: "The Stake", meta: "What late and missed cost" },
-  settle_up: { title: "Settling up", meta: "Who pays whom at month end" },
-  house_pass: { title: "House Pass", meta: "What it adds, and the price" },
-  family: { title: "Families", meta: "Parents, kids and pocket money" },
-};
+export function guideTopic(topic: HowTopic, words: Words): { title: string; meta: string } {
+  return { title: words(`door.guide.topic.${topic}.title`), meta: words(`door.guide.topic.${topic}.meta`) };
+}
 
 const GUIDE_SECTIONS: readonly { label: string; topics: readonly HowTopic[] }[] = [
   { label: "Getting started", topics: ["today", "week", "house"] },
@@ -244,11 +228,3 @@ export function guideMarkdown(text: string): string {
     })
     .join("");
 }
-
-export const GUIDE_COPY = {
-  title: "Guide",
-  lead: `How ${APP_NAME} works, page by page, with your house's own numbers. ${APP_NAME} reads the same guide, so you can ask it too.`,
-  /** At the foot of the list and of each page. */
-  ask: `Not here? Ask ${APP_NAME}`,
-  askAbout: `Ask ${APP_NAME} about this`,
-} as const;

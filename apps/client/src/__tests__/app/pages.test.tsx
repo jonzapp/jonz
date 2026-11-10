@@ -1,4 +1,4 @@
-import { ERROR_COPY, FOCUS_SHELL_COPY, HELP_PAGE, LEGAL_COPY, NOT_FOUND_COPY, PRIVACY_POLICY, REPORT_COPY, TERMS } from '@app/core';
+import { FOCUS_SHELL_COPY, HELP_PAGE, LEGAL_COPY, PRIVACY_POLICY, REPORT_COPY, TERMS, wordsFor } from '@app/core';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 import { renderRouter, screen as routed } from 'expo-router/testing-library';
 import { Text, useWindowDimensions } from 'react-native';
@@ -11,6 +11,8 @@ import Terms from '@/app/terms';
 import { sendReport } from '@/api/reports';
 import { supabase } from '@/api/supabase';
 import { useMembership } from '@/hooks/use-membership';
+
+const words = wordsFor('en', 'housemates');
 
 // The root layout's module brings sign-in with it; these pages don't need it.
 jest.mock('@/hooks/use-membership', () => ({ MembershipProvider: ({ children }: { children: unknown }) => children, useMembership: jest.fn() }));
@@ -69,25 +71,25 @@ it('goes back to the front door from privacy opened cold', async () => {
 it('turns a link to nowhere back to your Johns', async () => {
   jest.mocked(useMembership).mockReturnValue({ session: { user: { id: 'sam' } } } as ReturnType<typeof useMembership>);
   await render(<NotFound />);
-  expect(screen.getByRole('header', { name: NOT_FOUND_COPY.title })).toBeOnTheScreen();
-  expect(screen.getByText(NOT_FOUND_COPY.body)).toBeOnTheScreen();
-  expect(screen.getByRole('link', { name: NOT_FOUND_COPY.back })).toHaveProp('href', '/');
+  expect(screen.getByRole('header', { name: words('door.notFound.title') })).toBeOnTheScreen();
+  expect(screen.getByText(words('door.notFound.body'))).toBeOnTheScreen();
+  expect(screen.getByRole('link', { name: words('door.notFound.back') })).toHaveProp('href', '/');
 });
 
 it('turns a link to nowhere back to the front door when signed out', async () => {
   jest.mocked(useMembership).mockReturnValue({ session: null } as ReturnType<typeof useMembership>);
   await render(<NotFound />);
-  expect(screen.getByRole('link', { name: NOT_FOUND_COPY.backToDoor })).toHaveProp('href', '/');
-  expect(screen.queryByRole('link', { name: NOT_FOUND_COPY.back })).toBeNull();
+  expect(screen.getByRole('link', { name: words('door.notFound.backToDoor') })).toHaveProp('href', '/');
+  expect(screen.queryByRole('link', { name: words('door.notFound.back') })).toBeNull();
 });
 
 it('says a screen broke, and tries it again', async () => {
   jest.mocked(supabase.auth.getSession).mockResolvedValue({ data: { session: null }, error: null } as never);
   const retry = jest.fn(async () => {});
   await render(<ErrorBoundary error={new Error('boom')} retry={retry} />);
-  expect(screen.getByRole('header', { name: ERROR_COPY.title })).toBeOnTheScreen();
-  expect(screen.getByText(ERROR_COPY.body)).toBeOnTheScreen();
-  await fireEvent.press(screen.getByRole('button', { name: ERROR_COPY.retry }));
+  expect(screen.getByRole('header', { name: words('door.error.title') })).toBeOnTheScreen();
+  expect(screen.getByText(words('door.error.body'))).toBeOnTheScreen();
+  await fireEvent.press(screen.getByRole('button', { name: words('door.error.retry') }));
   expect(retry).toHaveBeenCalled();
 });
 
@@ -103,12 +105,12 @@ it('lets someone signed in tell us what happened when a screen broke, with what 
   await waitFor(() =>
     expect(sendReport).toHaveBeenCalledWith(expect.objectContaining({ kind: 'problem', details: expect.objectContaining({ error: 'Cannot read the week' }) })),
   );
-  expect(await screen.findByTestId('crash-report-sent')).toHaveTextContent(ERROR_COPY.told);
+  expect(await screen.findByTestId('crash-report-sent')).toHaveTextContent(words('door.error.told'));
 });
 
 it('gives the support address on a broken screen when signed out', async () => {
   jest.mocked(supabase.auth.getSession).mockResolvedValue({ data: { session: null }, error: null } as never);
   await render(<ErrorBoundary error={new Error('boom')} retry={jest.fn(async () => {})} />);
-  expect(await screen.findByText(ERROR_COPY.orEmail)).toBeOnTheScreen();
+  expect(await screen.findByText(words('door.error.orEmail'))).toBeOnTheScreen();
   expect(screen.queryByTestId('crash-report')).toBeNull();
 });

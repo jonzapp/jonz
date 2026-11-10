@@ -1,4 +1,4 @@
-import { afterSignIn, APPROVE_PATH, CONSENT_PATH_WITH_ID, DELETE_PATH, ERROR_COPY, SIGN_IN, signedOutTo } from '@app/core';
+import { afterSignIn, APPROVE_PATH, CONSENT_PATH_WITH_ID, DELETE_PATH, SIGN_IN, signedOutTo } from '@app/core';
 import { useFonts } from 'expo-font';
 import { Stack, useGlobalSearchParams, usePathname, type ErrorBoundaryProps } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -23,6 +23,7 @@ import { LookProvider } from '@/hooks/look';
 import { QueryProvider } from '@/hooks/query';
 import { MembershipProvider, useMembership } from '@/hooks/use-membership';
 import { FONT_FILES, SPACE, useTheme } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 // Keep the splash up until Overpass has loaded and the saved session (and its
 // house) has been read, so no screen shows the system font first, or the
@@ -159,13 +160,14 @@ function Routes() {
  * so, try the screen again, or tell us what happened.
  */
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  const words = useWords();
   const { colors } = useTheme();
   return (
     <View style={[styles.unreachable, { backgroundColor: colors.background }]}>
-      <Heading level={2}>{ERROR_COPY.title}</Heading>
-      <Body muted>{ERROR_COPY.body}</Body>
+      <Heading level={2}>{words('door.error.title')}</Heading>
+      <Body muted>{words('door.error.body')}</Body>
       <ButtonRow atEdge>
-        <Button label={ERROR_COPY.retry} icon={RefreshCwIcon} onPress={() => void retry()} />
+        <Button label={words('door.error.retry')} icon={RefreshCwIcon} onPress={() => void retry()} />
       </ButtonRow>
       <CrashReport error={error} />
     </View>
@@ -174,13 +176,14 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
 
 /** The house couldn't be read, so no screen can be chosen yet. */
 function Unreachable({ onRetry }: { onRetry: () => Promise<void> }) {
+  const words = useWords();
   const { colors } = useTheme();
   return (
     <View style={[styles.unreachable, { backgroundColor: colors.background }]}>
-      <Heading level={2}>{ERROR_COPY.unreachable}</Heading>
-      <Body muted>{ERROR_COPY.unreachableBody}</Body>
+      <Heading level={2}>{words('door.error.unreachable')}</Heading>
+      <Body muted>{words('door.error.unreachableBody')}</Body>
       <ButtonRow atEdge>
-        <Button label={ERROR_COPY.retry} icon={RefreshCwIcon} onPress={() => void onRetry()} />
+        <Button label={words('door.error.retry')} icon={RefreshCwIcon} onPress={() => void onRetry()} />
       </ButtonRow>
     </View>
   );

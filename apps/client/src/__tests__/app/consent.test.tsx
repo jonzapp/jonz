@@ -1,4 +1,4 @@
-import { CONSENT_COPY, SIGN_IN_COPY, signInReason } from '@app/core';
+import { CONSENT_COPY, signInReason, wordsFor } from '@app/core';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Slot } from 'expo-router';
 import { fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
@@ -8,6 +8,8 @@ import { answerConsent, goBack, readConsent } from '@/api/connected-apps';
 import Consent from '@/app/oauth/consent';
 import { useMembership } from '@/hooks/use-membership';
 import { testQueryClient } from '@/testing/query';
+
+const words = wordsFor('en', 'housemates');
 
 jest.mock('@/api/connected-apps', () => ({ readConsent: jest.fn(), answerConsent: jest.fn(), goBack: jest.fn() }));
 jest.mock('@/api/email-auth', () => ({}));
@@ -59,7 +61,7 @@ it('signs you in right there, and Google brings you back to the same sign-in', a
   as(null);
   await open();
   expect(screen.getByText(signInReason('/oauth/consent?authorization_id=auth123'))).toBeOnTheScreen();
-  await fireEvent.press(screen.getByRole('button', { name: SIGN_IN_COPY.google }));
+  await fireEvent.press(screen.getByRole('button', { name: words('door.signIn.google') }));
   expect(signInWithGoogle).toHaveBeenCalledWith('/oauth/consent?authorization_id=auth123');
   expect(read).not.toHaveBeenCalled();
 });

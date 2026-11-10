@@ -221,7 +221,7 @@ function TodayView({
   const offer = <TourOffer now={now} />;
   const mover = members.find((m) => m.userId === userId)?.movingOutOn ?? null;
   const localToday = localDate(now, rules.timezone);
-  const moving = movingLine(mover, localToday, house.name);
+  const moving = movingLine(mover, localToday, house.name, words);
   const ask = askWhosMovingIn({
     me: userId,
     members: members.map((m) => ({ userId: m.userId, movingOutOn: m.movingOutOn ?? null })),

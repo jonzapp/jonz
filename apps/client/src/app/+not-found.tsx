@@ -1,9 +1,10 @@
-import { NOT_FOUND_COPY, PAGE_TITLE } from '@app/core';
+import { PAGE_TITLE } from '@app/core';
 
 import { Button } from '@/components/button';
 import { Door, Sign, SignHeading } from '@/components/front-door/door';
 import { PageTitle } from '@/components/page-title';
 import { useMembership } from '@/hooks/use-membership';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * A link to nowhere, as the web's not-found page, on the front door's
@@ -11,13 +12,14 @@ import { useMembership } from '@/hooks/use-membership';
  * out, there are none yet, so it's the front door.
  */
 export default function NotFound() {
+  const words = useWords();
   const { session } = useMembership();
   return (
     <Door testID="not-found-screen">
       <PageTitle page={PAGE_TITLE.notFound} />
       <Sign>
-        <SignHeading title={NOT_FOUND_COPY.title} body={NOT_FOUND_COPY.body} />
-        <Button href="/" label={session ? NOT_FOUND_COPY.back : NOT_FOUND_COPY.backToDoor} />
+        <SignHeading title={words('door.notFound.title')} body={words('door.notFound.body')} />
+        <Button href="/" label={session ? words('door.notFound.back') : words('door.notFound.backToDoor')} />
       </Sign>
     </Door>
   );

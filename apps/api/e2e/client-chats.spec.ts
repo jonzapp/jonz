@@ -1,7 +1,9 @@
-import { ASK_CHATS_COPY, FOCUS_SHELL_COPY, FRONT_DOOR_COPY, PAGE_TITLE, type HouseDraft } from "@app/core";
+import { ASK_CHATS_COPY, FOCUS_SHELL_COPY, PAGE_TITLE, type HouseDraft, wordsFor } from "@app/core";
 import { expect, test, type Page } from "@playwright/test";
 
 import { CLIENT_URL, cleanUp, signInToClient } from "./auth";
+
+const words = wordsFor("en", "housemates");
 
 // Ask Jonz chats are kept until you delete them: the clock on the bar's
 // leading edge opens Your chats, a chat comes back from there, a reply that
@@ -19,7 +21,7 @@ function chat(page: Page) {
 test("a chat is kept, comes back from Your chats, and can be deleted", async ({ context, page }) => {
   made.push(await signInToClient(context, "Ava Chats"));
   await page.goto("/house/new");
-  await page.getByLabel(FRONT_DOOR_COPY.name).fill(`Lodge ${Date.now() % 10_000}`);
+  await page.getByLabel(words('door.welcome.name')).fill(`Lodge ${Date.now() % 10_000}`);
   await page.getByTestId("create-house").click();
   await expect(page).toHaveURL(/\/today$/);
   // A list to ask about: a starter one, kept.

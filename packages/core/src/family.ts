@@ -1,4 +1,4 @@
-import { FRONT_DOOR, FRONT_DOOR_COPY, JOIN_COPY, NEW_HOUSE_COPY, PAGE_TITLE, ROLE_WORDS } from "./copy";
+import { PAGE_TITLE, ROLE_WORDS } from "./copy";
 import type { HouseKind } from "./domain";
 import type { Words } from "./words-for";
 
@@ -16,23 +16,26 @@ export function kindParam(value: string | string[] | null | undefined): HouseKin
   return one === "family" || one === "housemates" ? one : null;
 }
 
+/** The front door's three sentences, by their ids' last part. */
+export const DOOR_POINTS = ["list", "share", "stake"] as const;
+
 /** The front door's words for the side picked: the headline, the three sentences and Start. */
 export function frontDoorWords(kind: HouseKind, words: Words) {
   return kind === "family"
-    ? { headline: words('house.family.door.headline'), points: (["list", "share", "stake"] as const).map((key) => ({ key, body: words(`house.family.door.points.${key}`) })), start: words('house.family.door.start') }
-    : { headline: FRONT_DOOR.headline, points: FRONT_DOOR_COPY.points, start: FRONT_DOOR_COPY.start };
+    ? { headline: words('house.family.door.headline'), points: DOOR_POINTS.map((key) => ({ key, body: words(`house.family.door.points.${key}`) })), start: words('house.family.door.start') }
+    : { headline: words('door.front.headline'), points: DOOR_POINTS.map((key) => ({ key, body: words(`door.welcome.points.${key}`) })), start: words('door.welcome.start') };
 }
 
 /** Start a house's sign for the kind picked: heading, intro and the button. */
 export function newHouseWords(kind: HouseKind, words: Words) {
   return kind === "family"
     ? { title: PAGE_TITLE.newFamily, heading: words('house.family.newHeading'), intro: words('house.family.newIntro'), submit: words('house.family.submit') }
-    : { title: PAGE_TITLE.newHouse, heading: NEW_HOUSE_COPY.heading, intro: NEW_HOUSE_COPY.intro, submit: FRONT_DOOR_COPY.submit };
+    : { title: PAGE_TITLE.newHouse, heading: words('door.newHouse.heading'), intro: words('door.newHouse.intro'), submit: words('door.welcome.submit') };
 }
 
 /** A join link's line under the house's name. */
 export function joinLine(kind: HouseKind, people: number, words: Words): string {
-  return kind === "family" ? words('house.family.livesHere', { people }) : JOIN_COPY.livesHere(people);
+  return kind === "family" ? words('house.family.livesHere', { people }) : words('door.join.livesHere', { people });
 }
 
 /**

@@ -1,27 +1,27 @@
 import { describe, expect, it } from "vitest";
 
 import * as copy from "./copy";
-import { APP_NAME, ERROR_COPY, FOCUS_SHELL_COPY, FRONT_DOOR, INVITE_COPY, JOIN_COPY, LOOK_LABEL, LOOKS, lookOf, NEW_HOUSE_COPY, NOT_FOUND_COPY, NO_HOUSE_COPY, PAGE_TITLE, pageTitle, SECTION_LABEL, SECTIONS, SHELL_COPY, SIGN_IN_COPY, TAGLINE } from "./copy";
+import { APP_NAME, FOCUS_SHELL_COPY, LOOK_LABEL, LOOKS, lookOf, PAGE_TITLE, pageTitle, SECTION_LABEL, SECTIONS, SHELL_COPY, TAGLINE } from "./copy";
 import { EN, type WordId } from "./locales";
 import { awayBannerBody, awayMovedLine, awayShade, johnWhen, makeupHint, phoneZoneLine, recordLine, shareStanding, tableRules } from "./word-keys";
 import { wordsFor } from "./words-for";
 
 const words = wordsFor("en", "housemates");
 
-const signIn = Object.values(SIGN_IN_COPY).flatMap((value) =>
-  typeof value === "function" ? [value("Google"), value("Apple")] : [value],
-);
+const signIn = [
+  ...(Object.keys(EN) as WordId[]).filter((id) => /^door\.signIn\./.test(id) && !EN[id].includes("{")).map((id) => words(id)),
+  words("door.signIn.failed", { provider: "Google" }),
+  words("door.signIn.failed", { provider: "Apple" }),
+];
 const house = [
-  ...Object.values(NEW_HOUSE_COPY),
-  ...Object.values(NO_HOUSE_COPY),
-  ...Object.values(JOIN_COPY).filter((value) => typeof value === "string"),
-  JOIN_COPY.alreadyIn("Flat 3"),
-  JOIN_COPY.livesHere(1),
-  JOIN_COPY.livesHere(4),
-  JOIN_COPY.join("Flat 3"),
+  ...(Object.keys(EN) as WordId[]).filter((id) => /^door\.(newHouse|noHouse|join)\./.test(id) && !EN[id].includes("{")).map((id) => words(id)),
+  words('door.join.alreadyIn', { house: "Flat 3" }),
+  words('door.join.livesHere', { people: 1 }),
+  words('door.join.livesHere', { people: 4 }),
+  words('door.join.join', { house: "Flat 3" }),
 ];
 const today = [
-  ...Object.values(INVITE_COPY).filter((v) => typeof v === "string"),
+  ...(Object.keys(EN) as WordId[]).filter((id) => /^door\.invite\./.test(id) && !EN[id].includes("{")).map((id) => words(id)),
   ...(Object.keys(EN) as WordId[]).filter((id) => /^(today\.page|john\.row)\./.test(id) && !EN[id].includes("{")).map((id) => words(id)),
   words('today.page.thisWeekRange', { range: "12–18 Oct" }),
   words('today.page.left', { count: 1 }),
@@ -34,13 +34,13 @@ const today = [
   words('john.row.dueBeforeYouGo', { was: "Fri 21:00" }),
   words('today.notDealt.nothingThisWeek'),
   words('today.notDealt.nothingThisWeekBody'),
-  INVITE_COPY.shareTitle("Flat 3"),
+  words('door.invite.shareTitle', { house: "Flat 3" }),
 ];
 const lines = [
   APP_NAME,
   TAGLINE,
-  FRONT_DOOR.headline,
-  FRONT_DOOR.signIn,
+  words('door.front.headline'),
+  words('door.front.signIn'),
   ...signIn,
   ...house,
   ...today,
@@ -56,19 +56,19 @@ describe("the words before signing in", () => {
   });
 });
 
-describe("SIGN_IN_COPY", () => {
+describe("door.signIn", () => {
   it("names the provider that didn’t finish", () => {
-    expect(SIGN_IN_COPY.failed("Google")).toBe("Google didn’t finish signing you in. Try again.");
-    expect(SIGN_IN_COPY.failed("Apple")).toBe("Apple didn’t finish signing you in. Try again.");
+    expect(words('door.signIn.failed', { provider: "Google" })).toBe("Google didn’t finish signing you in. Try again.");
+    expect(words('door.signIn.failed', { provider: "Apple" })).toBe("Apple didn’t finish signing you in. Try again.");
   });
 });
 
-describe("JOIN_COPY", () => {
+describe("door.join", () => {
   it("counts the house in words", () => {
-    expect(JOIN_COPY.livesHere(1)).toBe("1 person lives here. Join and you’re dealt Johns from next week.");
-    expect(JOIN_COPY.livesHere(3)).toBe("3 people live here. Join and you’re dealt Johns from next week.");
-    expect(JOIN_COPY.alreadyIn("Flat 3")).toBe("You’re already in Flat 3");
-    expect(JOIN_COPY.join("Flat 3")).toBe("Join Flat 3");
+    expect(words('door.join.livesHere', { people: 1 })).toBe("1 person lives here. Join and you’re dealt Johns from next week.");
+    expect(words('door.join.livesHere', { people: 3 })).toBe("3 people live here. Join and you’re dealt Johns from next week.");
+    expect(words('door.join.alreadyIn', { house: "Flat 3" })).toBe("You’re already in Flat 3");
+    expect(words('door.join.join', { house: "Flat 3" })).toBe("Join Flat 3");
   });
 });
 
@@ -218,10 +218,10 @@ describe("pageTitle", () => {
 
 describe("the pages around the house", () => {
   it("has not-found and error words", () => {
-    expect(NOT_FOUND_COPY.back).toBe("Back to your Johns");
-    expect(NOT_FOUND_COPY.backToDoor).toBe("Back to the front door");
-    expect(PAGE_TITLE.welcome).toBe(NO_HOUSE_COPY.heading);
-    expect(ERROR_COPY.retry).toBe("Try again");
+    expect(words('door.notFound.back')).toBe("Back to your Johns");
+    expect(words('door.notFound.backToDoor')).toBe("Back to the front door");
+    expect(PAGE_TITLE.welcome).toBe(words('door.noHouse.heading'));
+    expect(words('door.error.retry')).toBe("Try again");
   });
 });
 
@@ -265,19 +265,6 @@ describe("STAKE_HISTORY_COPY", () => {
   });
 });
 
-describe("Focus’s word objects", () => {
-  const FOCUS = [
-    "FRONT_DOOR_COPY",
-  ];
-
-  it("sit together in the order of the app, one per part of it", () => {
-    // Vitest keeps the module's exports in the order they're written.
-    const names = Object.keys(copy).filter((name) => FOCUS.includes(name));
-    expect(names).toEqual(FOCUS);
-    for (const name of names) expect(typeof copy[name as keyof typeof copy]).toBe("object");
-  });
-});
-
 /** Every sentence an export holds: strings, lists and objects of them (functions are tested one by one). */
 function sentences(value: unknown): string[] {
   if (typeof value === "string") return [value];
@@ -306,7 +293,7 @@ describe("every word in copy.ts", () => {
   const said = Object.values(copy).flatMap(spoken);
 
   it("is there to check", () => {
-    expect(all.length).toBeGreaterThan(40);
+    expect(all.length).toBeGreaterThan(20);
   });
 
   it("never calls it a rota or a chore app", () => {
@@ -318,7 +305,7 @@ describe("every word in copy.ts", () => {
   });
 
   it("writes every apostrophe curly, in the sentences that take names too", () => {
-    expect(said.length).toBeGreaterThan(40);
+    expect(said.length).toBeGreaterThan(20);
     for (const text of [...all, ...said]) expect(text).not.toContain("'");
   });
 });
