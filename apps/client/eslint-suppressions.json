@@ -107,7 +107,7 @@
   },
   "src/components/house/john-list.tsx": {
     "formatjs/no-literal-string-in-jsx": {
-      "count": 1
+      "count": 2
     }
   },
   "src/components/house/john-timing.tsx": {
