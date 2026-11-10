@@ -16,7 +16,7 @@ import {
   FOCUS_SHELL_COPY,
   switchChoices,
 } from '@app/core';
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 
 import type { AwayView } from '@/api/away';
 import type { JohnList } from '@/api/settings';
@@ -147,6 +147,7 @@ function TodayView({
   const standing = earned ?? page.standing;
   const nameOf = (id: string) => members.find((m) => m.userId === id)?.name ?? null;
   const two = useColumns();
+  const beside = useSideBySide();
   const day = <TopLine>{dayLabel(now, rules.timezone)}</TopLine>;
 
   const next = (
@@ -254,25 +255,61 @@ function TodayView({
       </PageLines>
     ) : null;
 
-  // On a laptop your own Johns keep the main column, Next up beside the rest of your week where there's room for
-  // both; what the house wants of you sits in the panel beside them, over its week. The day's line heads the main
-  // column, a section label's height, so Next up's card, the rest of your week and the first group in the panel
-  // share a top edge.
+  // What the house wants of you, over how its week is going: the panel beside your own Johns on a laptop.
+  const theirs = (
+    <>
+      {needsOk}
+      {needsYou}
+      {ask}
+      {onCall}
+      {couldCover}
+      <WeekGlance view={view} away={away} />
+    </>
+  );
+  // On a laptop Next up runs across the main column, with the rest of your week and the quiet lines under it, and
+  // what the house wants of you sits in the panel beside them, over its week. The day's line heads the main column,
+  // a section label's height, so Next up's plate and the first group in the panel share a top edge.
   if (two) {
     return (
       <Columns
-        main={<TodayMain day={day} offer={offer} next={next} swap={swap} rest={rest} lines={lines} />}
-        side={
+        main={
           <>
-            {needsOk}
-            {needsYou}
-            {ask}
-            {onCall}
-            {couldCover}
-            <WeekGlance view={view} away={away} />
+            {day}
+            {offer}
+            {next}
+            {swap}
+            {rest}
+            {lines}
           </>
         }
+        side={theirs}
       />
+    );
+  }
+  // On a laptop with no room for the panel (a smaller window, or beside the chat with Jonz) the page still fills
+  // the room: Next up across it, then the rest of your week beside what the house wants of you and its week.
+  if (beside) {
+    return (
+      <>
+        {day}
+        {offer}
+        {next}
+        {swap}
+        {rest || lines ? (
+          <Pair
+            testID="today-pair"
+            start={
+              <>
+                {rest}
+                {lines}
+              </>
+            }
+            end={theirs}
+          />
+        ) : (
+          theirs
+        )}
+      </>
     );
   }
   return (
@@ -292,52 +329,3 @@ function TodayView({
   );
 }
 
-/**
- * Today's main column on a laptop: Next up (with the day's line over it, and
- * the quiet lines under it) beside the rest of your week, where the column
- * has room for two (Pair); otherwise one after the other, as on a phone.
- */
-function TodayMain({
-  day,
-  offer,
-  next,
-  swap,
-  rest,
-  lines,
-}: {
-  day: ReactNode;
-  offer: ReactNode;
-  next: ReactNode;
-  swap: ReactNode;
-  rest: ReactNode;
-  lines: ReactNode;
-}) {
-  const beside = useSideBySide() && rest !== null;
-  if (!beside) {
-    return (
-      <>
-        {day}
-        {offer}
-        {next}
-        {swap}
-        {rest}
-        {lines}
-      </>
-    );
-  }
-  return (
-    <Pair
-      testID="today-pair"
-      start={
-        <>
-          {day}
-          {offer}
-          {next}
-          {swap}
-          {lines}
-        </>
-      }
-      end={rest}
-    />
-  );
-}

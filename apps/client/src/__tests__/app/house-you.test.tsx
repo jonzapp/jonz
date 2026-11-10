@@ -1,4 +1,4 @@
-import { DELETE_COPY, FOCUS_SHELL_COPY, HOUSE_COPY, PAGE_TITLE, SECTION_LABEL, wordsFor } from '@app/core';
+import { DELETE_COPY, FOCUS_SHELL_COPY, PAGE_TITLE, SECTION_LABEL, wordsFor } from '@app/core';
 import { screen, within } from 'expo-router/testing-library';
 import { useWindowDimensions } from 'react-native';
 
@@ -54,7 +54,7 @@ it('sits under a title bar with the way back to House, your name at the top', as
 it('holds your settings, help and leaving, in one column on a phone', async () => {
   await open();
   expect(screen.queryByTestId('you-pair')).toBeNull();
-  expect(within(screen.getByTestId('you-section')).getByText(HOUSE_COPY.you)).toBeOnTheScreen();
+  expect(within(screen.getByTestId('you-section')).getByText(words('house.month.you'))).toBeOnTheScreen();
   expect(screen.getByTestId('sign-out')).toBeOnTheScreen();
   expect(within(screen.getByTestId('you-rest')).getByText(DELETE_COPY.leave)).toBeOnTheScreen();
   expect(screen.getByTestId('to-delete-account')).toBeOnTheScreen();

@@ -66,6 +66,11 @@ const ALLOWED: Record<string, RegExp[]> = {
   "history.ts": [/\bimmunity\b/i],
 };
 
+/** The same, for lines in the words files: the Stake's "Let off" is a month an admin waived. */
+const ALLOWED_IDS: Record<string, RegExp[]> = {
+  "house.stake.letOff": [/\blet (it |\w+ )?off\b/i],
+};
+
 describe("the Jonz words", () => {
   it("reads strings, not code or comments", () => {
     expect(stringsOf('// immunity\nconst a = "Use a skip"; /* token */ const b = `${n} ${n === 1 ? "skip" : "skips"} left`;')).toEqual([
@@ -93,7 +98,7 @@ describe("the Jonz words", () => {
   it("the words files (locales/en/) say each thing by its one name", () => {
     const found: string[] = [];
     for (const [id, line] of Object.entries(EN)) {
-      for (const [word, say] of RETIRED) if (word.test(line)) found.push(`${id} "${line}": say ${say}`);
+      for (const [word, say] of RETIRED) if (word.test(line) && !(ALLOWED_IDS[id] ?? []).some((a) => a.source === word.source)) found.push(`${id} "${line}": say ${say}`);
     }
     expect(found).toEqual([]);
   });

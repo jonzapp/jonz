@@ -1,11 +1,14 @@
 import "server-only";
 
-import { AWAY_COPY, dueInLine, type AwayDraft } from "@app/core";
+import { dueInLine, type AwayDraft, wordsFor } from "@app/core";
 
 import { pushNotifier } from "@/lib/push";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 import type { Caller, Refusal } from "./disputes";
+
+// Pushes and server lines read the housemates' words for now; each person's own language comes with translation 7.
+const words = wordsFor("en", "housemates");
 
 // Booking time away needs a server for one thing: telling whoever it hands a
 // John to. The booking itself is the caller's own call to set_away, which
@@ -59,8 +62,8 @@ export async function bookAway(caller: Caller, draft: AwayDraft, now: Date): Pro
     const zone = house?.timezone ?? "UTC";
     for (const a of handed) {
       await notify([a.user_id], {
-        title: AWAY_COPY.handedTitle(a.name),
-        body: AWAY_COPY.handedBody(me?.display_name ?? "Someone", dueInLine(new Date(a.due_at), now, zone)),
+        title: words('house.away.handedTitle', { john: a.name }),
+        body: words('house.away.handedBody', { name: me?.display_name ?? "Someone", due: dueInLine(new Date(a.due_at), now, zone) }),
         url: "/today",
         kind: "deal",
         zone,

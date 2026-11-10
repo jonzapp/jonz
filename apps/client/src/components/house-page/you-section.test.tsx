@@ -1,4 +1,4 @@
-import { EMAIL_SIGN_IN_COPY, HOUSE_COPY, HOUSE_LOWER_COPY, ME_COPY, MOVING_COPY, PASSWORD_SETTING_COPY, STEADY_COPY } from '@app/core';
+import { EMAIL_SIGN_IN_COPY, MOVING_COPY, PASSWORD_SETTING_COPY, wordsFor } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 
 import { signOut } from '@/api/auth';
@@ -11,6 +11,8 @@ import { snapshot } from '@/testing/house';
 import { renderPages } from '@/testing/pages';
 
 import { YouSection } from './you-section';
+
+const words = wordsFor('en', 'housemates');
 
 jest.mock('@/api/auth', () => ({ signOut: jest.fn() }));
 jest.mock('@/api/email-auth', () => ({ emailSignIn: jest.fn(async () => null), setPassword: jest.fn() }));
@@ -57,7 +59,7 @@ it('says your moving-out day, or that none is planned, and pushes its page', asy
 
 it('says your preferences in a line, and pushes their page', async () => {
   await open();
-  expect(screen.getByTestId('to-prefs')).toHaveTextContent(new RegExp(`${STEADY_COPY.prefs}.*${STEADY_COPY.prefsNone}`));
+  expect(screen.getByTestId('to-prefs')).toHaveTextContent(new RegExp(`${words('week.steady.prefs')}.*${words('week.steady.prefsNone')}`));
   const base = snapshot();
   (loadHouse as jest.Mock).mockResolvedValue(
     snapshot({ members: base.members.map((m) => (m.userId === 'priya' ? { ...m, prefs: { days: [3, 6], bestTime: 'evening', rather: {} } } : m)) }),
@@ -68,14 +70,14 @@ it('says your preferences in a line, and pushes their page', async () => {
 
 it('shows your name, and changes it in a sheet', async () => {
   await open();
-  expect(screen.getByRole('header', { name: HOUSE_COPY.you })).toBeOnTheScreen();
+  expect(screen.getByRole('header', { name: words('house.month.you') })).toBeOnTheScreen();
   expect(screen.getByTestId('to-name')).toHaveTextContent(/Name.*Priya/);
   await fireEvent.press(within(screen.getByTestId('to-name')).getByRole('button'));
   const sheet = within(screen.getByTestId('name-sheet'));
-  expect(sheet.getByRole('header', { name: HOUSE_LOWER_COPY.rename })).toBeOnTheScreen();
+  expect(sheet.getByRole('header', { name: words('house.lower.rename') })).toBeOnTheScreen();
   // Nothing to save until the name is different.
   expect(sheet.getByTestId('save-name')).toBeDisabled();
-  await fireEvent.changeText(sheet.getByLabelText(ME_COPY.name), 'Pri');
+  await fireEvent.changeText(sheet.getByLabelText(words('people.me.name')), 'Pri');
   await fireEvent.press(sheet.getByTestId('save-name'));
   expect(renameMe).toHaveBeenCalledWith('priya', 'Pri');
   await waitFor(() => expect(screen.queryByTestId('name-sheet')).toBeNull());
@@ -88,7 +90,7 @@ it('saves once from the keyboard, and not at all while the name is unchanged', a
   (renameMe as jest.Mock).mockReturnValue(new Promise<void>((resolve) => (answer = resolve)));
   await open();
   await fireEvent.press(within(screen.getByTestId('to-name')).getByRole('button'));
-  const field = within(screen.getByTestId('name-sheet')).getByLabelText(ME_COPY.name);
+  const field = within(screen.getByTestId('name-sheet')).getByLabelText(words('people.me.name'));
   await fireEvent(field, 'submitEditing');
   expect(renameMe).not.toHaveBeenCalled();
   await fireEvent.changeText(field, 'Pri');
@@ -104,7 +106,7 @@ it("says why the name didn't save, in the sheet, and keeps it open", async () =>
   await open();
   await fireEvent.press(within(screen.getByTestId('to-name')).getByRole('button'));
   const sheet = within(screen.getByTestId('name-sheet'));
-  await fireEvent.changeText(sheet.getByLabelText(ME_COPY.name), '  ');
+  await fireEvent.changeText(sheet.getByLabelText(words('people.me.name')), '  ');
   await fireEvent.press(sheet.getByTestId('save-name'));
   expect(await sheet.findByRole('alert')).toHaveTextContent('Your name needs a letter or two.');
   expect(screen.getByTestId('name-sheet')).toBeOnTheScreen();
@@ -113,10 +115,10 @@ it("says why the name didn't save, in the sheet, and keeps it open", async () =>
 it('starts the sheet from your name each time it opens', async () => {
   await open();
   await fireEvent.press(within(screen.getByTestId('to-name')).getByRole('button'));
-  await fireEvent.changeText(screen.getByLabelText(ME_COPY.name), 'Half typed');
+  await fireEvent.changeText(screen.getByLabelText(words('people.me.name')), 'Half typed');
   await fireEvent.press(screen.getByTestId('sheet-close'));
   await fireEvent.press(within(screen.getByTestId('to-name')).getByRole('button'));
-  expect(screen.getByLabelText(ME_COPY.name)).toHaveDisplayValue('Priya');
+  expect(screen.getByLabelText(words('people.me.name'))).toHaveDisplayValue('Priya');
 });
 
 it('leaves out reminders where this device has none to offer', async () => {
@@ -132,8 +134,8 @@ it("says whether this device's reminders are on, and holds their switch in a she
   await fireEvent.press(within(screen.getByTestId('to-reminders')).getByRole('button'));
   const sheet = within(screen.getByTestId('reminders-sheet'));
   // Its title says Reminders, as every sheet's does, and the control doesn't say it again.
-  expect(sheet.getByRole('header', { name: HOUSE_LOWER_COPY.reminders })).toBeOnTheScreen();
-  expect(sheet.getAllByText(new RegExp(`^${HOUSE_LOWER_COPY.reminders}$`, 'i'))).toHaveLength(1);
+  expect(sheet.getByRole('header', { name: words('house.lower.reminders') })).toBeOnTheScreen();
+  expect(sheet.getAllByText(new RegExp(`^${words('house.lower.reminders')}$`, 'i'))).toHaveLength(1);
   expect(sheet.getByTestId('reminders')).toBeOnTheScreen();
 });
 
@@ -156,7 +158,7 @@ it('chooses the look in the row itself', async () => {
 
 it('signs you out', async () => {
   await open();
-  await fireEvent.press(within(screen.getByTestId('sign-out')).getByRole('button', { name: HOUSE_LOWER_COPY.signOut }));
+  await fireEvent.press(within(screen.getByTestId('sign-out')).getByRole('button', { name: words('house.lower.signOut') }));
   expect(signOut).toHaveBeenCalledTimes(1);
 });
 

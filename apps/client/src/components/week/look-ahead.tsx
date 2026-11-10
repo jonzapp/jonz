@@ -1,10 +1,4 @@
-import {
-  pointsLabel,
-  STEADY_COPY,
-  type AheadSection,
-  type TurnRow,
-  type WaitingRow,
-} from "@app/core";
+import { pointsLabel, type AheadSection, type TurnRow, type WaitingRow } from "@app/core";
 import { HourglassIcon } from "lucide-react-native";
 import { StyleSheet, View } from "react-native";
 
@@ -13,6 +7,7 @@ import { Row, RowIcon } from "@/components/row";
 import { Section } from "@/components/section";
 import { Meta } from "@/components/text";
 import { INSET, LABEL_GAP } from "@/theme";
+import { useWords } from '@/hooks/use-words';
 
 /**
  * Week's look ahead in Steady weeks, from what the deal kept: the Johns
@@ -21,10 +16,11 @@ import { INSET, LABEL_GAP } from "@/theme";
  * person by person. Each is nothing when it has nothing to show.
  */
 export function WaitingSection({ rows }: { rows: readonly WaitingRow[] }) {
+  const words = useWords();
   if (rows.length === 0) return null;
   return (
     <View style={styles.noted}>
-      <Section label={STEADY_COPY.waiting} testID="week-waiting">
+      <Section label={words('week.steady.waiting')} testID="week-waiting">
         {rows.map((r) => (
           <Row
             key={r.johnId}
@@ -36,7 +32,7 @@ export function WaitingSection({ rows }: { rows: readonly WaitingRow[] }) {
           />
         ))}
       </Section>
-      <Meta style={styles.note}>{STEADY_COPY.waitingNote}</Meta>
+      <Meta style={styles.note}>{words('week.steady.waitingNote')}</Meta>
     </View>
   );
 }
@@ -52,9 +48,10 @@ export function TurnsNextSection({
   userId: string;
   nameOf: (userId: string) => string | null;
 }) {
+  const words = useWords();
   if (rows.length === 0) return null;
   return (
-    <Section label={STEADY_COPY.turnsNext} testID="week-turns-next">
+    <Section label={words('week.steady.turnsNext')} testID="week-turns-next">
       {rows.map((r) => (
         <Row
           key={r.johnId}

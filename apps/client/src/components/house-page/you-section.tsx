@@ -1,4 +1,4 @@
-import { codeProblem, dateRange, DELETE_COPY, EMAIL_SIGN_IN_COPY, emailAuthProblem, HOUSE_COPY, HOUSE_LOWER_COPY, LOOK_LABEL, LOOKS, ME_COPY, MOVING_COPY, PASSWORD_MIN, PASSWORD_SETTING_COPY, passwordProblem, prefsLine, STEADY_COPY, BUSY_COPY } from '@app/core';
+import { codeProblem, dateRange, DELETE_COPY, EMAIL_SIGN_IN_COPY, emailAuthProblem, LOOK_LABEL, LOOKS, MOVING_COPY, PASSWORD_MIN, PASSWORD_SETTING_COPY, passwordProblem, prefsLine, BUSY_COPY } from '@app/core';
 import { BellIcon, KeyRoundIcon, LogOutIcon, SlidersHorizontalIcon, SunMoonIcon, Trash2Icon, TruckIcon } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
@@ -27,6 +27,7 @@ import { useLook } from '@/hooks/look';
 import type { HouseView } from '@/hooks/use-house';
 import { useMove } from '@/hooks/use-move';
 import { INSET, SECTION_GAP, SPACE, useTheme } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 const LOOK_OPTIONS = LOOKS.map((value) => ({ value, label: LOOK_LABEL[value] }));
 
@@ -52,6 +53,7 @@ export function YouSection({
   view: HouseView;
   part?: 'all' | 'account' | 'rest';
 }) {
+  const words = useWords();
   const [look, setLook] = useLook();
   const { colors } = useTheme();
   const [sheet, setSheet] = useState<'name' | 'reminders' | 'password' | 'delete' | null>(null);
@@ -82,10 +84,10 @@ export function YouSection({
   return (
     <View testID={part === 'rest' ? 'you-rest' : 'you-section'} style={styles.sections}>
       {part === 'rest' ? null : (
-        <Section label={HOUSE_COPY.you}>
+        <Section label={words('house.month.you')}>
           <Row
             leading={<Avatar name={name} userId={userId} me />}
-            title={HOUSE_LOWER_COPY.name}
+            title={words('house.lower.name')}
             meta={name}
             onPress={() => {
               setOpened((n) => n + 1);
@@ -97,8 +99,8 @@ export function YouSection({
           {reminders.support === 'none' ? null : (
             <Row
               leading={<RowIcon icon={BellIcon} />}
-              title={HOUSE_LOWER_COPY.reminders}
-              meta={reminders.on === null ? <PendingMeta /> : reminders.on ? HOUSE_LOWER_COPY.on : HOUSE_LOWER_COPY.off}
+              title={words('house.lower.reminders')}
+              meta={reminders.on === null ? <PendingMeta /> : reminders.on ? words('house.lower.on') : words('house.lower.off')}
               onPress={() => setSheet('reminders')}
               chevron
               testID="to-reminders"
@@ -107,8 +109,8 @@ export function YouSection({
           {listed ? null : (
             <Row
               leading={<RowIcon icon={SlidersHorizontalIcon} />}
-              title={STEADY_COPY.prefs}
-              meta={prefsLine(view.me.prefs)}
+              title={words('week.steady.prefs')}
+              meta={prefsLine(view.me.prefs, words)}
               href="/house/away"
               chevron
               testID="to-prefs"
@@ -116,8 +118,8 @@ export function YouSection({
           )}
           <Row
             leading={<RowIcon icon={SunMoonIcon} />}
-            title={HOUSE_LOWER_COPY.look}
-            trailing={<Segmented options={LOOK_OPTIONS} value={look} onChange={setLook} label={ME_COPY.look} testID="look" />}
+            title={words('house.lower.look')}
+            trailing={<Segmented options={LOOK_OPTIONS} value={look} onChange={setLook} label={words('people.me.look')} testID="look" />}
           />
           {email ? (
             <Row
@@ -134,7 +136,7 @@ export function YouSection({
           ) : null}
           <Row
             leading={<RowIcon icon={LogOutIcon} />}
-            title={HOUSE_LOWER_COPY.signOut}
+            title={words('house.lower.signOut')}
             onPress={() => void out()}
             disabled={signingOut}
             testID="sign-out"
@@ -177,7 +179,7 @@ export function YouSection({
       />
       <Sheet
         visible={sheet === 'reminders'}
-        title={HOUSE_LOWER_COPY.reminders}
+        title={words('house.lower.reminders')}
         onClose={() => setSheet(null)}
         onDismissed={reminders.read}
         testID="reminders-sheet"
@@ -245,6 +247,7 @@ function NameSheet({
   name: string;
   onClose: () => void;
 }) {
+  const words = useWords();
   const move = useMove(houseId);
   const [value, setValue] = useState(name);
 
@@ -257,9 +260,9 @@ function NameSheet({
   }
 
   return (
-    <Sheet visible={visible} title={HOUSE_LOWER_COPY.rename} onClose={onClose} testID="name-sheet">
+    <Sheet visible={visible} title={words('house.lower.rename')} onClose={onClose} testID="name-sheet">
       <Field
-        label={ME_COPY.name}
+        label={words('people.me.name')}
         value={value}
         onChangeText={setValue}
         maxLength={60}
@@ -270,7 +273,7 @@ function NameSheet({
       />
       {move.problem ? <Alert message={move.problem} /> : null}
       <Button
-        label={HOUSE_LOWER_COPY.save}
+        label={words('house.lower.save')}
         disabled={unchanged}
         busy={move.pending}
         busyLabel={BUSY_COPY.saving}

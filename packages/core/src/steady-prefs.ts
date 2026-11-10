@@ -10,9 +10,9 @@ import { format, set } from "date-fns";
 import type { BoardItem } from "./board";
 import type { Json } from "./db-types";
 import { BEST_TIME_HOUR, BEST_TIMES, DOW_LABEL, type BestTime, type IsoDow } from "./domain";
-import { STEADY_COPY } from "./copy";
 import { dueLabel } from "./format";
 import { addDaysTo, localDate } from "./week";
+import type { Words } from "./words-for";
 
 export interface MyPrefs {
   /** Days that suit me, ISO weekdays in order; none is any day. */
@@ -47,10 +47,10 @@ export function withRather(prefs: MyPrefs, johnId: string, rather: 1 | 0 | -1): 
 }
 
 /** You's line for them: "Wed, Thu, Sat, mornings", "Mornings", or "No preferences". */
-export function prefsLine(prefs: MyPrefs): string {
+export function prefsLine(prefs: MyPrefs, words: Words): string {
   const days = prefs.days.map((d) => DOW_LABEL[d].slice(0, 3));
-  const parts = [...days, ...(prefs.bestTime ? [STEADY_COPY.timeOften[prefs.bestTime]] : [])];
-  if (!parts.length) return Object.keys(prefs.rather).length ? STEADY_COPY.johns : STEADY_COPY.prefsNone;
+  const parts = [...days, ...(prefs.bestTime ? [words(`week.steady.timeOften.${prefs.bestTime}`)] : [])];
+  if (!parts.length) return Object.keys(prefs.rather).length ? words('week.steady.johns') : words('week.steady.prefsNone');
   const line = parts.join(", ");
   return line[0].toUpperCase() + line.slice(1);
 }
@@ -87,7 +87,7 @@ export function planChoices(
   dueAt: Date,
   now: Date,
   zone: string,
-  bestTime: BestTime | null,
+  bestTime: BestTime | null, words: Words,
 ): { days: PlanDay[]; chosen: PlanTime; dueWords: string } | null {
   const best = bestTime ?? "evening";
   const today = localDate(now, zone);
@@ -99,7 +99,7 @@ export function planChoices(
       return {
         at,
         label: format(at, "HH:mm", { in: tz(zone) }),
-        meta: t === bestTime ? STEADY_COPY.yourBest(STEADY_COPY.time[t]) : STEADY_COPY.time[t],
+        meta: t === bestTime ? words('week.steady.yourBest', { time: words(`week.steady.time.${t}`).toLowerCase() }) : words(`week.steady.time.${t}`),
         best: t === best,
       };
     }).filter((t) => t.at.getTime() > now.getTime() && t.at.getTime() < dueAt.getTime());

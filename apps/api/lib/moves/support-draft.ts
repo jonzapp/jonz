@@ -1,11 +1,14 @@
 import "server-only";
 
-import { DEFAULT_RULES, howItWorks, SUPPORT_DRAFTS_PER_DAY, SupportDraft, tidySuggestion, type SupportDraftResponse } from "@app/core";
+import { DEFAULT_RULES, howItWorks, SUPPORT_DRAFTS_PER_DAY, SupportDraft, tidySuggestion, type SupportDraftResponse, wordsFor } from "@app/core";
 
 import { canAsk, type AgentAnswer } from "@/lib/ai/agent";
 import { askSupportClaude, type ReportForAgent, type SupportAnswer, type SupportReads } from "@/lib/ai/support-draft";
 import type { Caller, Refusal } from "@/lib/moves/disputes";
 import { ownerReads } from "@/lib/moves/owner-ask";
+
+// Pushes and server lines read the housemates' words for now; each person's own language comes with translation 7.
+const words = wordsFor("en", "housemates");
 
 // The support agent (lib/ai/support-draft.ts) on one report, as the owner's
 // own session: every read, and the suggestion's own record
@@ -121,7 +124,7 @@ export function supportReads(caller: Caller, report: OpenedReport, now: Date): S
     deletions: (q) => owner.deletions(q),
     audit: (q) => owner.audit(q, null, null),
     howItWorks(topic, family) {
-      return howItWorks(topic, { rules: { ...DEFAULT_RULES, timezone: OWNER_TZ, currency: "GBP" }, family, awayMakeup: 100 });
+      return howItWorks(topic, { rules: { ...DEFAULT_RULES, timezone: OWNER_TZ, currency: "GBP" }, family, awayMakeup: 100 }, words);
     },
   };
 }

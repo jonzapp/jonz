@@ -1,16 +1,4 @@
-import {
-  awayLines,
-  familyHides,
-  HOUSE_PAGE_COPY,
-  moneyLines,
-  monthOf,
-  monthWord,
-  owingLines,
-  perkLines,
-  PERSON_COPY,
-  recordLines,
-  shareLine,
-} from '@app/core';
+import { awayLines, familyHides, moneyLines, monthOf, monthWord, owingLines, perkLines, recordLines, shareLine } from '@app/core';
 import type { UseQueryResult } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 
@@ -27,6 +15,7 @@ import { Body } from '@/components/text';
 import type { HouseView } from '@/hooks/use-house';
 import { Waiting } from '@/components/waiting';
 import { OutlineRows } from '@/components/outline';
+import { useWords } from '@/hooks/use-words';
 
 /** A section's rows while what they need is read (in outline), or why the read failed. */
 function Pending({ query, label, unreadable, rows = 2 }: { query: UseQueryResult<unknown>; label: string; unreadable: string; rows?: number }) {
@@ -42,11 +31,12 @@ function Pending({ query, label, unreadable, rows = 2 }: { query: UseQueryResult
 
 /** Their time away from today on, or a sentence saying there's none (as an empty group says it anywhere). */
 function AwayLines({ away, personId }: { away: AwayView; personId: string }) {
-  const lines = awayLines(away.periods, personId, away.today);
+  const words = useWords();
+  const lines = awayLines(away.periods, personId, away.today, words);
   if (lines.length > 0) return <PersonLines lines={lines} />;
   return (
     <GroupItem>
-      <Body>{PERSON_COPY.noAway}</Body>
+      <Body>{words('people.person.noAway')}</Body>
     </GroupItem>
   );
 }
@@ -76,6 +66,7 @@ export function PersonSections({
   away: UseQueryResult<AwayView>;
   admin?: ReactNode;
 }) {
+  const words = useWords();
   const you = person.userId === userId;
   const { rules, members } = view.snapshot;
   const month = table.data?.month ?? stake.data?.month ?? monthOf(view.now, rules.timezone);
@@ -90,7 +81,7 @@ export function PersonSections({
         currency: rules.currency,
         ledger: stake.data.ledger,
         closedMonths: stake.data.closedMonths,
-      })
+      }, words)
     : [];
 
   const items: FlowItem[] = [
@@ -98,10 +89,10 @@ export function PersonSections({
       key: 'record',
       weight: 3,
       node: (
-        <Section label={you ? PERSON_COPY.yourRecord : PERSON_COPY.record} testID="person-record">
-          <PersonLines lines={recordLines(week, monthRow, month)} />
+        <Section label={you ? words('people.person.yourRecord') : words('people.person.record')} testID="person-record">
+          <PersonLines lines={recordLines(week, monthRow, month, words)} />
           {table.data ? null : (
-            <Pending query={table} label={HOUSE_PAGE_COPY.readingTable} unreadable={HOUSE_PAGE_COPY.tableUnreadable} />
+            <Pending query={table} label={words('house.page.readingTable')} unreadable={words('house.page.tableUnreadable')} />
           )}
         </Section>
       ),
@@ -110,18 +101,18 @@ export function PersonSections({
       key: 'share',
       weight: 2,
       node: (
-        <Section label={PERSON_COPY.fairShare} testID="person-share">
+        <Section label={words('people.person.fairShare')} testID="person-share">
           {table.data ? (
             <PersonLines
               lines={[
                 shareLine(
                   table.data.balances.find((b) => b.userId === person.userId),
                   you,
-                ),
+                 words),
               ]}
             />
           ) : (
-            <Pending query={table} label={HOUSE_PAGE_COPY.readingTable} unreadable={HOUSE_PAGE_COPY.tableUnreadable} />
+            <Pending query={table} label={words('house.page.readingTable')} unreadable={words('house.page.tableUnreadable')} />
           )}
         </Section>
       ),
@@ -130,8 +121,8 @@ export function PersonSections({
       key: 'perks',
       weight: 3,
       node: (
-        <Section label={PERSON_COPY.streakAndTokens} testID="person-perks">
-          <PersonLines lines={perkLines(person)} />
+        <Section label={words('people.person.streakAndTokens')} testID="person-perks">
+          <PersonLines lines={perkLines(person, words)} />
         </Section>
       ),
     },
@@ -143,7 +134,7 @@ export function PersonSections({
         key: 'money',
         weight: 4,
         node: (
-          <Section label={HOUSE_PAGE_COPY.soFar(monthWord(month))} testID="person-money">
+          <Section label={words('house.page.soFar', { month: monthWord(month) })} testID="person-money">
             {stake.data ? (
               <PersonLines
                 lines={moneyLines({
@@ -152,10 +143,10 @@ export function PersonSections({
                   stakeMinor: rules.stakeMinor,
                   record: monthRow,
                   currency: rules.currency,
-                })}
+                }, words)}
               />
             ) : (
-              <Pending query={stake} label={HOUSE_PAGE_COPY.readingStake} unreadable={HOUSE_PAGE_COPY.stakeUnreadable} />
+              <Pending query={stake} label={words('house.page.readingStake')} unreadable={words('house.page.stakeUnreadable')} />
             )}
           </Section>
         ),
@@ -167,7 +158,7 @@ export function PersonSections({
       key: 'settling',
       weight: owing.length + 1,
       node: (
-        <Section label={PERSON_COPY.settling} testID="person-settling">
+        <Section label={words('people.person.settling')} testID="person-settling">
           <PersonLines lines={owing} testID="person-owing" />
         </Section>
       ),
@@ -177,11 +168,11 @@ export function PersonSections({
     key: 'away',
     weight: 2,
     node: (
-      <Section label={PERSON_COPY.away} testID="person-away">
+      <Section label={words('people.person.away')} testID="person-away">
         {away.data ? (
           <AwayLines away={away.data} personId={person.userId} />
         ) : (
-          <Pending query={away} label={PERSON_COPY.readingAway} unreadable={PERSON_COPY.awayUnreadable} />
+          <Pending query={away} label={words('people.person.readingAway')} unreadable={words('people.person.awayUnreadable')} />
         )}
       </Section>
     ),

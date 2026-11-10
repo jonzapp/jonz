@@ -1,4 +1,4 @@
-import { BIN_NIGHT, FOCUS_SHELL_COPY, HOUSE_LOWER_COPY, wordsFor } from '@app/core';
+import { BIN_NIGHT, FOCUS_SHELL_COPY, wordsFor } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 import { Text } from 'react-native';
 
@@ -63,15 +63,15 @@ beforeEach(() => {
 it('names the house to leave, in hazard words', async () => {
   await open();
   const row = within(screen.getByTestId('leave'));
-  expect(row.getByRole('button', { name: HOUSE_LOWER_COPY.leave('Flat 3') })).toBeOnTheScreen();
-  expect(row.getByText(HOUSE_LOWER_COPY.leave('Flat 3'))).toHaveStyle({ color: BIN_NIGHT.light.hazard });
+  expect(row.getByRole('button', { name: words('house.lower.leave', { house: 'Flat 3' }) })).toBeOnTheScreen();
+  expect(row.getByText(words('house.lower.leave', { house: 'Flat 3' }))).toHaveStyle({ color: BIN_NIGHT.light.hazard });
 });
 
 it('asks first, saying what leaving costs in money', async () => {
   await open();
   await waitFor(() => expect(loadStake).toHaveBeenCalled());
   const sheet = await ask();
-  expect(sheet.getByRole('header', { name: HOUSE_LOWER_COPY.leaveAsk('Flat 3') })).toBeOnTheScreen();
+  expect(sheet.getByRole('header', { name: words('house.lower.leaveAsk', { house: 'Flat 3' }) })).toBeOnTheScreen();
   expect(
     await sheet.findByText('You’ll lose the £3.33 coming to you from October’s forfeits, and Sam still owes you £4.50.'),
   ).toBeOnTheScreen();
@@ -84,7 +84,7 @@ it("says it costs nothing when you're square, and that the last one out leaves t
   await open();
   await waitFor(() => expect(loadStake).toHaveBeenCalled());
   const sheet = await ask();
-  expect(await sheet.findByText(`${HOUSE_LOWER_COPY.costsNothing} ${HOUSE_LOWER_COPY.lastOne}`)).toBeOnTheScreen();
+  expect(await sheet.findByText(`${words('house.lower.costsNothing')} ${words('house.lower.lastOne')}`)).toBeOnTheScreen();
   expect(sheet.getByTestId('confirm')).toBeEnabled();
 });
 
@@ -109,8 +109,8 @@ it('says nothing about money until the Stake is read', async () => {
   (loadStake as jest.Mock).mockReturnValue(new Promise((resolve) => (answer = resolve)));
   await open();
   const sheet = await ask();
-  expect(sheet.getByText(HOUSE_LOWER_COPY.costReading)).toBeOnTheScreen();
-  expect(sheet.queryByText(HOUSE_LOWER_COPY.costsNothing)).toBeNull();
+  expect(sheet.getByText(words('house.lower.costReading'))).toBeOnTheScreen();
+  expect(sheet.queryByText(words('house.lower.costsNothing'))).toBeNull();
   answer(stake(0, [{ from: 'priya', to: 'sam', amount: 120 }]));
   expect(await sheet.findByText('You still owe Sam £1.20.')).toBeOnTheScreen();
 });
@@ -120,8 +120,8 @@ it("says when it can't read what leaving costs, and reads the Stake again when a
   await open();
   await waitFor(() => expect(loadStake).toHaveBeenCalled());
   let sheet = await ask();
-  expect(await sheet.findByText(HOUSE_LOWER_COPY.costUnread)).toBeOnTheScreen();
-  expect(sheet.queryByText(HOUSE_LOWER_COPY.costsNothing)).toBeNull();
+  expect(await sheet.findByText(words('house.lower.costUnread'))).toBeOnTheScreen();
+  expect(sheet.queryByText(words('house.lower.costsNothing'))).toBeNull();
   // Leaving is still yours to do.
   expect(sheet.getByTestId('confirm')).toBeEnabled();
   await fireEvent.press(sheet.getByTestId('cancel'));
@@ -136,7 +136,7 @@ it("reads the Stake again from the sheet, when it couldn't", async () => {
   (loadStake as jest.Mock).mockRejectedValue(new Error('offline'));
   await open();
   const sheet = await ask();
-  expect(await sheet.findByText(HOUSE_LOWER_COPY.costUnread)).toBeOnTheScreen();
+  expect(await sheet.findByText(words('house.lower.costUnread'))).toBeOnTheScreen();
   const retry = sheet.getByRole('button', { name: FOCUS_SHELL_COPY.retry });
   let answer: (value: unknown) => void = () => undefined;
   (loadStake as jest.Mock).mockReturnValue(new Promise((resolve) => (answer = resolve)));
@@ -144,7 +144,7 @@ it("reads the Stake again from the sheet, when it couldn't", async () => {
   await fireEvent.press(retry);
   expect(loadStake).toHaveBeenCalledTimes(asked + 1);
   // While it reads, the sheet says so, and there's nothing to press again.
-  expect(await sheet.findByText(HOUSE_LOWER_COPY.costReading)).toBeOnTheScreen();
+  expect(await sheet.findByText(words('house.lower.costReading'))).toBeOnTheScreen();
   expect(sheet.queryByTestId('leave-retry')).toBeNull();
   answer(stake(0, [{ from: 'priya', to: 'sam', amount: 120 }]));
   expect(await sheet.findByText('You still owe Sam £1.20.')).toBeOnTheScreen();
@@ -178,19 +178,19 @@ it('stays when you cancel', async () => {
 
 it('says Jonz never moves money, and leads to Privacy', async () => {
   await open();
-  expect(screen.getByText(HOUSE_LOWER_COPY.noMoney)).toBeOnTheScreen();
+  expect(screen.getByText(words('house.lower.noMoney'))).toBeOnTheScreen();
   // The links are the same size as the words beside them (Meta, 14).
-  for (const label of [HOUSE_LOWER_COPY.noMoney, HOUSE_LOWER_COPY.privacy, HOUSE_LOWER_COPY.terms]) {
+  for (const label of [words('house.lower.noMoney'), words('house.lower.privacy'), words('house.lower.terms')]) {
     expect(screen.getByText(label)).toHaveStyle({ fontSize: 14 });
   }
-  await fireEvent.press(screen.getByRole('link', { name: HOUSE_LOWER_COPY.privacy }));
+  await fireEvent.press(screen.getByRole('link', { name: words('house.lower.privacy') }));
   expect(screen).toHavePathname('/privacy');
   expect(screen.getByText('Privacy page')).toBeOnTheScreen();
 });
 
 it('leads to the Terms', async () => {
   await open();
-  await fireEvent.press(screen.getByRole('link', { name: HOUSE_LOWER_COPY.terms }));
+  await fireEvent.press(screen.getByRole('link', { name: words('house.lower.terms') }));
   expect(screen).toHavePathname('/terms');
   expect(screen.getByText('Terms page')).toBeOnTheScreen();
 });

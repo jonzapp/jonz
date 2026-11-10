@@ -1,16 +1,4 @@
-import {
-  familyHides,
-  HOUSE_LOWER_COPY,
-  HOUSE_PAGE_COPY,
-  HOUSE_SHOWS_COPY,
-  memberCan,
-  monthOf,
-  overviewFigures,
-  PAGE_TITLE,
-  PASS_COPY,
-  passUnlocked,
-  type OverviewFigure,
-} from '@app/core';
+import { familyHides, memberCan, monthOf, overviewFigures, PAGE_TITLE, PASS_COPY, passUnlocked, type OverviewFigure } from '@app/core';
 import type { Href } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -158,7 +146,7 @@ function HouseSections({
     housemates: members.length,
     words,
     johns: list.data?.johns,
-  }).map((figure) => ({ ...figure, href: FIGURE_PAGE[figure.key] }));
+  }, words).map((figure) => ({ ...figure, href: FIGURE_PAGE[figure.key] }));
   const me = view.me;
   // A family has no Stake: no money figures, no settling up (familyHides). Pocket money in their place.
   const noStake = familyHides(view.snapshot.house.kind).stake;
@@ -172,8 +160,8 @@ function HouseSections({
         <PocketSection houseId={houseId} userId={userId} view={view} pocket={pocket} />
       ) : unlocked ? (
         <>
-          {stake.isError ? <ReadFailed message={HOUSE_PAGE_COPY.stakeUnreadable} onRetry={() => void stake.refetch()} /> : null}
-          <Figures figures={figures} label={HOUSE_PAGE_COPY.figures} testID="house-figures" />
+          {stake.isError ? <ReadFailed message={words('house.page.stakeUnreadable')} onRetry={() => void stake.refetch()} /> : null}
+          <Figures figures={figures} label={words('house.page.figures')} testID="house-figures" />
           {stake.data ? <SettleUpSection houseId={houseId} userId={userId} view={view} stake={stake.data} /> : null}
         </>
       ) : (
@@ -201,7 +189,7 @@ function HouseSections({
           <Row
             leading={<Avatar name={me.name} userId={userId} me />}
             title={me.name}
-            meta={HOUSE_LOWER_COPY.youMeta}
+            meta={words('house.lower.youMeta')}
             href="/house/you"
             chevron
             testID="to-you"
@@ -225,12 +213,12 @@ function HouseSections({
         <View style={styles.pick}>
           <Segmented
             options={[
-              { value: 'overview', label: HOUSE_SHOWS_COPY.overview },
-              { value: 'setup', label: HOUSE_SHOWS_COPY.setup },
+              { value: 'overview', label: words('house.shows.overview') },
+              { value: 'setup', label: words('house.shows.setup') },
             ]}
             value={shown}
             onChange={onShow}
-            label={HOUSE_SHOWS_COPY.label}
+            label={words('house.shows.label')}
             testID="house-shows"
           />
         </View>

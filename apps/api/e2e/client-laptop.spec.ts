@@ -1,7 +1,9 @@
-import { HOUSE_LOWER_COPY, HOUSE_PAGE_COPY, HOUSE_SHOWS_COPY, JOHN_LIST_COPY, PAGE_TITLE, SECTION_LABEL } from "@app/core";
+import { PAGE_TITLE, SECTION_LABEL, wordsFor } from "@app/core";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, dealtHouseInClient } from "./auth";
+
+const words = wordsFor("en", "housemates");
 
 // Today, Week and House on a laptop: Today and Week spread into two columns
 // beside the rail, the second a panel docked to the window's right edge,
@@ -27,6 +29,20 @@ async function shoot(page: Page, name: string) {
 /** Where a box's top edge is on the page. */
 async function topOf(box: Locator): Promise<number> {
   return (await box.boundingBox())?.y ?? Number.NaN;
+}
+
+/** Where a box's bottom edge is on the page. */
+async function bottomOf(box: Locator): Promise<number> {
+  const b = await box.boundingBox();
+  return b ? b.y + b.height : Number.NaN;
+}
+
+/** Today's Next up runs across the whole of the column it heads, edge to edge, never a phone's width of it. */
+async function acrossTheColumn(nextUp: Locator, column: Locator) {
+  const card = await nextUp.boundingBox();
+  const room = await column.boundingBox();
+  expect(Math.abs((card?.x ?? 0) - (room?.x ?? 0))).toBeLessThan(2);
+  expect(Math.abs(rightOf(card) - rightOf(room))).toBeLessThan(2);
 }
 
 /** A section's group of rows: the last of its two children, under its header. */
@@ -116,12 +132,28 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   // The columns share a top edge: Next up's card and the group beside it, under the day's line and its label.
   expect(await topOf(today.getByTestId("next-up"))).toBeCloseTo(await topOf(groupOf(today.getByTestId("week-glance"))), 0);
   await holdsTheEdges(page, today, today.getByTestId("next-up"));
-  // Next up beside the rest of your week, the two sharing a top edge, in a main column that runs to the panel.
-  await expect(today.getByTestId("today-pair-start").getByTestId("next-up")).toBeVisible();
-  await expect(today.getByTestId("today-pair-end").getByTestId("rest-of-week")).toBeVisible();
-  expect(await topOf(today.getByTestId("today-pair-start"))).toBeCloseTo(await topOf(today.getByTestId("today-pair-end")), 0);
+  // Next up runs across a main column that runs to the panel, with the rest of your week under it.
+  await expect(today.getByTestId("today-pair")).toHaveCount(0);
+  await acrossTheColumn(today.getByTestId("next-up"), today.getByTestId("column-main"));
+  await expect(today.getByTestId("column-main").getByTestId("rest-of-week")).toBeVisible();
+  expect(await topOf(today.getByTestId("rest-of-week"))).toBeGreaterThan(await bottomOf(today.getByTestId("next-up")));
   await runsToThePanel(today);
   await shoot(page, "today");
+  // Beside the chat with Jonz there's no room for the panel, but the page still fills the room up to the chat: Next up
+  // across it, then the rest of your week beside the week, never one phone-wide column with the room blank beside it.
+  await today.getByTestId("ask-jonz").click();
+  const chat = page.getByTestId("ask-panel");
+  await expect(chat).toBeVisible();
+  await expect(today.getByTestId("columns")).toHaveCount(0);
+  await expect(today.getByTestId("today-pair").getByTestId("next-up")).toHaveCount(0);
+  await expect(today.getByTestId("today-pair-start").getByTestId("rest-of-week")).toBeVisible();
+  await expect(today.getByTestId("today-pair-end").getByTestId("week-glance")).toBeVisible();
+  await acrossTheColumn(today.getByTestId("next-up"), today.getByTestId("today-pair"));
+  const chatEdge = (await chat.boundingBox())?.x ?? 0;
+  expect(Math.abs(rightOf(await today.getByTestId("today-pair-end").boundingBox()) - (chatEdge - 16))).toBeLessThan(2);
+  await shoot(page, "today-ask");
+  await today.getByTestId("ask-jonz").click();
+  await expect(chat).toHaveCount(0);
 
   await page.getByRole("tab", { name: SECTION_LABEL.week }).click();
   await expect(page.getByRole("heading", { name: PAGE_TITLE.week })).toBeVisible();
@@ -133,6 +165,13 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   await holdsTheEdges(page, week, week.getByTestId("week-summary"));
   await runsToThePanel(week);
   await shoot(page, "week");
+  // Beside the chat with Jonz, Week's one column runs up to the chat too.
+  await week.getByTestId("ask-jonz").click();
+  await expect(chat).toBeVisible();
+  await expect(week.getByTestId("columns")).toHaveCount(0);
+  expect(Math.abs(rightOf(await week.getByTestId("week-table").boundingBox()) - (chatEdge - 16))).toBeLessThan(2);
+  await week.getByTestId("ask-jonz").click();
+  await expect(chat).toHaveCount(0);
 
   // On a big screen the main column still runs to the panel, on Week and on Today.
   await page.setViewportSize({ width: 1920, height: 1080 });
@@ -140,7 +179,7 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   await shoot(page, "week-wide");
   await page.getByRole("tab", { name: SECTION_LABEL.today }).click();
   await runsToThePanel(today);
-  await expect(today.getByTestId("today-pair-end").getByTestId("rest-of-week")).toBeVisible();
+  await acrossTheColumn(today.getByTestId("next-up"), today.getByTestId("column-main"));
   await shoot(page, "today-wide");
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.getByRole("tab", { name: SECTION_LABEL.week }).click();
@@ -148,21 +187,21 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
 
   // The Table shows the week or the month from the menu in its header, dropped from its words.
   const span = week.getByTestId("table-span");
-  await expect(span).toHaveText(HOUSE_PAGE_COPY.week);
+  await expect(span).toHaveText(words('house.page.week'));
   await span.click();
   const menu = page.getByTestId("table-span-menu");
   await expect(menu).toBeVisible();
-  const words = await span.boundingBox();
+  const label = await span.boundingBox();
   const dropped = await menu.boundingBox();
-  expect((dropped?.x ?? 0) + (dropped?.width ?? 0)).toBeCloseTo((words?.x ?? 0) + (words?.width ?? 0), 0);
-  expect(dropped?.y ?? 0).toBeGreaterThan((words?.y ?? 0) + (words?.height ?? 0));
+  expect((dropped?.x ?? 0) + (dropped?.width ?? 0)).toBeCloseTo((label?.x ?? 0) + (label?.width ?? 0), 0);
+  expect(dropped?.y ?? 0).toBeGreaterThan((label?.y ?? 0) + (label?.height ?? 0));
   await shoot(page, "table-menu");
   await page.keyboard.press("Escape");
   await expect(menu).toHaveCount(0);
   await span.click();
   await page.getByTestId("table-span-month").click();
   await expect(menu).toHaveCount(0);
-  await expect(span).not.toHaveText(HOUSE_PAGE_COPY.week);
+  await expect(span).not.toHaveText(words('house.page.week'));
   await shoot(page, "table-month");
 
   // Track record: the grid, and your breakdown beside it, the two sharing a top edge and filling the room.
@@ -199,7 +238,7 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
 
   // House lists its pages beside them: the John list, and a John in the panel beside it.
   const nav = page.getByTestId("house-nav");
-  await nav.getByRole("link", { name: HOUSE_LOWER_COPY.johns }).click();
+  await nav.getByRole("link", { name: words('house.lower.johns') }).click();
   await expect(page.getByRole("heading", { name: PAGE_TITLE.johnList })).toBeVisible();
   // The page fills the room beside the list: its kinds in two columns sharing a top edge, out to the
   // window's gutter, with Add a John at the top right over them.
@@ -212,10 +251,10 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   await shoot(page, "johns-columns");
   await page.getByRole("button", { name: /^Edit Bathroom clean, / }).click();
   const panel = page.getByTestId("john-panel");
-  await expect(panel.getByRole("heading", { name: JOHN_LIST_COPY.edit("Bathroom clean") })).toBeVisible();
+  await expect(panel.getByRole("heading", { name: words('house.johns.edit', { name: "Bathroom clean" }) })).toBeVisible();
   await shoot(page, "johns");
   await page.getByRole("button", { name: /^Edit Big shop, / }).click();
-  await expect(panel.getByRole("heading", { name: JOHN_LIST_COPY.edit("Big shop") })).toBeVisible();
+  await expect(panel.getByRole("heading", { name: words('house.johns.edit', { name: "Big shop" }) })).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(panel).toHaveCount(0);
 
@@ -281,7 +320,7 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   await nav.getByTestId("nav-johns").click();
   await expect(page.getByTestId("john-kinds").getByTestId("johns-groups")).toBeVisible();
 
-  await page.getByTestId("house-nav").getByRole("link", { name: HOUSE_LOWER_COPY.overview }).click();
+  await page.getByTestId("house-nav").getByRole("link", { name: words('house.lower.overview') }).click();
   await expect(house.getByTestId("house-figures")).toBeVisible();
 
   // A screen wide enough for the list beside the chat with Jonz still has one panel down the right: a John closes the chat.
@@ -297,19 +336,19 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   await expect(house.getByTestId("ask-jonz")).toHaveAttribute("aria-expanded", "true");
   await expect(house.getByTestId("ask-jonz")).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   await shoot(page, "ask-open");
-  await nav.getByRole("link", { name: HOUSE_LOWER_COPY.johns }).click();
+  await nav.getByRole("link", { name: words('house.lower.johns') }).click();
   await page.getByRole("button", { name: /^Edit Big shop, / }).click();
   await expect(panel).toBeVisible();
   await expect(page.getByTestId("ask-panel")).toHaveCount(0);
   await page.keyboard.press("Escape");
-  await nav.getByRole("link", { name: HOUSE_LOWER_COPY.overview }).click();
+  await nav.getByRole("link", { name: words('house.lower.overview') }).click();
 
   // The narrowest laptop leaves too little room for House's list beside the rail: the setup, the Pass and You
   // are rows on the page again.
   await page.setViewportSize({ width: 1100, height: 900 });
   await expect(page.getByTestId("house-nav")).toHaveCount(0);
   // As on a phone, they're the other half of House's switch.
-  await house.getByTestId("house-shows").getByRole("radio", { name: HOUSE_SHOWS_COPY.setup }).click();
+  await house.getByTestId("house-shows").getByRole("radio", { name: words('house.shows.setup') }).click();
   await expect(house.getByTestId("setup-section")).toBeVisible();
   await expect(house.getByTestId("to-you")).toBeVisible();
 });

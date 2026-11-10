@@ -1,4 +1,4 @@
-import { BIN_NIGHT, DEAL_COPY , wordsFor } from '@app/core';
+import { BIN_NIGHT, wordsFor } from '@app/core';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
@@ -35,7 +35,7 @@ it('starts the house in amber, "Deal week 1" as on every screen, across the colu
 
 it('re-deals in outline once the house has started', async () => {
   await render(<DealButton houseId="h1" started />, { wrapper: House });
-  expect(screen.getByRole('button', { name: DEAL_COPY.again })).toHaveStyle({ backgroundColor: 'transparent' });
+  expect(screen.getByRole('button', { name: words('house.deal.again') })).toHaveStyle({ backgroundColor: 'transparent' });
 });
 
 it("says it in the screen's words, in the colour asked for, across a card", async () => {

@@ -10,10 +10,10 @@
  */
 import type { JohnDef } from "./board";
 import { weeklyEffort } from "./board";
-import { STEADY_COPY } from "./copy";
 import type { DealMode } from "./domain";
 import type { RunHouse, RunJohn } from "./steady-run";
 import { periodOf, steadyRun } from "./steady-run";
+import type { Words } from "./words-for";
 
 /** Weeks run forward, and the first few left out while a fresh list settles. */
 const RUN_WEEKS = 26;
@@ -85,7 +85,7 @@ export function budgetChoices(
   johns: readonly BudgetJohn[],
   people: readonly string[],
   groups: Readonly<Record<string, readonly string[]>>,
-  mode: DealMode,
+  mode: DealMode, words: Words,
 ): { choices: BudgetChoice[]; need: number; tooLong: boolean } {
   const need = people.length ? weeklyEffort(johns, people.length) / people.length : 0;
   const day = johns.filter((j) => j.when !== "on_call");
@@ -101,23 +101,24 @@ export function budgetChoices(
 
   const choices: BudgetChoice[] = runs.map((r) => ({
     budget: r.budget,
-    label: STEADY_COPY.budgetName(r.budget),
-    effect: `${STEADY_COPY.johnsEach(r.each)} ${often(r.slips, r.gaps)}`,
+    label: words('week.steady.budgetName', { budget: r.budget }),
+    effect: `${words('week.steady.johnsEach', { n: Math.max(1, Math.round(r.each)) })} ${often(r.slips, r.gaps, words)}`,
     suggested: r.budget === suggested,
   }));
-  choices.push({ budget: 0, label: STEADY_COPY.budgetName(0), effect: STEADY_COPY.noLimit, suggested: false });
+  choices.push({ budget: 0, label: words('week.steady.budgetName', { budget: 0 }), effect: words('week.steady.noLimit'), suggested: false });
   return { choices, need, tooLong: !fits };
 }
 
 /** How often the list's Johns come round on a budget, in words. */
-function often(slips: readonly { j: BudgetJohn; slip: number }[], gaps: Map<string, number>): string {
-  if (slips.every((s) => s.slip <= 1.15)) return slips.every((s) => s.j.everyWeeks === 1 && !s.j.everyMonths) ? STEADY_COPY.everyWeek : STEADY_COPY.onTime;
+function often(slips: readonly { j: BudgetJohn; slip: number }[], gaps: Map<string, number>, words: Words): string {
+  if (slips.every((s) => s.slip <= 1.15)) return slips.every((s) => s.j.everyWeeks === 1 && !s.j.everyMonths) ? words('week.steady.everyWeek') : words('week.steady.onTime');
   const weekly = slips.filter((s) => s.j.everyWeeks === 1 && !s.j.everyMonths);
-  if (!weekly.length) return STEADY_COPY.someWait;
+  if (!weekly.length) return words('week.steady.someWait');
   const onTime = weekly.filter((s) => s.slip <= 1.15).length;
-  if (onTime / weekly.length >= 0.75) return STEADY_COPY.mostWeekly;
+  if (onTime / weekly.length >= 0.75) return words('week.steady.mostWeekly');
   const weeks = weekly.map((s) => gaps.get(s.j.id)!);
   const lo = Math.max(1, Math.round(Math.min(...weeks)));
   const hi = Math.max(lo, Math.min(26, Math.round(Math.max(...weeks))));
-  return STEADY_COPY.weeklyEvery(lo, hi, weekly.length === slips.length);
+  const all = weekly.length === slips.length;
+  return lo === hi ? words('week.steady.weeklyEvery', { lo, all }) : words('week.steady.weeklyEveryRange', { lo, hi, all });
 }

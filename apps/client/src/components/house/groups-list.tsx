@@ -1,4 +1,4 @@
-import { firstName, GROUPS_COPY, membersLine, SETUP_COPY, type GroupDef, BUSY_COPY } from '@app/core';
+import { firstName, membersLine, type GroupDef, BUSY_COPY } from '@app/core';
 import { PlusIcon, Trash2Icon, UsersIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -18,6 +18,7 @@ import { Sheet } from '@/components/sheet';
 import { Meta } from '@/components/text';
 import { useMove } from '@/hooks/use-move';
 import { INSET, LABEL_GAP, SECTION_GAP, SPACE } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 type Draft = { id?: string; name: string; memberIds: string[] };
 
@@ -41,6 +42,7 @@ export function GroupsList({
   me: string;
   editable: boolean;
 }) {
+  const words = useWords();
   const [editing, setEditing] = useState<Draft | null>(null);
   const add = () => setEditing({ name: '', memberIds: [] });
 
@@ -49,7 +51,7 @@ export function GroupsList({
       <View style={styles.noted} testID="groups">
         <Group>
           {groups.map((g) => {
-            const members = membersLine(g.memberIds, people, me);
+            const members = membersLine(g.memberIds, people, me, words);
             return (
               <Row
                 key={g.id}
@@ -58,20 +60,20 @@ export function GroupsList({
                 meta={members}
                 chevron={editable}
                 onPress={editable ? () => setEditing({ id: g.id, name: g.name, memberIds: g.memberIds }) : undefined}
-                accessibilityLabel={editable ? `${GROUPS_COPY.edit(g.name)}, ${members}` : undefined}
+                accessibilityLabel={editable ? `${words('house.groups.edit', { name: g.name })}, ${members}` : undefined}
                 testID="group"
               />
             );
           })}
-          {editable ? <Row leading={<RowIcon icon={PlusIcon} />} title={SETUP_COPY.addGroup} onPress={add} testID="add-group" /> : null}
+          {editable ? <Row leading={<RowIcon icon={PlusIcon} />} title={words('house.setup.addGroup')} onPress={add} testID="add-group" /> : null}
         </Group>
         {/* With none yet, what a group is for; then what belonging to one does. */}
-        <Meta style={styles.note}>{groups.length === 0 ? GROUPS_COPY.empty : SETUP_COPY.groupsNote}</Meta>
+        <Meta style={styles.note}>{groups.length === 0 ? words('house.groups.empty') : words('house.setup.groupsNote')}</Meta>
       </View>
       <Sheet
         visible={editing !== null}
-        title={editing?.id ? GROUPS_COPY.edit(editing.name) : SETUP_COPY.addGroup}
-        description={GROUPS_COPY.hint}
+        title={editing?.id ? words('house.groups.edit', { name: editing.name }) : words('house.setup.addGroup')}
+        description={words('house.groups.hint')}
         flush
         onClose={() => setEditing(null)}
       >
@@ -104,6 +106,7 @@ function GroupForm({
   me: string;
   onDone: () => void;
 }) {
+  const words = useWords();
   const move = useMove(houseId);
   // Which of the two buttons is waiting: they share one move.
   const [doing, setDoing] = useState<'save' | 'remove'>('save');
@@ -132,8 +135,8 @@ function GroupForm({
       <Group>
         <GroupItem>
           <Field
-            label={GROUPS_COPY.name}
-            placeholder={GROUPS_COPY.namePlaceholder}
+            label={words('house.groups.name')}
+            placeholder={words('house.groups.namePlaceholder')}
             value={name}
             onChangeText={setName}
             maxLength={40}
@@ -141,12 +144,12 @@ function GroupForm({
           />
         </GroupItem>
       </Group>
-      <Section label={GROUPS_COPY.who}>
+      <Section label={words('house.groups.who')}>
         {people.map((p) => (
           <ChoiceRow
             key={p.userId}
             role="checkbox"
-            label={p.userId === me ? SETUP_COPY.you : firstName(p.name)}
+            label={p.userId === me ? words('house.setup.you') : firstName(p.name)}
             checked={picked.has(p.userId)}
             leading={<Avatar name={p.name} userId={p.userId} me={p.userId === me} />}
             onPress={() => toggle(p.userId)}
@@ -157,15 +160,15 @@ function GroupForm({
         {move.problem ? <Alert message={move.problem} /> : null}
         <ButtonRow stacked>
           <Button
-            label={initial.id ? GROUPS_COPY.save : GROUPS_COPY.create}
-            busyLabel={GROUPS_COPY.saving}
+            label={initial.id ? words('house.groups.save') : words('house.groups.create')}
+            busyLabel={words('house.groups.saving')}
             busy={move.pending && doing === 'save'}
             disabled={picked.size === 0 || !name.trim()}
             onPress={() => void save()}
             testID="save-group"
           />
           {initial.id ? (
-            <Button variant="hazard" icon={Trash2Icon} label={GROUPS_COPY.remove} busy={move.pending && doing === 'remove'} busyLabel={BUSY_COPY.removing} onPress={() => void remove()} />
+            <Button variant="hazard" icon={Trash2Icon} label={words('house.groups.remove')} busy={move.pending && doing === 'remove'} busyLabel={BUSY_COPY.removing} onPress={() => void remove()} />
           ) : null}
         </ButtonRow>
       </View>

@@ -1,4 +1,4 @@
-import { FOCUS_SHELL_COPY, TABLE_COPY, weekShareRows, weekWho } from '@app/core';
+import { FOCUS_SHELL_COPY, weekShareRows, weekWho } from '@app/core';
 import { InfoIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -55,8 +55,8 @@ export function FairnessFooter({
       </Pressable>
       <Sheet
         visible={open}
-        title={TABLE_COPY.shares}
-        description={TABLE_COPY.sharesBody}
+        title={words('house.table.shares')}
+        description={words('house.table.sharesBody')}
         onClose={() => setOpen(false)}
         flush
         testID="fair-shares"

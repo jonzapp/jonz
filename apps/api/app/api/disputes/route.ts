@@ -20,8 +20,7 @@ export async function POST(request: Request) {
     { db: auth.supabase, userId: auth.user.id },
     body.data.assignmentId,
     body.data.reason,
-    new Date(),
-  );
+    new Date());
   if (refusal) return refused(request, refusal);
   return json(request, MoveResponse.parse({ ok: true }));
 }

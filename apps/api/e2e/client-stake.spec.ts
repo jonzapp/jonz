@@ -1,8 +1,10 @@
-import { formatMoney, HOUSE_PAGE_COPY, monthOf, SECTION_LABEL, STAKE_HISTORY_COPY } from "@app/core";
+import { formatMoney, monthOf, SECTION_LABEL, wordsFor } from "@app/core";
 import { expect, test } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, dealtHouseInClient } from "./auth";
 import { backToHouse } from "./house-pages";
+
+const words = wordsFor("en", "housemates");
 
 // The Stake in the Expo app's web build: what a closed month left owing, on
 // House's month card, and the person paid marking it received there.
@@ -45,16 +47,16 @@ test("a closed month's debt is settled once the person paid marks it received", 
   const benPage = await benContext.newPage();
   await benPage.goto("/stake");
   await expect(benPage).toHaveURL(/\/house\/stake$/);
-  await expect(benPage.getByRole("heading", { name: STAKE_HISTORY_COPY.title })).toBeVisible();
-  await expect(benPage.getByTestId("stake-screen").getByTestId("ledger-entry").filter({ hasText: STAKE_HISTORY_COPY.aJohn })).toContainText(four);
+  await expect(benPage.getByRole("heading", { name: words('house.stake.title') })).toBeVisible();
+  await expect(benPage.getByTestId("stake-screen").getByTestId("ledger-entry").filter({ hasText: words('house.stake.aJohn') })).toContainText(four);
 
   // Back on House, settling up says what he owes, with nothing to mark.
   await backToHouse(benPage, benPage.getByTestId("stake-screen").getByTestId("back")).click();
   await expect(benPage).toHaveURL(/\/house$/);
   const owed = benPage.getByTestId("house-screen").getByTestId("settle-up").getByTestId("transfer");
   await expect(owed).toHaveCount(1);
-  await expect(owed).toContainText(HOUSE_PAGE_COPY.youOwe("Ava", four));
-  await expect(owed).toContainText(HOUSE_PAGE_COPY.waitingFor("Ava"));
+  await expect(owed).toContainText(words("house.page.youOwe", { name: "Ava", amount: four }));
+  await expect(owed).toContainText(words('house.page.waitingFor', { name: "Ava" }));
   await expect(owed.getByRole("button")).toHaveCount(0);
 
   // Ava, paid, marks it received from settling up on House; the house is square, so settling up goes.
@@ -63,8 +65,8 @@ test("a closed month's debt is settled once the person paid marks it received", 
   await avaPage.getByRole("tab", { name: SECTION_LABEL.house }).click();
   const avaHouse = avaPage.getByTestId("house-screen");
   const due = avaHouse.getByTestId("settle-up").getByTestId("transfer");
-  await expect(due).toContainText(HOUSE_PAGE_COPY.owesYou("Ben", four));
-  await due.getByRole("button", { name: HOUSE_PAGE_COPY.markReceivedFrom("Ben", four) }).click();
+  await expect(due).toContainText(words("house.page.owesYou", { name: "Ben", amount: four }));
+  await due.getByRole("button", { name: words('house.page.markReceivedFrom', { name: "Ben", amount: four }) }).click();
   await expect(due).toHaveCount(0);
   // Ben's House follows, live.
   await expect(owed).toHaveCount(0);
@@ -75,8 +77,8 @@ test("a closed month's debt is settled once the person paid marks it received", 
   await avaHouse.getByTestId("figure-money").click();
   await expect(avaPage).toHaveURL(/\/house\/stake$/);
   const stake = avaPage.getByTestId("stake-screen");
-  const paid = stake.getByTestId("ledger-entry").filter({ hasText: STAKE_HISTORY_COPY.paid("Ben", STAKE_HISTORY_COPY.yourself) });
+  const paid = stake.getByTestId("ledger-entry").filter({ hasText: words('house.stake.paid', { from: "Ben", to: words('house.stake.yourself') }) });
   await expect(paid).toHaveCount(1);
-  await stake.getByRole("radio", { name: STAKE_HISTORY_COPY.whole }).click();
+  await stake.getByRole("radio", { name: words('house.stake.whole') }).click();
   await expect(paid).toHaveCount(1);
 });

@@ -1,10 +1,11 @@
-import { HOUSE_PAGE_COPY, type MetaPart } from '@app/core';
+import { type MetaPart } from '@app/core';
 import { TrendingDownIcon } from 'lucide-react-native';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { STATUS_ICON } from '@/components/status-mark';
 import { Body, Meta } from '@/components/text';
 import { SPACE, TABULAR, useTheme } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * A row's meta line from core's parts: muted Meta, with late and missed in
@@ -62,6 +63,7 @@ export function Money({
   tinted?: boolean;
   testID?: string;
 }) {
+  const words = useWords();
   const { colors } = useTheme();
   if (!losing) {
     return (
@@ -71,7 +73,7 @@ export function Money({
     );
   }
   return (
-    <View accessible accessibilityLabel={HOUSE_PAGE_COPY.losing(value)} style={styles.losing} testID={testID}>
+    <View accessible accessibilityLabel={words('house.page.losing', { amount: value })} style={styles.losing} testID={testID}>
       {marked ? <TrendingDownIcon size={16} color={colors.hazard} aria-hidden /> : null}
       <Body numberOfLines={1} style={[styles.value, { color: tinted ? colors.foreground : colors.hazard }]}>
         {value}

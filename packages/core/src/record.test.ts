@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import { RECORD_COPY } from "./copy";
 import {
   heldMark,
   readSpan,
@@ -12,6 +11,9 @@ import {
   type RecordJohn,
   type RecordWeek,
 } from "./record";
+import { wordsFor } from "./words-for";
+
+const words = wordsFor("en", "housemates");
 
 const ZONE = "Europe/London";
 // Wednesday 14 Oct 2026, noon in London.
@@ -103,8 +105,8 @@ describe("trackRecord", () => {
         john(W3, "ana", { outcome: null }),
       ]),
       "year",
-    );
-    expect(record.range).toBe(RECORD_COPY.yearRange("2026", 3));
+     words);
+    expect(record.range).toBe(words('week.record.yearRange', { year: "2026", weeks: 3 }));
     expect(record.rows.map((r) => [r.userId, r.cells.map((c) => c.mark), r.onTimePct])).toEqual([
       // Ana covered Sam's this week: her square says so over her open John.
       ["ana", ["clean", "clean", "covered"], 100],
@@ -118,7 +120,7 @@ describe("trackRecord", () => {
     const record = trackRecord(
       input([john(W2, "ana")], { away: [{ id: "x", userId: "sam", startsOn: "2026-10-06", endsOn: "2026-10-08", note: null }] }),
       "month",
-    );
+     words);
     expect(record.rows.find((r) => r.userId === "sam")!.cells.map((c) => c.mark)).toEqual(["away", "none"]);
     expect(record.rows.find((r) => r.userId === "sam")!.onTimePct).toBeNull();
   });
@@ -127,7 +129,7 @@ describe("trackRecord", () => {
     const record = trackRecord(
       input([john(W3, "sam", { outcome: null }), john(W3, "sam", { outcome: "late" }), john(W3, "ana", { covered_by: "sam", outcome: "covered" })]),
       "week",
-    );
+     words);
     expect(record.range).toBe("12–18 Oct");
     expect(record.rows.find((r) => r.userId === "sam")!.cells.map((c) => c.mark)).toEqual(["open", "late", "covered"]);
   });
@@ -147,7 +149,7 @@ describe("recordBreakdown", () => {
       "month",
       "sam",
       nameOf,
-    );
+     words);
     expect(b.weeks).toBe(2);
     expect(b.lines.map((l) => [l.key, l.points, l.johns.length])).toEqual([
       ["share", -4, 0],
@@ -158,12 +160,12 @@ describe("recordBreakdown", () => {
       ["covered", 4, 1],
     ]);
     expect(b.total).toBe(5);
-    expect(b.lines.find((l) => l.key === "missed")!.johns.map((j) => j.note)).toEqual([RECORD_COPY.coveredIt("Ana"), null]);
-    expect(b.lines.find((l) => l.key === "covered")!.johns[0].note).toBe(RECORD_COPY.coveredFor("Ana"));
+    expect(b.lines.find((l) => l.key === "missed")!.johns.map((j) => j.note)).toEqual([words('week.record.coveredIt', { name: "Ana" }), null]);
+    expect(b.lines.find((l) => l.key === "covered")!.johns[0].note).toBe(words('week.record.coveredFor', { name: "Ana" }));
   });
 
   it("is just the share, with nothing handed", () => {
-    const b = recordBreakdown(input([]), "all", "ana", nameOf);
+    const b = recordBreakdown(input([]), "all", "ana", nameOf, words);
     expect(b.lines).toEqual([{ key: "share", points: -6, johns: [] }]);
     expect(b.total).toBe(-6);
   });
@@ -176,13 +178,13 @@ describe("after an admin's resets", () => {
       [john(W2, "sam", { outcome: "done", points: 3 }), john(W3, "sam", { outcome: "missed", changed_by: "ana" })],
       { weeks: [W1, skipped, W3, NEXT] },
     );
-    const sam = trackRecord(data, "month").rows.find((r) => r.userId === "sam")!;
+    const sam = trackRecord(data, "month", words).rows.find((r) => r.userId === "sam")!;
     expect(sam.cells.map((c) => [c.mark, c.changed])).toEqual([
       ["skipped", false],
       ["missed", true],
     ]);
     // W3's share only: W2's share and its 3 points count for nothing.
-    expect(recordBreakdown(data, "month", "sam", nameOf).total).toBe(-2);
+    expect(recordBreakdown(data, "month", "sam", nameOf, words).total).toBe(-2);
   });
 });
 

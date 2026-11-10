@@ -1,4 +1,4 @@
-import { FOCUS_SHELL_COPY, HOUSE_LOWER_COPY, KID_HOUSE_COPY } from '@app/core';
+import { FOCUS_SHELL_COPY, wordsFor } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 import { Text } from 'react-native';
 
@@ -10,6 +10,8 @@ import { snapshot } from '@/testing/house';
 import { BATH, BINS, renderPages } from '@/testing/pages';
 
 import { SetupSection } from './setup-section';
+
+const words = wordsFor('en', 'housemates');
 
 jest.mock('@/api/away', () => ({ loadAway: jest.fn() }));
 jest.mock('@/api/draft', () => ({
@@ -57,14 +59,14 @@ it('says it affects everyone, under its label', async () => {
   await open();
   const section = within(screen.getByTestId('setup-section'));
   expect(section.getByRole('header', { name: FOCUS_SHELL_COPY.setup })).toBeOnTheScreen();
-  expect(section.getByText(HOUSE_LOWER_COPY.setupNote)).toBeOnTheScreen();
+  expect(section.getByText(words('house.lower.setupNote'))).toBeOnTheScreen();
 });
 
 it("is a kid's to read: how the family runs, set by their parents, without Ask Jonz's usage", async () => {
   await open({ kid: true });
   const section = within(screen.getByTestId('setup-section'));
-  expect(section.getByRole('header', { name: KID_HOUSE_COPY.setup })).toBeOnTheScreen();
-  expect(section.getByText(KID_HOUSE_COPY.setupNote)).toBeOnTheScreen();
+  expect(section.getByRole('header', { name: words('house.kid.setup') })).toBeOnTheScreen();
+  expect(section.getByText(words('house.kid.setupNote'))).toBeOnTheScreen();
   expect(section.getAllByRole('link')).toHaveLength(3);
   expect(screen.queryByTestId('to-ask-usage')).toBeNull();
 });
@@ -74,7 +76,7 @@ it('shows what each page is set to now', async () => {
   // The bins every week (1) and the bathroom every other (4 / 2).
   await rowSays('to-johns', /Johns.*2 Johns, about 3 pts a week/);
   expect(screen.getByTestId('to-rules')).toHaveTextContent(/Rules.*£20 stake, £1 late, £3 missed/);
-  await rowSays('to-away', new RegExp(`${HOUSE_LOWER_COPY.away}.*Sam, 29 Oct–1 Nov`));
+  await rowSays('to-away', new RegExp(`${words('house.lower.away')}.*Sam, 29 Oct–1 Nov`));
 });
 
 it('leaves Groups, the admins and History to the pages they are on now', async () => {
@@ -98,8 +100,8 @@ it("says nobody's away when nobody is, and none yet before there are Johns", asy
   (loadJohnList as jest.Mock).mockResolvedValue({ johns: [], groups: [] });
   (loadAway as jest.Mock).mockResolvedValue({ today: '2026-10-26', periods: [] });
   await open();
-  await rowSays('to-johns', new RegExp(HOUSE_LOWER_COPY.noJohns));
-  await rowSays('to-away', new RegExp(HOUSE_LOWER_COPY.nobodyAway));
+  await rowSays('to-johns', new RegExp(words('house.lower.noJohns')));
+  await rowSays('to-away', new RegExp(words('house.lower.nobodyAway')));
 });
 
 it.each([

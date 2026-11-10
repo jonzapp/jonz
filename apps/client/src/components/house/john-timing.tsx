@@ -1,23 +1,4 @@
-import {
-  DOW_LABEL,
-  JOHN_LIST_COPY,
-  LAST_OF_MONTH,
-  landingLabel,
-  MAX_EVERY_MONTHS,
-  MAX_EVERY_WEEKS,
-  monthName,
-  nextLine,
-  nextStartsOn,
-  periodWords,
-  placeWord,
-  previewLandings,
-  REPEAT_COPY,
-  RESPOND_HOURS,
-  startMonths,
-  type HouseRules,
-  type IsoDow,
-  type JohnDef,
-} from '@app/core';
+import { DOW_LABEL, LAST_OF_MONTH, landingLabel, MAX_EVERY_MONTHS, MAX_EVERY_WEEKS, monthName, nextLine, REPEAT_CLOCK, REPEAT_QUICK, nextStartsOn, periodWords, placeWord, previewLandings, RESPOND_HOURS, startMonths, type HouseRules, type IsoDow, type JohnDef } from '@app/core';
 import { MinusIcon, PlusIcon } from 'lucide-react-native';
 import { useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -30,6 +11,7 @@ import { Segmented } from '@/components/segmented';
 import { ChoiceRow } from '@/components/setup/choice-row';
 import { Body, Lead, Meta } from '@/components/text';
 import { FONT, INSET, LABEL_GAP, SECTION_GAP, SPACE, TABULAR, TAP, useTheme } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 // When a John comes round, as one sentence in the John editor: "Every [3
 // months] from [November] on the [first] [Saturday] by [21:00]", or "On call,
@@ -47,12 +29,8 @@ export type Timing = Pick<
 export type TimingWord = 'often' | 'from' | 'which' | 'day' | 'time' | 'times' | 'within';
 
 const DAYS = ([1, 2, 3, 4, 5, 6, 7] as IsoDow[]).map((d) => ({ value: d, label: DOW_LABEL[d].slice(0, 3), spoken: DOW_LABEL[d] }));
-const TIMINGS = [
-  { value: 'day' as const, label: REPEAT_COPY.onSchedule },
-  { value: 'on_call' as const, label: JOHN_LIST_COPY.onCall },
-];
 type Unit = 'weeks' | 'months' | 'years';
-const UNITS: { value: Unit; label: string }[] = (['weeks', 'months', 'years'] as const).map((u) => ({ value: u, label: REPEAT_COPY.units[u] }));
+const UNIT_KEYS = ['weeks', 'months', 'years'] as const;
 /** How far each unit's stepper goes. */
 const MOST: Record<Unit, number> = { weeks: MAX_EVERY_WEEKS, months: 24, years: MAX_EVERY_MONTHS / 12 };
 
@@ -83,24 +61,25 @@ export function TimingSentence({
   onChange: (patch: Partial<Timing>) => void;
   onPick: (word: TimingWord) => void;
 }) {
+  const words = useWords();
   const onCall = value.when === 'on_call';
   const from = nextStartsOn(now, rules.timezone, rules.weekStarts);
   const day = DOW_LABEL[value.dueDow];
-  const words: (string | { word: TimingWord; label: string; what: string })[] = onCall
+  const parts: (string | { word: TimingWord; label: string; what: string })[] = onCall
     ? [
-        REPEAT_COPY.onCallUpTo,
-        { word: 'times', label: REPEAT_COPY.times(value.perWeek), what: REPEAT_COPY.timesAWeek },
-        REPEAT_COPY.aWeekWithin,
-        { word: 'within', label: JOHN_LIST_COPY.respondHours(value.respondHours), what: REPEAT_COPY.within },
+        words('house.repeat.onCallUpTo'),
+        { word: 'times', label: words('house.repeat.times', { n: value.perWeek }), what: words('house.repeat.timesAWeek') },
+        words('house.repeat.aWeekWithin'),
+        { word: 'within', label: words('house.johns.respondHours', { hours: value.respondHours }), what: words('house.repeat.within') },
       ]
     : [
-        REPEAT_COPY.every,
-        { word: 'often', label: periodWords(value), what: REPEAT_COPY.often },
+        words('house.repeat.every'),
+        { word: 'often', label: periodWords(value), what: words('house.repeat.often') },
         ...(value.everyMonths !== null && value.weekOfMonth !== null
           ? [
               ...(value.everyMonths > 1
                 ? [
-                    value.everyMonths % 12 === 0 ? REPEAT_COPY.in : REPEAT_COPY.from,
+                    value.everyMonths % 12 === 0 ? words('house.repeat.in') : words('house.repeat.from'),
                     {
                       word: 'from' as const,
                       label: monthName(
@@ -109,26 +88,29 @@ export function TimingSentence({
                             ?.month ??
                           0,
                       ),
-                      what: REPEAT_COPY.startsIn,
+                      what: words('house.repeat.startsIn'),
                     },
                   ]
                 : []),
-              REPEAT_COPY.onThe,
-              { word: 'which' as const, label: placeWord(value.weekOfMonth), what: REPEAT_COPY.which(day) },
+              words('house.repeat.onThe'),
+              { word: 'which' as const, label: placeWord(value.weekOfMonth, words), what: words('house.repeat.which', { day }) },
             ]
-          : [REPEAT_COPY.on]),
-        { word: 'day', label: day, what: REPEAT_COPY.day },
-        REPEAT_COPY.by,
-        { word: 'time', label: value.dueTime, what: REPEAT_COPY.time },
+          : [words('house.repeat.on')]),
+        { word: 'day', label: day, what: words('house.repeat.day') },
+        words('house.repeat.by'),
+        { word: 'time', label: value.dueTime, what: words('house.repeat.time') },
       ];
-  const next = onCall ? null : nextLine(previewLandings(value, now, rules.timezone, rules.weekStarts, 4));
+  const next = onCall ? null : nextLine(previewLandings(value, now, rules.timezone, rules.weekStarts, 4), words);
 
   return (
     <View style={styles.block}>
       <View style={styles.inset}>
         <Segmented
-          label={REPEAT_COPY.timing}
-          options={TIMINGS}
+          label={words('house.repeat.timing')}
+          options={[
+            { value: 'day' as const, label: words('house.repeat.onSchedule') },
+            { value: 'on_call' as const, label: words('house.johns.onCall') },
+          ]}
           value={value.when}
           onChange={(when) => onChange({ when })}
           equal
@@ -138,7 +120,7 @@ export function TimingSentence({
       <View style={styles.noted}>
         <Group>
           <GroupItem>
-            <Sentence words={words} onPick={onPick} />
+            <Sentence parts={parts} onPick={onPick} />
           </GroupItem>
         </Group>
         {next ? (
@@ -147,7 +129,7 @@ export function TimingSentence({
           </Meta>
         ) : onCall ? (
           <Meta style={styles.note} testID="on-call-note">
-            {JOHN_LIST_COPY.onCallHint}
+            {words('house.johns.onCallHint')}
           </Meta>
         ) : null}
       </View>
@@ -157,17 +139,18 @@ export function TimingSentence({
 
 /** The sentence: plain words, and words to press, wrapping like text. */
 function Sentence({
-  words,
+  parts,
   onPick,
 }: {
-  words: readonly (string | { word: TimingWord; label: string; what: string })[];
+  parts: readonly (string | { word: TimingWord; label: string; what: string })[];
   onPick: (word: TimingWord) => void;
 }) {
+  const words = useWords();
   const { colors, type } = useTheme();
   const big = [type.lead, styles.sentence];
   return (
     <View style={styles.words} testID="john-sentence">
-      {words.flatMap((w, i) =>
+      {parts.flatMap((w, i) =>
         typeof w === 'string' ? (
           w.split(' ').map((plain, j) => (
             <Text key={`${i}-${j}`} style={big}>
@@ -178,7 +161,7 @@ function Sentence({
           <Pressable
             key={w.word}
             accessibilityRole="button"
-            accessibilityLabel={REPEAT_COPY.word(w.what, w.label)}
+            accessibilityLabel={words('house.repeat.word', { what: w.what, value: w.label })}
             onPress={() => onPick(w.word)}
             hitSlop={8}
             testID={`timing-${w.word}`}
@@ -213,18 +196,19 @@ function Pill({ label, chosen, onPress, spoken }: { label: string; chosen: boole
 
 /** − n + for a count, with its value spoken. */
 function Stepper({ label, value, min, max, onChange }: { label: string; value: number; min: number; max: number; onChange: (n: number) => void }) {
+  const words = useWords();
   const { colors, type } = useTheme();
   const step = (by: number) => onChange(Math.min(max, Math.max(min, value + by)));
   const round = [styles.round, { borderColor: colors.border }];
   return (
     <View style={styles.stepper} accessibilityRole="adjustable" accessibilityLabel={label} accessibilityValue={{ now: value, min, max }}>
-      <Pressable accessibilityRole="button" accessibilityLabel={`${REPEAT_COPY.fewer}: ${label}`} disabled={value <= min} onPress={() => step(-1)} style={[round, value <= min && styles.off]}>
+      <Pressable accessibilityRole="button" accessibilityLabel={`${words('house.repeat.fewer')}: ${label}`} disabled={value <= min} onPress={() => step(-1)} style={[round, value <= min && styles.off]}>
         <MinusIcon size={20} color={colors.foreground} aria-hidden />
       </Pressable>
       <Text style={[type.lead, styles.count]} testID="stepper-value">
         {value}
       </Text>
-      <Pressable accessibilityRole="button" accessibilityLabel={`${REPEAT_COPY.more}: ${label}`} disabled={value >= max} onPress={() => step(1)} style={[round, value >= max && styles.off]}>
+      <Pressable accessibilityRole="button" accessibilityLabel={`${words('house.repeat.more')}: ${label}`} disabled={value >= max} onPress={() => step(1)} style={[round, value >= max && styles.off]}>
         <PlusIcon size={20} color={colors.foreground} aria-hidden />
       </Pressable>
     </View>
@@ -250,6 +234,7 @@ export function TimingPicker({
   onChange: (patch: Partial<Timing>) => void;
   onDone: () => void;
 }) {
+  const words = useWords();
   const [unit, setUnit] = useState<Unit>(unitOf(value));
   const from = nextStartsOn(now, rules.timezone, rules.weekStarts);
   const day = DOW_LABEL[value.dueDow];
@@ -264,14 +249,14 @@ export function TimingPicker({
   let body: ReactNode = null;
   switch (word) {
     case 'often':
-      title = REPEAT_COPY.often;
+      title = words('house.repeat.often');
       body = (
         <>
-          <View style={styles.pills} accessibilityRole="radiogroup" accessibilityLabel={REPEAT_COPY.often}>
-            {REPEAT_COPY.quick.map((q) => (
+          <View style={styles.pills} accessibilityRole="radiogroup" accessibilityLabel={words('house.repeat.often')}>
+            {REPEAT_QUICK.map((q) => (
               <Pill
-                key={q.label}
-                label={q.label}
+                key={q.key}
+                label={words(`house.repeat.quick.${q.key}` as const)}
                 chosen={q.everyMonths === value.everyMonths && (q.everyMonths !== null || q.everyWeeks === value.everyWeeks)}
                 onPress={() => {
                   setUnit(unitOf(q));
@@ -281,14 +266,14 @@ export function TimingPicker({
             ))}
           </View>
           <View style={styles.noted}>
-            <Body style={styles.inset}>{REPEAT_COPY.anyPeriod}</Body>
+            <Body style={styles.inset}>{words('house.repeat.anyPeriod')}</Body>
             <Group>
               <GroupItem>
                 <View style={styles.period}>
-                  <Stepper label={REPEAT_COPY.often} value={countOf(value)} min={1} max={MOST[unit]} onChange={(n) => setCount(n)} />
+                  <Stepper label={words('house.repeat.often')} value={countOf(value)} min={1} max={MOST[unit]} onChange={(n) => setCount(n)} />
                   <Segmented
-                    label={REPEAT_COPY.often}
-                    options={UNITS}
+                    label={words('house.repeat.often')}
+                    options={UNIT_KEYS.map((u) => ({ value: u, label: words(`house.repeat.units.${u}` as const) }))}
                     value={unit}
                     onChange={(u) => {
                       setUnit(u);
@@ -305,8 +290,8 @@ export function TimingPicker({
       );
       break;
     case 'from': {
-      title = REPEAT_COPY.startsIn;
-      sub = REPEAT_COPY.startsInSub;
+      title = words('house.repeat.startsIn');
+      sub = words('house.repeat.startsInSub');
       const months = startMonths({ everyMonths: value.everyMonths, weekOfMonth: value.weekOfMonth, dueDow: value.dueDow }, from, rules.weekStarts);
       const chosen = value.anchorMonth === null ? months[0]?.month : months.find((m) => (m.month - value.anchorMonth!) % (value.everyMonths ?? 1) === 0)?.month;
       body = (
@@ -326,15 +311,15 @@ export function TimingPicker({
       break;
     }
     case 'which':
-      title = REPEAT_COPY.which(day);
-      sub = REPEAT_COPY.whichSub;
+      title = words('house.repeat.which', { day });
+      sub = words('house.repeat.whichSub');
       body = (
         <Group>
           {[1, 2, 3, 4, LAST_OF_MONTH].map((n) => (
             <ChoiceRow
               key={n}
               role="radio"
-              label={placeWord(n).charAt(0).toLocaleUpperCase() + placeWord(n).slice(1)}
+              label={placeWord(n, words).charAt(0).toLocaleUpperCase() + placeWord(n, words).slice(1)}
               meta={preview({ weekOfMonth: n }, 3).join(', ')}
               checked={value.weekOfMonth === n}
               onPress={() => onChange({ weekOfMonth: n })}
@@ -344,31 +329,31 @@ export function TimingPicker({
       );
       break;
     case 'day': {
-      title = REPEAT_COPY.day;
+      title = words('house.repeat.day');
       const first = previewLandings(value, now, rules.timezone, rules.weekStarts, 1)[0];
       body = (
         <View style={styles.noted}>
           <View style={styles.inset}>
-            <Segmented label={REPEAT_COPY.day} options={DAYS} value={value.dueDow} onChange={(dueDow) => onChange({ dueDow })} equal testID="timing-days" />
+            <Segmented label={words('house.repeat.day')} options={DAYS} value={value.dueDow} onChange={(dueDow) => onChange({ dueDow })} equal testID="timing-days" />
           </View>
-          {first ? <Meta style={styles.note}>{REPEAT_COPY.next(landingLabel(first, { day: true }), [])}</Meta> : null}
+          {first ? <Meta style={styles.note}>{nextLine([first], words)}</Meta> : null}
         </View>
       );
       break;
     }
     case 'time':
-      title = REPEAT_COPY.time;
+      title = words('house.repeat.time');
       body = (
         <>
-          <View style={styles.pills} accessibilityRole="radiogroup" accessibilityLabel={REPEAT_COPY.time}>
-            {REPEAT_COPY.clock.map((c) => (
-              <Pill key={c.time} label={`${c.label} ${c.time}`} chosen={value.dueTime === c.time} onPress={() => onChange({ dueTime: c.time })} />
+          <View style={styles.pills} accessibilityRole="radiogroup" accessibilityLabel={words('house.repeat.time')}>
+            {REPEAT_CLOCK.map((c) => (
+              <Pill key={c.time} label={`${words(`house.repeat.clock.${c.key}` as const)} ${c.time}`} chosen={value.dueTime === c.time} onPress={() => onChange({ dueTime: c.time })} />
             ))}
           </View>
           <View style={styles.noted}>
             <View style={styles.inset}>
               <Field
-                label={REPEAT_COPY.anyTime}
+                label={words('house.repeat.anyTime')}
                 value={value.dueTime}
                 onChangeText={(dueTime) => onChange({ dueTime })}
                 placeholder="21:00"
@@ -377,33 +362,33 @@ export function TimingPicker({
                 testID="john-time"
               />
             </View>
-            <Meta style={styles.note}>{REPEAT_COPY.lateAfter(rules.lateHours)}</Meta>
+            <Meta style={styles.note}>{words('house.repeat.lateAfter', { hours: rules.lateHours })}</Meta>
           </View>
         </>
       );
       break;
     case 'times':
-      title = REPEAT_COPY.timesAWeek;
-      sub = REPEAT_COPY.timesAWeekSub;
+      title = words('house.repeat.timesAWeek');
+      sub = words('house.repeat.timesAWeekSub');
       body = (
         <Group>
           <GroupItem>
-            <Stepper label={REPEAT_COPY.timesAWeek} value={value.perWeek} min={1} max={14} onChange={(perWeek) => onChange({ perWeek })} />
+            <Stepper label={words('house.repeat.timesAWeek')} value={value.perWeek} min={1} max={14} onChange={(perWeek) => onChange({ perWeek })} />
           </GroupItem>
         </Group>
       );
       break;
     case 'within': {
-      title = REPEAT_COPY.within;
-      sub = REPEAT_COPY.withinSub;
+      title = words('house.repeat.within');
+      sub = words('house.repeat.withinSub');
       // A window set outside the choices (by an older app) still shows.
       const hours: number[] = (RESPOND_HOURS as readonly number[]).includes(value.respondHours)
         ? [...RESPOND_HOURS]
         : [...RESPOND_HOURS, value.respondHours].sort((a, b) => a - b);
       body = (
-        <View style={styles.pills} accessibilityRole="radiogroup" accessibilityLabel={REPEAT_COPY.within}>
+        <View style={styles.pills} accessibilityRole="radiogroup" accessibilityLabel={words('house.repeat.within')}>
           {hours.map((h) => (
-            <Pill key={h} label={JOHN_LIST_COPY.respondHours(h)} chosen={value.respondHours === h} onPress={() => onChange({ respondHours: h })} />
+            <Pill key={h} label={words('house.johns.respondHours', { hours: h })} chosen={value.respondHours === h} onPress={() => onChange({ respondHours: h })} />
           ))}
         </View>
       );
@@ -420,7 +405,7 @@ export function TimingPicker({
       {body}
       <View style={styles.inset}>
         <ButtonRow>
-          <Button label={REPEAT_COPY.done} onPress={onDone} testID="timing-done" />
+          <Button label={words('house.repeat.done')} onPress={onDone} testID="timing-done" />
         </ButtonRow>
       </View>
     </View>

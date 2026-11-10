@@ -4,6 +4,7 @@ import { CoinsIcon } from 'lucide-react-native';
 import { Avatar } from '@/components/avatar';
 import { EmptyState } from '@/components/empty-state';
 import { HousePage } from '@/components/house/house-page';
+import { Flow } from '@/components/page-columns';
 import { Row } from '@/components/row';
 import { Section } from '@/components/section';
 import { useHouse } from '@/hooks/use-house';
@@ -35,25 +36,36 @@ function PocketFor({ houseId, userId }: { houseId: string; userId: string }) {
       onRetry={() => void Promise.all([query.refetch(), pocket.refetch()])}
       refreshing={refreshing}
       onRefresh={pull}
+      fills
     >
       {() => {
         const { rules, members } = view!.snapshot;
         const months = pocketHistory({ view: pocket.data!, members, currency: rules.currency, zone: rules.timezone });
         if (months.length === 0) return <EmptyState icon={CoinsIcon} title={POCKET_COPY.history} body={POCKET_COPY.historyEmpty} />;
-        return months.map((m) => (
-          <Section key={m.month} label={m.label} testID="pocket-month">
-            {m.lines.map((line) => (
-              <Row
-                key={line.key}
-                leading={<Avatar name={line.name} userId={line.userId} me={line.userId === userId} />}
-                title={line.name}
-                meta={line.meta}
-                trailing={line.value}
-                testID="pocket-line"
-              />
-            ))}
-          </Section>
-        ));
+        // On a laptop the months sit side by side in as many columns as fit, as the Stake's history does.
+        return (
+          <Flow
+            testID="pocket-months"
+            items={months.map((m) => ({
+              key: m.month,
+              weight: m.lines.length + 1,
+              node: (
+                <Section label={m.label} testID="pocket-month">
+                  {m.lines.map((line) => (
+                    <Row
+                      key={line.key}
+                      leading={<Avatar name={line.name} userId={line.userId} me={line.userId === userId} />}
+                      title={line.name}
+                      meta={line.meta}
+                      trailing={line.value}
+                      testID="pocket-line"
+                    />
+                  ))}
+                </Section>
+              ),
+            }))}
+          />
+        );
       }}
     </HousePage>
   );

@@ -1,4 +1,4 @@
-import { buildStake, FOCUS_SHELL_COPY, type HistoryRow, HOUSE_PAGE_COPY, PERSON_COPY, SECTION_LABEL, wordsFor } from '@app/core';
+import { buildStake, FOCUS_SHELL_COPY, type HistoryRow, SECTION_LABEL, wordsFor, lateMissedLine } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 
 import { loadAway } from '@/api/away';
@@ -53,7 +53,7 @@ async function open(person: string, as: 'priya' | 'sam' = 'priya') {
   mockMembership.userId = as;
   await renderPages({ 'house/people/[userId]': PersonScreen }, `/house/people/${person}`);
   await untilRead();
-  await waitFor(() => expect(screen.queryByLabelText(HOUSE_PAGE_COPY.readingStake)).toBeNull());
+  await waitFor(() => expect(screen.queryByLabelText(words('house.page.readingStake'))).toBeNull());
 }
 
 beforeEach(() => {
@@ -87,38 +87,38 @@ it('names the housemate in the title bar, with the way back to House', async () 
 it('shows their week and month, and where they stand against their share', async () => {
   await open('sam');
   const record = within(screen.getByTestId('person-record'));
-  expect(record.getByText(PERSON_COPY.thisWeek)).toBeOnTheScreen();
-  expect(record.getByText(HOUSE_PAGE_COPY.lateMissed(1, 1))).toBeOnTheScreen();
+  expect(record.getByText(words('people.person.thisWeek'))).toBeOnTheScreen();
+  expect(record.getByText(lateMissedLine(1, 1, words))).toBeOnTheScreen();
   const share = within(screen.getByTestId('person-share'));
-  expect(share.getByText(PERSON_COPY.behind('3', false))).toBeOnTheScreen();
-  expect(share.getByText(PERSON_COPY.catchingUp(2))).toBeOnTheScreen();
+  expect(share.getByText(words('people.person.behind', { points: '3', you: false }))).toBeOnTheScreen();
+  expect(share.getByText(words('people.person.catchingUp', { weeks: 2 }))).toBeOnTheScreen();
 });
 
 it('says being level with your share in words alone, with no bare figure after them', async () => {
   await open('priya');
-  expect(screen.getByTestId('person-share')).toHaveTextContent(new RegExp(`${PERSON_COPY.level(true)}${PERSON_COPY.sinceJoining}$`));
+  expect(screen.getByTestId('person-share')).toHaveTextContent(new RegExp(`${words('people.person.level', { you: true })}${words('people.person.sinceJoining')}$`));
 });
 
 it('counts someone dealt nothing lately as level, rather than reading for ever', async () => {
   (loadTable as jest.Mock).mockResolvedValue({ month: '2026-10', monthTable: [], balances: [] });
   await open('sam');
   const share = within(screen.getByTestId('person-share'));
-  expect(share.getByText(PERSON_COPY.level(false))).toBeOnTheScreen();
-  expect(share.queryByLabelText(HOUSE_PAGE_COPY.readingTable)).toBeNull();
+  expect(share.getByText(words('people.person.level', { you: false }))).toBeOnTheScreen();
+  expect(share.queryByLabelText(words('house.page.readingTable'))).toBeNull();
 });
 
 it('shows the month’s money, and apart from it what they owe from a closed month', async () => {
   await open('sam');
   const money = within(screen.getByTestId('person-money'));
-  expect(money.getByText(PERSON_COPY.forfeited)).toBeOnTheScreen();
-  expect(money.getByText(PERSON_COPY.net)).toBeOnTheScreen();
+  expect(money.getByText(words('people.person.forfeited'))).toBeOnTheScreen();
+  expect(money.getByText(words('people.person.net'))).toBeOnTheScreen();
   // September's debt isn't October's: it has its own section.
   expect(money.queryByTestId('person-owing')).toBeNull();
   const settling = within(screen.getByTestId('person-settling'));
-  expect(settling.getByRole('header', { name: PERSON_COPY.settling })).toBeOnTheScreen();
+  expect(settling.getByRole('header', { name: words('people.person.settling') })).toBeOnTheScreen();
   expect(settling.getByTestId('person-owing')).toHaveTextContent(
     new RegExp(
-      `${HOUSE_PAGE_COPY.owesYou('Sam', '£4', 'September')}${HOUSE_PAGE_COPY.paidHowYouLike}`,
+      `${words('house.page.owesYouFor', { name: 'Sam', amount: '£4', months: 'September' })}${words('house.page.paidHowYouLike')}`,
     ),
   );
 });
@@ -141,7 +141,7 @@ it('shows their streak and tokens, and their time away', async () => {
     periods: [{ id: 'p1', userId: 'sam', startsOn: '2026-10-28', endsOn: '2026-10-31', note: 'Cork' }],
   });
   await open('sam');
-  expect(within(screen.getByTestId('person-perks')).getByText(PERSON_COPY.noStreak)).toBeOnTheScreen();
+  expect(within(screen.getByTestId('person-perks')).getByText(words('people.person.noStreak'))).toBeOnTheScreen();
   expect(screen.getByTestId('person-away')).toHaveTextContent(/28–31 Oct/);
 });
 
@@ -149,7 +149,7 @@ it('says so in a sentence when they have no time away booked, as an empty group 
   (loadAway as jest.Mock).mockResolvedValue({ today: '2026-10-26', periods: [] });
   await open('sam');
   const away = within(screen.getByTestId('person-away'));
-  expect(away.getByText(PERSON_COPY.noAway)).toBeOnTheScreen();
+  expect(away.getByText(words('people.person.noAway'))).toBeOnTheScreen();
   expect(away.queryByRole('button')).toBeNull();
 });
 
@@ -166,14 +166,14 @@ it('asks before removing them from the house', async () => {
   await open('sam');
   await fireEvent.press(screen.getByTestId('remove-person'));
   expect(removeMember).not.toHaveBeenCalled();
-  expect(screen.getByText(PERSON_COPY.removeBody('Sam'))).toBeOnTheScreen();
-  await fireEvent.press(screen.getByRole('button', { name: PERSON_COPY.removeConfirm('Sam') }));
+  expect(screen.getByText(words('people.person.removeBody', { name: 'Sam' }))).toBeOnTheScreen();
+  await fireEvent.press(screen.getByRole('button', { name: words('people.person.removeConfirm', { name: 'Sam' }) }));
   expect(removeMember).toHaveBeenCalledWith('h1', 'sam');
 });
 
 it('offers nothing to change on your own page, or to anyone who is not an admin', async () => {
   await open('priya');
-  expect(screen.getByRole('header', { name: PERSON_COPY.yourRecord })).toBeOnTheScreen();
+  expect(screen.getByRole('header', { name: words('people.person.yourRecord') })).toBeOnTheScreen();
   expect(screen.queryByTestId('person-admin')).toBeNull();
   await screen.unmount();
   await open('priya', 'sam');
@@ -189,7 +189,7 @@ it("says so for someone who isn't in the house any more", async () => {
 it("says when the Stake can't be read, and tries again", async () => {
   (loadStake as jest.Mock).mockRejectedValueOnce(new Error('offline'));
   await open('sam');
-  expect(await screen.findByRole('alert')).toHaveTextContent(HOUSE_PAGE_COPY.stakeUnreadable);
+  expect(await screen.findByRole('alert')).toHaveTextContent(words('house.page.stakeUnreadable'));
   await fireEvent.press(screen.getByRole('button', { name: FOCUS_SHELL_COPY.retry }));
-  expect(await screen.findByText(PERSON_COPY.net)).toBeOnTheScreen();
+  expect(await screen.findByText(words('people.person.net'))).toBeOnTheScreen();
 });
