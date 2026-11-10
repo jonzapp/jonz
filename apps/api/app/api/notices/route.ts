@@ -1,6 +1,7 @@
-import { noticeFromRow, NoticesResponse, type Notice } from "@app/core";
+import { noticeFromRow, NoticesResponse, type Database, type Notice } from "@app/core";
 import { createClient } from "@supabase/supabase-js";
 
+import { visitorDbFromPool } from "@/lib/db/scope";
 import { env } from "@/lib/env";
 import { readCopy } from "@/lib/notices/copy";
 import { json, preflight } from "@/lib/respond";
@@ -26,17 +27,22 @@ export async function GET(request: Request) {
 async function readDatabase(): Promise<Notice[] | null> {
   try {
     // As a visitor: RLS shows everyone the notices that are on, and nothing else.
-    const supabase = createClient(env.supabaseUrl(), env.supabaseAnonKey(), {
-      auth: { persistSession: false, autoRefreshToken: false },
-      global: { fetch: (input, init) => fetch(input, { ...init, signal: AbortSignal.timeout(3000) }) },
-    });
-    const { data, error } = await supabase
+    const services = () =>
+      createClient<Database>(env.supabaseUrl(), env.supabaseAnonKey(), {
+        auth: { persistSession: false, autoRefreshToken: false },
+        global: { fetch: (input, init) => fetch(input, { ...init, signal: AbortSignal.timeout(3000) }) },
+      });
+    const db = visitorDbFromPool(services) ?? services();
+    const read = db
       .from("notices")
       .select("id, kind, title, body, link_label, link_url, starts_at, ends_at")
       .order("starts_at", { ascending: false })
       .limit(20);
-    if (error || !data) return null;
-    return data.map(noticeFromRow).filter((notice): notice is Notice => notice !== null);
+    // Three seconds at most, then the kept copy answers instead.
+    const late = new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000));
+    const result = await Promise.race([read, late]);
+    if (!result || result.error || !result.data) return null;
+    return result.data.map(noticeFromRow).filter((notice): notice is Notice => notice !== null);
   } catch {
     return null;
   }

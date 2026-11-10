@@ -951,24 +951,38 @@ export function txClient(
   );
 }
 
-/** The server's role, for one statement at a time from the pool: each its own transaction, sent in one go. */
-export function poolClient(pool: Sql, become: string, services?: () => Db): Db {
+/**
+ * One statement at a time from the pool, each its own transaction, sent in
+ * one go after `become`: the server's role, a visitor's, or a person's.
+ * `become` may be worked out first (a person's token checked), once.
+ */
+export function poolClient(
+  pool: Sql,
+  become: string | (() => Promise<string>),
+  services?: () => Db,
+): Db {
+  let ready: Promise<string> | null = null;
+  const role = () =>
+    typeof become === "string" ? Promise.resolve(become) : (ready ??= become());
   return restClient(
     {
       run: async (text, params) => {
+        const first = await role();
         const [, rows] = (await pool.begin((tx) => [
-          tx.unsafe(become),
+          tx.unsafe(first),
           tx.unsafe(text, params as never[]),
         ])) as unknown as [unknown, Record<string, unknown>[]];
         return rows;
       },
       signature: (name) =>
         cached(signatureCache, pool, () => signatures(pool))(name),
-      call: (signature, name, args) =>
-        pool.begin(async (tx) => {
-          await tx.unsafe(become);
+      call: async (signature, name, args) => {
+        const first = await role();
+        return pool.begin(async (tx) => {
+          await tx.unsafe(first);
           return callFunction(tx, signature, name, args);
-        }) as Promise<unknown>,
+        }) as Promise<unknown>;
+      },
       meta: () => cached(metaCache, pool, () => readMeta(pool)),
     },
     services,
