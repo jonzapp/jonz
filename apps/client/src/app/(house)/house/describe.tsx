@@ -1,9 +1,9 @@
-import { SECTION_LABEL } from '@app/core';
 
 import { AskJonz } from '@/components/house/ask-jonz';
 import { PageTitle } from '@/components/page-title';
 import { TitleBar } from '@/components/title-bar';
 import { useMembership } from '@/hooks/use-membership';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * The chat with Jonz as a page, on a phone or a tablet (from WIDE the same
@@ -16,6 +16,7 @@ import { useMembership } from '@/hooks/use-membership';
  * scrolls over a message box that stays put above the keyboard.
  */
 export default function DescribeScreen() {
+  const words = useWords();
   const { session, house } = useMembership();
   // The layout's guard only shows the house's screens with a house and a session.
   return (
@@ -30,7 +31,7 @@ export default function DescribeScreen() {
             lead={lead}
             back={back ? undefined : '/house'}
             onBack={back?.onPress}
-            backLabel={back?.label ?? SECTION_LABEL.house}
+            backLabel={back?.label ?? words('common.section.house')}
             right={actions}
           />
           <PageTitle page={title} />

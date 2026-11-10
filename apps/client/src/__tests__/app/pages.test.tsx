@@ -1,4 +1,4 @@
-import { FOCUS_SHELL_COPY, HELP_PAGE, LEGAL_COPY, PRIVACY_POLICY, REPORT_COPY, TERMS, wordsFor } from '@app/core';
+import { HELP_PAGE, LEGAL_COPY, PRIVACY_POLICY, REPORT_COPY, TERMS, wordsFor } from '@app/core';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 import { renderRouter, screen as routed } from 'expo-router/testing-library';
 import { Text, useWindowDimensions } from 'react-native';
@@ -63,7 +63,7 @@ it('lists a page to read On this page beside its words on a laptop, and only the
 
 it('goes back to the front door from privacy opened cold', async () => {
   await renderRouter({ index: () => <Text>Front door</Text>, privacy: Privacy }, { initialUrl: '/privacy' });
-  await fireEvent.press(routed.getByRole('button', { name: FOCUS_SHELL_COPY.back }));
+  await fireEvent.press(routed.getByRole('button', { name: words('common.shell.back') }));
   expect(routed).toHavePathname('/');
   expect(routed.getByText('Front door')).toBeOnTheScreen();
 });

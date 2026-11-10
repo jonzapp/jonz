@@ -1,4 +1,4 @@
-import { firstName, FOCUS_SHELL_COPY, leaveBar, leaveCost, roleCopy, BUSY_COPY } from '@app/core';
+import { firstName, leaveBar, leaveCost, roleCopy } from '@app/core';
 import { useQueryClient } from '@tanstack/react-query';
 import { DoorOpenIcon, RefreshCwIcon } from 'lucide-react-native';
 import { useState } from 'react';
@@ -108,7 +108,7 @@ export function LeaveSection({ houseId, userId, view }: { houseId: string; userI
         confirmLabel={bar === 'last-admin' ? (heirName ? roles.handOver(heirName) : null) : words('house.lower.leaveConfirm')}
         icon={DoorOpenIcon}
         busy={busy}
-        busyLabel={bar === 'last-admin' ? BUSY_COPY.handingOver : BUSY_COPY.leaving}
+        busyLabel={bar === 'last-admin' ? words('common.busy.handingOver') : words('common.busy.leaving')}
         problem={problem}
         onConfirm={() => void leave()}
         onClose={() => setAsking(false)}
@@ -133,7 +133,7 @@ export function LeaveSection({ houseId, userId, view }: { houseId: string; userI
         ) : null}
         {unread ? (
           <TextButton
-            label={FOCUS_SHELL_COPY.retry}
+            label={words('common.shell.retry')}
             icon={RefreshCwIcon}
             align="start"
             onPress={() => void stake.refetch()}

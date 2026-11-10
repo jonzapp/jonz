@@ -1,4 +1,4 @@
-import { firstName, memberCan, roleCopy, BUSY_COPY } from '@app/core';
+import { firstName, memberCan, roleCopy } from '@app/core';
 import { ShieldCheckIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -28,6 +28,7 @@ import { useWords } from '@/hooks/use-words';
  * from House by handing over. Housemates see the list without the buttons.
  */
 export function AdminsList({ houseId, userId, view }: { houseId: string; userId: string; view: HouseView }) {
+  const words = useWords();
   const role = useMove(houseId);
   const offer = useUndoOffer(houseId);
   const [adding, setAdding] = useState(false);
@@ -98,7 +99,7 @@ export function AdminsList({ houseId, userId, view }: { houseId: string; userId:
         icon={ShieldCheckIcon}
         tone="primary"
         busy={role.pending}
-        busyLabel={BUSY_COPY.saving}
+        busyLabel={words('common.busy.saving')}
         problem={role.problem}
         onConfirm={() =>
           void change(chosen!, 'admin').then((done) => {

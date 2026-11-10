@@ -1,6 +1,7 @@
-import { HELP_PAGE, PAGE_TITLE } from '@app/core';
+import { HELP_PAGE } from '@app/core';
 
 import { LegalPage } from '@/components/legal/legal-page';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * jonz.app/help: how to reach Jonz, from inside the app or by email, open
@@ -8,5 +9,6 @@ import { LegalPage } from '@/components/legal/legal-page';
  * CONTRIBUTING send people here instead of GitHub issues.
  */
 export default function Help() {
-  return <LegalPage page={HELP_PAGE} tab={PAGE_TITLE.help} testID="help-screen" />;
+  const words = useWords();
+  return <LegalPage page={HELP_PAGE} tab={words('common.title.help')} testID="help-screen" />;
 }

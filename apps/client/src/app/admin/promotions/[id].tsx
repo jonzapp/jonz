@@ -1,4 +1,4 @@
-import { promotionGives, PROMOTIONS_COPY, promotionSentence, promotionUsed, promotionWhoSentence, toEmail, BUSY_COPY, wordsFor } from '@app/core';
+import { promotionGives, PROMOTIONS_COPY, promotionSentence, promotionUsed, promotionWhoSentence, toEmail, wordsFor } from '@app/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
 import { MailIcon, RefreshCwIcon, TicketIcon } from 'lucide-react-native';
@@ -25,6 +25,7 @@ import { useOwnerMay } from '@/components/admin/use-owner-may';
 import { FORM_MAX, INSET, SPACE } from '@/theme';
 import { Waiting } from '@/components/waiting';
 import { PanelOutline } from '@/components/page-outlines';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * One promotion: what it gives and who can use it, its link to copy or
@@ -52,6 +53,7 @@ export default function PromotionPage() {
 }
 
 function Promotion({ p }: { p: PromotionDetail }) {
+  const words = useWords();
   const two = useColumns();
   const toast = useToast();
   const client = useQueryClient();
@@ -105,7 +107,7 @@ function Promotion({ p }: { p: PromotionDetail }) {
         <View style={styles.group}>
           <Alert message={PROMOTIONS_COPY.notReadyBody} testID="promotion-not-ready" />
           <ButtonRow>
-            <Button label={PROMOTIONS_COPY.tryAgain} icon={RefreshCwIcon} onPress={() => retry.mutate()} busy={retry.isPending} busyLabel={BUSY_COPY.trying} testID="promotion-retry" />
+            <Button label={PROMOTIONS_COPY.tryAgain} icon={RefreshCwIcon} onPress={() => retry.mutate()} busy={retry.isPending} busyLabel={words('common.busy.trying')} testID="promotion-retry" />
           </ButtonRow>
           {retry.error ? <Alert message={retry.error.message} /> : null}
         </View>
@@ -121,7 +123,7 @@ function Promotion({ p }: { p: PromotionDetail }) {
               onPress={() => email.mutate()}
               disabled={waiting === 0}
               busy={email.isPending}
-              busyLabel={BUSY_COPY.emailing}
+              busyLabel={words('common.busy.emailing')}
               testID="promotion-email"
             />
           </ButtonRow>
@@ -175,7 +177,7 @@ function Promotion({ p }: { p: PromotionDetail }) {
         confirmLabel={PROMOTIONS_COPY.stop}
         tone="hazard"
         busy={stop.isPending}
-        busyLabel={BUSY_COPY.stopping}
+        busyLabel={words('common.busy.stopping')}
         problem={stop.error?.message ?? null}
         onConfirm={() => stop.mutate()}
         onClose={() => setStopping(false)}

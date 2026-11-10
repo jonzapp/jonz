@@ -8,7 +8,7 @@ import { FONT, LEADING, ROW_GAP, ROW_MIN, SPACE, useTheme } from '@/theme';
 
 /**
  * Finished things, folded away inside a group: a row that says what it holds
- * ("Done (2)", from FOCUS_SHELL_COPY.done) and shows its rows under it when
+ * ("Done (2)", from common.shell.done) and shows its rows under it when
  * opened. `meta` follows the label on the same line, after a comma ("1 late"
  * with its hazard mark, or a time), and keeps its room while a long label
  * gives way. `detail` is a line of its own under the label, as a row's meta

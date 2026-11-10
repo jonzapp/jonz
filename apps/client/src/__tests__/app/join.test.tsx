@@ -1,4 +1,4 @@
-import { BIN_NIGHT, FOCUS_SHELL_COPY, signInReason, wordsFor } from '@app/core';
+import { BIN_NIGHT, signInReason, wordsFor } from '@app/core';
 import { fireEvent, renderRouter, screen } from 'expo-router/testing-library';
 import { Text } from 'react-native';
 
@@ -140,9 +140,9 @@ it("says when the house can't be read, rather than blaming the link, and reads i
   as(ME);
   byCode.mockRejectedValueOnce(new Error('Failed to fetch')).mockResolvedValueOnce(FLAT);
   await open();
-  expect(await screen.findByRole('alert')).toHaveTextContent(FOCUS_SHELL_COPY.unreadable);
+  expect(await screen.findByRole('alert')).toHaveTextContent(words('common.shell.unreadable'));
   expect(screen.queryByRole('header', { name: words('door.join.badLink') })).not.toBeOnTheScreen();
-  await fireEvent.press(screen.getByRole('button', { name: FOCUS_SHELL_COPY.retry }));
+  await fireEvent.press(screen.getByRole('button', { name: words('common.shell.retry') }));
   expect(await screen.findByRole('header', { name: 'Flat 3' })).toBeOnTheScreen();
   expect(byCode).toHaveBeenCalledTimes(2);
 });

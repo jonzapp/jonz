@@ -1,4 +1,4 @@
-import { BIN_NIGHT, SHELL_COPY } from '@app/core';
+import { BIN_NIGHT } from '@app/core';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { Platform, ScrollView, StyleSheet, Text, useWindowDimensions } from 'react-native';
 
@@ -7,6 +7,9 @@ import { measureAt, measureNowhere } from '@/testing/layout';
 import { LookContext, RAIL, SPACE } from '@/theme';
 
 import { Sheet, SheetAnchor, SheetRailContext } from './sheet';
+import { wordsFor } from '@app/core';
+
+const words = wordsFor('en', 'housemates');
 
 // A Modal that, like react-native-web's, stays in the tree while it closes
 // (it slides out first), so the test can see whether the sheet let it go. It
@@ -85,10 +88,10 @@ it('keeps the scrim to a pointer: out of the focus order and the accessibility t
   expect(scrim).not.toHaveProp('tabIndex');
   expect(scrim).not.toHaveProp('onPress');
   // The one thing named Close is the sheet's own button, inside it.
-  expect(screen.getAllByLabelText(SHELL_COPY.close)).toHaveLength(1);
+  expect(screen.getAllByLabelText(words('common.shell.close'))).toHaveLength(1);
   await fireEvent(scrim, 'responderRelease');
   expect(onClose).toHaveBeenCalledTimes(1);
-  await fireEvent.press(screen.getByRole('button', { name: SHELL_COPY.close }));
+  await fireEvent.press(screen.getByRole('button', { name: words('common.shell.close') }));
   expect(onClose).toHaveBeenCalledTimes(2);
 });
 

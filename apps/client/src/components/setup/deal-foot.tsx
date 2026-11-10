@@ -1,4 +1,3 @@
-import { BUSY_COPY } from '@app/core';
 import { ShuffleIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -68,7 +67,7 @@ export function DealFoot({ houseId, started, canRedeal = true }: { houseId: stri
         icon={ShuffleIcon}
         tone="primary"
         busy={move.pending}
-        busyLabel={BUSY_COPY.dealing}
+        busyLabel={words('common.busy.dealing')}
         problem={asked ? move.problem : null}
         onConfirm={() => void redeal()}
         onClose={() => setConfirming(false)}

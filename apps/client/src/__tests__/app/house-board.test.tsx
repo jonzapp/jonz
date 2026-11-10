@@ -50,7 +50,7 @@ function family(kind: 'family' | 'housemates' = 'family') {
 
 async function open() {
   await renderPages({ 'house/board': BoardScreen }, '/house/board');
-  await untilRead();
+  await untilRead(words);
 }
 
 beforeEach(() => {

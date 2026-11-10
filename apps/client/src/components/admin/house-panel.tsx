@@ -1,4 +1,4 @@
-import { humanError, DELETE_HOUSE_COPY, FOCUS_SHELL_COPY, HOUSES_COPY, houseFacts, houseLead, passDetail, personMeta, type HouseDetail } from '@app/core';
+import { humanError, DELETE_HOUSE_COPY, HOUSES_COPY, houseFacts, houseLead, passDetail, personMeta, type HouseDetail } from '@app/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { MegaphoneIcon } from 'lucide-react-native';
@@ -22,6 +22,7 @@ import { Lead, Meta } from '@/components/text';
 import { useToast } from '@/components/toast';
 import { Waiting } from '@/components/waiting';
 import { INSET, SPACE } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /** The Houses list's reads, so the panel and the list share their cache. */
 export const HOUSES_KEY = ['owner-houses'] as const;
@@ -78,6 +79,7 @@ function HouseBody({ house }: { house: HouseDetail }) {
  * the house's name is typed. Then it's back to Houses.
  */
 function DeleteHouse({ house }: { house: HouseDetail }) {
+  const words = useWords();
   const may = useOwnerMay('houses:write');
   const toast = useToast();
   const queryClient = useQueryClient();
@@ -122,7 +124,7 @@ function DeleteHouse({ house }: { house: HouseDetail }) {
             onPress={() => remove.mutate()}
             testID="house-delete-confirm"
           />
-          <Button variant="outline" label={FOCUS_SHELL_COPY.cancel} onPress={() => setOpen(false)} testID="house-delete-cancel" />
+          <Button variant="outline" label={words('common.shell.cancel')} onPress={() => setOpen(false)} testID="house-delete-cancel" />
         </ButtonRow>
       </Sheet>
     </>

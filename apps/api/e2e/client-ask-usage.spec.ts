@@ -1,4 +1,4 @@
-import { ASK_USAGE_COPY, type AskUsage, wordsFor } from "@app/core";
+import { type AskUsage, wordsFor } from "@app/core";
 import { expect, test, type Page } from "@playwright/test";
 
 import { CLIENT_URL, cleanUp, signInToClient } from "./auth";
@@ -50,12 +50,12 @@ test("warn when Ask Jonz is low, give way to a notice once it's used, and show t
 
   await usageIs(page, { left: 0, house: true, pass: false });
   await page.reload();
-  await expect(page.getByTestId("chat-out")).toContainText(ASK_USAGE_COPY.outHouse);
+  await expect(page.getByTestId("chat-out")).toContainText(words('ask.usage.outHouse'));
   await expect(page.getByTestId("chat-input")).toHaveCount(0);
   await expect(page.getByTestId("chat-out-pass")).toBeVisible();
 
   await page.getByTestId("chat-out-usage").click();
   await expect(page).toHaveURL(/\/house\/ask-usage$/);
-  await expect(page.getByTestId("usage-house")).toContainText(ASK_USAGE_COPY.house);
+  await expect(page.getByTestId("usage-house")).toContainText(words('ask.usage.house'));
   await expect(page.getByTestId("usage-week")).toContainText(/Resets \w+ at \d\d:\d\d/);
 });

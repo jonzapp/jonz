@@ -1,15 +1,4 @@
-import {
-  ADMIN_COPY,
-  daysUntil,
-  DELETION_FACETS,
-  DELETION_LIST_COPY,
-  DELETION_WHEN,
-  deletionDay,
-  FOCUS_SHELL_COPY,
-  SHELL_COPY,
-  type PendingDeletion,
-  BUSY_COPY,
-} from '@app/core';
+import { ADMIN_COPY, daysUntil, DELETION_FACETS, DELETION_LIST_COPY, DELETION_WHEN, deletionDay, type PendingDeletion } from '@app/core';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { MailIcon, UserXIcon } from 'lucide-react-native';
 import { useState, type ReactNode } from 'react';
@@ -36,6 +25,7 @@ import { useNow } from '@/hooks/use-now';
 import { SPACE, TABULAR, useTheme } from '@/theme';
 import { useOwnerMay } from '@/components/admin/use-owner-may';
 import { AdminSwitch } from '@/components/admin/admin-shell';
+import { useWords } from '@/hooks/use-words';
 
 const KEY = ['owner-deletions'];
 
@@ -217,6 +207,7 @@ function Left({ iso, now }: { iso: string; now: Date }) {
 
 /** What can be done to one person's deletion: Delete now or Stop, and why. */
 function ChosenSheet({ person, inline = false, onClose }: { person: PendingDeletion | null; inline?: boolean; onClose: () => void }) {
+  const words = useWords();
   const toast = useToast();
   const queryClient = useQueryClient();
   const [reason, setReason] = useState('');
@@ -270,14 +261,14 @@ function ChosenSheet({ person, inline = false, onClose }: { person: PendingDelet
               variant={asking === 'now' ? 'hazard' : 'primary'}
               label={asking === 'now' ? ADMIN_COPY.deleteNow : ADMIN_COPY.stop}
               busy={busy}
-              busyLabel={asking === 'now' ? BUSY_COPY.deleting : BUSY_COPY.stopping}
+              busyLabel={asking === 'now' ? words('common.busy.deleting') : words('common.busy.stopping')}
               onPress={() => (asking === 'now' ? now : stop).mutate(person.userId)}
               testID="deletion-confirm"
             />
-            <Button variant="outline" label={FOCUS_SHELL_COPY.cancel} onPress={() => setAsking(null)} testID="deletion-cancel" />
+            <Button variant="outline" label={words('common.shell.cancel')} onPress={() => setAsking(null)} testID="deletion-cancel" />
           </ButtonRow>
         )}
-        {inline && asking === null ? <TextButton label={SHELL_COPY.close} onPress={onClose} testID="deletion-close" /> : null}
+        {inline && asking === null ? <TextButton label={words('common.shell.close')} onPress={onClose} testID="deletion-close" /> : null}
       </View>
     </Holder>
   );
@@ -285,6 +276,7 @@ function ChosenSheet({ person, inline = false, onClose }: { person: PendingDelet
 
 /** Start the 30 days for someone who emailed and can't sign in. */
 function ByEmailSheet({ visible, inline = false, onClose }: { visible: boolean; inline?: boolean; onClose: () => void }) {
+  const words = useWords();
   const toast = useToast();
   const queryClient = useQueryClient();
   const [email, setEmail] = useState('');
@@ -331,7 +323,7 @@ function ByEmailSheet({ visible, inline = false, onClose }: { visible: boolean; 
         label={ADMIN_COPY.startDeleting}
         disabled={!email.includes('@')}
         busy={start.isPending}
-        busyLabel={BUSY_COPY.starting}
+        busyLabel={words('common.busy.starting')}
         onPress={() => start.mutate()}
         testID="deletion-start"
       />

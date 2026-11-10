@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { APP_NAME } from "./copy";
+import { APP_NAME } from "./app";
 import { OPERATIONS, type OperationName } from "./operations";
 
 // Approving a connected app's request (docs/specs/operation-registry.md,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { wholePercent } from "./app";
 
-import { ASK_USAGE_COPY } from "./copy";
 import { NEW_JOHN, type JohnDef } from "./board";
 
 import {
@@ -28,7 +28,6 @@ import {
   tidyAsk,
   tidyDraft,
 } from "./house-draft";
-import { HOUSE_DRAFT_COPY } from "./copy";
 import { JohnDraft } from "./schemas";
 import { wordsFor } from "./words-for";
 
@@ -101,8 +100,8 @@ describe("offlineTurn", () => {
   const said = (text: string) => ({ role: "user" as const, text });
 
   it("offers the starter list that fits what was said", () => {
-    expect(offlineTurn([said("Me, my wife and the kids")], null)).toEqual({
-      reply: HOUSE_DRAFT_COPY.offline,
+    expect(offlineTurn([said("Me, my wife and the kids")], null, words)).toEqual({
+      reply: words('ask.draft.offline'),
       ask: null,
       draft: starterDraft("family"),
       source: "starter",
@@ -110,14 +109,14 @@ describe("offlineTurn", () => {
   });
 
   it("offers the starter list the admin named", () => {
-    const turn = offlineTurn([said(HOUSE_DRAFT_COPY.starter.couple.title)], null);
+    const turn = offlineTurn([said(words('ask.draft.starter.couple.title'))], null, words);
     expect(turn.draft).toEqual(starterDraft("couple"));
-    expect(turn.reply).toBe(HOUSE_DRAFT_COPY.fromStarter);
+    expect(turn.reply).toBe(words('ask.draft.fromStarter'));
   });
 
   it("leaves a draft that's already there as it is", () => {
-    expect(offlineTurn([said("Oven every month")], starterDraft("couple"))).toEqual({
-      reply: HOUSE_DRAFT_COPY.offlineChange,
+    expect(offlineTurn([said("Oven every month")], starterDraft("couple"), words)).toEqual({
+      reply: words('ask.draft.offlineChange'),
       ask: null,
       draft: null,
       source: "starter",
@@ -395,7 +394,7 @@ describe("changing a list that's already there", () => {
   });
 
   it("says who's in a group, before → after", () => {
-    expect(HOUSE_DRAFT_COPY.groupPeople("You and Sam", "You, Sam and Ivy")).toBe("You and Sam → You, Sam and Ivy");
+    expect(words('ask.draft.groupPeople', { before: "You and Sam", after: "You, Sam and Ivy" })).toBe("You and Sam → You, Sam and Ivy");
   });
 });
 
@@ -448,15 +447,15 @@ describe("askBackOn", () => {
   });
 });
 
-describe("ASK_USAGE_COPY", () => {
+describe("Ask Jonz usage", () => {
   it("never rounds a little to none or nearly all to all", () => {
-    expect(ASK_USAGE_COPY.used(0.001)).toBe("1% used");
-    expect(ASK_USAGE_COPY.used(0.999)).toBe("99% used");
-    expect(ASK_USAGE_COPY.used(0)).toBe("0% used");
-    expect(ASK_USAGE_COPY.used(1)).toBe("100% used");
+    expect(words('ask.usage.used', { used: wholePercent(0.001) })).toBe("1% used");
+    expect(words('ask.usage.used', { used: wholePercent(0.999) })).toBe("99% used");
+    expect(words('ask.usage.used', { used: wholePercent(0) })).toBe("0% used");
+    expect(words('ask.usage.used', { used: wholePercent(1) })).toBe("100% used");
   });
   it("names whose Ask Jonz is low", () => {
-    expect(ASK_USAGE_COPY.low(0.18, false, "Monday at 00:00")).toBe("Only 18% of your Ask Jonz left this week. More on Monday at 00:00.");
-    expect(ASK_USAGE_COPY.low(0.1, true, "Monday at 00:00")).toContain("the house’s");
+    expect(words('ask.usage.low', { left: wholePercent(0.18), house: false, backOn: "Monday at 00:00" })).toBe("Only 18% of your Ask Jonz left this week. More on Monday at 00:00.");
+    expect(words('ask.usage.low', { left: wholePercent(0.1), house: true, backOn: "Monday at 00:00" })).toContain("the house’s");
   });
 });

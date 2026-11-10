@@ -1,4 +1,3 @@
-import { FOCUS_SHELL_COPY, HOUSE_DRAFT_COPY } from '@app/core';
 import { useRouter, type Href } from 'expo-router';
 import { ChevronLeftIcon, CircleQuestionMarkIcon, EllipsisIcon, SparklesIcon } from 'lucide-react-native';
 import { createContext, useContext, type ReactNode } from 'react';
@@ -55,7 +54,7 @@ export function TitleBar({
   sub,
   right,
   back,
-  backLabel = FOCUS_SHELL_COPY.back,
+  backLabel,
   ask = false,
   lead,
   onBack,
@@ -79,6 +78,7 @@ export function TitleBar({
   end?: ReactNode;
 }) {
   const words = useWords();
+  backLabel ??= words('common.shell.back');
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const contentWidth = useContentWidth();
@@ -151,12 +151,13 @@ export function TopLine({ children }: { children: string }) {
  * the tab it came from.
  */
 function BackLink({ to, onPress, label }: { to?: Href; onPress?: () => void; label: string }) {
+  const words = useWords();
   const { colors, type } = useTheme();
   const router = useRouter();
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={label === FOCUS_SHELL_COPY.back ? label : FOCUS_SHELL_COPY.backTo(label)}
+      accessibilityLabel={label === words('common.shell.back') ? label : words('common.shell.backTo', { place: label })}
       onPress={onPress ?? (() => to && router.dismissTo(to))}
       testID="back"
       style={({ pressed }) => [styles.back, pressed && styles.pressed]}
@@ -177,13 +178,14 @@ function BackLink({ to, onPress, label }: { to?: Href; onPress?: () => void; lab
  * chat's page.
  */
 function AskButton() {
+  const words = useWords();
   const ask = useAskJonz('toggle');
   const open = useAskPanelOpen();
   return (
     <TourSpot id="shell.ask">
       <IconButton
         icon={SparklesIcon}
-        label={HOUSE_DRAFT_COPY.open}
+        label={words('ask.draft.open')}
         expanded={'onPress' in ask ? open : undefined}
         onPress={'onPress' in ask ? ask.onPress : undefined}
         href={'href' in ask ? ask.href : undefined}
@@ -195,7 +197,8 @@ function AskButton() {
 
 /** The title bar's "•••": opens the screen's ActionMenu. */
 export function MoreButton({ onPress, testID = 'more' }: { onPress: () => void; testID?: string }) {
-  return <IconButton icon={EllipsisIcon} label={FOCUS_SHELL_COPY.more} onPress={onPress} testID={testID} />;
+  const words = useWords();
+  return <IconButton icon={EllipsisIcon} label={words('common.shell.more')} onPress={onPress} testID={testID} />;
 }
 
 const styles = StyleSheet.create({

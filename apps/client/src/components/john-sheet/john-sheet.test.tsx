@@ -1,4 +1,4 @@
-import { BIN_NIGHT, buildStake, type DisputeRow, FOCUS_SHELL_COPY, monthOf, wordsFor } from '@app/core';
+import { BIN_NIGHT, buildStake, type DisputeRow, monthOf, wordsFor } from '@app/core';
 import type { QueryClient } from '@tanstack/react-query';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
@@ -297,7 +297,7 @@ describe('your open John', () => {
       expect(within(body).getByText(words('john.sheet.skipMeta', { skips: 1 }))).toBeOnTheScreen();
       await fireEvent.press(within(body).getByTestId('skip-row'));
       expect(within(within(body).getByTestId('skip-confirm')).getByText(words('john.sheet.skipSentence', { john: 'Bins out', left: 0 }))).toBeOnTheScreen();
-      await fireEvent.press(within(body).getByRole('button', { name: FOCUS_SHELL_COPY.cancel }));
+      await fireEvent.press(within(body).getByRole('button', { name: words('common.shell.cancel') }));
       expect(within(body).queryByTestId('skip-confirm')).toBeNull();
       expect(spendImmunity).not.toHaveBeenCalled();
     });
@@ -433,7 +433,7 @@ describe('a John done together, and help', () => {
     await show(house(garden(), people));
     const body = await openOn('Open a1');
     await fireEvent.press(within(body).getByRole('button', { name: words('john.row.markDone') }));
-    await fireEvent.press(within(body).getByRole('button', { name: FOCUS_SHELL_COPY.cancel }));
+    await fireEvent.press(within(body).getByRole('button', { name: words('common.shell.cancel') }));
     expect(within(body).queryByTestId('roll-call')).toBeNull();
     expect(within(body).getByTestId('crew-part')).toBeOnTheScreen();
   });

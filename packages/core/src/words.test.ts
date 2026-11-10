@@ -12,7 +12,7 @@ import { stringsOf } from "./strings-of";
  * the excused outcome, IMMUNITY_EVERY) are fine.
  */
 const FILES = [
-  "copy.ts",
+  "app.ts",
   "errors.ts",
   "wall.ts",
   "history.ts",
@@ -58,7 +58,6 @@ const RETIRED: [RegExp, string][] = [
  */
 const ALLOWED: Record<string, RegExp[]> = {
   "resets.ts": [/\blet (it |\w+ )?off\b/i],
-  "copy.ts": [/\blet (it |\w+ )?off\b/i],
   // The sign-in emails' code placeholder is Supabase's {{ .Token }}.
   "auth-email.ts": [/\btokens?\b/i],
   // History's own name for a skip's event, matched in code, never shown.

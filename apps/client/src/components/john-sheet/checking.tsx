@@ -1,4 +1,4 @@
-import { FOCUS_SHELL_COPY, forfeitRoom, monthOf, tickedLine, undoWarning, type BoardItem, BUSY_COPY } from '@app/core';
+import { forfeitRoom, monthOf, tickedLine, undoWarning, type BoardItem } from '@app/core';
 import { FlagIcon, Undo2Icon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -43,11 +43,11 @@ export function YoursChecking({ item, context }: { item: BoardItem; context: Joh
               icon={Undo2Icon}
               label={words('john.sheet.undoIt')}
               busy={move.pending}
-              busyLabel={BUSY_COPY.undoing}
+              busyLabel={words('common.busy.undoing')}
               onPress={undo}
               testID="sheet-undo-it"
             />
-            <Button variant="ghost" label={FOCUS_SHELL_COPY.cancel} onPress={() => setAsking(false)} />
+            <Button variant="ghost" label={words('common.shell.cancel')} onPress={() => setAsking(false)} />
           </ButtonRow>
         </View>
       ) : (
@@ -56,7 +56,7 @@ export function YoursChecking({ item, context }: { item: BoardItem; context: Joh
           icon={Undo2Icon}
           label={words('john.row.undo')}
           busy={move.pending}
-          busyLabel={BUSY_COPY.undoing}
+          busyLabel={words('common.busy.undoing')}
           onPress={warning ? () => setAsking(true) : undo}
           testID="sheet-undo"
         />

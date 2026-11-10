@@ -1,4 +1,4 @@
-import { buildStake, FOCUS_SHELL_COPY, type HistoryRow, SECTION_LABEL, wordsFor, lateMissedLine } from '@app/core';
+import { buildStake, type HistoryRow, wordsFor, lateMissedLine } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 
 import { loadAway } from '@/api/away';
@@ -52,7 +52,7 @@ function stakeRead(): StakeRead {
 async function open(person: string, as: 'priya' | 'sam' = 'priya') {
   mockMembership.userId = as;
   await renderPages({ 'house/people/[userId]': PersonScreen }, `/house/people/${person}`);
-  await untilRead();
+  await untilRead(words);
   await waitFor(() => expect(screen.queryByLabelText(words('house.page.readingStake'))).toBeNull());
 }
 
@@ -81,7 +81,7 @@ it('names the housemate in the title bar, with the way back to House', async () 
   const bar = within(screen.getByTestId('title-bar'));
   expect(bar.getByRole('header', { name: 'Sam' })).toBeOnTheScreen();
   expect(bar.getByText(words('people.person.role', { role: 'member' }))).toBeOnTheScreen();
-  expect(bar.getByRole('button', { name: FOCUS_SHELL_COPY.backTo(SECTION_LABEL.house) })).toBeOnTheScreen();
+  expect(bar.getByRole('button', { name: words('common.shell.backTo', { place: words('common.section.house') }) })).toBeOnTheScreen();
 });
 
 it('shows their week and month, and where they stand against their share', async () => {
@@ -182,7 +182,7 @@ it('offers nothing to change on your own page, or to anyone who is not an admin'
 
 it("says so for someone who isn't in the house any more", async () => {
   await open('ben');
-  expect(screen.getByText(FOCUS_SHELL_COPY.gone)).toBeOnTheScreen();
+  expect(screen.getByText(words('common.shell.gone'))).toBeOnTheScreen();
   expect(screen.queryByTestId('person-record')).toBeNull();
 });
 
@@ -190,6 +190,6 @@ it("says when the Stake can't be read, and tries again", async () => {
   (loadStake as jest.Mock).mockRejectedValueOnce(new Error('offline'));
   await open('sam');
   expect(await screen.findByRole('alert')).toHaveTextContent(words('house.page.stakeUnreadable'));
-  await fireEvent.press(screen.getByRole('button', { name: FOCUS_SHELL_COPY.retry }));
+  await fireEvent.press(screen.getByRole('button', { name: words('common.shell.retry') }));
   expect(await screen.findByText(words('people.person.net'))).toBeOnTheScreen();
 });

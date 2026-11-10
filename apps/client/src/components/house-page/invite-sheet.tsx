@@ -1,4 +1,3 @@
-import { BUSY_COPY } from '@app/core';
 import { CheckIcon, CopyIcon, RefreshCwIcon, Share2Icon } from 'lucide-react-native';
 import { useState } from 'react';
 import { Platform, Share, StyleSheet, Text, View } from 'react-native';
@@ -121,7 +120,7 @@ export function InviteSheet({
               icon={RefreshCwIcon}
               label={words('door.invite.newCode')}
               busy={reset.pending}
-              busyLabel={BUSY_COPY.resetting}
+              busyLabel={words('common.busy.resetting')}
               onPress={() => {
                 setCopied(false);
                 void reset.run(() => resetJoinCode(resetFor));

@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import { buildWeekBoard, todayView, type AssignmentRow, type BoardItem, type WeekBoard } from "./board";
-import { FOCUS_SHELL_COPY } from "./copy";
 import { DEFAULT_RULES } from "./domain";
 import { familyHides } from "./family";
 import { settleOutcome } from "./outcome";
@@ -122,7 +121,7 @@ describe("a family's rules and words", () => {
   });
 
   it("speaks the Today tab's badge as OKs in a family", () => {
-    expect(FOCUS_SHELL_COPY.tab("Today", 2, true)).toBe("Today, 2 waiting for your OK");
-    expect(FOCUS_SHELL_COPY.tab("Today", 2)).toBe("Today, 2 waiting for your vote");
+    expect(wordsFor("en", "family")('common.shell.tab', { label: "Today", toVote: 2 })).toBe("Today, 2 waiting for your OK");
+    expect(words('common.shell.tab', { label: "Today", toVote: 2 })).toBe("Today, 2 waiting for your vote");
   });
 });

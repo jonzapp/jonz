@@ -1,4 +1,4 @@
-import { ADMIN_COPY, AUDIT_FACETS, AUDIT_LIST_COPY, LIST_COPY, listTime, type AuditEntry } from '@app/core';
+import { ADMIN_COPY, AUDIT_FACETS, AUDIT_LIST_COPY, listTime, type AuditEntry } from '@app/core';
 import { router } from 'expo-router';
 import { ScrollTextIcon } from 'lucide-react-native';
 import { useState } from 'react';
@@ -13,6 +13,7 @@ import { useMembership } from '@/hooks/use-membership';
 import { useNow } from '@/hooks/use-now';
 import { AdminSwitch } from '@/components/admin/admin-shell';
 import { SPACE } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * The audit log, built for thousands of entries a day: no day headings, one
@@ -43,6 +44,7 @@ export default function AuditPage() {
 
 /** The list, and on a laptop the entry chosen beside it. Inside the Screen, which knows whether there's room for two columns. */
 function AuditLog({ busy, ownerId }: { busy: BusyList<AuditEntry>; ownerId: string | null }) {
+  const words = useWords();
   const two = useColumns();
   const now = useNow();
   const [chosen, setChosen] = useState<number | null>(null);
@@ -68,7 +70,7 @@ function AuditLog({ busy, ownerId }: { busy: BusyList<AuditEntry>; ownerId: stri
       )}
       row={(entry) => <AuditRow key={entry.id} entry={entry} ownerId={ownerId} now={now} onPress={() => open(entry)} />}
       empty={{ icon: ScrollTextIcon, title: ADMIN_COPY.noAudit, body: ADMIN_COPY.noAuditBody }}
-      foot={(last) => LIST_COPY.backTo(listTime(last.at, now, ownerZone(), false))}
+      foot={(last) => words('common.list.backTo', { day: listTime(last.at, now, ownerZone(), false) })}
     />
   );
   // On a laptop the list always sits in the main column, even with nothing to show beside it (nothing

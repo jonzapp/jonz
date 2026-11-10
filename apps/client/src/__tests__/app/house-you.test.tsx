@@ -1,4 +1,4 @@
-import { DELETE_COPY, FOCUS_SHELL_COPY, PAGE_TITLE, SECTION_LABEL, wordsFor } from '@app/core';
+import { DELETE_COPY, wordsFor } from '@app/core';
 import { screen, within } from 'expo-router/testing-library';
 import { useWindowDimensions } from 'react-native';
 
@@ -31,7 +31,7 @@ jest.mock('@/hooks/use-membership', () => ({
 
 async function open() {
   await renderPages({ 'house/you': YouScreen }, '/house/you');
-  await untilRead();
+  await untilRead(words);
 }
 
 beforeEach(() => {
@@ -44,8 +44,8 @@ beforeEach(() => {
 it('sits under a title bar with the way back to House, your name at the top', async () => {
   await open();
   const bar = within(screen.getByTestId('title-bar'));
-  expect(bar.getByRole('header', { name: PAGE_TITLE.you })).toBeOnTheScreen();
-  expect(bar.getByRole('button', { name: FOCUS_SHELL_COPY.backTo(SECTION_LABEL.house) })).toBeOnTheScreen();
+  expect(bar.getByRole('header', { name: words('common.title.you') })).toBeOnTheScreen();
+  expect(bar.getByRole('button', { name: words('common.shell.backTo', { place: words('common.section.house') }) })).toBeOnTheScreen();
   const me = snapshot().members.find((m) => m.userId === 'priya')!;
   // Your picture (here your initials), then your name over the house and your part in it.
   expect(screen.getByTestId('you-head')).toHaveTextContent(`PR${me.name}${words('house.leave.youIn', { house: 'Flat 3', role: me.role })}`);

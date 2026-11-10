@@ -1,4 +1,4 @@
-import { type BoardItem, type SwapAsk, type SwapOfferToYou, BUSY_COPY } from '@app/core';
+import { type BoardItem, type SwapAsk, type SwapOfferToYou } from '@app/core';
 import { useState } from 'react';
 import { RepeatIcon } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
@@ -47,7 +47,7 @@ export function SwapSuggestion({ houseId, ask, nameOf }: { houseId: string; ask:
               icon={RepeatIcon}
               label={ask.button}
               busy={move.pending}
-              busyLabel={BUSY_COPY.asking}
+              busyLabel={words('common.busy.asking')}
               onPress={async () => {
                 if (await move.run(() => askSwap(ask.mine.id, ask.theirs.id))) toast?.show(words('week.steady.asked', { name: nameOf(ask.withUserId) }));
               }}
@@ -82,8 +82,8 @@ export function SwapOfferCard({ houseId, offer, nameOf }: { houseId: string; off
       <GroupItem>
         <Body>{offer.body}</Body>
         <ButtonRow>
-          <Button icon={RepeatIcon} label={words('week.steady.accept')} busy={move.pending && accepting} busyLabel={BUSY_COPY.accepting} onPress={() => void answer(true)} testID="accept-swap" />
-          <Button variant="ghost" label={words('week.steady.decline')} busy={move.pending && !accepting} busyLabel={BUSY_COPY.declining} onPress={() => void answer(false)} testID="decline-swap" />
+          <Button icon={RepeatIcon} label={words('week.steady.accept')} busy={move.pending && accepting} busyLabel={words('common.busy.accepting')} onPress={() => void answer(true)} testID="accept-swap" />
+          <Button variant="ghost" label={words('week.steady.decline')} busy={move.pending && !accepting} busyLabel={words('common.busy.declining')} onPress={() => void answer(false)} testID="decline-swap" />
         </ButtonRow>
         {move.problem ? <Alert message={move.problem} /> : null}
       </GroupItem>

@@ -1,4 +1,4 @@
-import { firstName, membersLine, type GroupDef, BUSY_COPY } from '@app/core';
+import { firstName, membersLine, type GroupDef } from '@app/core';
 import { PlusIcon, Trash2Icon, UsersIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -168,7 +168,7 @@ function GroupForm({
             testID="save-group"
           />
           {initial.id ? (
-            <Button variant="hazard" icon={Trash2Icon} label={words('house.groups.remove')} busy={move.pending && doing === 'remove'} busyLabel={BUSY_COPY.removing} onPress={() => void remove()} />
+            <Button variant="hazard" icon={Trash2Icon} label={words('house.groups.remove')} busy={move.pending && doing === 'remove'} busyLabel={words('common.busy.removing')} onPress={() => void remove()} />
           ) : null}
         </ButtonRow>
       </View>

@@ -1,4 +1,4 @@
-import { DELETE_COPY, DELETE_PATH, PAGE_TITLE, signInPath } from '@app/core';
+import { DELETE_COPY, DELETE_PATH, signInPath } from '@app/core';
 import { router } from 'expo-router';
 import { LogInIcon } from 'lucide-react-native';
 import { StyleSheet, Text } from 'react-native';
@@ -10,6 +10,7 @@ import { PageTitle } from '@/components/page-title';
 import { Body, Meta } from '@/components/text';
 import { useMembership } from '@/hooks/use-membership';
 import { FONT } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * jonz.app/delete, for anyone: the page Google Play links to, for someone
@@ -18,10 +19,11 @@ import { FONT } from '@/theme';
  * account. Whoever can't sign in any more is told who to email.
  */
 export default function DeletePage() {
+  const words = useWords();
   const { session } = useMembership();
   return (
     <Door testID="delete-page">
-      <PageTitle page={PAGE_TITLE.deleteAccount} />
+      <PageTitle page={words('common.title.deleteAccount')} />
       <Sign>
         {session ? (
           <>

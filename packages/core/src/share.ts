@@ -1,9 +1,10 @@
-import { APP_NAME, PAGE_TITLE, SHARE_COPY, pageTitle } from "./copy";
+import { APP_NAME, pageTitle } from "./app";
 import type { HouseKind } from "./domain";
 import { wordsFor } from "./words-for";
 
 /** A link preview has no reader, so its words are English. */
 const PREVIEW_WORDS = wordsFor("en", "housemates");
+const words = PREVIEW_WORDS;
 
 /**
  * What a pasted jonz.app link shows in a chat (iMessage, WhatsApp, Slack,
@@ -46,7 +47,7 @@ export const BRAND_SIGN: ShareSign = { legend: APP_NAME, plate: "Fair shares of 
 
 /** A join link's sign: the house's own name beside the J, or the brand's when it's kept out. */
 export function joinSign(invite: InviteCard | null, namesHouse = SHARE_NAMES_HOUSE): ShareSign {
-  if (!invite) return { legend: "Invite expired", plate: SHARE_COPY.expiredLine };
+  if (!invite) return { legend: "Invite expired", plate: words('common.share.expiredLine') };
   if (!namesHouse) return { legend: APP_NAME, plate: "You're invited to a house." };
   return { legend: invite.name, plate: wordsFor("en", invite.kind)("common.joinPlate", { count: invite.members }) };
 }
@@ -57,7 +58,7 @@ export function joinSign(invite: InviteCard | null, namesHouse = SHARE_NAMES_HOU
  * ended or never was.
  */
 export function offerSign(offer: OfferCard | null): ShareSign {
-  if (!offer?.live) return { legend: "Offer ended", plate: SHARE_COPY.offerEndedLine };
+  if (!offer?.live) return { legend: "Offer ended", plate: words('common.share.offerEndedLine') };
   return { legend: offer.legend, plate: offer.plate };
 }
 
@@ -89,25 +90,25 @@ export interface SharePreview {
 
 /** Each page's name in a card, by its path on jonz.app (the app's routes). */
 const PAGES: [RegExp, string][] = [
-  [/^\/today$/, PAGE_TITLE.today],
-  [/^\/week$/, PAGE_TITLE.week],
+  [/^\/today$/, words('common.title.today')],
+  [/^\/week$/, words('common.title.week')],
   [/^\/week\/record(\/[^/]+)?$/, PREVIEW_WORDS('week.record.title')],
-  [/^\/house$/, PAGE_TITLE.house],
+  [/^\/house$/, words('common.title.house')],
   [/^\/house\/wall$/, PREVIEW_WORDS('wall.page.title')],
   [/^\/house\/stake$/, PREVIEW_WORDS('house.stake.title')],
   [/^\/house\/history$/, PREVIEW_WORDS('wall.history.title')],
-  [/^\/house\/johns$/, PAGE_TITLE.johnList],
-  [/^\/house\/rules$/, PAGE_TITLE.rules],
-  [/^\/house\/away$/, PAGE_TITLE.away],
-  [/^\/house\/moving$/, PAGE_TITLE.moving],
-  [/^\/house\/groups$/, PAGE_TITLE.groups],
-  [/^\/house\/describe$/, PAGE_TITLE.describe],
-  [/^\/house\/pass$/, PAGE_TITLE.pass],
-  [/^\/house\/new$/, PAGE_TITLE.newHouse],
-  [/^\/signin$/, PAGE_TITLE.signIn],
-  [/^\/privacy$/, PAGE_TITLE.privacy],
-  [/^\/help$/, PAGE_TITLE.help],
-  [/^\/welcome$/, PAGE_TITLE.welcome],
+  [/^\/house\/johns$/, words('common.title.johnList')],
+  [/^\/house\/rules$/, words('common.title.rules')],
+  [/^\/house\/away$/, words('common.title.away')],
+  [/^\/house\/moving$/, words('common.title.moving')],
+  [/^\/house\/groups$/, words('common.title.groups')],
+  [/^\/house\/describe$/, words('common.title.describe')],
+  [/^\/house\/pass$/, words('common.title.pass')],
+  [/^\/house\/new$/, words('common.title.newHouse')],
+  [/^\/signin$/, words('common.title.signIn')],
+  [/^\/privacy$/, words('common.title.privacy')],
+  [/^\/help$/, words('common.title.help')],
+  [/^\/welcome$/, words('common.title.welcome')],
 ];
 
 /** The join code in a join link's path, as typed (the API checks it), or null. */
@@ -129,10 +130,10 @@ export function pagePreview(path: string): SharePreview {
   const page = PAGES.find(([pattern]) => pattern.test(at))?.[1];
   return {
     title: pageTitle(page),
-    description: SHARE_COPY.description,
+    description: words('common.share.description'),
     url: `${SHARE_SITE}${at === "/" ? "" : at}`,
     image: `${SHARE_SITE}/og.png`,
-    imageAlt: SHARE_COPY.imageAlt,
+    imageAlt: words('common.share.imageAlt'),
   };
 }
 
@@ -144,15 +145,15 @@ export function joinPreview(code: string, invite: InviteCard | null, namesHouse 
   const url = `${SHARE_SITE}/join/${code}`;
   const image = `${SHARE_SITE}/api/og/join/${code}`;
   if (!invite) {
-    return { title: SHARE_COPY.expiredTitle, description: SHARE_COPY.expiredLine, url, image, imageAlt: SHARE_COPY.expiredTitle };
+    return { title: words('common.share.expiredTitle'), description: words('common.share.expiredLine'), url, image, imageAlt: words('common.share.expiredTitle') };
   }
   if (!namesHouse) {
-    return { title: SHARE_COPY.joinGeneric, description: SHARE_COPY.joinLine, url, image, imageAlt: SHARE_COPY.joinGeneric };
+    return { title: words('common.share.joinGeneric'), description: words('common.share.joinLine'), url, image, imageAlt: words('common.share.joinGeneric') };
   }
-  const title = SHARE_COPY.joinTitle(invite.name);
+  const title = words('common.share.joinTitle', { house: invite.name });
   return {
     title,
-    description: `${wordsFor("en", invite.kind)("common.members", { count: invite.members })}. ${SHARE_COPY.joinLine}`,
+    description: `${wordsFor("en", invite.kind)("common.members", { count: invite.members })}. ${words('common.share.joinLine')}`,
     url,
     image,
     imageAlt: title,
@@ -167,7 +168,7 @@ export function offerPreview(code: string, offer: OfferCard | null): SharePrevie
   const url = `${SHARE_SITE}/offer/${code}`;
   const image = `${SHARE_SITE}/api/og/offer/${code}`;
   if (!offer?.live) {
-    return { title: SHARE_COPY.offerEnded, description: SHARE_COPY.offerEndedLine, url, image, imageAlt: SHARE_COPY.offerEnded };
+    return { title: words('common.share.offerEnded'), description: words('common.share.offerEndedLine'), url, image, imageAlt: words('common.share.offerEnded') };
   }
   return { title: offer.title, description: offer.sentence, url, image, imageAlt: offer.title };
 }

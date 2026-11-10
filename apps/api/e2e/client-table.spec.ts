@@ -1,4 +1,4 @@
-import { monthOf, monthWord, pointsLabel, SECTION_LABEL, wordsFor } from "@app/core";
+import { monthOf, monthWord, pointsLabel, wordsFor } from "@app/core";
 import { expect, test } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, dealtHouseInClient } from "./auth";
@@ -40,7 +40,7 @@ test("a tick scores on the Table at once, beside fair shares and streaks", async
   // The Table is on House: one row per housemate, this week's points first.
   // Ava leads with her John's points (the month's depends on whether it
   // falls due this month).
-  await ava.getByRole("tab", { name: SECTION_LABEL.house }).click();
+  await ava.getByRole("tab", { name: words('common.section.house') }).click();
   await expect(ava).toHaveURL(/\/house$/);
   const table = ava.getByTestId("house-screen").getByTestId("house-table");
   await expect(table.getByRole("heading", { name: words('house.page.table') })).toBeVisible();

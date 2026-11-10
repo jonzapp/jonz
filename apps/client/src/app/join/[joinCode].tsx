@@ -1,4 +1,4 @@
-import { DOOR, formatMoney, joinLine, PAGE_TITLE } from '@app/core';
+import { DOOR, formatMoney, joinLine } from '@app/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 
@@ -89,7 +89,7 @@ export default function Join() {
 
   return (
     <Door testID="join-screen">
-      <PageTitle page={PAGE_TITLE.join} />
+      <PageTitle page={words('common.title.join')} />
       {!session ? (
         preview === undefined ? (
           <Waiting ready={false} label={words('door.welcome.lookingUp')} outline={<DoorOutline />} />
@@ -117,7 +117,7 @@ export default function Join() {
         )
       ) : unreadable ? (
         <Sign>
-          <SignHeading title={PAGE_TITLE.join} />
+          <SignHeading title={words('common.title.join')} />
           <ReadFailed onRetry={readAgain} />
         </Sign>
       ) : invite === undefined ? (

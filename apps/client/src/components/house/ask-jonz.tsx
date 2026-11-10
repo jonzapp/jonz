@@ -1,4 +1,4 @@
-import { ASK_CHATS_COPY, memberCan, PAGE_TITLE, passUnlocked } from '@app/core';
+import { ASK_CHATS_COPY, memberCan, passUnlocked } from '@app/core';
 import { HistoryIcon, SquarePenIcon } from 'lucide-react-native';
 import { useCallback, useState, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -69,7 +69,7 @@ export function AskJonz({
   const retry = () => void Promise.all([query.refetch(), list.refetch()]);
   const ready = view !== null && list.data !== undefined;
   const [title, setTitle] = useState<string | null>(null);
-  if (ready && title === null) setTitle(list.data.johns.length > 0 ? PAGE_TITLE.ask : PAGE_TITLE.describe);
+  if (ready && title === null) setTitle(list.data.johns.length > 0 ? words('common.title.ask') : words('common.title.describe'));
   const [chat, setChat] = useState<Open>({ serial: 0, saved: null });
   const [openId, setOpenId] = useState<string | null>(null);
   const [all, setAll] = useState(false);
@@ -99,7 +99,7 @@ export function AskJonz({
 
   // Describe your house is a long title, and a new house's chat is one sitting: the buttons would push the
   // title into dots there. Leaving the page and coming back starts afresh.
-  const describing = title === PAGE_TITLE.describe && !all;
+  const describing = title === words('common.title.describe') && !all;
   const newChat = describing ? null : <IconButton icon={SquarePenIcon} label={ASK_CHATS_COPY.newChat} onPress={fresh} disabled={!talked && !all} testID="chat-new" />;
   const yours =
     describing || all ? null : (
@@ -113,7 +113,7 @@ export function AskJonz({
         testID="chats-open"
       />
     );
-  const chatTitle = title ?? PAGE_TITLE.ask;
+  const chatTitle = title ?? words('common.title.ask');
   const zone = view?.snapshot.rules.timezone ?? 'UTC';
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>

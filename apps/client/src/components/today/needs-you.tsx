@@ -1,4 +1,4 @@
-import { coverTitle, FOCUS_SHELL_COPY, johnRow, voteMeta, voteTitle, type BoardItem } from '@app/core';
+import { coverTitle, johnRow, voteMeta, voteTitle, type BoardItem } from '@app/core';
 
 import type { Housemate } from '@/api/board';
 import { Avatar } from '@/components/avatar';
@@ -22,7 +22,7 @@ export function NeedsYou({ items, members, now }: { items: BoardItem[]; members:
       {items.map((item) => (
         <Row
           key={item.id}
-          leading={<Avatar name={members.find((m) => m.userId === item.userId)?.name ?? FOCUS_SHELL_COPY.formerHousemate} userId={item.userId} />}
+          leading={<Avatar name={members.find((m) => m.userId === item.userId)?.name ?? words('common.shell.formerHousemate')} userId={item.userId} />}
           title={voteTitle(item, members, words)}
           // The John's name is never cut short.
           titleLines={2}
@@ -64,7 +64,7 @@ export function CouldCover({
       {items.map((item) => (
         <Row
           key={item.id}
-          leading={<Avatar name={nameOf(item.userId) ?? FOCUS_SHELL_COPY.formerHousemate} userId={item.userId} />}
+          leading={<Avatar name={nameOf(item.userId) ?? words('common.shell.formerHousemate')} userId={item.userId} />}
           title={coverTitle(item, members, words)}
           titleLines={2}
           meta={johnRow(item, userId, now, zone, nameOf, words).meta}

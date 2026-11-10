@@ -1,4 +1,4 @@
-import { CATEGORIES, CATEGORY_LABEL, CREW_CHOICES, crewLine, CURRENCY_SYMBOL, johnFacts, johnsByKind, listLine, moneyInput, NEW_JOHN, parseMinAge, parseMoney, pocketMoney, pointsLabel, weeklyEffort, type Category, type GroupDef, type HouseRules, type JohnDef, BUSY_COPY } from '@app/core';
+import { CATEGORIES, CATEGORY_LABEL, CREW_CHOICES, crewLine, CURRENCY_SYMBOL, johnFacts, johnsByKind, listLine, moneyInput, NEW_JOHN, parseMinAge, parseMoney, pocketMoney, pointsLabel, weeklyEffort, type Category, type GroupDef, type HouseRules, type JohnDef } from '@app/core';
 import { ListTodoIcon, PlusIcon, SparklesIcon, Trash2Icon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -414,7 +414,7 @@ function JohnForm({
             testID="save-john"
           />
           {v.id ? (
-            <Button variant="hazard" icon={Trash2Icon} label={words('house.johns.remove')} busy={move.pending && doing === 'remove'} busyLabel={BUSY_COPY.removing} onPress={() => void remove()} />
+            <Button variant="hazard" icon={Trash2Icon} label={words('house.johns.remove')} busy={move.pending && doing === 'remove'} busyLabel={words('common.busy.removing')} onPress={() => void remove()} />
           ) : null}
         </ButtonRow>
       </View>

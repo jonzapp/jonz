@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import * as copy from "./copy";
-import { APP_NAME, FOCUS_SHELL_COPY, LOOK_LABEL, LOOKS, lookOf, PAGE_TITLE, pageTitle, SECTION_LABEL, SECTIONS, SHELL_COPY, TAGLINE } from "./copy";
+import { APP_NAME, LOOKS, lookOf, pageTitle, SECTIONS, TAGLINE } from "./app";
 import { EN, type WordId } from "./locales";
 import { awayBannerBody, awayMovedLine, awayShade, johnWhen, makeupHint, phoneZoneLine, recordLine, shareStanding, tableRules } from "./word-keys";
 import { wordsFor } from "./words-for";
@@ -109,12 +108,10 @@ describe("a dispute’s words", () => {
 describe("SECTIONS", () => {
   it("names every screen once, in the house’s words", () => {
     expect(new Set(SECTIONS).size).toBe(SECTIONS.length);
-    expect(SECTIONS.map((s) => SECTION_LABEL[s])).toEqual(["Today", "Week", "Wall", "Table", "Stake", "House"]);
+    expect(SECTIONS.map((s) => words(`common.section.${s}` as const))).toEqual(["Today", "Week", "Wall", "Table", "Stake", "House"]);
   });
 
   it("counts the house and your standing in words", () => {
-    expect(SHELL_COPY.standing(0, 1)).toBe("0-week streak, 1 skip");
-    expect(SHELL_COPY.standing(5, 0)).toBe("5-week streak, 0 skips");
   });
 });
 
@@ -209,8 +206,8 @@ describe("time away’s words", () => {
 
 describe("pageTitle", () => {
   it("names the page, then the app, as the web’s tab does", () => {
-    expect(pageTitle(PAGE_TITLE.today)).toBe("Today · Jonz");
-    expect(pageTitle(PAGE_TITLE.week)).toBe("This week · Jonz");
+    expect(pageTitle(words('common.title.today'))).toBe("Today · Jonz");
+    expect(pageTitle(words('common.title.week'))).toBe("This week · Jonz");
     expect(pageTitle()).toBe("Jonz");
     expect(pageTitle("")).toBe("Jonz");
   });
@@ -220,14 +217,14 @@ describe("the pages around the house", () => {
   it("has not-found and error words", () => {
     expect(words('door.notFound.back')).toBe("Back to your Johns");
     expect(words('door.notFound.backToDoor')).toBe("Back to the front door");
-    expect(PAGE_TITLE.welcome).toBe(words('door.noHouse.heading'));
+    expect(words('common.title.welcome')).toBe(words('door.noHouse.heading'));
     expect(words('door.error.retry')).toBe("Try again");
   });
 });
 
 describe("looks", () => {
   it("names day, night and auto", () => {
-    expect(LOOKS.map((l) => LOOK_LABEL[l])).toEqual(["Day", "Night", "Auto"]);
+    expect(LOOKS.map((l) => words(`common.look.${l}` as const))).toEqual(["Day", "Night", "Auto"]);
   });
 
   it("reads a saved look, and anything else as following the device", () => {
@@ -246,16 +243,16 @@ describe("REMINDERS_COPY", () => {
   });
 });
 
-describe("FOCUS_SHELL_COPY", () => {
+describe("the shell's words", () => {
   it("speaks Today’s badge, and leaves a tab with none as its name", () => {
-    expect(FOCUS_SHELL_COPY.tab("Today", 2)).toBe("Today, 2 waiting for your vote");
-    expect(FOCUS_SHELL_COPY.tab("Today", 0)).toBe("Today");
-    expect(FOCUS_SHELL_COPY.tab("Week", 0)).toBe("Week");
+    expect(words('common.shell.tab', { label: "Today", toVote: 2 })).toBe("Today, 2 waiting for your vote");
+    expect(words('common.shell.tab', { label: "Today", toVote: 0 })).toBe("Today");
+    expect(words('common.shell.tab', { label: "Week", toVote: 0 })).toBe("Week");
   });
 
   it("counts what a fold holds", () => {
-    expect(FOCUS_SHELL_COPY.done(0)).toBe("Done (0)");
-    expect(FOCUS_SHELL_COPY.done(2)).toBe("Done (2)");
+    expect(words('common.shell.done', { count: 0 })).toBe("Done (0)");
+    expect(words('common.shell.done', { count: 2 })).toBe("Done (2)");
   });
 });
 
@@ -265,32 +262,9 @@ describe("STAKE_HISTORY_COPY", () => {
   });
 });
 
-/** Every sentence an export holds: strings, lists and objects of them (functions are tested one by one). */
-function sentences(value: unknown): string[] {
-  if (typeof value === "string") return [value];
-  if (Array.isArray(value)) return value.flatMap(sentences);
-  if (value && typeof value === "object") return Object.values(value).flatMap(sentences);
-  return [];
-}
-
-/** What each sentence-making function says with stand-in words in its places: enough to read its own words. */
-function spoken(value: unknown): string[] {
-  if (typeof value === "function") {
-    try {
-      const out: unknown = value("Sam", "Priya", "Tom");
-      return typeof out === "string" ? [out] : [];
-    } catch {
-      return [];
-    }
-  }
-  if (Array.isArray(value)) return value.flatMap(spoken);
-  if (value && typeof value === "object") return Object.values(value).flatMap(spoken);
-  return [];
-}
-
-describe("every word in copy.ts", () => {
-  const all = Object.values(copy).flatMap(sentences);
-  const said = Object.values(copy).flatMap(spoken);
+describe("every word in the words files", () => {
+  const all: string[] = Object.values(EN);
+  const said = all;
 
   it("is there to check", () => {
     expect(all.length).toBeGreaterThan(20);

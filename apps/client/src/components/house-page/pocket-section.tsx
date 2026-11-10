@@ -1,4 +1,4 @@
-import { formatMoney, memberCan, payRows, pocketCard, type PayRow, type PocketView, BUSY_COPY } from '@app/core';
+import { formatMoney, memberCan, payRows, pocketCard, type PayRow, type PocketView } from '@app/core';
 import type { UseQueryResult } from '@tanstack/react-query';
 import { CheckIcon } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
@@ -80,6 +80,7 @@ export function PocketSection({
 
 /** One kid's month to pay: the row, and for a parent the button that says it's paid. */
 function PayDay({ houseId, row, fullName }: { houseId: string; row: PayRow; fullName: string }) {
+  const words = useWords();
   const move = useMove(houseId);
   const toasts = useToastIfAny();
   const inset = useRowInset();
@@ -94,7 +95,7 @@ function PayDay({ houseId, row, fullName }: { houseId: string; row: PayRow; full
               icon={CheckIcon}
               label={row.action}
               busy={move.pending}
-              busyLabel={BUSY_COPY.markingPaid}
+              busyLabel={words('common.busy.markingPaid')}
               onPress={() =>
                 void move
                   .run(() => payPocketMoney(houseId, row.userId, row.month))

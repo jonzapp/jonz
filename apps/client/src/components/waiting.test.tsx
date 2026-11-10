@@ -1,4 +1,3 @@
-import { FOCUS_SHELL_COPY } from '@app/core';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { Text } from 'react-native';
 
@@ -7,6 +6,9 @@ import { WAIT_DELAY, WAIT_MIN } from '@/theme';
 import { Group } from './group';
 import { OutlineRows } from './outline';
 import { Waiting } from './waiting';
+import { wordsFor } from '@app/core';
+
+const words = wordsFor('en', 'housemates');
 
 // A pretend clock throughout: the waits are about time, never the real one.
 beforeEach(() => jest.useFakeTimers({ now: new Date('2026-11-09T12:00:00Z') }));
@@ -72,7 +74,7 @@ describe('a part that reads before it shows', () => {
       </Waiting>,
     );
     await act(() => jest.advanceTimersByTime(WAIT_DELAY));
-    expect(screen.getByLabelText(FOCUS_SHELL_COPY.reading)).toBeOnTheScreen();
+    expect(screen.getByLabelText(words('common.shell.reading'))).toBeOnTheScreen();
     expect(screen.getAllByTestId('hairline', hidden).length).toBeGreaterThan(0);
   });
 
@@ -92,8 +94,8 @@ describe('a part that reads before it shows', () => {
         <Table />
       </Waiting>,
     );
-    expect(screen.getByText(FOCUS_SHELL_COPY.unreadable)).toBeOnTheScreen();
-    await fireEvent.press(screen.getByText(FOCUS_SHELL_COPY.retry));
+    expect(screen.getByText(words('common.shell.unreadable'))).toBeOnTheScreen();
+    await fireEvent.press(screen.getByText(words('common.shell.retry')));
     expect(retry).toHaveBeenCalledTimes(1);
   });
 });

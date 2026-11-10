@@ -9,7 +9,6 @@
 // grants, as if by hand.
 import { z } from "zod";
 
-import { HOUSE_DRAFT_COPY } from "./copy";
 import type { GroupDef, JohnDef } from "./board";
 import { CATEGORIES, CATEGORY_LABEL, DOW_LABEL, JOHN_WHEN, type Category, type IsoDow } from "./domain";
 import { firstName } from "./format";
@@ -483,12 +482,12 @@ export function draftForModel(draft: HouseDraft, people: readonly Person[], me: 
  * the admin said (or the one they named); after, the draft stays as it is
  * and the admin is told to change it by hand.
  */
-export function offlineTurn(messages: readonly ChatMessage[], draft: HouseDraft | null): ChatResponse {
-  if (draft) return { reply: HOUSE_DRAFT_COPY.offlineChange, ask: null, draft: null, source: "starter" };
+export function offlineTurn(messages: readonly ChatMessage[], draft: HouseDraft | null, words: Words): ChatResponse {
+  if (draft) return { reply: words('ask.draft.offlineChange'), ask: null, draft: null, source: "starter" };
   const said = messages.filter((m) => m.role === "user").map((m) => m.text);
-  const named = STARTER_KINDS.find((k) => said.some((t) => key(t.trim()) === key(HOUSE_DRAFT_COPY.starter[k].title)));
+  const named = STARTER_KINDS.find((k) => said.some((t) => key(t.trim()) === key(words(`ask.draft.starter.${k}.title` as const))));
   const kind = named ?? guessStarter(said.join(" "));
-  return { reply: named ? HOUSE_DRAFT_COPY.fromStarter : HOUSE_DRAFT_COPY.offline, ask: null, draft: starterDraft(kind), source: "starter" };
+  return { reply: named ? words('ask.draft.fromStarter') : words('ask.draft.offline'), ask: null, draft: starterDraft(kind), source: "starter" };
 }
 
 // --- Changing a list that's already there ---------------------------------------

@@ -1,4 +1,4 @@
-import { type Currency, FOCUS_SHELL_COPY, formatMoney, pointsLabel, listLine, SECTION_LABEL, wordsFor } from "@app/core";
+import { type Currency, formatMoney, pointsLabel, listLine, wordsFor } from "@app/core";
 import { expect, test, type Page } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, signInToClient } from "./auth";
@@ -97,7 +97,7 @@ test("run a house from nothing on the phone", async ({ browser }) => {
   await expect(page).toHaveURL(/\/house\/johns$/);
   await list.getByTestId("deal-week").click();
   await expect(list.getByTestId("deal-week")).toHaveText(new RegExp(words('house.deal.again')));
-  await page.getByRole("tab", { name: SECTION_LABEL.today }).click();
+  await page.getByRole("tab", { name: words('common.section.today') }).click();
   await expect(today.getByTestId("next-up-name")).toBeVisible();
   await expect(today.getByTestId("my-john")).toHaveCount(0);
   await benPage.reload();
@@ -140,7 +140,7 @@ test("run a house from nothing on the phone", async ({ browser }) => {
   await person.getByTestId("toggle-admin").getByRole("button", { name: words("people.person.makeAdmin") }).click();
   await expect(person.getByTestId("title-bar")).toContainText(words("people.person.role", { role: "admin" }));
   await expect(person.getByTestId("toggle-admin")).toContainText(words("people.person.makeMember"));
-  await backToHouse(page, person.getByRole("button", { name: FOCUS_SHELL_COPY.backTo(SECTION_LABEL.house) })).click();
+  await backToHouse(page, person.getByRole("button", { name: words('common.shell.backTo', { place: words('common.section.house') }) })).click();
   await expect(page).toHaveURL(/\/house$/);
   // Your name is on You, a row at the foot of House on a phone and a page in its list on a laptop.
   await toHousePage(page, "to-you").click();

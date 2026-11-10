@@ -1,17 +1,4 @@
-import {
-  facetChoices,
-  LIST_COPY,
-  listAsk,
-  listCount,
-  listQueryFromParams,
-  listQueryIsSet,
-  listQueryToParams,
-  type ListAsk,
-  type ListFacet,
-  type ListQuery,
-  type ListWhen,
-  type WhenPreset,
-} from '@app/core';
+import { facetChoices, listAsk, listCount, listQueryFromParams, listQueryIsSet, listQueryToParams, type ListAsk, type ListFacet, type ListQuery, type ListWhen, type WhenPreset } from '@app/core';
 import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SearchXIcon, type LucideIcon } from 'lucide-react-native';
@@ -31,6 +18,7 @@ import { Meta } from '@/components/text';
 import { TextButton } from '@/components/text-button';
 import { Waiting } from '@/components/waiting';
 import { INSET, OUTLINE, SPACE, useTheme } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /** A page of a busy list, whether there's another after it, and (from /v1) where that one starts. */
 export interface ListPage<T, C = unknown> {
@@ -145,6 +133,7 @@ export function BusyListView<T>({
   /** What the foot says is shown, when the count isn't in yet: how far back. */
   foot?: (last: T) => string;
 }) {
+  const words = useWords();
   const wide = useColumns();
   const { colors } = useTheme();
   // Typed, and waiting for the pause before it searches: already "searching", so it shows at once.
@@ -170,19 +159,19 @@ export function BusyListView<T>({
           searching={busy.searching}
           onPending={setTyping}
         />
-        <SearchLine searching={searching} label={LIST_COPY.searching} testID={`${name}-search-line`} />
+        <SearchLine searching={searching} label={words('common.list.searching')} testID={`${name}-search-line`} />
       </View>
       <View style={styles.count} testID={`${name}-count`}>
         {searching && busy.count !== null ? (
           // Not the last search's count, which would pass for this one's.
-          <Meta testID={`${name}-count-searching`}>{LIST_COPY.searching}…</Meta>
+          <Meta testID={`${name}-count-searching`}>{words('common.list.searching')}…</Meta>
         ) : busy.count === null ? (
           // The count's room while it's first read, in outline.
           <OutlineBar width={120} height={OUTLINE.meta} onCard={false} />
         ) : (
           <Meta>{noun(listCount(busy.count, false))}</Meta>
         )}
-        {busy.narrowed ? <TextButton label={LIST_COPY.clear} onPress={() => busy.show({})} testID={`${name}-clear`} /> : null}
+        {busy.narrowed ? <TextButton label={words('common.list.clear')} onPress={() => busy.show({})} testID={`${name}-clear`} /> : null}
       </View>
     </>
   );
@@ -192,7 +181,7 @@ export function BusyListView<T>({
     body = (
       <Waiting
         ready={false}
-        label={LIST_COPY.reading}
+        label={words('common.list.reading')}
         outline={
           <Group>
             <OutlineRows count={8} lead={wide ? 'none' : 'circle'} end={wide} />
@@ -203,7 +192,7 @@ export function BusyListView<T>({
   else if (busy.list.isError) body = <ReadFailed onRetry={() => void busy.list.refetch()} />;
   else if (busy.items.length === 0)
     body = busy.narrowed ? (
-      <EmptyState icon={SearchXIcon} title={LIST_COPY.noMatch} body={LIST_COPY.noMatchBody} testID={`${name}-no-match`} />
+      <EmptyState icon={SearchXIcon} title={words('common.list.noMatch')} body={words('common.list.noMatchBody')} testID={`${name}-no-match`} />
     ) : (
       <EmptyState icon={empty.icon} title={empty.title} body={empty.body} testID={`${name}-empty`} />
     );
@@ -220,7 +209,7 @@ export function BusyListView<T>({
         )}
         <ListFoot
           more={busy.more}
-          shown={busy.count !== null ? LIST_COPY.of(busy.items.length, busy.count) : (foot?.(last) ?? null)}
+          shown={busy.count !== null ? words('common.list.of', { shown: busy.items.length, total: busy.count }) : (foot?.(last) ?? null)}
           testID={`${name}-foot`}
         />
       </>

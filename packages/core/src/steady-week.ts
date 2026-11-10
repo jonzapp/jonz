@@ -9,7 +9,6 @@ import { tz } from "@date-fns/tz";
 import { format } from "date-fns";
 
 import type { JohnDef } from "./board";
-import { FOCUS_SHELL_COPY } from "./copy";
 import type { Words } from "./words-for";
 import { firstName } from "./format";
 import { johnKind } from "./john-row";
@@ -144,7 +143,7 @@ export function aheadSections(
           .map(([id]) => johnOf.get(id)!);
         return {
           userId,
-          who: userId === viewerId ? words('week.table.you') : named(nameOf(userId)),
+          who: userId === viewerId ? words('week.table.you') : named(nameOf(userId), words),
           johns: johns.map((j) => j.name),
           points: johns.reduce((s, j) => s + j.points, 0),
         };
@@ -153,13 +152,13 @@ export function aheadSections(
   }));
 }
 
-function named(name: string | null): string {
-  return name ? firstName(name) : FOCUS_SHELL_COPY.formerHousemate;
+function named(name: string | null, words: Words): string {
+  return name ? firstName(name) : words('common.shell.formerHousemate');
 }
 
 /** "your", or "Ada’s". */
 function whose(userId: string, viewerId: string, nameOf: (userId: string) => string | null, words: Words): string {
-  return userId === viewerId ? words('week.steady.yourTurn') : `${named(nameOf(userId))}’s`;
+  return userId === viewerId ? words('week.steady.yourTurn') : `${named(nameOf(userId), words)}’s`;
 }
 
 /**

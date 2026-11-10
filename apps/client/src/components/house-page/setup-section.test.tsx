@@ -1,4 +1,4 @@
-import { FOCUS_SHELL_COPY, wordsFor } from '@app/core';
+import { wordsFor } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 import { Text } from 'react-native';
 
@@ -58,7 +58,7 @@ beforeEach(() => {
 it('says it affects everyone, under its label', async () => {
   await open();
   const section = within(screen.getByTestId('setup-section'));
-  expect(section.getByRole('header', { name: FOCUS_SHELL_COPY.setup })).toBeOnTheScreen();
+  expect(section.getByRole('header', { name: words('common.shell.setup') })).toBeOnTheScreen();
   expect(section.getByText(words('house.lower.setupNote'))).toBeOnTheScreen();
 });
 

@@ -1,4 +1,4 @@
-import { memberCan, PAGE_TITLE, rulesRows } from '@app/core';
+import { memberCan, rulesRows } from '@app/core';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -42,7 +42,7 @@ function RulesFor({ houseId, userId }: { houseId: string; userId: string }) {
   const { refreshing, pull } = usePull(houseId, query.refetch);
   const [editing, setEditing] = useState(false);
   const page = {
-    title: PAGE_TITLE.rules,
+    title: words('common.title.rules'),
     ready: view !== null,
     failed: query.isError,
     onRetry: () => void query.refetch(),

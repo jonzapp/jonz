@@ -1,4 +1,5 @@
-import { ASK_LOW, ASK_USAGE_COPY, askBackOn, type AskUsage } from '@app/core';
+import { wholePercent } from '@app/core';
+import { ASK_LOW, askBackOn, type AskUsage } from '@app/core';
 import { ChevronRightIcon, GaugeIcon, TicketIcon } from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Link, type Href } from 'expo-router';
@@ -10,6 +11,7 @@ import { Group, GroupItem } from '@/components/group';
 import { Section } from '@/components/section';
 import { Body, Meta, RowTitle } from '@/components/text';
 import { CONTENT_MAX, GROUP_RADIUS, RADIUS, GUTTER, INSET, SECTION_GAP, SPACE, useTheme } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 // The week's Ask Jonz, as the chat and the usage page show it: a warning over
 // the message box once under a quarter is left, a notice in the box's place
@@ -28,13 +30,14 @@ export function usageState(usage: AskUsage | undefined): 'plenty' | 'low' | 'out
 
 /** One person's (or the house's) use: what, how much used, a bar, and a note under it. */
 export function UsageBar({ label, used, note, testID }: { label: string; used: number; note?: string; testID?: string }) {
+  const words = useWords();
   const { colors } = useTheme();
   const fill = used >= 0.9 ? colors.hazard : colors.primary;
   return (
     <View style={styles.bar} testID={testID}>
       <View style={styles.barTop}>
         <RowTitle>{label}</RowTitle>
-        <Meta>{ASK_USAGE_COPY.used(used)}</Meta>
+        <Meta>{words('ask.usage.used', { used: wholePercent(used) })}</Meta>
       </View>
       <View
         style={[styles.track, { backgroundColor: colors.muted }]}
@@ -53,6 +56,7 @@ export function UsageBar({ label, used, note, testID }: { label: string; used: n
 
 /** Over the message box once under a quarter is left: how much, whose, and when more comes. Opens the usage page. */
 export function LowWarning({ usage, zone }: { usage: AskUsage; zone: string }) {
+  const words = useWords();
   const { colors } = useTheme();
   return (
     <View style={styles.lowLine}>
@@ -60,11 +64,11 @@ export function LowWarning({ usage, zone }: { usage: AskUsage; zone: string }) {
       <Pressable
         style={StyleSheet.flatten([styles.low, { backgroundColor: colors.card, borderColor: colors.border }])}
         role="link"
-        aria-label={`${ASK_USAGE_COPY.low(usage.left, usage.house, askBackOn(usage.resetsAt, zone))} ${ASK_USAGE_COPY.lowLabel}`}
+        aria-label={`${words('ask.usage.low', { left: wholePercent(usage.left), house: usage.house, backOn: askBackOn(usage.resetsAt, zone) })} ${words('ask.usage.lowLabel')}`}
         testID="chat-low"
       >
         <GaugeIcon size={18} color={colors.foreground} aria-hidden />
-        <Body style={styles.flex}>{ASK_USAGE_COPY.low(usage.left, usage.house, askBackOn(usage.resetsAt, zone))}</Body>
+        <Body style={styles.flex}>{words('ask.usage.low', { left: wholePercent(usage.left), house: usage.house, backOn: askBackOn(usage.resetsAt, zone) })}</Body>
         <ChevronRightIcon size={18} color={colors.mutedForeground} aria-hidden />
       </Pressable>
     </Link>
@@ -78,20 +82,21 @@ export function LowWarning({ usage, zone }: { usage: AskUsage; zone: string }) {
  * no Pass, the Pass too.
  */
 export function OutNotice({ usage, zone }: { usage: AskUsage; zone: string }) {
+  const words = useWords();
   const { colors } = useTheme();
   const backOn = askBackOn(usage.resetsAt, zone);
   const house = usage.house;
   return (
     <ComposerBar testID="chat-out">
       <View style={[styles.outCard, { backgroundColor: colors.card }]}>
-        <RowTitle>{house ? ASK_USAGE_COPY.outHouse : ASK_USAGE_COPY.outMine}</RowTitle>
+        <RowTitle>{house ? words('ask.usage.outHouse') : words('ask.usage.outMine')}</RowTitle>
         <View style={[styles.track, { backgroundColor: colors.muted }]}>
           <View style={[styles.fill, { width: '100%', backgroundColor: colors.hazard }]} />
         </View>
-        <Meta>{house ? ASK_USAGE_COPY.outHouseNote(backOn, usage.pass) : ASK_USAGE_COPY.outMineNote(backOn)}</Meta>
+        <Meta>{house ? words('ask.usage.outHouseNote', { backOn, pass: usage.pass }) : words('ask.usage.outMineNote', { backOn })}</Meta>
         <ButtonRow>
-          {house && !usage.pass ? <Button label={ASK_USAGE_COPY.getPass} icon={TicketIcon} href="/house/pass" testID="chat-out-pass" /> : null}
-          <Button label={ASK_USAGE_COPY.seeUsage} variant="outline" href={ASK_USAGE_HREF} testID="chat-out-usage" />
+          {house && !usage.pass ? <Button label={words('ask.usage.getPass')} icon={TicketIcon} href="/house/pass" testID="chat-out-pass" /> : null}
+          <Button label={words('ask.usage.seeUsage')} variant="outline" href={ASK_USAGE_HREF} testID="chat-out-usage" />
         </ButtonRow>
       </View>
     </ComposerBar>
@@ -110,33 +115,34 @@ export function UsageDetail({
   me: string;
   nameOf: (userId: string) => string;
 }) {
+  const words = useWords();
   const halves = usage.people >= 2;
   return (
     <View style={styles.page}>
-      <Section label={ASK_USAGE_COPY.thisWeek} right={ASK_USAGE_COPY.resets(askBackOn(usage.resetsAt, zone))} testID="usage-week">
+      <Section label={words('ask.usage.thisWeek')} right={words('ask.usage.resets', { backOn: askBackOn(usage.resetsAt, zone) })} testID="usage-week">
         <Group>
           <GroupItem>
-            <UsageBar label={ASK_USAGE_COPY.house} used={usage.houseUsed} note={ASK_USAGE_COPY.houseNote(usage.people)} testID="usage-house" />
+            <UsageBar label={words('ask.usage.house')} used={usage.houseUsed} note={words('ask.usage.houseNote', { people: usage.people })} testID="usage-house" />
           </GroupItem>
           {halves ? (
             <GroupItem>
-              <UsageBar label={ASK_USAGE_COPY.you} used={usage.mineUsed} note={ASK_USAGE_COPY.youNote} testID="usage-mine" />
+              <UsageBar label={words('ask.usage.you')} used={usage.mineUsed} note={words('ask.usage.youNote')} testID="usage-mine" />
             </GroupItem>
           ) : null}
         </Group>
       </Section>
       {halves ? (
-        <Section label={ASK_USAGE_COPY.whoUsed} testID="usage-people">
+        <Section label={words('ask.usage.whoUsed')} testID="usage-people">
           <Group>
             {usage.usedBy.map((p) => (
               <GroupItem key={p.userId}>
-                <UsageBar label={p.userId === me ? ASK_USAGE_COPY.you : nameOf(p.userId)} used={p.used} testID={`usage-${p.userId}`} />
+                <UsageBar label={p.userId === me ? words('ask.usage.you') : nameOf(p.userId)} used={p.used} testID={`usage-${p.userId}`} />
               </GroupItem>
             ))}
           </Group>
         </Section>
       ) : null}
-      {usage.pass ? null : <Meta>{ASK_USAGE_COPY.passMore}</Meta>}
+      {usage.pass ? null : <Meta>{words('ask.usage.passMore')}</Meta>}
     </View>
   );
 }

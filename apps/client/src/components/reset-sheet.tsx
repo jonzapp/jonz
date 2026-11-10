@@ -1,4 +1,4 @@
-import { FOCUS_SHELL_COPY, RESET_COPY, resetSheet, resetTitle, type ResetSheet as ResetSheetWordsOut, type ResetWords, BUSY_COPY } from '@app/core';
+import { RESET_COPY, resetSheet, resetTitle, type ResetSheet as ResetSheetWordsOut, type ResetWords } from '@app/core';
 import { useQuery } from '@tanstack/react-query';
 import { RotateCcwIcon } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
@@ -17,6 +17,7 @@ import { useMove } from '@/hooks/use-move';
 import { useUndoOffer } from '@/hooks/use-undo-offer';
 import { Waiting } from '@/components/waiting';
 import { OUTLINE, SPACE } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /** What the sheet needs to say a reset in words, besides the house's own names, money and zone. */
 export type ResetSheetWords = Omit<ResetWords, 'kind' | 'nameOf' | 'viewerId' | 'currency' | 'zone'>;
@@ -114,7 +115,7 @@ function Preview({ reset }: { reset: ReturnType<typeof useReset> }) {
 export function ResetSheet({
   ask,
   userId,
-  words,
+  words: names,
   onClose,
   testID = 'reset-sheet',
 }: {
@@ -126,7 +127,8 @@ export function ResetSheet({
   onClose: () => void;
   testID?: string;
 }) {
-  const reset = useReset(ask, userId, words, onClose);
+  const words = useWords();
+  const reset = useReset(ask, userId, names, onClose);
   if (!ask || !reset.full) return null;
   const { sheet, preview, move } = reset;
   return (
@@ -138,7 +140,7 @@ export function ResetSheet({
       icon={RotateCcwIcon}
       tone="hazard"
       busy={move.pending}
-      busyLabel={BUSY_COPY.resetting}
+      busyLabel={words('common.busy.resetting')}
       problem={move.problem}
       onConfirm={() => void reset.confirm()}
       onClose={onClose}
@@ -156,7 +158,7 @@ export function ResetSheet({
 export function ResetPanel({
   ask,
   userId,
-  words,
+  words: names,
   onClose,
   testID = 'reset-panel',
 }: {
@@ -166,7 +168,8 @@ export function ResetPanel({
   onClose: () => void;
   testID?: string;
 }) {
-  const reset = useReset(ask, userId, words, onClose);
+  const words = useWords();
+  const reset = useReset(ask, userId, names, onClose);
   const { sheet, preview, move } = reset;
   return (
     <View style={styles.panel} testID={testID}>
@@ -176,9 +179,9 @@ export function ResetPanel({
       {move.problem ? <Alert message={move.problem} /> : null}
       <ButtonRow stacked>
         {sheet ? (
-          <Button variant="hazard" icon={RotateCcwIcon} label={sheet.confirm} busy={move.pending} busyLabel={BUSY_COPY.resetting} onPress={() => void reset.confirm()} testID="confirm" />
+          <Button variant="hazard" icon={RotateCcwIcon} label={sheet.confirm} busy={move.pending} busyLabel={words('common.busy.resetting')} onPress={() => void reset.confirm()} testID="confirm" />
         ) : null}
-        <Button variant="outline" label={FOCUS_SHELL_COPY.cancel} onPress={onClose} testID="cancel" />
+        <Button variant="outline" label={words('common.shell.cancel')} onPress={onClose} testID="cancel" />
       </ButtonRow>
     </View>
   );

@@ -1,4 +1,4 @@
-import { BIN_NIGHT, buildStake, FOCUS_SHELL_COPY, humanError, NEW_JOHN, PAGE_TITLE, type SteadyAheadWeek, wordsFor } from '@app/core';
+import { BIN_NIGHT, buildStake, humanError, NEW_JOHN, type SteadyAheadWeek, wordsFor } from '@app/core';
 import { QueryClientProvider, type QueryClient } from '@tanstack/react-query';
 import { Slot } from 'expo-router';
 import { act, fireEvent, renderRouter, screen, waitFor, within } from 'expo-router/testing-library';
@@ -101,8 +101,8 @@ async function open(): Promise<QueryClient> {
     { initialUrl: '/week' },
   );
   // The house has been read once the spinner goes.
-  await waitFor(() => expect(screen.queryByLabelText(FOCUS_SHELL_COPY.reading)).toBeNull());
-  expect(within(screen.getByTestId('title-bar')).getByRole('header', { name: PAGE_TITLE.week })).toBeOnTheScreen();
+  await waitFor(() => expect(screen.queryByLabelText(words('common.shell.reading'))).toBeNull());
+  expect(within(screen.getByTestId('title-bar')).getByRole('header', { name: words('common.title.week') })).toBeOnTheScreen();
   return client;
 }
 
@@ -457,7 +457,7 @@ describe('on a phone', () => {
 
   it("ends a finished John's row with what it earned, not a second tick", async () => {
     await open();
-    await fireEvent.press(screen.getByRole('button', { name: FOCUS_SHELL_COPY.done(1) }));
+    await fireEvent.press(screen.getByRole('button', { name: words('common.shell.done', { count: 1 }) }));
     const hob = row('Wipe the hob');
     expect(within(hob).getByText('2 pts')).toBeOnTheScreen();
     expect(within(hob).queryByTestId('status-done')).toBeNull();
@@ -680,14 +680,14 @@ describe('the ••• menu', () => {
 
   it("goes to time away from \"I'm away…\"", async () => {
     await open();
-    await fireEvent.press(screen.getByRole('button', { name: FOCUS_SHELL_COPY.more }));
+    await fireEvent.press(screen.getByRole('button', { name: words('common.shell.more') }));
     await fireEvent.press(screen.getByRole('button', { name: words('week.summary.awayAction') }));
     expect(screen).toHavePathname('/house/away');
   });
 
   it('gives an admin the John list', async () => {
     await open();
-    await fireEvent.press(screen.getByRole('button', { name: FOCUS_SHELL_COPY.more }));
+    await fireEvent.press(screen.getByRole('button', { name: words('common.shell.more') }));
     await fireEvent.press(screen.getByRole('button', { name: words('week.summary.editJohns') }));
     expect(screen).toHavePathname('/house/johns');
   });
@@ -695,7 +695,7 @@ describe('the ••• menu', () => {
   it('lets an admin re-deal a week nobody has ticked in, after asking', async () => {
     read.mockResolvedValue(untouched());
     await open();
-    await fireEvent.press(screen.getByRole('button', { name: FOCUS_SHELL_COPY.more }));
+    await fireEvent.press(screen.getByRole('button', { name: words('common.shell.more') }));
     await fireEvent.press(screen.getByRole('button', { name: words('week.summary.redeal') }));
     expect(screen.getByRole('header', { name: words('week.summary.redealTitle') })).toBeOnTheScreen();
     expect(screen.getByText(words('week.summary.redealBody'))).toBeOnTheScreen();
@@ -709,7 +709,7 @@ describe('the ••• menu', () => {
     read.mockResolvedValue(untouched());
     (dealThisWeek as jest.Mock).mockRejectedValue(new Error('Someone has already ticked a John this week.'));
     await open();
-    await fireEvent.press(screen.getByRole('button', { name: FOCUS_SHELL_COPY.more }));
+    await fireEvent.press(screen.getByRole('button', { name: words('common.shell.more') }));
     await fireEvent.press(screen.getByRole('button', { name: words('week.summary.redeal') }));
     await fireEvent.press(screen.getByTestId('confirm'));
     expect(await screen.findByText('Someone has already ticked a John this week.')).toBeOnTheScreen();
@@ -718,7 +718,7 @@ describe('the ••• menu', () => {
 
   it('offers no re-deal once a John is ticked', async () => {
     await open();
-    await fireEvent.press(screen.getByRole('button', { name: FOCUS_SHELL_COPY.more }));
+    await fireEvent.press(screen.getByRole('button', { name: words('common.shell.more') }));
     expect(screen.getByRole('button', { name: words('week.summary.editJohns') })).toBeOnTheScreen();
     expect(screen.queryByRole('button', { name: words('week.summary.redeal') })).toBeNull();
   });
@@ -727,7 +727,7 @@ describe('the ••• menu', () => {
     mockViewer.id = 'sam';
     read.mockResolvedValue(untouched());
     await open();
-    await fireEvent.press(screen.getByRole('button', { name: FOCUS_SHELL_COPY.more }));
+    await fireEvent.press(screen.getByRole('button', { name: words('common.shell.more') }));
     expect(screen.getByRole('button', { name: words('week.summary.awayAction') })).toBeOnTheScreen();
     expect(screen.queryByRole('button', { name: words('week.summary.editJohns') })).toBeNull();
     expect(screen.queryByRole('button', { name: words('week.summary.redeal') })).toBeNull();
@@ -770,7 +770,7 @@ describe('on a laptop', () => {
       expect(screen.queryByRole('header', { name: column })).toBeNull();
     }
     expect(screen.getAllByTestId('week-row')).toHaveLength(4);
-    await fireEvent.press(screen.getByRole('button', { name: FOCUS_SHELL_COPY.done(1) }));
+    await fireEvent.press(screen.getByRole('button', { name: words('common.shell.done', { count: 1 }) }));
     expect(screen.getAllByTestId('week-row')).toHaveLength(5);
   });
 

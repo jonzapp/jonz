@@ -1,4 +1,4 @@
-import { codeProblem, dateRange, DELETE_COPY, emailAuthProblem, LOOK_LABEL, LOOKS, PASSWORD_MIN, passwordProblem, prefsLine, BUSY_COPY } from '@app/core';
+import { codeProblem, dateRange, DELETE_COPY, emailAuthProblem, LOOKS, PASSWORD_MIN, passwordProblem, prefsLine } from '@app/core';
 import { BellIcon, KeyRoundIcon, LogOutIcon, SlidersHorizontalIcon, SunMoonIcon, Trash2Icon, TruckIcon } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
@@ -28,8 +28,6 @@ import type { HouseView } from '@/hooks/use-house';
 import { useMove } from '@/hooks/use-move';
 import { INSET, SECTION_GAP, SPACE, useTheme } from '@/theme';
 import { useWords } from '@/hooks/use-words';
-
-const LOOK_OPTIONS = LOOKS.map((value) => ({ value, label: LOOK_LABEL[value] }));
 
 /**
  * You: your name (a sheet to change it), reminders on this device (a sheet
@@ -119,7 +117,7 @@ export function YouSection({
           <Row
             leading={<RowIcon icon={SunMoonIcon} />}
             title={words('house.lower.look')}
-            trailing={<Segmented options={LOOK_OPTIONS} value={look} onChange={setLook} label={words('people.me.look')} testID="look" />}
+            trailing={<Segmented options={LOOKS.map((value) => ({ value, label: words(`common.look.${value}` as const) }))} value={look} onChange={setLook} label={words('people.me.look')} testID="look" />}
           />
           {email ? (
             <Row
@@ -276,7 +274,7 @@ function NameSheet({
         label={words('house.lower.save')}
         disabled={unchanged}
         busy={move.pending}
-        busyLabel={BUSY_COPY.saving}
+        busyLabel={words('common.busy.saving')}
         onPress={() => void save()}
         testID="save-name"
       />

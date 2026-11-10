@@ -1,4 +1,3 @@
-import { SHELL_COPY } from '@app/core';
 import { router } from 'expo-router';
 import { XIcon } from 'lucide-react-native';
 import { useContext } from 'react';
@@ -9,6 +8,7 @@ import { TitleBar } from '@/components/title-bar';
 import { IconButton } from '@/components/icon-button';
 import { AskPanelContext, askPanelWidth } from '@/hooks/use-ask-jonz';
 import { useTheme, WIDE } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * The chat with Jonz down the right of the window, from WIDE, while it's
@@ -17,6 +17,7 @@ import { useTheme, WIDE } from '@/theme';
  * to pick up again from the start); anything applied stays applied.
  */
 export function AskPanel({ houseId, userId }: { houseId: string; userId: string }) {
+  const words = useWords();
   const panel = useContext(AskPanelContext);
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
@@ -38,7 +39,7 @@ export function AskPanel({ houseId, userId }: { houseId: string; userId: string 
             backLabel={back?.label}
             // New chat, Help, then Close at the edge.
             right={actions}
-            end={<IconButton icon={XIcon} label={SHELL_COPY.close} onPress={close} testID="ask-close" />}
+            end={<IconButton icon={XIcon} label={words('common.shell.close')} onPress={close} testID="ask-close" />}
           />
         )}
         onOpenList={() => router.navigate('/house/johns')}

@@ -1,36 +1,6 @@
 import "server-only";
 
-import {
-  CHAT_RESETS_MAX,
-  ASK_TURN_RESERVE,
-  askAllowance,
-  CHAT_TURNS_PER_PERSON_PER_DAY,
-  draftForModel,
-  editDraft,
-  firstName,
-  groupDef,
-  HOUSE_DRAFT_COPY,
-  johnDef,
-  listAsDraft,
-  localDate,
-  offlineTurn,
-  passOf,
-  passUnlocked,
-  PERMISSIONS,
-  rulesOf,
-  tidyAsk,
-  tidyDraft,
-  tidyReply,
-  type ChatMessage,
-  type ChatMove,
-  type ChatReset,
-  type ChatResponse,
-  type EditResult,
-  type HouseDraft,
-  askOperationsFor,
-  type Permission,
-  type RawDraft,
-} from "@app/core";
+import { CHAT_RESETS_MAX, houseKind, wordsFor, ASK_TURN_RESERVE, askAllowance, CHAT_TURNS_PER_PERSON_PER_DAY, draftForModel, editDraft, firstName, groupDef, johnDef, listAsDraft, localDate, offlineTurn, passOf, passUnlocked, PERMISSIONS, rulesOf, tidyAsk, tidyDraft, tidyReply, type ChatMessage, type ChatMove, type ChatReset, type ChatResponse, type EditResult, type HouseDraft, askOperationsFor, type Permission, type RawDraft } from "@app/core";
 
 import { askClaude, canDraft, type DraftAnswer, type DraftContext, type JonzTools } from "@/lib/ai/house-draft";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -100,13 +70,14 @@ export async function chatTurn(
     caller.db.from("groups").select("id, name, group_members(user_id)").eq("house_id", houseId).order("name"),
   ]);
   if (!house) return { refusal: { code: "42501", message: "not_in_house" } };
+  const words = wordsFor("en", houseKind(house.kind));
   // A house with a list already: the House Pass's assistant. Setting up a new house is free.
   const list = johns && johns.length > 0 ? listAsDraft(johns.map(johnDef), (groups ?? []).map(groupDef)) : null;
   if (list && !passUnlocked(passOf(house), now)) return { refusal: { code: "P0001", message: "pass_needed" } };
   const draftNow = current ?? list;
   const mayEdit = may("johns:write");
   const offline = (): ChatResponse =>
-    mayEdit ? offlineTurn(messages, draftNow) : { reply: HOUSE_DRAFT_COPY.offlineAsk, ask: null, draft: null, source: "starter" };
+    mayEdit ? offlineTurn(messages, draftNow, words) : { reply: words('ask.draft.offlineAsk'), ask: null, draft: null, source: "starter" };
 
   if (!canDraft() && ask === askClaude) return offline();
 

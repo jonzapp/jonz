@@ -1,4 +1,4 @@
-import { HOUSE_DRAFT_COPY, PAGE_TITLE, SECTION_LABEL, wordsFor } from "@app/core";
+import { wordsFor } from "@app/core";
 import { expect, test, type Page } from "@playwright/test";
 
 import { CLIENT_URL, cleanUp, dealtHouseInClient, signInToClient } from "./auth";
@@ -49,7 +49,7 @@ function backTo(page: Page, label: string) {
     .getByTestId("back")
     .filter({ visible: true })
     .and(page.getByRole("button", { name: `Back to ${label}` }));
-  return label === SECTION_LABEL.house ? backToHouse(page, back) : back;
+  return label === words('common.section.house') ? backToHouse(page, back) : back;
 }
 
 /**
@@ -78,12 +78,12 @@ async function newHouse(page: Page, name: string) {
 
 /** The House pages a row on House opens, with where each lands and what it's called. */
 const PUSHED = [
-  { row: "to-johns", path: "/house/johns", title: PAGE_TITLE.johnList },
-  { row: "to-rules", path: "/house/rules", title: PAGE_TITLE.rules },
-  { row: "to-away", path: "/house/away", title: PAGE_TITLE.away },
-  { row: "to-pass", path: "/house/pass", title: PAGE_TITLE.pass },
+  { row: "to-johns", path: "/house/johns", title: words('common.title.johnList') },
+  { row: "to-rules", path: "/house/rules", title: words('common.title.rules') },
+  { row: "to-away", path: "/house/away", title: words('common.title.away') },
+  { row: "to-pass", path: "/house/pass", title: words('common.title.pass') },
   // You: your name, look and sign-in, help, and leaving.
-  { row: "to-you", path: "/house/you", title: PAGE_TITLE.you },
+  { row: "to-you", path: "/house/you", title: words('common.title.you') },
 ];
 
 test.describe("a house with its week dealt", () => {
@@ -115,7 +115,7 @@ test.describe("a house with its week dealt", () => {
       await toHousePage(page, row).click();
       await expect(page).toHaveURL(new RegExp(`${path}$`));
       await expect(page.getByRole("heading", { name: title, exact: true, level: 1 })).toBeVisible();
-      await tapBack(page, SECTION_LABEL.house);
+      await tapBack(page, words('common.section.house'));
       await expectOnHouse(page, houseName);
     }
 
@@ -123,12 +123,12 @@ test.describe("a house with its week dealt", () => {
     await showHouseOverview(page);
     await page.getByTestId("to-wall").getByRole("link").click();
     await expect(page).toHaveURL(/\/house\/wall$/);
-    await tapBack(page, SECTION_LABEL.house);
+    await tapBack(page, words('common.section.house'));
     await expectOnHouse(page, houseName);
 
     await page.getByTestId("standing").filter({ hasText: "Ben" }).getByRole("link").click();
     await expect(page).toHaveURL(new RegExp(`/house/people/${mateId}$`));
-    await tapBack(page, SECTION_LABEL.house);
+    await tapBack(page, words('common.section.house'));
     await expectOnHouse(page, houseName);
   });
 
@@ -141,7 +141,7 @@ test.describe("a house with its week dealt", () => {
     await expectOnHouse(page, houseName);
     await page.goForward();
     await expect(page).toHaveURL(/\/house\/johns$/);
-    await tapBack(page, SECTION_LABEL.house);
+    await tapBack(page, words('common.section.house'));
     await expectOnHouse(page, houseName);
   });
 
@@ -166,20 +166,20 @@ test.describe("a house with its week dealt", () => {
       const home = query ? new RegExp(`/house(\\?${query})?$`) : /\/house$/;
       await page.goto(path);
       await expect(page).toHaveURL(landed);
-      await tapBack(page, SECTION_LABEL.house);
+      await tapBack(page, words('common.section.house'));
       await expectOnHouse(page, houseName, home);
 
       await page.goto(path);
       await page.reload();
       await expect(page).toHaveURL(landed);
-      await tapBack(page, SECTION_LABEL.house);
+      await tapBack(page, words('common.section.house'));
       await expectOnHouse(page, houseName, home);
     });
   }
 
   test("a housemate's page opened cold goes back to House", async ({ page }) => {
     await page.goto(`/house/people/${mateId}`);
-    await tapBack(page, SECTION_LABEL.house);
+    await tapBack(page, words('common.section.house'));
     // Known issue: opened cold, Expo Router copies the page's params onto the
     // routes under it, so House comes back as /house?userId=<id>. House
     // itself is right; only the URL carries the stray param.
@@ -192,29 +192,29 @@ test.describe("a house with its week dealt", () => {
     await expectOnHouse(page, houseName);
     await toHousePage(page, "to-away").click();
     await expect(page).toHaveURL(/\/house\/away$/);
-    await tapBack(page, SECTION_LABEL.house);
+    await tapBack(page, words('common.section.house'));
     await expectOnHouse(page, houseName);
   });
 
   test("the tabs: each opens its page, and House on a pushed page goes back to House", async ({ page }) => {
     await page.goto("/today");
     // The tabs answer once the app has drawn the page.
-    await expect(page.getByRole("heading", { name: PAGE_TITLE.today })).toBeVisible();
-    await page.getByRole("tab", { name: SECTION_LABEL.week }).click();
+    await expect(page.getByRole("heading", { name: words('common.title.today') })).toBeVisible();
+    await page.getByRole("tab", { name: words('common.section.week') }).click();
     await expect(page).toHaveURL(/\/week$/);
-    await expect(page.getByRole("heading", { name: PAGE_TITLE.week })).toBeVisible();
-    await page.getByRole("tab", { name: SECTION_LABEL.house }).click();
+    await expect(page.getByRole("heading", { name: words('common.title.week') })).toBeVisible();
+    await page.getByRole("tab", { name: words('common.section.house') }).click();
     await expectOnHouse(page, houseName);
     await toHousePage(page, "to-rules").click();
     await expect(page).toHaveURL(/\/house\/rules$/);
-    await page.getByRole("tab", { name: SECTION_LABEL.today }).click();
+    await page.getByRole("tab", { name: words('common.section.today') }).click();
     await expect(page).toHaveURL(/\/today$/);
-    await page.getByRole("tab", { name: SECTION_LABEL.house }).click();
+    await page.getByRole("tab", { name: words('common.section.house') }).click();
     // A tab keeps its place: House comes back to the page it was on, and a
     // second tap takes it home.
     await expect(page).toHaveURL(/\/house(\/rules)?$/);
     if (page.url().endsWith("/house/rules")) {
-      await page.getByRole("tab", { name: SECTION_LABEL.house }).click();
+      await page.getByRole("tab", { name: words('common.section.house') }).click();
     }
     await expectOnHouse(page, houseName);
   });
@@ -227,7 +227,7 @@ test.describe("a house just started", () => {
     await newHouse(page, name);
     await page.getByTestId("setup-johns").click();
     await expect(page).toHaveURL(/\/house\/johns$/);
-    await tapBack(page, SECTION_LABEL.house);
+    await tapBack(page, words('common.section.house'));
     await expectOnHouse(page, name);
   });
 
@@ -241,15 +241,15 @@ test.describe("a house just started", () => {
     await page.getByTestId("setup-describe").click();
     await chatOpened(page);
     await page.getByTestId("starter-flat_share").click();
-    await expect(page.getByText(HOUSE_DRAFT_COPY.fromStarter)).toBeVisible();
+    await expect(page.getByText(words('ask.draft.fromStarter'))).toBeVisible();
     await page.getByTestId("describe-keep").click();
     await page.getByTestId("chat-open-list").click();
     await expect(page).toHaveURL(/\/house\/johns$/);
-    await tapBack(page, SECTION_LABEL.house);
+    await tapBack(page, words('common.section.house'));
     await expectOnHouse(page, name);
     // And House's own back history doesn't send the next back to the chat.
     await toHousePage(page, "to-johns").click();
-    await tapBack(page, SECTION_LABEL.house);
+    await tapBack(page, words('common.section.house'));
     await expectOnHouse(page, name);
   });
 
@@ -260,7 +260,7 @@ test.describe("a house just started", () => {
     made.push(await signInToClient(context, "Eli Nav"));
     const name = `List ${Date.now() % 100_000}`;
     await newHouse(page, name);
-    await page.getByRole("tab", { name: SECTION_LABEL.house }).click();
+    await page.getByRole("tab", { name: words('common.section.house') }).click();
     await toHousePage(page, "to-johns").click();
     await page.getByTestId("describe-house").click();
     await chatOpened(page);
@@ -268,7 +268,7 @@ test.describe("a house just started", () => {
     await page.getByTestId("describe-keep").click();
     await page.getByTestId("chat-open-list").click();
     await expect(page).toHaveURL(/\/house\/johns$/);
-    await tapBack(page, SECTION_LABEL.house);
+    await tapBack(page, words('common.section.house'));
     await expectOnHouse(page, name);
   });
 });
@@ -276,7 +276,7 @@ test.describe("a house just started", () => {
 test.describe("outside a house", () => {
   test("privacy's back goes to the front door, opened cold or from sign-in", async ({ page }) => {
     await page.goto("/privacy");
-    await expect(page.getByRole("heading", { name: PAGE_TITLE.privacy })).toBeVisible();
+    await expect(page.getByRole("heading", { name: words('common.title.privacy') })).toBeVisible();
     await page.getByTestId("back").click();
     await expect(page).toHaveURL(new RegExp(`${CLIENT_URL}/(signin)?$`));
   });
@@ -285,7 +285,7 @@ test.describe("outside a house", () => {
     made.push(await signInToClient(context, "Fay Nav"));
     await newHouse(page, `Lost ${Date.now() % 100_000}`);
     await page.goto("/house/nope");
-    await expect(page.getByRole("heading", { name: PAGE_TITLE.notFound })).toBeVisible();
+    await expect(page.getByRole("heading", { name: words('common.title.notFound') })).toBeVisible();
     await page.getByRole("link", { name: words('door.notFound.back') }).click();
     await expect(page).toHaveURL(/\/today$/);
   });

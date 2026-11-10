@@ -1,4 +1,4 @@
-import { dayLabel, LIST_COPY, SECTION_LABEL, wallDays, wallFeedRow, type WallFeedRow } from '@app/core';
+import { dayLabel, wallDays, wallFeedRow, type WallFeedRow } from '@app/core';
 import { useLocalSearchParams } from 'expo-router';
 import { MegaphoneIcon } from 'lucide-react-native';
 import { useEffect, useState, type ReactNode } from 'react';
@@ -145,7 +145,7 @@ function WallFor({ houseId, userId }: { houseId: string; userId: string }) {
             )}
           </Section>
         ))}
-        <ListFoot more={more} shown={oldest && scene ? LIST_COPY.backTo(dayLabel(oldest.createdAt, scene.zone)) : null} testID="wall-foot" />
+        <ListFoot more={more} shown={oldest && scene ? words('common.list.backTo', { day: dayLabel(oldest.createdAt, scene.zone) }) : null} testID="wall-foot" />
       </>
     );
   }
@@ -183,7 +183,7 @@ function WallFor({ houseId, userId }: { houseId: string; userId: string }) {
   const historyNear = nearEnd(historyMore);
   return (
     <Screen
-      bar={<TitleBar title={words('wall.page.title')} back="/house" backLabel={SECTION_LABEL.house} />}
+      bar={<TitleBar title={words('wall.page.title')} back="/house" backLabel={words('common.section.house')} />}
       refreshing={refreshing}
       onRefresh={pull}
       onNearEnd={() => {

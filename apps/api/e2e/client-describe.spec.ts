@@ -1,4 +1,4 @@
-import { HOUSE_DRAFT_COPY, PAGE_TITLE, STARTER_LISTS, type HouseDraft, wordsFor } from "@app/core";
+import { STARTER_LISTS, type HouseDraft, wordsFor } from "@app/core";
 import { expect, test, type Page } from "@playwright/test";
 
 import { CLIENT_URL, cleanUp, signInToClient } from "./auth";
@@ -34,7 +34,7 @@ test("describe the house, keep most of the draft, and find it on the list", asyn
 
   await page.getByTestId("setup-describe").click();
   await chatOpened(page);
-  await expect(page.getByRole("heading", { name: PAGE_TITLE.describe })).toBeVisible();
+  await expect(page.getByRole("heading", { name: words('common.title.describe') })).toBeVisible();
 
   await page.getByTestId("chat-input").fill("Me, my husband and our two kids in a semi. Bins go out Tuesday night.");
   const answered = page.waitForResponse((r) => /\/v1\/houses\/[^/]+\/ask$/.test(r.url()) && r.request().method() === "POST");
@@ -42,7 +42,7 @@ test("describe the house, keep most of the draft, and find it on the list", asyn
   expect((await answered).status()).toBe(201);
 
   // No gateway here, so the family starter list stands in, and says so.
-  await expect(page.getByText(HOUSE_DRAFT_COPY.offline)).toBeVisible();
+  await expect(page.getByText(words('ask.draft.offline'))).toBeVisible();
   const family = STARTER_LISTS.family;
   await expect(page.getByTestId("draft-john")).toHaveCount(3);
   await page.getByTestId("draft-see-all").click();
@@ -50,7 +50,7 @@ test("describe the house, keep most of the draft, and find it on the list", asyn
 
   await page.getByRole("checkbox", { name: new RegExp(`^${family[0].name}`) }).click();
   await page.getByTestId("describe-keep").click();
-  await expect(page.getByText(HOUSE_DRAFT_COPY.added(family.length - 1))).toBeVisible();
+  await expect(page.getByText(words('ask.draft.added', { n: family.length - 1 }))).toBeVisible();
   await page.getByTestId("chat-open-list").click();
 
   await expect(page).toHaveURL(/\/house\/johns$/);
@@ -70,7 +70,7 @@ test("start from a list without writing anything", async ({ context, page }) => 
   await page.goto("/house/johns");
   await page.getByTestId("describe-house").click();
   await page.getByTestId("starter-flat_share").click();
-  await expect(page.getByText(HOUSE_DRAFT_COPY.fromStarter)).toBeVisible();
+  await expect(page.getByText(words('ask.draft.fromStarter'))).toBeVisible();
   await page.getByTestId("describe-keep").click();
   await page.getByTestId("chat-open-list").click();
   await expect(page).toHaveURL(/\/house\/johns$/);
@@ -101,7 +101,7 @@ test("ask Jonz from Today to change the list, and apply what's ticked", async ({
   await page.goto("/today");
   await page.getByTestId("ask-jonz").click();
   await chatOpened(page);
-  await expect(page.getByRole("heading", { name: PAGE_TITLE.ask })).toBeVisible();
+  await expect(page.getByRole("heading", { name: words('common.title.ask') })).toBeVisible();
   await page.getByTestId("chat-input").fill(`${couple[0].name} is more work, no ${couple[1].name}, and add windows`);
   await page.getByTestId("chat-send").click();
 
@@ -109,7 +109,7 @@ test("ask Jonz from Today to change the list, and apply what's ticked", async ({
   await expect(page.getByTestId("draft-remove")).toContainText(couple[1].name);
   await expect(page.getByTestId("draft-john")).toContainText("Windows");
   await page.getByTestId("describe-keep").click();
-  await expect(page.getByText(HOUSE_DRAFT_COPY.applied(3))).toBeVisible();
+  await expect(page.getByText(words('ask.draft.applied', { n: 3 }))).toBeVisible();
   await page.getByTestId("chat-open-list").click();
 
   await expect(page).toHaveURL(/\/house\/johns$/);

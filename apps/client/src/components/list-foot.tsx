@@ -1,4 +1,3 @@
-import { FOCUS_SHELL_COPY, LIST_COPY } from '@app/core';
 import { RefreshCwIcon } from 'lucide-react-native';
 import { ActivityIndicator, Platform, StyleSheet, Text, useWindowDimensions, View, type ViewStyle } from 'react-native';
 
@@ -7,6 +6,7 @@ import { Button } from '@/components/button';
 import { Meta } from '@/components/text';
 import { TextButton } from '@/components/text-button';
 import { INSET, SPACE, TAP, useTheme, WIDE } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /** A long list's next page: whether there is one, whether it's being read, whether the last read failed, and how to read it. */
 export interface ListMore {
@@ -37,6 +37,7 @@ export function nearEnd(more: ListMore): () => void {
  * along the bottom of the window, full width, so you always see where you are.
  */
 export function ListFoot({ more, shown, testID = 'list-foot' }: { more: ListMore; shown?: string | null; testID?: string }) {
+  const words = useWords();
   const { colors, type } = useTheme();
   const wide = useWindowDimensions().width >= WIDE;
   // Sticky is the web's; the app on a phone never spreads this wide.
@@ -46,8 +47,8 @@ export function ListFoot({ more, shown, testID = 'list-foot' }: { more: ListMore
   if (more.failed) {
     body = (
       <>
-        <Alert message={LIST_COPY.failed} />
-        <Button variant="outline" icon={RefreshCwIcon} label={FOCUS_SHELL_COPY.retry} onPress={more.load} testID={`${testID}-retry`} />
+        <Alert message={words('common.list.failed')} />
+        <Button variant="outline" icon={RefreshCwIcon} label={words('common.shell.retry')} onPress={more.load} testID={`${testID}-retry`} />
       </>
     );
   } else if (more.busy) {
@@ -55,7 +56,7 @@ export function ListFoot({ more, shown, testID = 'list-foot' }: { more: ListMore
       <>
         <View style={styles.loading}>
           <ActivityIndicator color={colors.foreground} />
-          <Text style={[type.rowTitle, { color: colors.foreground }]}>{LIST_COPY.loading}</Text>
+          <Text style={[type.rowTitle, { color: colors.foreground }]}>{words('common.list.loading')}</Text>
         </View>
         {shown ? <Meta>{shown}</Meta> : null}
       </>
@@ -64,11 +65,11 @@ export function ListFoot({ more, shown, testID = 'list-foot' }: { more: ListMore
     body = (
       <>
         {shown ? <Meta>{shown}</Meta> : null}
-        <TextButton label={LIST_COPY.more} onPress={more.load} testID={`${testID}-more`} />
+        <TextButton label={words('common.list.more')} onPress={more.load} testID={`${testID}-more`} />
       </>
     );
   } else {
-    body = <Meta>{LIST_COPY.everything}</Meta>;
+    body = <Meta>{words('common.list.everything')}</Meta>;
   }
 
   return (

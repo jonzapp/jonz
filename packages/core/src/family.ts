@@ -1,4 +1,3 @@
-import { PAGE_TITLE, ROLE_WORDS } from "./copy";
 import type { HouseKind } from "./domain";
 import type { Words } from "./words-for";
 
@@ -29,8 +28,8 @@ export function frontDoorWords(kind: HouseKind, words: Words) {
 /** Start a house's sign for the kind picked: heading, intro and the button. */
 export function newHouseWords(kind: HouseKind, words: Words) {
   return kind === "family"
-    ? { title: PAGE_TITLE.newFamily, heading: words('house.family.newHeading'), intro: words('house.family.newIntro'), submit: words('house.family.submit') }
-    : { title: PAGE_TITLE.newHouse, heading: words('door.newHouse.heading'), intro: words('door.newHouse.intro'), submit: words('door.welcome.submit') };
+    ? { title: words('common.title.newFamily'), heading: words('house.family.newHeading'), intro: words('house.family.newIntro'), submit: words('house.family.submit') }
+    : { title: words('common.title.newHouse'), heading: words('door.newHouse.heading'), intro: words('door.newHouse.intro'), submit: words('door.welcome.submit') };
 }
 
 /** A join link's line under the house's name. */
@@ -48,7 +47,6 @@ export function joinLine(kind: HouseKind, people: number, words: Words): string 
 export function roleCopy(w: Words) {
   const role = (admin: boolean) => ({ role: admin ? "admin" : "member" });
   return {
-    words: ROLE_WORDS[w.kind],
     /** House › Rules' list of who looks after the house. */
     admins: {
       meta: (admins: number, everyone: number) => w("house.adminsList.meta", { admins, everyone }),
