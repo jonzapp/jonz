@@ -1,60 +1,10 @@
-import {
-  addDaysTo,
-  AHEAD_WEEKS,
-  crewByJob,
-  dealtMembers,
-  dueInLine,
-  firstName,
-  FOCUS_SHELL_COPY,
-  PARENT_OK_COPY,
-  earnsImmunity,
-  forfeitFor,
-  isCleanWeek,
-  localDate,
-  monthOf,
-  monthWindow,
-  movingOutAway,
-  MOVING_COPY,
-  NOTIFY_COPY,
-  ON_CALL_COPY,
-  ON_CALL_WEEKS,
-  onCallUsual,
-  passOf,
-  passUnlocked,
-  prefsOf,
-  recentBalances,
-  reminderFor,
-  remindMoverNow,
-  REMIND_AFTER_DAYS,
-  REMIND_UNTIL_DAYS,
-  rulesOf,
-  settleMonth,
-  settleOutcome,
-  standings,
-  steadyAhead,
-  steadyDeal,
-  stillHere,
-  tableInputs,
-  USUAL_WEEKS,
-  verdict,
-  votersOn,
-  weekStateOf,
-  weekWindow,
-  weekWinners,
-  oldEnough,
-  type AwayPeriod,
-  type Database,
-  type IsoDow,
-  type Json,
-  type Outcome,
-  type PushKind,
-  type SteadyDealArgs,
-  type SteadyLastTurn,
-  type WeekWindow,
-} from "@app/core";
+import { addDaysTo, AHEAD_WEEKS, crewByJob, dealtMembers, dueInLine, firstName, FOCUS_SHELL_COPY, PARENT_OK_COPY, earnsImmunity, forfeitFor, isCleanWeek, localDate, monthOf, monthWindow, movingOutAway, MOVING_COPY, ON_CALL_WEEKS, onCallUsual, passOf, passUnlocked, prefsOf, recentBalances, reminderFor, remindMoverNow, REMIND_AFTER_DAYS, REMIND_UNTIL_DAYS, rulesOf, settleMonth, settleOutcome, standings, steadyAhead, steadyDeal, stillHere, tableInputs, USUAL_WEEKS, verdict, votersOn, weekStateOf, weekWindow, weekWinners, oldEnough, type AwayPeriod, type Database, type IsoDow, type Json, type Outcome, type PushKind, type SteadyDealArgs, type SteadyLastTurn, type WeekWindow, wordsFor } from "@app/core";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { tellHouse } from "./tell";
+
+// Pushes and server lines read the housemates' words for now; each person's own language comes with translation 7.
+const words = wordsFor("en", "housemates");
 
 /**
  * The engine: everything the clock does to a house.
@@ -135,8 +85,7 @@ export async function loadHouse(db: Db, houseId: string) {
 export async function tickHouse(
   db: Db,
   houseId: string,
-  now: Date,
-  notify?: Notify,
+  now: Date, notify?: Notify,
 ): Promise<TickSummary> {
   const { house, members } = await loadHouse(db, houseId);
   const summary: TickSummary = {
@@ -431,7 +380,7 @@ export async function dealWeek(
   const onCallDealt = plan.places.flatMap((p) => {
     if (p.dueAt) return [];
     const j = johnOf.get(p.johnId)!;
-    byUser.set(p.userId, [...(byUser.get(p.userId) ?? []), ON_CALL_COPY.dealtAs(j.name)]);
+    byUser.set(p.userId, [...(byUser.get(p.userId) ?? []), words('today.onCall.dealtAs', { john: j.name })]);
     return [{ john_id: j.id, user_id: p.userId }];
   });
   if (assignments.length === 0 && onCallDealt.length === 0 && Object.keys(plan.state.waiting).length === 0) {
@@ -465,8 +414,7 @@ async function ensureCurrentWeek(
   db: Db,
   house: HouseRow,
   members: readonly MemberRow[],
-  now: Date,
-  notify?: Notify,
+  now: Date, notify?: Notify,
 ): Promise<string | null> {
   const rules = rulesOf(house);
   const week = weekWindow(now, rules.timezone, rules.weekStarts);
@@ -479,7 +427,7 @@ async function ensureCurrentWeek(
   if (weekId && notify) {
     for (const [userId, names] of byUser) {
       await notify([userId], {
-        title: NOTIFY_COPY.dealTitle,
+        title: words('house.notify.dealTitle'),
         body: names.join(", "),
         url: "/today",
         kind: "deal",
@@ -656,8 +604,8 @@ async function reopenFlag(db: Db, house: HouseRow, johnId: string, now: Date, no
   // An older flag already open, from a housemate, was told about when it was raised.
   if (!notify || flag.flagged_by !== null || !flag.flagged_at || Date.parse(flag.flagged_at) !== now.getTime()) return;
   await notify([flag.user_id], {
-    title: ON_CALL_COPY.pushTitle(flag.name),
-    body: ON_CALL_COPY.pushAgainBody(dueInLine(new Date(flag.due_at), now, rulesOf(house).timezone)),
+    title: words('today.onCall.pushTitle', { john: flag.name }),
+    body: words('today.onCall.pushAgainBody', { due: dueInLine(new Date(flag.due_at), now, rulesOf(house).timezone) }),
     url: "/today",
     kind: "flags",
     zone: rulesOf(house).timezone,
@@ -858,15 +806,15 @@ async function sendReminders(db: Db, house: HouseRow, now: Date, notify: Notify)
     if (claimed.length === 0 || when === "skip") continue;
     const due = dueInLine(new Date(a.due_at), now, zone);
     const body =
-      stage === PLANNED ? NOTIFY_COPY.plannedBody(due) : stage === 2 ? NOTIFY_COPY.dueSoonBody(due) : NOTIFY_COPY.dueTomorrowBody(due);
+      stage === PLANNED ? words('house.notify.plannedBody', { due }) : stage === 2 ? words('house.notify.dueSoonBody', { due }) : words('house.notify.dueTomorrowBody', { due });
     await notify([a.user_id], {
       title:
         stage === PLANNED
-          ? NOTIFY_COPY.plannedTitle(a.name)
+          ? words('house.notify.plannedTitle', { john: a.name })
           : stage === 2
-            ? NOTIFY_COPY.dueSoonTitle(a.name)
-            : NOTIFY_COPY.dueTomorrowTitle(a.name),
-      body: a.needs_photo ? `Due ${due}. ${NOTIFY_COPY.needsPhoto}` : body,
+            ? words('house.notify.dueSoonTitle', { john: a.name })
+            : words('house.notify.dueTomorrowTitle', { john: a.name }),
+      body: a.needs_photo ? `Due ${due}. ${words('house.notify.needsPhoto')}` : body,
       url: "/today",
       kind: "reminders",
       zone,

@@ -1,7 +1,7 @@
 import type { JohnDef } from "./board";
-import { REPEAT_COPY } from "./copy";
 import type { Category, IsoDow } from "./domain";
 import { addDaysTo, isDueInWeek, nextWeek, weekIndex, weekWindow } from "./week";
+import type { Words } from "./words-for";
 
 /**
  * How often a John comes round, on any period.
@@ -153,18 +153,19 @@ export function periodWords(repeat: Pick<Repeat, "everyWeeks" | "everyMonths">):
 }
 
 /** How often, on its own: "Every week", "Every 2 weeks", "Every month", "Every 3 months", "Twice a year", "Every year". */
-export function oftenWords(repeat: Pick<Repeat, "everyWeeks" | "everyMonths">): string {
-  return repeat.everyMonths === 6 ? REPEAT_COPY.twiceAYear : `Every ${periodWords(repeat)}`;
+export function oftenWords(repeat: Pick<Repeat, "everyWeeks" | "everyMonths">, words: Words): string {
+  return repeat.everyMonths === 6 ? words('house.repeat.twiceAYear') : `Every ${periodWords(repeat)}`;
 }
 
 /** Which of its weekday, in words: "first" … "fourth", "last". */
-export function placeWord(weekOfMonth: number): string {
-  return REPEAT_COPY.places[weekOfMonth] ?? REPEAT_COPY.places[LAST_OF_MONTH];
+export function placeWord(weekOfMonth: number, words: Words): string {
+  const place = weekOfMonth >= 1 && weekOfMonth <= LAST_OF_MONTH ? (weekOfMonth as 1 | 2 | 3 | 4 | 5) : LAST_OF_MONTH;
+  return words(`house.repeat.places.${place}`);
 }
 
 /** When in the week or month, short, for a list's meta line: "Sun 21:00", or "first Sat 21:00" for a monthly John. */
-export function dueWords(repeat: Pick<Repeat, "weekOfMonth">, dueTime: string, dayShort: string): string {
-  return repeat.weekOfMonth === null ? `${dayShort} ${dueTime}` : `${placeWord(repeat.weekOfMonth)} ${dayShort} ${dueTime}`;
+export function dueWords(repeat: Pick<Repeat, "weekOfMonth">, dueTime: string, dayShort: string, words: Words): string {
+  return repeat.weekOfMonth === null ? `${dayShort} ${dueTime}` : `${placeWord(repeat.weekOfMonth, words)} ${dayShort} ${dueTime}`;
 }
 
 /** The week after the one `now` is in, where a new or changed John's timing starts: this week is already dealt. */
@@ -244,10 +245,13 @@ export function previewLandings(
 }
 
 /** "Next: Sat 7 Nov, then 6 Feb, 1 May, 7 Aug", or null when it can't land. */
-export function nextLine(dates: readonly string[]): string | null {
+export function nextLine(dates: readonly string[], words: Words): string | null {
   if (dates.length === 0) return null;
   const [first, ...rest] = dates;
-  return REPEAT_COPY.next(landingLabel(first, { day: true }), rest.map((d) => landingLabel(d)));
+  const firstLabel = landingLabel(first, { day: true });
+  return rest.length
+    ? words('house.repeat.nextThen', { first: firstLabel, rest: rest.map((d) => landingLabel(d)).join(", ") })
+    : words('house.repeat.next', { first: firstLabel });
 }
 
 /** A long John not dealt yet, as Week's "Coming up" shows it. */
@@ -271,7 +275,7 @@ export interface ComingUp {
 export function comingUp(
   johns: readonly (Pick<JohnDef, "id" | "name" | "category" | "points" | "everyWeeks" | "everyMonths" | "weekOfMonth" | "anchorMonth" | "anchorWeek" | "dueDow" | "when">)[],
   startsOn: string,
-  weekStarts: IsoDow,
+  weekStarts: IsoDow, words: Words,
 ): ComingUp[] {
   const out: ComingUp[] = [];
   for (const j of johns) {
@@ -287,10 +291,28 @@ export function comingUp(
         category: j.category,
         points: j.points,
         date,
-        meta: REPEAT_COPY.comingUpWhen(landingLabel(date, { day: true }), oftenWords(j)),
+        meta: words('house.repeat.comingUpWhen', { date: landingLabel(date, { day: true }), often: oftenWords(j, words).toLocaleLowerCase() }),
       });
       break;
     }
   }
   return out.sort((a, b) => a.date.localeCompare(b.date) || a.name.localeCompare(b.name));
 }
+
+/** The quick picks at the top of How often, in the order they show; each label is house.repeat.quick.<key>. */
+export const REPEAT_QUICK = [
+  { key: "week", everyWeeks: 1, everyMonths: null },
+  { key: "twoWeeks", everyWeeks: 2, everyMonths: null },
+  { key: "month", everyWeeks: 1, everyMonths: 1 },
+  { key: "threeMonths", everyWeeks: 1, everyMonths: 3 },
+  { key: "sixMonths", everyWeeks: 1, everyMonths: 6 },
+  { key: "year", everyWeeks: 1, everyMonths: 12 },
+] as const satisfies readonly { key: string; everyWeeks: number; everyMonths: number | null }[];
+
+/** The time sheet's quick picks; each label is house.repeat.clock.<key>. */
+export const REPEAT_CLOCK = [
+  { key: "morning", time: "09:00" },
+  { key: "midday", time: "12:00" },
+  { key: "evening", time: "18:00" },
+  { key: "night", time: "21:00" },
+] as const;

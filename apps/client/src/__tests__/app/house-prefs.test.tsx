@@ -1,4 +1,4 @@
-import { NEW_JOHN, PAGE_TITLE, STEADY_COPY } from '@app/core';
+import { NEW_JOHN, PAGE_TITLE, wordsFor } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 
 import { loadAway } from '@/api/away';
@@ -10,6 +10,8 @@ import AwayScreen from '@/app/(house)/house/away';
 import PrefsScreen from '@/app/(house)/house/prefs';
 import { snapshot } from '@/testing/house';
 import { renderPages, untilRead } from '@/testing/pages';
+
+const words = wordsFor('en', 'housemates');
 
 // Your days and best time are on Days and time away, beside the house's time away.
 jest.mock('@/api/away', () => ({ loadAway: jest.fn(), setAway: jest.fn(), cancelAway: jest.fn() }));
@@ -59,11 +61,11 @@ it('shows the days that suit you, your best time and your Johns as saved', async
   await open();
   expect(screen.getByRole('checkbox', { name: 'Wednesday' })).toBeChecked();
   expect(screen.getByRole('checkbox', { name: 'Monday' })).not.toBeChecked();
-  expect(within(screen.getByTestId('prefs-time')).getByRole('radio', { name: STEADY_COPY.time.morning })).toBeChecked();
+  expect(within(screen.getByTestId('prefs-time')).getByRole('radio', { name: words('week.steady.time.morning') })).toBeChecked();
   const johns = screen.getAllByTestId('prefs-john');
   expect(johns[0]).toHaveTextContent(/Mopping.*Rather do/);
   expect(johns[1]).toHaveTextContent(/Garbage.*No preference/);
-  expect(screen.getByText(STEADY_COPY.prefsNote)).toBeOnTheScreen();
+  expect(screen.getByText(words('week.steady.prefsNote'))).toBeOnTheScreen();
 });
 
 it('saves each change as it is made', async () => {
@@ -72,11 +74,11 @@ it('saves each change as it is made', async () => {
   expect(saveMyPrefs).toHaveBeenLastCalledWith('h1', { ...PRIYA, days: [1, 3, 4, 6] });
   expect(screen.getByRole('checkbox', { name: 'Monday' })).toBeChecked();
 
-  await fireEvent.press(screen.getByRole('radio', { name: STEADY_COPY.anyTime }));
+  await fireEvent.press(screen.getByRole('radio', { name: words('week.steady.anyTime') }));
   expect(saveMyPrefs).toHaveBeenLastCalledWith('h1', { ...PRIYA, days: [1, 3, 4, 6], bestTime: null });
 
   await fireEvent.press(within(screen.getAllByTestId('prefs-john')[1]).getByRole('button'));
-  await fireEvent.press(screen.getByRole('radio', { name: STEADY_COPY.rather['-1'] }));
+  await fireEvent.press(screen.getByRole('radio', { name: words('week.steady.rather.minus1') }));
   expect(saveMyPrefs).toHaveBeenLastCalledWith('h1', { days: [1, 3, 4, 6], bestTime: null, rather: { mop: 1, bins: -1 } });
 });
 

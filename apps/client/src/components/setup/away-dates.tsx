@@ -1,10 +1,11 @@
-import { bookingWeeks, dayName, DOW_LABEL, monthLabel, monthsSpanned, SETUP_COPY, type IsoDow } from '@app/core';
+import { bookingWeeks, dayName, DOW_LABEL, monthLabel, monthsSpanned, type IsoDow } from '@app/core';
 import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { IconButton } from '@/components/icon-button';
 import { FONT, RADIUS, SPACE, TAP, useTheme } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /** A run of days being picked: neither end yet, the first, or both. */
 export interface DateRange {
@@ -34,6 +35,7 @@ export function AwayDates({
   value: DateRange;
   onChange: (range: DateRange, picking: boolean) => void;
 }) {
+  const words = useWords();
   const { colors, type } = useTheme();
   const [from, setFrom] = useState(0);
   const [picking, setPicking] = useState(false);
@@ -56,7 +58,7 @@ export function AwayDates({
       <View style={styles.head}>
         <IconButton
           icon={ChevronLeftIcon}
-          label={SETUP_COPY.earlier}
+          label={words('house.setup.earlier')}
           disabled={from === 0}
           onPress={() => setFrom((was) => Math.max(0, was - STEP))}
         />
@@ -64,7 +66,7 @@ export function AwayDates({
         <Text style={[type.rowTitle, styles.span]} numberOfLines={2} accessibilityLiveRegion="polite">
           {span}
         </Text>
-        <IconButton icon={ChevronRightIcon} label={SETUP_COPY.later} onPress={() => setFrom((was) => was + STEP)} />
+        <IconButton icon={ChevronRightIcon} label={words('house.setup.later')} onPress={() => setFrom((was) => was + STEP)} />
       </View>
       <View style={styles.week} aria-hidden>
         {days.map((d) => (

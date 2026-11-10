@@ -1,4 +1,4 @@
-import { HISTORY_COPY, ON_CALL_COPY, wordsFor } from "@app/core";
+import { HISTORY_COPY, wordsFor } from "@app/core";
 import { expect, test, type Page } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, dealtHouseInClient } from "./auth";
@@ -92,7 +92,7 @@ test("whoever raised a flag can take it down; whoever has it can't", async ({ br
   // Sam takes it down.
   await onCall(sam).getByTestId("on-call-flagged").click();
   await sam.getByTestId("john-sheet-body").getByTestId("remove-flag").click();
-  await expect(sam.getByTestId("toast")).toContainText(ON_CALL_COPY.removed);
+  await expect(sam.getByTestId("toast")).toContainText(words('today.onCall.removed'));
   await expect(onCall(sam).getByTestId("on-call-flag")).toBeVisible();
   await expect.poll(() => flagsOf(houseId)).toEqual([]);
   await samContext.close();

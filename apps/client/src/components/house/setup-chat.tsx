@@ -1,37 +1,4 @@
-import {
-  ASK_CHATS_COPY,
-  CATEGORIES,
-  changedLine,
-  CHAT_MAX_MESSAGES,
-  DEAL_MODES,
-  draftChanges,
-  groupChanges,
-  DOW_LABEL,
-  HOUSE_DRAFT_COPY,
-  listAsDraft,
-  MESSAGE_MAX,
-  membersLine,
-  pointsLabel,
-  scheduleLine,
-  STARTER_KINDS,
-  starterDraft,
-  STEADY_COPY,
-  weeklyEffort,
-  type ChatAsk,
-  type ChatMessage,
-  type ChatMove,
-  type ChatReset,
-  type DealMode,
-  type DraftChange,
-  type DraftedJohn,
-  type GroupDef,
-  type HouseDraft,
-  type HouseRules,
-  type JohnDef,
-  type IsoDow,
-  type SavedTurn,
-  type StarterKind,
-} from '@app/core';
+import { ASK_CHATS_COPY, CATEGORIES, changedLine, CHAT_MAX_MESSAGES, DEAL_MODES, draftChanges, groupChanges, DOW_LABEL, HOUSE_DRAFT_COPY, listAsDraft, MESSAGE_MAX, membersLine, pointsLabel, scheduleLine, STARTER_KINDS, starterDraft, weeklyEffort, type ChatAsk, type ChatMessage, type ChatMove, type ChatReset, type DealMode, type DraftChange, type DraftedJohn, type GroupDef, type HouseDraft, type HouseRules, type JohnDef, type IsoDow, type SavedTurn, type StarterKind, type Words } from '@app/core';
 import { router } from 'expo-router';
 import { CheckIcon, MinusIcon, PencilIcon, PlusIcon } from 'lucide-react-native';
 import { useQueryClient } from '@tanstack/react-query';
@@ -445,11 +412,12 @@ export function SetupChat({
 }
 
 // Smart is the suggested one, as in House rules.
-const MODES = DEAL_MODES.map((m) => ({
-  mode: m,
-  label: STEADY_COPY.modeName[m],
-  meta: m === 'smart' ? `${STEADY_COPY.suggested} ${STEADY_COPY.modeMeta[m]}` : STEADY_COPY.modeMeta[m],
-}));
+const modes = (words: Words) =>
+  DEAL_MODES.map((m) => ({
+    mode: m,
+    label: words(`week.steady.modeName.${m}` as const),
+    meta: m === 'smart' ? `${words('week.steady.suggested')} ${words(`week.steady.modeMeta.${m}` as const)}` : words(`week.steady.modeMeta.${m}` as const),
+  }));
 
 /**
  * How the house shares Johns, asked once a new house has its list: Smart
@@ -457,6 +425,7 @@ const MODES = DEAL_MODES.map((m) => ({
  * means. A tap saves it; House rules can change it after.
  */
 function ModeAsk({ houseId, start }: { houseId: string; start: DealMode }) {
+  const words = useWords();
   const move = useMove(houseId);
   const [mode, setMode] = useState(start);
 
@@ -469,10 +438,10 @@ function ModeAsk({ houseId, start }: { houseId: string; start: DealMode }) {
 
   return (
     <>
-      <Body>{STEADY_COPY.modeAsk}</Body>
+      <Body>{words('week.steady.modeAsk')}</Body>
       <Group testID="chat-mode">
-        <View accessibilityRole="radiogroup" accessibilityLabel={STEADY_COPY.mode}>
-          {MODES.map((m) => (
+        <View accessibilityRole="radiogroup" accessibilityLabel={words('week.steady.mode')}>
+          {modes(words).map((m) => (
             <ChoiceRow
               key={m.mode}
               role="radio"
@@ -488,7 +457,7 @@ function ModeAsk({ houseId, start }: { houseId: string; start: DealMode }) {
         </View>
       </Group>
       {move.problem ? <Alert message={move.problem} /> : null}
-      <Meta>{`${STEADY_COPY.modeFoot} ${STEADY_COPY.modeLater}`}</Meta>
+      <Meta>{`${words('week.steady.modeFoot')} ${words('week.steady.modeLater')}`}</Meta>
     </>
   );
 }
@@ -563,7 +532,7 @@ function DraftCard({
   const groups = draft.groups.filter((g) => changes.some((c) => c.kind !== 'remove' && c.john.group === g.name));
   const waiting = groups.filter((g) => g.memberIds.length === 0);
   const after = afterApplying(base, changes, keep);
-  const line = (j: DraftedJohn) => [scheduleLine({ ...j, dueDow: j.dueDow as IsoDow }, j.group), pointsLabel(j.points)].join(', ');
+  const line = (j: DraftedJohn) => [scheduleLine({ ...j, dueDow: j.dueDow as IsoDow }, words, j.group), pointsLabel(j.points)].join(', ');
   const row = (c: DraftChange) => {
     const j = c.kind === 'remove' ? c.before : c.john;
     const meta = c.kind === 'change' ? changedLine(c.before, c.john, words) : [line(j), editing ? null : j.why || null].filter(Boolean).join(', ');
@@ -602,7 +571,7 @@ function DraftCard({
                     key={g.key}
                     role="checkbox"
                     label={g.before.name}
-                    meta={HOUSE_DRAFT_COPY.groupPeople(membersLine(g.before.memberIds, people, me), membersLine(g.group.memberIds, people, me))}
+                    meta={HOUSE_DRAFT_COPY.groupPeople(membersLine(g.before.memberIds, people, me, words), membersLine(g.group.memberIds, people, me, words))}
                     leading={<KindIcon kind="change" />}
                     checked={keep.includes(g.key)}
                     onPress={() => onToggle(g.key)}
@@ -634,7 +603,7 @@ function DraftCard({
               key={g.name}
               title={g.name}
               meta={[
-                g.memberIds.length > 0 ? membersLine(g.memberIds, people, me) : null,
+                g.memberIds.length > 0 ? membersLine(g.memberIds, people, me, words) : null,
                 g.waitingFor.length > 0 ? HOUSE_DRAFT_COPY.waiting(namesList(g.waitingFor)) : null,
               ]
                 .filter(Boolean)

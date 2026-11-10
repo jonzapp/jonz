@@ -1,4 +1,4 @@
-import { firstName, FOCUS_SHELL_COPY, HOUSE_LOWER_COPY, leaveBar, leaveCost, roleCopy, BUSY_COPY } from '@app/core';
+import { firstName, FOCUS_SHELL_COPY, leaveBar, leaveCost, roleCopy, BUSY_COPY } from '@app/core';
 import { useQueryClient } from '@tanstack/react-query';
 import { DoorOpenIcon, RefreshCwIcon } from 'lucide-react-native';
 import { useState } from 'react';
@@ -33,6 +33,7 @@ import { useWords } from '@/hooks/use-words';
  * house will be empty.
  */
 export function LeaveSection({ houseId, userId, view }: { houseId: string; userId: string; view: HouseView }) {
+  const words = useWords();
   const { colors } = useTheme();
   const client = useQueryClient();
   const { refresh } = useMembership();
@@ -45,7 +46,7 @@ export function LeaveSection({ houseId, userId, view }: { houseId: string; userI
 
   // A read that failed, and isn't being tried again right now.
   const unread = stake.isError && !stake.isFetching;
-  let cost: string = HOUSE_LOWER_COPY.costReading;
+  let cost: string = words('house.lower.costReading');
   if (stake.data) {
     cost = leaveCost({
       me: userId,
@@ -54,13 +55,13 @@ export function LeaveSection({ houseId, userId, view }: { houseId: string; userI
       transfers: stake.data.transfers,
       members,
       currency: rules.currency,
-    });
+    }, words);
   } else if (unread) {
-    cost = HOUSE_LOWER_COPY.costUnread;
+    cost = words('house.lower.costUnread');
   }
   const bar = leaveBar(userId, members);
   const roles = roleCopy(useWords(house.kind));
-  const body = bar === 'last-admin' ? `${cost} ${roles.lastAdmin}` : bar === 'last-one' ? `${cost} ${HOUSE_LOWER_COPY.lastOne}` : cost;
+  const body = bar === 'last-admin' ? `${cost} ${roles.lastAdmin}` : bar === 'last-one' ? `${cost} ${words('house.lower.lastOne')}` : cost;
   const heirName = heir ? firstName(members.find((m) => m.userId === heir)?.name ?? '') : null;
 
   async function leave() {
@@ -85,7 +86,7 @@ export function LeaveSection({ houseId, userId, view }: { houseId: string; userI
       <Group>
         <Row
           leading={<DoorOpenIcon size={24} color={colors.hazard} aria-hidden />}
-          title={HOUSE_LOWER_COPY.leave(house.name)}
+          title={words('house.lower.leave', { house: house.name })}
           tone="hazard"
           onPress={() => {
             setProblem(null);
@@ -96,15 +97,15 @@ export function LeaveSection({ houseId, userId, view }: { houseId: string; userI
         />
       </Group>
       <View style={styles.footer}>
-        <Meta>{HOUSE_LOWER_COPY.noMoney}</Meta>
-        <TextLink href="/privacy" label={HOUSE_LOWER_COPY.privacy} small testID="to-privacy" />
-        <TextLink href="/terms" label={HOUSE_LOWER_COPY.terms} small testID="to-terms" />
+        <Meta>{words('house.lower.noMoney')}</Meta>
+        <TextLink href="/privacy" label={words('house.lower.privacy')} small testID="to-privacy" />
+        <TextLink href="/terms" label={words('house.lower.terms')} small testID="to-terms" />
       </View>
       <ConfirmSheet
         visible={asking}
-        title={HOUSE_LOWER_COPY.leaveAsk(house.name)}
+        title={words('house.lower.leaveAsk', { house: house.name })}
         body={body}
-        confirmLabel={bar === 'last-admin' ? (heirName ? roles.handOver(heirName) : null) : HOUSE_LOWER_COPY.leaveConfirm}
+        confirmLabel={bar === 'last-admin' ? (heirName ? roles.handOver(heirName) : null) : words('house.lower.leaveConfirm')}
         icon={DoorOpenIcon}
         busy={busy}
         busyLabel={bar === 'last-admin' ? BUSY_COPY.handingOver : BUSY_COPY.leaving}

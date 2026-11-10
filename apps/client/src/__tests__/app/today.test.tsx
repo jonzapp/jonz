@@ -1,19 +1,4 @@
-import {
-  BIN_NIGHT,
-  buildStake,
-  type DisputeRow,
-  FOCUS_SHELL_COPY,
-  HOUSE_PAGE_COPY,
-  localDate,
-  monthOf,
-  MOVING_COPY,
-  ON_CALL_COPY,
-  PAGE_TITLE,
-  PARENT_OK_COPY,
-  planLabel,
-  STEADY_COPY,
-  wordsFor,
-} from '@app/core';
+import { BIN_NIGHT, buildStake, type DisputeRow, FOCUS_SHELL_COPY, localDate, monthOf, MOVING_COPY, PAGE_TITLE, PARENT_OK_COPY, planLabel, wordsFor } from '@app/core';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Slot } from 'expo-router';
 import { fireEvent, renderRouter, screen, waitFor, within } from 'expo-router/testing-library';
@@ -180,7 +165,7 @@ describe('Next up', () => {
   it('plans it in one tap, before it is due', async () => {
     (planJohn as jest.Mock).mockResolvedValue(undefined);
     await open();
-    await fireEvent.press(screen.getByRole('button', { name: STEADY_COPY.plan }));
+    await fireEvent.press(screen.getByRole('button', { name: words('week.steady.plan') }));
     const [id, when] = (planJohn as jest.Mock).mock.calls[0];
     expect(id).toBe('a1');
     expect((when as Date).getTime()).toBeGreaterThan(Date.now());
@@ -192,9 +177,9 @@ describe('Next up', () => {
     read.mockResolvedValue(snapshot({ assignments: [assignment({ planned_at: plannedAt }), ...snapshot().assignments.slice(1)] }));
     await open();
     expect(screen.getByTestId('plan-it-when')).toHaveTextContent(
-      STEADY_COPY.planned(planLabel(new Date(plannedAt), new Date(), 'Europe/London')),
+      words('week.steady.planned', { when: planLabel(new Date(plannedAt), new Date(), 'Europe/London') }),
     );
-    expect(screen.queryByRole('button', { name: STEADY_COPY.plan })).toBeNull();
+    expect(screen.queryByRole('button', { name: words('week.steady.plan') })).toBeNull();
   });
 
   it('ticks it, reads the house again, and moves on to the next', async () => {
@@ -396,7 +381,7 @@ describe('what takes Next up’s place', () => {
       expect(sheet.getByRole('header', { name: words('house.page.invite') })).toBeOnTheScreen();
       expect(sheet.getByTestId('invite-code')).toHaveTextContent('AB3DEF7H');
       expect(sheet.getByTestId('invite-url')).toHaveTextContent('https://jonz.app/join/AB3DEF7H');
-      expect(sheet.getByRole('button', { name: HOUSE_PAGE_COPY.shareInvite })).toHaveStyle({
+      expect(sheet.getByRole('button', { name: words('house.page.shareInvite') })).toHaveStyle({
         backgroundColor: BIN_NIGHT.light.hivis,
       });
       await fireEvent.press(sheet.getByTestId('sheet-close'));
@@ -444,17 +429,17 @@ describe('swapping a John you’d rather not', () => {
     read.mockResolvedValue(house());
     await open();
     const offer = within(screen.getByTestId('swap-suggestion'));
-    expect(offer.getByText(STEADY_COPY.ratherDoIt('Sam'))).toBeOnTheScreen();
-    expect(offer.getByText(STEADY_COPY.swapFor('Sam', 'Clean the bath', '2 pts'))).toBeOnTheScreen();
-    expect(offer.getByText(STEADY_COPY.askNote('Sam', 'Bins out'))).toBeOnTheScreen();
-    await fireEvent.press(offer.getByRole('button', { name: STEADY_COPY.ask('Sam') }));
+    expect(offer.getByText(words('week.steady.ratherDoIt', { name: 'Sam' }))).toBeOnTheScreen();
+    expect(offer.getByText(words('week.steady.swapFor', { name: 'Sam', john: 'Clean the bath', points: '2 pts' }))).toBeOnTheScreen();
+    expect(offer.getByText(words('week.steady.askNote', { name: 'Sam', john: 'Bins out' }))).toBeOnTheScreen();
+    await fireEvent.press(offer.getByRole('button', { name: words('week.steady.ask', { name: 'Sam' }) }));
     expect(askSwap).toHaveBeenCalledWith('a1', 'a4');
   });
 
   it('says once it has asked', async () => {
     read.mockResolvedValue(house([{ id: 'o1', mine: 'a1', theirs: 'a4', asked_by: 'priya', asked_user_id: 'sam', expires_at: at(6) }]));
     await open();
-    expect(screen.getByTestId('swap-asked')).toHaveTextContent(STEADY_COPY.asked('Sam'));
+    expect(screen.getByTestId('swap-asked')).toHaveTextContent(words('week.steady.asked', { name: 'Sam' }));
     expect(screen.queryByTestId('swap-suggestion')).toBeNull();
   });
 
@@ -469,11 +454,11 @@ describe('swapping a John you’d rather not', () => {
     );
     await open();
     const card = within(screen.getByTestId('swap-offer'));
-    expect(card.getByText(STEADY_COPY.offerTitle('Sam'))).toBeOnTheScreen();
-    expect(card.getByText(STEADY_COPY.offerBody('Clean the bath', 'Hoover the stairs', '2 pts'))).toBeOnTheScreen();
-    await fireEvent.press(card.getByRole('button', { name: STEADY_COPY.accept }));
+    expect(card.getByText(words('week.steady.offerTitle', { name: 'Sam' }))).toBeOnTheScreen();
+    expect(card.getByText(words('week.steady.offerBody', { theirs: 'Clean the bath', yours: 'Hoover the stairs', points: '2 pts' }))).toBeOnTheScreen();
+    await fireEvent.press(card.getByRole('button', { name: words('week.steady.accept') }));
     expect(answerSwap).toHaveBeenCalledWith('o2', true);
-    await fireEvent.press(card.getByRole('button', { name: STEADY_COPY.decline }));
+    await fireEvent.press(card.getByRole('button', { name: words('week.steady.decline') }));
     expect(answerSwap).toHaveBeenLastCalledWith('o2', false);
   });
 });
@@ -753,7 +738,7 @@ describe('On call', () => {
     await open();
     const section = within(await screen.findByTestId('on-call'));
     expect(section.getByText('Empty the bins')).toBeOnTheScreen();
-    expect(section.getByText(`${ON_CALL_COPY.holder('Sam')}, ${ON_CALL_COPY.times(0)}`)).toBeOnTheScreen();
+    expect(section.getByText(`${words('today.onCall.holder', { name: 'Sam' })}, ${words('today.onCall.times', { n: 0 })}`)).toBeOnTheScreen();
     await fireEvent.press(section.getByTestId('on-call-flag'));
     await waitFor(() => expect(raiseFlag).toHaveBeenCalledWith('j-bins'));
     expect(markDone).not.toHaveBeenCalled();
@@ -764,7 +749,7 @@ describe('On call', () => {
     read.mockResolvedValue(snapshot({ onCall: [{ ...BINS_ON_CALL, user_id: 'priya' }] }));
     await open();
     const section = within(await screen.findByTestId('on-call'));
-    expect(section.getByText(`${ON_CALL_COPY.youreOnCall}, ${ON_CALL_COPY.times(0)}`)).toBeOnTheScreen();
+    expect(section.getByText(`${words('today.onCall.youreOnCall')}, ${words('today.onCall.times', { n: 0 })}`)).toBeOnTheScreen();
     await fireEvent.press(section.getByTestId('on-call-done'));
     await waitFor(() => expect(markDone).toHaveBeenCalledWith('f1'));
     expect(raiseFlag).toHaveBeenCalledWith('j-bins');
@@ -788,7 +773,7 @@ describe('On call', () => {
     await open();
     const section = within(await screen.findByTestId('on-call'));
     expect(section.getByTestId('on-call-done-it')).toBeOnTheScreen();
-    expect(section.getByText(ON_CALL_COPY.done)).toBeOnTheScreen();
+    expect(section.getByText(words('today.onCall.done'))).toBeOnTheScreen();
     expect(section.queryByTestId('on-call-done')).toBeNull();
   });
 
@@ -807,7 +792,7 @@ describe('On call', () => {
     await open();
     const section = within(await screen.findByTestId('on-call'));
     expect(section.getByTestId('on-call-flagged')).toBeOnTheScreen();
-    expect(section.getByText(new RegExp(`^${ON_CALL_COPY.flagged('Sam')}, due `))).toBeOnTheScreen();
+    expect(section.getByText(new RegExp(`^${words('today.onCall.flagged', { name: 'Sam' })}, due `))).toBeOnTheScreen();
     expect(section.queryByTestId('on-call-flag')).toBeNull();
   });
 

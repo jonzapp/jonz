@@ -587,8 +587,8 @@ export function changedLine(before: DraftedJohn, after: DraftedJohn, words: Word
   const arrow = (was: string, now: string) => `${was} → ${lower(now)}`;
   if (before.name !== after.name) parts.push(`was “${before.name}”`);
   // How often and when, each only if it moved: "Every week → every 2 weeks", "Sat 18:00 → Sun 10:00".
-  const often = (j: DraftedJohn) => (j.when === "on_call" ? "On call" : oftenWords(j));
-  const due = (j: DraftedJohn) => dueWords(j, j.dueTime, DOW_LABEL[j.dueDow as IsoDow].slice(0, 3));
+  const often = (j: DraftedJohn) => (j.when === "on_call" ? "On call" : oftenWords(j, words));
+  const due = (j: DraftedJohn) => dueWords(j, j.dueTime, DOW_LABEL[j.dueDow as IsoDow].slice(0, 3), words);
   if (often(before) !== often(after)) parts.push(arrow(often(before), often(after)));
   if (before.when !== "on_call" && after.when !== "on_call" && due(before) !== due(after)) parts.push(`${due(before)} → ${due(after)}`);
   if (before.points !== after.points) parts.push(`${before.points} → ${after.points} ${after.points === 1 ? "pt" : "pts"}`);

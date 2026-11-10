@@ -1,4 +1,4 @@
-import { FOCUS_SHELL_COPY, planChoices, planLabel, STEADY_COPY, type BestTime, type BoardItem, type PlanTime, BUSY_COPY } from '@app/core';
+import { FOCUS_SHELL_COPY, planChoices, planLabel, type BestTime, type BoardItem, type PlanTime, BUSY_COPY } from '@app/core';
 import { BellIcon, CalendarClockIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -13,6 +13,7 @@ import { Lead, Meta } from '@/components/text';
 import { TextButton } from '@/components/text-button';
 import { usePlan } from '@/hooks/use-plan';
 import { SPACE, TAP, useTheme } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * Plan it, on one of your open Johns (Today's card, its sheet): one tap
@@ -39,6 +40,7 @@ export function PlanIt({
   inline?: boolean;
   testID?: string;
 }) {
+  const words = useWords();
   const { colors } = useTheme();
   const planned = item.plannedAt ?? null;
   const { pending, problem, plan } = usePlan(houseId, item.id, planned);
@@ -49,10 +51,10 @@ export function PlanIt({
     setOpened((n) => n + 1);
     setOpen(true);
   };
-  const choices = planChoices(item.dueAt, now, zone, bestTime);
+  const choices = planChoices(item.dueAt, now, zone, bestTime, words);
   if (!planned && !choices) return null;
 
-  const take = (at: PlanTime['at']) => plan(at, STEADY_COPY.plannedToast(planLabel(at, now, zone)));
+  const take = (at: PlanTime['at']) => plan(at, words('week.steady.plannedToast', { when: planLabel(at, now, zone) }));
   const picker = choices ? (
     <PlanPicker
       key={opened}
@@ -63,7 +65,7 @@ export function PlanIt({
         if (await take(at)) setOpen(false);
       }}
       onClear={async () => {
-        if (await plan(null, STEADY_COPY.unplanned)) setOpen(false);
+        if (await plan(null, words('week.steady.unplanned'))) setOpen(false);
       }}
       onCancel={inline ? () => setOpen(false) : undefined}
     />
@@ -72,8 +74,8 @@ export function PlanIt({
   if (inline && open && picker) {
     return (
       <View testID={testID} style={styles.inline}>
-        <Lead>{STEADY_COPY.planTitle}</Lead>
-        <Meta>{STEADY_COPY.planBody(choices!.dueWords)}</Meta>
+        <Lead>{words('week.steady.planTitle')}</Lead>
+        <Meta>{words('week.steady.planBody', { due: choices!.dueWords })}</Meta>
         {picker}
         {problem ? <Alert message={problem} /> : null}
       </View>
@@ -86,13 +88,13 @@ export function PlanIt({
         <View style={styles.line}>
           <BellIcon size={16} color={colors.mutedForeground} aria-hidden />
           <Meta style={styles.grow} testID={`${testID}-when`}>
-            {STEADY_COPY.planned(planLabel(planned, now, zone))}
+            {words('week.steady.planned', { when: planLabel(planned, now, zone) })}
           </Meta>
-          {choices ? <TextButton label={STEADY_COPY.change} align="end" onPress={change} testID={`${testID}-change`} /> : null}
+          {choices ? <TextButton label={words('week.steady.change')} align="end" onPress={change} testID={`${testID}-change`} /> : null}
         </View>
       ) : (
         <TextButton
-          label={STEADY_COPY.plan}
+          label={words('week.steady.plan')}
           icon={CalendarClockIcon}
           align="start"
           disabled={pending}
@@ -104,8 +106,8 @@ export function PlanIt({
       {choices && !inline ? (
         <Sheet
           visible={open}
-          title={STEADY_COPY.planTitle}
-          description={STEADY_COPY.planBody(choices.dueWords)}
+          title={words('week.steady.planTitle')}
+          description={words('week.steady.planBody', { due: choices.dueWords })}
           onClose={() => setOpen(false)}
           testID="plan-sheet"
         >
@@ -133,6 +135,7 @@ function PlanPicker({
   /** In place, the way back to the line. */
   onCancel?: () => void;
 }) {
+  const words = useWords();
   const all = choices.days.flatMap((d) => d.times.map((t) => ({ day: d, time: t })));
   const start = all.find((c) => planned && c.time.at.getTime() === planned.getTime()) ?? all.find((c) => c.time === choices.chosen)!;
   const [day, setDay] = useState(start.day.date);
@@ -154,7 +157,7 @@ function PlanPicker({
             const times = choices.days.find((x) => x.date === d)!.times;
             setAt((times.find((t) => t.best) ?? times[times.length - 1]).at.getTime());
           }}
-          label={STEADY_COPY.planTitle}
+          label={words('week.steady.planTitle')}
           equal
           testID="plan-days"
         />
@@ -173,7 +176,7 @@ function PlanPicker({
         ))}
       </Group>
       <Button
-        label={STEADY_COPY.planFor(`${shown.label} ${picked.label}`)}
+        label={words('week.steady.planFor', { when: `${shown.label} ${picked.label}` })}
         busy={pending && !clearing}
         busyLabel={BUSY_COPY.planning}
         disabled={clearWaits}
@@ -185,7 +188,7 @@ function PlanPicker({
       />
       {planned || onCancel ? (
         <View style={styles.quiet}>
-          {planned ? <TextButton label={STEADY_COPY.unplan} align="start"
+          {planned ? <TextButton label={words('week.steady.unplan')} align="start"
               disabled={pending}
               onPress={() => {
                 setClearing(true);

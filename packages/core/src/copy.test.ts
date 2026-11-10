@@ -1,36 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import * as copy from "./copy";
-import {
-  APP_NAME,
-  ERROR_COPY,
-  AWAY_COPY,
-  FOCUS_SHELL_COPY,
-  DEAL_COPY,
-  FRONT_DOOR,
-  GROUPS_COPY,
-  INVITE_COPY,
-  JOHN_LIST_COPY,
-  JOIN_COPY,
-  LOOK_LABEL,
-  LOOKS,
-  lookOf,
-  NEW_HOUSE_COPY,
-  NOT_FOUND_COPY,
-  NO_HOUSE_COPY,
-  PAGE_TITLE,
-  pageTitle,
-  REMINDERS_COPY,
-  RULES_COPY,
-  SECTION_LABEL,
-  SECTIONS,
-  SHELL_COPY,
-  SIGN_IN_COPY,
-  STAKE_HISTORY_COPY,
-  TABLE_COPY,
-  TAGLINE,
-} from "./copy";
+import { APP_NAME, ERROR_COPY, FOCUS_SHELL_COPY, FRONT_DOOR, INVITE_COPY, JOIN_COPY, LOOK_LABEL, LOOKS, lookOf, NEW_HOUSE_COPY, NOT_FOUND_COPY, NO_HOUSE_COPY, PAGE_TITLE, pageTitle, SECTION_LABEL, SECTIONS, SHELL_COPY, SIGN_IN_COPY, TAGLINE } from "./copy";
 import { EN, type WordId } from "./locales";
+import { awayBannerBody, awayMovedLine, awayShade, johnWhen, makeupHint, phoneZoneLine, recordLine, shareStanding, tableRules } from "./word-keys";
 import { wordsFor } from "./words-for";
 
 const words = wordsFor("en", "housemates");
@@ -145,92 +118,92 @@ describe("SECTIONS", () => {
   });
 });
 
-describe("TABLE_COPY", () => {
+describe("the Table’s words", () => {
   it("tells a record without the zeros", () => {
-    expect(TABLE_COPY.record({ done: 3, late: 0, missed: 0 })).toBe("3 done");
-    expect(TABLE_COPY.record({ done: 0, late: 1, missed: 2 })).toBe("0 done, 1 late, 2 missed");
+    expect(recordLine({ done: 3, late: 0, missed: 0 }, words)).toBe("3 done");
+    expect(recordLine({ done: 0, late: 1, missed: 2 }, words)).toBe("0 done, 1 late, 2 missed");
   });
 
   it("says where you stand against your share", () => {
-    expect(TABLE_COPY.shareLine(-4, 1)).toMatch(/for about 1 week\.$/);
-    expect(TABLE_COPY.shareLine(-0.5, 3)).toMatch(/^Points behind your share.*about 3 weeks\.$/);
-    expect(TABLE_COPY.shareLine(0.5, 0)).toBe("Points ahead of your share, so the next weeks go a little easier on you.");
-    expect(TABLE_COPY.shareLine(0.49, 0)).toBe("You’ve done your share.");
-    expect(TABLE_COPY.shareLine(-0.49, 0)).toBe("You’ve done your share.");
+    expect(shareStanding(-4, 1, words)).toMatch(/for about 1 week\.$/);
+    expect(shareStanding(-0.5, 3, words)).toMatch(/^Points behind your share.*about 3 weeks\.$/);
+    expect(shareStanding(0.5, 0, words)).toBe("Points ahead of your share, so the next weeks go a little easier on you.");
+    expect(shareStanding(0.49, 0, words)).toBe("You’ve done your share.");
+    expect(shareStanding(-0.49, 0, words)).toBe("You’ve done your share.");
   });
 
   it("names the rules’ numbers from the rules", () => {
-    expect(TABLE_COPY.sharesBody).toMatch(/since you joined/);
-    expect(TABLE_COPY.rules[1].body).toMatch(/^Every 4 clean weeks/);
-    expect(TABLE_COPY.weeks(1)).toBe("1 week");
+    expect(words('house.table.sharesBody')).toMatch(/since you joined/);
+    expect(tableRules(words)[1].body).toMatch(/^Every 4 clean weeks/);
+    expect(words('house.table.weeks', { n: 1 })).toBe("1 week");
   });
 });
 
-describe("JOHN_LIST_COPY", () => {
+describe("the John list’s words", () => {
   it("says how often and when, short", () => {
-    expect(JOHN_LIST_COPY.when(1, "Sunday", "21:00")).toBe("Every week, due Sun 21:00");
-    expect(JOHN_LIST_COPY.when(4, "Monday", "09:30")).toBe("Every 4 weeks, due Mon 09:30");
-    expect(JOHN_LIST_COPY.when(6, "Friday", "18:00")).toBe("Every 6 weeks, due Fri 18:00");
+    expect(johnWhen(1, "Sunday", "21:00", words)).toBe("Every week, due Sun 21:00");
+    expect(johnWhen(4, "Monday", "09:30", words)).toBe("Every 4 weeks, due Mon 09:30");
+    expect(johnWhen(6, "Friday", "18:00", words)).toBe("Every 6 weeks, due Fri 18:00");
   });
 
   it("rounds the house’s weekly effort", () => {
-    expect(JOHN_LIST_COPY.perWeek(0)).toMatch(/^About 0 points a week/);
-    expect(JOHN_LIST_COPY.perWeek(7.5)).toMatch(/^About 8 points a week/);
+    expect(words('house.johns.perWeek', { points: 0 })).toMatch(/^About 0 points a week/);
+    expect(words('house.johns.perWeek', { points: 7.5 })).toMatch(/^About 8 points a week/);
   });
 });
 
-describe("DEAL_COPY", () => {
+describe("the deal’s words", () => {
   it("calls giving out the week the deal", () => {
-    expect(DEAL_COPY.again).toBe("Re-deal this week");
+    expect(words('house.deal.again')).toBe("Re-deal this week");
   });
 });
 
-describe("RULES_COPY", () => {
+describe("the Rules’ words", () => {
   it("names the amounts in the house’s currency", () => {
-    expect(RULES_COPY.stake("£")).toBe("Monthly stake (£)");
-    expect(RULES_COPY.missed("€")).toBe("Missed forfeit (€)");
+    expect(words('house.rules.stake', { symbol: "£" })).toBe("Monthly stake (£)");
+    expect(words('house.rules.missed', { symbol: "€" })).toBe("Missed forfeit (€)");
   });
 
   it("says each dispute window and make-up rate", () => {
-    expect(RULES_COPY.disputeHours(0)).toBe("No disputes (honour system)");
-    expect(RULES_COPY.disputeHours(48)).toBe("48 hours after a tick");
-    for (const n of [100, 50, 0]) expect(RULES_COPY.makeupHint[n]).toBeTruthy();
-    expect(RULES_COPY.phoneZone("America/New_York")).toBe("Use this phone’s: America/New York");
+    expect(words('house.rules.disputeHours', { hours: 0 })).toBe("No disputes (honour system)");
+    expect(words('house.rules.disputeHours', { hours: 48 })).toBe("48 hours after a tick");
+    for (const n of [100, 50, 0]) expect(makeupHint(n, words)).toBeTruthy();
+    expect(phoneZoneLine("America/New_York", words)).toBe("Use this phone’s: America/New York");
   });
 });
 
-describe("GROUPS_COPY", () => {
+describe("the groups’ words", () => {
   it("names the group being edited", () => {
-    expect(GROUPS_COPY.edit("Upstairs")).toBe("Edit Upstairs");
+    expect(words('house.groups.edit', { name: "Upstairs" })).toBe("Edit Upstairs");
   });
 });
 
-describe("AWAY_COPY", () => {
+describe("time away’s words", () => {
   it("counts the Johns booking moved", () => {
-    expect(AWAY_COPY.moved(1)).toBe("1 of your Johns falls due while you’re away, so it’s now due before you go.");
-    expect(AWAY_COPY.moved(3)).toBe("3 of your Johns fall due while you’re away, so they’re now due before you go.");
-    expect(AWAY_COPY.moved(0, 1, 0)).toBe(
+    expect(awayMovedLine(1, 0, 0, words)).toBe("1 of your Johns falls due while you’re away, so it’s now due before you go.");
+    expect(awayMovedLine(3, 0, 0, words)).toBe("3 of your Johns fall due while you’re away, so they’re now due before you go.");
+    expect(awayMovedLine(0, 1, 0, words)).toBe(
       "1 was due too soon to do first, so it’s gone to someone else, who’s been told. Cancel and it comes back to you.",
     );
-    expect(AWAY_COPY.moved(1, 0, 2)).toBe(
+    expect(awayMovedLine(1, 0, 2, words)).toBe(
       "1 of your Johns falls due while you’re away, so it’s now due before you go. 2 were skipped, with nobody home to take them.",
     );
   });
 
   it("tells you on Today when you’re away, and what your share does", () => {
-    expect(AWAY_COPY.banner("26–28 Oct", false)).toBe("You’re away 26–28 Oct.");
-    expect(AWAY_COPY.banner("Wed 28 Oct", true)).toBe("You’re away until Wed 28 Oct.");
-    expect(AWAY_COPY.bannerBody(100)).toMatch(/, but your share still counts/);
-    expect(AWAY_COPY.bannerBody(50)).toMatch(/, but half your share still counts/);
-    expect(AWAY_COPY.bannerBody(0)).toBe("Nobody hands you a John due while you’re gone.");
+    expect(words('house.away.banner', { range: "26–28 Oct", now: false })).toBe("You’re away 26–28 Oct.");
+    expect(words('house.away.banner', { range: "Wed 28 Oct", now: true })).toBe("You’re away until Wed 28 Oct.");
+    expect(awayBannerBody(100, words)).toMatch(/, but your share still counts/);
+    expect(awayBannerBody(50, words)).toMatch(/, but half your share still counts/);
+    expect(awayBannerBody(0, words)).toBe("Nobody hands you a John due while you’re gone.");
   });
 
   it("says a day of the month calendar, its key and its sheet", () => {
-    expect(AWAY_COPY.dayLabel("Sunday 8 November", 3)).toBe("Sunday 8 November, 3 away");
-    expect(AWAY_COPY.dayLabel("Monday 2 November", 0)).toBe("Monday 2 November, everyone home");
-    expect([1, 2, 3, 5].map(AWAY_COPY.shade)).toEqual(["1 away", "2 away", "3 or more", "3 or more"]);
-    expect(AWAY_COPY.dayCount(3, 2)).toBe("3 away, 2 home");
-    expect(AWAY_COPY.backOn("Tue 10 Nov")).toBe("Back Tue 10 Nov");
+    expect(words('house.away.dayLabel', { day: "Sunday 8 November", away: 3 })).toBe("Sunday 8 November, 3 away");
+    expect(words('house.away.dayLabel', { day: "Monday 2 November", away: 0 })).toBe("Monday 2 November, everyone home");
+    expect([1, 2, 3, 5].map((n) => awayShade(n, words))).toEqual(["1 away", "2 away", "3 or more", "3 or more"]);
+    expect(words('house.away.dayCount', { away: 3, home: 2 })).toBe("3 away, 2 home");
+    expect(words('house.away.backOn', { day: "Tue 10 Nov" })).toBe("Back Tue 10 Nov");
   });
 });
 
@@ -269,7 +242,7 @@ describe("looks", () => {
 
 describe("REMINDERS_COPY", () => {
   it("tells an iPhone to install first", () => {
-    expect(REMINDERS_COPY.unsupported).toMatch(/home screen/);
+    expect(words('house.reminders.unsupported')).toMatch(/home screen/);
   });
 });
 
@@ -288,18 +261,13 @@ describe("FOCUS_SHELL_COPY", () => {
 
 describe("STAKE_HISTORY_COPY", () => {
   it("says the stake under its title", () => {
-    expect(STAKE_HISTORY_COPY.sub("£20")).toBe("£20 a month each");
+    expect(words('house.stake.sub', { stake: "£20" })).toBe("£20 a month each");
   });
 });
 
 describe("Focus’s word objects", () => {
   const FOCUS = [
-    "HOUSE_PAGE_COPY",
-    "PERSON_COPY",
-    "STAKE_HISTORY_COPY",
     "WALL_FEED_COPY",
-    "HOUSE_LOWER_COPY",
-    "SETUP_COPY",
     "FRONT_DOOR_COPY",
   ];
 

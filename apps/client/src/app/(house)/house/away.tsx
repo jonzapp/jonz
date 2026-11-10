@@ -1,4 +1,4 @@
-import { AWAY_COPY, myTrips, PAGE_TITLE, SETUP_COPY, type MyPrefs } from '@app/core';
+import { myTrips, PAGE_TITLE, type MyPrefs } from '@app/core';
 
 import type { AwayView } from '@/api/away';
 import type { JohnList } from '@/api/settings';
@@ -13,6 +13,7 @@ import { useJohnList } from '@/hooks/use-john-list';
 import { useMembership } from '@/hooks/use-membership';
 import { usePull, useReadOnFocus } from '@/hooks/use-refresh';
 import { RecordOutline } from '@/components/page-outlines';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * Days and time away, pushed from House: your days, best time and the
@@ -70,6 +71,7 @@ function AwayPage({
   prefs: MyPrefs;
   list: JohnList;
 }) {
+  const words = useWords();
   const { snapshot } = view;
   const { periods, today } = away;
   const mine = myTrips(periods, userId, today);
@@ -81,14 +83,14 @@ function AwayPage({
       end={
         <>
           {mine.length > 0 ? (
-            <Section label={AWAY_COPY.yours} testID="my-trips">
+            <Section label={words('house.away.yours')} testID="my-trips">
               <MyTrips houseId={houseId} periods={mine} today={today} />
             </Section>
           ) : null}
-          <Section label={SETUP_COPY.whosAway} testID="away-panel">
+          <Section label={words('house.setup.whosAway')} testID="away-panel">
             <AwayMonth periods={periods} people={snapshot.members} me={userId} today={today} weekStarts={snapshot.rules.weekStarts} />
           </Section>
-          <Section label={AWAY_COPY.book}>
+          <Section label={words('house.away.book')}>
             <AwayForm houseId={houseId} today={today} weekStarts={snapshot.rules.weekStarts} />
           </Section>
         </>

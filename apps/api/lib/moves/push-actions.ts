@@ -1,12 +1,15 @@
 import "server-only";
 
-import { NOTIFY_COPY, type PushActionRequest, type PushActionResponse } from "@app/core";
+import { type PushActionRequest, type PushActionResponse, wordsFor } from "@app/core";
 
 import { tickHouse } from "@/lib/engine/tick";
 import { readPushToken } from "@/lib/push-token";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 import type { Refusal } from "./disputes";
+
+// Pushes and server lines read the housemates' words for now; each person's own language comes with translation 7.
+const words = wordsFor("en", "housemates");
 
 // A button on a notification. There's no session: the token that came with
 // the push says who and what, and push_action makes the move as them through
@@ -30,9 +33,9 @@ export async function answerPush({ token, action }: PushActionRequest, now: Date
     });
     const { data: a } = await admin.from("assignments").select("name").eq("id", grant.assignmentId).maybeSingle();
     const name = a?.name ?? "That John";
-    if (error?.message === "already_done") return { ok: { ok: true, title: NOTIFY_COPY.alreadyTicked(name), body: "" } };
+    if (error?.message === "already_done") return { ok: { ok: true, title: words('house.notify.alreadyTicked', { john: name }), body: "" } };
     if (error) return { refusal: error };
-    return { ok: { ok: true, title: NOTIFY_COPY.ticked(name), body: NOTIFY_COPY.tickedBody } };
+    return { ok: { ok: true, title: words('house.notify.ticked', { john: name }), body: words('house.notify.tickedBody') } };
   }
 
   if (action === "done") return { mismatch: true };
@@ -53,8 +56,8 @@ export async function answerPush({ token, action }: PushActionRequest, now: Date
   return {
     ok: {
       ok: true,
-      title: NOTIFY_COPY.voted(d?.assignments?.name ?? "that John"),
-      body: action === "struck" ? NOTIFY_COPY.votedStruck : NOTIFY_COPY.votedHeld,
+      title: words('house.notify.voted', { john: d?.assignments?.name ?? "that John" }),
+      body: action === "struck" ? words('house.notify.votedStruck') : words('house.notify.votedHeld'),
     },
   };
 }

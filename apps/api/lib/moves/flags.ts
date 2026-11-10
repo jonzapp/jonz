@@ -1,11 +1,14 @@
 import "server-only";
 
-import { dueInLine, ON_CALL_COPY, rulesOf } from "@app/core";
+import { dueInLine, rulesOf, wordsFor } from "@app/core";
 
 import { pushNotifier } from "@/lib/push";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 import type { Caller, Refusal } from "./disputes";
+
+// Pushes and server lines read the housemates' words for now; each person's own language comes with translation 7.
+const words = wordsFor("en", "housemates");
 
 // Flagging an on-call John needs a server for one thing: telling whoever has
 // it. The flag itself is the caller's own call to raise_flag, which decides
@@ -37,8 +40,8 @@ export async function raiseFlag(
     const { data: me } = await caller.db.from("profiles").select("display_name").eq("id", caller.userId).single();
     const zone = rulesOf(flag.houses).timezone;
     await notify([flag.user_id], {
-      title: ON_CALL_COPY.pushTitle(flag.name),
-      body: ON_CALL_COPY.pushBody(me?.display_name ?? "Someone", dueInLine(new Date(flag.due_at), now, zone)),
+      title: words('today.onCall.pushTitle', { john: flag.name }),
+      body: words('today.onCall.pushBody', { by: me?.display_name ?? "Someone", due: dueInLine(new Date(flag.due_at), now, zone) }),
       url: "/today",
       kind: "flags",
       zone,

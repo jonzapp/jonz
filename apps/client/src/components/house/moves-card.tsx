@@ -12,6 +12,7 @@ import { Row, RowIcon } from '@/components/row';
 import { Section } from '@/components/section';
 import { ChoiceRow } from '@/components/setup/choice-row';
 import { useMove } from '@/hooks/use-move';
+import { useWords } from '@/hooks/use-words';
 import { SPACE } from '@/theme';
 
 const ICON: Record<ChatMove['kind'], LucideIcon> = { away: CalendarCheckIcon, cancel_away: CalendarXIcon, operation: ZapIcon };
@@ -25,6 +26,7 @@ const ICON: Record<ChatMove['kind'], LucideIcon> = { away: CalendarCheckIcon, ca
  */
 export function MovesCard({ houseId, me, items }: { houseId: string; me: string; items: readonly ChatMove[] }) {
   const move = useMove(houseId);
+  const words = useWords();
   const [keep, setKeep] = useState<number[]>(() => items.map((_, at) => at));
   const [done, setDone] = useState<number | null>(null);
 
@@ -35,7 +37,7 @@ export function MovesCard({ houseId, me, items }: { houseId: string; me: string;
         const m = items[at];
         if (m.kind === 'away') await setAway({ from: m.from, to: m.to, note: m.note });
         else if (m.kind === 'cancel_away') await cancelAway(m.awayId);
-        else await runCardOperation(m.operation, m.input, { userId: me });
+        else await runCardOperation(m.operation, m.input, { userId: me, words });
         count += 1;
       }
     });

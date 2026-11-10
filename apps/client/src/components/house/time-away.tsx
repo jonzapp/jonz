@@ -1,25 +1,4 @@
-import {
-  addDaysTo,
-  AWAY_COPY,
-  backOn,
-  dateRange,
-  dayName,
-  DOW_LABEL,
-  firstName,
-  FOCUS_SHELL_COPY,
-  HISTORY_COPY,
-  monthLabel,
-  monthWeeks,
-  SETUP_COPY,
-  shiftMonth,
-  tripMeta,
-  tripStarted,
-  tripsOn,
-  upcomingTrips,
-  withAlpha,
-  type AwayPeriod,
-  type IsoDow,
-} from '@app/core';
+import { addDaysTo, awayMovedLine, awayShade, backOn, dateRange, dayName, DOW_LABEL, firstName, FOCUS_SHELL_COPY, HISTORY_COPY, monthLabel, monthWeeks, shiftMonth, tripMeta, tripStarted, tripsOn, upcomingTrips, withAlpha, type AwayPeriod, type IsoDow } from '@app/core';
 import { ChevronLeftIcon, ChevronRightIcon, PlaneIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -42,6 +21,7 @@ import { IconButton } from '@/components/icon-button';
 import { useMove } from '@/hooks/use-move';
 import { useUndoOffer } from '@/hooks/use-undo-offer';
 import { FONT, RADIUS, SPACE, useTheme, type Theme } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * Who's away, on a month calendar for a group: weeks from the house's first
@@ -64,6 +44,7 @@ export function AwayMonth({
   today: string;
   weekStarts: IsoDow;
 }) {
+  const words = useWords();
   const { colors, type } = useTheme();
   const [month, setMonth] = useState(today.slice(0, 7));
   const [day, setDay] = useState<string | null>(null);
@@ -83,7 +64,7 @@ export function AwayMonth({
           <View style={styles.head}>
             <IconButton
               icon={ChevronLeftIcon}
-              label={AWAY_COPY.earlierMonth}
+              label={words('house.away.earlierMonth')}
               disabled={month <= today.slice(0, 7)}
               onPress={() => setMonth((was) => shiftMonth(was, -1))}
             />
@@ -92,7 +73,7 @@ export function AwayMonth({
             </Text>
             <IconButton
               icon={ChevronRightIcon}
-              label={AWAY_COPY.laterMonth}
+              label={words('house.away.laterMonth')}
               onPress={() => setMonth((was) => shiftMonth(was, 1))}
             />
           </View>
@@ -115,7 +96,7 @@ export function AwayMonth({
                   <Pressable
                     key={date}
                     accessibilityRole="button"
-                    accessibilityLabel={AWAY_COPY.dayLabel(dayName(date), away)}
+                    accessibilityLabel={words('house.away.dayLabel', { day: dayName(date), away })}
                     onPress={() => open(date)}
                     style={[styles.day, { backgroundColor: shade }]}
                     testID="away-day"
@@ -141,11 +122,11 @@ export function AwayMonth({
           {[1, 2, 3].map((n) => (
             <View key={n} style={styles.keyItem}>
               <View style={[styles.swatch, { backgroundColor: shadeOf(colors, n) }]} />
-              <Meta>{AWAY_COPY.shade(n)}</Meta>
+              <Meta>{awayShade(n, words)}</Meta>
             </View>
           ))}
         </View>
-        {nobody ? <Body>{AWAY_COPY.nobody}</Body> : <Meta>{AWAY_COPY.tapADay}</Meta>}
+        {nobody ? <Body>{words('house.away.nobody')}</Body> : <Meta>{words('house.away.tapADay')}</Meta>}
       </GroupItem>
       <DaySheet day={day} periods={periods} people={people} me={me} onDay={open} onClose={() => setDay(null)} />
     </>
@@ -179,24 +160,25 @@ function DaySheet({
   onDay: (date: string) => void;
   onClose: () => void;
 }) {
+  const words = useWords();
   const trips = day ? tripsOn(periods, day) : [];
   const home = people.filter((p) => !trips.some((t) => t.userId === p.userId));
-  const name = (p: Housemate) => (p.userId === me ? SETUP_COPY.you : firstName(p.name));
+  const name = (p: Housemate) => (p.userId === me ? words('house.setup.you') : firstName(p.name));
   const person = (id: string) => people.find((p) => p.userId === id);
   return (
     <Sheet
       visible={day !== null}
       title={day ? dayName(day) : undefined}
-      description={AWAY_COPY.dayCount(trips.length, home.length)}
+      description={words('house.away.dayCount', { away: trips.length, home: home.length })}
       flush
       onClose={onClose}
       testID="away-day-sheet"
     >
-      <Section label={AWAY_COPY.awayLabel}>
+      <Section label={words('house.away.awayLabel')}>
         <Group>
           {trips.length === 0 ? (
             <GroupItem>
-              <Body>{AWAY_COPY.everyoneHome}</Body>
+              <Body>{words('house.away.everyoneHome')}</Body>
             </GroupItem>
           ) : (
             trips.map((t) => {
@@ -207,7 +189,7 @@ function DaySheet({
                   key={t.id}
                   leading={<Avatar name={who?.name ?? FOCUS_SHELL_COPY.formerHousemate} userId={t.userId} me={t.userId === me} />}
                   title={who ? name(who) : FOCUS_SHELL_COPY.formerHousemate}
-                  meta={[AWAY_COPY.backOn(dateRange(back, back)), t.note || null].filter(Boolean).join(', ')}
+                  meta={[words('house.away.backOn', { day: dateRange(back, back) }), t.note || null].filter(Boolean).join(', ')}
                   testID="day-away"
                 />
               );
@@ -215,11 +197,11 @@ function DaySheet({
           )}
         </Group>
       </Section>
-      <Section label={AWAY_COPY.homeLabel}>
+      <Section label={words('house.away.homeLabel')}>
         <Group>
           <GroupItem testID="day-home">
             {home.length === 0 ? (
-              <Body>{AWAY_COPY.nobodyHome}</Body>
+              <Body>{words('house.away.nobodyHome')}</Body>
             ) : (
               <View style={styles.home}>
                 {home.map((p) => (
@@ -235,8 +217,8 @@ function DaySheet({
       </Section>
       {day ? (
         <ButtonRow>
-          <Button variant="ghost" icon={ChevronLeftIcon} label={AWAY_COPY.dayBefore} onPress={() => onDay(addDaysTo(day, -1))} />
-          <Button variant="ghost" icon={ChevronRightIcon} label={AWAY_COPY.dayAfter} iconAfter onPress={() => onDay(addDaysTo(day, 1))} />
+          <Button variant="ghost" icon={ChevronLeftIcon} label={words('house.away.dayBefore')} onPress={() => onDay(addDaysTo(day, -1))} />
+          <Button variant="ghost" icon={ChevronRightIcon} label={words('house.away.dayAfter')} iconAfter onPress={() => onDay(addDaysTo(day, 1))} />
         </ButtonRow>
       ) : null}
     </Sheet>
@@ -256,15 +238,16 @@ export function MyTrips({ houseId, periods, today }: { houseId: string; periods:
 }
 
 function TripRow({ houseId, period, today }: { houseId: string; period: AwayPeriod; today: string }) {
+  const words = useWords();
   const move = useMove(houseId);
   const range = dateRange(period.startsOn, period.endsOn);
-  const label = tripStarted(period, today) ? AWAY_COPY.back : AWAY_COPY.cancel;
+  const label = tripStarted(period, today) ? words('house.away.back') : words('house.away.cancel');
   return (
     <>
       <Row
         leading={<RowIcon icon={PlaneIcon} />}
         title={range}
-        meta={tripMeta(period, today) || undefined}
+        meta={tripMeta(period, today, words) || undefined}
         trailing={
           <TextButton
             label={label}
@@ -291,6 +274,7 @@ function TripRow({ houseId, period, today }: { houseId: string; period: AwayPeri
  * one amber button. What booking moved is said under it.
  */
 export function AwayForm({ houseId, today, weekStarts }: { houseId: string; today: string; weekStarts: IsoDow }) {
+  const words = useWords();
   const move = useMove(houseId);
   const offer = useUndoOffer(houseId);
   const [range, setRange] = useState<DateRange>({ from: null, to: null });
@@ -311,11 +295,11 @@ export function AwayForm({ houseId, today, weekStarts }: { houseId: string; toda
     setNote('');
   }
 
-  const status = picking ? AWAY_COPY.pickTo : range.from && range.to ? AWAY_COPY.picked(dateRange(range.from, range.to)) : AWAY_COPY.pickFrom;
+  const status = picking ? words('house.away.pickTo') : range.from && range.to ? words('house.away.picked', { range: dateRange(range.from, range.to) }) : words('house.away.pickFrom');
 
   return (
     <GroupItem testID="away-form">
-      <Meta>{AWAY_COPY.howItWorks}</Meta>
+      <Meta>{words('house.away.howItWorks')}</Meta>
       <AwayDates
         today={today}
         weekStarts={weekStarts}
@@ -330,8 +314,8 @@ export function AwayForm({ houseId, today, weekStarts }: { houseId: string; toda
         <Body>{status}</Body>
       </View>
       <Field
-        label={AWAY_COPY.note}
-        placeholder={AWAY_COPY.notePlaceholder}
+        label={words('house.away.note')}
+        placeholder={words('house.away.notePlaceholder')}
         value={note}
         onChangeText={setNote}
         maxLength={60}
@@ -340,14 +324,14 @@ export function AwayForm({ houseId, today, weekStarts }: { houseId: string; toda
       {move.problem ? <Alert message={move.problem} /> : null}
       {moved && moved.before + moved.handed + moved.skipped > 0 ? (
         <View accessibilityLiveRegion="polite">
-          <Meta>{AWAY_COPY.moved(moved.before, moved.handed, moved.skipped)}</Meta>
+          <Meta>{awayMovedLine(moved.before, moved.handed, moved.skipped, words)}</Meta>
         </View>
       ) : null}
       <ButtonRow atEdge>
         <Button
           icon={PlaneIcon}
-          label={SETUP_COPY.book}
-          busyLabel={AWAY_COPY.booking}
+          label={words('house.setup.book')}
+          busyLabel={words('house.away.booking')}
           busy={move.pending}
           disabled={!range.from || !range.to}
           onPress={() => void book()}

@@ -1,11 +1,14 @@
 import "server-only";
 
-import { NOTIFY_COPY, prefsOf, pushFor } from "@app/core";
+import { prefsOf, pushFor, wordsFor } from "@app/core";
 import webpush from "web-push";
 
 import type { Notify, PushMessage } from "@/lib/engine/tick";
 import { pushToken } from "@/lib/push-token";
 import type { AdminClient } from "@/lib/supabase/admin";
+
+// Pushes and server lines read the housemates' words for now; each person's own language comes with translation 7.
+const words = wordsFor("en", "housemates");
 
 /** What the service worker (apps/client/public/sw.js) is sent: the message, as one person gets it. */
 export interface PushPayload {
@@ -29,10 +32,10 @@ export function payloadFor(userId: string, message: PushMessage, silent: boolean
   const actions: PushPayload["actions"] = !token
     ? []
     : "assignmentId" in message.act!
-      ? [{ action: "done", title: NOTIFY_COPY.done }]
+      ? [{ action: "done", title: words('house.notify.done') }]
       : [
-          { action: "held", title: NOTIFY_COPY.held },
-          { action: "struck", title: NOTIFY_COPY.struck },
+          { action: "held", title: words('house.notify.held') },
+          { action: "struck", title: words('house.notify.struck') },
         ];
   return {
     title: message.title,

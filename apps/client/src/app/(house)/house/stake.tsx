@@ -1,4 +1,4 @@
-import { formatMoney, HOUSE_PAGE_COPY, memberCan, monthLabel, RESET_COPY, SECTION_LABEL, STAKE_HISTORY_COPY, stakeHistory } from '@app/core';
+import { formatMoney, memberCan, monthLabel, RESET_COPY, SECTION_LABEL, stakeHistory } from '@app/core';
 import { CoinsIcon, RotateCcwIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -20,6 +20,7 @@ import { useStake } from '@/hooks/use-stake';
 import { INSET } from '@/theme';
 import { Waiting } from '@/components/waiting';
 import { StakeOutline } from '@/components/page-outlines';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * Stake history, pushed from House's first figure: the ledger by month, every
@@ -34,6 +35,7 @@ export default function StakeScreen() {
 }
 
 function StakeFor({ houseId, userId }: { houseId: string; userId: string }) {
+  const words = useWords();
   const { query, view } = useHouse(houseId, userId);
   const stake = useStake(houseId, query.data);
   const { refreshing, pull } = usePull(houseId, () => Promise.all([query.refetch(), stake.refetch()]));
@@ -50,7 +52,7 @@ function StakeFor({ houseId, userId }: { houseId: string; userId: string }) {
           members: view.snapshot.members,
           currency: rules.currency,
           zone: rules.timezone,
-        })
+        }, words)
       : null;
   const empty = months?.length === 0;
   const nothingAtAll = stake.data?.ledger.length === 0;
@@ -81,8 +83,8 @@ function StakeFor({ houseId, userId }: { houseId: string; userId: string }) {
     <Screen
       bar={
         <TitleBar
-          title={STAKE_HISTORY_COPY.title}
-          sub={rules ? STAKE_HISTORY_COPY.sub(formatMoney(rules.stakeMinor, rules.currency)) : undefined}
+          title={words('house.stake.title')}
+          sub={rules ? words('house.stake.sub', { stake: formatMoney(rules.stakeMinor, rules.currency) }) : undefined}
           back="/house"
           backLabel={SECTION_LABEL.house}
         />
@@ -92,35 +94,35 @@ function StakeFor({ houseId, userId }: { houseId: string; userId: string }) {
       fills
       testID="stake-screen"
     >
-      <PageTitle page={STAKE_HISTORY_COPY.title} />
+      <PageTitle page={words('house.stake.title')} />
       {!months ? (
         query.isError || stake.isError ? (
           <ReadFailed
-            message={query.isError ? undefined : HOUSE_PAGE_COPY.stakeUnreadable}
+            message={query.isError ? undefined : words('house.page.stakeUnreadable')}
             onRetry={() => void Promise.all([query.refetch(), stake.refetch()])}
           />
         ) : (
-          <Waiting ready={false} label={HOUSE_PAGE_COPY.readingStake} outline={<StakeOutline />} />
+          <Waiting ready={false} label={words('house.page.readingStake')} outline={<StakeOutline />} />
         )
       ) : nothingAtAll ? (
-        <EmptyState icon={CoinsIcon} title={STAKE_HISTORY_COPY.empty} body={STAKE_HISTORY_COPY.emptyBody} />
+        <EmptyState icon={CoinsIcon} title={words('house.stake.empty')} body={words('house.stake.emptyBody')} />
       ) : (
         <>
           <View style={styles.switch}>
             <Segmented
               options={[
-                { value: 'mine', label: STAKE_HISTORY_COPY.mine },
-                { value: 'whole', label: STAKE_HISTORY_COPY.whole },
+                { value: 'mine', label: words('house.stake.mine') },
+                { value: 'whole', label: words('house.stake.whole') },
               ]}
               value={whole ? 'whole' : 'mine'}
               onChange={(value) => setWhole(value === 'whole')}
-              label={STAKE_HISTORY_COPY.show}
+              label={words('house.stake.show')}
               testID="stake-span"
             />
           </View>
           {empty ? (
             <>
-              <EmptyState icon={CoinsIcon} title={STAKE_HISTORY_COPY.empty} body={STAKE_HISTORY_COPY.emptyMine} />
+              <EmptyState icon={CoinsIcon} title={words('house.stake.empty')} body={words('house.stake.emptyMine')} />
               {letOffRows}
             </>
           ) : (

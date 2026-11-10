@@ -1,11 +1,14 @@
 import "server-only";
 
-import { NOTIFY_COPY, votersOn, type Database } from "@app/core";
+import { votersOn, type Database, wordsFor } from "@app/core";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { tickHouse } from "@/lib/engine/tick";
 import { pushNotifier } from "@/lib/push";
 import { createAdminClient } from "@/lib/supabase/admin";
+
+// Pushes and server lines read the housemates' words for now; each person's own language comes with translation 7.
+const words = wordsFor("en", "housemates");
 
 // The two moves on a dispute that need a server. Each is the caller's own
 // call to the SQL function that owns the rule, which decides exactly as it
@@ -52,9 +55,9 @@ export async function raiseDispute(caller: Caller, assignmentId: string, reason:
     const voters = votersOn((members ?? []).map((m) => m.user_id), { userId: a.user_id, coveredBy: a.covered_by }).filter(
       (id) => id !== caller.userId,
     );
-    await notify([ticker], { title: NOTIFY_COPY.disputedTitle(a.name), body: reason, url: "/week", kind: "checks", zone });
+    await notify([ticker], { title: words('house.notify.disputedTitle', { john: a.name }), body: reason, url: "/week", kind: "checks", zone });
     await notify(voters, {
-      title: NOTIFY_COPY.voteTitle(a.name),
+      title: words('house.notify.voteTitle', { john: a.name }),
       body: reason,
       url: "/week",
       kind: "checks",
