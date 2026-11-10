@@ -1,4 +1,4 @@
-import { FOCUS_SHELL_COPY, planChoices, planLabel, type BestTime, type BoardItem, type PlanTime, BUSY_COPY } from '@app/core';
+import { planChoices, planLabel, type BestTime, type BoardItem, type PlanTime } from '@app/core';
 import { BellIcon, CalendarClockIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -178,7 +178,7 @@ function PlanPicker({
       <Button
         label={words('week.steady.planFor', { when: `${shown.label} ${picked.label}` })}
         busy={pending && !clearing}
-        busyLabel={BUSY_COPY.planning}
+        busyLabel={words('common.busy.planning')}
         disabled={clearWaits}
         onPress={() => {
           setClearing(false);
@@ -196,7 +196,7 @@ function PlanPicker({
               }}
               testID="plan-clear"
             /> : null}
-          {onCancel ? <TextButton label={FOCUS_SHELL_COPY.cancel} align="start" onPress={onCancel} testID="plan-cancel" /> : null}
+          {onCancel ? <TextButton label={words('common.shell.cancel')} align="start" onPress={onCancel} testID="plan-cancel" /> : null}
         </View>
       ) : null}
     </>

@@ -1,4 +1,4 @@
-import { PAGE_TITLE, wordsFor } from '@app/core';
+import { wordsFor } from '@app/core';
 import { Slot } from 'expo-router';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 
@@ -45,7 +45,7 @@ function HouseLayout() {
 async function open(as: 'priya' | 'sam' = 'priya', path = '/house/johns') {
   mockMembership.userId = as;
   await renderPages({ 'house/_layout': HouseLayout, 'house/johns': JohnListScreen, 'house/groups': GroupsScreen }, path);
-  await untilRead();
+  await untilRead(words);
 }
 
 beforeEach(() => {
@@ -59,7 +59,7 @@ beforeEach(() => {
 it('is on the John list, where an old link to Groups lands', async () => {
   (loadJohnList as jest.Mock).mockResolvedValue({ johns: [{ ...BATH, groupId: 'g1' }], groups: [UPSTAIRS] });
   await open('priya', '/house/groups');
-  expect(within(screen.getByTestId('title-bar')).getByRole('header', { name: PAGE_TITLE.johnList })).toBeOnTheScreen();
+  expect(within(screen.getByTestId('title-bar')).getByRole('header', { name: words('common.title.johnList') })).toBeOnTheScreen();
   const groups = within(screen.getByTestId('johns-groups'));
   expect(groups.getByText(words('house.groups.title'))).toBeOnTheScreen();
   expect(groups.getByTestId('group')).toHaveTextContent(/Upstairs bathroom/);

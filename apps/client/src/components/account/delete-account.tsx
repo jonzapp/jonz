@@ -1,4 +1,4 @@
-import { confirmsDelete, DELETE_COPY, passDay, withAlpha, BUSY_COPY } from '@app/core';
+import { confirmsDelete, DELETE_COPY, passDay, withAlpha } from '@app/core';
 import { useQuery } from '@tanstack/react-query';
 import { Trash2Icon } from 'lucide-react-native';
 import { useState } from 'react';
@@ -15,6 +15,7 @@ import { TextButton } from '@/components/text-button';
 import { Waiting } from '@/components/waiting';
 import { useMembership } from '@/hooks/use-membership';
 import { FONT, RADIUS, SPACE, useTheme } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * Delete my account, in House's sheet and on jonz.app/delete: what goes,
@@ -25,6 +26,7 @@ import { FONT, RADIUS, SPACE, useTheme } from '@/theme';
  * becomes the being-deleted screen, which says when it goes.
  */
 export function DeleteAccountForm({ onKeep }: { onKeep: () => void }) {
+  const words = useWords();
   const { refresh } = useMembership();
   const preview = useQuery({ queryKey: ['deletion-preview'], queryFn: deletionPreview });
   const [typed, setTyped] = useState('');
@@ -75,7 +77,7 @@ export function DeleteAccountForm({ onKeep }: { onKeep: () => void }) {
             label={DELETE_COPY.confirm}
             disabled={!ready}
             busy={busy}
-            busyLabel={BUSY_COPY.deleting}
+            busyLabel={words('common.busy.deleting')}
             onPress={() => void remove()}
             testID="delete-account"
           />

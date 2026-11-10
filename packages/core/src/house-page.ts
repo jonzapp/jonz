@@ -2,7 +2,6 @@ import { format } from "date-fns";
 
 import { currentOrNext, shiftMonth, type AwayPeriod } from "./away";
 import { weeklyEffort, type JohnDef } from "./board";
-import { FOCUS_SHELL_COPY } from "./copy";
 import type { BalanceRow } from "./deal";
 import type { Currency, HouseRules, SettleIn } from "./domain";
 import { dateRange, dayLabel, firstName, formatBalance, monthLabel, pointsLabel, STATUS_MARK, type StatusIcon } from "./format";
@@ -62,24 +61,24 @@ export function shareOutDay(month: string): string {
 }
 
 /** A housemate's whole name, or "A former housemate" for someone who has left. */
-function nameIn(members: readonly Named[], userId: string | null): string {
-  return (userId ? members.find((m) => m.userId === userId)?.name : undefined) ?? FOCUS_SHELL_COPY.formerHousemate;
+function nameIn(members: readonly Named[], userId: string | null, words: Words): string {
+  return (userId ? members.find((m) => m.userId === userId)?.name : undefined) ?? words('common.shell.formerHousemate');
 }
 
 /** A housemate's first name, or "A former housemate" for someone who has left. */
-function firstNameIn(members: readonly Named[], userId: string | null): string {
+function firstNameIn(members: readonly Named[], userId: string | null, words: Words): string {
   const member = userId ? members.find((m) => m.userId === userId) : undefined;
-  return member ? firstName(member.name) : FOCUS_SHELL_COPY.formerHousemate;
+  return member ? firstName(member.name) : words('common.shell.formerHousemate');
 }
 
 /** As firstNameIn, mid-sentence: "a former housemate". */
 function firstNameMid(members: readonly Named[], userId: string | null, words: Words): string {
-  return members.some((m) => m.userId === userId) ? firstNameIn(members, userId) : words('house.page.formerHousemate');
+  return members.some((m) => m.userId === userId) ? firstNameIn(members, userId, words) : words('house.page.formerHousemate');
 }
 
 /** As firstNameIn, but "You" for you. */
 function called(members: readonly Named[], userId: string | null, me: string, words: Words): string {
-  return userId === me ? words('house.page.you') : firstNameIn(members, userId);
+  return userId === me ? words('house.page.you') : firstNameIn(members, userId, words);
 }
 
 /** Segments joined by commas, neighbours of the same tone merged into one part. */
@@ -311,14 +310,14 @@ export function settleRows(input: {
     .filter((t) => t.to === me && t.from !== me)
     .map((t): SettleRow => {
       const amount = formatMoney(t.amount, currency);
-      const who = firstNameIn(members, t.from);
+      const who = firstNameIn(members, t.from, words);
       const months = monthsOf(t.from);
       const inSplitwise = splitwise && here(t.from);
       const plain = moneyInput(t.amount);
       return {
         key: `${t.from}-${t.to}`,
         userId: t.from,
-        name: nameIn(members, t.from),
+        name: nameIn(members, t.from, words),
         owedToYou: true,
         amount: t.amount,
         title: months ? words('house.page.owesYouFor', { name: who, amount, months }) : words('house.page.owesYou', { name: who, amount }),
@@ -350,7 +349,7 @@ export function settleRows(input: {
       return {
         key: `${t.from}-${t.to}`,
         userId: t.to,
-        name: nameIn(members, t.to),
+        name: nameIn(members, t.to, words),
         owedToYou: false,
         amount: t.amount,
         title: months
@@ -436,7 +435,7 @@ export function tableLines(input: {
   const { members, me, projection } = input;
   return input.rows.map((row) => {
     const member = members.find((m) => m.userId === row.userId);
-    const name = nameIn(members, row.userId);
+    const name = nameIn(members, row.userId, words);
     const record = input.monthRows?.find((r) => r.userId === row.userId);
     const period = input.away ? currentOrNext(input.away, row.userId, input.today) : null;
     const extras: MetaPart[][] = [
@@ -638,8 +637,8 @@ export function owingLines(input: {
             ? words('house.page.youOweFor', { name: firstNameMid(members, t.to, words), amount, months })
             : words('house.page.youOwe', { name: firstNameMid(members, t.to, words), amount })
           : months
-            ? words('house.page.owesYouFor', { name: firstNameIn(members, t.from), amount, months })
-            : words('house.page.owesYou', { name: firstNameIn(members, t.from), amount });
+            ? words('house.page.owesYouFor', { name: firstNameIn(members, t.from, words), amount, months })
+            : words('house.page.owesYou', { name: firstNameIn(members, t.from, words), amount });
       return { key: `${t.from}-${t.to}`, title, meta: [{ text: settleMeta(t, me, members, words) }] };
     });
 }

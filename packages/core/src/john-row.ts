@@ -1,5 +1,4 @@
 import { isOpen, type BoardItem } from "./board";
-import { FOCUS_SHELL_COPY } from "./copy";
 import { andNames } from "./crew";
 import { CATEGORY_SHORT } from "./domain";
 import { dueInLine, firstName, relative, sinceLabel, STATUS_LABEL } from "./format";
@@ -244,5 +243,5 @@ function metaLine(
  */
 export function doneFold(folded: readonly { status: LiveStatus }[], words: Words): { label: string; late: string | null } {
   const late = folded.filter((i) => i.status === "late").length;
-  return { label: FOCUS_SHELL_COPY.done(folded.length), late: late > 0 ? words('week.summary.late', { count: late }) : null };
+  return { label: words('common.shell.done', { count: folded.length }), late: late > 0 ? words('week.summary.late', { count: late }) : null };
 }

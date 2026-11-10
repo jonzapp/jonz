@@ -1,4 +1,4 @@
-import { ASK_CHATS_COPY, FOCUS_SHELL_COPY, PAGE_TITLE, type HouseDraft, wordsFor } from "@app/core";
+import { ASK_CHATS_COPY, type HouseDraft, wordsFor } from "@app/core";
 import { expect, test, type Page } from "@playwright/test";
 
 import { CLIENT_URL, cleanUp, signInToClient } from "./auth";
@@ -40,7 +40,7 @@ test("a chat is kept, comes back from Your chats, and can be deleted", async ({ 
   await page.goto("/today");
   await page.getByTestId("ask-jonz").click();
   const here = chat(page);
-  await expect(here.getByRole("heading", { name: PAGE_TITLE.ask })).toBeVisible();
+  await expect(here.getByRole("heading", { name: words('common.title.ask') })).toBeVisible();
 
   const said = "Add windows every month";
   await here.getByTestId("chat-input").fill(said);
@@ -79,8 +79,8 @@ test("a chat is kept, comes back from Your chats, and can be deleted", async ({ 
   await expect(page.getByText(ASK_CHATS_COPY.deleteBody)).toBeVisible();
   await page.getByTestId("chat-delete-sheet").getByTestId("confirm").click();
   await expect(here.getByTestId("chats-none")).toBeVisible();
-  await here.getByRole("button", { name: FOCUS_SHELL_COPY.backTo(PAGE_TITLE.ask) }).click();
-  await expect(here.getByRole("heading", { name: PAGE_TITLE.ask })).toBeVisible();
+  await here.getByRole("button", { name: words('common.shell.backTo', { place: words('common.title.ask') }) }).click();
+  await expect(here.getByRole("heading", { name: words('common.title.ask') })).toBeVisible();
 });
 
 test("on a computer Enter sends and Shift+Enter starts a new line; on a phone Return is a new line", async ({ context, page }) => {

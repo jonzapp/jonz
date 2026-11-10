@@ -1,4 +1,4 @@
-import { FOCUS_SHELL_COPY, LIST_COPY, REACTION_LABEL, SECTION_LABEL, wallEvents, type WallRow } from '@app/core';
+import { REACTION_LABEL, wallEvents, type WallRow } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 import { useWindowDimensions } from 'react-native';
 
@@ -199,7 +199,7 @@ it('reads older days as you scroll near the end, from where the last one ended',
   await open();
   const foot = screen.getByTestId('wall-foot');
   expect(foot).toHaveTextContent(/Showing back to \w{3} \d+ \w{3}/);
-  expect(screen.queryByText(LIST_COPY.everything)).toBeNull();
+  expect(screen.queryByText(words('common.list.everything'))).toBeNull();
   await fireEvent.scroll(screen.getByTestId('page-scroll'), {
     nativeEvent: { contentOffset: { y: 300 }, contentSize: { height: 1200 }, layoutMeasurement: { height: 800 } },
   });
@@ -207,7 +207,7 @@ it('reads older days as you scroll near the end, from where the last one ended',
   expect(await screen.findByText(/September is closed/)).toBeOnTheScreen();
   expect(day('Thu 1 Oct').getAllByTestId('wall-event')).toHaveLength(1);
   // Nothing older than that.
-  expect(screen.getByTestId('wall-foot')).toHaveTextContent(LIST_COPY.everything);
+  expect(screen.getByTestId('wall-foot')).toHaveTextContent(words('common.list.everything'));
   expect(screen.queryByTestId('wall-foot-more')).toBeNull();
 });
 
@@ -215,7 +215,7 @@ it('reads older days from Show more too, for a keyboard or a short page', async 
   await open();
   await fireEvent.press(screen.getByTestId('wall-foot-more'));
   expect(loadWall).toHaveBeenLastCalledWith('h1', 'priya', 40, OLDER);
-  expect(await screen.findByText(LIST_COPY.everything)).toBeOnTheScreen();
+  expect(await screen.findByText(words('common.list.everything'))).toBeOnTheScreen();
 });
 
 it('says what lands here before anything has', async () => {
@@ -230,7 +230,7 @@ it("says when it can't read the house it needs for the Wall's rows, and tries ag
   (loadHouse as jest.Mock).mockRejectedValueOnce(new Error('offline'));
   await renderPages({ 'house/wall': WallScreen }, '/house/wall');
   expect(await screen.findByRole('alert')).toHaveTextContent(words('wall.feed.unreadable'));
-  await fireEvent.press(screen.getByRole('button', { name: FOCUS_SHELL_COPY.retry }));
+  await fireEvent.press(screen.getByRole('button', { name: words('common.shell.retry') }));
   expect(await screen.findAllByTestId('wall-day')).toHaveLength(2);
 });
 
@@ -238,7 +238,7 @@ it("says when it can't read the Wall, and tries again", async () => {
   (loadWall as jest.Mock).mockRejectedValueOnce(new Error('offline'));
   await renderPages({ 'house/wall': WallScreen }, '/house/wall');
   expect(await screen.findByRole('alert')).toHaveTextContent(words('wall.feed.unreadable'));
-  await fireEvent.press(screen.getByRole('button', { name: FOCUS_SHELL_COPY.retry }));
+  await fireEvent.press(screen.getByRole('button', { name: words('common.shell.retry') }));
   expect(await screen.findAllByTestId('wall-day')).toHaveLength(2);
 });
 
@@ -246,7 +246,7 @@ it('sits under a title bar with the way back to House', async () => {
   await open();
   const bar = within(screen.getByTestId('title-bar'));
   expect(bar.getByRole('header', { name: words('wall.page.title') })).toBeOnTheScreen();
-  expect(bar.getByRole('button', { name: FOCUS_SHELL_COPY.backTo(SECTION_LABEL.house) })).toBeOnTheScreen();
+  expect(bar.getByRole('button', { name: words('common.shell.backTo', { place: words('common.section.house') }) })).toBeOnTheScreen();
 });
 
 it('shows History beside the Wall on a laptop, under its name, and a switch between them on a phone', async () => {

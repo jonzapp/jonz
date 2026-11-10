@@ -1,18 +1,4 @@
-import {
-  AUDIT_LIST_COPY,
-  DELETION_LIST_COPY,
-  HOUSES_COPY,
-  LIST_COPY,
-  MESSAGE_COPY,
-  NOTICE_LIST_COPY,
-  OWNER_PERMISSION_NAMES,
-  PROMOTIONS_COPY,
-  REPORT_COPY,
-  type AuditEntry,
-  type HouseRow,
-  type Notice,
-  type PromotionRow,
-} from '@app/core';
+import { AUDIT_LIST_COPY, DELETION_LIST_COPY, HOUSES_COPY, MESSAGE_COPY, NOTICE_LIST_COPY, OWNER_PERMISSION_NAMES, PROMOTIONS_COPY, REPORT_COPY, type AuditEntry, type HouseRow, type Notice, type PromotionRow } from '@app/core';
 import { fireEvent, screen, waitFor } from 'expo-router/testing-library';
 import type { ComponentType } from 'react';
 import { useWindowDimensions } from 'react-native';
@@ -32,6 +18,9 @@ import NoticesPage from '@/app/admin/notices';
 import PromotionsPage from '@/app/admin/promotions/index';
 import { authStorage } from '@/api/storage';
 import { renderPages } from '@/testing/pages';
+import { wordsFor } from '@app/core';
+
+const words = wordsFor('en', 'housemates');
 
 // Every admin list shares one search box. From the first key the box spins
 // and the count says Searching… until the answer is in (search loading A,
@@ -319,7 +308,7 @@ describe.each(SCREENS)('the search box keeps the cursor as you type, on %s', (_n
     await fireEvent.changeText(box, 'zz');
     // It heard you at once: the box spins and the count stops claiming the last search's number.
     expect(screen.getByTestId(`${page.name}-search-spinner`, { includeHiddenElements: true })).toBeOnTheScreen();
-    expect(screen.getByTestId(`${page.name}-count-searching`)).toHaveTextContent(`${LIST_COPY.searching}…`);
+    expect(screen.getByTestId(`${page.name}-count-searching`)).toHaveTextContent(`${words('common.list.searching')}…`);
     // Words alone offer nothing to pick, so nothing opens over the list.
     expect(screen.queryByTestId(`${page.name}-search-panel`)).toBeNull();
     await waitFor(() => expect(screen.getByTestId(`${page.name}-search-line`)).toHaveProp('accessibilityLabel', expect.any(String)), { timeout: 3000 });

@@ -2,7 +2,7 @@ import { tz } from "@date-fns/tz";
 import { format } from "date-fns";
 import { z } from "zod";
 
-import { APP_NAME } from "./copy";
+import { APP_NAME } from "./app";
 import { CURRENCIES, type Currency } from "./domain";
 import { formatMoney } from "./money";
 import { hasPass, PASS_PRICES, PASS_PURCHASES, type HousePass, type PassPurchase } from "./pass";

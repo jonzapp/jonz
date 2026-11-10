@@ -1,4 +1,4 @@
-import { canSwap, memberCan, oneRowPerJob, passUnlocked, liveWeekFilter, PAGE_TITLE, toggleWeekFilter, weekAwayLine, weekAwayNote, weekFairness, weekList, weekLookAhead, weekPeople, weekRangeLine, weekSummary, weekTogether, weekUnticked, whoDeals, type JohnDef, type WeekPart } from '@app/core';
+import { canSwap, memberCan, oneRowPerJob, passUnlocked, liveWeekFilter, toggleWeekFilter, weekAwayLine, weekAwayNote, weekFairness, weekList, weekLookAhead, weekPeople, weekRangeLine, weekSummary, weekTogether, weekUnticked, whoDeals, type JohnDef, type WeekPart } from '@app/core';
 import { RepeatIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
@@ -51,6 +51,7 @@ export default function Week() {
 }
 
 function WeekFor({ houseId, userId }: { houseId: string; userId: string }) {
+  const words = useWords();
   const wide = useWindowDimensions().width >= WIDE;
   const { query, view } = useHouse(houseId, userId);
   // Time away isn't on Realtime: read it again on coming back to Week. A pull reads it and the fair shares too.
@@ -72,7 +73,7 @@ function WeekFor({ houseId, userId }: { houseId: string; userId: string }) {
       bar={
         <>
           <TitleBar
-            title={PAGE_TITLE.week}
+            title={words('common.title.week')}
             right={
               <TourSpot id="week.more">
                 <MoreButton onPress={() => setMenu(true)} />
@@ -96,7 +97,7 @@ function WeekFor({ houseId, userId }: { houseId: string; userId: string }) {
       onRefresh={pull}
       testID="week-screen"
     >
-      <PageTitle page={PAGE_TITLE.week} />
+      <PageTitle page={words('common.title.week')} />
       <Waiting ready={view != null} failed={query.isError} onRetry={() => void query.refetch()} outline={<WeekOutline />} fill>
         {() => (
           <Board

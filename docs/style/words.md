@@ -26,8 +26,7 @@
   tested above the default size.
 - The words themselves follow the voice in [feel.md](feel.md). They live
   in the words files, `packages/core/src/locales/en/<part>.json`, read with
-  `useWords()` in the app and `wordsFor(language, kind)` elsewhere; the
-  lines not moved yet are still in `packages/core/src/copy.ts`
+  `useWords()` in the app and `wordsFor(language, kind)` elsewhere
   ([translation.md](../specs/translation.md)).
 - **Families.** In a family house an admin is a **Parent** and everyone
   else a **Kid**, wherever the app names a role; the roles underneath are

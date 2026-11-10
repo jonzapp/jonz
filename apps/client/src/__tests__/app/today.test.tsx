@@ -1,4 +1,4 @@
-import { BIN_NIGHT, buildStake, type DisputeRow, FOCUS_SHELL_COPY, localDate, monthOf, PAGE_TITLE, planLabel, wordsFor } from '@app/core';
+import { BIN_NIGHT, buildStake, type DisputeRow, localDate, monthOf, planLabel, wordsFor } from '@app/core';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Slot } from 'expo-router';
 import { fireEvent, renderRouter, screen, waitFor, within } from 'expo-router/testing-library';
@@ -135,7 +135,7 @@ beforeEach(() => {
 it("reads the house under Focus's title bar, and leaves signing out to House", async () => {
   await open();
   const bar = within(screen.getByTestId('title-bar'));
-  expect(bar.getByRole('header', { name: PAGE_TITLE.today })).toBeOnTheScreen();
+  expect(bar.getByRole('header', { name: words('common.title.today') })).toBeOnTheScreen();
   // The day it is in the house, first on the page rather than in the bar.
   const day = /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun) \d{1,2} [A-Z][a-z]{2}$/;
   expect(bar.queryByText(day)).toBeNull();
@@ -283,7 +283,7 @@ describe('what takes Next up’s place', () => {
     expect(within(card).getByText(words('today.nextUp.clearBody'))).toBeOnTheScreen();
     expect(screen.queryByTestId('mark-done')).toBeNull();
     // The finished ones are folded away.
-    expect(screen.getByTestId('done-fold')).toHaveTextContent(FOCUS_SHELL_COPY.done(3));
+    expect(screen.getByTestId('done-fold')).toHaveTextContent(words('common.shell.done', { count: 3 }));
   });
 
   it('says so when nothing on the list is yours this week', async () => {
@@ -601,7 +601,7 @@ describe('the rest of your week', () => {
     expect(markDone).toHaveBeenCalledWith('a2');
 
     const fold = screen.getByTestId('done-fold');
-    expect(fold).toHaveTextContent(FOCUS_SHELL_COPY.done(1));
+    expect(fold).toHaveTextContent(words('common.shell.done', { count: 1 }));
     await fireEvent.press(fold);
     // Done once: the green box, then the points it earned, not a second mark.
     const hob = within(section).getAllByTestId('my-john')[1];
@@ -653,7 +653,7 @@ describe('the rest of your week', () => {
     );
     await open();
     const fold = within(screen.getByTestId('done-fold'));
-    expect(fold.getByText(`${FOCUS_SHELL_COPY.done(2)},`)).toBeOnTheScreen();
+    expect(fold.getByText(`${words('common.shell.done', { count: 2 })},`)).toBeOnTheScreen();
     expect(fold.getByText(words('week.summary.late', { count: 1 }))).toBeOnTheScreen();
   });
 
@@ -724,8 +724,8 @@ describe('catching up', () => {
 it("says when it can't read the house, and tries again", async () => {
   read.mockRejectedValueOnce(new Error('offline'));
   await show();
-  expect(await screen.findByRole('alert')).toHaveTextContent(FOCUS_SHELL_COPY.unreadable);
-  await fireEvent.press(screen.getByRole('button', { name: FOCUS_SHELL_COPY.retry }));
+  expect(await screen.findByRole('alert')).toHaveTextContent(words('common.shell.unreadable'));
+  await fireEvent.press(screen.getByRole('button', { name: words('common.shell.retry') }));
   expect(await screen.findByTestId('next-up')).toBeOnTheScreen();
 });
 

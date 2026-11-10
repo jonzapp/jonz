@@ -1,17 +1,4 @@
-import {
-  addDaysTo,
-  ASK_POOL_TOKENS,
-  localDate,
-  ASK_TURN_RESERVE,
-  hasPass,
-  passOf,
-  CHAT_TURNS_PER_PERSON_PER_DAY,
-  HOUSE_DRAFT_COPY,
-  HouseDraft,
-  PERMISSIONS,
-  starterDraft,
-  type DraftEdit,
-} from "@app/core";
+import { addDaysTo, ASK_POOL_TOKENS, localDate, ASK_TURN_RESERVE, hasPass, passOf, CHAT_TURNS_PER_PERSON_PER_DAY, HouseDraft, PERMISSIONS, starterDraft, type DraftEdit } from "@app/core";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { OPTIONS, POST } from "@/app/api/setup/draft/route";
@@ -21,6 +8,9 @@ import { chatTurn } from "@/lib/moves/draft";
 import { adminClient, signedInUser, type Actor } from "@/tests/support/clients";
 import { expectOk } from "@/tests/support/expect";
 import { addJohns, deal, makeHouse, thisWeek } from "@/tests/support/factories";
+import { wordsFor } from '@app/core';
+
+const words = wordsFor('en', 'housemates');
 
 /**
  * POST /api/setup/draft, called as the app calls it, and the chat turn
@@ -86,14 +76,14 @@ describe("POST /api/setup/draft", () => {
     const house = await makeHouse(["Ava", "Ben"]);
     const res = await chatAs(house.members[0], { houseId: house.id, messages: said("Who's on bins?"), draft: null });
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ reply: HOUSE_DRAFT_COPY.offlineAsk, ask: null, draft: null, source: "starter" });
+    expect(await res.json()).toEqual({ reply: words('ask.draft.offlineAsk'), ask: null, draft: null, source: "starter" });
   });
 
   it("offers a starter list that fits when Claude isn't set up, adds nothing and counts nothing", async () => {
     const house = await makeHouse(["Ava"]);
     const res = await chatAs(house.admin, { houseId: house.id, messages: said("Me, my husband and the kids"), draft: null });
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ reply: HOUSE_DRAFT_COPY.offline, ask: null, draft: starterDraft("family"), source: "starter" });
+    expect(await res.json()).toEqual({ reply: words('ask.draft.offline'), ask: null, draft: starterDraft("family"), source: "starter" });
     expect(await turnsIn(house.id)).toEqual([]);
     const { count } = await db.from("johns").select("id", { count: "exact", head: true }).eq("house_id", house.id);
     expect(count).toBe(0);
@@ -101,9 +91,9 @@ describe("POST /api/setup/draft", () => {
 
   it("leaves a draft as it is when Claude isn't set up to change it", async () => {
     const house = await makeHouse(["Ava"]);
-    const messages = [...said("Flat share"), { role: "assistant", text: HOUSE_DRAFT_COPY.fromStarter }, ...said("Oven every month")];
+    const messages = [...said("Flat share"), { role: "assistant", text: words('ask.draft.fromStarter') }, ...said("Oven every month")];
     const res = await chatAs(house.admin, { houseId: house.id, messages, draft: starterDraft("flat_share") });
-    expect(await res.json()).toEqual({ reply: HOUSE_DRAFT_COPY.offlineChange, ask: null, draft: null, source: "starter" });
+    expect(await res.json()).toEqual({ reply: words('ask.draft.offlineChange'), ask: null, draft: null, source: "starter" });
   });
 
   it("answers a browser's preflight", async () => {
@@ -308,7 +298,7 @@ describe("chatTurn, with Claude stood in for", () => {
     const result = await chatTurn({ db: house.admin.db, userId: house.admin.userId }, house.id, said(A_HOUSE), null, new Date(), async () => {
       throw new Error("overloaded");
     });
-    expect(result).toEqual({ reply: HOUSE_DRAFT_COPY.offline, ask: null, draft: starterDraft("flat_share"), source: "starter" });
+    expect(result).toEqual({ reply: words('ask.draft.offline'), ask: null, draft: starterDraft("flat_share"), source: "starter" });
     expect((await turnsIn(house.id)).map((d) => d.outcome)).toEqual(["failed"]);
   });
 

@@ -1,4 +1,4 @@
-import { NEW_JOHN, PAGE_TITLE, wordsFor } from '@app/core';
+import { NEW_JOHN, wordsFor } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 
 import { loadAway } from '@/api/away';
@@ -28,7 +28,7 @@ const PRIYA = { days: [3, 4, 6] as (3 | 4 | 6)[], bestTime: 'morning' as const, 
 
 async function open(path = '/house/away') {
   await renderPages({ 'house/away': AwayScreen, 'house/prefs': PrefsScreen }, path);
-  await untilRead();
+  await untilRead(words);
 }
 
 beforeEach(() => {
@@ -51,7 +51,7 @@ beforeEach(() => {
 
 it('is on Days and time away, where an old link to Preferences lands', async () => {
   await open('/house/prefs');
-  expect(within(screen.getByTestId('title-bar')).getByRole('header', { name: PAGE_TITLE.away })).toBeOnTheScreen();
+  expect(within(screen.getByTestId('title-bar')).getByRole('header', { name: words('common.title.away') })).toBeOnTheScreen();
   expect(screen.getByTestId('prefs-time')).toBeOnTheScreen();
   // The house's time away is on the same page.
   expect(screen.getByTestId('away-panel')).toBeOnTheScreen();

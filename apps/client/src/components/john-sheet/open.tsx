@@ -1,4 +1,4 @@
-import { cantOptions, coverOffer, firstName, dueInLine, FOCUS_SHELL_COPY, holdable, plannable, swapChoice, type BoardItem, type CantOptions } from '@app/core';
+import { cantOptions, coverOffer, firstName, dueInLine, holdable, plannable, swapChoice, type BoardItem, type CantOptions } from '@app/core';
 import { CameraIcon, CheckIcon, HandIcon, ImagesIcon, RepeatIcon, ShieldIcon, UsersIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -203,7 +203,7 @@ function IfYouCant({
                     }
                     testID="skip-it"
                   />
-                  <Button variant="ghost" label={FOCUS_SHELL_COPY.cancel} onPress={() => setSkipping(false)} />
+                  <Button variant="ghost" label={words('common.shell.cancel')} onPress={() => setSkipping(false)} />
                 </ButtonRow>
                 {move.problem ? <Alert message={move.problem} /> : null}
               </GroupItem>
@@ -297,7 +297,7 @@ function SwapPicker({
           onPress={() => void swap()}
           testID="swap-them"
         />
-        <Button variant="outline" label={FOCUS_SHELL_COPY.cancel} onPress={onCancel} testID="swap-cancel" />
+        <Button variant="outline" label={words('common.shell.cancel')} onPress={onCancel} testID="swap-cancel" />
         {move.problem ? <Alert message={move.problem} /> : null}
       </SheetLines>
     </>
@@ -360,7 +360,7 @@ export function TheirsOpen({ item, context }: { item: BoardItem; context: JohnSh
     <SheetLines>
       <View style={styles.owner}>
         <Avatar name={context.nameOf(item.userId)} userId={item.userId} />
-        <Body style={styles.shrink}>{words('john.sheet.theirs', { owner: owner ? firstName(owner.name) : FOCUS_SHELL_COPY.formerHousemate })}</Body>
+        <Body style={styles.shrink}>{words('john.sheet.theirs', { owner: owner ? firstName(owner.name) : words('common.shell.formerHousemate') })}</Body>
       </View>
       {offer.kind === 'cover' && offer.text ? (
         <Cover item={item} context={context} body={offer.text} />

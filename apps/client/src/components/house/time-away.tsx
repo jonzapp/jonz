@@ -1,4 +1,4 @@
-import { addDaysTo, awayMovedLine, awayShade, backOn, dateRange, dayName, DOW_LABEL, firstName, FOCUS_SHELL_COPY, monthLabel, monthWeeks, shiftMonth, tripMeta, tripStarted, tripsOn, upcomingTrips, withAlpha, type AwayPeriod, type IsoDow } from '@app/core';
+import { addDaysTo, awayMovedLine, awayShade, backOn, dateRange, dayName, DOW_LABEL, firstName, monthLabel, monthWeeks, shiftMonth, tripMeta, tripStarted, tripsOn, upcomingTrips, withAlpha, type AwayPeriod, type IsoDow } from '@app/core';
 import { ChevronLeftIcon, ChevronRightIcon, PlaneIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -187,8 +187,8 @@ function DaySheet({
               return (
                 <Row
                   key={t.id}
-                  leading={<Avatar name={who?.name ?? FOCUS_SHELL_COPY.formerHousemate} userId={t.userId} me={t.userId === me} />}
-                  title={who ? name(who) : FOCUS_SHELL_COPY.formerHousemate}
+                  leading={<Avatar name={who?.name ?? words('common.shell.formerHousemate')} userId={t.userId} me={t.userId === me} />}
+                  title={who ? name(who) : words('common.shell.formerHousemate')}
                   meta={[words('house.away.backOn', { day: dateRange(back, back) }), t.note || null].filter(Boolean).join(', ')}
                   testID="day-away"
                 />

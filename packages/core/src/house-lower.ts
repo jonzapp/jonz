@@ -3,7 +3,6 @@ import { format } from "date-fns";
 
 import type { AwayPeriod } from "./away";
 import { weeklyEffort, type JohnDef } from "./board";
-import { FOCUS_SHELL_COPY } from "./copy";
 import type { Currency, HouseKind, HouseRules } from "./domain";
 import { dateRange, dayLabel, firstName, STATUS_MARK, type StatusIcon } from "./format";
 import { monthWord } from "./house-page";
@@ -127,7 +126,7 @@ function named(userId: string | null | undefined, me: string, members: readonly 
     return { subject: first, object: first, possessive: `${first}’s`, you: false };
   }
   // Someone the event doesn't name, or who has since left the house.
-  const nobody = userId ? FOCUS_SHELL_COPY.formerHousemate : words('wall.feed.someone');
+  const nobody = userId ? words('common.shell.formerHousemate') : words('wall.feed.someone');
   return { subject: nobody, object: lowerFirst(nobody), possessive: `${lowerFirst(nobody)}’s`, you: false };
 }
 

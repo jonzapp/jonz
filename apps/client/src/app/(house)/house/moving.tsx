@@ -1,4 +1,4 @@
-import { dateRange, localDate, PAGE_TITLE, type IsoDow, BUSY_COPY } from '@app/core';
+import { dateRange, localDate, type IsoDow } from '@app/core';
 import { CalendarXIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -35,6 +35,7 @@ export default function MovingScreen() {
 }
 
 function MovingFor({ houseId, userId }: { houseId: string; userId: string }) {
+  const words = useWords();
   const { query, view } = useHouse(houseId, userId);
   const { refreshing, pull } = usePull(houseId, () => query.refetch());
   const me = view?.snapshot.members.find((m) => m.userId === userId);
@@ -44,7 +45,7 @@ function MovingFor({ houseId, userId }: { houseId: string; userId: string }) {
   const weekStarts = view?.snapshot.rules.weekStarts;
   return (
     <HousePage
-      title={PAGE_TITLE.moving}
+      title={words('common.title.moving')}
       testID="moving-screen" outline={<SettingsOutline card />}
       fills
       ready={me !== undefined && today !== null}
@@ -125,7 +126,7 @@ function MovingForm({
                     label={picked ? words('house.moving.save', { day: dateRange(picked, picked) }) : words('house.moving.pick')}
                     disabled={!picked || !changed}
                     busy={move.pending}
-                    busyLabel={BUSY_COPY.saving}
+                    busyLabel={words('common.busy.saving')}
                     onPress={() => void move.run(() => setMovingOut(picked))}
                     testID="moving-save"
                   />

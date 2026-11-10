@@ -1,18 +1,4 @@
-import {
-  ADMIN_COPY,
-  LIST_COPY,
-  listTime,
-  NOTICE_FACETS,
-  NOTICE_LIST_COPY,
-  NOTICE_WHEN,
-  noticeLine,
-  noticeState,
-  noticeToShow,
-  noticeWindow,
-  type Notice,
-  type NoticeKind,
-  type NoticeState,
-} from '@app/core';
+import { ADMIN_COPY, listTime, NOTICE_FACETS, NOTICE_LIST_COPY, NOTICE_WHEN, noticeLine, noticeState, noticeToShow, noticeWindow, type Notice, type NoticeKind, type NoticeState } from '@app/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { MegaphoneIcon } from 'lucide-react-native';
 import { useState } from 'react';
@@ -37,6 +23,7 @@ import { useNow } from '@/hooks/use-now';
 import { useOwnerMay } from '@/components/admin/use-owner-may';
 import { INSET, SPACE } from '@/theme';
 import { AdminSwitch } from '@/components/admin/admin-shell';
+import { useWords } from '@/hooks/use-words';
 
 const KIND_LABEL: Record<NoticeKind, string> = { status: 'Status', offer: 'Offer', news: 'News' };
 const STATE_LABEL: Record<NoticeState, string> = { live: 'Showing', scheduled: 'Starting later', ended: 'Ended' };
@@ -147,6 +134,7 @@ function Notices({ busy, chosen, choose }: { busy: BusyList<Notice>; chosen: Cho
 }
 
 function NoticeList({ busy, chosen, choose }: { busy: BusyList<Notice>; chosen: Chosen; choose?: (next: Chosen) => void }) {
+  const words = useWords();
   const now = useNow();
   // What people see comes from the notices on now, whatever the list below is narrowed to.
   const live = useQuery({ queryKey: ['owner-notices', 'live'], queryFn: () => liveNotices() });
@@ -205,7 +193,7 @@ function NoticeList({ busy, chosen, choose }: { busy: BusyList<Notice>; chosen: 
             />
           )}
           empty={{ icon: MegaphoneIcon, title: ADMIN_COPY.noNotices, body: ADMIN_COPY.noNoticesBody }}
-          foot={(last) => LIST_COPY.backTo(listTime(last.startsAt, now, ownerZone(), false))}
+          foot={(last) => words('common.list.backTo', { day: listTime(last.startsAt, now, ownerZone(), false) })}
         />
       </Section>
     </>

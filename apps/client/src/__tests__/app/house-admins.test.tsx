@@ -1,4 +1,4 @@
-import { PAGE_TITLE, roleCopy, wordsFor } from '@app/core';
+import { roleCopy, wordsFor } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 
 import { loadHouse } from '@/api/board';
@@ -57,7 +57,7 @@ beforeEach(() => {
 
 it('is on the Rules page, where an old link to Admins lands', async () => {
   await open('/house/admins');
-  expect(within(screen.getByTestId('title-bar')).getByRole('header', { name: PAGE_TITLE.rules })).toBeOnTheScreen();
+  expect(within(screen.getByTestId('title-bar')).getByRole('header', { name: words('common.title.rules') })).toBeOnTheScreen();
   expect(screen.getByTestId('rules-panel')).toBeOnTheScreen();
   expect(within(screen.getByTestId('admins-section')).getByText(ADMINS.title)).toBeOnTheScreen();
 });

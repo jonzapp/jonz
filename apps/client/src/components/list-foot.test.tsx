@@ -1,8 +1,10 @@
-import { LIST_COPY } from '@app/core';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { Platform, useWindowDimensions, type ViewStyle } from 'react-native';
 
 import { ListFoot, nearEnd, type ListMore } from './list-foot';
+import { wordsFor } from '@app/core';
+
+const words = wordsFor('en', 'housemates');
 
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({ __esModule: true, default: jest.fn() }));
 
@@ -25,20 +27,20 @@ describe('the foot of a long list', () => {
 
   it('says it is reading while it reads, with nothing to press', async () => {
     await render(<ListFoot more={more({ busy: true })} shown="Showing back to Tue 27 Oct" />);
-    expect(screen.getByText(LIST_COPY.loading)).toBeOnTheScreen();
+    expect(screen.getByText(words('common.list.loading'))).toBeOnTheScreen();
     expect(screen.queryByTestId('list-foot-more')).toBeNull();
   });
 
   it('says that’s everything at the end', async () => {
     await render(<ListFoot more={more({ has: false })} shown="Showing back to Thu 3 Sep" />);
-    expect(screen.getByTestId('list-foot')).toHaveTextContent(LIST_COPY.everything);
+    expect(screen.getByTestId('list-foot')).toHaveTextContent(words('common.list.everything'));
     expect(screen.queryByTestId('list-foot-more')).toBeNull();
   });
 
   it('says a read failed, with Try again across the width', async () => {
     const m = more({ failed: true });
     await render(<ListFoot more={m} />);
-    expect(screen.getByRole('alert')).toHaveTextContent(LIST_COPY.failed);
+    expect(screen.getByRole('alert')).toHaveTextContent(words('common.list.failed'));
     expect(screen.getByTestId('list-foot')).toHaveStyle({ alignItems: 'stretch' });
     await fireEvent.press(screen.getByTestId('list-foot-retry'));
     expect(m.load).toHaveBeenCalledTimes(1);

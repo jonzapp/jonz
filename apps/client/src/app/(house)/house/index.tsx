@@ -1,4 +1,4 @@
-import { familyHides, memberCan, monthOf, overviewFigures, PAGE_TITLE, passUnlocked, type OverviewFigure } from '@app/core';
+import { familyHides, memberCan, monthOf, overviewFigures, passUnlocked, type OverviewFigure } from '@app/core';
 import type { Href } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -54,6 +54,7 @@ export default function HouseScreen() {
 }
 
 function HouseFor({ houseId, userId }: { houseId: string; userId: string }) {
+  const words = useWords();
   const { query, view } = useHouse(houseId, userId);
   const table = useTable(houseId, query.data);
   const stake = useStake(houseId, query.data);
@@ -69,11 +70,11 @@ function HouseFor({ houseId, userId }: { houseId: string; userId: string }) {
   // Which half a phone shows. Kept here, so it's still the same on the way back from a setup page.
   const [shown, setShown] = useState<Shown>('overview');
   const snapshot = view?.snapshot;
-  const bar = <TitleBar title={snapshot?.house.name ?? PAGE_TITLE.house} ask={memberCan(view?.me, 'house:read')} />;
+  const bar = <TitleBar title={snapshot?.house.name ?? words('common.title.house')} ask={memberCan(view?.me, 'house:read')} />;
 
   return (
     <Screen bar={bar} fills refreshing={refreshing} onRefresh={pull} testID="house-screen">
-      <PageTitle page={PAGE_TITLE.house} />
+      <PageTitle page={words('common.title.house')} />
       <Waiting ready={view != null} failed={query.isError} onRetry={() => void query.refetch()} outline={<HouseOutline />}>
         {() => (
           <HouseSections
@@ -185,7 +186,7 @@ function HouseSections({
       <SetupSection houseId={houseId} userId={userId} view={view} kid={kid} spot={!halves} />
       {kid ? null : <PassSection view={view} />}
       {me ? (
-        <Section label={PAGE_TITLE.you} testID="you-row">
+        <Section label={words('common.title.you')} testID="you-row">
           <Row
             leading={<Avatar name={me.name} userId={userId} me />}
             title={me.name}

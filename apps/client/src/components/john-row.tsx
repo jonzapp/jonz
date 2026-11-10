@@ -1,19 +1,4 @@
-import {
-  doneFold,
-  forfeitRoom,
-  johnRow,
-  monthOf,
-  pocketMoney,
-  pointsLabel,
-  undoWarning,
-  type BoardItem,
-  type Currency,
-  type HouseRules,
-  type JohnRowPlan,
-  type StakeView,
-  BUSY_COPY,
-  type Words,
-} from '@app/core';
+import { doneFold, forfeitRoom, johnRow, monthOf, pocketMoney, pointsLabel, undoWarning, type BoardItem, type Currency, type HouseRules, type JohnRowPlan, type StakeView, type Words } from '@app/core';
 import { ClockIcon, ShieldIcon, Undo2Icon } from 'lucide-react-native';
 import { useState, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -112,7 +97,7 @@ export function useJohnRow(item: BoardItem, context: JohnRowContext) {
         confirmLabel={words('john.sheet.undoIt')}
         icon={Undo2Icon}
         busy={undo.pending}
-        busyLabel={BUSY_COPY.undoing}
+        busyLabel={words('common.busy.undoing')}
         problem={undo.problem}
         onConfirm={() => void undoNow()}
         onClose={() => setAsking(false)}

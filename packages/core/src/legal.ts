@@ -1,4 +1,4 @@
-import { APP_NAME } from "./copy";
+import { APP_NAME } from "./app";
 
 /**
  * The Privacy Policy and the Terms of Service, at jonz.app/privacy and

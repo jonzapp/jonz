@@ -1,4 +1,4 @@
-import { ASK_USAGE_COPY, FOCUS_SHELL_COPY, PAGE_TITLE, type Words } from '@app/core';
+import { type Words } from '@app/core';
 import { usePathname, useRouter, type Href } from 'expo-router';
 import {
   GaugeIcon,
@@ -139,19 +139,19 @@ const pages = (words: Words): { group: string | null; items: { href: Href; label
     ],
   },
   {
-    group: FOCUS_SHELL_COPY.setup,
+    group: words('common.shell.setup'),
     items: [
       { href: '/house/johns', label: words('house.lower.johns'), icon: ListTodoIcon, testID: 'nav-johns' },
       { href: '/house/rules', label: words('house.lower.rules'), icon: ScrollTextIcon, testID: 'nav-rules' },
       { href: '/house/away', label: words('house.lower.away'), icon: PlaneIcon, testID: 'nav-away' },
-      { href: '/house/ask-usage', label: ASK_USAGE_COPY.title, icon: GaugeIcon, testID: 'nav-ask-usage' },
+      { href: '/house/ask-usage', label: words('ask.usage.title'), icon: GaugeIcon, testID: 'nav-ask-usage' },
     ],
   },
   {
     group: null,
     items: [
       { href: '/house/pass', label: words('house.pass.title'), icon: TicketIcon, testID: 'nav-pass' },
-      { href: '/house/you', label: PAGE_TITLE.you, icon: UserRoundIcon, testID: 'nav-you' },
+      { href: '/house/you', label: words('common.title.you'), icon: UserRoundIcon, testID: 'nav-you' },
     ],
   },
 ];

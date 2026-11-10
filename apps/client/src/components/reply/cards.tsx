@@ -1,4 +1,4 @@
-import { FOCUS_SHELL_COPY, pointsLabel, REPLY_COPY, scheduleLine, weekWho, type BoardItem, type JohnDef } from '@app/core';
+import { pointsLabel, REPLY_COPY, scheduleLine, weekWho, type BoardItem, type JohnDef } from '@app/core';
 import type { Href } from 'expo-router';
 
 import { Avatar } from '@/components/avatar';
@@ -53,7 +53,7 @@ export function SharesCard({
         {rows.map((row) => (
           <Row
             key={row.userId}
-            leading={<Avatar name={nameOf(row.userId) ?? FOCUS_SHELL_COPY.formerHousemate} userId={row.userId} me={row.userId === viewerId} />}
+            leading={<Avatar name={nameOf(row.userId) ?? words('common.shell.formerHousemate')} userId={row.userId} me={row.userId === viewerId} />}
             title={weekWho(row.userId, viewerId, nameOf, words)}
             trailing={row.balance}
             href={href}

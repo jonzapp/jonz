@@ -1,14 +1,4 @@
-import {
-  firstName,
-  FOCUS_SHELL_COPY,
-  jobPlaces,
-  pointsLabel,
-  rollCallPlace,
-  rollCallPlan,
-  rollCallStart,
-  shareLabel,
-  type BoardItem,
-} from '@app/core';
+import { firstName, jobPlaces, pointsLabel, rollCallPlace, rollCallPlan, rollCallStart, shareLabel, type BoardItem } from '@app/core';
 import { CameraIcon, CheckIcon, ImagesIcon, PlusIcon } from 'lucide-react-native';
 import { useState } from 'react';
 
@@ -162,7 +152,7 @@ export function RollCall({ item, context, onCancel }: { item: BoardItem; context
             testID="roll-call-done"
           />
         )}
-        <Button variant="ghost" label={FOCUS_SHELL_COPY.cancel} disabled={tick.waiting !== null} onPress={onCancel} testID="roll-call-cancel" />
+        <Button variant="ghost" label={words('common.shell.cancel')} disabled={tick.waiting !== null} onPress={onCancel} testID="roll-call-cancel" />
         {tick.problem ? <Alert message={tick.problem} /> : null}
       </SheetLines>
     </>

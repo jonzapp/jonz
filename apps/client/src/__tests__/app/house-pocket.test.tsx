@@ -77,7 +77,7 @@ async function open(path = '/house') {
     },
     path,
   );
-  await untilRead();
+  await untilRead(words);
 }
 
 beforeEach(() => {

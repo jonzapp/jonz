@@ -1,4 +1,4 @@
-import { FOCUS_SHELL_COPY, NEW_JOHN, type JohnDef } from '@app/core';
+import { NEW_JOHN, type JohnDef } from '@app/core';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Slot } from 'expo-router';
 import { renderRouter, screen, waitFor } from 'expo-router/testing-library';
@@ -6,6 +6,7 @@ import type { ComponentType } from 'react';
 
 import { LookProvider } from '@/hooks/look';
 import { testQueryClient } from '@/testing/query';
+import type { Words } from '@app/core';
 
 // Rendering one house page (or a few) in the router for a test, with a
 // fresh cache and the look, and the John list the House pages' tests share.
@@ -45,9 +46,9 @@ export async function renderPages(routes: Record<string, ComponentType>, initial
 }
 
 /** Until the page's first read is in: nothing on it is still waiting (whatever its label). */
-export async function untilRead() {
+export async function untilRead(words: Words) {
   await waitFor(() => {
-    expect(screen.queryByLabelText(FOCUS_SHELL_COPY.reading)).toBeNull();
+    expect(screen.queryByLabelText(words('common.shell.reading'))).toBeNull();
     expect(screen.queryAllByTestId('waiting', { includeHiddenElements: true })).toHaveLength(0);
   });
 }

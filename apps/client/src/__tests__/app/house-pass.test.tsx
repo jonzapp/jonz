@@ -1,4 +1,4 @@
-import { FOCUS_SHELL_COPY, LEGAL, PAGE_TITLE, SECTION_LABEL, wordsFor } from '@app/core';
+import { LEGAL, wordsFor } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 
 import { loadHouse } from '@/api/board';
@@ -45,7 +45,7 @@ function Page() {
 
 async function open(url = '/house/pass') {
   await renderPages({ 'house/pass': Page }, url);
-  await untilRead();
+  await untilRead(words);
 }
 
 beforeEach(() => {
@@ -59,8 +59,8 @@ beforeEach(() => {
 it('sits under a title bar with the way back to House', async () => {
   await open();
   const bar = within(screen.getByTestId('title-bar'));
-  expect(bar.getByRole('header', { name: PAGE_TITLE.pass })).toBeOnTheScreen();
-  expect(bar.getByRole('button', { name: FOCUS_SHELL_COPY.backTo(SECTION_LABEL.house) })).toBeOnTheScreen();
+  expect(bar.getByRole('header', { name: words('common.title.pass') })).toBeOnTheScreen();
+  expect(bar.getByRole('button', { name: words('common.shell.backTo', { place: words('common.section.house') }) })).toBeOnTheScreen();
 });
 
 it('is the Family Pass in a family, with what a family gets', async () => {

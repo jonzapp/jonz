@@ -28,8 +28,8 @@ through FormatJS. A family reads its own sentences (never "housemates" or
 - **The checks.** `family-words.test.ts` reads every line every way it can
   be read (each select option, counts 0, 1, 2 and 5) and fails if a
   family's reading says housemate, flatmate or admin, or if a line doesn't
-  parse; it also fails on housemate or admin left in `copy.ts` outside the
-  sections that name both kinds on purpose. `words.test.ts` checks the words
+  parse; it also fails on housemate left in a core file's strings outside
+  the words files. `words.test.ts` checks the words
   files for retired words too. In the app, ESLint's
   `formatjs/no-literal-string-in-jsx` stops new text typed into a screen;
   the screens that still have some are listed in `eslint-suppressions.json`.
@@ -51,8 +51,12 @@ The lines move part by part, one pull request each, merged one at a time:
 3. House (Rules, the Johns, the Table, the Stake, You).
 4. The Wall, History, emails and push.
 5. The front door, sign-in, joining, errors, the Guide and tours.
-6. Owner admin and text typed into screens; the lint rule's suppressions go,
-   and `copy.ts` is deleted.
+6. In three parts. 6a: the shell, tabs, lists, busy buttons, page titles,
+   link previews and Ask Jonz's chat and usage (`common.json`, `ask.json`);
+   `copy.ts` is deleted and what wasn't words (the name, sections, looks)
+   lives in `app.ts`. 6b: the other screens' leftover objects (resets,
+   offers, reports, notices, tours, the Guide's sections). 6c: owner admin
+   and text typed into screens; the lint rule's suppressions go.
 7. The language setting, dates and money in the reader's language, Ask Jonz
    answering in it, and a pseudo-language to spot lines that never moved.
 

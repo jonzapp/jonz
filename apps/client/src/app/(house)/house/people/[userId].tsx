@@ -1,4 +1,4 @@
-import { FOCUS_SHELL_COPY, memberCan, PAGE_TITLE, SECTION_LABEL } from '@app/core';
+import { memberCan } from '@app/core';
 import { useLocalSearchParams } from 'expo-router';
 import { UserRoundXIcon } from 'lucide-react-native';
 
@@ -17,6 +17,7 @@ import { useTable } from '@/hooks/use-table';
 import { useRoleCopy } from '@/hooks/use-kind';
 import { Waiting } from '@/components/waiting';
 import { PersonOutline } from '@/components/page-outlines';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * A housemate's page, pushed from a row of House's Table: their record,
@@ -32,6 +33,7 @@ export default function PersonScreen() {
 }
 
 function PersonFor({ houseId, userId, personId }: { houseId: string; userId: string; personId: string }) {
+  const words = useWords();
   const { query, view } = useHouse(houseId, userId);
   const table = useTable(houseId, query.data);
   const stake = useStake(houseId, query.data);
@@ -44,7 +46,7 @@ function PersonFor({ houseId, userId, personId }: { houseId: string; userId: str
   const person = view?.snapshot.members.find((m) => m.userId === personId) ?? null;
   const roles = useRoleCopy();
   // Someone who isn't in the house any more is named as such, not as House itself.
-  const title = person?.name ?? (view ? FOCUS_SHELL_COPY.formerHousemate : PAGE_TITLE.house);
+  const title = person?.name ?? (view ? words('common.shell.formerHousemate') : words('common.title.house'));
 
   return (
     <Screen
@@ -53,7 +55,7 @@ function PersonFor({ houseId, userId, personId }: { houseId: string; userId: str
           title={title}
           sub={person ? roles.sub(person.role === 'admin', person.userId === userId) : undefined}
           back="/house"
-          backLabel={SECTION_LABEL.house}
+          backLabel={words('common.section.house')}
         />
       }
       refreshing={refreshing}
@@ -65,7 +67,7 @@ function PersonFor({ houseId, userId, personId }: { houseId: string; userId: str
       {!view ? (
         <Waiting ready={false} failed={query.isError} onRetry={() => void query.refetch()} outline={<PersonOutline />} />
       ) : !person ? (
-        <EmptyState icon={UserRoundXIcon} title={FOCUS_SHELL_COPY.gone} />
+        <EmptyState icon={UserRoundXIcon} title={words('common.shell.gone')} />
       ) : (
         <PersonSections
           userId={userId}

@@ -1,4 +1,4 @@
-import { PAGE_TITLE, SECTION_LABEL, wordsFor } from "@app/core";
+import { wordsFor } from "@app/core";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, dealtHouseInClient } from "./auth";
@@ -155,8 +155,8 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   await today.getByTestId("ask-jonz").click();
   await expect(chat).toHaveCount(0);
 
-  await page.getByRole("tab", { name: SECTION_LABEL.week }).click();
-  await expect(page.getByRole("heading", { name: PAGE_TITLE.week })).toBeVisible();
+  await page.getByRole("tab", { name: words('common.section.week') }).click();
+  await expect(page.getByRole("heading", { name: words('common.title.week') })).toBeVisible();
   const week = page.getByTestId("week-screen");
   await expect(week.getByTestId("column-main").getByTestId("week-table")).toBeVisible();
   await expect(week.getByTestId("column-side").getByTestId("house-table")).toBeVisible();
@@ -177,13 +177,13 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   await page.setViewportSize({ width: 1920, height: 1080 });
   await runsToThePanel(week);
   await shoot(page, "week-wide");
-  await page.getByRole("tab", { name: SECTION_LABEL.today }).click();
+  await page.getByRole("tab", { name: words('common.section.today') }).click();
   await runsToThePanel(today);
   await acrossTheColumn(today.getByTestId("next-up"), today.getByTestId("column-main"));
   await shoot(page, "today-wide");
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.getByRole("tab", { name: SECTION_LABEL.week }).click();
-  await expect(page.getByRole("heading", { name: PAGE_TITLE.week })).toBeVisible();
+  await page.getByRole("tab", { name: words('common.section.week') }).click();
+  await expect(page.getByRole("heading", { name: words('common.title.week') })).toBeVisible();
 
   // The Table shows the week or the month from the menu in its header, dropped from its words.
   const span = week.getByTestId("table-span");
@@ -222,9 +222,9 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   await expect(page.getByTestId("record-screen").getByTestId("record-pair-end").getByTestId("record-breakdown")).toContainText("Laptop");
   await expect(page.getByTestId("record-person-screen")).toHaveCount(0);
   await page.goto("/week");
-  await expect(page.getByRole("heading", { name: PAGE_TITLE.week })).toBeVisible();
+  await expect(page.getByRole("heading", { name: words('common.title.week') })).toBeVisible();
 
-  await page.getByRole("tab", { name: SECTION_LABEL.house }).click();
+  await page.getByRole("tab", { name: words('common.section.house') }).click();
   const house = page.getByTestId("house-screen");
   // The house at a glance in four figures on one line, then the Table beside the Wall, the two sharing a top edge.
   const figures = house.getByTestId("house-figures");
@@ -239,7 +239,7 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   // House lists its pages beside them: the John list, and a John in the panel beside it.
   const nav = page.getByTestId("house-nav");
   await nav.getByRole("link", { name: words('house.lower.johns') }).click();
-  await expect(page.getByRole("heading", { name: PAGE_TITLE.johnList })).toBeVisible();
+  await expect(page.getByRole("heading", { name: words('common.title.johnList') })).toBeVisible();
   // The page fills the room beside the list: its kinds in two columns sharing a top edge, out to the
   // window's gutter, with Add a John at the top right over them.
   const kinds = page.getByTestId("john-kinds-column");

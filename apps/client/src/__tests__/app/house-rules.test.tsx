@@ -1,4 +1,4 @@
-import { FOCUS_SHELL_COPY, NEW_JOHN, PAGE_TITLE, SECTION_LABEL, makeupHint, wordsFor } from '@app/core';
+import { NEW_JOHN, makeupHint, wordsFor } from '@app/core';
 import { Slot } from 'expo-router';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 
@@ -35,7 +35,7 @@ function HouseLayout() {
 async function open(as: 'priya' | 'sam' = 'priya') {
   mockMembership.userId = as;
   await renderPages({ 'house/_layout': HouseLayout, 'house/rules': RulesScreen }, '/house/rules');
-  await untilRead();
+  await untilRead(words);
 }
 
 async function edit() {
@@ -70,8 +70,8 @@ beforeEach(() => {
 it('sits under a title bar with the way back to House', async () => {
   await open();
   const bar = within(screen.getByTestId('title-bar'));
-  expect(bar.getByRole('header', { name: PAGE_TITLE.rules })).toBeOnTheScreen();
-  expect(bar.getByRole('button', { name: FOCUS_SHELL_COPY.backTo(SECTION_LABEL.house) })).toBeOnTheScreen();
+  expect(bar.getByRole('header', { name: words('common.title.rules') })).toBeOnTheScreen();
+  expect(bar.getByRole('button', { name: words('common.shell.backTo', { place: words('common.section.house') }) })).toBeOnTheScreen();
 });
 
 it('reads the rules out in plain words, with the admins who can change them', async () => {

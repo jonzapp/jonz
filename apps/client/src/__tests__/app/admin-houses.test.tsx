@@ -10,6 +10,9 @@ import HousesPage from '@/app/admin/houses/index';
 import DeletionsPage from '@/app/admin/deletions';
 import OverviewPage from '@/app/admin/overview';
 import { renderPages, untilRead } from '@/testing/pages';
+import { wordsFor } from '@app/core';
+
+const words = wordsFor('en', 'housemates');
 
 jest.mock('@/api/owner', () => ({
   ...jest.requireActual<typeof import('@/api/owner')>('@/api/owner'),
@@ -116,7 +119,7 @@ beforeEach(() => {
 describe('Overview', () => {
   it('leads with what needs you, then how things are, the figures and the chart', async () => {
     await renderPages(ROUTES, '/admin/overview');
-    await untilRead();
+    await untilRead(words);
     expect(within(screen.getByTestId('overview-needs')).getByTestId('need-r1')).toHaveTextContent(/Sam wrote in.*Charged twice, The Annexe, 2 h ago/);
     expect(screen.getByTestId('overview-inbox')).toHaveTextContent(OVERVIEW_COPY.openInbox(2));
     expect(screen.getByTestId('health-database')).toHaveTextContent(/Database.*120 ms.*Up/);
@@ -130,7 +133,7 @@ describe('Overview', () => {
   it('reads this month when asked, and says the clock is late after half an hour', async () => {
     jest.mocked(ownerOverview).mockResolvedValue({ overview: { ...OVERVIEW, clock: minutesAgo(50) }, ms: 120 });
     await renderPages(ROUTES, '/admin/overview');
-    await untilRead();
+    await untilRead(words);
     expect(screen.getByTestId('health-clock')).toHaveTextContent(/Late/);
     await fireEvent.press(within(screen.getByTestId('overview-span')).getByText(OVERVIEW_COPY.spans.month));
     await waitFor(() => expect(ownerOverview).toHaveBeenLastCalledWith('month', expect.any(String)));
@@ -139,7 +142,7 @@ describe('Overview', () => {
   it('says nothing needs you when nothing does', async () => {
     jest.mocked(ownerOverview).mockResolvedValue({ overview: { ...OVERVIEW, needs: [], reports: 0 }, ms: 80 });
     await renderPages(ROUTES, '/admin/overview');
-    await untilRead();
+    await untilRead(words);
     expect(screen.getByText(OVERVIEW_COPY.nothingNeeds)).toBeVisible();
   });
 });
@@ -147,7 +150,7 @@ describe('Overview', () => {
 describe('Houses', () => {
   it('lists every house on a phone with one line each, and a house opens as its own page', async () => {
     await renderPages(ROUTES, '/admin/houses');
-    await untilRead();
+    await untilRead(words);
     expect(screen.getByTestId('house-h1')).toHaveTextContent(/Elm Street.*5 people, Pass, active 2 min ago, 74% on time/);
     expect(screen.getByTestId('house-h2')).toHaveTextContent(/Flat 4B.*3 people, None, never/);
     await fireEvent.press(screen.getByTestId('house-h1'));
@@ -163,7 +166,7 @@ describe('Houses', () => {
   it("names a family's parents and kids", async () => {
     jest.mocked(ownerHouse).mockResolvedValue({ ...ELM_DETAIL, kind: 'family' });
     await renderPages(ROUTES, '/admin/houses/h1');
-    await untilRead();
+    await untilRead(words);
     expect(await screen.findByText('Started 3 Sep, Priya is the parent')).toBeVisible();
     expect(screen.getByTestId('house-person-p')).toHaveTextContent(/Priya.*parent, 6 of 7 on time/);
     expect(screen.getByTestId('house-person-j')).toHaveTextContent(/Jo.*kid, away until 2 Nov/);
@@ -173,7 +176,7 @@ describe('Houses', () => {
   it('deletes a house only once its name is typed, telling everyone by default, then goes back to Houses', async () => {
     jest.mocked(deleteHouse).mockResolvedValue({ ok: true, name: 'Elm Street', people: 2, told: 2, passStopped: true });
     await renderPages(ROUTES, '/admin/houses/h1');
-    await untilRead();
+    await untilRead(words);
     await fireEvent.press(await screen.findByTestId('house-delete'));
     const sheet = within(await screen.findByTestId('house-delete-sheet'));
     expect(sheet.getByText(DELETE_HOUSE_COPY.title('Elm Street'))).toBeVisible();
@@ -190,14 +193,14 @@ describe('Houses', () => {
   it('offers no Delete house to a support helper, who may only read it', async () => {
     jest.mocked(ownerStatus).mockResolvedValue({ owner: true, mfa: true, permissions: ['admin:read', 'reports:write'] });
     await renderPages(ROUTES, '/admin/houses/h1');
-    await untilRead();
+    await untilRead(words);
     expect(await screen.findByText(HOUSES_COPY.readOnly)).toBeVisible();
     expect(screen.queryByTestId('house-delete')).toBeNull();
   });
 
   it('is a busy list: the database finds houses by words and filters by Pass', async () => {
     await renderPages(ROUTES, '/admin/houses');
-    await untilRead();
+    await untilRead(words);
     expect(housesPage).toHaveBeenLastCalledWith(null, { q: '', pass: null, active: null, after: null, before: null });
     const box = screen.getByLabelText('House, person, email or join code');
     await fireEvent(box, 'focus');
@@ -209,7 +212,7 @@ describe('Houses', () => {
 
   it('keeps the old houses in view under the search line while a search reads', async () => {
     await renderPages(ROUTES, '/admin/houses');
-    await untilRead();
+    await untilRead(words);
     // The next read never comes back, so the list stays mid-search.
     jest.mocked(housesPage).mockReturnValue(new Promise(() => {}));
     const box = screen.getByLabelText('House, person, email or join code');
@@ -223,7 +226,7 @@ describe('Houses', () => {
   it('shows a table on a laptop with the first house beside it', async () => {
     (useWindowDimensions as jest.Mock).mockReturnValue(LAPTOP);
     await renderPages(ROUTES, '/admin/houses');
-    await untilRead();
+    await untilRead(words);
     expect(screen.getByTestId('house-h1')).toHaveTextContent(/Elm Street.*5.*Pass.*2 min ago.*74%.*12 Sep/);
     expect(screen.getByTestId('house-h2')).toHaveTextContent(/Flat 4B.*3.*None.*Never.*None due/);
     expect(await screen.findByTestId('house-panel')).toHaveTextContent(/Elm Street/);
@@ -241,7 +244,7 @@ describe('On a laptop, the room is used', () => {
   it('opens a house linked to directly beside the list, and the list reaches the panel', async () => {
     (useWindowDimensions as jest.Mock).mockReturnValue(LAPTOP);
     await renderPages(ROUTES, '/admin/houses/h2');
-    await untilRead();
+    await untilRead(words);
     await waitFor(() => expect(ownerHouse).toHaveBeenCalledWith('h2'));
     expect(screen.getByTestId('admin-houses')).toBeVisible();
     expect(screen.queryByTestId('admin-house')).toBeNull();
@@ -252,7 +255,7 @@ describe('On a laptop, the room is used', () => {
 describe('Tabs by job, on a phone', () => {
   it('has five tabs, and Records opens Deletions with a switch to the Audit log', async () => {
     await renderPages(ROUTES, '/admin/deletions');
-    await untilRead();
+    await untilRead(words);
     for (const key of ['overview', 'inbox', 'houses', 'send', 'records']) expect(screen.getByTestId(`admin-tab-${key}`)).toBeVisible();
     expect(screen.getByTestId('admin-tab-records')).toBeSelected();
     expect(within(screen.getByTestId('admin-switch')).getByText('Deletions')).toBeVisible();
@@ -262,7 +265,7 @@ describe('Tabs by job, on a phone', () => {
   it('shows no switch on a laptop, where the side list names every page', async () => {
     (useWindowDimensions as jest.Mock).mockReturnValue(LAPTOP);
     await renderPages(ROUTES, '/admin/deletions');
-    await untilRead();
+    await untilRead(words);
     expect(screen.queryByTestId('admin-switch')).toBeNull();
     expect(screen.getByTestId('admin-nav-audit')).toBeVisible();
     expect(screen.getByText('Records')).toBeVisible();

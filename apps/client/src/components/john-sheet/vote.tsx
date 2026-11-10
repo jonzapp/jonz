@@ -1,4 +1,4 @@
-import { FOCUS_SHELL_COPY, voteCloses, votersOn, voteTally, type BoardItem, type DisputeView, BUSY_COPY } from '@app/core';
+import { voteCloses, votersOn, voteTally, type BoardItem, type DisputeView } from '@app/core';
 import { CameraIcon, CheckIcon, ImagesIcon, ThumbsDownIcon, ThumbsUpIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -40,7 +40,7 @@ export function Disputed({ item, context }: { item: BoardItem; context: JohnShee
     <SheetLines testID="dispute-note">
       <View style={styles.reason}>
         <Avatar
-          name={dispute.raisedBy ? context.nameOf(dispute.raisedBy) : FOCUS_SHELL_COPY.formerHousemate}
+          name={dispute.raisedBy ? context.nameOf(dispute.raisedBy) : words('common.shell.formerHousemate')}
           userId={dispute.raisedBy}
           me={dispute.raisedBy === context.userId}
         />
@@ -97,7 +97,7 @@ function SheetVote({ houseId, dispute, onVoted }: { houseId: string; dispute: Di
             icon={dispute.myVote === false ? CheckIcon : ThumbsUpIcon}
             label={words('john.dispute.done')}
             busy={move.pending && !upholding}
-            busyLabel={BUSY_COPY.voting}
+            busyLabel={words('common.busy.voting')}
             onPress={() => void vote(false)}
             testID="vote-fine"
           />
@@ -107,7 +107,7 @@ function SheetVote({ houseId, dispute, onVoted }: { houseId: string; dispute: Di
             icon={dispute.myVote === true ? CheckIcon : ThumbsDownIcon}
             label={words('john.dispute.notDone')}
             busy={move.pending && upholding}
-            busyLabel={BUSY_COPY.voting}
+            busyLabel={words('common.busy.voting')}
             onPress={() => void vote(true)}
             testID="vote-not-done"
           />
@@ -173,7 +173,7 @@ function AnswerWithPhoto({
             icon={CameraIcon}
             label={words('john.sheet.answerPhoto')}
             busy={busy && from === 'camera'}
-            busyLabel={uploading ? words('john.row.uploading') : BUSY_COPY.sending}
+            busyLabel={uploading ? words('john.row.uploading') : words('common.busy.sending')}
             onPress={() => void answer('camera')}
             testID="answer-photo"
           />
@@ -182,7 +182,7 @@ function AnswerWithPhoto({
             icon={ImagesIcon}
             label={words('john.sheet.fromLibrary')}
             busy={busy && from === 'library'}
-            busyLabel={uploading ? words('john.row.uploading') : BUSY_COPY.sending}
+            busyLabel={uploading ? words('john.row.uploading') : words('common.busy.sending')}
             onPress={() => void answer('library')}
             testID="answer-library"
           />

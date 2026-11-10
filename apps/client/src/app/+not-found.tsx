@@ -1,4 +1,3 @@
-import { PAGE_TITLE } from '@app/core';
 
 import { Button } from '@/components/button';
 import { Door, Sign, SignHeading } from '@/components/front-door/door';
@@ -16,7 +15,7 @@ export default function NotFound() {
   const { session } = useMembership();
   return (
     <Door testID="not-found-screen">
-      <PageTitle page={PAGE_TITLE.notFound} />
+      <PageTitle page={words('common.title.notFound')} />
       <Sign>
         <SignHeading title={words('door.notFound.title')} body={words('door.notFound.body')} />
         <Button href="/" label={session ? words('door.notFound.back') : words('door.notFound.backToDoor')} />

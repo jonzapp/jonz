@@ -1,4 +1,4 @@
-import { formatMoney, memberCan, monthLabel, RESET_COPY, SECTION_LABEL, stakeHistory } from '@app/core';
+import { formatMoney, memberCan, monthLabel, RESET_COPY, stakeHistory } from '@app/core';
 import { CoinsIcon, RotateCcwIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -86,7 +86,7 @@ function StakeFor({ houseId, userId }: { houseId: string; userId: string }) {
           title={words('house.stake.title')}
           sub={rules ? words('house.stake.sub', { stake: formatMoney(rules.stakeMinor, rules.currency) }) : undefined}
           back="/house"
-          backLabel={SECTION_LABEL.house}
+          backLabel={words('common.section.house')}
         />
       }
       refreshing={refreshing}

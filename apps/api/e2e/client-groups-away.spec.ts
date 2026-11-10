@@ -1,4 +1,4 @@
-import { addDaysTo, dateRange, dayName, localDate, SECTION_LABEL, wordsFor } from "@app/core";
+import { addDaysTo, dateRange, dayName, localDate, wordsFor } from "@app/core";
 import { expect, test, type Page } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, dealtHouseInClient } from "./auth";
@@ -95,7 +95,7 @@ test("make a group, give it a John, and book time away", async ({ browser }) => 
   expect(booked).toEqual([{ starts_on: from, ends_on: to, note: "Lisbon" }]);
 
   // Today says so, under the week; Ben sees it on Time away, and can't change the groups.
-  await page.getByRole("tab", { name: SECTION_LABEL.today }).click();
+  await page.getByRole("tab", { name: words('common.section.today') }).click();
   await expect(page.getByTestId("today-screen").getByTestId("away-line")).toContainText(words('today.nextUp.awaySoon', { range: dateRange(from, to) }));
   const benPage = await benContext.newPage();
   await benPage.goto("/house/away");

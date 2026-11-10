@@ -1,4 +1,3 @@
-import { FOCUS_SHELL_COPY } from '@app/core';
 import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -7,6 +6,7 @@ import { Button, type ButtonIcon } from '@/components/button';
 import { ButtonRow } from '@/components/button-row';
 import { Sheet } from '@/components/sheet';
 import { SPACE } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * "Are you sure?", for a move that can't be taken back or costs something
@@ -50,6 +50,7 @@ export function ConfirmSheet({
   children?: ReactNode;
   testID?: string;
 }) {
+  const words = useWords();
   return (
     <Sheet visible={visible} title={title} description={body} onClose={onClose} testID={testID}>
       {children}
@@ -59,7 +60,7 @@ export function ConfirmSheet({
           {confirmLabel === null ? null : (
             <Button variant={tone} icon={icon} label={confirmLabel} busy={busy} busyLabel={busyLabel} onPress={onConfirm} testID="confirm" />
           )}
-          <Button variant="outline" label={FOCUS_SHELL_COPY.cancel} onPress={onClose} testID="cancel" />
+          <Button variant="outline" label={words('common.shell.cancel')} onPress={onClose} testID="cancel" />
         </ButtonRow>
       </View>
     </Sheet>

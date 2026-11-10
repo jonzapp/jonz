@@ -14,7 +14,7 @@ export * from "./auth-paths";
 export * from "./away";
 export * from "./bin-night";
 export * from "./board";
-export * from "./copy";
+export * from "./app";
 export * from "./words-for";
 export * from "./word-keys";
 export * from "./crew";

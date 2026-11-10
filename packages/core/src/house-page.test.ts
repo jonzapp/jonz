@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { wordsFor } from "./words-for";
 
 import type { AwayPeriod } from "./away";
-import { FOCUS_SHELL_COPY } from "./copy";
 import {
   awayLines,
   joinParts,
@@ -293,7 +292,7 @@ describe("settleRows", () => {
     ];
     const rows = settleRows({ transfers, me: "sam", members: MEMBERS, currency: "GBP", ledger: [], closedMonths: [] }, words);
     expect(rows.map((r) => [r.title, r.meta, r.action, r.primary])).toEqual([
-      [`${FOCUS_SHELL_COPY.formerHousemate} owes you £0.50`, words('house.page.gone'), null, false],
+      [`${words('common.shell.formerHousemate')} owes you £0.50`, words('house.page.gone'), null, false],
       // The amber button goes to the first one that can be marked.
       ["Tom owes you £3", words('house.page.paidHowYouLike'), "Mark £3 received", true],
     ]);
@@ -426,8 +425,8 @@ describe("tableLines", () => {
   it("shows nobody for an empty table, and someone who left by name", () => {
     expect(tableLines({ ...base, rows: [] }, words)).toEqual([]);
     expect(tableLines({ ...base, rows: [row("ben", 3)] }, words)[0]).toMatchObject({
-      title: FOCUS_SHELL_COPY.formerHousemate,
-      name: FOCUS_SHELL_COPY.formerHousemate,
+      title: words('common.shell.formerHousemate'),
+      name: words('common.shell.formerHousemate'),
     });
   });
 });
@@ -653,7 +652,7 @@ describe("stakeHistory", () => {
       h(entry("sam", "payment", -100, "2026-10", { counterparty_user_id: "ben" })),
     ];
     expect(stakeHistory({ ...input, ledger: gone, me: "sam", whole: true }, words)[0].lines.map((l) => [l.title, l.amount])).toEqual([
-      [`${FOCUS_SHELL_COPY.formerHousemate} paid you`, "£1"],
+      [`${words('common.shell.formerHousemate')} paid you`, "£1"],
     ]);
     const paidGone = [
       h(entry("tom", "payment", 100, "2026-10", { counterparty_user_id: "ben" })),

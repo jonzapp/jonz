@@ -1,4 +1,3 @@
-import { PAGE_TITLE, SECTION_LABEL } from "@app/core";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 import { tickHouse } from "../lib/engine/tick";
@@ -52,9 +51,9 @@ test("dispute a housemate's tick from the board, and the house of two decides wh
   // Ava goes from Today to the board by its tab, and sees it being checked.
   const ava = await avaContext.newPage();
   await ava.goto("/today");
-  await ava.getByRole("tab", { name: SECTION_LABEL.week }).click();
+  await ava.getByRole("tab", { name: words('common.section.week') }).click();
   await expect(ava).toHaveURL(/\/week$/);
-  await expect(ava.getByRole("heading", { name: PAGE_TITLE.week })).toBeVisible();
+  await expect(ava.getByRole("heading", { name: words('common.title.week') })).toBeVisible();
   const theirs = onBoard(ava, benJohn);
   await expect(theirs.getByRole("img", { name: words('today.nextUp.stateLabel.checking') })).toBeVisible();
   await expect(theirs.getByTestId("status-checking")).toBeVisible();

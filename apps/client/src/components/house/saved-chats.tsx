@@ -1,4 +1,4 @@
-import { ASK_CHATS_COPY, chatGroups, chatWhen, BUSY_COPY } from '@app/core';
+import { ASK_CHATS_COPY, chatGroups, chatWhen } from '@app/core';
 import { MessagesSquareIcon, Trash2Icon } from 'lucide-react-native';
 import { useState, type ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -16,6 +16,7 @@ import { Meta } from '@/components/text';
 import { Waiting } from '@/components/waiting';
 import { useToastIfAny } from '@/components/toast';
 import { GUTTER, INSET, SECTION_GAP } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /** A chat as a row: what it began with, and when it was last used. */
 function ChatRow({
@@ -71,6 +72,7 @@ export function AllChats({
   note?: string;
   deleteBody?: string;
 }) {
+  const words = useWords();
   const chats = useQuery({ queryKey: store.key, queryFn: store.list });
   const client = useQueryClient();
   const toast = useToastIfAny();
@@ -147,7 +149,7 @@ export function AllChats({
         confirmLabel={ASK_CHATS_COPY.delete}
         icon={Trash2Icon}
         busy={pending}
-        busyLabel={BUSY_COPY.deleting}
+        busyLabel={words('common.busy.deleting')}
         problem={problem}
         onConfirm={() => void remove()}
         onClose={() => setDoomed(null)}

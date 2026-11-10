@@ -1,4 +1,4 @@
-import { memberCan, SECTION_LABEL } from "@app/core";
+import { memberCan } from "@app/core";
 import { Tabs } from "expo-router/js-tabs";
 import { useMemo } from "react";
 import { StyleSheet, useWindowDimensions, View } from "react-native";
@@ -15,6 +15,7 @@ import { PhotosContext } from "@/hooks/photos";
 import { useHouse, useLiveHouse } from "@/hooks/use-house";
 import { useMembership } from "@/hooks/use-membership";
 import { RAIL, SPACE, useTheme, WIDE } from "@/theme";
+import { useWords } from '@/hooks/use-words';
 
 /** The tab bar's height above the home bar, so a toast clears it. */
 const TAB_BAR = 56;
@@ -33,6 +34,7 @@ const TAB_BAR = 56;
  * every tab, as a tour can walk from one page to another.
  */
 export default function HouseLayout() {
+  const words = useWords();
   // The root layout's guard only opens this group with a house and a session.
   const { session, house } = useMembership();
   const { colors } = useTheme();
@@ -95,15 +97,15 @@ export default function HouseLayout() {
                   >
                     <Tabs.Screen
                       name="today"
-                      options={{ title: SECTION_LABEL.today }}
+                      options={{ title: words('common.section.today') }}
                     />
                     <Tabs.Screen
                       name="week"
-                      options={{ title: SECTION_LABEL.week }}
+                      options={{ title: words('common.section.week') }}
                     />
                     <Tabs.Screen
                       name="house"
-                      options={{ title: SECTION_LABEL.house }}
+                      options={{ title: words('common.section.house') }}
                     />
                   </Tabs>
                 </View>

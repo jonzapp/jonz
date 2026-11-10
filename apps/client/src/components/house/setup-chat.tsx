@@ -1,4 +1,5 @@
-import { ASK_CHATS_COPY, CATEGORIES, changedLine, CHAT_MAX_MESSAGES, DEAL_MODES, draftChanges, groupChanges, DOW_LABEL, HOUSE_DRAFT_COPY, listAsDraft, MESSAGE_MAX, membersLine, pointsLabel, scheduleLine, STARTER_KINDS, starterDraft, weeklyEffort, type ChatAsk, type ChatMessage, type ChatMove, type ChatReset, type DealMode, type DraftChange, type DraftedJohn, type GroupDef, type HouseDraft, type HouseRules, type JohnDef, type IsoDow, type SavedTurn, type StarterKind, type Words } from '@app/core';
+import { askExamples, changesMeta, thinkingSteps } from '@app/core';
+import { ASK_CHATS_COPY, CATEGORIES, changedLine, CHAT_MAX_MESSAGES, DEAL_MODES, draftChanges, groupChanges, DOW_LABEL, listAsDraft, MESSAGE_MAX, membersLine, pointsLabel, scheduleLine, STARTER_KINDS, starterDraft, weeklyEffort, type ChatAsk, type ChatMessage, type ChatMove, type ChatReset, type DealMode, type DraftChange, type DraftedJohn, type GroupDef, type HouseDraft, type HouseRules, type JohnDef, type IsoDow, type SavedTurn, type StarterKind, type Words } from '@app/core';
 import { router } from 'expo-router';
 import { CheckIcon, MinusIcon, PencilIcon, PlusIcon } from 'lucide-react-native';
 import { useQueryClient } from '@tanstack/react-query';
@@ -152,6 +153,7 @@ export function SetupChat({
   /** Whether there's anything in the chat yet (said, or being written): New chat has nothing to clear until there is. */
   onTalked?: (talked: boolean) => void;
 }) {
+  const words = useWords();
   const keeping = useMove(houseId);
   // The list as the chat found it: what a draft's changes are counted from. Held while a draft is open, so
   // applying doesn't move it under the card; once a draft is applied, it's the list as it now is.
@@ -187,7 +189,7 @@ export function SetupChat({
   const last = turns.at(-1);
   const ask = !busy && last?.role === 'assistant' ? last.ask : null;
   // What Jonz shows itself doing while it answers: "your list" once there's a draft or a list to look at.
-  const steps = HOUSE_DRAFT_COPY.thinkingSteps(draft !== null);
+  const steps = thinkingSteps(draft !== null, words);
 
   // Each answer (and each list applied) keeps the chat as it now is. A chat that can't be kept carries on
   // regardless: keeping is for coming back to it, never in the way of it.
@@ -221,8 +223,8 @@ export function SetupChat({
     }
   }
 
-  async function send(words: string) {
-    const said = words.trim();
+  async function send(text: string) {
+    const said = text.trim();
     if (!said || busy || done) return;
     const before = turns;
     const next: Turn[] = [...turns, { role: 'user', text: said }];
@@ -236,7 +238,7 @@ export function SetupChat({
       const messages: ChatMessage[] = next
         .flatMap((t) => (t.role === 'done' || !t.text ? [] : [{ role: t.role, text: t.text }]))
         .slice(-CHAT_MAX_MESSAGES);
-      const answer = await sendChat(houseId, messages, draft);
+      const answer = await sendChat(houseId, messages, draft, words);
       const took = clock() - asked;
       const thought = { seconds: Math.max(1, Math.round(took / 1000)), steps: stepsShown(steps, took) };
       if (answer.allowance) usage.put(answer.allowance);
@@ -254,8 +256,8 @@ export function SetupChat({
   }
 
   function pick(kind: StarterKind) {
-    const said: Turn[] = [...turns, { role: 'user', text: HOUSE_DRAFT_COPY.starter[kind].title }];
-    answered({ role: 'assistant', text: HOUSE_DRAFT_COPY.fromStarter, ask: null, draft: starterDraft(kind) }, said);
+    const said: Turn[] = [...turns, { role: 'user', text: words(`ask.draft.starter.${kind}.title` as const) }];
+    answered({ role: 'assistant', text: words('ask.draft.fromStarter'), ask: null, draft: starterDraft(kind) }, said);
   }
 
   async function add() {
@@ -276,20 +278,20 @@ export function SetupChat({
   const nameOf = (id: string) => (id === me ? 'You' : (people.find((p) => p.userId === id)?.name ?? 'Someone'));
 
   const placeholder = !canChange
-    ? HOUSE_DRAFT_COPY.placeholderAsk
+    ? words('ask.draft.placeholderAsk')
     : editing && turns.length === 0
-      ? HOUSE_DRAFT_COPY.placeholderList
+      ? words('ask.draft.placeholderList')
       : draft
-        ? HOUSE_DRAFT_COPY.placeholderChange
-        : HOUSE_DRAFT_COPY.placeholder;
+        ? words('ask.draft.placeholderChange')
+        : words('ask.draft.placeholder');
 
   return (
     <ChatLog
       foot={
         done ? null : gated ? (
           <ComposerBar testID="chat-pass">
-            <Meta>{HOUSE_DRAFT_COPY.passNeeded}</Meta>
-            <Button variant="outline" label={HOUSE_DRAFT_COPY.seePass} href="/house/pass" testID="chat-see-pass" />
+            <Meta>{words('ask.draft.passNeeded')}</Meta>
+            <Button variant="outline" label={words('ask.draft.seePass')} href="/house/pass" testID="chat-see-pass" />
           </ComposerBar>
         ) : week === 'out' && usage.data ? (
           <OutNotice usage={usage.data} zone={rules.timezone} />
@@ -302,8 +304,8 @@ export function SetupChat({
               onSend={() => void send(text)}
               busy={busy}
               placeholder={placeholder}
-              label={HOUSE_DRAFT_COPY.message}
-              sendLabel={HOUSE_DRAFT_COPY.send}
+              label={words('ask.draft.message')}
+              sendLabel={words('ask.draft.send')}
               maxLength={MESSAGE_MAX}
               problem={problem}
             />
@@ -312,39 +314,39 @@ export function SetupChat({
       }
     >
       <Said testID="chat-greeting">
-        <Body>{!canChange ? HOUSE_DRAFT_COPY.greetingAsk : editing ? HOUSE_DRAFT_COPY.greetingList : HOUSE_DRAFT_COPY.greeting}</Body>
+        <Body>{!canChange ? words('ask.draft.greetingAsk') : editing ? words('ask.draft.greetingList') : words('ask.draft.greeting')}</Body>
         {(editing || !canChange) && turns.length === 0 ? (
           <>
             {/* A chat never opens on nothing: three questions to tap, while it can be asked anything. */}
             {!gated && week !== 'out' ? (
               <>
-                <Meta>{HOUSE_DRAFT_COPY.orAsk}</Meta>
+                <Meta>{words('ask.draft.orAsk')}</Meta>
                 <View style={styles.choices} testID="chat-examples">
-                  {HOUSE_DRAFT_COPY.examples.map((question, at) => (
+                  {askExamples(words).map((question, at) => (
                     <Button key={question} variant="outline" label={question} onPress={() => void send(question)} testID={`chat-example-${at}`} />
                   ))}
                 </View>
               </>
             ) : null}
-            <Meta>{HOUSE_DRAFT_COPY.privacy}</Meta>
+            <Meta>{words('ask.draft.privacy')}</Meta>
           </>
         ) : null}
         {!editing && canChange && turns.length === 0 ? (
           <>
-            <Meta>{HOUSE_DRAFT_COPY.orStart}</Meta>
+            <Meta>{words('ask.draft.orStart')}</Meta>
             <View style={styles.choices}>
               {STARTER_KINDS.map((kind) => (
                 <Button
                   key={kind}
                   variant="outline"
-                  label={HOUSE_DRAFT_COPY.starter[kind].title}
-                  spoken={`${HOUSE_DRAFT_COPY.starter[kind].title}: ${HOUSE_DRAFT_COPY.starter[kind].meta}`}
+                  label={words(`ask.draft.starter.${kind}.title` as const)}
+                  spoken={`${words(`ask.draft.starter.${kind}.title` as const)}: ${words(`ask.draft.starter.${kind}.meta` as const)}`}
                   onPress={() => pick(kind)}
                   testID={`starter-${kind}`}
                 />
               ))}
             </View>
-            <Meta>{HOUSE_DRAFT_COPY.privacy}</Meta>
+            <Meta>{words('ask.draft.privacy')}</Meta>
           </>
         ) : null}
       </Said>
@@ -357,11 +359,11 @@ export function SetupChat({
           const row = (
             <Group testID="chat-done">
               <Row
-                title={editing ? HOUSE_DRAFT_COPY.applied(turn.added) : HOUSE_DRAFT_COPY.added(turn.added)}
-                meta={editing ? HOUSE_DRAFT_COPY.appliedMeta : HOUSE_DRAFT_COPY.addedMeta}
+                title={editing ? words('ask.draft.applied', { n: turn.added }) : words('ask.draft.added', { n: turn.added })}
+                meta={editing ? words('ask.draft.appliedMeta') : words('ask.draft.addedMeta')}
                 leading={<RowIcon icon={CheckIcon} />}
                 onPress={onOpenList}
-                accessibilityLabel={`${editing ? HOUSE_DRAFT_COPY.applied(turn.added) : HOUSE_DRAFT_COPY.added(turn.added)}. ${HOUSE_DRAFT_COPY.openList}`}
+                accessibilityLabel={`${editing ? words('ask.draft.applied', { n: turn.added }) : words('ask.draft.added', { n: turn.added })}. ${words('ask.draft.openList')}`}
                 chevron
                 testID="chat-open-list"
               />
@@ -464,6 +466,7 @@ function ModeAsk({ houseId, start }: { houseId: string; start: DealMode }) {
 
 /** Jonz's question, answered with a tap: a few quick answers as buttons, or a day as the app's day picker. */
 function AskCard({ ask, weekStarts, onAnswer }: { ask: ChatAsk; weekStarts: IsoDow; onAnswer: (answer: string) => void }) {
+  const words = useWords();
   if (ask.kind === 'choices') {
     return (
       <View style={styles.choices} testID="ask-choices">
@@ -477,7 +480,7 @@ function AskCard({ ask, weekStarts, onAnswer }: { ask: ChatAsk; weekStarts: IsoD
   return (
     <Segmented<number>
       equal
-      label={HOUSE_DRAFT_COPY.pickDay}
+      label={words('ask.draft.pickDay')}
       value={0}
       options={days.map((d) => ({ value: d, label: DOW_LABEL[d].slice(0, 3), spoken: DOW_LABEL[d] }))}
       onChange={(d) => onAnswer(DOW_LABEL[d as IsoDow])}
@@ -556,7 +559,7 @@ function DraftCard({
       {editing ? (
         <>
           <Meta style={styles.inset} testID="draft-points">
-            {HOUSE_DRAFT_COPY.changesMeta(pointsAWeek(base.johns), pointsAWeek(after))}
+            {changesMeta(words, pointsAWeek(base.johns), pointsAWeek(after))}
           </Meta>
           {KINDS.map((kind) => {
             const these = shown.filter((c) => c.kind === kind);
@@ -564,14 +567,14 @@ function DraftCard({
             const moved = kind === 'change' ? regrouped : [];
             const all = changes.filter((c) => c.kind === kind).length + moved.length;
             return these.length + moved.length > 0 ? (
-              <Section key={kind} label={KIND_HEADING[kind]} count={all} testID={`draft-${kind}s`}>
+              <Section key={kind} label={words(KIND_HEADING[kind])} count={all} testID={`draft-${kind}s`}>
                 {these.map(row)}
                 {moved.map((g) => (
                   <ChoiceRow
                     key={g.key}
                     role="checkbox"
                     label={g.before.name}
-                    meta={HOUSE_DRAFT_COPY.groupPeople(membersLine(g.before.memberIds, people, me, words), membersLine(g.group.memberIds, people, me, words))}
+                    meta={words('ask.draft.groupPeople', { before: membersLine(g.before.memberIds, people, me, words), after: membersLine(g.group.memberIds, people, me, words) })}
                     leading={<KindIcon kind="change" />}
                     checked={keep.includes(g.key)}
                     onPress={() => onToggle(g.key)}
@@ -585,26 +588,26 @@ function DraftCard({
           })}
         </>
       ) : (
-        <Section label={HOUSE_DRAFT_COPY.draftLabel} right={HOUSE_DRAFT_COPY.draftMeta(keep.length, pointsAWeek(after))}>
+        <Section label={words('ask.draft.draftLabel')} right={words('ask.draft.draftMeta', { n: keep.length, points: pointsAWeek(after) })}>
           {shown.map(row)}
         </Section>
       )}
       {changes.length > folded ? (
         <TextButton
-          label={open ? HOUSE_DRAFT_COPY.showLess : HOUSE_DRAFT_COPY.seeAll(changes.length)}
+          label={open ? words('ask.draft.showLess') : words('ask.draft.seeAll', { n: changes.length })}
           onPress={() => onOpen(!open)}
           testID="draft-see-all"
         />
       ) : null}
       {open && groups.length > 0 ? (
-        <Section label={HOUSE_DRAFT_COPY.groupsLabel} testID="draft-groups">
+        <Section label={words('ask.draft.groupsLabel')} testID="draft-groups">
           {groups.map((g) => (
             <Row
               key={g.name}
               title={g.name}
               meta={[
                 g.memberIds.length > 0 ? membersLine(g.memberIds, people, me, words) : null,
-                g.waitingFor.length > 0 ? HOUSE_DRAFT_COPY.waiting(namesList(g.waitingFor)) : null,
+                g.waitingFor.length > 0 ? words('ask.draft.waiting', { names: namesList(g.waitingFor) }) : null,
               ]
                 .filter(Boolean)
                 .join(', ')}
@@ -614,7 +617,7 @@ function DraftCard({
         </Section>
       ) : null}
       {open && waiting.length > 0 ? (
-        <Meta style={styles.inset}>{HOUSE_DRAFT_COPY.everyoneForNow(namesList(waiting.map((g) => g.name)))}</Meta>
+        <Meta style={styles.inset}>{words('ask.draft.everyoneForNow', { groups: namesList(waiting.map((g) => g.name)) })}</Meta>
       ) : null}
       {draft.note ? (
         <Meta style={styles.inset} testID="draft-note">
@@ -624,8 +627,8 @@ function DraftCard({
       {problem ? <Alert message={problem} /> : null}
       <ButtonRow>
         <Button
-          label={editing ? HOUSE_DRAFT_COPY.apply(keep.length) : HOUSE_DRAFT_COPY.keep(keep.length)}
-          busyLabel={editing ? HOUSE_DRAFT_COPY.applying : HOUSE_DRAFT_COPY.keeping}
+          label={editing ? words('ask.draft.apply', { n: keep.length }) : words('ask.draft.keep', { n: keep.length })}
+          busyLabel={editing ? words('ask.draft.applying') : words('ask.draft.keeping')}
           onPress={onKeep}
           busy={pending}
           disabled={keep.length === 0}
@@ -637,9 +640,9 @@ function DraftCard({
 }
 
 const KIND_HEADING = {
-  remove: HOUSE_DRAFT_COPY.removingHeading,
-  change: HOUSE_DRAFT_COPY.changingHeading,
-  add: HOUSE_DRAFT_COPY.addingHeading,
+  remove: 'ask.draft.removingHeading',
+  change: 'ask.draft.changingHeading',
+  add: 'ask.draft.addingHeading',
 } as const;
 
 /** What a change does, at the row's leading edge: a minus in the hazard colour to take off, a pencil to change, a plus to add. */

@@ -1,10 +1,10 @@
-import { FOCUS_SHELL_COPY } from '@app/core';
 import type { ReactNode } from 'react';
 import { View } from 'react-native';
 
 import { OutlinePage } from '@/components/outline';
 import { ReadFailed } from '@/components/read-state';
 import { useWaitShown } from '@/hooks/use-wait-shown';
+import { useWords } from '@/hooks/use-words';
 
 type Failing = { failed?: undefined; onRetry?: undefined } | { failed: boolean; onRetry: () => void };
 
@@ -21,7 +21,7 @@ export function Waiting({
   ready,
   failed,
   onRetry,
-  label = FOCUS_SHELL_COPY.reading,
+  label,
   outline,
   children,
   fill = false,
@@ -36,6 +36,8 @@ export function Waiting({
   children?: ReactNode | (() => ReactNode);
   testID?: string;
 } & Failing) {
+  const words = useWords();
+  label ??= words('common.shell.reading');
   const shown = useWaitShown(!ready && !failed);
   // A read that failed with nothing to show; a later read failing over what's shown leaves it shown.
   if (failed && !ready && onRetry) return <ReadFailed onRetry={onRetry} />;
