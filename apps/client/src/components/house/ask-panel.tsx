@@ -36,6 +36,7 @@ export function AskPanel({ houseId, userId }: { houseId: string; userId: string 
             lead={lead}
             onBack={back?.onPress}
             backLabel={back?.label}
+            docked
             // New chat, Help, then Close at the edge.
             right={actions}
             end={<IconButton icon={XIcon} label={SHELL_COPY.close} onPress={close} testID="ask-close" />}

@@ -2,7 +2,7 @@ import { ASK_CHATS_COPY, CHAT_MAX_MESSAGES, MESSAGE_MAX, OWNER_ASK_COPY, type Ch
 import { useQueryClient } from '@tanstack/react-query';
 import { HistoryIcon, SquarePenIcon, XIcon } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import type { ChatStore, SavedChat } from '@/api/ask-chats';
 import { askOwner, ownerChats } from '@/api/owner';
@@ -14,9 +14,10 @@ import { ChatLog, Composer, JonzSaid, Said, UserBubble } from '@/components/chat
 import { AllChats } from '@/components/house/saved-chats';
 import { stepsShown, Thinking } from '@/components/house/thinking';
 import { IconButton } from '@/components/icon-button';
+import { Chip } from '@/components/status-mark';
 import { Body } from '@/components/text';
 import { BarEdgeContext, TitleBar } from '@/components/title-bar';
-import { GUTTER, LookContext, SPACE, useTheme } from '@/theme';
+import { GUTTER, LookContext, SPACE, useTheme, WIDE } from '@/theme';
 
 /** One turn of the owner's chat: what they asked, or Jonz's answer, how long it thought, and what it put on the card. */
 export type OwnerTurn =
@@ -67,6 +68,8 @@ export function OwnerAsk({ turns: initial = [], onClose, store = ownerChats }: {
 
 function OwnerChats({ initial, onClose, store }: { initial: OwnerTurn[]; onClose?: () => void; store: ChatStore }) {
   const { colors } = useTheme();
+  // Docked beside the page from WIDE: its bar stays as tall as the page's.
+  const docked = useWindowDimensions().width >= WIDE;
   const [chat, setChat] = useState<Open>({ serial: 0, saved: null });
   const [openId, setOpenId] = useState<string | null>(null);
   const [all, setAll] = useState(false);
@@ -104,7 +107,9 @@ function OwnerChats({ initial, onClose, store }: { initial: OwnerTurn[]; onClose
     <View style={[styles.screen, { backgroundColor: colors.background }]} testID="owner-ask">
       <TitleBar
         title={all ? ASK_CHATS_COPY.all : OWNER_ASK_COPY.title}
-        sub={OWNER_ASK_COPY.label}
+        // Docked, the bar keeps to one line like the page's; the Owner label goes just under it.
+        sub={docked ? undefined : OWNER_ASK_COPY.label}
+        docked={docked}
         lead={
           all ? undefined : (
             <IconButton
@@ -122,6 +127,11 @@ function OwnerChats({ initial, onClose, store }: { initial: OwnerTurn[]; onClose
         backLabel={all ? OWNER_ASK_COPY.title : undefined}
         right={tools}
       />
+      {docked ? (
+        <View style={styles.owner}>
+          <Chip label={OWNER_ASK_COPY.label} testID="owner-ask-label" />
+        </View>
+      ) : null}
       {problem ? (
         <View style={styles.problem}>
           <Alert message={problem} />
@@ -273,4 +283,6 @@ const styles = StyleSheet.create({
   screen: { flex: 1 },
   tools: { flexDirection: 'row', alignItems: 'center', gap: SPACE.xs },
   problem: { padding: GUTTER },
+  // The Owner label under a docked bar, on the chat's leading edge, as far down as the page's first line.
+  owner: { flexDirection: 'row', paddingHorizontal: GUTTER, paddingTop: SPACE.lg },
 });

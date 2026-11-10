@@ -80,3 +80,49 @@ test("a chat is kept, comes back from Your chats, and can be deleted", async ({ 
   await here.getByRole("button", { name: FOCUS_SHELL_COPY.backTo(PAGE_TITLE.ask) }).click();
   await expect(here.getByRole("heading", { name: PAGE_TITLE.ask })).toBeVisible();
 });
+
+test("on a computer Enter sends and Shift+Enter starts a new line; on a phone Return is a new line", async ({ context, page }) => {
+  made.push(await signInToClient(context, "Ava Enter"));
+  await page.goto("/house/new");
+  await page.getByLabel(FRONT_DOOR_COPY.name).fill(`Lodge ${Date.now() % 10_000}`);
+  await page.getByTestId("create-house").click();
+  await expect(page).toHaveURL(/\/today$/);
+  await page.goto("/house/describe");
+  await page.getByTestId("starter-couple").click();
+  await page.getByTestId("describe-keep").click();
+  await expect(page.getByTestId("chat-open-list")).toBeVisible();
+
+  const asked: unknown[] = [];
+  await page.route("**/v1/houses/*/ask", async (route) => {
+    const { draft, messages } = route.request().postDataJSON() as { draft: HouseDraft; messages: unknown };
+    asked.push(messages);
+    await route.fulfill({ json: { reply: "Noted.", ask: null, draft, source: "ai" } });
+  });
+
+  await page.goto("/today");
+  await page.getByTestId("ask-jonz").click();
+  const here = chat(page);
+  const input = here.getByTestId("chat-input");
+  await input.click();
+  await page.keyboard.type("Bins on Monday");
+  await page.keyboard.press("Shift+Enter");
+  await page.keyboard.type("and Thursday");
+  await expect(input).toHaveValue("Bins on Monday\nand Thursday");
+
+  // A laptop has a keyboard; a phone (touch, no mouse) keeps Return for new lines.
+  const touchOnly = await page.evaluate(() => window.matchMedia("(hover: none) and (pointer: coarse)").matches);
+  if ((page.viewportSize()?.width ?? 0) >= 1024) expect(touchOnly).toBe(false);
+  await page.keyboard.press("Enter");
+  if (touchOnly) {
+    await expect(input).toHaveValue("Bins on Monday\nand Thursday\n");
+    expect(asked).toHaveLength(0);
+  } else {
+    await expect(here.getByText("Noted.")).toBeVisible();
+    await expect(input).toHaveValue("");
+    expect(asked).toHaveLength(1);
+    // Enter in an empty box sends nothing and adds no line.
+    await page.keyboard.press("Enter");
+    await expect(input).toHaveValue("");
+    expect(asked).toHaveLength(1);
+  }
+});
