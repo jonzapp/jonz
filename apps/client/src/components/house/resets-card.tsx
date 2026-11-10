@@ -1,4 +1,4 @@
-import { RESET_COPY, resetItemLine, toldLine, type ChatReset, type Currency, BUSY_COPY } from '@app/core';
+import { RESET_COPY, resetItemLine, toldLine, type ChatReset, type Currency } from '@app/core';
 import { CheckIcon, RotateCcwIcon, Undo2Icon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -15,6 +15,7 @@ import { ChoiceRow } from '@/components/setup/choice-row';
 import { Meta } from '@/components/text';
 import { useMove } from '@/hooks/use-move';
 import { INSET, SPACE } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * Ask Jonz's Resets card: what Jonz offers to put right, each with the
@@ -40,13 +41,14 @@ export function ResetsCard({
   currency: Currency;
   zone: string;
 }) {
+  const words = useWords();
   const move = useMove(houseId);
   const [keep, setKeep] = useState<number[]>(() => items.map((_, at) => at));
   // The History rows of what this card reset, once it has; null before.
   const [done, setDone] = useState<{ count: number; actions: string[] } | null>(null);
   const [undone, setUndone] = useState(false);
-  const words = { nameOf, viewerId: me, currency, zone };
-  const lines = items.map((item) => resetItemLine(item, words));
+  const said = { nameOf, viewerId: me, currency, zone };
+  const lines = items.map((item) => resetItemLine(item, said));
   const told = keep.flatMap((at) => lines[at].told);
 
   async function apply() {
@@ -81,7 +83,7 @@ export function ResetsCard({
         {move.problem ? <Alert message={move.problem} /> : null}
         {!undone && done.actions.length > 0 ? (
           <ButtonRow>
-            <Button variant="outline" icon={Undo2Icon} label={RESET_COPY.undoAll} onPress={() => void undo()} busy={move.pending} busyLabel={BUSY_COPY.undoing} testID="resets-undo" />
+            <Button variant="outline" icon={Undo2Icon} label={RESET_COPY.undoAll} onPress={() => void undo()} busy={move.pending} busyLabel={words('common.busy.undoing')} testID="resets-undo" />
           </ButtonRow>
         ) : null}
       </View>

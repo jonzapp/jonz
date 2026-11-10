@@ -1,4 +1,4 @@
-import { addDaysTo, dateRange, dayName, FOCUS_SHELL_COPY, localDate, PAGE_TITLE, SECTION_LABEL, wordsFor } from '@app/core';
+import { addDaysTo, dateRange, dayName, localDate, wordsFor } from '@app/core';
 import { fireEvent, screen, within } from 'expo-router/testing-library';
 
 import { loadHouse } from '@/api/board';
@@ -29,7 +29,7 @@ function movingOn(on: string | null) {
 
 async function open() {
   await renderPages({ 'house/moving': MovingScreen }, '/house/moving');
-  await untilRead();
+  await untilRead(words);
 }
 
 beforeEach(() => {
@@ -42,8 +42,8 @@ beforeEach(() => {
 it('sits under a title bar with the way back to House', async () => {
   await open();
   const bar = within(screen.getByTestId('title-bar'));
-  expect(bar.getByRole('header', { name: PAGE_TITLE.moving })).toBeOnTheScreen();
-  expect(bar.getByRole('button', { name: FOCUS_SHELL_COPY.backTo(SECTION_LABEL.house) })).toBeOnTheScreen();
+  expect(bar.getByRole('header', { name: words('common.title.moving') })).toBeOnTheScreen();
+  expect(bar.getByRole('button', { name: words('common.shell.backTo', { place: words('common.section.house') }) })).toBeOnTheScreen();
   expect(screen.getByText(words('house.moving.intro'))).toBeOnTheScreen();
   expect(screen.getByText(words('house.moving.afterward'))).toBeOnTheScreen();
 });

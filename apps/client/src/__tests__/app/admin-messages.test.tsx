@@ -9,6 +9,9 @@ import MessagesPage from '@/app/admin/messages/index';
 import NewMessagePage from '@/app/admin/messages/new';
 import SentPage from '@/app/admin/messages/sent';
 import { renderPages, untilRead } from '@/testing/pages';
+import { wordsFor } from '@app/core';
+
+const words = wordsFor('en', 'housemates');
 
 jest.mock('@/api/owner', () => ({ ownerStatus: jest.fn() }));
 jest.mock('@/api/messages', () => ({
@@ -72,7 +75,7 @@ async function write(subject: string, body: string) {
 describe('A new message', () => {
   it('sends you a test before anyone else gets it: a push, never on a Wall', async () => {
     await renderPages(ROUTES, '/admin/messages/new');
-    await untilRead();
+    await untilRead(words);
     await write('Testing pushes', 'Does this reach my iPhone?');
     await fireEvent.press(screen.getByTestId('message-test'));
     await waitFor(() => expect(sendMessage).toHaveBeenCalled());
@@ -86,7 +89,7 @@ describe('A new message', () => {
 
   it('finds a house, says how many it reaches, and sends to them', async () => {
     await renderPages(ROUTES, '/admin/messages/new');
-    await untilRead();
+    await untilRead(words);
     await fireEvent.changeText(screen.getByTestId('message-find'), 'elm');
     await fireEvent.press(await screen.findByTestId('message-found-h1'));
     expect(await screen.findByText('Send to 5 people')).toBeVisible();
@@ -100,7 +103,7 @@ describe('A new message', () => {
 
   it('says what is missing rather than sending', async () => {
     await renderPages(ROUTES, '/admin/messages/new');
-    await untilRead();
+    await untilRead(words);
     await fireEvent.press(screen.getByTestId('message-send'));
     expect(await screen.findByText(MESSAGE_COPY.pickHouse)).toBeVisible();
     expect(screen.getByText(MESSAGE_COPY.subjectProblem)).toBeVisible();
@@ -109,7 +112,7 @@ describe('A new message', () => {
 
   it('keeps a message to one person off the Wall', async () => {
     await renderPages(ROUTES, '/admin/messages/new');
-    await untilRead();
+    await untilRead(words);
     await fireEvent.press(screen.getByText(MESSAGE_COPY.audience.person));
     const wall = screen.getByTestId('message-way-wall');
     expect(wall).not.toBeChecked();
@@ -119,7 +122,7 @@ describe('A new message', () => {
 
   it('asks again, naming the number, before sending to everyone', async () => {
     await renderPages(ROUTES, '/admin/messages/new');
-    await untilRead();
+    await untilRead(words);
     await fireEvent.press(screen.getByText(MESSAGE_COPY.audience.everyone));
     await write('Welcome to the beta', 'Thanks for trying Jonz.');
     await fireEvent.press(await screen.findByText('Send to 5 people'));
@@ -133,7 +136,7 @@ describe('A new message', () => {
 describe('Messages', () => {
   it('lists every message sent first, and on a phone opens one in full as a sheet', async () => {
     await renderPages(ROUTES, '/admin/messages');
-    await untilRead();
+    await untilRead(words);
     expect(screen.queryByTestId('message-form')).toBeNull();
     await fireEvent.press(await screen.findByTestId('sent-m1'));
     const sheet = await screen.findByTestId('sent-sheet');
@@ -143,7 +146,7 @@ describe('Messages', () => {
 
   it('pushes New message as a page of its own on a phone', async () => {
     await renderPages(ROUTES, '/admin/messages');
-    await untilRead();
+    await untilRead(words);
     await fireEvent.press(screen.getByTestId('message-new'));
     expect(await screen.findByTestId('admin-message-new')).toBeVisible();
     expect(screen.getByTestId('message-form')).toBeVisible();
@@ -152,7 +155,7 @@ describe('Messages', () => {
   it('on a laptop writes the new message in the side panel, how it looks under it', async () => {
     (useWindowDimensions as jest.Mock).mockReturnValue(LAPTOP);
     await renderPages(ROUTES, '/admin/messages');
-    await untilRead();
+    await untilRead(words);
     expect(await screen.findByText('Welcome to the beta')).toBeVisible();
     const side = screen.getByTestId('message-side');
     expect(within(side).getByTestId('message-form')).toBeVisible();
@@ -163,7 +166,7 @@ describe('Messages', () => {
   it('on a laptop opens a sent one in the panel, and New message brings the form back with its words', async () => {
     (useWindowDimensions as jest.Mock).mockReturnValue(LAPTOP);
     await renderPages(ROUTES, '/admin/messages');
-    await untilRead();
+    await untilRead(words);
     await write('Half written', 'Not sent yet.');
     await fireEvent.press(await screen.findByTestId('sent-m1'));
     const side = screen.getByTestId('message-side');
@@ -179,7 +182,7 @@ describe('Messages', () => {
     jest.mocked(ownerStatus).mockResolvedValue({ owner: true, mfa: true, permissions: OWNER_PERMISSION_NAMES.filter((p) => p !== 'messages:write') });
     (useWindowDimensions as jest.Mock).mockReturnValue(LAPTOP);
     await renderPages(ROUTES, '/admin/messages');
-    await untilRead();
+    await untilRead(words);
     expect(await screen.findByText('Welcome to the beta')).toBeVisible();
     expect(screen.queryByTestId('message-new')).toBeNull();
     expect(screen.queryByTestId('message-form')).toBeNull();
@@ -187,7 +190,7 @@ describe('Messages', () => {
 
   it('lands an old All sent link on the list', async () => {
     await renderPages(ROUTES, '/admin/messages/sent');
-    await untilRead();
+    await untilRead(words);
     expect(await screen.findByTestId('admin-messages')).toBeVisible();
     expect(await screen.findByTestId('sent-m1')).toBeVisible();
     await act(async () => {});

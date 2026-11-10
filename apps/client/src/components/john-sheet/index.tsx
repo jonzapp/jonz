@@ -1,4 +1,4 @@
-import { FOCUS_SHELL_COPY, type StakeView } from '@app/core';
+import { type StakeView } from '@app/core';
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 
 import { Sheet } from '@/components/sheet';
@@ -7,6 +7,7 @@ import { useHouse } from '@/hooks/use-house';
 
 import { JohnSheetBody, type JohnSheetContext, type JohnSheetFocus } from './body';
 import { useCached } from './cached';
+import { useWords } from '@/hooks/use-words';
 
 export type { JohnSheetFocus } from './body';
 
@@ -37,6 +38,7 @@ export function useJohnSheetIfAny(): JohnSheetApi | null {
  * votes as they land, and puts itself away if the John goes (a re-deal).
  */
 export function JohnSheetProvider({ houseId, userId, children }: { houseId: string; userId: string; children: ReactNode }) {
+  const words = useWords();
   const { view } = useHouse(houseId, userId);
   // What lateness costs is capped at the stake: the sheet knows how near once a screen has read the Stake.
   const stake = useCached<StakeView>(stakeKey(houseId)) ?? null;
@@ -61,7 +63,7 @@ export function JohnSheetProvider({ houseId, userId, children }: { houseId: stri
       zone: view.snapshot.rules.timezone,
       rules: view.snapshot.rules,
       now: view.now,
-      nameOf: (id) => members.find((m) => m.userId === id)?.name ?? FOCUS_SHELL_COPY.formerHousemate,
+      nameOf: (id) => members.find((m) => m.userId === id)?.name ?? words('common.shell.formerHousemate'),
       members,
       me: view.me,
       board: view.board,

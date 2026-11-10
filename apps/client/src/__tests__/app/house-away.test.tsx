@@ -1,4 +1,4 @@
-import { FOCUS_SHELL_COPY, PAGE_TITLE, SECTION_LABEL, awayMovedLine, wordsFor } from '@app/core';
+import { awayMovedLine, wordsFor } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 
 import { cancelAway, loadAway, setAway } from '@/api/away';
@@ -33,7 +33,7 @@ const trip = (overrides: object = {}) => ({
 
 async function open() {
   await renderPages({ 'house/away': AwayScreen }, '/house/away');
-  await untilRead();
+  await untilRead(words);
 }
 
 beforeEach(() => {
@@ -50,8 +50,8 @@ beforeEach(() => {
 it('sits under a title bar with the way back to House', async () => {
   await open();
   const bar = within(screen.getByTestId('title-bar'));
-  expect(bar.getByRole('header', { name: PAGE_TITLE.away })).toBeOnTheScreen();
-  expect(bar.getByRole('button', { name: FOCUS_SHELL_COPY.backTo(SECTION_LABEL.house) })).toBeOnTheScreen();
+  expect(bar.getByRole('header', { name: words('common.title.away') })).toBeOnTheScreen();
+  expect(bar.getByRole('button', { name: words('common.shell.backTo', { place: words('common.section.house') }) })).toBeOnTheScreen();
 });
 
 it('shows the month, each day saying how many are away', async () => {

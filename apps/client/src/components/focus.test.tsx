@@ -1,4 +1,4 @@
-import { BIN_NIGHT, FOCUS_SHELL_COPY, withAlpha } from '@app/core';
+import { BIN_NIGHT, withAlpha } from '@app/core';
 import { CalendarIcon } from 'lucide-react-native';
 import { fireEvent, render, screen, within } from '@testing-library/react-native';
 import { StyleSheet, Text, View } from 'react-native';
@@ -22,6 +22,9 @@ import { Chip, StatusMark } from './status-mark';
 import { Body, Lead, Meta, RowTitle, SectionLabel, Title } from './text';
 import { TextButton } from './text-button';
 import { TickBox } from './tick-box';
+import { wordsFor } from '@app/core';
+
+const words = wordsFor('en', 'housemates');
 
 // Focus's pieces. Decoration (hairlines, lid bars, badges, avatars) is hidden
 // from screen readers, so queries ask for hidden elements to find it.
@@ -228,7 +231,7 @@ describe('Fold', () => {
     await render(
       <Group>
         <Row title="Bins out" />
-        <Fold label={FOCUS_SHELL_COPY.done(2)}>
+        <Fold label={words('common.shell.done', { count: 2 })}>
           <Row title="Wipe the hob" />
           <Row title="Hoover" />
         </Fold>

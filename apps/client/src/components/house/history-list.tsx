@@ -1,4 +1,4 @@
-import { actionLine, historyDayLabel, historyDays, historyFor, historyMeta, historyTime, dayLabel, LIST_COPY, type Currency, type HouseKind, type HistoryItem } from '@app/core';
+import { actionLine, historyDayLabel, historyDays, historyFor, historyMeta, historyTime, dayLabel, type Currency, type HouseKind, type HistoryItem } from '@app/core';
 import { HistoryIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -82,7 +82,7 @@ export function HistoryList({
       {items.length > 0 || more.has ? (
         <ListFoot
           more={more}
-          shown={items.length > 0 ? LIST_COPY.backTo(dayLabel(items[items.length - 1].at, scene.zone)) : null}
+          shown={items.length > 0 ? words('common.list.backTo', { day: dayLabel(items[items.length - 1].at, scene.zone) }) : null}
           testID="history-foot"
         />
       ) : null}

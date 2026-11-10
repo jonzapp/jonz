@@ -1,4 +1,4 @@
-import { FOCUS_SHELL_COPY, memberCan, RESET_COPY, RESULT_CHOICES, type BoardItem, type ResultChoice } from '@app/core';
+import { memberCan, RESET_COPY, RESULT_CHOICES, type BoardItem, type ResultChoice } from '@app/core';
 import { RotateCcwIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { View } from 'react-native';
@@ -12,6 +12,7 @@ import { Section } from '@/components/section';
 
 import type { JohnSheetContext } from './body';
 import { SheetLines, SheetSection } from './parts';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * An admin's "Fix the result": one row under "Admin", whatever the John's
@@ -21,6 +22,7 @@ import { SheetLines, SheetSection } from './parts';
  * (the reset sheet, in place), so nothing changes on one tap.
  */
 export function ChangeResult({ item, context }: { item: BoardItem; context: JohnSheetContext }) {
+  const words = useWords();
   const [picking, setPicking] = useState(false);
   const [choice, setChoice] = useState<ResultChoice | null>(null);
   if (!memberCan(context.me, 'history:write') || item.dispute) return null;
@@ -47,7 +49,7 @@ export function ChangeResult({ item, context }: { item: BoardItem; context: John
             ))}
             <GroupItem>
               <ButtonRow>
-                <Button variant="outline" label={FOCUS_SHELL_COPY.cancel} onPress={() => setPicking(false)} testID="fix-result-cancel" />
+                <Button variant="outline" label={words('common.shell.cancel')} onPress={() => setPicking(false)} testID="fix-result-cancel" />
               </ButtonRow>
             </GroupItem>
           </Section>

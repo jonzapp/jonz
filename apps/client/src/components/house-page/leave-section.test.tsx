@@ -1,4 +1,4 @@
-import { BIN_NIGHT, FOCUS_SHELL_COPY, wordsFor } from '@app/core';
+import { BIN_NIGHT, wordsFor } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 import { Text } from 'react-native';
 
@@ -137,7 +137,7 @@ it("reads the Stake again from the sheet, when it couldn't", async () => {
   await open();
   const sheet = await ask();
   expect(await sheet.findByText(words('house.lower.costUnread'))).toBeOnTheScreen();
-  const retry = sheet.getByRole('button', { name: FOCUS_SHELL_COPY.retry });
+  const retry = sheet.getByRole('button', { name: words('common.shell.retry') });
   let answer: (value: unknown) => void = () => undefined;
   (loadStake as jest.Mock).mockReturnValue(new Promise((resolve) => (answer = resolve)));
   const asked = (loadStake as jest.Mock).mock.calls.length;

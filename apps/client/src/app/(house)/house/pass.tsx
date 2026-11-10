@@ -1,4 +1,4 @@
-import { hasPass, LEGAL, PAGE_TITLE, passWords, type Words, type PassExtra, PASS_FREE_HISTORY_WEEKS, passFirstChargeNote, passLine, passOffers, passPurchaseRefusal, type PassPurchase } from '@app/core';
+import { hasPass, LEGAL, passWords, type Words, type PassExtra, PASS_FREE_HISTORY_WEEKS, passFirstChargeNote, passLine, passOffers, passPurchaseRefusal, type PassPurchase } from '@app/core';
 import { useLocalSearchParams } from 'expo-router';
 import { CameraIcon, CoinsIcon, CreditCardIcon, HistoryIcon, TrophyIcon, UserRoundIcon, type LucideIcon } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
@@ -76,7 +76,7 @@ function PassFor({ houseId, userId }: { houseId: string; userId: string }) {
 
   return (
     <HousePage
-      title={view?.snapshot.house.kind === 'family' ? words('house.familyPass.title') : PAGE_TITLE.pass}
+      title={view?.snapshot.house.kind === 'family' ? words('house.familyPass.title') : words('common.title.pass')}
       testID="pass-screen" outline={<SettingsOutline card />}
       fills
       ready={view !== null}

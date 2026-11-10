@@ -1,4 +1,4 @@
-import { FOCUS_SHELL_COPY, SECTION_LABEL, wordsFor } from '@app/core';
+import { wordsFor } from '@app/core';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Link, router, Slot } from 'expo-router';
 import { fireEvent, renderRouter, screen, waitFor, within } from 'expo-router/testing-library';
@@ -60,7 +60,7 @@ jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
 function Pushed({ name }: { name: string }) {
   return (
     <View>
-      <TitleBar title={name} back="/house" backLabel={SECTION_LABEL.house} />
+      <TitleBar title={name} back="/house" backLabel={words('common.section.house')} />
       <Text>{`${name} screen`}</Text>
     </View>
   );
@@ -142,22 +142,22 @@ describe('on a phone', () => {
     await open();
     expect(screen.getAllByRole('tab')).toHaveLength(3);
     expect(screen.getByText('Today screen')).toBeOnTheScreen();
-    expect(screen.getByRole('tab', { name: SECTION_LABEL.today })).toBeSelected();
+    expect(screen.getByRole('tab', { name: words('common.section.today') })).toBeSelected();
 
-    await fireEvent.press(screen.getByRole('tab', { name: SECTION_LABEL.week }));
+    await fireEvent.press(screen.getByRole('tab', { name: words('common.section.week') }));
     expect(screen).toHavePathname('/week');
     expect(screen.getByText('Week screen')).toBeOnTheScreen();
-    expect(screen.getByRole('tab', { name: SECTION_LABEL.week })).toBeSelected();
-    expect(screen.getByRole('tab', { name: SECTION_LABEL.today })).not.toBeSelected();
+    expect(screen.getByRole('tab', { name: words('common.section.week') })).toBeSelected();
+    expect(screen.getByRole('tab', { name: words('common.section.today') })).not.toBeSelected();
 
-    await fireEvent.press(screen.getByRole('tab', { name: SECTION_LABEL.house }));
+    await fireEvent.press(screen.getByRole('tab', { name: words('common.section.house') }));
     expect(screen).toHavePathname('/house');
     expect(screen.getByText('House screen')).toBeOnTheScreen();
   });
 
   it('has no Wall, Table or Stake tab, and no wordmark strip', async () => {
     await open();
-    for (const gone of [SECTION_LABEL.wall, SECTION_LABEL.table, SECTION_LABEL.stake]) {
+    for (const gone of [words('common.section.wall'), words('common.section.table'), words('common.section.stake')]) {
       expect(screen.queryByRole('tab', { name: gone })).toBeNull();
     }
     expect(screen.queryByLabelText('Jonz')).toBeNull();
@@ -166,7 +166,7 @@ describe('on a phone', () => {
   it("counts the disputes waiting for your vote on Today's tab, and says so", async () => {
     (loadHouse as jest.Mock).mockResolvedValue(waitingForPriya());
     await open('/week');
-    const today = await screen.findByRole('tab', { name: FOCUS_SHELL_COPY.tab(SECTION_LABEL.today, 1) });
+    const today = await screen.findByRole('tab', { name: words('common.shell.tab', { label: words('common.section.today'), toVote: 1 }) });
     // The badge itself is silent: the tab's name says it.
     expect(within(today).getByTestId('count-badge', { includeHiddenElements: true })).toHaveTextContent('1');
     // The other tabs have nothing to count.
@@ -175,7 +175,7 @@ describe('on a phone', () => {
 
   it('shows no badge when nothing waits for your vote', async () => {
     await open();
-    expect(await screen.findByRole('tab', { name: SECTION_LABEL.today })).toBeOnTheScreen();
+    expect(await screen.findByRole('tab', { name: words('common.section.today') })).toBeOnTheScreen();
     expect(screen.queryByTestId('count-badge', { includeHiddenElements: true })).toBeNull();
   });
 
@@ -185,9 +185,9 @@ describe('on a phone', () => {
     expect(screen).toHavePathname('/house/wall');
     expect(screen.getByText('Wall screen')).toBeOnTheScreen();
     expect(screen.getAllByRole('tab')).toHaveLength(3);
-    expect(screen.getByRole('tab', { name: SECTION_LABEL.house })).toBeSelected();
+    expect(screen.getByRole('tab', { name: words('common.section.house') })).toBeSelected();
 
-    await fireEvent.press(screen.getByRole('button', { name: FOCUS_SHELL_COPY.backTo(SECTION_LABEL.house) }));
+    await fireEvent.press(screen.getByRole('button', { name: words('common.shell.backTo', { place: words('common.section.house') }) }));
     expect(screen).toHavePathname('/house');
     expect(screen.getByText('House screen')).toBeOnTheScreen();
   });
@@ -195,8 +195,8 @@ describe('on a phone', () => {
   it('puts House under a page opened straight from a link, so back has somewhere to go', async () => {
     await open('/house/stake');
     expect(screen.getByText('Stake screen')).toBeOnTheScreen();
-    expect(screen.getByRole('tab', { name: SECTION_LABEL.house })).toBeSelected();
-    await fireEvent.press(screen.getByRole('button', { name: FOCUS_SHELL_COPY.backTo(SECTION_LABEL.house) }));
+    expect(screen.getByRole('tab', { name: words('common.section.house') })).toBeSelected();
+    await fireEvent.press(screen.getByRole('button', { name: words('common.shell.backTo', { place: words('common.section.house') }) }));
     expect(screen).toHavePathname('/house');
   });
 
@@ -204,7 +204,7 @@ describe('on a phone', () => {
     await open('/today');
     await fireEvent.press(screen.getByRole('link', { name: 'To the Stake' }));
     expect(screen).toHavePathname('/house/stake');
-    await fireEvent.press(screen.getByRole('button', { name: FOCUS_SHELL_COPY.backTo(SECTION_LABEL.house) }));
+    await fireEvent.press(screen.getByRole('button', { name: words('common.shell.backTo', { place: words('common.section.house') }) }));
     expect(screen).toHavePathname('/house');
     expect(screen.getByText('House screen')).toBeOnTheScreen();
   });
@@ -215,7 +215,7 @@ describe('on a phone', () => {
     expect(screen).toHavePathname('/house/describe');
     await fireEvent.press(screen.getByText('Open the list'));
     expect(screen).toHavePathname('/house/johns');
-    await fireEvent.press(screen.getByRole('button', { name: FOCUS_SHELL_COPY.backTo(SECTION_LABEL.house) }));
+    await fireEvent.press(screen.getByRole('button', { name: words('common.shell.backTo', { place: words('common.section.house') }) }));
     expect(screen).toHavePathname('/house');
     expect(screen.getByText('House screen')).toBeOnTheScreen();
   });
@@ -224,7 +224,7 @@ describe('on a phone', () => {
     await open('/house');
     await fireEvent.press(screen.getByRole('link', { name: 'To the Wall' }));
     expect(screen).toHavePathname('/house/wall');
-    await fireEvent.press(screen.getByRole('tab', { name: SECTION_LABEL.house }));
+    await fireEvent.press(screen.getByRole('tab', { name: words('common.section.house') }));
     // The stack pops on the next frame, once every listener has had the press.
     await waitFor(() => expect(screen).toHavePathname('/house'));
     expect(screen.getByText('House screen')).toBeOnTheScreen();
@@ -271,15 +271,15 @@ describe('on a laptop', () => {
     expect(await screen.findByText('2 housemates')).toBeOnTheScreen();
     expect(screen.getByText('Flat 3')).toBeOnTheScreen();
     expect(screen.getAllByRole('tab')).toHaveLength(3);
-    expect(screen.getByRole('tab', { name: SECTION_LABEL.week })).toBeSelected();
-    await fireEvent.press(screen.getByRole('tab', { name: SECTION_LABEL.house }));
+    expect(screen.getByRole('tab', { name: words('common.section.week') })).toBeSelected();
+    await fireEvent.press(screen.getByRole('tab', { name: words('common.section.house') }));
     expect(screen).toHavePathname('/house');
   });
 
   it("counts the disputes waiting for your vote beside Today", async () => {
     (loadHouse as jest.Mock).mockResolvedValue(waitingForPriya());
     await open('/week');
-    const today = await screen.findByRole('tab', { name: FOCUS_SHELL_COPY.tab(SECTION_LABEL.today, 1) });
+    const today = await screen.findByRole('tab', { name: words('common.shell.tab', { label: words('common.section.today'), toVote: 1 }) });
     expect(within(today).getByTestId('count-badge', { includeHiddenElements: true })).toHaveTextContent('1');
   });
   it("lists House's pages beside them, the one you're on marked, and no way back on the page", async () => {

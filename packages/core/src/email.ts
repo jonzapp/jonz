@@ -1,4 +1,4 @@
-import { APP_NAME } from "./copy";
+import { APP_NAME } from "./app";
 import type { Currency } from "./domain";
 import { LEGAL } from "./legal";
 import type { NoticeKind } from "./notices";

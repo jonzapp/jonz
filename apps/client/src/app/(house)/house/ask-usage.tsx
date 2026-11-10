@@ -1,4 +1,3 @@
-import { ASK_USAGE_COPY, SECTION_LABEL } from '@app/core';
 
 import { UsageDetail } from '@/components/chat/ask-usage';
 import { PageTitle } from '@/components/page-title';
@@ -10,6 +9,7 @@ import { useMembership } from '@/hooks/use-membership';
 import { usePull } from '@/hooks/use-refresh';
 import { Waiting } from '@/components/waiting';
 import { ListPageOutline } from '@/components/page-outlines';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * Ask Jonz usage, pushed from the chat's warning and notice and from House's
@@ -23,6 +23,7 @@ export default function AskUsageScreen() {
 }
 
 function AskUsageFor({ houseId, userId }: { houseId: string; userId: string }) {
+  const words = useWords();
   const { query, view } = useHouse(houseId, userId);
   const usage = useAskUsage(houseId);
   const { refreshing, pull } = usePull(houseId, () => Promise.all([query.refetch(), usage.refetch()]));
@@ -31,13 +32,13 @@ function AskUsageFor({ houseId, userId }: { houseId: string; userId: string }) {
 
   return (
     <Screen
-      bar={<TitleBar title={ASK_USAGE_COPY.title} back="/house" backLabel={SECTION_LABEL.house} />}
+      bar={<TitleBar title={words('ask.usage.title')} back="/house" backLabel={words('common.section.house')} />}
       refreshing={refreshing}
       onRefresh={pull}
       fills
       testID="ask-usage-screen"
     >
-      <PageTitle page={ASK_USAGE_COPY.title} />
+      <PageTitle page={words('ask.usage.title')} />
       {usage.data && view ? (
         <UsageDetail usage={usage.data} zone={view.snapshot.rules.timezone} me={userId} nameOf={nameOf} />
       ) : (

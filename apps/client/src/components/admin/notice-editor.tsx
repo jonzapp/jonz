@@ -1,20 +1,4 @@
-import {
-  ADMIN_COPY,
-  formatLocalDateTime,
-  NOTICE_COPY,
-  NOTICE_ENDS,
-  NOTICE_ENDS_LABEL,
-  NOTICE_KINDS,
-  NOTICE_PRESETS,
-  noticeEndsAt,
-  noticeProblems,
-  parseLocalDateTime,
-  type Notice,
-  type NoticeDraft,
-  type NoticeEnds,
-  type NoticeKind,
-  BUSY_COPY,
-} from '@app/core';
+import { ADMIN_COPY, formatLocalDateTime, NOTICE_COPY, NOTICE_ENDS, NOTICE_ENDS_LABEL, NOTICE_KINDS, NOTICE_PRESETS, noticeEndsAt, noticeProblems, parseLocalDateTime, type Notice, type NoticeDraft, type NoticeEnds, type NoticeKind } from '@app/core';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -25,6 +9,7 @@ import { Field, FieldLabel } from '@/components/field';
 import { Segmented } from '@/components/segmented';
 import { Meta } from '@/components/text';
 import { SPACE } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 type Starts = 'now' | 'later';
 
@@ -79,6 +64,7 @@ export function NoticeEditor({
   onSave: (saved: SavedNotice) => void;
   onEnd?: () => void;
 }) {
+  const words = useWords();
   const [now] = useState(() => new Date());
   const [form, setForm] = useState<Form>(() => formFor(notice, kind, now));
   const [tried, setTried] = useState(false);
@@ -190,8 +176,8 @@ export function NoticeEditor({
       </View>
       <View style={styles.actions}>
         <ButtonRow stacked>
-          <Button label={notice === null && form.starts === 'now' ? ADMIN_COPY.saveAndShow : ADMIN_COPY.save} onPress={save} busy={waiting === 'save'} busyLabel={BUSY_COPY.saving} testID="notice-save" />
-          {onEnd ? <Button label={ADMIN_COPY.endNow} variant="hazard" onPress={onEnd} busy={waiting === 'end'} busyLabel={BUSY_COPY.ending} testID="notice-end" /> : null}
+          <Button label={notice === null && form.starts === 'now' ? ADMIN_COPY.saveAndShow : ADMIN_COPY.save} onPress={save} busy={waiting === 'save'} busyLabel={words('common.busy.saving')} testID="notice-save" />
+          {onEnd ? <Button label={ADMIN_COPY.endNow} variant="hazard" onPress={onEnd} busy={waiting === 'end'} busyLabel={words('common.busy.ending')} testID="notice-end" /> : null}
         </ButtonRow>
       </View>
       <Meta>{ADMIN_COPY.auditNote}</Meta>

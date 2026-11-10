@@ -1,4 +1,4 @@
-import { formatMoney, monthOf, SECTION_LABEL, wordsFor } from "@app/core";
+import { formatMoney, monthOf, wordsFor } from "@app/core";
 import { expect, test } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, dealtHouseInClient } from "./auth";
@@ -62,7 +62,7 @@ test("a closed month's debt is settled once the person paid marks it received", 
   // Ava, paid, marks it received from settling up on House; the house is square, so settling up goes.
   const avaPage = await avaContext.newPage();
   await avaPage.goto("/today");
-  await avaPage.getByRole("tab", { name: SECTION_LABEL.house }).click();
+  await avaPage.getByRole("tab", { name: words('common.section.house') }).click();
   const avaHouse = avaPage.getByTestId("house-screen");
   const due = avaHouse.getByTestId("settle-up").getByTestId("transfer");
   await expect(due).toContainText(words("house.page.owesYou", { name: "Ben", amount: four }));

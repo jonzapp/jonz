@@ -1,10 +1,10 @@
-import { HOUSE_DRAFT_COPY } from '@app/core';
 import { CheckIcon, ChevronDownIcon, ChevronRightIcon } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing, Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { Meta } from '@/components/text';
 import { GROUP_RADIUS, INSET, SPACE, useTheme } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /** How long each of Jonz's steps shows while it thinks, before the next. */
 export const STEP_MS = 1300;
@@ -48,6 +48,7 @@ function useReduceMotion(): boolean {
  * A screen reader hears "Jonz is thinking…" once, not every step.
  */
 export function Thinking({ steps }: { steps: readonly string[] }) {
+  const words = useWords();
   const { colors } = useTheme();
   const reduce = useReduceMotion();
   const [at, setAt] = useState(0);
@@ -96,7 +97,7 @@ export function Thinking({ steps }: { steps: readonly string[] }) {
   return (
     <View
       accessible
-      accessibilityLabel={HOUSE_DRAFT_COPY.thinking}
+      accessibilityLabel={words('ask.draft.thinking')}
       accessibilityLiveRegion="polite"
       aria-busy
       style={styles.thinking}
@@ -123,6 +124,7 @@ export function Thinking({ steps }: { steps: readonly string[] }) {
  * got through, each ticked, on a card; tapped again, it folds away.
  */
 export function ThoughtFold({ seconds, steps }: { seconds: number; steps: readonly string[] }) {
+  const words = useWords();
   const { colors } = useTheme();
   const [open, setOpen] = useState(false);
   const Chevron = open ? ChevronDownIcon : ChevronRightIcon;
@@ -136,7 +138,7 @@ export function ThoughtFold({ seconds, steps }: { seconds: number; steps: readon
         style={({ pressed }) => [styles.foldHead, pressed && { opacity: 0.6 }]}
         testID="chat-thought"
       >
-        <Meta>{HOUSE_DRAFT_COPY.thought(seconds)}</Meta>
+        <Meta>{words('ask.draft.thought', { seconds })}</Meta>
         <Chevron size={16} color={colors.mutedForeground} aria-hidden />
       </Pressable>
       {open ? (

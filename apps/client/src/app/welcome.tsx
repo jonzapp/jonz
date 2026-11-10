@@ -1,4 +1,4 @@
-import { dateRange, DOOR, inviteCode, PAGE_TITLE } from '@app/core';
+import { dateRange, DOOR, inviteCode } from '@app/core';
 import { router } from 'expo-router';
 import { LogOutIcon, TicketXIcon, TruckIcon } from 'lucide-react-native';
 import { useState } from 'react';
@@ -46,7 +46,7 @@ export default function Welcome() {
 
   return (
     <Door testID="welcome-screen">
-      <PageTitle page={moving ? PAGE_TITLE.movingOn : PAGE_TITLE.welcome} />
+      <PageTitle page={moving ? words('common.title.movingOn') : words('common.title.welcome')} />
       <Sign>
         {moving ? (
           <>

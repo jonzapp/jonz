@@ -14,6 +14,7 @@ import {
 import { ApiRequestError } from './base';
 import { addJohns, archiveJohn, loadJohnList, saveGroup, saveJohn, type JohnList } from './settings';
 import { callV1 } from './v1';
+import type { Words } from '@app/core';
 
 // Ask Jonz and Describe your house: one turn of the chat with apps/api
 // (Claude, or a starter list when Claude isn't there), then apply the changes
@@ -28,12 +29,12 @@ import { callV1 } from './v1';
  * (a starter list that fits, or the draft left as it is), so setting up a
  * house never stops here.
  */
-export async function sendChat(houseId: string, messages: readonly ChatMessage[], draft: HouseDraft | null): Promise<ChatResponse> {
+export async function sendChat(houseId: string, messages: readonly ChatMessage[], draft: HouseDraft | null, words: Words): Promise<ChatResponse> {
   try {
     return await callV1('ask_house', { houseId, messages: [...messages], draft });
   } catch (e) {
     if (e instanceof ApiRequestError && e.status >= 400 && e.status < 500 && e.status !== 404) throw e;
-    return offlineTurn(messages, draft);
+    return offlineTurn(messages, draft, words);
   }
 }
 

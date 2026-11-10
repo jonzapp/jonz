@@ -1,4 +1,4 @@
-import { BIN_NIGHT, CATEGORY_LABEL, FOCUS_SHELL_COPY, NEW_JOHN, PAGE_TITLE, SECTION_LABEL, wordsFor } from '@app/core';
+import { BIN_NIGHT, CATEGORY_LABEL, NEW_JOHN, wordsFor } from '@app/core';
 import { router, Slot } from 'expo-router';
 import { act, fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 import { useContext } from 'react';
@@ -66,7 +66,7 @@ function HouseLayout() {
 async function open(as: 'priya' | 'sam' = 'priya') {
   mockMembership.userId = as;
   await renderPages({ 'house/_layout': HouseLayout, 'house/johns': JohnListScreen }, '/house/johns');
-  await untilRead();
+  await untilRead(words);
 }
 
 /** A setting in the John sheet, opened: its row is named "Kind, Kitchen". */
@@ -98,8 +98,8 @@ beforeEach(() => {
 it('sits under a title bar with the way back to House', async () => {
   await open();
   const bar = within(screen.getByTestId('title-bar'));
-  expect(bar.getByRole('header', { name: PAGE_TITLE.johnList })).toBeOnTheScreen();
-  expect(bar.getByRole('button', { name: FOCUS_SHELL_COPY.backTo(SECTION_LABEL.house) })).toBeOnTheScreen();
+  expect(bar.getByRole('header', { name: words('common.title.johnList') })).toBeOnTheScreen();
+  expect(bar.getByRole('button', { name: words('common.shell.backTo', { place: words('common.section.house') }) })).toBeOnTheScreen();
 });
 
 it('groups the Johns by kind, each with when, what sets it apart and its points', async () => {
@@ -585,7 +585,7 @@ it("says when it can't read the list, and tries again", async () => {
   (loadJohnList as jest.Mock).mockRejectedValueOnce(new Error('offline'));
   mockMembership.userId = 'priya';
   await renderPages({ 'house/_layout': HouseLayout, 'house/johns': JohnListScreen }, '/house/johns');
-  expect(await screen.findByRole('alert')).toHaveTextContent(FOCUS_SHELL_COPY.unreadable);
-  await fireEvent.press(screen.getByRole('button', { name: FOCUS_SHELL_COPY.retry }));
+  expect(await screen.findByRole('alert')).toHaveTextContent(words('common.shell.unreadable'));
+  await fireEvent.press(screen.getByRole('button', { name: words('common.shell.retry') }));
   expect(await screen.findAllByTestId('john-def')).toHaveLength(2);
 });

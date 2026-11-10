@@ -1,4 +1,4 @@
-import { SHELL_COPY, withAlpha } from '@app/core';
+import { withAlpha } from '@app/core';
 import { XIcon } from 'lucide-react-native';
 import { createContext, useCallback, useContext, useEffect, useRef, type ReactNode } from 'react';
 import {
@@ -18,6 +18,7 @@ import { HazardTape, SIGN_TAPE } from '@/components/hazard-tape';
 import { Body, Lead } from '@/components/text';
 import { IconButton } from '@/components/icon-button';
 import { GUTTER, INSET, SECTION_GAP, SPACE, TAP, useTheme, WIDE } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * How wide a rail down the window's left is, where one stands (the house's,
@@ -105,6 +106,7 @@ export function Sheet({
   testID?: string;
   children: ReactNode;
 }) {
+  const words = useWords();
   const { colors, scheme, type } = useTheme();
   const insets = useSafeAreaInsets();
   const wide = useWindowDimensions().width >= WIDE;
@@ -172,7 +174,7 @@ export function Sheet({
               ) : (
                 <View style={styles.title} />
               )}
-              <IconButton icon={XIcon} label={SHELL_COPY.close} onPress={onClose} testID="sheet-close" />
+              <IconButton icon={XIcon} label={words('common.shell.close')} onPress={onClose} testID="sheet-close" />
             </View>
             <ScrollView
               ref={scroll}

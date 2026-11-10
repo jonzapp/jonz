@@ -1,4 +1,4 @@
-import { BIN_NIGHT, buildStake, FOCUS_SHELL_COPY, type HistoryRow, monthOf, monthWord, stakeRules, perWeekLine, lateMissedLine, wordsFor } from '@app/core';
+import { BIN_NIGHT, buildStake, type HistoryRow, monthOf, monthWord, stakeRules, perWeekLine, lateMissedLine, wordsFor } from '@app/core';
 import { router, Slot } from 'expo-router';
 import { Tabs } from 'expo-router/js-tabs';
 import { act, fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
@@ -100,7 +100,7 @@ async function open({ workspace = false } = {}) {
     },
     '/house',
   );
-  await untilRead();
+  await untilRead(words);
   // The Stake, the Table, the John list and time away are read after the house itself.
   // Your month's figure fills in once the Stake is read, or the Stake says it couldn't be.
   await waitFor(() =>
@@ -163,7 +163,7 @@ it('names the house in the title bar, and leads the page with its figures', asyn
   expect(screen.getByTestId('figure-johns')).toHaveTextContent(`2${words('house.page.johnsListed', { n: 2 })}${perWeekLine(4, words)}`);
   expect(within(screen.getByTestId('house-figures')).getAllByRole('link')).toHaveLength(4);
   // House is a tab's top: there's no way back from it.
-  expect(bar.queryByRole('button', { name: FOCUS_SHELL_COPY.back })).toBeNull();
+  expect(bar.queryByRole('button', { name: words('common.shell.back') })).toBeNull();
 });
 
 /** On a phone, the switch's other half: the setup, the Pass and You. */
@@ -301,7 +301,7 @@ describe('your month and settling up', () => {
     await open();
     const transfers = screen.getAllByTestId('transfer');
     const gone = transfers.find((t) => within(t).queryByText(words('house.page.gone')))!;
-    expect(gone).toHaveTextContent(new RegExp(words('house.page.owesYou', { name: FOCUS_SHELL_COPY.formerHousemate, amount: '£2' })));
+    expect(gone).toHaveTextContent(new RegExp(words('house.page.owesYou', { name: words('common.shell.formerHousemate'), amount: '£2' })));
     expect(within(gone).queryByRole('button')).toBeNull();
     // The one amber button is Sam's, the only one the database would take.
     expect(screen.getAllByRole('button', { name: /^Mark/ })).toHaveLength(1);
@@ -321,7 +321,7 @@ describe('your month and settling up', () => {
     (loadStake as jest.Mock).mockRejectedValueOnce(new Error('offline'));
     await open();
     expect(await screen.findByRole('alert')).toHaveTextContent(words('house.page.stakeUnreadable'));
-    await fireEvent.press(screen.getByRole('button', { name: FOCUS_SHELL_COPY.retry }));
+    await fireEvent.press(screen.getByRole('button', { name: words('common.shell.retry') }));
     await waitFor(() => expect(screen.getByTestId('figure-money')).toHaveTextContent(new RegExp(words('house.page.upIn', { month: 'October' }))));
   });
 });
@@ -475,7 +475,7 @@ it('reads the house again each time House comes into view', async () => {
     },
     '/house',
   );
-  await untilRead();
+  await untilRead(words);
   await waitFor(() => expect(screen.getByTestId('figure-stake')).toHaveTextContent(new RegExp('^£20')));
   // Someone else changes the stake while you're on another tab.
   (loadHouse as jest.Mock).mockResolvedValue(snapshot({ rules: { ...snapshot().rules, stakeMinor: 2500 } }));
@@ -487,8 +487,8 @@ it('reads the house again each time House comes into view', async () => {
 it("says when it can't read the house, and tries again", async () => {
   (loadHouse as jest.Mock).mockRejectedValueOnce(new Error('offline'));
   await renderPages({ 'house/index': HouseScreen }, '/house');
-  expect(await screen.findByRole('alert')).toHaveTextContent(FOCUS_SHELL_COPY.unreadable);
-  await fireEvent.press(screen.getByRole('button', { name: FOCUS_SHELL_COPY.retry }));
+  expect(await screen.findByRole('alert')).toHaveTextContent(words('common.shell.unreadable'));
+  await fireEvent.press(screen.getByRole('button', { name: words('common.shell.retry') }));
   expect(await screen.findByRole('header', { name: 'Flat 3' })).toBeOnTheScreen();
 });
 

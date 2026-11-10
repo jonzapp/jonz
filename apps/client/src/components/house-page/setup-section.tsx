@@ -1,4 +1,5 @@
-import { ASK_USAGE_COPY, FOCUS_SHELL_COPY, houseSetupValues, localDate, memberCan } from '@app/core';
+import { wholePercent } from '@app/core';
+import { houseSetupValues, localDate, memberCan } from '@app/core';
 import { GaugeIcon, ListTodoIcon, PlaneIcon, ScrollTextIcon } from 'lucide-react-native';
 import { View } from 'react-native';
 
@@ -61,7 +62,7 @@ export function SetupSection({
 
   const section = (
     <Section
-      label={kid ? words('house.kid.setup') : FOCUS_SHELL_COPY.setup}
+      label={kid ? words('house.kid.setup') : words('common.shell.setup')}
       right={kid ? words('house.kid.setupNote') : words('house.lower.setupNote')}
       testID="setup-section"
     >
@@ -92,8 +93,8 @@ export function SetupSection({
       {kid ? null : (
         <Row
           leading={<RowIcon icon={GaugeIcon} />}
-          title={ASK_USAGE_COPY.title}
-          meta={usage.data ? ASK_USAGE_COPY.rowMeta(usage.data.left) : pending}
+          title={words('ask.usage.title')}
+          meta={usage.data ? words('ask.usage.rowMeta', { left: wholePercent(usage.data.left) }) : pending}
           href="/house/ask-usage"
           chevron
           testID="to-ask-usage"

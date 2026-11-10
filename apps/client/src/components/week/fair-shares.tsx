@@ -1,4 +1,4 @@
-import { FOCUS_SHELL_COPY, weekShareRows, weekWho } from '@app/core';
+import { weekShareRows, weekWho } from '@app/core';
 import { InfoIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -67,7 +67,7 @@ export function FairnessFooter({
               <Row
                 key={row.userId}
                 leading={
-                  <Avatar name={nameOf(row.userId) ?? FOCUS_SHELL_COPY.formerHousemate} userId={row.userId} me={row.userId === viewerId} />
+                  <Avatar name={nameOf(row.userId) ?? words('common.shell.formerHousemate')} userId={row.userId} me={row.userId === viewerId} />
                 }
                 title={weekWho(row.userId, viewerId, nameOf, words)}
                 trailing={row.balance}

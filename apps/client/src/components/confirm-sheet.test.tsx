@@ -1,9 +1,12 @@
-import { BIN_NIGHT, FOCUS_SHELL_COPY } from '@app/core';
+import { BIN_NIGHT } from '@app/core';
 import { fireEvent, render, screen, within } from '@testing-library/react-native';
 import { LogOutIcon } from 'lucide-react-native';
 import { Text } from 'react-native';
 
 import { ConfirmSheet } from './confirm-sheet';
+import { wordsFor } from '@app/core';
+
+const words = wordsFor('en', 'housemates');
 
 const light = BIN_NIGHT.light;
 
@@ -33,7 +36,7 @@ it('asks under a heading, says what it costs, then the move and Cancel', async (
   expect(screen.getByText('Leave the house')).toHaveStyle({ color: light.foreground });
   await fireEvent.press(screen.getByRole('button', { name: 'Leave the house' }));
   expect(onConfirm).toHaveBeenCalledTimes(1);
-  await fireEvent.press(within(screen.getByTestId('cancel')).getByText(FOCUS_SHELL_COPY.cancel));
+  await fireEvent.press(within(screen.getByTestId('cancel')).getByText(words('common.shell.cancel')));
   expect(onClose).toHaveBeenCalledTimes(1);
 });
 

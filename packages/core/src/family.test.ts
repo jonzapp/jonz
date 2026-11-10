@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import { PAGE_TITLE } from "./copy";
 import { DEFAULT_RULES, houseKind } from "./domain";
 import { familyHides, frontDoorWords, joinLine, kindParam, newHouseWords, roleCopy } from "./family";
 import { afterSignIn, DOOR, houseDefaults, signInLine } from "./front-door";
@@ -44,7 +43,7 @@ describe("the front door and Start a house, for a family", () => {
 
   it("sets up a family with its own heading and button", () => {
     expect(newHouseWords("family", words)).toEqual({
-      title: PAGE_TITLE.newFamily,
+      title: words('common.title.newFamily'),
       heading: "Start your family",
       intro: words('house.family.newIntro'),
       submit: "Start the family",

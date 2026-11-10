@@ -1,18 +1,4 @@
-import {
-  ADMIN_COPY,
-  AUDIT_LIST_COPY,
-  DELETION_LIST_COPY,
-  LIST_COPY,
-  NOTICE_LIST_COPY,
-  ASK_CHATS_COPY,
-  OWNER_ASK_COPY,
-  OWNER_MOVES_COPY,
-  OVERVIEW_COPY,
-  OWNER_PERMISSION_NAMES,
-  type AuditEntry,
-  type Notice,
-  wordsFor,
-} from '@app/core';
+import { ADMIN_COPY, AUDIT_LIST_COPY, DELETION_LIST_COPY, NOTICE_LIST_COPY, ASK_CHATS_COPY, OWNER_ASK_COPY, OWNER_MOVES_COPY, OVERVIEW_COPY, OWNER_PERMISSION_NAMES, type AuditEntry, type Notice, wordsFor } from '@app/core';
 import * as Clipboard from 'expo-clipboard';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 import { Platform, useWindowDimensions, type ViewStyle } from 'react-native';
@@ -295,7 +281,7 @@ describe('the owner’s Ask Jonz', () => {
   it('opens from the sparkles on a phone, over the whole screen, and keeps the chat when it’s closed', async () => {
     jest.mocked(askOwner).mockResolvedValue({ reply: 'Two reports are waiting.' } as Awaited<ReturnType<typeof askOwner>>);
     await renderPages(ROUTES, '/admin/overview');
-    await untilRead();
+    await untilRead(words);
     expect(screen.queryByTestId('owner-ask')).toBeNull();
     const open = screen.getByTestId('owner-ask-open');
     expect(open).toHaveAccessibleName(OWNER_ASK_COPY.open);
@@ -325,7 +311,7 @@ describe('the owner’s Ask Jonz', () => {
       ],
     });
     await renderPages(ROUTES, '/admin/overview');
-    await untilRead();
+    await untilRead(words);
     await fireEvent.press(screen.getByTestId('owner-ask-open'));
     const chat = () => within(screen.getByTestId('owner-ask-sheet'));
     expect(chat().getByTestId('chat-new')).toBeDisabled();
@@ -363,7 +349,7 @@ describe('the owner’s Ask Jonz', () => {
     });
     jest.mocked(ownerChats.keep).mockResolvedValue('c1');
     await renderPages(ROUTES, '/admin/overview');
-    await untilRead();
+    await untilRead(words);
     await fireEvent.press(screen.getByTestId('owner-ask-open'));
     const chat = () => within(screen.getByTestId('owner-ask-sheet'));
     await fireEvent.changeText(chat().getByLabelText(OWNER_ASK_COPY.box), 'Keep Sam and end the slow notice');
@@ -386,7 +372,7 @@ describe('the owner’s Ask Jonz', () => {
   it('docks down the right on a laptop, beside the page and the rail, and the sparkles close it again', async () => {
     (useWindowDimensions as jest.Mock).mockReturnValue(LAPTOP);
     await renderPages(ROUTES, '/admin/notices');
-    await untilRead();
+    await untilRead(words);
     await fireEvent.press(screen.getByTestId('owner-ask-open'));
     expect(within(screen.getByTestId('owner-ask-panel')).getByTestId('owner-ask')).toBeVisible();
     expect(screen.getByTestId('admin-rail')).toBeVisible();
@@ -400,7 +386,7 @@ describe('the owner’s Ask Jonz', () => {
 describe('notices on a phone', () => {
   it('shows what people see now, then every notice newest first, each saying whether it is showing, later or over, with tabs at the bottom', async () => {
     await renderPages(ROUTES, '/admin/notices');
-    await untilRead();
+    await untilRead(words);
     expect(await within(screen.getByTestId('what-people-see')).findByText('Jonz is slow right now')).toBeVisible();
     const every = within(screen.getByTestId('notices-every'));
     expect(every.getByTestId('notices-count')).toHaveTextContent(/3 notices/);
@@ -413,7 +399,7 @@ describe('notices on a phone', () => {
 
   it('narrows every notice from the search box, by kind, state or words', async () => {
     await renderPages(ROUTES, '/admin/notices');
-    await untilRead();
+    await untilRead(words);
     expect(noticesPage).toHaveBeenLastCalledWith(null, { q: '', kind: null, state: null, after: null, before: null });
     const box = screen.getByLabelText(NOTICE_LIST_COPY.searchPlaceholder);
     await fireEvent(box, 'focus');
@@ -430,7 +416,7 @@ describe('notices on a phone', () => {
 
   it('edits a notice in a sheet, and ends it', async () => {
     await renderPages(ROUTES, '/admin/notices');
-    await untilRead();
+    await untilRead(words);
     expect(screen.queryByTestId('notice-editor')).toBeNull();
     await fireEvent.press(screen.getByTestId('notice-row-n1'));
     const sheet = await screen.findByTestId('notice-sheet');
@@ -443,7 +429,7 @@ describe('notices on a phone', () => {
   it('writes a new notice and says so when the copy for outages did not update', async () => {
     jest.mocked(saveNotice).mockResolvedValue({ id: 'n9', copied: false });
     await renderPages(ROUTES, '/admin/notices');
-    await untilRead();
+    await untilRead(words);
     await fireEvent.press(screen.getByTestId('start-status'));
     const sheet = await screen.findByTestId('notice-sheet');
     await fireEvent.changeText(within(sheet).getByTestId('notice-title'), 'Ticks may be slow');
@@ -456,7 +442,7 @@ describe('notices on a phone', () => {
 describe('starting a notice', () => {
   it('starts from what is happening: Something is wrong offers the outage words, News starts as news', async () => {
     await renderPages(ROUTES, '/admin/notices');
-    await untilRead();
+    await untilRead(words);
     await fireEvent.press(screen.getByTestId('start-status'));
     let sheet = await screen.findByTestId('notice-sheet');
     expect(within(sheet).getByText(ADMIN_COPY.start.status.title)).toBeVisible();
@@ -475,7 +461,7 @@ describe('notices on a laptop', () => {
 
   it('has the rail, and the editor in the side panel', async () => {
     await renderPages(ROUTES, '/admin/notices');
-    await untilRead();
+    await untilRead(words);
     expect(screen.getByTestId('admin-rail')).toBeVisible();
     expect(screen.queryByTestId('admin-tabs')).toBeNull();
     const side = screen.getByTestId('notice-side');
@@ -490,7 +476,7 @@ describe('notices on a laptop', () => {
 describe('deletions', () => {
   it('lists who is waiting, their email (a line of its own) and house, and how long is left, under Records', async () => {
     await renderPages(ROUTES, '/admin/deletions');
-    await untilRead();
+    await untilRead(words);
     expect(screen.getByTestId('deletions-count')).toHaveTextContent(/2 people waiting/);
     expect(screen.getByTestId('deletion-sam')).toHaveTextContent(/Sam.*sam@example\.com\sThe Annexe, asked in the app.*Goes in 28 days/);
     expect(screen.getByTestId('deletion-kit')).toHaveTextContent(/kit@example\.com\sin no house, you started it/);
@@ -501,7 +487,7 @@ describe('deletions', () => {
 
   it('is a busy list: the database finds people by their words, who started it, and how soon it goes', async () => {
     await renderPages(ROUTES, '/admin/deletions');
-    await untilRead();
+    await untilRead(words);
     expect(deletionsPage).toHaveBeenLastCalledWith(null, { q: '', by: null, goes: null, after: null, before: null });
     const box = screen.getByLabelText(DELETION_LIST_COPY.searchPlaceholder);
     await fireEvent(box, 'focus');
@@ -519,7 +505,7 @@ describe('deletions', () => {
       after === null ? { people: [SAM], more: true, next: 'c-sam' } : { people: [KIT], more: false, next: null },
     );
     await renderPages(ROUTES, '/admin/deletions');
-    await untilRead();
+    await untilRead(words);
     await fireEvent.scroll(screen.getByTestId('page-scroll'), {
       nativeEvent: { contentOffset: { y: 300 }, contentSize: { height: 1200 }, layoutMeasurement: { height: 800 } },
     });
@@ -530,7 +516,7 @@ describe('deletions', () => {
   it('is a table on a laptop, one line a person, with what can be done beside it', async () => {
     (useWindowDimensions as jest.Mock).mockReturnValue(LAPTOP);
     await renderPages(ROUTES, '/admin/deletions');
-    await untilRead();
+    await untilRead(words);
     expect(screen.getByTestId('deletions-table-head', { includeHiddenElements: true })).toHaveTextContent(/Name.*Email.*House.*Asked.*Goes/);
     expect(screen.getByTestId('deletion-kit')).toHaveTextContent(/Kit.*kit@example\.com.*No house.*in 28 days/);
     // Nobody chosen: the side panel starts one for someone who emailed.
@@ -553,7 +539,7 @@ describe('deletions', () => {
 
   it('deletes now, with a reason, only once asked twice', async () => {
     await renderPages(ROUTES, '/admin/deletions');
-    await untilRead();
+    await untilRead(words);
     await fireEvent.press(within(screen.getByTestId('deletion-sam')).getByRole('button'));
     const sheet = within(await screen.findByTestId('deletion-sheet'));
     await fireEvent.changeText(sheet.getByLabelText(ADMIN_COPY.reason), 'Emailed to ask for it sooner');
@@ -567,7 +553,7 @@ describe('deletions', () => {
 
   it('stops one, and can think better of it', async () => {
     await renderPages(ROUTES, '/admin/deletions');
-    await untilRead();
+    await untilRead(words);
     await fireEvent.press(within(screen.getByTestId('deletion-kit')).getByRole('button'));
     const sheet = within(await screen.findByTestId('deletion-sheet'));
     await fireEvent.press(sheet.getByTestId('deletion-stop'));
@@ -582,7 +568,7 @@ describe('deletions', () => {
   it('starts the 30 days for someone who emailed, and says why it couldn’t', async () => {
     jest.mocked(deleteByEmail).mockRejectedValueOnce(new Error('There’s no Jonz account with that email.'));
     await renderPages(ROUTES, '/admin/deletions');
-    await untilRead();
+    await untilRead(words);
     await fireEvent.press(within(screen.getByTestId('delete-by-email')).getByRole('button'));
     const sheet = within(await screen.findByTestId('by-email-sheet'));
     expect(sheet.getByTestId('deletion-start')).toBeDisabled();
@@ -600,7 +586,7 @@ describe('deletions', () => {
 describe('the audit log', () => {
   it('lists entries newest first with their time, no day headings, and opens one as its own page on a phone', async () => {
     await renderPages(ROUTES, '/admin/audit');
-    await untilRead();
+    await untilRead(words);
     expect(screen.getByText('You changed a status notice')).toBeVisible();
     expect(screen.getByText('The owner wrote a status notice')).toBeVisible();
     // Before today, the date rides in the time column instead of a heading over the day.
@@ -617,7 +603,7 @@ describe('the audit log', () => {
   it('shows the entries as a table on a laptop, the chosen one beside it', async () => {
     (useWindowDimensions as jest.Mock).mockReturnValue(LAPTOP);
     await renderPages(ROUTES, '/admin/audit');
-    await untilRead();
+    await untilRead(words);
     expect(screen.getByTestId('audit-table-head', { includeHiddenElements: true })).toHaveTextContent(/When.*Who.*What happened.*Where/);
     expect(screen.getByTestId('audit-row-2')).toHaveTextContent(/You.*changed a status notice.*Jonz is slow right now.*Notices/);
     expect(screen.getByTestId('audit-detail-2')).toBeVisible();
@@ -631,7 +617,7 @@ describe('the audit log', () => {
     Platform.OS = 'web';
     try {
       await renderPages(ROUTES, '/admin/audit');
-      await untilRead();
+      await untilRead(words);
       const top = screen.getByTestId('audit-top');
       // React Native's types stop at absolute; the web's sticky is what pins it.
       expect(top).toHaveStyle({ position: 'sticky', top: 0 } as unknown as ViewStyle);
@@ -648,7 +634,7 @@ describe('the audit log', () => {
 
   it('narrows the list from its address, and the database does the narrowing', async () => {
     await renderPages(ROUTES, '/admin/audit?who=you&what=notices&q=slow&when=week');
-    await untilRead();
+    await untilRead(words);
     expect(auditPage).toHaveBeenLastCalledWith(
       null,
       expect.objectContaining({ q: 'slow', who: 'you', what: 'notices', ownerId: 'owner', after: expect.any(String), before: null }),
@@ -667,8 +653,8 @@ describe('the audit log', () => {
     );
     jest.mocked(auditCount).mockImplementation(async (filter) => (filter?.q ? 0 : 1));
     await renderPages(ROUTES, '/admin/audit?q=nothing');
-    await untilRead();
-    expect(screen.getByTestId('audit-no-match')).toHaveTextContent(new RegExp(LIST_COPY.noMatch));
+    await untilRead(words);
+    expect(screen.getByTestId('audit-no-match')).toHaveTextContent(new RegExp(words('common.list.noMatch')));
     expect(screen.getByTestId('audit-count')).toHaveTextContent(/^0 entries/);
     await fireEvent.press(screen.getByTestId('audit-clear'));
     expect(await screen.findByTestId('audit-row-2')).toBeVisible();
@@ -677,7 +663,7 @@ describe('the audit log', () => {
   it('shows more like an entry: by the same person, of the same kind, or around its time', async () => {
     (useWindowDimensions as jest.Mock).mockReturnValue(LAPTOP);
     await renderPages(ROUTES, '/admin/audit');
-    await untilRead();
+    await untilRead(words);
     const like = screen.getByTestId('audit-like-this');
     expect(like).toHaveTextContent(/Everything you did.*Every entry about notices.*Around this time/);
     await fireEvent.press(screen.getByTestId('audit-like-who'));
@@ -690,7 +676,7 @@ describe('the audit log', () => {
 
   it('goes back to the list, narrowed, from an entry’s own page on a phone', async () => {
     await renderPages(ROUTES, '/admin/audit');
-    await untilRead();
+    await untilRead(words);
     await fireEvent.press(screen.getByTestId('audit-row-2'));
     await screen.findByTestId('audit-detail-2');
     await fireEvent.press(screen.getByTestId('audit-like-what'));
@@ -704,14 +690,14 @@ describe('the audit log', () => {
     );
     jest.mocked(auditCount).mockResolvedValue(3);
     await renderPages(ROUTES, '/admin/audit');
-    await untilRead();
-    expect(screen.getByTestId('audit-foot')).toHaveTextContent(new RegExp(LIST_COPY.of(2, 3)));
+    await untilRead(words);
+    expect(screen.getByTestId('audit-foot')).toHaveTextContent(new RegExp(words('common.list.of', { shown: 2, total: 3 })));
     await fireEvent.scroll(screen.getByTestId('page-scroll'), {
       nativeEvent: { contentOffset: { y: 300 }, contentSize: { height: 1200 }, layoutMeasurement: { height: 800 } },
     });
     await waitFor(() => expect(auditPage).toHaveBeenLastCalledWith('c-79', expect.objectContaining({ who: 'anyone' })));
     expect(await screen.findByTestId('audit-row-12')).toBeVisible();
-    expect(screen.getByTestId('audit-foot')).toHaveTextContent(LIST_COPY.everything);
+    expect(screen.getByTestId('audit-foot')).toHaveTextContent(words('common.list.everything'));
     expect(screen.queryByTestId('audit-foot-more')).toBeNull();
   });
 });
@@ -727,7 +713,7 @@ describe('the search box every admin list has', () => {
 
   it('lists every filter there is when you tap into it, nothing typed', async () => {
     await renderPages(ROUTES, '/admin/audit');
-    await untilRead();
+    await untilRead(words);
     await fireEvent(box(), 'focus');
     const panel = screen.getByTestId('audit-search-panel');
     expect(panel).toHaveTextContent(/Who.*You.*Someone else.*Jonz itself.*What.*Notices.*Accounts.*When.*The last hour.*Today/);
@@ -736,7 +722,7 @@ describe('the search box every admin list has', () => {
 
   it('turns a word into a filter: “me” offers Who: You, which becomes a tag and narrows the list', async () => {
     await renderPages(ROUTES, '/admin/audit');
-    await untilRead();
+    await untilRead(words);
     await typeIn('me');
     await fireEvent.press(screen.getByTestId('audit-search-suggestion-who-you'));
     await waitFor(() => expect(auditPage).toHaveBeenLastCalledWith(null, expect.objectContaining({ who: 'you', q: '' })));
@@ -747,12 +733,12 @@ describe('the search box every admin list has', () => {
 
   it('searches the words themselves once you pause, spinning in the box until the answer is in', async () => {
     await renderPages(ROUTES, '/admin/audit');
-    await untilRead();
+    await untilRead(words);
     await typeIn('slow');
     // Nothing to pick for words alone: the list searches them, and the box says it's on it.
     expect(screen.queryByTestId('audit-search-panel')).toBeNull();
     expect(screen.getByTestId('audit-search-spinner', { includeHiddenElements: true })).toBeOnTheScreen();
-    expect(screen.getByTestId('audit-count')).toHaveTextContent(`${LIST_COPY.searching}…`);
+    expect(screen.getByTestId('audit-count')).toHaveTextContent(`${words('common.list.searching')}…`);
     await waitFor(() => expect(auditPage).toHaveBeenLastCalledWith(null, expect.objectContaining({ q: 'slow' })));
     await waitFor(() => expect(screen.queryByTestId('audit-search-spinner', { includeHiddenElements: true })).toBeNull());
     expect(screen.getByTestId('audit-count')).toHaveTextContent(/^2 entries/);
@@ -760,14 +746,14 @@ describe('the search box every admin list has', () => {
 
   it('floats its suggestions over the list, so the rows don’t move', async () => {
     await renderPages(ROUTES, '/admin/audit');
-    await untilRead();
+    await untilRead(words);
     await typeIn('me');
     expect(screen.getByTestId('audit-search-panel')).toHaveStyle({ position: 'absolute', top: '100%' });
   });
 
   it('starts the list from a moment typed into it', async () => {
     await renderPages(ROUTES, '/admin/audit');
-    await untilRead();
+    await untilRead(words);
     await typeIn('yesterday 18:00');
     await fireEvent.press(screen.getByTestId('audit-search-suggestion-from'));
     await waitFor(() =>
@@ -778,7 +764,7 @@ describe('the search box every admin list has', () => {
 
   it('takes a tag away with a tap, and the last one with backspace in an empty box', async () => {
     await renderPages(ROUTES, '/admin/audit?who=you&what=notices');
-    await untilRead();
+    await untilRead(words);
     await fireEvent.press(screen.getByRole('button', { name: 'Remove What: Notices' }));
     await waitFor(() => expect(auditPage).toHaveBeenLastCalledWith(null, expect.objectContaining({ who: 'you', what: 'anything' })));
     await fireEvent(box(), 'keyPress', { nativeEvent: { key: 'Backspace' }, preventDefault: jest.fn() });
@@ -788,7 +774,7 @@ describe('the search box every admin list has', () => {
 
   it('remembers recent searches on this device, a tap away', async () => {
     await renderPages(ROUTES, '/admin/audit');
-    await untilRead();
+    await untilRead(words);
     await typeIn('del');
     await fireEvent.press(screen.getByTestId('audit-search-suggestion-what-accounts'));
     await fireEvent.press(screen.getByTestId('audit-clear'));

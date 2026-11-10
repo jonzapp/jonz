@@ -1,16 +1,4 @@
-import {
-  MESSAGE_AUDIENCES,
-  MESSAGE_COPY,
-  MESSAGE_LIMITS,
-  messageProblems,
-  messageWays,
-  sendLabel,
-  testWays,
-  wayMeta,
-  type MessageAudience,
-  type MessageWays,
-  BUSY_COPY,
-} from '@app/core';
+import { MESSAGE_AUDIENCES, MESSAGE_COPY, MESSAGE_LIMITS, messageProblems, messageWays, sendLabel, testWays, wayMeta, type MessageAudience, type MessageWays } from '@app/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { EyeIcon, SendIcon } from 'lucide-react-native';
 import { useState } from 'react';
@@ -31,6 +19,7 @@ import { Sheet } from '@/components/sheet';
 import { Meta } from '@/components/text';
 import { useToast } from '@/components/toast';
 import { SPACE } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /** The key every list of sent messages reads under: a send makes them read again. */
 export const SENT_KEY = ['owner-sent'] as const;
@@ -53,6 +42,7 @@ const START: Form = { audience: 'house', picked: null, subject: '', body: '', wa
  * button. `onSent` runs once a real message (not a test) has gone.
  */
 export function MessageForm({ beside = false, onSent }: { beside?: boolean; onSent?: () => void }) {
+  const words = useWords();
   const toast = useToast();
   const client = useQueryClient();
   const [form, setForm] = useState<Form>(START);
@@ -121,7 +111,7 @@ export function MessageForm({ beside = false, onSent }: { beside?: boolean; onSe
       icon={SendIcon}
       onPress={onSend}
       busy={sendingIt}
-      busyLabel={BUSY_COPY.sending}
+      busyLabel={words('common.busy.sending')}
       disabled={testing}
       testID="message-send"
     />
@@ -132,7 +122,7 @@ export function MessageForm({ beside = false, onSent }: { beside?: boolean; onSe
       variant="outline"
       onPress={onTest}
       busy={testing}
-      busyLabel={BUSY_COPY.sendingTest}
+      busyLabel={words('common.busy.sendingTest')}
       disabled={sendingIt}
       testID="message-test"
     />
@@ -241,7 +231,7 @@ export function MessageForm({ beside = false, onSent }: { beside?: boolean; onSe
         confirmLabel={MESSAGE_COPY.confirmSend(reach.data?.people ?? 0)}
         tone="primary"
         busy={send.isPending}
-        busyLabel={BUSY_COPY.sending}
+        busyLabel={words('common.busy.sending')}
         problem={send.error?.message ?? null}
         onConfirm={() => send.mutate(outgoing('everyone'))}
         onClose={() => setConfirming(false)}

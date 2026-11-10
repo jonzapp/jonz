@@ -3,7 +3,6 @@ import { differenceInCalendarDays, format } from "date-fns";
 
 import { currentOrNext, type AwayPeriod } from "./away";
 import { byDoneLatest, isOpen, TODAY_ORDER, type BoardItem, type DisputeView, type WeekBoard } from "./board";
-import { FOCUS_SHELL_COPY } from "./copy";
 import { andNames } from "./crew";
 import type { Currency, HouseRules } from "./domain";
 import { dateRange, dueInLine, firstName, pointsLabel, relative, sinceLabel, STATUS_LABEL, STATUS_MARK } from "./format";
@@ -35,9 +34,9 @@ interface Person {
 }
 
 /** A first name to start a sentence with: "Priya", or "A former housemate" for someone who has left. */
-function firstNameIn(people: readonly Person[], userId: string | null): string {
+function firstNameIn(people: readonly Person[], userId: string | null, words: Words): string {
   const person = people.find((p) => p.userId === userId);
-  return person ? firstName(person.name) : FOCUS_SHELL_COPY.formerHousemate;
+  return person ? firstName(person.name) : words('common.shell.formerHousemate');
 }
 
 /** A first name mid-sentence: "Priya", or "a former housemate". */
@@ -325,7 +324,7 @@ export function voteTitle(item: Pick<BoardItem, "userId" | "name">, people: read
 
 /** Needs you's meta line for a dispute: "Megan says it's not done, closes in 17h". */
 export function voteMeta(dispute: DisputeView, people: readonly Person[], now: Date, words: Words): string {
-  return `${words('today.nextUp.saysNotDone', { name: firstNameIn(people, dispute.raisedBy) })}, ${voteCloses(dispute.closesAt, now, words)}`;
+  return `${words('today.nextUp.saysNotDone', { name: firstNameIn(people, dispute.raisedBy, words) })}, ${voteCloses(dispute.closesAt, now, words)}`;
 }
 
 /** The tally, in the vote buttons' order: "1 fine, 1 not done, closes in 17h". */
@@ -483,8 +482,8 @@ function tickedAt(at: Date, now: Date, zone: string, words: Words): string {
  */
 export function tickedLine(item: BoardItem, people: readonly Person[], viewerId: string, rules: HouseRules, now: Date, words: Words): string {
   const ticker = tickerOf(item);
-  const who = ticker === viewerId ? words('john.sheet.you') : firstNameIn(people, ticker);
-  const whom = item.userId === viewerId ? words('john.sheet.byYou') : firstNameIn(people, item.userId);
+  const who = ticker === viewerId ? words('john.sheet.you') : firstNameIn(people, ticker, words);
+  const whom = item.userId === viewerId ? words('john.sheet.byYou') : firstNameIn(people, item.userId, words);
   const ticked = item.doneAt
     ? words(item.coveredBy ? 'john.sheet.covered' : 'john.sheet.ticked', { who, when: tickedAt(item.doneAt, now, rules.timezone, words) })
     : item.absentAt
@@ -505,7 +504,7 @@ export function tickedLine(item: BoardItem, people: readonly Person[], viewerId:
  * lateness costs is said only while it's to do; the Stake has what it cost.
  */
 export function settledLine(item: BoardItem, people: readonly Person[], viewerId: string, rules: HouseRules, now: Date, words: Words): string {
-  const who = item.userId === viewerId ? words('john.sheet.you') : firstNameIn(people, item.userId);
+  const who = item.userId === viewerId ? words('john.sheet.you') : firstNameIn(people, item.userId, words);
   const ticked = item.doneAt ? tickedAt(item.doneAt, now, rules.timezone, words) : null;
   switch (item.status) {
     case "done":
@@ -517,7 +516,7 @@ export function settledLine(item: BoardItem, people: readonly Person[], viewerId
     case "missed":
       return item.absentAt ? words('john.crew.missedAbsent') : words('john.sheet.missed');
     case "covered": {
-      const coverer = item.coveredBy === viewerId ? words('john.sheet.you') : firstNameIn(people, item.coveredBy);
+      const coverer = item.coveredBy === viewerId ? words('john.sheet.you') : firstNameIn(people, item.coveredBy, words);
       const yours = item.userId === viewerId;
       const owner = yours ? words('john.sheet.byYou') : called(people, item.userId, words);
       const whose = yours ? words('john.sheet.your') : `${owner}’s`;
@@ -625,7 +624,7 @@ export function swapMeta(item: BoardItem, people: readonly Person[], rules: Hous
     item.status === "overdue"
       ? words('today.nextUp.wasDue', { when: sinceLabel(item.dueAt, now, rules.timezone) })
       : dueInLine(item.dueAt, now, rules.timezone);
-  return [firstNameIn(people, item.userId), due, pointsLabel(item.points)].join(", ");
+  return [firstNameIn(people, item.userId, words), due, pointsLabel(item.points)].join(", ");
 }
 
 /**

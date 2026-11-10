@@ -1,4 +1,4 @@
-import { GOOGLE_LIMITED_USE, HELP_PAGE, LEGAL_COPY, LOOK_LABEL, PRIVACY_POLICY, SECTION_LABEL, TERMS, wordsFor } from "@app/core";
+import { GOOGLE_LIMITED_USE, HELP_PAGE, LEGAL_COPY, PRIVACY_POLICY, TERMS, wordsFor } from "@app/core";
 import { expect, test } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, dealtHouseInClient } from "./auth";
@@ -125,9 +125,9 @@ test("tab titles, the look, and reminders on this device", async ({ browser }) =
   const page = await context.newPage();
   await page.goto("/today");
   await expect(page).toHaveTitle("Today · Jonz");
-  await page.getByRole("tab", { name: SECTION_LABEL.week }).click();
+  await page.getByRole("tab", { name: words('common.section.week') }).click();
   await expect(page).toHaveTitle("This week · Jonz");
-  await page.getByRole("tab", { name: SECTION_LABEL.house }).click();
+  await page.getByRole("tab", { name: words('common.section.house') }).click();
   await expect(page).toHaveTitle("House · Jonz");
 
   // Night, chosen on You, stays chosen on this device.
@@ -136,14 +136,14 @@ test("tab titles, the look, and reminders on this device", async ({ browser }) =
   const house = page.getByTestId("you-screen");
   const ground = () => house.evaluate((el) => getComputedStyle(el).backgroundColor);
   const day = await ground();
-  await house.getByRole("radio", { name: LOOK_LABEL.dark }).click();
-  await expect(house.getByRole("radio", { name: LOOK_LABEL.dark })).toBeChecked();
+  await house.getByRole("radio", { name: words('common.look.dark') }).click();
+  await expect(house.getByRole("radio", { name: words('common.look.dark') })).toBeChecked();
   await expect.poll(ground).not.toBe(day);
   const night = await ground();
   await page.reload();
-  await expect(house.getByRole("radio", { name: LOOK_LABEL.dark })).toBeChecked();
+  await expect(house.getByRole("radio", { name: words('common.look.dark') })).toBeChecked();
   expect(await ground()).toBe(night);
-  await house.getByRole("radio", { name: LOOK_LABEL.system }).click();
+  await house.getByRole("radio", { name: words('common.look.system') }).click();
   await expect.poll(ground).toBe(day);
 
   // Reminders, from their row on You: on, saved as Ava's, then off again.

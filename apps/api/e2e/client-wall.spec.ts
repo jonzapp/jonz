@@ -1,4 +1,4 @@
-import { firstName, REACTION_LABEL, SECTION_LABEL, wordsFor } from "@app/core";
+import { firstName, REACTION_LABEL, wordsFor } from "@app/core";
 import { expect, test, type BrowserContext } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, dealtHouseInClient } from "./auth";
@@ -41,7 +41,7 @@ test("ticks land on the Wall with their photos, and take reactions", async ({ br
   // The watcher opens the whole Wall from House. So far it says who moved in.
   const wall = await contexts[watcher].newPage();
   await wall.goto("/today");
-  await wall.getByRole("tab", { name: SECTION_LABEL.house }).click();
+  await wall.getByRole("tab", { name: words('common.section.house') }).click();
   await wall.getByTestId("house-screen").getByTestId("to-wall").getByRole("link").click();
   await expect(wall).toHaveURL(/\/house\/wall$/);
   await expect(wall.getByRole("heading", { name: words('wall.page.title') })).toBeVisible();

@@ -20,6 +20,7 @@ const HOUSE_ONLY = /\b(housemates?|flatmates?|admins?)\b/i;
 
 /** Lines a family never sees, so they need no family sentence, and why. */
 const HOUSEMATES_ONLY: Partial<Record<WordId, string>> = {
+  "ask.draft.starter.flat_share.meta": "names the flat-share starter list, picked by name in any house",
   "errors.ask_limit": "the owner's Ask Jonz limit, which points at the owner's admin pages",
   "door.newHouse.intro": "a family reads house.family.newIntro through newHouseWords",
   "house.family.kinds.housemates": "Rules' switch between the two kinds names both on purpose",
@@ -58,15 +59,6 @@ function readings(id: WordId): WordValues[] {
   }
   return all;
 }
-
-/**
- * Sections outside the book that may say housemate: each says why a family
- * never reads it, or reads its own words elsewhere.
- */
-const SECTION_REASONS: Record<string, string> = {
-  ROLE_WORDS: "names both kinds' roles on purpose",
-  HOUSE_DRAFT_COPY: "Describe your house's kinds of house, one of which is a flat share",
-};
 
 /** Other files' strings that may say housemate, and why. */
 const FILE_REASONS: Record<string, RegExp[]> = {
@@ -151,14 +143,8 @@ describe("a family's words", () => {
   });
 
   it("says housemate or admin outside the words files only where a family never reads it", () => {
-    const copy = readFileSync(join(__dirname, "copy.ts"), "utf8");
     const found: string[] = [];
-    for (const block of copy.split(/^(?=export const )/m)) {
-      const name = /^export const (\w+)/.exec(block)?.[1];
-      if (!name || SECTION_REASONS[name]) continue;
-      for (const s of stringsOf(block)) if (/\b(housemates?|admins?)\b/i.test(s)) found.push(`copy.ts ${name}: ${s}`);
-    }
-    const others = readdirSync(__dirname).filter((f) => f.endsWith(".ts") && !f.includes(".test.") && f !== "copy.ts");
+    const others = readdirSync(__dirname).filter((f) => f.endsWith(".ts") && !f.includes(".test."));
     for (const file of others) {
       const allowed = FILE_REASONS[file] ?? [];
       for (const s of stringsOf(readFileSync(join(__dirname, file), "utf8"))) {

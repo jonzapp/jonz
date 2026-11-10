@@ -1,4 +1,4 @@
-import { buildStake, FOCUS_SHELL_COPY, type HistoryRow, SECTION_LABEL, wordsFor } from '@app/core';
+import { buildStake, type HistoryRow, wordsFor } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 
 import { loadHouse } from '@/api/board';
@@ -63,7 +63,7 @@ const LEDGER = [
 
 async function open() {
   await renderPages({ 'house/stake': StakeScreen, 'house/index': () => null }, '/house/stake');
-  await untilRead();
+  await untilRead(words);
   await waitFor(() => expect(screen.queryByLabelText(words('house.page.readingStake'))).toBeNull());
 }
 
@@ -79,7 +79,7 @@ it('names the page and the stake, with the way back to House', async () => {
   const bar = within(screen.getByTestId('title-bar'));
   expect(bar.getByRole('header', { name: words('house.stake.title') })).toBeOnTheScreen();
   expect(bar.getByText(words('house.stake.sub', { stake: '£20' }))).toBeOnTheScreen();
-  expect(bar.getByRole('button', { name: FOCUS_SHELL_COPY.backTo(SECTION_LABEL.house) })).toBeOnTheScreen();
+  expect(bar.getByRole('button', { name: words('common.shell.backTo', { place: words('common.section.house') }) })).toBeOnTheScreen();
 });
 
 it('starts on yours: your entries by month, each said in words', async () => {
@@ -143,6 +143,6 @@ it("says when it can't read the Stake, and tries again", async () => {
   (loadStake as jest.Mock).mockRejectedValueOnce(new Error('offline'));
   await renderPages({ 'house/stake': StakeScreen }, '/house/stake');
   expect(await screen.findByRole('alert')).toHaveTextContent(words('house.page.stakeUnreadable'));
-  await fireEvent.press(screen.getByRole('button', { name: FOCUS_SHELL_COPY.retry }));
+  await fireEvent.press(screen.getByRole('button', { name: words('common.shell.retry') }));
   expect(await screen.findAllByTestId('ledger-entry')).not.toHaveLength(0);
 });

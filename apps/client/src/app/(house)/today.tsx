@@ -1,19 +1,4 @@
-import {
-  askWhosMovingIn,
-  dayLabel,
-  localDate,
-  memberCan,
-  monthWord,
-  movingLine,
-  onCallItems,
-  PAGE_TITLE,
-  pocketMoney,
-  todayPage,
-  type PocketView,
-  type StakeView,
-  FOCUS_SHELL_COPY,
-  switchChoices,
-} from '@app/core';
+import { askWhosMovingIn, dayLabel, localDate, memberCan, monthWord, movingLine, onCallItems, pocketMoney, todayPage, type PocketView, type StakeView, switchChoices } from '@app/core';
 import { useState } from 'react';
 
 import type { AwayView } from '@/api/away';
@@ -85,7 +70,7 @@ function TodayFor({ houseId, userId: me }: { houseId: string; userId: string }) 
     <Screen
       bar={
         <TitleBar
-          title={PAGE_TITLE.today}
+          title={words('common.title.today')}
           ask={userId === me && memberCan(view?.me, 'house:read')}
           right={
             choices.length > 0 ? (
@@ -99,7 +84,7 @@ function TodayFor({ houseId, userId: me }: { houseId: string; userId: string }) 
       onRefresh={pull}
       testID="today-screen"
     >
-      <PageTitle page={PAGE_TITLE.today} />
+      <PageTitle page={words('common.title.today')} />
       <Waiting ready={view != null} failed={query.isError} onRetry={() => void query.refetch()} outline={<TodayOutline />} fill>
         {() => (
           <TodayView
@@ -250,7 +235,7 @@ function TodayView({
           // On the day it's time to leave, from the foot of House; before it, the date can change.
           <PageLine text={moving} href={mover && mover <= localToday ? '/house' : '/house/moving'} testID="moving-line" />
         ) : null}
-        {reading && !standing && !page.away ? <PendingLine label={FOCUS_SHELL_COPY.reading} /> : null}
+        {reading && !standing && !page.away ? <PendingLine label={words('common.shell.reading')} /> : null}
       </PageLines>
     ) : null;
 

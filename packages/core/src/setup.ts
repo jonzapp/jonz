@@ -1,7 +1,6 @@
 // House setup's pages: the rules as label and value, the Johns by category, a John's schedule line and the admins' names.
 import { isoDayOf, shiftMonth, type AwayPeriod } from "./away";
 import type { BoardItem, JohnDef } from "./board";
-import { FOCUS_SHELL_COPY } from "./copy";
 import { MAKEUP_LABEL } from "./deal";
 import { CATEGORIES, CATEGORY_LABEL, DOW_LABEL, type Category, type Currency, type DealMode, type HouseKind, type HouseRules, type IsoDow, type SettleIn } from "./domain";
 import { familyHides } from "./family";
@@ -207,7 +206,7 @@ export function membersLine(memberIds: readonly string[], people: readonly { use
   if (memberIds.length === 0) return words('house.groups.nobody');
   const name = (id: string) => {
     const person = people.find((p) => p.userId === id);
-    return person ? firstName(person.name) : FOCUS_SHELL_COPY.formerHousemate;
+    return person ? firstName(person.name) : words('common.shell.formerHousemate');
   };
   const ordered = [
     ...memberIds.filter((id) => id === me).map(() => words('house.setup.you')),
@@ -215,7 +214,7 @@ export function membersLine(memberIds: readonly string[], people: readonly { use
     ...memberIds.filter((id) => id !== me && !people.some((p) => p.userId === id)).map(name),
   ];
   // "Sam and a former housemate": only the first name in the line keeps its capital.
-  return listed(ordered.map((n, i) => (i > 0 && n === FOCUS_SHELL_COPY.formerHousemate ? n[0].toLowerCase() + n.slice(1) : n)), words);
+  return listed(ordered.map((n, i) => (i > 0 && n === words('common.shell.formerHousemate') ? n[0].toLowerCase() + n.slice(1) : n)), words);
 }
 
 /** Whether a trip has begun by `today` (a local date): it can then only be ended, not cancelled. */

@@ -1,4 +1,4 @@
-import { familyWaits, formatMoney, HOUSE_KINDS, memberCan, nextFirst, switchWords, type HouseKind, BUSY_COPY } from '@app/core';
+import { familyWaits, formatMoney, HOUSE_KINDS, memberCan, nextFirst, switchWords, type HouseKind } from '@app/core';
 import { HouseIcon } from 'lucide-react-native';
 import { useState } from 'react';
 
@@ -100,7 +100,7 @@ export function KindSwitch({ houseId, view }: { houseId: string; view: HouseView
         icon={HouseIcon}
         tone="primary"
         busy={move.pending}
-        busyLabel={BUSY_COPY.switching}
+        busyLabel={words('common.busy.switching')}
         problem={move.problem}
         onConfirm={() => {
           const kind = asking!;

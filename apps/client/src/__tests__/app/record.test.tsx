@@ -1,4 +1,4 @@
-import { FOCUS_SHELL_COPY, SECTION_LABEL, wordsFor } from '@app/core';
+import { wordsFor } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 import { useWindowDimensions } from 'react-native';
 
@@ -85,10 +85,10 @@ const PAGES = { 'week/record/index': RecordScreen, 'week/record/[userId]': Recor
 
 it('shows everyone a square a week, best on time first, with the way back to Week', async () => {
   await renderPages(PAGES, '/week/record?span=all');
-  await untilRead();
+  await untilRead(words);
   const bar = within(screen.getByTestId('title-bar'));
   expect(bar.getByRole('header', { name: words('week.record.title') })).toBeOnTheScreen();
-  expect(bar.getByRole('button', { name: FOCUS_SHELL_COPY.backTo(SECTION_LABEL.week) })).toBeOnTheScreen();
+  expect(bar.getByRole('button', { name: words('common.shell.backTo', { place: words('common.section.week') }) })).toBeOnTheScreen();
 
   const records = await screen.findAllByTestId('record-row');
   expect(records.map((r) => r.props.accessibilityLabel)).toEqual([
@@ -110,7 +110,7 @@ it('shows everyone a square a week, best on time first, with the way back to Wee
 
 it('switches the span', async () => {
   await renderPages(PAGES, '/week/record?span=all');
-  await untilRead();
+  await untilRead(words);
   await fireEvent.press(within(screen.getByTestId('record-span')).getByRole('radio', { name: words('week.record.spans.week') }));
   await waitFor(() => expect(screen.getByText(words('week.record.introWeek'))).toBeOnTheScreen());
   const sam = (await screen.findAllByTestId('record-row'))[0];
@@ -119,7 +119,7 @@ it('switches the span', async () => {
 
 it("opens a person's breakdown, which adds up and opens onto its Johns", async () => {
   await renderPages(PAGES, '/week/record?span=all');
-  await untilRead();
+  await untilRead(words);
   await fireEvent.press((await screen.findAllByTestId('record-row'))[1]);
   const breakdown = within(await screen.findByTestId('record-breakdown'));
   expect(within(screen.getByTestId('title-bar')).getByRole('header', { name: 'Sam' })).toBeOnTheScreen();
@@ -138,7 +138,7 @@ it("opens a person's breakdown, which adds up and opens onto its Johns", async (
 it('on a laptop, opens your breakdown beside the grid, then whoever you click, on the same page', async () => {
   (useWindowDimensions as jest.Mock).mockReturnValue(LAPTOP);
   await renderPages(PAGES, '/week/record?span=all');
-  await untilRead();
+  await untilRead(words);
   const beside = within(await screen.findByTestId('record-pair-end'));
   expect(await beside.findByTestId('record-breakdown')).toHaveTextContent(/Priya \(you\)/);
   expect(beside.getByTestId('record-total')).toHaveTextContent(new RegExp(`^${words('week.record.totalYou')}`));
@@ -158,7 +158,7 @@ it('on a laptop, opens your breakdown beside the grid, then whoever you click, o
 it("on a laptop, a link to someone's page opens them beside the grid", async () => {
   (useWindowDimensions as jest.Mock).mockReturnValue(LAPTOP);
   await renderPages(PAGES, '/week/record/sam?span=all');
-  await untilRead();
+  await untilRead(words);
   expect(await screen.findByTestId('record-screen')).toBeOnTheScreen();
   expect(await within(screen.getByTestId('record-pair-end')).findByTestId('record-total')).toHaveTextContent(/−2$/);
   expect(screen.queryByTestId('record-person-screen')).toBeNull();

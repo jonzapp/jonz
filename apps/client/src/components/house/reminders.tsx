@@ -1,4 +1,3 @@
-import { BUSY_COPY } from '@app/core';
 import { BellIcon, BellOffIcon } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -79,11 +78,11 @@ export function Reminders({ userId, labelled = true }: { userId: string; labelle
       ) : on === null ? null : on ? (
         // Across the sheet, as every sheet's buttons are.
         <ButtonRow>
-          <Button variant="outline" icon={BellOffIcon} label={words('house.reminders.off')} busy={busy} busyLabel={BUSY_COPY.turningOff} onPress={() => void disable()} />
+          <Button variant="outline" icon={BellOffIcon} label={words('house.reminders.off')} busy={busy} busyLabel={words('common.busy.turningOff')} onPress={() => void disable()} />
         </ButtonRow>
       ) : (
         <ButtonRow>
-          <Button icon={BellIcon} label={words('house.reminders.on')} busy={busy} busyLabel={BUSY_COPY.turningOn} onPress={() => void enable()} testID="enable-push" />
+          <Button icon={BellIcon} label={words('house.reminders.on')} busy={busy} busyLabel={words('common.busy.turningOn')} onPress={() => void enable()} testID="enable-push" />
         </ButtonRow>
       )}
       {problem ? <Alert message={problem} /> : null}

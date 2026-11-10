@@ -1,4 +1,4 @@
-import { FOCUS_SHELL_COPY, weekPersonMeta, weekWho, type BoardItem, type WeekPerson } from '@app/core';
+import { weekPersonMeta, weekWho, type BoardItem, type WeekPerson } from '@app/core';
 import { RepeatIcon } from 'lucide-react-native';
 
 import { Avatar } from '@/components/avatar';
@@ -36,7 +36,7 @@ export function PersonSection({
 }) {
   const words = useWords();
   const mine = person.userId === context.userId;
-  const name = context.nameOf(person.userId) ?? FOCUS_SHELL_COPY.formerHousemate;
+  const name = context.nameOf(person.userId) ?? words('common.shell.formerHousemate');
   const counts = weekPersonMeta({ done: person.done, total: person.total, points }, words);
   return (
     <Section

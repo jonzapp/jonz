@@ -1,4 +1,3 @@
-import { FOCUS_SHELL_COPY, SECTION_LABEL } from '@app/core';
 import type { BottomTabBarProps } from 'expo-router/js-tabs';
 import { CalendarDaysIcon, HouseIcon, ListChecksIcon, type LucideIcon } from 'lucide-react-native';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -49,14 +48,14 @@ export function HouseTabBar({
   house,
   toVote,
 }: BottomTabBarProps & { wide: boolean; house: ShellHouse | null; toVote: number }) {
-  const words = useWords();
+  const words = useWords(house?.family ? 'family' : undefined);
   const { colors, type } = useTheme();
 
   const places = state.routes.map((route, index) => {
     const place = route.name as Place;
     const focused = index === state.index;
     const Icon = ICON[place] ?? HouseIcon;
-    const label = SECTION_LABEL[place];
+    const label = words(`common.section.${place}` as const);
     const badge = place === 'today' ? toVote : 0;
     const ink = focused ? colors.foreground : colors.mutedForeground;
     const onPress = () => {
@@ -67,7 +66,7 @@ export function HouseTabBar({
     const common = {
       role: 'tab' as const,
       'aria-selected': focused,
-      accessibilityLabel: FOCUS_SHELL_COPY.tab(label, badge, house?.family),
+      accessibilityLabel: words('common.shell.tab', { label, toVote: badge }),
       testID: `tab-${place}`,
       onPress,
     };
@@ -99,7 +98,7 @@ export function HouseTabBar({
       <TourSpot id="shell.tabs">
         <View
           role="tablist"
-          accessibilityLabel={FOCUS_SHELL_COPY.places}
+          accessibilityLabel={words('common.shell.places')}
           style={[styles.bar, { paddingBottom: insets.bottom, backgroundColor: colors.background, borderTopColor: colors.border }]}
         >
           {places}
@@ -117,7 +116,7 @@ export function HouseTabBar({
         </View>
       ) : null}
       <TourSpot id="shell.tabs">
-        <View role="tablist" accessibilityLabel={FOCUS_SHELL_COPY.places} style={styles.railItems}>
+        <View role="tablist" accessibilityLabel={words('common.shell.places')} style={styles.railItems}>
           {places}
         </View>
       </TourSpot>

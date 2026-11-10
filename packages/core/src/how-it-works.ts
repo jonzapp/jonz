@@ -7,7 +7,7 @@
  * tool, then walks the person through it with their numbers from the other
  * reads (balances, stake, why_john).
  */
-import { APP_NAME } from "./copy";
+import { APP_NAME } from "./app";
 import type { HouseRules } from "./domain";
 import { formatMoney } from "./money";
 import { PASS_ENFORCED, PASS_PRICES, PASS_TRIAL_DAYS } from "./pass";

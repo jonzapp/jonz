@@ -1,4 +1,4 @@
-import { canRedeal, johnsComing, memberCan, PAGE_TITLE } from '@app/core';
+import { canRedeal, johnsComing, memberCan } from '@app/core';
 
 import type { JohnList as List } from '@/api/settings';
 import { useWords } from '@/hooks/use-words';
@@ -28,6 +28,7 @@ export default function JohnListScreen() {
 }
 
 function JohnListFor({ houseId, userId }: { houseId: string; userId: string }) {
+  const words = useWords();
   const { query, view } = useHouse(houseId, userId);
   const list = useJohnList(houseId);
   // Neither the list nor the rules come over Realtime: read them again on
@@ -41,7 +42,7 @@ function JohnListFor({ houseId, userId }: { houseId: string; userId: string }) {
   // there: React's compiler reads what a callback uses before calling it.
   return (
     <HousePage
-      title={PAGE_TITLE.johnList}
+      title={words('common.title.johnList')}
       testID="johns-screen" outline={<ListPageOutline />}
       fills
       ready={view !== null && list.data !== undefined}

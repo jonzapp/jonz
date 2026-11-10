@@ -1,4 +1,4 @@
-import { historyItems, LIST_COPY, type ActionRow } from '@app/core';
+import { historyItems, type ActionRow } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 
 import { loadHouse } from '@/api/board';
@@ -147,7 +147,7 @@ it('says what lands here when nothing has yet', async () => {
 
 it('says when it has everything, under the oldest move', async () => {
   await open();
-  expect(screen.getByTestId('history-foot')).toHaveTextContent(LIST_COPY.everything);
+  expect(screen.getByTestId('history-foot')).toHaveTextContent(words('common.list.everything'));
 });
 
 it('reads older moves as you scroll near the end, from the last one shown', async () => {
@@ -164,5 +164,5 @@ it('reads older moves as you scroll near the end, from the last one shown', asyn
   });
   await waitFor(() => expect(loadHistory).toHaveBeenLastCalledWith('h1', last));
   expect(await screen.findByText(/Dishes/)).toBeOnTheScreen();
-  expect(screen.getByTestId('history-foot')).toHaveTextContent(LIST_COPY.everything);
+  expect(screen.getByTestId('history-foot')).toHaveTextContent(words('common.list.everything'));
 });

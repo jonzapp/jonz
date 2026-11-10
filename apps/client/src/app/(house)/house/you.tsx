@@ -1,4 +1,3 @@
-import { PAGE_TITLE } from '@app/core';
 import { StyleSheet, View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
@@ -14,6 +13,7 @@ import { useMembership } from '@/hooks/use-membership';
 import { usePull, useReadOnFocus } from '@/hooks/use-refresh';
 import { INSET, SPACE } from '@/theme';
 import { SettingsOutline } from '@/components/page-outlines';
+import { useWords } from '@/hooks/use-words';
 
 /** How big your picture is at the top of the page. */
 const PHOTO = 64;
@@ -33,13 +33,14 @@ export default function YouScreen() {
 }
 
 function YouFor({ houseId, userId }: { houseId: string; userId: string }) {
+  const words = useWords();
   const { query, view } = useHouse(houseId, userId);
   // Your name or role may have changed from another device.
   useReadOnFocus(query.refetch, { skipFirst: true });
   const { refreshing, pull } = usePull(houseId, () => query.refetch());
   return (
     <HousePage
-      title={PAGE_TITLE.you}
+      title={words('common.title.you')}
       testID="you-screen" outline={<SettingsOutline sections={[1, 3, 2]} />}
       fills
       ready={!!view?.me}

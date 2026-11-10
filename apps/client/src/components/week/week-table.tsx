@@ -1,4 +1,4 @@
-import { FOCUS_SHELL_COPY, weekSpokenRow, weekWho, type BoardItem } from '@app/core';
+import { weekSpokenRow, weekWho, type BoardItem } from '@app/core';
 import { StyleSheet, Text, View, type StyleProp, type TextStyle } from 'react-native';
 
 import { Alert } from '@/components/alert';
@@ -81,7 +81,7 @@ function TableRow({ item, context }: { item: BoardItem; context: JohnRowContext 
   const words = useWords();
   const john = useJohnRow(item, context);
   const mine = item.userId === context.userId;
-  const name = context.nameOf(item.userId) ?? FOCUS_SHELL_COPY.formerHousemate;
+  const name = context.nameOf(item.userId) ?? words('common.shell.formerHousemate');
   const who = weekWho(item.userId, context.userId, context.nameOf, words);
   return (
     <>

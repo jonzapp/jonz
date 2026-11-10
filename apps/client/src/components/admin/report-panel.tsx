@@ -1,4 +1,4 @@
-import { humanError, REPORT_COPY, REPORT_LIMITS, reportGist, BUSY_COPY } from '@app/core';
+import { humanError, REPORT_COPY, REPORT_LIMITS, reportGist } from '@app/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CheckIcon, CopyIcon, MailIcon, RotateCcwIcon, SearchIcon, UnlinkIcon } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
@@ -20,6 +20,7 @@ import { Sheet } from '@/components/sheet';
 import { Lead, Meta } from '@/components/text';
 import { Waiting } from '@/components/waiting';
 import { SPACE } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /** The Inbox's reads, so a reply or a fix can refresh the list, the count and the report together. */
 export const INBOX_KEY = ['owner-inbox'] as const;
@@ -71,6 +72,7 @@ function ReportBody({
   onOpen?: (id: string) => void;
   onReply: (text: string) => Promise<void>;
 }) {
+  const words = useWords();
   const [sheet, setSheet] = useState<'fix' | 'same' | null>(null);
   const [done, setDone] = useState<string | null>(null);
   const [unfolding, setUnfolding] = useState<string | null>(null);
@@ -170,7 +172,7 @@ function ReportBody({
           icon={fixed ? RotateCcwIcon : CheckIcon}
           variant="outline"
           busy={reopen.isPending}
-          busyLabel={BUSY_COPY.reopening}
+          busyLabel={words('common.busy.reopening')}
           onPress={() => {
             setDone(null);
             if (fixed) reopen.mutate();

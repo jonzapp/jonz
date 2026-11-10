@@ -1,4 +1,3 @@
-import { SECTION_LABEL } from '@app/core';
 import type { Href } from 'expo-router';
 import type { ReactNode } from 'react';
 
@@ -6,6 +5,7 @@ import { PageTitle } from '@/components/page-title';
 import { Screen } from '@/components/screen';
 import { TitleBar } from '@/components/title-bar';
 import { Waiting } from '@/components/waiting';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * A page House pushes (the John list, the rules, time away, groups, a
@@ -24,7 +24,7 @@ export function HousePage({
   refreshing,
   onRefresh,
   back = '/house',
-  backLabel = SECTION_LABEL.house,
+  backLabel,
   fills = false,
   outline,
   label,
@@ -48,6 +48,8 @@ export function HousePage({
   label?: string;
   children: () => ReactNode;
 }) {
+  const words = useWords();
+  backLabel ??= words('common.section.house');
   return (
     <Screen
       bar={<TitleBar title={title} back={back} backLabel={backLabel} />}

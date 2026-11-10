@@ -1,4 +1,4 @@
-import { myTrips, PAGE_TITLE, type MyPrefs } from '@app/core';
+import { myTrips, type MyPrefs } from '@app/core';
 
 import type { AwayView } from '@/api/away';
 import type { JohnList } from '@/api/settings';
@@ -30,6 +30,7 @@ export default function AwayScreen() {
 }
 
 function AwayFor({ houseId, userId }: { houseId: string; userId: string }) {
+  const words = useWords();
   const { query, view } = useHouse(houseId, userId);
   const away = useAway(houseId, query.data);
   const list = useJohnList(houseId);
@@ -42,7 +43,7 @@ function AwayFor({ houseId, userId }: { houseId: string; userId: string }) {
 
   return (
     <HousePage
-      title={PAGE_TITLE.away}
+      title={words('common.title.away')}
       testID="away-screen" outline={<RecordOutline />}
       fills
       ready={view !== null && away.data !== undefined && prefs !== null && list.data !== undefined}

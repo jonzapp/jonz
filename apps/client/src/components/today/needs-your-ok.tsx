@@ -1,4 +1,4 @@
-import { FOCUS_SHELL_COPY, okMeta, okTitle, tickerOf, type BoardItem } from '@app/core';
+import { okMeta, okTitle, tickerOf, type BoardItem } from '@app/core';
 
 import type { Housemate } from '@/api/board';
 import { Avatar } from '@/components/avatar';
@@ -24,7 +24,7 @@ export function NeedsYourOk({ items, members, now }: { items: BoardItem[]; membe
         return (
           <Row
             key={item.id}
-            leading={<Avatar name={members.find((m) => m.userId === kid)?.name ?? FOCUS_SHELL_COPY.formerHousemate} userId={kid} />}
+            leading={<Avatar name={members.find((m) => m.userId === kid)?.name ?? words('common.shell.formerHousemate')} userId={kid} />}
             title={okTitle(item, members, words)}
             // The John's name is never cut short.
             titleLines={2}

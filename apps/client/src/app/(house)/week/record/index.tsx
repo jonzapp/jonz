@@ -1,4 +1,4 @@
-import { readSpan, RECORD_SPANS, SECTION_LABEL, trackRecord, type RecordMark, type RecordSpan, type TrackRecord } from '@app/core';
+import { readSpan, RECORD_SPANS, trackRecord, type RecordMark, type RecordSpan, type TrackRecord } from '@app/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
@@ -56,7 +56,7 @@ function RecordFor({ houseId, userId, span, open }: { houseId: string; userId: s
 
   return (
     <Screen
-      bar={<TitleBar title={words('week.record.title')} back="/week" backLabel={SECTION_LABEL.week} />}
+      bar={<TitleBar title={words('week.record.title')} back="/week" backLabel={words('common.section.week')} />}
       refreshing={refreshing}
       onRefresh={pull}
       testID="record-screen"

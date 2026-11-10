@@ -1,4 +1,4 @@
-import { PAGE_TITLE, SECTION_LABEL, wordsFor } from "@app/core";
+import { wordsFor } from "@app/core";
 import { expect, test, type Page } from "@playwright/test";
 
 import { CLIENT_URL, cleanUp, houseOf, signInToClient } from "./auth";
@@ -17,7 +17,7 @@ test.afterAll(async () => cleanUp(made));
  * House, whose title bar does.
  */
 async function expectHouseNamed(page: Page, name: string) {
-  await page.getByRole("tab", { name: SECTION_LABEL.house }).click();
+  await page.getByRole("tab", { name: words('common.section.house') }).click();
   await expect(page).toHaveURL(/\/house$/);
   await expect(page.getByRole("heading", { name })).toBeVisible();
 }
@@ -45,7 +45,7 @@ test("start a house, and land on it caught up", async ({ context, page }) => {
   await page.getByTestId("create-house").click();
 
   await expect(page).toHaveURL(/\/today$/);
-  await expect(page.getByRole("heading", { name: PAGE_TITLE.today })).toBeVisible();
+  await expect(page.getByRole("heading", { name: words('common.title.today') })).toBeVisible();
   const answer = await fresh;
   expect(answer.status()).toBe(201);
   expect(await answer.json()).toEqual({ ticked: true });
@@ -79,7 +79,7 @@ test("a join link opens on the invite, signs you in on the spot, then joins", as
   const catching = caughtUp(joiner);
   await joiner.getByRole("button", { name: words('door.welcome.join') }).click();
   await expect(joiner).toHaveURL(/\/today$/);
-  await expect(joiner.getByRole("heading", { name: PAGE_TITLE.today })).toBeVisible();
+  await expect(joiner.getByRole("heading", { name: words('common.title.today') })).toBeVisible();
   expect((await catching).status()).toBe(201);
   await expectHouseNamed(joiner, "Number 9");
 });

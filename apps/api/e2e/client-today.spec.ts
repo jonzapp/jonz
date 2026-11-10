@@ -1,4 +1,3 @@
-import { PAGE_TITLE } from "@app/core";
 import { expect, test } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, dealtHouseInClient } from "./auth";
@@ -25,7 +24,7 @@ test("tick a John, take it back, and tick one with a photo", async ({ context, p
 
   await page.goto("/");
   await expect(page).toHaveURL(/\/today$/);
-  await expect(page.getByRole("heading", { name: PAGE_TITLE.today })).toBeVisible();
+  await expect(page.getByRole("heading", { name: words('common.title.today') })).toBeVisible();
   // (Tabs keep the other screens laid out underneath: look on Today's.)
   const today = page.getByTestId("today-screen");
   const nextUp = today.getByTestId("next-up");

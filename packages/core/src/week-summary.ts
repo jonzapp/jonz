@@ -3,7 +3,6 @@ import { format } from "date-fns";
 
 import { awayDays, currentOrNext, type AwayPeriod } from "./away";
 import { byDoneLatest, type BoardItem } from "./board";
-import { FOCUS_SHELL_COPY } from "./copy";
 import { MAKEUP_LABEL } from "./deal";
 import { dateRange, firstName, formatBalance, pointsLabel, STATUS_LABEL, STATUS_MARK, weekRange } from "./format";
 import type { LiveStatus } from "./outcome";
@@ -274,7 +273,7 @@ function called(name: string | null, words: Words): string {
 export function weekWho(userId: string, viewerId: string, nameOf: (userId: string) => string | null, words: Words): string {
   if (userId === viewerId) return words('week.table.you');
   const name = nameOf(userId);
-  return name ? firstName(name) : FOCUS_SHELL_COPY.formerHousemate;
+  return name ? firstName(name) : words('common.shell.formerHousemate');
 }
 
 /**
