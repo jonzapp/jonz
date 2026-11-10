@@ -374,6 +374,16 @@ export function auditLine(entry: AuditEntry, ownerId: string | null): { title: s
   return { title: known ? `${parts.who} ${parts.what}` : `${parts.who}: ${entry.action}`, meta: parts.detail || parts.where };
 }
 
+/**
+ * Every word a row of the audit log shows, as its search box finds them:
+ * who, what, where and the notice's title. The database says the same
+ * (audit_row_words), so typing what you see finds it.
+ */
+export function auditRowWords(entry: AuditEntry, viewerId: string | null): string {
+  const { who, what, where, detail } = auditParts(entry, viewerId);
+  return [who, what, where, detail].filter(Boolean).join(" ");
+}
+
 function accountMeta(entry: AuditEntry): string {
   return entry.targetId ? `Account ${entry.targetId.slice(0, 8)}` : "";
 }
