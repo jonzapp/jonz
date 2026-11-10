@@ -43,7 +43,9 @@ function looksLikeControl(node: ReactNode): boolean {
  * the title out. With `onPress` or `href` it is a button or a link a whole
  * thumb tall, `chevron` when it pushes a page. `selected` (true or false)
  * makes it one of several to choose from, a radio (`aria-checked`), the
- * chosen one on the tint; put the rows in a radiogroup. A `leading` or
+ * chosen one on the tint; put the rows in a radiogroup. `current` marks the
+ * one open beside its list on a laptop (a guide topic), on the tint with an
+ * ink edge, as a chosen row of an owner's table is. A `leading` or
  * `trailing` element that has its own `onPress`, `href`, `onChange` or
  * `onValueChange` is its own control and sits beside the row's press target,
  * never inside it; `leadingControl` / `trailingControl` say so outright for
@@ -67,6 +69,7 @@ export function Row({
   tone = 'ink',
   disabled = false,
   selected,
+  current = false,
   titleLines = 1,
   metaLines = 1,
   cells,
@@ -103,6 +106,8 @@ export function Row({
   disabled?: boolean;
   /** One of several to choose from: a radio, checked and tinted when chosen. Needs `onPress`. */
   selected?: boolean;
+  /** The one of a list that's open beside it on a laptop: on the tint with an ink edge, `aria-current`. */
+  current?: boolean;
   /** How many lines the title may take before it's cut short: 2 for a John's name or a sentence (a Wall row). */
   titleLines?: 1 | 2;
   /** How many lines a meta string may take before it's cut short: 2 for a John's, which ends with when it's due. */
@@ -123,7 +128,7 @@ export function Row({
   const leadingOutside = pressable && (leadingControl ?? looksLikeControl(leading));
   const trailingOutside = pressable && (trailingControl ?? looksLikeControl(trailing));
   const hasMeta = (meta != null && meta !== '') || lid != null;
-  const tinted = tint === true || selected === true;
+  const tinted = tint === true || selected === true || current;
 
   const leadingSlot = leading != null ? <View style={styles.leading}>{leading}</View> : null;
   const trailingItem =
@@ -175,6 +180,7 @@ export function Row({
         accessibilityRole={selected != null ? 'radio' : href != null ? 'link' : 'button'}
         accessibilityLabel={accessibilityLabel}
         aria-checked={selected}
+        aria-current={current || undefined}
         aria-disabled={disabled}
         disabled={disabled}
         onPress={onPress}
@@ -210,6 +216,7 @@ export function Row({
         <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: withAlpha(colors.foreground, 0.06) }]} />
       ) : null}
       <Hairline />
+      {current ? <View aria-hidden pointerEvents="none" style={[styles.current, { backgroundColor: colors.foreground }]} /> : null}
       {hazardEdge ? (
         <View aria-hidden pointerEvents="none" style={styles.edge}>
           <HazardTape tone="hazard" width={4} height="100%" />
@@ -251,4 +258,6 @@ const styles = StyleSheet.create({
   metaText: { flexShrink: 1, minWidth: 0 },
   value: { flexShrink: 1, maxWidth: '60%', textAlign: 'right', ...TABULAR },
   edge: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 4 },
+  // The open one's ink edge, as on a chosen row of an owner's table.
+  current: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 3 },
 });

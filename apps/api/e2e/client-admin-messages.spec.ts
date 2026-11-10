@@ -43,6 +43,18 @@ test("sends the owner a test, then a message to a house that lands on its Wall",
   await page.goto("/admin/messages");
   const form = page.getByTestId("message-form");
   await expect(form).toBeVisible();
+  // Where the main column has room for two (a 1440 laptop): who it's to and what it says beside how it goes out,
+  // sharing a top edge. Beside the panel on a smaller laptop, and on a phone, one column.
+  if ((page.viewportSize()?.width ?? 0) < 1440) {
+    await expect(form.getByTestId("message-subject")).toBeVisible();
+    await expect(form.getByTestId("message-form-start")).toHaveCount(0);
+  } else {
+    await expect(form.getByTestId("message-form-start").getByTestId("message-subject")).toBeVisible();
+    await expect(form.getByTestId("message-form-end").getByTestId("message-way-push")).toBeVisible();
+    const start = await form.getByTestId("message-form-start").boundingBox();
+    const end = await form.getByTestId("message-form-end").boundingBox();
+    expect(start?.y ?? 0).toBeCloseTo(end?.y ?? 1, 0);
+  }
 
   // Pick the house by its name.
   await form.getByTestId("message-find").fill(houseName.slice(0, 14));

@@ -278,6 +278,7 @@ export function Lists() {
         />
         <Row title="A row someone picked" leading={<RowIcon icon={InboxIcon} />} selected onPress={none} chevron />
         <Row title="A row on the tint, for yours" leading={<RowIcon icon={ShieldIcon} />} tint onPress={none} />
+        <Row title="The one open beside its list" meta="On a laptop, a guide topic" current onPress={none} />
       </Group>
       <EmptyState icon={InboxIcon} title="Nothing here yet" body="An empty list says what would be here, and how to add the first." />
     </Section>

@@ -86,9 +86,20 @@ still look right stretched (content capped, nothing pinned to far edges).
   you (Needs you, On call, This week) in the panel. Where the main column
   has no room for two, they stack as on a phone. (Laptop width B, 10 Nov)
 - **The owner's pages use the whole room:** their lists are tables, so the
-  main column running to the panel suits them. A page a phone pushes (a
-  house, a report) opens beside its list on a laptop instead, never in one
-  column with the room blank beside it. (Owner admin, 7 Nov)
+  main column running to the panel suits them. A long form there (Messages,
+  Promotions) puts what it says beside how it goes out (`FormPair`), the
+  two sharing a top edge, where the main column has room for two columns;
+  only where it hasn't is it one stack, `FORM_MAX` wide. (Owner admin, 7
+  Nov; Laptop width B, 10 Nov)
+- **A page a phone pushes from a list opens beside the list on a laptop,**
+  never in one column with the room blank beside it: an owner's house or
+  report beside its table, a housemate's track record (you, to start)
+  beside the grid, a Guide topic (the first, to start) beside the topics.
+  The open one in the list is on the tint with an ink edge, and clicking
+  down the list changes what's beside it without leaving the page. A link
+  to the pushed page lands on the list with it open; on a phone it's still
+  a page of its own. (Owner admin, 7 Nov; Laptop width B, 10 Nov) *Backed
+  by* Material's list-detail layout and the HIG's split view.
 - Things side by side share a top edge: the page's first line sits in the
   main column so a bare card in main lines up with the side's first group.
   (#48)

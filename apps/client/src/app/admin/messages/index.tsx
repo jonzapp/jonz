@@ -27,6 +27,7 @@ import { ConfirmSheet } from '@/components/confirm-sheet';
 import { Field, FieldLabel } from '@/components/field';
 import { Group } from '@/components/group';
 import { Row } from '@/components/row';
+import { FormPair } from '@/components/page-columns';
 import { Columns, Screen, useColumns } from '@/components/screen';
 import { Section } from '@/components/section';
 import { Segmented } from '@/components/segmented';
@@ -36,7 +37,7 @@ import { Meta } from '@/components/text';
 import { TextButton } from '@/components/text-button';
 import { TitleBar } from '@/components/title-bar';
 import { useToast } from '@/components/toast';
-import { FORM_MAX, SPACE } from '@/theme';
+import { SPACE } from '@/theme';
 import { useOwnerMay } from '@/components/admin/use-owner-may';
 import { AdminSwitch } from '@/components/admin/admin-shell';
 
@@ -157,92 +158,102 @@ function Messages() {
     />
   );
 
+  // On a laptop, who it's to and what it says beside how it goes out, where the main column has room for both.
   const formView = (
-    <View style={[styles.form, two && styles.capped]} testID="message-form">
-      <View style={styles.group}>
-        <FieldLabel>{MESSAGE_COPY.to}</FieldLabel>
-        <Segmented
-          label={MESSAGE_COPY.to}
-          options={MESSAGE_AUDIENCES.map((audience) => ({ value: audience, label: MESSAGE_COPY.audience[audience] }))}
-          value={form.audience}
-          onChange={(audience) => set({ audience, picked: null })}
-          equal
-          testID="message-audience"
-        />
-      </View>
-      {form.audience === 'everyone' ? null : (
-        <RecipientPicker key={form.audience} audience={form.audience} picked={form.picked} onPick={(picked) => set({ picked })} problem={shown('who')} />
-      )}
-      <Field
-        label={MESSAGE_COPY.subject}
-        value={form.subject}
-        onChangeText={(subject) => set({ subject })}
-        problem={shown('subject')}
-        maxLength={MESSAGE_LIMITS.subject}
-        testID="message-subject"
-      />
-      <Field
-        label={MESSAGE_COPY.body}
-        value={form.body}
-        onChangeText={(body) => set({ body })}
-        problem={shown('body')}
-        hint={MESSAGE_COPY.count(form.body.trim().length, MESSAGE_LIMITS.body)}
-        multiline
-        maxLength={MESSAGE_LIMITS.body}
-        testID="message-body"
-      />
-      <View style={styles.group}>
-        <FieldLabel>{MESSAGE_COPY.sendAs}</FieldLabel>
-        <Group>
-          <ChoiceRow
-            role="checkbox"
-            label={MESSAGE_COPY.wall}
-            meta={wayMeta('wall', form.audience, reach.data ?? null)}
-            metaLines={2}
-            checked={ways.wall}
-            disabled={form.audience === 'person'}
-            onPress={() => set({ ways: { ...form.ways, wall: !form.ways.wall } })}
-            testID="message-way-wall"
+    <FormPair
+      testID="message-form"
+      start={
+        <>
+          <View style={styles.group}>
+            <FieldLabel>{MESSAGE_COPY.to}</FieldLabel>
+            <Segmented
+              label={MESSAGE_COPY.to}
+              options={MESSAGE_AUDIENCES.map((audience) => ({ value: audience, label: MESSAGE_COPY.audience[audience] }))}
+              value={form.audience}
+              onChange={(audience) => set({ audience, picked: null })}
+              equal
+              testID="message-audience"
+            />
+          </View>
+          {form.audience === 'everyone' ? null : (
+            <RecipientPicker key={form.audience} audience={form.audience} picked={form.picked} onPick={(picked) => set({ picked })} problem={shown('who')} />
+          )}
+          <Field
+            label={MESSAGE_COPY.subject}
+            value={form.subject}
+            onChangeText={(subject) => set({ subject })}
+            problem={shown('subject')}
+            maxLength={MESSAGE_LIMITS.subject}
+            testID="message-subject"
           />
-          <ChoiceRow
-            role="checkbox"
-            label={MESSAGE_COPY.push}
-            meta={wayMeta('push', form.audience, reach.data ?? null)}
-            metaLines={2}
-            checked={ways.push}
-            onPress={() => set({ ways: { ...form.ways, push: !form.ways.push } })}
-            testID="message-way-push"
+          <Field
+            label={MESSAGE_COPY.body}
+            value={form.body}
+            onChangeText={(body) => set({ body })}
+            problem={shown('body')}
+            hint={MESSAGE_COPY.count(form.body.trim().length, MESSAGE_LIMITS.body)}
+            multiline
+            maxLength={MESSAGE_LIMITS.body}
+            testID="message-body"
           />
-          <ChoiceRow
-            role="checkbox"
-            label={MESSAGE_COPY.email}
-            meta={wayMeta('email', form.audience, reach.data ?? null)}
-            checked={ways.email}
-            onPress={() => set({ ways: { ...form.ways, email: !form.ways.email } })}
-            testID="message-way-email"
-          />
-        </Group>
-        {shown('ways') ? <Alert message={problems.ways!} /> : null}
-      </View>
-      {send.error && !confirming ? <Alert message={send.error.message} testID="message-problem" /> : null}
-      <View style={styles.group}>
-        {two ? (
-          <ButtonRow>
-            {sendButton}
-            {testButton}
-          </ButtonRow>
-        ) : (
-          <>
-            {sendButton}
-            <ButtonRow>
-              <Button label={MESSAGE_COPY.preview} variant="outline" icon={EyeIcon} onPress={() => setPreviewing(true)} testID="message-preview-open" />
-              {testButton}
-            </ButtonRow>
-          </>
-        )}
-        <Meta>{MESSAGE_COPY.auditNote}</Meta>
-      </View>
-    </View>
+        </>
+      }
+      end={
+        <>
+          <View style={styles.group}>
+            <FieldLabel>{MESSAGE_COPY.sendAs}</FieldLabel>
+            <Group>
+              <ChoiceRow
+                role="checkbox"
+                label={MESSAGE_COPY.wall}
+                meta={wayMeta('wall', form.audience, reach.data ?? null)}
+                metaLines={2}
+                checked={ways.wall}
+                disabled={form.audience === 'person'}
+                onPress={() => set({ ways: { ...form.ways, wall: !form.ways.wall } })}
+                testID="message-way-wall"
+              />
+              <ChoiceRow
+                role="checkbox"
+                label={MESSAGE_COPY.push}
+                meta={wayMeta('push', form.audience, reach.data ?? null)}
+                metaLines={2}
+                checked={ways.push}
+                onPress={() => set({ ways: { ...form.ways, push: !form.ways.push } })}
+                testID="message-way-push"
+              />
+              <ChoiceRow
+                role="checkbox"
+                label={MESSAGE_COPY.email}
+                meta={wayMeta('email', form.audience, reach.data ?? null)}
+                checked={ways.email}
+                onPress={() => set({ ways: { ...form.ways, email: !form.ways.email } })}
+                testID="message-way-email"
+              />
+            </Group>
+            {shown('ways') ? <Alert message={problems.ways!} /> : null}
+          </View>
+          {send.error && !confirming ? <Alert message={send.error.message} testID="message-problem" /> : null}
+          <View style={styles.group}>
+            {two ? (
+              <ButtonRow>
+                {sendButton}
+                {testButton}
+              </ButtonRow>
+            ) : (
+              <>
+                {sendButton}
+                <ButtonRow>
+                  <Button label={MESSAGE_COPY.preview} variant="outline" icon={EyeIcon} onPress={() => setPreviewing(true)} testID="message-preview-open" />
+                  {testButton}
+                </ButtonRow>
+              </>
+            )}
+            <Meta>{MESSAGE_COPY.auditNote}</Meta>
+          </View>
+        </>
+      }
+    />
   );
 
   const side = (
@@ -317,8 +328,6 @@ function RecentlySent() {
 }
 
 const styles = StyleSheet.create({
-  form: { gap: SPACE.xl },
-  capped: { maxWidth: FORM_MAX, width: '100%' },
   group: { gap: SPACE.sm },
   side: { gap: SPACE.xl },
   phone: { gap: SPACE.xxl },

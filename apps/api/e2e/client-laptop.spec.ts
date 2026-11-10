@@ -165,6 +165,26 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   await expect(span).not.toHaveText(HOUSE_PAGE_COPY.week);
   await shoot(page, "table-month");
 
+  // Track record: the grid, and your breakdown beside it, the two sharing a top edge and filling the room.
+  await page.goto("/week/record?span=month");
+  const record = page.getByTestId("record-screen");
+  await expect(record.getByTestId("record-pair-end").getByTestId("record-breakdown")).toContainText("(you)");
+  expect(await topOf(record.getByTestId("record-pair-start"))).toBeCloseTo(await topOf(record.getByTestId("record-pair-end")), 0);
+  await fillsTheRoom(page, record.getByTestId("record-pair-end"));
+  // Click down the housemates: each opens beside the grid, on the same page, its row marked.
+  const someone = record.getByTestId("record-row").filter({ hasNotText: "(you)" }).first();
+  await someone.click();
+  await expect(someone).toHaveAttribute("aria-current", "true");
+  await expect(record.getByTestId("record-pair-end").getByTestId("record-breakdown")).not.toContainText("(you)");
+  await expect(page.getByTestId("record-person-screen")).toHaveCount(0);
+  await shoot(page, "record");
+  // A link to a housemate's own page opens them beside the grid too.
+  await page.goto(`/week/record/${housemateIds[0]}?span=month`);
+  await expect(page.getByTestId("record-screen").getByTestId("record-pair-end").getByTestId("record-breakdown")).toContainText("Laptop");
+  await expect(page.getByTestId("record-person-screen")).toHaveCount(0);
+  await page.goto("/week");
+  await expect(page.getByRole("heading", { name: PAGE_TITLE.week })).toBeVisible();
+
   await page.getByRole("tab", { name: SECTION_LABEL.house }).click();
   const house = page.getByTestId("house-screen");
   // The house at a glance in four figures on one line, then the Table beside the Wall, the two sharing a top edge.
@@ -240,6 +260,23 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   await expect(page.getByTestId("away-pair-start").getByTestId("prefs-time")).toBeVisible();
   await expect(page.getByTestId("away-pair-end").getByTestId("away-panel")).toBeVisible();
   await shoot(page, "days-away");
+  // The Guide: the topics, and beside them the one you click (the first, to start), on the same page.
+  await page.goto("/house/guide");
+  const guide = page.getByTestId("guide");
+  await expect(guide.getByTestId("guide-open").getByTestId("guide-words")).toBeVisible();
+  await expect(guide.getByTestId("guide-today").getByRole("button")).toHaveAttribute("aria-current", "true");
+  expect(await topOf(guide.getByTestId("guide-pair-start"))).toBeCloseTo(await topOf(guide.getByTestId("guide-pair-end")), 0);
+  await fillsTheRoom(page, guide.getByTestId("guide-pair-end"));
+  await guide.getByTestId("guide-fair_shares").click();
+  await expect(guide.getByTestId("guide-fair_shares").getByRole("button")).toHaveAttribute("aria-current", "true");
+  await expect(guide.getByTestId("guide-open")).toContainText("Fair shares");
+  await expect(guide.getByTestId("guide-open").getByTestId("guide-ask")).toBeVisible();
+  await expect(page.getByTestId("guide-page")).toHaveCount(0);
+  await shoot(page, "guide");
+  // A link to a topic's own page opens it beside the list too.
+  await page.goto("/house/guide/points");
+  await expect(page.getByTestId("guide").getByTestId("guide-points").getByRole("button")).toHaveAttribute("aria-current", "true");
+  await expect(page.getByTestId("guide-page")).toHaveCount(0);
   // The groups among the John list's kinds.
   await nav.getByTestId("nav-johns").click();
   await expect(page.getByTestId("john-kinds").getByTestId("johns-groups")).toBeVisible();

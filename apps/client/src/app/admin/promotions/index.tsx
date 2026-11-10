@@ -38,6 +38,7 @@ import { ButtonRow } from '@/components/button-row';
 import { Field, FieldLabel } from '@/components/field';
 import { Group } from '@/components/group';
 import { Row } from '@/components/row';
+import { FormPair } from '@/components/page-columns';
 import { Columns, Screen, useColumns } from '@/components/screen';
 import { Section } from '@/components/section';
 import { Segmented } from '@/components/segmented';
@@ -47,7 +48,7 @@ import { Meta } from '@/components/text';
 import { TextButton } from '@/components/text-button';
 import { TitleBar } from '@/components/title-bar';
 import { useToast } from '@/components/toast';
-import { FORM_MAX, SPACE } from '@/theme';
+import { SPACE } from '@/theme';
 
 const RECENT = 5;
 
@@ -118,202 +119,212 @@ function Promotions() {
     />
   );
 
+  // On a laptop, what it gives beside who gets it and its code, where the main column has room for both.
   const formView = (
-    <View style={[styles.form, two && styles.capped]} testID="promotion-form">
-      <Field
-        label={PROMOTIONS_COPY.name}
-        value={form.name}
-        onChangeText={(name) => set({ name })}
-        problem={shown('name')}
-        hint={PROMOTIONS_COPY.nameHint}
-        maxLength={PROMOTION_LIMITS.name}
-        testID="promotion-name"
-      />
-      <View style={styles.group}>
-        <FieldLabel>{PROMOTIONS_COPY.gives}</FieldLabel>
-        <Segmented
-          label={PROMOTIONS_COPY.gives}
-          options={PROMOTION_KINDS.map((kind) => ({ value: kind, label: PROMOTIONS_COPY.kind[kind] }))}
-          value={form.kind}
-          onChange={(kind) => set({ kind })}
-          equal
-          testID="promotion-kind"
-        />
-      </View>
-      {form.kind === 'percent' ? (
-        <Field
-          label={PROMOTIONS_COPY.percent}
-          value={form.percent}
-          onChangeText={(percent) => set({ percent })}
-          problem={shown('gives')}
-          keyboardType="number-pad"
-          maxLength={4}
-          testID="promotion-percent"
-        />
-      ) : null}
-      {form.kind === 'amount' ? (
-        <Field
-          label={PROMOTIONS_COPY.amount}
-          value={form.amount}
-          onChangeText={(amount) => set({ amount })}
-          problem={shown('gives')}
-          hint={PROMOTIONS_COPY.amountHint}
-          keyboardType="decimal-pad"
-          maxLength={8}
-          testID="promotion-amount"
-        />
-      ) : null}
-      {money ? (
-        <View style={styles.group}>
-          <FieldLabel>{PROMOTIONS_COPY.duration}</FieldLabel>
-          <Segmented
-            label={PROMOTIONS_COPY.duration}
-            options={PROMOTION_DURATIONS.map((d) => ({ value: d, label: PROMOTIONS_COPY.durations[d] }))}
-            value={form.duration}
-            onChange={(duration) => set({ duration })}
-            equal
-            testID="promotion-duration"
+    <FormPair
+      testID="promotion-form"
+      start={
+        <>
+          <Field
+            label={PROMOTIONS_COPY.name}
+            value={form.name}
+            onChangeText={(name) => set({ name })}
+            problem={shown('name')}
+            hint={PROMOTIONS_COPY.nameHint}
+            maxLength={PROMOTION_LIMITS.name}
+            testID="promotion-name"
           />
-        </View>
-      ) : null}
-      {form.kind === 'gift' ? (
-        <View style={styles.group}>
-          <FieldLabel>{PROMOTIONS_COPY.giftLength}</FieldLabel>
-          <Segmented
-            label={PROMOTIONS_COPY.giftLength}
-            options={GIFT_LENGTHS.map((g) => ({ value: g, label: PROMOTIONS_COPY.giftLengths[g] }))}
-            value={form.gift}
-            onChange={(gift) => set({ gift })}
-            equal
-            testID="promotion-gift"
+          <View style={styles.group}>
+            <FieldLabel>{PROMOTIONS_COPY.gives}</FieldLabel>
+            <Segmented
+              label={PROMOTIONS_COPY.gives}
+              options={PROMOTION_KINDS.map((kind) => ({ value: kind, label: PROMOTIONS_COPY.kind[kind] }))}
+              value={form.kind}
+              onChange={(kind) => set({ kind })}
+              equal
+              testID="promotion-kind"
+            />
+          </View>
+          {form.kind === 'percent' ? (
+            <Field
+              label={PROMOTIONS_COPY.percent}
+              value={form.percent}
+              onChangeText={(percent) => set({ percent })}
+              problem={shown('gives')}
+              keyboardType="number-pad"
+              maxLength={4}
+              testID="promotion-percent"
+            />
+          ) : null}
+          {form.kind === 'amount' ? (
+            <Field
+              label={PROMOTIONS_COPY.amount}
+              value={form.amount}
+              onChangeText={(amount) => set({ amount })}
+              problem={shown('gives')}
+              hint={PROMOTIONS_COPY.amountHint}
+              keyboardType="decimal-pad"
+              maxLength={8}
+              testID="promotion-amount"
+            />
+          ) : null}
+          {money ? (
+            <View style={styles.group}>
+              <FieldLabel>{PROMOTIONS_COPY.duration}</FieldLabel>
+              <Segmented
+                label={PROMOTIONS_COPY.duration}
+                options={PROMOTION_DURATIONS.map((d) => ({ value: d, label: PROMOTIONS_COPY.durations[d] }))}
+                value={form.duration}
+                onChange={(duration) => set({ duration })}
+                equal
+                testID="promotion-duration"
+              />
+            </View>
+          ) : null}
+          {form.kind === 'gift' ? (
+            <View style={styles.group}>
+              <FieldLabel>{PROMOTIONS_COPY.giftLength}</FieldLabel>
+              <Segmented
+                label={PROMOTIONS_COPY.giftLength}
+                options={GIFT_LENGTHS.map((g) => ({ value: g, label: PROMOTIONS_COPY.giftLengths[g] }))}
+                value={form.gift}
+                onChange={(gift) => set({ gift })}
+                equal
+                testID="promotion-gift"
+              />
+              <Meta>{PROMOTIONS_COPY.giftHint}</Meta>
+            </View>
+          ) : null}
+          {needsMonths ? (
+            <Field
+              label={PROMOTIONS_COPY.months}
+              value={form.months}
+              onChangeText={(months) => set({ months })}
+              problem={shown('months')}
+              hint={form.kind === 'trial' ? PROMOTIONS_COPY.trialHint : undefined}
+              keyboardType="number-pad"
+              maxLength={2}
+              testID="promotion-months"
+            />
+          ) : null}
+          {form.kind === 'gift' ? null : (
+            <View style={styles.group}>
+              <FieldLabel>{PROMOTIONS_COPY.plans}</FieldLabel>
+              <Group>
+                {PASS_PURCHASES.map((plan) => {
+                  const off = form.kind === 'trial' && plan === 'founding';
+                  const on = form.plans.includes(plan) && !off;
+                  return (
+                    <ChoiceRow
+                      key={plan}
+                      role="checkbox"
+                      label={PLAN_LABEL[plan]}
+                      meta={planPrice(plan)}
+                      checked={on}
+                      disabled={off}
+                      onPress={() => set({ plans: on ? form.plans.filter((p) => p !== plan) : [...form.plans, plan] })}
+                      testID={`promotion-plan-${plan}`}
+                    />
+                  );
+                })}
+              </Group>
+              {shown('plans') ? <Alert message={problems.plans!} /> : null}
+            </View>
+          )}
+        </>
+      }
+      end={
+        <>
+          <View style={styles.group}>
+            <FieldLabel>{PROMOTIONS_COPY.who}</FieldLabel>
+            <Segmented
+              label={PROMOTIONS_COPY.who}
+              options={PROMOTION_AUDIENCES.map((a) => ({ value: a, label: PROMOTIONS_COPY.audiences[a] }))}
+              value={form.audience}
+              onChange={(audience) => set({ audience })}
+              equal
+              testID="promotion-audience"
+            />
+          </View>
+          {form.audience === 'named' ? (
+            <Field
+              label={emails.length ? `${PROMOTIONS_COPY.people}, ${PROMOTIONS_COPY.peopleCount(emails.length)}` : PROMOTIONS_COPY.people}
+              value={form.people}
+              onChangeText={(people) => set({ people })}
+              problem={shown('people')}
+              hint={PROMOTIONS_COPY.peopleHint}
+              multiline
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="email-address"
+              testID="promotion-people-box"
+            />
+          ) : (
+            <Field
+              label={PROMOTIONS_COPY.maxUses}
+              value={form.maxUses}
+              onChangeText={(maxUses) => set({ maxUses })}
+              problem={shown('maxUses')}
+              hint={PROMOTIONS_COPY.maxUsesHint}
+              keyboardType="number-pad"
+              maxLength={7}
+              testID="promotion-max"
+            />
+          )}
+          <View style={styles.group}>
+            <FieldLabel>{PROMOTIONS_COPY.ends}</FieldLabel>
+            <Segmented
+              label={PROMOTIONS_COPY.ends}
+              options={PROMOTION_ENDS.map((e) => ({ value: e, label: PROMOTIONS_COPY.endsChoices[e] }))}
+              value={form.ends}
+              onChange={(ends) => set({ ends, endsOn: form.endsOn || formatDay(new Date(Date.now() + 30 * 86_400_000)) })}
+              equal
+              testID="promotion-ends"
+            />
+            {form.ends === 'day' ? (
+              <Field label={PROMOTIONS_COPY.endsOn} value={form.endsOn} onChangeText={(endsOn) => set({ endsOn })} problem={shown('endsAt')} testID="promotion-ends-on" />
+            ) : null}
+          </View>
+          <Field
+            label={PROMOTIONS_COPY.note}
+            value={form.note}
+            onChangeText={(note) => set({ note })}
+            problem={shown('note')}
+            hint={PROMOTIONS_COPY.noteHint}
+            maxLength={PROMOTION_LIMITS.note}
+            testID="promotion-note"
           />
-          <Meta>{PROMOTIONS_COPY.giftHint}</Meta>
-        </View>
-      ) : null}
-      {needsMonths ? (
-        <Field
-          label={PROMOTIONS_COPY.months}
-          value={form.months}
-          onChangeText={(months) => set({ months })}
-          problem={shown('months')}
-          hint={form.kind === 'trial' ? PROMOTIONS_COPY.trialHint : undefined}
-          keyboardType="number-pad"
-          maxLength={2}
-          testID="promotion-months"
-        />
-      ) : null}
-      {form.kind === 'gift' ? null : (
-        <View style={styles.group}>
-          <FieldLabel>{PROMOTIONS_COPY.plans}</FieldLabel>
-          <Group>
-            {PASS_PURCHASES.map((plan) => {
-              const off = form.kind === 'trial' && plan === 'founding';
-              const on = form.plans.includes(plan) && !off;
-              return (
-                <ChoiceRow
-                  key={plan}
-                  role="checkbox"
-                  label={PLAN_LABEL[plan]}
-                  meta={planPrice(plan)}
-                  checked={on}
-                  disabled={off}
-                  onPress={() => set({ plans: on ? form.plans.filter((p) => p !== plan) : [...form.plans, plan] })}
-                  testID={`promotion-plan-${plan}`}
-                />
-              );
-            })}
-          </Group>
-          {shown('plans') ? <Alert message={problems.plans!} /> : null}
-        </View>
-      )}
-      <View style={styles.group}>
-        <FieldLabel>{PROMOTIONS_COPY.who}</FieldLabel>
-        <Segmented
-          label={PROMOTIONS_COPY.who}
-          options={PROMOTION_AUDIENCES.map((a) => ({ value: a, label: PROMOTIONS_COPY.audiences[a] }))}
-          value={form.audience}
-          onChange={(audience) => set({ audience })}
-          equal
-          testID="promotion-audience"
-        />
-      </View>
-      {form.audience === 'named' ? (
-        <Field
-          label={emails.length ? `${PROMOTIONS_COPY.people}, ${PROMOTIONS_COPY.peopleCount(emails.length)}` : PROMOTIONS_COPY.people}
-          value={form.people}
-          onChangeText={(people) => set({ people })}
-          problem={shown('people')}
-          hint={PROMOTIONS_COPY.peopleHint}
-          multiline
-          autoCapitalize="none"
-          autoCorrect={false}
-          keyboardType="email-address"
-          testID="promotion-people-box"
-        />
-      ) : (
-        <Field
-          label={PROMOTIONS_COPY.maxUses}
-          value={form.maxUses}
-          onChangeText={(maxUses) => set({ maxUses })}
-          problem={shown('maxUses')}
-          hint={PROMOTIONS_COPY.maxUsesHint}
-          keyboardType="number-pad"
-          maxLength={7}
-          testID="promotion-max"
-        />
-      )}
-      <View style={styles.group}>
-        <FieldLabel>{PROMOTIONS_COPY.ends}</FieldLabel>
-        <Segmented
-          label={PROMOTIONS_COPY.ends}
-          options={PROMOTION_ENDS.map((e) => ({ value: e, label: PROMOTIONS_COPY.endsChoices[e] }))}
-          value={form.ends}
-          onChange={(ends) => set({ ends, endsOn: form.endsOn || formatDay(new Date(Date.now() + 30 * 86_400_000)) })}
-          equal
-          testID="promotion-ends"
-        />
-        {form.ends === 'day' ? (
-          <Field label={PROMOTIONS_COPY.endsOn} value={form.endsOn} onChangeText={(endsOn) => set({ endsOn })} problem={shown('endsAt')} testID="promotion-ends-on" />
-        ) : null}
-      </View>
-      <Field
-        label={PROMOTIONS_COPY.note}
-        value={form.note}
-        onChangeText={(note) => set({ note })}
-        problem={shown('note')}
-        hint={PROMOTIONS_COPY.noteHint}
-        maxLength={PROMOTION_LIMITS.note}
-        testID="promotion-note"
-      />
-      <Field
-        label={PROMOTIONS_COPY.code}
-        value={draft.code}
-        onChangeText={(code) => {
-          setCodeTyped(true);
-          set({ code: code.toUpperCase().replace(/[^A-Z0-9]/g, '') });
-        }}
-        problem={shown('code')}
-        hint={PROMOTIONS_COPY.codeHint}
-        autoCapitalize="characters"
-        autoCorrect={false}
-        maxLength={PROMOTION_LIMITS.code.max}
-        testID="promotion-code"
-      />
-      {make.error ? <Alert message={make.error.message} testID="promotion-problem" /> : null}
-      <View style={styles.group}>
-        {two ? (
-          <ButtonRow>
-            <Button label={PROMOTIONS_COPY.make} busyLabel={PROMOTIONS_COPY.making} icon={SparklesIcon} onPress={onMake} busy={make.isPending} testID="promotion-make" />
-          </ButtonRow>
-        ) : (
-          <ButtonRow stacked>
-            <Button label={PROMOTIONS_COPY.make} busyLabel={PROMOTIONS_COPY.making} icon={SparklesIcon} onPress={onMake} busy={make.isPending} testID="promotion-make" />
-            <Button label={PROMOTIONS_COPY.see} variant="outline" icon={EyeIcon} onPress={() => setPreviewing(true)} testID="promotion-preview-open" />
-          </ButtonRow>
-        )}
-        <Meta>{PROMOTIONS_COPY.auditNote}</Meta>
-      </View>
-    </View>
+          <Field
+            label={PROMOTIONS_COPY.code}
+            value={draft.code}
+            onChangeText={(code) => {
+              setCodeTyped(true);
+              set({ code: code.toUpperCase().replace(/[^A-Z0-9]/g, '') });
+            }}
+            problem={shown('code')}
+            hint={PROMOTIONS_COPY.codeHint}
+            autoCapitalize="characters"
+            autoCorrect={false}
+            maxLength={PROMOTION_LIMITS.code.max}
+            testID="promotion-code"
+          />
+          {make.error ? <Alert message={make.error.message} testID="promotion-problem" /> : null}
+          <View style={styles.group}>
+            {two ? (
+              <ButtonRow>
+                <Button label={PROMOTIONS_COPY.make} busyLabel={PROMOTIONS_COPY.making} icon={SparklesIcon} onPress={onMake} busy={make.isPending} testID="promotion-make" />
+              </ButtonRow>
+            ) : (
+              <ButtonRow stacked>
+                <Button label={PROMOTIONS_COPY.make} busyLabel={PROMOTIONS_COPY.making} icon={SparklesIcon} onPress={onMake} busy={make.isPending} testID="promotion-make" />
+                <Button label={PROMOTIONS_COPY.see} variant="outline" icon={EyeIcon} onPress={() => setPreviewing(true)} testID="promotion-preview-open" />
+              </ButtonRow>
+            )}
+            <Meta>{PROMOTIONS_COPY.auditNote}</Meta>
+          </View>
+        </>
+      }
+    />
   );
 
   return (
@@ -365,8 +376,6 @@ function Recent() {
 }
 
 const styles = StyleSheet.create({
-  form: { gap: SPACE.xl },
-  capped: { maxWidth: FORM_MAX, width: '100%' },
   group: { gap: SPACE.sm },
   side: { gap: SPACE.xl },
   phone: { gap: SPACE.xxl },

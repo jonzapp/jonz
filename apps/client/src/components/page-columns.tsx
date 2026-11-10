@@ -1,8 +1,10 @@
 import { Fragment, type ReactNode } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
-import { useFilled } from '@/components/screen';
-import { COLUMN_MIN, SECTION_GAP } from '@/theme';
+import { useHouseWorkspace } from '@/components/house/workspace';
+import { roomFor, useColumns, useFilled } from '@/components/screen';
+import { askPanelWidth, useAskPanelOpen } from '@/hooks/use-ask-jonz';
+import { COLUMN_MIN, FILL_MAX, FORM_MAX, GUTTER, SECTION_GAP, SPACE, WIDE } from '@/theme';
 
 /** How many columns of at least COLUMN_MIN, SECTION_GAP apart, fit in `width`. */
 export function columnsIn(width: number): number {
@@ -29,6 +31,23 @@ export function flowColumns(weights: readonly number[], columns: number): number
 export function useSideBySide(): boolean {
   const filled = useFilled();
   return filled !== null && columnsIn(filled) >= 2;
+}
+
+/**
+ * Whether a page that fills the room would show a `Pair` side by side at
+ * this window's width: where it does, a page a phone pushes from a list (a
+ * housemate's record, a guide topic) opens beside its list instead, never in
+ * one column with the room blank beside it. Read from the window (less the
+ * chat with Jonz, where it's open), as the page it goes to hasn't measured
+ * itself yet.
+ */
+export function useOpensBeside(): boolean {
+  const windowWidth = useWindowDimensions().width;
+  const { listed } = useHouseWorkspace();
+  const asking = useAskPanelOpen();
+  if (windowWidth < WIDE) return false;
+  const room = roomFor(windowWidth, listed) - (asking ? askPanelWidth(windowWidth) : 0);
+  return columnsIn(Math.min(room - 2 * GUTTER, FILL_MAX)) >= 2;
 }
 
 /**
@@ -73,6 +92,27 @@ export function Pair({
       <View style={[styles.column, { flex: 1 }]} testID={testID ? `${testID}-end` : undefined}>
         {end}
       </View>
+    </View>
+  );
+}
+
+/**
+ * A long form in the main column of a laptop page (`Columns`): what it says
+ * (`start`) beside how it goes out (`end`), sharing a top edge, where two
+ * columns fit, so the form uses the room rather than a narrow strip of it.
+ * Where they don't, one stack, FORM_MAX wide on a laptop; on a phone, one
+ * stack across the page.
+ */
+export function FormPair({ start, end, testID }: { start: ReactNode; end: ReactNode; testID?: string }) {
+  const beside = useSideBySide();
+  const two = useColumns();
+  if (beside) {
+    return <Pair testID={testID} start={<View style={styles.form}>{start}</View>} end={<View style={styles.form}>{end}</View>} />;
+  }
+  return (
+    <View style={[styles.form, two && styles.capped]} testID={testID}>
+      {start}
+      {end}
     </View>
   );
 }
@@ -124,4 +164,6 @@ const styles = StyleSheet.create({
   // Each column keeps SECTION_GAP between its sections, as the page does, and may shrink below its words.
   column: { minWidth: 0, gap: SECTION_GAP },
   even: { flex: 1 },
+  form: { gap: SPACE.xl },
+  capped: { maxWidth: FORM_MAX, width: '100%' },
 });

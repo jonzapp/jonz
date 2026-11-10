@@ -131,7 +131,10 @@ permanent once a store has seen them.
 - `src/components/`: the pieces every house screen is built from, Focus's
   kit: `Screen` (a house screen's page; `spreads` for Today, Week and
   House in `Columns`, `fills` for House's other pages, whose sections sit
-  side by side on a laptop in `Pair` and `Flow` from `page-columns.tsx`),
+  side by side on a laptop in `Pair` and `Flow` from `page-columns.tsx`,
+  where `FormPair` sets a long form in two columns beside the panel and
+  `useOpensBeside` sends a page a phone pushes back to its list on a
+  laptop, open beside it),
   `TitleBar` (with `MoreButton` for
   "•••"), `PageTitle` (the browser tab's title on the web from core's
   `pageTitle`, nothing on a phone), `Section`, `Group`, `Row` (the one row,

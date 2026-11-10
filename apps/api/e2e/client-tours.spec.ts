@@ -115,7 +115,8 @@ test("every tour plays through, each step lit on screen", async ({ context, page
   await expect(page.getByTestId("guide")).toBeVisible();
   await page.getByTestId("guide-today").click();
   await expect(page.getByTestId("guide-words")).toContainText(TOURS.today.steps[0].body);
-  await expect(page.getByTestId("guide-page").getByTestId("guide-ask")).toBeVisible();
+  // On a laptop the topic opens beside the list; on a phone it's a page of its own.
+  await expect(page.getByTestId(wide ? "guide-open" : "guide-page").getByTestId("guide-ask")).toBeVisible();
   await page.goto("/today");
   await expect(page.getByTestId("today-screen").getByTestId("next-up")).toBeVisible();
 

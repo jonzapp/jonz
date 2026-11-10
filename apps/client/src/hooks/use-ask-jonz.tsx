@@ -4,6 +4,15 @@ import { useWindowDimensions } from 'react-native';
 
 import { WIDE } from '@/theme';
 
+/** The panel's width beside the page; a little less on a narrow laptop so the page keeps its room. */
+const PANEL = 400;
+const PANEL_SHARE = 0.36;
+
+/** How wide the chat with Jonz is beside the page, in a window this wide. */
+export function askPanelWidth(windowWidth: number): number {
+  return Math.min(PANEL, windowWidth * PANEL_SHARE);
+}
+
 export const AskPanelContext = createContext<{ open: boolean; setOpen: (open: boolean) => void } | null>(null);
 
 /** Whether the chat with Jonz is open beside the page; the house layout holds it for every tab. */
