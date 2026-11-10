@@ -1,4 +1,4 @@
-import { FAMILY_PASS_COPY, FOCUS_SHELL_COPY, LEGAL, PAGE_TITLE, PASS_COPY, SECTION_LABEL } from '@app/core';
+import { FOCUS_SHELL_COPY, LEGAL, PAGE_TITLE, SECTION_LABEL, wordsFor } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 
 import { loadHouse } from '@/api/board';
@@ -9,6 +9,8 @@ import PassScreen from '@/app/(house)/house/pass';
 import { ToastProvider } from '@/components/toast';
 import { snapshot } from '@/testing/house';
 import { renderPages, untilRead } from '@/testing/pages';
+
+const words = wordsFor('en', 'housemates');
 
 jest.mock('@/api/board', () => ({ loadHouse: jest.fn() }));
 jest.mock('@/api/house', () => ({ catchUp: jest.fn() }));
@@ -65,55 +67,55 @@ it('is the Family Pass in a family, with what a family gets', async () => {
   const base = snapshot();
   (loadHouse as jest.Mock).mockResolvedValue({ ...base, house: { ...base.house, kind: 'family' } });
   await open();
-  expect(within(screen.getByTestId('title-bar')).getByRole('header', { name: FAMILY_PASS_COPY.title })).toBeOnTheScreen();
-  expect(screen.getByTestId('pass-lead')).toHaveTextContent(FAMILY_PASS_COPY.foundingLead);
-  expect(screen.getByText(FAMILY_PASS_COPY.includes)).toBeOnTheScreen();
-  expect(screen.getByText(FAMILY_PASS_COPY.pocket)).toBeOnTheScreen();
-  expect(screen.getByText(FAMILY_PASS_COPY.kids)).toBeOnTheScreen();
-  expect(screen.queryByText(PASS_COPY.stake)).toBeNull();
+  expect(within(screen.getByTestId('title-bar')).getByRole('header', { name: words('house.familyPass.title') })).toBeOnTheScreen();
+  expect(screen.getByTestId('pass-lead')).toHaveTextContent(words('house.familyPass.foundingLead'));
+  expect(screen.getByText(words('house.familyPass.includes'))).toBeOnTheScreen();
+  expect(screen.getByText(words('house.familyPass.pocket'))).toBeOnTheScreen();
+  expect(screen.getByText(words('house.familyPass.kids'))).toBeOnTheScreen();
+  expect(screen.queryByText(words('house.pass.stake'))).toBeNull();
 });
 
 it('thanks a Founding house, and offers it no plans', async () => {
   await open();
-  expect(screen.getByTestId('pass-lead')).toHaveTextContent(PASS_COPY.foundingLead);
-  expect(screen.getByTestId('pass-line')).toHaveTextContent(PASS_COPY.founding);
-  expect(screen.getByText(PASS_COPY.stake)).toBeOnTheScreen();
+  expect(screen.getByTestId('pass-lead')).toHaveTextContent(words('house.pass.foundingLead'));
+  expect(screen.getByTestId('pass-line')).toHaveTextContent(words('house.pass.founding'));
+  expect(screen.getByText(words('house.pass.stake'))).toBeOnTheScreen();
   expect(screen.queryByTestId('pass-plans')).toBeNull();
   expect(screen.queryByTestId('pass-soon')).toBeNull();
-  expect(screen.getByTestId('pass-money')).toHaveTextContent(PASS_COPY.money);
+  expect(screen.getByTestId('pass-money')).toHaveTextContent(words('house.pass.money'));
   expect(screen.queryByTestId('pass-ask-free')).toBeNull();
 });
 
 it('says where the money goes, and offers a free Pass only once the free month has ended', async () => {
   withPass({ plan: 'trial', until: new Date(Date.now() + 12 * DAY), buyerId: null });
   await open();
-  expect(screen.getByTestId('pass-money')).toHaveTextContent(PASS_COPY.money);
+  expect(screen.getByTestId('pass-money')).toHaveTextContent(words('house.pass.money'));
   expect(screen.queryByTestId('pass-ask-free')).toBeNull();
 });
 
 it('lets a house past its free month ask for the Pass free', async () => {
   withPass({ plan: 'trial', until: new Date(Date.now() - DAY), buyerId: null });
   await open();
-  expect(screen.getByTestId('pass-hardship')).toHaveTextContent(PASS_COPY.hardship);
-  expect(screen.getByRole('link', { name: PASS_COPY.askFree })).toBeOnTheScreen();
+  expect(screen.getByTestId('pass-hardship')).toHaveTextContent(words('house.pass.hardship'));
+  expect(screen.getByRole('link', { name: words('house.pass.askFree') })).toBeOnTheScreen();
   expect(LEGAL.email).toContain('@');
 });
 
 it('shows a house on its free month the plans in its own currency, Yearly first, not yet for sale', async () => {
   withPass({ plan: 'trial', until: new Date(Date.now() + 12 * DAY - 60_000), buyerId: null });
   await open();
-  expect(screen.getByTestId('pass-lead')).toHaveTextContent(PASS_COPY.lead);
-  expect(screen.getByTestId('pass-line')).toHaveTextContent(PASS_COPY.trialLeft(12));
+  expect(screen.getByTestId('pass-lead')).toHaveTextContent(words('house.pass.lead'));
+  expect(screen.getByTestId('pass-line')).toHaveTextContent(words('house.pass.trialLeft', { days: 12 }));
   const plans = within(screen.getByTestId('pass-plans'));
   for (const price of ['£39.99 a year', '£4.99 a month', '£54.99 once']) expect(plans.getByText(price)).toBeOnTheScreen();
-  expect(within(screen.getByTestId('plan-yearly')).getByText(PASS_COPY.yearly)).toBeOnTheScreen();
-  expect(screen.getByTestId('pass-soon')).toHaveTextContent(PASS_COPY.buyingSoon);
+  expect(within(screen.getByTestId('plan-yearly')).getByText(words('house.pass.yearly'))).toBeOnTheScreen();
+  expect(screen.getByTestId('pass-soon')).toHaveTextContent(words('house.pass.buyingSoon'));
 });
 
 it('says who bought it', async () => {
   withPass({ plan: 'yearly', until: new Date(Date.now() + 200 * DAY), buyerId: 'sam' });
   await open();
-  expect(screen.getByTestId('pass-line')).toHaveTextContent(PASS_COPY.boughtBy('Sam'), { exact: false });
+  expect(screen.getByTestId('pass-line')).toHaveTextContent(words('house.pass.boughtBy', { name: 'Sam' }), { exact: false });
 });
 
 describe('selling on the web', () => {
@@ -135,11 +137,11 @@ describe('selling on the web', () => {
 
   it('says why not when the API refuses, and stays put', async () => {
     withPass({ plan: 'trial', until: new Date(Date.now() - DAY), buyerId: null });
-    (passCheckoutUrl as jest.Mock).mockRejectedValue(new ApiRequestError(PASS_COPY.checkoutClosed, 503));
+    (passCheckoutUrl as jest.Mock).mockRejectedValue(new ApiRequestError(words('house.pass.checkoutClosed'), 503));
     await open();
     expect(screen.queryByTestId('pass-first-charge')).toBeNull();
     await fireEvent.press(screen.getByTestId('plan-monthly'));
-    expect(await screen.findByText(PASS_COPY.checkoutClosed)).toBeOnTheScreen();
+    expect(await screen.findByText(words('house.pass.checkoutClosed'))).toBeOnTheScreen();
     expect(leaveFor).not.toHaveBeenCalled();
   });
 
@@ -164,7 +166,7 @@ describe('selling on the web', () => {
   it('thanks the buyer back from Checkout until the Pass shows', async () => {
     withPass({ plan: 'trial', until: new Date(Date.now() + 12 * DAY), buyerId: null });
     await open('/house/pass?bought=1');
-    expect(screen.getByTestId('pass-bought')).toHaveTextContent(PASS_COPY.bought);
+    expect(screen.getByTestId('pass-bought')).toHaveTextContent(words('house.pass.bought'));
   });
 });
 
@@ -176,7 +178,7 @@ describe('during the beta, with checkout on and nothing locked', () => {
   it('says it is free and sells nothing', async () => {
     withPass({ plan: 'trial', until: new Date(Date.now() + 12 * DAY), buyerId: null });
     await open();
-    expect(screen.getByTestId('pass-soon')).toHaveTextContent(PASS_COPY.betaFree);
+    expect(screen.getByTestId('pass-soon')).toHaveTextContent(words('house.pass.betaFree'));
     await fireEvent.press(screen.getByTestId('plan-yearly'));
     expect(passCheckoutUrl).not.toHaveBeenCalled();
   });

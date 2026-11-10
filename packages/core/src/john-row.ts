@@ -1,5 +1,5 @@
 import { isOpen, type BoardItem } from "./board";
-import { FOCUS_SHELL_COPY, PARENT_OK_COPY } from "./copy";
+import { FOCUS_SHELL_COPY } from "./copy";
 import { andNames } from "./crew";
 import { CATEGORY_SHORT } from "./domain";
 import { dueInLine, firstName, relative, sinceLabel, STATUS_LABEL } from "./format";
@@ -206,7 +206,7 @@ function metaLine(
     }
     case "checking":
       // In a family a kid's tick has no closing time: it waits for a parent.
-      if (item.awaitsOk) return line(PARENT_OK_COPY.waiting);
+      if (item.awaitsOk) return line(words('today.parentOk.waiting'));
       if (!item.standsAt) return line();
       return line(item.standsAt > now ? words('john.sheet.standsIn', { when: relative(item.standsAt, now) }) : words('john.sheet.standsSoon'));
     case "overdue":

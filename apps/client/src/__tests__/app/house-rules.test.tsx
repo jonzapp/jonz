@@ -1,4 +1,4 @@
-import { FAMILY_COPY, FOCUS_SHELL_COPY, KIND_SWITCH_COPY, NEW_JOHN, PAGE_TITLE, SECTION_LABEL, makeupHint, wordsFor } from '@app/core';
+import { FOCUS_SHELL_COPY, NEW_JOHN, PAGE_TITLE, SECTION_LABEL, makeupHint, wordsFor } from '@app/core';
 import { Slot } from 'expo-router';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 
@@ -311,21 +311,21 @@ describe('Who lives here', () => {
   it('reads out what the house is to someone who is not an admin, with no way to change it', async () => {
     await open('sam');
     const section = within(screen.getByTestId('kind-switch'));
-    expect(section.getByTestId('kind-now')).toHaveTextContent(new RegExp(`^${FAMILY_COPY.kinds.housemates}`));
+    expect(section.getByTestId('kind-now')).toHaveTextContent(new RegExp(`^${words('house.family.kinds.housemates')}`));
     expect(section.queryByRole('radio')).toBeNull();
   });
 
   it("lets an admin make the house a family, saying first it waits for the month's money", async () => {
     (setHouseKind as jest.Mock).mockResolvedValue('2026-11-01');
     await open();
-    expect(screen.getByRole('radio', { name: new RegExp(`^${FAMILY_COPY.kinds.housemates}, `) })).toBeChecked();
-    await fireEvent.press(screen.getByRole('radio', { name: new RegExp(`^${FAMILY_COPY.kinds.family}, `) }));
+    expect(screen.getByRole('radio', { name: new RegExp(`^${words('house.family.kinds.housemates')}, `) })).toBeChecked();
+    await fireEvent.press(screen.getByRole('radio', { name: new RegExp(`^${words('house.family.kinds.family')}, `) }));
     const sheet = within(screen.getByTestId('kind-sheet'));
-    expect(sheet.getByText(KIND_SWITCH_COPY.toFamilyTitle('Flat 3'))).toBeOnTheScreen();
+    expect(sheet.getByText(words('house.kindSwitch.toFamilyTitle', { house: 'Flat 3' }))).toBeOnTheScreen();
     expect(sheet.getByText(/is settled up as usual, then the Stake stops/)).toBeOnTheScreen();
-    await fireEvent.press(sheet.getByRole('button', { name: KIND_SWITCH_COPY.toFamily }));
+    await fireEvent.press(sheet.getByRole('button', { name: words('house.kindSwitch.toFamily') }));
     await waitFor(() => expect(setHouseKind).toHaveBeenCalledWith('h1', 'family'));
-    expect(await screen.findByText(KIND_SWITCH_COPY.later('Sun 1 Nov'))).toBeOnTheScreen();
+    expect(await screen.findByText(words('house.kindSwitch.later', { on: 'Sun 1 Nov' }))).toBeOnTheScreen();
   });
 
   it('shows a change that waits for the 1st, and keeps housemates without asking', async () => {
@@ -333,13 +333,13 @@ describe('Who lives here', () => {
     (loadHouse as jest.Mock).mockResolvedValue(snapshot({ house: { ...base.house, nextKind: { kind: 'family', on: '2026-12-01' } } }));
     (setHouseKind as jest.Mock).mockResolvedValue(null);
     await open();
-    const family = screen.getByRole('radio', { name: new RegExp(`^${FAMILY_COPY.kinds.family}, `) });
+    const family = screen.getByRole('radio', { name: new RegExp(`^${words('house.family.kinds.family')}, `) });
     expect(family).toBeChecked();
-    expect(family).toHaveAccessibleName(new RegExp(KIND_SWITCH_COPY.waits('Tue 1 Dec', 'November')));
-    await fireEvent.press(screen.getByRole('radio', { name: new RegExp(`^${FAMILY_COPY.kinds.housemates}, `) }));
+    expect(family).toHaveAccessibleName(new RegExp(words('house.kindSwitch.waits', { on: 'Tue 1 Dec', month: 'November' })));
+    await fireEvent.press(screen.getByRole('radio', { name: new RegExp(`^${words('house.family.kinds.housemates')}, `) }));
     await waitFor(() => expect(setHouseKind).toHaveBeenCalledWith('h1', 'housemates'));
     expect(screen.queryByTestId('kind-sheet')).toBeNull();
-    expect(await screen.findByText(KIND_SWITCH_COPY.done.kept)).toBeOnTheScreen();
+    expect(await screen.findByText(words('house.kindSwitch.done.kept'))).toBeOnTheScreen();
   });
 
   it('asks before making a family housemates again', async () => {
@@ -352,11 +352,11 @@ describe('Who lives here', () => {
     );
     (setHouseKind as jest.Mock).mockResolvedValue(null);
     await open();
-    await fireEvent.press(screen.getByRole('radio', { name: new RegExp(`^${FAMILY_COPY.kinds.housemates}, `) }));
+    await fireEvent.press(screen.getByRole('radio', { name: new RegExp(`^${words('house.family.kinds.housemates')}, `) }));
     const sheet = within(screen.getByTestId('kind-sheet'));
-    expect(sheet.getByText(KIND_SWITCH_COPY.toHousemates)).toBeOnTheScreen();
-    await fireEvent.press(sheet.getByRole('button', { name: KIND_SWITCH_COPY.toHousematesConfirm }));
+    expect(sheet.getByText(words('house.kindSwitch.toHousemates'))).toBeOnTheScreen();
+    await fireEvent.press(sheet.getByRole('button', { name: words('house.kindSwitch.toHousematesConfirm') }));
     await waitFor(() => expect(setHouseKind).toHaveBeenCalledWith('h1', 'housemates'));
-    expect(await screen.findByText(KIND_SWITCH_COPY.done.housemates)).toBeOnTheScreen();
+    expect(await screen.findByText(words('house.kindSwitch.done.housemates'))).toBeOnTheScreen();
   });
 });

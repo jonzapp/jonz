@@ -1,4 +1,4 @@
-import { addDaysTo, AHEAD_WEEKS, crewByJob, dealtMembers, dueInLine, firstName, FOCUS_SHELL_COPY, PARENT_OK_COPY, earnsImmunity, forfeitFor, isCleanWeek, localDate, monthOf, monthWindow, movingOutAway, MOVING_COPY, ON_CALL_WEEKS, onCallUsual, passOf, passUnlocked, prefsOf, recentBalances, reminderFor, remindMoverNow, REMIND_AFTER_DAYS, REMIND_UNTIL_DAYS, rulesOf, settleMonth, settleOutcome, standings, steadyAhead, steadyDeal, stillHere, tableInputs, USUAL_WEEKS, verdict, votersOn, weekStateOf, weekWindow, weekWinners, oldEnough, type AwayPeriod, type Database, type IsoDow, type Json, type Outcome, type PushKind, type SteadyDealArgs, type SteadyLastTurn, type WeekWindow, wordsFor } from "@app/core";
+import { addDaysTo, AHEAD_WEEKS, crewByJob, dealtMembers, dueInLine, firstName, FOCUS_SHELL_COPY, earnsImmunity, forfeitFor, isCleanWeek, localDate, monthOf, monthWindow, movingOutAway, MOVING_COPY, ON_CALL_WEEKS, onCallUsual, passOf, passUnlocked, prefsOf, recentBalances, reminderFor, remindMoverNow, REMIND_AFTER_DAYS, REMIND_UNTIL_DAYS, rulesOf, settleMonth, settleOutcome, standings, steadyAhead, steadyDeal, stillHere, tableInputs, USUAL_WEEKS, verdict, votersOn, weekStateOf, weekWindow, weekWinners, oldEnough, type AwayPeriod, type Database, type IsoDow, type Json, type Outcome, type PushKind, type SteadyDealArgs, type SteadyLastTurn, type WeekWindow, wordsFor } from "@app/core";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { tellHouse } from "./tell";
@@ -512,8 +512,8 @@ async function askParents(db: Db, house: HouseRow, members: readonly MemberRow[]
     await notify(
       parents.filter((p) => p !== kid),
       {
-        title: PARENT_OK_COPY.askTitle(names.get(kid) ?? FOCUS_SHELL_COPY.formerHousemate, a.name),
-        body: PARENT_OK_COPY.askBody,
+        title: words('today.parentOk.askTitle', { kid: names.get(kid) ?? FOCUS_SHELL_COPY.formerHousemate, john: a.name }),
+        body: words('today.parentOk.askBody'),
         url: "/today",
         kind: "checks",
         zone: house.timezone,

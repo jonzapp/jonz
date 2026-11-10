@@ -1,20 +1,4 @@
-import {
-  type Currency,
-  CURRENCY_CHOICES,
-  DAY_CHOICES,
-  DOOR,
-  FAMILY_COPY,
-  FAMILY_OPEN,
-  FRONT_DOOR_COPY,
-  houseDefaults,
-  type HouseKind,
-  type IsoDow,
-  kindParam,
-  MOVING_COPY,
-  NEW_HOUSE_COPY,
-  newHouseWords,
-  timeZoneName,
-} from '@app/core';
+import { type Currency, CURRENCY_CHOICES, DAY_CHOICES, DOOR, FAMILY_OPEN, FRONT_DOOR_COPY, houseDefaults, type HouseKind, type IsoDow, kindParam, MOVING_COPY, NEW_HOUSE_COPY, newHouseWords, timeZoneName } from '@app/core';
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -36,6 +20,7 @@ import { useMovingOn } from '@/hooks/use-moving-on';
 import { rememberedKind } from '@/door-kind';
 import { deviceCurrency, deviceTimeZone } from '@/locale';
 import { SPACE } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * Starting a house: one field, its name. The rest starts from this phone
@@ -52,6 +37,7 @@ import { SPACE } from '@/theme';
  * place, and the old house's John list comes with it.
  */
 export default function NewHouse() {
+  const words = useWords();
   const { refresh } = useMembership();
   const { from, kind: asked } = useLocalSearchParams<{ from?: string; kind?: string }>();
   const moving = useMovingOn().data ?? null;
@@ -61,7 +47,7 @@ export default function NewHouse() {
   );
   // A move keeps the old house's kind, so there's nothing to ask.
   const asking = !copying && (FAMILY_OPEN || kindParam(asked) === 'family');
-  const words = newHouseWords(kind);
+  const sign = newHouseWords(kind, words);
   const [timezone] = useState(deviceTimeZone);
   const [name, setName] = useState('');
   const [currency, setCurrency] = useState<Currency>(deviceCurrency);
@@ -85,16 +71,16 @@ export default function NewHouse() {
 
   return (
     <Door testID="new-house-screen">
-      <PageTitle page={words.title} />
+      <PageTitle page={sign.title} />
       <Sign>
         {copying ? (
           <SignHeading title={MOVING_COPY.newHeading} body={MOVING_COPY.newIntro(copying.houseName, copying.johns)} />
         ) : (
-          <SignHeading title={words.heading} body={words.intro} />
+          <SignHeading title={sign.heading} body={sign.intro} />
         )}
         {asking ? (
           <View style={styles.pick}>
-            <FieldLabel>{FAMILY_COPY.whoLivesHere}</FieldLabel>
+            <FieldLabel>{words('house.family.whoLivesHere')}</FieldLabel>
             <KindChoice value={kind} onChange={setKind} />
           </View>
         ) : null}
@@ -113,7 +99,7 @@ export default function NewHouse() {
             testID="house-name"
           />
           <DefaultsLine
-            parts={houseDefaults({ currency, weekStarts, timezone, kind })}
+            parts={houseDefaults({ currency, weekStarts, timezone, kind, words })}
             open={changing}
             onToggle={() => setChanging((was) => !was)}
           />
@@ -147,7 +133,7 @@ export default function NewHouse() {
         ) : null}
         {problem ? <Alert message={problem} /> : null}
         <Button
-          label={words.submit}
+          label={sign.submit}
           busyLabel={NEW_HOUSE_COPY.busy}
           onPress={() => void submit()}
           busy={busy}

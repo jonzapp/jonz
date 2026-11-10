@@ -1,24 +1,6 @@
 import "server-only";
 
-import {
-  bornYearOk,
-  KIDS_COPY,
-  PASS_COPY,
-  PASS_ENFORCED,
-  promotionProblems,
-  type AwayDraft,
-  type ChatRequest,
-  type DeleteHouseRequest,
-  type OwnerAskRequest,
-  type OwnerMessageRequest,
-  type PassCheckoutRequest,
-  type PromotionRequest,
-  type ReportFixRequest,
-  type ReportMessageRequest,
-  type ReportRequest,
-  type RollCallRequest,
-  type SwapAskRequest,
-} from "@app/core";
+import { bornYearOk, PASS_ENFORCED, promotionProblems, type AwayDraft, type ChatRequest, type DeleteHouseRequest, type OwnerAskRequest, type OwnerMessageRequest, type PassCheckoutRequest, type PromotionRequest, type ReportFixRequest, type ReportMessageRequest, type ReportRequest, type RollCallRequest, type SwapAskRequest, wordsFor } from "@app/core";
 import { fromDatabase, Problem, type HandlerContext } from "@app/server";
 import type { Handlers } from "v1";
 
@@ -47,6 +29,9 @@ import { askSwap } from "@/lib/moves/swap-ask";
 import { copyNotices } from "@/lib/notices/copy";
 import { offerStripe, passStripe } from "@/lib/pass/stripe";
 import { userClient } from "@/lib/supabase/user";
+
+// Server lines read the housemates' words for now; each person's own language comes with translation 7.
+const words = wordsFor("en", "housemates");
 
 // The /v1 operations whose logic is TypeScript (docs/specs/api.md, C2): each
 // runs the same move its /api route runs, after the executor's checks (token,
@@ -131,7 +116,7 @@ const HANDLERS: Handlers = {
 
   async add_kid(ctx: HandlerContext) {
     const { name, bornYear } = ctx.input as { name: string; bornYear: number };
-    if (!bornYearOk(bornYear, ctx.now.getUTCFullYear())) throw new Problem("invalid_input", KIDS_COPY.problems.born);
+    if (!bornYearOk(bornYear, ctx.now.getUTCFullYear())) throw new Problem("invalid_input", words('people.kids.problems.born'));
     const added = await addKid(callerOf(ctx), { name, bornYear });
     if (!("userId" in added)) throw refusal(added);
     return added;
@@ -146,7 +131,7 @@ const HANDLERS: Handlers = {
 
   async pass_checkout(ctx: HandlerContext) {
     const { plan, offer } = ctx.input as PassCheckoutRequest;
-    if (!PASS_ENFORCED && !offer) throw new Problem("rejected", PASS_COPY.betaFree);
+    if (!PASS_ENFORCED && !offer) throw new Problem("rejected", words('house.pass.betaFree'));
     const email = typeof ctx.claims.email === "string" ? ctx.claims.email : undefined;
     const answer = await startCheckout({ ...callerOf(ctx), email }, passStripe(), houseId(ctx), plan, appUrl(ctx), env.stage(), ctx.now, offer ?? null);
     return passAnswer(answer);
@@ -154,7 +139,7 @@ const HANDLERS: Handlers = {
 
   async pass_billing(ctx: HandlerContext) {
     const stripe = passStripe();
-    if (!stripe) throw new Problem("rejected", PASS_COPY.checkoutClosed);
+    if (!stripe) throw new Problem("rejected", words('house.pass.checkoutClosed'));
     return passAnswer(await openBilling(callerOf(ctx), stripe, houseId(ctx), appUrl(ctx)));
   },
 

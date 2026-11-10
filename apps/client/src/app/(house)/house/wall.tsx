@@ -76,7 +76,7 @@ function WallFor({ houseId, userId }: { houseId: string; userId: string }) {
 
   const { events, photos } = wallPages(feed.data?.pages ?? []);
   const scene = view ? wallScene(view, userId, events, words, true) : null;
-  const rows = scene ? events.map((e) => wallFeedRow(e, scene)) : [];
+  const rows = scene ? events.map((e) => wallFeedRow(e, scene, words)) : [];
   const openRow = open ? rows.find((r) => r.id === open) : undefined;
   if (open && feed.data && scene && !openRow) setOpen(null);
   const more: ListMore = {

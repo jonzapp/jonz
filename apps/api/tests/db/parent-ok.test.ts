@@ -1,10 +1,12 @@
-import { nextWeek, PARENT_OK_COPY } from "@app/core";
+import { nextWeek, wordsFor } from "@app/core";
 import { describe, expect, it } from "vitest";
 
 import { tickHouse, type PushMessage } from "@/lib/engine/tick";
 import { adminClient } from "@/tests/support/clients";
 import { expectDenied, expectOk, expectRule } from "@/tests/support/expect";
 import { addJohns, deal, makeHouse, reread, thisWeek, ZONE } from "@/tests/support/factories";
+
+const words = wordsFor("en", "housemates");
 
 /**
  * A parent's OK, family step 2 (docs/specs/family-houses.md): in a family a
@@ -98,10 +100,10 @@ describe("a kid's tick in a family", () => {
     const r = recorder();
     await tickHouse(db, house.id, WEEK.startsAt, r.notify);
     await tickHouse(db, house.id, new Date(WEEK.startsAt.getTime() + HOUR), r.notify);
-    const asks = r.sent.filter((s) => s.message.body === PARENT_OK_COPY.askBody);
+    const asks = r.sent.filter((s) => s.message.body === words('today.parentOk.askBody'));
     expect(asks).toHaveLength(1);
     expect(asks[0].to).toEqual([sam.userId]);
-    expect(asks[0].message.title).toBe(PARENT_OK_COPY.askTitle("Leo", "Feed the fish"));
+    expect(asks[0].message.title).toBe(words('today.parentOk.askTitle', { kid: "Leo", john: "Feed the fish" }));
   });
 });
 

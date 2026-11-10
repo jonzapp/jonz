@@ -1,4 +1,4 @@
-import { checkKid, KIDS_COPY, BUSY_COPY } from '@app/core';
+import { checkKid, BUSY_COPY } from '@app/core';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -12,6 +12,7 @@ import { Sheet } from '@/components/sheet';
 import { useToastIfAny } from '@/components/toast';
 import { useMove } from '@/hooks/use-move';
 import { INSET, SECTION_GAP, SPACE } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * Add a child, a parent's sheet from the Table (family step 4): their name
@@ -19,14 +20,16 @@ import { INSET, SECTION_GAP, SPACE } from '@/theme';
  * parent picks them at the top of Today and ticks for them.
  */
 export function AddKidSheet({ houseId, visible, onClose }: { houseId: string; visible: boolean; onClose: () => void }) {
+  const words = useWords();
   return (
-    <Sheet visible={visible} title={KIDS_COPY.addTitle} description={KIDS_COPY.addBody} flush onClose={onClose}>
+    <Sheet visible={visible} title={words('people.kids.addTitle')} description={words('people.kids.addBody')} flush onClose={onClose}>
       {visible ? <AddKidForm houseId={houseId} onDone={onClose} /> : null}
     </Sheet>
   );
 }
 
 function AddKidForm({ houseId, onDone }: { houseId: string; onDone: () => void }) {
+  const words = useWords();
   const move = useMove(houseId);
   const toasts = useToastIfAny();
   const [name, setName] = useState('');
@@ -34,7 +37,7 @@ function AddKidForm({ houseId, onDone }: { houseId: string; onDone: () => void }
   const [problems, setProblems] = useState<Partial<Record<'name' | 'born', string>>>({});
 
   async function save() {
-    const checked = checkKid({ name, born }, new Date().getFullYear());
+    const checked = checkKid({ name, born }, new Date().getFullYear(), words);
     if (!checked.kid) {
       setProblems(checked.problems);
       return;
@@ -42,7 +45,7 @@ function AddKidForm({ houseId, onDone }: { houseId: string; onDone: () => void }
     setProblems({});
     const { kid } = checked;
     if (await move.run(() => addKid(houseId, kid.name, kid.bornYear))) {
-      toasts?.show(KIDS_COPY.added(kid.name.split(' ')[0]));
+      toasts?.show(words('people.kids.added', { name: kid.name.split(' ')[0] }));
       onDone();
     }
   }
@@ -52,10 +55,10 @@ function AddKidForm({ houseId, onDone }: { houseId: string; onDone: () => void }
       <Group>
         <GroupItem>
           <View style={styles.fields}>
-            <Field label={KIDS_COPY.name} value={name} onChangeText={setName} maxLength={40} problem={problems.name} testID="kid-name" />
+            <Field label={words('people.kids.name')} value={name} onChangeText={setName} maxLength={40} problem={problems.name} testID="kid-name" />
             <Field
-              label={KIDS_COPY.born}
-              hint={KIDS_COPY.bornMeta}
+              label={words('people.kids.born')}
+              hint={words('people.kids.bornMeta')}
               value={born}
               onChangeText={setBorn}
               keyboardType="number-pad"
@@ -69,7 +72,7 @@ function AddKidForm({ houseId, onDone }: { houseId: string; onDone: () => void }
       <View style={styles.actions}>
         {move.problem ? <Alert message={move.problem} /> : null}
         <ButtonRow>
-          <Button label={KIDS_COPY.submit} busy={move.pending} busyLabel={BUSY_COPY.adding} onPress={() => void save()} testID="add-kid" />
+          <Button label={words('people.kids.submit')} busy={move.pending} busyLabel={BUSY_COPY.adding} onPress={() => void save()} testID="add-kid" />
         </ButtonRow>
       </View>
     </View>
