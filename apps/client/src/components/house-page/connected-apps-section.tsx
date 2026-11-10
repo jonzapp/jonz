@@ -1,4 +1,4 @@
-import { CONNECTED_APPS_COPY, dayLabel } from '@app/core';
+import { dayLabel } from '@app/core';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { PlugIcon } from 'lucide-react-native';
 import { useState } from 'react';
@@ -8,6 +8,7 @@ import { ConfirmSheet } from '@/components/confirm-sheet';
 import { Row, RowIcon } from '@/components/row';
 import { Section } from '@/components/section';
 import { TextButton } from '@/components/text-button';
+import { useWords } from '@/hooks/use-words';
 
 const KEY = ['connected-apps'] as const;
 
@@ -17,6 +18,7 @@ const KEY = ['connected-apps'] as const;
  * which signs it out at once. Nothing connected says how one gets here.
  */
 export function ConnectedAppsSection({ zone }: { zone: string }) {
+  const words = useWords();
   const client = useQueryClient();
   const apps = useQuery({ queryKey: KEY, queryFn: connectedApps });
   const [leaving, setLeaving] = useState<{ id: string; name: string } | null>(null);
@@ -41,19 +43,19 @@ export function ConnectedAppsSection({ zone }: { zone: string }) {
   // Unread (the OAuth server off, or offline): nothing to show, and nothing to say.
   if (!apps.data) return null;
   return (
-    <Section label={CONNECTED_APPS_COPY.heading} testID="connected-apps">
+    <Section label={words('people.connectedApps.heading')} testID="connected-apps">
       {apps.data.length === 0 ? (
-        <Row leading={<RowIcon icon={PlugIcon} />} title={CONNECTED_APPS_COPY.none} meta={CONNECTED_APPS_COPY.noneMeta} testID="connected-apps-none" />
+        <Row leading={<RowIcon icon={PlugIcon} />} title={words('people.connectedApps.none')} meta={words('people.connectedApps.noneMeta')} testID="connected-apps-none" />
       ) : (
         apps.data.map((grant) => (
           <Row
             key={grant.client.id}
             leading={<RowIcon icon={PlugIcon} />}
             title={grant.client.name}
-            meta={CONNECTED_APPS_COPY.since(dayLabel(new Date(grant.granted_at), zone))}
+            meta={words('people.connectedApps.since', { date: dayLabel(new Date(grant.granted_at), zone) })}
             trailing={
               <TextButton
-                label={CONNECTED_APPS_COPY.disconnect}
+                label={words('people.connectedApps.disconnect')}
                 onPress={() => {
                   setProblem(null);
                   setLeaving({ id: grant.client.id, name: grant.client.name });
@@ -67,11 +69,11 @@ export function ConnectedAppsSection({ zone }: { zone: string }) {
       )}
       <ConfirmSheet
         visible={leaving !== null}
-        title={CONNECTED_APPS_COPY.confirm(leaving?.name ?? '')}
-        confirmLabel={CONNECTED_APPS_COPY.disconnect}
+        title={words('people.connectedApps.confirm', { app: leaving?.name ?? '' })}
+        confirmLabel={words('people.connectedApps.disconnect')}
         icon={PlugIcon}
         busy={busy}
-        busyLabel={CONNECTED_APPS_COPY.disconnecting}
+        busyLabel={words('people.connectedApps.disconnecting')}
         problem={problem}
         onConfirm={() => void disconnect()}
         onClose={() => setLeaving(null)}

@@ -1,13 +1,13 @@
 import "server-only";
 
 import {
+  wordsFor,
   hasPass,
   normalEmail,
   offerEmail,
   offerRefusal,
   offerUrl,
   passOf,
-  PROMOTION_COPY,
   promotionArgs,
   promotionLegend,
   promotionPrices,
@@ -29,6 +29,9 @@ import type { OfferStripe } from "@/lib/pass/stripe";
 import { type AdminClient, createAdminClient } from "@/lib/supabase/admin";
 
 import type { Caller, Refusal } from "./disputes";
+
+/** An offer link has no reader yet, so its words are English. */
+const words = wordsFor("en", "housemates");
 
 // Promotions (docs/specs/promotions.md). The owner makes one through the
 // database (owner_make_promotion: checks it's them, writes the audit); then
@@ -309,8 +312,8 @@ export async function readOffer(
   return {
     code: row.code,
     state,
-    legend: state === "live" ? promotionLegend(terms, currency) : PROMOTION_COPY.endedLegend,
-    plate: state === "live" ? PROMOTION_COPY.plate : PROMOTION_COPY.endedPlate,
+    legend: state === "live" ? promotionLegend(terms, currency) : words('house.promotion.endedLegend'),
+    plate: state === "live" ? words('house.promotion.plate') : words('house.promotion.endedPlate'),
     title: promotionTitle(terms, currency),
     sentence: promotionSentence(terms, ZONE, currency),
     note: row.note,

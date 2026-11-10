@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import { reportReplyEmail } from "./email";
 import { pushFor, type NotificationPrefs } from "./notify";
-import { REPORT_COPY, REPORT_FACETS, REPORT_LIMITS, REPORT_PUSH, ReportRequest, reportAge, reportGist } from "./reports";
+import { REPORT_FACETS, REPORT_LIMITS, REPORT_PUSH, ReportRequest, reportAge, reportGist } from "./reports";
+import { wordsFor } from "./words-for";
+
+const words = wordsFor("en", "housemates");
 
 describe("a report as the app sends it", () => {
   const ok = { kind: "problem", words: "Bins vanished", details: { pages: "Today, then House" }, shots: [] };
@@ -43,8 +46,8 @@ describe("the Inbox", () => {
   });
 
   it("names the states as the owner and as the sender see them", () => {
-    expect(REPORT_COPY.ownerState.new).toBe("New");
-    expect(REPORT_COPY.state.open).toBe("Read");
+    expect(words('common.report.ownerState.new')).toBe("New");
+    expect(words('common.report.state.open')).toBe("Read");
   });
 });
 

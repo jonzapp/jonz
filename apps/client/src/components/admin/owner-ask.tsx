@@ -1,4 +1,4 @@
-import { ASK_CHATS_COPY, CHAT_MAX_MESSAGES, MESSAGE_MAX, OWNER_ASK_COPY, type ChatMessage, type OwnerMove, type SavedTurn } from '@app/core';
+import { CHAT_MAX_MESSAGES, MESSAGE_MAX, OWNER_ASK_COPY, type ChatMessage, type OwnerMove, type SavedTurn } from '@app/core';
 import { useQueryClient } from '@tanstack/react-query';
 import { HistoryIcon, SquarePenIcon, XIcon } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -17,6 +17,7 @@ import { IconButton } from '@/components/icon-button';
 import { Body } from '@/components/text';
 import { BarEdgeContext, TitleBar } from '@/components/title-bar';
 import { GUTTER, LookContext, SPACE, useTheme } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /** One turn of the owner's chat: what they asked, or Jonz's answer, how long it thought, and what it put on the card. */
 export type OwnerTurn =
@@ -66,6 +67,7 @@ export function OwnerAsk({ turns: initial = [], onClose, store = ownerChats }: {
 }
 
 function OwnerChats({ initial, onClose, store }: { initial: OwnerTurn[]; onClose?: () => void; store: ChatStore }) {
+  const words = useWords();
   const { colors } = useTheme();
   const [chat, setChat] = useState<Open>({ serial: 0, saved: null });
   const [openId, setOpenId] = useState<string | null>(null);
@@ -96,20 +98,20 @@ function OwnerChats({ initial, onClose, store }: { initial: OwnerTurn[]; onClose
 
   const tools = (
     <View style={styles.tools}>
-      <IconButton icon={SquarePenIcon} label={ASK_CHATS_COPY.newChat} onPress={fresh} disabled={!talked && !all} testID="chat-new" />
+      <IconButton icon={SquarePenIcon} label={words('ask.chats.newChat')} onPress={fresh} disabled={!talked && !all} testID="chat-new" />
       {onClose ? <IconButton icon={XIcon} label={OWNER_ASK_COPY.close} onPress={onClose} testID="owner-ask-close" /> : null}
     </View>
   );
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]} testID="owner-ask">
       <TitleBar
-        title={all ? ASK_CHATS_COPY.all : OWNER_ASK_COPY.title}
+        title={all ? words('ask.chats.all') : OWNER_ASK_COPY.title}
         sub={OWNER_ASK_COPY.label}
         lead={
           all ? undefined : (
             <IconButton
               icon={HistoryIcon}
-              label={ASK_CHATS_COPY.open}
+              label={words('ask.chats.open')}
               onPress={() => {
                 setProblem(null);
                 setAll(true);

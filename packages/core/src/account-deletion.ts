@@ -1,4 +1,3 @@
-import { LEGAL } from "./legal";
 
 // Deleting an account (supabase/migrations/*_delete_account.sql): its
 // words, the day it goes, and the typed word that confirms it. Asked for in
@@ -76,38 +75,3 @@ export function statusFromRow(row: unknown): DeletionStatus | null {
   if (!value || typeof value.delete_after !== "string") return null;
   return { deleteAfter: value.delete_after, requestedBy: value.requested_by === "owner" ? "owner" : "self" };
 }
-
-export const DELETE_COPY = {
-  /** House's group holding Moving out and this. */
-  leave: "Leave",
-  row: "Delete my account",
-  elsewhere: "Also at jonz.app/delete, for anyone who has removed the app.",
-  // The sheet.
-  title: "Delete your account?",
-  goesLead: "Goes:",
-  goes: "your name, email, photo, reminders and sign-ins.",
-  staysLead: (house: string) => `Stays with ${house}:`,
-  stays: "past Johns and the Stake ledger, shown as “Someone who left”.",
-  staysAnyLead: "Stays with your house:",
-  passAny: "A House Pass you pay for stops renewing, and covers the house to the end of what was paid.",
-  passLead: "Your House Pass",
-  pass: (until: string) => `stops renewing. It covers the house until ${until}.`,
-  wait: `You have ${DELETION_DAYS} days to change your mind: sign in again and press Keep my account.`,
-  typeLabel: `Type ${DELETE_WORD} to confirm`,
-  confirm: "Delete my account",
-  keepIt: "Keep it",
-  reading: "Checking what goes and what stays",
-  // Signing in during the 30 days.
-  beingDeleted: "Your account is being deleted",
-  goesOn: (day: string) => `It goes for good on ${day}.`,
-  nothingGone: "Until then nothing is gone, and your house still sees you as away.",
-  nothingGoneNoHouse: "Until then nothing is gone.",
-  keep: "Keep my account",
-  signOut: "Sign out",
-  // jonz.app/delete, signed out.
-  pageTitle: "Delete your Jonz account",
-  pageBody: `Sign in with the account you use for Jonz, then confirm. It goes ${DELETION_DAYS} days later, and until then you can change your mind.`,
-  signInToDelete: "Sign in to delete it",
-  cantSignIn: `Can’t sign in any more? Email ${LEGAL.email} from the address on the account, and we’ll delete it for you.`,
-  signInReason: "Sign in to delete your account.",
-} as const;

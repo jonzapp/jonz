@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { approvalAsk, approvalDetails, approvalState, APPROVE_COPY, APPROVE_PATH, approvePath, CONSENT_COPY, consentPath, type ApprovalRow } from "./approvals";
+import { approvalAsk, approvalDetails, approvalState, APPROVE_PATH, approvePath, consentPath, type ApprovalRow } from "./approvals";
 import { signInReason } from "./auth-paths";
 import { afterSignIn, googleReturn } from "./front-door";
 import { OPERATIONS } from "./operations";
+import { wordsFor } from "./words-for";
+
+const words = wordsFor("en", "housemates");
 
 const ID = "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d";
 const row: ApprovalRow = {
@@ -41,7 +44,7 @@ describe("approving a connected app's request", () => {
     expect(APPROVE_PATH.test("/approve/../admin")).toBe(false);
     expect(afterSignIn(path)).toBe(path);
     expect(googleReturn(path)).toBe(path);
-    expect(signInReason(path)).toBe(APPROVE_COPY.signInReason);
+    expect(signInReason(path)).toBe(words('people.approve.signInReason'));
   });
 
   it("brings sign-in back to a connected app's consent page, from Google too, and nowhere it shouldn't", () => {
@@ -49,7 +52,7 @@ describe("approving a connected app's request", () => {
     expect(path).toBe("/oauth/consent?authorization_id=abc_123-XYZ");
     expect(afterSignIn(path)).toBe(path);
     expect(googleReturn(path)).toBe(path);
-    expect(signInReason(path)).toBe(CONSENT_COPY.signInReason);
+    expect(signInReason(path)).toBe(words('people.consent.signInReason'));
     expect(afterSignIn("/oauth/consent?authorization_id=x&next=//evil.example")).toBeUndefined();
   });
 });

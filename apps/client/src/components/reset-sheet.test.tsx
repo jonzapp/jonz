@@ -1,4 +1,4 @@
-import { RESET_COPY, type ResetPreview } from '@app/core';
+import { type ResetPreview, wordsFor } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 
 import { loadHouse } from '@/api/board';
@@ -9,6 +9,8 @@ import { snapshot } from '@/testing/house';
 import { renderPages } from '@/testing/pages';
 
 import { ResetSheet } from './reset-sheet';
+
+const words = wordsFor('en', 'housemates');
 
 jest.mock('@/api/board', () => ({ loadHouse: jest.fn() }));
 jest.mock('@/api/house', () => ({ catchUp: jest.fn() }));
@@ -74,7 +76,7 @@ it('resets on the hazard button, then offers Undo', async () => {
   await waitFor(() => expect(applyReset).toHaveBeenCalledWith({ houseId: 'h1', kind: 'week', week: 'w1' }));
   expect(onClose).toHaveBeenCalled();
   const toast = within(await screen.findByTestId('toast'));
-  expect(toast.getByText(RESET_COPY.done)).toBeOnTheScreen();
+  expect(toast.getByText(words('house.resets.done'))).toBeOnTheScreen();
   await fireEvent.press(screen.getByTestId('toast-action'));
   await waitFor(() => expect(undoAction).toHaveBeenCalledWith('action-1'));
 });
@@ -82,6 +84,6 @@ it('resets on the hazard button, then offers Undo', async () => {
 it('has nothing to press when there is nothing to reset', async () => {
   (previewReset as jest.Mock).mockResolvedValue(preview({ people: {}, told: [], nothing: true }));
   const sheet = await open();
-  expect(await sheet.findByText(RESET_COPY.nothing)).toBeOnTheScreen();
+  expect(await sheet.findByText(words('house.resets.nothing'))).toBeOnTheScreen();
   expect(sheet.queryByTestId('confirm')).toBeNull();
 });

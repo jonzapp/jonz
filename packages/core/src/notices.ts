@@ -139,18 +139,3 @@ export const NOTICE_PRESETS: readonly { label: string; kind: NoticeKind; title: 
     body: "",
   },
 ];
-
-/** The words of the banners and the Notices page. */
-export const NOTICE_COPY = {
-  close: "Close notice",
-  unreachableTitle: "We can’t reach Jonz right now.",
-  unreachableBody: "Showing what you saw last. We’ll keep trying.",
-  tryNow: "Try now",
-  kinds: { status: "Status", offer: "Offer", news: "News" } satisfies Record<NoticeKind, string>,
-  kindHints: {
-    status: "Something’s wrong. Comes back a day after it’s closed, while it’s on.",
-    offer: "Amber. Closed for good once closed.",
-    news: "Plain. Closed for good once closed.",
-  } satisfies Record<NoticeKind, string>,
-  states: { live: "Showing now", scheduled: "Starts later", ended: "Ended" } satisfies Record<NoticeState, string>,
-} as const;

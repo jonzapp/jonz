@@ -1,5 +1,9 @@
-import { DELETE_COPY, DELETE_PATH } from "./account-deletion";
-import { APPROVE_COPY, CONSENT_COPY, CONSENT_PATH } from "./approvals";
+import { DELETE_PATH } from "./account-deletion";
+import { CONSENT_PATH } from "./approvals";
+import { wordsFor } from "./words-for";
+
+/** Sign-in is before any house, so its words are English for now (each person picks a language in step 7). */
+const words = wordsFor("en", "housemates");
 
 /**
  * Where sign-in sends people, and where it is allowed to send them back to.
@@ -57,8 +61,8 @@ export function signInReason(next?: string | null): string {
   if (target.startsWith("/join")) return "Sign in to join your house.";
   if (target.startsWith("/offer")) return "Sign in to use your offer.";
   if (target.startsWith("/stake")) return "Sign in to see who owes what.";
-  if (target === DELETE_PATH) return DELETE_COPY.signInReason;
-  if (target.startsWith("/approve/")) return APPROVE_COPY.signInReason;
-  if (target.startsWith(CONSENT_PATH)) return CONSENT_COPY.signInReason;
+  if (target === DELETE_PATH) return words("people.delete.signInReason");
+  if (target.startsWith("/approve/")) return words("people.approve.signInReason");
+  if (target.startsWith(CONSENT_PATH)) return words("people.consent.signInReason");
   return "Your house’s Johns are kept with the account you sign in with.";
 }

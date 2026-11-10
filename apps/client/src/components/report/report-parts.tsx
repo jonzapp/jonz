@@ -1,9 +1,4 @@
-import {
-  listTime,
-  REPORT_COPY,
-  REPORT_LIMITS,
-  type ReportState,
-} from "@app/core";
+import { listTime, REPORT_LIMITS, type ReportState } from "@app/core";
 import {
   CheckIcon,
   CircleDotIcon,
@@ -20,6 +15,7 @@ import { Chip } from "@/components/status-mark";
 import { Body, Meta } from "@/components/text";
 import { RADIUS, SPACE, useTheme } from "@/theme";
 import { Photo } from "@/components/photo";
+import { useWords } from '@/hooks/use-words';
 
 const zone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
 
@@ -38,25 +34,26 @@ export function ReportChip({
   owner?: boolean;
   testID?: string;
 }) {
-  const words = owner ? REPORT_COPY.ownerState : REPORT_COPY.state;
+  const words = useWords();
+  const stateLabel = (s: ReportState) => words(owner ? (`common.report.ownerState.${s}` as const) : (`common.report.state.${s}` as const));
   if (state === "fixed")
     return (
-      <Chip label={words.fixed} icon={CheckIcon} tone="good" testID={testID} />
+      <Chip label={stateLabel("fixed")} icon={CheckIcon} tone="good" testID={testID} />
     );
   if (state === "replied")
     return (
-      <Chip label={words.replied} icon={MessageSquareIcon} testID={testID} />
+      <Chip label={stateLabel("replied")} icon={MessageSquareIcon} testID={testID} />
     );
   if (owner && state === "new")
     return (
       <Chip
-        label={words.new}
+        label={stateLabel("new")}
         icon={CircleDotIcon}
         tone="hazard"
         testID={testID}
       />
     );
-  return <Chip label={words[state]} icon={ClockIcon} testID={testID} />;
+  return <Chip label={stateLabel(state)} icon={ClockIcon} testID={testID} />;
 }
 
 /** A screenshot, small, with the group's corners. */
@@ -67,18 +64,20 @@ export function Shot({
   uri: string;
   size?: "small" | "large";
 }) {
+  const words = useWords();
   const { colors } = useTheme();
   const box = size === "small" ? styles.small : styles.large;
   return (
-    <Photo uri={uri} label={REPORT_COPY.shot} style={[box, styles.shot, { borderColor: colors.border }]} />
+    <Photo uri={uri} label={words('common.report.shot')} style={[box, styles.shot, { borderColor: colors.border }]} />
   );
 }
 
 /** What the app sends with a report, one line each: what it is, then what it said. */
 export function DetailsList({ details }: { details: ReportDetails }) {
+  const words = useWords();
   const lines = (["pages", "app", "house", "error"] as const).flatMap(
     (key): [string, string][] =>
-      details[key] ? [[REPORT_COPY.detail[key], details[key]]] : [],
+      details[key] ? [[words(`common.report.detail.${key}` as const), details[key]]] : [],
   );
   return (
     <GroupItem testID="report-details">
@@ -106,6 +105,7 @@ export function ReportThread({
   report: Report;
   viewer: "them" | "owner";
 }) {
+  const words = useWords();
   return (
     <View style={styles.thread} testID="report-thread">
       {report.messages.map((message, at) => {
@@ -114,11 +114,11 @@ export function ReportThread({
         const who =
           message.from === "jonz"
             ? message.name
-              ? REPORT_COPY.fromJonz(message.name)
-              : REPORT_COPY.jonz
+              ? words('common.report.fromJonz', { name: message.name })
+              : words('common.report.jonz')
             : viewer === "them"
-              ? REPORT_COPY.you
-              : (message.name ?? REPORT_COPY.gone);
+              ? words('common.report.you')
+              : (message.name ?? words('common.report.gone'));
         if (mine) {
           return (
             <View key={at} style={styles.mineWrap}>
@@ -174,6 +174,7 @@ export function ReplyBox({
   text?: string;
   onChangeText?: (text: string) => void;
 }) {
+  const words = useWords();
   const [own, setOwn] = useState("");
   const text = held ?? own;
   const setText = onChangeText ?? setOwn;
@@ -199,7 +200,7 @@ export function ReplyBox({
       busy={busy}
       placeholder={placeholder}
       label={placeholder}
-      sendLabel={REPORT_COPY.sendReply}
+      sendLabel={words('common.report.sendReply')}
       maxLength={REPORT_LIMITS.words}
       problem={problem}
       bare={bare}

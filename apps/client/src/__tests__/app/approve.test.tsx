@@ -1,4 +1,4 @@
-import { APPROVE_COPY, OPERATIONS, signInReason, wordsFor } from '@app/core';
+import { OPERATIONS, signInReason, wordsFor } from '@app/core';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Slot } from 'expo-router';
 import { fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
@@ -78,38 +78,38 @@ it("says what the app asked, in the registry's words, and approves it", async ()
   read.mockResolvedValueOnce(WAITING).mockResolvedValue({ ...WAITING, approved_at: '2027-01-04T09:31:00Z' });
   answer.mockResolvedValue(undefined);
   await open();
-  expect(await screen.findByRole('header', { name: APPROVE_COPY.heading })).toBeOnTheScreen();
+  expect(await screen.findByRole('header', { name: words('people.approve.heading') })).toBeOnTheScreen();
   expect(screen.getByTestId('approve-ask')).toHaveTextContent(`${OPERATIONS.set_house_kind.about}.`);
-  expect(screen.getByText(APPROVE_COPY.inHouse('Flat 3'))).toBeOnTheScreen();
+  expect(screen.getByText(words('people.approve.inHouse', { house: 'Flat 3' }))).toBeOnTheScreen();
   expect(screen.getByText('Kind: family')).toBeOnTheScreen();
-  await fireEvent.press(screen.getByRole('button', { name: APPROVE_COPY.approve }));
+  await fireEvent.press(screen.getByRole('button', { name: words('people.approve.approve') }));
   expect(answer).toHaveBeenCalledWith(ID, true);
-  expect(await screen.findByRole('header', { name: APPROVE_COPY.approved })).toBeOnTheScreen();
-  expect(screen.getByText(APPROVE_COPY.approvedBody)).toBeOnTheScreen();
+  expect(await screen.findByRole('header', { name: words('people.approve.approved') })).toBeOnTheScreen();
+  expect(screen.getByText(words('people.approve.approvedBody'))).toBeOnTheScreen();
 });
 
 it('declines it', async () => {
   as({ user: { id: 'u1' } });
   read.mockResolvedValueOnce(WAITING).mockResolvedValue({ ...WAITING, declined_at: '2027-01-04T09:31:00Z' });
   await open();
-  await fireEvent.press(await screen.findByRole('button', { name: APPROVE_COPY.decline }));
+  await fireEvent.press(await screen.findByRole('button', { name: words('people.approve.decline') }));
   expect(answer).toHaveBeenCalledWith(ID, false);
-  await waitFor(() => expect(screen.getByRole('header', { name: APPROVE_COPY.declined })).toBeOnTheScreen());
+  await waitFor(() => expect(screen.getByRole('header', { name: words('people.approve.declined') })).toBeOnTheScreen());
 });
 
 it("says when the link isn't yours, and when a request has expired or been done", async () => {
   as({ user: { id: 'u1', email: 'glyn@example.com' } });
   read.mockResolvedValue(null);
   await open();
-  expect(await screen.findByRole('header', { name: APPROVE_COPY.unknown })).toBeOnTheScreen();
-  expect(screen.getByText(APPROVE_COPY.signedInAs('glyn@example.com'))).toBeOnTheScreen();
+  expect(await screen.findByRole('header', { name: words('people.approve.unknown') })).toBeOnTheScreen();
+  expect(screen.getByText(words('people.approve.signedInAs', { email: 'glyn@example.com' }))).toBeOnTheScreen();
 
   read.mockResolvedValue({ ...WAITING, expires_at: '2027-01-04T09:34:00Z' });
   await open();
-  expect(await screen.findByRole('header', { name: APPROVE_COPY.expired })).toBeOnTheScreen();
-  expect(screen.queryByRole('button', { name: APPROVE_COPY.approve })).toBeNull();
+  expect(await screen.findByRole('header', { name: words('people.approve.expired') })).toBeOnTheScreen();
+  expect(screen.queryByRole('button', { name: words('people.approve.approve') })).toBeNull();
 
   read.mockResolvedValue({ ...WAITING, approved_at: '2027-01-04T09:31:00Z', used_at: '2027-01-04T09:32:00Z' });
   await open();
-  expect(await screen.findByRole('header', { name: APPROVE_COPY.done })).toBeOnTheScreen();
+  expect(await screen.findByRole('header', { name: words('people.approve.done') })).toBeOnTheScreen();
 });

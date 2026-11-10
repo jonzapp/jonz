@@ -1,3 +1,4 @@
+import type { Words } from "./words-for";
 import { z } from "zod";
 
 import { ASK_CARD_OPERATIONS, type AskCardOperation } from "./ask-operations";
@@ -32,18 +33,16 @@ export type ChatMove = z.infer<typeof ChatMove>;
 /** The most moves one answer puts on a card. */
 export const CHAT_MOVES_MAX = 6;
 
-export const CHAT_MOVES_COPY = {
-  card: "Your moves",
-  cardMeta: "Ticked ones happen when you tap",
-  title: (m: ChatMove) =>
-    m.kind === "away" ? `Away ${dateRange(m.from, m.to)}` : m.kind === "cancel_away" ? `Cancel time away ${dateRange(m.from, m.to)}` : m.title,
-  meta: (m: ChatMove) =>
-    m.kind === "away"
-      ? `${m.note ? `${m.note}. ` : ""}No Johns due while you’re gone; any you have then are due before you go.`
-      : m.kind === "cancel_away"
-        ? "The Johns it moved go back to when they were due."
-        : m.meta,
-  apply: (n: number) => (n === 0 ? "Pick at least one" : n === 1 ? "Do 1 thing" : `Do ${n} things`),
-  applying: "Doing it…",
-  done: (n: number) => (n === 1 ? "Done." : `All ${n} done.`),
-} as const;
+/** A move's title on its card: time away says its dates. */
+export function moveTitle(m: ChatMove, words: Words): string {
+  if (m.kind === "away") return words("ask.moves.awayTitle", { range: dateRange(m.from, m.to) });
+  if (m.kind === "cancel_away") return words("ask.moves.cancelTitle", { range: dateRange(m.from, m.to) });
+  return m.title;
+}
+
+/** The line under a move's title. */
+export function moveMeta(m: ChatMove, words: Words): string {
+  if (m.kind === "away") return words("ask.moves.awayMeta", { hasNote: Boolean(m.note), note: m.note ?? "" });
+  if (m.kind === "cancel_away") return words("ask.moves.cancelMeta");
+  return m.meta;
+}

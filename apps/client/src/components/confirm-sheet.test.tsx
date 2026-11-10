@@ -1,10 +1,9 @@
-import { BIN_NIGHT } from '@app/core';
+import { BIN_NIGHT, wordsFor } from '@app/core';
 import { fireEvent, render, screen, within } from '@testing-library/react-native';
 import { LogOutIcon } from 'lucide-react-native';
 import { Text } from 'react-native';
 
 import { ConfirmSheet } from './confirm-sheet';
-import { wordsFor } from '@app/core';
 
 const words = wordsFor('en', 'housemates');
 

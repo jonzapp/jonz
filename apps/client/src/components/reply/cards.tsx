@@ -1,4 +1,4 @@
-import { pointsLabel, REPLY_COPY, scheduleLine, weekWho, type BoardItem, type JohnDef } from '@app/core';
+import { weekLabel, pointsLabel, scheduleLine, weekWho, type BoardItem, type JohnDef } from '@app/core';
 import type { Href } from 'expo-router';
 
 import { Avatar } from '@/components/avatar';
@@ -17,8 +17,9 @@ import { useWords } from '@/hooks/use-words';
 
 /** ::week: this week's Johns as the Week page's rows, live (tick, open the sheet). */
 export function WeekCard({ items, context, who, open }: { items: BoardItem[]; context: JohnRowContext; who: string | null; open: boolean }) {
+  const words = useWords();
   return (
-    <Section label={REPLY_COPY.weekLabel(who, open)} count={open ? items.length : undefined}>
+    <Section label={weekLabel(who, open, words)} count={open ? items.length : undefined}>
       {items.length > 0 ? (
         <Group>
           {items.map((item) => (
@@ -26,7 +27,7 @@ export function WeekCard({ items, context, who, open }: { items: BoardItem[]; co
           ))}
         </Group>
       ) : (
-        <Meta>{REPLY_COPY.weekEmpty(open)}</Meta>
+        <Meta>{words('ask.reply.weekEmpty', { open })}</Meta>
       )}
     </Section>
   );
@@ -48,7 +49,7 @@ export function SharesCard({
 }) {
   const words = useWords();
   return (
-    <Section label={REPLY_COPY.shares}>
+    <Section label={words('ask.reply.shares')}>
       <Group>
         {rows.map((row) => (
           <Row
@@ -70,7 +71,7 @@ export function SharesCard({
 export function JohnsCard({ johns, groupOf, href }: { johns: JohnDef[]; groupOf: (groupId: string | null) => string | null; href?: Href }) {
   const words = useWords();
   return (
-    <Section label={REPLY_COPY.johns} count={johns.length || undefined}>
+    <Section label={words('ask.reply.johns')} count={johns.length || undefined}>
       {johns.length > 0 ? (
         <Group>
           {johns.map((j) => (
@@ -88,7 +89,7 @@ export function JohnsCard({ johns, groupOf, href }: { johns: JohnDef[]; groupOf:
           ))}
         </Group>
       ) : (
-        <Meta>{REPLY_COPY.johnsEmpty}</Meta>
+        <Meta>{words('ask.reply.johnsEmpty')}</Meta>
       )}
     </Section>
   );

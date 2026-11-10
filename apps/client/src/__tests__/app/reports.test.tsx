@@ -1,4 +1,4 @@
-import { OWNER_PERMISSION_NAMES, REPORT_COPY, SUPPORT_DRAFT_COPY } from '@app/core';
+import { OWNER_PERMISSION_NAMES, SUPPORT_DRAFT_COPY, wordsFor } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 import { useWindowDimensions } from 'react-native';
 
@@ -35,6 +35,8 @@ import InboxPage from '@/app/admin/inbox/index';
 import { HelpSection } from '@/components/house-page/help-section';
 import { snapshot } from '@/testing/house';
 import { renderPages } from '@/testing/pages';
+
+const words = wordsFor('en', 'housemates');
 
 jest.mock('@/api/board', () => ({ loadHouse: jest.fn() }));
 jest.mock('@/api/house', () => ({ catchUp: jest.fn() }));
@@ -145,10 +147,10 @@ describe('Help on House', () => {
   it('has Report a problem, Send an idea, and Your reports with the reply to read', async () => {
     await renderPages(ROUTES, '/house');
     const help = await screen.findByTestId('help-section');
-    expect(within(help).getByText(REPORT_COPY.report)).toBeVisible();
-    expect(within(help).getByText(REPORT_COPY.idea)).toBeVisible();
+    expect(within(help).getByText(words('common.report.report'))).toBeVisible();
+    expect(within(help).getByText(words('common.report.idea'))).toBeVisible();
     await waitFor(() => expect(screen.getByTestId('to-reports')).toHaveTextContent(/Your reports.*A reply to read/));
-    expect(screen.getByText(REPORT_COPY.orEmail)).toBeVisible();
+    expect(screen.getByText(words('common.report.orEmail'))).toBeVisible();
   });
 
   it('sends a report with a screenshot and the details it shows, then opens it under Your reports', async () => {
@@ -161,7 +163,7 @@ describe('Help on House', () => {
     expect(within(form).getByTestId('report-send-details')).toHaveTextContent(/Today, then House.*The Annexe.*Couldn’t read the week/);
     expect(screen.getByTestId('report-send')).toBeDisabled();
 
-    await fireEvent.changeText(within(form).getByLabelText(REPORT_COPY.words.problem), WORDS);
+    await fireEvent.changeText(within(form).getByLabelText(words('common.report.words.problem')), WORDS);
     await fireEvent.press(screen.getByTestId('report-add-shot'));
     expect(await screen.findByTestId('report-shot-0')).toBeVisible();
     await fireEvent.press(screen.getByTestId('report-send'));
@@ -181,8 +183,8 @@ describe('Help on House', () => {
     await renderPages(ROUTES, '/house');
     await fireEvent.press(await screen.findByTestId('to-idea'));
     const form = await screen.findByTestId('report-form');
-    await fireEvent.press(within(form).getByRole('checkbox', { name: new RegExp(REPORT_COPY.details) }));
-    await fireEvent.changeText(within(form).getByLabelText(REPORT_COPY.words.idea), 'Dark mode for the Wall');
+    await fireEvent.press(within(form).getByRole('checkbox', { name: new RegExp(words('common.report.details')) }));
+    await fireEvent.changeText(within(form).getByLabelText(words('common.report.words.idea')), 'Dark mode for the Wall');
     await fireEvent.press(screen.getByTestId('report-send'));
     await waitFor(() => expect(sendReport).toHaveBeenCalledWith({ kind: 'idea', words: 'Dark mode for the Wall', details: null, shots: [] }));
   });
@@ -191,10 +193,10 @@ describe('Help on House', () => {
     jest.mocked(sendReport).mockRejectedValue(new Error('That’s a lot for one day. Try again tomorrow, or email support@jonz.app.'));
     await renderPages(ROUTES, '/house');
     await fireEvent.press(await screen.findByTestId('to-report'));
-    await fireEvent.changeText(await screen.findByLabelText(REPORT_COPY.words.problem), WORDS);
+    await fireEvent.changeText(await screen.findByLabelText(words('common.report.words.problem')), WORDS);
     await fireEvent.press(screen.getByTestId('report-send'));
     expect(await screen.findByTestId('report-problem')).toHaveTextContent(/a lot for one day/);
-    expect(screen.getByLabelText(REPORT_COPY.words.problem)).toHaveDisplayValue(WORDS);
+    expect(screen.getByLabelText(words('common.report.words.problem'))).toHaveDisplayValue(WORDS);
   });
 });
 
@@ -213,7 +215,7 @@ describe('Your reports', () => {
     const thread = await screen.findByTestId('report-thread');
     expect(thread).toHaveTextContent(/You,.*The bins John vanished/);
     expect(thread).toHaveTextContent(/Glyn at Jonz,.*Thanks Ava, fixed/);
-    expect(screen.getByTestId('your-report-state')).toHaveTextContent(REPORT_COPY.state.replied);
+    expect(screen.getByTestId('your-report-state')).toHaveTextContent(words('common.report.state.replied'));
     await waitFor(() => expect(seeReport).toHaveBeenCalledWith('r1'));
 
     await fireEvent.changeText(screen.getByTestId('write-back-input'), 'Thank you!');
@@ -225,7 +227,7 @@ describe('Your reports', () => {
   it('says so when a report is not yours or not there', async () => {
     jest.mocked(myReport).mockResolvedValue(null);
     await renderPages(ROUTES, '/house/reports/r404');
-    expect(await screen.findByText(REPORT_COPY.missing)).toBeVisible();
+    expect(await screen.findByText(words('common.report.missing'))).toBeVisible();
     expect(seeReport).not.toHaveBeenCalled();
   });
 });
@@ -256,7 +258,7 @@ describe('the owner’s Inbox', () => {
     await fireEvent.changeText(within(fix).getByTestId('report-fix-note'), 'Fixed in today’s update.');
     await fireEvent.press(within(fix).getByTestId('report-fix-send'));
     await waitFor(() => expect(fixReport).toHaveBeenCalledWith('r1', 'Fixed in today’s update.', true));
-    expect(await screen.findByTestId('report-fixed-done')).toHaveTextContent(REPORT_COPY.fixedTold(1));
+    expect(await screen.findByTestId('report-fixed-done')).toHaveTextContent(words('common.report.fixedTold', { told: 1 }));
   });
 
   it('marks fixed without telling anyone when the box is unticked, and says how many it tells', async () => {
@@ -273,7 +275,7 @@ describe('the owner’s Inbox', () => {
     expect(await screen.findByTestId('report-also')).toHaveTextContent(/2 more people reported this.*Ben Cole.*Sam/);
     await fireEvent.press(screen.getByTestId('report-fixed'));
     const fix = await screen.findByTestId('report-fix-form');
-    const tell = within(fix).getByRole('checkbox', { name: new RegExp(REPORT_COPY.fixTell(3)) });
+    const tell = within(fix).getByRole('checkbox', { name: new RegExp(words('common.report.fixTell', { count: 3 })) });
     await fireEvent.press(tell);
     await fireEvent.press(within(fix).getByTestId('report-fix-send'));
     await waitFor(() => expect(fixReport).toHaveBeenCalledWith('r1', '', false));
@@ -313,7 +315,7 @@ describe('the owner’s Inbox', () => {
     await renderPages(ROUTES, '/admin/inbox/r1');
     const panel = await screen.findByTestId('report-panel');
     expect(panel).toHaveTextContent(/Sam Lee.*sam@example.com, by email.*Subject: Paying the Stake/);
-    expect(screen.getByLabelText(REPORT_COPY.replyByEmail('Sam'))).toBeVisible();
+    expect(screen.getByLabelText(words('common.report.replyByEmail', { name: 'Sam' }))).toBeVisible();
   });
 
   it('says which reports came by email in the list', async () => {

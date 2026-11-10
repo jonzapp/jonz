@@ -1,4 +1,4 @@
-import { MESSAGE_COPY, OWNER_PERMISSION_NAMES } from '@app/core';
+import { MESSAGE_COPY, OWNER_PERMISSION_NAMES, wordsFor } from '@app/core';
 import { act, fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 import { useWindowDimensions } from 'react-native';
 
@@ -9,7 +9,6 @@ import MessagesPage from '@/app/admin/messages/index';
 import NewMessagePage from '@/app/admin/messages/new';
 import SentPage from '@/app/admin/messages/sent';
 import { renderPages, untilRead } from '@/testing/pages';
-import { wordsFor } from '@app/core';
 
 const words = wordsFor('en', 'housemates');
 

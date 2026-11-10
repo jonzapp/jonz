@@ -1,18 +1,21 @@
 import { describe, expect, it } from "vitest";
 
-import { ASK_CHATS_COPY, CHAT_SAVED_TURNS, CHAT_TITLE_MAX, chatGroups, chatTitle, chatWhen, savedTurns } from "./ask-chats";
+import { CHAT_SAVED_TURNS, CHAT_TITLE_MAX, chatGroups, chatTitle, chatWhen, savedTurns } from "./ask-chats";
+import { wordsFor } from "./words-for";
+
+const words = wordsFor("en", "housemates");
 
 describe("chatTitle", () => {
   it("is the first thing said, on one line", () => {
-    expect(chatTitle([{ role: "user", text: "  Add Ivy\nto main floor " }])).toBe("Add Ivy to main floor");
+    expect(chatTitle([{ role: "user", text: "  Add Ivy\nto main floor " }], words)).toBe("Add Ivy to main floor");
   });
   it("cuts a long one at a word", () => {
-    const title = chatTitle([{ role: "user", text: "Can you move the bathroom clean to Sunday mornings and give the bins to whoever is home on Mondays" }]);
+    const title = chatTitle([{ role: "user", text: "Can you move the bathroom clean to Sunday mornings and give the bins to whoever is home on Mondays" }], words);
     expect(title.length).toBeLessThanOrEqual(CHAT_TITLE_MAX);
     expect(title).toBe("Can you move the bathroom clean to Sunday…");
   });
   it("has a title even before anything is said", () => {
-    expect(chatTitle([])).toBe(ASK_CHATS_COPY.untitled);
+    expect(chatTitle([], words)).toBe(words('ask.chats.untitled'));
   });
 });
 
@@ -29,13 +32,13 @@ describe("savedTurns", () => {
 describe("chatWhen", () => {
   const now = new Date("2026-11-06T00:30:00Z");
   it("says Today and Yesterday in the house's own zone", () => {
-    expect(chatWhen(new Date("2026-11-06T00:10:00Z"), now, "Europe/London")).toBe("Today");
+    expect(chatWhen(new Date("2026-11-06T00:10:00Z"), now, "Europe/London", words)).toBe("Today");
     // 18:30 in New York is still "today" there at 19:30, though London has moved on.
-    expect(chatWhen(new Date("2026-11-05T23:30:00Z"), now, "America/New_York")).toBe("Today");
-    expect(chatWhen(new Date("2026-11-05T12:00:00Z"), now, "Europe/London")).toBe("Yesterday");
+    expect(chatWhen(new Date("2026-11-05T23:30:00Z"), now, "America/New_York", words)).toBe("Today");
+    expect(chatWhen(new Date("2026-11-05T12:00:00Z"), now, "Europe/London", words)).toBe("Yesterday");
   });
   it("gives the date before that", () => {
-    expect(chatWhen(new Date("2026-11-02T12:00:00Z"), now, "Europe/London")).toBe("Mon 2 Nov");
+    expect(chatWhen(new Date("2026-11-02T12:00:00Z"), now, "Europe/London", words)).toBe("Mon 2 Nov");
   });
 });
 
@@ -53,20 +56,20 @@ describe("chatGroups", () => {
       ],
       now,
       "Europe/London",
-    );
+     words);
     expect(groups.map((g) => [g.label, g.chats.map((c) => c.id)])).toEqual([
-      [ASK_CHATS_COPY.today, ["a"]],
-      [ASK_CHATS_COPY.lastWeek, ["b", "c"]],
-      [ASK_CHATS_COPY.earlier, ["d"]],
+      [words('ask.chats.today'), ["a"]],
+      [words('ask.chats.lastWeek'), ["b", "c"]],
+      [words('ask.chats.earlier'), ["d"]],
     ]);
   });
 
   it("counts the day in the house's zone", () => {
-    const groups = chatGroups([at("2026-11-06T03:00:00Z", "late")], now, "America/New_York");
-    expect(groups[0].label).toBe(ASK_CHATS_COPY.lastWeek);
+    const groups = chatGroups([at("2026-11-06T03:00:00Z", "late")], now, "America/New_York", words);
+    expect(groups[0].label).toBe(words('ask.chats.lastWeek'));
   });
 
   it("leaves out empty groups", () => {
-    expect(chatGroups([], now, "Europe/London")).toEqual([]);
+    expect(chatGroups([], now, "Europe/London", words)).toEqual([]);
   });
 });

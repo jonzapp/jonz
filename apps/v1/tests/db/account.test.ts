@@ -3,7 +3,7 @@
 
 import { randomBytes, randomUUID } from "node:crypto";
 
-import { chatTitle, type SavedTurn } from "@app/core";
+import { chatTitle, type SavedTurn, wordsFor } from "@app/core";
 import { connect, createExecutor, type Claims, type Sql, type TokenVerifier } from "@app/server";
 import type { FastifyInstance } from "fastify";
 import postgres from "postgres";
@@ -11,6 +11,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApp } from "../../src/app";
 import { V1_OPERATIONS } from "../../src/operations";
+
+const words = wordsFor("en", "housemates");
 
 const DB_URL = process.env.DB_URL ?? "postgresql://postgres:postgres@127.0.0.1:54342/postgres";
 const NOW = new Date(Date.UTC(2027, 0, 4, 9, 30, 0)); // pretend clock
@@ -100,10 +102,10 @@ describe("your account on /v1", () => {
     const chatId = kept.json();
     let list = (await call("me", "GET", `/v1/houses/${houseId}/me/ask-chats`)).json();
     expect(list).toHaveLength(1);
-    expect(list[0]).toMatchObject({ id: chatId, title: chatTitle(long) });
+    expect(list[0]).toMatchObject({ id: chatId, title: chatTitle(long, words) });
     for (const turns of [[{ role: "user", text: "Short one" }], [], [{ role: "user", text: "x".repeat(80) }]] as SavedTurn[][]) {
       expect((await call("me", "PATCH", `/v1/me/ask-chats/${chatId}`, { turns })).statusCode).toBe(201);
-      expect((await call("me", "GET", `/v1/me/ask-chats/${chatId}`)).json()).toMatchObject({ id: chatId, title: chatTitle(turns) });
+      expect((await call("me", "GET", `/v1/me/ask-chats/${chatId}`)).json()).toMatchObject({ id: chatId, title: chatTitle(turns, words) });
     }
     // Not someone else's to read: to them there's no such chat.
     const theirs = await call("other", "GET", `/v1/me/ask-chats/${chatId}`);

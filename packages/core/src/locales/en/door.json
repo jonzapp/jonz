@@ -194,5 +194,21 @@
   "door.tour.offerYes": "Show me",
   "door.tour.offerNo": "Not now",
   "door.tour.guidesRow": "Show me around",
-  "door.tour.guidesMeta": "A minute each, any time"
+  "door.tour.guidesMeta": "A minute each, any time",
+  "door.offer.page": "Your offer",
+  "door.offer.giftFrom": "A gift from Jonz",
+  "door.offer.signIn": "Sign in to use it",
+  "door.offer.signedInAs": "Signed in as {email}.",
+  "door.offer.noHouse": "Start or join a house first, then open this link again.",
+  "door.offer.startHouse": "Start a house",
+  "door.offer.ended": "This offer has ended",
+  "door.offer.endedBody": "Ask for a new link.",
+  "door.offer.unknown": "This link doesn’t open an offer",
+  "door.offer.unknownBody": "Check it, or ask for a new one.",
+  "door.offer.goHome": "Go to Jonz",
+  "door.offer.goToHouse": "Go to your house",
+  "door.offer.noCard": "No card needed.",
+  "door.offer.payNext": "You pay on the next page and can cancel any time.",
+  "door.offer.using": "Opening…",
+  "door.offer.webOnly": "Open this link on jonz.app in a browser to use it."
 }

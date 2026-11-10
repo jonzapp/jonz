@@ -1,4 +1,4 @@
-import { ASK_CHATS_COPY, memberCan, passUnlocked } from '@app/core';
+import { memberCan, passUnlocked } from '@app/core';
 import { HistoryIcon, SquarePenIcon } from 'lucide-react-native';
 import { useCallback, useState, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -100,12 +100,12 @@ export function AskJonz({
   // Describe your house is a long title, and a new house's chat is one sitting: the buttons would push the
   // title into dots there. Leaving the page and coming back starts afresh.
   const describing = title === words('common.title.describe') && !all;
-  const newChat = describing ? null : <IconButton icon={SquarePenIcon} label={ASK_CHATS_COPY.newChat} onPress={fresh} disabled={!talked && !all} testID="chat-new" />;
+  const newChat = describing ? null : <IconButton icon={SquarePenIcon} label={words('ask.chats.newChat')} onPress={fresh} disabled={!talked && !all} testID="chat-new" />;
   const yours =
     describing || all ? null : (
       <IconButton
         icon={HistoryIcon}
-        label={ASK_CHATS_COPY.open}
+        label={words('ask.chats.open')}
         onPress={() => {
           setProblem(null);
           setAll(true);
@@ -118,7 +118,7 @@ export function AskJonz({
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
       {bar({
-        title: all ? ASK_CHATS_COPY.all : chatTitle,
+        title: all ? words('ask.chats.all') : chatTitle,
         lead: yours,
         actions: newChat,
         back: all ? { label: chatTitle, onPress: () => setAll(false) } : null,

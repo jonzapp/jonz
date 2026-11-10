@@ -1,4 +1,4 @@
-import { CHAT_MOVES_COPY, type ChatMove } from '@app/core';
+import { moveMeta, moveTitle, type ChatMove } from '@app/core';
 import { CalendarCheckIcon, CalendarXIcon, CheckIcon, ZapIcon, type LucideIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -48,7 +48,7 @@ export function MovesCard({ houseId, me, items }: { houseId: string; me: string;
   if (done !== null) {
     return (
       <View style={styles.card} testID="moves-done">
-        <Row title={CHAT_MOVES_COPY.done(done)} leading={<RowIcon icon={CheckIcon} />} />
+        <Row title={words('ask.moves.done', { n: done })} leading={<RowIcon icon={CheckIcon} />} />
         {move.problem ? <Alert message={move.problem} /> : null}
       </View>
     );
@@ -57,13 +57,13 @@ export function MovesCard({ houseId, me, items }: { houseId: string; me: string;
   const toggle = (at: number) => setKeep((was) => (was.includes(at) ? was.filter((k) => k !== at) : [...was, at].sort((a, b) => a - b)));
   return (
     <View style={styles.card} testID="moves-card">
-      <Section label={CHAT_MOVES_COPY.card} right={CHAT_MOVES_COPY.cardMeta}>
+      <Section label={words('ask.moves.card')} right={words('ask.moves.cardMeta')}>
         {items.map((item, at) => (
           <ChoiceRow
             key={at}
             role="checkbox"
-            label={CHAT_MOVES_COPY.title(item)}
-            meta={CHAT_MOVES_COPY.meta(item)}
+            label={moveTitle(item, words)}
+            meta={moveMeta(item, words)}
             leading={<RowIcon icon={ICON[item.kind]} />}
             checked={keep.includes(at)}
             onPress={() => toggle(at)}
@@ -76,8 +76,8 @@ export function MovesCard({ houseId, me, items }: { houseId: string; me: string;
       {move.problem ? <Alert message={move.problem} /> : null}
       <ButtonRow>
         <Button
-          label={CHAT_MOVES_COPY.apply(keep.length)}
-          busyLabel={CHAT_MOVES_COPY.applying}
+          label={words('ask.moves.apply', { n: keep.length })}
+          busyLabel={words('ask.moves.applying')}
           onPress={() => void apply()}
           busy={move.pending}
           disabled={keep.length === 0}

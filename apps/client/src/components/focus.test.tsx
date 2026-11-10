@@ -1,4 +1,4 @@
-import { BIN_NIGHT, withAlpha } from '@app/core';
+import { BIN_NIGHT, withAlpha, wordsFor } from '@app/core';
 import { CalendarIcon } from 'lucide-react-native';
 import { fireEvent, render, screen, within } from '@testing-library/react-native';
 import { StyleSheet, Text, View } from 'react-native';
@@ -22,7 +22,6 @@ import { Chip, StatusMark } from './status-mark';
 import { Body, Lead, Meta, RowTitle, SectionLabel, Title } from './text';
 import { TextButton } from './text-button';
 import { TickBox } from './tick-box';
-import { wordsFor } from '@app/core';
 
 const words = wordsFor('en', 'housemates');
 

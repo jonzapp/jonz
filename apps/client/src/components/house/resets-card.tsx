@@ -1,4 +1,4 @@
-import { RESET_COPY, resetItemLine, toldLine, type ChatReset, type Currency } from '@app/core';
+import { resetItemLine, toldLine, type ChatReset, type Currency } from '@app/core';
 import { CheckIcon, RotateCcwIcon, Undo2Icon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -48,7 +48,7 @@ export function ResetsCard({
   const [done, setDone] = useState<{ count: number; actions: string[] } | null>(null);
   const [undone, setUndone] = useState(false);
   const said = { nameOf, viewerId: me, currency, zone };
-  const lines = items.map((item) => resetItemLine(item, said));
+  const lines = items.map((item) => resetItemLine(item, said, words));
   const told = keep.flatMap((at) => lines[at].told);
 
   async function apply() {
@@ -76,14 +76,14 @@ export function ResetsCard({
     return (
       <View style={styles.card} testID="resets-done">
         <Row
-          title={undone ? RESET_COPY.putBack : RESET_COPY.appliedN(done.count)}
+          title={undone ? words('house.resets.putBack') : words('house.resets.appliedN', { n: done.count })}
           leading={<RowIcon icon={undone ? Undo2Icon : CheckIcon} />}
           testID="resets-done-row"
         />
         {move.problem ? <Alert message={move.problem} /> : null}
         {!undone && done.actions.length > 0 ? (
           <ButtonRow>
-            <Button variant="outline" icon={Undo2Icon} label={RESET_COPY.undoAll} onPress={() => void undo()} busy={move.pending} busyLabel={words('common.busy.undoing')} testID="resets-undo" />
+            <Button variant="outline" icon={Undo2Icon} label={words('house.resets.undoAll')} onPress={() => void undo()} busy={move.pending} busyLabel={words('common.busy.undoing')} testID="resets-undo" />
           </ButtonRow>
         ) : null}
       </View>
@@ -94,7 +94,7 @@ export function ResetsCard({
   return (
     <View style={styles.card} testID="resets-card">
       <HazardTape tone="hazard" height={8} />
-      <Section label={RESET_COPY.card} right={RESET_COPY.cardMeta}>
+      <Section label={words('house.resets.card')} right={words('house.resets.cardMeta')}>
         {items.map((item, at) => (
           <ChoiceRow
             key={at}
@@ -110,15 +110,15 @@ export function ResetsCard({
         ))}
       </Section>
       <Meta style={styles.inset} testID="resets-told">
-        {toldLine(told, nameOf)}
+        {toldLine(told, nameOf, words)}
       </Meta>
       {move.problem ? <Alert message={move.problem} /> : null}
       <ButtonRow>
         <Button
           variant="hazard"
           icon={RotateCcwIcon}
-          label={RESET_COPY.applyN(keep.length)}
-          busyLabel={RESET_COPY.applying}
+          label={words('house.resets.applyN', { n: keep.length })}
+          busyLabel={words('house.resets.applying')}
           onPress={() => void apply()}
           busy={move.pending}
           disabled={keep.length === 0}

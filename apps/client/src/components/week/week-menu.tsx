@@ -1,4 +1,4 @@
-import { RESET_COPY, type ResetKind } from '@app/core';
+import { type ResetKind } from '@app/core';
 import { useRouter } from 'expo-router';
 import { CircleSlashIcon, ListTodoIcon, PlaneIcon, RotateCcwIcon, ShuffleIcon } from 'lucide-react-native';
 import { useState } from 'react';
@@ -66,11 +66,11 @@ export function WeekMenu({
       });
     }
     if (weekId) {
-      actions.push({ label: RESET_COPY.resetWeek, icon: RotateCcwIcon, onPress: () => setResetting('week'), testID: 'menu-reset-week' });
+      actions.push({ label: words('house.resets.resetWeek'), icon: RotateCcwIcon, onPress: () => setResetting('week'), testID: 'menu-reset-week' });
       if (!canRedeal) {
-        actions.push({ label: RESET_COPY.redeal, icon: ShuffleIcon, onPress: () => setResetting('redeal'), testID: 'menu-reset-redeal' });
+        actions.push({ label: words('house.resets.redeal'), icon: ShuffleIcon, onPress: () => setResetting('redeal'), testID: 'menu-reset-redeal' });
       }
-      actions.push({ label: RESET_COPY.skip, icon: CircleSlashIcon, onPress: () => setResetting('skip'), testID: 'menu-skip-week' });
+      actions.push({ label: words('house.resets.skip'), icon: CircleSlashIcon, onPress: () => setResetting('skip'), testID: 'menu-skip-week' });
     }
   }
 

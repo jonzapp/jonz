@@ -1,3 +1,4 @@
+import type { Words } from "./words-for";
 import { Marked, type Token, type Tokens, type TokenizerExtension } from "marked";
 
 import { ADMIN_PAGES } from "./owner-admin";
@@ -337,20 +338,6 @@ export function replyText(source: string): string {
   return walk(parseReply(source)).join("\n");
 }
 
-/** The words around a reply's cards and chips. */
-export const REPLY_COPY = {
-  /** ::week's heading: whose Johns, and whether only those still to do. */
-  weekLabel: (who: string | null, open: boolean) =>
-    who === null ? (open ? "Still to do this week" : "This week") : `${who === "You" ? "Your" : `${who}’s`} ${open ? "Johns still to do" : "week"}`,
-  weekEmpty: (open: boolean) => (open ? "Nothing left to do this week." : "Nothing dealt this week yet."),
-  shares: "Fair shares",
-  johns: "On the list",
-  johnsEmpty: "None of those are on the list now.",
-  /** A chip's spoken words, after its own. */
-  spokenJohn: (name: string) => `${name}, John`,
-  spokenPage: (name: string) => `${name}, page`,
-} as const;
-
 /** What each card shows, for the prompt. */
 const CARD_GUIDE: Record<CardName, string> = {
   week: `::week shows this week's Johns as live rows (who has each, when it's due, whether it's done). ::week{who="me"} or ::week{who="Priya"} for one person's; add open for only those still to do: ::week{open}.`,
@@ -411,3 +398,8 @@ export const REPLY_FORMAT_GUIDE = [
   "",
   "  [Bins out](jonz:john/3f2a9c1e) is due tonight. [Priya](jonz:person/Priya) offered to swap if you're busy.",
 ].join("\n");
+
+/** A week card's heading: "This week", "Your week", "Sam’s Johns still to do". */
+export function weekLabel(who: string | null, open: boolean, words: Words): string {
+  return words("ask.reply.weekLabel", { whose: who === null ? "none" : who === "You" ? "you" : "name", who: who ?? "", open });
+}

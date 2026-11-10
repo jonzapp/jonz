@@ -1,4 +1,4 @@
-import { DELETE_COPY, type DeletionStatus } from '@app/core';
+import { type DeletionStatus, wordsFor } from '@app/core';
 import type { Session } from '@supabase/supabase-js';
 import { router, Slot } from 'expo-router';
 import { act, fireEvent, renderRouter, screen } from 'expo-router/testing-library';
@@ -8,6 +8,8 @@ import { Text } from 'react-native';
 import HouseStack, { unstable_settings as houseStackSettings } from '@/app/(house)/house/_layout';
 import RootLayout from '@/app/_layout';
 import { useMembership } from '@/hooks/use-membership';
+
+const words = wordsFor('en', 'housemates');
 
 // The real root layout and its guard, with stand-in screens.
 jest.mock('@/hooks/use-membership', () => ({
@@ -133,7 +135,7 @@ describe('deleting an account', () => {
     for (const url of ['/today', '/house', '/delete', '/join/AB3DEF7H']) {
       await open(url);
       expect(screen.getByTestId('being-deleted')).toBeOnTheScreen();
-      expect(screen.getByText(DELETE_COPY.beingDeleted)).toBeOnTheScreen();
+      expect(screen.getByText(words('people.delete.beingDeleted'))).toBeOnTheScreen();
       expect(screen.getByText(/It goes for good on Sun 29 Nov\. Until then nothing is gone, and your house still sees you as away\./)).toBeOnTheScreen();
       expect(screen.queryByText('Today')).toBeNull();
     }
