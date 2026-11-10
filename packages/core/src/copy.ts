@@ -367,6 +367,10 @@ export const JOIN_COPY = {
   noStake: "This house doesn’t play for money: it keeps score in points.",
   joining: "Joining…",
   back: "Back",
+  /** The invite, before signing in: what comes next, under its button. */
+  nextSignIn: "Next you sign in or make an account. Nothing is joined until you say so.",
+  /** Signing in from an invite: under "Sign in", in place of the usual line. */
+  signInFor: (house: string) => `Sign in to join ${house}.`,
 } as const;
 
 /** Signed in with no house: the app's way to start one or join by code. */

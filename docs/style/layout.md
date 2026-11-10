@@ -26,6 +26,13 @@ still look right stretched (content capped, nothing pinned to far edges).
   always returns to the tab's home (`dismissTo`), never through tab history.
   (Focus, #17; #34) *Backed by* the HIG's tab bar guidance and Nielsen's
   "user control and freedom".
+- **A link someone was sent opens on what it's for, then asks them to sign
+  in.** A join link shows the invite first, signed out: the house's name
+  and how many live there (no more than the link's card in a chat shows),
+  one button, and a line saying sign-in comes next. Sign-in then names the
+  house. What the house plays for shows after sign-in, before Join. A link
+  that opens nothing says so without asking anyone to sign in. (Opening an
+  invite A, 10 Nov)
 - **Things you set together are on one page.** House's pages are Overview,
   The Wall (with History beside it), Johns (with their groups), Rules (with
   who the admins are), Days and time away (your days, best time and Johns

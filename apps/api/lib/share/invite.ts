@@ -1,6 +1,6 @@
 import "server-only";
 
-import { JoinCode, type InviteCard } from "@app/core";
+import { JoinCode, type HouseKind, type InviteCard } from "@app/core";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -11,20 +11,23 @@ import { createAdminClient } from "@/lib/supabase/admin";
  *
  * A link-preview bot has no session, and `house_by_code` answers only a
  * signed-in caller, so this reads with the service role. It reads exactly
- * what that function would show anyone who signs in with the link, and
- * nothing else. Never throws: a card has to be drawn even when the database
+ * what that function would show anyone who signs in with the link (less the
+ * money rules), and nothing else. The join page reads it the same way for
+ * someone who hasn't signed in yet (/api/invites/CODE). Never throws: a card has to be drawn even when the database
  * can't be reached, or the chat shows a broken preview.
  */
-export async function inviteFor(raw: string): Promise<{ code: string; invite: InviteCard | null } | null> {
+export async function inviteFor(
+  raw: string,
+): Promise<{ code: string; invite: (InviteCard & { kind: HouseKind }) | null } | null> {
   const parsed = JoinCode.safeParse(raw);
   if (!parsed.success) return null;
   const code = parsed.data;
   try {
     const admin = createAdminClient();
-    const { data: house } = await admin.from("houses").select("id, name").eq("join_code", code).maybeSingle();
+    const { data: house } = await admin.from("houses").select("id, name, kind").eq("join_code", code).maybeSingle();
     if (!house) return { code, invite: null };
     const { count } = await admin.from("members").select("user_id", { count: "exact", head: true }).eq("house_id", house.id);
-    return { code, invite: count ? { name: house.name, members: count } : null };
+    return { code, invite: count ? { name: house.name, members: count, kind: house.kind as HouseKind } : null };
   } catch {
     return { code, invite: null };
   }
