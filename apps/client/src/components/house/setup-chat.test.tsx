@@ -1,5 +1,18 @@
-import { askExamples, changesMeta, thinkingSteps, wholePercent } from '@app/core';
-import { ASK_CHATS_COPY, type AskUsage, RESET_COPY, type ChatReset, listAsDraft, NEW_JOHN, starterDraft, tidyDraft, type HouseRules, type JohnDef, wordsFor } from '@app/core';
+import {
+  askExamples,
+  changesMeta,
+  thinkingSteps,
+  wholePercent,
+  type AskUsage,
+  type ChatReset,
+  listAsDraft,
+  NEW_JOHN,
+  starterDraft,
+  tidyDraft,
+  type HouseRules,
+  type JohnDef,
+  wordsFor,
+} from '@app/core';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 import { router } from 'expo-router';
@@ -371,7 +384,7 @@ describe('fixing mistakes', () => {
     expect(screen.getByRole('checkbox', { name: /^Undo: Sam ticked Bins/ })).toBeChecked();
     expect(screen.getByRole('checkbox', { name: /^Reset this week/ })).toBeChecked();
     expect(screen.getByTestId('resets-told')).toHaveTextContent('Sam gets a notification');
-    expect(screen.getByRole('button', { name: RESET_COPY.applyN(2) })).toBeTruthy();
+    expect(screen.getByRole('button', { name: words('house.resets.applyN', { n: 2 }) })).toBeTruthy();
     expect(applyReset).not.toHaveBeenCalled();
     expect(undoAction).not.toHaveBeenCalled();
   });
@@ -379,12 +392,12 @@ describe('fixing mistakes', () => {
   it('does only what is still ticked, then Undo takes the reset back', async () => {
     await offered();
     await fireEvent.press(screen.getByRole('checkbox', { name: /^Undo: Sam ticked Bins/ }));
-    await fireEvent.press(screen.getByRole('button', { name: RESET_COPY.applyN(1) }));
-    expect(await screen.findByText(RESET_COPY.appliedN(1))).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: words('house.resets.applyN', { n: 1 }) }));
+    expect(await screen.findByText(words('house.resets.appliedN', { n: 1 }))).toBeTruthy();
     expect(applyReset).toHaveBeenCalledWith({ houseId: 'h1', kind: 'week', week: '00000000-0000-4000-8000-0000000000aa' });
     expect(undoAction).not.toHaveBeenCalled();
-    await fireEvent.press(screen.getByRole('button', { name: RESET_COPY.undoAll }));
-    expect(await screen.findByText(RESET_COPY.putBack)).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: words('house.resets.undoAll') }));
+    expect(await screen.findByText(words('house.resets.putBack'))).toBeTruthy();
     expect(undoAction).toHaveBeenCalledWith('reset-1');
   });
 });
@@ -483,7 +496,7 @@ describe('kept chats', () => {
       { wrapper: House },
     );
     expect(screen.getByText('Bins weekly')).toBeTruthy();
-    expect(screen.getByTestId('chat-old-card')).toHaveTextContent(ASK_CHATS_COPY.oldCard);
+    expect(screen.getByTestId('chat-old-card')).toHaveTextContent(words('ask.chats.oldCard'));
     expect(screen.queryByTestId('draft-card')).toBeNull();
     chat.mockResolvedValueOnce({ reply: 'Done that.', ask: null, draft: null, source: 'ai' });
     await say('Thanks');

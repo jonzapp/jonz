@@ -1,4 +1,4 @@
-import { REPORT_COPY, TOURS, tourForPage, tourLength, toursFor, tourSteps, type ReportKind, type TourId } from '@app/core';
+import { TOURS, tourForPage, tourLength, toursFor, tourSteps, type ReportKind, type TourId } from '@app/core';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { BookOpenIcon, BugIcon, CheckIcon, LightbulbIcon, MessagesSquareIcon, SparklesIcon } from 'lucide-react-native';
@@ -56,7 +56,7 @@ export function HelpSheet({
   return (
     <Sheet
       visible={visible}
-      title={reporting ? REPORT_COPY.title[reporting] : words('door.tour.help')}
+      title={reporting ? words(`common.report.title.${reporting}` as const) : words('door.tour.help')}
       onClose={close}
       onDismissed={() => {
         setReporting(null);
@@ -148,19 +148,19 @@ function HelpMenu({
         </Section>
       ) : null}
       <Section label={words('door.tour.somethingWrong')}>
-        <Row leading={<RowIcon icon={BugIcon} />} title={REPORT_COPY.report} onPress={() => onReport('problem')} chevron testID="help-report" />
-        <Row leading={<RowIcon icon={LightbulbIcon} />} title={REPORT_COPY.idea} onPress={() => onReport('idea')} chevron testID="help-idea" />
+        <Row leading={<RowIcon icon={BugIcon} />} title={words('common.report.report')} onPress={() => onReport('problem')} chevron testID="help-report" />
+        <Row leading={<RowIcon icon={LightbulbIcon} />} title={words('common.report.idea')} onPress={() => onReport('idea')} chevron testID="help-idea" />
         <Row
           leading={<RowIcon icon={MessagesSquareIcon} />}
-          title={REPORT_COPY.yours}
-          meta={REPORT_COPY.yoursMeta(mine.data?.length ?? 0, unread)}
+          title={words('common.report.yours')}
+          meta={words('common.report.yoursMeta', { count: mine.data?.length ?? 0, replies: unread })}
           trailing={<CountBadge count={unread} />}
           onPress={() => go('/house/reports')}
           chevron
           testID="help-reports"
         />
       </Section>
-      <Meta style={styles.email}>{REPORT_COPY.orEmail}</Meta>
+      <Meta style={styles.email}>{words('common.report.orEmail')}</Meta>
     </View>
   );
 }

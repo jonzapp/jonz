@@ -1,4 +1,4 @@
-import { approvalAsk, approvalDetails, approvalState, APPROVE_COPY, approvePath, type ApprovalRow } from '@app/core';
+import { approvalAsk, approvalDetails, approvalState, approvePath, type ApprovalRow } from '@app/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
@@ -17,6 +17,7 @@ import { useMembership } from '@/hooks/use-membership';
 import { SPACE } from '@/theme';
 import { Waiting } from '@/components/waiting';
 import { DoorOutline } from '@/components/page-outlines';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * jonz.app/approve/<id>: an app the person connected to Jonz (over MCP)
@@ -26,6 +27,7 @@ import { DoorOutline } from '@/components/page-outlines';
  * app's retry then goes ahead, once; nothing else can approve it.
  */
 export default function Approve() {
+  const words = useWords();
   const { approvalId, error } = useLocalSearchParams<{ approvalId: string; error?: string }>();
   const { session } = useMembership();
   const read = useQuery({
@@ -36,21 +38,21 @@ export default function Approve() {
 
   return (
     <Door testID="approve-screen">
-      <PageTitle page={APPROVE_COPY.page} />
+      <PageTitle page={words('people.approve.page')} />
       {!session ? (
         <SignInPanel next={approvePath(approvalId)} failed={Boolean(error)} />
       ) : read.isPending ? (
         <Waiting ready={false} outline={<DoorOutline />} />
       ) : read.isError ? (
         <Sign>
-          <SignHeading title={APPROVE_COPY.page} />
+          <SignHeading title={words('people.approve.page')} />
           <ReadFailed onRetry={() => void read.refetch()} />
         </Sign>
       ) : read.data === null ? (
         <Sign testID="approve-unknown">
-          <SignHeading title={APPROVE_COPY.unknown} body={APPROVE_COPY.unknownBody} />
-          <Button href="/" variant="outline" label={APPROVE_COPY.goHome} />
-          {session.user.email ? <Meta>{APPROVE_COPY.signedInAs(session.user.email)}</Meta> : null}
+          <SignHeading title={words('people.approve.unknown')} body={words('people.approve.unknownBody')} />
+          <Button href="/" variant="outline" label={words('people.approve.goHome')} />
+          {session.user.email ? <Meta>{words('people.approve.signedInAs', { email: session.user.email })}</Meta> : null}
         </Sign>
       ) : (
         <Request row={read.data} />
@@ -60,13 +62,14 @@ export default function Approve() {
 }
 
 const ENDED = {
-  approved: [APPROVE_COPY.approved, APPROVE_COPY.approvedBody],
-  done: [APPROVE_COPY.done, APPROVE_COPY.doneBody],
-  declined: [APPROVE_COPY.declined, APPROVE_COPY.declinedBody],
-  expired: [APPROVE_COPY.expired, APPROVE_COPY.expiredBody],
+  approved: ['people.approve.approved', 'people.approve.approvedBody'],
+  done: ['people.approve.done', 'people.approve.doneBody'],
+  declined: ['people.approve.declined', 'people.approve.declinedBody'],
+  expired: ['people.approve.expired', 'people.approve.expiredBody'],
 } as const;
 
 function Request({ row }: { row: ApprovalRow }) {
+  const words = useWords();
   const queryClient = useQueryClient();
   // The page's own clock, read once: whether the request is still waiting.
   const [now] = useState(() => new Date());
@@ -84,13 +87,13 @@ function Request({ row }: { row: ApprovalRow }) {
   return (
     <Sign testID={`approve-${state}`}>
       {state === 'waiting' ? (
-        <SignHeading title={APPROVE_COPY.heading} body={APPROVE_COPY.body} />
+        <SignHeading title={words('people.approve.heading')} body={words('people.approve.body')} />
       ) : (
-        <SignHeading title={ENDED[state][0]} body={ENDED[state][1]} />
+        <SignHeading title={words(ENDED[state][0])} body={words(ENDED[state][1])} />
       )}
       <View style={styles.group}>
         <Body testID="approve-ask">{approvalAsk(row)}.</Body>
-        {row.house_name ? <Meta>{APPROVE_COPY.inHouse(row.house_name)}</Meta> : null}
+        {row.house_name ? <Meta>{words('people.approve.inHouse', { house: row.house_name })}</Meta> : null}
         {details.map((d) => (
           <Meta key={d.label}>
             {d.label}: {d.value}
@@ -102,16 +105,16 @@ function Request({ row }: { row: ApprovalRow }) {
           {answering.error ? <Alert message={answering.error.message} /> : null}
           <ButtonRow>
             <Button
-              label={APPROVE_COPY.approve}
+              label={words('people.approve.approve')}
               busy={answering.isPending && answer === true}
-              busyLabel={APPROVE_COPY.approving}
+              busyLabel={words('people.approve.approving')}
               onPress={() => answering.mutate(true)}
               testID="approve-yes"
             />
             <Button
-              label={APPROVE_COPY.decline}
+              label={words('people.approve.decline')}
               busy={answering.isPending && answer === false}
-              busyLabel={APPROVE_COPY.declining}
+              busyLabel={words('people.approve.declining')}
               variant="outline"
               onPress={() => answering.mutate(false)}
               testID="approve-no"
@@ -119,7 +122,7 @@ function Request({ row }: { row: ApprovalRow }) {
           </ButtonRow>
         </View>
       ) : (
-        <Button href="/" variant="outline" label={APPROVE_COPY.goHome} />
+        <Button href="/" variant="outline" label={words('people.approve.goHome')} />
       )}
     </Sign>
   );

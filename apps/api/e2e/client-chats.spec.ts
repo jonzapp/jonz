@@ -1,4 +1,4 @@
-import { ASK_CHATS_COPY, type HouseDraft, wordsFor } from "@app/core";
+import { type HouseDraft, wordsFor } from "@app/core";
 import { expect, test, type Page } from "@playwright/test";
 
 import { CLIENT_URL, cleanUp, signInToClient } from "./auth";
@@ -62,21 +62,21 @@ test("a chat is kept, comes back from Your chats, and can be deleted", async ({ 
 
   // Your chats, from the clock on the bar's leading edge: the kept one, under Today.
   await here.getByTestId("chats-open").click();
-  await expect(here.getByRole("heading", { name: ASK_CHATS_COPY.all, level: 1 })).toBeVisible();
+  await expect(here.getByRole("heading", { name: words('ask.chats.all'), level: 1 })).toBeVisible();
   const mine = here.getByTestId("all-chats").getByTestId("saved-chat").filter({ hasText: said });
   await expect(here.getByTestId("all-chats").getByTestId("saved-chat")).toHaveCount(1);
-  await expect(mine).toContainText(ASK_CHATS_COPY.today);
+  await expect(mine).toContainText(words('ask.chats.today'));
 
   // Opened again: what was said is back, and the card isn't, so it says to ask again.
   await mine.click();
   await expect(here.getByText(said)).toBeVisible();
-  await expect(here.getByTestId("chat-old-card")).toHaveText(ASK_CHATS_COPY.oldCard);
+  await expect(here.getByTestId("chat-old-card")).toHaveText(words('ask.chats.oldCard'));
   await expect(here.getByTestId("draft-card")).toHaveCount(0);
 
   // Your chats again: delete it, after the sheet, then back to the chat.
   await here.getByTestId("chats-open").click();
-  await here.getByRole("button", { name: ASK_CHATS_COPY.deleteChat(said) }).click();
-  await expect(page.getByText(ASK_CHATS_COPY.deleteBody)).toBeVisible();
+  await here.getByRole("button", { name: words('ask.chats.deleteChat', { title: said }) }).click();
+  await expect(page.getByText(words('ask.chats.deleteBody'))).toBeVisible();
   await page.getByTestId("chat-delete-sheet").getByTestId("confirm").click();
   await expect(here.getByTestId("chats-none")).toBeVisible();
   await here.getByRole("button", { name: words('common.shell.backTo', { place: words('common.title.ask') }) }).click();

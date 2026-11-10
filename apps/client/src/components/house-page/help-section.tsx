@@ -1,4 +1,4 @@
-import { REPORT_COPY, type ReportKind } from '@app/core';
+import { type ReportKind } from '@app/core';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { BookOpenIcon, BugIcon, CompassIcon, LightbulbIcon, MessagesSquareIcon } from 'lucide-react-native';
@@ -38,7 +38,7 @@ export function HelpSection({ house }: { house: string }) {
   const unread = mine.data?.filter((r) => r.unread).length ?? 0;
   return (
     <View style={styles.stack} testID="help-section">
-      <Section label={REPORT_COPY.help}>
+      <Section label={words('common.report.help')}>
         <Row
           leading={<RowIcon icon={BookOpenIcon} />}
           title={words('door.tour.guide')}
@@ -57,20 +57,20 @@ export function HelpSection({ house }: { house: string }) {
             testID="to-guides"
           />
         ) : null}
-        <Row leading={<RowIcon icon={BugIcon} />} title={REPORT_COPY.report} onPress={() => setOpen('problem')} chevron testID="to-report" />
-        <Row leading={<RowIcon icon={LightbulbIcon} />} title={REPORT_COPY.idea} onPress={() => setOpen('idea')} chevron testID="to-idea" />
+        <Row leading={<RowIcon icon={BugIcon} />} title={words('common.report.report')} onPress={() => setOpen('problem')} chevron testID="to-report" />
+        <Row leading={<RowIcon icon={LightbulbIcon} />} title={words('common.report.idea')} onPress={() => setOpen('idea')} chevron testID="to-idea" />
         <Row
           leading={<RowIcon icon={MessagesSquareIcon} />}
-          title={REPORT_COPY.yours}
-          meta={REPORT_COPY.yoursMeta(mine.data?.length ?? 0, unread)}
+          title={words('common.report.yours')}
+          meta={words('common.report.yoursMeta', { count: mine.data?.length ?? 0, replies: unread })}
           trailing={<CountBadge count={unread} />}
           href="/house/reports"
           chevron
           testID="to-reports"
         />
       </Section>
-      <Meta style={styles.email}>{REPORT_COPY.orEmail}</Meta>
-      <Sheet visible={open !== null} title={open ? REPORT_COPY.title[open] : undefined} onClose={() => setOpen(null)} testID="report-sheet">
+      <Meta style={styles.email}>{words('common.report.orEmail')}</Meta>
+      <Sheet visible={open !== null} title={open ? words(`common.report.title.${open}` as const) : undefined} onClose={() => setOpen(null)} testID="report-sheet">
         {open ? <ReportForm key={open} start={open} house={house} onSent={sent} /> : null}
       </Sheet>
     </View>

@@ -1,4 +1,4 @@
-import { DEMO_HOUSEMATES, STAGING_COPY, type DemoHousemate } from '@app/core';
+import { DEMO_HOUSEMATES, type DemoHousemate } from '@app/core';
 import { UserIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -10,6 +10,7 @@ import { Button } from '@/components/button';
 import { Field } from '@/components/field';
 import { Meta, SectionLabel } from '@/components/text';
 import { SPACE } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * Staging only (ON_STAGING): sign in as one of the demo house's four
@@ -17,6 +18,7 @@ import { SPACE } from '@/theme';
  * house. Signing in moves on by itself, as any sign-in does.
  */
 export function DemoSignIn() {
+  const words = useWords();
   const [password, setPassword] = useState(savedStagingPassword);
   // Whose sign-in is waiting on the server.
   const [signingIn, setSigningIn] = useState<string | null>(null);
@@ -36,11 +38,11 @@ export function DemoSignIn() {
 
   return (
     <View style={styles.demo} testID="demo-sign-in">
-      <SectionLabel>{STAGING_COPY.demoLabel}</SectionLabel>
-      <Meta>{STAGING_COPY.demoBody}</Meta>
+      <SectionLabel>{words('common.staging.demoLabel')}</SectionLabel>
+      <Meta>{words('common.staging.demoBody')}</Meta>
       <Field
-        label={STAGING_COPY.password}
-        hint={STAGING_COPY.passwordHint}
+        label={words('common.staging.password')}
+        hint={words('common.staging.passwordHint')}
         value={password}
         onChangeText={setPassword}
         secureTextEntry
@@ -48,14 +50,14 @@ export function DemoSignIn() {
         autoComplete="current-password"
         testID="demo-password"
       />
-      {failed ? <Alert message={STAGING_COPY.failed} /> : null}
+      {failed ? <Alert message={words('common.staging.failed')} /> : null}
       {DEMO_HOUSEMATES.map((who) => (
         <Button
           key={who.email}
           variant="outline"
           icon={UserIcon}
-          label={STAGING_COPY.as(who.name)}
-          busyLabel={STAGING_COPY.busy}
+          label={words('common.staging.as', { name: who.name })}
+          busyLabel={words('common.staging.busy')}
           busy={signingIn === who.email}
           // Not one row: the others hold still while one signs in.
           disabled={(signingIn !== null && signingIn !== who.email) || password.length === 0}

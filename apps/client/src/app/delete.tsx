@@ -1,4 +1,4 @@
-import { DELETE_COPY, DELETE_PATH, signInPath } from '@app/core';
+import { DELETION_DAYS, DELETE_PATH, signInPath } from '@app/core';
 import { router } from 'expo-router';
 import { LogInIcon } from 'lucide-react-native';
 import { StyleSheet, Text } from 'react-native';
@@ -27,25 +27,25 @@ export default function DeletePage() {
       <Sign>
         {session ? (
           <>
-            <SignHeading title={DELETE_COPY.title} />
+            <SignHeading title={words('people.delete.title')} />
             <DeleteAccountForm onKeep={() => router.replace('/')} />
           </>
         ) : (
           <>
-            <SignHeading title={DELETE_COPY.pageTitle} body={DELETE_COPY.pageBody} />
+            <SignHeading title={words('people.delete.pageTitle')} body={words('people.delete.pageBody', { days: DELETION_DAYS })} />
             <Body>
-              <Text style={styles.lead}>{DELETE_COPY.goesLead}</Text> {DELETE_COPY.goes}
+              <Text style={styles.lead}>{words('people.delete.goesLead')}</Text> {words('people.delete.goes')}
             </Body>
             <Body>
-              <Text style={styles.lead}>{DELETE_COPY.staysAnyLead}</Text> {DELETE_COPY.stays}
+              <Text style={styles.lead}>{words('people.delete.staysAnyLead')}</Text> {words('people.delete.stays')}
             </Body>
-            <Body>{DELETE_COPY.passAny}</Body>
-            <Button label={DELETE_COPY.signInToDelete} icon={LogInIcon} href={signInPath(DELETE_PATH)} testID="sign-in-to-delete" />
+            <Body>{words('people.delete.passAny')}</Body>
+            <Button label={words('people.delete.signInToDelete')} icon={LogInIcon} href={signInPath(DELETE_PATH)} testID="sign-in-to-delete" />
           </>
         )}
       </Sign>
       <DoorFoot>
-        <Meta>{DELETE_COPY.cantSignIn}</Meta>
+        <Meta>{words('people.delete.cantSignIn')}</Meta>
       </DoorFoot>
     </Door>
   );

@@ -4,11 +4,13 @@ import { actionLine } from "./history";
 import { wordsFor } from "./words-for";
 import { resetItemLine, resetSheet, resetTitle, resetWhat, toldLine, type ResetPreview, type ResetWords } from "./resets";
 
+const words = wordsFor("en", "housemates");
+
 const english = wordsFor("en", "housemates");
 
 const names: Record<string, string> = { glyn: "Glyn Finck", sam: "Sam Lee", ada: "Ada Park" };
 
-function words(overrides: Partial<ResetWords> = {}): ResetWords {
+function said(overrides: Partial<ResetWords> = {}): ResetWords {
   return {
     kind: "week",
     nameOf: (id) => (id === "glyn" ? "You" : names[id]),
@@ -38,7 +40,7 @@ function preview(overrides: Partial<ResetPreview> = {}): ResetPreview {
 
 describe("the reset sheet", () => {
   it("says what resetting the week clears, in numbers, and who is told", () => {
-    const sheet = resetSheet(preview(), words());
+    const sheet = resetSheet(preview(), said(), english);
     expect(sheet.title).toBe("Reset this week?");
     expect(sheet.body).toBe("Everyone keeps the Johns they were dealt. Ticks, covers and flags from 26 Oct–1 Nov are cleared.");
     expect(sheet.lines).toEqual([
@@ -55,8 +57,8 @@ describe("the reset sheet", () => {
   it("names one John's change, and a correction for a month already shared out", () => {
     const sheet = resetSheet(
       preview({ kind: "result", people: { sam: { points: 5, forfeit: 300 } }, told: ["sam"], correction: true }),
-      words({ kind: "result", person: "Sam Lee", john: "Bathroom", outcome: "done", was: "missed" }),
-    );
+      said({ kind: "result", person: "Sam Lee", john: "Bathroom", outcome: "done", was: "missed" }),
+     words);
     expect(sheet.title).toBe("Mark Bathroom done?");
     expect(sheet.body).toBe("Sam’s Bathroom changes from missed to done.");
     expect(sheet.lines.find((l) => l.key === "stake")!.value).toBe("£3 of forfeits removed, as a correction this month");
@@ -65,14 +67,14 @@ describe("the reset sheet", () => {
   });
 
   it("warns that reopened Johns past due turn late", () => {
-    const sheet = resetSheet(preview({ past_due: 2 }), words({ kind: "person_week", person: "Ada Park" }));
+    const sheet = resetSheet(preview({ past_due: 2 }), said({ kind: "person_week", person: "Ada Park" }), english);
     expect(sheet.title).toBe("Reset Ada’s week?");
     expect(sheet.lines.find((l) => l.key === "track")!.value).toMatch(/^Shows open again\. 2 past due/);
   });
 
   it("asks before its numbers are in", () => {
-    expect(resetTitle(words({ kind: "skip" }))).toBe("Skip this week?");
-    expect(resetTitle(words({ kind: "letoff", month: "2026-09" }))).toBe("Let everyone off September?");
+    expect(resetTitle(said({ kind: "skip" }), english)).toBe("Skip this week?");
+    expect(resetTitle(said({ kind: "letoff", month: "2026-09" }), english)).toBe("Let everyone off September?");
   });
 });
 
@@ -86,17 +88,17 @@ describe("a reset in History and on the Wall", () => {
 
 describe("Ask Jonz's Resets card", () => {
   it("puts a reset's numbers in one line, without the Track record", () => {
-    const line = resetItemLine({ kind: "reset", ask: { kind: "week", week: "w1" }, preview: preview(), words: {} }, words());
+    const line = resetItemLine({ kind: "reset", ask: { kind: "week", week: "w1" }, preview: preview(), words: {} }, said(), english);
     expect(line).toEqual({ title: "Reset this week", meta: "6 ticks cleared, Ada −7 pts, £2 of forfeits removed", told: ["ada", "sam"] });
   });
 
   it("says an undo in History's words, and tells whoever's move it was", () => {
-    const line = resetItemLine({ kind: "undo", action: "h1", line: "Sam ticked Bins", actor: "sam" }, words());
+    const line = resetItemLine({ kind: "undo", action: "h1", line: "Sam ticked Bins", actor: "sam" }, said(), english);
     expect(line).toEqual({ title: "Undo: Sam ticked Bins", meta: "Back as it was before", told: ["sam"] });
   });
 
   it("names everyone told once", () => {
-    expect(toldLine(["sam", "ada", "sam"], words().nameOf)).toBe("Ada and Sam get a notification");
-    expect(toldLine([], words().nameOf)).toBe("Nobody else is told");
+    expect(toldLine(["sam", "ada", "sam"], said().nameOf, english)).toBe("Ada and Sam get a notification");
+    expect(toldLine([], said().nameOf, english)).toBe("Nobody else is told");
   });
 });

@@ -1,15 +1,4 @@
-import {
-  firstName,
-  PAGES,
-  REPLY_COPY,
-  weekShareRows,
-  type BoardItem,
-  type GroupDef,
-  type JohnDef,
-  type PageName,
-  type ReplyCard,
-  type Words,
-} from '@app/core';
+import { firstName, PAGES, weekShareRows, type BoardItem, type GroupDef, type JohnDef, type PageName, type ReplyCard, type Words } from '@app/core';
 import type { Href } from 'expo-router';
 
 import type { JohnRowContext } from '@/components/john-row';
@@ -73,7 +62,7 @@ export function replyPieces(data: ReplyData, words: Words): ReplyPieces {
       const item =
         data.items?.find((i) => i.johnId === john.id && i.userId === data.viewerId) ?? data.items?.find((i) => i.johnId === john.id);
       const lead = { kind: 'lid' as const, category: john.category };
-      const spoken = REPLY_COPY.spokenJohn(john.name);
+      const spoken = words('ask.reply.spokenJohn', { name: john.name });
       return item && data.openJohn ? { lead, spoken, onPress: () => data.openJohn!(item.id) } : { lead, spoken, href: johnList };
     },
     person(ref) {
@@ -87,7 +76,7 @@ export function replyPieces(data: ReplyData, words: Words): ReplyPieces {
     },
     page(ref) {
       const page = PAGES[ref as PageName];
-      return page ? { lead: { kind: 'page' }, spoken: REPLY_COPY.spokenPage(page.label), href: page.href as Href } : null;
+      return page ? { lead: { kind: 'page' }, spoken: words('ask.reply.spokenPage', { name: page.label }), href: page.href as Href } : null;
     },
     card(card: ReplyCard) {
       switch (card.card) {

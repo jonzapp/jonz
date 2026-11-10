@@ -20,6 +20,9 @@ const HOUSE_ONLY = /\b(housemates?|flatmates?|admins?)\b/i;
 
 /** Lines a family never sees, so they need no family sentence, and why. */
 const HOUSEMATES_ONLY: Partial<Record<WordId, string>> = {
+  "common.report.role.admin": "the owner's Inbox names a reporter's role as the database does",
+  "common.report.role.member": "the owner's Inbox names a reporter's role as the database does",
+  "common.staging.demoBody": "staging's demo house is a housemates house",
   "ask.draft.starter.flat_share.meta": "names the flat-share starter list, picked by name in any house",
   "errors.ask_limit": "the owner's Ask Jonz limit, which points at the owner's admin pages",
   "door.newHouse.intro": "a family reads house.family.newIntro through newHouseWords",

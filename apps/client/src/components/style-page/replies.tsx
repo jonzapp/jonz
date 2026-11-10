@@ -1,4 +1,4 @@
-import { NEW_JOHN, REPLY_COPY, REPLY_SAMPLES, wordsFor, type JohnDef } from '@app/core';
+import { weekLabel, NEW_JOHN, REPLY_SAMPLES, wordsFor, type JohnDef } from '@app/core';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Group } from '@/components/group';
@@ -67,7 +67,8 @@ const WEEK = [
  * page has no house to read (the live card is the Week page's JohnRow).
  */
 // The style page's sample house is housemates, in English.
-const live = replyPieces(DATA, wordsFor('en', 'housemates'));
+const words = wordsFor('en', 'housemates');
+const live = replyPieces(DATA, words);
 export const SAMPLE_PIECES: ReplyPieces = {
   ...live,
   card(card) {
@@ -87,7 +88,7 @@ export const SAMPLE_PIECES: ReplyPieces = {
     const name = (id: string) => (id === 'glyn' ? 'You' : (DATA.people.find((p) => p.userId === id)?.name.split(' ')[0] ?? ''));
     const who = person === null ? null : name(person);
     return (
-      <Section label={REPLY_COPY.weekLabel(who, card.open)} count={card.open ? rows.length : undefined}>
+      <Section label={weekLabel(who, card.open, words)} count={card.open ? rows.length : undefined}>
         <Group>
           {rows.map((w, i) => (
             <Row

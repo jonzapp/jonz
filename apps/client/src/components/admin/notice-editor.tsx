@@ -1,4 +1,4 @@
-import { ADMIN_COPY, formatLocalDateTime, NOTICE_COPY, NOTICE_ENDS, NOTICE_ENDS_LABEL, NOTICE_KINDS, NOTICE_PRESETS, noticeEndsAt, noticeProblems, parseLocalDateTime, type Notice, type NoticeDraft, type NoticeEnds, type NoticeKind } from '@app/core';
+import { ADMIN_COPY, formatLocalDateTime, NOTICE_ENDS, NOTICE_ENDS_LABEL, NOTICE_KINDS, NOTICE_PRESETS, noticeEndsAt, noticeProblems, parseLocalDateTime, type Notice, type NoticeDraft, type NoticeEnds, type NoticeKind } from '@app/core';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -121,12 +121,12 @@ export function NoticeEditor({
         <FieldLabel>{ADMIN_COPY.kind}</FieldLabel>
         <Segmented
           label={ADMIN_COPY.kind}
-          options={NOTICE_KINDS.map((kind) => ({ value: kind, label: NOTICE_COPY.kinds[kind] }))}
+          options={NOTICE_KINDS.map((kind) => ({ value: kind, label: words(`common.notice.kinds.${kind}` as const) }))}
           value={form.kind}
           onChange={(kind) => set({ kind })}
           equal
         />
-        <Meta>{NOTICE_COPY.kindHints[form.kind]}</Meta>
+        <Meta>{words(`common.notice.kindHints.${form.kind}` as const)}</Meta>
       </View>
       <Field label={ADMIN_COPY.title} value={form.title} onChangeText={(title) => set({ title })} problem={shown('title')} maxLength={80} testID="notice-title" />
       <Field label={ADMIN_COPY.more} value={form.body} onChangeText={(body) => set({ body })} problem={shown('body')} multiline maxLength={240} testID="notice-body" />

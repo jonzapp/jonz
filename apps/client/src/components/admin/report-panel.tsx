@@ -1,4 +1,4 @@
-import { humanError, REPORT_COPY, REPORT_LIMITS, reportGist } from '@app/core';
+import { humanError, REPORT_LIMITS, reportGist } from '@app/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CheckIcon, CopyIcon, MailIcon, RotateCcwIcon, SearchIcon, UnlinkIcon } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
@@ -79,15 +79,15 @@ function ReportBody({
   // The reply box's words, which the support agent's "Change it first" fills; and which suggestion they came from.
   const [replyText, setReplyText] = useState('');
   const [fromDraft, setFromDraft] = useState<string | null>(null);
-  const first = report.name?.split(' ')[0] ?? REPORT_COPY.gone;
+  const first = report.name?.split(' ')[0] ?? words('common.report.gone');
   const emailOnly = report.source === 'email' && !report.userId;
   const where = emailOnly
-    ? REPORT_COPY.emailOnly(report.email ?? REPORT_COPY.gone)
+    ? words('common.report.emailOnly', { address: report.email ?? words('common.report.gone') })
     : [
-        report.house ?? REPORT_COPY.noHouse,
-        report.role ? (REPORT_COPY.role[report.role as 'admin' | 'member'] ?? null) : null,
+        report.house ?? words('common.report.noHouse'),
+        report.role ? (words(`common.report.role.${report.role as 'admin' | 'member'}` as const) ?? null) : null,
         report.email,
-        report.source === 'email' ? REPORT_COPY.byEmail : null,
+        report.source === 'email' ? words('common.report.byEmail') : null,
       ]
         .filter(Boolean)
         .join(', ');
@@ -108,25 +108,25 @@ function ReportBody({
       <View style={styles.head}>
         <View style={styles.titleLine}>
           <Lead header style={styles.name}>
-            {report.name ?? REPORT_COPY.gone}
+            {report.name ?? words('common.report.gone')}
           </Lead>
           <ReportChip state={report.state} owner testID="report-panel-state" />
         </View>
         <Meta>{where}</Meta>
-        {report.subject ? <Meta testID="report-panel-subject">{REPORT_COPY.subject(report.subject)}</Meta> : null}
+        {report.subject ? <Meta testID="report-panel-subject">{words('common.report.subject', { subject: report.subject })}</Meta> : null}
       </View>
       {report.sameAs ? (
         <Group testID="report-same-as">
           <Row
             leading={<RowIcon icon={CopyIcon} />}
-            title={REPORT_COPY.foldedInto(report.sameAs.name?.split(' ')[0] ?? REPORT_COPY.gone)}
+            title={words('common.report.foldedInto', { name: report.sameAs.name?.split(' ')[0] ?? words('common.report.gone') })}
             meta={reportGist(report.sameAs.words)}
             onPress={onOpen ? () => onOpen(report.sameAs!.id) : undefined}
             href={onOpen ? undefined : `/admin/inbox/${report.sameAs.id}`}
             chevron
             testID="report-same-as-link"
           />
-          <Row leading={<RowIcon icon={UnlinkIcon} />} title={REPORT_COPY.notSame} onPress={() => void unfold()} testID="report-not-same" />
+          <Row leading={<RowIcon icon={UnlinkIcon} />} title={words('common.report.notSame')} onPress={() => void unfold()} testID="report-not-same" />
         </Group>
       ) : null}
       {unfolding ? <Alert message={unfolding} /> : null}
@@ -151,7 +151,7 @@ function ReportBody({
       ) : null}
       {answerable ? (
         <ReplyBox
-          placeholder={emailOnly ? REPORT_COPY.replyByEmail(first) : REPORT_COPY.replyTo(first)}
+          placeholder={emailOnly ? words('common.report.replyByEmail', { name: first }) : words('common.report.replyTo', { name: first })}
           text={replyText}
           onChangeText={setReplyText}
           onSend={async (text) => {
@@ -168,7 +168,7 @@ function ReportBody({
       ) : null}
       <ButtonRow atEdge>
         <Button
-          label={fixed ? REPORT_COPY.reopen : REPORT_COPY.markFixed}
+          label={fixed ? words('common.report.reopen') : words('common.report.markFixed')}
           icon={fixed ? RotateCcwIcon : CheckIcon}
           variant="outline"
           busy={reopen.isPending}
@@ -181,13 +181,13 @@ function ReportBody({
           testID={fixed ? 'report-reopen' : 'report-fixed'}
         />
         {report.sameAs ? null : (
-          <Button label={REPORT_COPY.sameAs} icon={CopyIcon} variant="outline" onPress={() => setSheet('same')} testID="report-same" />
+          <Button label={words('common.report.sameAs')} icon={CopyIcon} variant="outline" onPress={() => setSheet('same')} testID="report-same" />
         )}
       </ButtonRow>
       {done ? <Meta testID="report-fixed-done">{done}</Meta> : null}
       {reopen.error ? <Alert message={reopen.error.message} /> : null}
-      <Meta>{REPORT_COPY.note}</Meta>
-      <Sheet visible={sheet === 'fix'} title={REPORT_COPY.fixTitle} onClose={() => setSheet(null)} testID="report-fix-sheet">
+      <Meta>{words('common.report.note')}</Meta>
+      <Sheet visible={sheet === 'fix'} title={words('common.report.fixTitle')} onClose={() => setSheet(null)} testID="report-fix-sheet">
         {sheet === 'fix' ? (
           <FixForm
             report={report}
@@ -201,8 +201,8 @@ function ReportBody({
       </Sheet>
       <Sheet
         visible={sheet === 'same'}
-        title={REPORT_COPY.sameAsTitle}
-        description={REPORT_COPY.sameAsBody}
+        title={words('common.report.sameAsTitle')}
+        description={words('common.report.sameAsBody')}
         onClose={() => setSheet(null)}
         testID="report-same-sheet"
       >
@@ -222,14 +222,15 @@ function ReportBody({
 
 /** The reports folded into this one: who sent each, and what they said. */
 function AlsoReported({ also, onOpen }: { also: readonly ReportLink[]; onOpen?: (id: string) => void }) {
+  const words = useWords();
   return (
     <View style={styles.also} testID="report-also">
-      <Meta>{REPORT_COPY.alsoFrom(also.length)}</Meta>
+      <Meta>{words('common.report.alsoFrom', { count: also.length })}</Meta>
       <Group>
         {also.map((one) => (
           <Row
             key={one.id}
-            title={one.name ?? REPORT_COPY.gone}
+            title={one.name ?? words('common.report.gone')}
             meta={reportGist(one.words)}
             trailing={<ReportChip state={one.state} owner />}
             onPress={onOpen ? () => onOpen(one.id) : undefined}
@@ -249,6 +250,7 @@ function AlsoReported({ also, onOpen }: { also: readonly ReportLink[]; onOpen?: 
  * conversations; without one they read a plain thank you.
  */
 function FixForm({ report, onDone }: { report: Report; onDone: (said: string) => Promise<void> }) {
+  const words = useWords();
   const [note, setNote] = useState('');
   const [tell, setTell] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -259,7 +261,7 @@ function FixForm({ report, onDone }: { report: Report; onDone: (said: string) =>
     setProblem(null);
     try {
       const { told } = await fixReport(report.id, note, tell);
-      await onDone(REPORT_COPY.fixedTold(told));
+      await onDone(words('common.report.fixedTold', { told }));
     } catch (e) {
       setProblem(e instanceof Error ? e.message : String(e));
       setBusy(false);
@@ -268,8 +270,8 @@ function FixForm({ report, onDone }: { report: Report; onDone: (said: string) =>
   return (
     <View style={styles.form} testID="report-fix-form">
       <Field
-        label={REPORT_COPY.fixNote}
-        placeholder={REPORT_COPY.fixNotePlaceholder}
+        label={words('common.report.fixNote')}
+        placeholder={words('common.report.fixNotePlaceholder')}
         value={note}
         onChangeText={setNote}
         multiline
@@ -280,15 +282,15 @@ function FixForm({ report, onDone }: { report: Report; onDone: (said: string) =>
       <Group>
         <ChoiceRow
           role="checkbox"
-          label={REPORT_COPY.fixTell(people)}
-          meta={REPORT_COPY.fixTellMeta}
+          label={words('common.report.fixTell', { count: people })}
+          meta={words('common.report.fixTellMeta')}
           checked={tell}
           onPress={() => setTell((on) => !on)}
         />
       </Group>
       {problem ? <Alert message={problem} testID="report-fix-problem" /> : null}
       <ButtonRow>
-        <Button label={REPORT_COPY.fixSend} busyLabel={REPORT_COPY.sending} icon={tell ? MailIcon : CheckIcon} busy={busy} onPress={() => void send()} testID="report-fix-send" />
+        <Button label={words('common.report.fixSend')} busyLabel={words('common.report.sending')} icon={tell ? MailIcon : CheckIcon} busy={busy} onPress={() => void send()} testID="report-fix-send" />
       </ButtonRow>
     </View>
   );
@@ -296,6 +298,7 @@ function FixForm({ report, onDone }: { report: Report; onDone: (said: string) =>
 
 /** Same as…: search for the report this one repeats, and fold it in. */
 function SameAsForm({ report, onDone }: { report: Report; onDone: () => Promise<void> }) {
+  const words = useWords();
   const [q, setQ] = useState('');
   const [problem, setProblem] = useState<string | null>(null);
   const found = useQuery({ queryKey: [...INBOX_KEY, 'same-as', report.id, q.trim()], queryFn: () => sameAsFind(report.id, q.trim()) });
@@ -310,17 +313,17 @@ function SameAsForm({ report, onDone }: { report: Report; onDone: () => Promise<
   };
   return (
     <View style={styles.form} testID="report-same-form">
-      <Field label={REPORT_COPY.sameAsSearch} value={q} onChangeText={setQ} autoFocus testID="report-same-search" />
+      <Field label={words('common.report.sameAsSearch')} value={q} onChangeText={setQ} autoFocus testID="report-same-search" />
       {problem ? <Alert message={problem} /> : null}
       {found.isError ? <ReadFailed message={humanError(found.error)} onRetry={() => void found.refetch()} /> : null}
-      {found.data && found.data.length === 0 ? <Meta>{REPORT_COPY.sameAsNone}</Meta> : null}
+      {found.data && found.data.length === 0 ? <Meta>{words('common.report.sameAsNone')}</Meta> : null}
       {found.data && found.data.length > 0 ? (
         <Group>
           {found.data.map((one) => (
             <Row
               key={one.id}
               leading={<RowIcon icon={SearchIcon} />}
-              title={one.name ?? REPORT_COPY.gone}
+              title={one.name ?? words('common.report.gone')}
               meta={reportGist(one.words)}
               metaLines={2}
               trailing={<ReportChip state={one.state} owner />}

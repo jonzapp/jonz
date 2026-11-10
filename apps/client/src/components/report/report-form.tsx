@@ -1,4 +1,4 @@
-import { REPORT_COPY, REPORT_KINDS, REPORT_LIMITS, withAlpha, type ReportKind } from '@app/core';
+import { REPORT_KINDS, REPORT_LIMITS, withAlpha, type ReportKind } from '@app/core';
 import { ImagePlusIcon, SendIcon, XIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -15,8 +15,7 @@ import { Segmented } from '@/components/segmented';
 import { ChoiceRow } from '@/components/setup/choice-row';
 import { Meta } from '@/components/text';
 import { RADIUS, SPACE, useTheme } from '@/theme';
-
-const KINDS = REPORT_KINDS.map((value) => ({ value, label: REPORT_COPY.kind[value] }));
+import { useWords } from '@/hooks/use-words';
 
 /**
  * Report a problem, send an idea or ask a question, in a sheet: what kind,
@@ -25,6 +24,7 @@ const KINDS = REPORT_KINDS.map((value) => ({ value, label: REPORT_COPY.kind[valu
  * amber button sends it; the line under it says where the answer comes.
  */
 export function ReportForm({ start, house, onSent }: { start: ReportKind; house: string | null; onSent: (id: string) => void }) {
+  const words = useWords();
   const { colors, scheme } = useTheme();
   const [kind, setKind] = useState<ReportKind>(start);
   const [text, setText] = useState('');
@@ -58,10 +58,10 @@ export function ReportForm({ start, house, onSent }: { start: ReportKind; house:
 
   return (
     <View style={styles.form} testID="report-form">
-      <Segmented options={KINDS} value={kind} onChange={setKind} label={REPORT_COPY.kindLabel} equal testID="report-kind" />
+      <Segmented options={REPORT_KINDS.map((value) => ({ value, label: words(`common.report.kind.${value}` as const) }))} value={kind} onChange={setKind} label={words('common.report.kindLabel')} equal testID="report-kind" />
       <Field
-        label={REPORT_COPY.words[kind]}
-        placeholder={REPORT_COPY.placeholder[kind]}
+        label={words(`common.report.words.${kind}` as const)}
+        placeholder={words(`common.report.placeholder.${kind}` as const)}
         value={text}
         onChangeText={setText}
         multiline
@@ -69,13 +69,13 @@ export function ReportForm({ start, house, onSent }: { start: ReportKind; house:
         testID="report-words"
       />
       <View style={styles.shots}>
-        <FieldLabel>{REPORT_COPY.screenshots}</FieldLabel>
+        <FieldLabel>{words('common.report.screenshots')}</FieldLabel>
         <View style={styles.shotRow}>
           {shots.map((uri, at) => (
             <Pressable
               key={uri}
               accessibilityRole="button"
-              accessibilityLabel={REPORT_COPY.removeScreenshot(at + 1)}
+              accessibilityLabel={words('common.report.removeScreenshot', { n: at + 1 })}
               onPress={() => setShots((now) => now.filter((one) => one !== uri))}
               testID={`report-shot-${at}`}
             >
@@ -88,7 +88,7 @@ export function ReportForm({ start, house, onSent }: { start: ReportKind; house:
           {shots.length < REPORT_LIMITS.shots ? (
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={REPORT_COPY.addScreenshot}
+              accessibilityLabel={words('common.report.addScreenshot')}
               onPress={() => void add()}
               style={[styles.add, { borderColor: colors.mutedForeground, backgroundColor: withAlpha(colors.card, scheme === 'dark' ? 0.6 : 1) }]}
               testID="report-add-shot"
@@ -96,19 +96,19 @@ export function ReportForm({ start, house, onSent }: { start: ReportKind; house:
               <ImagePlusIcon size={22} color={colors.mutedForeground} aria-hidden />
             </Pressable>
           ) : null}
-          <Meta style={styles.shotNote}>{REPORT_COPY.screenshotsNote}</Meta>
+          <Meta style={styles.shotNote}>{words('common.report.screenshotsNote')}</Meta>
         </View>
       </View>
       <Group testID="report-send-details">
-        <ChoiceRow role="checkbox" label={REPORT_COPY.details} meta={REPORT_COPY.detailsMeta} checked={send} onPress={() => setSend((on) => !on)} />
+        <ChoiceRow role="checkbox" label={words('common.report.details')} meta={words('common.report.detailsMeta')} checked={send} onPress={() => setSend((on) => !on)} />
         {send ? <DetailsList details={details} /> : null}
       </Group>
       <View style={styles.end}>
         {problem ? <Alert message={problem} testID="report-problem" /> : null}
         <ButtonRow>
           <Button
-            label={REPORT_COPY.send[kind]}
-            busyLabel={REPORT_COPY.sending}
+            label={words(`common.report.send.${kind}` as const)}
+            busyLabel={words('common.report.sending')}
             icon={SendIcon}
             busy={busy}
             disabled={!text.trim()}
@@ -116,7 +116,7 @@ export function ReportForm({ start, house, onSent }: { start: ReportKind; house:
             testID="report-send"
           />
         </ButtonRow>
-        <Meta>{REPORT_COPY.promise}</Meta>
+        <Meta>{words('common.report.promise')}</Meta>
       </View>
     </View>
   );

@@ -1,9 +1,11 @@
 import { randomUUID } from "node:crypto";
 
-import { OFFER_PAGE_COPY } from "@app/core";
 import { expect, test, type Page } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, signInToClient, undealtHouseInClient } from "./auth";
+import { wordsFor } from '@app/core';
+
+const words = wordsFor('en', 'housemates');
 
 // An offer's link in the Expo app's web build (docs/specs/promotions.md): a
 // free year for two named people. Signed out, anyone with the link sees what
@@ -107,8 +109,8 @@ test("says a stopped or unknown link opens nothing", async ({ page }) => {
   const { error } = await admin().from("promotions").update({ state: "stopped", stopped_at: new Date().toISOString() }).eq("code", code);
   expect(error).toBeNull();
   await page.goto(`/offer/${code}`);
-  await expect(page.getByTestId("offer-ended")).toContainText(OFFER_PAGE_COPY.ended);
+  await expect(page.getByTestId("offer-ended")).toContainText(words('door.offer.ended'));
   await shoot(page, "offer-ended");
   await page.goto("/offer/NOSUCHOFFER1");
-  await expect(page.getByTestId("offer-unknown")).toContainText(OFFER_PAGE_COPY.unknown);
+  await expect(page.getByTestId("offer-unknown")).toContainText(words('door.offer.unknown'));
 });

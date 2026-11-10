@@ -1,4 +1,3 @@
-import { ASK_CHATS_COPY } from '@app/core';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
@@ -9,6 +8,9 @@ import { testQueryClient } from '@/testing/query';
 import { houseChats } from '@/hooks/use-ask-chats';
 
 import { AllChats } from './saved-chats';
+import { wordsFor } from '@app/core';
+
+const words = wordsFor('en', 'housemates');
 
 jest.mock('@/api/ask-chats', () => ({ listChats: jest.fn(), deleteChat: jest.fn(async () => undefined) }));
 
@@ -35,8 +37,8 @@ it('lists every chat under Today, Last 7 days and Earlier, and opens one', async
   await render(<AllChats store={houseChats('h1')} zone="Europe/London" now={NOW} onOpen={open} onDeleted={jest.fn()} />, { wrapper: House });
   expect(await screen.findByText('Oven every month')).toBeTruthy();
   expect(screen.getAllByTestId('chats-group')).toHaveLength(3);
-  expect(screen.getByText(ASK_CHATS_COPY.lastWeek)).toBeTruthy();
-  expect(screen.getByText(ASK_CHATS_COPY.earlier)).toBeTruthy();
+  expect(screen.getByText(words('ask.chats.lastWeek'))).toBeTruthy();
+  expect(screen.getByText(words('ask.chats.earlier'))).toBeTruthy();
   await fireEvent.press(screen.getByText('Who has the bins?'));
   expect(open).toHaveBeenCalledWith('b');
 });
@@ -49,8 +51,8 @@ it('lists every chat and deletes one only after the sheet says it is gone for go
   );
   expect(await screen.findByText('Oven every month')).toBeTruthy();
   expect(screen.getAllByTestId('saved-chat')).toHaveLength(4);
-  await fireEvent.press(screen.getByRole('button', { name: ASK_CHATS_COPY.deleteChat('Who has the bins?') }));
-  expect(screen.getByText(ASK_CHATS_COPY.deleteBody)).toBeTruthy();
+  await fireEvent.press(screen.getByRole('button', { name: words('ask.chats.deleteChat', { title: 'Who has the bins?' }) }));
+  expect(screen.getByText(words('ask.chats.deleteBody'))).toBeTruthy();
   expect(deleteChat).not.toHaveBeenCalled();
   await fireEvent.press(screen.getByTestId('confirm'));
   await waitFor(() => expect(deleted).toHaveBeenCalledWith('b'));
@@ -63,5 +65,5 @@ it('says so when there are no chats', async () => {
     <AllChats store={houseChats('h1')} zone="Europe/London" now={NOW} onOpen={jest.fn()} onDeleted={jest.fn()} />,
     { wrapper: House },
   );
-  expect(await screen.findByText(ASK_CHATS_COPY.none)).toBeTruthy();
+  expect(await screen.findByText(words('ask.chats.none'))).toBeTruthy();
 });

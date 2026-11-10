@@ -1,4 +1,17 @@
-import { AUDIT_LIST_COPY, DELETION_LIST_COPY, HOUSES_COPY, MESSAGE_COPY, NOTICE_LIST_COPY, OWNER_PERMISSION_NAMES, PROMOTIONS_COPY, REPORT_COPY, type AuditEntry, type HouseRow, type Notice, type PromotionRow } from '@app/core';
+import {
+  AUDIT_LIST_COPY,
+  DELETION_LIST_COPY,
+  HOUSES_COPY,
+  MESSAGE_COPY,
+  NOTICE_LIST_COPY,
+  OWNER_PERMISSION_NAMES,
+  PROMOTIONS_COPY,
+  type AuditEntry,
+  type HouseRow,
+  type Notice,
+  type PromotionRow,
+  wordsFor,
+} from '@app/core';
 import { fireEvent, screen, waitFor } from 'expo-router/testing-library';
 import type { ComponentType } from 'react';
 import { useWindowDimensions } from 'react-native';
@@ -18,7 +31,6 @@ import NoticesPage from '@/app/admin/notices';
 import PromotionsPage from '@/app/admin/promotions/index';
 import { authStorage } from '@/api/storage';
 import { renderPages } from '@/testing/pages';
-import { wordsFor } from '@app/core';
 
 const words = wordsFor('en', 'housemates');
 
@@ -241,7 +253,7 @@ const PAGES: Page[] = [
     url: '/admin/inbox',
     route: 'admin/inbox/index',
     component: InboxPage,
-    placeholder: REPORT_COPY.searchPlaceholder,
+    placeholder: words('common.report.searchPlaceholder'),
     row: 'inbox-r1',
     reads: () => {
       jest.mocked(inboxPage).mockImplementation(async (_c, f) => ({ items: await answer(f.q, [REPORT]), more: false, next: null }));

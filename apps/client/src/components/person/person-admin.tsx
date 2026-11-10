@@ -1,4 +1,4 @@
-import { firstName, RESET_COPY } from '@app/core';
+import { firstName } from '@app/core';
 import { RotateCcwIcon, ShieldCheckIcon, ShieldOffIcon, UserMinusIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -64,8 +64,8 @@ export function PersonAdmin({ houseId, userId, person }: { houseId: string; user
         {weekId ? (
           <Row
             leading={<RowIcon icon={RotateCcwIcon} />}
-            title={RESET_COPY.resetPerson(name)}
-            meta={RESET_COPY.resetPersonMeta}
+            title={words('house.resets.resetPerson', { name })}
+            meta={words('house.resets.resetPersonMeta')}
             onPress={() => setResetting(true)}
             testID="reset-person-week"
           />

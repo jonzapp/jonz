@@ -1,8 +1,10 @@
-import { REPORT_COPY } from "@app/core";
 import { expect, test } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, dealtHouseInClient } from "./auth";
 import { photo } from "./photo";
+import { wordsFor } from '@app/core';
+
+const words = wordsFor('en', 'housemates');
 
 // Report a problem in the Expo app's web build (docs/specs/report-a-problem.md):
 // a housemate sends one from House with a screenshot and the details, sees
@@ -34,7 +36,7 @@ test("sends a problem with a screenshot from You, then reads the reply and write
   const form = page.getByTestId("report-form");
   await expect(form).toBeVisible();
   await expect(form.getByTestId("report-send-details")).toContainText("Flat 40");
-  await form.getByLabel(REPORT_COPY.words.problem).fill("The hob John vanished from Today after I ticked it.");
+  await form.getByLabel(words('common.report.words.problem')).fill("The hob John vanished from Today after I ticked it.");
   const chooser = page.waitForEvent("filechooser");
   await form.getByTestId("report-add-shot").click();
   await (await chooser).setFiles({ name: "screenshot.png", mimeType: "image/png", buffer: photo() });
@@ -43,7 +45,7 @@ test("sends a problem with a screenshot from You, then reads the reply and write
 
   // Sent, it opens under Your reports.
   await expect(page).toHaveURL(/\/house\/reports\/[0-9a-f-]{36}$/);
-  await expect(page.getByTestId("your-report-state")).toHaveText(REPORT_COPY.state.new);
+  await expect(page.getByTestId("your-report-state")).toHaveText(words('common.report.state.new'));
   const id = page.url().split("/").pop()!;
   reports.push(id);
   const { data: sent } = await admin().from("reports").select("user_id, kind, state, shots, details").eq("id", id).single();
@@ -57,22 +59,22 @@ test("sends a problem with a screenshot from You, then reads the reply and write
 
   // You says a reply is waiting; the report shows it, and writing back sends it to the Inbox as new.
   await page.goto("/house/you");
-  await expect(page.getByTestId("to-reports").filter({ visible: true })).toContainText(REPORT_COPY.yoursMeta(1, 1));
+  await expect(page.getByTestId("to-reports").filter({ visible: true })).toContainText(words('common.report.yoursMeta', { count: 1, replies: 1 }));
   await page.goto(`/house/reports/${id}`);
   const thread = page.getByTestId("report-thread");
   await expect(thread).toContainText("Glyn at Jonz");
   await expect(thread).toContainText("Thanks Ava, fixed in today's update.");
-  await expect(page.getByTestId("your-report-state")).toHaveText(REPORT_COPY.state.replied);
+  await expect(page.getByTestId("your-report-state")).toHaveText(words('common.report.state.replied'));
   // A short conversation leaves the box at the foot of the page, not under the last message.
   const box = (await page.getByTestId("write-back-box").boundingBox())!;
   expect(box.y + box.height).toBeGreaterThan(page.viewportSize()!.height * 0.75);
   await page.getByTestId("write-back-input").fill("Thank you!");
   await page.getByTestId("write-back-send").click();
   await expect(thread).toContainText("Thank you!");
-  await expect(page.getByTestId("your-report-state")).toHaveText(REPORT_COPY.state.new);
+  await expect(page.getByTestId("your-report-state")).toHaveText(words('common.report.state.new'));
 
   // Read now: You no longer says a reply is waiting.
   await page.goto("/house/you");
-  await expect(page.getByTestId("to-reports").filter({ visible: true })).not.toContainText(REPORT_COPY.yoursMeta(1, 1));
+  await expect(page.getByTestId("to-reports").filter({ visible: true })).not.toContainText(words('common.report.yoursMeta', { count: 1, replies: 1 }));
   await context.close();
 });

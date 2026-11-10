@@ -1,5 +1,4 @@
-import { wholePercent } from '@app/core';
-import { houseSetupValues, localDate, memberCan } from '@app/core';
+import { wholePercent, houseSetupValues, localDate, memberCan } from '@app/core';
 import { GaugeIcon, ListTodoIcon, PlaneIcon, ScrollTextIcon } from 'lucide-react-native';
 import { View } from 'react-native';
 

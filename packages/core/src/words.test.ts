@@ -68,6 +68,9 @@ const ALLOWED: Record<string, RegExp[]> = {
 const ALLOWED_IDS: Record<string, RegExp[]> = {
   "house.stake.letOff": [/\blet (it |\w+ )?off\b/i],
   // An admin's reset that waived someone's John, or a month's forfeits (resets.ts).
+  "house.resets.fixResultMeta": [/\blet (it |\w+ )?off\b/i],
+  "house.resets.letOff": [/\blet (it |\w+ )?off\b/i],
+  "house.resets.choice.excused": [/\blet (it |\w+ )?off\b/i],
   // An admin's reset outcomes, as the database names them (errors.ts).
   "errors.unknown_outcome": [/\blet (it |\w+ )?off\b/i],
   "errors.already_let_off": [/\blet (it |\w+ )?off\b/i],

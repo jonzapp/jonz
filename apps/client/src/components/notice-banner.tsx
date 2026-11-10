@@ -1,4 +1,4 @@
-import { BIN_NIGHT, NOTICE_COPY, safeNoticeLink, type Notice } from '@app/core';
+import { BIN_NIGHT, safeNoticeLink, type Notice } from '@app/core';
 import { router } from 'expo-router';
 import { GiftIcon, NewspaperIcon, TriangleAlertIcon, WifiOffIcon, XIcon, type LucideIcon } from 'lucide-react-native';
 import type { ReactNode } from 'react';
@@ -9,6 +9,7 @@ import { HazardTape } from '@/components/hazard-tape';
 import { IconButton } from '@/components/icon-button';
 import { useNotices } from '@/hooks/use-notices';
 import { CONTENT_MAX, GROUP_RADIUS, GUTTER, SPACE, useTheme } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 // The band at the top of every screen that carries a notice from the owner
 // (an outage, an offer, news) or says Jonz can't be reached. One at a time;
@@ -24,6 +25,7 @@ type Tone = 'status' | 'offer' | 'news';
  * doesn't rebuild the screen under it (and close a half-typed sheet).
  */
 export function NoticeBand({ children }: { children: ReactNode }) {
+  const words = useWords();
   const { notice, unreachable, close, retry } = useNotices();
   const insets = useSafeAreaInsets();
   const showing = unreachable || notice !== null;
@@ -33,9 +35,9 @@ export function NoticeBand({ children }: { children: ReactNode }) {
         <NoticeView
           tone="status"
           icon={WifiOffIcon}
-          title={NOTICE_COPY.unreachableTitle}
-          body={NOTICE_COPY.unreachableBody}
-          action={{ label: NOTICE_COPY.tryNow, onPress: retry }}
+          title={words('common.notice.unreachableTitle')}
+          body={words('common.notice.unreachableBody')}
+          action={{ label: words('common.notice.tryNow'), onPress: retry }}
           topInset={insets.top}
           testID="notice-unreachable"
         />
@@ -107,6 +109,7 @@ export function NoticeView({
   topInset?: number;
   testID?: string;
 }) {
+  const words = useWords();
   const { colors, type } = useTheme();
   // A status is always the night colours, so an outage looks the same by day
   // and by night; an offer is the amber plate; news sits on the card colour.
@@ -156,7 +159,7 @@ export function NoticeView({
           ) : null}
         </Text>
         {onClose ? (
-          <IconButton icon={XIcon} label={NOTICE_COPY.close} onPress={onClose} ink={look.ink} testID="notice-close" />
+          <IconButton icon={XIcon} label={words('common.notice.close')} onPress={onClose} ink={look.ink} testID="notice-close" />
         ) : null}
       </View>
     </View>

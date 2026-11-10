@@ -1,4 +1,4 @@
-import { RESET_COPY, resetSheet, resetTitle, type ResetSheet as ResetSheetWordsOut, type ResetWords } from '@app/core';
+import { resetSheet, resetTitle, type ResetSheet as ResetSheetWordsOut, type ResetWords } from '@app/core';
 import { useQuery } from '@tanstack/react-query';
 import { RotateCcwIcon } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
@@ -27,7 +27,8 @@ export type ResetSheetWords = Omit<ResetWords, 'kind' | 'nameOf' | 'viewerId' | 
  * the move that makes it. After it, a toast offers Undo (History keeps it
  * for longer) and `onDone` runs.
  */
-function useReset(ask: ResetAsk | null, userId: string, words: ResetSheetWords, onDone: () => void) {
+function useReset(ask: ResetAsk | null, userId: string, names: ResetSheetWords, onDone: () => void) {
+  const words = useWords();
   const houseId = ask?.houseId ?? '';
   const { view } = useHouse(houseId, userId);
   const move = useMove(houseId);
@@ -41,7 +42,7 @@ function useReset(ask: ResetAsk | null, userId: string, words: ResetSheetWords, 
   const members = view?.snapshot.members ?? [];
   const full: ResetWords | null = ask
     ? {
-        ...words,
+        ...names,
         kind: ask.kind,
         viewerId: userId,
         nameOf: (id) => (id === userId ? 'You' : (members.find((m) => m.userId === id)?.name ?? 'Someone')),
@@ -49,7 +50,7 @@ function useReset(ask: ResetAsk | null, userId: string, words: ResetSheetWords, 
         zone: view?.snapshot.rules.timezone ?? 'UTC',
       }
     : null;
-  const sheet = full && preview.data && !preview.data.nothing ? resetSheet(preview.data, full) : null;
+  const sheet = full && preview.data && !preview.data.nothing ? resetSheet(preview.data, full, words) : null;
 
   async function confirm() {
     let action = '';
@@ -58,7 +59,7 @@ function useReset(ask: ResetAsk | null, userId: string, words: ResetSheetWords, 
     });
     if (!done) return;
     onDone();
-    offer(RESET_COPY.done, { action });
+    offer(words('house.resets.done'), { action });
   }
 
   return { full, sheet, preview, move, confirm };
@@ -82,14 +83,15 @@ function ResetLines({ sheet }: { sheet: ResetSheetWordsOut }) {
 
 /** While the numbers are worked out: ResetLines in outline, or why they couldn't be. */
 function Preview({ reset }: { reset: ReturnType<typeof useReset> }) {
+  const words = useWords();
   if (reset.preview.isError) {
-    return <ReadFailed message={RESET_COPY.unreadable} onRetry={() => void reset.preview.refetch()} />;
+    return <ReadFailed message={words('house.resets.unreadable')} onRetry={() => void reset.preview.refetch()} />;
   }
   if (reset.preview.data) return null;
   return (
     <Waiting
       ready={false}
-      label={RESET_COPY.reading}
+      label={words('house.resets.reading')}
       outline={
         <View style={styles.lines}>
           {[40, 55, 35].map((width) => (
@@ -134,8 +136,8 @@ export function ResetSheet({
   return (
     <ConfirmSheet
       visible
-      title={sheet?.title ?? resetTitle(reset.full)}
-      body={sheet?.body ?? (preview.data?.nothing ? RESET_COPY.nothing : undefined)}
+      title={sheet?.title ?? resetTitle(reset.full, words)}
+      body={sheet?.body ?? (preview.data?.nothing ? words('house.resets.nothing') : undefined)}
       confirmLabel={sheet ? sheet.confirm : null}
       icon={RotateCcwIcon}
       tone="hazard"
@@ -173,8 +175,8 @@ export function ResetPanel({
   const { sheet, preview, move } = reset;
   return (
     <View style={styles.panel} testID={testID}>
-      <RowTitle>{sheet?.title ?? resetTitle(reset.full!)}</RowTitle>
-      {sheet ? <Body>{sheet.body}</Body> : preview.data?.nothing ? <Body>{RESET_COPY.nothing}</Body> : null}
+      <RowTitle>{sheet?.title ?? resetTitle(reset.full!, words)}</RowTitle>
+      {sheet ? <Body>{sheet.body}</Body> : preview.data?.nothing ? <Body>{words('house.resets.nothing')}</Body> : null}
       {sheet ? <ResetLines sheet={sheet} /> : <Preview reset={reset} />}
       {move.problem ? <Alert message={move.problem} /> : null}
       <ButtonRow stacked>

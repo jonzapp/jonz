@@ -1,3 +1,4 @@
+import type { Words } from "./words-for";
 import { z } from "zod";
 
 import type { ListFacet, ListWhen } from "./admin-list";
@@ -89,98 +90,6 @@ export const REPORT_PUSH = {
   /** To its sender. */
   replied: (signed: string | null) => (signed ? `${signed} at Jonz replied` : "Jonz replied"),
   fixed: "Fixed: the problem you reported",
-} as const;
-
-export const REPORT_COPY = {
-  /** A screenshot sent with a report, for a screen reader. */
-  shot: "Screenshot",
-  help: "Help",
-  report: "Report a problem",
-  idea: "Send an idea",
-  yours: "Your reports",
-  yoursMeta: (count: number, replies: number) =>
-    replies > 0 ? (replies === 1 ? "A reply to read" : `${replies} replies to read`) : count === 0 ? "None yet" : count === 1 ? "1 sent" : `${count} sent`,
-  orEmail: `Or email ${SUPPORT_EMAIL}.`,
-  kindLabel: "What is it?",
-  kind: { problem: "Problem", idea: "Idea", question: "Question" } satisfies Record<ReportKind, string>,
-  title: { problem: "Report a problem", idea: "Send an idea", question: "Ask a question" } satisfies Record<ReportKind, string>,
-  words: { problem: "What happened?", idea: "What would help?", question: "What would you like to know?" } satisfies Record<ReportKind, string>,
-  placeholder: {
-    problem: "What you did, and what you saw instead",
-    idea: "What you’d like Jonz to do",
-    question: "Ask anything about Jonz",
-  } satisfies Record<ReportKind, string>,
-  screenshots: "Screenshots",
-  addScreenshot: "Add a screenshot",
-  removeScreenshot: (n: number) => `Take out screenshot ${n}`,
-  screenshotsNote: "A screenshot can show the names of people in your house. Only Jonz sees it.",
-  details: "Send the details that help",
-  detailsMeta: "So we can find it faster",
-  detail: { pages: "Pages", app: "App", house: "House", error: "Last error" },
-  send: { problem: "Send report", idea: "Send idea", question: "Send question" } satisfies Record<ReportKind, string>,
-  promise: "We read every one, and reply here and by email.",
-  // Your reports.
-  state: { new: "Sent", open: "Read", replied: "Replied", fixed: "Fixed" } satisfies Record<ReportState, string>,
-  /** The same states as the owner sees them. */
-  ownerState: { new: "New", open: "Open", replied: "Replied", fixed: "Fixed" } satisfies Record<ReportState, string>,
-  yourReport: "Your report",
-  sentAt: (kind: ReportKind, at: string) => `${REPORT_COPY.kind[kind]}, sent ${at}`,
-  you: "You",
-  fromJonz: (name: string) => `${name} at Jonz`,
-  jonz: "Jonz",
-  writeBack: "Write back",
-  noneYet: "Nothing sent yet",
-  noneYetBody: "Problems you report and ideas you send are kept here with our replies.",
-  missing: "That report isn’t here",
-  missingBody: "It may have been sent from another account.",
-  // The owner's Inbox.
-  inbox: "Inbox",
-  from: "From",
-  what: "What they said",
-  kindColumn: "Kind",
-  stateColumn: "State",
-  when: "When",
-  replyTo: (name: string) => `Reply to ${name}, in the app and by email`,
-  sendReply: "Send reply",
-  markFixed: "Mark fixed",
-  reopen: "Open it again",
-  note: "Every reply and every change goes in the audit log.",
-  // Where it came from (step 2).
-  byColumn: "By",
-  source: { app: "App", email: "Email" } satisfies Record<ReportSource, string>,
-  byEmail: "By email",
-  emailOnly: (address: string) => `${address}, by email`,
-  replyByEmail: (name: string) => `Reply to ${name} by email`,
-  subject: (subject: string) => `Subject: ${subject}`,
-  // Same as (step 3).
-  sameAs: "Same as…",
-  sameAsTitle: "Same as another report",
-  sameAsBody: "Fold this into the report that says the same thing. When that one is fixed, everyone who reported it is told.",
-  sameAsSearch: "Words or a report’s id",
-  sameAsNone: "Nothing like that",
-  foldedInto: (name: string) => `Same as ${name}’s report`,
-  notSame: "Not the same",
-  alsoFrom: (count: number) => (count === 1 ? "1 more person reported this" : `${count} more people reported this`),
-  also: (count: number) => (count === 1 ? "+1" : `+${count}`),
-  // Fixed, and telling everyone (step 3).
-  fixTitle: "Mark fixed",
-  fixNote: "What changed",
-  fixNotePlaceholder: "It’s fixed in today’s update. Thank you for telling us.",
-  fixTell: (count: number) => (count <= 1 ? "Tell them it’s fixed" : `Tell all ${count} people it’s fixed`),
-  fixTellMeta: "In the app and by email",
-  fixSend: "Mark fixed",
-  fixedTold: (told: number) => (told === 0 ? "Marked fixed" : told === 1 ? "Marked fixed and told them" : `Marked fixed and told ${told} people`),
-  noHouse: "No house",
-  role: { admin: "admin", member: "housemate" },
-  gone: "Someone who left",
-  sending: "Sending…",
-  sent: "Sent. We’ll reply here.",
-  replied: "Reply sent",
-  tooBig: "That picture is too big. Try a smaller one.",
-  searchPlaceholder: "Name, email, house or words",
-  count: (count: string) => (count === "1" ? "1 report" : `${count} reports`),
-  empty: "Nothing to answer",
-  emptyBody: "Problems, ideas and questions from the app and by email arrive here.",
 } as const;
 
 /** The Inbox's filters: what state it's in, and what kind it is. It opens on what's waiting for you. */
@@ -278,3 +187,8 @@ export const HELP_PAGE: LegalPage = {
     },
   ],
 };
+
+/** "Problem, sent Tue 3 Nov". */
+export function reportSentAt(kind: ReportKind, at: string, words: Words): string {
+  return words("common.report.sentAt", { what: words(`common.report.kind.${kind}` as const), at });
+}

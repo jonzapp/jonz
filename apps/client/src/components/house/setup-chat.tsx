@@ -1,5 +1,38 @@
-import { askExamples, changesMeta, thinkingSteps } from '@app/core';
-import { ASK_CHATS_COPY, CATEGORIES, changedLine, CHAT_MAX_MESSAGES, DEAL_MODES, draftChanges, groupChanges, DOW_LABEL, listAsDraft, MESSAGE_MAX, membersLine, pointsLabel, scheduleLine, STARTER_KINDS, starterDraft, weeklyEffort, type ChatAsk, type ChatMessage, type ChatMove, type ChatReset, type DealMode, type DraftChange, type DraftedJohn, type GroupDef, type HouseDraft, type HouseRules, type JohnDef, type IsoDow, type SavedTurn, type StarterKind, type Words } from '@app/core';
+import {
+  askExamples,
+  changesMeta,
+  thinkingSteps,
+  CATEGORIES,
+  changedLine,
+  CHAT_MAX_MESSAGES,
+  DEAL_MODES,
+  draftChanges,
+  groupChanges,
+  DOW_LABEL,
+  listAsDraft,
+  MESSAGE_MAX,
+  membersLine,
+  pointsLabel,
+  scheduleLine,
+  STARTER_KINDS,
+  starterDraft,
+  weeklyEffort,
+  type ChatAsk,
+  type ChatMessage,
+  type ChatMove,
+  type ChatReset,
+  type DealMode,
+  type DraftChange,
+  type DraftedJohn,
+  type GroupDef,
+  type HouseDraft,
+  type HouseRules,
+  type JohnDef,
+  type IsoDow,
+  type SavedTurn,
+  type StarterKind,
+  type Words,
+} from '@app/core';
 import { router } from 'expo-router';
 import { CheckIcon, MinusIcon, PencilIcon, PlusIcon } from 'lucide-react-native';
 import { useQueryClient } from '@tanstack/react-query';
@@ -381,7 +414,7 @@ export function SetupChat({
         }
         return (
           <JonzSaid key={at} text={turn.text} thought={turn.thought} pieces={pieces}>
-            {turn.old ? <Meta testID="chat-old-card">{ASK_CHATS_COPY.oldCard}</Meta> : null}
+            {turn.old ? <Meta testID="chat-old-card">{words('ask.chats.oldCard')}</Meta> : null}
             {/* The question's answers sit under the question, over the draft it's about. */}
             {turn === last && ask ? <AskCard ask={ask} weekStarts={rules.weekStarts} onAnswer={(a) => void send(a)} /> : null}
             {/* A turn that changes nothing on a house's list (a question, say) has no card. */}

@@ -1,4 +1,4 @@
-import { formatMoney, memberCan, monthLabel, RESET_COPY, stakeHistory } from '@app/core';
+import { formatMoney, memberCan, monthLabel, stakeHistory } from '@app/core';
 import { CoinsIcon, RotateCcwIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -70,8 +70,8 @@ function StakeFor({ houseId, userId }: { houseId: string; userId: string }) {
           <Row
             key={month}
             leading={<RowIcon icon={RotateCcwIcon} />}
-            title={RESET_COPY.letOff(monthLabel(month).split(' ')[0])}
-            meta={RESET_COPY.letOffMeta}
+            title={words('house.resets.letOff', { month: monthLabel(month).split(' ')[0] })}
+            meta={words('house.resets.letOffMeta')}
             onPress={() => setLetOff(month)}
             testID={`let-off-${month}`}
           />

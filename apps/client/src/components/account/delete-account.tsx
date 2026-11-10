@@ -1,4 +1,4 @@
-import { confirmsDelete, DELETE_COPY, passDay, withAlpha } from '@app/core';
+import { DELETION_DAYS, confirmsDelete, passDay, withAlpha } from '@app/core';
 import { useQuery } from '@tanstack/react-query';
 import { Trash2Icon } from 'lucide-react-native';
 import { useState } from 'react';
@@ -51,14 +51,14 @@ export function DeleteAccountForm({ onKeep }: { onKeep: () => void }) {
   const passUntil = preview.data?.passUntil ?? null;
   return (
     <View style={styles.form} testID="delete-account-form">
-      <Said lead={DELETE_COPY.goesLead} words={DELETE_COPY.goes} />
+      <Said lead={words('people.delete.goesLead')} words={words('people.delete.goes')} />
       {/* What stays with your house, in outline while it's read: a sentence's lines. */}
-      {preview.isPending ? <Waiting ready={false} label={DELETE_COPY.reading} outline={<OutlineText lines={2} />} /> : null}
-      {house ? <Said lead={DELETE_COPY.staysLead(house)} words={DELETE_COPY.stays} testID="delete-stays" /> : null}
-      {passUntil ? <Said lead={DELETE_COPY.passLead} words={DELETE_COPY.pass(passDay(passUntil))} testID="delete-pass" /> : null}
-      <Note>{DELETE_COPY.wait}</Note>
+      {preview.isPending ? <Waiting ready={false} label={words('people.delete.reading')} outline={<OutlineText lines={2} />} /> : null}
+      {house ? <Said lead={words('people.delete.staysLead', { house })} words={words('people.delete.stays')} testID="delete-stays" /> : null}
+      {passUntil ? <Said lead={words('people.delete.passLead')} words={words('people.delete.pass', { until: passDay(passUntil) })} testID="delete-pass" /> : null}
+      <Note>{words('people.delete.wait', { days: DELETION_DAYS })}</Note>
       <Field
-        label={DELETE_COPY.typeLabel}
+        label={words('people.delete.typeLabel')}
         value={typed}
         onChangeText={setTyped}
         autoCapitalize="characters"
@@ -74,7 +74,7 @@ export function DeleteAccountForm({ onKeep }: { onKeep: () => void }) {
           <Button
             variant="hazard"
             icon={Trash2Icon}
-            label={DELETE_COPY.confirm}
+            label={words('people.delete.confirm')}
             disabled={!ready}
             busy={busy}
             busyLabel={words('common.busy.deleting')}
@@ -82,7 +82,7 @@ export function DeleteAccountForm({ onKeep }: { onKeep: () => void }) {
             testID="delete-account"
           />
         </ButtonRow>
-        <TextButton label={DELETE_COPY.keepIt} disabled={busy} onPress={onKeep} testID="keep-it" />
+        <TextButton label={words('people.delete.keepIt')} disabled={busy} onPress={onKeep} testID="keep-it" />
       </View>
     </View>
   );
