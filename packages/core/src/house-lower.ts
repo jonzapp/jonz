@@ -3,7 +3,7 @@ import { format } from "date-fns";
 
 import type { AwayPeriod } from "./away";
 import { weeklyEffort, type JohnDef } from "./board";
-import { FOCUS_SHELL_COPY, MOVING_COPY } from "./copy";
+import { FOCUS_SHELL_COPY } from "./copy";
 import type { Currency, HouseKind, HouseRules } from "./domain";
 import { dateRange, dayLabel, firstName, STATUS_MARK, type StatusIcon } from "./format";
 import { monthWord } from "./house-page";
@@ -448,17 +448,17 @@ export function wallFeedRow(event: WallEvent, scene: WallScene, words: Words): W
       break;
     case "moving_out": {
       const on = text("on");
-      title = on ? MOVING_COPY.movesOut(who.subject, dateRange(on, on)) : MOVING_COPY.stayingAfterAll(who.subject);
-      detail = MOVING_COPY.movingDetail;
+      title = on ? words("house.moving.movesOut", { who: who.subject, you: who.you, day: dateRange(on, on) }) : words("house.moving.stayingAfterAll", { who: who.subject, you: who.you });
+      detail = words('house.moving.movingDetail');
       break;
     }
     case "moved_out": {
       // They've gone, so the house can't name them: the post kept their name.
       const was = text("who");
       const subject = event.userId === me || !was ? who.subject : firstName(was);
-      title = MOVING_COPY.movedOut(subject);
+      title = words('house.moving.movedOut', { who: subject });
       bold = [subject];
-      detail = MOVING_COPY.movingDetail;
+      detail = words('house.moving.movingDetail');
       break;
     }
     case "jonz_message":

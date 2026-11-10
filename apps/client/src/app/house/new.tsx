@@ -1,4 +1,4 @@
-import { type Currency, CURRENCY_CHOICES, DAY_CHOICES, DOOR, FAMILY_OPEN, FRONT_DOOR_COPY, houseDefaults, type HouseKind, type IsoDow, kindParam, MOVING_COPY, NEW_HOUSE_COPY, newHouseWords, timeZoneName } from '@app/core';
+import { type Currency, CURRENCY_CHOICES, DAY_CHOICES, DOOR, FAMILY_OPEN, houseDefaults, type HouseKind, type IsoDow, kindParam, newHouseWords, timeZoneName } from '@app/core';
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -74,7 +74,7 @@ export default function NewHouse() {
       <PageTitle page={sign.title} />
       <Sign>
         {copying ? (
-          <SignHeading title={MOVING_COPY.newHeading} body={MOVING_COPY.newIntro(copying.houseName, copying.johns)} />
+          <SignHeading title={words('house.moving.newHeading')} body={words('house.moving.newIntro', { house: copying.houseName, johns: copying.johns })} />
         ) : (
           <SignHeading title={sign.heading} body={sign.intro} />
         )}
@@ -86,8 +86,8 @@ export default function NewHouse() {
         ) : null}
         <View style={styles.name}>
           <Field
-            label={FRONT_DOOR_COPY.name}
-            placeholder={NEW_HOUSE_COPY.namePlaceholder}
+            label={words('door.welcome.name')}
+            placeholder={words('door.newHouse.namePlaceholder')}
             value={name}
             onChangeText={setName}
             onSubmitEditing={() => {
@@ -107,10 +107,10 @@ export default function NewHouse() {
         {changing ? (
           <View style={styles.rest} testID="house-defaults-fields">
             <View style={styles.pick}>
-              <FieldLabel>{NEW_HOUSE_COPY.currency}</FieldLabel>
+              <FieldLabel>{words('door.newHouse.currency')}</FieldLabel>
               <Segmented
                 equal
-                label={NEW_HOUSE_COPY.currency}
+                label={words('door.newHouse.currency')}
                 options={CURRENCY_CHOICES}
                 value={currency}
                 onChange={setCurrency}
@@ -118,23 +118,23 @@ export default function NewHouse() {
               />
             </View>
             <View style={styles.pick}>
-              <FieldLabel>{NEW_HOUSE_COPY.weekStarts}</FieldLabel>
+              <FieldLabel>{words('door.newHouse.weekStarts')}</FieldLabel>
               <Segmented
                 equal
-                label={NEW_HOUSE_COPY.weekStarts}
+                label={words('door.newHouse.weekStarts')}
                 options={DAY_CHOICES}
                 value={weekStarts}
                 onChange={setWeekStarts}
                 testID="house-week-starts"
               />
             </View>
-            <Meta>{FRONT_DOOR_COPY.zoneNote(timeZoneName(timezone))}</Meta>
+            <Meta>{words('door.welcome.zoneNote', { zone: timeZoneName(timezone) })}</Meta>
           </View>
         ) : null}
         {problem ? <Alert message={problem} /> : null}
         <Button
           label={sign.submit}
-          busyLabel={NEW_HOUSE_COPY.busy}
+          busyLabel={words('door.newHouse.busy')}
           onPress={() => void submit()}
           busy={busy}
           disabled={!name.trim()}
@@ -142,7 +142,7 @@ export default function NewHouse() {
         />
       </Sign>
       <DoorFoot>
-        <TextButton href={DOOR.invite} label={FRONT_DOOR_COPY.invite} chevron align="start" />
+        <TextButton href={DOOR.invite} label={words('door.welcome.invite')} chevron align="start" />
       </DoorFoot>
     </Door>
   );

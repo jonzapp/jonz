@@ -1,10 +1,9 @@
-import { FRONT_DOOR_COPY, HOUSE_DRAFT_COPY, PAGE_TITLE, STARTER_LISTS, type HouseDraft } from "@app/core";
+import { HOUSE_DRAFT_COPY, PAGE_TITLE, STARTER_LISTS, type HouseDraft, wordsFor } from "@app/core";
 import { expect, test, type Page } from "@playwright/test";
 
 import { CLIENT_URL, cleanUp, signInToClient } from "./auth";
-import { wordsFor } from '@app/core';
 
-const words = wordsFor('en', 'housemates');
+const words = wordsFor("en", "housemates");
 
 // The Expo app's web build: Describe your house, a chat with Jonz, from
 // Today's setup card to the John list. On a phone the chat is a page; from
@@ -24,7 +23,7 @@ async function chatOpened(page: Page) {
 
 async function newHouse(page: Page, name: string) {
   await page.goto("/house/new");
-  await page.getByLabel(FRONT_DOOR_COPY.name).fill(name);
+  await page.getByLabel(words('door.welcome.name')).fill(name);
   await page.getByTestId("create-house").click();
   await expect(page).toHaveURL(/\/today$/);
 }

@@ -1,14 +1,9 @@
-import {
-  FRONT_DOOR_COPY,
-  JOIN_COPY,
-  NEW_HOUSE_COPY,
-  PAGE_TITLE,
-  SECTION_LABEL,
-  SIGN_IN_COPY,
-} from "@app/core";
+import { PAGE_TITLE, SECTION_LABEL, wordsFor } from "@app/core";
 import { expect, test, type Page } from "@playwright/test";
 
 import { CLIENT_URL, cleanUp, houseOf, signInToClient } from "./auth";
+
+const words = wordsFor("en", "housemates");
 
 // The Expo app's web build: starting a house, joining one by its link or its
 // code, and the house being caught up by the API as it comes into view.
@@ -38,12 +33,12 @@ test("start a house, and land on it caught up", async ({ context, page }) => {
 
   await page.goto("/");
   await expect(page).toHaveURL(/\/welcome$/);
-  await page.getByRole("link", { name: FRONT_DOOR_COPY.startInstead }).click();
+  await page.getByRole("link", { name: words('door.welcome.startInstead') }).click();
   await expect(page).toHaveURL(/\/house\/new$/);
-  await expect(page.getByRole("heading", { name: NEW_HOUSE_COPY.heading })).toBeVisible();
+  await expect(page.getByRole("heading", { name: words('door.newHouse.heading') })).toBeVisible();
 
   // One field, the name; the defaults are a line under it, and Change opens them.
-  await page.getByLabel(FRONT_DOOR_COPY.name).fill(name);
+  await page.getByLabel(words('door.welcome.name')).fill(name);
   await page.getByTestId("change-defaults").click();
   await page.getByRole("radio", { name: "Sunday" }).click();
   const fresh = caughtUp(page);
@@ -65,14 +60,14 @@ test("a join link opens on the invite, signs you in on the spot, then joins", as
   await page.goto(`/join/${code}`);
   const invite = page.getByTestId("invite-first");
   await expect(invite.getByRole("heading", { name: "Number 9" })).toBeVisible();
-  await expect(invite.getByText(JOIN_COPY.livesHere(1))).toBeVisible();
+  await expect(invite.getByText(words('door.join.livesHere', { people: 1 }))).toBeVisible();
   await expect(page.getByTestId("join-stake")).toHaveCount(0);
   // Its one button leads to signing in, right there, the house still named and the code kept.
-  await invite.getByRole("button", { name: FRONT_DOOR_COPY.join }).click();
-  await expect(page.getByText(JOIN_COPY.signInFor("Number 9"))).toBeVisible();
+  await invite.getByRole("button", { name: words('door.welcome.join') }).click();
+  await expect(page.getByText(words('door.join.signInFor', { house: "Number 9" }))).toBeVisible();
   await page.route(/\/auth\/v1\/authorize/, (route) => route.fulfill({ status: 200, body: "Google" }));
   const authorize = page.waitForRequest(/\/auth\/v1\/authorize/);
-  await page.getByRole("button", { name: SIGN_IN_COPY.google }).click();
+  await page.getByRole("button", { name: words('door.signIn.google') }).click();
   expect(new URL((await authorize).url()).searchParams.get("redirect_to")).toBe(`${CLIENT_URL}/join/${code}`);
 
   // Back from Google (minted here), signed in on the same link.
@@ -80,9 +75,9 @@ test("a join link opens on the invite, signs you in on the spot, then joins", as
   const joiner = await context.newPage();
   await joiner.goto(`/join/${code}`);
   await expect(joiner.getByRole("heading", { name: "Number 9" })).toBeVisible();
-  await expect(joiner.getByText(JOIN_COPY.livesHere(1))).toBeVisible();
+  await expect(joiner.getByText(words('door.join.livesHere', { people: 1 }))).toBeVisible();
   const catching = caughtUp(joiner);
-  await joiner.getByRole("button", { name: FRONT_DOOR_COPY.join }).click();
+  await joiner.getByRole("button", { name: words('door.welcome.join') }).click();
   await expect(joiner).toHaveURL(/\/today$/);
   await expect(joiner.getByRole("heading", { name: PAGE_TITLE.today })).toBeVisible();
   expect((await catching).status()).toBe(201);
@@ -91,8 +86,8 @@ test("a join link opens on the invite, signs you in on the spot, then joins", as
 
 test("a join link that opens nothing says so before anyone signs in", async ({ page }) => {
   await page.goto("/join/ZZZZ2222");
-  await expect(page.getByRole("heading", { name: JOIN_COPY.badLink })).toBeVisible();
-  await expect(page.getByRole("button", { name: SIGN_IN_COPY.google })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: words('door.join.badLink') })).toBeVisible();
+  await expect(page.getByRole("button", { name: words('door.signIn.google') })).toHaveCount(0);
 });
 
 test("a code typed in joins too, however it's spelt", async ({ context, page }) => {
@@ -100,12 +95,12 @@ test("a code typed in joins too, however it's spelt", async ({ context, page }) 
   made.push(ownerId, await signInToClient(context, "Eli Client"));
 
   await page.goto("/welcome");
-  await page.getByLabel(FRONT_DOOR_COPY.paste).fill("NOPE");
-  await page.getByRole("button", { name: FRONT_DOOR_COPY.open }).click();
-  await expect(page.getByText(FRONT_DOOR_COPY.badInvite)).toBeVisible();
+  await page.getByLabel(words('door.welcome.paste')).fill("NOPE");
+  await page.getByRole("button", { name: words('door.welcome.open') }).click();
+  await expect(page.getByText(words('door.welcome.badInvite'))).toBeVisible();
 
-  await page.getByLabel(FRONT_DOOR_COPY.paste).fill(`${code.slice(0, 4).toLowerCase()}-${code.slice(4)}`);
-  await page.getByRole("button", { name: FRONT_DOOR_COPY.open }).click();
+  await page.getByLabel(words('door.welcome.paste')).fill(`${code.slice(0, 4).toLowerCase()}-${code.slice(4)}`);
+  await page.getByRole("button", { name: words('door.welcome.open') }).click();
   await expect(page).toHaveURL(new RegExp(`/join/${code}$`));
   await expect(page.getByRole("heading", { name: "The Loft" })).toBeVisible();
 });

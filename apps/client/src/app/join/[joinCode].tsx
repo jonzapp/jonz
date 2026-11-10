@@ -1,4 +1,4 @@
-import { DOOR, formatMoney, FRONT_DOOR_COPY, JOIN_COPY, joinLine, PAGE_TITLE } from '@app/core';
+import { DOOR, formatMoney, joinLine, PAGE_TITLE } from '@app/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 
@@ -92,27 +92,27 @@ export default function Join() {
       <PageTitle page={PAGE_TITLE.join} />
       {!session ? (
         preview === undefined ? (
-          <Waiting ready={false} label={FRONT_DOOR_COPY.lookingUp} outline={<DoorOutline />} />
+          <Waiting ready={false} label={words('door.welcome.lookingUp')} outline={<DoorOutline />} />
         ) : preview === null ? (
           <Sign>
-            <SignHeading title={JOIN_COPY.badLink} body={JOIN_COPY.badLinkBody} />
+            <SignHeading title={words('door.join.badLink')} body={words('door.join.badLinkBody')} />
             <ButtonRow>
-              <Button href={DOOR.invite} variant="outline" label={JOIN_COPY.back} />
+              <Button href={DOOR.invite} variant="outline" label={words('door.join.back')} />
             </ButtonRow>
           </Sign>
         ) : preview === 'none' || signingIn ? (
           <SignInPanel
             next={`/join/${joinCode}`}
             failed={Boolean(error)}
-            reason={preview === 'none' ? undefined : JOIN_COPY.signInFor(preview.name)}
+            reason={preview === 'none' ? undefined : words('door.join.signInFor', { house: preview.name })}
           />
         ) : (
           <Sign testID="invite-first">
-            <SignHeading above={JOIN_COPY.invited} title={preview.name} body={joinLine(preview.kind, preview.members, words)} />
+            <SignHeading above={words('door.join.invited')} title={preview.name} body={joinLine(preview.kind, preview.members, words)} />
             <ButtonRow>
-              <Button label={FRONT_DOOR_COPY.join} onPress={() => setSigningIn(true)} testID="invite-join" />
+              <Button label={words('door.welcome.join')} onPress={() => setSigningIn(true)} testID="invite-join" />
             </ButtonRow>
-            <Meta>{JOIN_COPY.nextSignIn}</Meta>
+            <Meta>{words('door.join.nextSignIn')}</Meta>
           </Sign>
         )
       ) : unreadable ? (
@@ -121,39 +121,35 @@ export default function Join() {
           <ReadFailed onRetry={readAgain} />
         </Sign>
       ) : invite === undefined ? (
-        <Waiting ready={false} label={FRONT_DOOR_COPY.lookingUp} outline={<DoorOutline />} />
+        <Waiting ready={false} label={words('door.welcome.lookingUp')} outline={<DoorOutline />} />
       ) : !invite ? (
         <Sign>
-          <SignHeading title={JOIN_COPY.badLink} body={JOIN_COPY.badLinkBody} />
-          {!house ? <Button href={DOOR.invite} variant="outline" label={JOIN_COPY.back} /> : null}
+          <SignHeading title={words('door.join.badLink')} body={words('door.join.badLinkBody')} />
+          {!house ? <Button href={DOOR.invite} variant="outline" label={words('door.join.back')} /> : null}
         </Sign>
       ) : house?.id === invite.id ? (
         <Sign>
-          <SignHeading title={JOIN_COPY.alreadyIn(invite.name)} />
-          <Button href="/today" label={JOIN_COPY.goToJohns} />
+          <SignHeading title={words('door.join.alreadyIn', { house: invite.name })} />
+          <Button href="/today" label={words('door.join.goToJohns')} />
         </Sign>
       ) : house ? (
         <Sign>
-          <SignHeading title={JOIN_COPY.otherHouse} body={JOIN_COPY.otherHouseBody} />
-          <Button href="/today" variant="outline" label={JOIN_COPY.yourHouse} />
+          <SignHeading title={words('door.join.otherHouse')} body={words('door.join.otherHouseBody')} />
+          <Button href="/today" variant="outline" label={words('door.join.yourHouse')} />
         </Sign>
       ) : (
         <Sign>
-          <SignHeading above={JOIN_COPY.invited} title={invite.name} body={joinLine(invite.kind, invite.members, words)} />
+          <SignHeading above={words('door.join.invited')} title={invite.name} body={joinLine(invite.kind, invite.members, words)} />
           {invite.kind === 'family' ? null : (
             <Body testID="join-stake">
               {invite.stakeMinor > 0 || invite.lateMinor > 0 || invite.missedMinor > 0
-                ? JOIN_COPY.stake(
-                    formatMoney(invite.stakeMinor, invite.currency),
-                    formatMoney(invite.lateMinor, invite.currency),
-                    formatMoney(invite.missedMinor, invite.currency),
-                  )
-                : JOIN_COPY.noStake}
+                ? words('door.join.stake', { stake: formatMoney(invite.stakeMinor, invite.currency), late: formatMoney(invite.lateMinor, invite.currency), missed: formatMoney(invite.missedMinor, invite.currency) })
+                : words('door.join.noStake')}
             </Body>
           )}
           {problem ? <Alert message={problem} /> : null}
           <Button
-            label={joining ? JOIN_COPY.joining : FRONT_DOOR_COPY.join}
+            label={joining ? words('door.join.joining') : words('door.welcome.join')}
             onPress={() => void join()}
             disabled={joining}
             testID="join-house"

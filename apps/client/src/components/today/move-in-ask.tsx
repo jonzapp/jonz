@@ -1,4 +1,3 @@
-import { MOVING_COPY } from '@app/core';
 import { Share2Icon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -9,6 +8,7 @@ import { Card } from '@/components/card';
 import { InviteSheet } from '@/components/house-page/invite-sheet';
 import { Body, SectionLabel } from '@/components/text';
 import { SPACE } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * For the people who stay when someone moves out (core askWhosMovingIn):
@@ -17,16 +17,17 @@ import { SPACE } from '@/theme';
  * your own next John.
  */
 export function MoveInAsk({ houseName, joinCode }: { houseName: string; joinCode: string }) {
+  const words = useWords();
   const [inviting, setInviting] = useState(false);
   return (
     <>
       <Card testID="move-in-ask">
-        <SectionLabel style={styles.label}>{MOVING_COPY.askTitle}</SectionLabel>
-        <Body style={styles.body}>{MOVING_COPY.askBody(houseName)}</Body>
+        <SectionLabel style={styles.label}>{words('house.moving.askTitle')}</SectionLabel>
+        <Body style={styles.body}>{words('house.moving.askBody', { house: houseName })}</Body>
         <View style={styles.action}>
           <ButtonRow atEdge>
             <Button
-              label={MOVING_COPY.askButton}
+              label={words('house.moving.askButton')}
               icon={Share2Icon}
               variant="outline"
               onPress={() => setInviting(true)}

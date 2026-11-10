@@ -1,5 +1,7 @@
 import common from "./en/common.json";
+import door from "./en/door.json";
 import email from "./en/email.json";
+import errors from "./en/errors.json";
 import house from "./en/house.json";
 import john from "./en/john.json";
 import people from "./en/people.json";
@@ -14,10 +16,12 @@ import week from "./en/week.json";
  * Every id starts with its file's name. Another language is a folder beside
  * en/ with the same ids; a line it hasn't got yet is read in English.
  */
-export const EN_FILES = { common, email, house, john, people, today, wall, week };
+export const EN_FILES = { common, door, email, errors, house, john, people, today, wall, week };
 
 export const EN = Object.assign({}, ...Object.values(EN_FILES)) as typeof common &
+  typeof door &
   typeof email &
+  typeof errors &
   typeof house &
   typeof john &
   typeof people &

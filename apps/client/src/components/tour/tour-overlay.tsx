@@ -1,4 +1,4 @@
-import { placeTourCard, stepCount, TOUR_COPY, withAlpha, type TourRect, type TourStep } from '@app/core';
+import { placeTourCard, stepCount, withAlpha, type TourRect, type TourStep } from '@app/core';
 import { useEffect, useState } from 'react';
 import { Modal, Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
@@ -7,6 +7,7 @@ import { Button } from '@/components/button';
 import { TextButton } from '@/components/text-button';
 import { Body, Meta, RowTitle } from '@/components/text';
 import { GROUP_RADIUS, GUTTER, INSET, SPACE, useTheme } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /** How far the lit area reaches past the spot, so its edge isn't on the spot's own. */
 const AROUND = SPACE.sm;
@@ -44,6 +45,7 @@ export function TourOverlay({
   onBack: () => void;
   onSkip: () => void;
 }) {
+  const words = useWords();
   const { colors, scheme } = useTheme();
   const window = useWindowDimensions();
   const [cardHeight, setCardHeight] = useState(CARD_GUESS);
@@ -70,7 +72,7 @@ export function TourOverlay({
     : null;
 
   return (
-    <Modal visible transparent animationType="none" onRequestClose={onSkip} aria-label={TOUR_COPY.stepSpoken(index, total)}>
+    <Modal visible transparent animationType="none" onRequestClose={onSkip} aria-label={words("door.tour.stepSpoken", { step: index + 1, total })}>
       <View style={StyleSheet.absoluteFill} testID="tour">
         {/* The dim, with the spot cut out of it; it takes every tap so the page under it holds still. */}
         <View aria-hidden onStartShouldSetResponder={() => true} style={StyleSheet.absoluteFill} testID="tour-scrim">
@@ -112,11 +114,11 @@ export function TourOverlay({
             </View>
             <Body testID="tour-body">{step.body}</Body>
             <View style={styles.way}>
-              {last ? null : <TextButton label={TOUR_COPY.skip} onPress={onSkip} testID="tour-skip" />}
+              {last ? null : <TextButton label={words('door.tour.skip')} onPress={onSkip} testID="tour-skip" />}
               <View style={styles.space} />
-              {index > 0 ? <TextButton label={TOUR_COPY.back} onPress={onBack} testID="tour-back" /> : null}
+              {index > 0 ? <TextButton label={words('door.tour.back')} onPress={onBack} testID="tour-back" /> : null}
               {/* eslint-disable-next-line jonz/button-in-row -- Next shares the line with Skip and Back, at the trailing edge */}
-              <Button label={last ? TOUR_COPY.done : TOUR_COPY.next} onPress={onNext} testID="tour-next" />
+              <Button label={last ? words('door.tour.done') : words('door.tour.next')} onPress={onNext} testID="tour-next" />
             </View>
           </View>
         ) : null}

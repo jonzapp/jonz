@@ -1,4 +1,4 @@
-import { REPORT_COPY, TOUR_COPY, TOURS, tourForPage, tourLength, toursFor, tourSteps, type ReportKind, type TourId } from '@app/core';
+import { REPORT_COPY, TOURS, tourForPage, tourLength, toursFor, tourSteps, type ReportKind, type TourId } from '@app/core';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { BookOpenIcon, BugIcon, CheckIcon, LightbulbIcon, MessagesSquareIcon, SparklesIcon } from 'lucide-react-native';
@@ -17,6 +17,7 @@ import { useTour } from '@/components/tour/tour-context';
 import { useAskJonz } from '@/hooks/use-ask-jonz';
 import { useMembership } from '@/hooks/use-membership';
 import { INSET, SECTION_GAP } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * Help, from the title bar's question mark. First the two ways to find
@@ -46,6 +47,7 @@ export function HelpSheet({
   onTour: (id: TourId) => void;
   onDismissed: () => void;
 }) {
+  const words = useWords();
   const [reporting, setReporting] = useState<ReportKind | null>(null);
   const close = () => {
     setReporting(null);
@@ -54,7 +56,7 @@ export function HelpSheet({
   return (
     <Sheet
       visible={visible}
-      title={reporting ? REPORT_COPY.title[reporting] : TOUR_COPY.help}
+      title={reporting ? REPORT_COPY.title[reporting] : words('door.tour.help')}
       onClose={close}
       onDismissed={() => {
         setReporting(null);
@@ -85,6 +87,7 @@ function HelpMenu({
   onReport: (kind: ReportKind) => void;
   onClose: () => void;
 }) {
+  const words = useWords();
   const tours = useTour();
   const ask = useAskJonz('open');
   const mine = useQuery({ queryKey: ['my-reports'], queryFn: myReports });
@@ -100,12 +103,12 @@ function HelpMenu({
   };
   return (
     <View style={styles.menu}>
-      <Section label={TOUR_COPY.findOut} testID="help-find-out">
+      <Section label={words('door.tour.findOut')} testID="help-find-out">
         {canAsk ? (
           <Row
             leading={<RowIcon icon={SparklesIcon} />}
-            title={TOUR_COPY.ask}
-            meta={TOUR_COPY.askMeta}
+            title={words('door.tour.ask')}
+            meta={words('door.tour.askMeta')}
             onPress={() => {
               if ('href' in ask) go(ask.href as string);
               else {
@@ -119,23 +122,23 @@ function HelpMenu({
         ) : null}
         <Row
           leading={<RowIcon icon={BookOpenIcon} />}
-          title={TOUR_COPY.guide}
-          meta={TOUR_COPY.guideMeta}
+          title={words('door.tour.guide')}
+          meta={words('door.tour.guideMeta')}
           onPress={() => go('/house/guide')}
           chevron
           testID="help-guide"
         />
       </Section>
       {listed.length > 0 ? (
-        <Section label={TOUR_COPY.showMeAround} testID="help-guides">
+        <Section label={words('door.tour.showMeAround')} testID="help-guides">
           {listed.map((id) => {
             const length = tourLength(tourSteps(id, tours.facts).length);
             return (
               <Row
                 key={id}
                 title={TOURS[id].name}
-                meta={id === here ? TOUR_COPY.thisPage(length) : length}
-                trailing={tours.saved.seen.includes(id) ? <Chip label={TOUR_COPY.seen} icon={CheckIcon} tone="good" /> : undefined}
+                meta={id === here ? words('door.tour.thisPage', { length }) : length}
+                trailing={tours.saved.seen.includes(id) ? <Chip label={words('door.tour.seen')} icon={CheckIcon} tone="good" /> : undefined}
                 onPress={() => onTour(id)}
                 chevron
                 testID={`help-tour-${id}`}
@@ -144,7 +147,7 @@ function HelpMenu({
           })}
         </Section>
       ) : null}
-      <Section label={TOUR_COPY.somethingWrong}>
+      <Section label={words('door.tour.somethingWrong')}>
         <Row leading={<RowIcon icon={BugIcon} />} title={REPORT_COPY.report} onPress={() => onReport('problem')} chevron testID="help-report" />
         <Row leading={<RowIcon icon={LightbulbIcon} />} title={REPORT_COPY.idea} onPress={() => onReport('idea')} chevron testID="help-idea" />
         <Row

@@ -1,4 +1,4 @@
-import { INVITE_COPY, BUSY_COPY } from '@app/core';
+import { BUSY_COPY } from '@app/core';
 import { CheckIcon, CopyIcon, RefreshCwIcon, Share2Icon } from 'lucide-react-native';
 import { useState } from 'react';
 import { Platform, Share, StyleSheet, Text, View } from 'react-native';
@@ -61,7 +61,7 @@ export function InviteSheet({
   async function share() {
     if (web && typeof web.share !== 'function') return copy();
     try {
-      await Share.share({ title: INVITE_COPY.shareTitle(houseName), message: url, url });
+      await Share.share({ title: words('door.invite.shareTitle', { house: houseName }), message: url, url });
     } catch {
       // Cancelled: the link is on screen to copy.
     }
@@ -106,7 +106,7 @@ export function InviteSheet({
             <Button
               variant="outline"
               icon={copied ? CheckIcon : CopyIcon}
-              label={copied ? INVITE_COPY.copied : words('house.page.copyLink')}
+              label={copied ? words('door.invite.copied') : words('house.page.copyLink')}
               onPress={() => void copy()}
               testID="copy-link"
             />
@@ -119,7 +119,7 @@ export function InviteSheet({
             <Button
               variant="ghost"
               icon={RefreshCwIcon}
-              label={INVITE_COPY.newCode}
+              label={words('door.invite.newCode')}
               busy={reset.pending}
               busyLabel={BUSY_COPY.resetting}
               onPress={() => {
@@ -129,7 +129,7 @@ export function InviteSheet({
               testID="new-code"
             />
           </ButtonRow>
-          <Text style={[type.meta, { color: colors.mutedForeground }]}>{INVITE_COPY.newCodeNote}</Text>
+          <Text style={[type.meta, { color: colors.mutedForeground }]}>{words('door.invite.newCodeNote')}</Text>
           {reset.problem ? <Alert message={reset.problem} /> : null}
         </View>
       ) : null}

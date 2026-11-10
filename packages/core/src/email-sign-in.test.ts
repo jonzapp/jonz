@@ -2,15 +2,19 @@ import { describe, expect, it } from "vitest";
 
 import { authEmailTemplates, securityNoticeTemplates } from "./auth-email";
 import {
+  CODE_LENGTH,
+  PASSWORD_MIN,
   cleanCode,
   cleanEmail,
   codeProblem,
-  EMAIL_SIGN_IN_COPY,
   emailAuthProblem,
   emailLooksRight,
   nameProblem,
   passwordProblem,
 } from "./email-sign-in";
+import { wordsFor } from "./words-for";
+
+const words = wordsFor("en", "housemates");
 
 describe("email sign-in checks", () => {
   it("takes plain addresses and refuses obvious typos", () => {
@@ -21,21 +25,21 @@ describe("email sign-in checks", () => {
   });
 
   it("wants 8 characters of password and 6 digits of code", () => {
-    expect(passwordProblem("1234567")).toBe(EMAIL_SIGN_IN_COPY.shortPassword);
-    expect(passwordProblem("12345678")).toBeNull();
+    expect(passwordProblem("1234567", words)).toBe(words("door.email.shortPassword", { min: PASSWORD_MIN }));
+    expect(passwordProblem("12345678", words)).toBeNull();
     expect(cleanCode("123 456")).toBe("123456");
-    expect(codeProblem("123-456")).toBeNull();
-    expect(codeProblem("12345")).toBe(EMAIL_SIGN_IN_COPY.badCode);
+    expect(codeProblem("123-456", words)).toBeNull();
+    expect(codeProblem("12345", words)).toBe(words("door.email.badCode", { length: CODE_LENGTH }));
   });
 
   it("puts Supabase's refusals into words, never saying whether an address has an account", () => {
-    expect(emailAuthProblem({ code: "invalid_credentials" })).toBe(EMAIL_SIGN_IN_COPY.wrongPassword);
-    expect(emailAuthProblem({ code: "otp_expired" })).toBe(EMAIL_SIGN_IN_COPY.wrongCode);
-    expect(emailAuthProblem({ code: "insufficient_aal", status: 401 })).toBe(EMAIL_SIGN_IN_COPY.needsAuthenticator);
-    expect(emailAuthProblem({ code: "weak_password" })).toBe(EMAIL_SIGN_IN_COPY.weakPassword);
-    expect(emailAuthProblem({ code: "signup_disabled" })).toBe(EMAIL_SIGN_IN_COPY.notOpen);
-    expect(emailAuthProblem({ status: 429 })).toBe(EMAIL_SIGN_IN_COPY.tooMany);
-    expect(emailAuthProblem({})).toBe(EMAIL_SIGN_IN_COPY.failed);
+    expect(emailAuthProblem({ code: "invalid_credentials" }, words)).toBe(words('door.email.wrongPassword'));
+    expect(emailAuthProblem({ code: "otp_expired" }, words)).toBe(words('door.email.wrongCode'));
+    expect(emailAuthProblem({ code: "insufficient_aal", status: 401 }, words)).toBe(words('door.email.needsAuthenticator'));
+    expect(emailAuthProblem({ code: "weak_password" }, words)).toBe(words('door.email.weakPassword'));
+    expect(emailAuthProblem({ code: "signup_disabled" }, words)).toBe(words('door.email.notOpen'));
+    expect(emailAuthProblem({ status: 429 }, words)).toBe(words('door.email.tooMany'));
+    expect(emailAuthProblem({}, words)).toBe(words('door.email.failed'));
   });
 });
 
@@ -84,8 +88,8 @@ describe("Supabase's security notices", () => {
 
 describe("nameProblem", () => {
   it("asks for a name, and keeps it to what renaming allows", () => {
-    expect(nameProblem("  ")).toBe(EMAIL_SIGN_IN_COPY.noName);
-    expect(nameProblem("Sam")).toBeNull();
-    expect(nameProblem("x".repeat(61))).toMatch(/1 to 60/);
+    expect(nameProblem("  ", words)).toBe(words('door.email.noName'));
+    expect(nameProblem("Sam", words)).toBeNull();
+    expect(nameProblem("x".repeat(61), words)).toMatch(/1 to 60/);
   });
 });

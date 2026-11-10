@@ -5,13 +5,13 @@ import {
   LIST_COPY,
   NOTICE_LIST_COPY,
   ASK_CHATS_COPY,
-  NOT_FOUND_COPY,
   OWNER_ASK_COPY,
   OWNER_MOVES_COPY,
   OVERVIEW_COPY,
   OWNER_PERMISSION_NAMES,
   type AuditEntry,
   type Notice,
+  wordsFor,
 } from '@app/core';
 import * as Clipboard from 'expo-clipboard';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
@@ -49,6 +49,8 @@ import OverviewPage from '@/app/admin/overview';
 import { authStorage } from '@/api/storage';
 import { supabase } from '@/api/supabase';
 import { renderPages, untilRead } from '@/testing/pages';
+
+const words = wordsFor('en', 'housemates');
 
 jest.mock('@/api/owner', () => ({
   ownerStatus: jest.fn(),
@@ -203,7 +205,7 @@ describe('who gets in', () => {
   it('shows anyone who is not the owner the page that is not there', async () => {
     jest.mocked(ownerStatus).mockResolvedValue({ owner: false, mfa: true, permissions: [] });
     await renderPages(ROUTES, '/admin/notices');
-    expect(await screen.findByText(NOT_FOUND_COPY.title)).toBeVisible();
+    expect(await screen.findByText(words('door.notFound.title'))).toBeVisible();
     expect(noticesPage).not.toHaveBeenCalled();
     expect(liveNotices).not.toHaveBeenCalled();
   });

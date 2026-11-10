@@ -1,15 +1,4 @@
-import {
-  GOOGLE_LIMITED_USE,
-  HELP_PAGE,
-  LEGAL_COPY,
-  LOOK_LABEL,
-  NOT_FOUND_COPY,
-  PRIVACY_POLICY,
-  SECTION_LABEL,
-  SIGN_IN_COPY,
-  TERMS,
-  wordsFor,
-} from "@app/core";
+import { GOOGLE_LIMITED_USE, HELP_PAGE, LEGAL_COPY, LOOK_LABEL, PRIVACY_POLICY, SECTION_LABEL, TERMS, wordsFor } from "@app/core";
 import { expect, test } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, dealtHouseInClient } from "./auth";
@@ -26,7 +15,7 @@ test.afterAll(async () => cleanUp(made));
 
 test("privacy, the terms, help, and a link to nowhere, open for anyone", async ({ page }) => {
   await page.goto("/signin");
-  await page.getByRole("link", { name: SIGN_IN_COPY.privacy }).click();
+  await page.getByRole("link", { name: words('door.signIn.privacy') }).click();
   await expect(page).toHaveURL(/\/privacy$/);
   await expect(page.getByText(GOOGLE_LIMITED_USE)).toBeVisible();
   await expect(page).toHaveTitle("Privacy · Jonz");
@@ -44,12 +33,12 @@ test("privacy, the terms, help, and a link to nowhere, open for anyone", async (
 
   for (const path of ["/nowhere/at-all", "/_sitemap"]) {
     await page.goto(path);
-    await expect(page.getByText(NOT_FOUND_COPY.body)).toBeVisible();
+    await expect(page.getByText(words('door.notFound.body'))).toBeVisible();
   }
   // Signed out there are no Johns to go back to, so it's the front door.
-  await page.getByRole("link", { name: NOT_FOUND_COPY.backToDoor }).click();
+  await page.getByRole("link", { name: words('door.notFound.backToDoor') }).click();
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole("link", { name: SIGN_IN_COPY.privacy })).toBeVisible();
+  await expect(page.getByRole("link", { name: words('door.signIn.privacy') })).toBeVisible();
 });
 
 test("a page to read lists its sections beside the words on a laptop, each jumping to its own", async ({ page }, info) => {

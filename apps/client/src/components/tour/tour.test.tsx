@@ -1,4 +1,4 @@
-import { TOUR_COPY, TOURS, type TourFacts } from '@app/core';
+import { TOURS, type TourFacts, wordsFor } from '@app/core';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import { router } from 'expo-router';
@@ -9,6 +9,8 @@ import { useTour } from '@/components/tour/tour-context';
 import { TourProvider } from '@/components/tour/tour-provider';
 import { TourSpot } from '@/components/tour/tour-spot';
 import { testQueryClient } from '@/testing/query';
+
+const words = wordsFor('en', 'housemates');
 
 // Every host view's measureInWindow, as react-native's jest setup mocks it: one jest.fn they share.
 const { measureInWindow } = jest.requireActual<{ default: { measureInWindow: jest.Mock } }>(
@@ -104,7 +106,7 @@ it('walks a tour a step at a time: the count, Back, and Done on the last', async
     await settle();
   }
   expect(screen.getByTestId('tour-count')).toHaveTextContent('5 of 5');
-  expect(screen.getByTestId('tour-next')).toHaveTextContent(TOUR_COPY.done);
+  expect(screen.getByTestId('tour-next')).toHaveTextContent(words('door.tour.done'));
   // No Skip on the last step: Done is the way out.
   expect(screen.queryByTestId('tour-skip')).toBeNull();
   await fireEvent.press(screen.getByTestId('tour-next'));
@@ -176,13 +178,13 @@ describe('the Help sheet', () => {
     mockMeta = { tours: { seen: ['week'], offerDone: true } };
     await show(undefined, facts, true);
     await fireEvent.press(screen.getByText('help'));
-    expect(screen.getByTestId('help-ask')).toHaveTextContent(new RegExp(TOUR_COPY.ask));
-    expect(screen.getByTestId('help-guide')).toHaveTextContent(new RegExp(TOUR_COPY.guide));
+    expect(screen.getByTestId('help-ask')).toHaveTextContent(new RegExp(words('door.tour.ask')));
+    expect(screen.getByTestId('help-guide')).toHaveTextContent(new RegExp(words('door.tour.guide')));
     const tours = within(screen.getByTestId('help-guides')).getAllByTestId(/^help-tour-/);
     expect(tours[0]).toHaveProp('testID', 'help-tour-today');
     expect(tours[0]).toHaveTextContent(new RegExp(TOURS.today.name));
     expect(tours[0]).toHaveTextContent(/This page/);
-    expect(screen.getByTestId('help-tour-week')).toHaveTextContent(new RegExp(TOUR_COPY.seen));
+    expect(screen.getByTestId('help-tour-week')).toHaveTextContent(new RegExp(words('door.tour.seen')));
     expect(screen.getByTestId('help-tour-house')).toBeTruthy();
     // The admins' tour is for admins.
     expect(screen.queryByTestId('help-tour-setUp')).toBeNull();

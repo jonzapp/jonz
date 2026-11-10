@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import { signInPath, signInReason } from "./auth-paths";
-import { FRONT_DOOR_COPY, SIGN_IN_COPY } from "./copy";
 import { CURRENCIES } from "./domain";
 import {
   afterSignIn,
@@ -15,6 +14,7 @@ import {
   signInLine,
   timeZoneName,
 } from "./front-door";
+import { DOOR_POINTS } from "./family";
 import { wordsFor } from "./words-for";
 
 const words = wordsFor("en", "housemates");
@@ -74,19 +74,19 @@ describe("googleReturn", () => {
 
 describe("signInLine", () => {
   it("names the front door's choice", () => {
-    expect(signInLine("/house/new")).toBe(FRONT_DOOR_COPY.startReason);
-    expect(signInLine("/welcome")).toBe(FRONT_DOOR_COPY.inviteReason);
+    expect(signInLine("/house/new", words)).toBe(words('door.welcome.startReason'));
+    expect(signInLine("/welcome", words)).toBe(words('door.welcome.inviteReason'));
   });
 
   it("says what anything else is shut on, as the web does", () => {
-    expect(signInLine("/join/AB3DEF7H")).toBe(signInReason("/join/AB3DEF7H"));
-    expect(signInLine(null)).toBe(signInReason(null));
-    expect(signInLine("//evil.example/house/new")).toBe(signInReason(null));
+    expect(signInLine("/join/AB3DEF7H", words)).toBe(signInReason("/join/AB3DEF7H"));
+    expect(signInLine(null, words)).toBe(signInReason(null));
+    expect(signInLine("//evil.example/house/new", words)).toBe(signInReason(null));
   });
 
   it("warns, wherever it leads, that with Apple the house stays with the account chosen", () => {
     for (const next of [null, "/house/new", "/welcome", "/join/AB3DEF7H"]) {
-      expect(signInLine(next, true)).toBe(SIGN_IN_COPY.eitherAccount);
+      expect(signInLine(next, words, true)).toBe(words('door.signIn.eitherAccount'));
     }
   });
 });
@@ -183,15 +183,15 @@ describe("the choices behind Change", () => {
   });
 });
 
-describe("FRONT_DOOR_COPY", () => {
+describe("the front door's words", () => {
   it("names the phone's time zone in the note under Change", () => {
-    expect(FRONT_DOOR_COPY.zoneNote("America/New York")).toBe(
+    expect(words('door.welcome.zoneNote', { zone: "America/New York" })).toBe(
       "The time zone is this phone’s, America/New York. Change it later from House.",
     );
   });
 
   it("says the front door in three sentences", () => {
-    expect(FRONT_DOOR_COPY.points).toHaveLength(3);
-    for (const point of FRONT_DOOR_COPY.points) expect(point.body).toMatch(/\.$/);
+    expect(DOOR_POINTS).toHaveLength(3);
+    for (const key of DOOR_POINTS) expect(words(`door.welcome.points.${key}`)).toMatch(/\.$/);
   });
 });

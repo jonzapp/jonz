@@ -1,4 +1,4 @@
-import { BIN_NIGHT, FOCUS_SHELL_COPY, FRONT_DOOR_COPY, JOIN_COPY, SIGN_IN_COPY, signInReason } from '@app/core';
+import { BIN_NIGHT, FOCUS_SHELL_COPY, signInReason, wordsFor } from '@app/core';
 import { fireEvent, renderRouter, screen } from 'expo-router/testing-library';
 import { Text } from 'react-native';
 
@@ -6,6 +6,8 @@ import { signInWithGoogle } from '@/api/auth';
 import { houseByCode, invitePreview, joinHouse } from '@/api/house';
 import Join from '@/app/join/[joinCode]';
 import { useMembership } from '@/hooks/use-membership';
+
+const words = wordsFor('en', 'housemates');
 
 jest.mock('@/api/house', () => ({ houseByCode: jest.fn(), invitePreview: jest.fn(), joinHouse: jest.fn() }));
 jest.mock('@/api/email-auth', () => ({}));
@@ -48,18 +50,18 @@ it('opens on the invite when signed out: the house and how many live there, then
   await open();
   expect(await screen.findByRole('header', { name: 'Flat 3' })).toBeOnTheScreen();
   expect(preview).toHaveBeenCalledWith('AB3DEF7H');
-  expect(screen.getByText(JOIN_COPY.invited)).toBeOnTheScreen();
-  expect(screen.getByText(JOIN_COPY.livesHere(3))).toBeOnTheScreen();
-  expect(screen.getByText(JOIN_COPY.nextSignIn)).toBeOnTheScreen();
+  expect(screen.getByText(words('door.join.invited'))).toBeOnTheScreen();
+  expect(screen.getByText(words('door.join.livesHere', { people: 3 }))).toBeOnTheScreen();
+  expect(screen.getByText(words('door.join.nextSignIn'))).toBeOnTheScreen();
   // What it plays for waits for sign-in, as does the house's own read.
   expect(screen.queryByTestId('join-stake')).toBeNull();
   expect(byCode).not.toHaveBeenCalled();
-  expect(screen.queryByRole('header', { name: SIGN_IN_COPY.heading })).toBeNull();
+  expect(screen.queryByRole('header', { name: words('door.signIn.heading') })).toBeNull();
 
-  await fireEvent.press(screen.getByRole('button', { name: FRONT_DOOR_COPY.join }));
-  expect(screen.getByRole('header', { name: SIGN_IN_COPY.heading })).toBeOnTheScreen();
-  expect(screen.getByText(JOIN_COPY.signInFor('Flat 3'))).toBeOnTheScreen();
-  await fireEvent.press(screen.getByRole('button', { name: SIGN_IN_COPY.google }));
+  await fireEvent.press(screen.getByRole('button', { name: words('door.welcome.join') }));
+  expect(screen.getByRole('header', { name: words('door.signIn.heading') })).toBeOnTheScreen();
+  expect(screen.getByText(words('door.join.signInFor', { house: 'Flat 3' }))).toBeOnTheScreen();
+  await fireEvent.press(screen.getByRole('button', { name: words('door.signIn.google') }));
   expect(signInWithGoogle).toHaveBeenCalledWith('/join/AB3DEF7H');
 });
 
@@ -67,15 +69,15 @@ it("says a link that opens nothing doesn't work, before anyone signs in", async 
   as(null);
   preview.mockResolvedValue(null);
   await open('ZZZZZZZZ');
-  expect(await screen.findByRole('header', { name: JOIN_COPY.badLink })).toBeOnTheScreen();
-  expect(screen.getByRole('link', { name: JOIN_COPY.back })).toHaveProp('href', '/welcome');
-  expect(screen.queryByRole('header', { name: SIGN_IN_COPY.heading })).toBeNull();
+  expect(await screen.findByRole('header', { name: words('door.join.badLink') })).toBeOnTheScreen();
+  expect(screen.getByRole('link', { name: words('door.join.back') })).toHaveProp('href', '/welcome');
+  expect(screen.queryByRole('header', { name: words('door.signIn.heading') })).toBeNull();
 });
 
 it("signs you in right there when the house isn't to be named or couldn't be read", async () => {
   as(null);
   await open();
-  expect(await screen.findByRole('header', { name: SIGN_IN_COPY.heading })).toBeOnTheScreen();
+  expect(await screen.findByRole('header', { name: words('door.signIn.heading') })).toBeOnTheScreen();
   expect(screen.getByText(signInReason('/join/AB3DEF7H'))).toBeOnTheScreen();
   expect(byCode).not.toHaveBeenCalled();
 });
@@ -83,7 +85,7 @@ it("signs you in right there when the house isn't to be named or couldn't be rea
 it('brings the web back to the same link from Google', async () => {
   as(null);
   await open();
-  await fireEvent.press(await screen.findByRole('button', { name: SIGN_IN_COPY.google }));
+  await fireEvent.press(await screen.findByRole('button', { name: words('door.signIn.google') }));
   expect(signInWithGoogle).toHaveBeenCalledWith('/join/AB3DEF7H');
 });
 
@@ -92,8 +94,8 @@ it('says so when Google turns the web back to the link', async () => {
   preview.mockResolvedValue({ name: 'Flat 3', members: 3, kind: 'housemates' });
   await open('AB3DEF7H', '?error=access_denied');
   // Already past the invite: straight back to signing in, the house still named.
-  expect(await screen.findByRole('alert')).toHaveTextContent(SIGN_IN_COPY.returnFailed);
-  expect(screen.getByText(JOIN_COPY.signInFor('Flat 3'))).toBeOnTheScreen();
+  expect(await screen.findByRole('alert')).toHaveTextContent(words('door.signIn.returnFailed'));
+  expect(screen.getByText(words('door.join.signInFor', { house: 'Flat 3' }))).toBeOnTheScreen();
 });
 
 it('names the house and how many live there, and joins it', async () => {
@@ -102,14 +104,14 @@ it('names the house and how many live there, and joins it', async () => {
   join.mockResolvedValue('h1');
   await open();
   expect(await screen.findByRole('header', { name: 'Flat 3' })).toBeOnTheScreen();
-  expect(screen.getByText(JOIN_COPY.invited)).toBeOnTheScreen();
-  expect(screen.getByText(JOIN_COPY.livesHere(3))).toBeOnTheScreen();
+  expect(screen.getByText(words('door.join.invited'))).toBeOnTheScreen();
+  expect(screen.getByText(words('door.join.livesHere', { people: 3 }))).toBeOnTheScreen();
   // What it plays for, before anyone joins.
-  expect(screen.getByTestId('join-stake')).toHaveTextContent(JOIN_COPY.stake('£20', '£1', '£3'));
+  expect(screen.getByTestId('join-stake')).toHaveTextContent(words('door.join.stake', { stake: '£20', late: '£1', missed: '£3' }));
   expect(screen.getByTestId('hazard-tape', { includeHiddenElements: true })).toBeOnTheScreen();
   expect(byCode).toHaveBeenCalledWith('AB3DEF7H');
 
-  const button = screen.getByRole('button', { name: FRONT_DOOR_COPY.join });
+  const button = screen.getByRole('button', { name: words('door.welcome.join') });
   expect(button).toHaveStyle({ backgroundColor: BIN_NIGHT.light.hivis });
   await fireEvent.press(button);
   expect(join).toHaveBeenCalledWith('AB3DEF7H');
@@ -121,7 +123,7 @@ it("says when a house doesn't play for money", async () => {
   as(ME);
   byCode.mockResolvedValue({ ...FLAT, stakeMinor: 0, lateMinor: 0, missedMinor: 0 });
   await open();
-  expect(await screen.findByTestId('join-stake')).toHaveTextContent(JOIN_COPY.noStake);
+  expect(await screen.findByTestId('join-stake')).toHaveTextContent(words('door.join.noStake'));
 });
 
 it('says what went wrong joining, and stays', async () => {
@@ -129,7 +131,7 @@ it('says what went wrong joining, and stays', async () => {
   byCode.mockResolvedValue(FLAT);
   join.mockRejectedValue(new Error("You’re already in a house. Leave it first to join another."));
   await open();
-  await fireEvent.press(await screen.findByRole('button', { name: FRONT_DOOR_COPY.join }));
+  await fireEvent.press(await screen.findByRole('button', { name: words('door.welcome.join') }));
   expect(screen.getByRole('alert')).toHaveTextContent("You’re already in a house. Leave it first to join another.");
   expect(screen).toHavePathname('/join/AB3DEF7H');
 });
@@ -139,7 +141,7 @@ it("says when the house can't be read, rather than blaming the link, and reads i
   byCode.mockRejectedValueOnce(new Error('Failed to fetch')).mockResolvedValueOnce(FLAT);
   await open();
   expect(await screen.findByRole('alert')).toHaveTextContent(FOCUS_SHELL_COPY.unreadable);
-  expect(screen.queryByRole('header', { name: JOIN_COPY.badLink })).not.toBeOnTheScreen();
+  expect(screen.queryByRole('header', { name: words('door.join.badLink') })).not.toBeOnTheScreen();
   await fireEvent.press(screen.getByRole('button', { name: FOCUS_SHELL_COPY.retry }));
   expect(await screen.findByRole('header', { name: 'Flat 3' })).toBeOnTheScreen();
   expect(byCode).toHaveBeenCalledTimes(2);
@@ -149,25 +151,25 @@ it("says a link that matches no house doesn't work", async () => {
   as(ME);
   byCode.mockResolvedValue(null);
   await open('ZZZZZZZZ');
-  expect(await screen.findByRole('header', { name: JOIN_COPY.badLink })).toBeOnTheScreen();
-  expect(screen.getByRole('link', { name: JOIN_COPY.back })).toHaveProp('href', '/welcome');
+  expect(await screen.findByRole('header', { name: words('door.join.badLink') })).toBeOnTheScreen();
+  expect(screen.getByRole('link', { name: words('door.join.back') })).toHaveProp('href', '/welcome');
 });
 
 it("doesn't offer to join a house you're already in", async () => {
   as(ME, { id: 'h1', name: 'Flat 3' });
   byCode.mockResolvedValue(FLAT);
   await open();
-  expect(await screen.findByRole('header', { name: JOIN_COPY.alreadyIn('Flat 3') })).toBeOnTheScreen();
-  expect(screen.queryByRole('button', { name: FRONT_DOOR_COPY.join })).not.toBeOnTheScreen();
-  expect(screen.getByRole('link', { name: JOIN_COPY.goToJohns })).toHaveProp('href', '/today');
+  expect(await screen.findByRole('header', { name: words('door.join.alreadyIn', { house: 'Flat 3' }) })).toBeOnTheScreen();
+  expect(screen.queryByRole('button', { name: words('door.welcome.join') })).not.toBeOnTheScreen();
+  expect(screen.getByRole('link', { name: words('door.join.goToJohns') })).toHaveProp('href', '/today');
 });
 
 it("doesn't offer a second house to someone in one", async () => {
   as(ME, { id: 'h2', name: 'Number 9' });
   byCode.mockResolvedValue(FLAT);
   await open();
-  expect(await screen.findByRole('header', { name: JOIN_COPY.otherHouse })).toBeOnTheScreen();
-  expect(screen.getByText(JOIN_COPY.otherHouseBody)).toBeOnTheScreen();
-  expect(screen.queryByRole('button', { name: FRONT_DOOR_COPY.join })).not.toBeOnTheScreen();
-  expect(screen.getByRole('link', { name: JOIN_COPY.yourHouse })).toHaveProp('href', '/today');
+  expect(await screen.findByRole('header', { name: words('door.join.otherHouse') })).toBeOnTheScreen();
+  expect(screen.getByText(words('door.join.otherHouseBody'))).toBeOnTheScreen();
+  expect(screen.queryByRole('button', { name: words('door.welcome.join') })).not.toBeOnTheScreen();
+  expect(screen.getByRole('link', { name: words('door.join.yourHouse') })).toHaveProp('href', '/today');
 });

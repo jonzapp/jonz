@@ -1,7 +1,6 @@
 import { DELETE_PATH } from "./account-deletion";
 import { APPROVE_PATH, CONSENT_PATH_WITH_ID } from "./approvals";
 import { safeNext, signInPath, signInReason } from "./auth-paths";
-import { FRONT_DOOR_COPY, SIGN_IN_COPY } from "./copy";
 import { CURRENCIES, type Currency, DEFAULT_RULES, DOW_LABEL, FAMILY_POCKET_CAP, type HouseKind, type IsoDow } from "./domain";
 import { moneyInput } from "./money";
 import { normaliseJoinCode } from "./schemas";
@@ -57,11 +56,11 @@ export function googleReturn(next: string | null | undefined): string {
  * the account you choose (Hide My Email makes a new one); otherwise the front
  * door's choice when it came with one, or what the door is shut on.
  */
-export function signInLine(next: string | null | undefined, apple = false): string {
-  if (apple) return SIGN_IN_COPY.eitherAccount;
+export function signInLine(next: string | null | undefined, words: Words, apple = false): string {
+  if (apple) return words('door.signIn.eitherAccount');
   const target = afterSignIn(next);
-  if (target === DOOR.start || target === DOOR.startFamily) return FRONT_DOOR_COPY.startReason;
-  if (target === DOOR.invite) return FRONT_DOOR_COPY.inviteReason;
+  if (target === DOOR.start || target === DOOR.startFamily) return words('door.welcome.startReason');
+  if (target === DOOR.invite) return words('door.welcome.inviteReason');
   return signInReason(next);
 }
 
@@ -109,8 +108,8 @@ export function houseDefaults({
   return [
     kind === "family"
       ? words('house.pocket.defaults', { cap: `${currency} ${moneyInput(FAMILY_POCKET_CAP)}` })
-      : FRONT_DOOR_COPY.stakeEach(`${currency} ${moneyInput(stakeMinor)}`),
-    FRONT_DOOR_COPY.weekStarts(DOW_LABEL[weekStarts]),
+      : words('door.welcome.stakeEach', { amount: `${currency} ${moneyInput(stakeMinor)}` }),
+    words('door.welcome.weekStarts', { day: DOW_LABEL[weekStarts] }),
     timeZoneName(timezone),
   ];
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { DEFAULT_RULES, type HouseRules } from "./domain";
-import { GUIDE_TOPIC, guideMarkdown, guideSections, HOW_TOPICS, howItWorks, isHowTopic, type HowFacts } from "./how-it-works";
+import { guideMarkdown, guideTopic, guideSections, HOW_TOPICS, howItWorks, isHowTopic, type HowFacts } from "./how-it-works";
 import { TOURS } from "./tours";
 import { formatMoney } from "./money";
 import { PASS_PRICES } from "./pass";
@@ -99,7 +99,7 @@ describe("the guide", () => {
       expect(topics.includes("stake")).toBe(!family);
       for (const t of HOW_TOPICS) if (!(family ? ["stake", "settle_up"] : ["family"]).includes(t)) expect(topics, t).toContain(t);
     }
-    for (const t of HOW_TOPICS) expect(GUIDE_TOPIC[t].title.length, t).toBeGreaterThan(2);
+    for (const t of HOW_TOPICS) expect(guideTopic(t, words).title.length, t).toBeGreaterThan(2);
   });
 
   it("reads each page from its tour, so the guide and the tour say the same", () => {
