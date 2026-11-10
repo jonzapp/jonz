@@ -67,7 +67,12 @@ function measure(view: HostInstance | null): Promise<TourRect | null> {
   });
 }
 
-function reveal(view: HostInstance | null, scroll: ScrollViewInstance | null) {
+/**
+ * Scrolls `view` to the top of the page, under the title bar: a tour's spot,
+ * or the section a reading page's contents list jumps to. On the web the
+ * browser scrolls whatever holds it; on a phone, `scroll`.
+ */
+export function reveal(view: HostInstance | null, scroll: ScrollViewInstance | null) {
   if (!view) return;
   if (Platform.OS === 'web') {
     // react-native-web's View is the element itself. To the top of the page, under the title bar, as on a

@@ -26,6 +26,11 @@ export const LEGAL = {
   site: "https://jonz.app",
 } as const;
 
+/** The words a reading page (Help, Privacy, Terms) adds around its own: on a laptop, the list of its sections beside them. */
+export const LEGAL_COPY = {
+  contents: "On this page",
+} as const;
+
 export interface LegalLink {
   label: string;
   href: string;
