@@ -61,6 +61,29 @@ export function scheduleLine(
     .join(", ");
 }
 
+/**
+ * A John's line on the John list: when it's due, then only what sets it
+ * apart ("Sun 21:00", "Thu 07:00, every 2 weeks, photo, Upstairs bathroom",
+ * "On call, within 12 hours"). Every week is the usual, so it goes unsaid.
+ */
+export function listLine(
+  john: Pick<JohnDef, "everyWeeks" | "dueDow" | "dueTime" | "needsPhoto"> &
+    Partial<Pick<JohnDef, "when" | "respondHours" | "everyMonths" | "weekOfMonth">>,
+  groupName?: string | null,
+): string {
+  const often = cadence(john);
+  const weekly = john.everyWeeks === 1 && !john.everyMonths;
+  return [
+    ...(john.when === "on_call"
+      ? [JOHN_LIST_COPY.onCallWithin(john.respondHours ?? 12)]
+      : [dueLine(john), weekly ? null : often.charAt(0).toLowerCase() + often.slice(1)]),
+    john.needsPhoto ? SETUP_COPY.photo : null,
+    groupName || null,
+  ]
+    .filter(Boolean)
+    .join(", ");
+}
+
 /** A John as a housemate who can't edit it reads it: kind, who shares it, effort, how often, when, and the photo. */
 export function johnFacts(john: JohnDef, groupName?: string | null): LabelValue[] {
   return [
@@ -84,6 +107,8 @@ export function johnFacts(john: JohnDef, groupName?: string | null): LabelValue[
                 : `${capitalise(placeWord(john.weekOfMonth))} ${DOW_LABEL[john.dueDow]} ${john.dueTime}`,
           },
         ]),
+    // Only said when it does: the list's rows leave it to here.
+    ...(john.keepDay ? [{ label: STEADY_COPY.keepDay, value: STEADY_COPY.keepDayYes }] : []),
     { label: SETUP_COPY.photoLabel, value: john.needsPhoto ? SETUP_COPY.photoNeeded : SETUP_COPY.photoNot },
   ];
 }

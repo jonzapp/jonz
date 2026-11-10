@@ -6,6 +6,7 @@ pages are private artifacts on claude.ai.
 
 | Date | Decision | Where | Rule |
 | --- | --- | --- | --- |
+| 2026-11-10 | UI review, first four picks: a row's meta line and its value wrap onto a second line instead of being cut off (Cut-off words A); the John list is tidy by kind, each row only when it's due and what is unusual, the sum and Add a John over the list (John list A); the Wall folds a day's on-time ticks into one row at its foot (The Wall A); an admin's four Change result buttons become one row, Fix the result (Admin fixes A) | this PR | [lists](lists.md#rows), [lists](lists.md#order) |
 | 2026-11-10 | Admin lists show a search on its way from the first key: a spinner in the box's magnifier, the count says Searching…, old rows dim with the search line, suggestions float over the list and none for words alone (Search loading A) | this PR | [states](states.md#waiting) |
 | 2026-11-10 | Help, the Privacy Policy and the Terms list their sections On this page beside the words on a laptop, a heading jumping to its section (Help and legal B) | this PR | [layout](layout.md#laptop-pages) |
 | 2026-11-10 | Track record and the Guide open beside their list on a laptop (a housemate's record beside the grid, a topic beside the topics, the open one marked), and the owner's Messages and Promotions forms sit in two columns (Track record B, Guide B, Owner B) | this PR | [layout](layout.md#laptop-pages) |

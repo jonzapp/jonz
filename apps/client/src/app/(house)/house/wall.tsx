@@ -42,7 +42,8 @@ type Shown = 'wall' | 'history';
 
 /**
  * The whole Wall, pushed from House: what the house did, a day at a time,
- * latest first, with several ticks by one person in a row folded into one,
+ * latest first, with a day's ticks made on time folded into one row at its
+ * foot, several misses or late ticks by one person in a row folded into one,
  * photo receipts under their ticks, and older days on request. A row about
  * this week's John opens it in the John sheet; any other opens the event in
  * full. Holding a row down shows it with all four reactions. Older days
@@ -139,7 +140,9 @@ function WallFor({ houseId, userId }: { houseId: string; userId: string }) {
                 <Fold
                   key={item.fold.id}
                   label={item.fold.label}
-                  meta={<Meta>{item.fold.rows[0].when}</Meta>}
+                  // A run by one person says when it ended; the day's on-time ticks say who.
+                  meta={item.fold.detail ? undefined : <Meta>{item.fold.rows[0].when}</Meta>}
+                  detail={item.fold.detail}
                   testID="wall-fold"
                 >
                   {item.fold.rows.map(rowOf)}

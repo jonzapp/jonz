@@ -17,9 +17,8 @@ import { ListPageOutline } from '@/components/page-outlines';
  * The John list, pushed from House: every John by kind, how often and how
  * much, and the groups that share some of them (Groups was a page of its
  * own). Tapping one opens it, to edit for an admin and to read for everyone
- * else. An admin adds Johns (over the list on a laptop, at its foot on a
- * phone), and hands out the week under them (or deals it again, while
- * nothing in it is ticked).
+ * else. An admin adds Johns (over the list), and hands out the week under
+ * them (or deals it again, while nothing in it is ticked).
  */
 export default function JohnListScreen() {
   const { session, house } = useMembership();

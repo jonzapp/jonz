@@ -43,7 +43,7 @@ export function ConnectedAppsSection({ zone }: { zone: string }) {
   return (
     <Section label={CONNECTED_APPS_COPY.heading} testID="connected-apps">
       {apps.data.length === 0 ? (
-        <Row leading={<RowIcon icon={PlugIcon} />} title={CONNECTED_APPS_COPY.none} testID="connected-apps-none" />
+        <Row leading={<RowIcon icon={PlugIcon} />} title={CONNECTED_APPS_COPY.none} meta={CONNECTED_APPS_COPY.noneMeta} testID="connected-apps-none" />
       ) : (
         apps.data.map((grant) => (
           <Row

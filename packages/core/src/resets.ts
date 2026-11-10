@@ -12,7 +12,7 @@ import { signedPoints } from "./record";
 export const RESET_KINDS = ["result", "person_week", "week", "redeal", "skip", "letoff"] as const;
 export type ResetKind = (typeof RESET_KINDS)[number];
 
-/** What "Change result" can make a John. */
+/** What "Fix the result" can make a John. */
 export const RESULT_CHOICES = ["done", "late", "missed", "excused"] as const;
 export type ResultChoice = (typeof RESULT_CHOICES)[number];
 
@@ -100,8 +100,10 @@ export const RESET_COPY = {
   skipMeta: "Nothing counts",
   resetPerson: (name: string) => `Reset ${name}’s week`,
   resetPersonMeta: "Their ticks this week come off",
-  changeResult: "Change result",
-  changeResultMeta: "Admins",
+  /** An admin's one row in a John's sheet, under "Admin": it opens the four results. */
+  fixResult: "Fix the result",
+  fixResultMeta: "Done, late, missed or let off",
+  fixResultLabel: "Admin",
   letOff: (month: string) => `Let everyone off ${month}`,
   letOffMeta: "Its forfeits go; marks stay",
   choice: { done: "Done", late: "Late", missed: "Missed", excused: "Let off" } as Record<ResultChoice, string>,
