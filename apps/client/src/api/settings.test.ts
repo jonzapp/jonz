@@ -1,4 +1,4 @@
-import { NEW_JOHN, weekIndex, weekWindow, type HouseRules, type HouseSettings } from '@app/core';
+import { NEW_JOHN, weekIndex, weekWindow, type HouseRules, type HouseSettings, wordsFor } from '@app/core';
 
 import {
   addJohns,
@@ -17,6 +17,8 @@ import {
   updateHouse,
 } from './settings';
 import { callV1 } from './v1';
+
+const words = wordsFor('en', 'housemates');
 
 jest.mock('./v1', () => ({ callV1: jest.fn() }));
 
@@ -197,13 +199,13 @@ describe('updateHouse', () => {
   };
 
   it('saves the rules, as the form holds them', async () => {
-    await updateHouse(H1, { ...settings, dealMode: 'classic', dealBudget: 2 });
+    await updateHouse(H1, { ...settings, dealMode: 'classic', dealBudget: 2 }, words);
     expect(call).toHaveBeenCalledWith('save_house_rules', { ...settings, dealMode: 'classic', dealBudget: 2, houseId: H1 });
   });
 
   it('says what is wrong with the rules first', async () => {
-    await expect(updateHouse(H1, { ...settings, name: '' })).rejects.toThrow('Give the house a name.');
-    await expect(updateHouse(H1, { ...settings, stakeMinor: -1 })).rejects.toThrow('Amounts can’t be negative.');
+    await expect(updateHouse(H1, { ...settings, name: '' }, words)).rejects.toThrow('Give the house a name.');
+    await expect(updateHouse(H1, { ...settings, stakeMinor: -1 }, words)).rejects.toThrow('Amounts can’t be negative.');
     expect(call).not.toHaveBeenCalled();
   });
 });

@@ -1,4 +1,4 @@
-import { FOCUS_SHELL_COPY, HOUSE_LOWER_COPY, SECTION_LABEL } from '@app/core';
+import { FOCUS_SHELL_COPY, SECTION_LABEL, wordsFor } from '@app/core';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Link, router, Slot } from 'expo-router';
 import { fireEvent, renderRouter, screen, waitFor, within } from 'expo-router/testing-library';
@@ -10,6 +10,8 @@ import HouseStack, { unstable_settings as houseStackSettings } from '@/app/(hous
 import { TitleBar } from '@/components/title-bar';
 import { assignment, snapshot } from '@/testing/house';
 import { testQueryClient } from '@/testing/query';
+
+const words = wordsFor('en', 'housemates');
 
 // The real house layout (the tabs, the rail, the live channel, the John
 // sheet and the toasts) and House's own stack, with stand-in screens.
@@ -283,21 +285,21 @@ describe('on a laptop', () => {
   it("lists House's pages beside them, the one you're on marked, and no way back on the page", async () => {
     await open('/house');
     const nav = await screen.findByTestId('house-nav');
-    expect(within(nav).getByRole('link', { name: HOUSE_LOWER_COPY.overview })).toHaveProp('aria-current', 'page');
-    await fireEvent.press(within(nav).getByRole('link', { name: HOUSE_LOWER_COPY.johns }));
+    expect(within(nav).getByRole('link', { name: words('house.lower.overview') })).toHaveProp('aria-current', 'page');
+    await fireEvent.press(within(nav).getByRole('link', { name: words('house.lower.johns') }));
     expect(screen).toHavePathname('/house/johns');
     expect(screen.getByText('Johns screen')).toBeOnTheScreen();
-    expect(within(nav).getByRole('link', { name: HOUSE_LOWER_COPY.johns })).toHaveProp('aria-current', 'page');
-    expect(within(nav).getByRole('link', { name: HOUSE_LOWER_COPY.overview })).not.toHaveProp('aria-current', 'page');
+    expect(within(nav).getByRole('link', { name: words('house.lower.johns') })).toHaveProp('aria-current', 'page');
+    expect(within(nav).getByRole('link', { name: words('house.lower.overview') })).not.toHaveProp('aria-current', 'page');
     expect(screen.queryByTestId('back')).toBeNull();
   });
 
   it("moves between House's pages without piling them up, and Overview goes back to the top", async () => {
     await open('/house/wall');
     const nav = await screen.findByTestId('house-nav');
-    await fireEvent.press(within(nav).getByRole('link', { name: HOUSE_LOWER_COPY.johns }));
+    await fireEvent.press(within(nav).getByRole('link', { name: words('house.lower.johns') }));
     expect(screen).toHavePathname('/house/johns');
-    await fireEvent.press(within(nav).getByRole('link', { name: HOUSE_LOWER_COPY.overview }));
+    await fireEvent.press(within(nav).getByRole('link', { name: words('house.lower.overview') }));
     expect(screen).toHavePathname('/house');
     expect(screen.getByText('House screen')).toBeOnTheScreen();
   });

@@ -1,10 +1,9 @@
-import { HOUSE_PAGE_COPY, monthOf, monthWord, PERSON_COPY, pointsLabel, SECTION_LABEL } from "@app/core";
+import { monthOf, monthWord, pointsLabel, SECTION_LABEL, wordsFor } from "@app/core";
 import { expect, test } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, dealtHouseInClient } from "./auth";
-import { wordsFor } from '@app/core';
 
-const words = wordsFor('en', 'housemates');
+const words = wordsFor("en", "housemates");
 
 // The Table in the Expo app's web build: a tick scores at once, for the
 // week, on House's Table, and each housemate's row opens their page, with
@@ -44,10 +43,10 @@ test("a tick scores on the Table at once, beside fair shares and streaks", async
   await ava.getByRole("tab", { name: SECTION_LABEL.house }).click();
   await expect(ava).toHaveURL(/\/house$/);
   const table = ava.getByTestId("house-screen").getByTestId("house-table");
-  await expect(table.getByRole("heading", { name: HOUSE_PAGE_COPY.table })).toBeVisible();
+  await expect(table.getByRole("heading", { name: words('house.page.table') })).toBeVisible();
   const standings = table.getByTestId("standing");
   await expect(standings).toHaveCount(2);
-  await expect(standings.first()).toContainText(HOUSE_PAGE_COPY.you);
+  await expect(standings.first()).toContainText(words('house.page.you'));
   await expect(standings.first()).toContainText(pointsLabel(mine![0].points));
   await expect(standings.nth(1)).toContainText("Ben");
   await expect(standings.nth(1)).toContainText(pointsLabel(0));
@@ -62,6 +61,6 @@ test("a tick scores on the Table at once, beside fair shares and streaks", async
   await standings.filter({ hasText: "Ben" }).getByRole("link").click();
   await expect(ava).toHaveURL(new RegExp(`/house/people/${housemateIds[0]}$`));
   const person = ava.getByTestId("person-screen");
-  await expect(person.getByTestId("person-share")).toContainText(PERSON_COPY.level(false));
-  await expect(person.getByTestId("person-perks")).toContainText(PERSON_COPY.noStreak);
+  await expect(person.getByTestId("person-share")).toContainText(words('people.person.level', { you: false }));
+  await expect(person.getByTestId("person-perks")).toContainText(words('people.person.noStreak'));
 });

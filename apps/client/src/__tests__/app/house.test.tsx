@@ -1,16 +1,16 @@
 import {
   BIN_NIGHT,
-  HOUSE_LOWER_COPY,
   buildStake,
   FOCUS_SHELL_COPY,
-  HOUSE_PAGE_COPY,
-  HOUSE_SHOWS_COPY,
   type HistoryRow,
   INVITE_COPY,
   monthOf,
   monthWord,
   PASS_COPY,
   stakeRules,
+  perWeekLine,
+  lateMissedLine,
+  wordsFor,
 } from '@app/core';
 import { router, Slot } from 'expo-router';
 import { Tabs } from 'expo-router/js-tabs';
@@ -28,6 +28,8 @@ import HouseScreen from '@/app/(house)/house';
 import { HouseWorkspace } from '@/components/house/workspace';
 import { assignment, snapshot } from '@/testing/house';
 import { renderPages, untilRead } from '@/testing/pages';
+
+const words = wordsFor('en', 'housemates');
 
 jest.mock('@/api/away', () => ({ loadAway: jest.fn() }));
 jest.mock('@/api/board', () => ({ loadHouse: jest.fn() }));
@@ -116,11 +118,11 @@ async function open({ workspace = false } = {}) {
   // Your month's figure fills in once the Stake is read, or the Stake says it couldn't be.
   await waitFor(() =>
     expect(
-      screen.queryByText(HOUSE_PAGE_COPY.stakeUnreadable) ?? within(screen.getByTestId('figure-money')).getAllByText(/£/)[0],
+      screen.queryByText(words('house.page.stakeUnreadable')) ?? within(screen.getByTestId('figure-money')).getAllByText(/£/)[0],
     ).toBeOnTheScreen(),
   );
   await waitFor(() => expect(screen.getByTestId('figure-johns')).toHaveTextContent(/\d/));
-  await waitFor(() => expect(screen.queryByLabelText(HOUSE_PAGE_COPY.readingTable)).toBeNull());
+  await waitFor(() => expect(screen.queryByLabelText(words('house.page.readingTable'))).toBeNull());
 }
 
 beforeEach(() => {
@@ -169,9 +171,9 @@ it('names the house in the title bar, and leads the page with its figures', asyn
   const bar = within(screen.getByTestId('title-bar'));
   expect(bar.getByRole('header', { name: 'Flat 3' })).toBeOnTheScreen();
   // Each figure over what it counts, each opening its page.
-  expect(screen.getByTestId('figure-stake')).toHaveTextContent(`£20${HOUSE_PAGE_COPY.stakeEach}`);
+  expect(screen.getByTestId('figure-stake')).toHaveTextContent(`£20${words('house.page.stakeEach')}`);
   expect(screen.getByTestId('figure-people')).toHaveTextContent('2housemates');
-  expect(screen.getByTestId('figure-johns')).toHaveTextContent(`2${HOUSE_PAGE_COPY.johnsListed(2)}${HOUSE_LOWER_COPY.perWeek(4)}`);
+  expect(screen.getByTestId('figure-johns')).toHaveTextContent(`2${words('house.page.johnsListed', { n: 2 })}${perWeekLine(4, words)}`);
   expect(within(screen.getByTestId('house-figures')).getAllByRole('link')).toHaveLength(4);
   // House is a tab's top: there's no way back from it.
   expect(bar.queryByRole('button', { name: FOCUS_SHELL_COPY.back })).toBeNull();
@@ -179,13 +181,13 @@ it('names the house in the title bar, and leads the page with its figures', asyn
 
 /** On a phone, the switch's other half: the setup, the Pass and You. */
 async function showSetup() {
-  await fireEvent.press(within(screen.getByTestId('house-shows')).getByRole('radio', { name: HOUSE_SHOWS_COPY.setup }));
+  await fireEvent.press(within(screen.getByTestId('house-shows')).getByRole('radio', { name: words('house.shows.setup') }));
 }
 
 it('is two halves under a switch on a phone: the Overview, then the setup, the Pass and the way to You', async () => {
   await open();
   const shows = within(screen.getByTestId('house-shows'));
-  expect(shows.getByRole('radio', { name: HOUSE_SHOWS_COPY.overview })).toBeChecked();
+  expect(shows.getByRole('radio', { name: words('house.shows.overview') })).toBeChecked();
   expect(screen.getAllByTestId('lower').map((node) => node.props.children)).toEqual(['the Wall']);
   expect(screen.queryByTestId('pass-section')).toBeNull();
   expect(screen.queryByTestId('to-you')).toBeNull();
@@ -196,7 +198,7 @@ it('is two halves under a switch on a phone: the Overview, then the setup, the P
   expect(screen.queryByTestId('house-table')).toBeNull();
   expect(screen.getByTestId('pass-section')).toBeOnTheScreen();
   const you = screen.getByTestId('to-you');
-  expect(you).toHaveTextContent(new RegExp(`Priya.*${HOUSE_LOWER_COPY.youMeta}`));
+  expect(you).toHaveTextContent(new RegExp(`Priya.*${words('house.lower.youMeta')}`));
   await fireEvent.press(within(you).getByRole('link'));
   expect(screen).toHavePathname('/house/you');
 });
@@ -217,7 +219,7 @@ describe('your month and settling up', () => {
     await open();
     const money = screen.getByTestId('figure-money');
     expect(money).toHaveTextContent(
-      `£3${HOUSE_PAGE_COPY.upIn('October')}${HOUSE_PAGE_COPY.nothingForfeited}, ${HOUSE_PAGE_COPY.sharedOut('1 Nov')}`,
+      `£3${words('house.page.upIn', { month: 'October' })}${words('house.page.nothingForfeited')}, ${words('house.page.sharedOut', { day: '1 Nov' })}`,
     );
     expect(within(money).getByText('£3')).toHaveStyle({ color: BIN_NIGHT.light.good });
   });
@@ -227,7 +229,7 @@ describe('your month and settling up', () => {
     await open();
     const money = screen.getByTestId('figure-money');
     expect(money).toHaveTextContent(
-      `£3${HOUSE_PAGE_COPY.downIn('October')}${HOUSE_PAGE_COPY.forfeited('£3')}, ${HOUSE_PAGE_COPY.sharedOut('1 Nov')}`,
+      `£3${words('house.page.downIn', { month: 'October' })}${words('house.page.forfeited', { amount: '£3' })}, ${words('house.page.sharedOut', { day: '1 Nov' })}`,
     );
     // Green is for what you're up only: money lost is said in words, not in colour.
     expect(within(money).getByText('£3')).not.toHaveStyle({ color: BIN_NIGHT.light.good });
@@ -237,7 +239,7 @@ describe('your month and settling up', () => {
     (loadStake as jest.Mock).mockResolvedValue(stakeRead([]));
     await open();
     expect(screen.getByTestId('figure-money')).toHaveTextContent(
-      `£0${HOUSE_PAGE_COPY.forfeitedIn('October')}${HOUSE_PAGE_COPY.sharedOutAlone('1 Nov')}`,
+      `£0${words('house.page.forfeitedIn', { month: 'October' })}${words('house.page.sharedOutAlone', { day: '1 Nov' })}`,
     );
     expect(screen.queryByTestId('settle-up')).toBeNull();
   });
@@ -252,11 +254,11 @@ describe('your month and settling up', () => {
     await open();
     const transfer = screen.getByTestId('transfer');
     expect(transfer).toHaveTextContent(
-      new RegExp(`${HOUSE_PAGE_COPY.owesYou('Sam', '£4', 'September')}${HOUSE_PAGE_COPY.paidHowYouLike}`),
+      new RegExp(`${words('house.page.owesYouFor', { name: 'Sam', amount: '£4', months: 'September' })}${words('house.page.paidHowYouLike')}`),
     );
     // It shows the amount beside the row, and names who paid to a screen reader.
-    expect(within(transfer).getByText(HOUSE_PAGE_COPY.markReceived('£4'))).toBeOnTheScreen();
-    await fireEvent.press(within(transfer).getByRole('button', { name: HOUSE_PAGE_COPY.markReceivedFrom('Sam', '£4') }));
+    expect(within(transfer).getByText(words('house.page.markReceived', { amount: '£4' }))).toBeOnTheScreen();
+    await fireEvent.press(within(transfer).getByRole('button', { name: words('house.page.markReceivedFrom', { name: 'Sam', amount: '£4' }) }));
     expect(confirmPayment).toHaveBeenCalledWith('h1', 'sam', 400);
   });
 
@@ -266,15 +268,15 @@ describe('your month and settling up', () => {
     const openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
     await open();
     const transfer = screen.getByTestId('transfer');
-    expect(transfer).toHaveTextContent(new RegExp(HOUSE_PAGE_COPY.splitwiseHow('Sam')));
-    expect(within(transfer).getByText(HOUSE_PAGE_COPY.splitwiseDescription('September'))).toBeOnTheScreen();
+    expect(transfer).toHaveTextContent(new RegExp(words('house.page.splitwiseHow', { name: 'Sam' })));
+    expect(within(transfer).getByText(words('house.page.splitwiseDescriptionFor', { months: 'September' }))).toBeOnTheScreen();
     // The bare amount, which is what Splitwise's amount box takes.
-    await fireEvent.press(within(transfer).getByRole('button', { name: HOUSE_PAGE_COPY.copyAmountFrom('Sam', '£4') }));
+    await fireEvent.press(within(transfer).getByRole('button', { name: words('house.page.copyAmountFrom', { name: 'Sam', amount: '£4' }) }));
     expect(Clipboard.setStringAsync).toHaveBeenCalledWith('4');
-    await fireEvent.press(screen.getByRole('button', { name: HOUSE_PAGE_COPY.openSplitwise }));
+    await fireEvent.press(screen.getByRole('button', { name: words('house.page.openSplitwise') }));
     expect(openURL).toHaveBeenCalledWith('https://secure.splitwise.com/');
-    expect(within(transfer).queryByText(HOUSE_PAGE_COPY.markReceived('£4'))).toBeNull();
-    await fireEvent.press(within(transfer).getByRole('button', { name: HOUSE_PAGE_COPY.addedToSplitwiseFrom('Sam', '£4') }));
+    expect(within(transfer).queryByText(words('house.page.markReceived', { amount: '£4' }))).toBeNull();
+    await fireEvent.press(within(transfer).getByRole('button', { name: words('house.page.addedToSplitwiseFrom', { name: 'Sam', amount: '£4' }) }));
     expect(confirmPayment).toHaveBeenCalledWith('h1', 'sam', 400, 'splitwise');
     openURL.mockRestore();
   });
@@ -282,7 +284,7 @@ describe('your month and settling up', () => {
   it('says why marking it received was refused', async () => {
     (confirmPayment as jest.Mock).mockRejectedValue(new Error('Only the one who was paid can mark it received.'));
     await open();
-    await fireEvent.press(screen.getByRole('button', { name: HOUSE_PAGE_COPY.markReceivedFrom('Sam', '£4') }));
+    await fireEvent.press(screen.getByRole('button', { name: words('house.page.markReceivedFrom', { name: 'Sam', amount: '£4' }) }));
     expect(await screen.findByRole('alert')).toHaveTextContent('Only the one who was paid can mark it received.');
   });
 
@@ -293,7 +295,7 @@ describe('your month and settling up', () => {
     await open();
     const transfer = screen.getByTestId('transfer');
     expect(transfer).toHaveTextContent(
-      new RegExp(`${HOUSE_PAGE_COPY.youOwe('Sam', '£4', 'September')}${HOUSE_PAGE_COPY.waitingFor('Sam')}`),
+      new RegExp(`${words('house.page.youOweFor', { name: 'Sam', amount: '£4', months: 'September' })}${words('house.page.waitingFor', { name: 'Sam' })}`),
     );
     expect(within(transfer).queryByRole('button')).toBeNull();
   });
@@ -311,12 +313,12 @@ describe('your month and settling up', () => {
     );
     await open();
     const transfers = screen.getAllByTestId('transfer');
-    const gone = transfers.find((t) => within(t).queryByText(HOUSE_PAGE_COPY.gone))!;
-    expect(gone).toHaveTextContent(new RegExp(HOUSE_PAGE_COPY.owesYou(FOCUS_SHELL_COPY.formerHousemate, '£2')));
+    const gone = transfers.find((t) => within(t).queryByText(words('house.page.gone')))!;
+    expect(gone).toHaveTextContent(new RegExp(words('house.page.owesYou', { name: FOCUS_SHELL_COPY.formerHousemate, amount: '£2' })));
     expect(within(gone).queryByRole('button')).toBeNull();
     // The one amber button is Sam's, the only one the database would take.
     expect(screen.getAllByRole('button', { name: /^Mark/ })).toHaveLength(1);
-    expect(screen.getByRole('button', { name: HOUSE_PAGE_COPY.markReceivedFrom('Sam', '£4') })).toHaveStyle({
+    expect(screen.getByRole('button', { name: words('house.page.markReceivedFrom', { name: 'Sam', amount: '£4' }) })).toHaveStyle({
       backgroundColor: BIN_NIGHT.light.hivis,
     });
   });
@@ -331,9 +333,9 @@ describe('your month and settling up', () => {
   it("says when it can't read the Stake, and tries again", async () => {
     (loadStake as jest.Mock).mockRejectedValueOnce(new Error('offline'));
     await open();
-    expect(await screen.findByRole('alert')).toHaveTextContent(HOUSE_PAGE_COPY.stakeUnreadable);
+    expect(await screen.findByRole('alert')).toHaveTextContent(words('house.page.stakeUnreadable'));
     await fireEvent.press(screen.getByRole('button', { name: FOCUS_SHELL_COPY.retry }));
-    await waitFor(() => expect(screen.getByTestId('figure-money')).toHaveTextContent(new RegExp(HOUSE_PAGE_COPY.upIn('October'))));
+    await waitFor(() => expect(screen.getByTestId('figure-money')).toHaveTextContent(new RegExp(words('house.page.upIn', { month: 'October' }))));
   });
 });
 
@@ -342,10 +344,10 @@ describe('the Table', () => {
     await open();
     const standings = screen.getAllByTestId('standing');
     expect(standings).toHaveLength(2);
-    expect(standings[0]).toHaveTextContent(new RegExp(`${HOUSE_PAGE_COPY.you}3 pts, ${HOUSE_PAGE_COPY.streak(3)}\\+£3`));
+    expect(standings[0]).toHaveTextContent(new RegExp(`${words('house.page.you')}3 pts, ${words('house.page.streak', { weeks: 3 })}\\+£3`));
     // Sam's late John in the month comes before his streak, and leaves no room for it.
-    expect(standings[1]).toHaveTextContent(new RegExp(`Sam0 pts,${HOUSE_PAGE_COPY.lateMissed(1, 0)} in Oct−£3`));
-    expect(within(standings[1]).getByText(HOUSE_PAGE_COPY.lateMissed(1, 0))).toHaveStyle({ color: BIN_NIGHT.light.hazard });
+    expect(standings[1]).toHaveTextContent(new RegExp(`Sam0 pts,${lateMissedLine(1, 0, words)} in Oct−£3`));
+    expect(within(standings[1]).getByText(lateMissedLine(1, 0, words))).toHaveStyle({ color: BIN_NIGHT.light.hazard });
   });
 
   it('sets your own late and missed and money lost in ink on your tinted row', async () => {
@@ -362,28 +364,28 @@ describe('the Table', () => {
     const you = screen.getAllByTestId('standing')[0];
     expect(you).toHaveStyle({ backgroundColor: BIN_NIGHT.light.secondary });
     // Hazard words need the card colour behind them: on the tint they're ink, beside their mark.
-    expect(within(you).getByText(HOUSE_PAGE_COPY.lateMissed(1, 0))).not.toHaveStyle({ color: BIN_NIGHT.light.hazard });
+    expect(within(you).getByText(lateMissedLine(1, 0, words))).not.toHaveStyle({ color: BIN_NIGHT.light.hazard });
     expect(within(you).getByText('−£1')).toHaveStyle({ color: BIN_NIGHT.light.foreground });
-    expect(within(you).getByLabelText(HOUSE_PAGE_COPY.losing('−£1'))).toBeOnTheScreen();
+    expect(within(you).getByLabelText(words('house.page.losing', { amount: '−£1' }))).toBeOnTheScreen();
   });
 
   it('says more about each housemate where the row is wider', async () => {
     (useWindowDimensions as jest.Mock).mockReturnValue({ width: 1440, height: 900, scale: 1, fontScale: 1 });
     await open();
     expect(screen.getAllByTestId('standing')[1]).toHaveTextContent(
-      new RegExp(`Sam0 pts,${HOUSE_PAGE_COPY.lateMissed(1, 0)} in Oct, ${HOUSE_PAGE_COPY.streak(5)}−£3`),
+      new RegExp(`Sam0 pts,${lateMissedLine(1, 0, words)} in Oct, ${words('house.page.streak', { weeks: 5 })}−£3`),
     );
   });
 
   it('shows the month from the menu in its header, and back', async () => {
     await open();
-    expect(screen.getByTestId('table-span')).toHaveTextContent(HOUSE_PAGE_COPY.week);
+    expect(screen.getByTestId('table-span')).toHaveTextContent(words('house.page.week'));
     await showSpan('October');
     expect(screen.getByTestId('table-span')).toHaveTextContent('October');
     const month = screen.getAllByTestId('standing');
-    expect(month[0]).toHaveTextContent(new RegExp(`Sam12 pts,${HOUSE_PAGE_COPY.lateMissed(1, 0)} in Oct−£3`));
-    expect(month[1]).toHaveTextContent(new RegExp(`${HOUSE_PAGE_COPY.you}9 pts`));
-    await showSpan(HOUSE_PAGE_COPY.week);
+    expect(month[0]).toHaveTextContent(new RegExp(`Sam12 pts,${lateMissedLine(1, 0, words)} in Oct−£3`));
+    expect(month[1]).toHaveTextContent(new RegExp(`${words('house.page.you')}9 pts`));
+    await showSpan(words('house.page.week'));
     expect(screen.getAllByTestId('standing')[0]).toHaveTextContent(/3 pts/);
   });
 
@@ -399,7 +401,7 @@ describe('the Table', () => {
     await open();
     // With no Table read, the menu offers this month on the house's clock, whenever the test runs.
     await showSpan(monthWord(monthOf(new Date(), 'Europe/London')));
-    expect(screen.getByRole('alert')).toHaveTextContent(HOUSE_PAGE_COPY.tableUnreadable);
+    expect(screen.getByRole('alert')).toHaveTextContent(words('house.page.tableUnreadable'));
   });
 
   it('shares the join code and the link to it', async () => {
@@ -468,7 +470,7 @@ describe('the Table', () => {
   it('says how points and the stake work, in the house’s own numbers', async () => {
     await open();
     await fireEvent.press(screen.getByTestId('how-it-works'));
-    for (const rule of stakeRules(snapshot().rules, 100)) expect(screen.getByText(rule.body)).toBeOnTheScreen();
+    for (const rule of stakeRules(snapshot().rules, 100, words)) expect(screen.getByText(rule.body)).toBeOnTheScreen();
   });
 });
 

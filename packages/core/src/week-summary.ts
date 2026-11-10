@@ -3,7 +3,7 @@ import { format } from "date-fns";
 
 import { awayDays, currentOrNext, type AwayPeriod } from "./away";
 import { byDoneLatest, type BoardItem } from "./board";
-import { FOCUS_SHELL_COPY, TABLE_COPY } from "./copy";
+import { FOCUS_SHELL_COPY } from "./copy";
 import { MAKEUP_LABEL } from "./deal";
 import { dateRange, firstName, formatBalance, pointsLabel, STATUS_LABEL, STATUS_MARK, weekRange } from "./format";
 import type { LiveStatus } from "./outcome";
@@ -311,7 +311,7 @@ export function weekShareRows(
     .sort((a, b) => rank(a.userId) - rank(b.userId))
     .map((b) => ({ userId: b.userId, balance: formatBalance(b.balance) }));
   const makeup = MAKEUP_LABEL[awayMakeup] ?? MAKEUP_LABEL[100];
-  return { rows, key: words('week.summary.sharesKey', { key: TABLE_COPY.sharesKey, makeup: makeup.toLowerCase() }) };
+  return { rows, key: words('week.summary.sharesKey', { key: words('house.table.sharesKey'), makeup: makeup.toLowerCase() }) };
 }
 
 /**

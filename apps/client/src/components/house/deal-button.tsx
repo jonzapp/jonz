@@ -1,4 +1,3 @@
-import { DEAL_COPY } from '@app/core';
 import { ShuffleIcon } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
@@ -46,8 +45,8 @@ export function DealButton({
         <Button
           variant={variant ?? (started ? 'outline' : 'primary')}
           icon={ShuffleIcon}
-          label={label ?? (started ? DEAL_COPY.again : words('today.nextUp.dealWeek1'))}
-          busyLabel={DEAL_COPY.dealing}
+          label={label ?? (started ? words('house.deal.again') : words('today.nextUp.dealWeek1'))}
+          busyLabel={words('house.deal.dealing')}
           busy={move.pending}
           onPress={() => void move.run(() => dealThisWeek(houseId))}
           testID="deal-week"

@@ -1,4 +1,4 @@
-import { HOUSE_PAGE_COPY, INVITE_COPY, BUSY_COPY } from '@app/core';
+import { INVITE_COPY, BUSY_COPY } from '@app/core';
 import { CheckIcon, CopyIcon, RefreshCwIcon, Share2Icon } from 'lucide-react-native';
 import { useState } from 'react';
 import { Platform, Share, StyleSheet, Text, View } from 'react-native';
@@ -86,12 +86,12 @@ export function InviteSheet({
         onClose();
       }}
       title={words('house.page.invite')}
-      description={HOUSE_PAGE_COPY.inviteBody}
+      description={words('house.page.inviteBody')}
       tape
       testID="invite-sheet"
     >
       <View style={styles.sign}>
-        <SectionLabel>{HOUSE_PAGE_COPY.code}</SectionLabel>
+        <SectionLabel>{words('house.page.code')}</SectionLabel>
         <Text selectable style={[type.heading(1), styles.code]} testID="invite-code">
           {code}
         </Text>
@@ -101,12 +101,12 @@ export function InviteSheet({
       </View>
       <View style={styles.buttons}>
         <ButtonRow stacked>
-          <Button icon={Share2Icon} label={HOUSE_PAGE_COPY.shareInvite} onPress={() => void share()} testID="share-invite" />
+          <Button icon={Share2Icon} label={words('house.page.shareInvite')} onPress={() => void share()} testID="share-invite" />
           {web?.clipboard ? (
             <Button
               variant="outline"
               icon={copied ? CheckIcon : CopyIcon}
-              label={copied ? INVITE_COPY.copied : HOUSE_PAGE_COPY.copyLink}
+              label={copied ? INVITE_COPY.copied : words('house.page.copyLink')}
               onPress={() => void copy()}
               testID="copy-link"
             />

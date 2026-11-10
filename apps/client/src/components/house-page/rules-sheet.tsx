@@ -1,9 +1,10 @@
-import { HOUSE_PAGE_COPY, pocketRules, POCKET_COPY, stakeRules, type HouseRules } from '@app/core';
+import { pocketRules, POCKET_COPY, stakeRules, type HouseRules } from '@app/core';
 import { StyleSheet, View } from 'react-native';
 
 import { Group, GroupItem } from '@/components/group';
 import { Sheet } from '@/components/sheet';
 import { Body, RowTitle } from '@/components/text';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * How points and the stake work, in plain words with the house's own
@@ -24,13 +25,14 @@ export function RulesSheet({
   awayMakeup: number;
   pocketCapMinor?: number;
 }) {
+  const words = useWords();
   const family = pocketCapMinor !== undefined;
-  const items = family ? pocketRules(pocketCapMinor, rules.currency) : stakeRules(rules, awayMakeup);
+  const items = family ? pocketRules(pocketCapMinor, rules.currency) : stakeRules(rules, awayMakeup, words);
   return (
     <Sheet
       visible={visible}
       onClose={onClose}
-      title={family ? POCKET_COPY.howItWorks : HOUSE_PAGE_COPY.rulesTitle}
+      title={family ? POCKET_COPY.howItWorks : words('house.page.rulesTitle')}
       flush
       testID="rules-sheet"
     >

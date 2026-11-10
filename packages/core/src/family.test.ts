@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { ADMINS_COPY, FAMILY_COPY, FRONT_DOOR, JOIN_COPY, PAGE_TITLE, PERSON_COPY, SETUP_COPY } from "./copy";
+import { ADMINS_COPY, FAMILY_COPY, FRONT_DOOR, JOIN_COPY, PAGE_TITLE } from "./copy";
 import { DEFAULT_RULES, houseKind } from "./domain";
 import { familyHides, frontDoorWords, joinLine, kindParam, newHouseWords, roleCopy } from "./family";
 import { afterSignIn, DOOR, houseDefaults, signInLine } from "./front-door";
 import { CreateHouse } from "./schemas";
 import { rulesRows } from "./setup";
 import { wordsFor } from "./words-for";
+
+const words = wordsFor("en", "housemates");
 
 describe("the kind of house", () => {
   it("reads a row's kind, and anything it doesn't know is housemates", () => {
@@ -88,7 +90,7 @@ describe("roleCopy", () => {
     expect(house.admins.make("Sam")).toBe("Make Sam admin");
     expect(house.sub(true, true)).toBe("You, admin");
     expect(house.sub(false, false)).toBe("Housemate");
-    expect(house.person).toMatchObject({ section: "Admin", makeMember: "Make housemate", makeAdminMeta: PERSON_COPY.makeAdminMeta });
+    expect(house.person).toMatchObject({ section: "Admin", makeMember: "Make housemate", makeAdminMeta: words('people.person.makeAdminMeta') });
     expect(house.youIn("Elm Street", false)).toBe("Elm Street, housemate");
   });
 });
@@ -101,11 +103,11 @@ describe("what a family hides", () => {
 
   it("leaves the money out of a family's rules", () => {
     const rules = { ...DEFAULT_RULES, timezone: "Europe/London", currency: "GBP" as const, stakeMinor: 0, lateForfeitMinor: 0, missedForfeitMinor: 0 };
-    const labels = rulesRows(rules, 100, "jonz", "family").map((r) => r.label);
-    expect(labels).not.toContain(SETUP_COPY.stake);
-    expect(labels).not.toContain(SETUP_COPY.settleIn);
-    expect(labels).not.toContain(SETUP_COPY.late);
-    expect(rulesRows(rules, 100, "jonz").map((r) => r.label)).toEqual(expect.arrayContaining([SETUP_COPY.stake, SETUP_COPY.settleIn]));
+    const labels = rulesRows(rules, 100, words, "jonz", "family").map((r) => r.label);
+    expect(labels).not.toContain(words('house.setup.stake'));
+    expect(labels).not.toContain(words('house.setup.settleIn'));
+    expect(labels).not.toContain(words('house.setup.late'));
+    expect(rulesRows(rules, 100, words, "jonz").map((r) => r.label)).toEqual(expect.arrayContaining([words('house.setup.stake'), words('house.setup.settleIn')]));
   });
 });
 
@@ -114,7 +116,7 @@ describe("a family's House setup", () => {
     const { houseSetupValues } = await import("./house-lower");
     const rules = { currency: "USD" as const, stakeMinor: 0, lateForfeitMinor: 0, missedForfeitMinor: 0, dealMode: "smart" as const, dealBudget: 4 };
     const base = { rules, today: "2026-11-04", members: [], me: "sam", admin: true };
-    expect(houseSetupValues({ ...base, kind: "family" }).rules).toBe("Smart, Usual, 4 points each");
-    expect(houseSetupValues(base).rules).toContain("$0 late");
+    expect(houseSetupValues({ ...base, kind: "family" }, words).rules).toBe("Smart, Usual, 4 points each");
+    expect(houseSetupValues(base, words).rules).toContain("$0 late");
   });
 });

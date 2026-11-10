@@ -1,4 +1,18 @@
-import { ASK_CHATS_COPY, ASK_USAGE_COPY, type AskUsage, HOUSE_DRAFT_COPY, RESET_COPY, STEADY_COPY, type ChatReset, listAsDraft, NEW_JOHN, starterDraft, tidyDraft, type HouseRules, type JohnDef } from '@app/core';
+import {
+  ASK_CHATS_COPY,
+  ASK_USAGE_COPY,
+  type AskUsage,
+  HOUSE_DRAFT_COPY,
+  RESET_COPY,
+  type ChatReset,
+  listAsDraft,
+  NEW_JOHN,
+  starterDraft,
+  tidyDraft,
+  type HouseRules,
+  type JohnDef,
+  wordsFor,
+} from '@app/core';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 import { router } from 'expo-router';
@@ -12,7 +26,6 @@ import { saveDealMode } from '@/api/settings';
 import { testQueryClient } from '@/testing/query';
 
 import { SetupChat } from './setup-chat';
-import { wordsFor } from '@app/core';
 
 const words = wordsFor('en', 'housemates');
 
@@ -119,9 +132,9 @@ it('asks once the list is in how the house shares Johns, Smart already chosen, a
   await screen.findByText('Here’s a first go.');
   expect(screen.queryByTestId('chat-mode')).toBeNull();
   await fireEvent.press(screen.getByRole('button', { name: HOUSE_DRAFT_COPY.keep(2) }));
-  expect(await screen.findByText(STEADY_COPY.modeAsk)).toBeTruthy();
+  expect(await screen.findByText(words('week.steady.modeAsk'))).toBeTruthy();
   expect(screen.getByTestId('chat-mode-smart')).toBeChecked();
-  expect(screen.getByTestId('chat-mode-smart')).toHaveTextContent(STEADY_COPY.suggested, { exact: false });
+  expect(screen.getByTestId('chat-mode-smart')).toHaveTextContent(words('week.steady.suggested'), { exact: false });
   expect(screen.getByTestId('chat-mode-classic')).not.toBeChecked();
   await fireEvent.press(screen.getByTestId('chat-mode-smart'));
   expect(save).not.toHaveBeenCalled();

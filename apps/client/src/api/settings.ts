@@ -5,7 +5,6 @@ import {
   JohnFields,
   johnDef,
   repeatColumns,
-  RULES_COPY,
   weekIndex,
   weekWindow,
   type DealMode,
@@ -13,6 +12,7 @@ import {
   type HouseRules,
   type JohnDef,
   type JohnDraftInput,
+  type Words,
 } from '@app/core';
 
 import type { z } from 'zod';
@@ -120,9 +120,9 @@ export async function archiveJohn(_houseId: string, johnId: string, _now?: Date)
 }
 
 /** The house rules, as an admin set them. */
-export async function updateHouse(houseId: string, settings: HouseSettings) {
+export async function updateHouse(houseId: string, settings: HouseSettings, words: Words) {
   const parsed = HouseSettings.safeParse(settings);
-  if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? RULES_COPY.check);
+  if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? words('house.rules.check'));
   await callV1('save_house_rules', { ...parsed.data, houseId });
 }
 

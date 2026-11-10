@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { wordsFor } from "./words-for";
 
 import type { AwayPeriod } from "./away";
-import { FOCUS_SHELL_COPY, HOUSE_PAGE_COPY, PERSON_COPY, STAKE_HISTORY_COPY } from "./copy";
+import { FOCUS_SHELL_COPY } from "./copy";
 import {
   awayLines,
   joinParts,
@@ -28,6 +28,8 @@ import {
 } from "./house-page";
 import type { TableRow } from "./points";
 import { buildStake, type LedgerRow } from "./stake";
+
+const words = wordsFor("en", "housemates");
 
 const MEMBERS: PageMember[] = [
   { userId: "sam", name: "Sam Carter", role: "admin", streak: 6, immunityTokens: 1, swapTokens: 1 },
@@ -69,10 +71,10 @@ describe("month words", () => {
   });
 
   it("lists months in words", () => {
-    expect(monthsInWords([])).toBe("");
-    expect(monthsInWords(["2026-09"])).toBe("September");
-    expect(monthsInWords(["2026-08", "2026-09"])).toBe("August and September");
-    expect(monthsInWords(["2026-07", "2026-08", "2026-09"])).toBe("July, August and September");
+    expect(monthsInWords([], words)).toBe("");
+    expect(monthsInWords(["2026-09"], words)).toBe("September");
+    expect(monthsInWords(["2026-08", "2026-09"], words)).toBe("August and September");
+    expect(monthsInWords(["2026-07", "2026-08", "2026-09"], words)).toBe("July, August and September");
   });
 });
 
@@ -103,41 +105,41 @@ describe("overviewFigures", () => {
       { points: 3, everyWeeks: 1 },
       { points: 2, everyWeeks: 2 },
     ];
-    const figures = overviewFigures({ ...base, stake: stake({ sam: 401 }), johns });
+    const figures = overviewFigures({ ...base, stake: stake({ sam: 401 }), johns }, words);
     expect(figures.map((f) => f.key)).toEqual(["money", "stake", "people", "johns"]);
     expect(figures[0]).toEqual({
       key: "money",
       value: "£4.01",
-      label: HOUSE_PAGE_COPY.upIn("October"),
+      label: words('house.page.upIn', { month: "October" }),
       note: "Nothing forfeited, split 1 Nov",
       good: true,
     });
-    expect(figures[1]).toMatchObject({ value: "£20", label: HOUSE_PAGE_COPY.stakeEach });
+    expect(figures[1]).toMatchObject({ value: "£20", label: words('house.page.stakeEach') });
     expect(figures[2]).toMatchObject({ value: "4", label: "housemates" });
     expect(figures[3]).toMatchObject({ value: "2", label: "Johns on the list", note: "about 4 pts a week" });
   });
 
   it("says what you're down in words, not in green", () => {
-    const [money] = overviewFigures({ ...base, me: "tom", stake: stake({ tom: -934 }, { tom: 1000 }) });
-    expect(money).toMatchObject({ value: "£9.34", label: HOUSE_PAGE_COPY.downIn("October"), note: "£10 forfeited, split 1 Nov", good: false });
+    const [money] = overviewFigures({ ...base, me: "tom", stake: stake({ tom: -934 }, { tom: 1000 }) }, words);
+    expect(money).toMatchObject({ value: "£9.34", label: words('house.page.downIn', { month: "October" }), note: "£10 forfeited, split 1 Nov", good: false });
   });
 
   it("gives what you forfeited when you're square, and when it's shared out", () => {
-    expect(overviewFigures({ ...base, stake: stake({}) })[0]).toMatchObject({
+    expect(overviewFigures({ ...base, stake: stake({}) }, words)[0]).toMatchObject({
       value: "£0",
-      label: HOUSE_PAGE_COPY.forfeitedIn("October"),
-      note: HOUSE_PAGE_COPY.sharedOutAlone("1 Nov"),
+      label: words('house.page.forfeitedIn', { month: "October" }),
+      note: words('house.page.sharedOutAlone', { day: "1 Nov" }),
     });
-    expect(overviewFigures({ ...base, stake: stake({ sam: 0 }, { sam: 200 }) })[0]).toMatchObject({ value: "£2" });
+    expect(overviewFigures({ ...base, stake: stake({ sam: 0 }, { sam: 200 }) }, words)[0]).toMatchObject({ value: "£2" });
   });
 
   it("leaves a figure empty until it's read, and says one housemate and one John in the singular", () => {
-    const figures = overviewFigures({ ...base, month: "2026-11", housemates: 1, johns: undefined });
-    expect(figures[0]).toMatchObject({ value: null, label: HOUSE_PAGE_COPY.forfeitedIn("November") });
+    const figures = overviewFigures({ ...base, month: "2026-11", housemates: 1, johns: undefined }, words);
+    expect(figures[0]).toMatchObject({ value: null, label: words('house.page.forfeitedIn', { month: "November" }) });
     expect(figures[2].label).toBe("housemate");
     expect(figures[3]).toMatchObject({ value: null, note: null });
-    expect(overviewFigures({ ...base, johns: [{ points: 1, everyWeeks: 1 }] })[3].label).toBe("John on the list");
-    expect(overviewFigures({ ...base, johns: [] })[3]).toMatchObject({ value: "0", note: null });
+    expect(overviewFigures({ ...base, johns: [{ points: 1, everyWeeks: 1 }] }, words)[3].label).toBe("John on the list");
+    expect(overviewFigures({ ...base, johns: [] }, words)[3]).toMatchObject({ value: "0", note: null });
   });
 });
 
@@ -148,9 +150,9 @@ describe("monthCard", () => {
   });
 
   it("says you're up, the figure green, with nothing forfeited", () => {
-    expect(monthCard(stake({ sam: 401 }), "sam", "GBP")).toEqual({
+    expect(monthCard(stake({ sam: 401 }), "sam", "GBP", words)).toEqual({
       label: "October so far",
-      lead: HOUSE_PAGE_COPY.up,
+      lead: words('house.page.up'),
       figure: "£4.01",
       good: true,
       meta: "Nothing forfeited, split 1 Nov",
@@ -158,29 +160,29 @@ describe("monthCard", () => {
   });
 
   it("says you're down, in ink, with what you forfeited", () => {
-    const card = monthCard(stake({ tom: -934 }, { tom: 1000 }), "tom", "GBP");
-    expect(card).toMatchObject({ lead: HOUSE_PAGE_COPY.down, figure: "£9.34", good: false });
+    const card = monthCard(stake({ tom: -934 }, { tom: 1000 }), "tom", "GBP", words);
+    expect(card).toMatchObject({ lead: words('house.page.down'), figure: "£9.34", good: false });
     expect(card.meta).toBe("£10 forfeited, split 1 Nov");
   });
 
   it("says nothing's forfeited yet in a quiet month, without saying it twice", () => {
-    expect(monthCard(stake({}), "sam", "GBP")).toEqual({
+    expect(monthCard(stake({}), "sam", "GBP", words)).toEqual({
       label: "October so far",
-      lead: HOUSE_PAGE_COPY.nothingYet,
+      lead: words('house.page.nothingYet'),
       figure: null,
       good: false,
-      meta: HOUSE_PAGE_COPY.sharedOutAlone("1 Nov"),
+      meta: words('house.page.sharedOutAlone', { day: "1 Nov" }),
     });
   });
 
   it("says you're even when what you forfeited came back", () => {
-    const card = monthCard(stake({ sam: 0 }, { sam: 200 }), "sam", "GBP");
-    expect(card.lead).toBe(HOUSE_PAGE_COPY.even);
+    const card = monthCard(stake({ sam: 0 }, { sam: 200 }), "sam", "GBP", words);
+    expect(card.lead).toBe(words('house.page.even'));
     expect(card.meta).toBe("£2 forfeited, split 1 Nov");
   });
 
   it("treats someone not in the month as square", () => {
-    expect(monthCard({ month: "2026-12", projection: [] }, "sam", "EUR").meta).toBe(HOUSE_PAGE_COPY.sharedOutAlone("1 Jan"));
+    expect(monthCard({ month: "2026-12", projection: [] }, "sam", "EUR", words).meta).toBe(words('house.page.sharedOutAlone', { day: "1 Jan" }));
   });
 });
 
@@ -236,7 +238,7 @@ describe("settleRows", () => {
   const stake = buildStake({ ledger, closedMonths: ["2026-09"], memberIds: IDS, stakeMinor: 2000, month: "2026-10" });
 
   it("gives what's owed to you a button each, the first one amber", () => {
-    const rows = settleRows({ transfers: stake.transfers, me: "priya", members: MEMBERS, currency: "GBP", ledger, closedMonths: ["2026-09"] });
+    const rows = settleRows({ transfers: stake.transfers, me: "priya", members: MEMBERS, currency: "GBP", ledger, closedMonths: ["2026-09"] }, words);
     expect(rows).toEqual([
       {
         key: "tom-priya",
@@ -245,7 +247,7 @@ describe("settleRows", () => {
         owedToYou: true,
         amount: 534,
         title: "Tom owes you £5.34 for September",
-        meta: HOUSE_PAGE_COPY.paidHowYouLike,
+        meta: words('house.page.paidHowYouLike'),
         action: "Mark £5.34 received",
         // A screen reader hears the button away from its row, so it names who paid.
         spoken: "Mark Tom’s £5.34 received",
@@ -260,28 +262,28 @@ describe("settleRows", () => {
       { from: "tom", to: "sam", amount: 300 },
       { from: "megan", to: "sam", amount: 100 },
     ];
-    const rows = settleRows({ transfers, me: "sam", members: MEMBERS, currency: "GBP", ledger: [], closedMonths: [] });
+    const rows = settleRows({ transfers, me: "sam", members: MEMBERS, currency: "GBP", ledger: [], closedMonths: [] }, words);
     expect(rows.map((r) => [r.title, r.primary, r.meta])).toEqual([
-      ["Tom owes you £3", true, HOUSE_PAGE_COPY.paidHowYouLike],
-      ["Megan owes you £1", false, HOUSE_PAGE_COPY.paidHowYouLike],
+      ["Tom owes you £3", true, words('house.page.paidHowYouLike')],
+      ["Megan owes you £1", false, words('house.page.paidHowYouLike')],
     ]);
   });
 
   it("says what you owe, for when, and that it waits on them", () => {
-    const rows = settleRows({ transfers: stake.transfers, me: "tom", members: MEMBERS, currency: "GBP", ledger, closedMonths: ["2026-09"] });
+    const rows = settleRows({ transfers: stake.transfers, me: "tom", members: MEMBERS, currency: "GBP", ledger, closedMonths: ["2026-09"] }, words);
     expect(rows.map((r) => [r.title, r.meta, r.action, r.primary])).toEqual([
       ["You owe Priya £5.34 for September", "Waiting for Priya to confirm", null, false],
       ["You owe Sam £4.01 for September", "Waiting for Sam to confirm", null, false],
     ]);
     // With no closed month to name, it only waits.
-    const bare = settleRows({ transfers: stake.transfers, me: "tom", members: MEMBERS, currency: "GBP", ledger: [], closedMonths: [] });
-    expect([bare[0].title, bare[0].meta]).toEqual(["You owe Priya £5.34", HOUSE_PAGE_COPY.waitingFor("Priya")]);
+    const bare = settleRows({ transfers: stake.transfers, me: "tom", members: MEMBERS, currency: "GBP", ledger: [], closedMonths: [] }, words);
+    expect([bare[0].title, bare[0].meta]).toEqual(["You owe Priya £5.34", words('house.page.waitingFor', { name: "Priya" })]);
   });
 
   it("draws nothing when you're square, or it's between others", () => {
-    expect(settleRows({ transfers: [], me: "sam", members: MEMBERS, currency: "GBP", ledger: [], closedMonths: [] })).toEqual([]);
+    expect(settleRows({ transfers: [], me: "sam", members: MEMBERS, currency: "GBP", ledger: [], closedMonths: [] }, words)).toEqual([]);
     const theirs = [{ from: "tom", to: "priya", amount: 534 }];
-    expect(settleRows({ transfers: theirs, me: "megan", members: MEMBERS, currency: "GBP", ledger, closedMonths: [] })).toEqual([]);
+    expect(settleRows({ transfers: theirs, me: "megan", members: MEMBERS, currency: "GBP", ledger, closedMonths: [] }, words)).toEqual([]);
   });
 
   it("names someone who has left as someone who left, with no button the database would refuse", () => {
@@ -289,33 +291,33 @@ describe("settleRows", () => {
       { from: "ben", to: "sam", amount: 50 },
       { from: "tom", to: "sam", amount: 300 },
     ];
-    const rows = settleRows({ transfers, me: "sam", members: MEMBERS, currency: "GBP", ledger: [], closedMonths: [] });
+    const rows = settleRows({ transfers, me: "sam", members: MEMBERS, currency: "GBP", ledger: [], closedMonths: [] }, words);
     expect(rows.map((r) => [r.title, r.meta, r.action, r.primary])).toEqual([
-      [`${FOCUS_SHELL_COPY.formerHousemate} owes you £0.50`, HOUSE_PAGE_COPY.gone, null, false],
+      [`${FOCUS_SHELL_COPY.formerHousemate} owes you £0.50`, words('house.page.gone'), null, false],
       // The amber button goes to the first one that can be marked.
-      ["Tom owes you £3", HOUSE_PAGE_COPY.paidHowYouLike, "Mark £3 received", true],
+      ["Tom owes you £3", words('house.page.paidHowYouLike'), "Mark £3 received", true],
     ]);
-    const owing = settleRows({ transfers: [{ from: "sam", to: "ben", amount: 50 }], me: "sam", members: MEMBERS, currency: "GBP", ledger: [], closedMonths: [] });
-    expect(owing.map((r) => [r.title, r.meta])).toEqual([["You owe someone who left £0.50", HOUSE_PAGE_COPY.gone]]);
+    const owing = settleRows({ transfers: [{ from: "sam", to: "ben", amount: 50 }], me: "sam", members: MEMBERS, currency: "GBP", ledger: [], closedMonths: [] }, words);
+    expect(owing.map((r) => [r.title, r.meta])).toEqual([["You owe someone who left £0.50", words('house.page.gone')]]);
   });
 
   it("in a Splitwise house, gives what's owed to you its line to copy there and Added to Splitwise", () => {
-    const owed = settleRows({ transfers: stake.transfers, me: "priya", members: MEMBERS, currency: "GBP", ledger, closedMonths: ["2026-09"], settleIn: "splitwise" });
+    const owed = settleRows({ transfers: stake.transfers, me: "priya", members: MEMBERS, currency: "GBP", ledger, closedMonths: ["2026-09"], settleIn: "splitwise" }, words);
     expect(owed.map((r) => [r.title, r.meta, r.action, r.spoken, r.primary])).toEqual([
       ["Tom owes you £5.34 for September", "Add it in Splitwise: paid by you, Tom owes all of it", "Added to Splitwise", "Mark Tom’s £5.34 added to Splitwise", true],
     ]);
     // Splitwise's amount box takes the bare number.
     expect(owed[0].splitwise).toEqual({ description: "Jonz Stake, September", amount: "5.34", copy: "Copy 5.34", spoken: "Copy Tom’s £5.34" });
     // What you owe waits for them to add it; nothing to copy.
-    const owing = settleRows({ transfers: stake.transfers, me: "tom", members: MEMBERS, currency: "GBP", ledger, closedMonths: ["2026-09"], settleIn: "splitwise" });
+    const owing = settleRows({ transfers: stake.transfers, me: "tom", members: MEMBERS, currency: "GBP", ledger, closedMonths: ["2026-09"], settleIn: "splitwise" }, words);
     expect(owing.map((r) => [r.meta, r.splitwise])).toEqual([
       ["Priya adds it to Splitwise", null],
       ["Sam adds it to Splitwise", null],
     ]);
     // Whole amounts copy without pence, and someone who has left still can't be marked.
-    const left = settleRows({ transfers: [{ from: "ben", to: "sam", amount: 50 }, { from: "tom", to: "sam", amount: 300 }], me: "sam", members: MEMBERS, currency: "GBP", ledger: [], closedMonths: [], settleIn: "splitwise" });
+    const left = settleRows({ transfers: [{ from: "ben", to: "sam", amount: 50 }, { from: "tom", to: "sam", amount: 300 }], me: "sam", members: MEMBERS, currency: "GBP", ledger: [], closedMonths: [], settleIn: "splitwise" }, words);
     expect(left.map((r) => [r.meta, r.action, r.splitwise?.amount ?? null, r.splitwise?.description ?? null])).toEqual([
-      [HOUSE_PAGE_COPY.gone, null, null, null],
+      [words('house.page.gone'), null, null, null],
       ["Add it in Splitwise: paid by you, Tom owes all of it", "Added to Splitwise", "3", "Jonz Stake"],
     ]);
   });
@@ -332,7 +334,7 @@ describe("tableLines", () => {
   const away: AwayPeriod[] = [{ id: "a1", userId: "megan", startsOn: "2026-10-29", endsOn: "2026-11-01", note: "Cork" }];
 
   it("keeps the standings' order, with you as You and everyone else by first name", () => {
-    const lines = tableLines({ ...base, rows: [row("priya", 7), row("sam", 5, 0, 0, 0, 2), row("megan", 5, 0, 0, 0, 2), row("tom", 1)] });
+    const lines = tableLines({ ...base, rows: [row("priya", 7), row("sam", 5, 0, 0, 0, 2), row("megan", 5, 0, 0, 0, 2), row("tom", 1)] }, words);
     expect(lines.map((l) => [l.title, l.me, l.name])).toEqual([
       ["Priya", false, "Priya Shah"],
       ["You", true, "Sam Carter"],
@@ -342,11 +344,11 @@ describe("tableLines", () => {
   });
 
   it("says points, then streak and skips", () => {
-    const [priya, sam] = tableLines({ ...base, rows: [row("priya", 7), row("sam", 1)], column: 680 });
+    const [priya, sam] = tableLines({ ...base, rows: [row("priya", 7), row("sam", 1)], column: 680 }, words);
     expect(priya.meta).toEqual([{ text: "7 pts, 5-week streak" }]);
     expect(sam.meta).toEqual([{ text: "1 pt, 6-week streak, 1 skip" }]);
     const swapper = MEMBERS.map((m) => (m.userId === "tom" ? { ...m, swapTokens: 1 } : m));
-    expect(tableLines({ ...base, members: swapper, rows: [row("tom", 3)] })[0].meta).toEqual([{ text: "3 pts, swap ready" }]);
+    expect(tableLines({ ...base, members: swapper, rows: [row("tom", 3)] }, words)[0].meta).toEqual([{ text: "3 pts, swap ready" }]);
   });
 
   it("puts the month's late and missed first, in hazard, then time away", () => {
@@ -355,11 +357,11 @@ describe("tableLines", () => {
       rows: [row("tom", 1), row("megan", 5)],
       monthRows: [row("tom", 6, 2, 7, 1), row("megan", 20, 8)],
       away,
-    });
+    }, words);
     expect(lines[0].meta).toEqual([{ text: "1 pt, " }, { text: "7 late, 1 missed", hazard: true, icon: "x" }, { text: " in Oct" }]);
     expect(lines[1].meta).toEqual([{ text: "5 pts, away 29 Oct–1 Nov" }]);
     // Only late: late's clock marks it.
-    const [late] = tableLines({ ...base, rows: [row("tom", 1)], monthRows: [row("tom", 6, 2, 2, 0)] });
+    const [late] = tableLines({ ...base, rows: [row("tom", 1)], monthRows: [row("tom", 6, 2, 2, 0)] }, words);
     expect(late.meta[1]).toEqual({ text: "2 late", hazard: true, icon: "clock" });
   });
 
@@ -367,25 +369,25 @@ describe("tableLines", () => {
     const busy = MEMBERS.map((m) => (m.userId === "megan" ? { ...m, streak: 3, immunityTokens: 2 } : m));
     const text = (line: { meta: { text: string }[] }) => line.meta.map((p) => p.text).join("");
     // The month's misses come first; time away doesn't fit after them, so nothing lesser is said instead.
-    const [missed] = tableLines({ ...base, members: busy, rows: [row("megan", 2)], monthRows: [row("megan", 2, 0, 0, 1)], away });
+    const [missed] = tableLines({ ...base, members: busy, rows: [row("megan", 2)], monthRows: [row("megan", 2, 0, 0, 1)], away }, words);
     expect(text(missed)).toBe("2 pts, 1 missed in Oct");
-    const [home] = tableLines({ ...base, members: busy, rows: [row("megan", 2)], column: 680 });
+    const [home] = tableLines({ ...base, members: busy, rows: [row("megan", 2)], column: 680 }, words);
     expect(text(home)).toBe("2 pts, 3-week streak, 2 skips");
-    const [gone] = tableLines({ ...base, members: busy, rows: [row("megan", 2)], away });
+    const [gone] = tableLines({ ...base, members: busy, rows: [row("megan", 2)], away }, words);
     expect(text(gone)).toBe("2 pts, away 29 Oct–1 Nov");
     // On the narrowest phone the skips are left out whole rather than cut off.
-    const [narrow] = tableLines({ ...base, members: busy, rows: [row("megan", 2)], column: 360 });
+    const [narrow] = tableLines({ ...base, members: busy, rows: [row("megan", 2)], column: 360 }, words);
     expect(text(narrow)).toBe("2 pts, 3-week streak");
-    expect(tableLines({ ...base, members: busy, rows: [row("megan", 2)] })[0].meta).toEqual(narrow.meta);
+    expect(tableLines({ ...base, members: busy, rows: [row("megan", 2)] }, words)[0].meta).toEqual(narrow.meta);
   });
 
   it("leaves out what doesn't fit beside the money as it's drawn, on the reference phone", () => {
     const text = (line: { meta: { text: string }[] }) => line.meta.map((p) => p.text).join("");
     // Two-digit points and "+£40.01": the skip would be cut off, so it's left out.
-    const [owed] = tableLines({ ...base, rows: [row("sam", 31)], projection: projection({ sam: 4001 }), column: 390 });
+    const [owed] = tableLines({ ...base, rows: [row("sam", 31)], projection: projection({ sam: 4001 }), column: 390 }, words);
     expect([text(owed), owed.money]).toEqual(["31 pts, 6-week streak", "+£40.01"]);
     // Level money is short, which leaves room for it.
-    const [level] = tableLines({ ...base, rows: [row("sam", 31)], projection: projection({}), column: 390 });
+    const [level] = tableLines({ ...base, rows: [row("sam", 31)], projection: projection({}), column: 390 }, words);
     expect([text(level), level.money]).toEqual(["31 pts, 6-week streak, 1 skip", "£0"]);
   });
 
@@ -407,7 +409,7 @@ describe("tableLines", () => {
       ...base,
       rows: [row("priya", 7), row("tom", 1), row("megan", 0)],
       projection: projection({ priya: 400, tom: -934 }, { tom: 1000 }),
-    });
+    }, words);
     expect(lines.map((l) => [l.money, l.losing])).toEqual([
       ["+£4", false],
       ["−£9.34", true],
@@ -416,14 +418,14 @@ describe("tableLines", () => {
   });
 
   it("leaves the money off until the Stake is read", () => {
-    const [line] = tableLines({ ...base, rows: [row("sam", 0)], column: 390 });
+    const [line] = tableLines({ ...base, rows: [row("sam", 0)], column: 390 }, words);
     // The room for it is kept, so the line doesn't lose its end when the money lands.
     expect(line).toMatchObject({ money: null, losing: false, meta: [{ text: "0 pts, 6-week streak, 1 skip" }] });
   });
 
   it("shows nobody for an empty table, and someone who left by name", () => {
-    expect(tableLines({ ...base, rows: [] })).toEqual([]);
-    expect(tableLines({ ...base, rows: [row("ben", 3)] })[0]).toMatchObject({
+    expect(tableLines({ ...base, rows: [] }, words)).toEqual([]);
+    expect(tableLines({ ...base, rows: [row("ben", 3)] }, words)[0]).toMatchObject({
       title: FOCUS_SHELL_COPY.formerHousemate,
       name: FOCUS_SHELL_COPY.formerHousemate,
     });
@@ -432,7 +434,7 @@ describe("tableLines", () => {
 
 describe("stakeRules", () => {
   it("puts the house's own amounts in the words", () => {
-    const rules = stakeRules({ currency: "GBP", stakeMinor: 2000, lateForfeitMinor: 100, missedForfeitMinor: 300 }, 50);
+    const rules = stakeRules({ currency: "GBP", stakeMinor: 2000, lateForfeitMinor: 100, missedForfeitMinor: 300 }, 50, words);
     expect(rules.map((r) => r.label)).toEqual(["Points", "The Stake", "Skips", "Swap", "Fair shares"]);
     expect(rules[1].body).toContain("Everyone puts in £20 a month. A late John costs £1 and a missed one £3");
     expect(rules[2].body).toContain("Every 4 clean weeks in a row");
@@ -441,7 +443,7 @@ describe("stakeRules", () => {
   });
 
   it("falls back to in full for a setting it doesn't know", () => {
-    const rules = stakeRules({ currency: "EUR", stakeMinor: 1050, lateForfeitMinor: 50, missedForfeitMinor: 150 }, 75);
+    const rules = stakeRules({ currency: "EUR", stakeMinor: 1050, lateForfeitMinor: 50, missedForfeitMinor: 150 }, 75, words);
     expect(rules[1].body).toContain("€10.50");
     expect(rules[4].body).toContain("made up in full");
   });
@@ -449,7 +451,7 @@ describe("stakeRules", () => {
 
 describe("a housemate's page", () => {
   it("gives their week and month, late and missed in hazard only when there are any", () => {
-    const lines = recordLines(row("tom", 1, 1, 0, 0), row("tom", 6, 2, 7, 1), "2026-10");
+    const lines = recordLines(row("tom", 1, 1, 0, 0), row("tom", 6, 2, 7, 1), "2026-10", words);
     expect(lines).toEqual([
       { key: "week", title: "This week", meta: [{ text: "1 on time" }], value: "1 pt" },
       {
@@ -459,53 +461,53 @@ describe("a housemate's page", () => {
         value: "6 pts",
       },
     ]);
-    expect(recordLines(row("tom", 0, 0, 1, 0), null, "2026-10")[0].meta).toEqual([
+    expect(recordLines(row("tom", 0, 0, 1, 0), null, "2026-10", words)[0].meta).toEqual([
       { text: "0 on time, " },
       { text: "1 late", hazard: true, icon: "clock" },
     ]);
-    expect(recordLines(row("tom", 0), undefined, "2026-10").map((l) => l.key)).toEqual(["week"]);
-    expect(recordLines(null, null, "2026-10")).toEqual([]);
+    expect(recordLines(row("tom", 0), undefined, "2026-10", words).map((l) => l.key)).toEqual(["week"]);
+    expect(recordLines(null, null, "2026-10", words)).toEqual([]);
   });
 
   it("says where they stand against their share, rounded to the half point", () => {
-    expect(shareLine({ userId: "tom", balance: -3.4, weeksToEven: 2 }, false)).toEqual({
+    expect(shareLine({ userId: "tom", balance: -3.4, weeksToEven: 2 }, false, words)).toEqual({
       key: "share",
       title: "3.5 points behind their share",
-      meta: [{ text: PERSON_COPY.catchingUp(2) }],
+      meta: [{ text: words('people.person.catchingUp', { weeks: 2 }) }],
       value: "−3.5",
     });
-    expect(shareLine({ userId: "sam", balance: 1.1, weeksToEven: 0 }, true)).toMatchObject({
+    expect(shareLine({ userId: "sam", balance: 1.1, weeksToEven: 0 }, true, words)).toMatchObject({
       title: "1 point ahead of your share",
       value: "+1",
     });
-    expect(shareLine({ userId: "sam", balance: 0.2, weeksToEven: 0 }, true)).toEqual({
+    expect(shareLine({ userId: "sam", balance: 0.2, weeksToEven: 0 }, true, words)).toEqual({
       key: "share",
       title: "Level with your share",
-      meta: [{ text: PERSON_COPY.sinceJoining }],
+      meta: [{ text: words('people.person.sinceJoining') }],
     });
-    expect(shareLine({ userId: "tom", balance: -0.6, weeksToEven: 0 }, false).meta).toEqual([{ text: PERSON_COPY.sinceJoining }]);
+    expect(shareLine({ userId: "tom", balance: -0.6, weeksToEven: 0 }, false, words).meta).toEqual([{ text: words('people.person.sinceJoining') }]);
     // Nobody has dealt them anything lately (they've just joined): level.
-    expect(shareLine(undefined, false)).toEqual({
+    expect(shareLine(undefined, false, words)).toEqual({
       key: "share",
       title: "Level with their share",
-      meta: [{ text: PERSON_COPY.sinceJoining }],
+      meta: [{ text: words('people.person.sinceJoining') }],
     });
   });
 
   it("counts down to the next skip, and lists the skips held", () => {
-    expect(perkLines({ streak: 6, immunityTokens: 1, swapTokens: 1 }).map((l) => [l.title, l.meta[0].text])).toEqual([
+    expect(perkLines({ streak: 6, immunityTokens: 1, swapTokens: 1 }, words).map((l) => [l.title, l.meta[0].text])).toEqual([
       ["6-week streak", "Next skip in 2 weeks"],
-      ["1 skip", PERSON_COPY.immunityMeta],
-      ["Swap ready", PERSON_COPY.swapMeta],
+      ["1 skip", words('people.person.immunityMeta')],
+      ["Swap ready", words('people.person.swapMeta')],
     ]);
-    expect(perkLines({ streak: 4, immunityTokens: 0, swapTokens: 0 }).map((l) => l.meta[0].text)).toEqual([
+    expect(perkLines({ streak: 4, immunityTokens: 0, swapTokens: 0 }, words).map((l) => l.meta[0].text)).toEqual([
       "Next skip in 4 weeks",
-      PERSON_COPY.noTokensMeta,
+      words('people.person.noTokensMeta'),
     ]);
-    expect(perkLines({ streak: 9, immunityTokens: 2, swapTokens: 0 })[0].meta[0].text).toBe(PERSON_COPY.fullImmunity);
-    expect(perkLines({ streak: 0, immunityTokens: 0, swapTokens: 0 }).map((l) => l.title)).toEqual([
-      PERSON_COPY.noStreak,
-      PERSON_COPY.noTokens,
+    expect(perkLines({ streak: 9, immunityTokens: 2, swapTokens: 0 }, words)[0].meta[0].text).toBe(words('people.person.fullImmunity'));
+    expect(perkLines({ streak: 0, immunityTokens: 0, swapTokens: 0 }, words).map((l) => l.title)).toEqual([
+      words('people.person.noStreak'),
+      words('people.person.noTokens'),
     ]);
   });
 
@@ -516,11 +518,11 @@ describe("a housemate's page", () => {
       stakeMinor: 2000,
       record: row("tom", 6, 2, 7, 1),
       currency: "GBP",
-    });
+    }, words);
     expect(lines.map((l) => [l.title, l.value, l.losing])).toEqual([
-      [PERSON_COPY.forfeited, "−£10", true],
-      [PERSON_COPY.share, "+£0.66", undefined],
-      [PERSON_COPY.net, "−£9.34", true],
+      [words('people.person.forfeited'), "−£10", true],
+      [words('people.person.share'), "+£0.66", undefined],
+      [words('people.person.net'), "−£9.34", true],
     ]);
     expect(lines[0].meta).toEqual([{ text: "7 late, 1 missed", hazard: true, icon: "x" }, { text: " in Oct" }]);
     expect(lines[1].meta).toEqual([{ text: "Split 1 Nov" }]);
@@ -532,15 +534,15 @@ describe("a housemate's page", () => {
       month: "2026-10",
       stakeMinor: 2000,
       currency: "GBP",
-    });
+    }, words);
     expect(capped[0].meta).toEqual([{ text: "Capped at the £20 stake" }]);
-    const clean = moneyLines({ projection: undefined, month: "2026-10", stakeMinor: 2000, currency: "GBP" });
+    const clean = moneyLines({ projection: undefined, month: "2026-10", stakeMinor: 2000, currency: "GBP" }, words);
     expect(clean.map((l) => [l.value, l.losing])).toEqual([
       ["£0", false],
       ["£0", undefined],
       ["£0", false],
     ]);
-    expect(clean[0].meta).toEqual([{ text: PERSON_COPY.noneForfeited }]);
+    expect(clean[0].meta).toEqual([{ text: words('people.person.noneForfeited') }]);
   });
 
   it("says what they owe you or you owe them, and keeps what others owe between them", () => {
@@ -551,21 +553,21 @@ describe("a housemate's page", () => {
     ];
     const input = { transfers, members: MEMBERS, currency: "GBP" as const, ledger, closedMonths: ["2026-09"] };
     // Yours to mark received, said as House's settle-up says it; what Tom owes Priya stays between them.
-    expect(owingLines({ ...input, personId: "tom", me: "sam" }).map((l) => [l.title, l.meta[0].text])).toEqual([
-      ["Tom owes you £4.01 for September", HOUSE_PAGE_COPY.paidHowYouLike],
+    expect(owingLines({ ...input, personId: "tom", me: "sam" }, words).map((l) => [l.title, l.meta[0].text])).toEqual([
+      ["Tom owes you £4.01 for September", words('house.page.paidHowYouLike')],
     ]);
-    expect(owingLines({ ...input, personId: "priya", me: "sam" })).toEqual([]);
-    expect(owingLines({ ...input, personId: "tom", me: "tom" }).map((l) => [l.title, l.meta[0].text])).toEqual([
+    expect(owingLines({ ...input, personId: "priya", me: "sam" }, words)).toEqual([]);
+    expect(owingLines({ ...input, personId: "tom", me: "tom" }, words).map((l) => [l.title, l.meta[0].text])).toEqual([
       ["You owe Priya £5.34 for September", "Waiting for Priya to confirm"],
       ["You owe Sam £4.01 for September", "Waiting for Sam to confirm"],
     ]);
-    expect(owingLines({ ...input, personId: "megan", me: "sam" })).toEqual([]);
+    expect(owingLines({ ...input, personId: "megan", me: "sam" }, words)).toEqual([]);
     // With someone who has left, nobody can mark it: said as House's settle-up says it, whichever way it's owed.
-    const left = owingLines({ ...input, transfers: [{ from: "sam", to: "ben", amount: 100 }], personId: "sam", me: "sam" });
-    expect(left.map((l) => [l.title, l.meta[0].text])).toEqual([["You owe someone who left £1", HOUSE_PAGE_COPY.gone]]);
-    const theirs = owingLines({ ...input, transfers: [{ from: "ben", to: "sam", amount: 100 }], personId: "sam", me: "sam" });
-    expect(theirs.map((l) => [l.title, l.meta[0].text])).toEqual([["Someone who left owes you £1", HOUSE_PAGE_COPY.gone]]);
-    const house = settleRows({ ...input, transfers: [{ from: "sam", to: "ben", amount: 100 }, { from: "ben", to: "sam", amount: 100 }], me: "sam" });
+    const left = owingLines({ ...input, transfers: [{ from: "sam", to: "ben", amount: 100 }], personId: "sam", me: "sam" }, words);
+    expect(left.map((l) => [l.title, l.meta[0].text])).toEqual([["You owe someone who left £1", words('house.page.gone')]]);
+    const theirs = owingLines({ ...input, transfers: [{ from: "ben", to: "sam", amount: 100 }], personId: "sam", me: "sam" }, words);
+    expect(theirs.map((l) => [l.title, l.meta[0].text])).toEqual([["Someone who left owes you £1", words('house.page.gone')]]);
+    const house = settleRows({ ...input, transfers: [{ from: "sam", to: "ben", amount: 100 }, { from: "ben", to: "sam", amount: 100 }], me: "sam" }, words);
     expect(house.map((r) => r.meta)).toEqual([...theirs, ...left].map((l) => l.meta[0].text));
   });
 
@@ -576,14 +578,14 @@ describe("a housemate's page", () => {
       { id: "past", userId: "megan", startsOn: "2026-10-01", endsOn: "2026-10-03", note: null },
       { id: "theirs", userId: "tom", startsOn: "2026-11-01", endsOn: "2026-11-01", note: null },
     ];
-    expect(awayLines(periods, "megan", "2026-10-26").map((l) => [l.title, l.meta[0].text])).toEqual([
+    expect(awayLines(periods, "megan", "2026-10-26", words).map((l) => [l.title, l.meta[0].text])).toEqual([
       ["25–28 Oct", "Away now, Cork"],
-      ["20–27 Dec", PERSON_COPY.booked],
+      ["20–27 Dec", words('people.person.booked')],
     ]);
     // The last day away still counts as away.
-    expect(awayLines(periods, "megan", "2026-10-28")[0].meta[0].text).toBe("Away now, Cork");
+    expect(awayLines(periods, "megan", "2026-10-28", words)[0].meta[0].text).toBe("Away now, Cork");
     // None: the page says so in a sentence of its own.
-    expect(awayLines(periods, "sam", "2026-10-26")).toEqual([]);
+    expect(awayLines(periods, "sam", "2026-10-26", words)).toEqual([]);
   });
 });
 
@@ -601,37 +603,37 @@ describe("stakeHistory", () => {
   const input = { ledger, members: MEMBERS, currency: "GBP" as const, zone: "Europe/London" };
 
   it("groups the whole house's ledger by month, newest first, each forfeit naming its John", () => {
-    const months = stakeHistory({ ...input, me: "sam", whole: true });
+    const months = stakeHistory({ ...input, me: "sam", whole: true }, words);
     expect(months.map((m) => m.label)).toEqual(["October 2026", "September 2026"]);
     // A payment between two others shows once, without its amount: that's only theirs to see.
     expect(months[0].lines.map((l) => [l.kind, l.title, l.meta, l.amount, l.losing])).toEqual([
       ["late", "Descale the kettle", "Tom, late, Tue 20 Oct", "−£1", true],
       ["missed", "Bins out", "Tom, missed, Sun 18 Oct", "−£3", true],
-      ["payment", "Tom paid Megan", STAKE_HISTORY_COPY.received("Mon 12 Oct"), null, false],
+      ["payment", "Tom paid Megan", words('house.stake.received', { day: "Mon 12 Oct" }), null, false],
     ]);
     expect(months[1].lines.map((l) => [l.title, l.meta, l.amount])).toEqual([
-      [STAKE_HISTORY_COPY.capRefund, "Tom, Thu 1 Oct", "+£3"],
-      [STAKE_HISTORY_COPY.share, "You, Thu 1 Oct", "+£4.01"],
-      [STAKE_HISTORY_COPY.aJohn, "You, forfeit, Tue 8 Sep", "−£1"],
+      [words('house.stake.capRefund'), "Tom, Thu 1 Oct", "+£3"],
+      [words('house.stake.share'), "You, Thu 1 Oct", "+£4.01"],
+      [words('house.stake.aJohn'), "You, forfeit, Tue 8 Sep", "−£1"],
     ]);
   });
 
   it("shows only yours on Mine, a payment's amount unsigned", () => {
     // The ledger books being paid as coming off your side, which a sign would read as a loss...
-    expect(stakeHistory({ ...input, me: "megan", whole: false }).map((m) => m.lines.map((l) => [l.title, l.meta, l.amount, l.losing]))).toEqual([
-      [["Tom paid you", STAKE_HISTORY_COPY.received("Mon 12 Oct"), "£2.66", false]],
+    expect(stakeHistory({ ...input, me: "megan", whole: false }, words).map((m) => m.lines.map((l) => [l.title, l.meta, l.amount, l.losing]))).toEqual([
+      [["Tom paid you", words('house.stake.received', { day: "Mon 12 Oct" }), "£2.66", false]],
     ]);
     // ...and paying as going back on yours, which would read as a gain.
-    expect(stakeHistory({ ...input, me: "tom", whole: false })[0].lines.map((l) => [l.title, l.meta, l.amount])).toEqual([
+    expect(stakeHistory({ ...input, me: "tom", whole: false }, words)[0].lines.map((l) => [l.title, l.meta, l.amount])).toEqual([
       ["Descale the kettle", "Late, Tue 20 Oct", "−£1"],
       ["Bins out", "Missed, Sun 18 Oct", "−£3"],
-      ["You paid Megan", STAKE_HISTORY_COPY.received("Mon 12 Oct"), "£2.66"],
+      ["You paid Megan", words('house.stake.received', { day: "Mon 12 Oct" }), "£2.66"],
     ]);
   });
 
   it("shows a payment you're in once on Whole house, from your side", () => {
     const payments = (me: string) =>
-      stakeHistory({ ...input, me, whole: true })[0]
+      stakeHistory({ ...input, me, whole: true }, words)[0]
         .lines.filter((l) => l.kind === "payment")
         .map((l) => [l.title, l.amount]);
     expect(payments("tom")).toEqual([["You paid Megan", "£2.66"]]);
@@ -640,24 +642,24 @@ describe("stakeHistory", () => {
 
   it("dates entries in the house's zone", () => {
     const late = [h(entry("sam", "share", 100, "2026-09", { created_at: "2026-09-30T23:30:00Z" }))];
-    expect(stakeHistory({ ...input, ledger: late, me: "sam", whole: false })[0].lines[0].meta).toBe("Thu 1 Oct");
-    expect(stakeHistory({ ...input, ledger: late, zone: "America/Toronto", me: "sam", whole: false })[0].lines[0].meta).toBe("Wed 30 Sep");
+    expect(stakeHistory({ ...input, ledger: late, me: "sam", whole: false }, words)[0].lines[0].meta).toBe("Thu 1 Oct");
+    expect(stakeHistory({ ...input, ledger: late, zone: "America/Toronto", me: "sam", whole: false }, words)[0].lines[0].meta).toBe("Wed 30 Sep");
   });
 
   it("is empty for an empty ledger, and names someone who left", () => {
-    expect(stakeHistory({ ...input, ledger: [], me: "sam", whole: true })).toEqual([]);
+    expect(stakeHistory({ ...input, ledger: [], me: "sam", whole: true }, words)).toEqual([]);
     const gone = [
       h(entry("ben", "payment", 100, "2026-10", { counterparty_user_id: "sam" })),
       h(entry("sam", "payment", -100, "2026-10", { counterparty_user_id: "ben" })),
     ];
-    expect(stakeHistory({ ...input, ledger: gone, me: "sam", whole: true })[0].lines.map((l) => [l.title, l.amount])).toEqual([
+    expect(stakeHistory({ ...input, ledger: gone, me: "sam", whole: true }, words)[0].lines.map((l) => [l.title, l.amount])).toEqual([
       [`${FOCUS_SHELL_COPY.formerHousemate} paid you`, "£1"],
     ]);
     const paidGone = [
       h(entry("tom", "payment", 100, "2026-10", { counterparty_user_id: "ben" })),
       h(entry("ben", "payment", -100, "2026-10", { counterparty_user_id: "tom" })),
     ];
-    expect(stakeHistory({ ...input, ledger: paidGone, me: "sam", whole: true })[0].lines.map((l) => [l.title, l.amount])).toEqual([
+    expect(stakeHistory({ ...input, ledger: paidGone, me: "sam", whole: true }, words)[0].lines.map((l) => [l.title, l.amount])).toEqual([
       ["Tom paid someone who left", null],
     ]);
   });
@@ -676,7 +678,7 @@ describe("stakeHistory", () => {
         due_at: "2026-09-29T09:00:00.5+00:00",
       }),
     ];
-    expect(stakeHistory({ ...input, ledger: settled, me: "sam", whole: true })[0].lines.map((l) => [l.id, l.meta])).toEqual([
+    expect(stakeHistory({ ...input, ledger: settled, me: "sam", whole: true }, words)[0].lines.map((l) => [l.id, l.meta])).toEqual([
       [2, "You, Thu 1 Oct"],
       [1, "Tom, late, Wed 30 Sep"],
       [3, "Tom, missed, Tue 29 Sep"],
@@ -688,6 +690,6 @@ describe("stakeHistory", () => {
       h(entry("sam", "share", 100, "2026-09", { id: 5, created_at: "2026-10-01T00:05:00Z" })),
       h(entry("tom", "share", 200, "2026-09", { id: 9, created_at: "2026-10-01T00:05:00Z" })),
     ];
-    expect(stakeHistory({ ...input, ledger: tie, me: "sam", whole: true })[0].lines.map((l) => l.id)).toEqual([9, 5]);
+    expect(stakeHistory({ ...input, ledger: tie, me: "sam", whole: true }, words)[0].lines.map((l) => l.id)).toEqual([9, 5]);
   });
 });

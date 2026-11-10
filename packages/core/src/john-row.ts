@@ -1,5 +1,5 @@
 import { isOpen, type BoardItem } from "./board";
-import { FOCUS_SHELL_COPY, ON_CALL_COPY, PARENT_OK_COPY, STEADY_COPY } from "./copy";
+import { FOCUS_SHELL_COPY, PARENT_OK_COPY } from "./copy";
 import { andNames } from "./crew";
 import { CATEGORY_SHORT } from "./domain";
 import { dueInLine, firstName, relative, sinceLabel, STATUS_LABEL } from "./format";
@@ -176,8 +176,8 @@ function metaLine(
   const flagged =
     item.flaggedAt && isOpen(item.status)
       ? item.flaggedBy
-        ? ON_CALL_COPY.flaggedByInline(item.flaggedBy === viewerId ? words('week.summary.byYou') : called(nameOf(item.flaggedBy), words))
-        : ON_CALL_COPY.flaggedAgainInline
+        ? words('today.onCall.flaggedByInline', { name: item.flaggedBy === viewerId ? words('week.summary.byYou') : called(nameOf(item.flaggedBy), words) })
+        : words('today.onCall.flaggedAgainInline')
       : null;
   // Done together: who with ("with Sam and Ada"), or once ticked, who did it.
   const others = (item.crew ? item.crew.people.map((c) => c.userId) : (item.together ?? [])).filter((id) => id !== item.userId);
@@ -231,7 +231,7 @@ function metaLine(
       // Smart: who had it last time, when that was someone else ("after Ada").
       if (item.dealt?.mode === "smart" && !item.together?.length) {
         const before = item.dealt.weighed.find((w) => w.last && w.userId !== item.userId);
-        if (before) return line(due, STEADY_COPY.after(before.userId === viewerId ? words('week.summary.byYou') : called(nameOf(before.userId), words)));
+        if (before) return line(due, words('week.steady.after', { who: before.userId === viewerId ? words('week.summary.byYou') : called(nameOf(before.userId), words) }));
       }
       return line(due);
   }

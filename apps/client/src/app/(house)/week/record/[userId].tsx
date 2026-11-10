@@ -1,4 +1,4 @@
-import { readSpan, RECORD_COPY, RECORD_SPANS, type RecordSpan } from '@app/core';
+import { readSpan, RECORD_SPANS, type RecordSpan } from '@app/core';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
@@ -10,6 +10,7 @@ import { TitleBar } from '@/components/title-bar';
 import { PersonSections, usePersonRecord } from '@/components/week/person-record';
 import { useMembership } from '@/hooks/use-membership';
 import { INSET, SPACE } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * One person's track record on a phone, pushed from a row of it: the span,
@@ -27,6 +28,7 @@ export default function RecordPersonScreen() {
 }
 
 function PersonRecordPage({ houseId, userId, personId, span }: { houseId: string; userId: string; personId: string; span: RecordSpan }) {
+  const words = useWords();
   const record = usePersonRecord(houseId, userId, personId, span);
   return (
     <Screen
@@ -35,7 +37,7 @@ function PersonRecordPage({ houseId, userId, personId, span }: { houseId: string
           title={record.name}
           sub={record.breakdown?.range}
           back={{ pathname: '/week/record', params: { span } }}
-          backLabel={RECORD_COPY.title}
+          backLabel={words('week.record.title')}
         />
       }
       refreshing={record.refreshing}
@@ -45,10 +47,10 @@ function PersonRecordPage({ houseId, userId, personId, span }: { houseId: string
       <PageTitle page={record.name} />
       <View style={styles.top}>
         <Segmented
-          options={RECORD_SPANS.map((value) => ({ value, label: RECORD_COPY.spans[value] }))}
+          options={RECORD_SPANS.map((value) => ({ value, label: words(`week.record.spans.${value}` as const) }))}
           value={span}
           onChange={(value) => router.setParams({ span: value })}
-          label={RECORD_COPY.span}
+          label={words('week.record.span')}
           equal
           testID="record-span"
         />

@@ -153,7 +153,7 @@ describe("the month's pocket money", () => {
 
 describe("a family's rules", () => {
   it("say the cap in place of the stake", () => {
-    const rows = rulesRows(RULES, 100, "jonz", "family", 1000);
+    const rows = rulesRows(RULES, 100, words, "jonz", "family", 1000);
     expect(rows.find((r) => r.label === POCKET_COPY.rulesLabel)?.value).toBe("Up to £10 a month each");
     expect(pocketRules(1000, "GBP")[0].body).toContain("up to £10 a month");
   });
@@ -161,9 +161,9 @@ describe("a family's rules", () => {
   it("let a parent change the cap, as money", () => {
     const start = rulesDraft("The Parks", RULES, 100, "jonz", 1000);
     expect(start.pocket).toBe("10");
-    expect(checkRules({ ...start, pocket: "12.50" }).settings?.pocketCapMinor).toBe(1250);
-    expect(checkRules({ ...start, pocket: "lots" }).problems?.pocket).toBeTruthy();
+    expect(checkRules({ ...start, pocket: "12.50" }, words).settings?.pocketCapMinor).toBe(1250);
+    expect(checkRules({ ...start, pocket: "lots" }, words).problems?.pocket).toBeTruthy();
     // A housemates' form has no such field, and leaves it alone.
-    expect(checkRules(rulesDraft("Flat", RULES, 100)).settings?.pocketCapMinor).toBeUndefined();
+    expect(checkRules(rulesDraft("Flat", RULES, 100), words).settings?.pocketCapMinor).toBeUndefined();
   });
 });

@@ -1,4 +1,4 @@
-import { buildStake, FOCUS_SHELL_COPY, type HistoryRow, HOUSE_PAGE_COPY, SECTION_LABEL, STAKE_HISTORY_COPY } from '@app/core';
+import { buildStake, FOCUS_SHELL_COPY, type HistoryRow, SECTION_LABEL, wordsFor } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 
 import { loadHouse } from '@/api/board';
@@ -7,6 +7,8 @@ import { loadStake, type StakeRead } from '@/api/stake';
 import StakeScreen from '@/app/(house)/house/stake';
 import { snapshot } from '@/testing/house';
 import { renderPages, untilRead } from '@/testing/pages';
+
+const words = wordsFor('en', 'housemates');
 
 jest.mock('@/api/board', () => ({ loadHouse: jest.fn() }));
 jest.mock('@/api/house', () => ({ catchUp: jest.fn() }));
@@ -62,7 +64,7 @@ const LEDGER = [
 async function open() {
   await renderPages({ 'house/stake': StakeScreen, 'house/index': () => null }, '/house/stake');
   await untilRead();
-  await waitFor(() => expect(screen.queryByLabelText(HOUSE_PAGE_COPY.readingStake)).toBeNull());
+  await waitFor(() => expect(screen.queryByLabelText(words('house.page.readingStake'))).toBeNull());
 }
 
 beforeEach(() => {
@@ -75,8 +77,8 @@ beforeEach(() => {
 it('names the page and the stake, with the way back to House', async () => {
   await open();
   const bar = within(screen.getByTestId('title-bar'));
-  expect(bar.getByRole('header', { name: STAKE_HISTORY_COPY.title })).toBeOnTheScreen();
-  expect(bar.getByText(STAKE_HISTORY_COPY.sub('£20'))).toBeOnTheScreen();
+  expect(bar.getByRole('header', { name: words('house.stake.title') })).toBeOnTheScreen();
+  expect(bar.getByText(words('house.stake.sub', { stake: '£20' }))).toBeOnTheScreen();
   expect(bar.getByRole('button', { name: FOCUS_SHELL_COPY.backTo(SECTION_LABEL.house) })).toBeOnTheScreen();
 });
 
@@ -87,22 +89,22 @@ it('starts on yours: your entries by month, each said in words', async () => {
     'September 2026',
   ]);
   const [missed, payment, share] = screen.getAllByTestId('ledger-entry');
-  expect(missed).toHaveTextContent(new RegExp(`Wipe the hob${STAKE_HISTORY_COPY.missed}, Sun 18 Oct−£3`));
+  expect(missed).toHaveTextContent(new RegExp(`Wipe the hob${words('house.stake.missed')}, Sun 18 Oct−£3`));
   // A payment's amount unsigned: the ledger's sign would read being paid as a loss.
   expect(payment).toHaveTextContent(
-    new RegExp(`${STAKE_HISTORY_COPY.paid('Sam', STAKE_HISTORY_COPY.yourself)}${STAKE_HISTORY_COPY.received('Mon 12 Oct')}£4$`),
+    new RegExp(`${words('house.stake.paid', { from: 'Sam', to: words('house.stake.yourself') })}${words('house.stake.received', { day: 'Mon 12 Oct' })}£4$`),
   );
-  expect(share).toHaveTextContent(new RegExp(`${STAKE_HISTORY_COPY.share}Thu 1 Oct\\+£4`));
+  expect(share).toHaveTextContent(new RegExp(`${words('house.stake.share')}Thu 1 Oct\\+£4`));
 });
 
 it("shows the whole house's, each entry naming whose it is and a payment once", async () => {
   await open();
-  await fireEvent.press(screen.getByRole('radio', { name: STAKE_HISTORY_COPY.whole }));
+  await fireEvent.press(screen.getByRole('radio', { name: words('house.stake.whole') }));
   const entries = screen.getAllByTestId('ledger-entry');
-  expect(entries[0]).toHaveTextContent(new RegExp(`Bins outSam, ${STAKE_HISTORY_COPY.late.toLowerCase()}, Tue 20 Oct−£1`));
+  expect(entries[0]).toHaveTextContent(new RegExp(`Bins outSam, ${words('house.stake.late').toLowerCase()}, Tue 20 Oct−£1`));
   expect(entries[1]).toHaveTextContent(/Wipe the hobYou, missed, Sun 18 Oct−£3/);
   // A payment you're in, from your side.
-  expect(entries[2]).toHaveTextContent(new RegExp(`${STAKE_HISTORY_COPY.paid('Sam', STAKE_HISTORY_COPY.yourself)}${STAKE_HISTORY_COPY.received('Mon 12 Oct')}£4$`));
+  expect(entries[2]).toHaveTextContent(new RegExp(`${words('house.stake.paid', { from: 'Sam', to: words('house.stake.yourself') })}${words('house.stake.received', { day: 'Mon 12 Oct' })}£4$`));
   // The payment's other side isn't a second entry.
   expect(entries).toHaveLength(4);
 });
@@ -115,32 +117,32 @@ it("keeps the amount of a payment between two others to them", async () => {
     ]),
   );
   await open();
-  await fireEvent.press(screen.getByRole('radio', { name: STAKE_HISTORY_COPY.whole }));
+  await fireEvent.press(screen.getByRole('radio', { name: words('house.stake.whole') }));
   const payment = screen.getByTestId('ledger-entry');
-  expect(payment).toHaveTextContent(new RegExp(`^${STAKE_HISTORY_COPY.paid('Sam', HOUSE_PAGE_COPY.formerHousemate)}`));
+  expect(payment).toHaveTextContent(new RegExp(`^${words('house.stake.paid', { from: 'Sam', to: words('house.page.formerHousemate') })}`));
   expect(payment).not.toHaveTextContent(/£/);
 });
 
 it('says when nothing of yours is in the ledger, and the whole house still is', async () => {
   (loadStake as jest.Mock).mockResolvedValue(stakeRead([LEDGER[0]]));
   await open();
-  expect(screen.getByText(STAKE_HISTORY_COPY.emptyMine)).toBeOnTheScreen();
-  await fireEvent.press(screen.getByRole('radio', { name: STAKE_HISTORY_COPY.whole }));
+  expect(screen.getByText(words('house.stake.emptyMine'))).toBeOnTheScreen();
+  await fireEvent.press(screen.getByRole('radio', { name: words('house.stake.whole') }));
   expect(screen.getByTestId('ledger-entry')).toHaveTextContent(/Bins out/);
 });
 
 it('says when the ledger is empty, with nothing to switch', async () => {
   (loadStake as jest.Mock).mockResolvedValue(stakeRead([]));
   await open();
-  expect(screen.getByText(STAKE_HISTORY_COPY.empty)).toBeOnTheScreen();
-  expect(screen.getByText(STAKE_HISTORY_COPY.emptyBody)).toBeOnTheScreen();
+  expect(screen.getByText(words('house.stake.empty'))).toBeOnTheScreen();
+  expect(screen.getByText(words('house.stake.emptyBody'))).toBeOnTheScreen();
   expect(screen.queryByTestId('stake-span')).toBeNull();
 });
 
 it("says when it can't read the Stake, and tries again", async () => {
   (loadStake as jest.Mock).mockRejectedValueOnce(new Error('offline'));
   await renderPages({ 'house/stake': StakeScreen }, '/house/stake');
-  expect(await screen.findByRole('alert')).toHaveTextContent(HOUSE_PAGE_COPY.stakeUnreadable);
+  expect(await screen.findByRole('alert')).toHaveTextContent(words('house.page.stakeUnreadable'));
   await fireEvent.press(screen.getByRole('button', { name: FOCUS_SHELL_COPY.retry }));
   expect(await screen.findAllByTestId('ledger-entry')).not.toHaveLength(0);
 });

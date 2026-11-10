@@ -1,4 +1,4 @@
-import { firstName, HISTORY_COPY, PERSON_COPY, RESET_COPY, BUSY_COPY } from '@app/core';
+import { firstName, HISTORY_COPY, RESET_COPY, BUSY_COPY } from '@app/core';
 import { RotateCcwIcon, ShieldCheckIcon, ShieldOffIcon, UserMinusIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -38,20 +38,20 @@ export function PersonAdmin({ houseId, userId, person }: { houseId: string; user
   const weekId = useHouse(houseId, userId).view?.board.week?.id ?? null;
   const name = firstName(person.name);
   const admin = person.role === 'admin';
-  const words = useRoleCopy().person;
-  const say = useWords();
+  const copy = useRoleCopy().person;
+  const words = useWords();
 
   return (
     <View testID="person-admin" style={styles.stack}>
-      <Section label={words.section}>
+      <Section label={copy.section}>
         <Row
           leading={<RowIcon icon={admin ? ShieldOffIcon : ShieldCheckIcon} />}
-          title={admin ? words.makeMember : words.makeAdmin}
-          meta={admin ? words.makeMemberMeta : words.makeAdminMeta}
+          title={admin ? copy.makeMember : copy.makeAdmin}
+          meta={admin ? copy.makeMemberMeta : copy.makeAdminMeta}
           disabled={role.pending}
           onPress={() =>
             void role.run(() => setRole(houseId, person.userId, admin ? 'member' : 'admin')).then((done) => {
-              if (done) offer(say(admin ? 'wall.history.madeMember' : 'wall.history.madeAdmin', { name }), 'role', person.userId);
+              if (done) offer(words(admin ? 'wall.history.madeMember' : 'wall.history.madeAdmin', { name }), 'role', person.userId);
             })
           }
           testID="toggle-admin"
@@ -74,7 +74,7 @@ export function PersonAdmin({ houseId, userId, person }: { houseId: string; user
       <Group>
         <Row
           leading={<UserMinusIcon size={24} color={colors.hazard} aria-hidden />}
-          title={PERSON_COPY.remove(name)}
+          title={words('people.person.remove', { name })}
           // "Remove Tom from the house" says whole on the narrowest phone.
           titleLines={2}
           tone="hazard"
@@ -84,9 +84,9 @@ export function PersonAdmin({ houseId, userId, person }: { houseId: string; user
       </Group>
       <ConfirmSheet
         visible={confirming}
-        title={PERSON_COPY.removeTitle(name)}
-        body={PERSON_COPY.removeBody(name)}
-        confirmLabel={PERSON_COPY.removeConfirm(name)}
+        title={words('people.person.removeTitle', { name })}
+        body={words('people.person.removeBody', { name })}
+        confirmLabel={words('people.person.removeConfirm', { name })}
         icon={UserMinusIcon}
         busy={remove.pending}
         busyLabel={BUSY_COPY.removing}

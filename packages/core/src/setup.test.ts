@@ -3,7 +3,6 @@ import { wordsFor } from "./words-for";
 
 import type { AwayPeriod } from "./away";
 import { NEW_JOHN, type JohnDef } from "./board";
-import { GROUPS_COPY, RULES_COPY } from "./copy";
 import type { HouseRules } from "./domain";
 import { humanError } from "./errors";
 import {
@@ -58,64 +57,64 @@ describe("johnsByKind", () => {
       john({ id: "c", category: "bins" }),
       john({ id: "d", category: "other" }),
     ];
-    const kinds = johnsByKind(list);
+    const kinds = johnsByKind(list, words);
     expect(kinds.map((k) => k.label)).toEqual(["Kitchen (1)", "Bins & recycling (2)", "Everything else (1)"]);
     // Within a kind, the list's own order.
     expect(kinds[1].johns.map((j) => j.id)).toEqual(["a", "c"]);
   });
 
   it("has nothing to show for an empty list", () => {
-    expect(johnsByKind([])).toEqual([]);
+    expect(johnsByKind([], words)).toEqual([]);
   });
 });
 
 describe("listLine", () => {
   it("says when a weekly John is due and nothing more", () => {
-    expect(listLine(john({ everyWeeks: 1, dueDow: 7, dueTime: "21:00" }))).toBe("Sun 21:00");
+    expect(listLine(john({ everyWeeks: 1, dueDow: 7, dueTime: "21:00" }), words)).toBe("Sun 21:00");
   });
 
   it("adds what sets it apart: how often, the photo, the group", () => {
-    expect(listLine(john({ everyWeeks: 2, dueDow: 4, dueTime: "07:00", needsPhoto: true }), "Upstairs bathroom")).toBe(
+    expect(listLine(john({ everyWeeks: 2, dueDow: 4, dueTime: "07:00", needsPhoto: true }), words, "Upstairs bathroom")).toBe(
       "Thu 07:00, every 2 weeks, photo, Upstairs bathroom",
     );
-    expect(listLine(john({ everyMonths: 6, weekOfMonth: 5, dueDow: 7, dueTime: "10:00" }))).toBe("last Sun 10:00, twice a year");
+    expect(listLine(john({ everyMonths: 6, weekOfMonth: 5, dueDow: 7, dueTime: "10:00" }), words)).toBe("last Sun 10:00, twice a year");
   });
 
   it("says an on-call John's window", () => {
-    expect(listLine(john({ when: "on_call", respondHours: 12, perWeek: 3 }), "Downstairs")).toBe("On call, within 12 hours, Downstairs");
-    expect(listLine(john({ when: "on_call", respondHours: 1 }))).toBe("On call, within 1 hour");
+    expect(listLine(john({ when: "on_call", respondHours: 12, perWeek: 3 }), words, "Downstairs")).toBe("On call, within 12 hours, Downstairs");
+    expect(listLine(john({ when: "on_call", respondHours: 1 }), words)).toBe("On call, within 1 hour");
   });
 });
 
 describe("scheduleLine", () => {
   it("says how often, the day and time, and the photo", () => {
-    expect(scheduleLine(john({ everyWeeks: 1, dueDow: 7, dueTime: "21:00", needsPhoto: true }))).toBe(
+    expect(scheduleLine(john({ everyWeeks: 1, dueDow: 7, dueTime: "21:00", needsPhoto: true }), words)).toBe(
       "Every week, Sun 21:00, photo",
     );
   });
 
   it("leaves out the photo when there's none, and adds the group that shares it", () => {
-    expect(scheduleLine(john({ everyWeeks: 2, dueDow: 4, dueTime: "07:00" }), "Upstairs bathroom")).toBe(
+    expect(scheduleLine(john({ everyWeeks: 2, dueDow: 4, dueTime: "07:00" }), words, "Upstairs bathroom")).toBe(
       "Every 2 weeks, Thu 07:00, Upstairs bathroom",
     );
-    expect(scheduleLine(john({ everyWeeks: 1, dueDow: 1, dueTime: "09:30" }), null)).toBe("Every week, Mon 09:30");
+    expect(scheduleLine(john({ everyWeeks: 1, dueDow: 1, dueTime: "09:30" }), words, null)).toBe("Every week, Mon 09:30");
   });
 
   it("says a cadence the list doesn't name", () => {
-    expect(scheduleLine(john({ everyWeeks: 6, dueDow: 3, dueTime: "12:00" }))).toBe("Every 6 weeks, Wed 12:00");
+    expect(scheduleLine(john({ everyWeeks: 6, dueDow: 3, dueTime: "12:00" }), words)).toBe("Every 6 weeks, Wed 12:00");
   });
 
   it("says a monthly John's period and which of its weekday", () => {
-    expect(scheduleLine(john({ everyMonths: 3, weekOfMonth: 1, dueDow: 6, dueTime: "21:00" }))).toBe("Every 3 months, first Sat 21:00");
-    expect(scheduleLine(john({ everyMonths: 6, weekOfMonth: 5, dueDow: 7, dueTime: "10:00" }))).toBe("Twice a year, last Sun 10:00");
-    expect(scheduleLine(john({ everyMonths: 12, weekOfMonth: 2, dueDow: 1, dueTime: "09:00" }))).toBe("Every year, second Mon 09:00");
+    expect(scheduleLine(john({ everyMonths: 3, weekOfMonth: 1, dueDow: 6, dueTime: "21:00" }), words)).toBe("Every 3 months, first Sat 21:00");
+    expect(scheduleLine(john({ everyMonths: 6, weekOfMonth: 5, dueDow: 7, dueTime: "10:00" }), words)).toBe("Twice a year, last Sun 10:00");
+    expect(scheduleLine(john({ everyMonths: 12, weekOfMonth: 2, dueDow: 1, dueTime: "09:00" }), words)).toBe("Every year, second Mon 09:00");
   });
 
   it("says an on-call John's window and how often, not a day", () => {
-    expect(scheduleLine(john({ when: "on_call", respondHours: 12, perWeek: 3 }), "Downstairs")).toBe(
+    expect(scheduleLine(john({ when: "on_call", respondHours: 12, perWeek: 3 }), words, "Downstairs")).toBe(
       "On call, within 12 hours, about 3 times a week, Downstairs",
     );
-    expect(scheduleLine(john({ when: "on_call", respondHours: 1, perWeek: 1 }))).toBe("On call, within 1 hour, about once a week");
+    expect(scheduleLine(john({ when: "on_call", respondHours: 1, perWeek: 1 }), words)).toBe("On call, within 1 hour, about once a week");
   });
 });
 
@@ -157,7 +156,7 @@ describe("johnFacts", () => {
 
 describe("rulesRows", () => {
   it("reads the rules out in plain words", () => {
-    expect(rulesRows(RULES, 100)).toEqual([
+    expect(rulesRows(RULES, 100, words)).toEqual([
       { label: "How you share Johns", value: "Smart" },
       { label: "Effort each week", value: "Usual, 4 points each" },
       { label: "Stake", value: "£20 a month" },
@@ -187,7 +186,7 @@ describe("rulesRows", () => {
         dealBudget: 0,
       },
       50,
-    );
+     words);
     expect(rows.map((r) => r.value)).toEqual([
       "Classic",
       "No limit",
@@ -206,7 +205,7 @@ describe("rulesRows", () => {
     const rows = rulesRows(
       { ...RULES, stakeMinor: 0, lateForfeitMinor: 0, missedForfeitMinor: 0, disputeHours: 0, coverGraceHours: 0 },
       0,
-    );
+     words);
     expect(rows.map((r) => r.value).slice(2, 9)).toEqual([
       "None",
       "Nothing",
@@ -219,7 +218,7 @@ describe("rulesRows", () => {
   });
 
   it("says a make-up rate it has no words for as a share", () => {
-    expect(rulesRows(RULES, 75)[8].value).toBe("75% made up");
+    expect(rulesRows(RULES, 75, words)[8].value).toBe("75% made up");
   });
 });
 
@@ -238,22 +237,22 @@ describe("adminsLine", () => {
   const megan = { userId: "megan", name: "Megan Doyle", role: "admin" };
 
   it("names the one admin, by first name", () => {
-    expect(adminsLine([sam, priya], "priya", wordsFor("en", "housemates"))).toBe("Sam (admin) can change these.");
+    expect(adminsLine([sam, priya], "priya", wordsFor("en", "housemates"), words)).toBe("Sam (admin) can change these.");
   });
 
   it("tells the one admin it's them", () => {
-    expect(adminsLine([sam, priya], "sam", wordsFor("en", "housemates"))).toBe("You can change these.");
+    expect(adminsLine([sam, priya], "sam", wordsFor("en", "housemates"), words)).toBe("You can change these.");
   });
 
   it("names several admins, you first", () => {
-    expect(adminsLine([sam, priya, tom], "priya", wordsFor("en", "housemates"))).toBe("Sam and Tom (admins) can change these.");
-    expect(adminsLine([sam, priya, tom], "tom", wordsFor("en", "housemates"))).toBe("You and Sam (admins) can change these.");
-    expect(adminsLine([sam, tom, megan], "priya", wordsFor("en", "housemates"))).toBe("Sam, Tom and Megan (admins) can change these.");
+    expect(adminsLine([sam, priya, tom], "priya", wordsFor("en", "housemates"), words)).toBe("Sam and Tom (admins) can change these.");
+    expect(adminsLine([sam, priya, tom], "tom", wordsFor("en", "housemates"), words)).toBe("You and Sam (admins) can change these.");
+    expect(adminsLine([sam, tom, megan], "priya", wordsFor("en", "housemates"), words)).toBe("Sam, Tom and Megan (admins) can change these.");
   });
 
   it("still says who can when nobody listed is an admin", () => {
-    expect(adminsLine([priya], "priya", wordsFor("en", "housemates"))).toBe("Only admins can change these.");
-    expect(adminsLine([], "priya", wordsFor("en", "housemates"))).toBe("Only admins can change these.");
+    expect(adminsLine([priya], "priya", wordsFor("en", "housemates"), words)).toBe("Only admins can change these.");
+    expect(adminsLine([], "priya", wordsFor("en", "housemates"), words)).toBe("Only admins can change these.");
   });
 });
 
@@ -263,14 +262,14 @@ describe("johnsComing", () => {
   const tom = { userId: "tom", name: "Tom Reilly", role: "admin" };
 
   it("names whoever will add the Johns", () => {
-    expect(johnsComing([sam, priya], "priya", wordsFor("en", "housemates"))).toBe("Sam will add the Johns.");
-    expect(johnsComing([sam, priya, tom], "priya", wordsFor("en", "housemates"))).toBe("Sam and Tom will add the Johns.");
+    expect(johnsComing([sam, priya], "priya", wordsFor("en", "housemates"), words)).toBe("Sam will add the Johns.");
+    expect(johnsComing([sam, priya, tom], "priya", wordsFor("en", "housemates"), words)).toBe("Sam and Tom will add the Johns.");
   });
 
   it("leaves you out, and says an admin will when nobody else is one", () => {
-    expect(johnsComing([sam, priya, tom], "sam", wordsFor("en", "housemates"))).toBe("Tom will add the Johns.");
-    expect(johnsComing([sam, priya], "sam", wordsFor("en", "housemates"))).toBe("An admin will add the Johns.");
-    expect(johnsComing([], "priya", wordsFor("en", "housemates"))).toBe("An admin will add the Johns.");
+    expect(johnsComing([sam, priya, tom], "sam", wordsFor("en", "housemates"), words)).toBe("Tom will add the Johns.");
+    expect(johnsComing([sam, priya], "sam", wordsFor("en", "housemates"), words)).toBe("An admin will add the Johns.");
+    expect(johnsComing([], "priya", wordsFor("en", "housemates"), words)).toBe("An admin will add the Johns.");
   });
 });
 
@@ -302,17 +301,17 @@ describe("membersLine", () => {
   ];
 
   it("names who's in a group, you first, then in the house's order", () => {
-    expect(membersLine(["megan", "sam", "priya"], people, "priya")).toBe("You, Sam and Megan");
-    expect(membersLine(["megan"], people, "priya")).toBe("Megan");
+    expect(membersLine(["megan", "sam", "priya"], people, "priya", words)).toBe("You, Sam and Megan");
+    expect(membersLine(["megan"], people, "priya", words)).toBe("Megan");
   });
 
   it("says so when nobody is left in it", () => {
-    expect(membersLine([], people, "priya")).toBe(GROUPS_COPY.nobody);
+    expect(membersLine([], people, "priya", words)).toBe(words('house.groups.nobody'));
   });
 
   it("names someone who has left as someone who left", () => {
-    expect(membersLine(["sam", "gone"], people, "priya")).toBe("Sam and someone who left");
-    expect(membersLine(["gone"], people, "priya")).toBe("Someone who left");
+    expect(membersLine(["sam", "gone"], people, "priya", words)).toBe("Sam and someone who left");
+    expect(membersLine(["gone"], people, "priya", words)).toBe("Someone who left");
   });
 });
 
@@ -326,9 +325,9 @@ describe("time away lines", () => {
   });
 
   it("says where your trip is, and whether it's begun", () => {
-    expect(tripMeta(trip, "2026-10-26")).toBe("Mum's 60th in Cork");
-    expect(tripMeta(trip, "2026-10-28")).toBe("Away now, Mum's 60th in Cork");
-    expect(tripMeta({ ...trip, note: null }, "2026-10-26")).toBe("");
+    expect(tripMeta(trip, "2026-10-26", words)).toBe("Mum's 60th in Cork");
+    expect(tripMeta(trip, "2026-10-28", words)).toBe("Away now, Mum's 60th in Cork");
+    expect(tripMeta({ ...trip, note: null }, "2026-10-26", words)).toBe("");
   });
 
   it("gives a housemate's trip its dates and where", () => {
@@ -477,7 +476,7 @@ describe("the rules form", () => {
   });
 
   it("gives the settings to save, money in minor units", () => {
-    expect(checkRules({ ...start, stake: "25.50", missed: "£0" })).toEqual({
+    expect(checkRules({ ...start, stake: "25.50", missed: "£0" }, words)).toEqual({
       problems: null,
       settings: {
         name: "Flat 3",
@@ -499,33 +498,33 @@ describe("the rules form", () => {
   });
 
   it("puts each problem under its own field", () => {
-    const checked = checkRules({ ...start, name: "  ", late: "a quid", missed: "1001" });
+    const checked = checkRules({ ...start, name: "  ", late: "a quid", missed: "1001" }, words);
     expect(checked.settings).toBeNull();
     expect(checked.problems).toEqual({
       name: "Give the house a name.",
-      late: RULES_COPY.badAmount,
+      late: words('house.rules.badAmount'),
       missed: "Amounts are up to 1,000.",
     });
   });
 
   it("asks for a time zone", () => {
-    expect(checkRules({ ...start, timezone: "" }).problems).toEqual({ timezone: "Say which time zone the house is in." });
+    expect(checkRules({ ...start, timezone: "" }, words).problems).toEqual({ timezone: "Say which time zone the house is in." });
   });
 
   it("says a problem no field owns by Save", () => {
-    expect(checkRules({ ...start, awayMakeup: 75 }).problems).toEqual({ form: RULES_COPY.check });
+    expect(checkRules({ ...start, awayMakeup: 75 }, words).problems).toEqual({ form: words('house.rules.check') });
   });
 
   it("won't take a negative amount, whichever minus is typed", () => {
     for (const late of ["-5", "\u22125", "\u20135", "£-1.50"]) {
-      expect(checkRules({ ...start, late }).problems).toEqual({ late: RULES_COPY.badAmount });
+      expect(checkRules({ ...start, late }, words).problems).toEqual({ late: words('house.rules.badAmount') });
     }
     // Nor does it pass for the same amount the other way round: Save is offered, and says why.
     expect(rulesChanged({ ...start, late: "-1" }, start)).toBe(true);
   });
 
   it("takes zero and pence as they are", () => {
-    expect(checkRules({ ...start, late: "0", missed: "0.05" }).settings).toMatchObject({ lateForfeitMinor: 0, missedForfeitMinor: 5 });
+    expect(checkRules({ ...start, late: "0", missed: "0.05" }, words).settings).toMatchObject({ lateForfeitMinor: 0, missedForfeitMinor: 5 });
   });
 });
 

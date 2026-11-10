@@ -1,13 +1,4 @@
-import {
-  readSpan,
-  RECORD_COPY,
-  RECORD_SPANS,
-  SECTION_LABEL,
-  trackRecord,
-  type RecordMark,
-  type RecordSpan,
-  type TrackRecord,
-} from '@app/core';
+import { readSpan, RECORD_SPANS, SECTION_LABEL, trackRecord, type RecordMark, type RecordSpan, type TrackRecord } from '@app/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
@@ -27,6 +18,7 @@ import { useRecord } from '@/hooks/use-record';
 import { CONTENT_MAX, INSET, SPACE } from '@/theme';
 import { Waiting } from '@/components/waiting';
 import { RecordOutline } from '@/components/page-outlines';
+import { useWords } from '@/hooks/use-words';
 
 /** The key's marks, in the order they read. */
 const KEY: readonly RecordMark[] = ['clean', 'late', 'missed', 'covered', 'skipped', 'away', 'open'];
@@ -46,37 +38,38 @@ export default function RecordScreen() {
 }
 
 function RecordFor({ houseId, userId, span, open }: { houseId: string; userId: string; span: RecordSpan; open: string | null }) {
+  const words = useWords();
   const { query, view } = useHouse(houseId, userId);
   const rows = useRecord(houseId);
   const { refreshing, pull } = usePull(houseId, () => Promise.all([query.refetch(), rows.refetch()]));
 
   const members = view?.snapshot.members ?? [];
-  const nameOf = (id: string) => members.find((m) => m.userId === id)?.name ?? RECORD_COPY.someoneGone;
+  const nameOf = (id: string) => members.find((m) => m.userId === id)?.name ?? words('week.record.someoneGone');
   const record =
     view && rows.data
       ? trackRecord(
           { ...rows.data, memberIds: members.map((m) => m.userId), now: view.now, zone: view.snapshot.rules.timezone },
           span,
-        )
+         words)
       : null;
   const shown = record ? KEY.filter((mark) => record.rows.some((r) => r.cells.some((c) => c.mark === mark))) : [];
 
   return (
     <Screen
-      bar={<TitleBar title={RECORD_COPY.title} back="/week" backLabel={SECTION_LABEL.week} />}
+      bar={<TitleBar title={words('week.record.title')} back="/week" backLabel={SECTION_LABEL.week} />}
       refreshing={refreshing}
       onRefresh={pull}
       testID="record-screen"
       fills
     >
-      <PageTitle page={RECORD_COPY.title} />
+      <PageTitle page={words('week.record.title')} />
       <View style={styles.top}>
-        <Meta>{span === 'week' ? RECORD_COPY.introWeek : RECORD_COPY.intro}</Meta>
+        <Meta>{span === 'week' ? words('week.record.introWeek') : words('week.record.intro')}</Meta>
         <Segmented
-          options={RECORD_SPANS.map((value) => ({ value, label: RECORD_COPY.spans[value] }))}
+          options={RECORD_SPANS.map((value) => ({ value, label: words(`week.record.spans.${value}` as const) }))}
           value={span}
           onChange={(value) => router.setParams({ span: value })}
-          label={RECORD_COPY.span}
+          label={words('week.record.span')}
           equal
           testID="record-span"
         />
@@ -117,11 +110,12 @@ function RecordBody({
   shown: readonly RecordMark[];
   nameOf: (id: string) => string;
 }) {
+  const words = useWords();
   const beside = useSideBySide();
   // Someone who has left has no row to open: you, then.
   const chosen = open !== null && record.rows.some((r) => r.userId === open) ? open : userId;
   const grid = (
-    <Section label={record.range} right={RECORD_COPY.onTime} testID="record-section">
+    <Section label={record.range} right={words('week.record.onTime')} testID="record-section">
       <RecordGrid
         rows={record.rows}
         viewerId={userId}

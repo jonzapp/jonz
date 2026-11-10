@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { wordsFor } from "./words-for";
 
-import { HOUSE_LOWER_COPY, WALL_FEED_COPY } from "./copy";
+import { WALL_FEED_COPY } from "./copy";
 import { STATUS_MARK } from "./format";
 import {
   houseSetupValues,
@@ -17,6 +17,8 @@ import {
   type WallScene,
 } from "./house-lower";
 import { wallEvents, type WallEvent, type WallRow } from "./wall";
+
+const words = wordsFor("en", "housemates");
 
 const ZONE = "Europe/London";
 // A Monday afternoon, the day after the clocks went back: London is on GMT again.
@@ -510,7 +512,7 @@ describe("houseSetupValues", () => {
   const period = (userId: string, startsOn: string, endsOn: string) => ({ id: `${userId}${startsOn}`, userId, startsOn, endsOn, note: null });
 
   it("waits for each read", () => {
-    expect(houseSetupValues(base)).toEqual({
+    expect(houseSetupValues(base, words)).toEqual({
       johns: null,
       rules: "£20 stake, £1 late, £3 missed",
       away: null,
@@ -521,32 +523,32 @@ describe("houseSetupValues", () => {
 
   it("counts the Johns and their effort in an average week", () => {
     const weekly = Array.from({ length: 13 }, () => ({ points: 2, everyWeeks: 1 }));
-    expect(houseSetupValues({ ...base, johns: weekly }).johns).toBe("13 Johns, about 26 pts a week");
-    expect(houseSetupValues({ ...base, johns: [{ points: 3, everyWeeks: 2 }] }).johns).toBe("1 John, about 2 pts a week");
-    expect(houseSetupValues({ ...base, johns: [{ points: 1, everyWeeks: 1 }] }).johns).toBe("1 John, about 1 pt a week");
-    expect(houseSetupValues({ ...base, johns: [{ points: 1, everyWeeks: 4 }] }).johns).toBe("1 John, less than 1 pt a week");
-    expect(houseSetupValues({ ...base, johns: [] }).johns).toBe(HOUSE_LOWER_COPY.noJohns);
+    expect(houseSetupValues({ ...base, johns: weekly }, words).johns).toBe("13 Johns, about 26 pts a week");
+    expect(houseSetupValues({ ...base, johns: [{ points: 3, everyWeeks: 2 }] }, words).johns).toBe("1 John, about 2 pts a week");
+    expect(houseSetupValues({ ...base, johns: [{ points: 1, everyWeeks: 1 }] }, words).johns).toBe("1 John, about 1 pt a week");
+    expect(houseSetupValues({ ...base, johns: [{ points: 1, everyWeeks: 4 }] }, words).johns).toBe("1 John, less than 1 pt a week");
+    expect(houseSetupValues({ ...base, johns: [] }, words).johns).toBe(words('house.lower.noJohns'));
   });
 
   it("states the money rules, pence included, and a house with no stake", () => {
-    expect(houseSetupValues({ ...base, rules: { ...RULES, lateForfeitMinor: 50, missedForfeitMinor: 0 } }).rules).toBe(
+    expect(houseSetupValues({ ...base, rules: { ...RULES, lateForfeitMinor: 50, missedForfeitMinor: 0 } }, words).rules).toBe(
       "£20 stake, £0.50 late, £0 missed",
     );
-    expect(houseSetupValues({ ...base, rules: { ...RULES, stakeMinor: 0, currency: "EUR" } }).rules).toBe(
+    expect(houseSetupValues({ ...base, rules: { ...RULES, stakeMinor: 0, currency: "EUR" } }, words).rules).toBe(
       "No stake, €1 late, €3 missed",
     );
   });
 
   it("names who is away next, today's included, and nobody when nobody is", () => {
     const away = [period("megan", "2026-10-29", "2026-11-01"), period("tom", "2026-11-05", "2026-11-06")];
-    expect(houseSetupValues({ ...base, away }).away).toBe("Megan, 29 Oct–1 Nov");
+    expect(houseSetupValues({ ...base, away }, words).away).toBe("Megan, 29 Oct–1 Nov");
     const now = [...away, period("tom", "2026-10-20", "2026-10-26")];
-    expect(houseSetupValues({ ...base, away: now }).away).toBe("Tom, 20–26 Oct");
-    expect(houseSetupValues({ ...base, away: [period("sam", "2026-10-28", "2026-10-28")] }).away).toBe("You, Wed 28 Oct");
-    expect(houseSetupValues({ ...base, away: [period("tom", "2026-10-20", "2026-10-25")] }).away).toBe(
-      HOUSE_LOWER_COPY.nobodyAway,
+    expect(houseSetupValues({ ...base, away: now }, words).away).toBe("Tom, 20–26 Oct");
+    expect(houseSetupValues({ ...base, away: [period("sam", "2026-10-28", "2026-10-28")] }, words).away).toBe("You, Wed 28 Oct");
+    expect(houseSetupValues({ ...base, away: [period("tom", "2026-10-20", "2026-10-25")] }, words).away).toBe(
+      words('house.lower.nobodyAway'),
     );
-    expect(houseSetupValues({ ...base, away: [] }).away).toBe(HOUSE_LOWER_COPY.nobodyAway);
+    expect(houseSetupValues({ ...base, away: [] }, words).away).toBe(words('house.lower.nobodyAway'));
   });
 
   it("breaks a tie by who comes back first, then by name, and skips anyone who has left", () => {
@@ -556,15 +558,15 @@ describe("houseSetupValues", () => {
       period("megan", "2026-10-29", "2026-11-03"),
       period("gone", "2026-10-27", "2026-10-28"),
     ];
-    expect(houseSetupValues({ ...base, away: tie }).away).toBe("Priya, 29–31 Oct");
+    expect(houseSetupValues({ ...base, away: tie }, words).away).toBe("Priya, 29–31 Oct");
   });
 
   it("shows Groups to admins, and to everyone once a group exists", () => {
-    expect(houseSetupValues({ ...base, groups: 0 })).toMatchObject({ groups: "None", showGroups: false });
-    expect(houseSetupValues({ ...base, admin: true, groups: 0 })).toMatchObject({ groups: "None", showGroups: true });
-    expect(houseSetupValues({ ...base, groups: 2 })).toMatchObject({ groups: "2 groups", showGroups: true });
-    expect(houseSetupValues({ ...base, groups: 1 }).groups).toBe("1 group");
-    expect(houseSetupValues({ ...base, admin: true })).toMatchObject({ groups: null, showGroups: true });
+    expect(houseSetupValues({ ...base, groups: 0 }, words)).toMatchObject({ groups: "None", showGroups: false });
+    expect(houseSetupValues({ ...base, admin: true, groups: 0 }, words)).toMatchObject({ groups: "None", showGroups: true });
+    expect(houseSetupValues({ ...base, groups: 2 }, words)).toMatchObject({ groups: "2 groups", showGroups: true });
+    expect(houseSetupValues({ ...base, groups: 1 }, words).groups).toBe("1 group");
+    expect(houseSetupValues({ ...base, admin: true }, words)).toMatchObject({ groups: null, showGroups: true });
   });
 });
 
@@ -588,13 +590,13 @@ describe("leaveCost", () => {
   const base = { me: "sam", month: "2026-10", share: 333, transfers: [], members: MEMBERS, currency: "GBP" as const };
 
   it("costs your share so far of the month's forfeits", () => {
-    expect(leaveCost(base)).toBe("You’ll lose the £3.33 coming to you from October’s forfeits.");
-    expect(leaveCost({ ...base, share: 1000 })).toBe("You’ll lose the £10 coming to you from October’s forfeits.");
-    expect(leaveCost({ ...base, month: "" })).toBe("You’ll lose the £3.33 coming to you from this month’s forfeits.");
+    expect(leaveCost(base, words)).toBe("You’ll lose the £3.33 coming to you from October’s forfeits.");
+    expect(leaveCost({ ...base, share: 1000 }, words)).toBe("You’ll lose the £10 coming to you from October’s forfeits.");
+    expect(leaveCost({ ...base, month: "" }, words)).toBe("You’ll lose the £3.33 coming to you from this month’s forfeits.");
   });
 
   it("names every settle-up still open with you, owed to you first", () => {
-    expect(leaveCost({ ...base, transfers: [{ from: "tom", to: "sam", amount: 134 }] })).toBe(
+    expect(leaveCost({ ...base, transfers: [{ from: "tom", to: "sam", amount: 134 }] }, words)).toBe(
       "You’ll lose the £3.33 coming to you from October’s forfeits, and Tom still owes you £1.34.",
     );
     expect(
@@ -605,7 +607,7 @@ describe("leaveCost", () => {
           { from: "tom", to: "sam", amount: 134 },
           { from: "tom", to: "megan", amount: 500 },
         ],
-      }),
+      }, words),
     ).toBe("You’ll lose the £3.33 coming to you from October’s forfeits, Tom still owes you £1.34, and you still owe Priya £2.");
   });
 
@@ -620,27 +622,27 @@ describe("leaveCost", () => {
           { from: "tom", to: "priya", amount: 534 },
           { from: "tom", to: "sam", amount: 401 },
         ],
-      }),
+      }, words),
     ).toBe("You still owe Priya £5.34, and you still owe Sam £4.01.");
-    expect(leaveCost({ ...base, share: 0, transfers: [{ from: "sam", to: "priya", amount: 200 }] })).toBe(
+    expect(leaveCost({ ...base, share: 0, transfers: [{ from: "sam", to: "priya", amount: 200 }] }, words)).toBe(
       "You still owe Priya £2.",
     );
   });
 
   it("costs nothing when square with nothing to share", () => {
-    expect(leaveCost({ ...base, share: 0 })).toBe(HOUSE_LOWER_COPY.costsNothing);
+    expect(leaveCost({ ...base, share: 0 }, words)).toBe(words('house.lower.costsNothing'));
     // Settling up between two others is theirs.
-    expect(leaveCost({ ...base, share: 0, transfers: [{ from: "tom", to: "priya", amount: 100 }] })).toBe(
-      HOUSE_LOWER_COPY.costsNothing,
+    expect(leaveCost({ ...base, share: 0, transfers: [{ from: "tom", to: "priya", amount: 100 }] }, words)).toBe(
+      words('house.lower.costsNothing'),
     );
   });
 
   it("rounds nothing: pence stay pence", () => {
-    expect(leaveCost({ ...base, share: 1, transfers: [] })).toBe("You’ll lose the £0.01 coming to you from October’s forfeits.");
+    expect(leaveCost({ ...base, share: 1, transfers: [] }, words)).toBe("You’ll lose the £0.01 coming to you from October’s forfeits.");
   });
 
   it("names someone who has left as someone who left", () => {
-    expect(leaveCost({ ...base, share: 0, transfers: [{ from: "gone", to: "sam", amount: 100 }] })).toBe(
+    expect(leaveCost({ ...base, share: 0, transfers: [{ from: "gone", to: "sam", amount: 100 }] }, words)).toBe(
       "Someone who left still owes you £1.",
     );
   });

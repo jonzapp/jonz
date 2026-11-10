@@ -9,7 +9,7 @@ import { tz } from "@date-fns/tz";
 import { format } from "date-fns";
 
 import type { JohnDef } from "./board";
-import { FOCUS_SHELL_COPY, STEADY_COPY } from "./copy";
+import { FOCUS_SHELL_COPY } from "./copy";
 import type { Words } from "./words-for";
 import { firstName } from "./format";
 import { johnKind } from "./john-row";
@@ -54,9 +54,9 @@ export interface AheadSection {
 }
 
 /** A week ahead in a sentence: "next week" for the first, "week of 16 Nov" after. */
-function whenOf(startsOn: string, k: number): string {
-  if (k === 0) return STEADY_COPY.nextWeek;
-  return STEADY_COPY.weekOf(format(new Date(`${startsOn}T12:00:00Z`), "d MMM", { in: tz("UTC") }));
+function whenOf(startsOn: string, k: number, words: Words): string {
+  if (k === 0) return words('week.steady.nextWeek');
+  return words('week.steady.weekOf', { date: format(new Date(`${startsOn}T12:00:00Z`), "d MMM", { in: tz("UTC") }) });
 }
 
 const capital = (s: string) => s[0].toUpperCase() + s.slice(1);
@@ -70,7 +70,7 @@ function firstTurn(ahead: readonly SteadyAheadWeek[], johnId: string): { k: numb
 /** Week's "Waiting their turn": every John left waiting, longest waiting first, with when its turn comes. */
 export function waitingRows(
   list: readonly WeekJohn[],
-  state: { waiting: Readonly<Record<string, number>>; ahead: readonly SteadyAheadWeek[] },
+  state: { waiting: Readonly<Record<string, number>>; ahead: readonly SteadyAheadWeek[] }, words: Words,
 ): WaitingRow[] {
   return list
     .filter((j) => (state.waiting[j.id] ?? 0) > 0)
@@ -83,7 +83,7 @@ export function waitingRows(
         name: j.name,
         category: j.category,
         points: j.points,
-        meta: `${johnKind(j.category)}, ${turn ? whenOf(state.ahead[turn.k].startsOn, turn.k) : STEADY_COPY.waitingFor(weeks)}`,
+        meta: `${johnKind(j.category)}, ${turn ? whenOf(state.ahead[turn.k].startsOn, turn.k, words) : words('week.steady.waitingFor', { weeks })}`,
       };
     });
 }
@@ -99,7 +99,7 @@ export function turnRows(
   /** The Johns out this week, by the John they were dealt from. */
   outNow: ReadonlySet<string>,
   viewerId: string,
-  nameOf: (userId: string) => string | null,
+  nameOf: (userId: string) => string | null, words: Words,
 ): TurnRow[] {
   const rows: { k: number; row: TurnRow }[] = [];
   for (const j of list) {
@@ -107,7 +107,7 @@ export function turnRows(
     const turn = firstTurn(state.ahead, j.id);
     if (!turn) continue;
     const userId = turn.userIds[0];
-    const when = whenOf(state.ahead[turn.k].startsOn, turn.k);
+    const when = whenOf(state.ahead[turn.k].startsOn, turn.k, words);
     rows.push({
       k: turn.k,
       row: {
@@ -116,7 +116,7 @@ export function turnRows(
         category: j.category,
         points: j.points,
         userId,
-        meta: `${johnKind(j.category)}, ${STEADY_COPY.turnOf(whose(userId, viewerId, nameOf), when)}`,
+        meta: `${johnKind(j.category)}, ${words('week.steady.turnOf', { whose: whose(userId, viewerId, nameOf, words), when })}`,
       },
     });
   }
@@ -136,7 +136,7 @@ export function aheadSections(
   const order = [viewerId, ...memberIds.filter((id) => id !== viewerId)].filter((id) => memberIds.includes(id));
   return ahead.map((w, k) => ({
     startsOn: w.startsOn,
-    label: capital(whenOf(w.startsOn, k)),
+    label: capital(whenOf(w.startsOn, k, words)),
     people: order
       .map((userId) => {
         const johns = Object.entries(w.johns)
@@ -158,8 +158,8 @@ function named(name: string | null): string {
 }
 
 /** "your", or "Ada’s". */
-function whose(userId: string, viewerId: string, nameOf: (userId: string) => string | null): string {
-  return userId === viewerId ? STEADY_COPY.yourTurn : `${named(nameOf(userId))}’s`;
+function whose(userId: string, viewerId: string, nameOf: (userId: string) => string | null, words: Words): string {
+  return userId === viewerId ? words('week.steady.yourTurn') : `${named(nameOf(userId))}’s`;
 }
 
 /**
@@ -177,12 +177,12 @@ export function weekLookAhead<J extends WeekJohn>(args: {
   viewerId: string;
   nameOf: (userId: string) => string | null;
   words: Words;
-}): { waiting: WaitingRow[]; turns: TurnRow[]; weeks: AheadSection[]; comingUp: J[] } {
+}, words: Words): { waiting: WaitingRow[]; turns: TurnRow[]; weeks: AheadSection[]; comingUp: J[] } {
   const { list, state, viewerId, nameOf } = args;
   const outNow = new Set(args.items.filter((i) => !i.carried && i.johnId).map((i) => i.johnId!));
-  const waiting = waitingRows(list, state);
+  const waiting = waitingRows(list, state, words);
   const classic = args.mode === "classic";
-  const turns = classic ? [] : turnRows(list, state, outNow, viewerId, nameOf);
+  const turns = classic ? [] : turnRows(list, state, outNow, viewerId, nameOf, words);
   const weeks = classic ? aheadSections(list, state.ahead, args.memberIds, viewerId, nameOf, args.words).filter((w) => w.people.length) : [];
   const named = new Set([...waiting, ...turns].map((r) => r.johnId));
   for (const w of state.ahead) if (classic) for (const id of Object.keys(w.johns)) named.add(id);

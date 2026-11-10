@@ -1,4 +1,4 @@
-import { BEST_TIMES, STEADY_COPY, withRather, type BestTime, type MyPrefs } from '@app/core';
+import { BEST_TIMES, withRather, type BestTime, type MyPrefs, type Words } from '@app/core';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -14,12 +14,14 @@ import { Segmented } from '@/components/segmented';
 import { Meta } from '@/components/text';
 import { useMove } from '@/hooks/use-move';
 import { INSET, LABEL_GAP, SECTION_GAP } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
-const TIME_OPTIONS: readonly { value: BestTime | 'any'; label: string }[] = [
-  { value: 'any', label: STEADY_COPY.anyTime },
-  ...BEST_TIMES.map((value) => ({ value, label: STEADY_COPY.time[value] })),
+const timeOptions = (words: Words): readonly { value: BestTime | 'any'; label: string }[] => [
+  { value: 'any', label: words('week.steady.anyTime') },
+  ...BEST_TIMES.map((value) => ({ value, label: words(`week.steady.time.${value}` as const) })),
 ];
-const RATHER_OPTIONS = (['1', '0', '-1'] as const).map((value) => ({ value, label: STEADY_COPY.rather[value] }));
+const ratherOptions = (words: Words) =>
+  (['1', '0', '-1'] as const).map((value) => ({ value, label: words(`week.steady.rather.${value === '-1' ? 'minus1' : value}` as const) }));
 
 /**
  * Your preferences in this house, on Days and time away: the days that suit
@@ -28,6 +30,7 @@ const RATHER_OPTIONS = (['1', '0', '-1'] as const).map((value) => ({ value, labe
  * them each Monday, and everyone still does their fair share.
  */
 export function PrefsForm({ houseId, saved, list }: { houseId: string; saved: MyPrefs; list: JohnList }) {
+  const words = useWords();
   const { johns } = list;
   const move = useMove(houseId);
   // What you've picked, ahead of the save that follows each change.
@@ -41,35 +44,35 @@ export function PrefsForm({ houseId, saved, list }: { houseId: string; saved: My
   return (
     <View style={styles.page}>
       {move.problem ? <Alert message={move.problem} /> : null}
-      <Section label={STEADY_COPY.days} right={prefs.days.length ? undefined : STEADY_COPY.anyDay}>
+      <Section label={words('week.steady.days')} right={prefs.days.length ? undefined : words('week.steady.anyDay')}>
         <GroupItem>
-          <DayChips value={prefs.days} onChange={(days) => change({ ...prefs, days })} label={STEADY_COPY.days} testID="prefs-days" />
-          <Meta>{STEADY_COPY.daysHint}</Meta>
+          <DayChips value={prefs.days} onChange={(days) => change({ ...prefs, days })} label={words('week.steady.days')} testID="prefs-days" />
+          <Meta>{words('week.steady.daysHint')}</Meta>
         </GroupItem>
       </Section>
-      <Section label={STEADY_COPY.bestTime}>
+      <Section label={words('week.steady.bestTime')}>
         <GroupItem>
           <Segmented
-            options={TIME_OPTIONS}
+            options={timeOptions(words)}
             value={prefs.bestTime ?? 'any'}
             onChange={(t) => change({ ...prefs, bestTime: t === 'any' ? null : t })}
-            label={STEADY_COPY.bestTime}
+            label={words('week.steady.bestTime')}
             equal
             testID="prefs-time"
           />
-          <Meta>{STEADY_COPY.bestTimeHint}</Meta>
+          <Meta>{words('week.steady.bestTimeHint')}</Meta>
         </GroupItem>
       </Section>
       {johns.length ? (
         <View style={styles.noted}>
-          <Section label={STEADY_COPY.johns} testID="prefs-johns">
+          <Section label={words('week.steady.johns')} testID="prefs-johns">
             {johns.map((john) => (
               <Row
                 key={john.id}
                 title={john.name}
                 trailing={
                   <PickMenu
-                    options={RATHER_OPTIONS}
+                    options={ratherOptions(words)}
                     value={String(prefs.rather[john.id] ?? 0) as '1' | '0' | '-1'}
                     onChange={(v) => change(withRather(prefs, john.id, Number(v) as 1 | 0 | -1))}
                     label={john.name}
@@ -80,7 +83,7 @@ export function PrefsForm({ houseId, saved, list }: { houseId: string; saved: My
               />
             ))}
           </Section>
-          <Meta style={styles.note}>{STEADY_COPY.prefsNote}</Meta>
+          <Meta style={styles.note}>{words('week.steady.prefsNote')}</Meta>
         </View>
       ) : null}
     </View>

@@ -1,4 +1,4 @@
-import { HISTORY_COPY, HOUSE_PAGE_COPY, settleRows, type SettleRow } from '@app/core';
+import { HISTORY_COPY, settleRows, type SettleRow } from '@app/core';
 import * as Clipboard from 'expo-clipboard';
 import { CheckIcon, CopyIcon, ExternalLinkIcon } from 'lucide-react-native';
 import { Linking, StyleSheet, View } from 'react-native';
@@ -17,6 +17,7 @@ import type { HouseView } from '@/hooks/use-house';
 import { useMove } from '@/hooks/use-move';
 import { useUndoOffer } from '@/hooks/use-undo-offer';
 import { SPACE } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /** Where "Open Splitwise" goes: its web app, which hands over to the Splitwise app where it's installed. */
 const SPLITWISE_URL = 'https://secure.splitwise.com/';
@@ -42,6 +43,7 @@ export function SettleUpSection({
   view: HouseView;
   stake: StakeRead;
 }) {
+  const words = useWords();
   const { rules, members } = view.snapshot;
   const rows = settleRows({
     transfers: stake.transfers,
@@ -51,12 +53,12 @@ export function SettleUpSection({
     ledger: stake.ledger,
     closedMonths: stake.closedMonths,
     settleIn: view.snapshot.house.settleIn,
-  });
+  }, words);
   if (rows.length === 0) return null;
   const toSplitwise = rows.some((row) => row.splitwise);
 
   return (
-    <Section label={HOUSE_PAGE_COPY.settleUp} testID="settle-up">
+    <Section label={words('house.page.settleUp')} testID="settle-up">
       {rows.map((row) => (
         <SettleUp key={row.key} houseId={houseId} row={row} />
       ))}
@@ -66,13 +68,13 @@ export function SettleUpSection({
             variant="outline"
             icon={ExternalLinkIcon}
             iconAfter
-            label={HOUSE_PAGE_COPY.openSplitwise}
+            label={words('house.page.openSplitwise')}
             onPress={() => void Linking.openURL(SPLITWISE_URL)}
             testID="open-splitwise"
           />
         </GroupItem>
       ) : null}
-      <Row title={HOUSE_PAGE_COPY.history} href="/house/stake" chevron testID="to-stake" />
+      <Row title={words('house.page.history')} href="/house/stake" chevron testID="to-stake" />
     </Section>
   );
 }
@@ -83,6 +85,7 @@ export function SettleUpSection({
  * and amount to copy, then the button that says it's been added there.
  */
 function SettleUp({ houseId, row }: { houseId: string; row: SettleRow }) {
+  const words = useWords();
   const move = useMove(houseId);
   const offer = useUndoOffer(houseId);
   const toasts = useToastIfAny();
@@ -102,7 +105,7 @@ function SettleUp({ houseId, row }: { houseId: string; row: SettleRow }) {
             label={splitwise.copy}
             spoken={splitwise.spoken}
             onPress={() =>
-              void Clipboard.setStringAsync(splitwise.amount).then(() => toasts?.show(HOUSE_PAGE_COPY.copied(splitwise.amount)))
+              void Clipboard.setStringAsync(splitwise.amount).then(() => toasts?.show(words('house.page.copied', { plain: splitwise.amount })))
             }
             testID="copy-amount"
           />
@@ -115,7 +118,7 @@ function SettleUp({ houseId, row }: { houseId: string; row: SettleRow }) {
               variant={row.primary ? 'primary' : 'outline'}
               icon={CheckIcon}
               label={row.action}
-              busyLabel={HOUSE_PAGE_COPY.marking}
+              busyLabel={words('house.page.marking')}
               spoken={row.spoken ?? undefined}
               busy={move.pending}
               onPress={() =>

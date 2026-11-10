@@ -6,9 +6,9 @@
  * decides what Today offers. Pure.
  */
 import type { BoardItem } from "./board";
-import { STEADY_COPY } from "./copy";
 import { firstName, pointsLabel } from "./format";
 import type { MyPrefs } from "./steady-prefs";
+import type { Words } from "./words-for";
 
 /** An open ask, as read (swap_offers): `mine` is the asker's John, `theirs` the one it would swap for. */
 export interface SwapOfferRow {
@@ -57,11 +57,11 @@ export function swapAsk<I extends Swappable>(args: {
   members: readonly { userId: string; name: string; prefs: MyPrefs }[];
   offers: readonly SwapOfferRow[];
   now: Date;
-}): SwapAsk<I> | null {
+}, words: Words): SwapAsk<I> | null {
   const { items, viewerId, members, now } = args;
   const me = members.find((m) => m.userId === viewerId);
   if (!me) return null;
-  const nameOf = (id: string) => firstName(members.find((m) => m.userId === id)?.name ?? "") || STEADY_COPY.someone;
+  const nameOf = (id: string) => firstName(members.find((m) => m.userId === id)?.name ?? "") || words('week.steady.someone');
   const open = args.offers.filter((o) => Date.parse(o.expires_at) > now.getTime());
   const mine = items
     .filter((i) => i.userId === viewerId && i.johnId && me.prefs.rather[i.johnId] === -1 && swappable(i))
@@ -69,7 +69,7 @@ export function swapAsk<I extends Swappable>(args: {
 
   for (const item of mine) {
     const asked = open.find((o) => o.asked_by === viewerId && o.mine === item.id);
-    if (asked) return { kind: "asked", mine: item, withUserId: asked.asked_user_id, note: STEADY_COPY.asked(nameOf(asked.asked_user_id)) };
+    if (asked) return { kind: "asked", mine: item, withUserId: asked.asked_user_id, note: words('week.steady.asked', { name: nameOf(asked.asked_user_id) }) };
     const keen = new Set(members.filter((m) => m.userId !== viewerId && m.prefs.rather[item.johnId!] === 1).map((m) => m.userId));
     const theirs = items
       .filter((i) => keen.has(i.userId) && swappable(i) && !(i.johnId && me.prefs.rather[i.johnId] === -1))
@@ -81,10 +81,10 @@ export function swapAsk<I extends Swappable>(args: {
       mine: item,
       theirs,
       withUserId: theirs.userId,
-      title: STEADY_COPY.ratherDoIt(name),
-      meta: STEADY_COPY.swapFor(name, theirs.name, pointsLabel(theirs.points)),
-      button: STEADY_COPY.ask(name),
-      note: STEADY_COPY.askNote(name, item.name),
+      title: words('week.steady.ratherDoIt', { name }),
+      meta: words('week.steady.swapFor', { name, john: theirs.name, points: pointsLabel(theirs.points) }),
+      button: words('week.steady.ask', { name }),
+      note: words('week.steady.askNote', { name, john: item.name }),
     };
   }
   return null;
@@ -109,9 +109,9 @@ export function swapOffersToYou<I extends Swappable>(args: {
   members: readonly { userId: string; name: string }[];
   offers: readonly SwapOfferRow[];
   now: Date;
-}): SwapOfferToYou<I>[] {
+}, words: Words): SwapOfferToYou<I>[] {
   const byId = new Map(args.items.map((i) => [i.id, i]));
-  const nameOf = (id: string) => firstName(args.members.find((m) => m.userId === id)?.name ?? "") || STEADY_COPY.someone;
+  const nameOf = (id: string) => firstName(args.members.find((m) => m.userId === id)?.name ?? "") || words('week.steady.someone');
   return args.offers.flatMap((o) => {
     const theirs = byId.get(o.mine);
     const yours = byId.get(o.theirs);
@@ -123,8 +123,8 @@ export function swapOffersToYou<I extends Swappable>(args: {
         fromUserId: o.asked_by,
         theirs,
         yours,
-        title: STEADY_COPY.offerTitle(nameOf(o.asked_by)),
-        body: STEADY_COPY.offerBody(theirs.name, yours.name, pointsLabel(theirs.points)),
+        title: words('week.steady.offerTitle', { name: nameOf(o.asked_by) }),
+        body: words('week.steady.offerBody', { theirs: theirs.name, yours: yours.name, points: pointsLabel(theirs.points) }),
       },
     ];
   });

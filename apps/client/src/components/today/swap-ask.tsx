@@ -1,4 +1,4 @@
-import { STEADY_COPY, type BoardItem, type SwapAsk, type SwapOfferToYou, BUSY_COPY } from '@app/core';
+import { type BoardItem, type SwapAsk, type SwapOfferToYou, BUSY_COPY } from '@app/core';
 import { useState } from 'react';
 import { RepeatIcon } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
@@ -15,6 +15,7 @@ import { Body, Meta } from '@/components/text';
 import { useToastIfAny } from '@/components/toast';
 import { useMove } from '@/hooks/use-move';
 import { INSET, LABEL_GAP } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * A John you'd rather not, on Today: who would rather do it and which of
@@ -22,6 +23,7 @@ import { INSET, LABEL_GAP } from '@/theme';
  * if they say no or don't answer by tonight. Once asked, only that line.
  */
 export function SwapSuggestion({ houseId, ask, nameOf }: { houseId: string; ask: SwapAsk<BoardItem>; nameOf: (id: string) => string }) {
+  const words = useWords();
   const move = useMove(houseId);
   const toast = useToastIfAny();
   if (ask.kind === 'asked') {
@@ -47,7 +49,7 @@ export function SwapSuggestion({ houseId, ask, nameOf }: { houseId: string; ask:
               busy={move.pending}
               busyLabel={BUSY_COPY.asking}
               onPress={async () => {
-                if (await move.run(() => askSwap(ask.mine.id, ask.theirs.id))) toast?.show(STEADY_COPY.asked(nameOf(ask.withUserId)));
+                if (await move.run(() => askSwap(ask.mine.id, ask.theirs.id))) toast?.show(words('week.steady.asked', { name: nameOf(ask.withUserId) }));
               }}
               testID="ask-swap"
             />
@@ -66,21 +68,22 @@ export function SwapSuggestion({ houseId, ask, nameOf }: { houseId: string; ask:
 
 /** An ask made to you: who asks, what for, and Swap or No thanks. */
 export function SwapOfferCard({ houseId, offer, nameOf }: { houseId: string; offer: SwapOfferToYou<BoardItem>; nameOf: (id: string) => string }) {
+  const words = useWords();
   const move = useMove(houseId);
   const toast = useToastIfAny();
   // Which answer is waiting: the two share one move.
   const [accepting, setAccepting] = useState(true);
   const answer = async (accept: boolean) => {
     setAccepting(accept);
-    if (await move.run(() => answerSwap(offer.id, accept))) toast?.show(accept ? STEADY_COPY.swapped : STEADY_COPY.declined);
+    if (await move.run(() => answerSwap(offer.id, accept))) toast?.show(accept ? words('week.steady.swapped') : words('week.steady.declined'));
   };
   return (
     <Section label={offer.title} leading={<Avatar name={nameOf(offer.fromUserId)} userId={offer.fromUserId} size={24} />} testID="swap-offer">
       <GroupItem>
         <Body>{offer.body}</Body>
         <ButtonRow>
-          <Button icon={RepeatIcon} label={STEADY_COPY.accept} busy={move.pending && accepting} busyLabel={BUSY_COPY.accepting} onPress={() => void answer(true)} testID="accept-swap" />
-          <Button variant="ghost" label={STEADY_COPY.decline} busy={move.pending && !accepting} busyLabel={BUSY_COPY.declining} onPress={() => void answer(false)} testID="decline-swap" />
+          <Button icon={RepeatIcon} label={words('week.steady.accept')} busy={move.pending && accepting} busyLabel={BUSY_COPY.accepting} onPress={() => void answer(true)} testID="accept-swap" />
+          <Button variant="ghost" label={words('week.steady.decline')} busy={move.pending && !accepting} busyLabel={BUSY_COPY.declining} onPress={() => void answer(false)} testID="decline-swap" />
         </ButtonRow>
         {move.problem ? <Alert message={move.problem} /> : null}
       </GroupItem>

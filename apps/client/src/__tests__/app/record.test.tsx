@@ -1,4 +1,4 @@
-import { FOCUS_SHELL_COPY, RECORD_COPY, SECTION_LABEL } from '@app/core';
+import { FOCUS_SHELL_COPY, SECTION_LABEL, wordsFor } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 import { useWindowDimensions } from 'react-native';
 
@@ -10,6 +10,8 @@ import RecordPersonScreen from '@/app/(house)/week/record/[userId]';
 import RecordScreen from '@/app/(house)/week/record/index';
 import { snapshot } from '@/testing/house';
 import { renderPages, untilRead } from '@/testing/pages';
+
+const words = wordsFor('en', 'housemates');
 
 jest.mock('@/api/board', () => ({ loadHouse: jest.fn() }));
 jest.mock('@/api/house', () => ({ catchUp: jest.fn() }));
@@ -85,12 +87,12 @@ it('shows everyone a square a week, best on time first, with the way back to Wee
   await renderPages(PAGES, '/week/record?span=all');
   await untilRead();
   const bar = within(screen.getByTestId('title-bar'));
-  expect(bar.getByRole('header', { name: RECORD_COPY.title })).toBeOnTheScreen();
+  expect(bar.getByRole('header', { name: words('week.record.title') })).toBeOnTheScreen();
   expect(bar.getByRole('button', { name: FOCUS_SHELL_COPY.backTo(SECTION_LABEL.week) })).toBeOnTheScreen();
 
   const records = await screen.findAllByTestId('record-row');
   expect(records.map((r) => r.props.accessibilityLabel)).toEqual([
-    `${RECORD_COPY.you('Priya')}, 100% on time, 1 on time, covered 1`,
+    `${words('week.record.you', { name: 'Priya' })}, 100% on time, 1 on time, covered 1`,
     'Sam, 0% on time, 0 on time, 1 late, 1 missed',
   ]);
   expect(within(records[0]).getAllByTestId(/^square-/, { includeHiddenElements: true }).map((s) => s.props.testID)).toEqual([
@@ -102,15 +104,15 @@ it('shows everyone a square a week, best on time first, with the way back to Wee
     'square-late',
   ]);
   const key = within(screen.getByTestId('record-key'));
-  expect(key.getByText(RECORD_COPY.marks.missed)).toBeOnTheScreen();
-  expect(key.queryByText(RECORD_COPY.marks.away)).toBeNull();
+  expect(key.getByText(words('week.record.marks.missed'))).toBeOnTheScreen();
+  expect(key.queryByText(words('week.record.marks.away'))).toBeNull();
 });
 
 it('switches the span', async () => {
   await renderPages(PAGES, '/week/record?span=all');
   await untilRead();
-  await fireEvent.press(within(screen.getByTestId('record-span')).getByRole('radio', { name: RECORD_COPY.spans.week }));
-  await waitFor(() => expect(screen.getByText(RECORD_COPY.introWeek)).toBeOnTheScreen());
+  await fireEvent.press(within(screen.getByTestId('record-span')).getByRole('radio', { name: words('week.record.spans.week') }));
+  await waitFor(() => expect(screen.getByText(words('week.record.introWeek'))).toBeOnTheScreen());
   const sam = (await screen.findAllByTestId('record-row'))[0];
   expect(sam.props.accessibilityLabel).toMatch(/^Sam/);
 });
@@ -128,7 +130,7 @@ it("opens a person's breakdown, which adds up and opens onto its Johns", async (
 
   expect(breakdown.queryByTestId('record-john')).toBeNull();
   await fireEvent.press(breakdown.getByTestId('record-line-missed'));
-  expect(breakdown.getByTestId('record-john')).toHaveTextContent(new RegExp(RECORD_COPY.coveredIt(RECORD_COPY.you('Priya')).replace(/[()]/g, '\\$&')));
+  expect(breakdown.getByTestId('record-john')).toHaveTextContent(new RegExp(words('week.record.coveredIt', { name: words('week.record.you', { name: 'Priya' }) }).replace(/[()]/g, '\\$&')));
 
   expect(await screen.findByTestId('record-next')).toHaveTextContent(/2 points behind their share/);
 });
@@ -139,7 +141,7 @@ it('on a laptop, opens your breakdown beside the grid, then whoever you click, o
   await untilRead();
   const beside = within(await screen.findByTestId('record-pair-end'));
   expect(await beside.findByTestId('record-breakdown')).toHaveTextContent(/Priya \(you\)/);
-  expect(beside.getByTestId('record-total')).toHaveTextContent(new RegExp(`^${RECORD_COPY.totalYou}`));
+  expect(beside.getByTestId('record-total')).toHaveTextContent(new RegExp(`^${words('week.record.totalYou')}`));
   const [priya, sam] = within(screen.getByTestId('record-pair-start')).getAllByTestId('record-row');
   expect(priya.props['aria-current']).toBe(true);
 

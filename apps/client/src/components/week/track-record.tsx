@@ -1,4 +1,4 @@
-import { RECORD_COPY, withAlpha, type RecordMark, type RecordRow } from '@app/core';
+import { recordCounts, recordPct, withAlpha, type RecordMark, type RecordRow } from '@app/core';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -105,16 +105,17 @@ function RecordLine({
   onOpen: (userId: string) => void;
   chosen: boolean;
 }) {
+  const words = useWords();
   const { colors, type } = useTheme();
   const inset = useRowInset();
   const [pressed, setPressed] = useState(false);
-  const title = you ? RECORD_COPY.you(name) : name;
-  const pct = RECORD_COPY.pct(row.onTimePct);
-  const counts = RECORD_COPY.counts(row.counts);
+  const title = you ? words('week.record.you', { name }) : name;
+  const pct = recordPct(row.onTimePct, words);
+  const counts = recordCounts(row.counts, words);
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${title}, ${pct} ${RECORD_COPY.onTime.toLowerCase()}, ${counts}`}
+      accessibilityLabel={`${title}, ${pct} ${words('week.record.onTime').toLowerCase()}, ${counts}`}
       aria-current={chosen || undefined}
       onPress={() => onOpen(row.userId)}
       onPressIn={() => setPressed(true)}
@@ -143,13 +144,14 @@ function RecordLine({
 
 /** What the colours mean, the marks that show on the grid only. */
 export function RecordKey({ marks, changed = false }: { marks: readonly RecordMark[]; changed?: boolean }) {
+  const words = useWords();
   const changedBy = useWords()('week.record.changed');
   return (
-    <View accessibilityRole="list" accessibilityLabel={RECORD_COPY.key} style={styles.key} testID="record-key">
+    <View accessibilityRole="list" accessibilityLabel={words('week.record.key')} style={styles.key} testID="record-key">
       {marks.map((mark) => (
         <View key={mark} style={styles.keyItem}>
           <Square mark={mark} />
-          <Meta>{RECORD_COPY.marks[mark]}</Meta>
+          <Meta>{words(`week.record.marks.${mark}` as const)}</Meta>
         </View>
       ))}
       {changed ? (

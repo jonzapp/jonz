@@ -1,13 +1,4 @@
-import {
-  dueInLine,
-  firstName,
-  heldDoneIt,
-  HISTORY_COPY,
-  ON_CALL_COPY,
-  sinceLabel,
-  type HouseRules,
-  type OnCallItem,
-} from '@app/core';
+import { dueInLine, firstName, heldDoneIt, HISTORY_COPY, sinceLabel, type HouseRules, type OnCallItem } from '@app/core';
 import { BellRingIcon, CheckIcon } from 'lucide-react-native';
 
 import type { Housemate } from '@/api/board';
@@ -21,6 +12,7 @@ import { Chip } from '@/components/status-mark';
 import { TextButton } from '@/components/text-button';
 import { useMove } from '@/hooks/use-move';
 import { useUndoOffer } from '@/hooks/use-undo-offer';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * On call: the house's on-call Johns this week (the bins, whenever they're
@@ -47,6 +39,7 @@ export function OnCall({
   rules: HouseRules;
   now: Date;
 }) {
+  const words = useWords();
   const sheet = useJohnSheet();
   const move = useMove(houseId);
   const offer = useUndoOffer(houseId);
@@ -54,7 +47,7 @@ export function OnCall({
   const nameOf = (id: string) => firstName(members.find((m) => m.userId === id)?.name ?? 'Someone');
 
   return (
-    <Section label={ON_CALL_COPY.section} testID="on-call">
+    <Section label={words('today.onCall.section')} testID="on-call">
       {items.map((item) => {
         const flag = item.openFlag;
         if (flag) {
@@ -64,7 +57,7 @@ export function OnCall({
               key={item.johnId}
               title={item.name}
               lid={item.category}
-              meta={`${withMe ? ON_CALL_COPY.flaggedYou : ON_CALL_COPY.flagged(nameOf(flag.userId))}, due ${dueInLine(flag.dueAt, now, rules.timezone)}`}
+              meta={`${withMe ? words('today.onCall.flaggedYou') : words('today.onCall.flagged', { name: nameOf(flag.userId) })}, due ${dueInLine(flag.dueAt, now, rules.timezone)}`}
               chevron
               onPress={() => sheet.open(flag.id)}
               testID="on-call-flagged"
@@ -79,14 +72,14 @@ export function OnCall({
               key={item.johnId}
               title={item.name}
               lid={item.category}
-              meta={ON_CALL_COPY.didIt(sinceLabel(held.doneAt, now, rules.timezone))}
-              trailing={<Chip label={ON_CALL_COPY.done} icon={CheckIcon} tone="good" />}
+              meta={words('today.onCall.didIt', { time: sinceLabel(held.doneAt, now, rules.timezone) })}
+              trailing={<Chip label={words('today.onCall.done')} icon={CheckIcon} tone="good" />}
               onPress={() => sheet.open(held.id)}
               testID="on-call-done-it"
             />
           );
         }
-        const meta = `${mine ? ON_CALL_COPY.youreOnCall : ON_CALL_COPY.holder(nameOf(item.holderId))}, ${ON_CALL_COPY.times(item.times)}`;
+        const meta = `${mine ? words('today.onCall.youreOnCall') : words('today.onCall.holder', { name: nameOf(item.holderId) })}, ${words('today.onCall.times', { n: item.times })}`;
         // The flag's id, once raised: what the toast's Undo takes back.
         const raised = { id: '' };
         const flagIt = async () => {
@@ -112,12 +105,12 @@ export function OnCall({
             meta={meta}
             trailing={
               <TextButton
-                label={move.pending ? ON_CALL_COPY.flagging : mine ? ON_CALL_COPY.tookItOut : ON_CALL_COPY.needsDoing}
+                label={move.pending ? words('today.onCall.flagging') : mine ? words('today.onCall.tookItOut') : words('today.onCall.needsDoing')}
                 icon={mine ? CheckIcon : BellRingIcon}
                 align="end"
                 disabled={move.pending}
                 onPress={() => void (mine ? doneIt() : flagIt())}
-                accessibilityLabel={`${mine ? ON_CALL_COPY.tookItOut : ON_CALL_COPY.needsDoing}: ${item.name}`}
+                accessibilityLabel={`${mine ? words('today.onCall.tookItOut') : words('today.onCall.needsDoing')}: ${item.name}`}
                 testID={mine ? 'on-call-done' : 'on-call-flag'}
               />
             }

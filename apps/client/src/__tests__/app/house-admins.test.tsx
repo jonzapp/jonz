@@ -1,4 +1,4 @@
-import { PAGE_TITLE, PARENT_OK_COPY, roleCopy, SETUP_COPY, wordsFor } from '@app/core';
+import { PAGE_TITLE, PARENT_OK_COPY, roleCopy, wordsFor } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 
 import { loadHouse } from '@/api/board';
@@ -114,9 +114,9 @@ describe('in a family', () => {
   it('leaves the stake, forfeits and vote out of the rules', async () => {
     await open();
     const rules = within(screen.getByTestId('rules-panel'));
-    expect(rules.queryByText(SETUP_COPY.stake)).not.toBeOnTheScreen();
-    expect(rules.queryByText(SETUP_COPY.missed)).not.toBeOnTheScreen();
-    expect(rules.queryByText(SETUP_COPY.disputes)).not.toBeOnTheScreen();
+    expect(rules.queryByText(words('house.setup.stake'))).not.toBeOnTheScreen();
+    expect(rules.queryByText(words('house.setup.missed'))).not.toBeOnTheScreen();
+    expect(rules.queryByText(words('house.setup.disputes'))).not.toBeOnTheScreen();
     expect(rules.getByText(PARENT_OK_COPY.rulesValue)).toBeOnTheScreen();
   });
 });

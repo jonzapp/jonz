@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import { NEW_JOHN } from "./board";
-import { STEADY_COPY } from "./copy";
 import { budgetChoices, comesRound, type BudgetJohn } from "./steady-budget";
+import { wordsFor } from "./words-for";
+
+const words = wordsFor("en", "housemates");
 
 const john = (id: string, points: number, over: Partial<BudgetJohn> = {}): BudgetJohn => ({ ...NEW_JOHN, id, points, ...over });
 
@@ -46,35 +48,35 @@ describe("comesRound", () => {
 
 describe("budgetChoices", () => {
   it("offers Light, Usual, Busy and no limit, each saying what it does to this list", () => {
-    const { choices, need, tooLong } = budgetChoices(LIST, TWO, {}, "smart");
+    const { choices, need, tooLong } = budgetChoices(LIST, TWO, {}, "smart", words);
     expect(choices.map((c) => c.budget)).toEqual([2, 4, 6, 0]);
     expect(choices.map((c) => c.label)).toEqual(["Light, 2 points", "Usual, 4 points", "Busy, 6 points", "No limit"]);
     expect(choices[0].effect).toMatch(/^About one John each\. Each comes round every 2( to 3)? weeks\.$/);
-    expect(choices[2].effect).toBe(`${STEADY_COPY.johnsEach(3)} ${STEADY_COPY.everyWeek}`);
-    expect(choices[3].effect).toBe(STEADY_COPY.noLimit);
+    expect(choices[2].effect).toBe(`${words('week.steady.johnsEach', { n: 3 })} ${words('week.steady.everyWeek')}`);
+    expect(choices[3].effect).toBe(words('week.steady.noLimit'));
     expect(need).toBeCloseTo(4.5);
     expect(tooLong).toBe(false);
   });
 
   it("suggests the smallest budget that keeps every John within three times its schedule", () => {
-    expect(budgetChoices(LIST, TWO, {}, "smart").choices.filter((c) => c.suggested).map((c) => c.budget)).toEqual([2]);
+    expect(budgetChoices(LIST, TWO, {}, "smart", words).choices.filter((c) => c.suggested).map((c) => c.budget)).toEqual([2]);
     // Twice the list for the same two: Light would leave weekly Johns four weeks apart.
     const long = [...LIST, ...LIST.map((j) => ({ ...j, id: `${j.id}-2` }))];
-    const { choices } = budgetChoices(long, TWO, {}, "smart");
+    const { choices } = budgetChoices(long, TWO, {}, "smart", words);
     expect(choices.find((c) => c.suggested)!.budget).toBeGreaterThan(2);
   });
 
   it("says when even Busy can't keep up, and how much the list asks", () => {
     const huge = Array.from({ length: 16 }, (_, i) => john(`j${i}`, 5, { dueDow: ((i % 7) + 1) as BudgetJohn["dueDow"] }));
-    const { choices, need, tooLong } = budgetChoices(huge, TWO, {}, "smart");
+    const { choices, need, tooLong } = budgetChoices(huge, TWO, {}, "smart", words);
     expect(tooLong).toBe(true);
     expect(need).toBeCloseTo(40);
     expect(choices.find((c) => c.suggested)!.budget).toBe(6);
-    expect(STEADY_COPY.tooLong(need)).toContain("about 40 points a week each");
+    expect(words('week.steady.tooLong', { need })).toContain("about 40 points a week each");
   });
 
   it("works for a house of one, and in Classic", () => {
-    const { choices } = budgetChoices(LIST.slice(0, 2), ["ava"], {}, "classic");
+    const { choices } = budgetChoices(LIST.slice(0, 2), ["ava"], {}, "classic", words);
     expect(choices.filter((c) => c.suggested)).toHaveLength(1);
   });
 });
