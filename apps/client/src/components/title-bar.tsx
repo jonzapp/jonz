@@ -100,7 +100,7 @@ export function TitleBar({
   const leading = inlineBack ? (
     <IconButton
       icon={ChevronLeftIcon}
-      label={backLabel === FOCUS_SHELL_COPY.back ? backLabel : FOCUS_SHELL_COPY.backTo(backLabel)}
+      label={backLabel === words('common.shell.back') ? backLabel : words('common.shell.backTo', { place: backLabel })}
       onPress={onBack}
       testID="back"
     />
