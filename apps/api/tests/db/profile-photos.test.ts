@@ -1,12 +1,13 @@
 import { describe, expect, it } from "vitest";
 
+import { GET } from "@/app/files/[what]/[bucket]/[...path]/route";
 import { adminClient, signedInUser } from "@/tests/support/clients";
 import { expectDenied, expectOk, expectRule } from "@/tests/support/expect";
 
 /**
  * Profile photos (20261101110000_profile_photos.sql). Google's photo follows
  * its identity in the database; a Microsoft photo is copied by the app into
- * the public `avatars` bucket and pointed at with set_my_photo. The attack
+ * the `avatars` bucket (private since avatars_private; shown on our address) and pointed at with set_my_photo. The attack
  * surface is the bucket's folders and what set_my_photo will accept.
  */
 
@@ -18,7 +19,7 @@ async function photoOf(userId: string) {
 }
 
 describe("the avatars bucket", () => {
-  it("takes a photo only into your own folder, and shows it to anyone", async () => {
+  it("takes a photo only into your own folder, and shows it only through our address", async () => {
     const me = await signedInUser("Ava");
     const other = await signedInUser("Ben");
     const path = `${me.userId}/microsoft.jpg`;
@@ -34,8 +35,15 @@ describe("the avatars bucket", () => {
     const overwrite = await other.db.storage.from("avatars").upload(path, jpeg, { contentType: "image/jpeg", upsert: true });
     expect(overwrite.error).not.toBeNull();
 
+    // The bucket is private: Storage's public address shows nothing.
     const address = me.db.storage.from("avatars").getPublicUrl(path).data.publicUrl;
-    expect((await fetch(address)).status).toBe(200);
+    expect((await fetch(address)).status).not.toBe(200);
+    // Our own address reads it with the server's key, for anyone.
+    const shown = await GET(new Request(`https://jonz.app/files/photo/avatars/${path}`), {
+      params: Promise.resolve({ what: "photo", bucket: "avatars", path: path.split("/") }),
+    });
+    expect(shown.status).toBe(200);
+    expect(shown.headers.get("content-type")).toBe("image/jpeg");
 
     await adminClient().storage.from("avatars").remove([path]);
   });

@@ -230,21 +230,30 @@ Migration `20261219090000_api_layer.sql` sets up the following:
   engine through it. Kids' accounts stay on Supabase Auth's admin API, and
   files on Storage, neither of which is the Data API.
 - **C5: lock-down** ("lock it as much as necessary", Glyn, 9 November
-  2026). Code first, then Glyn's dashboard steps:
-  - Revoke `anon` and `authenticated`'s direct grants on our tables and
-    functions; turn the Data API off.
+  2026). Where it stands (10 November 2026):
+  - Data API off and Realtime private only: done by Glyn, 10 November.
+    `anon` and `authenticated` keep their grants: the API itself runs each
+    person's statements as `authenticated` (and visitors' as `anon`), so
+    RLS and the grants are still how a person is held to their own rows.
+    With the Data API off nobody else can reach them.
   - Realtime: channels private (RLS on `realtime.messages`), and only the
-    API's role may listen.
-  - Storage: every bucket private; files only through the API's short
-    links.
-  - Keys: move to the new publishable and secret keys, switch off the
-    legacy anon and service-role keys, and change the database password.
-  - Network: Vercel Static IPs on jonz-api, and Supabase Network
-    Restrictions allow only those addresses (and staging's) to reach the
-    database. Enforce SSL.
+    API's role may listen (migration live_changes).
+  - Storage: every bucket private (avatars_private); files only through
+    the API's short links, and people's photos through
+    `/files/photo/avatars/…`, read with the server's key.
+  - Keys: the new publishable and secret keys are live (Provision,
+    10 November; #176). Left for Glyn: turn the legacy JWT keys off once a
+    secret key is confirmed, and change the database password.
+  - Network: Vercel Static IPs and Supabase Network Restrictions skipped for
+    now (Glyn, 10 November: $100 a month per project for shared addresses);
+    revisit before launch.
   - Supabase Auth stays reachable: Google, Microsoft and email sign-up and
     sign-in all go through it.
-- **C6:** the phone version gate goes live.
+- **C6:** the phone version gate goes live. The executor already refuses a
+  build below `MIN_IOS_BUILD` / `MIN_ANDROID_BUILD` with
+  `426 client_too_old`, and the app sends `Jonz-Client`; what's left is the
+  app's "Update Jonz" screen, built with the phone apps (paused until Glyn
+  decides on the stores).
 
 ## Done when
 
