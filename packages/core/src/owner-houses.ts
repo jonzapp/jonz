@@ -140,9 +140,17 @@ export function passDetail(house: HouseDetail, now: Date): { title: string; meta
   };
 }
 
-/** The settings that help on a support email: "Europe/London, GBP, join code K7P2QX, 9 Johns". */
-export function houseFacts(house: HouseDetail): string {
-  return [house.timezone, house.currency, `join code ${house.joinCode}`, house.johns === 1 ? "1 John" : `${n(house.johns)} Johns`].join(", ");
+/**
+ * The settings that help on a support email, a row each: its time zone, its
+ * currency, its join code and how many Johns it has.
+ */
+export function houseFacts(house: HouseDetail): { key: "zone" | "currency" | "code" | "johns"; label: string; value: string }[] {
+  return [
+    { key: "zone", label: HOUSES_COPY.facts.zone, value: house.timezone },
+    { key: "currency", label: HOUSES_COPY.facts.currency, value: house.currency },
+    { key: "code", label: HOUSES_COPY.facts.code, value: house.joinCode },
+    { key: "johns", label: HOUSES_COPY.facts.johns, value: n(house.johns) },
+  ];
 }
 
 export const HOUSES_COPY = {
@@ -158,6 +166,8 @@ export const HOUSES_COPY = {
   people: "People",
   money: "Money",
   details: "Details",
+  /** Details' rows: what each value is. */
+  facts: { zone: "Time zone", currency: "Currency", code: "Join code", johns: "Johns" },
   readOnly: "Read only. Nothing here changes the house.",
   gone: "That house isn’t there any more.",
   pick: "Pick a house to see its people and Pass.",

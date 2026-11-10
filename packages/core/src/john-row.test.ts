@@ -183,6 +183,8 @@ describe("johnRow's meta line", () => {
     expect(meta({ status: "checking", standsAt: at(0.5) })).toBe("Kitchen, stands in 30 min");
     expect(meta({ status: "checking", standsAt: at(-1) })).toBe("Kitchen, stands any minute");
     expect(meta({ status: "checking", standsAt: null })).toBe("Kitchen");
+    // A kid's tick in a family: no closing time, it waits for a parent.
+    expect(meta({ status: "checking", standsAt: null, awaitsOk: true })).toBe("Kitchen, waiting for a parent’s OK");
   });
 
   it("says who disputed it and how long is left, with no lid dot", () => {

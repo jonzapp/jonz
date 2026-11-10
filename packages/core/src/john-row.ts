@@ -1,5 +1,5 @@
 import { isOpen, type BoardItem } from "./board";
-import { CREW_COPY, FOCUS_SHELL_COPY, JOHN_SHEET_COPY, NEXT_UP_COPY, ON_CALL_COPY, STEADY_COPY, WEEK_SUMMARY_COPY } from "./copy";
+import { CREW_COPY, FOCUS_SHELL_COPY, JOHN_SHEET_COPY, NEXT_UP_COPY, ON_CALL_COPY, PARENT_OK_COPY, STEADY_COPY, WEEK_SUMMARY_COPY } from "./copy";
 import { andNames } from "./crew";
 import { CATEGORY_SHORT } from "./domain";
 import { dueInLine, firstName, relative, sinceLabel, STATUS_LABEL } from "./format";
@@ -94,7 +94,7 @@ export function johnRow(
     BoardItem,
     "userId" | "name" | "category" | "points" | "needsPhoto" | "status" | "dueAt" | "movedFrom" | "doneAt" | "standsAt" | "dispute"
   > &
-    Partial<Pick<BoardItem, "flaggedAt" | "flaggedBy" | "coveredBy" | "outcome" | "together" | "crew" | "absentAt" | "dealt">>,
+    Partial<Pick<BoardItem, "flaggedAt" | "flaggedBy" | "coveredBy" | "outcome" | "together" | "crew" | "absentAt" | "dealt" | "awaitsOk">>,
   viewerId: string,
   now: Date,
   zone: string,
@@ -162,7 +162,7 @@ export function johnRow(
 /** The row's meta line, and whether its lid dot leads it. */
 function metaLine(
   item: Pick<BoardItem, "userId" | "category" | "status" | "dueAt" | "movedFrom" | "doneAt" | "standsAt" | "dispute"> &
-    Partial<Pick<BoardItem, "flaggedAt" | "flaggedBy" | "together" | "crew" | "dealt">> & {
+    Partial<Pick<BoardItem, "flaggedAt" | "flaggedBy" | "together" | "crew" | "dealt" | "awaitsOk">> & {
     coveredBy?: string | null;
   },
   viewerId: string,
@@ -204,6 +204,8 @@ function metaLine(
       return { meta: `${JOHN_SHEET_COPY.disputedBy(by)}, ${left}`, lid: false };
     }
     case "checking":
+      // In a family a kid's tick has no closing time: it waits for a parent.
+      if (item.awaitsOk) return line(PARENT_OK_COPY.waiting);
       if (!item.standsAt) return line();
       return line(item.standsAt > now ? JOHN_SHEET_COPY.standsIn(relative(item.standsAt, now)) : JOHN_SHEET_COPY.standsSoon);
     case "overdue":

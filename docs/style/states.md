@@ -56,6 +56,10 @@ progress indicators (a linear line for a list refreshing in place).
   app is ready. Never a white page.
 - **An empty state** shows only after a read has finished with nothing in
   it, never while it is still reading.
+- **A chat never opens on nothing:** under Jonz's greeting, three questions
+  to tap ("Who has what this week?"), each sent as written; they go once
+  the chat has begun, and aren't offered where the house can't ask. (UI
+  review small fixes, 10 Nov)
 - **Waiting on the AI:** three square ticks fill in turn with a shimmering
   step line, then fold to "Thought for 5s", which opens to the steps.
   (Thinking A, #69)

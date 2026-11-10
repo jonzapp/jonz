@@ -36,3 +36,18 @@ it('pads them less on a small phone, so the row beside it keeps its name, still 
     expect(screen.getByRole('radio', { name })).toHaveStyle({ paddingHorizontal: SPACE.xs, minWidth: TAP, minHeight: TAP });
   }
 });
+
+it('wraps in equal parts, so many to a row, where one row would cut its words short', async () => {
+  await render(
+    <Segmented
+      label="Ends"
+      options={['When I end it', 'In 2 hours', 'Tomorrow', 'On a date'].map((label) => ({ value: label, label }))}
+      value="Tomorrow"
+      onChange={jest.fn()}
+      perRow={2}
+      testID="ends"
+    />,
+  );
+  expect(screen.getByTestId('ends')).toHaveStyle({ flexWrap: 'wrap', alignSelf: 'stretch' });
+  for (const part of screen.getAllByRole('radio')) expect(part).toHaveStyle({ flexBasis: '50%', flexGrow: 0, minHeight: TAP });
+});

@@ -1916,6 +1916,10 @@ export const HOUSE_DRAFT_COPY = {
   /** For someone who can't change the list (a member, a kid): Jonz answers questions. */
   greetingAsk: "Ask me about the house: who has what this week, who’s away, how fair shares stand, or what a rule means.",
   placeholderAsk: "Who’s on bins this week?",
+  /** Over the questions to tap, under the greeting of a chat about a house that has a list. */
+  orAsk: "Or tap a question:",
+  /** Three questions to tap, to show what Jonz can answer. Each is sent as written. */
+  examples: ["Who has what this week?", "Who’s away soon?", "How do fair shares stand?"],
   /** Claude couldn't be reached to answer a question. */
   offlineAsk: "I couldn’t answer just now. Try again in a minute.",
   /** In place of the message box, for a house without the Pass. */

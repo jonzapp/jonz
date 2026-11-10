@@ -179,6 +179,8 @@ export function NoticeEditor({
           options={NOTICE_ENDS.map((ends) => ({ value: ends, label: NOTICE_ENDS_LABEL[ends] }))}
           value={form.ends}
           onChange={(ends) => set({ ends, endsAt: form.endsAt || formatLocalDateTime(new Date(start.getTime() + 7 * 86_400_000)) })}
+          // Four choices don't fit one row of the panel, or of a phone: two rows of two.
+          perRow={2}
         />
         {form.ends === 'date' ? (
           <Field label={ADMIN_COPY.endsAtLabel} value={form.endsAt} onChangeText={(text) => set({ endsAt: text })} problem={shown('endsAt')} />
