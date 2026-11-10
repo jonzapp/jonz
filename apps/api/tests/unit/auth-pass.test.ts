@@ -64,6 +64,15 @@ describe("/auth/v1", () => {
     expect(headers.get("authorization")).toBe("Bearer anon");
   });
 
+  it("never sends a new publishable key as a Bearer token: the apikey alone says it", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "sb_publishable_x");
+    fetchMock.mockResolvedValue(new Response("{}", { status: 200 }));
+    await GET(new Request("https://jonz.app/auth/v1/settings"), params("settings"));
+    const { headers } = sent();
+    expect(headers.get("apikey")).toBe("sb_publishable_x");
+    expect(headers.get("authorization")).toBeNull();
+  });
+
   it("hands a redirect back as it is (a provider's sign-in page, or back to the app)", async () => {
     fetchMock.mockResolvedValue(new Response(null, { status: 302, headers: { location: "https://accounts.google.com/o/oauth2/auth?x=1" } }));
     const answer = await GET(new Request("https://jonz.app/auth/v1/authorize?provider=google"), params("authorize"));

@@ -224,9 +224,12 @@ describe("keys and environment", () => {
     { name: "default", type: "secret", api_key: "sb_secret_x" },
   ];
 
-  it("prefers the keys local dev runs on, and falls back to the new ones", () => {
-    expect(pickKeys(keys)).toEqual({ anon: "eyJ.anon", service: "eyJ.service" });
+  it("prefers the new keys, falls back to the legacy ones, and never picks a disabled key", () => {
+    expect(pickKeys(keys)).toEqual({ anon: "sb_publishable_x", service: "sb_secret_x" });
+    expect(pickKeys(keys.slice(0, 2))).toEqual({ anon: "eyJ.anon", service: "eyJ.service" });
     expect(pickKeys(keys.slice(2))).toEqual({ anon: "sb_publishable_x", service: "sb_secret_x" });
+    expect(pickKeys(keys.map((k) => (k.type === "legacy" ? { ...k, disabled: true } : k)))).toEqual({ anon: "sb_publishable_x", service: "sb_secret_x" });
+    expect(pickKeys([{ ...keys[0], disabled: true }, keys[1]])).toEqual({ anon: null, service: "eyJ.service" });
     expect(pickKeys([])).toEqual({ anon: null, service: null });
   });
 

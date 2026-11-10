@@ -37,7 +37,12 @@ function connect(): Promise<void> {
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!url || !key) throw new Error("Live updates need NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.");
     client = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
-    await client.realtime.setAuth(key);
+    // A legacy service-role key is a JWT, which Realtime reads as the
+    // connection's token. A new secret key ("sb_secret_…") isn't: handed to
+    // setAuth, Realtime lets the private channels subscribe but never
+    // delivers to them, so it rides as the apikey alone (checked against the
+    // local stack, 2026-11-10).
+    if (!key.startsWith("sb_")) await client.realtime.setAuth(key);
     channels = await Promise.all(
       Array.from(
         { length: LIVE_SHARDS },
