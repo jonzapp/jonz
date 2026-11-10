@@ -6,7 +6,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { CountBadge } from '@/components/badge';
 import { Meta, RowTitle } from '@/components/text';
 import { TourSpot } from '@/components/tour/tour-spot';
-import { useCopy } from '@/hooks/use-copy';
+import { useWords } from '@/hooks/use-words';
 import { FONT, GUTTER, INSET, RAIL, SPACE, TAP, useTheme } from '@/theme';
 
 /** The house's three places, in the order the tabs and the rail show them. */
@@ -49,7 +49,7 @@ export function HouseTabBar({
   house,
   toVote,
 }: BottomTabBarProps & { wide: boolean; house: ShellHouse | null; toVote: number }) {
-  const copy = useCopy();
+  const words = useWords();
   const { colors, type } = useTheme();
 
   const places = state.routes.map((route, index) => {
@@ -113,7 +113,7 @@ export function HouseTabBar({
       {house ? (
         <View style={styles.house}>
           <RowTitle numberOfLines={2}>{house.name}</RowTitle>
-          <Meta>{copy.SHELL.housemates(house.memberCount)}</Meta>
+          <Meta>{words('common.members', { count: house.memberCount })}</Meta>
         </View>
       ) : null}
       <TourSpot id="shell.tabs">

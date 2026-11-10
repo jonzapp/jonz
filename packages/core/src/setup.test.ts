@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { wordsFor } from "./words-for";
 
 import type { AwayPeriod } from "./away";
 import { NEW_JOHN, type JohnDef } from "./board";
@@ -216,22 +217,22 @@ describe("adminsLine", () => {
   const megan = { userId: "megan", name: "Megan Doyle", role: "admin" };
 
   it("names the one admin, by first name", () => {
-    expect(adminsLine([sam, priya], "priya", "housemates")).toBe("Sam (admin) can change these.");
+    expect(adminsLine([sam, priya], "priya", wordsFor("en", "housemates"))).toBe("Sam (admin) can change these.");
   });
 
   it("tells the one admin it's them", () => {
-    expect(adminsLine([sam, priya], "sam", "housemates")).toBe("You can change these.");
+    expect(adminsLine([sam, priya], "sam", wordsFor("en", "housemates"))).toBe("You can change these.");
   });
 
   it("names several admins, you first", () => {
-    expect(adminsLine([sam, priya, tom], "priya", "housemates")).toBe("Sam and Tom (admins) can change these.");
-    expect(adminsLine([sam, priya, tom], "tom", "housemates")).toBe("You and Sam (admins) can change these.");
-    expect(adminsLine([sam, tom, megan], "priya", "housemates")).toBe("Sam, Tom and Megan (admins) can change these.");
+    expect(adminsLine([sam, priya, tom], "priya", wordsFor("en", "housemates"))).toBe("Sam and Tom (admins) can change these.");
+    expect(adminsLine([sam, priya, tom], "tom", wordsFor("en", "housemates"))).toBe("You and Sam (admins) can change these.");
+    expect(adminsLine([sam, tom, megan], "priya", wordsFor("en", "housemates"))).toBe("Sam, Tom and Megan (admins) can change these.");
   });
 
   it("still says who can when nobody listed is an admin", () => {
-    expect(adminsLine([priya], "priya", "housemates")).toBe("Only admins can change these.");
-    expect(adminsLine([], "priya", "housemates")).toBe("Only admins can change these.");
+    expect(adminsLine([priya], "priya", wordsFor("en", "housemates"))).toBe("Only admins can change these.");
+    expect(adminsLine([], "priya", wordsFor("en", "housemates"))).toBe("Only admins can change these.");
   });
 });
 
@@ -241,14 +242,14 @@ describe("johnsComing", () => {
   const tom = { userId: "tom", name: "Tom Reilly", role: "admin" };
 
   it("names whoever will add the Johns", () => {
-    expect(johnsComing([sam, priya], "priya", "housemates")).toBe("Sam will add the Johns.");
-    expect(johnsComing([sam, priya, tom], "priya", "housemates")).toBe("Sam and Tom will add the Johns.");
+    expect(johnsComing([sam, priya], "priya", wordsFor("en", "housemates"))).toBe("Sam will add the Johns.");
+    expect(johnsComing([sam, priya, tom], "priya", wordsFor("en", "housemates"))).toBe("Sam and Tom will add the Johns.");
   });
 
   it("leaves you out, and says an admin will when nobody else is one", () => {
-    expect(johnsComing([sam, priya, tom], "sam", "housemates")).toBe("Tom will add the Johns.");
-    expect(johnsComing([sam, priya], "sam", "housemates")).toBe("An admin will add the Johns.");
-    expect(johnsComing([], "priya", "housemates")).toBe("An admin will add the Johns.");
+    expect(johnsComing([sam, priya, tom], "sam", wordsFor("en", "housemates"))).toBe("Tom will add the Johns.");
+    expect(johnsComing([sam, priya], "sam", wordsFor("en", "housemates"))).toBe("An admin will add the Johns.");
+    expect(johnsComing([], "priya", wordsFor("en", "housemates"))).toBe("An admin will add the Johns.");
   });
 });
 

@@ -1,4 +1,4 @@
-import { buildStake, FOCUS_SHELL_COPY, type HistoryRow, HOUSE_PAGE_COPY, PERSON_COPY, SECTION_LABEL } from '@app/core';
+import { buildStake, FOCUS_SHELL_COPY, type HistoryRow, HOUSE_PAGE_COPY, PERSON_COPY, SECTION_LABEL, wordsFor } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 
 import { loadAway } from '@/api/away';
@@ -10,6 +10,8 @@ import { loadTable } from '@/api/table';
 import PersonScreen from '@/app/(house)/house/people/[userId]';
 import { snapshot } from '@/testing/house';
 import { renderPages, untilRead } from '@/testing/pages';
+
+const words = wordsFor('en', 'housemates');
 
 jest.mock('@/api/away', () => ({ loadAway: jest.fn() }));
 jest.mock('@/api/board', () => ({ loadHouse: jest.fn() }));
@@ -78,7 +80,7 @@ it('names the housemate in the title bar, with the way back to House', async () 
   await open('sam');
   const bar = within(screen.getByTestId('title-bar'));
   expect(bar.getByRole('header', { name: 'Sam' })).toBeOnTheScreen();
-  expect(bar.getByText(PERSON_COPY.sub(false, false))).toBeOnTheScreen();
+  expect(bar.getByText(words('people.person.role', { role: 'member' }))).toBeOnTheScreen();
   expect(bar.getByRole('button', { name: FOCUS_SHELL_COPY.backTo(SECTION_LABEL.house) })).toBeOnTheScreen();
 });
 

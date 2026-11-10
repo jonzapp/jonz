@@ -7,7 +7,7 @@ import { Group } from '@/components/group';
 import { Row } from '@/components/row';
 import { Body, Meta } from '@/components/text';
 import { useToastIfAny } from '@/components/toast';
-import { useCopy } from '@/hooks/use-copy';
+import { useWords } from '@/hooks/use-words';
 import { useMove } from '@/hooks/use-move';
 import { useTheme } from '@/theme';
 
@@ -25,7 +25,7 @@ export function FlagPart({ item, context }: { item: BoardItem; context: JohnShee
   const { colors } = useTheme();
   const move = useMove(context.houseId);
   const toast = useToastIfAny();
-  const words = useCopy().ON_CALL;
+  const words = useWords();
   if (item.flaggedAt === null || item.doneAt !== null || item.outcome !== null) return null;
 
   const raisedByMe = item.flaggedBy === context.userId;
@@ -33,7 +33,7 @@ export function FlagPart({ item, context }: { item: BoardItem; context: JohnShee
     if (item.userId !== context.userId) return null;
     return (
       <SheetLines testID="flag-who-can-remove">
-        <Meta>{item.flaggedBy ? words.onlyRaiser(firstName(context.nameOf(item.flaggedBy))) : words.onlyAdmin}</Meta>
+        <Meta>{item.flaggedBy ? words('today.onCall.onlyRaiser', { name: firstName(context.nameOf(item.flaggedBy)) }) : words('today.onCall.onlyAdmin')}</Meta>
       </SheetLines>
     );
   }

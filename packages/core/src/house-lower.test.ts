@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { wordsFor } from "./words-for";
 
 import { HOUSE_LOWER_COPY, WALL_FEED_COPY } from "./copy";
 import { STATUS_MARK } from "./format";
@@ -210,8 +211,8 @@ describe("wallFeedRow", () => {
     );
     expect(row({ kind: "joined", data: {} }).title).toBe("Megan moved in");
     // A family's Wall: someone joins the family.
-    expect(row({ kind: "joined", data: {} }, { family: true }).title).toBe("Megan joined the family");
-    expect(row({ kind: "joined", data: {} }, { family: true }).detail).toBe("New in the family");
+    expect(row({ kind: "joined", data: {} }, { words: wordsFor("en", "family") }).title).toBe("Megan joined the family");
+    expect(row({ kind: "joined", data: {} }, { words: wordsFor("en", "family") }).detail).toBe("New in the family");
     expect(row({ kind: "moving_out", data: { on: "2026-11-11" } }).title).toBe("Megan moves out on Wed 11 Nov");
     expect(row({ kind: "moving_out", data: { on: "2026-11-11" } }).detail).toBe("Moving out");
     expect(row({ kind: "moving_out", data: { on: null } }).title).toBe("Megan is staying after all");
@@ -390,7 +391,7 @@ describe("wallFeedRow on flags, undos and resets", () => {
     expect(undone.icon).toBe("undo");
     const reset = row({ kind: "reset", user_id: "priya", data: { what: "person_week", subject: "tom" } });
     expect(reset.title).toBe("Priya reset Tom’s week");
-    expect(reset.detail).toBe(WALL_FEED_COPY.adminFix);
+    expect(reset.detail).toBe("An admin’s fix");
   });
 
   it("sorts each kind into its family", () => {

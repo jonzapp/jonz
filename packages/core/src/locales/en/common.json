@@ -1,0 +1,4 @@
+{
+  "common.members": "{kind, select, family {{count} in the family} other {{count, plural, one {# housemate} other {# housemates}}}}",
+  "common.joinPlate": "{kind, select, family {Join the family on Jonz.} other {{count, plural, one {Join # housemate on Jonz.} other {Join # housemates on Jonz.}}}}"
+}

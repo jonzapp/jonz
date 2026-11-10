@@ -6,6 +6,7 @@ pages are private artifacts on claude.ai.
 
 | Date | Decision | Where | Rule |
 | --- | --- | --- | --- |
+| 2026-11-10 | Admin lists show a search on its way from the first key: a spinner in the box's magnifier, the count says Searching…, old rows dim with the search line, suggestions float over the list and none for words alone (Search loading A) | this PR | [states](states.md#waiting) |
 | 2026-11-10 | Help, the Privacy Policy and the Terms list their sections On this page beside the words on a laptop, a heading jumping to its section (Help and legal B) | this PR | [layout](layout.md#laptop-pages) |
 | 2026-11-10 | Track record and the Guide open beside their list on a laptop (a housemate's record beside the grid, a topic beside the topics, the open one marked), and the owner's Messages and Promotions forms sit in two columns (Track record B, Guide B, Owner B) | this PR | [layout](layout.md#laptop-pages) |
 | 2026-11-10 | Laptop pages leave no room blank: a two-column page's main column runs to the panel at any width (Today, Week, owner pages); Today puts Next up beside the rest of your week (Today B; the rest of the laptop-width B picks follow in the next PRs) | this PR | [layout](layout.md#laptop-pages) |

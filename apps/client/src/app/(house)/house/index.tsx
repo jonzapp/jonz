@@ -38,6 +38,7 @@ import { useStake } from '@/hooks/use-stake';
 import { useTable } from '@/hooks/use-table';
 import { Waiting } from '@/components/waiting';
 import { HouseOutline } from '@/components/page-outlines';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * House, the third tab: the house's Overview. Four figures, then settling
@@ -113,6 +114,7 @@ function HouseSections({
   pocket: ReturnType<typeof usePocket>;
 }) {
   const { listed } = useHouseWorkspace();
+  const words = useWords(view.snapshot.house.kind);
   const list = useJohnList(houseId);
   // The John list doesn't come over Realtime, and a housemate may have changed it.
   useReadOnFocus(list.refetch, { skipFirst: true });
@@ -124,7 +126,7 @@ function HouseSections({
     me: userId,
     rules,
     housemates: members.length,
-    kind: view.snapshot.house.kind,
+    words,
     johns: list.data?.johns,
   }).map((figure) => ({ ...figure, href: FIGURE_PAGE[figure.key] }));
   const me = view.me;

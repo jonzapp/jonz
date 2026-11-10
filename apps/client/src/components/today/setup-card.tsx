@@ -10,7 +10,7 @@ import { Row, RowIcon } from '@/components/row';
 import { Lead, SectionLabel } from '@/components/text';
 import { TickBox } from '@/components/tick-box';
 import { useAskJonz } from '@/hooks/use-ask-jonz';
-import { useCopy } from '@/hooks/use-copy';
+import { useWords } from '@/hooks/use-words';
 import { SPACE } from '@/theme';
 
 /** A checklist step's tick box: ticked once it's done. A picture, not a control: the row is the way in. */
@@ -42,7 +42,7 @@ export function SetupCard({
   memberCount: number;
 }) {
   const [inviting, setInviting] = useState(false);
-  const copy = useCopy();
+  const words = useWords();
   // Describe your house: the chat's page on a phone, the panel beside Today from WIDE.
   const ask = useAskJonz();
   const steps = setupChecklist(johns, memberCount);
@@ -72,8 +72,8 @@ export function SetupCard({
           />
           <Row
             leading={<Step done={steps.housemates} />}
-            title={copy.NEXT_UP.invite}
-            meta={copy.NEXT_UP.housemates(memberCount)}
+            title={words('today.nextUp.invite')}
+            meta={words('today.nextUp.soFar', { count: memberCount })}
             onPress={() => setInviting(true)}
             chevron
             testID="setup-invite"

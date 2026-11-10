@@ -448,7 +448,6 @@ export const SECTION_LABEL: Record<Section, string> = {
 
 /** The house and you, at the foot of the laptop's sidebar. */
 export const SHELL_COPY = {
-  housemates: (count: number) => `${count} ${count === 1 ? "housemate" : "housemates"}`,
   close: "Close",
   standing: (streak: number, tokens: number) => `${streak}-week streak, ${tokens} ${tokens === 1 ? "skip" : "skips"}`,
 } as const;
@@ -669,9 +668,6 @@ export const ON_CALL_COPY = {
   removeFlag: "Remove flag",
   removing: "Removing…",
   removed: "Flag removed.",
-  /** On a flag someone else raised, for whoever has it. */
-  onlyRaiser: (name: string) => `${name} raised this flag, so only ${name} or an admin can take it down.`,
-  onlyAdmin: "Jonz opened this again after a miss, so only an admin can take it down.",
   /** "Alex is on call". */
   holder: (name: string) => `${name} is on call`,
   /** "Flagged by Sam, due 9am": the John sheet's and Today's meta line. */
@@ -738,7 +734,6 @@ export const RULES_COPY = {
   save: "Save house rules",
   saving: "Saving…",
   saved: "Saved",
-  adminsOnly: "Only admins can change the house rules.",
 } as const;
 
 /** You: your name, the way out, and leaving. */
@@ -788,18 +783,6 @@ export const NOTIFY_COPY = {
   votedStruck: "You said it wasn’t done.",
   // Settings.
   settings: "What to send",
-  kinds: {
-    reminders: "Johns due soon",
-    checks: "Housemate checks",
-    flags: "On-call flags",
-    deal: "The week’s deal",
-  },
-  kindHints: {
-    reminders: "The day before and a few hours before. Tick from the notification.",
-    checks: "A tick of yours disputed, or a vote for you to answer.",
-    flags: "When someone flags an on-call John you have.",
-    deal: "Your Johns, when the week is dealt.",
-  },
   quiet: "Quiet hours",
   quietHint: "Reminders wait until morning. Anything else arrives without a sound.",
   on: "On",
@@ -956,11 +939,8 @@ export const NEXT_UP_COPY = {
   describe: "Describe your house",
   describeMeta: `${APP_NAME} drafts the list for you`,
   onTheList: (count: number) => (count === 0 ? "Nothing on the list yet" : `${count} on the list`),
-  invite: "Invite housemates",
-  housemates: (count: number) => (count <= 1 ? "Just you so far" : `${count} in the house so far`),
   dealWeek1: "Deal week 1",
   waiting: (admin: string) => `${admin} will deal it soon.`,
-  anAdmin: "An admin",
   /** Someone who has left, named mid-sentence. */
   someoneGone: "someone who left",
   /** A John row's tick box, spoken (on Today and Week alike), when it isn't a tick. */
@@ -1312,7 +1292,6 @@ export const HOUSE_PAGE_COPY = {
   downIn: (month: string) => `you’re down in ${month}`,
   forfeitedIn: (month: string) => `forfeited in ${month}`,
   stakeEach: "stake a month each",
-  housemates: (n: number) => (n === 1 ? "housemate" : "housemates"),
   johnsListed: (n: number) => (n === 1 ? "John on the list" : "Johns on the list"),
   /** Settling up, on the Overview while anything from a closed month is still to settle. */
   settleUp: "Settle up",
@@ -1373,7 +1352,6 @@ export const HOUSE_PAGE_COPY = {
   away: (range: string) => `away ${range}`,
   /** Money lost, said with the figure: a screen reader hears it as well as the colour shows it. */
   losing: (amount: string) => `${amount}, losing money`,
-  invite: "Invite housemates",
   inviteBody: "Send it to the group chat. Anyone with the link joins once they’ve signed in.",
   code: "Code",
   shareInvite: "Share invite",
@@ -1402,24 +1380,14 @@ export const HOUSE_PAGE_COPY = {
 /** A housemate's page. */
 /** House › Admins: who looks after the house. */
 export const ADMINS_COPY = {
-  title: "Admins",
   meta: (admins: number, everyone: number) => `${admins} of ${everyone}`,
-  note: "Admins change the list, the rules and who’s in, and fix mistakes. What they change is posted on the Wall.",
   /** You, in the list: "Priya (you)". */
   you: (name: string) => `${name} (you)`,
-  add: "Add an admin",
-  addTitle: "Add an admin",
   addBody: "They can change the list and the rules, and fix anyone’s mistakes.",
-  everyoneIs: "Everyone here is an admin already.",
-  make: (name: string) => `Make ${name} admin`,
   remove: "Remove",
-  removeLabel: (name: string) => `Remove ${name} as an admin`,
-  onlyAdmin: "The only admin can’t step down. Leaving hands the house over.",
 } as const;
 
 export const PERSON_COPY = {
-  /** Under their name: "Admin", or "You, admin" on your own page. */
-  sub: (admin: boolean, you: boolean) => (you ? `You, ${admin ? "admin" : "housemate"}` : admin ? "Admin" : "Housemate"),
   record: "Their record",
   yourRecord: "Your record",
   thisWeek: "This week",
@@ -1461,11 +1429,7 @@ export const PERSON_COPY = {
   noAway: "No time away booked.",
   readingAway: "Reading time away",
   awayUnreadable: "Couldn’t read time away. Check the connection.",
-  admin: "Admin",
-  makeAdmin: "Make admin",
   makeAdminMeta: "Can change the rules and the Johns",
-  makeHousemate: "Make housemate",
-  makeHousemateMeta: "Stops being an admin",
   remove: (name: string) => `Remove ${name} from the house`,
   removeTitle: (name: string) => `Remove ${name} from the house?`,
   removeBody: (name: string) =>
@@ -1607,7 +1571,6 @@ export const WALL_FEED_COPY = {
   swapped: (who: string, gave: string, whose: string, took: string) => `${who} swapped ${gave} for ${whose} ${took}`,
   away: (who: string, range: string) => `${who} is away ${range}`,
   youAway: (range: string) => `You’re away ${range}`,
-  joined: (who: string) => `${who} moved in`,
   /** `month` is null for an event that doesn't say which. */
   monthClosed: (month: string | null) => (month ? `${month} is closed` : "The month is closed"),
   /** A payment, to the two people in it: the amount. */
@@ -1633,7 +1596,6 @@ export const WALL_FEED_COPY = {
   awayMoved: (due: string) => `Time away. ${due}`,
   dueBefore: (n: number, you: boolean) =>
     `${n} ${n === 1 ? "John" : "Johns"} due before ${you ? "you go" : "they go"}`,
-  newHousemate: "New housemate",
   /** In a family: "Maya joined the family", "New in the family". */
   // An on-call John someone flagged: who flagged it, for whom, and how it went.
   flagged: (by: string, john: string, whom: string) => `${by} flagged ${john} for ${whom}`,
@@ -1656,7 +1618,6 @@ export const WALL_FEED_COPY = {
   lateBy: (n: number, unit: "h" | "min") => (unit === "h" ? `${n}h late` : `${n} min late`),
   /** An admin took back or reset someone's move. */
   undid: (by: string, whose: string, what: string) => `${by} undid ${whose} ${what}`,
-  adminFix: "An admin’s fix",
   sharedOut: "Forfeits split",
   settled: "Settled up",
   // Several in a row by one person, folded into one.
@@ -1703,8 +1664,6 @@ export const HOUSE_LOWER_COPY = {
   noGroups: "None",
   groupsValue: (n: number) => `${n} ${n === 1 ? "group" : "groups"}`,
   // You.
-  /** Under your name at the top of the You page: "Elm Street, admin". */
-  youIn: (house: string, admin: boolean) => `${house}, ${admin ? "admin" : "housemate"}`,
   /** The Overview's way to the You page on a phone, under your name. */
   youMeta: "Name, look, sign-in and leaving",
   name: "Name",
@@ -1724,9 +1683,6 @@ export const HOUSE_LOWER_COPY = {
   owesYou: (who: string, amount: string) => `${who} still owes you ${amount}`,
   youOwe: (whom: string, amount: string) => `you still owe ${whom} ${amount}`,
   costsNothing: "You’re square with everyone, so it costs you nothing.",
-  /** The only admin, with others still in the house: they hand over as they go. */
-  lastAdmin: "You’re the only admin. Pick who looks after the house when you go.",
-  handOver: (name: string) => `Make ${name} admin and leave`,
   /** The last one out, after what it costs. The house closes behind them: its invite opens nothing. */
   lastOne: "Nobody will be left, and the house’s invite will stop working.",
   /** Until the Stake is read, and if it can't be. */
@@ -1753,7 +1709,6 @@ export const SETUP_COPY = {
   noJohnsBody: "Start with the ones that cause arguments: bins, the bathroom, the kitchen.",
   /** An empty list, to a housemate who can't add to it: who will. */
   johnsComing: (names: string) => `${names} will add the Johns.`,
-  johnsComingAdmin: "An admin will add the Johns.",
   /** The John list's re-deal, asked first. */
   redealTitle: "Re-deal this week?",
   redealBody: "Everyone’s Johns will be dealt again from the list as it is now.",
@@ -1798,10 +1753,7 @@ export const SETUP_COPY = {
   and: "and",
   /** The rules' read-out, with Edit beside it for an admin. */
   rules: "Rules",
-  /** Under the rules: who can change them. */
-  canChange: (names: string, count: number) => `${names} (${count === 1 ? "admin" : "admins"}) can change these.`,
   youCanChange: "You can change these.",
-  adminsNobody: "Only admins can change these.",
   edit: "Edit",
   /** The rules form's three sections. */
   money: "Money",
@@ -2082,8 +2034,6 @@ export const FAMILY_PASS_COPY = {
 /** The track record, opened from Week: the grid, and one person's breakdown. */
 export const RECORD_COPY = {
   title: "Track record",
-  /** The key's line for the amber dot. */
-  changed: "Changed by an admin",
   /** Week's way in. */
   open: "Track record",
   intro: "One square per week. A streak, or a slide, shows at a glance.",
@@ -2324,9 +2274,6 @@ export const SHARE_COPY = {
   imageAlt: `${APP_NAME}: fair shares of the housework.`,
   joinTitle: (house: string) => `Join ${house} on ${APP_NAME}`,
   joinGeneric: `You’re invited to a house on ${APP_NAME}`,
-  housemates: (n: number) => `${n} ${n === 1 ? "housemate" : "housemates"}`,
-  /** A join link's amber plate: "Join 4 housemates on Jonz." */
-  joinPlate: (n: number) => `Join ${n} ${n === 1 ? "housemate" : "housemates"} on ${APP_NAME}.`,
   joinLine: "Sign in to join and get your Johns.",
   /** A code that opens nothing: reset, or its house is empty. */
   expiredTitle: "This invite has expired",

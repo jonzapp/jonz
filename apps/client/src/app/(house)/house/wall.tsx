@@ -37,6 +37,7 @@ import { useReact, useWallFeed, wallPages } from '@/hooks/use-wall';
 import { INSET } from '@/theme';
 import { Waiting } from '@/components/waiting';
 import { WallOutline } from '@/components/page-outlines';
+import { useWords } from '@/hooks/use-words';
 
 type Shown = 'wall' | 'history';
 
@@ -60,6 +61,7 @@ export default function WallScreen() {
 
 function WallFor({ houseId, userId }: { houseId: string; userId: string }) {
   const { query, view } = useHouse(houseId, userId);
+  const words = useWords(view?.snapshot.house.kind);
   const feed = useWallFeed(houseId, userId);
   const johnSheet = useJohnSheet();
   const { react, problem, problemAt, clear } = useReact(houseId, userId);
@@ -72,7 +74,7 @@ function WallFor({ houseId, userId }: { houseId: string; userId: string }) {
   const [beside, setBeside] = useState(false);
 
   const { events, photos } = wallPages(feed.data?.pages ?? []);
-  const scene = view ? wallScene(view, userId, events, true) : null;
+  const scene = view ? wallScene(view, userId, events, words, true) : null;
   const rows = scene ? events.map((e) => wallFeedRow(e, scene)) : [];
   const openRow = open ? rows.find((r) => r.id === open) : undefined;
   if (open && feed.data && scene && !openRow) setOpen(null);

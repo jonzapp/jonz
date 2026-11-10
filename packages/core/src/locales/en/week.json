@@ -1,0 +1,3 @@
+{
+  "week.record.changed": "{kind, select, family {Changed by a parent} other {Changed by an admin}}"
+}

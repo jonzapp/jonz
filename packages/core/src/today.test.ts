@@ -709,8 +709,6 @@ describe("the copy", () => {
   it("counts the list and the house for the setup checklist", () => {
     expect(NEXT_UP_COPY.onTheList(0)).toBe("Nothing on the list yet");
     expect(NEXT_UP_COPY.onTheList(3)).toBe("3 on the list");
-    expect(NEXT_UP_COPY.housemates(1)).toBe("Just you so far");
-    expect(NEXT_UP_COPY.housemates(4)).toBe("4 in the house so far");
   });
 });
 

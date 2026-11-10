@@ -1,8 +1,8 @@
 import { APP_NAME, PAGE_TITLE, RECORD_COPY, SHARE_COPY, STAKE_HISTORY_COPY, pageTitle } from "./copy";
-import { copyFor } from "./copy-book";
 import type { HouseKind } from "./domain";
 import { HISTORY_COPY } from "./history";
 import { WALL_COPY } from "./wall";
+import { wordsFor } from "./words-for";
 
 /**
  * What a pasted jonz.app link shows in a chat (iMessage, WhatsApp, Slack,
@@ -47,7 +47,7 @@ export const BRAND_SIGN: ShareSign = { legend: APP_NAME, plate: "Fair shares of 
 export function joinSign(invite: InviteCard | null, namesHouse = SHARE_NAMES_HOUSE): ShareSign {
   if (!invite) return { legend: "Invite expired", plate: SHARE_COPY.expiredLine };
   if (!namesHouse) return { legend: APP_NAME, plate: "You're invited to a house." };
-  return { legend: invite.name, plate: copyFor(invite.kind).SHARE.joinPlate(invite.members) };
+  return { legend: invite.name, plate: wordsFor("en", invite.kind)("common.joinPlate", { count: invite.members }) };
 }
 
 /**
@@ -151,7 +151,7 @@ export function joinPreview(code: string, invite: InviteCard | null, namesHouse 
   const title = SHARE_COPY.joinTitle(invite.name);
   return {
     title,
-    description: `${copyFor(invite.kind).SHARE.housemates(invite.members)}. ${SHARE_COPY.joinLine}`,
+    description: `${wordsFor("en", invite.kind)("common.members", { count: invite.members })}. ${SHARE_COPY.joinLine}`,
     url,
     image,
     imageAlt: title,

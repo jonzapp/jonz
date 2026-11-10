@@ -1,4 +1,4 @@
-import { BIN_NIGHT, FOCUS_SHELL_COPY, HOUSE_LOWER_COPY } from '@app/core';
+import { BIN_NIGHT, FOCUS_SHELL_COPY, HOUSE_LOWER_COPY, wordsFor } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 import { Text } from 'react-native';
 
@@ -10,6 +10,8 @@ import { snapshot } from '@/testing/house';
 import { renderPages } from '@/testing/pages';
 
 import { LeaveSection } from './leave-section';
+
+const words = wordsFor('en', 'housemates');
 
 jest.mock('@/api/board', () => ({ loadHouse: jest.fn() }));
 jest.mock('@/api/house', () => ({ catchUp: jest.fn() }));
@@ -91,13 +93,13 @@ it("lets the only admin leave by picking who looks after the house", async () =>
   await open();
   await waitFor(() => expect(loadStake).toHaveBeenCalled());
   const sheet = await ask();
-  expect(sheet.getByText(new RegExp(HOUSE_LOWER_COPY.lastAdmin))).toBeOnTheScreen();
+  expect(sheet.getByText(new RegExp(words('house.leave.lastAdmin')))).toBeOnTheScreen();
   // Nothing to press until someone is picked.
   expect(sheet.queryByTestId('confirm')).toBeNull();
   const [first] = sheet.getAllByTestId('heir');
   await fireEvent.press(first);
   const name = first.props.accessibilityLabel as string;
-  await fireEvent.press(sheet.getByRole('button', { name: HOUSE_LOWER_COPY.handOver(name.split(' ')[0]) }));
+  await fireEvent.press(sheet.getByRole('button', { name: words('house.leave.handOver', { name: name.split(' ')[0] }) }));
   await waitFor(() => expect(handOver).toHaveBeenCalledWith('h1', expect.any(String)));
   expect(removeMember).not.toHaveBeenCalled();
 });

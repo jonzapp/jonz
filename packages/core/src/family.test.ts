@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import { ADMINS_COPY, FAMILY_COPY, FRONT_DOOR, JOIN_COPY, PAGE_TITLE, PERSON_COPY, SETUP_COPY } from "./copy";
-import { copyFor } from "./copy-book";
 import { DEFAULT_RULES, houseKind } from "./domain";
 import { familyHides, frontDoorWords, joinLine, kindParam, newHouseWords, roleCopy } from "./family";
 import { afterSignIn, DOOR, houseDefaults, signInLine } from "./front-door";
 import { CreateHouse } from "./schemas";
 import { rulesRows } from "./setup";
+import { wordsFor } from "./words-for";
 
 describe("the kind of house", () => {
   it("reads a row's kind, and anything it doesn't know is housemates", () => {
@@ -71,8 +71,8 @@ describe("the front door and Start a house, for a family", () => {
 
 describe("roleCopy", () => {
   it("calls an admin a parent and everyone else a kid in a family", () => {
-    const family = roleCopy("family");
-    expect(family.admins).toBe(copyFor("family").ADMINS);
+    const family = roleCopy(wordsFor("en", "family"));
+    expect(family.admins.addBody).toBe(ADMINS_COPY.addBody);
     expect(family.admins.title).toBe("Parents");
     expect(family.sub(true, false)).toBe("Parent");
     expect(family.sub(false, false)).toBe("Kid");
@@ -83,10 +83,13 @@ describe("roleCopy", () => {
   });
 
   it("keeps the housemates' words as they were", () => {
-    const house = roleCopy("housemates");
-    expect(house.admins).toEqual(ADMINS_COPY);
-    expect(house.sub(true, true)).toBe(PERSON_COPY.sub(true, true));
-    expect(house.person.makeMember).toBe(PERSON_COPY.makeHousemate);
+    const house = roleCopy(wordsFor("en", "housemates"));
+    expect(house.admins).toMatchObject({ ...ADMINS_COPY, title: "Admins", add: "Add an admin" });
+    expect(house.admins.make("Sam")).toBe("Make Sam admin");
+    expect(house.sub(true, true)).toBe("You, admin");
+    expect(house.sub(false, false)).toBe("Housemate");
+    expect(house.person).toMatchObject({ section: "Admin", makeMember: "Make housemate", makeAdminMeta: PERSON_COPY.makeAdminMeta });
+    expect(house.youIn("Elm Street", false)).toBe("Elm Street, housemate");
   });
 });
 

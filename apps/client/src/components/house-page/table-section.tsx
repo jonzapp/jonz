@@ -1,5 +1,4 @@
 import {
-  copyFor,
   HOUSE_PAGE_COPY,
   KIDS_COPY,
   localDate,
@@ -34,6 +33,7 @@ import type { HouseView } from '@/hooks/use-house';
 import { TourSpot } from '@/components/tour/tour-spot';
 import { Waiting } from '@/components/waiting';
 import { OutlineRows } from '@/components/outline';
+import { useWords } from '@/hooks/use-words';
 
 type Span = 'week' | 'month';
 
@@ -62,6 +62,7 @@ export function TableSection({
   /** In a family: what each kid has earned, for the Table's money. */
   pocket?: UseQueryResult<PocketView>;
 }) {
+  const words = useWords(view.snapshot.house.kind);
   const [span, setSpan] = useState<Span>('week');
   const [sheet, setSheet] = useState<'invite' | 'rules' | 'kid' | null>(null);
   const column = Math.min(useWindowDimensions().width, useContentWidth());
@@ -136,7 +137,7 @@ export function TableSection({
           ) : null}
           <Row
             leading={<RowIcon icon={UserPlusIcon} />}
-            title={copyFor(view.snapshot.house.kind).HOUSE_PAGE.invite}
+            title={words('house.page.invite')}
             onPress={() => setSheet('invite')}
             chevron
             testID="invite"

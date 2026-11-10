@@ -1,4 +1,5 @@
 import {
+  type Currency,
   DEAL_COPY,
   FOCUS_SHELL_COPY,
   formatMoney,
@@ -6,19 +7,20 @@ import {
   JOHN_LIST_COPY,
   MOVING_COPY,
   NEXT_UP_COPY,
-  PERSON_COPY,
   pointsLabel,
   RULES_COPY,
   scheduleLine,
   SECTION_LABEL,
   SETUP_COPY,
   SIGN_IN_COPY,
-  type Currency,
+  wordsFor,
 } from "@app/core";
 import { expect, test, type Page } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, signInToClient } from "./auth";
 import { backToHouse, toHousePage } from "./house-pages";
+
+const words = wordsFor("en", "housemates");
 
 // A house from nothing, in the Expo app's web build alone: start it, write
 // the John list, let a housemate in, hand out the week, change the rules
@@ -151,9 +153,9 @@ test("run a house from nothing on the phone", async ({ browser }) => {
   await house.getByTestId("standing").filter({ hasText: "Ben" }).getByRole("link").click();
   await expect(page).toHaveURL(new RegExp(`/house/people/${ben}$`));
   const person = page.getByTestId("person-screen");
-  await person.getByTestId("toggle-admin").getByRole("button", { name: PERSON_COPY.makeAdmin }).click();
-  await expect(person.getByTestId("title-bar")).toContainText(PERSON_COPY.sub(true, false));
-  await expect(person.getByTestId("toggle-admin")).toContainText(PERSON_COPY.makeHousemate);
+  await person.getByTestId("toggle-admin").getByRole("button", { name: words("people.person.makeAdmin") }).click();
+  await expect(person.getByTestId("title-bar")).toContainText(words("people.person.role", { role: "admin" }));
+  await expect(person.getByTestId("toggle-admin")).toContainText(words("people.person.makeMember"));
   await backToHouse(page, person.getByRole("button", { name: FOCUS_SHELL_COPY.backTo(SECTION_LABEL.house) })).click();
   await expect(page).toHaveURL(/\/house$/);
   // Your name is on You, a row at the foot of House on a phone and a page in its list on a laptop.

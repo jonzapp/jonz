@@ -102,6 +102,12 @@ the glossary in `docs/style/words.md`, guarded by
 `packages/core/src/words.test.ts`. Copy never says "chore app", and never
 "rota" (the house doesn't use the word).
 
+**New words go in the words files** (`packages/core/src/locales/en/*.json`,
+ICU messages read with `useWords()` in the app, `wordsFor(language, kind)`
+elsewhere), not in `copy.ts` or typed into a screen. A line that names
+housemates or admins gets a whole family sentence:
+`{kind, select, family {…} other {…}}`. See `docs/specs/translation.md`.
+
 ## House style: Bin Night
 
 Council signage, on every platform: pavement and tarmac grounds, ink,

@@ -1,6 +1,7 @@
 import { canRedeal, GROUPS_COPY, johnsComing, memberCan, PAGE_TITLE } from '@app/core';
 
 import type { JohnList as List } from '@/api/settings';
+import { useWords } from '@/hooks/use-words';
 import { GroupsList } from '@/components/house/groups-list';
 import { HousePage } from '@/components/house/house-page';
 import { JohnList } from '@/components/house/john-list';
@@ -57,6 +58,7 @@ function JohnListFor({ houseId, userId }: { houseId: string; userId: string }) {
 
 function JohnListPage({ houseId, userId, view, list }: { houseId: string; userId: string; view: HouseView; list: List }) {
   const isAdmin = memberCan(view.me, 'johns:write');
+  const words = useWords(view.snapshot.house.kind);
   // Groups show to an admin, who makes them, and to everyone once there's one.
   const groups =
     isAdmin || list.groups.length > 0 ? (
@@ -75,7 +77,7 @@ function JohnListPage({ houseId, userId, view, list }: { houseId: string; userId
         groups={list.groups}
         editable={isAdmin}
         family={view.snapshot.house.kind === 'family'}
-        whoAdds={johnsComing(view.snapshot.members, userId, view.snapshot.house.kind)}
+        whoAdds={johnsComing(view.snapshot.members, userId, words)}
         // Until the first deal, the deal at the foot is the page's one amber button.
         quietAdd={!view.snapshot.house.everDealt}
         // A group's row is about two lines, with Add a group and the note under them.

@@ -140,8 +140,6 @@ describe("SECTIONS", () => {
   });
 
   it("counts the house and your standing in words", () => {
-    expect(SHELL_COPY.housemates(1)).toBe("1 housemate");
-    expect(SHELL_COPY.housemates(4)).toBe("4 housemates");
     expect(SHELL_COPY.standing(0, 1)).toBe("0-week streak, 1 skip");
     expect(SHELL_COPY.standing(5, 0)).toBe("5-week streak, 0 skips");
   });

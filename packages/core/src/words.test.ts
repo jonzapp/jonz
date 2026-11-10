@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
+import { EN } from "./locales";
 import { stringsOf } from "./strings-of";
 
 /**
@@ -88,4 +89,12 @@ describe("the Jonz words", () => {
       expect(found).toEqual([]);
     });
   }
+
+  it("the words files (locales/en/) say each thing by its one name", () => {
+    const found: string[] = [];
+    for (const [id, line] of Object.entries(EN)) {
+      for (const [word, say] of RETIRED) if (word.test(line)) found.push(`${id} "${line}": say ${say}`);
+    }
+    expect(found).toEqual([]);
+  });
 });

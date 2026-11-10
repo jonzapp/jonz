@@ -1,4 +1,4 @@
-import { copyFor, firstName, memberCan, BUSY_COPY } from '@app/core';
+import { firstName, memberCan, roleCopy, BUSY_COPY } from '@app/core';
 import { ShieldCheckIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -17,6 +17,7 @@ import type { HouseView } from '@/hooks/use-house';
 import { useMove } from '@/hooks/use-move';
 import { useUndoOffer } from '@/hooks/use-undo-offer';
 import { INSET, SECTION_GAP } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * Who looks after the house, on the Rules page beside the rules they can
@@ -35,13 +36,13 @@ export function AdminsList({ houseId, userId, view }: { houseId: string; userId:
   const admins = members.filter((m) => m.role === 'admin');
   const others = members.filter((m) => m.role !== 'admin');
   const amAdmin = memberCan(view.me, 'members:write');
-  const copy = copyFor(view.snapshot.house.kind);
-  const words = copy.ADMINS;
+  const say = useWords(view.snapshot.house.kind);
+  const words = roleCopy(say).admins;
 
   function change(person: Housemate, to: 'admin' | 'member') {
     const name = firstName(person.name);
     return role.run(() => setRole(houseId, person.userId, to)).then((done) => {
-      if (done) offer(to === 'admin' ? copy.HISTORY.madeAdmin(name) : copy.HISTORY.madeHousemate(name), 'role', person.userId);
+      if (done) offer(say(to === 'admin' ? 'wall.history.madeAdmin' : 'wall.history.madeMember', { name }), 'role', person.userId);
       return done;
     });
   }
@@ -91,7 +92,7 @@ export function AdminsList({ houseId, userId, view }: { houseId: string; userId:
       <Meta style={styles.note}>{admins.length === 1 && amAdmin ? `${words.note} ${words.onlyAdmin}` : words.note}</Meta>
       <ConfirmSheet
         visible={adding}
-        title={words.addTitle}
+        title={words.add}
         body={words.addBody}
         confirmLabel={chosen ? words.make(firstName(chosen.name)) : null}
         icon={ShieldCheckIcon}

@@ -1,4 +1,4 @@
-import { DELETE_COPY, FOCUS_SHELL_COPY, HOUSE_COPY, HOUSE_LOWER_COPY, PAGE_TITLE, SECTION_LABEL } from '@app/core';
+import { DELETE_COPY, FOCUS_SHELL_COPY, HOUSE_COPY, PAGE_TITLE, SECTION_LABEL, wordsFor } from '@app/core';
 import { screen, within } from 'expo-router/testing-library';
 import { useWindowDimensions } from 'react-native';
 
@@ -7,6 +7,8 @@ import { catchUp } from '@/api/house';
 import YouScreen from '@/app/(house)/house/you';
 import { snapshot } from '@/testing/house';
 import { renderPages, untilRead } from '@/testing/pages';
+
+const words = wordsFor('en', 'housemates');
 
 jest.mock('@/api/board', () => ({ loadHouse: jest.fn() }));
 jest.mock('@/api/house', () => ({ catchUp: jest.fn() }));
@@ -46,7 +48,7 @@ it('sits under a title bar with the way back to House, your name at the top', as
   expect(bar.getByRole('button', { name: FOCUS_SHELL_COPY.backTo(SECTION_LABEL.house) })).toBeOnTheScreen();
   const me = snapshot().members.find((m) => m.userId === 'priya')!;
   // Your picture (here your initials), then your name over the house and your part in it.
-  expect(screen.getByTestId('you-head')).toHaveTextContent(`PR${me.name}${HOUSE_LOWER_COPY.youIn('Flat 3', me.role === 'admin')}`);
+  expect(screen.getByTestId('you-head')).toHaveTextContent(`PR${me.name}${words('house.leave.youIn', { house: 'Flat 3', role: me.role })}`);
 });
 
 it('holds your settings, help and leaving, in one column on a phone', async () => {

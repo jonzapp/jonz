@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { wordsFor } from "./words-for";
 
 import type { AwayPeriod } from "./away";
 import { FOCUS_SHELL_COPY, HOUSE_PAGE_COPY, PERSON_COPY, STAKE_HISTORY_COPY } from "./copy";
@@ -95,7 +96,7 @@ describe("overviewFigures", () => {
     month: "2026-10",
     projection: projection(net, forfeited),
   });
-  const base = { month: "2026-10", me: "sam", rules: { currency: "GBP" as const, stakeMinor: 2000 }, housemates: 4, kind: "housemates" as const };
+  const base = { month: "2026-10", me: "sam", rules: { currency: "GBP" as const, stakeMinor: 2000 }, housemates: 4, words: wordsFor("en", "housemates") };
 
   it("gives your month, the stake, the housemates and the John list, in that order", () => {
     const johns = [

@@ -15,7 +15,7 @@ const BUTTONS = new Set(['Button', 'TextButton', 'IconButton']);
 // Plain layout boxes: a Button straight inside one of these has nothing placing it.
 const LAYOUT = new Set(['View', 'ScrollView', 'KeyboardAvoidingView', 'SafeAreaView']);
 // The kit's files that may draw a spinner (docs/style/states.md, "Waiting").
-const SPINNER_KIT = ['button.tsx', 'tick-box.tsx', 'list-foot.tsx', 'read-state.tsx', 'outline.tsx', 'waiting.tsx', 'style-page/'];
+const SPINNER_KIT = ['button.tsx', 'tick-box.tsx', 'list-foot.tsx', 'admin/smart-search.tsx', 'read-state.tsx', 'outline.tsx', 'waiting.tsx', 'style-page/'];
 // What a wait is called in a Button's `disabled`: a mutation's isPending, or busy, sending, saving and the like.
 const WAIT_NAMES = /\b(isPending|pending|busy|sending|saving|loading|working|isLoading|isFetching)\b/i;
 const PRESSABLES = new Set(['Pressable', 'TouchableOpacity', 'TouchableHighlight', 'TouchableWithoutFeedback']);
@@ -215,7 +215,7 @@ module.exports = {
       },
       create(context) {
         const file = context.filename.replace(/\\/g, '/');
-        // The kit's own pieces draw the spinners that are allowed: a busy button or tick, a list's foot, the style page.
+        // The kit's own pieces draw the spinners that are allowed: a busy button or tick, a list's foot, a list's search box, the style page.
         if (SPINNER_KIT.some((kit) => file.includes(`/src/components/${kit}`))) return {};
         return {
           ImportSpecifier(node) {

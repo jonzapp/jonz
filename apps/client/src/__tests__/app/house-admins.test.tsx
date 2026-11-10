@@ -1,4 +1,4 @@
-import { ADMINS_COPY, copyFor, HISTORY_COPY, PAGE_TITLE, PARENT_OK_COPY, SETUP_COPY } from '@app/core';
+import { PAGE_TITLE, PARENT_OK_COPY, roleCopy, SETUP_COPY, wordsFor } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 
 import { loadHouse } from '@/api/board';
@@ -9,7 +9,10 @@ import { ToastProvider } from '@/components/toast';
 import { snapshot } from '@/testing/house';
 import { renderPages } from '@/testing/pages';
 
-const PARENTS_COPY = copyFor('family').ADMINS;
+const words = wordsFor('en', 'housemates');
+const ADMINS_COPY = roleCopy(words).admins;
+
+const PARENTS_COPY = roleCopy(wordsFor('en', 'family')).admins;
 
 jest.mock('@/api/board', () => ({ loadHouse: jest.fn() }));
 jest.mock('@/api/house', () => ({ catchUp: jest.fn() }));
@@ -76,7 +79,7 @@ it('adds an admin from the housemates who aren’t one, then offers Undo', async
   await fireEvent.press(sheet.getByRole('radio', { name: 'Ada' }));
   await fireEvent.press(sheet.getByRole('button', { name: ADMINS_COPY.make('Ada') }));
   await waitFor(() => expect(setRole).toHaveBeenCalledWith('h1', 'ada', 'admin'));
-  expect(await screen.findByText(HISTORY_COPY.madeAdmin('Ada'))).toBeOnTheScreen();
+  expect(await screen.findByText(words('wall.history.madeAdmin', { name: 'Ada' }))).toBeOnTheScreen();
 });
 
 it('lets an admin step another down, and shows housemates the list alone', async () => {

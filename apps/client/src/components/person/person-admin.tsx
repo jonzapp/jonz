@@ -15,7 +15,7 @@ import { useHouse } from '@/hooks/use-house';
 import { useMove } from '@/hooks/use-move';
 import { useUndoOffer } from '@/hooks/use-undo-offer';
 import { SECTION_GAP, useTheme } from '@/theme';
-import { useCopy } from '@/hooks/use-copy';
+import { useWords } from '@/hooks/use-words';
 import { useRoleCopy } from '@/hooks/use-kind';
 
 /**
@@ -39,7 +39,7 @@ export function PersonAdmin({ houseId, userId, person }: { houseId: string; user
   const name = firstName(person.name);
   const admin = person.role === 'admin';
   const words = useRoleCopy().person;
-  const history = useCopy().HISTORY;
+  const say = useWords();
 
   return (
     <View testID="person-admin" style={styles.stack}>
@@ -51,7 +51,7 @@ export function PersonAdmin({ houseId, userId, person }: { houseId: string; user
           disabled={role.pending}
           onPress={() =>
             void role.run(() => setRole(houseId, person.userId, admin ? 'member' : 'admin')).then((done) => {
-              if (done) offer(admin ? history.madeHousemate(name) : history.madeAdmin(name), 'role', person.userId);
+              if (done) offer(say(admin ? 'wall.history.madeMember' : 'wall.history.madeAdmin', { name }), 'role', person.userId);
             })
           }
           testID="toggle-admin"

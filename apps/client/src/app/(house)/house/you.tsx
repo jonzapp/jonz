@@ -1,7 +1,8 @@
-import { PAGE_TITLE, roleCopy } from '@app/core';
+import { PAGE_TITLE } from '@app/core';
 import { StyleSheet, View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
+import { useRoleCopy } from '@/hooks/use-kind';
 import { HousePage } from '@/components/house/house-page';
 import { ConnectedAppsSection } from '@/components/house-page/connected-apps-section';
 import { LeaveSection } from '@/components/house-page/leave-section';
@@ -55,13 +56,14 @@ function YouFor({ houseId, userId }: { houseId: string; userId: string }) {
 
 function YouBody({ houseId, userId, view }: { houseId: string; userId: string; view: HouseView }) {
   const me = view.me!;
+  const roles = useRoleCopy(view.snapshot.house.kind);
   return (
     <>
       <View style={styles.head} testID="you-head">
         <Avatar name={me.name} userId={userId} me size={PHOTO} />
         <View style={styles.words}>
           <Lead>{me.name}</Lead>
-          <Meta>{roleCopy(view.snapshot.house.kind).youIn(view.snapshot.house.name, me.role === 'admin')}</Meta>
+          <Meta>{roles.youIn(view.snapshot.house.name, me.role === 'admin')}</Meta>
         </View>
       </View>
       <Pair

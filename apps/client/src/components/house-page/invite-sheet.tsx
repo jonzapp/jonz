@@ -9,7 +9,7 @@ import { Button } from '@/components/button';
 import { ButtonRow } from '@/components/button-row';
 import { Sheet } from '@/components/sheet';
 import { SectionLabel } from '@/components/text';
-import { useCopy } from '@/hooks/use-copy';
+import { useWords } from '@/hooks/use-words';
 import { useMove } from '@/hooks/use-move';
 import { SITE_URL } from '@/links';
 import { SPACE, useTheme } from '@/theme';
@@ -51,7 +51,7 @@ export function InviteSheet({
   /** The house's id, for an admin, who can ask for a new code. */
   resetFor?: string;
 }) {
-  const words = useCopy();
+  const words = useWords();
   const { colors, type } = useTheme();
   const [copied, setCopied] = useState(false);
   const reset = useMove(resetFor ?? '');
@@ -85,7 +85,7 @@ export function InviteSheet({
         setCopied(false);
         onClose();
       }}
-      title={words.HOUSE_PAGE.invite}
+      title={words('house.page.invite')}
       description={HOUSE_PAGE_COPY.inviteBody}
       tape
       testID="invite-sheet"
