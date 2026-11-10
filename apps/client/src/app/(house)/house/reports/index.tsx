@@ -20,7 +20,15 @@ const KIND_ICON = { problem: BugIcon, idea: LightbulbIcon, question: CircleHelpI
 export default function ReportsScreen() {
   const mine = useQuery({ queryKey: ['my-reports'], queryFn: myReports });
   return (
-    <HousePage title={REPORT_COPY.yours} testID="your-reports" outline={<ListPageOutline sections={[4]} lead="circle" />} ready={!!mine.data} failed={mine.isError} onRetry={() => void mine.refetch()}>
+    <HousePage
+      title={REPORT_COPY.yours}
+      testID="your-reports"
+      outline={<ListPageOutline sections={[4]} lead="circle" />}
+      ready={!!mine.data}
+      failed={mine.isError}
+      onRetry={() => void mine.refetch()}
+      fills
+    >
       {() => <YourReports reports={mine.data!} />}
     </HousePage>
   );
