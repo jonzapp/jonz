@@ -6,6 +6,7 @@ import { findHouses, findPeople, messageReach, sendMessage, sentCount, sentPage,
 import { ownerStatus } from '@/api/owner';
 import AdminLayout from '@/app/admin/_layout';
 import MessagesPage from '@/app/admin/messages/index';
+import NewMessagePage from '@/app/admin/messages/new';
 import SentPage from '@/app/admin/messages/sent';
 import { renderPages, untilRead } from '@/testing/pages';
 
@@ -32,6 +33,7 @@ const LAPTOP = { width: 1440, height: 900, scale: 1, fontScale: 1 };
 const ROUTES = {
   'admin/_layout': AdminLayout,
   'admin/messages/index': MessagesPage,
+  'admin/messages/new': NewMessagePage,
   'admin/messages/sent': SentPage,
 };
 
@@ -67,9 +69,9 @@ async function write(subject: string, body: string) {
   await fireEvent.changeText(screen.getByTestId('message-body'), body);
 }
 
-describe('Messages', () => {
+describe('A new message', () => {
   it('sends you a test before anyone else gets it: a push, never on a Wall', async () => {
-    await renderPages(ROUTES, '/admin/messages');
+    await renderPages(ROUTES, '/admin/messages/new');
     await untilRead();
     await write('Testing pushes', 'Does this reach my iPhone?');
     await fireEvent.press(screen.getByTestId('message-test'));
@@ -83,7 +85,7 @@ describe('Messages', () => {
   });
 
   it('finds a house, says how many it reaches, and sends to them', async () => {
-    await renderPages(ROUTES, '/admin/messages');
+    await renderPages(ROUTES, '/admin/messages/new');
     await untilRead();
     await fireEvent.changeText(screen.getByTestId('message-find'), 'elm');
     await fireEvent.press(await screen.findByTestId('message-found-h1'));
@@ -97,7 +99,7 @@ describe('Messages', () => {
   });
 
   it('says what is missing rather than sending', async () => {
-    await renderPages(ROUTES, '/admin/messages');
+    await renderPages(ROUTES, '/admin/messages/new');
     await untilRead();
     await fireEvent.press(screen.getByTestId('message-send'));
     expect(await screen.findByText(MESSAGE_COPY.pickHouse)).toBeVisible();
@@ -106,7 +108,7 @@ describe('Messages', () => {
   });
 
   it('keeps a message to one person off the Wall', async () => {
-    await renderPages(ROUTES, '/admin/messages');
+    await renderPages(ROUTES, '/admin/messages/new');
     await untilRead();
     await fireEvent.press(screen.getByText(MESSAGE_COPY.audience.person));
     const wall = screen.getByTestId('message-way-wall');
@@ -116,7 +118,7 @@ describe('Messages', () => {
   });
 
   it('asks again, naming the number, before sending to everyone', async () => {
-    await renderPages(ROUTES, '/admin/messages');
+    await renderPages(ROUTES, '/admin/messages/new');
     await untilRead();
     await fireEvent.press(screen.getByText(MESSAGE_COPY.audience.everyone));
     await write('Welcome to the beta', 'Thanks for trying Jonz.');
@@ -126,25 +128,68 @@ describe('Messages', () => {
     await waitFor(() => expect(sendMessage).toHaveBeenCalled());
     expect(jest.mocked(sendMessage).mock.calls[0][0]).toMatchObject({ audience: 'everyone' });
   });
+});
 
-  it('shows what was sent last, and on a laptop how it looks beside the form', async () => {
+describe('Messages', () => {
+  it('lists every message sent first, and on a phone opens one in full as a sheet', async () => {
+    await renderPages(ROUTES, '/admin/messages');
+    await untilRead();
+    expect(screen.queryByTestId('message-form')).toBeNull();
+    await fireEvent.press(await screen.findByTestId('sent-m1'));
+    const sheet = await screen.findByTestId('sent-sheet');
+    expect(within(sheet).getByText('Thanks for trying Jonz.')).toBeVisible();
+    await act(async () => {});
+  });
+
+  it('pushes New message as a page of its own on a phone', async () => {
+    await renderPages(ROUTES, '/admin/messages');
+    await untilRead();
+    await fireEvent.press(screen.getByTestId('message-new'));
+    expect(await screen.findByTestId('admin-message-new')).toBeVisible();
+    expect(screen.getByTestId('message-form')).toBeVisible();
+  });
+
+  it('on a laptop writes the new message in the side panel, how it looks under it', async () => {
     (useWindowDimensions as jest.Mock).mockReturnValue(LAPTOP);
     await renderPages(ROUTES, '/admin/messages');
     await untilRead();
     expect(await screen.findByText('Welcome to the beta')).toBeVisible();
-    expect(screen.getByText(/412 people/)).toBeTruthy();
-    expect(screen.getByTestId('message-preview')).toBeVisible();
+    const side = screen.getByTestId('message-side');
+    expect(within(side).getByTestId('message-form')).toBeVisible();
+    expect(within(side).getByTestId('message-preview')).toBeVisible();
     expect(screen.getByTestId('admin-nav-messages')).toBeSelected();
   });
-});
 
-describe('All sent', () => {
-  it('lists every message sent, and opens one in full', async () => {
+  it('on a laptop opens a sent one in the panel, and New message brings the form back with its words', async () => {
+    (useWindowDimensions as jest.Mock).mockReturnValue(LAPTOP);
+    await renderPages(ROUTES, '/admin/messages');
+    await untilRead();
+    await write('Half written', 'Not sent yet.');
+    await fireEvent.press(await screen.findByTestId('sent-m1'));
+    const side = screen.getByTestId('message-side');
+    // Its words, and how they looked.
+    expect(within(side).getAllByText('Thanks for trying Jonz.')[0]).toBeVisible();
+    expect(screen.queryByTestId('sent-sheet')).toBeNull();
+    await fireEvent.press(screen.getByTestId('message-new'));
+    expect(within(side).queryByText('Thanks for trying Jonz.')).toBeNull();
+    expect(screen.getByTestId('message-subject')).toHaveProp('value', 'Half written');
+  });
+
+  it('gives someone who can\u2019t send the list alone', async () => {
+    jest.mocked(ownerStatus).mockResolvedValue({ owner: true, mfa: true, permissions: OWNER_PERMISSION_NAMES.filter((p) => p !== 'messages:write') });
+    (useWindowDimensions as jest.Mock).mockReturnValue(LAPTOP);
+    await renderPages(ROUTES, '/admin/messages');
+    await untilRead();
+    expect(await screen.findByText('Welcome to the beta')).toBeVisible();
+    expect(screen.queryByTestId('message-new')).toBeNull();
+    expect(screen.queryByTestId('message-form')).toBeNull();
+  });
+
+  it('lands an old All sent link on the list', async () => {
     await renderPages(ROUTES, '/admin/messages/sent');
     await untilRead();
-    await fireEvent.press(await screen.findByTestId('sent-m1'));
-    const sheet = await screen.findByTestId('sent-sheet');
-    expect(within(sheet).getByText('Thanks for trying Jonz.')).toBeVisible();
+    expect(await screen.findByTestId('admin-messages')).toBeVisible();
+    expect(await screen.findByTestId('sent-m1')).toBeVisible();
     await act(async () => {});
   });
 });

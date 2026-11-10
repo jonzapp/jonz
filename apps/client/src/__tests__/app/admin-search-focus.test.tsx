@@ -27,9 +27,9 @@ import AuditPage from '@/app/admin/audit/index';
 import DeletionsPage from '@/app/admin/deletions';
 import HousesPage from '@/app/admin/houses/index';
 import InboxPage from '@/app/admin/inbox/index';
-import SentPage from '@/app/admin/messages/sent';
+import MessagesPage from '@/app/admin/messages/index';
 import NoticesPage from '@/app/admin/notices';
-import AllPromotionsPage from '@/app/admin/promotions/all';
+import PromotionsPage from '@/app/admin/promotions/index';
 import { authStorage } from '@/api/storage';
 import { renderPages } from '@/testing/pages';
 
@@ -261,9 +261,9 @@ const PAGES: Page[] = [
   },
   {
     name: 'sent',
-    url: '/admin/messages/sent',
-    route: 'admin/messages/sent',
-    component: SentPage,
+    url: '/admin/messages',
+    route: 'admin/messages/index',
+    component: MessagesPage,
     placeholder: MESSAGE_COPY.searchPlaceholder,
     row: 'sent-m1',
     reads: () => {
@@ -273,9 +273,9 @@ const PAGES: Page[] = [
   },
   {
     name: 'promotions',
-    url: '/admin/promotions/all',
-    route: 'admin/promotions/all',
-    component: AllPromotionsPage,
+    url: '/admin/promotions',
+    route: 'admin/promotions/index',
+    component: PromotionsPage,
     placeholder: PROMOTIONS_COPY.searchPlaceholder,
     row: 'promotion-BETA',
     reads: () => {

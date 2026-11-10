@@ -2,9 +2,9 @@ import { Fragment, type ReactNode } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { useHouseWorkspace } from '@/components/house/workspace';
-import { roomFor, useColumns, useFilled } from '@/components/screen';
+import { roomFor, useFilled } from '@/components/screen';
 import { askPanelWidth, useAskPanelOpen } from '@/hooks/use-ask-jonz';
-import { COLUMN_MIN, FILL_MAX, FORM_MAX, GUTTER, SECTION_GAP, SPACE, WIDE } from '@/theme';
+import { COLUMN_MIN, FILL_MAX, GUTTER, SECTION_GAP, WIDE } from '@/theme';
 
 /** How many columns of at least COLUMN_MIN, SECTION_GAP apart, fit in `width`. */
 export function columnsIn(width: number): number {
@@ -96,27 +96,6 @@ export function Pair({
   );
 }
 
-/**
- * A long form in the main column of a laptop page (`Columns`): what it says
- * (`start`) beside how it goes out (`end`), sharing a top edge, where two
- * columns fit, so the form uses the room rather than a narrow strip of it.
- * Where they don't, one stack, FORM_MAX wide on a laptop; on a phone, one
- * stack across the page.
- */
-export function FormPair({ start, end, testID }: { start: ReactNode; end: ReactNode; testID?: string }) {
-  const beside = useSideBySide();
-  const two = useColumns();
-  if (beside) {
-    return <Pair testID={testID} start={<View style={styles.form}>{start}</View>} end={<View style={styles.form}>{end}</View>} />;
-  }
-  return (
-    <View style={[styles.form, two && styles.capped]} testID={testID}>
-      {start}
-      {end}
-    </View>
-  );
-}
-
 /** One of the things a Flow shares out: its key, how tall it is in rows, and what it shows. */
 export interface FlowItem {
   key: string;
@@ -164,6 +143,4 @@ const styles = StyleSheet.create({
   // Each column keeps SECTION_GAP between its sections, as the page does, and may shrink below its words.
   column: { minWidth: 0, gap: SECTION_GAP },
   even: { flex: 1 },
-  form: { gap: SPACE.xl },
-  capped: { maxWidth: FORM_MAX, width: '100%' },
 });

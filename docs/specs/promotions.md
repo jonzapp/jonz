@@ -89,12 +89,14 @@ database's lock (`promotion_use` with `p_strict`).
 Promotions is the third page of the owner's Send tab, after Messages and
 Notices (`ADMIN_GROUPS` in `packages/core/src/owner-admin.ts`).
 
-- `/admin/promotions`: the form, with What they get beside it on a laptop
-  (the headline and sentence, what each plan costs with it, who can use it)
-  and a sheet on a phone; Recent under it. The code in the link is made from
-  the name until the owner types their own. Make it opens its page.
-- `/admin/promotions/all`: every promotion as a busy list, found by name,
-  code or an email on it, filtered by who and state.
+- `/admin/promotions`: every promotion as a busy list, found by name,
+  code or an email on it, filtered by who and state, with New promotion
+  over it on a phone. On a laptop the form is in the side panel, What they
+  get under it (the headline and sentence, what each plan costs with it,
+  who can use it); on a phone it's `/admin/promotions/new`, with What they
+  get as a sheet. The code in the link is made from the name until the
+  owner types their own. Make it opens its page.
+  `/admin/promotions/all` lands on the list, keeping its search.
 - `/admin/promotions/[id]`: what it gives and who can use it, the link to
   copy or share, Email them (named), Try again (still `making`), Stop it, and
   beside it who it's for (Used, Opened, Emailed, Not yet) and the houses that

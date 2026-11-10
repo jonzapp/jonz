@@ -101,11 +101,18 @@ still look right stretched (content capped, nothing pinned to far edges).
   you (Needs you, On call, This week) in the panel. Where the main column
   has no room for two, they stack as on a phone. (Laptop width B, 10 Nov)
 - **The owner's pages use the whole room:** their lists are tables, so the
-  main column running to the panel suits them. A long form there (Messages,
-  Promotions) puts what it says beside how it goes out (`FormPair`), the
-  two sharing a top edge, where the main column has room for two columns;
-  only where it hasn't is it one stack, `FORM_MAX` wide. (Owner admin, 7
-  Nov; Laptop width B, 10 Nov)
+  main column running to the panel suits them. (Owner admin, 7 Nov; Laptop
+  width B, 10 Nov)
+- **The owner's send pages are list first** (Messages, Notices,
+  Promotions): everything sent or made as the page's list, and the way to
+  a new one over it (New message, New promotion, Notices' tiles). On a
+  laptop the new one is written in the side panel, what it will look like
+  under the form, and a sent message opens there in the form's place, the
+  form keeping its words; on a phone New is a page of its own (Notices'
+  short editor a sheet) and a sent message a sheet. The old All sent and
+  All promotions links land on the list. (Owner: Messages A, 10 Nov) *Not*
+  the form as the page with the last few under it: three send pages then
+  had three layouts.
 - **A page a phone pushes from a list opens beside the list on a laptop,**
   never in one column with the room blank beside it: an owner's house or
   report beside its table, a housemate's track record (you, to start)
