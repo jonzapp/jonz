@@ -1,15 +1,6 @@
 import "server-only";
 
-import {
-  FAMILY_PASS_COPY,
-  humanError,
-  PASS_COPY,
-  PASS_LOOKUP_KEYS,
-  passFirstCharge,
-  passOf,
-  passPurchaseRefusal,
-  type PassPurchase,
-} from "@app/core";
+import { humanError, PASS_LOOKUP_KEYS, passFirstCharge, passOf, passPurchaseRefusal, type PassPurchase, wordsFor } from "@app/core";
 
 import type { Stage } from "@/lib/env";
 import type { PassStripe } from "@/lib/pass/stripe";
@@ -17,6 +8,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 import type { Caller } from "./disputes";
 import { checkOffer, giveGift } from "./promotions";
+
+// Server lines read the housemates' words for now; each person's own language comes with translation 7.
+const words = wordsFor("en", "housemates");
 
 /** A refusal with the status to answer it with, or where to send the browser. */
 export type PassAnswer = { url: string } | { status: number; message: string };
@@ -75,7 +69,7 @@ export async function startCheckout(
       .eq("house_id", house.id)
       .eq("user_id", caller.userId)
       .maybeSingle();
-    if (me?.role !== "admin") return { status: 403, message: FAMILY_PASS_COPY.parentsOnly };
+    if (me?.role !== "admin") return { status: 403, message: words('house.familyPass.parentsOnly') };
   }
 
   const pass = passOf(house);
@@ -88,12 +82,12 @@ export async function startCheckout(
     return { url: passPage(appUrl, true) };
   }
 
-  const refusal = passPurchaseRefusal(pass, plan, now);
+  const refusal = passPurchaseRefusal(pass, plan, now, words);
   if (refusal) return { status: 409, message: refusal };
 
-  if (!stripe) return { status: 503, message: PASS_COPY.checkoutClosed };
+  if (!stripe) return { status: 503, message: words('house.pass.checkoutClosed') };
   const price = await stripe.priceId(PASS_LOOKUP_KEYS[plan]);
-  if (!price) return { status: 503, message: PASS_COPY.checkoutClosed };
+  if (!price) return { status: 503, message: words('house.pass.checkoutClosed') };
 
   // Months free start now, or when the free month ends if that's later.
   const freeMonths = checked?.facts.terms.kind === "trial" ? checked.facts.terms.months : null;
@@ -140,7 +134,7 @@ function addMonths(from: Date, months: number): Date {
 export async function openBilling(caller: Caller, stripe: PassStripe, houseId: string, appUrl: string): Promise<PassAnswer> {
   const house = await houseOf(caller, houseId);
   if (!house) return NOT_IN_HOUSE;
-  if (house.pass_bought_by !== caller.userId) return { status: 403, message: PASS_COPY.notBuyer };
+  if (house.pass_bought_by !== caller.userId) return { status: 403, message: words('house.pass.notBuyer') };
 
   // The Stripe ids are the service role's alone; the house was read as the caller above.
   const { data: billing } = await createAdminClient()
@@ -148,7 +142,7 @@ export async function openBilling(caller: Caller, stripe: PassStripe, houseId: s
     .select("stripe_customer_id")
     .eq("house_id", house.id)
     .maybeSingle();
-  if (!billing) return { status: 404, message: PASS_COPY.nothingToManage };
+  if (!billing) return { status: 404, message: words('house.pass.nothingToManage') };
 
   return { url: await stripe.portal(billing.stripe_customer_id, passPage(appUrl, false)) };
 }

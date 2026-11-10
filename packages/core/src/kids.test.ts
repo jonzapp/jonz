@@ -5,6 +5,9 @@ import { humanError } from "./errors";
 import { passWords } from "./family";
 import { bornYearOk, checkKid, oldEnough, parseMinAge, switchChoices } from "./kids";
 import { JohnDraft } from "./schemas";
+import { wordsFor } from "./words-for";
+
+const words = wordsFor("en", "housemates");
 
 /** Kids without a sign-in, family step 4 (docs/specs/family-houses.md). */
 
@@ -16,11 +19,11 @@ const PEOPLE = [
 
 describe("adding a child", () => {
   it("wants a name and a year that makes them 18 or under", () => {
-    expect(checkKid({ name: " Maya ", born: "2018" }, 2026)).toEqual({ kid: { name: "Maya", bornYear: 2018 } });
-    expect(checkKid({ name: "", born: "2018" }, 2026).problems?.name).toBeTruthy();
-    expect(checkKid({ name: "Maya", born: "18" }, 2026).problems?.born).toBeTruthy();
-    expect(checkKid({ name: "Maya", born: "2000" }, 2026).problems?.born).toBeTruthy();
-    expect(checkKid({ name: "Maya", born: "2027" }, 2026).problems?.born).toBeTruthy();
+    expect(checkKid({ name: " Maya ", born: "2018" }, 2026, words)).toEqual({ kid: { name: "Maya", bornYear: 2018 } });
+    expect(checkKid({ name: "", born: "2018" }, 2026, words).problems?.name).toBeTruthy();
+    expect(checkKid({ name: "Maya", born: "18" }, 2026, words).problems?.born).toBeTruthy();
+    expect(checkKid({ name: "Maya", born: "2000" }, 2026, words).problems?.born).toBeTruthy();
+    expect(checkKid({ name: "Maya", born: "2027" }, 2026, words).problems?.born).toBeTruthy();
     expect(bornYearOk(2008, 2026)).toBe(true);
     expect(bornYearOk(2007, 2026)).toBe(false);
   });
@@ -32,16 +35,16 @@ describe("adding a child", () => {
 
 describe("Today's switcher", () => {
   it("is a parent's, with each kid who doesn't sign in", () => {
-    expect(switchChoices(PEOPLE, "sam", true)).toEqual([
+    expect(switchChoices(PEOPLE, "sam", true, words)).toEqual([
       { value: "sam", label: "You" },
       { value: "maya", label: "Maya" },
     ]);
   });
 
   it("isn't there for a kid, for housemates, or with nobody to switch to", () => {
-    expect(switchChoices(PEOPLE, "leo", true)).toEqual([]);
-    expect(switchChoices(PEOPLE, "sam", false)).toEqual([]);
-    expect(switchChoices(PEOPLE.slice(0, 2), "sam", true)).toEqual([]);
+    expect(switchChoices(PEOPLE, "leo", true, words)).toEqual([]);
+    expect(switchChoices(PEOPLE, "sam", false, words)).toEqual([]);
+    expect(switchChoices(PEOPLE.slice(0, 2), "sam", true, words)).toEqual([]);
   });
 });
 
@@ -74,11 +77,11 @@ describe("a John's youngest age", () => {
 
 describe("the Family Pass", () => {
   it("is the same Pass with a family's words and extras", () => {
-    const family = passWords("family", 4);
+    const family = passWords("family", 4, words);
     expect(family.title).toBe("Family Pass");
     expect(family.extras.map((e) => e.key)).toEqual(["pocket", "kids", "photos", "history"]);
     expect(family.lead).toContain("Only a parent can buy it");
-    const house = passWords("housemates", 4);
+    const house = passWords("housemates", 4, words);
     expect(house.title).toBe("House Pass");
     expect(house.extras.map((e) => e.key)).toEqual(["stake", "table", "photos", "history"]);
   });

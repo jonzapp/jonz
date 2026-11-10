@@ -1,4 +1,4 @@
-import { PAGE_TITLE, PARENT_OK_COPY, roleCopy, wordsFor } from '@app/core';
+import { PAGE_TITLE, roleCopy, wordsFor } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 
 import { loadHouse } from '@/api/board';
@@ -10,7 +10,7 @@ import { snapshot } from '@/testing/house';
 import { renderPages } from '@/testing/pages';
 
 const words = wordsFor('en', 'housemates');
-const ADMINS_COPY = roleCopy(words).admins;
+const ADMINS = roleCopy(words).admins;
 
 const PARENTS_COPY = roleCopy(wordsFor('en', 'family')).admins;
 
@@ -59,25 +59,25 @@ it('is on the Rules page, where an old link to Admins lands', async () => {
   await open('/house/admins');
   expect(within(screen.getByTestId('title-bar')).getByRole('header', { name: PAGE_TITLE.rules })).toBeOnTheScreen();
   expect(screen.getByTestId('rules-panel')).toBeOnTheScreen();
-  expect(within(screen.getByTestId('admins-section')).getByText(ADMINS_COPY.title)).toBeOnTheScreen();
+  expect(within(screen.getByTestId('admins-section')).getByText(ADMINS.title)).toBeOnTheScreen();
 });
 
 it('lists the admins, and the only one is told leaving hands over', async () => {
   const list = await open();
   expect(list.getAllByTestId('admin-row')).toHaveLength(1);
-  expect(list.getByText(ADMINS_COPY.you('Priya'))).toBeOnTheScreen();
+  expect(list.getByText(words('house.adminsList.you', { name: 'Priya' }))).toBeOnTheScreen();
   // The only admin can't step themselves down here.
   expect(list.queryByTestId('remove-admin')).toBeNull();
-  expect(screen.getByText(new RegExp(ADMINS_COPY.onlyAdmin))).toBeOnTheScreen();
+  expect(screen.getByText(new RegExp(ADMINS.onlyAdmin))).toBeOnTheScreen();
 });
 
 it('adds an admin from the housemates who aren’t one, then offers Undo', async () => {
   const list = await open();
-  await fireEvent.press(list.getByRole('button', { name: ADMINS_COPY.add }));
+  await fireEvent.press(list.getByRole('button', { name: ADMINS.add }));
   const sheet = within(screen.getByTestId('add-admin-sheet'));
   expect(sheet.getAllByTestId('admin-pick')).toHaveLength(2);
   await fireEvent.press(sheet.getByRole('radio', { name: 'Ada' }));
-  await fireEvent.press(sheet.getByRole('button', { name: ADMINS_COPY.make('Ada') }));
+  await fireEvent.press(sheet.getByRole('button', { name: ADMINS.make('Ada') }));
   await waitFor(() => expect(setRole).toHaveBeenCalledWith('h1', 'ada', 'admin'));
   expect(await screen.findByText(words('wall.history.madeAdmin', { name: 'Ada' }))).toBeOnTheScreen();
 });
@@ -85,7 +85,7 @@ it('adds an admin from the housemates who aren’t one, then offers Undo', async
 it('lets an admin step another down, and shows housemates the list alone', async () => {
   (loadHouse as jest.Mock).mockResolvedValue(snapshot({ members: [...snapshot().members, { ...ADA, role: 'admin' }] }));
   const list = await open();
-  await fireEvent.press(list.getByRole('button', { name: ADMINS_COPY.removeLabel('Ada') }));
+  await fireEvent.press(list.getByRole('button', { name: ADMINS.removeLabel('Ada') }));
   await waitFor(() => expect(setRole).toHaveBeenCalledWith('h1', 'ada', 'member'));
 
   mockMe = 'sam';
@@ -117,6 +117,6 @@ describe('in a family', () => {
     expect(rules.queryByText(words('house.setup.stake'))).not.toBeOnTheScreen();
     expect(rules.queryByText(words('house.setup.missed'))).not.toBeOnTheScreen();
     expect(rules.queryByText(words('house.setup.disputes'))).not.toBeOnTheScreen();
-    expect(rules.getByText(PARENT_OK_COPY.rulesValue)).toBeOnTheScreen();
+    expect(rules.getByText(words('today.parentOk.rulesValue'))).toBeOnTheScreen();
   });
 });

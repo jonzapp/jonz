@@ -1,4 +1,4 @@
-import { BIN_NIGHT, CATEGORY_LABEL, KIDS_COPY, FOCUS_SHELL_COPY, NEW_JOHN, PAGE_TITLE, SECTION_LABEL, wordsFor } from '@app/core';
+import { BIN_NIGHT, CATEGORY_LABEL, FOCUS_SHELL_COPY, NEW_JOHN, PAGE_TITLE, SECTION_LABEL, wordsFor } from '@app/core';
 import { router, Slot } from 'expo-router';
 import { act, fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 import { useContext } from 'react';
@@ -432,7 +432,7 @@ describe('a parent, in a family', () => {
     await fireEvent.changeText(form.getByTestId('john-name'), 'Use the oven');
     await fireEvent.changeText(form.getByTestId('john-min-age'), '30');
     await fireEvent.press(form.getByTestId('save-john'));
-    expect(form.getByText(KIDS_COPY.problems.minAge)).toBeOnTheScreen();
+    expect(form.getByText(words('people.kids.problems.minAge'))).toBeOnTheScreen();
     expect(saveJohn).not.toHaveBeenCalled();
     await fireEvent.changeText(form.getByTestId('john-min-age'), '10');
     await fireEvent.press(form.getByTestId('save-john'));

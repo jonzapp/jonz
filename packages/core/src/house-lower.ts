@@ -3,7 +3,7 @@ import { format } from "date-fns";
 
 import type { AwayPeriod } from "./away";
 import { weeklyEffort, type JohnDef } from "./board";
-import { FOCUS_SHELL_COPY, KIND_SWITCH_COPY, MOVING_COPY, WALL_FEED_COPY } from "./copy";
+import { FOCUS_SHELL_COPY, MOVING_COPY, WALL_FEED_COPY } from "./copy";
 import type { Currency, HouseKind, HouseRules } from "./domain";
 import { dateRange, dayLabel, firstName, STATUS_MARK, type StatusIcon } from "./format";
 import { undoneWhat } from "./history";
@@ -276,7 +276,7 @@ const HOUSE_NEWS = new Set(["upheld", "rejected", "month_closed", "jonz_message"
  * "Time away") before the time. A payment names its amount only to the two
  * people in it; everyone else reads that it was paid.
  */
-export function wallFeedRow(event: WallEvent, scene: WallScene): WallFeedRow {
+export function wallFeedRow(event: WallEvent, scene: WallScene, words: Words): WallFeedRow {
   const { me, members } = scene;
   const say = scene.words ?? wordsFor("en", "housemates");
   const who = named(event.userId, me, members);
@@ -441,19 +441,18 @@ export function wallFeedRow(event: WallEvent, scene: WallScene): WallFeedRow {
     case "kind_changed": {
       // Rules' Who lives here: a family from the 1st, kept, housemates again, or a family now.
       const on = text("on");
-      const w = KIND_SWITCH_COPY.wall;
       if (on) {
-        title = w.later(who.subject, dateRange(on, on));
-        detail = w.laterDetail;
+        title = words("house.kindSwitch.wall.later", { who: who.subject, on: dateRange(on, on) });
+        detail = words("house.kindSwitch.wall.laterDetail");
       } else if (event.data.kept) {
-        title = w.kept(who.subject);
+        title = words("house.kindSwitch.wall.kept", { who: who.subject });
       } else if (event.data.kind !== "family") {
-        title = w.housemates(who.subject);
-        detail = w.housematesDetail;
+        title = words("house.kindSwitch.wall.housemates", { who: who.subject });
+        detail = words("house.kindSwitch.wall.housematesDetail");
       } else {
-        title = event.userId ? w.family(who.subject) : w.familyNow;
+        title = event.userId ? words("house.kindSwitch.wall.family", { who: who.subject }) : words("house.kindSwitch.wall.familyNow");
         bold = event.userId ? bold : [];
-        detail = w.familyDetail;
+        detail = words("house.kindSwitch.wall.familyDetail");
       }
       break;
     }

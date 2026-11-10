@@ -1,9 +1,9 @@
 import { tz } from "@date-fns/tz";
 import { format } from "date-fns";
 
-import { PASS_COPY } from "./copy";
 import type { Currency } from "./domain";
 import { formatMoney } from "./money";
+import type { Words } from "./words-for";
 
 // The House Pass (docs/specs/house-pass.md): one subscription per house that
 // unlocks the extras for everyone in it. Running a fair house stays free.
@@ -63,13 +63,13 @@ export function passDaysLeft(pass: HousePass, now: Date): number | null {
 }
 
 /** The Pass in a few words, for its row on House: "Founding house", "Free month, 12 days left", "Yearly, renews 12 Nov". */
-export function passLine(pass: HousePass, now: Date, zone: string): string {
-  if (pass.plan === "founding") return PASS_COPY.founding;
+export function passLine(pass: HousePass, now: Date, zone: string, words: Words): string {
+  if (pass.plan === "founding") return words('house.pass.founding');
   const day = format(pass.until!, "d MMM", { in: tz(zone) });
   const left = passDaysLeft(pass, now)!;
-  if (left === 0) return pass.plan === "trial" ? PASS_COPY.trialEnded : PASS_COPY.ended(day);
-  if (pass.plan === "trial") return left > PASS_TRIAL_DAYS ? PASS_COPY.freeUntil(day) : PASS_COPY.trialLeft(left);
-  return PASS_COPY.renews(pass.plan === "yearly" ? PASS_COPY.yearly : PASS_COPY.monthly, day);
+  if (left === 0) return pass.plan === "trial" ? words('house.pass.trialEnded') : words('house.pass.ended', { day });
+  if (pass.plan === "trial") return left > PASS_TRIAL_DAYS ? words('house.pass.freeUntil', { day }) : words('house.pass.trialLeft', { days: left });
+  return words('house.pass.renews', { plan: pass.plan === "yearly" ? words('house.pass.yearly') : words('house.pass.monthly'), day });
 }
 
 /**
@@ -92,12 +92,12 @@ export interface PassOffer {
 }
 
 /** The plans on the Pass page, Yearly first (the one picked): label, price and what it works out at. */
-export function passOffers(currency: Currency): PassOffer[] {
+export function passOffers(currency: Currency, words: Words): PassOffer[] {
   const p = PASS_PRICES[currency];
   return [
-    { plan: "yearly", label: PASS_COPY.yearly, price: PASS_COPY.perYear(formatMoney(p.yearly, currency)), meta: PASS_COPY.perMonthish(formatMoney(Math.round(p.yearly / 12), currency)) },
-    { plan: "monthly", label: PASS_COPY.monthly, price: PASS_COPY.perMonth(formatMoney(p.monthly, currency)), meta: PASS_COPY.monthlyMeta },
-    { plan: "founding", label: PASS_COPY.foundingPlan, price: PASS_COPY.once(formatMoney(p.founding, currency)), meta: PASS_COPY.foundingMeta },
+    { plan: "yearly", label: words('house.pass.yearly'), price: words('house.pass.perYear', { price: formatMoney(p.yearly, currency) }), meta: words('house.pass.perMonthish', { price: formatMoney(Math.round(p.yearly / 12), currency) }) },
+    { plan: "monthly", label: words('house.pass.monthly'), price: words('house.pass.perMonth', { price: formatMoney(p.monthly, currency) }), meta: words('house.pass.monthlyMeta') },
+    { plan: "founding", label: words('house.pass.foundingPlan'), price: words('house.pass.once', { price: formatMoney(p.founding, currency) }), meta: words('house.pass.foundingMeta') },
   ];
 }
 
@@ -149,9 +149,9 @@ export function passFirstCharge(pass: HousePass, now: Date): Date | null {
 }
 
 /** The line under the plans while a first charge can wait for the free month to end: "Nothing to pay until your free month ends on 22 Nov." */
-export function passFirstChargeNote(pass: HousePass, now: Date, zone: string): string | null {
+export function passFirstChargeNote(pass: HousePass, now: Date, zone: string, words: Words): string | null {
   const first = passFirstCharge(pass, now);
-  return first ? PASS_COPY.firstCharge(format(first, "d MMM", { in: tz(zone) })) : null;
+  return first ? words('house.pass.firstCharge', { day: format(first, "d MMM", { in: tz(zone) }) }) : null;
 }
 
 /**
@@ -159,9 +159,9 @@ export function passFirstChargeNote(pass: HousePass, now: Date, zone: string): s
  * it can. A Founding house has nothing to buy; a house on a paid plan changes
  * it from Manage, except to buy Founding, which ends the plan for it.
  */
-export function passPurchaseRefusal(pass: HousePass, plan: PassPurchase, now: Date): string | null {
-  if (pass.plan === "founding") return PASS_COPY.alreadyFounding;
-  if (plan !== "founding" && pass.plan !== "trial" && hasPass(pass, now)) return PASS_COPY.alreadyPaid;
+export function passPurchaseRefusal(pass: HousePass, plan: PassPurchase, now: Date, words: Words): string | null {
+  if (pass.plan === "founding") return words('house.pass.alreadyFounding');
+  if (plan !== "founding" && pass.plan !== "trial" && hasPass(pass, now)) return words('house.pass.alreadyPaid');
   return null;
 }
 

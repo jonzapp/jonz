@@ -1,4 +1,4 @@
-import { BIN_NIGHT, buildStake, type DisputeRow, FOCUS_SHELL_COPY, localDate, monthOf, MOVING_COPY, PAGE_TITLE, PARENT_OK_COPY, planLabel, wordsFor } from '@app/core';
+import { BIN_NIGHT, buildStake, type DisputeRow, FOCUS_SHELL_COPY, localDate, monthOf, MOVING_COPY, PAGE_TITLE, planLabel, wordsFor } from '@app/core';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Slot } from 'expo-router';
 import { fireEvent, renderRouter, screen, waitFor, within } from 'expo-router/testing-library';
@@ -548,14 +548,14 @@ describe('Needs your OK, in a family', () => {
     read.mockResolvedValue(family());
     await open();
     const section = screen.getByTestId('needs-your-ok');
-    expect(within(section).getByText(PARENT_OK_COPY.needsYourOk)).toBeOnTheScreen();
+    expect(within(section).getByText(words('today.parentOk.needsYourOk'))).toBeOnTheScreen();
     const row = within(section).getByTestId('ok-row');
     expect(within(row).getByText('Sam did Clean the bath')).toBeOnTheScreen();
     expect(row).toHaveTextContent(/Ticked 2h ago/);
     expect(screen.queryByTestId('needs-you')).toBeNull();
     await fireEvent.press(row);
     const body = await screen.findByTestId('john-sheet-body');
-    expect(within(body).getByRole('button', { name: PARENT_OK_COPY.ok })).toBeOnTheScreen();
+    expect(within(body).getByRole('button', { name: words('today.parentOk.ok') })).toBeOnTheScreen();
   });
 
   it('is not there for housemates', async () => {

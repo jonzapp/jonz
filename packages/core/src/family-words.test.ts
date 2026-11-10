@@ -19,7 +19,20 @@ import { wordsFor, type WordValues } from "./words-for";
 const HOUSE_ONLY = /\b(housemates?|flatmates?|admins?)\b/i;
 
 /** Lines a family never sees, so they need no family sentence, and why. */
-const HOUSEMATES_ONLY: Partial<Record<WordId, string>> = {};
+const HOUSEMATES_ONLY: Partial<Record<WordId, string>> = {
+  "house.family.kinds.housemates": "Rules' switch between the two kinds names both on purpose",
+  "house.kindSwitch.keep": "Rules' switch between the two kinds names both on purpose",
+  "house.kindSwitch.toFamilyNow": "Rules' switch between the two kinds names both on purpose",
+  "house.kindSwitch.toFamilyLater": "Rules' switch between the two kinds names both on purpose",
+  "house.kindSwitch.toHousematesTitle": "Rules' switch between the two kinds names both on purpose",
+  "house.kindSwitch.toHousemates": "Rules' switch between the two kinds names both on purpose",
+  "house.kindSwitch.toHousematesConfirm": "Rules' switch between the two kinds names both on purpose",
+  "house.kindSwitch.done.housemates": "Rules' switch between the two kinds names both on purpose",
+  "house.kindSwitch.done.kept": "Rules' switch between the two kinds names both on purpose",
+  "house.kindSwitch.wall.kept": "Rules' switch between the two kinds names both on purpose",
+  "house.kindSwitch.wall.housemates": "Rules' switch between the two kinds names both on purpose",
+  "house.pass.free": "a family reads house.familyPass.free through passWords",
+};
 
 /** Every gap a line has, by name, and what kind of gap it is. */
 function gaps(elements: MessageFormatElement[], out = new Map<string, MessageFormatElement>()) {
@@ -50,15 +63,14 @@ function readings(id: WordId): WordValues[] {
  */
 const SECTION_REASONS: Record<string, string> = {
   ROLE_WORDS: "names both kinds' roles on purpose",
-  FAMILY_COPY: "the family's own front door and Start a house, beside the housemates' words",
-  KIND_SWITCH_COPY: "Rules' switch between the two kinds names both on purpose",
   HOUSE_DRAFT_COPY: "Describe your house's kinds of house, one of which is a flat share",
-  PASS_COPY: "a family reads FAMILY_PASS_COPY through passWords",
-  NEW_HOUSE_COPY: "a family reads FAMILY_COPY's Start a house through newHouseWords",
+  NEW_HOUSE_COPY: "a family reads house.family's Start a house through newHouseWords",
 };
 
 /** Other files' strings that may say housemate, and why. */
 const FILE_REASONS: Record<string, RegExp[]> = {
+  // The Wall's line for the switch between the two kinds, by its id.
+  "house-lower.ts": [/^house\.kindSwitch\./],
   // The switch between the two kinds names both.
   "wall.ts": [/the house housemates/i, /the house as housemates/i],
   // The style page's sample replies, about a sample house of housemates.

@@ -22,6 +22,9 @@ import {
   type OfferFacts,
   type PromotionTerms,
 } from "./promotions";
+import { wordsFor } from "./words-for";
+
+const words = wordsFor("en", "housemates");
 
 // A fixed clock: nothing here reads the real time.
 const NOW = new Date("2026-11-20T12:00:00Z");
@@ -180,8 +183,8 @@ describe("using one", () => {
   });
 
   it("calls a free month made longer free until its day", () => {
-    expect(passLine({ plan: "trial", until: new Date("2027-02-20T12:00:00Z"), buyerId: null }, NOW, ZONE)).toBe("Free until 20 Feb");
-    expect(passLine({ plan: "trial", until: new Date("2026-11-30T12:00:00Z"), buyerId: null }, NOW, ZONE)).toBe("Free month, 10 days left");
+    expect(passLine({ plan: "trial", until: new Date("2027-02-20T12:00:00Z"), buyerId: null }, NOW, ZONE, words)).toBe("Free until 20 Feb");
+    expect(passLine({ plan: "trial", until: new Date("2026-11-30T12:00:00Z"), buyerId: null }, NOW, ZONE, words)).toBe("Free month, 10 days left");
   });
 });
 

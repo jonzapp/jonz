@@ -1,9 +1,10 @@
-import { FAMILY_COPY, HOUSE_KINDS, type HouseKind } from '@app/core';
+import { HOUSE_KINDS, type HouseKind } from '@app/core';
 import { CircleDotIcon, CircleIcon } from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Meta, RowTitle } from '@/components/text';
 import { ICON_ONLY, RADIUS, ROW_GAP, SPACE, TAP, useTheme } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * "Who lives here?" on Start a house: two cards, Housemates and Family,
@@ -11,16 +12,17 @@ import { ICON_ONLY, RADIUS, ROW_GAP, SPACE, TAP, useTheme } from '@/theme';
  * like a focused field. A radio group to a screen reader.
  */
 export function KindChoice({ value, onChange }: { value: HouseKind; onChange: (kind: HouseKind) => void }) {
+  const words = useWords();
   const { colors } = useTheme();
   return (
-    <View accessibilityRole="radiogroup" accessibilityLabel={FAMILY_COPY.whoLivesHere} style={styles.stack} testID="house-kind">
+    <View accessibilityRole="radiogroup" accessibilityLabel={words('house.family.whoLivesHere')} style={styles.stack} testID="house-kind">
       {HOUSE_KINDS.map((kind) => {
         const chosen = kind === value;
         return (
           <Pressable
             key={kind}
             accessibilityRole="radio"
-            accessibilityLabel={`${FAMILY_COPY.kinds[kind]}, ${FAMILY_COPY.kindBody[kind]}`}
+            accessibilityLabel={`${words(`house.family.kinds.${kind}` as const)}, ${words(`house.family.kindBody.${kind}` as const)}`}
             aria-checked={chosen}
             onPress={() => onChange(kind)}
             testID={`house-kind-${kind}`}
@@ -35,8 +37,8 @@ export function KindChoice({ value, onChange }: { value: HouseKind; onChange: (k
               <CircleIcon size={ICON_ONLY} color={colors.mutedForeground} aria-hidden />
             )}
             <View style={styles.words}>
-              <RowTitle>{FAMILY_COPY.kinds[kind]}</RowTitle>
-              <Meta>{FAMILY_COPY.kindBody[kind]}</Meta>
+              <RowTitle>{words(`house.family.kinds.${kind}` as const)}</RowTitle>
+              <Meta>{words(`house.family.kindBody.${kind}` as const)}</Meta>
             </View>
           </Pressable>
         );

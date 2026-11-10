@@ -1,13 +1,4 @@
-import {
-  PASS_COPY,
-  promotionGives,
-  PROMOTIONS_COPY,
-  promotionSentence,
-  promotionUsed,
-  promotionWhoSentence,
-  toEmail,
-  BUSY_COPY,
-} from '@app/core';
+import { promotionGives, PROMOTIONS_COPY, promotionSentence, promotionUsed, promotionWhoSentence, toEmail, BUSY_COPY, wordsFor } from '@app/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
 import { MailIcon, RefreshCwIcon, TicketIcon } from 'lucide-react-native';
@@ -194,7 +185,9 @@ function Promotion({ p }: { p: PromotionDetail }) {
   );
 }
 
-const PLAN_NAME: Record<string, string> = { yearly: PASS_COPY.yearly, monthly: PASS_COPY.monthly, founding: PASS_COPY.foundingPlan, trial: PROMOTIONS_COPY.kind.gift };
+// The owner's pages are in English for now (translation 6).
+const english = wordsFor('en', 'housemates');
+const PLAN_NAME: Record<string, string> = { yearly: english('house.pass.yearly'), monthly: english('house.pass.monthly'), founding: english('house.pass.foundingPlan'), trial: PROMOTIONS_COPY.kind.gift };
 const planName = (plan: string) => PLAN_NAME[plan] ?? plan;
 
 const styles = StyleSheet.create({

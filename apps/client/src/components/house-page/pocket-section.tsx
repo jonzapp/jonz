@@ -1,4 +1,4 @@
-import { BOARD_COPY, formatMoney, memberCan, payRows, pocketCard, POCKET_COPY, type PayRow, type PocketView, BUSY_COPY } from '@app/core';
+import { formatMoney, memberCan, payRows, pocketCard, type PayRow, type PocketView, BUSY_COPY } from '@app/core';
 import type { UseQueryResult } from '@tanstack/react-query';
 import { CheckIcon } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
@@ -19,6 +19,7 @@ import { SPACE } from '@/theme';
 import { ReadFailed } from '@/components/read-state';
 import { Waiting } from '@/components/waiting';
 import { OutlineRows } from '@/components/outline';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * A family's month card, on House in place of the Stake: what the kids have
@@ -38,12 +39,13 @@ export function PocketSection({
   view: HouseView;
   pocket: UseQueryResult<PocketView>;
 }) {
+  const words = useWords();
   const { rules, members } = view.snapshot;
   const parent = memberCan(view.me, 'pocket_money:write');
   const inset = useRowInset();
   if (!pocket.data) {
     return (
-      <Section label={POCKET_COPY.card} testID="pocket">
+      <Section label={words('house.pocket.card')} testID="pocket">
         {pocket.isError ? (
           <GroupItem>
             <ReadFailed onRetry={() => void pocket.refetch()} />
@@ -54,10 +56,10 @@ export function PocketSection({
       </Section>
     );
   }
-  const card = pocketCard(pocket.data, rules.currency);
-  const rows = payRows({ owed: pocket.data.owed, members, me: userId, parent, currency: rules.currency });
+  const card = pocketCard(pocket.data, rules.currency, words);
+  const rows = payRows({ owed: pocket.data.owed, members, me: userId, parent, currency: rules.currency }, words);
   const parents = members.filter((m) => m.role === 'admin').length;
-  const line = POCKET_COPY.family(parents, members.length - parents, formatMoney(view.snapshot.house.pocketCapMinor ?? 0, rules.currency));
+  const line = words('house.pocket.family', { parents, kids: members.length - parents, cap: formatMoney(view.snapshot.house.pocketCapMinor ?? 0, rules.currency) });
   return (
     <>
     <Meta style={{ paddingHorizontal: inset }} testID="family-line">{line}</Meta>
@@ -69,8 +71,8 @@ export function PocketSection({
       {rows.map((row) => (
         <PayDay key={row.key} houseId={houseId} row={row} fullName={members.find((m) => m.userId === row.userId)?.name ?? row.name} />
       ))}
-      <Row title={POCKET_COPY.history} href="/house/pocket" chevron testID="to-pocket" />
-      {parent ? <Row title={BOARD_COPY.row} meta={BOARD_COPY.rowMeta} href="/house/board" chevron testID="to-board" /> : null}
+      <Row title={words('house.pocket.history')} href="/house/pocket" chevron testID="to-pocket" />
+      {parent ? <Row title={words('today.board.row')} meta={words('today.board.rowMeta')} href="/house/board" chevron testID="to-board" /> : null}
     </Section>
     </>
   );

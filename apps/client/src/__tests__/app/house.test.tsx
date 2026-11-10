@@ -1,17 +1,4 @@
-import {
-  BIN_NIGHT,
-  buildStake,
-  FOCUS_SHELL_COPY,
-  type HistoryRow,
-  INVITE_COPY,
-  monthOf,
-  monthWord,
-  PASS_COPY,
-  stakeRules,
-  perWeekLine,
-  lateMissedLine,
-  wordsFor,
-} from '@app/core';
+import { BIN_NIGHT, buildStake, FOCUS_SHELL_COPY, type HistoryRow, INVITE_COPY, monthOf, monthWord, stakeRules, perWeekLine, lateMissedLine, wordsFor } from '@app/core';
 import { router, Slot } from 'expo-router';
 import { Tabs } from 'expo-router/js-tabs';
 import { act, fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
@@ -209,8 +196,8 @@ it('shows where the house stands on the House Pass, with the way to its page', a
   expect(screen.getByTestId('house-figures')).toBeOnTheScreen();
   await showSetup();
   const row = screen.getByTestId('to-pass');
-  expect(within(row).getByText(PASS_COPY.title)).toBeOnTheScreen();
-  expect(within(row).getByText(PASS_COPY.founding)).toBeOnTheScreen();
+  expect(within(row).getByText(words('house.pass.title'))).toBeOnTheScreen();
+  expect(within(row).getByText(words('house.pass.founding'))).toBeOnTheScreen();
   expect(screen.queryByTestId('stake-locked')).toBeNull();
 });
 

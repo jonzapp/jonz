@@ -1,4 +1,4 @@
-import { pocketHistory, POCKET_COPY } from '@app/core';
+import { pocketHistory } from '@app/core';
 import { CoinsIcon } from 'lucide-react-native';
 
 import { Avatar } from '@/components/avatar';
@@ -11,6 +11,7 @@ import { useMembership } from '@/hooks/use-membership';
 import { usePocket } from '@/hooks/use-pocket';
 import { usePull } from '@/hooks/use-refresh';
 import { ListPageOutline } from '@/components/page-outlines';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * Pocket money history, pushed from a family's month card: each month,
@@ -23,12 +24,13 @@ export default function PocketScreen() {
 }
 
 function PocketFor({ houseId, userId }: { houseId: string; userId: string }) {
+  const words = useWords();
   const { query, view } = useHouse(houseId, userId);
   const pocket = usePocket(houseId, query.data);
   const { refreshing, pull } = usePull(houseId, () => Promise.all([query.refetch(), pocket.refetch()]));
   return (
     <HousePage
-      title={POCKET_COPY.history}
+      title={words('house.pocket.history')}
       testID="pocket-screen" outline={<ListPageOutline sections={[3, 3]} lead="none" />}
       ready={view !== null && pocket.data !== undefined}
       failed={query.isError || pocket.isError}
@@ -38,8 +40,8 @@ function PocketFor({ houseId, userId }: { houseId: string; userId: string }) {
     >
       {() => {
         const { rules, members } = view!.snapshot;
-        const months = pocketHistory({ view: pocket.data!, members, currency: rules.currency, zone: rules.timezone });
-        if (months.length === 0) return <EmptyState icon={CoinsIcon} title={POCKET_COPY.history} body={POCKET_COPY.historyEmpty} />;
+        const months = pocketHistory({ view: pocket.data!, members, currency: rules.currency, zone: rules.timezone }, words);
+        if (months.length === 0) return <EmptyState icon={CoinsIcon} title={words('house.pocket.history')} body={words('house.pocket.historyEmpty')} />;
         return months.map((m) => (
           <Section key={m.month} label={m.label} testID="pocket-month">
             {m.lines.map((line) => (

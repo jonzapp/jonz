@@ -1,4 +1,4 @@
-import { ADMINS_COPY, FAMILY_COPY, FAMILY_PASS_COPY, FRONT_DOOR, FRONT_DOOR_COPY, JOIN_COPY, NEW_HOUSE_COPY, PAGE_TITLE, PASS_COPY, ROLE_WORDS } from "./copy";
+import { FRONT_DOOR, FRONT_DOOR_COPY, JOIN_COPY, NEW_HOUSE_COPY, PAGE_TITLE, ROLE_WORDS } from "./copy";
 import type { HouseKind } from "./domain";
 import type { Words } from "./words-for";
 
@@ -17,22 +17,22 @@ export function kindParam(value: string | string[] | null | undefined): HouseKin
 }
 
 /** The front door's words for the side picked: the headline, the three sentences and Start. */
-export function frontDoorWords(kind: HouseKind) {
+export function frontDoorWords(kind: HouseKind, words: Words) {
   return kind === "family"
-    ? { headline: FAMILY_COPY.door.headline, points: FAMILY_COPY.door.points, start: FAMILY_COPY.door.start }
+    ? { headline: words('house.family.door.headline'), points: (["list", "share", "stake"] as const).map((key) => ({ key, body: words(`house.family.door.points.${key}`) })), start: words('house.family.door.start') }
     : { headline: FRONT_DOOR.headline, points: FRONT_DOOR_COPY.points, start: FRONT_DOOR_COPY.start };
 }
 
 /** Start a house's sign for the kind picked: heading, intro and the button. */
-export function newHouseWords(kind: HouseKind) {
+export function newHouseWords(kind: HouseKind, words: Words) {
   return kind === "family"
-    ? { title: PAGE_TITLE.newFamily, heading: FAMILY_COPY.newHeading, intro: FAMILY_COPY.newIntro, submit: FAMILY_COPY.submit }
+    ? { title: PAGE_TITLE.newFamily, heading: words('house.family.newHeading'), intro: words('house.family.newIntro'), submit: words('house.family.submit') }
     : { title: PAGE_TITLE.newHouse, heading: NEW_HOUSE_COPY.heading, intro: NEW_HOUSE_COPY.intro, submit: FRONT_DOOR_COPY.submit };
 }
 
 /** A join link's line under the house's name. */
-export function joinLine(kind: HouseKind, people: number): string {
-  return kind === "family" ? FAMILY_COPY.livesHere(people) : JOIN_COPY.livesHere(people);
+export function joinLine(kind: HouseKind, people: number, words: Words): string {
+  return kind === "family" ? words('house.family.livesHere', { people }) : JOIN_COPY.livesHere(people);
 }
 
 /**
@@ -48,7 +48,10 @@ export function roleCopy(w: Words) {
     words: ROLE_WORDS[w.kind],
     /** House › Rules' list of who looks after the house. */
     admins: {
-      ...ADMINS_COPY,
+      meta: (admins: number, everyone: number) => w("house.adminsList.meta", { admins, everyone }),
+      you: (name: string) => w("house.adminsList.you", { name }),
+      addBody: w("house.adminsList.addBody"),
+      remove: w("house.adminsList.remove"),
       title: w("house.admins.title"),
       note: w("house.admins.note"),
       add: w("house.admins.add"),
@@ -97,44 +100,31 @@ export interface PassExtra {
  * (the same Pass and price), with pocket money, kid profiles and photos to
  * check as its extras. `historyWeeks` is how far back a house without it sees.
  */
-export function passWords(kind: HouseKind, historyWeeks: number) {
-  const history: PassExtra = { key: "history", title: PASS_COPY.history, meta: PASS_COPY.historyMeta(historyWeeks) };
-  if (kind === "family") {
-    const f = FAMILY_PASS_COPY;
-    return {
-      title: f.title,
-      sectionNote: f.sectionNote,
-      lead: f.lead,
-      foundingLead: f.foundingLead,
-      includes: f.includes,
-      extras: [
-        { key: "pocket", title: f.pocket, meta: f.pocketMeta },
-        { key: "kids", title: f.kids, meta: f.kidsMeta },
-        { key: "photos", title: f.photos, meta: f.photosMeta },
-        history,
-      ] as PassExtra[],
-      free: f.free,
-      bought: f.bought,
-      locked: f.locked,
-      unlock: f.unlock,
-    };
-  }
-  const p = PASS_COPY;
+export function passWords(kind: HouseKind, historyWeeks: number, words: Words) {
+  const history: PassExtra = { key: "history", title: words('house.pass.history'), meta: words('house.pass.historyMeta', { weeks: historyWeeks }) };
+  const p = kind === "family" ? "house.familyPass" : "house.pass";
   return {
-    title: p.title,
-    sectionNote: p.sectionNote,
-    lead: p.lead,
-    foundingLead: p.foundingLead,
-    includes: p.includes,
-    extras: [
-      { key: "stake", title: p.stake, meta: p.stakeMeta },
-      { key: "table", title: p.table, meta: p.tableMeta },
-      { key: "photos", title: p.photos, meta: p.photosMeta },
-      history,
-    ] as PassExtra[],
-    free: p.free,
-    bought: p.bought,
-    locked: p.locked,
-    unlock: p.unlock,
+    title: words(`${p}.title`),
+    sectionNote: words(`${p}.sectionNote`),
+    lead: words(`${p}.lead`),
+    foundingLead: words(`${p}.foundingLead`),
+    includes: words(`${p}.includes`),
+    extras: (kind === "family"
+      ? [
+          { key: "pocket", title: words("house.familyPass.pocket"), meta: words("house.familyPass.pocketMeta") },
+          { key: "kids", title: words("house.familyPass.kids"), meta: words("house.familyPass.kidsMeta") },
+          { key: "photos", title: words("house.familyPass.photos"), meta: words("house.familyPass.photosMeta") },
+          history,
+        ]
+      : [
+          { key: "stake", title: words("house.pass.stake"), meta: words("house.pass.stakeMeta") },
+          { key: "table", title: words("house.pass.table"), meta: words("house.pass.tableMeta") },
+          { key: "photos", title: words("house.pass.photos"), meta: words("house.pass.photosMeta") },
+          history,
+        ]) as PassExtra[],
+    free: words(`${p}.free`),
+    bought: words(`${p}.bought`),
+    locked: (feature: string) => words(`${p}.locked`, { feature }),
+    unlock: words(`${p}.unlock`),
   };
 }

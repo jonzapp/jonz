@@ -1,21 +1,4 @@
-import {
-  askWhosMovingIn,
-  dayLabel,
-  localDate,
-  memberCan,
-  monthWord,
-  movingLine,
-  onCallItems,
-  PAGE_TITLE,
-  pocketMoney,
-  POCKET_COPY,
-  todayPage,
-  type PocketView,
-  type StakeView,
-  KIDS_COPY,
-  FOCUS_SHELL_COPY,
-  switchChoices,
-} from '@app/core';
+import { askWhosMovingIn, dayLabel, localDate, memberCan, monthWord, movingLine, onCallItems, PAGE_TITLE, pocketMoney, todayPage, type PocketView, type StakeView, FOCUS_SHELL_COPY, switchChoices } from '@app/core';
 import { useState, type ReactNode } from 'react';
 
 import type { AwayView } from '@/api/away';
@@ -64,11 +47,12 @@ export default function Today() {
 }
 
 function TodayFor({ houseId, userId: me }: { houseId: string; userId: string }) {
+  const words = useWords();
   // A parent can switch to a kid who doesn't sign in, and tick for them (family step 4).
   const [viewing, setViewing] = useState(me);
   const { query: mine } = useHouse(houseId, me);
   const snap = mine.data;
-  const choices = snap ? switchChoices(snap.members, me, snap.house.kind === 'family') : [];
+  const choices = snap ? switchChoices(snap.members, me, snap.house.kind === 'family', words) : [];
   const userId = choices.some((c) => c.value === viewing) ? viewing : me;
   const { query, view } = useHouse(houseId, userId);
   const away = useAway(houseId, query.data);
@@ -90,7 +74,7 @@ function TodayFor({ houseId, userId: me }: { houseId: string; userId: string }) 
           ask={userId === me && memberCan(view?.me, 'house:read')}
           right={
             choices.length > 0 ? (
-              <PickMenu options={choices} value={userId} onChange={setViewing} label={KIDS_COPY.switchLabel} testID="kid-switch" />
+              <PickMenu options={choices} value={userId} onChange={setViewing} label={words('people.kids.switchLabel')} testID="kid-switch" />
             ) : undefined
           }
         />
@@ -142,7 +126,7 @@ function TodayView({
   // A kid in a family sees what they've earned this month in place of where they stand.
   const earned =
     house.kind === 'family' && me?.role !== 'admin' && pocket
-      ? POCKET_COPY.kidMonth(pocketMoney(pocket.earned[userId] ?? 0, rules.currency), monthWord(pocket.month))
+      ? words('house.pocket.kidMonth', { money: pocketMoney(pocket.earned[userId] ?? 0, rules.currency), month: monthWord(pocket.month) })
       : null;
   const standing = earned ?? page.standing;
   const nameOf = (id: string) => members.find((m) => m.userId === id)?.name ?? null;

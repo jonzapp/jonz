@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { KIDS_COPY } from "./copy";
+import { wordsFor, type Words } from "./words-for";
 
 /**
  * Kids without a sign-in, family step 4 (docs/specs/family-houses.md): a
@@ -9,9 +9,12 @@ import { KIDS_COPY } from "./copy";
  * to.
  */
 
+// The server's refusals read the housemates' words for now; each person's own language comes with translation 7.
+const SERVER_WORDS = wordsFor("en", "housemates");
+
 /** What POST /api/kids takes. */
 export const AddKid = z.object({
-  name: z.string().trim().min(1, KIDS_COPY.problems.name).max(40, KIDS_COPY.problems.name),
+  name: z.string().trim().min(1, SERVER_WORDS("people.kids.problems.name")).max(40, SERVER_WORDS("people.kids.problems.name")),
   bornYear: z.number().int(),
 });
 export type AddKid = z.infer<typeof AddKid>;
@@ -27,13 +30,13 @@ export function bornYearOk(year: number, thisYear: number): boolean {
 /** The Add a child form, checked: the kid to add, or what to fix in each field. */
 export function checkKid(
   form: { name: string; born: string },
-  thisYear: number,
+  thisYear: number, words: Words,
 ): { kid: AddKid; problems?: undefined } | { kid?: undefined; problems: Partial<Record<"name" | "born", string>> } {
   const problems: Partial<Record<"name" | "born", string>> = {};
   const name = form.name.trim();
-  if (!name || name.length > 40) problems.name = KIDS_COPY.problems.name;
+  if (!name || name.length > 40) problems.name = words('people.kids.problems.name');
   const year = /^\d{4}$/.test(form.born.trim()) ? Number(form.born.trim()) : NaN;
-  if (!bornYearOk(year, thisYear)) problems.born = KIDS_COPY.problems.born;
+  if (!bornYearOk(year, thisYear)) problems.born = words('people.kids.problems.born');
   return Object.keys(problems).length ? { problems } : { kid: { name, bornYear: year } };
 }
 
@@ -65,11 +68,11 @@ export function oldEnough(bornYear: number | null | undefined, minAge: number | 
 export function switchChoices(
   members: readonly { userId: string; name: string; role: string; signsIn?: boolean }[],
   me: string,
-  family: boolean,
+  family: boolean, words: Words,
 ): { value: string; label: string }[] {
   const mine = members.find((m) => m.userId === me);
   if (!family || mine?.role !== "admin") return [];
   const kids = members.filter((m) => m.role !== "admin" && m.signsIn === false);
   if (kids.length === 0) return [];
-  return [{ value: me, label: KIDS_COPY.you }, ...kids.map((k) => ({ value: k.userId, label: k.name.split(" ")[0] }))];
+  return [{ value: me, label: words('people.kids.you') }, ...kids.map((k) => ({ value: k.userId, label: k.name.split(" ")[0] }))];
 }

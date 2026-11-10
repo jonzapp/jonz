@@ -36,7 +36,7 @@ export function WallSection({ houseId, userId, view }: { houseId: string; userId
 
   const events = latest.data?.events ?? [];
   const scene = wallScene(view, userId, events, words);
-  const rows = events.map((event) => wallFeedRow(event, scene));
+  const rows = events.map((event) => wallFeedRow(event, scene, words));
   const shown = open ? rows.find((r) => r.id === open) : undefined;
   // Its event has gone from the latest (a newer one pushed it off): put the sheet away.
   if (open && latest.data && !shown) setOpen(null);

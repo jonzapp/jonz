@@ -1,10 +1,11 @@
 import { DELETE_PATH } from "./account-deletion";
 import { APPROVE_PATH, CONSENT_PATH_WITH_ID } from "./approvals";
 import { safeNext, signInPath, signInReason } from "./auth-paths";
-import { FRONT_DOOR_COPY, POCKET_COPY, SIGN_IN_COPY } from "./copy";
+import { FRONT_DOOR_COPY, SIGN_IN_COPY } from "./copy";
 import { CURRENCIES, type Currency, DEFAULT_RULES, DOW_LABEL, FAMILY_POCKET_CAP, type HouseKind, type IsoDow } from "./domain";
 import { moneyInput } from "./money";
 import { normaliseJoinCode } from "./schemas";
+import type { Words } from "./words-for";
 
 // Before you have a house: where the front door's choice leads after
 // sign-in, reading an invite link or code, and the new house's defaults line.
@@ -95,6 +96,7 @@ export function houseDefaults({
   timezone,
   stakeMinor = DEFAULT_RULES.stakeMinor,
   kind = "housemates",
+  words,
 }: {
   currency: Currency;
   weekStarts: IsoDow;
@@ -102,10 +104,11 @@ export function houseDefaults({
   stakeMinor?: number;
   /** A family has no stake: its line starts with pocket money instead. */
   kind?: HouseKind;
+  words: Words;
 }): string[] {
   return [
     kind === "family"
-      ? POCKET_COPY.defaults(`${currency} ${moneyInput(FAMILY_POCKET_CAP)}`)
+      ? words('house.pocket.defaults', { cap: `${currency} ${moneyInput(FAMILY_POCKET_CAP)}` })
       : FRONT_DOOR_COPY.stakeEach(`${currency} ${moneyInput(stakeMinor)}`),
     FRONT_DOOR_COPY.weekStarts(DOW_LABEL[weekStarts]),
     timeZoneName(timezone),
