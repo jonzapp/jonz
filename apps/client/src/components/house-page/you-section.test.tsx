@@ -1,4 +1,4 @@
-import { EMAIL_SIGN_IN_COPY, MOVING_COPY, PASSWORD_SETTING_COPY, wordsFor } from '@app/core';
+import { PASSWORD_MIN, wordsFor } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 
 import { signOut } from '@/api/auth';
@@ -48,7 +48,7 @@ beforeEach(() => {
 
 it('says your moving-out day, or that none is planned, and pushes its page', async () => {
   await open();
-  expect(screen.getByTestId('to-moving')).toHaveTextContent(new RegExp(`${MOVING_COPY.row}.*${MOVING_COPY.notPlanned}`));
+  expect(screen.getByTestId('to-moving')).toHaveTextContent(new RegExp(`${words('house.moving.row')}.*${words('house.moving.notPlanned')}`));
   const base = snapshot();
   (loadHouse as jest.Mock).mockResolvedValue(
     snapshot({ members: base.members.map((m) => (m.userId === 'priya' ? { ...m, movingOutOn: '2026-11-11' } : m)) }),
@@ -168,18 +168,18 @@ it('adds a password in a sheet, for an account with an email address', async () 
   setPassword.mockResolvedValue(undefined);
   await open();
   const row = await screen.findByTestId('to-password');
-  expect(row).toHaveTextContent(new RegExp(`${PASSWORD_SETTING_COPY.label}.*${PASSWORD_SETTING_COPY.add}`));
+  expect(row).toHaveTextContent(new RegExp(`${words('door.password.label')}.*${words('door.password.add')}`));
   await fireEvent.press(within(row).getByRole('button'));
   const sheet = within(screen.getByTestId('password-sheet'));
-  expect(sheet.getByText(PASSWORD_SETTING_COPY.addBody('priya@example.com'))).toBeOnTheScreen();
+  expect(sheet.getByText(words('door.password.addBody', { email: 'priya@example.com' }))).toBeOnTheScreen();
   await fireEvent.changeText(sheet.getByTestId('new-password'), 'short');
-  await fireEvent.press(sheet.getByRole('button', { name: PASSWORD_SETTING_COPY.save }));
+  await fireEvent.press(sheet.getByRole('button', { name: words('door.password.save') }));
   expect(setPassword).not.toHaveBeenCalled();
-  expect(sheet.getByRole('alert')).toHaveTextContent(EMAIL_SIGN_IN_COPY.shortPassword);
+  expect(sheet.getByRole('alert')).toHaveTextContent(words("door.email.shortPassword", { min: PASSWORD_MIN }));
   await fireEvent.changeText(sheet.getByTestId('new-password'), 'long enough');
-  await fireEvent.press(sheet.getByRole('button', { name: PASSWORD_SETTING_COPY.save }));
+  await fireEvent.press(sheet.getByRole('button', { name: words('door.password.save') }));
   expect(setPassword).toHaveBeenCalledWith('long enough', undefined);
-  expect(sheet.getByText(PASSWORD_SETTING_COPY.saved)).toBeOnTheScreen();
+  expect(sheet.getByText(words('door.password.saved'))).toBeOnTheScreen();
 });
 
 it('asks for the authenticator code when the account has one, then saves the password', async () => {
@@ -195,20 +195,20 @@ it('asks for the authenticator code when the account has one, then saves the pas
   const sheet = within(screen.getByTestId('password-sheet'));
   expect(sheet.queryByTestId('password-authenticator')).toBeNull();
   await fireEvent.changeText(sheet.getByTestId('new-password'), 'long enough');
-  await fireEvent.press(sheet.getByRole('button', { name: PASSWORD_SETTING_COPY.save }));
-  expect(sheet.getByText(PASSWORD_SETTING_COPY.authenticatorBody)).toBeOnTheScreen();
-  expect(sheet.queryByText(PASSWORD_SETTING_COPY.saved)).toBeNull();
+  await fireEvent.press(sheet.getByRole('button', { name: words('door.password.save') }));
+  expect(sheet.getByText(words('door.password.authenticatorBody'))).toBeOnTheScreen();
+  expect(sheet.queryByText(words('door.password.saved'))).toBeNull();
   // Save with no code yet: it asks for all six digits first.
-  await fireEvent.press(sheet.getByRole('button', { name: PASSWORD_SETTING_COPY.save }));
+  await fireEvent.press(sheet.getByRole('button', { name: words('door.password.save') }));
   expect(setPassword).toHaveBeenCalledTimes(1);
   await fireEvent.changeText(sheet.getByTestId('password-authenticator'), '111111');
-  await fireEvent.press(sheet.getByRole('button', { name: PASSWORD_SETTING_COPY.save }));
+  await fireEvent.press(sheet.getByRole('button', { name: words('door.password.save') }));
   expect(setPassword).toHaveBeenLastCalledWith('long enough', '111111');
-  expect(sheet.getByRole('alert')).toHaveTextContent(PASSWORD_SETTING_COPY.wrongAuthenticator);
+  expect(sheet.getByRole('alert')).toHaveTextContent(words('door.password.wrongAuthenticator'));
   await fireEvent.changeText(sheet.getByTestId('password-authenticator'), '222222');
-  await fireEvent.press(sheet.getByRole('button', { name: PASSWORD_SETTING_COPY.save }));
+  await fireEvent.press(sheet.getByRole('button', { name: words('door.password.save') }));
   expect(setPassword).toHaveBeenLastCalledWith('long enough', '222222');
-  expect(sheet.getByText(PASSWORD_SETTING_COPY.saved)).toBeOnTheScreen();
+  expect(sheet.getByText(words('door.password.saved'))).toBeOnTheScreen();
 });
 
 it('leaves out the password row for an account with no email address', async () => {

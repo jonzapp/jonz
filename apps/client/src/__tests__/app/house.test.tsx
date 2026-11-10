@@ -1,4 +1,4 @@
-import { BIN_NIGHT, buildStake, FOCUS_SHELL_COPY, type HistoryRow, INVITE_COPY, monthOf, monthWord, stakeRules, perWeekLine, lateMissedLine, wordsFor } from '@app/core';
+import { BIN_NIGHT, buildStake, FOCUS_SHELL_COPY, type HistoryRow, monthOf, monthWord, stakeRules, perWeekLine, lateMissedLine, wordsFor } from '@app/core';
 import { router, Slot } from 'expo-router';
 import { Tabs } from 'expo-router/js-tabs';
 import { act, fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
@@ -398,7 +398,7 @@ describe('the Table', () => {
     expect(screen.getByTestId('invite-code')).toHaveTextContent('AB3DEF7H');
     expect(screen.getByTestId('invite-url')).toHaveTextContent(/\/join\/AB3DEF7H$/);
     await fireEvent.press(screen.getByTestId('share-invite'));
-    expect(share).toHaveBeenCalledWith(expect.objectContaining({ title: INVITE_COPY.shareTitle('Flat 3') }));
+    expect(share).toHaveBeenCalledWith(expect.objectContaining({ title: words('door.invite.shareTitle', { house: 'Flat 3' }) }));
   });
 
   it('leaves copying to the share sheet on a phone, which has no clipboard of its own here', async () => {
@@ -416,7 +416,7 @@ describe('the Table', () => {
     await fireEvent.press(screen.getByTestId('invite'));
     await fireEvent.press(screen.getByTestId('copy-link'));
     expect(writeText).toHaveBeenCalledWith(expect.stringContaining('/join/AB3DEF7H'));
-    expect(await screen.findByText(INVITE_COPY.copied)).toBeOnTheScreen();
+    expect(await screen.findByText(words('door.invite.copied'))).toBeOnTheScreen();
   });
 
   it('copies the link from Share invite in a browser with no share sheet', async () => {
@@ -429,14 +429,14 @@ describe('the Table', () => {
     await fireEvent.press(screen.getByTestId('share-invite'));
     expect(share).not.toHaveBeenCalled();
     expect(writeText).toHaveBeenCalledWith(expect.stringContaining('/join/AB3DEF7H'));
-    expect(await screen.findByText(INVITE_COPY.copied)).toBeOnTheScreen();
+    expect(await screen.findByText(words('door.invite.copied'))).toBeOnTheScreen();
   });
 
   it('gives an admin a new code, and reads the house again to show it', async () => {
     (resetJoinCode as jest.Mock).mockResolvedValue(undefined);
     await open();
     await fireEvent.press(screen.getByTestId('invite'));
-    expect(screen.getByText(INVITE_COPY.newCodeNote)).toBeOnTheScreen();
+    expect(screen.getByText(words('door.invite.newCodeNote'))).toBeOnTheScreen();
     const reads = (loadHouse as jest.Mock).mock.calls.length;
     (loadHouse as jest.Mock).mockResolvedValue(snapshot({ house: { ...snapshot().house, joinCode: 'ZX9KPQ2M' } }));
     await fireEvent.press(screen.getByTestId('new-code'));

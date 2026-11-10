@@ -1,4 +1,4 @@
-import { googleReturn, SIGN_IN_COPY, signInLine, type SignInProvider } from '@app/core';
+import { googleReturn, signInLine, type SignInProvider } from '@app/core';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -16,6 +16,7 @@ import { MicrosoftIcon } from '@/components/microsoft-icon';
 import { Meta } from '@/components/text';
 import { TextLink } from '@/components/text-link';
 import { RADIUS, SPACE, TAP, useTheme } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * Sign-in: Apple then Google then Microsoft on iOS, Google then Microsoft
@@ -38,6 +39,7 @@ export function SignInPanel({
   /** The line under the heading, in place of the usual one: an invite names its house ("Sign in to join Flat 3."). */
   reason?: string;
 }) {
+  const words = useWords();
   const { scheme } = useTheme();
   const [apple, setApple] = useState(false);
   const [busy, setBusy] = useState<SignInProvider | null>(null);
@@ -73,12 +75,12 @@ export function SignInPanel({
     <>
       <Sign testID="sign-in-panel">
         <SignHeading
-          title={SIGN_IN_COPY.heading}
+          title={words('door.signIn.heading')}
           // Apple's line about which account to use still comes first.
-          body={reason && !apple ? reason : signInLine(next, apple)}
+          body={reason && !apple ? reason : signInLine(next, words, apple)}
         />
 
-        {failed ? <Alert message={failed === 'return' ? SIGN_IN_COPY.returnFailed : SIGN_IN_COPY.failed(failed)} /> : null}
+        {failed ? <Alert message={failed === 'return' ? words('door.signIn.returnFailed') : words('door.signIn.failed', { provider: failed })} /> : null}
 
         <View style={styles.ways}>
           {apple ? (
@@ -101,8 +103,8 @@ export function SignInPanel({
             <Button
               variant="outline"
               icon={GoogleIcon}
-              label={SIGN_IN_COPY.google}
-              busyLabel={SIGN_IN_COPY.googleBusy}
+              label={words('door.signIn.google')}
+              busyLabel={words('door.signIn.googleBusy')}
               busy={busy === 'Google'}
               // Apple's own button is outside the row: these hold still while it signs in.
               disabled={appleWaits}
@@ -113,8 +115,8 @@ export function SignInPanel({
             <Button
               variant="outline"
               icon={MicrosoftIcon}
-              label={SIGN_IN_COPY.microsoft}
-              busyLabel={SIGN_IN_COPY.microsoftBusy}
+              label={words('door.signIn.microsoft')}
+              busyLabel={words('door.signIn.microsoftBusy')}
               busy={busy === 'Microsoft'}
               disabled={appleWaits}
               onPress={() => void attempt('Microsoft', () => signInWithMicrosoft(googleReturn(next)))}
@@ -122,7 +124,7 @@ export function SignInPanel({
             />
           </ButtonRow>
 
-          <Meta>{SIGN_IN_COPY.sameAccount}</Meta>
+          <Meta>{words('door.signIn.sameAccount')}</Meta>
         </View>
 
         <EmailSignIn />
@@ -131,10 +133,10 @@ export function SignInPanel({
       </Sign>
 
       <DoorFoot>
-        <Meta>{SIGN_IN_COPY.terms}</Meta>
+        <Meta>{words('door.signIn.terms')}</Meta>
         <View style={styles.legal}>
-          <TextLink href="/privacy" label={SIGN_IN_COPY.privacy} small />
-          <TextLink href="/terms" label={SIGN_IN_COPY.termsLink} small />
+          <TextLink href="/privacy" label={words('door.signIn.privacy')} small />
+          <TextLink href="/terms" label={words('door.signIn.termsLink')} small />
         </View>
       </DoorFoot>
     </>

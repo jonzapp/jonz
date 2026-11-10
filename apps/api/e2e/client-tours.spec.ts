@@ -1,7 +1,9 @@
-import { TOUR_COPY, TOURS, tourSteps, type TourFacts, type TourId } from "@app/core";
+import { TOURS, tourSteps, type TourFacts, type TourId, wordsFor } from "@app/core";
 import { expect, test, type Page } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, dealtHouseInClient } from "./auth";
+
+const words = wordsFor("en", "housemates");
 
 // Help and tours in the Expo app's web build: the title bar's question mark
 // opens Help, and every tour plays through on a phone and a laptop with each
@@ -140,7 +142,7 @@ test("every tour plays through, each step lit on screen", async ({ context, page
     .poll(async () => (await admin().auth.admin.getUserById(userId)).data.user?.user_metadata.tours.seen)
     .toEqual(expect.arrayContaining(["today", "week", "house", "setUp"]));
   await helpButton(page, "today-screen").click();
-  await expect(page.getByTestId("help-sheet").getByTestId("help-tour-week")).toContainText(TOUR_COPY.seen);
+  await expect(page.getByTestId("help-sheet").getByTestId("help-tour-week")).toContainText(words('door.tour.seen'));
   await mate.close();
 });
 
@@ -154,7 +156,7 @@ test("Today offers its tour once to someone new; Skip and Escape end it", async 
   await page.goto("/today");
   const offer = page.getByTestId("tour-offer");
   await expect(offer).toBeVisible();
-  await expect(offer).toContainText(TOUR_COPY.offerTitle);
+  await expect(offer).toContainText(words('door.tour.offerTitle'));
   await shoot(page, "offer");
 
   // Show me starts it; Escape ends it, as Skip does, and the offer has gone.

@@ -277,38 +277,6 @@ export function offersTour(saved: ToursSaved, signedUpAt: Date | null, now: Date
   return now.getTime() - signedUpAt.getTime() < TOUR_OFFER_DAYS * 24 * 60 * 60 * 1000;
 }
 
-/** The words around tours: the Help sheet, the offer on Today and the tour's card. */
-export const TOUR_COPY = {
-  help: "Help",
-  /** The title bar's question mark, to a screen reader. */
-  open: "Help",
-  /** The Help sheet's first section: the ways to find something out. */
-  findOut: "Find out",
-  ask: "Ask Jonz",
-  askMeta: "Ask how anything works",
-  guide: "Read the guide",
-  guideMeta: "Every page and rule, explained",
-  /** The tours, under Help. */
-  showMeAround: "Show me around",
-  /** The tour of the page Help was opened on, first under Show me around. */
-  thisPage: (length: string) => `This page, ${length}`,
-  forAdmins: "For admins",
-  somethingWrong: "Something wrong?",
-  next: "Next",
-  done: "Done",
-  back: "Back",
-  skip: "Skip",
-  /** The card, to a screen reader: "Tour, step 2 of 4". */
-  stepSpoken: (index: number, total: number) => `Tour, step ${index + 1} of ${total}`,
-  seen: "Seen",
-  offerTitle: "New to Jonz?",
-  offerBody: "Take a one-minute look around Today.",
-  offerYes: "Show me",
-  offerNo: "Not now",
-  guidesRow: "Show me around",
-  guidesMeta: "A minute each, any time",
-} as const;
-
 export interface TourRect {
   x: number;
   y: number;

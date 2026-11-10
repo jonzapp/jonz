@@ -1,4 +1,4 @@
-import { BIN_NIGHT, buildStake, type DisputeRow, FOCUS_SHELL_COPY, localDate, monthOf, MOVING_COPY, PAGE_TITLE, planLabel, wordsFor } from '@app/core';
+import { BIN_NIGHT, buildStake, type DisputeRow, FOCUS_SHELL_COPY, localDate, monthOf, PAGE_TITLE, planLabel, wordsFor } from '@app/core';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Slot } from 'expo-router';
 import { fireEvent, renderRouter, screen, waitFor, within } from 'expo-router/testing-library';
@@ -809,7 +809,7 @@ describe('moving out', () => {
   it('says your moving-out day, onward to change it', async () => {
     read.mockResolvedValue(snapshot({ members: priyaWith({ movingOutOn: later }) }));
     await open();
-    expect(screen.getByTestId('moving-line')).toHaveTextContent(MOVING_COPY.youMoveOut('Tue 30 Jun'));
+    expect(screen.getByTestId('moving-line')).toHaveTextContent(words('house.moving.youMoveOut', { day: 'Tue 30 Jun' }));
     await fireEvent.press(screen.getByTestId('moving-line'));
     expect(await screen.findByText('Landed on Moving')).toBeOnTheScreen();
   });
@@ -817,7 +817,7 @@ describe('moving out', () => {
   it('on the day, says it is time to leave, onward to House', async () => {
     read.mockResolvedValue(snapshot({ members: priyaWith({ movingOutOn: today }) }));
     await open();
-    expect(screen.getByTestId('moving-line')).toHaveTextContent(MOVING_COPY.movingDay('Flat 3'));
+    expect(screen.getByTestId('moving-line')).toHaveTextContent(words('house.moving.movingDay', { house: 'Flat 3' }));
     await fireEvent.press(screen.getByTestId('moving-line'));
     expect(await screen.findByText('Landed on House')).toBeOnTheScreen();
     // Never asked who's moving in: it's them moving out.
@@ -830,8 +830,8 @@ describe('moving out', () => {
     await open();
     expect(screen.queryByTestId('moving-line')).toBeNull();
     const ask = screen.getByTestId('move-in-ask');
-    expect(within(ask).getByText(MOVING_COPY.askTitle)).toBeOnTheScreen();
-    await fireEvent.press(within(ask).getByRole('button', { name: MOVING_COPY.askButton }));
+    expect(within(ask).getByText(words('house.moving.askTitle'))).toBeOnTheScreen();
+    await fireEvent.press(within(ask).getByRole('button', { name: words('house.moving.askButton') }));
     expect(await screen.findByTestId('invite-code')).toBeOnTheScreen();
   });
 

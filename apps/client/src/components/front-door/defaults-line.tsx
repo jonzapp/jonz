@@ -1,9 +1,9 @@
-import { FRONT_DOOR_COPY } from '@app/core';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
 
 import { Meta } from '@/components/text';
 import { FONT, ROW_GAP, TAP, useTheme } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * A new house's defaults in Meta, on two lines where a phone can't fit them
@@ -14,14 +14,15 @@ import { FONT, ROW_GAP, TAP, useTheme } from '@/theme';
  * reader hears the whole line.
  */
 export function DefaultsLine({ parts, open, onToggle }: { parts: readonly string[]; open: boolean; onToggle: () => void }) {
+  const words = useWords();
   const { colors, type } = useTheme();
   const [pressed, setPressed] = useState(false);
-  const action = open ? FRONT_DOOR_COPY.done : FRONT_DOOR_COPY.change;
+  const action = open ? words('door.welcome.done') : words('door.welcome.change');
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`${action}: ${parts.join(', ')}`}
-      accessibilityHint={FRONT_DOOR_COPY.changeSpoken}
+      accessibilityHint={words('door.welcome.changeSpoken')}
       aria-expanded={open}
       onPress={onToggle}
       onPressIn={() => setPressed(true)}

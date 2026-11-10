@@ -1,4 +1,4 @@
-import { APPROVE_COPY, OPERATIONS, SIGN_IN_COPY, signInReason } from '@app/core';
+import { APPROVE_COPY, OPERATIONS, signInReason, wordsFor } from '@app/core';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Slot } from 'expo-router';
 import { fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
@@ -8,6 +8,8 @@ import { signInWithGoogle } from '@/api/auth';
 import Approve from '@/app/approve/[approvalId]';
 import { useMembership } from '@/hooks/use-membership';
 import { testQueryClient } from '@/testing/query';
+
+const words = wordsFor('en', 'housemates');
 
 jest.mock('@/api/approvals', () => ({ readApproval: jest.fn(), answerApproval: jest.fn() }));
 jest.mock('@/api/email-auth', () => ({}));
@@ -67,7 +69,7 @@ it('signs you in right there when signed out, and Google brings you back to it',
   await open();
   expect(screen.getByText(signInReason(`/approve/${ID}`))).toBeOnTheScreen();
   expect(read).not.toHaveBeenCalled();
-  await fireEvent.press(screen.getByRole('button', { name: SIGN_IN_COPY.google }));
+  await fireEvent.press(screen.getByRole('button', { name: words('door.signIn.google') }));
   expect(signInWithGoogle).toHaveBeenCalledWith(`/approve/${ID}`);
 });
 

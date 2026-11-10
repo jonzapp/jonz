@@ -1,4 +1,4 @@
-import { type Currency, FOCUS_SHELL_COPY, formatMoney, FRONT_DOOR_COPY, MOVING_COPY, pointsLabel, listLine, SECTION_LABEL, SIGN_IN_COPY, wordsFor } from "@app/core";
+import { type Currency, FOCUS_SHELL_COPY, formatMoney, pointsLabel, listLine, SECTION_LABEL, wordsFor } from "@app/core";
 import { expect, test, type Page } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, signInToClient } from "./auth";
@@ -44,8 +44,8 @@ test("run a house from nothing on the phone", async ({ browser }) => {
   // Ava starts the house; Today's setup checklist sends her to the John list.
   const page = await avaContext.newPage();
   await page.goto("/welcome");
-  await page.getByRole("link", { name: FRONT_DOOR_COPY.startInstead }).click();
-  await page.getByLabel(FRONT_DOOR_COPY.name).fill(name);
+  await page.getByRole("link", { name: words('door.welcome.startInstead') }).click();
+  await page.getByLabel(words('door.welcome.name')).fill(name);
   await page.getByTestId("create-house").click();
   await expect(page).toHaveURL(/\/today$/);
   const today = page.getByTestId("today-screen");
@@ -85,7 +85,7 @@ test("run a house from nothing on the phone", async ({ browser }) => {
   await inviteSheet.getByTestId("sheet-close").click();
   const benPage = await benContext.newPage();
   await benPage.goto(new URL(invite).pathname);
-  await benPage.getByRole("button", { name: FRONT_DOOR_COPY.join }).click();
+  await benPage.getByRole("button", { name: words('door.welcome.join') }).click();
   await expect(benPage).toHaveURL(/\/today$/);
   await expect(benPage.getByText(words('today.nextUp.waiting', { admin: "Ava" }))).toBeVisible();
 
@@ -166,9 +166,9 @@ test("run a house from nothing on the phone", async ({ browser }) => {
   expect(left).toEqual([{ user_id: ava }]);
 
   // It's the Moving on screen: Ben starts his new place, and the John list comes too.
-  await expect(benPage.getByRole("heading", { name: MOVING_COPY.heading })).toBeVisible();
+  await expect(benPage.getByRole("heading", { name: words('house.moving.heading') })).toBeVisible();
   await benPage.getByTestId("start-from").click();
-  await expect(benPage.getByRole("heading", { name: MOVING_COPY.newHeading })).toBeVisible();
+  await expect(benPage.getByRole("heading", { name: words('house.moving.newHeading') })).toBeVisible();
   await benPage.getByTestId("house-name").fill("Ben's new place");
   await benPage.getByTestId("create-house").click();
   await expect(benPage).toHaveURL(/\/today$/);
@@ -183,7 +183,7 @@ test("run a house from nothing on the phone", async ({ browser }) => {
   // Ava signs out from You.
   await you.getByTestId("sign-out").click();
   await expect(page).toHaveURL(/\/signin$/);
-  await expect(page.getByRole("button", { name: SIGN_IN_COPY.google })).toBeVisible();
+  await expect(page.getByRole("button", { name: words('door.signIn.google') })).toBeVisible();
 
   await avaContext.close();
   await benContext.close();

@@ -20,6 +20,8 @@ const HOUSE_ONLY = /\b(housemates?|flatmates?|admins?)\b/i;
 
 /** Lines a family never sees, so they need no family sentence, and why. */
 const HOUSEMATES_ONLY: Partial<Record<WordId, string>> = {
+  "errors.ask_limit": "the owner's Ask Jonz limit, which points at the owner's admin pages",
+  "door.newHouse.intro": "a family reads house.family.newIntro through newHouseWords",
   "house.family.kinds.housemates": "Rules' switch between the two kinds names both on purpose",
   "house.kindSwitch.keep": "Rules' switch between the two kinds names both on purpose",
   "house.kindSwitch.toFamilyNow": "Rules' switch between the two kinds names both on purpose",
@@ -64,7 +66,6 @@ function readings(id: WordId): WordValues[] {
 const SECTION_REASONS: Record<string, string> = {
   ROLE_WORDS: "names both kinds' roles on purpose",
   HOUSE_DRAFT_COPY: "Describe your house's kinds of house, one of which is a flat share",
-  NEW_HOUSE_COPY: "a family reads house.family's Start a house through newHouseWords",
 };
 
 /** Other files' strings that may say housemate, and why. */

@@ -1,4 +1,4 @@
-import { APP_NAME, DOOR, FAMILY_OPEN, FRONT_DOOR, FRONT_DOOR_COPY, frontDoorWords, type Words, HOUSE_KINDS, type HouseKind, SIGN_IN, SIGN_IN_COPY, signInPath } from '@app/core';
+import { APP_NAME, DOOR, DOOR_POINTS, FAMILY_OPEN, frontDoorWords, type Words, HOUSE_KINDS, type HouseKind, SIGN_IN, signInPath } from '@app/core';
 import { useState } from 'react';
 import { CoinsIcon, ListTodoIcon, ShuffleIcon, type LucideIcon } from 'lucide-react-native';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
@@ -15,7 +15,7 @@ import { rememberedKind, rememberKind } from '@/door-kind';
 import { CONTENT_MAX, LEADING, ROW_GAP, SPACE, useTheme } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
-type Point = (typeof FRONT_DOOR_COPY.points)[number]['key'];
+type Point = (typeof DOOR_POINTS)[number];
 
 const ICON: Record<Point, LucideIcon> = {
   list: ListTodoIcon,
@@ -51,7 +51,7 @@ export default function FrontDoor() {
     <Door
       home
       maxWidth={CONTENT_MAX}
-      right={<TextButton href={SIGN_IN} label={FRONT_DOOR.signIn} align="end" testID="sign-in" />}
+      right={<TextButton href={SIGN_IN} label={words('door.front.signIn')} align="end" testID="sign-in" />}
       testID="front-door"
     >
       <PageTitle />
@@ -85,14 +85,14 @@ export default function FrontDoor() {
         </View>
         <ButtonRow stacked={!sideBySide}>
           <Button href={signInPath(start)} label={sign.start} testID="start" />
-          <Button href={signInPath(DOOR.invite)} label={FRONT_DOOR_COPY.invite} variant="outline" testID="invite" />
+          <Button href={signInPath(DOOR.invite)} label={words('door.welcome.invite')} variant="outline" testID="invite" />
         </ButtonRow>
       </Sign>
       <DoorFoot>
         <View style={styles.foot}>
           <Meta>{APP_NAME}</Meta>
-          <TextLink href="/privacy" label={SIGN_IN_COPY.privacy} small testID="privacy" />
-          <TextLink href="/terms" label={SIGN_IN_COPY.termsLink} small testID="terms" />
+          <TextLink href="/privacy" label={words('door.signIn.privacy')} small testID="privacy" />
+          <TextLink href="/terms" label={words('door.signIn.termsLink')} small testID="terms" />
         </View>
       </DoorFoot>
     </Door>

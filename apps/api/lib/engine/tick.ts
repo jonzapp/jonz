@@ -1,4 +1,4 @@
-import { addDaysTo, AHEAD_WEEKS, crewByJob, dealtMembers, dueInLine, firstName, FOCUS_SHELL_COPY, earnsImmunity, forfeitFor, isCleanWeek, localDate, monthOf, monthWindow, movingOutAway, MOVING_COPY, ON_CALL_WEEKS, onCallUsual, passOf, passUnlocked, prefsOf, recentBalances, reminderFor, remindMoverNow, REMIND_AFTER_DAYS, REMIND_UNTIL_DAYS, rulesOf, settleMonth, settleOutcome, standings, steadyAhead, steadyDeal, stillHere, tableInputs, USUAL_WEEKS, verdict, votersOn, weekStateOf, weekWindow, weekWinners, oldEnough, type AwayPeriod, type Database, type IsoDow, type Json, type Outcome, type PushKind, type SteadyDealArgs, type SteadyLastTurn, type WeekWindow, wordsFor } from "@app/core";
+import { addDaysTo, AHEAD_WEEKS, crewByJob, dealtMembers, dueInLine, firstName, FOCUS_SHELL_COPY, earnsImmunity, forfeitFor, isCleanWeek, localDate, monthOf, monthWindow, movingOutAway, ON_CALL_WEEKS, onCallUsual, passOf, passUnlocked, prefsOf, recentBalances, reminderFor, remindMoverNow, REMIND_AFTER_DAYS, REMIND_UNTIL_DAYS, rulesOf, settleMonth, settleOutcome, standings, steadyAhead, steadyDeal, stillHere, tableInputs, USUAL_WEEKS, verdict, votersOn, weekStateOf, weekWindow, weekWinners, oldEnough, type AwayPeriod, type Database, type IsoDow, type Json, type Outcome, type PushKind, type SteadyDealArgs, type SteadyLastTurn, type WeekWindow, wordsFor } from "@app/core";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { tellHouse } from "./tell";
@@ -877,8 +877,8 @@ export async function remindMovers(db: Db, now: Date, notify: Notify) {
     );
     if (claimed.length === 0 || when === "skip") continue;
     await notify([m.user_id], {
-      title: MOVING_COPY.reminderTitle,
-      body: MOVING_COPY.reminderBody,
+      title: words('house.moving.reminderTitle'),
+      body: words('house.moving.reminderBody'),
       url: "/welcome",
       kind: "reminders",
       zone,

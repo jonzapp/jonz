@@ -59,7 +59,6 @@ const RETIRED: [RegExp, string][] = [
 const ALLOWED: Record<string, RegExp[]> = {
   "resets.ts": [/\blet (it |\w+ )?off\b/i],
   "copy.ts": [/\blet (it |\w+ )?off\b/i],
-  "errors.ts": [/\blet (it |\w+ )?off\b/i],
   // The sign-in emails' code placeholder is Supabase's {{ .Token }}.
   "auth-email.ts": [/\btokens?\b/i],
   // History's own name for a skip's event, matched in code, never shown.
@@ -70,6 +69,9 @@ const ALLOWED: Record<string, RegExp[]> = {
 const ALLOWED_IDS: Record<string, RegExp[]> = {
   "house.stake.letOff": [/\blet (it |\w+ )?off\b/i],
   // An admin's reset that waived someone's John, or a month's forfeits (resets.ts).
+  // An admin's reset outcomes, as the database names them (errors.ts).
+  "errors.unknown_outcome": [/\blet (it |\w+ )?off\b/i],
+  "errors.already_let_off": [/\blet (it |\w+ )?off\b/i],
   "wall.history.reset.excused": [/\blet (it |\w+ )?off\b/i],
   "wall.history.reset.letoff": [/\blet (it |\w+ )?off\b/i],
   "wall.history.reset.letoffAny": [/\blet (it |\w+ )?off\b/i],

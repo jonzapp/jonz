@@ -1,4 +1,4 @@
-import { FOCUS_SHELL_COPY, HOUSE_DRAFT_COPY, TOUR_COPY } from '@app/core';
+import { FOCUS_SHELL_COPY, HOUSE_DRAFT_COPY } from '@app/core';
 import { useRouter, type Href } from 'expo-router';
 import { ChevronLeftIcon, CircleQuestionMarkIcon, EllipsisIcon, SparklesIcon } from 'lucide-react-native';
 import { createContext, useContext, type ReactNode } from 'react';
@@ -13,6 +13,7 @@ import { useTour } from '@/components/tour/tour-context';
 import { TourSpot } from '@/components/tour/tour-spot';
 import { useAskJonz, useAskPanelOpen } from '@/hooks/use-ask-jonz';
 import { FONT, GUTTER, INSET, SECTION_GAP, SPACE, TAP, TITLE_BAR, useTheme, WIDE } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * A button a part of the app puts at the edge of every title bar inside it,
@@ -77,6 +78,7 @@ export function TitleBar({
   /** A panel's Close: at the very edge, after Help. */
   end?: ReactNode;
 }) {
+  const words = useWords();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const contentWidth = useContentWidth();
@@ -113,7 +115,7 @@ export function TitleBar({
               {right}
               {help ? (
                 <TourSpot id="shell.help">
-                  <IconButton icon={CircleQuestionMarkIcon} label={TOUR_COPY.open} onPress={tours.openHelp} testID="help-button" />
+                  <IconButton icon={CircleQuestionMarkIcon} label={words('door.tour.open')} onPress={tours.openHelp} testID="help-button" />
                 </TourSpot>
               ) : null}
               {ask ? <AskButton /> : edge}

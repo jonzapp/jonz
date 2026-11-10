@@ -1,4 +1,4 @@
-import { GUIDE_COPY, GUIDE_TOPIC, isHowTopic } from '@app/core';
+import { guideTopic, isHowTopic } from '@app/core';
 import { Redirect, useLocalSearchParams } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
@@ -12,6 +12,7 @@ import { SECTION_GAP } from '@/theme';
 import { ArticleOutline } from '@/components/page-outlines';
 
 import NotFound from '../../../+not-found';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * One page of the guide on a phone: a topic in this house's own words and
@@ -20,6 +21,7 @@ import NotFound from '../../../+not-found';
  * column with the room blank beside it.
  */
 export default function GuideTopicScreen() {
+  const words = useWords();
   const { topic = '' } = useLocalSearchParams<{ topic?: string }>();
   const { session, house } = useMembership();
   const beside = useOpensBeside();
@@ -29,11 +31,11 @@ export default function GuideTopicScreen() {
   if (beside) return <Redirect href={{ pathname: '/house/guide', params: { topic } }} />;
   return (
     <HousePage
-      title={GUIDE_TOPIC[topic].title}
+      title={guideTopic(topic, words).title}
       testID="guide-page"
       outline={<ArticleOutline />}
       back="/house/guide"
-      backLabel={GUIDE_COPY.title}
+      backLabel={words('door.guide.title')}
       ready={view !== null}
       failed={query.isError}
       onRetry={() => void query.refetch()}
@@ -41,7 +43,7 @@ export default function GuideTopicScreen() {
       {() => (
         <View style={styles.stack}>
           <TopicWords topic={topic} view={view!} />
-          <AskRow me={view!.me} title={GUIDE_COPY.askAbout} />
+          <AskRow me={view!.me} title={words('door.guide.askAbout')} />
         </View>
       )}
     </HousePage>
