@@ -43,8 +43,12 @@ test("makes a free year for three people, then opens it with its link", async ({
   await page.goto("/admin/promotions");
   const form = page.getByTestId("promotion-form");
   await expect(form).toBeVisible();
-  // On a laptop, what it gives beside who gets it and its code, the two sharing a top edge.
-  if ((page.viewportSize()?.width ?? 0) >= 1024) {
+  // Where the main column has room for two (a 1440 laptop): what it gives beside who gets it and its code,
+  // sharing a top edge. Beside the panel on a smaller laptop, and on a phone, one column.
+  if ((page.viewportSize()?.width ?? 0) < 1440) {
+    await expect(form.getByTestId("promotion-name")).toBeVisible();
+    await expect(form.getByTestId("promotion-form-start")).toHaveCount(0);
+  } else {
     await expect(form.getByTestId("promotion-form-start").getByTestId("promotion-name")).toBeVisible();
     await expect(form.getByTestId("promotion-form-end").getByTestId("promotion-code")).toBeVisible();
     const start = await form.getByTestId("promotion-form-start").boundingBox();
