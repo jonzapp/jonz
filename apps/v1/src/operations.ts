@@ -24,7 +24,11 @@ export function apiOperation(name: OperationName): ApiOperation {
     output: io.output,
     http: { method, path },
     rpcArgs: (input) => rpcArgs(name, input),
-    fromResult: io.page ? (raw, input) => fromPage(name, input as { limit?: number }, (raw as unknown[] | null) ?? []) : camelKeys,
+    fromResult: io.page
+      ? (raw, input) => fromPage(name, input as { limit?: number }, (raw as unknown[] | null) ?? [])
+      : io.asIs
+        ? undefined
+        : camelKeys,
   };
 }
 

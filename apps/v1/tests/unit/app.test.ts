@@ -130,6 +130,19 @@ describe("the registry on /v1", () => {
     expect(V1_OPERATIONS.map((o) => o.name)).not.toContain("raise_flag");
   });
 
+  it("hands a reset's preview on as admin_reset words it, past_due and all", () => {
+    const reset = withHandlers({ reset_house: async () => ({}) }).find((o) => o.name === "reset_house")!;
+    const preview = {
+      kind: "week", week: { id: "w", starts_on: "2026-11-09", starts_at: "2026-11-09T06:00:00Z", ends_at: "2026-11-16T06:00:00Z" },
+      month: null, people: {}, told: [], reopened: 1, past_due: 2, flags: 0, disputes: 0, correction: false, nothing: false,
+    };
+    const answer = reset.fromResult ? reset.fromResult({ preview }, {}) : { preview };
+    expect(reset.output.safeParse(answer)).toMatchObject({ success: true, data: { preview: { past_due: 2, week: { starts_on: "2026-11-09" } } } });
+    // Everything else still answers in camelCase.
+    const plain = V1_OPERATIONS.find((o) => o.fromResult?.length === 1)!;
+    expect(plain.fromResult!({ due_at: 1 }, {})).toEqual({ dueAt: 1 });
+  });
+
   it("reads a query string by the operation's input types", () => {
     const types = queryTypes(z.object({ limit: z.int().optional(), all: z.boolean().optional(), ids: z.array(z.uuid()).optional(), q: z.string().optional() }));
     expect(readQuery({ limit: "20", all: "true", ids: "a,b", q: "12" }, types)).toEqual({ limit: 20, all: true, ids: ["a", "b"], q: "12" });

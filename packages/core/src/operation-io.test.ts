@@ -57,6 +57,35 @@ describe("every operation's contract", () => {
     }
   });
 
+  it("camelCases its answer unless the answer is as it comes, snake_case keys and all", () => {
+    // /v1 camelCases every answer but an asIs one (apps/v1 operations.ts): an
+    // output with a snake_case key would then never match its own contract.
+    const snake = (schema: unknown, out: string[], path = "", depth = 0): string[] => {
+      const d = (schema as { _zod?: { def?: Record<string, never> } })?._zod?.def;
+      if (!d || depth > 12) return out;
+      const into = (s: unknown, p = path) => snake(s, out, p, depth + 1);
+      if (d.type === "object")
+        for (const [k, v] of Object.entries(d.shape as Record<string, unknown>)) {
+          if (k.includes("_")) out.push(`${path}.${k}`);
+          into(v, `${path}.${k}`);
+        }
+      else if (d.type === "array") into(d.element, `${path}[]`);
+      else if (d.type === "union") for (const o of d.options as unknown[]) into(o);
+      else if (d.type === "record") into(d.valueType, `${path}{}`);
+      else if (d.type === "pipe") {
+        into(d.in);
+        into(d.out);
+      }
+      else if (d.type === "lazy") into((d.getter as () => unknown)());
+      else if ("innerType" in d) into(d.innerType);
+      return out;
+    };
+    const wrong = each.filter(([, , io]) => !io.asIs && snake(io.output, []).length > 0).map(([n, , io]) => `${n}: ${snake(io.output, []).join(" ")}`);
+    expect(wrong).toEqual([]);
+    expect(snake(OPERATION_IO.reset_house.output, [])).toContain(".preview.past_due");
+    expect(OPERATION_IO.reset_house.asIs && OPERATION_IO.ask_house.asIs).toBe(true);
+  });
+
   it("pages a list with limit and startingAfter, and answers data, hasMore and startingAfter", () => {
     for (const [n, , io] of each.filter(([, , io]) => io.page)) {
       expect(Object.keys(io.input.shape), n).toEqual(expect.arrayContaining(["limit", "startingAfter"]));

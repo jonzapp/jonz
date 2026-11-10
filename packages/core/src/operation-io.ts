@@ -84,6 +84,12 @@ export interface OperationIo {
   toRequest?: (input: never) => unknown;
   /** A list read a page at a time: which of a row's fields the cursor holds, and (for a function) which arguments take them. */
   page?: { at: string; id: string; atArg?: string; idArg?: string };
+  /**
+   * The answer is already in the contract's shape, snake_case keys and all
+   * (a reset's preview is admin_reset's own words): /v1 hands it on as it
+   * is rather than camelCasing its keys.
+   */
+  asIs?: boolean;
 }
 
 // --- Pieces ------------------------------------------------------------------------------------
@@ -610,7 +616,7 @@ export const OPERATION_IO = {
   raise_dispute: io(RaiseDispute, MoveResponse, "POST /v1/assignments/{assignmentId}/disputes"),
   cast_vote: io(CastVote.extend({ disputeId: id }), MoveResponse, "POST /v1/disputes/{disputeId}/votes"),
   confirm_payment: io(z.object({ houseId: id, fromId: id, amount: z.int().min(1), via: text.optional() }), nothing, "POST /v1/houses/{houseId}/payments"),
-  ask_house: io(ChatRequest, ChatResponse, "POST /v1/houses/{houseId}/ask"),
+  ask_house: io(ChatRequest, ChatResponse, "POST /v1/houses/{houseId}/ask", { asIs: true }),
   pass_checkout: io(PassCheckoutRequest, PassRedirect, "POST /v1/houses/{houseId}/pass/checkout"),
   pass_billing: io(PassManageRequest, PassRedirect, "POST /v1/houses/{houseId}/pass/billing"),
 
@@ -634,6 +640,7 @@ export const OPERATION_IO = {
   deal_week: io(DealRequest, MoveResponse, "POST /v1/houses/{houseId}/deal"),
   reset_house: io(resetInput, ResetResponse, "POST /v1/houses/{houseId}/resets", {
     toRequest: ({ weekId, userId, assignmentId, ...rest }: z.infer<typeof resetInput>): ResetRequest => ({ ...rest, week: weekId, user: userId, assignment: assignmentId }),
+    asIs: true,
   }),
   pay_pocket_money: io(z.object({ houseId: id, kidId: id, month }), int, "POST /v1/houses/{houseId}/kids/{kidId}/pocket-money"),
   add_kid: io(AddKid.extend({ houseId: id }), AddKidResponse, "POST /v1/houses/{houseId}/kids"),
