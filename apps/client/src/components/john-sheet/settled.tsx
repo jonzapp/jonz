@@ -10,7 +10,8 @@ import { SheetLines } from './parts';
 
 /**
  * A settled John: the header has said what happened, so all that's left is
- * the photo receipt, if it had one.
+ * the photo receipt, if it had one. A John being checked shows it too, above
+ * Undo or Dispute.
  */
 export function Settled({ item, context }: { item: BoardItem; context: JohnSheetContext }) {
   if (!item.photoPath) return null;

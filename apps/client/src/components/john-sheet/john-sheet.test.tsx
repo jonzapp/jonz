@@ -492,6 +492,14 @@ describe('your tick, being checked', () => {
     expect(undoDone).toHaveBeenCalledWith('a1');
   });
 
+  it('shows its photo while it is being checked', async () => {
+    await show(house([binsOut({ done_at: at(-1), photo_path: 'h1/a1.jpg' })]));
+    const body = await openOn('Open a1');
+    const photo = await within(body).findByTestId('sheet-photo-image', { includeHiddenElements: true });
+    expect(photo.props.source).toEqual({ uri: 'https://photos.test/a3.jpg' });
+    expect(within(body).getByRole('button', { name: JOHN_COPY.undo })).toBeOnTheScreen();
+  });
+
   it('says a refusal', async () => {
     (undoDone as jest.Mock).mockRejectedValue(new Error('It has stood.'));
     await show(house([binsOut({ done_at: at(-1) })]));
@@ -543,6 +551,15 @@ describe("a housemate's John", () => {
     await fireEvent.press(within(body).getByRole('button', { name: DISPUTE_COPY.open }));
     expect(within(body).getByTestId('dispute-reason')).toBeOnTheScreen();
     expect(within(body).getByTestId('send-dispute')).toBeOnTheScreen();
+  });
+
+  it("shows a housemate's photo above Dispute, so it can be checked", async () => {
+    await show(house([binsOut(), samsBath({ done_at: at(-1), photo_path: 'h1/a4.jpg' })]));
+    const body = await openOn('Open a4');
+    const photo = await within(body).findByTestId('sheet-photo-image', { includeHiddenElements: true });
+    expect(photo.props.source).toEqual({ uri: 'https://photos.test/a3.jpg' });
+    expect(signPhoto).toHaveBeenCalledWith('h1/a4.jpg');
+    expect(within(body).getByRole('button', { name: DISPUTE_COPY.open })).toBeOnTheScreen();
   });
 
   it('waits for Dispute to be pressed, even when opened to dispute', async () => {
