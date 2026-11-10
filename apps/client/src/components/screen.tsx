@@ -80,7 +80,9 @@ export function useFilled(): number | null {
  * the page instead once the page itself is COLUMNS_MIN wide, a laptop's
  * beside the rail, and its content lays itself out in Columns. The page
  * measures itself, so it goes back to one column when something beside it
- * (the chat with Jonz) takes the room. In two columns each scrolls on its
+ * (the chat with Jonz) takes the room; on a laptop that one column still
+ * fills the room, as a page that `fills` does, so it never stops short of
+ * the chat with the room blank beside it. In two columns each scrolls on its
  * own (Columns), so the page itself holds still under the title bar. The
  * title bar keeps clear of the notch; the tabs keep clear of the home bar.
  *
@@ -118,16 +120,19 @@ export function Screen({
   const { listed } = useHouseWorkspace();
   const width = measured ?? roomFor(windowWidth, listed);
   const two = spreads && width >= COLUMNS_MIN;
-  const filling = fills && !spreads && windowWidth >= WIDE;
+  // From WIDE a page that fills, or one that spreads with no room for its panel, runs its content across the room.
+  const filling = (fills || spreads) && !two && windowWidth >= WIDE;
   const max = two ? undefined : filling ? FILL_MAX : maxWidth;
   const onLayout = spreads || filling ? (e: LayoutChangeEvent) => setMeasured(e.nativeEvent.layout.width) : undefined;
+  // What a page that fills has to lay out in: the room less its gutters, up to FILL_MAX.
+  const filled = filling ? Math.min(width - 2 * GUTTER, FILL_MAX) : null;
   // A tour scrolls a spot on this page into view through it.
   const scroll = useRef<ScrollViewInstance>(null);
   return (
-    <ContentWidth.Provider value={max ?? CONTENT_MAX}>
+    <ContentWidth.Provider value={filled ?? max ?? CONTENT_MAX}>
       <TwoColumns.Provider value={two}>
         <PageWidth.Provider value={two ? width : null}>
-          <Filled.Provider value={filling ? Math.min(width - 2 * GUTTER, FILL_MAX) : null}>
+          <Filled.Provider value={filled}>
             <View testID={testID} onLayout={onLayout} style={[styles.screen, { backgroundColor: colors.background }]}>
               {bar}
               <ScrollView
