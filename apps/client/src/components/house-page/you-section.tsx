@@ -1,4 +1,4 @@
-import { codeProblem, dateRange, DELETE_COPY, emailAuthProblem, LOOKS, PASSWORD_MIN, passwordProblem, prefsLine } from '@app/core';
+import { codeProblem, dateRange, emailAuthProblem, LOOKS, PASSWORD_MIN, passwordProblem, prefsLine } from '@app/core';
 import { BellIcon, KeyRoundIcon, LogOutIcon, SlidersHorizontalIcon, SunMoonIcon, Trash2Icon, TruckIcon } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
@@ -146,7 +146,7 @@ export function YouSection({
 
       {part === 'account' ? null : (
         <View style={styles.leave}>
-          <Section label={DELETE_COPY.leave}>
+          <Section label={words('people.delete.leave')}>
             <Row
               leading={<RowIcon icon={TruckIcon} />}
               title={words('house.moving.row')}
@@ -157,13 +157,13 @@ export function YouSection({
             />
             <Row
               leading={<Trash2Icon size={24} color={colors.hazard} aria-hidden />}
-              title={DELETE_COPY.row}
+              title={words('people.delete.row')}
               tone="hazard"
               onPress={() => setSheet('delete')}
               testID="to-delete-account"
             />
           </Section>
-          <Meta style={styles.elsewhere}>{DELETE_COPY.elsewhere}</Meta>
+          <Meta style={styles.elsewhere}>{words('people.delete.elsewhere')}</Meta>
         </View>
       )}
 
@@ -194,7 +194,7 @@ export function YouSection({
           onClose={() => setSheet(null)}
         />
       ) : null}
-      <Sheet visible={sheet === 'delete'} title={DELETE_COPY.title} onClose={() => setSheet(null)} testID="delete-sheet">
+      <Sheet visible={sheet === 'delete'} title={words('people.delete.title')} onClose={() => setSheet(null)} testID="delete-sheet">
         <DeleteAccountForm onKeep={() => setSheet(null)} />
       </Sheet>
     </View>

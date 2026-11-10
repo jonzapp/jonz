@@ -92,52 +92,6 @@ export type ChatReset = z.infer<typeof ChatReset>;
 /** The most resets one answer offers. */
 export const CHAT_RESETS_MAX = 6;
 
-export const RESET_COPY = {
-  fix: "Fix this week",
-  resetWeek: "Reset this week…",
-  resetWeekMeta: "Same Johns, ticks cleared",
-  redeal: "Re-deal this week…",
-  redealMeta: "Dealt again from the list",
-  skip: "Skip this week…",
-  skipMeta: "Nothing counts",
-  resetPerson: (name: string) => `Reset ${name}’s week`,
-  resetPersonMeta: "Their ticks this week come off",
-  /** An admin's one row in a John's sheet, under "Admin": it opens the four results. */
-  fixResult: "Fix the result",
-  fixResultMeta: "Done, late, missed or let off",
-  fixResultLabel: "Admin",
-  letOff: (month: string) => `Let everyone off ${month}`,
-  letOffMeta: "Its forfeits go; marks stay",
-  choice: { done: "Done", late: "Late", missed: "Missed", excused: "Let off" } as Record<ResultChoice, string>,
-  reading: "Working out what changes",
-  unreadable: "What this would change couldn’t be worked out.",
-  nothing: "Nothing to reset: nobody has ticked anything here.",
-  done: "Done.",
-  undo: (until: string) => `You can undo this from History until ${until}’s forfeits are split.`,
-  ticks: (n: number) => (n === 1 ? "1 tick cleared" : `${n} ticks cleared`),
-  balances: "Balances",
-  stake: "Stake",
-  track: "Track record",
-  cleared: "Also cleared",
-  noChange: "No change",
-  pts: "pts",
-  removed: (money: string) => `${money} of forfeits removed`,
-  added: (money: string) => `${money} of forfeits added`,
-  asCorrection: "as a correction this month",
-  card: "Resets",
-  cardMeta: "Untick anything to keep",
-  applyN: (n: number) => (n === 1 ? "Reset 1 thing" : `Reset ${n} things`),
-  applying: "Resetting…",
-  appliedN: (n: number) => (n === 1 ? "Done. 1 thing reset." : `Done. ${n} things reset.`),
-  undoAll: "Undo",
-  putBack: "Put back as it was.",
-  undoLine: (line: string) => `Undo: ${line}`,
-  undoMeta: "Back as it was before",
-  told: (names: string) => `${names} ${names.includes(" and ") ? "get" : "gets"} a notification`,
-  toldNobody: "Nobody else is told",
-  you: "you",
-} as const;
-
 export interface ResetLine {
   key: "ticks" | "balances" | "stake" | "track" | "cleared";
   label: string;
@@ -191,14 +145,14 @@ const RESULT_WORDS: Record<string, string> = {
 };
 
 /** The reset sheet's words and numbers, from what the database says the reset would do. */
-export function resetSheet(preview: ResetPreview, w: ResetWords): ResetSheet {
-  const short = (id: string) => (id === w.viewerId ? RESET_COPY.you : firstName(w.nameOf(id)));
+export function resetSheet(preview: ResetPreview, w: ResetWords, words: Words): ResetSheet {
+  const short = (id: string) => (id === w.viewerId ? words('house.resets.you') : firstName(w.nameOf(id)));
   const people = Object.entries(preview.people).sort(([a], [b]) => short(a).localeCompare(short(b)));
   const range = preview.week
     ? weekRange(new Date(preview.week.starts_at), new Date(preview.week.ends_at), w.zone)
     : "";
   const monthName = preview.month ? monthOnly(preview.month) : "";
-  const { title, body, confirm } = resetHead(w, range, monthName);
+  const { title, body, confirm } = resetHead(w, range, monthName, words);
 
   const lines: ResetLine[] = [];
   const ticks = people.filter(([, t]) => (t.ticks ?? 0) > 0);
@@ -206,7 +160,7 @@ export function resetSheet(preview: ResetPreview, w: ResetWords): ResetSheet {
     const total = ticks.reduce((n, [, t]) => n + (t.ticks ?? 0), 0);
     lines.push({
       key: "ticks",
-      label: RESET_COPY.ticks(total),
+      label: words('house.resets.ticks', { n: total }),
       value: ticks.map(([id, t]) => `${short(id)} ${t.ticks}`).join(", "),
     });
   }
@@ -214,51 +168,51 @@ export function resetSheet(preview: ResetPreview, w: ResetWords): ResetSheet {
     const moved = people.filter(([, t]) => Math.round((t.points ?? 0) * 10) !== 0);
     lines.push({
       key: "balances",
-      label: RESET_COPY.balances,
+      label: words('house.resets.balances'),
       value:
         w.kind === "redeal" && moved.length === 0
           ? "From the new deal"
           : moved.length === 0
-            ? RESET_COPY.noChange
-            : `${moved.map(([id, t]) => `${short(id)} ${signedPoints(t.points ?? 0)}`).join(", ")} ${RESET_COPY.pts}`,
+            ? words('house.resets.noChange')
+            : `${moved.map(([id, t]) => `${short(id)} ${signedPoints(t.points ?? 0)}`).join(", ")} ${words('house.resets.pts')}`,
     });
   }
   const back = people.reduce((n, [, t]) => n + Math.max(t.forfeit ?? 0, 0), 0);
   const owed = people.reduce((n, [, t]) => n + Math.max(-(t.forfeit ?? 0), 0), 0);
   const money: string[] = [];
-  if (back > 0) money.push(RESET_COPY.removed(formatMoney(back, w.currency)));
-  if (owed > 0) money.push(RESET_COPY.added(formatMoney(owed, w.currency)));
+  if (back > 0) money.push(words('house.resets.removed', { money: formatMoney(back, w.currency) }));
+  if (owed > 0) money.push(words('house.resets.added', { money: formatMoney(owed, w.currency) }));
   lines.push({
     key: "stake",
-    label: RESET_COPY.stake,
+    label: words('house.resets.stake'),
     value:
       money.length === 0
-        ? RESET_COPY.noChange
-        : `${money.join(", ")}${preview.correction ? `, ${RESET_COPY.asCorrection}` : ""}`,
+        ? words('house.resets.noChange')
+        : `${money.join(", ")}${preview.correction ? `, ${words('house.resets.asCorrection')}` : ""}`,
   });
-  lines.push({ key: "track", label: RESET_COPY.track, value: trackLine(preview, w) });
+  lines.push({ key: "track", label: words('house.resets.track'), value: trackLine(preview, w) });
   const cleared: string[] = [];
   if (preview.flags > 0) cleared.push(preview.flags === 1 ? "1 flag" : `${preview.flags} flags`);
   if (preview.disputes > 0) cleared.push(preview.disputes === 1 ? "1 dispute" : `${preview.disputes} disputes`);
-  if (cleared.length > 0) lines.push({ key: "cleared", label: RESET_COPY.cleared, value: and(cleared) });
+  if (cleared.length > 0) lines.push({ key: "cleared", label: words('house.resets.cleared'), value: and(cleared) });
 
   const told = preview.told.filter((id) => id !== w.viewerId).map((id) => firstName(w.nameOf(id)));
   return {
     title,
     body,
     lines,
-    told: told.length === 0 ? RESET_COPY.toldNobody : RESET_COPY.told(and(told.sort())),
-    undo: RESET_COPY.undo(preview.month ? monthOnly(preview.month) : "this month"),
+    told: told.length === 0 ? words('house.resets.toldNobody') : resetTold(and(told.sort()), words),
+    undo: words('house.resets.undo', { until: preview.month ? monthOnly(preview.month) : "this month" }),
     confirm,
   };
 }
 
 /** A reset's question before its numbers are in: the sheet's title while it works them out. */
-export function resetTitle(w: ResetWords): string {
-  return resetHead(w, "", w.month ? monthOnly(w.month) : "").title;
+export function resetTitle(w: ResetWords, words: Words): string {
+  return resetHead(w, "", w.month ? monthOnly(w.month) : "", words).title;
 }
 
-function resetHead(w: ResetWords, range: string, monthName: string): { title: string; body: string; confirm: string } {
+function resetHead(w: ResetWords, range: string, monthName: string, words: Words): { title: string; body: string; confirm: string } {
   const person = w.person ? firstName(w.person) : "";
   const john = w.john ?? "this John";
   switch (w.kind) {
@@ -276,7 +230,7 @@ function resetHead(w: ResetWords, range: string, monthName: string): { title: st
       return {
         title: `Reset ${person}’s week?`,
         body: `${person} keeps the Johns they were dealt. Their ticks from ${range} are cleared.`,
-        confirm: RESET_COPY.resetPerson(person),
+        confirm: words('house.resets.resetPerson', { name: person }),
       };
     case "week":
       return {
@@ -326,26 +280,26 @@ function trackLine(preview: ResetPreview, w: ResetWords): string {
 /** One row of Ask Jonz's Resets card: what it is, and its numbers in a line. */
 export function resetItemLine(
   item: ChatReset,
-  w: Pick<ResetWords, "nameOf" | "viewerId" | "currency" | "zone">,
+  w: Pick<ResetWords, "nameOf" | "viewerId" | "currency" | "zone">, words: Words,
 ): { title: string; meta: string; told: string[] } {
   if (item.kind === "undo") {
-    return { title: RESET_COPY.undoLine(item.line), meta: RESET_COPY.undoMeta, told: item.actor && item.actor !== w.viewerId ? [item.actor] : [] };
+    return { title: words('house.resets.undoLine', { line: item.line }), meta: words('house.resets.undoMeta'), told: item.actor && item.actor !== w.viewerId ? [item.actor] : [] };
   }
-  const sheet = resetSheet(item.preview, { ...w, ...item.words, kind: item.ask.kind });
+  const sheet = resetSheet(item.preview, { ...w, ...item.words, kind: item.ask.kind }, words);
   const parts = sheet.lines
-    .filter((l) => l.key !== "track" && l.value !== RESET_COPY.noChange)
+    .filter((l) => l.key !== "track" && l.value !== words('house.resets.noChange'))
     .map((l) => (l.key === "ticks" ? l.label : l.key === "cleared" ? `${l.value} cleared` : l.value));
   return {
     title: sheet.confirm,
-    meta: parts.length > 0 ? parts.join(", ") : RESET_COPY.noChange,
+    meta: parts.length > 0 ? parts.join(", ") : words('house.resets.noChange'),
     told: item.preview.told.filter((id) => id !== w.viewerId),
   };
 }
 
 /** "Ada and Sam get a notification", for a whole card. */
-export function toldLine(ids: readonly string[], nameOf: (id: string) => string): string {
+export function toldLine(ids: readonly string[], nameOf: (id: string) => string, words: Words): string {
   const names = [...new Set(ids)].map((id) => firstName(nameOf(id))).sort();
-  return names.length === 0 ? RESET_COPY.toldNobody : RESET_COPY.told(and(names));
+  return names.length === 0 ? words('house.resets.toldNobody') : resetTold(and(names), words);
 }
 
 /** History's and the Wall's words for a reset: "reset Sam’s week", "marked Bins done". */
@@ -368,4 +322,9 @@ export function resetWhat(data: Record<string, unknown>, subject: string, words:
     default:
       return words("wall.history.reset.other");
   }
+}
+
+/** Who a reset tells: "Sam gets a notification", "Sam and Priya get one". */
+export function resetTold(names: string, words: Words): string {
+  return words("house.resets.told", { names, many: names.includes(" and ") });
 }

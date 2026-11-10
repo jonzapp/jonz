@@ -1,4 +1,4 @@
-import { humanError, OFFER_PAGE_COPY, PROMOTION_COPY, type OfferView, type PassPurchase } from '@app/core';
+import { humanError, type OfferView, type PassPurchase } from '@app/core';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
@@ -31,6 +31,7 @@ import { useWords } from '@/hooks/use-words';
  * redirect comes back with a `?code=` of its own, and a refusal with `?error=`.)
  */
 export default function Offer() {
+  const words = useWords();
   const { offerCode, error } = useLocalSearchParams<{ offerCode: string; error?: string }>();
   const { session } = useMembership();
   const [signingIn, setSigningIn] = useState(Boolean(error));
@@ -41,25 +42,25 @@ export default function Offer() {
 
   return (
     <Door testID="offer-screen">
-      <PageTitle page={read.data?.title ?? OFFER_PAGE_COPY.page} />
+      <PageTitle page={read.data?.title ?? words('door.offer.page')} />
       {!session && signingIn ? (
         <SignInPanel next={`/offer/${offerCode}`} failed={Boolean(error)} />
       ) : read.isPending ? (
         <Waiting ready={false} outline={<DoorOutline />} />
       ) : read.isError ? (
         <Sign>
-          <SignHeading title={OFFER_PAGE_COPY.page} />
+          <SignHeading title={words('door.offer.page')} />
           <ReadFailed onRetry={() => void read.refetch()} />
         </Sign>
       ) : read.data === null ? (
         <Sign testID="offer-unknown">
-          <SignHeading title={OFFER_PAGE_COPY.unknown} body={OFFER_PAGE_COPY.unknownBody} />
-          <Button href="/" variant="outline" label={OFFER_PAGE_COPY.goHome} />
+          <SignHeading title={words('door.offer.unknown')} body={words('door.offer.unknownBody')} />
+          <Button href="/" variant="outline" label={words('door.offer.goHome')} />
         </Sign>
       ) : read.data.state === 'ended' ? (
         <Sign testID="offer-ended">
-          <SignHeading title={OFFER_PAGE_COPY.ended} body={OFFER_PAGE_COPY.endedBody} />
-          <Button href="/" variant="outline" label={OFFER_PAGE_COPY.goHome} />
+          <SignHeading title={words('door.offer.ended')} body={words('door.offer.endedBody')} />
+          <Button href="/" variant="outline" label={words('door.offer.goHome')} />
         </Sign>
       ) : (
         <LiveOffer view={read.data} signedIn={Boolean(session)} onSignIn={() => setSigningIn(true)} />
@@ -90,7 +91,7 @@ function LiveOffer({ view, signedIn, onSignIn }: { view: OfferView; signedIn: bo
 
   return (
     <Sign testID="offer-sign">
-      <SignHeading above={OFFER_PAGE_COPY.giftFrom} title={view.title} body={view.sentence} />
+      <SignHeading above={words('door.offer.giftFrom')} title={view.title} body={view.sentence} />
       {view.note ? <Body testID="offer-note">{view.note}</Body> : null}
       {gift || view.prices.length === 0 ? null : (
         <View style={styles.prices} testID="offer-prices">
@@ -109,42 +110,42 @@ function LiveOffer({ view, signedIn, onSignIn }: { view: OfferView; signedIn: bo
       )}
 
       {!signedIn ? (
-        <Button label={OFFER_PAGE_COPY.signIn} onPress={onSignIn} testID="offer-sign-in" />
+        <Button label={words('door.offer.signIn')} onPress={onSignIn} testID="offer-sign-in" />
       ) : !you ? null : !you.forYou ? (
         <Alert message={humanError({ message: 'offer_not_yours' })} testID="offer-not-yours" />
       ) : !mine ? (
         <View style={styles.group}>
-          <Body muted>{OFFER_PAGE_COPY.noHouse}</Body>
+          <Body muted>{words('door.offer.noHouse')}</Body>
           <ButtonRow>
-            <Button href="/welcome" label={OFFER_PAGE_COPY.startHouse} />
+            <Button href="/welcome" label={words('door.offer.startHouse')} />
           </ButtonRow>
         </View>
       ) : refusal ? (
         <View style={styles.group}>
           <Alert message={refusal} testID="offer-refused" />
           <ButtonRow>
-            <Button href="/today" variant="outline" label={OFFER_PAGE_COPY.goToHouse} />
+            <Button href="/today" variant="outline" label={words('door.offer.goToHouse')} />
           </ButtonRow>
         </View>
       ) : !canBuy ? (
-        <Meta testID="offer-web-only">{Platform.OS === 'web' ? words('house.pass.checkoutClosed') : OFFER_PAGE_COPY.webOnly}</Meta>
+        <Meta testID="offer-web-only">{Platform.OS === 'web' ? words('house.pass.checkoutClosed') : words('door.offer.webOnly')}</Meta>
       ) : (
         <View style={styles.group}>
           {use.error ? <Alert message={use.error.message} /> : null}
           <ButtonRow>
             <Button
-              label={PROMOTION_COPY.useIt}
-              busyLabel={OFFER_PAGE_COPY.using}
+              label={words('house.promotion.useIt')}
+              busyLabel={words('door.offer.using')}
               onPress={() => use.mutate(mine.id)}
               // Busy on through the way to checkout, after the server said yes.
               busy={use.isPending || use.isSuccess}
               testID="offer-use"
             />
           </ButtonRow>
-          <Meta>{gift ? OFFER_PAGE_COPY.noCard : OFFER_PAGE_COPY.payNext}</Meta>
+          <Meta>{gift ? words('door.offer.noCard') : words('door.offer.payNext')}</Meta>
         </View>
       )}
-      {you ? <Meta testID="offer-you">{OFFER_PAGE_COPY.signedInAs(you.email)}</Meta> : null}
+      {you ? <Meta testID="offer-you">{words('door.offer.signedInAs', { email: you.email })}</Meta> : null}
     </Sign>
   );
 }

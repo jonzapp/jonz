@@ -5,7 +5,7 @@
 
 import { randomBytes, randomUUID } from "node:crypto";
 
-import { auditRowWords, chatTitle, type AuditEntry, type SavedTurn } from "@app/core";
+import { auditRowWords, chatTitle, type AuditEntry, type SavedTurn, wordsFor } from "@app/core";
 import { connect, createExecutor, type Claims, type Sql, type TokenVerifier } from "@app/server";
 import type { FastifyInstance } from "fastify";
 import postgres from "postgres";
@@ -13,6 +13,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApp } from "../../src/app";
 import { V1_OPERATIONS } from "../../src/operations";
+
+const words = wordsFor("en", "housemates");
 
 const DB_URL = process.env.DB_URL ?? "postgresql://postgres:postgres@127.0.0.1:54342/postgres";
 const NOW = new Date(Date.UTC(2027, 0, 4, 9, 30, 0)); // pretend clock for the API's own bookkeeping
@@ -197,8 +199,8 @@ describe("the owner's Ask Jonz chats on /v1", () => {
     const kept = await call("owner", "POST", "/v1/admin/ask-chats", { turns });
     expect(kept.statusCode, kept.body).toBe(201);
     const chatId: string = kept.json();
-    expect((await call("owner", "GET", "/v1/admin/ask-chats")).json()).toEqual([expect.objectContaining({ id: chatId, title: chatTitle(turns) })]);
-    expect((await call("owner", "GET", `/v1/admin/ask-chats/${chatId}`)).json()).toEqual({ id: chatId, title: chatTitle(turns), turns });
+    expect((await call("owner", "GET", "/v1/admin/ask-chats")).json()).toEqual([expect.objectContaining({ id: chatId, title: chatTitle(turns, words) })]);
+    expect((await call("owner", "GET", `/v1/admin/ask-chats/${chatId}`)).json()).toEqual({ id: chatId, title: chatTitle(turns, words), turns });
     const more = [...turns, { role: "user" as const, text: "And last month?" }];
     const patched = await call("owner", "PATCH", `/v1/admin/ask-chats/${chatId}`, { turns: more });
     expect(patched.statusCode, patched.body).toBe(201);

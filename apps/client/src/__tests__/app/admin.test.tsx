@@ -1,4 +1,4 @@
-import { ADMIN_COPY, AUDIT_LIST_COPY, DELETION_LIST_COPY, NOTICE_LIST_COPY, ASK_CHATS_COPY, OWNER_ASK_COPY, OWNER_MOVES_COPY, OVERVIEW_COPY, OWNER_PERMISSION_NAMES, type AuditEntry, type Notice, wordsFor } from '@app/core';
+import { ADMIN_COPY, AUDIT_LIST_COPY, DELETION_LIST_COPY, NOTICE_LIST_COPY, OWNER_ASK_COPY, OWNER_MOVES_COPY, OVERVIEW_COPY, OWNER_PERMISSION_NAMES, type AuditEntry, type Notice, wordsFor } from '@app/core';
 import * as Clipboard from 'expo-clipboard';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 import { Platform, useWindowDimensions, type ViewStyle } from 'react-native';
@@ -327,7 +327,7 @@ describe('the owner’s Ask Jonz', () => {
     await fireEvent.press(chat().getByTestId('chat-new'));
     expect(chat().queryByText('Two reports are waiting.')).toBeNull();
     await fireEvent.press(chat().getByTestId('chats-open'));
-    expect(chat().getByText(ASK_CHATS_COPY.all)).toBeVisible();
+    expect(chat().getByText(words('ask.chats.all'))).toBeVisible();
     expect(await chat().findByText(OWNER_ASK_COPY.chatsNote)).toBeVisible();
     await fireEvent.press(await chat().findByText('What’s waiting?'));
     expect(await chat().findByText('Two reports are waiting.')).toBeVisible();

@@ -1,4 +1,4 @@
-import { CONSENT_COPY, consentPath } from '@app/core';
+import { consentPath } from '@app/core';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -16,6 +16,7 @@ import { useMembership } from '@/hooks/use-membership';
 import { SPACE } from '@/theme';
 import { Waiting } from '@/components/waiting';
 import { DoorOutline } from '@/components/page-outlines';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * jonz.app/oauth/consent?authorization_id=…: where Supabase's OAuth server
@@ -26,6 +27,7 @@ import { DoorOutline } from '@/components/page-outlines';
  * to the app. An app you've already allowed goes straight back.
  */
 export default function Consent() {
+  const words = useWords();
   const { authorization_id: authorizationId = '', error } = useLocalSearchParams<{ authorization_id?: string; error?: string }>();
   const { session } = useMembership();
   const [allowing, setAllowing] = useState<boolean | null>(null);
@@ -50,7 +52,7 @@ export default function Consent() {
   if (!session) {
     return (
       <Door testID="consent-screen">
-        <PageTitle page={CONSENT_COPY.page} />
+        <PageTitle page={words('people.consent.page')} />
         <SignInPanel next={consentPath(authorizationId)} failed={Boolean(error)} />
       </Door>
     );
@@ -59,36 +61,36 @@ export default function Consent() {
   const details = read.data?.kind === 'ask' ? read.data.details : null;
   return (
     <Door testID="consent-screen">
-      <PageTitle page={CONSENT_COPY.page} />
+      <PageTitle page={words('people.consent.page')} />
       {!authorizationId || read.isError ? (
         <Sign testID="consent-gone">
-          <SignHeading title={CONSENT_COPY.gone} body={CONSENT_COPY.goneBody} />
-          <Button href="/" variant="outline" label={CONSENT_COPY.goHome} />
+          <SignHeading title={words('people.consent.gone')} body={words('people.consent.goneBody')} />
+          <Button href="/" variant="outline" label={words('people.consent.goHome')} />
         </Sign>
       ) : !details ? (
         <Waiting ready={false} outline={<DoorOutline />} />
       ) : (
         <Sign testID="consent-ask">
-          <SignHeading title={CONSENT_COPY.heading(details.client.name)} body={CONSENT_COPY.body(details.client.name)} />
+          <SignHeading title={words('people.consent.heading', { app: details.client.name })} body={words('people.consent.body', { app: details.client.name })} />
           <View style={styles.group}>
-            {details.client.uri ? <Meta>{CONSENT_COPY.website(details.client.uri)}</Meta> : null}
-            <Meta>{CONSENT_COPY.backTo(details.redirect_uri)}</Meta>
-            {details.user.email ? <Meta>{CONSENT_COPY.signedInAs(details.user.email)}</Meta> : null}
+            {details.client.uri ? <Meta>{words('people.consent.website', { uri: details.client.uri })}</Meta> : null}
+            <Meta>{words('people.consent.backTo', { uri: details.redirect_uri })}</Meta>
+            {details.user.email ? <Meta>{words('people.consent.signedInAs', { email: details.user.email })}</Meta> : null}
           </View>
           {answer.error ? <Alert message={answer.error.message} /> : null}
           <ButtonRow>
             <Button
-              label={CONSENT_COPY.allow}
+              label={words('people.consent.allow')}
               busy={answer.isPending && allowing === true}
-              busyLabel={CONSENT_COPY.allowing}
+              busyLabel={words('people.consent.allowing')}
               onPress={() => answer.mutate(true)}
               disabled={answer.isSuccess}
               testID="consent-allow"
             />
             <Button
-              label={CONSENT_COPY.deny}
+              label={words('people.consent.deny')}
               busy={answer.isPending && allowing === false}
-              busyLabel={CONSENT_COPY.denying}
+              busyLabel={words('people.consent.denying')}
               variant="outline"
               onPress={() => answer.mutate(false)}
               disabled={answer.isSuccess}

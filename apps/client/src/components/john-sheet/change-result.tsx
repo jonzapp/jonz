@@ -1,4 +1,4 @@
-import { memberCan, RESET_COPY, RESULT_CHOICES, type BoardItem, type ResultChoice } from '@app/core';
+import { memberCan, RESULT_CHOICES, type BoardItem, type ResultChoice } from '@app/core';
 import { RotateCcwIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { View } from 'react-native';
@@ -43,9 +43,9 @@ export function ChangeResult({ item, context }: { item: BoardItem; context: John
     <SheetSection>
       <View testID="change-result">
         {picking ? (
-          <Section label={RESET_COPY.fixResult}>
+          <Section label={words('house.resets.fixResult')}>
             {RESULT_CHOICES.filter((c) => c !== now).map((c) => (
-              <Row key={c} title={RESET_COPY.choice[c]} chevron onPress={() => setChoice(c)} testID={`result-${c}`} />
+              <Row key={c} title={words(`house.resets.choice.${c}` as const)} chevron onPress={() => setChoice(c)} testID={`result-${c}`} />
             ))}
             <GroupItem>
               <ButtonRow>
@@ -54,11 +54,11 @@ export function ChangeResult({ item, context }: { item: BoardItem; context: John
             </GroupItem>
           </Section>
         ) : (
-          <Section label={RESET_COPY.fixResultLabel}>
+          <Section label={words('house.resets.fixResultLabel')}>
             <Row
               leading={<RowIcon icon={RotateCcwIcon} />}
-              title={RESET_COPY.fixResult}
-              meta={RESET_COPY.fixResultMeta}
+              title={words('house.resets.fixResult')}
+              meta={words('house.resets.fixResultMeta')}
               chevron
               onPress={() => setPicking(true)}
               testID="fix-result"

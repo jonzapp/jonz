@@ -9,12 +9,12 @@ import {
   type GroupDef,
   type HouseDraft,
   type HouseRules,
+  type Words,
 } from '@app/core';
 
 import { ApiRequestError } from './base';
 import { addJohns, archiveJohn, loadJohnList, saveGroup, saveJohn, type JohnList } from './settings';
 import { callV1 } from './v1';
-import type { Words } from '@app/core';
 
 // Ask Jonz and Describe your house: one turn of the chat with apps/api
 // (Claude, or a starter list when Claude isn't there), then apply the changes

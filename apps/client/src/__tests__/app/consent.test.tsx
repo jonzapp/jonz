@@ -1,4 +1,4 @@
-import { CONSENT_COPY, signInReason, wordsFor } from '@app/core';
+import { signInReason, wordsFor } from '@app/core';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Slot } from 'expo-router';
 import { fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
@@ -71,10 +71,10 @@ it('names the app and what it may do, and allows it, back to the app', async () 
   read.mockResolvedValue(ASK);
   answer.mockResolvedValue('https://claude.ai/api/mcp/auth_callback?code=xyz&state=s');
   await open();
-  expect(await screen.findByRole('header', { name: CONSENT_COPY.heading('Claude') })).toBeOnTheScreen();
-  expect(screen.getByText(CONSENT_COPY.body('Claude'))).toBeOnTheScreen();
-  expect(screen.getByText(CONSENT_COPY.backTo('https://claude.ai/api/mcp/auth_callback'))).toBeOnTheScreen();
-  await fireEvent.press(screen.getByRole('button', { name: CONSENT_COPY.allow }));
+  expect(await screen.findByRole('header', { name: words('people.consent.heading', { app: 'Claude' }) })).toBeOnTheScreen();
+  expect(screen.getByText(words('people.consent.body', { app: 'Claude' }))).toBeOnTheScreen();
+  expect(screen.getByText(words('people.consent.backTo', { uri: 'https://claude.ai/api/mcp/auth_callback' }))).toBeOnTheScreen();
+  await fireEvent.press(screen.getByRole('button', { name: words('people.consent.allow') }));
   expect(answer).toHaveBeenCalledWith('auth123', true);
   await waitFor(() => expect(assign).toHaveBeenCalledWith('https://claude.ai/api/mcp/auth_callback?code=xyz&state=s'));
 });
@@ -84,7 +84,7 @@ it("says no, back to the app", async () => {
   read.mockResolvedValue(ASK);
   answer.mockResolvedValue('https://claude.ai/api/mcp/auth_callback?error=access_denied');
   await open();
-  await fireEvent.press(await screen.findByRole('button', { name: CONSENT_COPY.deny }));
+  await fireEvent.press(await screen.findByRole('button', { name: words('people.consent.deny') }));
   expect(answer).toHaveBeenCalledWith('auth123', false);
   await waitFor(() => expect(assign).toHaveBeenCalledWith('https://claude.ai/api/mcp/auth_callback?error=access_denied'));
 });
@@ -97,5 +97,5 @@ it('goes straight back to an app already allowed, and says when the link has exp
 
   read.mockRejectedValue(new Error('gone'));
   await open('old');
-  expect(await screen.findByRole('header', { name: CONSENT_COPY.gone })).toBeOnTheScreen();
+  expect(await screen.findByRole('header', { name: words('people.consent.gone') })).toBeOnTheScreen();
 });

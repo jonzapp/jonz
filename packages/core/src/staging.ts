@@ -12,15 +12,3 @@ export const DEMO_HOUSEMATES = [
 ] as const;
 
 export type DemoHousemate = (typeof DEMO_HOUSEMATES)[number];
-
-/** The words only staging shows. */
-export const STAGING_COPY = {
-  ribbon: "Staging: demo data, not jonz.app",
-  demoLabel: "Staging",
-  demoBody: "Sign in as one of the demo house’s housemates.",
-  password: "Staging password",
-  passwordHint: "The one you set for staging. This browser keeps it.",
-  as: (name: string) => `Sign in as ${name}`,
-  busy: "Signing in…",
-  failed: "That password didn’t work for the demo house.",
-} as const;

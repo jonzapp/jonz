@@ -1,4 +1,4 @@
-import { DELETE_COPY, deletionDay, type DeletionStatus } from '@app/core';
+import { deletionDay, type DeletionStatus } from '@app/core';
 import { useState } from 'react';
 
 import { keepAccount } from '@/api/account';
@@ -44,16 +44,16 @@ export function BeingDeleted({ deletion }: { deletion: DeletionStatus }) {
     }
   }
 
-  const body = `${DELETE_COPY.goesOn(deletionDay(deletion.deleteAfter))} ${house ? DELETE_COPY.nothingGone : DELETE_COPY.nothingGoneNoHouse}`;
+  const body = `${words('people.delete.goesOn', { day: deletionDay(deletion.deleteAfter) })} ${house ? words('people.delete.nothingGone') : words('people.delete.nothingGoneNoHouse')}`;
   return (
     <Door home testID="being-deleted">
       <PageTitle page={words('common.title.deleteAccount')} />
       <Sign>
-        <SignHeading title={DELETE_COPY.beingDeleted} body={body} />
+        <SignHeading title={words('people.delete.beingDeleted')} body={body} />
         {problem ? <Alert message={problem} /> : null}
         {/* Not one row, so each holds still while the other waits. */}
         <Button
-          label={DELETE_COPY.keep}
+          label={words('people.delete.keep')}
           busy={waiting === 'keep'}
           busyLabel={words('common.busy.keeping')}
           disabled={waiting === 'out'}
@@ -62,7 +62,7 @@ export function BeingDeleted({ deletion }: { deletion: DeletionStatus }) {
         />
         <Button
           variant="outline"
-          label={DELETE_COPY.signOut}
+          label={words('people.delete.signOut')}
           busy={waiting === 'out'}
           busyLabel={words('common.busy.signingOut')}
           disabled={waiting === 'keep'}

@@ -1,18 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  confirmsDelete,
-  DELETE_COPY,
-  DELETE_PATH,
-  DELETION_DAYS,
-  deletedOnDay,
-  deletionDay,
-  passDay,
-  previewFromRow,
-  statusFromRow,
-} from "./account-deletion";
+import { confirmsDelete, DELETE_PATH, DELETION_DAYS, deletedOnDay, deletionDay, passDay, previewFromRow, statusFromRow } from "./account-deletion";
 import { signInPath, signInReason } from "./auth-paths";
 import { LEGAL, PRIVACY_POLICY } from "./legal";
+import { wordsFor } from "./words-for";
+
+const words = wordsFor("en", "housemates");
 
 describe("deleting an account", () => {
   it("needs the word typed, however it's cased or spaced, and nothing else", () => {
@@ -56,7 +49,7 @@ describe("deleting an account", () => {
   it("is at jonz.app/delete, which sign-in comes back to", () => {
     expect(`${LEGAL.site}${DELETE_PATH}`).toBe("https://jonz.app/delete");
     expect(signInPath(DELETE_PATH)).toBe("/signin?next=%2Fdelete");
-    expect(signInReason(DELETE_PATH)).toBe(DELETE_COPY.signInReason);
+    expect(signInReason(DELETE_PATH)).toBe(words('people.delete.signInReason'));
   });
 
   it("is in the Privacy Policy as it works: in the app or on the web, 30 days to change your mind", () => {

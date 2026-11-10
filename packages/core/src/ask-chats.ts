@@ -1,3 +1,4 @@
+import type { Words } from "./words-for";
 import { z } from "zod";
 
 import { dayLabel } from "./format";
@@ -32,10 +33,10 @@ export const CHAT_SAVED_TURNS = 200;
 export const CHAT_TITLE_MAX = 44;
 
 /** A chat's title: the first thing they said, on one line, cut at a word to fit CHAT_TITLE_MAX. */
-export function chatTitle(turns: readonly SavedTurn[]): string {
+export function chatTitle(turns: readonly SavedTurn[], words: Words): string {
   const first = turns.find((t) => t.role === "user")?.text ?? "";
   const line = first.replace(/\s+/g, " ").trim();
-  if (line.length <= CHAT_TITLE_MAX) return line || ASK_CHATS_COPY.untitled;
+  if (line.length <= CHAT_TITLE_MAX) return line || words('ask.chats.untitled');
   const cut = line.slice(0, CHAT_TITLE_MAX - 1);
   const at = cut.lastIndexOf(" ");
   return `${(at > CHAT_TITLE_MAX / 2 ? cut.slice(0, at) : cut).replace(/[\s,.;:–-]+$/, "")}…`;
@@ -51,11 +52,11 @@ export function savedTurns(raw: unknown): SavedTurn[] {
 }
 
 /** When a chat was last used: "Today", "Yesterday", else "Mon 3 Nov". */
-export function chatWhen(at: Date, now: Date, zone: string): string {
+export function chatWhen(at: Date, now: Date, zone: string, words: Words): string {
   const day = localDate(at, zone);
   const today = localDate(now, zone);
-  if (day === today) return ASK_CHATS_COPY.today;
-  if (day === addDaysTo(today, -1)) return ASK_CHATS_COPY.yesterday;
+  if (day === today) return words('ask.chats.today');
+  if (day === addDaysTo(today, -1)) return words('ask.chats.yesterday');
   return dayLabel(at, zone);
 }
 
@@ -63,14 +64,14 @@ export function chatWhen(at: Date, now: Date, zone: string): string {
 export function chatGroups<T extends { updatedAt: string }>(
   chats: readonly T[],
   now: Date,
-  zone: string,
+  zone: string, words: Words,
 ): { label: string; chats: T[] }[] {
   const today = localDate(now, zone);
   const weekAgo = addDaysTo(today, -7);
   const groups = [
-    { label: ASK_CHATS_COPY.today, chats: [] as T[] },
-    { label: ASK_CHATS_COPY.lastWeek, chats: [] as T[] },
-    { label: ASK_CHATS_COPY.earlier, chats: [] as T[] },
+    { label: words('ask.chats.today'), chats: [] as T[] },
+    { label: words('ask.chats.lastWeek'), chats: [] as T[] },
+    { label: words('ask.chats.earlier'), chats: [] as T[] },
   ];
   for (const chat of chats) {
     const day = localDate(new Date(chat.updatedAt), zone);
@@ -78,28 +79,3 @@ export function chatGroups<T extends { updatedAt: string }>(
   }
   return groups.filter((g) => g.chats.length > 0);
 }
-
-export const ASK_CHATS_COPY = {
-  all: "Your chats",
-  /** While your chats are read, to a screen reader. */
-  reading: "Reading your chats",
-  unreadable: "Couldn’t read your chats.",
-  /** Ask Jonz's leading button, to a screen reader. */
-  open: "Your chats",
-  lastWeek: "Last 7 days",
-  earlier: "Earlier",
-  allNote: "Only you can see your chats. They’re kept until you delete them, and go if you leave the house or delete your account.",
-  none: "No chats yet. What you ask Jonz is kept here.",
-  newChat: "New chat",
-  today: "Today",
-  yesterday: "Yesterday",
-  untitled: "A chat with Jonz",
-  delete: "Delete",
-  deleteChat: (title: string) => `Delete “${title}”`,
-  deleteTitle: "Delete this chat?",
-  deleteBody: "It’s gone for good. Anything it changed in the house stays changed.",
-  deleted: "Chat deleted.",
-  /** Under a reply in a reopened chat that had a card then. */
-  oldCard: "This had a card earlier. Ask again to change things now.",
-  privacy: "Only you can see your chats. They’re kept until you delete them.",
-} as const;

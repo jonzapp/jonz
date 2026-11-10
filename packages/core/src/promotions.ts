@@ -1,8 +1,8 @@
+import type { Words } from "./words-for";
 import { tz } from "@date-fns/tz";
 import { format } from "date-fns";
 import { z } from "zod";
 
-import { APP_NAME } from "./app";
 import { CURRENCIES, type Currency } from "./domain";
 import { formatMoney } from "./money";
 import { hasPass, PASS_PRICES, PASS_PURCHASES, type HousePass, type PassPurchase } from "./pass";
@@ -400,42 +400,6 @@ export const OfferView = z.object({
 });
 export type OfferView = z.infer<typeof OfferView>;
 
-export const PROMOTION_COPY = {
-  /** The line under the legend on the sign, and the share card's. */
-  plate: `Your House Pass, a gift from ${APP_NAME}.`,
-  endedLegend: "Offer ended",
-  endedPlate: "Ask for a new link.",
-  useIt: "Use it",
-  /** The small print, for a named promotion's email. */
-  smallPrint: (email: string, until: string | null, gift: boolean) =>
-    `It works when you sign in to ${APP_NAME} as ${email}${until ? `, until ${until}` : ""}.${gift ? " No card needed." : " You pay on the next page and can cancel any time."}`,
-  emailWhy: `A gift from ${APP_NAME}, sent only to you.`,
-} as const;
-
-/**
- * The page an offer's link opens (apps/client/src/app/offer): a taped sign
- * with what it gives, and Use it for whoever it's for.
- */
-export const OFFER_PAGE_COPY = {
-  page: "Your offer",
-  giftFrom: `A gift from ${APP_NAME}`,
-  signIn: "Sign in to use it",
-  signedInAs: (email: string) => `Signed in as ${email}.`,
-  noHouse: "Start or join a house first, then open this link again.",
-  startHouse: "Start a house",
-  ended: "This offer has ended",
-  endedBody: "Ask for a new link.",
-  unknown: "This link doesn’t open an offer",
-  unknownBody: "Check it, or ask for a new one.",
-  goHome: `Go to ${APP_NAME}`,
-  goToHouse: "Go to your house",
-  noCard: "No card needed.",
-  payNext: "You pay on the next page and can cancel any time.",
-  using: "Opening…",
-  /** Money off needs Stripe Checkout, which only the web build opens. */
-  webOnly: "Open this link on jonz.app in a browser to use it.",
-} as const;
-
 /** The offer code in an offer link's path, as typed (upper-cased), or null when it can't be one. */
 export function offerCodeIn(path: string): string | null {
   const match = /^\/offer\/([^/?#]+)\/?$/.exec(path);
@@ -447,4 +411,9 @@ export function offerCodeIn(path: string): string | null {
 export function offerCode(raw: string): string | null {
   const code = raw.trim().toUpperCase();
   return /^[A-Z0-9]{4,20}$/.test(code) ? code : null;
+}
+
+/** An offer's small print: who it's for, how long, and whether a card is needed. */
+export function offerSmallPrint(email: string, until: string | null, gift: boolean, words: Words): string {
+  return words("house.promotion.smallPrint", { email, hasUntil: until !== null, until: until ?? "", gift });
 }

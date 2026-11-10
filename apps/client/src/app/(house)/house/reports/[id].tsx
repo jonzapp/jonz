@@ -1,4 +1,4 @@
-import { REPORT_COPY, reportGist } from '@app/core';
+import { reportSentAt, reportGist } from '@app/core';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
 import { MessagesSquareIcon } from 'lucide-react-native';
@@ -15,6 +15,7 @@ import { TitleBar } from '@/components/title-bar';
 import { GUTTER, SPACE, useTheme } from '@/theme';
 import { Waiting } from '@/components/waiting';
 import { ArticleOutline } from '@/components/page-outlines';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * One of your reports, as a chat: what it's about and where it's got to at
@@ -23,6 +24,7 @@ import { ArticleOutline } from '@/components/page-outlines';
  * that stays put above the keyboard.
  */
 export default function ReportScreen() {
+  const words = useWords();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const client = useQueryClient();
@@ -39,15 +41,15 @@ export default function ReportScreen() {
   };
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]} testID="your-report">
-      <TitleBar title={REPORT_COPY.yourReport} back="/house/reports" backLabel={REPORT_COPY.yours} />
-      <PageTitle page={REPORT_COPY.yourReport} />
+      <TitleBar title={words('common.report.yourReport')} back="/house/reports" backLabel={words('common.report.yours')} />
+      <PageTitle page={words('common.report.yourReport')} />
       {report.data === undefined ? (
         <View style={styles.reading}>
           <Waiting ready={false} failed={report.isError} onRetry={() => void report.refetch()} outline={<ArticleOutline />} />
         </View>
       ) : report.data === null ? (
         <View style={styles.reading}>
-          <EmptyState icon={MessagesSquareIcon} title={REPORT_COPY.missing} body={REPORT_COPY.missingBody} />
+          <EmptyState icon={MessagesSquareIcon} title={words('common.report.missing')} body={words('common.report.missingBody')} />
         </View>
       ) : (
         <YourReport report={report.data} onSend={send} />
@@ -57,8 +59,9 @@ export default function ReportScreen() {
 }
 
 function YourReport({ report, onSend }: { report: Report; onSend: (text: string) => Promise<void> }) {
+  const words = useWords();
   return (
-    <ChatLog foot={<ReplyBox placeholder={REPORT_COPY.writeBack} onSend={onSend} testID="write-back" />}>
+    <ChatLog foot={<ReplyBox placeholder={words('common.report.writeBack')} onSend={onSend} testID="write-back" />}>
       <View style={styles.head}>
         <View style={styles.titleLine}>
           <Lead header style={styles.title}>
@@ -66,7 +69,7 @@ function YourReport({ report, onSend }: { report: Report; onSend: (text: string)
           </Lead>
           <ReportChip state={report.state} testID="your-report-state" />
         </View>
-        <Meta>{REPORT_COPY.sentAt(report.kind, said(report.sentAt))}</Meta>
+        <Meta>{reportSentAt(report.kind, said(report.sentAt), words)}</Meta>
       </View>
       <ReportThread report={report} viewer="them" />
     </ChatLog>

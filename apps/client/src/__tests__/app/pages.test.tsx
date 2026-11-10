@@ -1,4 +1,4 @@
-import { HELP_PAGE, LEGAL_COPY, PRIVACY_POLICY, REPORT_COPY, TERMS, wordsFor } from '@app/core';
+import { HELP_PAGE, LEGAL_COPY, PRIVACY_POLICY, TERMS, wordsFor } from '@app/core';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 import { renderRouter, screen as routed } from 'expo-router/testing-library';
 import { Text, useWindowDimensions } from 'react-native';
@@ -100,7 +100,7 @@ it('lets someone signed in tell us what happened when a screen broke, with what 
   await fireEvent.press(await screen.findByTestId('crash-report'));
   const form = await screen.findByTestId('report-form');
   expect(within(form).getByTestId('report-send-details')).toHaveTextContent(/Cannot read the week/);
-  await fireEvent.changeText(within(form).getByLabelText(REPORT_COPY.words.problem), 'I opened the Week and it went blank.');
+  await fireEvent.changeText(within(form).getByLabelText(words('common.report.words.problem')), 'I opened the Week and it went blank.');
   await fireEvent.press(within(form).getByTestId('report-send'));
   await waitFor(() =>
     expect(sendReport).toHaveBeenCalledWith(expect.objectContaining({ kind: 'problem', details: expect.objectContaining({ error: 'Cannot read the week' }) })),

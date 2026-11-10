@@ -1,4 +1,4 @@
-import { BIN_NIGHT } from '@app/core';
+import { BIN_NIGHT, wordsFor } from '@app/core';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { Platform, ScrollView, StyleSheet, Text, useWindowDimensions } from 'react-native';
 
@@ -7,7 +7,6 @@ import { measureAt, measureNowhere } from '@/testing/layout';
 import { LookContext, RAIL, SPACE } from '@/theme';
 
 import { Sheet, SheetAnchor, SheetRailContext } from './sheet';
-import { wordsFor } from '@app/core';
 
 const words = wordsFor('en', 'housemates');
 

@@ -1,4 +1,4 @@
-import { DELETE_COPY, wordsFor } from '@app/core';
+import { wordsFor } from '@app/core';
 import { screen, within } from 'expo-router/testing-library';
 import { useWindowDimensions } from 'react-native';
 
@@ -56,7 +56,7 @@ it('holds your settings, help and leaving, in one column on a phone', async () =
   expect(screen.queryByTestId('you-pair')).toBeNull();
   expect(within(screen.getByTestId('you-section')).getByText(words('house.month.you'))).toBeOnTheScreen();
   expect(screen.getByTestId('sign-out')).toBeOnTheScreen();
-  expect(within(screen.getByTestId('you-rest')).getByText(DELETE_COPY.leave)).toBeOnTheScreen();
+  expect(within(screen.getByTestId('you-rest')).getByText(words('people.delete.leave'))).toBeOnTheScreen();
   expect(screen.getByTestId('to-delete-account')).toBeOnTheScreen();
   expect(screen.getByTestId('leave')).toBeOnTheScreen();
   // Each part once: your settings aren't in the second half, nor leaving in the first.

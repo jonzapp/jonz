@@ -1,4 +1,4 @@
-import { DELETE_COPY } from '@app/core';
+import { DELETION_DAYS, wordsFor } from "@app/core";
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 
 import { deletionPreview, keepAccount, requestDeletion } from '@/api/account';
@@ -13,6 +13,8 @@ import { snapshot } from '@/testing/house';
 import { renderPages } from '@/testing/pages';
 
 import { BeingDeleted } from './being-deleted';
+
+const words = wordsFor("en", "housemates");
 
 jest.mock('@/api/account', () => ({ deletionPreview: jest.fn(), requestDeletion: jest.fn(), keepAccount: jest.fn() }));
 jest.mock('@/api/auth', () => ({ signOut: jest.fn() }));
@@ -58,19 +60,19 @@ describe('in House', () => {
       return view ? <YouSection houseId="h1" userId="priya" view={view} /> : null;
     }
     await renderPages({ 'house/index': Host }, '/house');
-    expect(await screen.findByRole('header', { name: DELETE_COPY.leave })).toBeOnTheScreen();
+    expect(await screen.findByRole('header', { name: words('people.delete.leave') })).toBeOnTheScreen();
     expect(screen.getByTestId('to-moving')).toBeOnTheScreen();
-    expect(screen.getByTestId('to-delete-account')).toHaveTextContent(DELETE_COPY.row);
-    expect(screen.getByText(DELETE_COPY.elsewhere)).toBeOnTheScreen();
+    expect(screen.getByTestId('to-delete-account')).toHaveTextContent(words('people.delete.row'));
+    expect(screen.getByText(words('people.delete.elsewhere'))).toBeOnTheScreen();
   });
 
   it('says what goes, what stays with the house, and that the Pass stops renewing', async () => {
     const sheet = await openSheet();
-    expect(sheet.getByRole('header', { name: DELETE_COPY.title })).toBeOnTheScreen();
-    expect(sheet.getByText(DELETE_COPY.goes, { exact: false })).toBeOnTheScreen();
-    expect(await sheet.findByTestId('delete-stays')).toHaveTextContent(`Stays with The Annexe: ${DELETE_COPY.stays}`);
+    expect(sheet.getByRole('header', { name: words('people.delete.title') })).toBeOnTheScreen();
+    expect(sheet.getByText(words('people.delete.goes'), { exact: false })).toBeOnTheScreen();
+    expect(await sheet.findByTestId('delete-stays')).toHaveTextContent(`Stays with The Annexe: ${words('people.delete.stays')}`);
     expect(sheet.getByTestId('delete-pass')).toHaveTextContent('Your House Pass stops renewing. It covers the house until 12 Oct 2027.');
-    expect(sheet.getByTestId('delete-wait')).toHaveTextContent(DELETE_COPY.wait);
+    expect(sheet.getByTestId('delete-wait')).toHaveTextContent(words('people.delete.wait', { days: DELETION_DAYS }));
   });
 
   it('leaves out the Pass for someone who doesn’t pay for one', async () => {
@@ -83,9 +85,9 @@ describe('in House', () => {
   it('waits for DELETE to be typed, then asks and reads the account again', async () => {
     const sheet = await openSheet();
     expect(sheet.getByTestId('delete-account')).toBeDisabled();
-    await fireEvent.changeText(sheet.getByLabelText(DELETE_COPY.typeLabel), 'DELE');
+    await fireEvent.changeText(sheet.getByLabelText(words('people.delete.typeLabel')), 'DELE');
     expect(sheet.getByTestId('delete-account')).toBeDisabled();
-    await fireEvent.changeText(sheet.getByLabelText(DELETE_COPY.typeLabel), 'delete');
+    await fireEvent.changeText(sheet.getByLabelText(words('people.delete.typeLabel')), 'delete');
     expect(sheet.getByTestId('delete-account')).toBeEnabled();
     await fireEvent.press(sheet.getByTestId('delete-account'));
     expect(requestDeletion).toHaveBeenCalledTimes(1);
@@ -96,7 +98,7 @@ describe('in House', () => {
   it('says why when it couldn’t, and keeps the sheet open', async () => {
     jest.mocked(requestDeletion).mockRejectedValue(new Error('Something went wrong. Try again.'));
     const sheet = await openSheet();
-    await fireEvent.changeText(sheet.getByLabelText(DELETE_COPY.typeLabel), 'DELETE');
+    await fireEvent.changeText(sheet.getByLabelText(words('people.delete.typeLabel')), 'DELETE');
     await fireEvent.press(sheet.getByTestId('delete-account'));
     expect(await sheet.findByText('Something went wrong. Try again.')).toBeOnTheScreen();
     expect(refresh).not.toHaveBeenCalled();
@@ -115,7 +117,7 @@ describe('while it waits', () => {
 
   it('says when it goes, and Keep my account stops it', async () => {
     await renderPages({ index: () => <BeingDeleted deletion={deletion} /> }, '/');
-    expect(screen.getByText(DELETE_COPY.beingDeleted)).toBeOnTheScreen();
+    expect(screen.getByText(words('people.delete.beingDeleted'))).toBeOnTheScreen();
     expect(screen.getByText(/It goes for good on Sun 29 Nov\. Until then nothing is gone, and your house still sees you as away\./)).toBeOnTheScreen();
     await fireEvent.press(screen.getByTestId('keep-account'));
     expect(keepAccount).toHaveBeenCalled();
@@ -136,10 +138,10 @@ describe('jonz.app/delete', () => {
   it('signed out, says what goes and stays, and signs in on the way back here', async () => {
     jest.mocked(useMembership).mockReturnValue({ session: null, house: null, refresh } as unknown as ReturnType<typeof useMembership>);
     await renderPages({ delete: DeletePage }, '/delete');
-    expect(screen.getByText(DELETE_COPY.pageTitle)).toBeOnTheScreen();
-    expect(screen.getByText(DELETE_COPY.stays, { exact: false })).toBeOnTheScreen();
-    expect(screen.getByText(DELETE_COPY.passAny)).toBeOnTheScreen();
-    expect(screen.getByText(DELETE_COPY.cantSignIn)).toBeOnTheScreen();
+    expect(screen.getByText(words('people.delete.pageTitle'))).toBeOnTheScreen();
+    expect(screen.getByText(words('people.delete.stays'), { exact: false })).toBeOnTheScreen();
+    expect(screen.getByText(words('people.delete.passAny'))).toBeOnTheScreen();
+    expect(screen.getByText(words('people.delete.cantSignIn'))).toBeOnTheScreen();
     expect(screen.getByTestId('sign-in-to-delete')).toHaveProp('href', '/signin?next=%2Fdelete');
     expect(deletionPreview).not.toHaveBeenCalled();
   });

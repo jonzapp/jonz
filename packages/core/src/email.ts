@@ -3,7 +3,7 @@ import type { Currency } from "./domain";
 import { LEGAL } from "./legal";
 import type { NoticeKind } from "./notices";
 import { refTag } from "./inbound-email";
-import { PROMOTION_COPY, promotionPrices, promotionSentence, promotionTitle, type PromotionTerms } from "./promotions";
+import { offerSmallPrint, promotionPrices, promotionSentence, promotionTitle, type PromotionTerms } from "./promotions";
 import { type ReportKind, reportGist } from "./reports";
 import { escapeHtml } from "./share";
 import { wordsFor } from "./words-for";
@@ -412,9 +412,9 @@ export function offerEmail(args: {
       { type: "text", text: hi(args.name) },
       ...(args.note ? [{ type: "text" as const, text: args.note }] : []),
       ...(rows.length ? [{ type: "rows" as const, rows }] : []),
-      { type: "button", label: PROMOTION_COPY.useIt, url: args.url },
-      { type: "small", text: PROMOTION_COPY.smallPrint(args.email, until, args.terms.kind === "gift") },
+      { type: "button", label: words('house.promotion.useIt'), url: args.url },
+      { type: "small", text: offerSmallPrint(args.email, until, args.terms.kind === "gift", words) },
     ],
-    why: PROMOTION_COPY.emailWhy,
+    why: words('house.promotion.emailWhy'),
   });
 }

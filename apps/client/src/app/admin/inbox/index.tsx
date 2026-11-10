@@ -1,4 +1,4 @@
-import { REPORT_COPY, REPORT_FACETS, REPORT_WHEN, reportAge, reportGist, type ListAsk } from '@app/core';
+import { REPORT_FACETS, REPORT_WHEN, reportAge, reportGist, type ListAsk, type Words } from '@app/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { InboxIcon } from 'lucide-react-native';
 import { useState } from 'react';
@@ -14,16 +14,16 @@ import { INBOX_KEY, ReportPanel } from '@/components/admin/report-panel';
 import { Columns, Screen, useColumns } from '@/components/screen';
 import { TitleBar } from '@/components/title-bar';
 import { SPACE } from '@/theme';
-
+import { useWords } from '@/hooks/use-words';
 
 /** The Inbox's columns on a laptop. */
-const INBOX_TABLE: readonly ListColumn[] = [
-  { key: 'from', label: REPORT_COPY.from, width: 132 },
-  { key: 'what', label: REPORT_COPY.what, flex: 1 },
-  { key: 'kind', label: REPORT_COPY.kindColumn, width: 84 },
-  { key: 'by', label: REPORT_COPY.byColumn, width: 64 },
-  { key: 'state', label: REPORT_COPY.stateColumn, width: 104 },
-  { key: 'when', label: REPORT_COPY.when, width: 64, end: true },
+const inboxTable = (words: Words): readonly ListColumn[] => [
+  { key: 'from', label: words('common.report.from'), width: 132 },
+  { key: 'what', label: words('common.report.what'), flex: 1 },
+  { key: 'kind', label: words('common.report.kindColumn'), width: 84 },
+  { key: 'by', label: words('common.report.byColumn'), width: 64 },
+  { key: 'state', label: words('common.report.stateColumn'), width: 104 },
+  { key: 'when', label: words('common.report.when'), width: 64, end: true },
 ];
 
 /**
@@ -32,6 +32,7 @@ const INBOX_TABLE: readonly ListColumn[] = [
  * beside the list; on a phone it's a page of its own.
  */
 export default function InboxPage() {
+  const words = useWords();
   const busy = useBusyList({
     key: INBOX_KEY,
     facets: REPORT_FACETS,
@@ -40,13 +41,14 @@ export default function InboxPage() {
     count: (ask) => inboxCount(inboxFilter(ask)),
   });
   return (
-    <Screen spreads bar={<TitleBar title={REPORT_COPY.inbox} />} onNearEnd={busy.onNearEnd} testID="admin-inbox">
+    <Screen spreads bar={<TitleBar title={words('common.report.inbox')} />} onNearEnd={busy.onNearEnd} testID="admin-inbox">
       <Inbox busy={busy} />
     </Screen>
   );
 }
 
 function Inbox({ busy }: { busy: BusyList<InboxRow> }) {
+  const words = useWords();
   const two = useColumns();
   // A link in (the Overview's Needs you, a pushed page opened on a laptop) names the one to open with ?open=.
   const { open } = useLocalSearchParams<{ open?: string }>();
@@ -57,18 +59,18 @@ function Inbox({ busy }: { busy: BusyList<InboxRow> }) {
     <BusyListView
       busy={busy}
       name="inbox"
-      placeholder={REPORT_COPY.searchPlaceholder}
-      noun={REPORT_COPY.count}
-      columns={INBOX_TABLE}
+      placeholder={words('common.report.searchPlaceholder')}
+      noun={(count: string) => words('common.report.count', { count })}
+      columns={inboxTable(words)}
       tableRow={(report) => (
         <ListTableRow
           key={report.id}
-          columns={INBOX_TABLE}
+          columns={inboxTable(words)}
           cells={{
-            from: report.name ?? REPORT_COPY.gone,
-            what: whatOf(report),
-            kind: REPORT_COPY.kind[report.kind],
-            by: REPORT_COPY.source[report.source],
+            from: report.name ?? words('common.report.gone'),
+            what: whatOf(report, words),
+            kind: words(`common.report.kind.${report.kind}` as const),
+            by: words(`common.report.source.${report.source}` as const),
             state: <ReportChip state={report.state} owner />,
             when: reportAge(report.sentAt, now),
           }}
@@ -76,19 +78,19 @@ function Inbox({ busy }: { busy: BusyList<InboxRow> }) {
           strong={['from']}
           chosen={shownId === report.id}
           onPress={() => setChosen(report.id)}
-          accessibilityLabel={`${report.name ?? REPORT_COPY.gone}, ${reportGist(report.words)}`}
+          accessibilityLabel={`${report.name ?? words('common.report.gone')}, ${reportGist(report.words)}`}
           testID={`inbox-${report.id}`}
         />
       )}
       row={(report) => (
         <Row
           key={report.id}
-          leading={<Avatar name={report.name ?? REPORT_COPY.gone} userId={report.userId ?? report.id} />}
-          title={report.name ?? REPORT_COPY.gone}
-          meta={`${whatOf(report)}\n${[
-            REPORT_COPY.kind[report.kind],
-            report.source === 'email' ? REPORT_COPY.byEmail.toLowerCase() : null,
-            report.house ?? (report.source === 'email' ? null : REPORT_COPY.noHouse),
+          leading={<Avatar name={report.name ?? words('common.report.gone')} userId={report.userId ?? report.id} />}
+          title={report.name ?? words('common.report.gone')}
+          meta={`${whatOf(report, words)}\n${[
+            words(`common.report.kind.${report.kind}` as const),
+            report.source === 'email' ? words('common.report.byEmail').toLowerCase() : null,
+            report.house ?? (report.source === 'email' ? null : words('common.report.noHouse')),
             reportAge(report.sentAt, now),
           ]
             .filter(Boolean)
@@ -100,7 +102,7 @@ function Inbox({ busy }: { busy: BusyList<InboxRow> }) {
           testID={`inbox-${report.id}`}
         />
       )}
-      empty={{ icon: InboxIcon, title: REPORT_COPY.empty, body: REPORT_COPY.emptyBody }}
+      empty={{ icon: InboxIcon, title: words('common.report.empty'), body: words('common.report.emptyBody') }}
     />
   );
   // A report the panel leads to (the one it's the same as) may not be in this page of the list.
@@ -109,9 +111,9 @@ function Inbox({ busy }: { busy: BusyList<InboxRow> }) {
 }
 
 /** What they said, short, with how many more reported the same thing. */
-function whatOf(report: InboxRow): string {
+function whatOf(report: InboxRow, words: Words): string {
   const gist = reportGist(report.subject && report.source === 'email' ? `${report.subject}: ${report.words}` : report.words);
-  return report.also > 0 ? `${gist} ${REPORT_COPY.also(report.also)}` : gist;
+  return report.also > 0 ? `${gist} ${words('common.report.also', { count: report.also })}` : gist;
 }
 
 const styles = StyleSheet.create({

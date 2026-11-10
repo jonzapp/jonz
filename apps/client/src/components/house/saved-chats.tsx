@@ -1,4 +1,4 @@
-import { ASK_CHATS_COPY, chatGroups, chatWhen } from '@app/core';
+import { chatGroups, chatWhen } from '@app/core';
 import { MessagesSquareIcon, Trash2Icon } from 'lucide-react-native';
 import { useState, type ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -32,11 +32,12 @@ function ChatRow({
   onOpen: (id: string) => void;
   trailing: ReactNode;
 }) {
+  const words = useWords();
   return (
     <Row
       title={chat.title}
       titleLines={2}
-      meta={chatWhen(new Date(chat.updatedAt), now, zone)}
+      meta={chatWhen(new Date(chat.updatedAt), now, zone, words)}
       leading={<RowIcon icon={MessagesSquareIcon} />}
       trailing={trailing}
       onPress={() => onOpen(chat.id)}
@@ -60,8 +61,8 @@ export function AllChats({
   now,
   onOpen,
   onDeleted,
-  note = ASK_CHATS_COPY.allNote,
-  deleteBody = ASK_CHATS_COPY.deleteBody,
+  note,
+  deleteBody,
 }: {
   store: ChatStore;
   zone: string;
@@ -73,6 +74,8 @@ export function AllChats({
   deleteBody?: string;
 }) {
   const words = useWords();
+  deleteBody ??= words('ask.chats.deleteBody');
+  note ??= words('ask.chats.allNote');
   const chats = useQuery({ queryKey: store.key, queryFn: store.list });
   const client = useQueryClient();
   const toast = useToastIfAny();
@@ -91,7 +94,7 @@ export function AllChats({
       await client.invalidateQueries({ queryKey: store.key });
       setDoomed(null);
       onDeleted(id);
-      toast?.show(ASK_CHATS_COPY.deleted);
+      toast?.show(words('ask.chats.deleted'));
     } catch (reason) {
       setProblem(reason instanceof Error ? reason.message : String(reason));
     } finally {
@@ -103,12 +106,12 @@ export function AllChats({
     <ScrollView contentContainerStyle={styles.page} testID="all-chats">
       {chats.data === undefined ? (
         chats.isError ? (
-          <ReadFailed message={ASK_CHATS_COPY.unreadable} onRetry={() => void chats.refetch()} />
+          <ReadFailed message={words('ask.chats.unreadable')} onRetry={() => void chats.refetch()} />
         ) : (
           // The chats in outline: a label and a few rows, the way a day's group of them looks.
           <Waiting
             ready={false}
-            label={ASK_CHATS_COPY.reading}
+            label={words('ask.chats.reading')}
             outline={
 <OutlineGroup rows={4} lead="none" end />
             }
@@ -116,10 +119,10 @@ export function AllChats({
         )
       ) : list.length === 0 ? (
         <Group>
-          <Row title={ASK_CHATS_COPY.none} titleLines={2} testID="chats-none" />
+          <Row title={words('ask.chats.none')} titleLines={2} testID="chats-none" />
         </Group>
       ) : (
-        chatGroups(list, now, zone).map((group) => (
+        chatGroups(list, now, zone, words).map((group) => (
           <Section key={group.label} label={group.label} testID="chats-group">
             {group.chats.map((c) => (
               <ChatRow
@@ -131,7 +134,7 @@ export function AllChats({
                 trailing={
                   <IconButton
                     icon={Trash2Icon}
-                    label={ASK_CHATS_COPY.deleteChat(c.title)}
+                    label={words('ask.chats.deleteChat', { title: c.title })}
                     onPress={() => setDoomed(c)}
                     testID="chat-delete"
                   />
@@ -144,9 +147,9 @@ export function AllChats({
       <Meta style={styles.note}>{note}</Meta>
       <ConfirmSheet
         visible={doomed !== null}
-        title={ASK_CHATS_COPY.deleteTitle}
+        title={words('ask.chats.deleteTitle')}
         body={deleteBody}
-        confirmLabel={ASK_CHATS_COPY.delete}
+        confirmLabel={words('ask.chats.delete')}
         icon={Trash2Icon}
         busy={pending}
         busyLabel={words('common.busy.deleting')}

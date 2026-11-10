@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-import { APP_NAME } from "./app";
 import { OPERATIONS, type OperationName } from "./operations";
 
 // Approving a connected app's request (docs/specs/operation-registry.md,
@@ -59,58 +58,3 @@ export function approvalDetails(row: ApprovalRow): { label: string; value: strin
 export const CONSENT_PATH = "/oauth/consent";
 export const CONSENT_PATH_WITH_ID = /^\/oauth\/consent\?authorization_id=[A-Za-z0-9_-]+$/;
 export const consentPath = (authorizationId: string) => `${CONSENT_PATH}?authorization_id=${encodeURIComponent(authorizationId)}`;
-
-/** The consent page: an app asking to use Jonz as you. */
-export const CONSENT_COPY = {
-  page: "Connect an app",
-  heading: (app: string) => `Let ${app} use ${APP_NAME}?`,
-  body: (app: string) =>
-    `${app} will see your house and can do what you can do in it, as you. Anything that can’t be undone still waits for you to approve it here.`,
-  website: (uri: string) => `From ${uri}.`,
-  backTo: (uri: string) => `You’ll go back to ${uri}.`,
-  allow: "Allow",
-  deny: "Don’t allow",
-  allowing: "Allowing…",
-  denying: "Going back…",
-  gone: "This sign-in link has expired",
-  goneBody: "Go back to the app and connect again.",
-  signInReason: "Sign in to connect an app to Jonz.",
-  signedInAs: (email: string) => `Signed in as ${email}.`,
-  goHome: `Go to ${APP_NAME}`,
-} as const;
-
-/** Connected apps, on You: what each can do and how to stop it. */
-export const CONNECTED_APPS_COPY = {
-  heading: "Connected apps",
-  none: "No apps are connected",
-  noneMeta: "An app you connect to Jonz over MCP shows here.",
-  since: (date: string) => `Connected ${date}.`,
-  disconnect: "Disconnect",
-  disconnecting: "Disconnecting…",
-  confirm: (app: string) => `Disconnect ${app}? It signs out at once and has to ask again to come back.`,
-} as const;
-
-export const APPROVE_COPY = {
-  page: "Approve a request",
-  heading: "Approve this?",
-  body: `An app you connected to ${APP_NAME} asked to do this. It can’t be undone, so it waits for you.`,
-  inHouse: (house: string) => `In ${house}.`,
-  approve: "Approve",
-  decline: "Decline",
-  approving: "Approving…",
-  declining: "Declining…",
-  approved: "Approved",
-  approvedBody: "Go back to the app. It carries on from here.",
-  done: "Done",
-  doneBody: "The app has already done this.",
-  declined: "Declined",
-  declinedBody: "Nothing was changed, and the app won’t do it.",
-  expired: "This request has expired",
-  expiredBody: "Nothing was changed. Ask the app again if you still want it.",
-  unknown: "This link doesn’t open a request",
-  unknownBody: "It may be someone else’s. Check you’re signed in with the right account.",
-  signIn: "Sign in to approve",
-  signInReason: "Sign in to approve a request from an app you connected.",
-  signedInAs: (email: string) => `Signed in as ${email}.`,
-  goHome: `Go to ${APP_NAME}`,
-} as const;
