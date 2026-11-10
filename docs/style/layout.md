@@ -39,8 +39,16 @@ still look right stretched (content capped, nothing pinned to far edges).
   (`Figures`: your month, the stake, the housemates, the John list), each
   opening its page, then settling up while there's any, then the Table
   beside the Wall's latest. Your own settings are on You, not the
-  Overview; on a phone a row at the Overview's foot opens it. (House
-  pages, 1 Nov)
+  Overview. (House pages, 1 Nov)
+- **On a phone House is two halves under a switch,** "Overview" and "Setup
+  and you": the figures, settling up, the Table and the Wall, or the house's
+  setup, the House Pass and the row to You. The switch stays where you left
+  it on the way back from a setup page. A laptop needs none: the list of
+  House's pages is beside the Overview. (House on a phone B, 10 Nov)
+- **A kid's House is one short page:** pocket money, the Table, the Wall,
+  then "How the family runs" (the Johns, the rules and time away to read,
+  "Set by your parents") and You. No invite, no Ask Jonz usage, no Pass, on
+  the page or in the laptop's list. (A kid's House B, 10 Nov)
 
 ## The title bar
 
@@ -133,6 +141,9 @@ still look right stretched (content capped, nothing pinned to far edges).
 
 ## Phone pages
 
+- **A phone page that runs past about two screens is split, not shortened:**
+  a `Segmented` switch at the top shows one half at a time, each a whole
+  thing to do (see what's going on; set it up). (House on a phone B, 10 Nov)
 - What is a side panel on a laptop is a pushed page or a sheet on a phone.
   (Owner admin, 30 Oct)
 - Content keeps a 16pt gutter (`GUTTER`) and is capped at `CONTENT_MAX`

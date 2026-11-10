@@ -2,6 +2,7 @@ import {
   familyHides,
   HOUSE_LOWER_COPY,
   HOUSE_PAGE_COPY,
+  HOUSE_SHOWS_COPY,
   memberCan,
   monthOf,
   overviewFigures,
@@ -11,6 +12,8 @@ import {
   type OverviewFigure,
 } from '@app/core';
 import type { Href } from 'expo-router';
+import { useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
 import { Figures } from '@/components/figures';
@@ -27,7 +30,9 @@ import { ReadFailed } from '@/components/read-state';
 import { Row } from '@/components/row';
 import { Screen } from '@/components/screen';
 import { Section } from '@/components/section';
+import { Segmented } from '@/components/segmented';
 import { TitleBar } from '@/components/title-bar';
+import { TourSpot } from '@/components/tour/tour-spot';
 import { useAway } from '@/hooks/use-away';
 import { useHouse, type HouseView } from '@/hooks/use-house';
 import { useJohnList } from '@/hooks/use-john-list';
@@ -38,12 +43,18 @@ import { useStake } from '@/hooks/use-stake';
 import { useTable } from '@/hooks/use-table';
 import { Waiting } from '@/components/waiting';
 import { HouseOutline } from '@/components/page-outlines';
+import { INSET } from '@/theme';
+
+/** Which half of House a phone shows. */
+type Shown = 'overview' | 'setup';
 
 /**
  * House, the third tab: the house's Overview. Four figures, then settling
- * up while there's any, then the Table and the Wall's latest; on a phone,
- * the house's setup, the House Pass and the way to You under them. Each
- * section is its own component in components/house-page. Without the Pass
+ * up while there's any, then the Table and the Wall's latest. On a phone a
+ * switch at the top shows that, or "Setup and you": the house's setup, the
+ * House Pass and the way to You. A kid's House is short enough for one
+ * page: pocket money, the Table, the Wall, how the family runs (to read)
+ * and You. Each section is its own component in components/house-page. Without the Pass
  * (once it's enforced) the figures and the Table give way to a row to the
  * Pass page. The pages it pushes keep the tabs (house/_layout is a stack).
  */
@@ -66,6 +77,8 @@ function HouseFor({ houseId, userId }: { houseId: string; userId: string }) {
     Promise.all([query.refetch(), table.refetch(), stake.refetch(), away.refetch(), pocket.refetch()]),
   );
 
+  // Which half a phone shows. Kept here, so it's still the same on the way back from a setup page.
+  const [shown, setShown] = useState<Shown>('overview');
   const snapshot = view?.snapshot;
   const bar = <TitleBar title={snapshot?.house.name ?? PAGE_TITLE.house} ask={memberCan(view?.me, 'house:read')} />;
 
@@ -73,7 +86,19 @@ function HouseFor({ houseId, userId }: { houseId: string; userId: string }) {
     <Screen bar={bar} fills refreshing={refreshing} onRefresh={pull} testID="house-screen">
       <PageTitle page={PAGE_TITLE.house} />
       <Waiting ready={view != null} failed={query.isError} onRetry={() => void query.refetch()} outline={<HouseOutline />}>
-        {() => <HouseSections houseId={houseId} userId={userId} view={view!} table={table} stake={stake} away={away} pocket={pocket} />}
+        {() => (
+          <HouseSections
+            houseId={houseId}
+            userId={userId}
+            view={view!}
+            table={table}
+            stake={stake}
+            away={away}
+            pocket={pocket}
+            shown={shown}
+            onShow={setShown}
+          />
+        )}
       </Waiting>
     </Screen>
   );
@@ -92,8 +117,9 @@ const FIGURE_PAGE: Record<OverviewFigure['key'], Href> = {
  * month, the stake, the housemates and the John list, each opening its
  * page), anything from a closed month still to settle, then the Table
  * beside the Wall's latest. On a phone the Wall comes under the Table, and
- * the setup, the Pass and the way to You under them; on a laptop those are
- * in House's list beside the page.
+ * the setup, the Pass and the way to You are the switch's other half; on a
+ * laptop those are in House's list beside the page. A kid has no switch:
+ * the family's setup, to read, and You come under the Wall.
  */
 function HouseSections({
   houseId,
@@ -103,6 +129,8 @@ function HouseSections({
   stake,
   away,
   pocket,
+  shown,
+  onShow,
 }: {
   houseId: string;
   userId: string;
@@ -111,6 +139,8 @@ function HouseSections({
   stake: ReturnType<typeof useStake>;
   away: ReturnType<typeof useAway>;
   pocket: ReturnType<typeof usePocket>;
+  shown: Shown;
+  onShow: (shown: Shown) => void;
 }) {
   const { listed } = useHouseWorkspace();
   const list = useJohnList(houseId);
@@ -129,7 +159,11 @@ function HouseSections({
   const me = view.me;
   // A family has no Stake: no money figures, no settling up (familyHides). Pocket money in their place.
   const noStake = familyHides(view.snapshot.house.kind).stake;
-  return (
+  // A kid in a family: their parents run it, so its setup is theirs to read and the Pass isn't theirs to buy.
+  const kid = view.snapshot.house.kind === 'family' && me?.role !== 'admin';
+  // On a phone the page is two halves under a switch; a kid's is short enough to be one.
+  const halves = !listed && !kid;
+  const overview = (
     <>
       {noStake ? (
         <PocketSection houseId={houseId} userId={userId} view={view} pocket={pocket} />
@@ -153,9 +187,13 @@ function HouseSections({
         }
         end={<WallSection houseId={houseId} userId={userId} view={view} />}
       />
-      {listed ? null : <SetupSection houseId={houseId} userId={userId} view={view} />}
-      {listed ? null : <PassSection view={view} />}
-      {listed || !me ? null : (
+    </>
+  );
+  const setup = (
+    <>
+      <SetupSection houseId={houseId} userId={userId} view={view} kid={kid} spot={!halves} />
+      {kid ? null : <PassSection view={view} />}
+      {me ? (
         <Section label={PAGE_TITLE.you} testID="you-row">
           <Row
             leading={<Avatar name={me.name} userId={userId} me />}
@@ -166,7 +204,40 @@ function HouseSections({
             testID="to-you"
           />
         </Section>
-      )}
+      ) : null}
+    </>
+  );
+  if (!halves) {
+    return (
+      <>
+        {overview}
+        {listed ? null : setup}
+      </>
+    );
+  }
+  return (
+    <>
+      {/* The tour's "House setup" lights the switch, whichever half is showing. */}
+      <TourSpot id="house.setup">
+        <View style={styles.pick}>
+          <Segmented
+            options={[
+              { value: 'overview', label: HOUSE_SHOWS_COPY.overview },
+              { value: 'setup', label: HOUSE_SHOWS_COPY.setup },
+            ]}
+            value={shown}
+            onChange={onShow}
+            label={HOUSE_SHOWS_COPY.label}
+            testID="house-shows"
+          />
+        </View>
+      </TourSpot>
+      {shown === 'overview' ? overview : setup}
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  // On the leading edge, where the sections' labels start.
+  pick: { paddingHorizontal: INSET, alignItems: 'flex-start' },
+});

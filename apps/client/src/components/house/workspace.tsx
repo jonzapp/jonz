@@ -1,4 +1,4 @@
-import { ASK_USAGE_COPY, FOCUS_SHELL_COPY, HOUSE_LOWER_COPY, PAGE_TITLE, PASS_COPY, WALL_COPY } from '@app/core';
+import { ASK_USAGE_COPY, FOCUS_SHELL_COPY, HOUSE_LOWER_COPY, KID_HOUSE_COPY, PAGE_TITLE, PASS_COPY, WALL_COPY } from '@app/core';
 import { usePathname, useRouter, type Href } from 'expo-router';
 import {
   GaugeIcon,
@@ -76,7 +76,7 @@ export function useHouseWorkspace(): Workspace {
  * beside it) keeps the phone's way: the House page lists its setup, and
  * each page has its way back.
  */
-export function HouseWorkspace({ children }: { children: ReactNode }) {
+export function HouseWorkspace({ children, kid = false }: { children: ReactNode; /** A kid in a family is looking: the list leaves out what's their parents'. */ kid?: boolean }) {
   const { colors } = useTheme();
   const windowWidth = useWindowDimensions().width;
   const wide = windowWidth >= WIDE;
@@ -118,7 +118,7 @@ export function HouseWorkspace({ children }: { children: ReactNode }) {
         testID="house-workspace"
         onLayout={wide ? (e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width) : undefined}
       >
-        {listed ? <HouseNav /> : null}
+        {listed ? <HouseNav kid={kid} /> : null}
         <View style={styles.page}>{children}</View>
         {listed && panel ? (
           <SidePanel content={panel} onClose={() => setPanel(null)} border={colors.border} />
@@ -155,8 +155,11 @@ const PAGES: { group: string | null; items: { href: Href; label: string; icon: L
   },
 ];
 
+/** What a kid's list leaves out: their parents' Ask Jonz usage and the Pass. */
+const KID_HIDES = new Set(['nav-ask-usage', 'nav-pass']);
+
 /** The list of House's pages, the one you're on marked; any other page under House (a housemate's) marks none. */
-function HouseNav() {
+function HouseNav({ kid }: { kid: boolean }) {
   const { colors } = useTheme();
   const pathname = usePathname();
   const atTop = pathname === '/house';
@@ -170,8 +173,8 @@ function HouseNav() {
       <ScrollView contentContainerStyle={styles.navList}>
         {PAGES.map((part, i) => (
           <View key={i} style={styles.navGroup}>
-            {part.group ? <SectionLabel style={styles.navLabel}>{part.group}</SectionLabel> : null}
-            {part.items.map((item) => (
+            {part.group ? <SectionLabel style={styles.navLabel}>{kid ? KID_HOUSE_COPY.setup : part.group}</SectionLabel> : null}
+            {part.items.filter((item) => !kid || !KID_HIDES.has(item.testID)).map((item) => (
               <NavItem key={item.testID} {...item} current={pathname === item.href} replace={!atTop} />
             ))}
           </View>

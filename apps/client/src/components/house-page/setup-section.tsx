@@ -1,4 +1,4 @@
-import { ASK_USAGE_COPY, FOCUS_SHELL_COPY, HOUSE_LOWER_COPY, houseSetupValues, localDate, memberCan } from '@app/core';
+import { ASK_USAGE_COPY, FOCUS_SHELL_COPY, HOUSE_LOWER_COPY, houseSetupValues, KID_HOUSE_COPY, localDate, memberCan } from '@app/core';
 import { GaugeIcon, ListTodoIcon, PlaneIcon, ScrollTextIcon } from 'lucide-react-native';
 import { View } from 'react-native';
 
@@ -19,9 +19,24 @@ import { TourSpot } from '@/components/tour/tour-spot';
  * page too), the money rules (and the admins who can change them), and who's
  * away next (with your own days), and what's left of your Ask Jonz this
  * week. Changing any of them changes the house
- * for everyone, so it says so. History is on the Wall.
+ * for everyone, so it says so. History is on the Wall. A kid reads it as
+ * "How the family runs", set by their parents: the Johns, the rules and
+ * time away, without Ask Jonz's usage.
  */
-export function SetupSection({ houseId, userId, view }: { houseId: string; userId: string; view: HouseView }) {
+export function SetupSection({
+  houseId,
+  userId,
+  view,
+  kid = false,
+  spot = true,
+}: {
+  houseId: string;
+  userId: string;
+  view: HouseView;
+  kid?: boolean;
+  /** Whether it's the tour's "House setup" spot: not under House's switch on a phone, which is. */
+  spot?: boolean;
+}) {
   const pending = <PendingMeta />;
   const list = useJohnList(houseId);
   const away = useAway(houseId, view.snapshot);
@@ -42,33 +57,37 @@ export function SetupSection({ houseId, userId, view }: { houseId: string; userI
     admin: memberCan(view.me, 'johns:write'),
   });
 
-  return (
-    <TourSpot id="house.setup">
-      <Section label={FOCUS_SHELL_COPY.setup} right={HOUSE_LOWER_COPY.setupNote} testID="setup-section">
-        <Row
-          leading={<RowIcon icon={ListTodoIcon} />}
-          title={HOUSE_LOWER_COPY.johns}
-          meta={values.johns ?? pending}
-          href="/house/johns"
-          chevron
-          testID="to-johns"
-        />
-        <Row
-          leading={<RowIcon icon={ScrollTextIcon} />}
-          title={HOUSE_LOWER_COPY.rules}
-          meta={values.rules}
-          href="/house/rules"
-          chevron
-          testID="to-rules"
-        />
-        <Row
-          leading={<RowIcon icon={PlaneIcon} />}
-          title={HOUSE_LOWER_COPY.away}
-          meta={values.away ?? pending}
-          href="/house/away"
-          chevron
-          testID="to-away"
-        />
+  const section = (
+    <Section
+      label={kid ? KID_HOUSE_COPY.setup : FOCUS_SHELL_COPY.setup}
+      right={kid ? KID_HOUSE_COPY.setupNote : HOUSE_LOWER_COPY.setupNote}
+      testID="setup-section"
+    >
+      <Row
+        leading={<RowIcon icon={ListTodoIcon} />}
+        title={HOUSE_LOWER_COPY.johns}
+        meta={values.johns ?? pending}
+        href="/house/johns"
+        chevron
+        testID="to-johns"
+      />
+      <Row
+        leading={<RowIcon icon={ScrollTextIcon} />}
+        title={HOUSE_LOWER_COPY.rules}
+        meta={values.rules}
+        href="/house/rules"
+        chevron
+        testID="to-rules"
+      />
+      <Row
+        leading={<RowIcon icon={PlaneIcon} />}
+        title={HOUSE_LOWER_COPY.away}
+        meta={values.away ?? pending}
+        href="/house/away"
+        chevron
+        testID="to-away"
+      />
+      {kid ? null : (
         <Row
           leading={<RowIcon icon={GaugeIcon} />}
           title={ASK_USAGE_COPY.title}
@@ -77,9 +96,10 @@ export function SetupSection({ houseId, userId, view }: { houseId: string; userI
           chevron
           testID="to-ask-usage"
         />
-      </Section>
-    </TourSpot>
+      )}
+    </Section>
   );
+  return spot ? <TourSpot id="house.setup">{section}</TourSpot> : section;
 }
 
 /**
