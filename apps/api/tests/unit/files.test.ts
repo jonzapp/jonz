@@ -38,13 +38,19 @@ describe("/files", () => {
     expect(await answer.text()).toBe("jpeg");
   });
 
-  it("shows someone's photo from the public bucket, and nothing else that way", async () => {
+  it("shows someone's photo from the private bucket with the server's key, and nothing else that way", async () => {
+    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "sb_secret_x");
     fetchMock.mockResolvedValue(new Response("png", { headers: { "content-type": "image/png" } }));
     const answer = await GET(new Request("https://jonz.app/files/photo/avatars/u1/photo-1.png"), params("photo", "avatars", ["u1", "photo-1.png"]));
-    expect(fetchMock).toHaveBeenCalledWith(`${STORAGE}/storage/v1/object/public/avatars/u1/photo-1.png`);
+    // A new secret key is never a Bearer token.
+    expect(fetchMock).toHaveBeenCalledWith(`${STORAGE}/storage/v1/object/authenticated/avatars/u1/photo-1.png`, { headers: { apikey: "sb_secret_x" } });
     expect(answer.headers.get("cache-control")).toBe("public, max-age=86400");
     const proof = await GET(new Request("https://jonz.app/files/photo/proofs/h1/a1/p.jpg"), params("photo", "proofs", ["h1", "a1", "p.jpg"]));
     expect(proof.status).toBe(404);
+    // A legacy service-role key is a JWT, sent as the Bearer token too.
+    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "eyJlegacy");
+    await GET(new Request("https://jonz.app/files/photo/avatars/u1/photo-1.png"), params("photo", "avatars", ["u1", "photo-1.png"]));
+    expect(fetchMock).toHaveBeenLastCalledWith(expect.any(String), { headers: { apikey: "eyJlegacy", Authorization: "Bearer eyJlegacy" } });
   });
 
   it("answers a plain 404 for another bucket, a path that climbs, no token, or anything Storage refuses", async () => {

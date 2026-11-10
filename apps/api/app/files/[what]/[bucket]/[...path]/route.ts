@@ -9,7 +9,8 @@ import { BUCKETS, SEE_SECONDS } from "@/lib/files";
  *   upload link (proof_upload, file_upload) said.
  * - `GET /files/see/{bucket}/{path}?token=` shows a private picture while
  *   its link (file_links) works.
- * - `GET /files/photo/avatars/{path}` shows someone's photo.
+ * - `GET /files/photo/avatars/{path}` shows someone's photo, read with
+ *   the server's key: the bucket is private like the others.
  *
  * Storage checks its own token on each, so a link only ever does what the
  * API handed out. Pictures only; anything Storage refuses comes back as a
@@ -27,6 +28,16 @@ type Params = { params: Promise<{ what: string; bucket: string; path: string[] }
 
 const nothing = (status = 404) => new Response(null, { status, headers: { "Cache-Control": "no-store" } });
 
+/**
+ * The server's key, for a photo. A legacy service-role key is a JWT and goes
+ * as the Bearer token too; a new secret key ("sb_secret_…") goes only as
+ * the apikey, which Supabase turns into the service role.
+ */
+function serverKey(): Record<string, string> {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+  return key.startsWith("sb_") ? { apikey: key } : { apikey: key, Authorization: `Bearer ${key}` };
+}
+
 /** Storage's address for a file, or null when the request names something it shouldn't. */
 async function storageUrl(params: Params["params"], request: Request, what: string, kind: string): Promise<string | null> {
   const p = await params;
@@ -41,9 +52,9 @@ async function storageUrl(params: Params["params"], request: Request, what: stri
 
 export async function GET(request: Request, { params }: Params) {
   const { what } = await params;
-  const url = await storageUrl(params, request, what, what === "photo" ? "public" : "sign");
+  const url = await storageUrl(params, request, what, what === "photo" ? "authenticated" : "sign");
   if (!url || (what !== "see" && what !== "photo")) return nothing();
-  const answer = await fetch(url);
+  const answer = what === "photo" ? await fetch(url, { headers: serverKey() }) : await fetch(url);
   const type = answer.headers.get("content-type") ?? "";
   if (!answer.ok || !answer.body || !PICTURES.has(type.split(";")[0].trim())) return nothing();
   return new Response(answer.body, {
