@@ -8,6 +8,7 @@ import {
   type JohnDef,
   type PageName,
   type ReplyCard,
+  type Words,
 } from '@app/core';
 import type { Href } from 'expo-router';
 
@@ -59,7 +60,7 @@ export function findJohn(data: ReplyData, ref: string): JohnDef | null {
  * board, the fair shares and the list. A chip or card for something not
  * found is left as words, or out.
  */
-export function replyPieces(data: ReplyData): ReplyPieces {
+export function replyPieces(data: ReplyData, words: Words): ReplyPieces {
   const nameOf = (id: string) => data.people.find((p) => p.userId === id)?.name ?? null;
   const groupOf = (id: string | null) => (id ? (data.groups.find((g) => g.id === id)?.name ?? null) : null);
   const johnList: Href = '/house/johns';
@@ -103,7 +104,7 @@ export function replyPieces(data: ReplyData): ReplyPieces {
         }
         case 'shares': {
           if (!data.balances) return null;
-          const shares = weekShareRows(data.balances, data.people.map((p) => p.userId), data.viewerId, data.awayMakeup);
+          const shares = weekShareRows(data.balances, data.people.map((p) => p.userId), data.viewerId, data.awayMakeup, words);
           return <SharesCard rows={shares.rows} viewerId={data.viewerId} nameOf={nameOf} keyLine={shares.key} href={PAGES.shares.href as Href} />;
         }
         case 'johns': {

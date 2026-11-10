@@ -3,7 +3,7 @@ import { differenceInCalendarDays, format } from "date-fns";
 
 import { currentOrNext, type AwayPeriod } from "./away";
 import { byDoneLatest, isOpen, TODAY_ORDER, type BoardItem, type DisputeView, type WeekBoard } from "./board";
-import { CREW_COPY, FOCUS_SHELL_COPY, JOHN_SHEET_COPY, NEXT_UP_COPY, PARENT_OK_COPY, POCKET_COPY } from "./copy";
+import { FOCUS_SHELL_COPY, PARENT_OK_COPY, POCKET_COPY } from "./copy";
 import { andNames } from "./crew";
 import type { Currency, HouseRules } from "./domain";
 import { dateRange, dueInLine, firstName, pointsLabel, relative, sinceLabel, STATUS_LABEL, STATUS_MARK } from "./format";
@@ -18,6 +18,7 @@ import type { StakeView } from "./stake";
 import { NO_PREFS, type MyPrefs } from "./steady-prefs";
 import { swapAsk, swapOffersToYou, type SwapAsk, type SwapOfferRow, type SwapOfferToYou } from "./steady-swap";
 import { addDaysTo, monthOf } from "./week";
+import type { Words } from "./words-for";
 
 // Today as Focus shows it, and the John sheet: which John is Next up and
 // what the rest of your week holds, the words in their meta lines (what
@@ -40,9 +41,9 @@ function firstNameIn(people: readonly Person[], userId: string | null): string {
 }
 
 /** A first name mid-sentence: "Priya", or "a former housemate". */
-function called(people: readonly Person[], userId: string | null): string {
+function called(people: readonly Person[], userId: string | null, words: Words): string {
   const person = people.find((p) => p.userId === userId);
-  return person ? firstName(person.name) : NEXT_UP_COPY.someoneGone;
+  return person ? firstName(person.name) : words('today.nextUp.someoneGone');
 }
 
 /** Settled one way or another: nothing more to do or check. A cover is, once its outcome is stamped (johnSheetMode). */
@@ -101,12 +102,12 @@ const AWAY_NOTICE_DAYS = 14;
  * else, before the week is out), or "You're away 28–31 Oct" for a trip that
  * starts within a fortnight. Null when there's neither.
  */
-export function awayLine(periods: readonly AwayPeriod[], userId: string, today: string): string | null {
+export function awayLine(periods: readonly AwayPeriod[], userId: string, today: string, words: Words): string | null {
   const until = awayTodayUntil(periods, userId, today);
-  if (until) return NEXT_UP_COPY.away(dateRange(until, until));
+  if (until) return words('today.nextUp.away', { day: dateRange(until, until) });
   const next = currentOrNext(periods, userId, today);
   if (!next || next.startsOn > addDaysTo(today, AWAY_NOTICE_DAYS)) return null;
-  return NEXT_UP_COPY.awaySoon(dateRange(next.startsOn, next.endsOn));
+  return words('today.nextUp.awaySoon', { range: dateRange(next.startsOn, next.endsOn) });
 }
 
 /** What takes the Next up card's place: the setup, a wait, time away, your next John, or nothing to do. */
@@ -165,10 +166,10 @@ export function nextUpState(input: {
  * zone, with its date when the day alone could be read as today or this
  * week's ("until Mon 2 Nov", on a Monday or six days out).
  */
-export function clearUntil(until: Date, zone: string, now: Date): string {
+export function clearUntil(until: Date, zone: string, now: Date, words: Words): string {
   const inZone = tz(zone);
   const days = differenceInCalendarDays(until, now, { in: inZone });
-  return NEXT_UP_COPY.clear(format(until, days >= 6 || days % 7 === 0 ? "EEE d MMM" : "EEE", { in: inZone }));
+  return words('today.nextUp.clear', { day: format(until, days >= 6 || days % 7 === 0 ? "EEE d MMM" : "EEE", { in: inZone }) });
 }
 
 /**
@@ -199,11 +200,11 @@ function forfeits(rules: HouseRules, room: number | null): { late: string | null
 }
 
 /** What an overdue John costs: "£1 now, £3 if missed", or less when a forfeit is zero. */
-function overdueCost(rules: HouseRules, room: number | null): string | null {
+function overdueCost(rules: HouseRules, room: number | null, words: Words): string | null {
   const { late, missed } = forfeits(rules, room);
-  if (late && missed) return NEXT_UP_COPY.nowOrMissed(late, missed);
-  if (late) return NEXT_UP_COPY.now(late);
-  if (missed) return NEXT_UP_COPY.ifMissed(missed);
+  if (late && missed) return words('today.nextUp.nowOrMissed', { late, missed });
+  if (late) return words('today.nextUp.now', { late });
+  if (missed) return words('today.nextUp.ifMissed', { amount: missed });
   return null;
 }
 
@@ -222,19 +223,19 @@ export interface NextUpMeta {
  * "Overdue since Tue" with "£1 now, £3 if missed". `room` caps the costs
  * at what's left of your stake (forfeitRoom).
  */
-export function nextUpMeta(item: BoardItem, rules: HouseRules, now: Date, room: number | null = null): NextUpMeta {
+export function nextUpMeta(item: BoardItem, rules: HouseRules, now: Date, words: Words, room: number | null = null): NextUpMeta {
   const zone = rules.timezone;
   const kind = johnKind(item.category);
   if (item.status === "overdue") {
     return {
       kind,
       due: null,
-      overdue: { since: NEXT_UP_COPY.overdueSince(sinceLabel(item.dueAt, now, zone)), cost: overdueCost(rules, room) },
+      overdue: { since: words('today.nextUp.overdueSince', { when: sinceLabel(item.dueAt, now, zone) }), cost: overdueCost(rules, room, words) },
     };
   }
-  const due = NEXT_UP_COPY.due(dueInLine(item.dueAt, now, zone)) + (item.movedFrom ? `, ${NEXT_UP_COPY.beforeYouGo}` : "");
+  const due = words('today.nextUp.due', { when: dueInLine(item.dueAt, now, zone) }) + (item.movedFrom ? `, ${words('today.nextUp.beforeYouGo')}` : "");
   const { late, missed } = forfeits(rules, room);
-  const cost = late ? NEXT_UP_COPY.ifLate(late) : missed ? NEXT_UP_COPY.ifMissed(missed) : null;
+  const cost = late ? words('today.nextUp.ifLate', { amount: late }) : missed ? words('today.nextUp.ifMissed', { amount: missed }) : null;
   // A kid's John in a family says what it earns instead (there's nothing to lose).
   const earns = item.payMinor ? POCKET_COPY.earns(pocketMoney(item.payMinor, rules.currency)) : null;
   return { kind, due: [due, cost ?? earns].filter(Boolean).join(", "), overdue: null };
@@ -248,8 +249,8 @@ function ordinal(n: number): string {
 }
 
 /** Where you are on a table, in words: "2nd", or "Joint 2nd" on a tie. */
-export function standingPlace(rank: number, joint: boolean): string {
-  return joint ? NEXT_UP_COPY.joint(ordinal(rank)) : ordinal(rank);
+export function standingPlace(rank: number, joint: boolean, words: Words): string {
+  return joint ? words('today.nextUp.joint', { place: ordinal(rank) }) : ordinal(rank);
 }
 
 /** "October" from "2026-10". */
@@ -271,13 +272,13 @@ export function standingLine(input: {
   /** The Stake, or null until it's read. */
   stake: Pick<StakeView, "month" | "projection"> | null;
   currency: Currency;
-}): string | null {
+}, words: Words): string | null {
   const { table, userId, stake, currency } = input;
   const me = table.find((r) => r.userId === userId);
   const scored = table.some((r) => r.points > 0);
   const place =
     me && table.length > 1 && scored
-      ? NEXT_UP_COPY.thisWeek(standingPlace(me.rank, table.some((r) => r.userId !== userId && r.rank === me.rank)))
+      ? words('today.nextUp.thisWeek', { place: standingPlace(me.rank, table.some((r) => r.userId !== userId && r.rank === me.rank), words) })
       : null;
   const net = stake?.projection.find((p) => p.userId === userId)?.net ?? null;
   const month = stake ? monthName(stake.month) : null;
@@ -285,10 +286,10 @@ export function standingLine(input: {
     net === null || month === null
       ? null
       : net > 0
-        ? NEXT_UP_COPY.up(formatMoney(net, currency), month)
+        ? words('today.nextUp.up', { amount: formatMoney(net, currency), month })
         : net < 0
-          ? NEXT_UP_COPY.down(formatMoney(-net, currency), month)
-          : NEXT_UP_COPY.square(month);
+          ? words('today.nextUp.down', { amount: formatMoney(-net, currency), month })
+          : words('today.nextUp.square', { month });
   const line = [place, money].filter(Boolean).join(", ");
   return line ? line[0].toUpperCase() + line.slice(1) : null;
 }
@@ -312,29 +313,29 @@ export function setupChecklist(list: readonly unknown[] | null, memberCount: num
 }
 
 /** "closes in 17h", or "closing now" once its time has come and the clock hasn't closed it yet. */
-export function voteCloses(closesAt: Date, now: Date): string {
-  return closesAt.getTime() > now.getTime() ? NEXT_UP_COPY.closes(relative(closesAt, now)) : NEXT_UP_COPY.closingNow;
+export function voteCloses(closesAt: Date, now: Date, words: Words): string {
+  return closesAt.getTime() > now.getTime() ? words('today.nextUp.closes', { when: relative(closesAt, now) }) : words('today.nextUp.closingNow');
 }
 
 /** Needs you's title for a dispute: "Vote on Priya’s Clean the bathroom" ("Vote on Clean the bathroom" once she's left). */
-export function voteTitle(item: Pick<BoardItem, "userId" | "name">, people: readonly Person[]): string {
+export function voteTitle(item: Pick<BoardItem, "userId" | "name">, people: readonly Person[], words: Words): string {
   const owner = people.find((p) => p.userId === item.userId);
-  return NEXT_UP_COPY.voteOn(owner ? firstName(owner.name) : null, item.name);
+  return owner ? words('today.nextUp.voteOn', { owner: firstName(owner.name), john: item.name }) : words('today.nextUp.voteOnGone', { john: item.name });
 }
 
 /** Needs you's meta line for a dispute: "Megan says it's not done, closes in 17h". */
-export function voteMeta(dispute: DisputeView, people: readonly Person[], now: Date): string {
-  return `${NEXT_UP_COPY.saysNotDone(firstNameIn(people, dispute.raisedBy))}, ${voteCloses(dispute.closesAt, now)}`;
+export function voteMeta(dispute: DisputeView, people: readonly Person[], now: Date, words: Words): string {
+  return `${words('today.nextUp.saysNotDone', { name: firstNameIn(people, dispute.raisedBy) })}, ${voteCloses(dispute.closesAt, now, words)}`;
 }
 
 /** The tally, in the vote buttons' order: "1 fine, 1 not done, closes in 17h". */
-export function voteTally(dispute: DisputeView, now: Date): string {
-  return JOHN_SHEET_COPY.tally(dispute.reject, dispute.uphold, voteCloses(dispute.closesAt, now));
+export function voteTally(dispute: DisputeView, now: Date, words: Words): string {
+  return words('john.sheet.tally', { done: dispute.reject, notDone: dispute.uphold, closes: voteCloses(dispute.closesAt, now, words) });
 }
 
 /** Needs your OK's title for a kid's tick: "Leo did Feed the fish". */
-export function okTitle(item: Pick<BoardItem, "userId" | "name"> & Partial<Pick<BoardItem, "coveredBy" | "crew">>, people: readonly Person[]): string {
-  return PARENT_OK_COPY.rowTitle(called(people, tickerOf(item)), item.name);
+export function okTitle(item: Pick<BoardItem, "userId" | "name"> & Partial<Pick<BoardItem, "coveredBy" | "crew">>, people: readonly Person[], words: Words): string {
+  return PARENT_OK_COPY.rowTitle(called(people, tickerOf(item), words), item.name);
 }
 
 /** Its meta line: "Ticked 2h ago". */
@@ -351,13 +352,13 @@ export function okWho(
   item: Pick<BoardItem, "userId"> & Partial<Pick<BoardItem, "coveredBy" | "crew">>,
   people: readonly Person[],
   parentIds: readonly string[],
-  viewerId: string,
+  viewerId: string, words: Words,
 ): string {
   const names = [...parentIds]
     .sort((a, b) => (a === viewerId ? -1 : b === viewerId ? 1 : 0))
-    .map((id) => (id === viewerId ? JOHN_SHEET_COPY.you : called(people, id)));
+    .map((id) => (id === viewerId ? words('john.sheet.you') : called(people, id, words)));
   const parents = names.length <= 1 ? (names[0] ?? "") : `${names.slice(0, -1).join(", ")} or ${names[names.length - 1]}`;
-  return PARENT_OK_COPY.who(parents, called(people, tickerOf(item)));
+  return PARENT_OK_COPY.who(parents, called(people, tickerOf(item), words));
 }
 
 /** What the John sheet offers, from whose John it is and where it has got to. */
@@ -397,28 +398,28 @@ export function johnSheetMode(
  * the list).
  */
 export function sheetKind(
-  item: Pick<BoardItem, "category" | "groupName" | "points" | "everyWeeks"> & Partial<Pick<BoardItem, "flaggedAt" | "everyMonths" | "together">>,
+  item: Pick<BoardItem, "category" | "groupName" | "points" | "everyWeeks"> & Partial<Pick<BoardItem, "flaggedAt" | "everyMonths" | "together">>, words: Words,
 ): string {
   // A flag comes round when it's flagged, not every N weeks.
   const often = item.flaggedAt
-    ? JOHN_SHEET_COPY.onCall
+    ? words('john.sheet.onCall')
     : item.everyMonths
       ? oftenWords({ everyWeeks: 1, everyMonths: item.everyMonths }).toLocaleLowerCase()
       : item.everyWeeks
-        ? JOHN_SHEET_COPY.every(item.everyWeeks)
+        ? words('john.sheet.every', { weeks: item.everyWeeks })
         : null;
-  const points = (item.together?.length ?? 1) > 1 ? CREW_COPY.each(pointsLabel(item.points)) : pointsLabel(item.points);
+  const points = (item.together?.length ?? 1) > 1 ? words('john.crew.each', { points: pointsLabel(item.points) }) : pointsLabel(item.points);
   return [johnKind(item.category), item.groupName, points, often]
     .filter(Boolean)
     .join(", ");
 }
 
 /** What lateness costs, for the sheet: "late costs £1, missed £3". Null when both are free. */
-function lateCosts(rules: HouseRules, room: number | null): string | null {
+function lateCosts(rules: HouseRules, room: number | null, words: Words): string | null {
   const { late, missed } = forfeits(rules, room);
-  if (late && missed) return JOHN_SHEET_COPY.costs(late, missed);
-  if (late) return JOHN_SHEET_COPY.lateCosts(late);
-  if (missed) return JOHN_SHEET_COPY.missedCosts(missed);
+  if (late && missed) return words('john.sheet.costs', { late, missed });
+  if (late) return words('john.sheet.lateCosts', { late });
+  if (missed) return words('john.sheet.missedCosts', { missed });
   return null;
 }
 
@@ -438,64 +439,64 @@ export function sheetWhen(
   viewerId: string,
   rules: HouseRules,
   now: Date,
+  words: Words,
   room: number | null = null,
 ): { sign: "overdue" | "disputed" | "late" | "missed" | "covered" | null; text: string } {
   const zone = rules.timezone;
   if (item.status === "covered" && !item.outcome) {
-    return { sign: "covered", text: JOHN_SHEET_COPY.coveredWasDue(sinceLabel(item.dueAt, now, zone)) };
+    return { sign: "covered", text: words('john.sheet.coveredWasDue', { when: sinceLabel(item.dueAt, now, zone) }) };
   }
-  if (item.status === "covered") return { sign: "covered", text: settledLine(item, people, viewerId, rules, now) };
+  if (item.status === "covered") return { sign: "covered", text: settledLine(item, people, viewerId, rules, now, words) };
   if (SETTLED.has(item.status)) {
     const sign = item.status === "late" || item.status === "missed" ? item.status : null;
-    return { sign, text: settledLine(item, people, viewerId, rules, now) };
+    return { sign, text: settledLine(item, people, viewerId, rules, now, words) };
   }
   if (item.status === "overdue") {
-    const text = [NEXT_UP_COPY.overdueSince(sinceLabel(item.dueAt, now, zone)), overdueCost(rules, room)].filter(Boolean).join(", ");
+    const text = [words('today.nextUp.overdueSince', { when: sinceLabel(item.dueAt, now, zone) }), overdueCost(rules, room, words)].filter(Boolean).join(", ");
     return { sign: "overdue", text };
   }
   if (item.status === "disputed" && item.dispute) {
-    const raiser = item.dispute.raisedBy === viewerId ? JOHN_SHEET_COPY.byYou : called(people, item.dispute.raisedBy);
-    return { sign: "disputed", text: JOHN_SHEET_COPY.disputedBy(raiser) };
+    const raiser = item.dispute.raisedBy === viewerId ? words('john.sheet.byYou') : called(people, item.dispute.raisedBy, words);
+    return { sign: "disputed", text: words('john.sheet.disputedBy', { name: raiser }) };
   }
-  const due = JOHN_SHEET_COPY.due(dueInLine(item.dueAt, now, zone));
+  const due = words('john.sheet.due', { when: dueInLine(item.dueAt, now, zone) });
   if (!isOpen(item.status)) return { sign: null, text: due };
   return {
     sign: null,
-    text: [item.movedFrom ? `${due}, ${NEXT_UP_COPY.beforeYouGo}` : due, lateCosts(rules, room)].filter(Boolean).join(", "),
+    text: [item.movedFrom ? `${due}, ${words('today.nextUp.beforeYouGo')}` : due, lateCosts(rules, room, words)].filter(Boolean).join(", "),
   };
 }
 
 /** "at 14:10" today, "yesterday at 14:10", "on Sun at 14:10" this week, "on Sun 18 Oct at 14:10" before that. */
-function tickedAt(at: Date, now: Date, zone: string): string {
+function tickedAt(at: Date, now: Date, zone: string, words: Words): string {
   const inZone = tz(zone);
   const days = differenceInCalendarDays(now, at, { in: inZone });
   const time = format(at, "HH:mm", { in: inZone });
-  if (days <= 0) return JOHN_SHEET_COPY.at(time);
-  if (days === 1) return JOHN_SHEET_COPY.yesterdayAt(time);
-  return JOHN_SHEET_COPY.onAt(format(at, days < 7 ? "EEE" : "EEE d MMM", { in: inZone }), time);
+  if (days <= 0) return words('john.sheet.at', { time });
+  if (days === 1) return words('john.sheet.yesterdayAt', { time });
+  return words('john.sheet.onAt', { day: format(at, days < 7 ? "EEE" : "EEE d MMM", { in: inZone }), time });
 }
 
 /**
  * A tick being checked: "Megan ticked this at 14:10, stands in 21h" ("You
  * ticked…" for yours); a cover, "Glyn covered this at 23:04, …".
  */
-export function tickedLine(item: BoardItem, people: readonly Person[], viewerId: string, rules: HouseRules, now: Date): string {
+export function tickedLine(item: BoardItem, people: readonly Person[], viewerId: string, rules: HouseRules, now: Date, words: Words): string {
   const ticker = tickerOf(item);
-  const who = ticker === viewerId ? JOHN_SHEET_COPY.you : firstNameIn(people, ticker);
-  const verb = item.coveredBy ? JOHN_SHEET_COPY.covered : JOHN_SHEET_COPY.ticked;
-  const whom = item.userId === viewerId ? JOHN_SHEET_COPY.byYou : firstNameIn(people, item.userId);
+  const who = ticker === viewerId ? words('john.sheet.you') : firstNameIn(people, ticker);
+  const whom = item.userId === viewerId ? words('john.sheet.byYou') : firstNameIn(people, item.userId);
   const ticked = item.doneAt
-    ? verb(who, tickedAt(item.doneAt, now, rules.timezone))
+    ? words(item.coveredBy ? 'john.sheet.covered' : 'john.sheet.ticked', { who, when: tickedAt(item.doneAt, now, rules.timezone, words) })
     : item.absentAt
-      ? CREW_COPY.without(who, tickedAt(item.absentAt, now, rules.timezone), whom)
+      ? words('john.crew.without', { who, when: tickedAt(item.absentAt, now, rules.timezone, words), whom })
       : null;
   const stands = item.awaitsOk
     ? PARENT_OK_COPY.waiting
     : item.standsAt === null
       ? null
       : item.standsAt.getTime() > now.getTime()
-        ? JOHN_SHEET_COPY.standsIn(relative(item.standsAt, now))
-        : JOHN_SHEET_COPY.standsSoon;
+        ? words('john.sheet.standsIn', { when: relative(item.standsAt, now) })
+        : words('john.sheet.standsSoon');
   return [ticked, stands].filter(Boolean).join(", ");
 }
 
@@ -503,23 +504,26 @@ export function tickedLine(item: BoardItem, people: readonly Person[], viewerId:
  * What happened to a settled John, in a sentence: who did it and when. What
  * lateness costs is said only while it's to do; the Stake has what it cost.
  */
-export function settledLine(item: BoardItem, people: readonly Person[], viewerId: string, rules: HouseRules, now: Date): string {
-  const who = item.userId === viewerId ? JOHN_SHEET_COPY.you : firstNameIn(people, item.userId);
-  const ticked = item.doneAt ? tickedAt(item.doneAt, now, rules.timezone) : null;
+export function settledLine(item: BoardItem, people: readonly Person[], viewerId: string, rules: HouseRules, now: Date, words: Words): string {
+  const who = item.userId === viewerId ? words('john.sheet.you') : firstNameIn(people, item.userId);
+  const ticked = item.doneAt ? tickedAt(item.doneAt, now, rules.timezone, words) : null;
   switch (item.status) {
     case "done":
-      return JOHN_SHEET_COPY.doneOnTime(who, ticked);
+      return ticked ? words('john.sheet.doneOnTimeWhen', { who, when: ticked }) : words('john.sheet.doneOnTime', { who });
     case "late":
-      return JOHN_SHEET_COPY.doneLate(who, ticked);
+      return ticked ? words('john.sheet.doneLateWhen', { who, when: ticked }) : words('john.sheet.doneLate', { who });
     case "excused":
-      return JOHN_SHEET_COPY.excused(who);
+      return words('john.sheet.excused', { who });
     case "missed":
-      return item.absentAt ? CREW_COPY.missedAbsent : JOHN_SHEET_COPY.missed;
+      return item.absentAt ? words('john.crew.missedAbsent') : words('john.sheet.missed');
     case "covered": {
-      const coverer = item.coveredBy === viewerId ? JOHN_SHEET_COPY.you : firstNameIn(people, item.coveredBy);
+      const coverer = item.coveredBy === viewerId ? words('john.sheet.you') : firstNameIn(people, item.coveredBy);
       const yours = item.userId === viewerId;
-      const owner = yours ? JOHN_SHEET_COPY.byYou : called(people, item.userId);
-      return JOHN_SHEET_COPY.coveredSettled(coverer, owner, yours ? JOHN_SHEET_COPY.your : `${owner}’s`, ticked);
+      const owner = yours ? words('john.sheet.byYou') : called(people, item.userId, words);
+      const whose = yours ? words('john.sheet.your') : `${owner}’s`;
+      return ticked
+        ? words('john.sheet.coveredSettledWhen', { who: coverer, owner, whose, when: ticked })
+        : words('john.sheet.coveredSettled', { who: coverer, owner, whose });
     }
     default:
       return "";
@@ -539,8 +543,8 @@ export interface CoverOffer {
  * pts and £3."); overdue inside the grace, when it opens to you; nothing
  * before it's due. The money is the missed forfeit, before any cap.
  */
-export function coverOffer(item: BoardItem, people: readonly Person[], viewerId: string, rules: HouseRules, now: Date): CoverOffer {
-  const owner = called(people, item.userId);
+export function coverOffer(item: BoardItem, people: readonly Person[], viewerId: string, rules: HouseRules, now: Date, words: Words): CoverOffer {
+  const owner = called(people, item.userId, words);
   const holders = item.together ?? [item.userId];
   // On a Together John you have a place in, you tick it with the roll call.
   if (holders.includes(viewerId)) return { kind: null, text: null };
@@ -548,25 +552,27 @@ export function coverOffer(item: BoardItem, people: readonly Person[], viewerId:
     const each = rules.missedForfeitMinor * holders.length;
     const money = each > 0 ? formatMoney(each, rules.currency) : null;
     if (holders.length > 1) {
-      const owners = andNames(holders.map((id) => called(people, id)));
-      return { kind: "cover", text: CREW_COPY.coverBody(upperFirst(owners), pointsLabel(item.points * holders.length), money) };
+      const owners = andNames(holders.map((id) => called(people, id, words)));
+      const values = { owners: upperFirst(owners), points: pointsLabel(item.points * holders.length), money };
+      return { kind: "cover", text: money ? words('john.crew.coverBodyMoney', values) : words('john.crew.coverBody', values) };
     }
-    return { kind: "cover", text: JOHN_SHEET_COPY.coverBody(upperFirst(owner), pointsLabel(item.points), money) };
+    const values = { owner: upperFirst(owner), points: pointsLabel(item.points), money };
+    return { kind: "cover", text: money ? words('john.sheet.coverBodyMoney', values) : words('john.sheet.coverBody', values) };
   }
   if (item.userId !== viewerId && item.status === "overdue") {
     const opens = coverOpensAt(item.dueAt, rules.coverGraceHours, item.closesAt);
     if (item.heldUntil && item.heldUntil > now && item.heldUntil >= opens) {
-      return { kind: "soon", text: JOHN_SHEET_COPY.coverHeld(upperFirst(owner), dueInLine(item.heldUntil, now, rules.timezone)) };
+      return { kind: "soon", text: words('john.sheet.coverHeld', { owner: upperFirst(owner), when: dueInLine(item.heldUntil, now, rules.timezone) }) };
     }
-    return { kind: "soon", text: JOHN_SHEET_COPY.coverSoon(upperFirst(owner), dueInLine(opens, now, rules.timezone)) };
+    return { kind: "soon", text: words('john.sheet.coverSoon', { owner: upperFirst(owner), when: dueInLine(opens, now, rules.timezone) }) };
   }
   return { kind: null, text: null };
 }
 
 /** Needs you's title for a John you could cover: "Cover Sam’s Bins". */
-export function coverTitle(item: Pick<BoardItem, "userId" | "name">, people: readonly Person[]): string {
+export function coverTitle(item: Pick<BoardItem, "userId" | "name">, people: readonly Person[], words: Words): string {
   const owner = people.find((p) => p.userId === item.userId);
-  return NEXT_UP_COPY.coverOn(owner ? firstName(owner.name) : null, item.name);
+  return owner ? words('today.nextUp.coverOn', { owner: firstName(owner.name), john: item.name }) : words('today.nextUp.coverOnGone', { john: item.name });
 }
 
 function upperFirst(text: string): string {
@@ -614,10 +620,10 @@ export function canSwap(board: WeekBoard, me: { userId: string; swapTokens: numb
 }
 
 /** A housemate's open John as the swap lists it: "Tom, today 21:00, 3 pts", or "Tom, was due Sun, 1 pt" overdue. */
-export function swapMeta(item: BoardItem, people: readonly Person[], rules: HouseRules, now: Date): string {
+export function swapMeta(item: BoardItem, people: readonly Person[], rules: HouseRules, now: Date, words: Words): string {
   const due =
     item.status === "overdue"
-      ? NEXT_UP_COPY.wasDue(sinceLabel(item.dueAt, now, rules.timezone))
+      ? words('today.nextUp.wasDue', { when: sinceLabel(item.dueAt, now, rules.timezone) })
       : dueInLine(item.dueAt, now, rules.timezone);
   return [firstNameIn(people, item.userId), due, pointsLabel(item.points)].join(", ");
 }
@@ -632,9 +638,9 @@ export function swapChoice(
   people: readonly Person[],
   rules: HouseRules,
   now: Date,
-  chosen: boolean,
+  chosen: boolean, words: Words,
 ): { meta: string; label: string } {
-  const meta = swapMeta(item, people, rules, now);
+  const meta = swapMeta(item, people, rules, now, words);
   const word = STATUS_MARK[item.status].tone === "none" ? null : STATUS_LABEL[item.status];
   return {
     meta: chosen && word ? `${word}, ${meta}` : meta,
@@ -653,13 +659,15 @@ export function undoWarning(
   item: Pick<BoardItem, "dueAt" | "doneAt"> & { coveredBy?: string | null },
   rules: HouseRules,
   now: Date,
+  words: Words,
   room: number | null = null,
 ): string | null {
   // Taking back a cover only hands the John back to its owner: nothing of yours turns late.
   if (item.coveredBy) return null;
   if (now.getTime() <= item.dueAt.getTime()) return null;
   if (item.doneAt && item.doneAt.getTime() > item.dueAt.getTime()) return null;
-  return JOHN_SHEET_COPY.undoLate(forfeits(rules, room).late);
+  const late = forfeits(rules, room).late;
+  return late ? words('john.sheet.undoLateCost', { late }) : words('john.sheet.undoLate');
 }
 
 /** Everything Today shows, shaped from what the screen reads. */
@@ -699,7 +707,7 @@ export function todayPage(input: {
   /** Asks to swap still open that you made or were asked, as read. */
   offers?: readonly SwapOfferRow[];
   now?: Date;
-}): TodayPage {
+}, words: Words): TodayPage {
   const { board, mine, userId, away, stake, rules } = input;
   const state = nextUpState({
     board,
@@ -715,8 +723,8 @@ export function todayPage(input: {
     ...restOfWeek(mine, shown?.id ?? null),
     cant: { immunity: (cant?.immunity ?? 0) > 0, swap: (cant?.swapFor.length ?? 0) > 0 },
     room: shown ? forfeitRoom(stake, userId, monthOf(shown.dueAt, rules.timezone)) : null,
-    away: away && state.kind !== "away" ? awayLine(away.periods, userId, away.today) : null,
-    standing: board.week ? standingLine({ table: board.table, userId, stake, currency: rules.currency }) : null,
+    away: away && state.kind !== "away" ? awayLine(away.periods, userId, away.today, words) : null,
+    standing: board.week ? standingLine({ table: board.table, userId, stake, currency: rules.currency }, words) : null,
     ...swapsFor(input),
   };
 }
@@ -728,4 +736,9 @@ function swapsFor(input: Parameters<typeof todayPage>[0]): Pick<TodayPage, "swap
   const members = input.members.map((m) => ({ userId: m.userId, name: m.name, prefs: m.prefs ?? NO_PREFS }));
   const args = { items: input.board.items, viewerId: input.userId, members, offers, now };
   return { swap: swapAsk(args), offers: swapOffersToYou(args) };
+}
+
+/** How your share catches up after time away, by houses.away_makeup: in full, half of it, or none (it goes to whoever's home). */
+export function awayShare(makeup: number): "full" | "half" | "none" {
+  return makeup >= 100 ? "full" : makeup > 0 ? "half" : "none";
 }

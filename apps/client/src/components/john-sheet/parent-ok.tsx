@@ -14,6 +14,7 @@ import { SPACE } from '@/theme';
 
 import type { JohnSheetContext } from './body';
 import { SheetLines } from './parts';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * A kid's tick in a family, waiting for a parent's OK: who ticked it and
@@ -23,6 +24,7 @@ import { SheetLines } from './parts';
  * that it waits. There is no closing time and no vote.
  */
 export function AwaitsOk({ item, context }: { item: BoardItem; context: JohnSheetContext }) {
+  const words = useWords();
   const move = useMove(context.houseId);
   // Which answer is waiting: the two share one move.
   const [said, setSaid] = useState(true);
@@ -41,10 +43,10 @@ export function AwaitsOk({ item, context }: { item: BoardItem; context: JohnShee
 
   return (
     <SheetLines testID="awaits-ok">
-      <Body testID="ticked-line">{tickedLine(item, context.members, context.userId, context.rules, context.now)}</Body>
+      <Body testID="ticked-line">{tickedLine(item, context.members, context.userId, context.rules, context.now, words)}</Body>
       {parent ? (
         <>
-          <Meta testID="ok-who">{okWho(item, context.members, parentIds, context.userId)}</Meta>
+          <Meta testID="ok-who">{okWho(item, context.members, parentIds, context.userId, words)}</Meta>
           <View style={styles.pair}>
             <ButtonRow>
               <Button

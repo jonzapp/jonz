@@ -1,6 +1,5 @@
 import {
   canSwap,
-  CREW_COPY,
   memberCan,
   oneRowPerJob,
   passUnlocked,
@@ -9,7 +8,6 @@ import {
   PAGE_TITLE,
   RECORD_COPY,
   toggleWeekFilter,
-  WEEK_SUMMARY_COPY,
   weekAwayLine,
   weekAwayNote,
   weekFairness,
@@ -180,14 +178,14 @@ function Board({
   }
 
   const week = board.week;
-  const summary = weekSummary(board.items);
+  const summary = weekSummary(board.items, words);
   const shown = liveWeekFilter(summary, filter);
   // A filter whose part has emptied lets go for good, so the part filling up again later doesn't hide the rest.
   if (filter !== null && shown === null) setFilter(null);
   const memberIds = members.map((m) => m.userId);
-  const fairness = shares ? weekFairness(shares.balances, board.items.map((i) => i.points), userId, nameOf) : null;
+  const fairness = shares ? weekFairness(shares.balances, board.items.map((i) => i.points), userId, nameOf, words) : null;
   const pointsOf = (id: string) => board.table.find((r) => r.userId === id)?.points ?? 0;
-  const awayOf = (id: string) => (away ? weekAwayNote(away.periods, id, week.startsOn, away.today) : null);
+  const awayOf = (id: string) => (away ? weekAwayNote(away.periods, id, week.startsOn, away.today, words) : null);
   const onCallOf = (id: string) => {
     const names = snapshot.onCall.filter((r) => r.user_id === id && r.johns).map((r) => r.johns!.name);
     return names.length > 0 ? ON_CALL_COPY.weekLine(names) : null;
@@ -197,19 +195,19 @@ function Board({
   const summaryBar = (
     <TourSpot id="week.summary">
     <WeekSummaryBar
-      range={weekRangeLine(week.startsAt, week.endsAt, now, rules.timezone)}
+      range={weekRangeLine(week.startsAt, week.endsAt, now, rules.timezone, words)}
       summary={summary}
       filter={shown}
       onFilter={(part) => setFilter(toggleWeekFilter(shown, part))}
       // The table has no person headers, so what they'd say about time away and your swap goes here.
-      tag={wide && swapReady ? <Chip label={WEEK_SUMMARY_COPY.swapReady} icon={RepeatIcon} testID="swap-ready" /> : undefined}
+      tag={wide && swapReady ? <Chip label={words('week.summary.swapReady')} icon={RepeatIcon} testID="swap-ready" /> : undefined}
       note={
         wide
           ? weekAwayLine(
               weekPeople(board.items, memberIds, userId).map((p) => ({ userId: p.userId, away: awayOf(p.userId) })),
               userId,
               nameOf,
-            )
+             words)
           : null
       }
     />
@@ -224,7 +222,7 @@ function Board({
   ) : (
     <>
       {together.length > 0 ? (
-        <Section label={CREW_COPY.together} testID="week-together">
+        <Section label={words('john.crew.together')} testID="week-together">
           {together.map((item) => (
             <JohnRow key={item.id} item={item} context={context} testID="week-row" />
           ))}
@@ -268,7 +266,7 @@ function Board({
     ) : null;
   // What the deal looked ahead to, once the list is read to name the Johns.
   const look = list
-    ? weekLookAhead({ list, state: snapshot.steady, mode: rules.dealMode, items: board.items, memberIds, viewerId: userId, nameOf })
+    ? weekLookAhead({ list, state: snapshot.steady, mode: rules.dealMode, items: board.items, memberIds, viewerId: userId, nameOf, words })
     : null;
   const ahead = look ? (
     <>

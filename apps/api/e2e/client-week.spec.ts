@@ -1,8 +1,11 @@
-import { DISPUTE_COPY, JOHN_COPY, NEXT_UP_COPY, PAGE_TITLE, SECTION_LABEL, WEEK_SUMMARY_COPY } from "@app/core";
+import { PAGE_TITLE, SECTION_LABEL } from "@app/core";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 import { tickHouse } from "../lib/engine/tick";
 import { admin, CLIENT_URL, cleanUp, dealtHouseInClient } from "./auth";
+import { wordsFor } from '@app/core';
+
+const words = wordsFor('en', 'housemates');
 
 // The board in the Expo app's web build: two housemates, one ticks, the
 // other opens it from the board and disputes it in its John sheet. In a
@@ -42,9 +45,9 @@ test("dispute a housemate's tick from the board, and the house of two decides wh
   await ben.goto("/today");
   const benToday = ben.getByTestId("today-screen");
   await expect(benToday.getByTestId("next-up-name")).toHaveText(benJohn);
-  await benToday.getByTestId("next-up").getByRole("button", { name: JOHN_COPY.markDone, exact: true }).click();
+  await benToday.getByTestId("next-up").getByRole("button", { name: words('john.row.markDone'), exact: true }).click();
   const mine = benToday.getByTestId("rest-of-week").getByTestId("my-john").filter({ hasText: benJohn });
-  await expect(mine.getByRole("img", { name: NEXT_UP_COPY.stateLabel.checking })).toBeVisible();
+  await expect(mine.getByRole("img", { name: words('today.nextUp.stateLabel.checking') })).toBeVisible();
 
   // Ava goes from Today to the board by its tab, and sees it being checked.
   const ava = await avaContext.newPage();
@@ -53,7 +56,7 @@ test("dispute a housemate's tick from the board, and the house of two decides wh
   await expect(ava).toHaveURL(/\/week$/);
   await expect(ava.getByRole("heading", { name: PAGE_TITLE.week })).toBeVisible();
   const theirs = onBoard(ava, benJohn);
-  await expect(theirs.getByRole("img", { name: NEXT_UP_COPY.stateLabel.checking })).toBeVisible();
+  await expect(theirs.getByRole("img", { name: words('today.nextUp.stateLabel.checking') })).toBeVisible();
   await expect(theirs.getByTestId("status-checking")).toBeVisible();
 
   // The row opens its John sheet, where she disputes it. She's the only
@@ -61,11 +64,11 @@ test("dispute a housemate's tick from the board, and the house of two decides wh
   await theirs.getByRole("button", { name: benJohn }).click();
   const sheet = ava.getByTestId("john-sheet");
   await expect(sheet.getByTestId("john-sheet-name")).toHaveText(benJohn);
-  await sheet.getByRole("button", { name: DISPUTE_COPY.open, exact: true }).click();
-  await sheet.getByLabel(DISPUTE_COPY.label).fill("Still greasy");
-  await sheet.getByRole("button", { name: DISPUTE_COPY.send }).click();
-  await expect(sheet.getByRole("button", { name: DISPUTE_COPY.open, exact: true })).toHaveCount(0);
-  await expect(theirs.getByRole("img", { name: NEXT_UP_COPY.stateLabel.disputed })).toBeVisible();
+  await sheet.getByRole("button", { name: words('john.dispute.open'), exact: true }).click();
+  await sheet.getByLabel(words('john.dispute.label')).fill("Still greasy");
+  await sheet.getByRole("button", { name: words('john.dispute.send') }).click();
+  await expect(sheet.getByRole("button", { name: words('john.dispute.open'), exact: true })).toHaveCount(0);
+  await expect(theirs.getByRole("img", { name: words('today.nextUp.stateLabel.disputed') })).toBeVisible();
   const { data: open } = await admin().from("disputes").select("id, resolution").eq("house_id", houseId);
   expect(open).toEqual([{ id: expect.any(String), resolution: null }]);
 
@@ -73,11 +76,11 @@ test("dispute a housemate's tick from the board, and the house of two decides wh
   await admin().from("disputes").update({ closes_at: new Date(Date.now() - 1000).toISOString() }).eq("id", open![0].id);
   await tickHouse(admin(), houseId, new Date());
   await ava.reload();
-  await expect(onBoard(ava, benJohn).getByRole("img", { name: WEEK_SUMMARY_COPY.notDone })).toBeVisible();
+  await expect(onBoard(ava, benJohn).getByRole("img", { name: words('today.nextUp.stateLabel.open') })).toBeVisible();
 
   // Ben's Today follows: his John is open again.
   await ben.reload();
-  await expect(benToday.getByTestId("next-up").getByRole("button", { name: JOHN_COPY.markDone, exact: true })).toBeVisible();
+  await expect(benToday.getByTestId("next-up").getByRole("button", { name: words('john.row.markDone'), exact: true })).toBeVisible();
   await expect(benToday.getByTestId("next-up-name")).toHaveText(benJohn);
   const { data: struck } = await admin().from("disputes").select("resolution").eq("house_id", houseId);
   expect(struck).toEqual([{ resolution: "upheld" }]);

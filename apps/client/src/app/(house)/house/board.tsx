@@ -29,6 +29,7 @@ import { useMove } from '@/hooks/use-move';
 import { usePocket } from '@/hooks/use-pocket';
 import { usePull } from '@/hooks/use-refresh';
 import { ListPageOutline } from '@/components/page-outlines';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * The board (docs/specs/family-houses.md, "The board"): a family's shared
@@ -146,10 +147,11 @@ function BoardRow({
   zone: string;
   currency: Currency;
 }) {
+  const words = useWords();
   const sheet = useJohnSheet();
   const move = useMove(houseId);
   // Planned as the kid sees it: whether it's still to do, and its line.
-  const plan = johnRow(item, item.userId, now, zone, () => kid);
+  const plan = johnRow(item, item.userId, now, zone, () => kid, words);
   const waits = item.awaitsOk === true && item.doneAt !== null;
   const meta = waits ? BOARD_COPY.waits : item.needsPhoto && plan.ticks ? BOARD_COPY.photo : plan.meta;
   const leading =

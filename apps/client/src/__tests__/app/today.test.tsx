@@ -1,24 +1,17 @@
 import {
   BIN_NIGHT,
   buildStake,
-  DISPUTE_COPY,
   type DisputeRow,
   FOCUS_SHELL_COPY,
   HOUSE_PAGE_COPY,
-  JOHN_COPY,
-  JOHN_SHEET_COPY,
   localDate,
   monthOf,
   MOVING_COPY,
-  NEXT_UP_COPY,
-  NOT_DEALT_COPY,
   ON_CALL_COPY,
   PAGE_TITLE,
   PARENT_OK_COPY,
   planLabel,
   STEADY_COPY,
-  TODAY_COPY,
-  WEEK_SUMMARY_COPY,
   wordsFor,
 } from '@app/core';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -170,13 +163,13 @@ describe('Next up', () => {
   it('posts your next John on a plate, with what it is, when it is due and what late costs', async () => {
     const card = await open();
     // The plate says it's next: "Next up" is heard, not shown.
-    expect(within(card).queryByText(NEXT_UP_COPY.label)).toBeNull();
-    expect(within(card).getByRole('button', { name: `${NEXT_UP_COPY.label}: Bins out` })).toBeOnTheScreen();
+    expect(within(card).queryByText(words('today.nextUp.label'))).toBeNull();
+    expect(within(card).getByRole('button', { name: `${words('today.nextUp.label')}: Bins out` })).toBeOnTheScreen();
     expect(within(card).getByText('Bins out')).toBeOnTheScreen();
     expect(within(card).getByTestId('plate-border')).toBeOnTheScreen();
     expect(screen.getByTestId('next-up-meta')).toHaveTextContent(/^Bins, due .+, £1 if late$/);
-    expect(within(card).getByRole('button', { name: JOHN_COPY.markDone })).toBeOnTheScreen();
-    expect(within(card).getByRole('button', { name: NEXT_UP_COPY.photo })).toBeOnTheScreen();
+    expect(within(card).getByRole('button', { name: words('john.row.markDone') })).toBeOnTheScreen();
+    expect(within(card).getByRole('button', { name: words('today.nextUp.photo') })).toBeOnTheScreen();
     // Not overdue, and no skip to use: no hazard, no way to skip.
     expect(screen.queryByTestId('overdue-edge')).toBeNull();
     expect(screen.queryByTestId('skip-or-swap')).toBeNull();
@@ -227,8 +220,8 @@ describe('Next up', () => {
   it('leads a photo John with the camera, and offers the library beside it', async () => {
     read.mockResolvedValue(snapshot({ assignments: [assignment({ needs_photo: true })] }));
     await open();
-    expect(screen.getByTestId('mark-done')).toHaveTextContent(NEXT_UP_COPY.takePhoto);
-    await fireEvent.press(screen.getByRole('button', { name: NEXT_UP_COPY.library }));
+    expect(screen.getByTestId('mark-done')).toHaveTextContent(words('today.nextUp.takePhoto'));
+    await fireEvent.press(screen.getByRole('button', { name: words('today.nextUp.library') }));
     expect(pickPhoto).toHaveBeenCalledWith('library');
     await fireEvent.press(screen.getByTestId('mark-done'));
     expect(pickPhoto).toHaveBeenLastCalledWith('camera');
@@ -275,9 +268,9 @@ describe('Next up', () => {
   });
 
   it.each([
-    [{ immunityTokens: 1 }, NEXT_UP_COPY.cant(true, false), 'skip-confirm'],
-    [{ swapTokens: 1 }, NEXT_UP_COPY.cant(false, true), 'swap-picker'],
-    [{ immunityTokens: 2, swapTokens: 1 }, NEXT_UP_COPY.cant(true, true), 'if-you-cant'],
+    [{ immunityTokens: 1 }, words('today.nextUp.cant', { skip: true, swap: false }), 'skip-confirm'],
+    [{ swapTokens: 1 }, words('today.nextUp.cant', { skip: false, swap: true }), 'swap-picker'],
+    [{ immunityTokens: 2, swapTokens: 1 }, words('today.nextUp.cant', { skip: true, swap: true }), 'if-you-cant'],
   ])('offers to skip or swap while you hold %o, and opens the sheet on it', async (tokens, words, part) => {
     read.mockResolvedValue(snapshot({ members: priyaWith(tokens) }));
     await open();
@@ -302,7 +295,7 @@ describe('what takes Next up’s place', () => {
     );
     const card = await open();
     expect(within(card).getByText(/^You’re clear until (Mon|Tue|Wed|Thu|Fri|Sat|Sun)$/)).toBeOnTheScreen();
-    expect(within(card).getByText(NEXT_UP_COPY.clearBody)).toBeOnTheScreen();
+    expect(within(card).getByText(words('today.nextUp.clearBody'))).toBeOnTheScreen();
     expect(screen.queryByTestId('mark-done')).toBeNull();
     // The finished ones are folded away.
     expect(screen.getByTestId('done-fold')).toHaveTextContent(FOCUS_SHELL_COPY.done(3));
@@ -311,7 +304,7 @@ describe('what takes Next up’s place', () => {
   it('says so when nothing on the list is yours this week', async () => {
     read.mockResolvedValue(snapshot({ assignments: [assignment({ user_id: 'sam' })] }));
     const card = await open();
-    expect(within(card).getByText(NEXT_UP_COPY.nothingYours)).toBeOnTheScreen();
+    expect(within(card).getByText(words('today.nextUp.nothingYours'))).toBeOnTheScreen();
     expect(screen.queryByTestId('rest-of-week')).toBeNull();
   });
 
@@ -323,9 +316,9 @@ describe('what takes Next up’s place', () => {
       await show();
       const card = await screen.findByText(/^You’re away until Wed 28 Oct$/);
       expect(card).toBeOnTheScreen();
-      expect(screen.getByText(NEXT_UP_COPY.awayBody(100))).toBeOnTheScreen();
+      expect(screen.getByText(words('today.nextUp.awayBody', { share: 'full' }))).toBeOnTheScreen();
       expect(screen.queryByTestId('mark-done')).toBeNull();
-      await fireEvent.press(screen.getByRole('link', { name: NEXT_UP_COPY.changeDates }));
+      await fireEvent.press(screen.getByRole('link', { name: words('today.nextUp.changeDates') }));
       expect(screen).toHavePathname('/house/away');
     });
 
@@ -347,7 +340,7 @@ describe('what takes Next up’s place', () => {
       const line = await screen.findByTestId('away-line');
       expect(line).toHaveTextContent('You’re away 23–28 Oct');
       expect(screen.getByTestId('mark-done')).toBeOnTheScreen();
-      await fireEvent.press(screen.getByRole('link', { name: `You’re away 23–28 Oct. ${NEXT_UP_COPY.changeDates}` }));
+      await fireEvent.press(screen.getByRole('link', { name: `You’re away 23–28 Oct. ${words('today.nextUp.changeDates')}` }));
       expect(screen).toHavePathname('/house/away');
     });
 
@@ -372,9 +365,9 @@ describe('what takes Next up’s place', () => {
       read.mockResolvedValue(first());
       const card = await open();
       expect(within(card).getByText('Set up Flat 3')).toBeOnTheScreen();
-      expect(await within(card).findByText(NEXT_UP_COPY.onTheList(1))).toBeOnTheScreen();
+      expect(await within(card).findByText(words('today.nextUp.onTheList', { count: 1 }))).toBeOnTheScreen();
       expect(within(card).getByText(words('today.nextUp.soFar', { count: 2 }))).toBeOnTheScreen();
-      const deal = within(card).getByRole('button', { name: NEXT_UP_COPY.dealWeek1 });
+      const deal = within(card).getByRole('button', { name: words('today.nextUp.dealWeek1') });
       expect(deal).toHaveStyle({ backgroundColor: BIN_NIGHT.light.hivis });
       await fireEvent.press(deal);
       expect(dealThisWeek).toHaveBeenCalledWith('h1');
@@ -385,8 +378,8 @@ describe('what takes Next up’s place', () => {
       (loadJohnList as jest.Mock).mockResolvedValue({ johns: [], groups: [] });
       read.mockResolvedValue({ ...first(), members: first().members.slice(0, 1) });
       const card = await open();
-      expect(await within(card).findByText(NEXT_UP_COPY.onTheList(0))).toBeOnTheScreen();
-      const deal = within(card).getByRole('button', { name: NEXT_UP_COPY.dealWeek1 });
+      expect(await within(card).findByText(words('today.nextUp.onTheList', { count: 0 }))).toBeOnTheScreen();
+      const deal = within(card).getByRole('button', { name: words('today.nextUp.dealWeek1') });
       expect(deal).toHaveStyle({ backgroundColor: 'transparent' });
       await fireEvent.press(deal);
       expect(dealThisWeek).toHaveBeenCalledWith('h1');
@@ -407,7 +400,7 @@ describe('what takes Next up’s place', () => {
         backgroundColor: BIN_NIGHT.light.hivis,
       });
       await fireEvent.press(sheet.getByTestId('sheet-close'));
-      await fireEvent.press(screen.getByRole('link', { name: new RegExp(NEXT_UP_COPY.addJohns) }));
+      await fireEvent.press(screen.getByRole('link', { name: new RegExp(words('today.nextUp.addJohns')) }));
       expect(screen).toHavePathname('/house/johns');
     });
 
@@ -421,7 +414,7 @@ describe('what takes Next up’s place', () => {
         ],
       });
       const card = await open();
-      expect(within(card).getByText(NEXT_UP_COPY.waiting('Sam'))).toBeOnTheScreen();
+      expect(within(card).getByText(words('today.nextUp.waiting', { admin: 'Sam' }))).toBeOnTheScreen();
       expect(screen.queryByTestId('setup-steps')).toBeNull();
     });
   });
@@ -429,7 +422,7 @@ describe('what takes Next up’s place', () => {
   it("says when a dealt house has nothing handed out this week", async () => {
     read.mockResolvedValue(snapshot({ week: null, assignments: [] }));
     const card = await open();
-    expect(within(card).getByText(NOT_DEALT_COPY.nothingThisWeek)).toBeOnTheScreen();
+    expect(within(card).getByText(words('today.notDealt.nothingThisWeek'))).toBeOnTheScreen();
     expect(screen.queryByTestId('standing-line')).toBeNull();
   });
 });
@@ -511,7 +504,7 @@ describe('Needs you', () => {
     read.mockResolvedValue(disputed());
     await open();
     const section = screen.getByTestId('needs-you');
-    expect(within(section).getByText(`${NEXT_UP_COPY.needsYou}`)).toBeOnTheScreen();
+    expect(within(section).getByText(`${words('today.nextUp.needsYou')}`)).toBeOnTheScreen();
     const row = within(section).getByTestId('vote-row');
     expect(within(row).getByText('Vote on Sam’s Clean the bath')).toBeOnTheScreen();
     expect(row).toHaveTextContent(/Megan says it’s not done, closes in 1[78]h/);
@@ -525,10 +518,10 @@ describe('Needs you', () => {
     await fireEvent.press(within(screen.getByTestId('needs-you')).getByTestId('vote-row'));
     const body = await screen.findByTestId('john-sheet-body');
     expect(within(body).getByText('“Ring round the bath”')).toBeOnTheScreen();
-    await fireEvent.press(within(body).getByRole('button', { name: DISPUTE_COPY.notDone }));
+    await fireEvent.press(within(body).getByRole('button', { name: words('john.dispute.notDone') }));
     expect(castVote).toHaveBeenCalledWith('d1', true);
     await waitFor(() => expect(screen.queryByTestId('john-sheet-body')).toBeNull());
-    expect(screen.getByText(JOHN_SHEET_COPY.voted)).toBeOnTheScreen();
+    expect(screen.getByText(words('john.sheet.voted'))).toBeOnTheScreen();
   });
 
   it("lists a housemate's John past due and the grace, to cover, and opens its sheet", async () => {
@@ -549,7 +542,7 @@ describe('Needs you', () => {
     expect(within(rows[0]).getByText('Cover Sam’s Clean the bath')).toBeOnTheScreen();
     await fireEvent.press(rows[0]);
     const body = await screen.findByTestId('john-sheet-body');
-    expect(within(body).getByRole('button', { name: JOHN_SHEET_COPY.coverIt })).toBeOnTheScreen();
+    expect(within(body).getByRole('button', { name: words('john.sheet.coverIt') })).toBeOnTheScreen();
   });
 });
 
@@ -613,13 +606,13 @@ describe('the rest of your week', () => {
   it('lists your other Johns, ticked from their tick box, with the finished ones folded', async () => {
     await open();
     const section = screen.getByTestId('rest-of-week');
-    expect(within(section).getByText(NEXT_UP_COPY.rest)).toBeOnTheScreen();
+    expect(within(section).getByText(words('today.nextUp.rest'))).toBeOnTheScreen();
     // Next up's John isn't listed twice.
     expect(within(section).queryByText('Bins out')).toBeNull();
     expect(within(section).getByText('Hoover the stairs')).toBeOnTheScreen();
     expect(within(section).queryByText('Wipe the hob')).toBeNull();
 
-    await fireEvent.press(within(section).getByRole('checkbox', { name: NEXT_UP_COPY.tick('Hoover the stairs') }));
+    await fireEvent.press(within(section).getByRole('checkbox', { name: words('today.nextUp.tick', { john: 'Hoover the stairs' }) }));
     expect(markDone).toHaveBeenCalledWith('a2');
 
     const fold = screen.getByTestId('done-fold');
@@ -628,7 +621,7 @@ describe('the rest of your week', () => {
     // Done once: the green box, then the points it earned, not a second mark.
     const hob = within(section).getAllByTestId('my-john')[1];
     expect(hob).toHaveTextContent(/^Wipe the hobKitchen, done .+2 pts$/);
-    expect(within(hob).getByLabelText(NEXT_UP_COPY.stateLabel.done)).toBeOnTheScreen();
+    expect(within(hob).getByLabelText(words('today.nextUp.stateLabel.done'))).toBeOnTheScreen();
     expect(within(hob).queryByTestId('status-done')).toBeNull();
   });
 
@@ -655,12 +648,12 @@ describe('the rest of your week', () => {
     const section = screen.getByTestId('rest-of-week');
     const stairs = within(section).getByTestId('my-john');
     expect(stairs).toHaveTextContent(/^Hoover the stairsDisputed by Sam, 1[78]h left2 pts$/);
-    expect(within(stairs).getByLabelText(NEXT_UP_COPY.stateLabel.disputed)).toBeOnTheScreen();
+    expect(within(stairs).getByLabelText(words('today.nextUp.stateLabel.disputed'))).toBeOnTheScreen();
     await fireEvent.press(screen.getByTestId('done-fold'));
     const hob = within(section).getAllByTestId('my-john')[1];
     expect(hob).toHaveTextContent(/^Wipe the hobKitchen, skipped$/);
     // Never spoken as "Not done".
-    expect(within(hob).queryByLabelText(NEXT_UP_COPY.stateLabel.open)).toBeNull();
+    expect(within(hob).queryByLabelText(words('today.nextUp.stateLabel.open'))).toBeNull();
   });
 
   it('says how many of the folded ones were late, as Week does', async () => {
@@ -676,7 +669,7 @@ describe('the rest of your week', () => {
     await open();
     const fold = within(screen.getByTestId('done-fold'));
     expect(fold.getByText(`${FOCUS_SHELL_COPY.done(2)},`)).toBeOnTheScreen();
-    expect(fold.getByText(WEEK_SUMMARY_COPY.late(1))).toBeOnTheScreen();
+    expect(fold.getByText(words('week.summary.late', { count: 1 }))).toBeOnTheScreen();
   });
 
   it('offers Undo while the house checks your tick', async () => {
@@ -685,9 +678,9 @@ describe('the rest of your week', () => {
     );
     await open();
     const row = within(screen.getByTestId('rest-of-week')).getByTestId('my-john');
-    expect(within(row).getByLabelText(NEXT_UP_COPY.stateLabel.checking)).toBeOnTheScreen();
+    expect(within(row).getByLabelText(words('today.nextUp.stateLabel.checking'))).toBeOnTheScreen();
     expect(within(row).queryByTestId('status-checking')).toBeNull();
-    await fireEvent.press(within(row).getByRole('button', { name: NEXT_UP_COPY.undo('Hoover the stairs') }));
+    await fireEvent.press(within(row).getByRole('button', { name: words('today.nextUp.undo', { john: 'Hoover the stairs' }) }));
     expect(undoDone).toHaveBeenCalledWith('a2');
   });
 
@@ -707,7 +700,7 @@ describe('the rest of your week', () => {
     (markDone as jest.Mock).mockRejectedValue(new Error('That week has closed.'));
     await open();
     const section = screen.getByTestId('rest-of-week');
-    await fireEvent.press(within(section).getByRole('checkbox', { name: NEXT_UP_COPY.tick('Hoover the stairs') }));
+    await fireEvent.press(within(section).getByRole('checkbox', { name: words('today.nextUp.tick', { john: 'Hoover the stairs' }) }));
     expect(await within(section).findByRole('alert')).toHaveTextContent('That week has closed.');
   });
 });
@@ -888,7 +881,7 @@ describe('on a laptop', () => {
     // The glance's parts are one line, not Week's filters.
     expect(within(glance).getByTestId('week-parts')).toBeOnTheScreen();
     expect(within(glance).queryByRole('button', { name: /done/ })).toBeNull();
-    expect(within(glance).getByRole('link', { name: new RegExp(TODAY_COPY.seeWeek) })).toBeOnTheScreen();
+    expect(within(glance).getByRole('link', { name: new RegExp(words('today.page.seeWeek')) })).toBeOnTheScreen();
   });
 
   it('stays in one column, in the phone’s order, at the narrowest laptop', async () => {

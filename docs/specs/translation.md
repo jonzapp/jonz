@@ -9,8 +9,8 @@ through FormatJS. A family reads its own sentences (never "housemates" or
 ## How it works
 
 - **The words files.** `packages/core/src/locales/en/<part>.json`, one per
-  part of the app (`today`, `week`, `house`, `people`, `wall`, `common`, and
-  more as the lines move). Flat ids that start with the file's name
+  part of the app (`today`, `week`, `john`, `house`, `people`, `wall`,
+  `common`, and more as the lines move). Flat ids that start with the file's name
   (`today.nextUp.invite`), each line an ICU message:
   - a family's own sentence: `{kind, select, family {Invite your family} other {Invite housemates}}`
   - a count: `{count, plural, one {# housemate} other {# housemates}}`
@@ -43,7 +43,10 @@ The lines move part by part, one pull request each, merged one at a time:
 
 1. FormatJS, `useWords()`/`wordsFor()`, the checks, and every line that
    differs for a family.
-2. Today, Week and the John sheet.
+2. Today, Week and the John sheet (`today.json`, `week.json`, `john.json`).
+   Shared code that says these lines takes the reader's `words` as its last
+   argument (before any optional one), so the API and pushes pass
+   `wordsFor(language, kind)` and screens pass `useWords()`.
 3. House (Rules, the Johns, the Table, the Stake, You).
 4. The Wall, History, emails and push.
 5. The front door, sign-in, joining, errors, the Guide and tours.

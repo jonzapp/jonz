@@ -7,6 +7,7 @@ import { JohnRow, type JohnRowContext } from '@/components/john-row';
 import { Row } from '@/components/row';
 import { Section } from '@/components/section';
 import { Meta } from '@/components/text';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * The cards a reply can hold (::week, ::shares, ::johns). Each is the app's
@@ -45,6 +46,7 @@ export function SharesCard({
   keyLine?: string;
   href?: Href;
 }) {
+  const words = useWords();
   return (
     <Section label={REPLY_COPY.shares}>
       <Group>
@@ -52,7 +54,7 @@ export function SharesCard({
           <Row
             key={row.userId}
             leading={<Avatar name={nameOf(row.userId) ?? FOCUS_SHELL_COPY.formerHousemate} userId={row.userId} me={row.userId === viewerId} />}
-            title={weekWho(row.userId, viewerId, nameOf)}
+            title={weekWho(row.userId, viewerId, nameOf, words)}
             trailing={row.balance}
             href={href}
             testID="reply-share"

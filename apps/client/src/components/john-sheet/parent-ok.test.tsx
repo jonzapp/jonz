@@ -1,4 +1,4 @@
-import { DISPUTE_COPY, PARENT_OK_COPY } from '@app/core';
+import { PARENT_OK_COPY , wordsFor } from '@app/core';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { Pressable, Text } from 'react-native';
@@ -11,6 +11,8 @@ import { assignment, snapshot } from '@/testing/house';
 import { testQueryClient } from '@/testing/query';
 
 import { JohnSheetProvider, useJohnSheet } from '.';
+
+const words = wordsFor('en', 'housemates');
 
 jest.mock('@/api/board', () => ({ loadHouse: jest.fn() }));
 jest.mock('@/api/house', () => ({ catchUp: jest.fn(() => Promise.resolve(false)) }));
@@ -72,7 +74,7 @@ describe("a kid's tick in the John sheet", () => {
     await openAs('priya');
     expect(await screen.findByTestId('ok-who')).toHaveTextContent('You can OK it. Not yet sends it back to Sam.');
     expect(screen.getByTestId('ticked-line')).toHaveTextContent(PARENT_OK_COPY.waiting, { exact: false });
-    expect(screen.queryByRole('button', { name: DISPUTE_COPY.open })).toBeNull();
+    expect(screen.queryByRole('button', { name: words('john.dispute.open') })).toBeNull();
     await fireEvent.press(screen.getByRole('button', { name: PARENT_OK_COPY.ok }));
     await waitFor(() => expect(answerTick).toHaveBeenCalledWith('a4', true));
   });

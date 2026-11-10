@@ -7,6 +7,9 @@ import { payRows, pocketCard, pocketHistory, pocketMoney, pocketRules, pocketVie
 import { checkRules, rulesDraft, rulesRows } from "./setup";
 import { nextUpMeta } from "./today";
 import { describeEvent, type WallEvent } from "./wall";
+import { wordsFor } from "./words-for";
+
+const words = wordsFor("en", "housemates");
 
 /** Pocket money and Pay day, family step 3 (docs/specs/family-houses.md). */
 
@@ -81,9 +84,9 @@ describe("what a John earns", () => {
 
   it("is said in Next up's meta where a housemate's cost would be", () => {
     const [item] = board([row("Feed the cat")], KIDS).items;
-    expect(nextUpMeta(item, RULES, now).due).toBe("due today 21:00, earns 50p");
+    expect(nextUpMeta(item, RULES, now, words).due).toBe("due today 21:00, earns 50p");
     const [mate] = board([row("Bins")]).items;
-    expect(nextUpMeta(mate, RULES, now).due).toBe("due today 21:00");
+    expect(nextUpMeta(mate, RULES, now, words).due).toBe("due today 21:00");
   });
 });
 

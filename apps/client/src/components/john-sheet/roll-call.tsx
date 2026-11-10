@@ -1,8 +1,6 @@
 import {
-  CREW_COPY,
   firstName,
   FOCUS_SHELL_COPY,
-  JOHN_SHEET_COPY,
   jobPlaces,
   pointsLabel,
   rollCallPlace,
@@ -27,6 +25,7 @@ import { useTick } from '@/hooks/use-tick';
 
 import type { JohnSheetContext } from './body';
 import { SheetLines, SheetSection } from './parts';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * The roll call, in place of the sheet's content: "Who did it?". You first
@@ -37,6 +36,7 @@ import { SheetLines, SheetSection } from './parts';
  * 4 pts each"), then Mark done (with a photo, for a photo John) and Cancel.
  */
 export function RollCall({ item, context, onCancel }: { item: BoardItem; context: JohnSheetContext; onCancel: () => void }) {
+  const words = useWords();
   const places = jobPlaces(item, context.board.items).map(rollCallPlace);
   const [holders] = useState(() => rollCallStart(places, context.userId));
   const [helpers, setHelpers] = useState<string[]>([]);
@@ -46,7 +46,7 @@ export function RollCall({ item, context, onCancel }: { item: BoardItem; context
   const plan = rollCallPlan(places, crew);
   const tick = useTick(context.houseId, item.id, { crew });
   const others = context.members.filter((m) => !holders.includes(m.userId) && !helpers.includes(m.userId));
-  const name = (id: string) => (id === context.userId ? JOHN_SHEET_COPY.you : context.nameOf(id));
+  const name = (id: string) => (id === context.userId ? words('john.sheet.you') : context.nameOf(id));
 
   const toggle = (id: string) => setOff((was) => (was.includes(id) ? was.filter((x) => x !== id) : [...was, id]));
   const add = (id: string) => {
@@ -57,10 +57,10 @@ export function RollCall({ item, context, onCancel }: { item: BoardItem; context
   return (
     <>
       <SheetLines>
-        <Body testID="roll-call-sub">{CREW_COPY.sub(pointsLabel(plan.total))}</Body>
+        <Body testID="roll-call-sub">{words('john.crew.sub', { total: pointsLabel(plan.total) })}</Body>
       </SheetLines>
       <SheetSection>
-        <Section label={CREW_COPY.title} testID="roll-call">
+        <Section label={words('john.crew.title')} testID="roll-call">
           {holders.map((id) => {
             const you = id === context.userId;
             const on = !off.includes(id);
@@ -70,7 +70,7 @@ export function RollCall({ item, context, onCancel }: { item: BoardItem; context
                 role="checkbox"
                 leading={<Avatar name={context.nameOf(id)} me={you} />}
                 label={name(id)}
-                meta={you ? CREW_COPY.youDidIt : on ? undefined : CREW_COPY.leftOff(firstName(context.nameOf(id)))}
+                meta={you ? words('john.crew.youDidIt') : on ? undefined : words('john.crew.leftOff', { name: firstName(context.nameOf(id)) })}
                 checked={on}
                 // Whoever ticks it did it: you can't leave yourself off.
                 disabled={you}
@@ -85,7 +85,7 @@ export function RollCall({ item, context, onCancel }: { item: BoardItem; context
               role="checkbox"
               leading={<Avatar name={context.nameOf(id)} />}
               label={name(id)}
-              meta={CREW_COPY.helped}
+              meta={words('john.crew.helped')}
               checked
               // Unticked, a helper comes off the list again.
               onPress={() => setHelpers((was) => was.filter((x) => x !== id))}
@@ -96,7 +96,7 @@ export function RollCall({ item, context, onCancel }: { item: BoardItem; context
             others.length > 0 ? (
               <>
                 <GroupItem>
-                  <Meta>{CREW_COPY.pickHelper}</Meta>
+                  <Meta>{words('john.crew.pickHelper')}</Meta>
                 </GroupItem>
                 {others.map((m) => (
                   <Row
@@ -111,20 +111,20 @@ export function RollCall({ item, context, onCancel }: { item: BoardItem; context
               </>
             ) : (
               <GroupItem>
-                <Meta>{CREW_COPY.noMoreHelpers}</Meta>
+                <Meta>{words('john.crew.noMoreHelpers')}</Meta>
               </GroupItem>
             )
           ) : (
             <Row
               leading={<RowIcon icon={PlusIcon} />}
-              title={CREW_COPY.addHelper}
+              title={words('john.crew.addHelper')}
               onPress={() => setAdding(true)}
               testID="add-helper"
             />
           )}
           <GroupItem>
             <Meta testID="roll-call-split">
-              {`${CREW_COPY.split(pointsLabel(plan.total), crew.length)}, ${CREW_COPY.splitEach(shareLabel(plan.each))}`}
+              {`${words('john.crew.split', { total: pointsLabel(plan.total), people: crew.length })}, ${words('john.crew.splitEach', { each: shareLabel(plan.each) })}`}
             </Meta>
           </GroupItem>
         </Section>
@@ -134,7 +134,7 @@ export function RollCall({ item, context, onCancel }: { item: BoardItem; context
           <>
             <Button
               icon={CameraIcon}
-              label={CREW_COPY.photoDone}
+              label={words('john.crew.photoDone')}
               busy={tick.waiting === 'camera'}
               busyLabel={tick.busyLabel}
               disabled={tick.held('camera')}
@@ -144,7 +144,7 @@ export function RollCall({ item, context, onCancel }: { item: BoardItem; context
             <Button
               variant="outline"
               icon={ImagesIcon}
-              label={JOHN_SHEET_COPY.fromLibrary}
+              label={words('john.sheet.fromLibrary')}
               busy={tick.waiting === 'library'}
               busyLabel={tick.busyLabel}
               disabled={tick.held('library')}
@@ -154,7 +154,7 @@ export function RollCall({ item, context, onCancel }: { item: BoardItem; context
         ) : (
           <Button
             icon={CheckIcon}
-            label={CREW_COPY.markDone}
+            label={words('john.crew.markDone')}
             busy={tick.waiting === 'tick'}
             busyLabel={tick.busyLabel}
             disabled={tick.held('tick')}
@@ -176,14 +176,15 @@ export function RollCall({ item, context, onCancel }: { item: BoardItem; context
  * anyone left off as not there. Nothing on a John done by one alone.
  */
 export function CrewPart({ item, context }: { item: BoardItem; context: JohnSheetContext }) {
+  const words = useWords();
   const places = jobPlaces(item, context.board.items);
   if (!item.crew && places.length <= 1) return null;
   const avatar = (id: string) => <Avatar name={context.nameOf(id)} me={id === context.userId} />;
-  const name = (id: string) => (id === context.userId ? JOHN_SHEET_COPY.you : context.nameOf(id));
+  const name = (id: string) => (id === context.userId ? words('john.sheet.you') : context.nameOf(id));
   if (!item.crew) {
     return (
       <SheetSection>
-        <Section label={CREW_COPY.onIt} testID="crew-part">
+        <Section label={words('john.crew.onIt')} testID="crew-part">
           {places.map((p) => (
             <Row
               key={p.id}
@@ -200,13 +201,13 @@ export function CrewPart({ item, context }: { item: BoardItem; context: JohnShee
   const left = places.filter((p) => p.absentAt);
   return (
     <SheetSection>
-      <Section label={CREW_COPY.didIt} testID="crew-part">
+      <Section label={words('john.crew.didIt')} testID="crew-part">
         {item.crew.people.map((c) => (
           <Row
             key={c.userId}
             leading={avatar(c.userId)}
             title={name(c.userId)}
-            meta={c.helper ? CREW_COPY.helped : undefined}
+            meta={c.helper ? words('john.crew.helped') : undefined}
             trailing={shareLabel(c.points)}
             testID="crew-member"
           />
@@ -216,7 +217,7 @@ export function CrewPart({ item, context }: { item: BoardItem; context: JohnShee
             key={p.id}
             leading={avatar(p.userId)}
             title={name(p.userId)}
-            meta={CREW_COPY.wasntThere}
+            meta={words('john.crew.wasntThere')}
             trailing={<StatusMark status={p.status} />}
             testID="crew-absent"
           />

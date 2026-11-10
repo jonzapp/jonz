@@ -1,4 +1,4 @@
-import { HISTORY_COPY, JOHN_COPY, ON_CALL_COPY, wordsFor } from "@app/core";
+import { HISTORY_COPY, ON_CALL_COPY, wordsFor } from "@app/core";
 import { expect, test, type Page } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, dealtHouseInClient } from "./auth";
@@ -49,7 +49,7 @@ test("Done it counts once, and Undo takes the flag with it", async ({ context, p
   // From the John's sheet, the same.
   await section.getByTestId("on-call-done").click();
   await section.getByTestId("on-call-done-it").click();
-  await page.getByTestId("john-sheet-body").getByRole("button", { name: JOHN_COPY.undo, exact: true }).click();
+  await page.getByTestId("john-sheet-body").getByRole("button", { name: words('john.row.undo'), exact: true }).click();
   await expect(section.getByTestId("on-call-done")).toBeVisible();
   await expect(section.getByTestId("on-call-flagged")).toHaveCount(0);
   await expect.poll(() => flagsOf(houseId)).toEqual([]);

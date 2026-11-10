@@ -1,10 +1,8 @@
 import {
+  awayShare,
   clearUntil,
   dateRange,
-  JOHN_COPY,
-  NEXT_UP_COPY,
   nextUpMeta,
-  NOT_DEALT_COPY,
   plannable,
   type BestTime,
   type BoardItem,
@@ -82,23 +80,23 @@ export function NextUp({
     case 'clear':
       return (
         <NextUpCard
-          lead={clearUntil(state.until, rules.timezone, now)}
-          body={state.nothingYours ? NEXT_UP_COPY.nothingYours : NEXT_UP_COPY.clearBody}
+          lead={clearUntil(state.until, rules.timezone, now, words)}
+          body={state.nothingYours ? words('today.nextUp.nothingYours') : words('today.nextUp.clearBody')}
         />
       );
     case 'voting':
       // Not clear yet: the disputed John is in the rest of the week, below.
-      return <NextUpCard lead={NEXT_UP_COPY.voting} body={NEXT_UP_COPY.votingBody(state.item.name)} />;
+      return <NextUpCard lead={words('today.nextUp.voting')} body={words('today.nextUp.votingBody', { john: state.item.name })} />;
     case 'away':
       return (
-        <NextUpCard lead={NEXT_UP_COPY.away(dateRange(state.until, state.until))} body={NEXT_UP_COPY.awayBody(awayMakeup)}>
-          <TextButton label={NEXT_UP_COPY.changeDates} href="/house/away" chevron align="start" testID="change-dates" />
+        <NextUpCard lead={words('today.nextUp.away', { day: dateRange(state.until, state.until) })} body={words('today.nextUp.awayBody', { share: awayShare(awayMakeup) })}>
+          <TextButton label={words('today.nextUp.changeDates')} href="/house/away" chevron align="start" testID="change-dates" />
         </NextUpCard>
       );
     case 'waiting':
-      return <NextUpCard lead={NEXT_UP_COPY.waiting(state.admin ?? words('today.nextUp.anAdmin'))} />;
+      return <NextUpCard lead={words('today.nextUp.waiting', { admin: state.admin ?? words('today.nextUp.anAdmin') })} />;
     case 'undealt':
-      return <NextUpCard lead={NOT_DEALT_COPY.nothingThisWeek} body={NOT_DEALT_COPY.nothingThisWeekBody} />;
+      return <NextUpCard lead={words('today.notDealt.nothingThisWeek')} body={words('today.notDealt.nothingThisWeekBody')} />;
   }
 }
 
@@ -107,9 +105,10 @@ export function NextUp({
  * a line under it, and a quiet way onward. No amber.
  */
 export function NextUpCard({ lead, body, children }: { lead: string; body?: string; children?: ReactNode }) {
+  const words = useWords();
   return (
     <Card testID="next-up" style={children ? styles.quietEnd : undefined}>
-      <SectionLabel style={styles.label}>{NEXT_UP_COPY.label}</SectionLabel>
+      <SectionLabel style={styles.label}>{words('today.nextUp.label')}</SectionLabel>
       <Lead style={styles.lead}>{lead}</Lead>
       {body ? <Meta>{body}</Meta> : null}
       {children ? <View style={styles.onward}>{children}</View> : null}
@@ -143,11 +142,12 @@ function NextJohn({
   room: number | null;
   bestTime: BestTime | null;
 }) {
+  const words = useWords();
   const { colors, type } = useTheme();
   const sheet = useJohnSheet();
   const tick = useTick(houseId, item.id);
   const [pressed, setPressed] = useState(false);
-  const meta = nextUpMeta(item, rules, now, room);
+  const meta = nextUpMeta(item, rules, now, words, room);
   const offersCant = cant.immunity || cant.swap;
   // On a small phone the photo button beside Mark done is just its icon, so Mark done keeps to one line.
   const narrow = useWindowDimensions().width < NARROW;
@@ -156,7 +156,7 @@ function NextJohn({
     <View testID="next-up" style={styles.posted}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`${NEXT_UP_COPY.label}: ${item.name}`}
+        accessibilityLabel={`${words('today.nextUp.label')}: ${item.name}`}
         onPress={() => sheet.open(item.id)}
         onPressIn={() => setPressed(true)}
         onPressOut={() => setPressed(false)}
@@ -198,7 +198,7 @@ function NextJohn({
             // eslint-disable-next-line jonz/button-in-row -- Today's one exception (docs/style/controls.md)
             <Button
               icon={CameraIcon}
-              label={NEXT_UP_COPY.takePhoto}
+              label={words('today.nextUp.takePhoto')}
               busy={tick.waiting === 'camera'}
               busyLabel={tick.busyLabel}
               disabled={tick.held('camera')}
@@ -209,7 +209,7 @@ function NextJohn({
             // eslint-disable-next-line jonz/button-in-row -- Today's one exception (docs/style/controls.md)
             <Button
               icon={CheckIcon}
-              label={JOHN_COPY.markDone}
+              label={words('john.row.markDone')}
               busy={tick.waiting === 'tick'}
               busyLabel={tick.busyLabel}
               disabled={tick.held('tick')}
@@ -222,7 +222,7 @@ function NextJohn({
           <Button
             variant="outline"
             icon={ImagesIcon}
-            label={NEXT_UP_COPY.library}
+            label={words('today.nextUp.library')}
             iconOnly={narrow}
             busy={tick.waiting === 'library'}
             busyLabel={tick.busyLabel}
@@ -234,7 +234,7 @@ function NextJohn({
           <Button
             variant="outline"
             icon={CameraIcon}
-            label={NEXT_UP_COPY.photo}
+            label={words('today.nextUp.photo')}
             iconOnly={narrow}
             // Its photo goes up as Mark done's: the wide button shows the wait.
             disabled={tick.waiting !== null}
@@ -252,7 +252,7 @@ function NextJohn({
       {offersCant ? (
         <View style={[styles.onward, styles.words]}>
           <TextButton
-            label={NEXT_UP_COPY.cant(cant.immunity, cant.swap)}
+            label={words('today.nextUp.cant', { skip: cant.immunity, swap: cant.swap })}
             chevron
             align="start"
             // Only a swap to spend: straight to the swap.

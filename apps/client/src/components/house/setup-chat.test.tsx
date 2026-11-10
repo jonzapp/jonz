@@ -1,4 +1,4 @@
-import { ASK_CHATS_COPY, ASK_USAGE_COPY, type AskUsage, HOUSE_DRAFT_COPY, RESET_COPY, STEADY_COPY, type ChatReset, listAsDraft, NEW_JOHN, NEXT_UP_COPY, starterDraft, tidyDraft, type HouseRules, type JohnDef } from '@app/core';
+import { ASK_CHATS_COPY, ASK_USAGE_COPY, type AskUsage, HOUSE_DRAFT_COPY, RESET_COPY, STEADY_COPY, type ChatReset, listAsDraft, NEW_JOHN, starterDraft, tidyDraft, type HouseRules, type JohnDef } from '@app/core';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 import { router } from 'expo-router';
@@ -12,6 +12,9 @@ import { saveDealMode } from '@/api/settings';
 import { testQueryClient } from '@/testing/query';
 
 import { SetupChat } from './setup-chat';
+import { wordsFor } from '@app/core';
+
+const words = wordsFor('en', 'housemates');
 
 jest.mock('@/api/draft', () => ({
   applyDraft: jest.fn(),
@@ -220,7 +223,7 @@ it('can’t add nothing', async () => {
   await fireEvent.press(screen.getByTestId('draft-see-all'));
   for (const row of screen.getAllByRole('checkbox')) await fireEvent.press(row);
   expect(screen.getByRole('button', { name: HOUSE_DRAFT_COPY.keep(0) })).toBeDisabled();
-  expect(NEXT_UP_COPY.describe).toBe(HOUSE_DRAFT_COPY.title);
+  expect(words('today.nextUp.describe')).toBe(HOUSE_DRAFT_COPY.title);
 });
 
 describe('with a list already', () => {

@@ -1,7 +1,10 @@
-import { FRONT_DOOR_COPY, HOUSE_DRAFT_COPY, NEXT_UP_COPY, PAGE_TITLE, STARTER_LISTS, type HouseDraft } from "@app/core";
+import { FRONT_DOOR_COPY, HOUSE_DRAFT_COPY, PAGE_TITLE, STARTER_LISTS, type HouseDraft } from "@app/core";
 import { expect, test, type Page } from "@playwright/test";
 
 import { CLIENT_URL, cleanUp, signInToClient } from "./auth";
+import { wordsFor } from '@app/core';
+
+const words = wordsFor('en', 'housemates');
 
 // The Expo app's web build: Describe your house, a chat with Jonz, from
 // Today's setup card to the John list. On a phone the chat is a page; from
@@ -58,7 +61,7 @@ test("describe the house, keep most of the draft, and find it on the list", asyn
 
   // With Johns on the list, Today's setup card stops offering a draft.
   await page.goto("/today");
-  await expect(page.getByTestId("setup-johns")).toContainText(NEXT_UP_COPY.onTheList(family.length - 1));
+  await expect(page.getByTestId("setup-johns")).toContainText(words('today.nextUp.onTheList', { count: family.length - 1 }));
   await expect(page.getByTestId("setup-describe")).toHaveCount(0);
 });
 

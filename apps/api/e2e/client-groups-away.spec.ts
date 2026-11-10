@@ -1,18 +1,10 @@
-import {
-  addDaysTo,
-  AWAY_COPY,
-  dateRange,
-  dayName,
-  GROUPS_COPY,
-  JOHN_LIST_COPY,
-  localDate,
-  NEXT_UP_COPY,
-  SECTION_LABEL,
-  SETUP_COPY,
-} from "@app/core";
+import { addDaysTo, AWAY_COPY, dateRange, dayName, GROUPS_COPY, JOHN_LIST_COPY, localDate, SECTION_LABEL, SETUP_COPY } from "@app/core";
 import { expect, test, type Page } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, dealtHouseInClient } from "./auth";
+import { wordsFor } from '@app/core';
+
+const words = wordsFor('en', 'housemates');
 
 // Groups and time away in the Expo app's web build: a John only some of the
 // house shares, and a trip booked from the calendar. The rules behind both
@@ -105,7 +97,7 @@ test("make a group, give it a John, and book time away", async ({ browser }) => 
 
   // Today says so, under the week; Ben sees it on Time away, and can't change the groups.
   await page.getByRole("tab", { name: SECTION_LABEL.today }).click();
-  await expect(page.getByTestId("today-screen").getByTestId("away-line")).toContainText(NEXT_UP_COPY.awaySoon(dateRange(from, to)));
+  await expect(page.getByTestId("today-screen").getByTestId("away-line")).toContainText(words('today.nextUp.awaySoon', { range: dateRange(from, to) }));
   const benPage = await benContext.newPage();
   await benPage.goto("/house/away");
   await openDay(benPage, today, to, 1);

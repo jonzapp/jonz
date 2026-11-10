@@ -1,4 +1,4 @@
-import { jobPlaces, johnWhy, WHY_COPY, type BoardItem } from '@app/core';
+import { jobPlaces, johnWhy, type BoardItem } from '@app/core';
 
 import { Avatar } from '@/components/avatar';
 import { Fold } from '@/components/fold';
@@ -9,6 +9,7 @@ import { Body, Meta } from '@/components/text';
 
 import type { JohnSheetContext } from './body';
 import { SheetSection } from './parts';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * "Why?": why the deal gave this John to whom it did, from what the deal
@@ -18,16 +19,17 @@ import { SheetSection } from './parts';
  * been handed the most extra a week gives.
  */
 export function JohnWhy({ item, context }: { item: BoardItem; context: JohnSheetContext }) {
-  const why = johnWhy(item, context.members, context.userId, context.rules, context.now, jobPlaces(item, context.board.items));
+  const words = useWords();
+  const why = johnWhy(item, context.members, context.userId, context.rules, context.now, words, jobPlaces(item, context.board.items));
   return (
     <SheetSection>
-      <Section label={WHY_COPY.label} testID="john-why">
+      <Section label={words('john.why.label')} testID="john-why">
         <GroupItem>
           <Body testID="why-answer">{why.answer}</Body>
           {why.stakes ? <Body testID="why-stakes">{why.stakes}</Body> : null}
         </GroupItem>
         {why.rows.length > 0 ? (
-          <Fold label={WHY_COPY.addsUp} testID="why-adds-up">
+          <Fold label={words('john.why.addsUp')} testID="why-adds-up">
             {why.rows.map((row) => (
               <Row
                 key={row.userId}

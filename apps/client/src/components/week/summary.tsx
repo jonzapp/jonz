@@ -1,9 +1,10 @@
-import { WEEK_SUMMARY_COPY, withAlpha, type WeekPart, type WeekSummary } from '@app/core';
+import { withAlpha, type WeekPart, type WeekSummary } from '@app/core';
 import type { ReactNode } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Meta, RowTitle } from '@/components/text';
 import { INSET, RADIUS, SPACE, TAP, useTheme, type Theme } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * Each part's colour: done green, checking green at 40%, disputed ink,
@@ -48,12 +49,13 @@ export function WeekSummaryBar({
   tag?: ReactNode;
   note?: string | null;
 }) {
+  const words = useWords();
   const theme = useTheme();
   const { colors, type } = theme;
   const shown = summary.parts.filter((p) => p.count > 0);
   return (
     // A region on the web, named for what it sums up.
-    <View accessibilityRole="summary" accessibilityLabel={WEEK_SUMMARY_COPY.soFar} testID="week-summary" style={styles.summary}>
+    <View accessibilityRole="summary" accessibilityLabel={words('week.summary.soFar')} testID="week-summary" style={styles.summary}>
       <View style={styles.top}>
         <Meta numberOfLines={1} style={styles.range}>
           {range}
@@ -95,8 +97,8 @@ export function WeekSummaryBar({
               <Pressable
                 key={p.part}
                 accessibilityRole="button"
-                accessibilityLabel={WEEK_SUMMARY_COPY.part(p.count, p.label)}
-                accessibilityHint={WEEK_SUMMARY_COPY.showOnly}
+                accessibilityLabel={words('week.summary.part', { count: p.count, label: p.label })}
+                accessibilityHint={words('week.summary.showOnly')}
                 {...state}
                 aria-disabled={empty}
                 disabled={empty}

@@ -1,10 +1,11 @@
-import { coverTitle, FOCUS_SHELL_COPY, johnRow, NEXT_UP_COPY, voteMeta, voteTitle, type BoardItem } from '@app/core';
+import { coverTitle, FOCUS_SHELL_COPY, johnRow, voteMeta, voteTitle, type BoardItem } from '@app/core';
 
 import type { Housemate } from '@/api/board';
 import { Avatar } from '@/components/avatar';
 import { useJohnSheet } from '@/components/john-sheet';
 import { Row } from '@/components/row';
 import { Section } from '@/components/section';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * Needs you: one row per dispute waiting for your vote ("Vote on Priya's
@@ -13,18 +14,19 @@ import { Section } from '@/components/section';
  * of one).
  */
 export function NeedsYou({ items, members, now }: { items: BoardItem[]; members: Housemate[]; now: Date }) {
+  const words = useWords();
   const sheet = useJohnSheet();
   if (items.length === 0) return null;
   return (
-    <Section label={NEXT_UP_COPY.needsYou} count={items.length} testID="needs-you">
+    <Section label={words('today.nextUp.needsYou')} count={items.length} testID="needs-you">
       {items.map((item) => (
         <Row
           key={item.id}
           leading={<Avatar name={members.find((m) => m.userId === item.userId)?.name ?? FOCUS_SHELL_COPY.formerHousemate} userId={item.userId} />}
-          title={voteTitle(item, members)}
+          title={voteTitle(item, members, words)}
           // The John's name is never cut short.
           titleLines={2}
-          meta={item.dispute ? voteMeta(item.dispute, members, now) : undefined}
+          meta={item.dispute ? voteMeta(item.dispute, members, now, words) : undefined}
           chevron
           onPress={() => sheet.open(item.id, 'vote')}
           testID="vote-row"
@@ -53,18 +55,19 @@ export function CouldCover({
   zone: string;
   now: Date;
 }) {
+  const words = useWords();
   const sheet = useJohnSheet();
   if (items.length === 0) return null;
   const nameOf = (id: string) => members.find((m) => m.userId === id)?.name ?? null;
   return (
-    <Section label={NEXT_UP_COPY.couldCover} count={items.length} testID="could-cover">
+    <Section label={words('today.nextUp.couldCover')} count={items.length} testID="could-cover">
       {items.map((item) => (
         <Row
           key={item.id}
           leading={<Avatar name={nameOf(item.userId) ?? FOCUS_SHELL_COPY.formerHousemate} userId={item.userId} />}
-          title={coverTitle(item, members)}
+          title={coverTitle(item, members, words)}
           titleLines={2}
-          meta={johnRow(item, userId, now, zone, nameOf).meta}
+          meta={johnRow(item, userId, now, zone, nameOf, words).meta}
           chevron
           hazardEdge
           onPress={() => sheet.open(item.id)}

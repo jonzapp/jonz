@@ -1,6 +1,6 @@
 import "server-only";
 
-import { CREW_COPY, firstName, rulesOf, shareLabel, type RollCallRequest } from "@app/core";
+import { firstName, houseKind, rulesOf, shareLabel, wordsFor, type RollCallRequest } from "@app/core";
 
 import { pushNotifier } from "@/lib/push";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -32,7 +32,7 @@ export async function rollCall(
   const { data: place } = await caller.db
     .from("assignments")
     .select(
-      "name, job_id, crew:crew_members(user_id, points), houses(timezone, currency, week_starts, stake_minor, late_forfeit_minor, missed_forfeit_minor, dispute_hours, cover_grace_hours, late_hours, deal_mode, deal_budget)",
+      "name, job_id, crew:crew_members(user_id, points), houses(kind, timezone, currency, week_starts, stake_minor, late_forfeit_minor, missed_forfeit_minor, dispute_hours, cover_grace_hours, late_hours, deal_mode, deal_budget)",
     )
     .eq("id", assignmentId)
     .single();
@@ -45,18 +45,20 @@ export async function rollCall(
   const { data: me } = await caller.db.from("profiles").select("display_name").eq("id", caller.userId).single();
   const who = firstName(me?.display_name ?? "Someone");
   const zone = rulesOf(place.houses).timezone;
+  // Pushes are in English until each person picks a language (translation step 7).
+  const words = wordsFor("en", houseKind(place.houses.kind));
   const message = { url: "/today", kind: "checks" as const, zone, tag: `john:${assignmentId}` };
   for (const c of place.crew ?? []) {
     if (c.user_id === caller.userId) continue;
     await notify([c.user_id], {
       ...message,
-      title: CREW_COPY.pushAdded(who, place.name, shareLabel(Number(c.points))),
-      body: CREW_COPY.pushAddedBody,
+      title: words('john.crew.pushAdded', { who, john: place.name, points: shareLabel(Number(c.points)) }),
+      body: words('john.crew.pushAddedBody'),
     });
   }
   const leftOff = (absent ?? []).map((a) => a.user_id);
   if (leftOff.length > 0) {
-    await notify(leftOff, { ...message, title: CREW_COPY.pushLeftOff(who, place.name), body: CREW_COPY.pushLeftOffBody });
+    await notify(leftOff, { ...message, title: words('john.crew.pushLeftOff', { who, john: place.name }), body: words('john.crew.pushLeftOffBody') });
   }
   return { people };
 }

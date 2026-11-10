@@ -61,6 +61,7 @@ import { useAskUsage } from '@/hooks/use-ask-usage';
 import { askChatsKey } from '@/hooks/keys';
 import { useMove } from '@/hooks/use-move';
 import { INSET, SPACE, useTheme } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 type Person = { userId: string; name: string };
 
@@ -549,6 +550,7 @@ function DraftCard({
   people: Person[];
   me: string;
 }) {
+  const words = useWords();
   const editing = base !== null;
   const changes = draftChanges(base, draft);
   const regrouped = groupChanges(base, draft);
@@ -564,7 +566,7 @@ function DraftCard({
   const line = (j: DraftedJohn) => [scheduleLine({ ...j, dueDow: j.dueDow as IsoDow }, j.group), pointsLabel(j.points)].join(', ');
   const row = (c: DraftChange) => {
     const j = c.kind === 'remove' ? c.before : c.john;
-    const meta = c.kind === 'change' ? changedLine(c.before, c.john) : [line(j), editing ? null : j.why || null].filter(Boolean).join(', ');
+    const meta = c.kind === 'change' ? changedLine(c.before, c.john, words) : [line(j), editing ? null : j.why || null].filter(Boolean).join(', ');
     return (
       <ChoiceRow
         key={c.key}

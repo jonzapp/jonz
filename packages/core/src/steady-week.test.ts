@@ -3,6 +3,9 @@ import { describe, expect, it } from "vitest";
 import type { JohnDef } from "./board";
 import type { SteadyAheadWeek } from "./steady-deal";
 import { aheadSections, turnRows, waitingRows, weekLookAhead } from "./steady-week";
+import { wordsFor } from "./words-for";
+
+const words = wordsFor("en", "housemates");
 
 const LIST: Pick<JohnDef, "id" | "name" | "category" | "points" | "when" | "crew">[] = [
   { id: "mop", name: "Mopping", category: "floors", points: 3, when: "day", crew: 1 },
@@ -52,7 +55,7 @@ describe("turnRows", () => {
 
 describe("aheadSections", () => {
   it("lays out Classic's next two weeks, you first", () => {
-    const sections = aheadSections(LIST, AHEAD, ["ada", "me"], "me", nameOf);
+    const sections = aheadSections(LIST, AHEAD, ["ada", "me"], "me", nameOf, words);
     expect(sections.map((s) => s.label)).toEqual(["Next week", "Week of 16 Nov"]);
     expect(sections[0].people).toEqual([
       { userId: "me", who: "You", johns: ["Kitchen", "Garden"], points: 4 },
@@ -65,7 +68,7 @@ describe("aheadSections", () => {
   });
 
   it("leaves out someone who has left, and anyone with nothing", () => {
-    const sections = aheadSections(LIST, [{ startsOn: "2026-11-09", johns: { mop: ["gone"], kitchen: ["ada"] } }], ["ada", "me"], "me", nameOf);
+    const sections = aheadSections(LIST, [{ startsOn: "2026-11-09", johns: { mop: ["gone"], kitchen: ["ada"] } }], ["ada", "me"], "me", nameOf, words);
     expect(sections[0].people.map((p) => p.who)).toEqual(["Ada"]);
   });
 });
@@ -81,6 +84,7 @@ describe("weekLookAhead", () => {
     memberIds: ["me", "ada"],
     viewerId: "me",
     nameOf,
+    words,
   };
 
   it("in Smart: the waiting, whose turn next, and the rest still coming up", () => {

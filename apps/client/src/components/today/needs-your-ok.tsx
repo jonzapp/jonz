@@ -5,6 +5,7 @@ import { Avatar } from '@/components/avatar';
 import { useJohnSheet } from '@/components/john-sheet';
 import { Row } from '@/components/row';
 import { Section } from '@/components/section';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * Needs your OK, on a parent's Today in a family: one row per kid's tick
@@ -13,6 +14,7 @@ import { Section } from '@/components/section';
  * when nothing waits.
  */
 export function NeedsYourOk({ items, members, now }: { items: BoardItem[]; members: Housemate[]; now: Date }) {
+  const words = useWords();
   const sheet = useJohnSheet();
   if (items.length === 0) return null;
   return (
@@ -23,7 +25,7 @@ export function NeedsYourOk({ items, members, now }: { items: BoardItem[]; membe
           <Row
             key={item.id}
             leading={<Avatar name={members.find((m) => m.userId === kid)?.name ?? FOCUS_SHELL_COPY.formerHousemate} userId={kid} />}
-            title={okTitle(item, members)}
+            title={okTitle(item, members, words)}
             // The John's name is never cut short.
             titleLines={2}
             meta={okMeta(item, now)}

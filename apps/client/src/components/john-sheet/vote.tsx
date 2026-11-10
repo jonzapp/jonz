@@ -1,15 +1,4 @@
-import {
-  DISPUTE_COPY,
-  FOCUS_SHELL_COPY,
-  JOHN_COPY,
-  JOHN_SHEET_COPY,
-  voteCloses,
-  votersOn,
-  voteTally,
-  type BoardItem,
-  type DisputeView,
-  BUSY_COPY,
-} from '@app/core';
+import { FOCUS_SHELL_COPY, voteCloses, votersOn, voteTally, type BoardItem, type DisputeView, BUSY_COPY } from '@app/core';
 import { CameraIcon, CheckIcon, ImagesIcon, ThumbsDownIcon, ThumbsUpIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -27,6 +16,7 @@ import { SPACE } from '@/theme';
 
 import type { JohnSheetContext } from './body';
 import { SheetLines } from './parts';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * A disputed John: the reason in body ink (a house decision, not an error)
@@ -36,6 +26,7 @@ import { SheetLines } from './parts';
  * that the rest of the house is checking it (dispute.ts votersOn).
  */
 export function Disputed({ item, context }: { item: BoardItem; context: JohnSheetContext }) {
+  const words = useWords();
   const dispute = item.dispute;
   const ticker = item.coveredBy ?? item.userId;
   const mine = ticker === context.userId;
@@ -55,20 +46,20 @@ export function Disputed({ item, context }: { item: BoardItem; context: JohnShee
         />
         <Body style={styles.shrink}>{`“${dispute.reason}”`}</Body>
       </View>
-      <Meta testID="tally">{voteTally(dispute, context.now)}</Meta>
+      <Meta testID="tally">{voteTally(dispute, context.now, words)}</Meta>
       {mine ? (
         <>
           <Body testID="your-tick">
             {dispute.answered
-              ? JOHN_SHEET_COPY.answered
+              ? words('john.sheet.answered')
               : voters.length === 1
-                ? JOHN_SHEET_COPY.onlyVoter(context.nameOf(voters[0]), voteCloses(dispute.closesAt, context.now))
-                : JOHN_SHEET_COPY.yourTick}
+                ? words('john.sheet.onlyVoter', { name: context.nameOf(voters[0]), closes: voteCloses(dispute.closesAt, context.now, words) })
+                : words('john.sheet.yourTick')}
           </Body>
           {dispute.answered ? null : <AnswerWithPhoto houseId={context.houseId} assignmentId={dispute.assignmentId} disputeId={dispute.id} onDone={context.close} />}
         </>
       ) : ownsCover ? (
-        <Body testID="cover-of-yours">{JOHN_SHEET_COPY.coverOfYours(context.nameOf(ticker))}</Body>
+        <Body testID="cover-of-yours">{words('john.sheet.coverOfYours', { name: context.nameOf(ticker) })}</Body>
       ) : (
         <SheetVote houseId={context.houseId} dispute={dispute} onVoted={context.close} />
       )}
@@ -82,6 +73,7 @@ export function Disputed({ item, context }: { item: BoardItem; context: JohnShee
  * counted closes the sheet and says where to change it.
  */
 function SheetVote({ houseId, dispute, onVoted }: { houseId: string; dispute: DisputeView; onVoted: () => void }) {
+  const words = useWords();
   const move = useMove(houseId);
   // Which vote is waiting: the two share one move.
   const [upholding, setUpholding] = useState(false);
@@ -91,7 +83,7 @@ function SheetVote({ houseId, dispute, onVoted }: { houseId: string; dispute: Di
     setUpholding(uphold);
     if (await move.run(() => castVote(dispute.id, uphold))) {
       onVoted();
-      offer(JOHN_SHEET_COPY.voted, 'vote', dispute.id);
+      offer(words('john.sheet.voted'), 'vote', dispute.id);
     }
   }
 
@@ -103,7 +95,7 @@ function SheetVote({ houseId, dispute, onVoted }: { houseId: string; dispute: Di
             variant="outline"
             chosen={dispute.myVote === false}
             icon={dispute.myVote === false ? CheckIcon : ThumbsUpIcon}
-            label={DISPUTE_COPY.done}
+            label={words('john.dispute.done')}
             busy={move.pending && !upholding}
             busyLabel={BUSY_COPY.voting}
             onPress={() => void vote(false)}
@@ -113,7 +105,7 @@ function SheetVote({ houseId, dispute, onVoted }: { houseId: string; dispute: Di
             variant="outline"
             chosen={dispute.myVote === true}
             icon={dispute.myVote === true ? CheckIcon : ThumbsDownIcon}
-            label={DISPUTE_COPY.notDone}
+            label={words('john.dispute.notDone')}
             busy={move.pending && upholding}
             busyLabel={BUSY_COPY.voting}
             onPress={() => void vote(true)}
@@ -141,6 +133,7 @@ function AnswerWithPhoto({
   disputeId: string;
   onDone: () => void;
 }) {
+  const words = useWords();
   const move = useMove(houseId);
   const [uploading, setUploading] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
@@ -153,7 +146,7 @@ function AnswerWithPhoto({
     try {
       uri = await pickPhoto(source);
     } catch (reason) {
-      setProblem(reason instanceof Error ? reason.message : JOHN_COPY.photoFailed);
+      setProblem(reason instanceof Error ? reason.message : words('john.row.photoFailed'));
       return;
     }
     if (!uri) return;
@@ -162,7 +155,7 @@ function AnswerWithPhoto({
     try {
       path = await uploadProof(houseId, assignmentId, uri);
     } catch {
-      setProblem(JOHN_COPY.photoFailed);
+      setProblem(words('john.row.photoFailed'));
       return;
     } finally {
       setUploading(false);
@@ -178,18 +171,18 @@ function AnswerWithPhoto({
           <Button
             variant="outline"
             icon={CameraIcon}
-            label={JOHN_SHEET_COPY.answerPhoto}
+            label={words('john.sheet.answerPhoto')}
             busy={busy && from === 'camera'}
-            busyLabel={uploading ? JOHN_COPY.uploading : BUSY_COPY.sending}
+            busyLabel={uploading ? words('john.row.uploading') : BUSY_COPY.sending}
             onPress={() => void answer('camera')}
             testID="answer-photo"
           />
           <Button
             variant="outline"
             icon={ImagesIcon}
-            label={JOHN_SHEET_COPY.fromLibrary}
+            label={words('john.sheet.fromLibrary')}
             busy={busy && from === 'library'}
-            busyLabel={uploading ? JOHN_COPY.uploading : BUSY_COPY.sending}
+            busyLabel={uploading ? words('john.row.uploading') : BUSY_COPY.sending}
             onPress={() => void answer('library')}
             testID="answer-library"
           />

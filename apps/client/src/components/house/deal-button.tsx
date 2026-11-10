@@ -1,4 +1,4 @@
-import { DEAL_COPY, NEXT_UP_COPY } from '@app/core';
+import { DEAL_COPY } from '@app/core';
 import { ShuffleIcon } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
@@ -8,6 +8,7 @@ import { Button } from '@/components/button';
 import { ButtonRow } from '@/components/button-row';
 import { useMove } from '@/hooks/use-move';
 import { SPACE } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * Deal this week's Johns, as the web's button does, with a refusal under
@@ -37,6 +38,7 @@ export function DealButton({
   /** In a card: across it on a laptop too. */
   fill?: boolean;
 }) {
+  const words = useWords();
   const move = useMove(houseId);
   return (
     <View style={styles.stack}>
@@ -44,7 +46,7 @@ export function DealButton({
         <Button
           variant={variant ?? (started ? 'outline' : 'primary')}
           icon={ShuffleIcon}
-          label={label ?? (started ? DEAL_COPY.again : NEXT_UP_COPY.dealWeek1)}
+          label={label ?? (started ? DEAL_COPY.again : words('today.nextUp.dealWeek1'))}
           busyLabel={DEAL_COPY.dealing}
           busy={move.pending}
           onPress={() => void move.run(() => dealThisWeek(houseId))}

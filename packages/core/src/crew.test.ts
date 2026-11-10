@@ -15,6 +15,9 @@ import { fairSharesExplained, togetherPlaces, type DealJohn } from "./deal";
 import { settleOutcome } from "./outcome";
 import { standings } from "./points";
 import { settleMonth } from "./stake";
+import { wordsFor } from "./words-for";
+
+const words = wordsFor("en", "housemates");
 
 const NOW = new Date("2026-10-28T12:00:00Z");
 const EARLIER = new Date("2026-10-27T12:00:00Z");
@@ -161,9 +164,9 @@ describe("the deal", () => {
 
 describe("the words", () => {
   it("says what a John done together adds up to", () => {
-    expect(crewLine(1, 4)).toBeNull();
-    expect(crewLine(3, 4)).toBe("4 pts each, so 12 pts in all");
-    expect(crewLine(0, 2)).toBe("2 pts each, for everyone at home that day");
+    expect(crewLine(1, 4, words)).toBeNull();
+    expect(crewLine(3, 4, words)).toBe("4 pts each, so 12 pts in all");
+    expect(crewLine(0, 2, words)).toBe("2 pts each, for everyone at home that day");
   });
 
   it("joins names as people say them", () => {

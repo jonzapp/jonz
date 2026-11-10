@@ -18,6 +18,7 @@ import { useHouse } from '@/hooks/use-house';
 import { useJohnList } from '@/hooks/use-john-list';
 import { useTable } from '@/hooks/use-table';
 import { GUTTER, useTheme } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /** Which chat is open: a new one, or one kept earlier; `serial` starts the chat afresh on each switch. */
 type Open = { serial: number; saved: SavedChat | null };
@@ -59,6 +60,7 @@ export function AskJonz({
   bar: (bar: AskBar) => ReactNode;
   onOpenList?: () => void;
 }) {
+  const words = useWords();
   const { colors } = useTheme();
   const { query, view } = useHouse(houseId, userId);
   const list = useJohnList(houseId);
@@ -171,7 +173,7 @@ export function AskJonz({
             balances: table.data?.balances ?? null,
             awayMakeup: view.snapshot.house.awayMakeup,
             openJohn: sheet?.open,
-          })}
+          }, words)}
         />
       ) : (
         <View style={[styles.reading, styles.screen]}>

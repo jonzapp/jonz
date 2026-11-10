@@ -1,7 +1,7 @@
 // House setup's pages: the rules as label and value, the Johns by category, a John's schedule line and the admins' names.
 import { isoDayOf, shiftMonth, type AwayPeriod } from "./away";
 import type { BoardItem, JohnDef } from "./board";
-import { CREW_COPY, FOCUS_SHELL_COPY, GROUPS_COPY, JOHN_LIST_COPY, PARENT_OK_COPY, POCKET_COPY, RULES_COPY, SETUP_COPY, STEADY_COPY } from "./copy";
+import { FOCUS_SHELL_COPY, GROUPS_COPY, JOHN_LIST_COPY, PARENT_OK_COPY, POCKET_COPY, RULES_COPY, SETUP_COPY, STEADY_COPY } from "./copy";
 import { MAKEUP_LABEL } from "./deal";
 import { CATEGORIES, CATEGORY_LABEL, DOW_LABEL, type Category, type Currency, type DealMode, type HouseKind, type HouseRules, type IsoDow, type SettleIn } from "./domain";
 import { familyHides } from "./family";
@@ -86,12 +86,12 @@ export function listLine(
 }
 
 /** A John as a housemate who can't edit it reads it: kind, who shares it, effort, how often, when, and the photo. */
-export function johnFacts(john: JohnDef, groupName?: string | null): LabelValue[] {
+export function johnFacts(john: JohnDef, groupName: string | null | undefined, words: Words): LabelValue[] {
   return [
     { label: SETUP_COPY.kindLabel, value: CATEGORY_LABEL[john.category] },
     { label: JOHN_LIST_COPY.sharedBy, value: groupName || JOHN_LIST_COPY.everyone },
     { label: JOHN_LIST_COPY.effort, value: pointsLabel(john.points) },
-    ...(john.crew === 1 ? [] : [{ label: CREW_COPY.doneBy, value: CREW_COPY.choice(john.crew) }]),
+    ...(john.crew === 1 ? [] : [{ label: words('john.crew.doneBy'), value: words('john.crew.choice', { crew: john.crew }) }]),
     ...(john.when === "on_call"
       ? [
           { label: JOHN_LIST_COPY.whenLabel, value: JOHN_LIST_COPY.onCall },

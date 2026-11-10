@@ -20,7 +20,7 @@
  * Table's credit (tableInputs), the roll call before it's sent
  * (rollCallPlan), and the words.
  */
-import { CREW_COPY } from "./copy";
+import type { Words } from "./words-for";
 import { pointsLabel } from "./format";
 import type { LiveStatus } from "./outcome";
 import type { SharedJob, TableInput } from "./points";
@@ -208,10 +208,10 @@ export function shareLabel(points: number): string {
 }
 
 /** The John editor's line under "Done by": "4 pts each, so 12 in all". Null for one person. */
-export function crewLine(crew: number, points: number): string | null {
+export function crewLine(crew: number, points: number, words: Words): string | null {
   if (crew === 1) return null;
-  if (crew === 0) return CREW_COPY.everyoneEach(pointsLabel(points));
-  return CREW_COPY.inAll(pointsLabel(points), pointsLabel(points * crew));
+  if (crew === 0) return words('john.crew.everyoneEach', { each: pointsLabel(points) });
+  return words('john.crew.inAll', { each: pointsLabel(points), total: pointsLabel(points * crew) });
 }
 
 /** "Ben", "Ben and Cal", "Ben, Cal and Dee". */

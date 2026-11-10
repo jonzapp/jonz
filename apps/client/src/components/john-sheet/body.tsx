@@ -27,6 +27,7 @@ import { CrewPart, RollCall } from './roll-call';
 import { Settled } from './settled';
 import { Disputed } from './vote';
 import { JohnWhy } from './why';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * What the John sheet was opened for, when it was opened for something in
@@ -139,9 +140,10 @@ function ModeContent({ item, context, onRollCall }: { item: BoardItem; context: 
  * hazard, never in hazard words.
  */
 function JohnSheetHeader({ item, context }: { item: BoardItem; context: JohnSheetContext }) {
+  const words = useWords();
   const { colors, type } = useTheme();
   const room = forfeitRoom(context.stake, item.userId, monthOf(item.dueAt, context.zone));
-  const when = sheetWhen(item, context.members, context.userId, context.rules, context.now, room);
+  const when = sheetWhen(item, context.members, context.userId, context.rules, context.now, words, room);
   const icon = when.sign ? STATUS_MARK[when.sign].icon : null;
   const Sign = icon ? STATUS_ICON[icon] : null;
   return (
@@ -152,7 +154,7 @@ function JohnSheetHeader({ item, context }: { item: BoardItem; context: JohnShee
           <LidBar category={item.category} />
         </View>
         <Meta numberOfLines={2} style={styles.shrink}>
-          {sheetKind(item)}
+          {sheetKind(item, words)}
         </Meta>
       </View>
       <Lead header testID="john-sheet-name">
