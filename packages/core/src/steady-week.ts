@@ -9,7 +9,8 @@ import { tz } from "@date-fns/tz";
 import { format } from "date-fns";
 
 import type { JohnDef } from "./board";
-import { FOCUS_SHELL_COPY, STEADY_COPY, WEEK_COPY } from "./copy";
+import { FOCUS_SHELL_COPY, STEADY_COPY } from "./copy";
+import type { Words } from "./words-for";
 import { firstName } from "./format";
 import { johnKind } from "./john-row";
 import type { SteadyAheadWeek } from "./steady-deal";
@@ -129,6 +130,7 @@ export function aheadSections(
   memberIds: readonly string[],
   viewerId: string,
   nameOf: (userId: string) => string | null,
+  words: Words,
 ): AheadSection[] {
   const johnOf = new Map(list.map((j) => [j.id, j]));
   const order = [viewerId, ...memberIds.filter((id) => id !== viewerId)].filter((id) => memberIds.includes(id));
@@ -142,7 +144,7 @@ export function aheadSections(
           .map(([id]) => johnOf.get(id)!);
         return {
           userId,
-          who: userId === viewerId ? WEEK_COPY.you : named(nameOf(userId)),
+          who: userId === viewerId ? words('week.table.you') : named(nameOf(userId)),
           johns: johns.map((j) => j.name),
           points: johns.reduce((s, j) => s + j.points, 0),
         };
@@ -174,13 +176,14 @@ export function weekLookAhead<J extends WeekJohn>(args: {
   memberIds: readonly string[];
   viewerId: string;
   nameOf: (userId: string) => string | null;
+  words: Words;
 }): { waiting: WaitingRow[]; turns: TurnRow[]; weeks: AheadSection[]; comingUp: J[] } {
   const { list, state, viewerId, nameOf } = args;
   const outNow = new Set(args.items.filter((i) => !i.carried && i.johnId).map((i) => i.johnId!));
   const waiting = waitingRows(list, state);
   const classic = args.mode === "classic";
   const turns = classic ? [] : turnRows(list, state, outNow, viewerId, nameOf);
-  const weeks = classic ? aheadSections(list, state.ahead, args.memberIds, viewerId, nameOf).filter((w) => w.people.length) : [];
+  const weeks = classic ? aheadSections(list, state.ahead, args.memberIds, viewerId, nameOf, args.words).filter((w) => w.people.length) : [];
   const named = new Set([...waiting, ...turns].map((r) => r.johnId));
   for (const w of state.ahead) if (classic) for (const id of Object.keys(w.johns)) named.add(id);
   return { waiting, turns, weeks, comingUp: list.filter((j) => !named.has(j.id)) };

@@ -1,4 +1,4 @@
-import { DISPUTE_COPY, HISTORY_COPY } from '@app/core';
+import { HISTORY_COPY } from '@app/core';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -10,6 +10,7 @@ import { Field } from '@/components/field';
 import { useMove } from '@/hooks/use-move';
 import { useUndoOffer } from '@/hooks/use-undo-offer';
 import { SPACE } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * Housemate check: what's wrong with someone's tick, and "Put it to the
@@ -27,6 +28,7 @@ export function DisputeForm({
   onSent?: () => void;
   autoFocus?: boolean;
 }) {
+  const words = useWords();
   const move = useMove(houseId);
   const offer = useUndoOffer(houseId);
   const [reason, setReason] = useState('');
@@ -42,8 +44,8 @@ export function DisputeForm({
   return (
     <View style={styles.form}>
       <Field
-        label={DISPUTE_COPY.label}
-        placeholder={DISPUTE_COPY.placeholder}
+        label={words('john.dispute.label')}
+        placeholder={words('john.dispute.placeholder')}
         value={reason}
         onChangeText={setReason}
         maxLength={280}
@@ -54,8 +56,8 @@ export function DisputeForm({
       {move.problem ? <Alert message={move.problem} /> : null}
       <ButtonRow>
         <Button
-          label={DISPUTE_COPY.send}
-          busyLabel={DISPUTE_COPY.sending}
+          label={words('john.dispute.send')}
+          busyLabel={words('john.dispute.sending')}
           busy={move.pending}
           disabled={!reason.trim()}
           onPress={() => void send()}

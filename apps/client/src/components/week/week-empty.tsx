@@ -1,10 +1,11 @@
-import { NEXT_UP_COPY, NOT_DEALT_COPY, setupChecklist, WEEK_SUMMARY_COPY } from '@app/core';
+import { setupChecklist } from '@app/core';
 import { CalendarDaysIcon, ListTodoIcon, ShuffleIcon } from 'lucide-react-native';
 
 import { Button } from '@/components/button';
 import { ButtonRow } from '@/components/button-row';
 import { EmptyState } from '@/components/empty-state';
 import { DealButton } from '@/components/house/deal-button';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * Week with nothing on it. Before the house's first deal: "This week hasn't
@@ -33,12 +34,13 @@ export function WeekEmpty({
   johns: readonly unknown[] | null;
   memberCount: number;
 }) {
+  const words = useWords();
   if (!notStarted) {
     return (
       <EmptyState
         icon={CalendarDaysIcon}
-        title={NOT_DEALT_COPY.nothingThisWeek}
-        body={NOT_DEALT_COPY.nothingThisWeekBody}
+        title={words('today.notDealt.nothingThisWeek')}
+        body={words('today.notDealt.nothingThisWeekBody')}
         testID="week-empty"
       />
     );
@@ -46,16 +48,16 @@ export function WeekEmpty({
   const steps = setupChecklist(johns, memberCount);
   const action = !isAdmin ? undefined : steps.johnCount === 0 ? (
     <ButtonRow atEdge>
-      <Button variant="outline" icon={ListTodoIcon} label={NEXT_UP_COPY.addJohns} href="/house/johns" testID="add-johns" />
+      <Button variant="outline" icon={ListTodoIcon} label={words('today.nextUp.addJohns')} href="/house/johns" testID="add-johns" />
     </ButtonRow>
   ) : (
-    <DealButton houseId={houseId} label={NEXT_UP_COPY.dealWeek1} variant={steps.ready ? 'primary' : 'outline'} />
+    <DealButton houseId={houseId} label={words('today.nextUp.dealWeek1')} variant={steps.ready ? 'primary' : 'outline'} />
   );
   return (
     <EmptyState
       icon={ShuffleIcon}
-      title={WEEK_SUMMARY_COPY.notDealt}
-      body={isAdmin ? WEEK_SUMMARY_COPY.notDealtBody : NEXT_UP_COPY.waiting(adminName)}
+      title={words('week.summary.notDealt')}
+      body={isAdmin ? words('week.summary.notDealtBody') : words('today.nextUp.waiting', { admin: adminName })}
       action={action}
       testID="week-not-dealt"
     />

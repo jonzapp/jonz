@@ -30,6 +30,9 @@ import {
 } from "./house-draft";
 import { HOUSE_DRAFT_COPY } from "./copy";
 import { JohnDraft } from "./schemas";
+import { wordsFor } from "./words-for";
+
+const words = wordsFor("en", "housemates");
 
 const ME = "00000000-0000-4000-8000-000000000001";
 const SAM = "00000000-0000-4000-8000-000000000002";
@@ -359,15 +362,15 @@ describe("changing a list that's already there", () => {
     expect(changes.map((c) => c.key)).toEqual(["change:" + BATH, "add:1", "add:2", "remove:" + BINS]);
     const changed = changes[0];
     if (changed.kind !== "change") throw new Error("not a change");
-    expect(changedLine(changed.before, changed.john)).toBe("3 → 4 pts");
+    expect(changedLine(changed.before, changed.john, words)).toBe("3 → 4 pts");
   });
 
   it("says what changed in words, before → after", () => {
     const [bath] = base.johns;
-    expect(changedLine(bath, { ...bath, name: "Upstairs bathroom", everyWeeks: 2, dueDow: 6, group: null })).toBe(
+    expect(changedLine(bath, { ...bath, name: "Upstairs bathroom", everyWeeks: 2, dueDow: 6, group: null }, words)).toBe(
       "was “Bathroom”, Every week → every 2 weeks, Sun 21:00 → Sat 21:00, Upstairs → everyone’s",
     );
-    expect(changedLine(bath, { ...bath, when: "on_call" })).toBe("Every week → on call");
+    expect(changedLine(bath, { ...bath, when: "on_call" }, words)).toBe("Every week → on call");
   });
 
   it("treats every John in a new house's draft as one to add", () => {

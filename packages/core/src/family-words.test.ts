@@ -54,7 +54,6 @@ const SECTION_REASONS: Record<string, string> = {
   KIND_SWITCH_COPY: "Rules' switch between the two kinds names both on purpose",
   HOUSE_DRAFT_COPY: "Describe your house's kinds of house, one of which is a flat share",
   PASS_COPY: "a family reads FAMILY_PASS_COPY through passWords",
-  DISPUTE_COPY: "the housemate check, hidden from a family",
   NEW_HOUSE_COPY: "a family reads FAMILY_COPY's Start a house through newHouseWords",
 };
 

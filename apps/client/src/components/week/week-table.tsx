@@ -1,4 +1,4 @@
-import { FOCUS_SHELL_COPY, WEEK_COPY, weekSpokenRow, weekWho, type BoardItem } from '@app/core';
+import { FOCUS_SHELL_COPY, weekSpokenRow, weekWho, type BoardItem } from '@app/core';
 import { StyleSheet, Text, View, type StyleProp, type TextStyle } from 'react-native';
 
 import { Alert } from '@/components/alert';
@@ -8,6 +8,7 @@ import { DoneFold, useJohnRow, type JohnRowContext } from '@/components/john-row
 import { Row } from '@/components/row';
 import { Body } from '@/components/text';
 import { INSET, LABEL_GAP, LEADING, ROW_GAP, SPACE, TABULAR, useTheme } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /** A section label's line, which the columns' names stand in. */
 const LABEL_LINE = 24;
@@ -53,6 +54,7 @@ export function WeekTable({ rows, folded, context }: { rows: BoardItem[]; folded
  * rows with that section's rows.
  */
 function HeadRow() {
+  const words = useWords();
   const { type } = useTheme();
   const head = (label: string, style: StyleProp<TextStyle>) => (
     <Text numberOfLines={1} style={[type.caps, styles.caps, style]}>
@@ -62,10 +64,10 @@ function HeadRow() {
   return (
     <View aria-hidden testID="week-table-head" style={styles.head}>
       <View style={styles.leading} />
-      {head(WEEK_COPY.columns.john, styles.john)}
-      {head(WEEK_COPY.columns.who, styles.who)}
-      {head(WEEK_COPY.columns.points, [styles.points, styles.end])}
-      {head(WEEK_COPY.columns.status, [styles.status, styles.end])}
+      {head(words('week.table.columns.john'), styles.john)}
+      {head(words('week.table.columns.who'), styles.who)}
+      {head(words('week.table.columns.points'), [styles.points, styles.end])}
+      {head(words('week.table.columns.status'), [styles.status, styles.end])}
     </View>
   );
 }
@@ -76,10 +78,11 @@ function HeadRow() {
  * item, kept beside its press target (it may hold Undo or Vote).
  */
 function TableRow({ item, context }: { item: BoardItem; context: JohnRowContext }) {
+  const words = useWords();
   const john = useJohnRow(item, context);
   const mine = item.userId === context.userId;
   const name = context.nameOf(item.userId) ?? FOCUS_SHELL_COPY.formerHousemate;
-  const who = weekWho(item.userId, context.userId, context.nameOf);
+  const who = weekWho(item.userId, context.userId, context.nameOf, words);
   return (
     <>
       <Row

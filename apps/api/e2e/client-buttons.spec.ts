@@ -1,8 +1,10 @@
-import { NEXT_UP_COPY } from "@app/core";
 import { expect, test } from "@playwright/test";
 
 import { CLIENT_URL, cleanUp, dealtHouseInClient, undealtHouseInClient } from "./auth";
 import { expectButtonRules } from "./button-rules";
+import { wordsFor } from '@app/core';
+
+const words = wordsFor('en', 'housemates');
 
 // The button rules (docs/style/controls.md) on the real pages, on every
 // phone and laptop the suite runs: a button on its own fills its column on a
@@ -22,7 +24,7 @@ test("Week before the first deal: Deal week 1 is across a phone, its own width o
   const page = await context.newPage();
   await page.goto("/week");
   const week = page.getByTestId("week-screen");
-  const deal = week.getByRole("button", { name: NEXT_UP_COPY.dealWeek1 });
+  const deal = week.getByRole("button", { name: words('today.nextUp.dealWeek1') });
   await expect(deal).toBeVisible();
 
   // Measured against the empty page's column, not the button's own wrapper, which hugged it before.
@@ -37,7 +39,7 @@ test("Week before the first deal: Deal week 1 is across a phone, its own width o
 
   await page.goto("/today");
   await expect(page.getByTestId("today-screen")).toBeVisible();
-  await expect(page.getByTestId("today-screen").getByRole("button", { name: NEXT_UP_COPY.dealWeek1 })).toBeVisible();
+  await expect(page.getByTestId("today-screen").getByRole("button", { name: words('today.nextUp.dealWeek1') })).toBeVisible();
   await expectButtonRules(page, "Today's setup card");
   await context.close();
 });

@@ -1,7 +1,10 @@
-import { HOUSE_PAGE_COPY, JOHN_COPY, monthOf, monthWord, NEXT_UP_COPY, PERSON_COPY, pointsLabel, SECTION_LABEL } from "@app/core";
+import { HOUSE_PAGE_COPY, monthOf, monthWord, PERSON_COPY, pointsLabel, SECTION_LABEL } from "@app/core";
 import { expect, test } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, dealtHouseInClient } from "./auth";
+import { wordsFor } from '@app/core';
+
+const words = wordsFor('en', 'housemates');
 
 // The Table in the Expo app's web build: a tick scores at once, for the
 // week, on House's Table, and each housemate's row opens their page, with
@@ -32,8 +35,8 @@ test("a tick scores on the Table at once, beside fair shares and streaks", async
   await ava.goto("/today");
   const today = ava.getByTestId("today-screen");
   await expect(today.getByTestId("next-up-name")).toHaveText(mine![0].name);
-  await today.getByTestId("next-up").getByRole("button", { name: JOHN_COPY.markDone, exact: true }).click();
-  await expect(today.getByRole("img", { name: NEXT_UP_COPY.stateLabel.checking })).toBeVisible();
+  await today.getByTestId("next-up").getByRole("button", { name: words('john.row.markDone'), exact: true }).click();
+  await expect(today.getByRole("img", { name: words('today.nextUp.stateLabel.checking') })).toBeVisible();
 
   // The Table is on House: one row per housemate, this week's points first.
   // Ava leads with her John's points (the month's depends on whether it

@@ -1,4 +1,4 @@
-import { FOCUS_SHELL_COPY, TABLE_COPY, WEEK_SUMMARY_COPY, weekShareRows, weekWho } from '@app/core';
+import { FOCUS_SHELL_COPY, TABLE_COPY, weekShareRows, weekWho } from '@app/core';
 import { InfoIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -9,6 +9,7 @@ import { Row } from '@/components/row';
 import { Sheet } from '@/components/sheet';
 import { Meta } from '@/components/text';
 import { INSET, SPACE, TAP, useTheme } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * Week's footer: the deal's fairness in one sentence, with an info mark,
@@ -35,15 +36,16 @@ export function FairnessFooter({
   /** houses.away_makeup. */
   awayMakeup: number;
 }) {
+  const words = useWords();
   const { colors } = useTheme();
   const [open, setOpen] = useState(false);
-  const shares = weekShareRows(balances, memberIds, viewerId, awayMakeup);
+  const shares = weekShareRows(balances, memberIds, viewerId, awayMakeup, words);
   return (
     <>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={sentence}
-        accessibilityHint={WEEK_SUMMARY_COPY.sharesHint}
+        accessibilityHint={words('week.summary.sharesHint')}
         onPress={() => setOpen(true)}
         testID="week-fairness"
         style={({ pressed }) => [styles.footer, pressed && styles.pressed]}
@@ -67,7 +69,7 @@ export function FairnessFooter({
                 leading={
                   <Avatar name={nameOf(row.userId) ?? FOCUS_SHELL_COPY.formerHousemate} userId={row.userId} me={row.userId === viewerId} />
                 }
-                title={weekWho(row.userId, viewerId, nameOf)}
+                title={weekWho(row.userId, viewerId, nameOf, words)}
                 trailing={row.balance}
                 testID="fair-share"
               />

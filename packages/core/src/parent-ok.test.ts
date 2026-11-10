@@ -8,6 +8,9 @@ import { settleOutcome } from "./outcome";
 import { rulesRows } from "./setup";
 import { okMeta, okTitle, okWho, tickedLine } from "./today";
 import { describeEvent, type WallEvent } from "./wall";
+import { wordsFor } from "./words-for";
+
+const words = wordsFor("en", "housemates");
 
 /** A parent's OK, family step 2 (docs/specs/family-houses.md). */
 
@@ -68,7 +71,7 @@ describe("a tick waiting for an OK", () => {
   it("is being checked, with no time it stands", () => {
     const item = boardOf([row("Feed the fish", { done_at: at(-2).toISOString(), awaits_ok: true })]).items[0];
     expect(item).toMatchObject({ status: "checking", awaitsOk: true, standsAt: null });
-    expect(tickedLine(item, PEOPLE, "sam", RULES, now)).toBe(`Leo ticked this at 10:00, ${PARENT_OK_COPY.waiting}`);
+    expect(tickedLine(item, PEOPLE, "sam", RULES, now, words)).toBe(`Leo ticked this at 10:00, ${PARENT_OK_COPY.waiting}`);
   });
 });
 
@@ -90,10 +93,10 @@ describe("Needs your OK", () => {
 
   it("says who did what, when, and who can answer", () => {
     const fish = board.items.find((i) => i.name === "Feed the fish") as BoardItem;
-    expect(okTitle(fish, PEOPLE)).toBe("Leo did Feed the fish");
+    expect(okTitle(fish, PEOPLE, words)).toBe("Leo did Feed the fish");
     expect(okMeta(fish, now)).toBe("Ticked 2h ago");
-    expect(okWho(fish, PEOPLE, ["sam", "alex"], "alex")).toBe("You or Sam can OK it. Not yet sends it back to Leo.");
-    expect(okWho(fish, PEOPLE, ["sam"], "maya")).toBe("Sam can OK it. Not yet sends it back to Leo.");
+    expect(okWho(fish, PEOPLE, ["sam", "alex"], "alex", words)).toBe("You or Sam can OK it. Not yet sends it back to Leo.");
+    expect(okWho(fish, PEOPLE, ["sam"], "maya", words)).toBe("Sam can OK it. Not yet sends it back to Leo.");
   });
 });
 

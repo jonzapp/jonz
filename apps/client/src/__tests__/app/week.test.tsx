@@ -3,16 +3,11 @@ import {
   buildStake,
   FOCUS_SHELL_COPY,
   humanError,
-  JOHN_SHEET_COPY,
   NEW_JOHN,
-  NEXT_UP_COPY,
-  NOT_DEALT_COPY,
   PAGE_TITLE,
   REPEAT_COPY,
   STEADY_COPY,
   TABLE_COPY,
-  WEEK_COPY,
-  WEEK_SUMMARY_COPY,
   type SteadyAheadWeek,
 } from '@app/core';
 import { QueryClientProvider, type QueryClient } from '@tanstack/react-query';
@@ -33,6 +28,9 @@ import { ToastProvider } from '@/components/toast';
 import { houseKey } from '@/hooks/keys';
 import { assignment, snapshot } from '@/testing/house';
 import { testQueryClient } from '@/testing/query';
+import { wordsFor } from '@app/core';
+
+const words = wordsFor('en', 'housemates');
 
 jest.mock('@/api/board', () => ({ loadHouse: jest.fn() }));
 jest.mock('@/api/away', () => ({ loadAway: jest.fn() }));
@@ -165,7 +163,7 @@ describe('the summary', () => {
     }
     expect(screen.getByRole('button', { name: '0 overdue' })).toBeDisabled();
     // No stat tiles and no Table card any more.
-    expect(screen.queryByTestId(`stat-${WEEK_COPY.done}`)).toBeNull();
+    expect(screen.queryByTestId(`stat-${words('week.table.done')}`)).toBeNull();
     expect(screen.queryByTestId('standing')).toBeNull();
   });
 
@@ -240,7 +238,7 @@ describe('on a phone', () => {
     const groups = screen.getAllByTestId(/^person-/);
     expect(groups.map((g) => g.props.testID)).toEqual(['person-priya', 'person-sam']);
     const you = screen.getByTestId('person-priya');
-    expect(within(you).getByRole('header', { name: WEEK_COPY.you })).toBeOnTheScreen();
+    expect(within(you).getByRole('header', { name: words('week.table.you') })).toBeOnTheScreen();
     expect(within(you).getByText('1 of 3 done, 2 pts')).toBeOnTheScreen();
     expect(within(screen.getByTestId('person-sam')).getByText('0 of 2 done, 4 pts')).toBeOnTheScreen();
   });
@@ -292,18 +290,18 @@ describe('on a phone', () => {
     );
     (pickPhoto as jest.Mock).mockResolvedValue(null);
     await open();
-    const tick = screen.getByRole('checkbox', { name: NEXT_UP_COPY.tick('Bins out') });
+    const tick = screen.getByRole('checkbox', { name: words('today.nextUp.tick', { john: 'Bins out' }) });
     expect(tick).not.toBeChecked();
     await fireEvent.press(tick);
     expect(markDone).toHaveBeenCalledWith('a1');
-    await fireEvent.press(screen.getByRole('checkbox', { name: NEXT_UP_COPY.tickWithPhoto('Hoover the stairs') }));
+    await fireEvent.press(screen.getByRole('checkbox', { name: words('today.nextUp.tickWithPhoto', { john: 'Hoover the stairs' }) }));
     expect(pickPhoto).toHaveBeenCalledWith('camera');
   });
 
   it("says why when the database refuses a tick, under the John's row", async () => {
     (markDone as jest.Mock).mockRejectedValue(new Error('This week has closed.'));
     await open();
-    await fireEvent.press(screen.getByRole('checkbox', { name: NEXT_UP_COPY.tick('Bins out') }));
+    await fireEvent.press(screen.getByRole('checkbox', { name: words('today.nextUp.tick', { john: 'Bins out' }) }));
     expect(await within(screen.getByTestId('person-priya')).findByText('This week has closed.')).toBeOnTheScreen();
   });
 
@@ -311,7 +309,7 @@ describe('on a phone', () => {
     await open();
     const sam = screen.getByTestId('person-sam');
     expect(within(sam).queryByRole('checkbox')).toBeNull();
-    expect(within(sam).getByRole('image', { name: NEXT_UP_COPY.stateLabel.checking })).toBeOnTheScreen();
+    expect(within(sam).getByRole('image', { name: words('today.nextUp.stateLabel.checking') })).toBeOnTheScreen();
   });
 
   it('offers Undo on your tick while the house checks it', async () => {
@@ -324,7 +322,7 @@ describe('on a phone', () => {
       }),
     );
     await open();
-    await fireEvent.press(screen.getByRole('button', { name: NEXT_UP_COPY.undo('Hoover the stairs') }));
+    await fireEvent.press(screen.getByRole('button', { name: words('today.nextUp.undo', { john: 'Hoover the stairs' }) }));
     expect(undoDone).toHaveBeenCalledWith('a2');
   });
 
@@ -358,10 +356,10 @@ describe('on a phone', () => {
       let refuse: (reason: Error) => void = () => undefined;
       (undoDone as jest.Mock).mockImplementation(() => new Promise((_ok, no) => (refuse = no)));
       const client = await open();
-      await fireEvent.press(screen.getByRole('button', { name: NEXT_UP_COPY.undo('Hoover the stairs') }));
+      await fireEvent.press(screen.getByRole('button', { name: words('today.nextUp.undo', { john: 'Hoover the stairs' }) }));
       expect(undoDone).not.toHaveBeenCalled();
       const confirm = screen.getByTestId('undo-confirm');
-      await fireEvent.press(within(confirm).getByRole('button', { name: JOHN_SHEET_COPY.undoIt }));
+      await fireEvent.press(within(confirm).getByRole('button', { name: words('john.sheet.undoIt') }));
       expect(undoDone).toHaveBeenCalledWith('a2');
 
       // Sam's dispute lands while the undo is on its way: the row offers no Undo, so the question goes.
@@ -375,14 +373,14 @@ describe('on a phone', () => {
     it('never asks again by itself when the dispute that took the question away is turned down', async () => {
       read.mockResolvedValue(checking());
       const client = await open();
-      await fireEvent.press(screen.getByRole('button', { name: NEXT_UP_COPY.undo('Hoover the stairs') }));
+      await fireEvent.press(screen.getByRole('button', { name: words('today.nextUp.undo', { john: 'Hoover the stairs' }) }));
       expect(screen.getByTestId('undo-confirm')).toBeOnTheScreen();
 
       await reread(client, disputed());
       await waitFor(() => expect(screen.queryByTestId('undo-confirm')).toBeNull());
       // The house turns the dispute down before the tick stands: Undo is back, the question isn't.
       await reread(client, checking());
-      expect(await screen.findByRole('button', { name: NEXT_UP_COPY.undo('Hoover the stairs') })).toBeOnTheScreen();
+      expect(await screen.findByRole('button', { name: words('today.nextUp.undo', { john: 'Hoover the stairs' }) })).toBeOnTheScreen();
       expect(screen.queryByTestId('undo-confirm')).toBeNull();
       expect(undoDone).not.toHaveBeenCalled();
     });
@@ -397,7 +395,7 @@ describe('on a phone', () => {
     await fireEvent.press(within(row('Mop the floor')).getByRole('button', { name: /Disputed by/ }));
     expect(mockOpen).toHaveBeenLastCalledWith('a5', 'vote');
     // The dispute waits for Priya's vote: its row says so with a Vote button of its own.
-    await fireEvent.press(screen.getByRole('button', { name: WEEK_SUMMARY_COPY.voteOn('Mop the floor') }));
+    await fireEvent.press(screen.getByRole('button', { name: words('week.summary.voteOn', { john: 'Mop the floor' }) }));
     expect(mockOpen).toHaveBeenCalledTimes(4);
     expect(mockOpen).toHaveBeenLastCalledWith('a5', 'vote');
     // Cal, who raised it, has left the house since.
@@ -414,7 +412,7 @@ describe('on a phone', () => {
     const members = snapshot().members.map((m) => (m.userId === 'priya' ? { ...m, swapTokens: 1 } : m));
     read.mockResolvedValue(busyWeek({ members, assignments: [...busyWeek().assignments, samsOpenJohn] }));
     await open();
-    expect(within(screen.getByTestId('person-priya')).getByTestId('swap-ready')).toHaveTextContent(WEEK_SUMMARY_COPY.swapReady);
+    expect(within(screen.getByTestId('person-priya')).getByTestId('swap-ready')).toHaveTextContent(words('week.summary.swapReady'));
     expect(within(screen.getByTestId('person-sam')).queryByTestId('swap-ready')).toBeNull();
   });
 
@@ -451,7 +449,7 @@ describe('on a phone', () => {
     expect(within(sam).getByText('0 of 2 done, 4 pts')).toBeOnTheScreen();
     const cal = screen.getByTestId('person-cal');
     expect(within(cal).getByText('away all week')).toBeOnTheScreen();
-    expect(within(cal).getByText(WEEK_SUMMARY_COPY.nothing)).toBeOnTheScreen();
+    expect(within(cal).getByText(words('week.summary.nothing'))).toBeOnTheScreen();
     expect(within(screen.getByTestId('person-priya')).queryByText(/away/)).toBeNull();
   });
 
@@ -483,7 +481,7 @@ describe('on a phone', () => {
     );
     await open();
     expect(within(row('Hoover the stairs')).getByText(/^Floors, stands in \d+h$/)).toBeOnTheScreen();
-    expect(within(row('Hoover the stairs')).getByRole('button', { name: NEXT_UP_COPY.undo('Hoover the stairs') })).toBeOnTheScreen();
+    expect(within(row('Hoover the stairs')).getByRole('button', { name: words('today.nextUp.undo', { john: 'Hoover the stairs' }) })).toBeOnTheScreen();
     expect(within(row('Clean the bath')).getByText(/^Bathroom, stands in /)).toBeOnTheScreen();
   });
 
@@ -507,7 +505,7 @@ describe('on a phone', () => {
 describe('the fairness footer', () => {
   it('says the deal is even when it is', async () => {
     await open();
-    expect(await screen.findByText(WEEK_SUMMARY_COPY.fairLevel)).toBeOnTheScreen();
+    expect(await screen.findByText(words('week.summary.fairLevel'))).toBeOnTheScreen();
   });
 
   it('names whoever is furthest off their share', async () => {
@@ -535,12 +533,12 @@ describe('the fairness footer', () => {
       ],
     });
     await open();
-    await fireEvent.press(await screen.findByRole('button', { name: WEEK_SUMMARY_COPY.fairClose }));
+    await fireEvent.press(await screen.findByRole('button', { name: words('week.summary.fairClose') }));
     const sheet = screen.getByTestId('fair-shares');
     expect(within(sheet).getByRole('header', { name: TABLE_COPY.shares })).toBeOnTheScreen();
     expect(within(sheet).getByText(TABLE_COPY.sharesBody)).toBeOnTheScreen();
     const rows = within(sheet).getAllByTestId('fair-share');
-    expect(within(rows[0]).getByText(WEEK_COPY.you)).toBeOnTheScreen();
+    expect(within(rows[0]).getByText(words('week.table.you'))).toBeOnTheScreen();
     expect(within(rows[0]).getByText('+1')).toBeOnTheScreen();
     expect(within(rows[1]).getByText('Sam')).toBeOnTheScreen();
     expect(within(rows[1]).getByText('−1')).toBeOnTheScreen();
@@ -630,11 +628,11 @@ describe('before the deal', () => {
     read.mockResolvedValue(notDealt());
     (loadJohnList as jest.Mock).mockResolvedValue({ johns: [{ ...NEW_JOHN, id: 'j1', name: 'Bins out' }], groups: [] });
     await open();
-    expect(screen.getByRole('header', { name: WEEK_SUMMARY_COPY.notDealt })).toBeOnTheScreen();
+    expect(screen.getByRole('header', { name: words('week.summary.notDealt') })).toBeOnTheScreen();
     expect(screen.queryByTestId('week-summary')).toBeNull();
     // Outline while the list is read, then amber.
-    await waitFor(() => expect(screen.getByRole('button', { name: NEXT_UP_COPY.dealWeek1 })).toHaveStyle({ backgroundColor: BIN_NIGHT.light.hivis }));
-    await fireEvent.press(screen.getByRole('button', { name: NEXT_UP_COPY.dealWeek1 }));
+    await waitFor(() => expect(screen.getByRole('button', { name: words('today.nextUp.dealWeek1') })).toHaveStyle({ backgroundColor: BIN_NIGHT.light.hivis }));
+    await fireEvent.press(screen.getByRole('button', { name: words('today.nextUp.dealWeek1') }));
     expect(dealThisWeek).toHaveBeenCalledWith('h1');
   });
 
@@ -643,14 +641,14 @@ describe('before the deal', () => {
     (loadJohnList as jest.Mock).mockResolvedValue({ johns: [{ ...NEW_JOHN, id: 'j1', name: 'Bins out' }], groups: [] });
     await open();
     await waitFor(() => expect(loadJohnList).toHaveBeenCalled());
-    expect(await screen.findByRole('button', { name: NEXT_UP_COPY.dealWeek1 })).not.toHaveStyle({ backgroundColor: BIN_NIGHT.light.hivis });
+    expect(await screen.findByRole('button', { name: words('today.nextUp.dealWeek1') })).not.toHaveStyle({ backgroundColor: BIN_NIGHT.light.hivis });
   });
 
   it('with no Johns yet, offers to add them rather than a deal that would be refused', async () => {
     read.mockResolvedValue(notDealt());
     (loadJohnList as jest.Mock).mockResolvedValue({ johns: [], groups: [] });
     await open();
-    const add = await screen.findByRole('link', { name: NEXT_UP_COPY.addJohns });
+    const add = await screen.findByRole('link', { name: words('today.nextUp.addJohns') });
     expect(add).not.toHaveStyle({ backgroundColor: BIN_NIGHT.light.hivis });
     expect(screen.queryByTestId('deal-week')).toBeNull();
     await fireEvent.press(add);
@@ -662,7 +660,7 @@ describe('before the deal', () => {
     (loadJohnList as jest.Mock).mockResolvedValue({ johns: [{ ...NEW_JOHN, id: 'j1', name: 'Bins out' }], groups: [] });
     (dealThisWeek as jest.Mock).mockRejectedValue(new Error('Only the house admins can do that.'));
     await open();
-    await fireEvent.press(await screen.findByRole('button', { name: NEXT_UP_COPY.dealWeek1 }));
+    await fireEvent.press(await screen.findByRole('button', { name: words('today.nextUp.dealWeek1') }));
     expect(await within(screen.getByTestId('week-not-dealt')).findByText('Only the house admins can do that.')).toBeOnTheScreen();
   });
 
@@ -670,7 +668,7 @@ describe('before the deal', () => {
     mockViewer.id = 'sam';
     read.mockResolvedValue(notDealt());
     await open();
-    expect(screen.getByText(NEXT_UP_COPY.waiting('Priya'))).toBeOnTheScreen();
+    expect(screen.getByText(words('today.nextUp.waiting', { admin: 'Priya' }))).toBeOnTheScreen();
     expect(screen.queryByTestId('deal-week')).toBeNull();
     // Nor is the John list read for them.
     expect(loadJohnList).not.toHaveBeenCalled();
@@ -679,7 +677,7 @@ describe('before the deal', () => {
   it('says why a week with nothing on it is empty, once the house has begun', async () => {
     read.mockResolvedValue(snapshot({ week: null, assignments: [] }));
     await open();
-    expect(screen.getByRole('header', { name: NOT_DEALT_COPY.nothingThisWeek })).toBeOnTheScreen();
+    expect(screen.getByRole('header', { name: words('today.notDealt.nothingThisWeek') })).toBeOnTheScreen();
     expect(screen.queryByTestId('deal-week')).toBeNull();
   });
 });
@@ -695,14 +693,14 @@ describe('the ••• menu', () => {
   it("goes to time away from \"I'm away…\"", async () => {
     await open();
     await fireEvent.press(screen.getByRole('button', { name: FOCUS_SHELL_COPY.more }));
-    await fireEvent.press(screen.getByRole('button', { name: WEEK_SUMMARY_COPY.awayAction }));
+    await fireEvent.press(screen.getByRole('button', { name: words('week.summary.awayAction') }));
     expect(screen).toHavePathname('/house/away');
   });
 
   it('gives an admin the John list', async () => {
     await open();
     await fireEvent.press(screen.getByRole('button', { name: FOCUS_SHELL_COPY.more }));
-    await fireEvent.press(screen.getByRole('button', { name: WEEK_SUMMARY_COPY.editJohns }));
+    await fireEvent.press(screen.getByRole('button', { name: words('week.summary.editJohns') }));
     expect(screen).toHavePathname('/house/johns');
   });
 
@@ -710,13 +708,13 @@ describe('the ••• menu', () => {
     read.mockResolvedValue(untouched());
     await open();
     await fireEvent.press(screen.getByRole('button', { name: FOCUS_SHELL_COPY.more }));
-    await fireEvent.press(screen.getByRole('button', { name: WEEK_SUMMARY_COPY.redeal }));
-    expect(screen.getByRole('header', { name: WEEK_SUMMARY_COPY.redealTitle })).toBeOnTheScreen();
-    expect(screen.getByText(WEEK_SUMMARY_COPY.redealBody)).toBeOnTheScreen();
+    await fireEvent.press(screen.getByRole('button', { name: words('week.summary.redeal') }));
+    expect(screen.getByRole('header', { name: words('week.summary.redealTitle') })).toBeOnTheScreen();
+    expect(screen.getByText(words('week.summary.redealBody'))).toBeOnTheScreen();
     expect(dealThisWeek).not.toHaveBeenCalled();
     await fireEvent.press(screen.getByTestId('confirm'));
     expect(dealThisWeek).toHaveBeenCalledWith('h1');
-    expect(await screen.findByText(WEEK_SUMMARY_COPY.redealt)).toBeOnTheScreen();
+    expect(await screen.findByText(words('week.summary.redealt'))).toBeOnTheScreen();
   });
 
   it("says why when the database won't re-deal, in the confirm", async () => {
@@ -724,17 +722,17 @@ describe('the ••• menu', () => {
     (dealThisWeek as jest.Mock).mockRejectedValue(new Error('Someone has already ticked a John this week.'));
     await open();
     await fireEvent.press(screen.getByRole('button', { name: FOCUS_SHELL_COPY.more }));
-    await fireEvent.press(screen.getByRole('button', { name: WEEK_SUMMARY_COPY.redeal }));
+    await fireEvent.press(screen.getByRole('button', { name: words('week.summary.redeal') }));
     await fireEvent.press(screen.getByTestId('confirm'));
     expect(await screen.findByText('Someone has already ticked a John this week.')).toBeOnTheScreen();
-    expect(screen.getByRole('header', { name: WEEK_SUMMARY_COPY.redealTitle })).toBeOnTheScreen();
+    expect(screen.getByRole('header', { name: words('week.summary.redealTitle') })).toBeOnTheScreen();
   });
 
   it('offers no re-deal once a John is ticked', async () => {
     await open();
     await fireEvent.press(screen.getByRole('button', { name: FOCUS_SHELL_COPY.more }));
-    expect(screen.getByRole('button', { name: WEEK_SUMMARY_COPY.editJohns })).toBeOnTheScreen();
-    expect(screen.queryByRole('button', { name: WEEK_SUMMARY_COPY.redeal })).toBeNull();
+    expect(screen.getByRole('button', { name: words('week.summary.editJohns') })).toBeOnTheScreen();
+    expect(screen.queryByRole('button', { name: words('week.summary.redeal') })).toBeNull();
   });
 
   it("gives everyone else only \"I'm away…\"", async () => {
@@ -742,9 +740,9 @@ describe('the ••• menu', () => {
     read.mockResolvedValue(untouched());
     await open();
     await fireEvent.press(screen.getByRole('button', { name: FOCUS_SHELL_COPY.more }));
-    expect(screen.getByRole('button', { name: WEEK_SUMMARY_COPY.awayAction })).toBeOnTheScreen();
-    expect(screen.queryByRole('button', { name: WEEK_SUMMARY_COPY.editJohns })).toBeNull();
-    expect(screen.queryByRole('button', { name: WEEK_SUMMARY_COPY.redeal })).toBeNull();
+    expect(screen.getByRole('button', { name: words('week.summary.awayAction') })).toBeOnTheScreen();
+    expect(screen.queryByRole('button', { name: words('week.summary.editJohns') })).toBeNull();
+    expect(screen.queryByRole('button', { name: words('week.summary.redeal') })).toBeNull();
   });
 });
 
@@ -779,7 +777,7 @@ describe('on a laptop', () => {
     expect(screen.queryByTestId('person-priya')).toBeNull();
     // The column names are for the eye only: no empty headings in the page's outline.
     const head = screen.getByTestId('week-table-head', { includeHiddenElements: true });
-    for (const column of Object.values(WEEK_COPY.columns).filter((c) => c !== WEEK_COPY.columns.due)) {
+    for (const column of (['john', 'who', 'points', 'status'] as const).map((c) => words(`week.table.columns.${c}`))) {
       expect(within(head).getByText(column, { includeHiddenElements: true })).toBeTruthy();
       expect(screen.queryByRole('header', { name: column })).toBeNull();
     }
@@ -794,10 +792,10 @@ describe('on a laptop', () => {
     expect(
       within(row('Clean the bath')).getByRole('button', { name: /^Clean the bath, Bathroom, stands in .*, Sam, 2 pts, Done, being checked$/ }),
     ).toBeOnTheScreen();
-    expect(within(row('Bins out')).getByText(WEEK_COPY.you)).toBeOnTheScreen();
+    expect(within(row('Bins out')).getByText(words('week.table.you'))).toBeOnTheScreen();
     expect(within(row('Clean the bath')).getByText('Sam')).toBeOnTheScreen();
     expect(within(row('Clean the bath')).getByTestId('status-checking')).toBeOnTheScreen();
-    await fireEvent.press(within(row('Mop the floor')).getByRole('button', { name: WEEK_SUMMARY_COPY.voteOn('Mop the floor') }));
+    await fireEvent.press(within(row('Mop the floor')).getByRole('button', { name: words('week.summary.voteOn', { john: 'Mop the floor' }) }));
     expect(mockOpen).toHaveBeenLastCalledWith('a5', 'vote');
   });
 
@@ -819,7 +817,7 @@ describe('on a laptop', () => {
     await open();
     const summary = screen.getByTestId('week-summary');
     expect(await within(summary).findByText('Sam is away 21–23 Oct.')).toBeOnTheScreen();
-    expect(within(summary).getByTestId('swap-ready')).toHaveTextContent(WEEK_SUMMARY_COPY.swapReady);
+    expect(within(summary).getByTestId('swap-ready')).toHaveTextContent(words('week.summary.swapReady'));
   });
 
   it('filters the table by the legend too', async () => {

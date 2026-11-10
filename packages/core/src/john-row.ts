@@ -1,10 +1,11 @@
 import { isOpen, type BoardItem } from "./board";
-import { CREW_COPY, FOCUS_SHELL_COPY, JOHN_SHEET_COPY, NEXT_UP_COPY, ON_CALL_COPY, PARENT_OK_COPY, STEADY_COPY, WEEK_SUMMARY_COPY } from "./copy";
+import { FOCUS_SHELL_COPY, ON_CALL_COPY, PARENT_OK_COPY, STEADY_COPY } from "./copy";
 import { andNames } from "./crew";
 import { CATEGORY_SHORT } from "./domain";
 import { dueInLine, firstName, relative, sinceLabel, STATUS_LABEL } from "./format";
 import type { LiveStatus } from "./outcome";
 import { pointsEarned } from "./points";
+import type { Words } from "./words-for";
 
 // A John as a row, the same wherever it's drawn: Today's rest of your week,
 // Week's groups and its laptop table. The tick box and what it says, the meta
@@ -63,7 +64,7 @@ function waitsForYourVote(
 }
 
 /** What a tick box that doesn't tick says: where the John has got to, or just that it isn't done. */
-function tickSays(status: LiveStatus): string {
+function tickSays(status: LiveStatus, words: Words): string {
   switch (status) {
     case "checking":
     case "done":
@@ -72,15 +73,15 @@ function tickSays(status: LiveStatus): string {
     case "missed":
     case "excused":
     case "covered":
-      return NEXT_UP_COPY.stateLabel[status];
+      return words(`today.nextUp.stateLabel.${status}` as const);
     default:
-      return NEXT_UP_COPY.stateLabel.open;
+      return words('today.nextUp.stateLabel.open');
   }
 }
 
 /** Someone by first name mid-sentence, or "a former housemate" once they've left (no name). */
-function called(name: string | null): string {
-  return name ? firstName(name) : NEXT_UP_COPY.someoneGone;
+function called(name: string | null, words: Words): string {
+  return name ? firstName(name) : words('today.nextUp.someoneGone');
 }
 
 /**
@@ -99,7 +100,7 @@ export function johnRow(
   now: Date,
   zone: string,
   /** Anyone's full name, or null for someone who has left. */
-  nameOf: (userId: string) => string | null,
+  nameOf: (userId: string) => string | null, words: Words,
 ): JohnRowPlan {
   const { status } = item;
   const mine = item.userId === viewerId;
@@ -118,7 +119,7 @@ export function johnRow(
           : "open";
   // A John done together is ticked with its roll call, in its sheet.
   const ticks = mine && toDo && (item.together?.length ?? 1) <= 1;
-  const { meta, lid } = metaLine(item, viewerId, now, zone, nameOf);
+  const { meta, lid } = metaLine(item, viewerId, now, zone, nameOf, words);
   // Ticked by roll call, a place earns its holder's share of the job.
   const share = item.crew?.people.some((c) => c.userId === item.userId)
     ? pointsEarned(status, item.crew.total) / item.crew.people.length
@@ -127,9 +128,9 @@ export function johnRow(
     tick,
     tickLabel: ticks
       ? item.needsPhoto
-        ? NEXT_UP_COPY.tickWithPhoto(item.name)
-        : NEXT_UP_COPY.tick(item.name)
-      : tickSays(status),
+        ? words('today.nextUp.tickWithPhoto', { john: item.name })
+        : words('today.nextUp.tick', { john: item.name })
+      : tickSays(status, words),
     ticks,
     meta,
     lid,
@@ -168,20 +169,20 @@ function metaLine(
   viewerId: string,
   now: Date,
   zone: string,
-  nameOf: (userId: string) => string | null,
+  nameOf: (userId: string) => string | null, words: Words,
 ): { meta: string; lid: boolean } {
   const mine = item.userId === viewerId;
   // An open flag says who flagged it ("flagged by Sam"), or that it's open again after a miss.
   const flagged =
     item.flaggedAt && isOpen(item.status)
       ? item.flaggedBy
-        ? ON_CALL_COPY.flaggedByInline(item.flaggedBy === viewerId ? WEEK_SUMMARY_COPY.byYou : called(nameOf(item.flaggedBy)))
+        ? ON_CALL_COPY.flaggedByInline(item.flaggedBy === viewerId ? words('week.summary.byYou') : called(nameOf(item.flaggedBy), words))
         : ON_CALL_COPY.flaggedAgainInline
       : null;
   // Done together: who with ("with Sam and Ada"), or once ticked, who did it.
   const others = (item.crew ? item.crew.people.map((c) => c.userId) : (item.together ?? [])).filter((id) => id !== item.userId);
   const together = others.length
-    ? CREW_COPY.with(andNames(others.map((id) => (id === viewerId ? WEEK_SUMMARY_COPY.byYou : called(nameOf(id))))))
+    ? words('john.crew.with', { names: andNames(others.map((id) => (id === viewerId ? words('week.summary.byYou') : called(nameOf(id), words)))) })
     : null;
   const line = (...parts: string[]) => ({
     meta: [johnKind(item.category), ...(flagged ? [flagged] : []), ...parts, ...(together ? [together] : [])].join(", "),
@@ -195,42 +196,42 @@ function metaLine(
       if (!dispute) return { meta: STATUS_LABEL.disputed, lid: false };
       const by =
         dispute.raisedBy === null
-          ? NEXT_UP_COPY.someoneGone
+          ? words('today.nextUp.someoneGone')
           : dispute.raisedBy === viewerId
-            ? WEEK_SUMMARY_COPY.byYou
-            : called(nameOf(dispute.raisedBy));
+            ? words('week.summary.byYou')
+            : called(nameOf(dispute.raisedBy), words);
       const left =
-        dispute.closesAt > now ? NEXT_UP_COPY.left(relative(dispute.closesAt, now).replace(/^in /, "")) : NEXT_UP_COPY.closingNow;
-      return { meta: `${JOHN_SHEET_COPY.disputedBy(by)}, ${left}`, lid: false };
+        dispute.closesAt > now ? words('today.nextUp.left', { time: relative(dispute.closesAt, now).replace(/^in /, "") }) : words('today.nextUp.closingNow');
+      return { meta: `${words('john.sheet.disputedBy', { name: by })}, ${left}`, lid: false };
     }
     case "checking":
       // In a family a kid's tick has no closing time: it waits for a parent.
       if (item.awaitsOk) return line(PARENT_OK_COPY.waiting);
       if (!item.standsAt) return line();
-      return line(item.standsAt > now ? JOHN_SHEET_COPY.standsIn(relative(item.standsAt, now)) : JOHN_SHEET_COPY.standsSoon);
+      return line(item.standsAt > now ? words('john.sheet.standsIn', { when: relative(item.standsAt, now) }) : words('john.sheet.standsSoon'));
     case "overdue":
     case "missed":
-      return line(NEXT_UP_COPY.wasDue(sinceLabel(item.dueAt, now, zone)));
+      return line(words('today.nextUp.wasDue', { when: sinceLabel(item.dueAt, now, zone) }));
     case "done":
     case "late":
-      return line(item.doneAt ? NEXT_UP_COPY.done(dueInLine(item.doneAt, now, zone)) : due);
+      return line(item.doneAt ? words('today.nextUp.done', { when: dueInLine(item.doneAt, now, zone) }) : due);
     case "excused":
-      return line(NEXT_UP_COPY.excused);
+      return line(words('today.nextUp.excused'));
     case "covered": {
       const coverer = item.coveredBy ?? null;
-      const by = coverer === viewerId ? WEEK_SUMMARY_COPY.byYou : called(coverer === null ? null : nameOf(coverer));
-      return line(NEXT_UP_COPY.coveredBy(by));
+      const by = coverer === viewerId ? words('week.summary.byYou') : called(coverer === null ? null : nameOf(coverer), words);
+      return line(words('today.nextUp.coveredBy', { name: by }));
     }
     default:
       // Pulled forward by someone's time away: say so.
       if (item.movedFrom) {
-        const before = mine ? NEXT_UP_COPY.beforeYouGo : WEEK_SUMMARY_COPY.beforeTheyGo(called(nameOf(item.userId)));
+        const before = mine ? words('today.nextUp.beforeYouGo') : words('week.summary.beforeTheyGo', { name: called(nameOf(item.userId), words) });
         return line(`${due}, ${before}`);
       }
       // Smart: who had it last time, when that was someone else ("after Ada").
       if (item.dealt?.mode === "smart" && !item.together?.length) {
         const before = item.dealt.weighed.find((w) => w.last && w.userId !== item.userId);
-        if (before) return line(due, STEADY_COPY.after(before.userId === viewerId ? WEEK_SUMMARY_COPY.byYou : called(nameOf(before.userId))));
+        if (before) return line(due, STEADY_COPY.after(before.userId === viewerId ? words('week.summary.byYou') : called(nameOf(before.userId), words)));
       }
       return line(due);
   }
@@ -241,7 +242,7 @@ function metaLine(
  * how many of those were late ("1 late", hazard words after it), or null
  * for none.
  */
-export function doneFold(folded: readonly { status: LiveStatus }[]): { label: string; late: string | null } {
+export function doneFold(folded: readonly { status: LiveStatus }[], words: Words): { label: string; late: string | null } {
   const late = folded.filter((i) => i.status === "late").length;
-  return { label: FOCUS_SHELL_COPY.done(folded.length), late: late > 0 ? WEEK_SUMMARY_COPY.late(late) : null };
+  return { label: FOCUS_SHELL_COPY.done(folded.length), late: late > 0 ? words('week.summary.late', { count: late }) : null };
 }

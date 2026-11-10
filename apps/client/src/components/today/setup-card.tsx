@@ -1,4 +1,4 @@
-import { NEXT_UP_COPY, setupChecklist } from '@app/core';
+import { setupChecklist } from '@app/core';
 import { SparklesIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -15,7 +15,8 @@ import { SPACE } from '@/theme';
 
 /** A checklist step's tick box: ticked once it's done. A picture, not a control: the row is the way in. */
 function Step({ done }: { done: boolean }) {
-  return <TickBox state={done ? 'done' : 'open'} label={done ? NEXT_UP_COPY.stateLabel.done : NEXT_UP_COPY.stateLabel.open} />;
+  const words = useWords();
+  return <TickBox state={done ? 'done' : 'open'} label={done ? words('today.nextUp.stateLabel.done') : words('today.nextUp.stateLabel.open')} />;
 }
 
 /**
@@ -49,14 +50,14 @@ export function SetupCard({
   return (
     <>
       <Card testID="next-up">
-        <SectionLabel style={styles.label}>{NEXT_UP_COPY.label}</SectionLabel>
-        <Lead style={styles.lead}>{NEXT_UP_COPY.setUp(houseName)}</Lead>
+        <SectionLabel style={styles.label}>{words('today.nextUp.label')}</SectionLabel>
+        <Lead style={styles.lead}>{words('today.nextUp.setUp', { house: houseName })}</Lead>
         <CardRows testID="setup-steps">
           {steps.johnCount === 0 ? (
             <Row
               leading={<RowIcon icon={SparklesIcon} />}
-              title={NEXT_UP_COPY.describe}
-              meta={NEXT_UP_COPY.describeMeta}
+              title={words('today.nextUp.describe')}
+              meta={words('today.nextUp.describeMeta')}
               {...ask}
               chevron
               testID="setup-describe"
@@ -64,8 +65,8 @@ export function SetupCard({
           ) : null}
           <Row
             leading={<Step done={steps.johns} />}
-            title={NEXT_UP_COPY.addJohns}
-            meta={steps.johnCount === null ? undefined : NEXT_UP_COPY.onTheList(steps.johnCount)}
+            title={words('today.nextUp.addJohns')}
+            meta={steps.johnCount === null ? undefined : words('today.nextUp.onTheList', { count: steps.johnCount })}
             href="/house/johns"
             chevron
             testID="setup-johns"
@@ -80,7 +81,7 @@ export function SetupCard({
           />
         </CardRows>
         <View style={styles.deal}>
-          <DealButton houseId={houseId} label={NEXT_UP_COPY.dealWeek1} variant={steps.ready ? 'primary' : 'outline'} fill />
+          <DealButton houseId={houseId} label={words('today.nextUp.dealWeek1')} variant={steps.ready ? 'primary' : 'outline'} fill />
         </View>
       </Card>
       <InviteSheet visible={inviting} onClose={() => setInviting(false)} code={joinCode} houseName={houseName} />

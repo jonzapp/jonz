@@ -1,10 +1,11 @@
-import { HISTORY_COPY, JOHN_COPY } from '@app/core';
+import { HISTORY_COPY } from '@app/core';
 import { useState } from 'react';
 
 import { coverJohn, markDone, rollCall } from '@/api/johns';
 import { pickPhoto, uploadProof } from '@/api/photos';
 import { useMove } from '@/hooks/use-move';
 import { useUndoOffer } from '@/hooks/use-undo-offer';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * Ticking one John: as it is, or with a photo receipt from the camera or the
@@ -21,6 +22,7 @@ export function useTick(
   assignmentId: string,
   { cover = false, crew }: { cover?: boolean; crew?: readonly string[] } = {},
 ) {
+  const words = useWords();
   const done = crew
     ? async (id: string, photoPath?: string) => {
         await rollCall(id, crew, photoPath);
@@ -42,7 +44,7 @@ export function useTick(
     try {
       uri = await pickPhoto(source);
     } catch (reason) {
-      setPhotoProblem(reason instanceof Error ? reason.message : JOHN_COPY.photoFailed);
+      setPhotoProblem(reason instanceof Error ? reason.message : words('john.row.photoFailed'));
       return;
     }
     if (!uri) return;
@@ -51,7 +53,7 @@ export function useTick(
     try {
       path = await uploadProof(houseId, assignmentId, uri);
     } catch {
-      setPhotoProblem(JOHN_COPY.photoFailed);
+      setPhotoProblem(words('john.row.photoFailed'));
       return;
     } finally {
       setUploading(false);
@@ -80,7 +82,7 @@ export function useTick(
     /** Whether another way is waiting, so this way's button holds still (the sheet's buttons aren't one row). */
     held: (way: TickVia) => (move.pending || uploading) && via !== way,
     /** What a busy button says: ticking, or sending the photo first. */
-    busyLabel: uploading ? JOHN_COPY.uploading : JOHN_COPY.ticking,
+    busyLabel: uploading ? words('john.row.uploading') : words('john.row.ticking'),
     problem: photoProblem ?? move.problem,
     tick,
     tickWithPhoto,

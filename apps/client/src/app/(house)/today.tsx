@@ -5,7 +5,6 @@ import {
   memberCan,
   monthWord,
   movingLine,
-  NEXT_UP_COPY,
   onCallItems,
   PAGE_TITLE,
   pocketMoney,
@@ -47,6 +46,7 @@ import { useMembership } from '@/hooks/use-membership';
 import { usePocket } from '@/hooks/use-pocket';
 import { usePull, useReadOnFocus } from '@/hooks/use-refresh';
 import { useStake } from '@/hooks/use-stake';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * Today, for doing: your next John in the one card (or what takes its
@@ -134,10 +134,11 @@ function TodayView({
   /** In a family: the pocket money, for a kid's line on what they've earned. */
   pocket: PocketView | null;
 }) {
+  const words = useWords();
   const { snapshot, board, today, me, now } = view;
   const { house, rules, members } = snapshot;
   const userId = me?.userId ?? '';
-  const page = todayPage({ board, mine: today.mine, userId, me, members, rules, away, stake, offers: snapshot.offers, now });
+  const page = todayPage({ board, mine: today.mine, userId, me, members, rules, away, stake, offers: snapshot.offers, now }, words);
   // A kid in a family sees what they've earned this month in place of where they stand.
   const earned =
     house.kind === 'family' && me?.role !== 'admin' && pocket
@@ -241,7 +242,7 @@ function TodayView({
           <PageLine
             text={page.away}
             href="/house/away"
-            accessibilityLabel={`${page.away}. ${NEXT_UP_COPY.changeDates}`}
+            accessibilityLabel={`${page.away}. ${words('today.nextUp.changeDates')}`}
             testID="away-line"
           />
         ) : null}

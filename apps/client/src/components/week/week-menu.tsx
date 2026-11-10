@@ -1,4 +1,4 @@
-import { RESET_COPY, WEEK_SUMMARY_COPY, type ResetKind, BUSY_COPY } from '@app/core';
+import { RESET_COPY, type ResetKind, BUSY_COPY } from '@app/core';
 import { useRouter } from 'expo-router';
 import { CircleSlashIcon, ListTodoIcon, PlaneIcon, RotateCcwIcon, ShuffleIcon } from 'lucide-react-native';
 import { useState } from 'react';
@@ -9,6 +9,7 @@ import { ConfirmSheet } from '@/components/confirm-sheet';
 import { ResetSheet } from '@/components/reset-sheet';
 import { useToast } from '@/components/toast';
 import { useMove } from '@/hooks/use-move';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * Week's "•••" menu: "I'm away…" (Time away) for everyone; for admins, "Edit
@@ -39,6 +40,7 @@ export function WeekMenu({
   /** Who's looking. */
   userId: string;
 }) {
+  const words = useWords();
   const router = useRouter();
   const toast = useToast();
   const deal = useMove(houseId);
@@ -48,13 +50,13 @@ export function WeekMenu({
   const [resetting, setResetting] = useState<ResetKind | null>(null);
 
   const actions: MenuAction[] = [
-    { label: WEEK_SUMMARY_COPY.awayAction, icon: PlaneIcon, onPress: () => router.push('/house/away'), testID: 'menu-away' },
+    { label: words('week.summary.awayAction'), icon: PlaneIcon, onPress: () => router.push('/house/away'), testID: 'menu-away' },
   ];
   if (admin) {
-    actions.push({ label: WEEK_SUMMARY_COPY.editJohns, icon: ListTodoIcon, onPress: () => router.push('/house/johns'), testID: 'menu-johns' });
+    actions.push({ label: words('week.summary.editJohns'), icon: ListTodoIcon, onPress: () => router.push('/house/johns'), testID: 'menu-johns' });
     if (canRedeal) {
       actions.push({
-        label: WEEK_SUMMARY_COPY.redeal,
+        label: words('week.summary.redeal'),
         icon: ShuffleIcon,
         onPress: () => {
           setAsked(false);
@@ -76,7 +78,7 @@ export function WeekMenu({
     setAsked(true);
     if (await deal.run(() => dealThisWeek(houseId))) {
       setConfirming(false);
-      toast.show(WEEK_SUMMARY_COPY.redealt);
+      toast.show(words('week.summary.redealt'));
     }
   }
 
@@ -85,9 +87,9 @@ export function WeekMenu({
       <ActionMenu visible={visible} onClose={onClose} actions={actions} testID="week-menu" />
       <ConfirmSheet
         visible={confirming}
-        title={WEEK_SUMMARY_COPY.redealTitle}
-        body={WEEK_SUMMARY_COPY.redealBody}
-        confirmLabel={WEEK_SUMMARY_COPY.redeal}
+        title={words('week.summary.redealTitle')}
+        body={words('week.summary.redealBody')}
+        confirmLabel={words('week.summary.redeal')}
         icon={ShuffleIcon}
         tone="primary"
         busy={deal.pending}

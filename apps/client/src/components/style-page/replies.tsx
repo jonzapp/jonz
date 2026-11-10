@@ -1,4 +1,4 @@
-import { NEW_JOHN, REPLY_COPY, REPLY_SAMPLES, type JohnDef } from '@app/core';
+import { NEW_JOHN, REPLY_COPY, REPLY_SAMPLES, wordsFor, type JohnDef } from '@app/core';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Group } from '@/components/group';
@@ -66,7 +66,8 @@ const WEEK = [
  * (replyPieces), with the week drawn from made-up rows, since the style
  * page has no house to read (the live card is the Week page's JohnRow).
  */
-const live = replyPieces(DATA);
+// The style page's sample house is housemates, in English.
+const live = replyPieces(DATA, wordsFor('en', 'housemates'));
 export const SAMPLE_PIECES: ReplyPieces = {
   ...live,
   card(card) {

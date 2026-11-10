@@ -1,21 +1,18 @@
 import {
   doneFold,
   forfeitRoom,
-  JOHN_COPY,
-  JOHN_SHEET_COPY,
   johnRow,
   monthOf,
-  NEXT_UP_COPY,
   pocketMoney,
   pointsLabel,
   undoWarning,
-  WEEK_SUMMARY_COPY,
   type BoardItem,
   type Currency,
   type HouseRules,
   type JohnRowPlan,
   type StakeView,
   BUSY_COPY,
+  type Words,
 } from '@app/core';
 import { ClockIcon, ShieldIcon, Undo2Icon } from 'lucide-react-native';
 import { useState, type ReactNode } from 'react';
@@ -37,6 +34,7 @@ import { stakeKey } from '@/hooks/keys';
 import { useMove } from '@/hooks/use-move';
 import { useTick } from '@/hooks/use-tick';
 import { FONT, SPACE, useTheme } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /** Who's looking, and how to name everyone: what every John's row needs. */
 export interface JohnRowContext {
@@ -60,17 +58,18 @@ export interface JohnRowContext {
  * draw beside the row.
  */
 export function useJohnRow(item: BoardItem, context: JohnRowContext) {
+  const words = useWords();
   const sheet = useJohnSheet();
   const tick = useTick(context.houseId, item.id);
   const undo = useMove(context.houseId);
   const [asking, setAsking] = useState(false);
   // What lateness can still cost is capped at the stake, once a screen has read it.
   const stake = useCached<StakeView>(stakeKey(context.houseId)) ?? null;
-  const plan = johnRow(item, context.userId, context.now, context.zone, context.nameOf);
+  const plan = johnRow(item, context.userId, context.now, context.zone, context.nameOf, words);
   const open = () => sheet.open(item.id, plan.focus ?? undefined);
   const warning =
     plan.trailing === 'undo'
-      ? undoWarning(item, context.rules, context.now, forfeitRoom(stake, item.userId, monthOf(item.dueAt, context.zone)))
+      ? undoWarning(item, context.rules, context.now, words, forfeitRoom(stake, item.userId, monthOf(item.dueAt, context.zone)))
       : null;
   // The confirm lasts only while the row offers Undo: when the John moves on
   // under it (a dispute lands, the tick stands), the question goes, and
@@ -102,15 +101,15 @@ export function useJohnRow(item: BoardItem, context: JohnRowContext) {
       undo: () => (warning ? setAsking(true) : void undoNow()),
       undoing: undo.pending,
       vote: open,
-    }, context.rules.currency),
+    }, context.rules.currency, words),
     // A refusal from the confirm is said in it, and under the row once it has gone.
     problem: tick.problem ?? (asking ? null : undo.problem),
     confirm: warning ? (
       <ConfirmSheet
         visible={asking}
-        title={JOHN_SHEET_COPY.undoTitle(item.name)}
+        title={words('john.sheet.undoTitle', { john: item.name })}
         body={warning}
-        confirmLabel={JOHN_SHEET_COPY.undoIt}
+        confirmLabel={words('john.sheet.undoIt')}
         icon={Undo2Icon}
         busy={undo.pending}
         busyLabel={BUSY_COPY.undoing}
@@ -128,15 +127,15 @@ function trailingFor(
   plan: JohnRowPlan,
   item: BoardItem,
   moves: { undo: () => void; undoing: boolean; vote: () => void },
-  currency: Currency,
+  currency: Currency, words: Words,
 ): ReactNode {
   switch (plan.trailing) {
     case 'undo':
       return (
         <TextButton
-          label={JOHN_COPY.undo}
+          label={words('john.row.undo')}
           align="end"
-          accessibilityLabel={NEXT_UP_COPY.undo(item.name)}
+          accessibilityLabel={words('today.nextUp.undo', { john: item.name })}
           disabled={moves.undoing}
           onPress={moves.undo}
         />
@@ -144,10 +143,10 @@ function trailingFor(
     case 'vote':
       return (
         <TextButton
-          label={WEEK_SUMMARY_COPY.vote}
+          label={words('week.summary.vote')}
           chevron
           align="end"
-          accessibilityLabel={WEEK_SUMMARY_COPY.voteOn(item.name)}
+          accessibilityLabel={words('week.summary.voteOn', { john: item.name })}
           onPress={moves.vote}
         />
       );
@@ -200,9 +199,10 @@ export function JohnRow({ item, context, testID }: { item: BoardItem; context: J
  * there are none.
  */
 export function DoneFold({ items, children }: { items: readonly BoardItem[]; children: ReactNode }) {
+  const words = useWords();
   const { colors } = useTheme();
   if (items.length === 0) return null;
-  const fold = doneFold(items);
+  const fold = doneFold(items, words);
   return (
     <Fold
       label={fold.label}

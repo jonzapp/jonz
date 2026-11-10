@@ -1,4 +1,4 @@
-import { firstName, JOHN_COPY, REACTION_LABEL, SECTION_LABEL, WALL_COPY, WALL_FEED_COPY, wordsFor } from "@app/core";
+import { firstName, REACTION_LABEL, SECTION_LABEL, WALL_COPY, WALL_FEED_COPY, wordsFor } from "@app/core";
 import { expect, test, type BrowserContext } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, dealtHouseInClient } from "./auth";
@@ -55,7 +55,7 @@ test("ticks land on the Wall with their photos, and take reactions", async ({ br
   await hobPage.goto("/today");
   const hobNext = hobPage.getByTestId("today-screen").getByTestId("next-up");
   await expect(hobNext.getByTestId("next-up-name")).toHaveText(hob.name);
-  await hobNext.getByRole("button", { name: JOHN_COPY.markDone, exact: true }).click();
+  await hobNext.getByRole("button", { name: words('john.row.markDone'), exact: true }).click();
   const hobTick = events.filter({ hasText: WALL_FEED_COPY.ticked(them, hob.name) });
   await expect(hobTick).toBeVisible();
 

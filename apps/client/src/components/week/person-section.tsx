@@ -1,4 +1,4 @@
-import { FOCUS_SHELL_COPY, WEEK_SUMMARY_COPY, weekPersonMeta, weekWho, type BoardItem, type WeekPerson } from '@app/core';
+import { FOCUS_SHELL_COPY, weekPersonMeta, weekWho, type BoardItem, type WeekPerson } from '@app/core';
 import { RepeatIcon } from 'lucide-react-native';
 
 import { Avatar } from '@/components/avatar';
@@ -7,6 +7,7 @@ import { DoneFold, JohnRow, type JohnRowContext } from '@/components/john-row';
 import { Section } from '@/components/section';
 import { Chip } from '@/components/status-mark';
 import { Body } from '@/components/text';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * One person's week, as a Section: a header with their 24pt avatar, their
@@ -33,14 +34,15 @@ export function PersonSection({
   onCall?: string | null;
   swapReady?: boolean;
 }) {
+  const words = useWords();
   const mine = person.userId === context.userId;
   const name = context.nameOf(person.userId) ?? FOCUS_SHELL_COPY.formerHousemate;
-  const counts = weekPersonMeta({ done: person.done, total: person.total, points });
+  const counts = weekPersonMeta({ done: person.done, total: person.total, points }, words);
   return (
     <Section
-      label={weekWho(person.userId, context.userId, context.nameOf)}
+      label={weekWho(person.userId, context.userId, context.nameOf, words)}
       leading={<Avatar name={name} userId={person.userId} me={mine} size={24} />}
-      tag={swapReady ? <Chip label={WEEK_SUMMARY_COPY.swapReady} icon={RepeatIcon} testID="swap-ready" /> : undefined}
+      tag={swapReady ? <Chip label={words('week.summary.swapReady')} icon={RepeatIcon} testID="swap-ready" /> : undefined}
       // Where the name, its tag and these don't fit on one line, these move under them.
       right={[counts, away, onCall].filter((line): line is string => Boolean(line))}
       testID={`person-${person.userId}`}
@@ -55,7 +57,7 @@ export function PersonSection({
       </DoneFold>
       {person.total === 0 ? (
         <GroupItem>
-          <Body>{WEEK_SUMMARY_COPY.nothing}</Body>
+          <Body>{words('week.summary.nothing')}</Body>
         </GroupItem>
       ) : null}
     </Section>

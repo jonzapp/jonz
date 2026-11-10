@@ -6,7 +6,7 @@ import { MESSAGES, type Language, type WordId } from "./locales";
 export { LANGUAGES, type Language, type WordId } from "./locales";
 
 /** What a line fills its gaps with. The house's kind is filled in for you. */
-export type WordValues = Record<string, string | number | Date | null | undefined>;
+export type WordValues = Record<string, string | number | boolean | Date | null | undefined>;
 
 /**
  * The words for one person's language and their house's kind: call it with a

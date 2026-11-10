@@ -1,17 +1,12 @@
 import {
   cantOptions,
   coverOffer,
-  CREW_COPY,
   firstName,
   dueInLine,
   FOCUS_SHELL_COPY,
   HISTORY_COPY,
   holdable,
-  JOHN_COPY,
-  JOHN_SHEET_COPY,
-  NEXT_UP_COPY,
   plannable,
-  SWAP_COPY,
   swapChoice,
   type BoardItem,
   type CantOptions,
@@ -39,6 +34,7 @@ import { SPACE, useTheme } from '@/theme';
 
 import type { JohnSheetContext, JohnSheetFocus } from './body';
 import { SheetLines, SheetSection } from './parts';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * Your open John: amber "Mark done" and a photo with it (a photo John
@@ -51,6 +47,7 @@ import { SheetLines, SheetSection } from './parts';
  * sentence, or the swap.
  */
 export function YoursOpen({ item, context, onRollCall }: { item: BoardItem; context: JohnSheetContext; onRollCall: () => void }) {
+  const words = useWords();
   const tick = useTick(context.houseId, item.id);
   const cant = cantOptions(item, context.board, context.me);
   const atCant = context.focus === 'cant' && cant !== null;
@@ -67,7 +64,7 @@ export function YoursOpen({ item, context, onRollCall }: { item: BoardItem; cont
         {item.jobId ? (
           <Button
             icon={item.needsPhoto ? CameraIcon : CheckIcon}
-            label={JOHN_COPY.markDone}
+            label={words('john.row.markDone')}
             onPress={onRollCall}
             testID="sheet-mark-done"
           />
@@ -75,7 +72,7 @@ export function YoursOpen({ item, context, onRollCall }: { item: BoardItem; cont
           <>
             <Button
               icon={CameraIcon}
-label={NEXT_UP_COPY.takePhoto}
+label={words('today.nextUp.takePhoto')}
               busy={tick.waiting === 'camera'}
               busyLabel={tick.busyLabel}
               disabled={tick.held('camera')}
@@ -85,7 +82,7 @@ label={NEXT_UP_COPY.takePhoto}
             <Button
               variant="outline"
               icon={ImagesIcon}
-label={JOHN_SHEET_COPY.fromLibrary}
+label={words('john.sheet.fromLibrary')}
               busy={tick.waiting === 'library'}
               busyLabel={tick.busyLabel}
               disabled={tick.held('library')}
@@ -96,7 +93,7 @@ label={JOHN_SHEET_COPY.fromLibrary}
           <>
             <Button
               icon={CheckIcon}
-label={JOHN_COPY.markDone}
+label={words('john.row.markDone')}
               busy={tick.waiting === 'tick'}
               busyLabel={tick.busyLabel}
               disabled={tick.held('tick')}
@@ -106,7 +103,7 @@ label={JOHN_COPY.markDone}
             <Button
               variant="outline"
               icon={CameraIcon}
-label={JOHN_SHEET_COPY.addPhoto}
+label={words('john.sheet.addPhoto')}
               busy={tick.waiting === 'camera'}
               busyLabel={tick.busyLabel}
               disabled={tick.held('camera')}
@@ -115,7 +112,7 @@ label={JOHN_SHEET_COPY.addPhoto}
           </>
         )}
         {item.jobId ? null : (
-          <Button variant="ghost" icon={UsersIcon} label={CREW_COPY.withHelp} disabled={tick.waiting !== null} onPress={onRollCall} testID="done-with-help" />
+          <Button variant="ghost" icon={UsersIcon} label={words('john.crew.withHelp')} disabled={tick.waiting !== null} onPress={onRollCall} testID="done-with-help" />
         )}
         {tick.problem ? <Alert message={tick.problem} /> : null}
         <OnIt item={item} context={context} />
@@ -149,18 +146,19 @@ label={JOHN_SHEET_COPY.addPhoto}
  * for 2 hours, once; after that, the line saying until when.
  */
 function OnIt({ item, context }: { item: BoardItem; context: JohnSheetContext }) {
+  const words = useWords();
   const move = useMove(context.houseId);
   const { now, rules, userId } = context;
   if (item.heldUntil && item.heldUntil > now && !item.doneAt) {
-    return <Body testID="cover-held">{JOHN_SHEET_COPY.held(dueInLine(item.heldUntil, now, rules.timezone))}</Body>;
+    return <Body testID="cover-held">{words('john.sheet.held', { when: dueInLine(item.heldUntil, now, rules.timezone) })}</Body>;
   }
   if (!holdable({ ...item, excused: item.status === 'excused' }, userId, now, rules.coverGraceHours)) return null;
   return (
     <>
       <Row
         leading={<RowIcon icon={HandIcon} />}
-        title={JOHN_SHEET_COPY.onIt}
-        meta={JOHN_SHEET_COPY.onItMeta}
+        title={words('john.sheet.onIt')}
+        meta={words('john.sheet.onItMeta')}
         disabled={move.pending}
         onPress={() => void move.run(() => holdCover(item.id))}
         testID="on-it"
@@ -189,6 +187,7 @@ function IfYouCant({
   skipFirst: boolean;
   onSwap: () => void;
 }) {
+  const words = useWords();
   const move = useMove(context.houseId);
   const offer = useUndoOffer(context.houseId);
   const [skipping, setSkipping] = useState(skipFirst);
@@ -197,18 +196,18 @@ function IfYouCant({
   return (
     <SheetSection>
       <SheetAnchor name={anchor}>
-        <Section label={JOHN_SHEET_COPY.cant} testID="if-you-cant">
+        <Section label={words('john.sheet.cant')} testID="if-you-cant">
           {cant.immunity > 0 ? (
             skipping ? (
               <GroupItem testID="skip-confirm">
-                <Body>{JOHN_SHEET_COPY.skipSentence(item.name, cant.immunity - 1)}</Body>
+                <Body>{words('john.sheet.skipSentence', { john: item.name, left: cant.immunity - 1 })}</Body>
                 <ButtonRow>
                   <Button
                     variant="outline"
                     icon={ShieldIcon}
-                    label={JOHN_SHEET_COPY.skipIt}
+                    label={words('john.sheet.skipIt')}
                     busy={move.pending}
-                    busyLabel={JOHN_SHEET_COPY.skipping}
+                    busyLabel={words('john.sheet.skipping')}
                     onPress={() =>
                       void move.run(() => spendImmunity(item.id)).then((done) => {
                         if (done) offer(HISTORY_COPY.immunity, 'immunity', item.id);
@@ -223,8 +222,8 @@ function IfYouCant({
             ) : (
               <Row
                 leading={<RowIcon icon={ShieldIcon} />}
-                title={JOHN_SHEET_COPY.skip}
-                meta={JOHN_SHEET_COPY.skipMeta(cant.immunity)}
+                title={words('john.sheet.skip')}
+                meta={words('john.sheet.skipMeta', { skips: cant.immunity })}
                 chevron
                 onPress={() => setSkipping(true)}
                 testID="skip-row"
@@ -234,8 +233,8 @@ function IfYouCant({
           {cant.swapFor.length > 0 ? (
             <Row
               leading={<RowIcon icon={RepeatIcon} />}
-              title={JOHN_SHEET_COPY.swap}
-              meta={JOHN_SHEET_COPY.swapMeta}
+              title={words('john.sheet.swap')}
+              meta={words('john.sheet.swapMeta')}
               chevron
               onPress={onSwap}
               testID="swap-row"
@@ -266,6 +265,7 @@ function SwapPicker({
   context: JohnSheetContext;
   onCancel: () => void;
 }) {
+  const words = useWords();
   const move = useMove(context.houseId);
   const offer = useUndoOffer(context.houseId);
   const [take, setTake] = useState<string | null>(null);
@@ -282,11 +282,11 @@ function SwapPicker({
   return (
     <>
       <SheetLines>
-        <Body>{JOHN_SHEET_COPY.swapBody(item.name)}</Body>
+        <Body>{words('john.sheet.swapBody', { john: item.name })}</Body>
       </SheetLines>
       <SheetSection>
-        <Section label={JOHN_SHEET_COPY.swapFor} testID="swap-picker">
-          <View accessibilityRole="radiogroup" accessibilityLabel={JOHN_SHEET_COPY.swapFor}>
+        <Section label={words('john.sheet.swapFor')} testID="swap-picker">
+          <View accessibilityRole="radiogroup" accessibilityLabel={words('john.sheet.swapFor')}>
             {cant.swapFor.map((theirs) => (
               <SwapChoice
                 key={theirs.id}
@@ -301,8 +301,8 @@ function SwapPicker({
       </SheetSection>
       <SheetLines>
         <Button
-          label={SWAP_COPY.swap}
-          busyLabel={SWAP_COPY.swapping}
+          label={words('john.swap.swap')}
+          busyLabel={words('john.swap.swapping')}
           icon={RepeatIcon}
           busy={move.pending}
           disabled={!picked}
@@ -333,8 +333,9 @@ function SwapChoice({
   chosen: boolean;
   onChoose: () => void;
 }) {
+  const words = useWords();
   const { colors } = useTheme();
-  const { meta, label } = swapChoice(item, context.members, context.rules, context.now, chosen);
+  const { meta, label } = swapChoice(item, context.members, context.rules, context.now, chosen, words);
   return (
     <Row
       leading={<Avatar name={context.nameOf(item.userId)} userId={item.userId} />}
@@ -364,13 +365,14 @@ function SwapChoice({
  * photo, for a photo John); overdue inside the grace, when that opens.
  */
 export function TheirsOpen({ item, context }: { item: BoardItem; context: JohnSheetContext }) {
+  const words = useWords();
   const owner = context.members.find((m) => m.userId === item.userId);
-  const offer = coverOffer(item, context.members, context.userId, context.rules, context.now);
+  const offer = coverOffer(item, context.members, context.userId, context.rules, context.now, words);
   return (
     <SheetLines>
       <View style={styles.owner}>
         <Avatar name={context.nameOf(item.userId)} userId={item.userId} />
-        <Body style={styles.shrink}>{JOHN_SHEET_COPY.theirs(owner ? firstName(owner.name) : FOCUS_SHELL_COPY.formerHousemate)}</Body>
+        <Body style={styles.shrink}>{words('john.sheet.theirs', { owner: owner ? firstName(owner.name) : FOCUS_SHELL_COPY.formerHousemate })}</Body>
       </View>
       {offer.kind === 'cover' && offer.text ? (
         <Cover item={item} context={context} body={offer.text} />
@@ -383,6 +385,7 @@ export function TheirsOpen({ item, context }: { item: BoardItem; context: JohnSh
 
 /** Covering a housemate's John: what it means, then the sheet's one amber, as ticking your own looks. */
 function Cover({ item, context, body }: { item: BoardItem; context: JohnSheetContext; body: string }) {
+  const words = useWords();
   const tick = useTick(context.houseId, item.id, { cover: true });
   return (
     <>
@@ -391,7 +394,7 @@ function Cover({ item, context, body }: { item: BoardItem; context: JohnSheetCon
         <>
           <Button
             icon={CameraIcon}
-label={JOHN_SHEET_COPY.coverPhoto}
+label={words('john.sheet.coverPhoto')}
             busy={tick.waiting === 'camera'}
             busyLabel={tick.busyLabel}
             disabled={tick.held('camera')}
@@ -401,7 +404,7 @@ label={JOHN_SHEET_COPY.coverPhoto}
           <Button
             variant="outline"
             icon={ImagesIcon}
-label={JOHN_SHEET_COPY.fromLibrary}
+label={words('john.sheet.fromLibrary')}
             busy={tick.waiting === 'library'}
             busyLabel={tick.busyLabel}
             disabled={tick.held('library')}
@@ -411,7 +414,7 @@ label={JOHN_SHEET_COPY.fromLibrary}
       ) : (
         <Button
           icon={CheckIcon}
-label={JOHN_SHEET_COPY.coverIt}
+label={words('john.sheet.coverIt')}
           busy={tick.waiting === 'tick'}
           busyLabel={tick.busyLabel}
           disabled={tick.held('tick')}

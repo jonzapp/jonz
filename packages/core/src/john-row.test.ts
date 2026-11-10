@@ -4,6 +4,9 @@ import type { BoardItem, DisputeView } from "./board";
 import { CATEGORIES } from "./domain";
 import { doneFold, johnKind, johnRow } from "./john-row";
 import type { LiveStatus } from "./outcome";
+import { wordsFor } from "./words-for";
+
+const words = wordsFor("en", "housemates");
 
 const HOUR = 3_600_000;
 // Thursday 22 Oct 2026, 15:00 in London (BST, an hour ahead of UTC).
@@ -58,7 +61,7 @@ function dispute(overrides: Partial<DisputeView> = {}): DisputeView {
 }
 
 /** Sam's row for a John. */
-const row = (overrides: Partial<BoardItem>, viewer = "sam") => johnRow(item("a", overrides), viewer, now, ZONE, nameOf);
+const row = (overrides: Partial<BoardItem>, viewer = "sam") => johnRow(item("a", overrides), viewer, now, ZONE, nameOf, words);
 
 describe("johnKind", () => {
   it("is the category's short word, one word for every kind", () => {
@@ -117,7 +120,7 @@ describe("johnRow", () => {
 
   it("asks for your vote on a dispute until you've given it; otherwise its flag says it, and the points trail", () => {
     const waiting = item("a", { userId: "priya", status: "disputed", dispute: dispute() });
-    expect(johnRow(waiting, "sam", now, ZONE, nameOf)).toMatchObject({ tick: "disputed", trailing: "vote", focus: "vote" });
+    expect(johnRow(waiting, "sam", now, ZONE, nameOf, words)).toMatchObject({ tick: "disputed", trailing: "vote", focus: "vote" });
     expect(row({ userId: "priya", status: "disputed", dispute: dispute({ myVote: false }) })).toMatchObject({
       trailing: "points",
       focus: "vote",
@@ -149,8 +152,8 @@ describe("johnRow", () => {
     const statuses: LiveStatus[] = ["upcoming", "due-soon", "overdue", "checking", "disputed", "done", "late", "missed", "excused"];
     for (const status of statuses) {
       const john = item("a", { userId: "tom", status, dispute: status === "disputed" ? dispute({ myVote: false }) : null, standsAt: at(5) });
-      const mine = johnRow(john, "tom", now, ZONE, nameOf);
-      const theirs = johnRow(john, "sam", now, ZONE, nameOf);
+      const mine = johnRow(john, "tom", now, ZONE, nameOf, words);
+      const theirs = johnRow(john, "sam", now, ZONE, nameOf, words);
       expect([theirs.tick, theirs.meta, theirs.lid, theirs.points, theirs.hazardEdge]).toEqual([
         mine.tick,
         mine.meta,
@@ -228,7 +231,7 @@ describe("johnRow's meta line in Smart", () => {
       { userId: last, standing: 1, last: true as const },
     ],
   });
-  const meta = (overrides: Partial<BoardItem>, viewer = "sam") => johnRow(item("a", overrides), viewer, now, ZONE, nameOf).meta;
+  const meta = (overrides: Partial<BoardItem>, viewer = "sam") => johnRow(item("a", overrides), viewer, now, ZONE, nameOf, words).meta;
   const dueAt = new Date("2026-10-23T06:30:00Z");
 
   it("says who had it before, while it's still to do", () => {
@@ -245,8 +248,8 @@ describe("johnRow's meta line in Smart", () => {
 
 describe("doneFold", () => {
   it("says how many are folded, and how many of those were late", () => {
-    expect(doneFold([{ status: "late" }, { status: "done" }, { status: "late" }])).toEqual({ label: "Done (3)", late: "2 late" });
-    expect(doneFold([{ status: "done" }, { status: "excused" }])).toEqual({ label: "Done (2)", late: null });
+    expect(doneFold([{ status: "late" }, { status: "done" }, { status: "late" }], words)).toEqual({ label: "Done (3)", late: "2 late" });
+    expect(doneFold([{ status: "done" }, { status: "excused" }], words)).toEqual({ label: "Done (2)", late: null });
   });
 });
 

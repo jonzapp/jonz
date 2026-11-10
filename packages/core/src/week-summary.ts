@@ -3,11 +3,12 @@ import { format } from "date-fns";
 
 import { awayDays, currentOrNext, type AwayPeriod } from "./away";
 import { byDoneLatest, type BoardItem } from "./board";
-import { FOCUS_SHELL_COPY, TABLE_COPY, WEEK_COPY, WEEK_SUMMARY_COPY } from "./copy";
+import { FOCUS_SHELL_COPY, TABLE_COPY } from "./copy";
 import { MAKEUP_LABEL } from "./deal";
 import { dateRange, firstName, formatBalance, pointsLabel, STATUS_LABEL, STATUS_MARK, weekRange } from "./format";
 import type { LiveStatus } from "./outcome";
 import { addDaysTo, localDate } from "./week";
+import type { Words } from "./words-for";
 
 // Week: the whole house's week at a glance. A summary whose parts add up to
 // the week's Johns and filter the list, one group per person with finished
@@ -57,15 +58,15 @@ export interface WeekSummary {
 }
 
 /** The week in five parts that add up to its Johns. */
-export function weekSummary(items: readonly { status: LiveStatus }[]): WeekSummary {
+export function weekSummary(items: readonly { status: LiveStatus }[], words: Words): WeekSummary {
   const counts = new Map<WeekPart, number>(WEEK_PARTS.map((p) => [p, 0]));
   for (const item of items) {
     const part = weekPart(item.status);
     counts.set(part, counts.get(part)! + 1);
   }
-  const parts = WEEK_PARTS.map((part) => ({ part, count: counts.get(part)!, label: WEEK_SUMMARY_COPY.parts[part] }));
-  const said = parts.filter((p) => p.count > 0).map((p) => WEEK_SUMMARY_COPY.part(p.count, p.label));
-  return { total: items.length, parts, spoken: WEEK_SUMMARY_COPY.bar(items.length, said) };
+  const parts = WEEK_PARTS.map((part) => ({ part, count: counts.get(part)!, label: words(`week.summary.parts.${part}` as const) }));
+  const said = parts.filter((p) => p.count > 0).map((p) => words('week.summary.part', { count: p.count, label: p.label }));
+  return { total: items.length, parts, spoken: words('week.summary.bar', { total: items.length, parts: said.join(", ") }) };
 }
 
 /** Pressing a legend part: show only it, or, pressed again, everything. */
@@ -199,9 +200,9 @@ export function weekList<T extends { status: LiveStatus; dueAt: Date; doneAt?: D
  * someone with no Johns this week. Their time away has a line of its own
  * under it (weekAwayNote), so neither is ever cut short.
  */
-export function weekPersonMeta(p: { done: number; total: number; points: number }): string | null {
+export function weekPersonMeta(p: { done: number; total: number; points: number }, words: Words): string | null {
   if (p.total === 0) return null;
-  return `${WEEK_SUMMARY_COPY.doneOf(p.done, p.total)}, ${pointsLabel(p.points)}`;
+  return `${words('week.summary.doneOf', { done: p.done, total: p.total })}, ${pointsLabel(p.points)}`;
 }
 
 /**
@@ -213,10 +214,10 @@ export function weekAwayNote(
   periods: readonly AwayPeriod[],
   userId: string,
   weekStartsOn: string,
-  today: string,
+  today: string, words: Words,
 ): string | null {
   const weekEndsOn = addDaysTo(weekStartsOn, 6);
-  if (awayDays(periods, userId, weekStartsOn, weekEndsOn).length === 7) return WEEK_SUMMARY_COPY.awayAllWeek;
+  if (awayDays(periods, userId, weekStartsOn, weekEndsOn).length === 7) return words('week.summary.awayAllWeek');
   const inWeek = periods
     .filter((p) => p.userId === userId && p.startsOn <= weekEndsOn && p.endsOn >= weekStartsOn)
     .sort((a, b) => a.startsOn.localeCompare(b.startsOn));
@@ -225,7 +226,7 @@ export function weekAwayNote(
     inWeek.find((p) => p.endsOn >= today) ??
     inWeek[0] ??
     (next && next.startsOn <= addDaysTo(today, 7) ? next : null);
-  return period ? WEEK_SUMMARY_COPY.away(dateRange(period.startsOn, period.endsOn)) : null;
+  return period ? words('week.summary.away', { days: dateRange(period.startsOn, period.endsOn) }) : null;
 }
 
 /**
@@ -236,11 +237,11 @@ export function weekAwayNote(
 export function weekAwayLine(
   notes: readonly { userId: string; away: string | null }[],
   viewerId: string,
-  nameOf: (userId: string) => string | null,
+  nameOf: (userId: string) => string | null, words: Words,
 ): string | null {
   const said = notes
     .filter((n): n is { userId: string; away: string } => n.away !== null)
-    .map((n) => WEEK_SUMMARY_COPY.isAway(weekWho(n.userId, viewerId, nameOf), n.away, n.userId === viewerId));
+    .map((n) => words('week.summary.isAway', { who: weekWho(n.userId, viewerId, nameOf, words), note: n.away, you: n.userId === viewerId }));
   // Each is a sentence of its own ("You’re away all week"), so each ends as one.
   return said.length > 0 ? `${said.join(". ")}.` : null;
 }
@@ -249,29 +250,29 @@ export function weekAwayLine(
  * The summary's first line: the week's days and when it ends, in the house's
  * zone. "19–25 Oct, ends tonight", ", ends tomorrow", ", ends Sun".
  */
-export function weekRangeLine(startsAt: Date, endsAt: Date, now: Date, zone: string): string {
+export function weekRangeLine(startsAt: Date, endsAt: Date, now: Date, zone: string, words: Words): string {
   const days = weekRange(startsAt, endsAt, zone);
-  if (now >= endsAt) return WEEK_SUMMARY_COPY.range(days, WEEK_SUMMARY_COPY.ended);
+  if (now >= endsAt) return words('week.summary.range', { days, ends: words('week.summary.ended') });
   const last = new Date(endsAt.getTime() - 1);
   const lastDay = localDate(last, zone);
   const today = localDate(now, zone);
   const ends =
     lastDay === today
-      ? WEEK_SUMMARY_COPY.endsTonight
+      ? words('week.summary.endsTonight')
       : lastDay === addDaysTo(today, 1)
-        ? WEEK_SUMMARY_COPY.endsTomorrow
-        : WEEK_SUMMARY_COPY.endsOn(format(last, "EEE", { in: tz(zone) }));
-  return WEEK_SUMMARY_COPY.range(days, ends);
+        ? words('week.summary.endsTomorrow')
+        : words('week.summary.endsOn', { day: format(last, "EEE", { in: tz(zone) }) });
+  return words('week.summary.range', { days, ends });
 }
 
 /** Someone by first name mid-sentence, or "a former housemate" once they've left (no name). */
-function called(name: string | null): string {
-  return name ? firstName(name) : WEEK_SUMMARY_COPY.someoneGone;
+function called(name: string | null, words: Words): string {
+  return name ? firstName(name) : words('week.summary.someoneGone');
 }
 
 /** Whose a John or a group is, as Week labels it: "You", a first name, or "A former housemate". */
-export function weekWho(userId: string, viewerId: string, nameOf: (userId: string) => string | null): string {
-  if (userId === viewerId) return WEEK_COPY.you;
+export function weekWho(userId: string, viewerId: string, nameOf: (userId: string) => string | null, words: Words): string {
+  if (userId === viewerId) return words('week.table.you');
   const name = nameOf(userId);
   return name ? firstName(name) : FOCUS_SHELL_COPY.formerHousemate;
 }
@@ -288,7 +289,7 @@ export function weekSpokenRow(
   points: number,
 ): string {
   const status = STATUS_MARK[item.status].tone === "none" ? [] : [STATUS_LABEL[item.status]];
-  return WEEK_SUMMARY_COPY.spokenRow([item.name, meta, who, pointsLabel(points), ...status]);
+  return [item.name, meta, who, pointsLabel(points), ...status].join(", ");
 }
 
 /**
@@ -302,6 +303,7 @@ export function weekShareRows(
   memberIds: readonly string[],
   viewerId: string,
   awayMakeup: number,
+  words: Words,
 ): { rows: { userId: string; balance: string }[]; key: string } {
   const order = [viewerId, ...memberIds.filter((id) => id !== viewerId)];
   const rank = (id: string) => (order.includes(id) ? order.indexOf(id) : order.length);
@@ -309,7 +311,7 @@ export function weekShareRows(
     .sort((a, b) => rank(a.userId) - rank(b.userId))
     .map((b) => ({ userId: b.userId, balance: formatBalance(b.balance) }));
   const makeup = MAKEUP_LABEL[awayMakeup] ?? MAKEUP_LABEL[100];
-  return { rows, key: WEEK_SUMMARY_COPY.sharesKey(TABLE_COPY.sharesKey, makeup) };
+  return { rows, key: words('week.summary.sharesKey', { key: TABLE_COPY.sharesKey, makeup: makeup.toLowerCase() }) };
 }
 
 /**
@@ -325,7 +327,7 @@ export function weekFairness(
   balances: readonly { userId: string; balance: number }[],
   johnPoints: readonly number[],
   viewerId: string,
-  nameOf: (userId: string) => string | null,
+  nameOf: (userId: string) => string | null, words: Words,
 ): string | null {
   if (balances.length < 2) return null;
   const furthest = balances.reduce((worst, b) =>
@@ -334,13 +336,13 @@ export function weekFairness(
       : worst,
   );
   const off = Math.abs(furthest.balance);
-  if (off < 0.5) return WEEK_SUMMARY_COPY.fairLevel;
+  if (off < 0.5) return words('week.summary.fairLevel');
   const john = johnPoints.length > 0 ? johnPoints.reduce((a, b) => a + b, 0) / johnPoints.length : 1;
-  if (off <= john / 2) return WEEK_SUMMARY_COPY.fairClose;
+  if (off <= john / 2) return words('week.summary.fairClose');
   const points = pointsLabel(Math.round(off * 2) / 2);
   const you = furthest.userId === viewerId;
-  const who = called(nameOf(furthest.userId));
+  const who = called(nameOf(furthest.userId), words);
   return furthest.balance < 0
-    ? WEEK_SUMMARY_COPY.fairBehind(who, points, you)
-    : WEEK_SUMMARY_COPY.fairAhead(who, points, you);
+    ? words('week.summary.fairBehind', { who, points, you })
+    : words('week.summary.fairAhead', { who, points, you });
 }

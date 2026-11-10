@@ -4,6 +4,9 @@ import { router } from 'expo-router';
 
 import { findJohn, findPerson, replyPieces, type ReplyData } from './pieces';
 import { NO_PIECES, Reply } from './reply';
+import { wordsFor } from '@app/core';
+
+const words = wordsFor('en', 'housemates');
 
 jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
 // The live week card's rows tick through the app's API; nothing here ticks.
@@ -42,15 +45,15 @@ describe('Reply', () => {
 
   it('shows no Markdown marks, whatever the sample', async () => {
     for (const s of REPLY_SAMPLES) {
-      const { unmount } = await render(<Reply source={s.reply} pieces={replyPieces(DATA)} testID="reply" />);
+      const { unmount } = await render(<Reply source={s.reply} pieces={replyPieces(DATA, words)} testID="reply" />);
       const all = screen.getByTestId('reply');
-      const words = (function text(node: unknown): string {
+      const drawn = (function text(node: unknown): string {
         if (typeof node === 'string') return node;
         const n = node as { children?: unknown[] };
         return (n.children ?? []).map(text).join('');
       })(all);
       // Raw HTML the model typed stays as the words it is; everything else is drawn, not shown.
-      const shown = words.replace('<b>raw HTML</b>', '').replace('< 5 pts > 2 pts', '').replace('**Unclosed', 'Unclosed');
+      const shown = drawn.replace('<b>raw HTML</b>', '').replace('< 5 pts > 2 pts', '').replace('**Unclosed', 'Unclosed');
       expect({ id: s.id, marks: shown.match(/\*\*|__|::|\]\(|^#+ |\| --- \||```/gm) }).toEqual({ id: s.id, marks: null });
       await unmount();
     }
@@ -77,7 +80,7 @@ describe('Reply', () => {
   });
 
   it('makes chips of what the house has, each named for a screen reader, and opens them', async () => {
-    await render(<Reply source={sample('howto')} pieces={replyPieces(DATA)} />);
+    await render(<Reply source={sample('howto')} pieces={replyPieces(DATA, words)} />);
     const page = screen.getByRole('link', { name: 'Days and time away, page' });
     await fireEvent.press(page);
     expect(router.push).toHaveBeenCalledWith('/house/away');
@@ -88,14 +91,14 @@ describe('Reply', () => {
   it("opens a John's sheet when it's on this week's board, yours first", async () => {
     const openJohn = jest.fn();
     const items = [item('a-sam', DATA.johns[0].id, 'u-sam'), item('a-me', DATA.johns[0].id, 'u-glyn')];
-    await render(<Reply source="[Bins](jonz:john/0000000a)" pieces={replyPieces({ ...DATA, items, openJohn })} />);
+    await render(<Reply source="[Bins](jonz:john/0000000a)" pieces={replyPieces({ ...DATA, items, openJohn }, words)} />);
     await fireEvent.press(screen.getByRole('button', { name: 'Bins out, John' }));
     expect(openJohn).toHaveBeenCalledWith('a-me');
     expect(router.push).not.toHaveBeenCalled();
   });
 
   it("draws a chip it can't find as its words, in bold, and nothing to tap", async () => {
-    await render(<Reply source="Ask [Zed](jonz:person/Zed) about [Oven](jonz:john/ffffffff)" pieces={replyPieces(DATA)} />);
+    await render(<Reply source="Ask [Zed](jonz:person/Zed) about [Oven](jonz:john/ffffffff)" pieces={replyPieces(DATA, words)} />);
     expect(screen.getByText('Zed')).toBeTruthy();
     expect(screen.getByText('Oven')).toBeTruthy();
     expect(screen.queryByRole('link')).toBeNull();
@@ -110,7 +113,7 @@ describe('Reply', () => {
   });
 
   it('never makes a web link tappable', async () => {
-    await render(<Reply source={sample('messy')} pieces={replyPieces(DATA)} />);
+    await render(<Reply source={sample('messy')} pieces={replyPieces(DATA, words)} />);
     expect(screen.queryByRole('link')).toBeNull();
     expect(screen.getByText(/raw HTML/)).toBeTruthy();
   });
@@ -133,20 +136,20 @@ describe('replyPieces', () => {
   });
 
   it("gives no week card before the board is read, or for someone who isn't in the house", () => {
-    const pieces = replyPieces(DATA);
+    const pieces = replyPieces(DATA, words);
     expect(pieces.card({ card: 'week', who: null, open: false })).toBeNull();
-    const withBoard = replyPieces({ ...DATA, items: [], rowContext: {} as never });
+    const withBoard = replyPieces({ ...DATA, items: [], rowContext: {} as never }, words);
     expect(withBoard.card({ card: 'week', who: 'Zed', open: false })).toBeNull();
     expect(withBoard.card({ card: 'week', who: 'Priya', open: false })).not.toBeNull();
   });
 
   it('gives no fair shares before they are read', () => {
-    expect(replyPieces(DATA).card({ card: 'shares' })).toBeNull();
-    expect(replyPieces({ ...DATA, balances: [{ userId: 'u-glyn', balance: 0 }] }).card({ card: 'shares' })).not.toBeNull();
+    expect(replyPieces(DATA, words).card({ card: 'shares' })).toBeNull();
+    expect(replyPieces({ ...DATA, balances: [{ userId: 'u-glyn', balance: 0 }] }, words).card({ card: 'shares' })).not.toBeNull();
   });
 
   it("knows the app's pages and no others", () => {
-    const pieces = replyPieces(DATA);
+    const pieces = replyPieces(DATA, words);
     expect(pieces.page('away')?.href).toBe('/house/away');
     expect(pieces.page('admin')).toBeNull();
   });

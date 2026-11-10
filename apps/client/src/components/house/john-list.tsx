@@ -2,11 +2,9 @@ import {
   CATEGORIES,
   CATEGORY_LABEL,
   CREW_CHOICES,
-  CREW_COPY,
   crewLine,
   CURRENCY_SYMBOL,
   JOHN_LIST_COPY,
-  NEXT_UP_COPY,
   johnFacts,
   johnsByKind,
   listLine,
@@ -53,12 +51,12 @@ import { useAskJonz } from '@/hooks/use-ask-jonz';
 import { useMove } from '@/hooks/use-move';
 import { INSET, LABEL_GAP, SECTION_GAP, SPACE } from '@/theme';
 import { TourSpot } from '@/components/tour/tour-spot';
+import { useWords } from '@/hooks/use-words';
 
 type Draft = Omit<JohnDef, 'id'> & { id?: string };
 
 const KINDS = CATEGORIES.map((c) => ({ value: c, label: CATEGORY_LABEL[c] }));
 const EFFORT = Array.from({ length: 20 }, (_, i) => ({ value: i + 1, label: pointsLabel(i + 1) }));
-const CREW = CREW_CHOICES.map((n) => ({ value: n, label: CREW_COPY.choice(n) }));
 
 /**
  * The house's list of Johns: what it adds up to and Add a John over it, then
@@ -92,6 +90,7 @@ export function JohnList({
   /** In a family each John can earn pocket money: the form asks how much, and each row says. */
   family?: boolean;
 }) {
+  const words = useWords();
   const [editing, setEditing] = useState<Draft | null>(null);
   const [reading, setReading] = useState<JohnDef | null>(null);
   const groupName = (id: string | null) => groups.find((g) => g.id === id)?.name ?? null;
@@ -144,7 +143,7 @@ export function JohnList({
             editable ? (
               <View style={styles.emptyActions}>
                 <ButtonRow stacked>
-                  <Button icon={SparklesIcon} label={NEXT_UP_COPY.describe} {...ask} testID="describe-house" />
+                  <Button icon={SparklesIcon} label={words('today.nextUp.describe')} {...ask} testID="describe-house" />
                   <Button variant="outline" icon={PlusIcon} label={JOHN_LIST_COPY.add} onPress={add} testID="add-john" />
                 </ButtonRow>
               </View>
@@ -199,7 +198,7 @@ export function JohnList({
                       const earns = family && j.payMinor ? POCKET_COPY.earns(pocketMoney(j.payMinor, rules.currency)) : null;
                       const aged = family && j.minAge ? KIDS_COPY.minAgeLine(j.minAge) : null;
                       // Whether it keeps its day is in its own sheet, with the rest of its details.
-                      const line = [schedule, j.crew === 1 ? null : CREW_COPY.choice(j.crew), earns, aged]
+                      const line = [schedule, j.crew === 1 ? null : words('john.crew.choice', { crew: j.crew }), earns, aged]
                         .filter(Boolean)
                         .join(', ');
                       return (
@@ -252,9 +251,10 @@ export function JohnList({
 
 /** A John's details, to read: what an admin would edit, one row each. */
 function JohnFacts({ john, group }: { john: JohnDef; group: string | null }) {
+  const words = useWords();
   return (
     <Group>
-      {johnFacts(john, group).map((fact) => (
+      {johnFacts(john, group, words).map((fact) => (
         <Row key={fact.label} title={fact.label} trailing={fact.value} testID="john-fact" />
       ))}
     </Group>
@@ -286,6 +286,7 @@ function JohnForm({
   family?: boolean;
   onDone: () => void;
 }) {
+  const words = useWords();
   const move = useMove(houseId);
   // Which of the two buttons is waiting: they share one move.
   const [doing, setDoing] = useState<'save' | 'remove'>('save');
@@ -303,8 +304,8 @@ function JohnForm({
   // group yet, and what a group's John does once one is picked.
   const sharing = groups.length === 0 ? JOHN_LIST_COPY.noGroups : v.groupId ? JOHN_LIST_COPY.groupOnly : null;
   // Done together: what its points add up to, and who shares them.
-  const line = v.when === 'day' ? crewLine(v.crew, v.points) : null;
-  const together = line ? `${line}. ${CREW_COPY.hint}` : null;
+  const line = v.when === 'day' ? crewLine(v.crew, v.points, words) : null;
+  const together = line ? `${line}. ${words('john.crew.hint')}` : null;
 
   async function save() {
     setDoing('save');
@@ -399,7 +400,7 @@ function JohnForm({
           ) : null}
           {/* On call stays one person: whoever is on call. */}
           {v.when === 'day' ? (
-            <PickRow label={CREW_COPY.doneBy} options={CREW} value={v.crew} onChange={(crew) => set({ crew })} testID="john-crew" />
+            <PickRow label={words('john.crew.doneBy')} options={CREW_CHOICES.map((n) => ({ value: n, label: words('john.crew.choice', { crew: n }) }))} value={v.crew} onChange={(crew) => set({ crew })} testID="john-crew" />
           ) : null}
           {/* On call has no day to keep. */}
           {v.when === 'day' ? (

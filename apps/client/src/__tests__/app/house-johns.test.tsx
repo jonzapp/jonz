@@ -1,18 +1,19 @@
 import {
   BIN_NIGHT,
   CATEGORY_LABEL,
-  CREW_COPY,
   DEAL_COPY,
   KIDS_COPY,
   FOCUS_SHELL_COPY,
   HOUSE_LOWER_COPY,
   JOHN_LIST_COPY,
   NEW_JOHN,
-  NEXT_UP_COPY,
   PAGE_TITLE,
   REPEAT_COPY,
   SECTION_LABEL,
-  SETUP_COPY, STEADY_COPY } from '@app/core';
+  SETUP_COPY,
+  STEADY_COPY,
+  wordsFor,
+} from '@app/core';
 import { router, Slot } from 'expo-router';
 import { act, fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 import { useContext } from 'react';
@@ -27,6 +28,8 @@ import { ToastProvider } from '@/components/toast';
 import { AskPanelContext, AskPanelProvider } from '@/hooks/use-ask-jonz';
 import { assignment, snapshot } from '@/testing/house';
 import { BATH, BINS, renderPages, untilRead } from '@/testing/pages';
+
+const words = wordsFor('en', 'housemates');
 
 jest.mock('@/api/board', () => ({ loadHouse: jest.fn() }));
 jest.mock('@/api/house', () => ({ catchUp: jest.fn() }));
@@ -283,14 +286,14 @@ describe('an admin', () => {
     await open();
     await fireEvent.press(screen.getByRole('button', { name: JOHN_LIST_COPY.add }));
     const form = within(screen.getByTestId('john-form'));
-    expect(form.getByRole('button', { name: `${CREW_COPY.doneBy}, ${CREW_COPY.choice(1)}` })).toBeOnTheScreen();
+    expect(form.getByRole('button', { name: `${words('john.crew.doneBy')}, ${words('john.crew.choice', { crew: 1 })}` })).toBeOnTheScreen();
     expect(form.queryByTestId('crew-note')).toBeNull();
     await fireEvent.changeText(form.getByTestId('john-name'), 'Garden tidy');
     await pick(form, JOHN_LIST_COPY.effort, '4 pts');
-    await pick(form, CREW_COPY.doneBy, CREW_COPY.choice(3));
-    expect(form.getByTestId('crew-note')).toHaveTextContent(`4 pts each, so 12 pts in all. ${CREW_COPY.hint}`);
-    await pick(form, CREW_COPY.doneBy, CREW_COPY.choice(0));
-    expect(form.getByTestId('crew-note')).toHaveTextContent(`4 pts each, for everyone at home that day. ${CREW_COPY.hint}`);
+    await pick(form, words('john.crew.doneBy'), words('john.crew.choice', { crew: 3 }));
+    expect(form.getByTestId('crew-note')).toHaveTextContent(`4 pts each, so 12 pts in all. ${words('john.crew.hint')}`);
+    await pick(form, words('john.crew.doneBy'), words('john.crew.choice', { crew: 0 }));
+    expect(form.getByTestId('crew-note')).toHaveTextContent(`4 pts each, for everyone at home that day. ${words('john.crew.hint')}`);
     await fireEvent.press(form.getByTestId('save-john'));
     expect(saveJohn).toHaveBeenCalledWith(
       'h1',
@@ -326,7 +329,7 @@ describe('an admin', () => {
     expect(sentence()).toBe('On call, up to 2 times a week, done within 12 hours');
     expect(form.getByTestId('on-call-note')).toBeOnTheScreen();
     // Whoever is on call does it: on call is never done together.
-    expect(form.queryByRole('button', { name: new RegExp(`^${CREW_COPY.doneBy}, `) })).toBeNull();
+    expect(form.queryByRole('button', { name: new RegExp(`^${words('john.crew.doneBy')}, `) })).toBeNull();
     expect(form.queryByTestId('john-next')).toBeNull();
     await word(form, REPEAT_COPY.timesAWeek, REPEAT_COPY.times(2));
     await fireEvent.press(form.getByRole('button', { name: `${REPEAT_COPY.more}: ${REPEAT_COPY.timesAWeek}` }));
@@ -492,7 +495,7 @@ describe('the deal', () => {
     (dealThisWeek as jest.Mock).mockRejectedValue(new Error("Someone’s already ticked a John this week, so it can’t be re-dealt."));
     await open();
     expect(screen.getByText(DEAL_COPY.firstBody)).toBeOnTheScreen();
-    await fireEvent.press(screen.getByRole('button', { name: NEXT_UP_COPY.dealWeek1 }));
+    await fireEvent.press(screen.getByRole('button', { name: words('today.nextUp.dealWeek1') }));
     expect(await screen.findByRole('alert')).toHaveTextContent(/can’t be re-dealt/);
   });
 });
@@ -578,7 +581,7 @@ describe('on a laptop', () => {
     (loadHouse as jest.Mock).mockResolvedValue(snapshot({ house: { ...snapshot().house, everDealt: false } }));
     await open();
     expect(within(screen.getByTestId('john-list-bar')).getByTestId('add-john')).toHaveStyle({ backgroundColor: 'transparent' });
-    expect(within(screen.getByTestId('deal')).getByRole('button', { name: NEXT_UP_COPY.dealWeek1 })).toHaveStyle({
+    expect(within(screen.getByTestId('deal')).getByRole('button', { name: words('today.nextUp.dealWeek1') })).toHaveStyle({
       backgroundColor: BIN_NIGHT.light.hivis,
     });
   });

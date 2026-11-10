@@ -7,11 +7,9 @@ import {
   AWAY_COPY,
   FOCUS_SHELL_COPY,
   DEAL_COPY,
-  DISPUTE_COPY,
   FRONT_DOOR,
   GROUPS_COPY,
   INVITE_COPY,
-  JOHN_COPY,
   JOHN_LIST_COPY,
   JOIN_COPY,
   LOOK_LABEL,
@@ -19,7 +17,6 @@ import {
   lookOf,
   NEW_HOUSE_COPY,
   NOT_FOUND_COPY,
-  NOT_DEALT_COPY,
   NO_HOUSE_COPY,
   PAGE_TITLE,
   pageTitle,
@@ -32,9 +29,11 @@ import {
   STAKE_HISTORY_COPY,
   TABLE_COPY,
   TAGLINE,
-  TODAY_COPY,
-  WEEK_COPY,
 } from "./copy";
+import { EN, type WordId } from "./locales";
+import { wordsFor } from "./words-for";
+
+const words = wordsFor("en", "housemates");
 
 const signIn = Object.values(SIGN_IN_COPY).flatMap((value) =>
   typeof value === "function" ? [value("Google"), value("Apple")] : [value],
@@ -49,21 +48,22 @@ const house = [
   JOIN_COPY.join("Flat 3"),
 ];
 const today = [
-  ...[TODAY_COPY, JOHN_COPY, INVITE_COPY].flatMap((copy) => Object.values(copy).filter((v) => typeof v === "string")),
-  TODAY_COPY.thisWeekRange("12–18 Oct"),
-  TODAY_COPY.left(1),
-  TODAY_COPY.left(3),
-  TODAY_COPY.streak(1),
-  TODAY_COPY.streak(4),
-  JOHN_COPY.standsIn("in 3 hours"),
-  JOHN_COPY.disputed("Still filthy"),
-  JOHN_COPY.votes(1, 2, "in 5 hours"),
-  JOHN_COPY.dueBeforeYouGo("Fri 21:00"),
-  NOT_DEALT_COPY.nothingThisWeek,
-  NOT_DEALT_COPY.nothingThisWeekBody,
+  ...Object.values(INVITE_COPY).filter((v) => typeof v === "string"),
+  ...(Object.keys(EN) as WordId[]).filter((id) => /^(today\.page|john\.row)\./.test(id) && !EN[id].includes("{")).map((id) => words(id)),
+  words('today.page.thisWeekRange', { range: "12–18 Oct" }),
+  words('today.page.left', { count: 1 }),
+  words('today.page.left', { count: 3 }),
+  words('today.page.streak', { weeks: 1 }),
+  words('today.page.streak', { weeks: 4 }),
+  words('john.row.standsIn', { when: "in 3 hours" }),
+  words('john.row.disputed', { reason: "Still filthy" }),
+  words('john.row.votes', { uphold: 1, reject: 2, closes: "in 5 hours" }),
+  words('john.row.dueBeforeYouGo', { was: "Fri 21:00" }),
+  words('today.notDealt.nothingThisWeek'),
+  words('today.notDealt.nothingThisWeekBody'),
   INVITE_COPY.shareTitle("Flat 3"),
 ];
-const words = [
+const lines = [
   APP_NAME,
   TAGLINE,
   FRONT_DOOR.headline,
@@ -75,11 +75,11 @@ const words = [
 
 describe("the words before signing in", () => {
   it("never call it a rota or a chore app", () => {
-    for (const text of words) expect(text).not.toMatch(/\brota\b|chore app/i);
+    for (const text of lines) expect(text).not.toMatch(/\brota\b|chore app/i);
   });
 
   it("carry no emoji", () => {
-    for (const text of words) expect(text).not.toMatch(/\p{Extended_Pictographic}/u);
+    for (const text of lines) expect(text).not.toMatch(/\p{Extended_Pictographic}/u);
   });
 });
 
@@ -99,35 +99,35 @@ describe("JOIN_COPY", () => {
   });
 });
 
-describe("TODAY_COPY", () => {
+describe("Today’s words", () => {
   it("counts in words", () => {
-    expect(TODAY_COPY.left(1)).toBe("John left this week");
-    expect(TODAY_COPY.left(0)).toBe("Johns left this week");
-    expect(TODAY_COPY.streak(1)).toBe("1 week");
-    expect(TODAY_COPY.streak(2)).toBe("2 weeks");
+    expect(words('today.page.left', { count: 1 })).toBe("John left this week");
+    expect(words('today.page.left', { count: 0 })).toBe("Johns left this week");
+    expect(words('today.page.streak', { weeks: 1 })).toBe("1 week");
+    expect(words('today.page.streak', { weeks: 2 })).toBe("2 weeks");
   });
 });
 
-describe("JOHN_COPY’s time away", () => {
+describe("a John’s row, on time away", () => {
   it("says whose trip pulled a John forward", () => {
-    expect(JOHN_COPY.dueBeforeYouGo("sat 09:00")).toBe("Due before you go: it was due sat 09:00, while you’re away.");
-    expect(JOHN_COPY.dueBeforeTheyGo("Ben", "sat 09:00")).toBe("Due before Ben goes: it was due sat 09:00, while they’re away.");
+    expect(words('john.row.dueBeforeYouGo', { was: "sat 09:00" })).toBe("Due before you go: it was due sat 09:00, while you’re away.");
+    expect(words('john.row.dueBeforeTheyGo', { owner: "Ben", was: "sat 09:00" })).toBe("Due before Ben goes: it was due sat 09:00, while they’re away.");
   });
 });
 
-describe("WEEK_COPY", () => {
+describe("Week’s table words", () => {
   it("counts and tallies in words", () => {
-    expect(WEEK_COPY.doneOf(0, 0)).toBe("0 of 0");
-    expect(WEEK_COPY.doneOf(3, 7)).toBe("3 of 7");
-    expect(WEEK_COPY.tally(1, 0, "in 5h")).toBe("0 done, 1 not done, closes in 5h");
-    expect(WEEK_COPY.disputeOn("Bins", "Still full")).toBe("Bins: “Still full”");
+    expect(words('week.table.doneOf', { done: 0, total: 0 })).toBe("0 of 0");
+    expect(words('week.table.doneOf', { done: 3, total: 7 })).toBe("3 of 7");
+    expect(words('week.table.tally', { uphold: 1, reject: 0, closes: "in 5h" })).toBe("0 done, 1 not done, closes in 5h");
+    expect(words('week.table.disputeOn', { john: "Bins", reason: "Still full" })).toBe("Bins: “Still full”");
   });
 });
 
-describe("DISPUTE_COPY", () => {
+describe("a dispute’s words", () => {
   it("names the John and whose tick it is", () => {
-    expect(DISPUTE_COPY.title("Bins")).toBe("Was Bins really done?");
-    expect(DISPUTE_COPY.body("Ben")).toBe(
+    expect(words('john.dispute.title', { john: "Bins" })).toBe("Was Bins really done?");
+    expect(words('john.dispute.body', { owner: "Ben" })).toBe(
       "Ben’s tick goes to a house vote. If the house agrees with you, the John opens again.",
     );
   });
@@ -294,9 +294,6 @@ describe("STAKE_HISTORY_COPY", () => {
 
 describe("Focus’s word objects", () => {
   const FOCUS = [
-    "NEXT_UP_COPY",
-    "JOHN_SHEET_COPY",
-    "WEEK_SUMMARY_COPY",
     "HOUSE_PAGE_COPY",
     "PERSON_COPY",
     "STAKE_HISTORY_COPY",

@@ -9,7 +9,7 @@
 // grants, as if by hand.
 import { z } from "zod";
 
-import { CREW_COPY, HOUSE_DRAFT_COPY } from "./copy";
+import { HOUSE_DRAFT_COPY } from "./copy";
 import type { GroupDef, JohnDef } from "./board";
 import { CATEGORIES, CATEGORY_LABEL, DOW_LABEL, JOHN_WHEN, type Category, type IsoDow } from "./domain";
 import { firstName } from "./format";
@@ -17,6 +17,7 @@ import { dueWords, LAST_OF_MONTH, MAX_EVERY_MONTHS, MAX_EVERY_WEEKS, oftenWords 
 import { CHAT_MOVES_MAX, ChatMove } from "./chat-moves";
 import { CHAT_RESETS_MAX, ChatReset } from "./resets";
 import type { JohnDraft } from "./schemas";
+import type { Words } from "./words-for";
 
 /** The most a draft holds: a long list is a list nobody reads. */
 export const DRAFT_MAX_JOHNS = 30;
@@ -580,7 +581,7 @@ export function groupChanges(base: HouseDraft | null, next: HouseDraft): GroupCh
  * card: "Every week → every 2 weeks, Sun 21:00 → Sat 21:00, 3 → 4 pts". A new
  * name says what it was called.
  */
-export function changedLine(before: DraftedJohn, after: DraftedJohn): string {
+export function changedLine(before: DraftedJohn, after: DraftedJohn, words: Words): string {
   const parts: string[] = [];
   const lower = (s: string) => s.charAt(0).toLocaleLowerCase() + s.slice(1);
   const arrow = (was: string, now: string) => `${was} → ${lower(now)}`;
@@ -591,7 +592,7 @@ export function changedLine(before: DraftedJohn, after: DraftedJohn): string {
   if (often(before) !== often(after)) parts.push(arrow(often(before), often(after)));
   if (before.when !== "on_call" && after.when !== "on_call" && due(before) !== due(after)) parts.push(`${due(before)} → ${due(after)}`);
   if (before.points !== after.points) parts.push(`${before.points} → ${after.points} ${after.points === 1 ? "pt" : "pts"}`);
-  if (before.crew !== after.crew) parts.push(arrow(CREW_COPY.choice(before.crew), CREW_COPY.choice(after.crew)));
+  if (before.crew !== after.crew) parts.push(arrow(words('john.crew.choice', { crew: before.crew }), words('john.crew.choice', { crew: after.crew })));
   if (before.group !== after.group) parts.push(arrow(before.group ?? "Everyone’s", after.group ?? "everyone’s"));
   if (before.category !== after.category) parts.push(arrow(CATEGORY_LABEL[before.category], CATEGORY_LABEL[after.category]));
   return parts.join(", ");

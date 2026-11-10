@@ -6,7 +6,6 @@ import {
   FRONT_DOOR_COPY,
   JOHN_LIST_COPY,
   MOVING_COPY,
-  NEXT_UP_COPY,
   pointsLabel,
   RULES_COPY,
   listLine,
@@ -65,7 +64,7 @@ test("run a house from nothing on the phone", async ({ browser }) => {
   await page.getByTestId("create-house").click();
   await expect(page).toHaveURL(/\/today$/);
   const today = page.getByTestId("today-screen");
-  await expect(today.getByTestId("next-up")).toContainText(NEXT_UP_COPY.setUp(name));
+  await expect(today.getByTestId("next-up")).toContainText(words('today.nextUp.setUp', { house: name }));
   await today.getByTestId("setup-johns").getByRole("link").click();
   await expect(page).toHaveURL(/\/house\/johns$/);
   const list = page.getByTestId("johns-screen");
@@ -103,7 +102,7 @@ test("run a house from nothing on the phone", async ({ browser }) => {
   await benPage.goto(new URL(invite).pathname);
   await benPage.getByRole("button", { name: FRONT_DOOR_COPY.join }).click();
   await expect(benPage).toHaveURL(/\/today$/);
-  await expect(benPage.getByText(NEXT_UP_COPY.waiting("Ava"))).toBeVisible();
+  await expect(benPage.getByText(words('today.nextUp.waiting', { admin: "Ava" }))).toBeVisible();
 
   // Ava hands out the week from the John list, by House's Johns row: two
   // Johns, two people, one each.
