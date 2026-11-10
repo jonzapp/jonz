@@ -41,20 +41,19 @@ test("makes a free year for three people, then opens it with its link", async ({
 
   const page = await context.newPage();
   await page.goto("/admin/promotions");
+  // The list first. In two columns (a laptop) a new one is filled in in the side panel beside it;
+  // in one (a phone, or a laptop narrowed by a panel) New promotion pushes a page of its own.
+  await expect(page.getByTestId("admin-promotions")).toBeVisible();
+  const wide = (page.viewportSize()?.width ?? 0) >= 1024;
+  if (wide) {
+    await expect(page.getByTestId("promotion-side")).toBeVisible();
+  } else {
+    await expect(page.getByTestId("promotion-form")).toHaveCount(0);
+    await page.getByTestId("promotion-new").click();
+    await expect(page.getByTestId("admin-promotion-new")).toBeVisible();
+  }
   const form = page.getByTestId("promotion-form");
   await expect(form).toBeVisible();
-  // Where the main column has room for two (a 1440 laptop): what it gives beside who gets it and its code,
-  // sharing a top edge. Beside the panel on a smaller laptop, and on a phone, one column.
-  if ((page.viewportSize()?.width ?? 0) < 1440) {
-    await expect(form.getByTestId("promotion-name")).toBeVisible();
-    await expect(form.getByTestId("promotion-form-start")).toHaveCount(0);
-  } else {
-    await expect(form.getByTestId("promotion-form-start").getByTestId("promotion-name")).toBeVisible();
-    await expect(form.getByTestId("promotion-form-end").getByTestId("promotion-code")).toBeVisible();
-    const start = await form.getByTestId("promotion-form-start").boundingBox();
-    const end = await form.getByTestId("promotion-form-end").boundingBox();
-    expect(start?.y ?? 0).toBeCloseTo(end?.y ?? 1, 0);
-  }
   await shoot(page, "promotions-start");
 
   await form.getByTestId("promotion-name").fill("A free year for friends");
@@ -66,9 +65,8 @@ test("makes a free year for three people, then opens it with its link", async ({
   await form.getByTestId("promotion-code").fill(code);
 
   // What they get, before it's made: beside the form on a laptop, a sheet on a phone.
-  const wide = (page.viewportSize()?.width ?? 0) >= 1024;
   if (!wide) await page.getByTestId("promotion-preview-open").click();
-  const preview = page.getByTestId(wide ? "admin-promotions" : "promotion-preview-sheet").getByTestId("promotion-preview");
+  const preview = page.getByTestId(wide ? "promotion-side" : "promotion-preview-sheet").getByTestId("promotion-preview");
   await expect(preview.getByTestId("promotion-preview-title")).toHaveText("A free year of the House Pass");
   await expect(preview.getByTestId("promotion-preview-who")).toContainText("Only sam.okafor@example.com, priya.n@example.com and leo.marsh@example.com, once each.");
   await shoot(page, "promotions");
@@ -90,9 +88,9 @@ test("makes a free year for three people, then opens it with its link", async ({
   const { data } = await admin().from("promotions").select("kind, months, plans, audience, state, note").eq("code", code).single();
   expect(data).toEqual({ kind: "gift", months: 12, plans: [], audience: "named", state: "live", note: "Thanks for helping test Jonz." });
 
-  // And in All promotions, found by an email on it.
+  // And in the list, found by an email on it; an old All promotions link lands there with its search.
   await page.goto(`/admin/promotions/all?q=${encodeURIComponent("leo.marsh")}`);
-  const all = page.getByTestId("admin-promotions-all");
+  const all = page.getByTestId("admin-promotions");
   await expect(all.getByTestId(`promotion-${code}`)).toBeVisible();
   await shoot(page, "promotions-all");
   await context.close();

@@ -342,6 +342,10 @@ export const JOIN_COPY = {
   noStake: "This house doesn’t play for money: it keeps score in points.",
   joining: "Joining…",
   back: "Back",
+  /** The invite, before signing in: what comes next, under its button. */
+  nextSignIn: "Next you sign in or make an account. Nothing is joined until you say so.",
+  /** Signing in from an invite: under "Sign in", in place of the usual line. */
+  signInFor: (house: string) => `Sign in to join ${house}.`,
 } as const;
 
 /** Signed in with no house: the app's way to start one or join by code. */
@@ -1270,6 +1274,19 @@ export const WEEK_SUMMARY_COPY = {
 } as const;
 
 /** House: the month card and settling up, and the Table with its invite and rules sheets. */
+/** House on a phone: the switch between what's going on in the house and what it's set to. */
+export const HOUSE_SHOWS_COPY = {
+  label: "Show",
+  overview: "Overview",
+  setup: "Setup and you",
+} as const;
+
+/** A kid's House: how the family is set up, to read. Their parents change it. */
+export const KID_HOUSE_COPY = {
+  setup: "How the family runs",
+  setupNote: "Set by your parents",
+} as const;
+
 export const HOUSE_PAGE_COPY = {
   /** The month card's label: "October so far". */
   soFar: (month: string) => `${month} so far`,

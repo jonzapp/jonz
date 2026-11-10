@@ -41,20 +41,18 @@ test("sends the owner a test, then a message to a house that lands on its Wall",
 
   const page = await context.newPage();
   await page.goto("/admin/messages");
-  const form = page.getByTestId("message-form");
-  await expect(form).toBeVisible();
-  // Where the main column has room for two (a 1440 laptop): who it's to and what it says beside how it goes out,
-  // sharing a top edge. Beside the panel on a smaller laptop, and on a phone, one column.
-  if ((page.viewportSize()?.width ?? 0) < 1440) {
-    await expect(form.getByTestId("message-subject")).toBeVisible();
-    await expect(form.getByTestId("message-form-start")).toHaveCount(0);
-  } else {
-    await expect(form.getByTestId("message-form-start").getByTestId("message-subject")).toBeVisible();
-    await expect(form.getByTestId("message-form-end").getByTestId("message-way-push")).toBeVisible();
-    const start = await form.getByTestId("message-form-start").boundingBox();
-    const end = await form.getByTestId("message-form-end").boundingBox();
-    expect(start?.y ?? 0).toBeCloseTo(end?.y ?? 1, 0);
+  // The list first. In two columns (a laptop) the new message is written in the side panel beside it;
+  // in one (a phone, or a laptop narrowed by a panel) New message pushes a page of its own.
+  await expect(page.getByTestId("message-new")).toBeVisible();
+  const beside = (await page.getByTestId("message-side").count()) > 0;
+  expect(beside).toBe((page.viewportSize()?.width ?? 0) >= 1024);
+  if (!beside) {
+    await expect(page.getByTestId("message-form")).toHaveCount(0);
+    await page.getByTestId("message-new").click();
+    await expect(page.getByTestId("admin-message-new")).toBeVisible();
   }
+  const form = beside ? page.getByTestId("message-side").getByTestId("message-form") : page.getByTestId("message-form");
+  await expect(form).toBeVisible();
 
   // Pick the house by its name.
   await form.getByTestId("message-find").fill(houseName.slice(0, 14));
@@ -79,14 +77,19 @@ test("sends the owner a test, then a message to a house that lands on its Wall",
   const { data: wall } = await db.from("events").select("kind, data").eq("kind", "jonz_message").contains("data", { subject });
   expect(wall).toHaveLength(1);
 
-  // Both are in Sent, newest first.
-  const recent = page.getByTestId("message-recent");
-  await expect(recent.getByText(subject)).toHaveCount(2);
+  // Sending goes back to the list on a phone. Both are in it, newest first, and one opens in full:
+  // in the panel in the form's place on a laptop, a sheet on a phone.
+  const list = page.getByTestId("admin-messages");
+  await expect(list.getByText(subject, { exact: true })).toHaveCount(2);
   await shoot(page, "messages-sent");
+  await list.getByText(subject, { exact: true }).first().click();
+  const opened = page.getByTestId(beside ? "message-side" : "sent-sheet");
+  await expect(opened.getByText(/Hi Elm Street, a bug/).first()).toBeVisible();
+  await shoot(page, "messages-opened");
 
-  await page.getByTestId("message-all-sent").click();
-  await expect(page.getByTestId("admin-sent")).toBeVisible();
-  await expect(page.getByTestId("admin-sent").getByText(subject).first()).toBeVisible();
-  await shoot(page, "messages-all-sent");
+  // An old All sent link lands on the list.
+  await page.goto("/admin/messages/sent");
+  await expect(page.getByTestId("admin-messages").getByText(subject, { exact: true }).first()).toBeVisible();
+  await expect(page).toHaveURL(/\/admin\/messages$/);
   await context.close();
 });

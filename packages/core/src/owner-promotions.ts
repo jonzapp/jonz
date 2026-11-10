@@ -256,6 +256,7 @@ export const PROMOTION_FACETS: readonly ListFacet[] = [
 
 export const PROMOTIONS_COPY = {
   page: "Promotions",
+  newPromotion: "New promotion",
   all: "All promotions",
   recent: "Recent",
   nothing: "No promotions yet",

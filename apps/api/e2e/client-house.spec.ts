@@ -4,7 +4,6 @@ import {
   NEW_HOUSE_COPY,
   PAGE_TITLE,
   SECTION_LABEL,
-  signInReason,
   SIGN_IN_COPY,
 } from "@app/core";
 import { expect, test, type Page } from "@playwright/test";
@@ -58,14 +57,19 @@ test("start a house, and land on it caught up", async ({ context, page }) => {
   await expectHouseNamed(page, name);
 });
 
-test("a join link signs you in on the spot, then joins", async ({ context, page }) => {
+test("a join link opens on the invite, signs you in on the spot, then joins", async ({ context, page }) => {
   const { ownerId, code } = await houseOf("Ben Owner", "Number 9");
   made.push(ownerId);
 
-  // Signed out, the link keeps its code and names no house.
+  // Signed out, the link opens on the invite: the house and how many live there, not yet what it plays for.
   await page.goto(`/join/${code}`);
-  await expect(page.getByText(signInReason(`/join/${code}`))).toBeVisible();
-  await expect(page.getByText("Number 9")).toHaveCount(0);
+  const invite = page.getByTestId("invite-first");
+  await expect(invite.getByRole("heading", { name: "Number 9" })).toBeVisible();
+  await expect(invite.getByText(JOIN_COPY.livesHere(1))).toBeVisible();
+  await expect(page.getByTestId("join-stake")).toHaveCount(0);
+  // Its one button leads to signing in, right there, the house still named and the code kept.
+  await invite.getByRole("button", { name: FRONT_DOOR_COPY.join }).click();
+  await expect(page.getByText(JOIN_COPY.signInFor("Number 9"))).toBeVisible();
   await page.route(/\/auth\/v1\/authorize/, (route) => route.fulfill({ status: 200, body: "Google" }));
   const authorize = page.waitForRequest(/\/auth\/v1\/authorize/);
   await page.getByRole("button", { name: SIGN_IN_COPY.google }).click();
@@ -83,6 +87,12 @@ test("a join link signs you in on the spot, then joins", async ({ context, page 
   await expect(joiner.getByRole("heading", { name: PAGE_TITLE.today })).toBeVisible();
   expect((await catching).status()).toBe(201);
   await expectHouseNamed(joiner, "Number 9");
+});
+
+test("a join link that opens nothing says so before anyone signs in", async ({ page }) => {
+  await page.goto("/join/ZZZZ2222");
+  await expect(page.getByRole("heading", { name: JOIN_COPY.badLink })).toBeVisible();
+  await expect(page.getByRole("button", { name: SIGN_IN_COPY.google })).toHaveCount(0);
 });
 
 test("a code typed in joins too, however it's spelt", async ({ context, page }) => {

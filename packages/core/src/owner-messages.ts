@@ -154,6 +154,7 @@ export function sentMeta(row: { audience: SentAudience; toName: string | null; p
 
 export const MESSAGE_COPY = {
   page: "Messages",
+  newMessage: "New message",
   to: "To",
   audience: { person: "A person", house: "A house", everyone: "Everyone" } satisfies Record<MessageAudience, string>,
   whichPerson: "Which person",

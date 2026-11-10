@@ -2,7 +2,7 @@ import { FRONT_DOOR_COPY, HOUSE_DRAFT_COPY, NOT_FOUND_COPY, PAGE_TITLE, SECTION_
 import { expect, test, type Page } from "@playwright/test";
 
 import { CLIENT_URL, cleanUp, dealtHouseInClient, signInToClient } from "./auth";
-import { backToHouse, toHousePage } from "./house-pages";
+import { backToHouse, showHouseOverview, toHousePage } from "./house-pages";
 
 // The Expo app's web build, walked as a housemate walks it: every way into a
 // House page (its row on House, a card on Today, a link opened cold, a
@@ -117,6 +117,8 @@ test.describe("a house with its week dealt", () => {
       await expectOnHouse(page, houseName);
     }
 
+    // The setup rows were the switch's other half on a phone: back to the Table and the Wall.
+    await showHouseOverview(page);
     await page.getByTestId("to-wall").getByRole("link").click();
     await expect(page).toHaveURL(/\/house\/wall$/);
     await tapBack(page, SECTION_LABEL.house);

@@ -4,6 +4,7 @@ import {
   buildStake,
   FOCUS_SHELL_COPY,
   HOUSE_PAGE_COPY,
+  HOUSE_SHOWS_COPY,
   type HistoryRow,
   INVITE_COPY,
   monthOf,
@@ -176,9 +177,23 @@ it('names the house in the title bar, and leads the page with its figures', asyn
   expect(bar.queryByRole('button', { name: FOCUS_SHELL_COPY.back })).toBeNull();
 });
 
-it('keeps the Wall and the setup under the Table on a phone, then the Pass and the way to You', async () => {
+/** On a phone, the switch's other half: the setup, the Pass and You. */
+async function showSetup() {
+  await fireEvent.press(within(screen.getByTestId('house-shows')).getByRole('radio', { name: HOUSE_SHOWS_COPY.setup }));
+}
+
+it('is two halves under a switch on a phone: the Overview, then the setup, the Pass and the way to You', async () => {
   await open();
-  expect(screen.getAllByTestId('lower').map((node) => node.props.children)).toEqual(['the Wall', 'House setup']);
+  const shows = within(screen.getByTestId('house-shows'));
+  expect(shows.getByRole('radio', { name: HOUSE_SHOWS_COPY.overview })).toBeChecked();
+  expect(screen.getAllByTestId('lower').map((node) => node.props.children)).toEqual(['the Wall']);
+  expect(screen.queryByTestId('pass-section')).toBeNull();
+  expect(screen.queryByTestId('to-you')).toBeNull();
+  await showSetup();
+  // The figures, the Table and the Wall give way to it.
+  expect(screen.getAllByTestId('lower').map((node) => node.props.children)).toEqual(['House setup']);
+  expect(screen.queryByTestId('house-figures')).toBeNull();
+  expect(screen.queryByTestId('house-table')).toBeNull();
   expect(screen.getByTestId('pass-section')).toBeOnTheScreen();
   const you = screen.getByTestId('to-you');
   expect(you).toHaveTextContent(new RegExp(`Priya.*${HOUSE_LOWER_COPY.youMeta}`));
@@ -188,11 +203,12 @@ it('keeps the Wall and the setup under the Table on a phone, then the Pass and t
 
 it('shows where the house stands on the House Pass, with the way to its page', async () => {
   await open();
+  // The Pass isn't enforced yet, so every house keeps the money and the Table.
+  expect(screen.getByTestId('house-figures')).toBeOnTheScreen();
+  await showSetup();
   const row = screen.getByTestId('to-pass');
   expect(within(row).getByText(PASS_COPY.title)).toBeOnTheScreen();
   expect(within(row).getByText(PASS_COPY.founding)).toBeOnTheScreen();
-  // The Pass isn't enforced yet, so every house keeps the money and the Table.
-  expect(screen.getByTestId('house-figures')).toBeOnTheScreen();
   expect(screen.queryByTestId('stake-locked')).toBeNull();
 });
 
@@ -505,6 +521,8 @@ describe('on a laptop', () => {
     expect(screen.getAllByTestId('lower').map((node) => node.props.children)).toEqual(['the Wall']);
     expect(screen.queryByTestId('pass-section')).toBeNull();
     expect(screen.queryByTestId('to-you')).toBeNull();
+    // The list is the way to them, so there's no switch.
+    expect(screen.queryByTestId('house-shows')).toBeNull();
     expect(screen.getByTestId('nav-you')).toHaveTextContent('You');
   });
 

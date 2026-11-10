@@ -135,13 +135,16 @@ export function TableSection({
               testID="add-a-child"
             />
           ) : null}
-          <Row
-            leading={<RowIcon icon={UserPlusIcon} />}
-            title={words('house.page.invite')}
-            onPress={() => setSheet('invite')}
-            chevron
-            testID="invite"
-          />
+          {/* Who joins a family is its parents' to decide: a kid has no invite to send. */}
+          {family && !parent ? null : (
+            <Row
+              leading={<RowIcon icon={UserPlusIcon} />}
+              title={words('house.page.invite')}
+              onPress={() => setSheet('invite')}
+              chevron
+              testID="invite"
+            />
+          )}
           <Row
             leading={<RowIcon icon={InfoIcon} />}
             title={family ? POCKET_COPY.howItWorks : HOUSE_PAGE_COPY.rules}

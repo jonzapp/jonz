@@ -4,6 +4,11 @@
       "count": 1
     }
   },
+  "src/app/admin/messages/index.tsx": {
+    "formatjs/no-literal-string-in-jsx": {
+      "count": 1
+    }
+  },
   "src/app/admin/messages/sent.tsx": {
     "formatjs/no-literal-string-in-jsx": {
       "count": 1

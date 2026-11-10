@@ -164,12 +164,14 @@ One message, to the right people, safely
   for up to 40 seconds; the clock sends whatever is left, 20 seconds a tick.
   Taking a row deletes it under `SKIP LOCKED`, so two senders never send
   one person the same message twice.
-- **The page.** On a laptop, the form, with how it looks (as a push, or on
-  the Wall) and the last five sent beside it; on a phone the form, then
-  Preview as a sheet. **All sent** is a busy list: it finds a subject, the
-  words, a person or a house; To (A person, A house, Everyone, Tests), Way
-  (Push, Wall, Email), and When is Sent. A message opens in full in a
-  sheet.
+- **The page.** List first: everything sent, tests included, as a busy
+  list (it finds a subject, the words, a person or a house; To (A person,
+  A house, Everyone, Tests), Way (Push, Wall, Email), and When is Sent),
+  with New message over it. On a laptop the new message is written in the
+  side panel, how it looks (as a push, or on the Wall) under the form, and
+  a sent one opens there in the form's place; on a phone New message is
+  `/admin/messages/new`, with Preview as a sheet, and a sent one opens in
+  a sheet. `/admin/messages/sent` lands on the list.
 
 ## Deleting an account
 

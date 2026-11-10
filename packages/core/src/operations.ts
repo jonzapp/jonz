@@ -311,6 +311,7 @@ export const SYSTEM_ROUTES = {
   "POST /api/stripe/webhook": "Stripe, signed: House Pass payments",
   "POST /api/email/inbound": "Resend, signed (Svix): replies to report emails",
   "POST /api/push-actions": "A notification's button, with a one-use token in the push",
+  "GET /api/invites/[code]": "Anyone: the house an invite link is for, as its link preview names it",
   "GET /api/notices": "Anyone: the notices that are on",
   "GET /api/offer/[code]": "Anyone: what a promotion link offers",
   "GET /api/share/[[...path]]": "Anyone: the link preview for an invite or an offer",

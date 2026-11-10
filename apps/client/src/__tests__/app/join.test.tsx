@@ -3,11 +3,11 @@ import { fireEvent, renderRouter, screen } from 'expo-router/testing-library';
 import { Text } from 'react-native';
 
 import { signInWithGoogle } from '@/api/auth';
-import { houseByCode, joinHouse } from '@/api/house';
+import { houseByCode, invitePreview, joinHouse } from '@/api/house';
 import Join from '@/app/join/[joinCode]';
 import { useMembership } from '@/hooks/use-membership';
 
-jest.mock('@/api/house', () => ({ houseByCode: jest.fn(), joinHouse: jest.fn() }));
+jest.mock('@/api/house', () => ({ houseByCode: jest.fn(), invitePreview: jest.fn(), joinHouse: jest.fn() }));
 jest.mock('@/api/email-auth', () => ({}));
 jest.mock('@/api/auth', () => ({
   appleSignInAvailable: jest.fn(async () => false),
@@ -19,6 +19,7 @@ jest.mock('@/hooks/use-membership', () => ({ useMembership: jest.fn() }));
 
 const byCode = houseByCode as jest.Mock;
 const join = joinHouse as jest.Mock;
+const preview = invitePreview as jest.Mock;
 const membership = useMembership as jest.Mock;
 const refresh = jest.fn();
 const FLAT = { id: 'h1', name: 'Flat 3', members: 3, kind: 'housemates', currency: 'GBP', stakeMinor: 2000, lateMinor: 100, missedMinor: 300 };
@@ -35,12 +36,46 @@ async function open(code = 'AB3DEF7H', query = '') {
   );
 }
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => {
+  jest.clearAllMocks();
+  // Unless a test says otherwise, the house isn't named before sign-in (or couldn't be read).
+  preview.mockResolvedValue(undefined);
+});
 
-it('signs you in right there when signed out, without naming the house', async () => {
+it('opens on the invite when signed out: the house and how many live there, then sign-in naming it', async () => {
+  as(null);
+  preview.mockResolvedValue({ name: 'Flat 3', members: 3, kind: 'housemates' });
+  await open();
+  expect(await screen.findByRole('header', { name: 'Flat 3' })).toBeOnTheScreen();
+  expect(preview).toHaveBeenCalledWith('AB3DEF7H');
+  expect(screen.getByText(JOIN_COPY.invited)).toBeOnTheScreen();
+  expect(screen.getByText(JOIN_COPY.livesHere(3))).toBeOnTheScreen();
+  expect(screen.getByText(JOIN_COPY.nextSignIn)).toBeOnTheScreen();
+  // What it plays for waits for sign-in, as does the house's own read.
+  expect(screen.queryByTestId('join-stake')).toBeNull();
+  expect(byCode).not.toHaveBeenCalled();
+  expect(screen.queryByRole('header', { name: SIGN_IN_COPY.heading })).toBeNull();
+
+  await fireEvent.press(screen.getByRole('button', { name: FRONT_DOOR_COPY.join }));
+  expect(screen.getByRole('header', { name: SIGN_IN_COPY.heading })).toBeOnTheScreen();
+  expect(screen.getByText(JOIN_COPY.signInFor('Flat 3'))).toBeOnTheScreen();
+  await fireEvent.press(screen.getByRole('button', { name: SIGN_IN_COPY.google }));
+  expect(signInWithGoogle).toHaveBeenCalledWith('/join/AB3DEF7H');
+});
+
+it("says a link that opens nothing doesn't work, before anyone signs in", async () => {
+  as(null);
+  preview.mockResolvedValue(null);
+  await open('ZZZZZZZZ');
+  expect(await screen.findByRole('header', { name: JOIN_COPY.badLink })).toBeOnTheScreen();
+  expect(screen.getByRole('link', { name: JOIN_COPY.back })).toHaveProp('href', '/welcome');
+  expect(screen.queryByRole('header', { name: SIGN_IN_COPY.heading })).toBeNull();
+});
+
+it("signs you in right there when the house isn't to be named or couldn't be read", async () => {
   as(null);
   await open();
-  expect(screen.getByRole('header', { name: SIGN_IN_COPY.heading })).toBeOnTheScreen();
+  expect(await screen.findByRole('header', { name: SIGN_IN_COPY.heading })).toBeOnTheScreen();
   expect(screen.getByText(signInReason('/join/AB3DEF7H'))).toBeOnTheScreen();
   expect(byCode).not.toHaveBeenCalled();
 });
@@ -48,15 +83,17 @@ it('signs you in right there when signed out, without naming the house', async (
 it('brings the web back to the same link from Google', async () => {
   as(null);
   await open();
-  await fireEvent.press(screen.getByRole('button', { name: SIGN_IN_COPY.google }));
+  await fireEvent.press(await screen.findByRole('button', { name: SIGN_IN_COPY.google }));
   expect(signInWithGoogle).toHaveBeenCalledWith('/join/AB3DEF7H');
 });
 
 it('says so when Google turns the web back to the link', async () => {
   as(null);
+  preview.mockResolvedValue({ name: 'Flat 3', members: 3, kind: 'housemates' });
   await open('AB3DEF7H', '?error=access_denied');
-  expect(screen.getByRole('alert')).toHaveTextContent(SIGN_IN_COPY.returnFailed);
-  expect(screen.getByText(signInReason('/join/AB3DEF7H'))).toBeOnTheScreen();
+  // Already past the invite: straight back to signing in, the house still named.
+  expect(await screen.findByRole('alert')).toHaveTextContent(SIGN_IN_COPY.returnFailed);
+  expect(screen.getByText(JOIN_COPY.signInFor('Flat 3'))).toBeOnTheScreen();
 });
 
 it('names the house and how many live there, and joins it', async () => {

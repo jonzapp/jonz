@@ -2,14 +2,15 @@ import { DOOR, formatMoney, FRONT_DOOR_COPY, JOIN_COPY, joinLine, PAGE_TITLE } f
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 
-import { houseByCode, joinHouse, type Invite } from '@/api/house';
+import { houseByCode, invitePreview, joinHouse, type Invite, type InvitePreview } from '@/api/house';
 import { Alert } from '@/components/alert';
 import { Button } from '@/components/button';
+import { ButtonRow } from '@/components/button-row';
 import { Door, Sign, SignHeading } from '@/components/front-door/door';
 import { PageTitle } from '@/components/page-title';
 import { ReadFailed } from '@/components/read-state';
 import { SignInPanel } from '@/components/sign-in-panel';
-import { Body } from '@/components/text';
+import { Body, Meta } from '@/components/text';
 import { useMembership } from '@/hooks/use-membership';
 import { Waiting } from '@/components/waiting';
 import { DoorOutline } from '@/components/page-outlines';
@@ -17,10 +18,12 @@ import { DoorOutline } from '@/components/page-outlines';
 /**
  * A join link: /join/CODE on the web, jonz://join/CODE on a phone, the same
  * path the web app's links use. Open to anyone, so the code survives signing
- * in: signed out, it signs you in here. Like the web, it names the house only
- * to someone signed in: then the house's name on the taped sign, how many
- * live there, what it plays for (the stake and fines, so nobody joins a
- * money game unaware), and "Join the house". A read that fails says so, with "Try
+ * in. Signed out, it opens on the invite: the house's name on the taped sign
+ * and how many live there (what the link's card in a chat already shows),
+ * with one button that leads to signing in here, the house named there too.
+ * A link that opens nothing says so before anyone signs in. Signed in: the
+ * house's name, how many live there, what it plays for (the stake and
+ * fines, so nobody joins a money game unaware), and "Join the house". A read that fails says so, with "Try
  * again". (The parameter is `joinCode`, not `code`: the web's Google redirect
  * comes back with a `?code=` of its own, and a refusal with `?error=`.)
  */
@@ -32,6 +35,21 @@ export default function Join() {
   const [reads, setReads] = useState(0);
   const [joining, setJoining] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
+  // Signed out: the house as its link names it (null: the link opens nothing; 'none': not to be named, or unread).
+  const [preview, setPreview] = useState<InvitePreview | null | 'none' | undefined>(undefined);
+  // The invite's button was pressed; coming back from Google or Microsoft refused is already past it.
+  const [signingIn, setSigningIn] = useState(Boolean(error));
+
+  useEffect(() => {
+    if (session) return;
+    let active = true;
+    void invitePreview(joinCode).then((found) => {
+      if (active) setPreview(found === undefined ? 'none' : found);
+    });
+    return () => {
+      active = false;
+    };
+  }, [session, joinCode]);
 
   useEffect(() => {
     if (!session) return;
@@ -71,7 +89,30 @@ export default function Join() {
     <Door testID="join-screen">
       <PageTitle page={PAGE_TITLE.join} />
       {!session ? (
-        <SignInPanel next={`/join/${joinCode}`} failed={Boolean(error)} />
+        preview === undefined ? (
+          <Waiting ready={false} label={FRONT_DOOR_COPY.lookingUp} outline={<DoorOutline />} />
+        ) : preview === null ? (
+          <Sign>
+            <SignHeading title={JOIN_COPY.badLink} body={JOIN_COPY.badLinkBody} />
+            <ButtonRow>
+              <Button href={DOOR.invite} variant="outline" label={JOIN_COPY.back} />
+            </ButtonRow>
+          </Sign>
+        ) : preview === 'none' || signingIn ? (
+          <SignInPanel
+            next={`/join/${joinCode}`}
+            failed={Boolean(error)}
+            reason={preview === 'none' ? undefined : JOIN_COPY.signInFor(preview.name)}
+          />
+        ) : (
+          <Sign testID="invite-first">
+            <SignHeading above={JOIN_COPY.invited} title={preview.name} body={joinLine(preview.kind, preview.members)} />
+            <ButtonRow>
+              <Button label={FRONT_DOOR_COPY.join} onPress={() => setSigningIn(true)} testID="invite-join" />
+            </ButtonRow>
+            <Meta>{JOIN_COPY.nextSignIn}</Meta>
+          </Sign>
+        )
       ) : unreadable ? (
         <Sign>
           <SignHeading title={PAGE_TITLE.join} />

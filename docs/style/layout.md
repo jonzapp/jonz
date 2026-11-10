@@ -26,6 +26,13 @@ still look right stretched (content capped, nothing pinned to far edges).
   always returns to the tab's home (`dismissTo`), never through tab history.
   (Focus, #17; #34) *Backed by* the HIG's tab bar guidance and Nielsen's
   "user control and freedom".
+- **A link someone was sent opens on what it's for, then asks them to sign
+  in.** A join link shows the invite first, signed out: the house's name
+  and how many live there (no more than the link's card in a chat shows),
+  one button, and a line saying sign-in comes next. Sign-in then names the
+  house. What the house plays for shows after sign-in, before Join. A link
+  that opens nothing says so without asking anyone to sign in. (Opening an
+  invite A, 10 Nov)
 - **Things you set together are on one page.** House's pages are Overview,
   The Wall (with History beside it), Johns (with their groups), Rules (with
   who the admins are), Days and time away (your days, best time and Johns
@@ -39,8 +46,16 @@ still look right stretched (content capped, nothing pinned to far edges).
   (`Figures`: your month, the stake, the housemates, the John list), each
   opening its page, then settling up while there's any, then the Table
   beside the Wall's latest. Your own settings are on You, not the
-  Overview; on a phone a row at the Overview's foot opens it. (House
-  pages, 1 Nov)
+  Overview. (House pages, 1 Nov)
+- **On a phone House is two halves under a switch,** "Overview" and "Setup
+  and you": the figures, settling up, the Table and the Wall, or the house's
+  setup, the House Pass and the row to You. The switch stays where you left
+  it on the way back from a setup page. A laptop needs none: the list of
+  House's pages is beside the Overview. (House on a phone B, 10 Nov)
+- **A kid's House is one short page:** pocket money, the Table, the Wall,
+  then "How the family runs" (the Johns, the rules and time away to read,
+  "Set by your parents") and You. No invite, no Ask Jonz usage, no Pass, on
+  the page or in the laptop's list. (A kid's House B, 10 Nov)
 
 ## The title bar
 
@@ -86,11 +101,18 @@ still look right stretched (content capped, nothing pinned to far edges).
   you (Needs you, On call, This week) in the panel. Where the main column
   has no room for two, they stack as on a phone. (Laptop width B, 10 Nov)
 - **The owner's pages use the whole room:** their lists are tables, so the
-  main column running to the panel suits them. A long form there (Messages,
-  Promotions) puts what it says beside how it goes out (`FormPair`), the
-  two sharing a top edge, where the main column has room for two columns;
-  only where it hasn't is it one stack, `FORM_MAX` wide. (Owner admin, 7
-  Nov; Laptop width B, 10 Nov)
+  main column running to the panel suits them. (Owner admin, 7 Nov; Laptop
+  width B, 10 Nov)
+- **The owner's send pages are list first** (Messages, Notices,
+  Promotions): everything sent or made as the page's list, and the way to
+  a new one over it (New message, New promotion, Notices' tiles). On a
+  laptop the new one is written in the side panel, what it will look like
+  under the form, and a sent message opens there in the form's place, the
+  form keeping its words; on a phone New is a page of its own (Notices'
+  short editor a sheet) and a sent message a sheet. The old All sent and
+  All promotions links land on the list. (Owner: Messages A, 10 Nov) *Not*
+  the form as the page with the last few under it: three send pages then
+  had three layouts.
 - **A page a phone pushes from a list opens beside the list on a laptop,**
   never in one column with the room blank beside it: an owner's house or
   report beside its table, a housemate's track record (you, to start)
@@ -133,6 +155,9 @@ still look right stretched (content capped, nothing pinned to far edges).
 
 ## Phone pages
 
+- **A phone page that runs past about two screens is split, not shortened:**
+  a `Segmented` switch at the top shows one half at a time, each a whole
+  thing to do (see what's going on; set it up). (House on a phone B, 10 Nov)
 - What is a side panel on a laptop is a pushed page or a sheet on a phone.
   (Owner admin, 30 Oct)
 - Content keeps a 16pt gutter (`GUTTER`) and is capped at `CONTENT_MAX`
