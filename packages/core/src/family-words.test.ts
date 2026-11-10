@@ -69,6 +69,8 @@ const FILE_REASONS: Record<string, RegExp[]> = {
   "permissions.ts": [/between housemates/i],
   // How it works says a family is not housemates.
   "how-it-works.ts": [/is housemates, not a family/i, /a housemate can question a tick/i],
+  // The owner's house panel names the kind of house; only the owner reads it.
+  "owner-houses.ts": [/^Housemates$/],
   // A bug report's role, read by the owner, not the house.
   "reports.ts": [/^housemate$/],
   // The legal pages are about every kind of house.

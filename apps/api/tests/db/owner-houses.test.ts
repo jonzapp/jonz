@@ -165,11 +165,12 @@ describe("Houses", () => {
     const data = await ok(owner.db.rpc("owner_house", { p_house: house.id }));
     const one = data as {
       name: string;
+      kind: string;
       joinCode: string;
       passPlan: string;
       people: { id: string; role: string; awayUntil: string | null; settled: number }[];
     };
-    expect(one).toMatchObject({ name, joinCode: house.code, passPlan: "trial" });
+    expect(one).toMatchObject({ name, kind: "housemates", joinCode: house.code, passPlan: "trial" });
     expect(one.people.map((p) => [p.id, p.role])).toEqual([
       [ava.userId, "admin"],
       [ben.userId, "member"],

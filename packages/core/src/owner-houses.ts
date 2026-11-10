@@ -1,5 +1,6 @@
 import type { ListFacet, ListWhen } from "./admin-list";
 import { monthLabel, weekRange } from "./format";
+import type { HouseKind } from "./domain";
 import type { PassPlan } from "./pass";
 import { monthOf } from "./week";
 
@@ -81,6 +82,8 @@ export function houseMeta(row: HouseRow, now: Date): string {
 export interface HouseDetail {
   id: string;
   name: string;
+  /** Housemates or a family: a family's admins are its parents, everyone else a kid. */
+  kind: HouseKind;
   joinCode: string;
   createdAt: string;
   firstDealtAt: string | null;
@@ -107,19 +110,27 @@ export interface HousePerson {
   awayUntil: string | null;
 }
 
-/** Under the house's name: "Started 3 Sep, Priya and Ade are admins". */
+/**
+ * Under the house's name: "Started 3 Sep, Priya and Ade are admins", or for
+ * a family "Started 3 Sep, Priya and Ade are the parents".
+ */
 export function houseLead(house: HouseDetail): string {
   const admins = house.people.filter((p) => p.role === "admin").map((p) => p.name);
+  const family = house.kind === "family";
   const parts = [`Started ${day(house.createdAt)}`];
-  if (admins.length === 1) parts.push(`${admins[0]} is the admin`);
-  else if (admins.length > 1) parts.push(`${admins.slice(0, -1).join(", ")} and ${admins[admins.length - 1]} are admins`);
+  if (admins.length === 1) parts.push(`${admins[0]} is the ${family ? "parent" : "admin"}`);
+  else if (admins.length > 1) parts.push(`${admins.slice(0, -1).join(", ")} and ${admins[admins.length - 1]} are ${family ? "the parents" : "admins"}`);
   return parts.join(", ");
 }
 
-/** A person's line: "admin, 6 of 7 on time", "away until 2 Nov", "moving out 3 Dec". */
-export function personMeta(person: HousePerson): string {
+/**
+ * A person's line: "admin, 6 of 7 on time", "away until 2 Nov", "moving out
+ * 3 Dec". In a family everyone has a role: "parent, …" or "kid, …".
+ */
+export function personMeta(person: HousePerson, kind: HouseKind = "housemates"): string {
   const parts: string[] = [];
-  if (person.role === "admin") parts.push("admin");
+  if (kind === "family") parts.push(person.role === "admin" ? "parent" : "kid");
+  else if (person.role === "admin") parts.push("admin");
   if (person.awayUntil) parts.push(`away until ${plainDay(person.awayUntil)}`);
   else if (person.settled > 0) parts.push(`${person.onTime} of ${person.settled} on time`);
   else parts.push("nothing due in four weeks");
@@ -141,11 +152,13 @@ export function passDetail(house: HouseDetail, now: Date): { title: string; meta
 }
 
 /**
- * The settings that help on a support email, a row each: its time zone, its
- * currency, its join code and how many Johns it has.
+ * The settings that help on a support email, a row each: who lives there
+ * (housemates or a family), its time zone, its currency, its join code and
+ * how many Johns it has.
  */
-export function houseFacts(house: HouseDetail): { key: "zone" | "currency" | "code" | "johns"; label: string; value: string }[] {
+export function houseFacts(house: HouseDetail): { key: "kind" | "zone" | "currency" | "code" | "johns"; label: string; value: string }[] {
   return [
+    { key: "kind", label: HOUSES_COPY.facts.kind, value: HOUSES_COPY.kinds[house.kind] },
     { key: "zone", label: HOUSES_COPY.facts.zone, value: house.timezone },
     { key: "currency", label: HOUSES_COPY.facts.currency, value: house.currency },
     { key: "code", label: HOUSES_COPY.facts.code, value: house.joinCode },
@@ -167,7 +180,9 @@ export const HOUSES_COPY = {
   money: "Money",
   details: "Details",
   /** Details' rows: what each value is. */
-  facts: { zone: "Time zone", currency: "Currency", code: "Join code", johns: "Johns" },
+  facts: { kind: "Who lives here", zone: "Time zone", currency: "Currency", code: "Join code", johns: "Johns" },
+  /** Who lives here, as the Details row says it. */
+  kinds: { housemates: "Housemates", family: "A family" } satisfies Record<HouseKind, string>,
   readOnly: "Read only. Nothing here changes the house.",
   gone: "That house isn’t there any more.",
   pick: "Pick a house to see its people and Pass.",

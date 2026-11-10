@@ -75,6 +75,7 @@ describe("a house in the list", () => {
 const detail = (over: Partial<HouseDetail> = {}): HouseDetail => ({
   id: "h1",
   name: "Elm Street",
+  kind: "housemates",
   joinCode: "K7P2QX",
   createdAt: "2026-09-03T10:00:00Z",
   firstDealtAt: "2026-09-04T10:00:00Z",
@@ -102,6 +103,11 @@ describe("one house", () => {
     expect(houseLead(detail({ people: [detail().people[0]] }))).toBe("Started 3 Sep, Priya is the admin");
   });
 
+  it("calls a family's admins its parents", () => {
+    expect(houseLead(detail({ kind: "family" }))).toBe("Started 3 Sep, Priya and Ade are the parents");
+    expect(houseLead(detail({ kind: "family", people: [detail().people[0]] }))).toBe("Started 3 Sep, Priya is the parent");
+  });
+
   it("gives each person their role, how they're doing, time away and moving out", () => {
     const [priya, , jo, mika] = detail().people;
     expect(personMeta(priya)).toBe("admin, 6 of 7 on time");
@@ -109,14 +115,22 @@ describe("one house", () => {
     expect(personMeta(mika)).toBe("nothing due in four weeks");
   });
 
-  it("gives its settings a row each: time zone, currency, join code and how many Johns", () => {
+  it("gives everyone in a family their role: parent or kid", () => {
+    const [priya, , jo] = detail().people;
+    expect(personMeta(priya, "family")).toBe("parent, 6 of 7 on time");
+    expect(personMeta(jo, "family")).toBe("kid, away until 2 Nov, moving out 3 Dec");
+  });
+
+  it("gives its settings a row each: who lives there, time zone, currency, join code and how many Johns", () => {
     const house = detail();
     expect(houseFacts(house)).toEqual([
+      { key: "kind", label: "Who lives here", value: "Housemates" },
       { key: "zone", label: "Time zone", value: house.timezone },
       { key: "currency", label: "Currency", value: house.currency },
       { key: "code", label: "Join code", value: house.joinCode },
       { key: "johns", label: "Johns", value: String(house.johns) },
     ]);
+    expect(houseFacts(detail({ kind: "family" }))[0].value).toBe("A family");
   });
 
   it("says what the Pass is, who pays and when it renews or ends", () => {

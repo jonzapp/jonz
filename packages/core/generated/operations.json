@@ -10750,6 +10750,13 @@
               "name": {
                 "type": "string"
               },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "housemates",
+                  "family"
+                ]
+              },
               "joinCode": {
                 "type": "string"
               },
@@ -10908,6 +10915,7 @@
             "required": [
               "id",
               "name",
+              "kind",
               "joinCode",
               "createdAt",
               "firstDealtAt",

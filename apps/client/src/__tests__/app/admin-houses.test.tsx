@@ -65,6 +65,7 @@ const FLAT: HouseRow = { ...ELM, id: 'h2', name: 'Flat 4B', people: 3, passPlan:
 const ELM_DETAIL: HouseDetail = {
   id: 'h1',
   name: 'Elm Street',
+  kind: 'housemates',
   joinCode: 'K7P2QX',
   createdAt: '2026-09-03T10:00:00Z',
   firstDealtAt: '2026-09-04T10:00:00Z',
@@ -156,6 +157,17 @@ describe('Houses', () => {
     expect(screen.getByTestId('house-person-p')).toHaveTextContent(/Priya.*admin, 6 of 7 on time/);
     expect(screen.getByTestId('house-person-j')).toHaveTextContent(/Jo.*away until 2 Nov/);
     expect(screen.getByText('Started 3 Sep, Priya is the admin')).toBeVisible();
+    expect(screen.getByTestId('house-fact-kind')).toHaveTextContent(/Who lives here.*Housemates/);
+  });
+
+  it("names a family's parents and kids", async () => {
+    jest.mocked(ownerHouse).mockResolvedValue({ ...ELM_DETAIL, kind: 'family' });
+    await renderPages(ROUTES, '/admin/houses/h1');
+    await untilRead();
+    expect(await screen.findByText('Started 3 Sep, Priya is the parent')).toBeVisible();
+    expect(screen.getByTestId('house-person-p')).toHaveTextContent(/Priya.*parent, 6 of 7 on time/);
+    expect(screen.getByTestId('house-person-j')).toHaveTextContent(/Jo.*kid, away until 2 Nov/);
+    expect(screen.getByTestId('house-fact-kind')).toHaveTextContent(/Who lives here.*A family/);
   });
 
   it('deletes a house only once its name is typed, telling everyone by default, then goes back to Houses', async () => {

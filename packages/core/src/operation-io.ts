@@ -235,6 +235,7 @@ const houseRow = z.object({
 const houseDetail = z.object({
   id,
   name: text,
+  kind: z.enum(HOUSE_KINDS),
   joinCode: text,
   createdAt: at,
   firstDealtAt: at.nullable(),
