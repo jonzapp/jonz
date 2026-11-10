@@ -9,6 +9,7 @@ import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { notePage } from '@/api/report-details';
+import { useTooOld } from '@/api/too-old';
 import { BeingDeleted } from '@/components/account/being-deleted';
 import { Button } from '@/components/button';
 import { ButtonRow } from '@/components/button-row';
@@ -16,6 +17,7 @@ import { CrashReport } from '@/components/report/crash-report';
 import { NoticeBand } from '@/components/notice-banner';
 import { StagingRibbon } from '@/components/staging-ribbon';
 import { StartSign } from '@/components/start-sign';
+import { UpdateJonz } from '@/components/update/update-jonz';
 import { Body, Heading } from '@/components/text';
 import { LookProvider } from '@/hooks/look';
 import { QueryProvider } from '@/hooks/query';
@@ -44,6 +46,7 @@ function Routes() {
   const { session, signedOut, house, deletion, loading, failed, refresh } = useMembership();
   const { scheme, colors } = useTheme();
   const pathname = usePathname();
+  const tooOld = useTooOld();
   const { next } = useGlobalSearchParams<{ next?: string | string[] }>();
   // A font that fails to load falls back to the system font rather than a stuck splash.
   const ready = (fontsLoaded || fontError !== null) && !loading;
@@ -63,6 +66,15 @@ function Routes() {
 
   // The J sign on the page's ground, where the web's page template drew it before any script ran.
   if (!ready) return <StartSign />;
+  // The API no longer takes this phone's build: nothing but the way to update.
+  if (tooOld) {
+    return (
+      <>
+        <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+        <UpdateJonz />
+      </>
+    );
+  }
   if (failed) return <Unreachable onRetry={refresh} />;
 
   const signedIn = session !== null;

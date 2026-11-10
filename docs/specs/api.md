@@ -242,18 +242,23 @@ Migration `20261219090000_api_layer.sql` sets up the following:
     the API's short links, and people's photos through
     `/files/photo/avatars/…`, read with the server's key.
   - Keys: the new publishable and secret keys are live (Provision,
-    10 November; #176). Left for Glyn: turn the legacy JWT keys off once a
-    secret key is confirmed, and change the database password.
-  - Network: Vercel Static IPs and Supabase Network Restrictions skipped for
-    now (Glyn, 10 November: $100 a month per project for shared addresses);
-    revisit before launch.
+    10 November; #176). The legacy JWT keys are off and the database
+    password is new (Glyn, 10 November), once the logs showed the server on
+    a secret key.
+  - Network: no Vercel Static IPs and no Supabase Network Restrictions
+    (Glyn, 10 November): $100 a month for the API's project, and they turn
+    off Fluid Compute's newer features. The database stays behind its
+    passwords, and the app's own login (`jonz_api`) can only do what the
+    operations do.
   - Supabase Auth stays reachable: Google, Microsoft and email sign-up and
     sign-in all go through it.
-- **C6:** the phone version gate goes live. The executor already refuses a
-  build below `MIN_IOS_BUILD` / `MIN_ANDROID_BUILD` with
-  `426 client_too_old`, and the app sends `Jonz-Client`; what's left is the
-  app's "Update Jonz" screen, built with the phone apps (paused until Glyn
-  decides on the stores).
+- **C6:** the phone version gate. The executor refuses a build below
+  `MIN_IOS_BUILD` / `MIN_ANDROID_BUILD` with `426 client_too_old`; the app
+  sends `Jonz-Client`, and the first 426 (from an operation or the live
+  stream) turns the whole app to **Update Jonz** (`components/update/`):
+  the way to Google Play by the app's package, or the App Store once
+  `extra.appStoreId` is set in app.json, and jonz.app meanwhile. Set the
+  minimums only with a release that needs them.
 
 ## Done when
 

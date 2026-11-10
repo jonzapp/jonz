@@ -1,4 +1,8 @@
 {
   "common.members": "{kind, select, family {{count} in the family} other {{count, plural, one {# housemate} other {# housemates}}}}",
-  "common.joinPlate": "{kind, select, family {Join the family on Jonz.} other {{count, plural, one {Join # housemate on Jonz.} other {Join # housemates on Jonz.}}}}"
+  "common.joinPlate": "{kind, select, family {Join the family on Jonz.} other {{count, plural, one {Join # housemate on Jonz.} other {Join # housemates on Jonz.}}}}",
+  "common.update.title": "Update Jonz",
+  "common.update.body": "This version of Jonz is too old to keep working. Update it to carry on. Your house is just as you left it.",
+  "common.update.store": "{store, select, ios {Open the App Store} other {Open Google Play}}",
+  "common.update.web": "Use jonz.app for now"
 }

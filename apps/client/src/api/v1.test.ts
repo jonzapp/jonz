@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 
 import { ApiRequestError } from './base';
 import { supabase } from './supabase';
+import { isTooOld, resetTooOld } from './too-old';
 import { callV1, problemSentence, v1Request } from './v1';
 
 jest.mock('./supabase', () => ({ supabase: { auth: { getSession: jest.fn() } } }));
@@ -64,6 +65,20 @@ describe('callV1', () => {
     const refusal = await callV1('cast_vote', { disputeId: DISPUTE, uphold: true }).catch((e: unknown) => e);
     expect(refusal).toBeInstanceOf(ApiRequestError);
     expect(refusal).toMatchObject({ message: 'Voting on that has closed.', status: 400 });
+  });
+
+  it('turns the app to Update Jonz when the API says this build is too old', async () => {
+    resetTooOld();
+    fetchMock.mockResolvedValue(reply(426, { title: 'client_too_old', status: 426, detail: 'This version of Jonz is too old. Update it to keep going.' }));
+    await expect(callV1('cast_vote', { disputeId: DISPUTE, uphold: true })).rejects.toMatchObject({ status: 426 });
+    expect(isTooOld()).toBe(true);
+    resetTooOld();
+  });
+
+  it('leaves the app as it is for any other refusal', async () => {
+    fetchMock.mockResolvedValue(reply(403, { title: 'forbidden', status: 403 }));
+    await callV1('cast_vote', { disputeId: DISPUTE, uphold: true }).catch(() => undefined);
+    expect(isTooOld()).toBe(false);
   });
 
   it("refuses an answer that isn't the contract's", async () => {
