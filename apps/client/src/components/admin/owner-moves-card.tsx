@@ -1,4 +1,4 @@
-import { OWNER_MOVES_COPY, OWNER_MOVES_FINAL, type OwnerMove, type OwnerMoveKind } from '@app/core';
+import { ownerMoveMeta, ownerMoveTitle, OWNER_MOVES_FINAL, type OwnerMove, type OwnerMoveKind, type Words } from '@app/core';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   BanIcon,
@@ -33,6 +33,7 @@ import { Row, RowIcon } from '@/components/row';
 import { Section } from '@/components/section';
 import { ChoiceRow } from '@/components/setup/choice-row';
 import { SPACE } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 const ICON: Record<OwnerMoveKind, LucideIcon> = {
   report_reply: ReplyIcon,
@@ -106,9 +107,9 @@ export async function doOwnerMove(m: OwnerMove): Promise<void> {
 }
 
 /** A move's line under its title: what it does, and whether it can be taken back. */
-function metaOf(m: OwnerMove): string {
-  const meta = OWNER_MOVES_COPY.meta(m);
-  return OWNER_MOVES_FINAL.includes(m.kind) ? `${OWNER_MOVES_COPY.final}. ${meta}` : meta;
+function metaOf(m: OwnerMove, words: Words): string {
+  const meta = ownerMoveMeta(m, words);
+  return OWNER_MOVES_FINAL.includes(m.kind) ? `${words('admin.moves.final')}. ${meta}` : meta;
 }
 
 /**
@@ -119,6 +120,7 @@ function metaOf(m: OwnerMove): string {
  * pages' lists read again after.
  */
 export function OwnerMovesCard({ items, run = doOwnerMove }: { items: readonly OwnerMove[]; run?: (m: OwnerMove) => Promise<void> }) {
+  const words = useWords();
   const client = useQueryClient();
   const [keep, setKeep] = useState<number[]>(() => items.map((_, at) => at));
   const [pending, setPending] = useState(false);
@@ -147,7 +149,7 @@ export function OwnerMovesCard({ items, run = doOwnerMove }: { items: readonly O
   if (done !== null) {
     return (
       <View style={styles.card} testID="owner-moves-done">
-        <Row title={OWNER_MOVES_COPY.done(done)} leading={<RowIcon icon={CheckIcon} />} />
+        <Row title={words('admin.moves.done', { n: done })} leading={<RowIcon icon={CheckIcon} />} />
         {problem ? <Alert message={problem} /> : null}
       </View>
     );
@@ -156,13 +158,13 @@ export function OwnerMovesCard({ items, run = doOwnerMove }: { items: readonly O
   const toggle = (at: number) => setKeep((was) => (was.includes(at) ? was.filter((k) => k !== at) : [...was, at].sort((a, b) => a - b)));
   return (
     <View style={styles.card} testID="owner-moves-card">
-      <Section label={OWNER_MOVES_COPY.card} right={OWNER_MOVES_COPY.cardMeta}>
+      <Section label={words('admin.moves.card')} right={words('admin.moves.cardMeta')}>
         {items.map((item, at) => (
           <ChoiceRow
             key={at}
             role="checkbox"
-            label={OWNER_MOVES_COPY.title(item)}
-            meta={metaOf(item)}
+            label={ownerMoveTitle(item, words)}
+            meta={metaOf(item, words)}
             leading={<RowIcon icon={ICON[item.kind]} />}
             checked={keep.includes(at)}
             onPress={() => toggle(at)}
@@ -175,8 +177,8 @@ export function OwnerMovesCard({ items, run = doOwnerMove }: { items: readonly O
       {problem ? <Alert message={problem} /> : null}
       <ButtonRow>
         <Button
-          label={OWNER_MOVES_COPY.apply(keep.length)}
-          busyLabel={OWNER_MOVES_COPY.applying}
+          label={words('admin.moves.apply', { n: keep.length })}
+          busyLabel={words('admin.moves.applying')}
           onPress={() => void apply()}
           disabled={keep.length === 0}
           busy={pending}

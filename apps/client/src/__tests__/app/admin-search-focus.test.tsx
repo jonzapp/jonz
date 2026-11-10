@@ -1,17 +1,4 @@
-import {
-  AUDIT_LIST_COPY,
-  DELETION_LIST_COPY,
-  HOUSES_COPY,
-  MESSAGE_COPY,
-  NOTICE_LIST_COPY,
-  OWNER_PERMISSION_NAMES,
-  PROMOTIONS_COPY,
-  type AuditEntry,
-  type HouseRow,
-  type Notice,
-  type PromotionRow,
-  wordsFor,
-} from '@app/core';
+import { OWNER_PERMISSION_NAMES, type AuditEntry, type HouseRow, type Notice, type PromotionRow, wordsFor } from '@app/core';
 import { fireEvent, screen, waitFor } from 'expo-router/testing-library';
 import type { ComponentType } from 'react';
 import { useWindowDimensions } from 'react-native';
@@ -205,7 +192,7 @@ const PAGES: Page[] = [
     url: '/admin/audit',
     route: 'admin/audit/index',
     component: AuditPage,
-    placeholder: AUDIT_LIST_COPY.searchPlaceholder,
+    placeholder: words('admin.audit.searchPlaceholder'),
     row: 'audit-row-1',
     reads: () => {
       jest.mocked(auditPage).mockImplementation(async (_c, f) => ({ entries: await answer(f?.q, [ENTRY]), more: false, next: null }));
@@ -217,7 +204,7 @@ const PAGES: Page[] = [
     url: '/admin/deletions',
     route: 'admin/deletions',
     component: DeletionsPage,
-    placeholder: DELETION_LIST_COPY.searchPlaceholder,
+    placeholder: words('admin.deletions.searchPlaceholder'),
     row: 'deletion-sam',
     reads: () => {
       jest.mocked(deletionsPage).mockImplementation(async (_c, f) => ({ people: await answer(f.q, [PERSON]), more: false, next: null }));
@@ -229,7 +216,7 @@ const PAGES: Page[] = [
     url: '/admin/notices',
     route: 'admin/notices',
     component: NoticesPage,
-    placeholder: NOTICE_LIST_COPY.searchPlaceholder,
+    placeholder: words('admin.notices.searchPlaceholder'),
     row: 'notice-row-n1',
     reads: () => {
       jest.mocked(noticesPage).mockImplementation(async (_c, f) => ({ notices: await answer(f.q, [NOTICE]), more: false, next: null }));
@@ -241,7 +228,7 @@ const PAGES: Page[] = [
     url: '/admin/houses',
     route: 'admin/houses/index',
     component: HousesPage,
-    placeholder: HOUSES_COPY.searchPlaceholder,
+    placeholder: words('admin.houses.searchPlaceholder'),
     row: 'house-h1',
     reads: () => {
       jest.mocked(housesPage).mockImplementation(async (_c, f) => ({ items: await answer(f.q, [HOUSE]), more: false, next: null }));
@@ -265,7 +252,7 @@ const PAGES: Page[] = [
     url: '/admin/messages',
     route: 'admin/messages/index',
     component: MessagesPage,
-    placeholder: MESSAGE_COPY.searchPlaceholder,
+    placeholder: words('admin.messages.searchPlaceholder'),
     row: 'sent-m1',
     reads: () => {
       jest.mocked(sentPage).mockImplementation(async (_c, f) => ({ items: await answer(f.q, [SENT]), more: false, next: null }));
@@ -277,7 +264,7 @@ const PAGES: Page[] = [
     url: '/admin/promotions',
     route: 'admin/promotions/index',
     component: PromotionsPage,
-    placeholder: PROMOTIONS_COPY.searchPlaceholder,
+    placeholder: words('admin.promotions.searchPlaceholder'),
     row: 'promotion-BETA',
     reads: () => {
       jest.mocked(promotionsPage).mockImplementation(async (_c, f) => ({ items: await answer(f.q, [PROMOTION]), more: false, next: null }));

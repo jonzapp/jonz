@@ -15,6 +15,9 @@ import {
   type AuditEntry,
   type NoticeDraft,
 } from "./owner-admin";
+import { wordsFor } from "./words-for";
+
+const words = wordsFor("en", "housemates");
 
 const NOW = new Date("2026-11-02T12:00:00Z");
 const draft = (over: Partial<NoticeDraft> = {}): NoticeDraft => ({
@@ -90,12 +93,12 @@ describe("the audit log", () => {
   });
 
   it("says who did what in plain words", () => {
-    expect(auditLine(entry({}), owner)).toEqual({ title: "You wrote a status notice", meta: "Jonz is slow right now" });
-    expect(auditLine(entry({ before: { title: "Ticks may be slow" } }), owner).title).toBe("You changed a status notice");
-    expect(auditLine(entry({ action: "notice.end", after: { kind: "offer", title: "Founding pass" } }), owner).title).toBe(
+    expect(auditLine(entry({}), owner, words)).toEqual({ title: "You wrote a status notice", meta: "Jonz is slow right now" });
+    expect(auditLine(entry({ before: { title: "Ticks may be slow" } }), owner, words).title).toBe("You changed a status notice");
+    expect(auditLine(entry({ action: "notice.end", after: { kind: "offer", title: "Founding pass" } }), owner, words).title).toBe(
       "You ended an offer",
     );
-    expect(auditLine(entry({}), "someone-else").title).toBe("The owner wrote a status notice");
+    expect(auditLine(entry({}), "someone-else", words).title).toBe("The owner wrote a status notice");
   });
 
   it("lists only what changed, old beside new", () => {
@@ -118,7 +121,7 @@ describe("the audit log", () => {
 
   it("says what happened to an account by its id alone, never a name", () => {
     const account = (action: string, actor: string | null, after: unknown = null) =>
-      auditLine(entry({ action, actor, targetKind: "account", targetId: "a1b2c3d4-0000-4000-8000-000000000000", before: null, after }), owner);
+      auditLine(entry({ action, actor, targetKind: "account", targetId: "a1b2c3d4-0000-4000-8000-000000000000", before: null, after }), owner, words);
     expect(account("account.delete_request", "a1b2c3d4", { requested_by: "self" })).toEqual({
       title: "Someone asked to delete their account",
       meta: "Account a1b2c3d4",
@@ -131,15 +134,15 @@ describe("the audit log", () => {
   });
 
   it("splits an entry into who, what, where and its detail, for a table's columns", () => {
-    expect(auditParts(entry({}), owner)).toEqual({
+    expect(auditParts(entry({}), owner, words)).toEqual({
       who: "You",
       what: "wrote a status notice",
       where: "Notices",
       detail: "Jonz is slow right now",
     });
     const done = entry({ action: "account.delete_done", actor: null, targetKind: "account", targetId: "a1b2c3d4-0000", after: null });
-    expect(auditParts(done, owner)).toEqual({ who: "Jonz", what: "deleted an account", where: "Account a1b2c3d4", detail: "" });
-    expect(auditParts(entry({ action: "house.open", actor: null, targetId: "h1" }), owner)).toEqual({
+    expect(auditParts(done, owner, words)).toEqual({ who: "Jonz", what: "deleted an account", where: "Account a1b2c3d4", detail: "" });
+    expect(auditParts(entry({ action: "house.open", actor: null, targetId: "h1" }), owner, words)).toEqual({
       who: "Jonz",
       what: "house.open",
       where: "h1",
@@ -148,11 +151,11 @@ describe("the audit log", () => {
   });
 
   it("gives every word a row shows, for the search box to find", () => {
-    expect(auditRowWords(entry({}), owner)).toBe("You wrote a status notice Notices Jonz is slow right now");
-    expect(auditRowWords(entry({}), "someone-else")).toBe("The owner wrote a status notice Notices Jonz is slow right now");
+    expect(auditRowWords(entry({}), owner, words)).toBe("You wrote a status notice Notices Jonz is slow right now");
+    expect(auditRowWords(entry({}), "someone-else", words)).toBe("The owner wrote a status notice Notices Jonz is slow right now");
     const done = entry({ action: "account.delete_done", actor: null, targetKind: "account", targetId: "a1b2c3d4-0000", after: null });
-    expect(auditRowWords(done, owner)).toBe("Jonz deleted an account Account a1b2c3d4");
-    expect(auditRowWords(entry({ action: "house.open", actor: null, targetId: "h1" }), owner)).toBe("Jonz house.open h1");
+    expect(auditRowWords(done, owner, words)).toBe("Jonz deleted an account Account a1b2c3d4");
+    expect(auditRowWords(entry({ action: "house.open", actor: null, targetId: "h1" }), owner, words)).toBe("Jonz house.open h1");
   });
 
   it("lists what changed on a deletion in words", () => {

@@ -1,3 +1,4 @@
+import type { Words } from "./words-for";
 import { z } from "zod";
 
 import { REPORT_LIMITS, REPORT_STATES } from "./reports";
@@ -70,23 +71,7 @@ export function tidySuggestion(
   return { reply, action: "none", sameAs: null, why };
 }
 
-export const SUPPORT_DRAFT_COPY = {
-  label: "Jonz suggests",
-  /** While Claude reads: the thinking indicator's steps. */
-  thinkingSteps: ["Reading the report", "Looking at their house", "Writing a reply"],
-  send: "Send this reply",
-  sendAndFold: (name: string) => `Send, and fold into ${name}’s`,
-  sendAndDelete: "Send, and start the 30 days",
-  edit: "Change it first",
-  dismiss: "Not this",
-  sameAs: (name: string) => `Same as ${name}’s report`,
-  deleteStep: "Start the 30 days to delete their account",
-  deleteTitle: "Start the 30 days?",
-  deleteBody: (name: string) =>
-    `${name}’s account goes in 30 days. They can keep it by signing in before then. It’s written in the audit log.`,
-  deleteYes: "Start the 30 days",
-  deleteReason: "Asked in a report",
-  sending: "Sending…",
-  failed: "Jonz couldn’t write a suggestion this time. Reply in the box below.",
-  note: "Jonz drafts this as you, from what the admin pages show. Nothing happens until you tap.",
-} as const;
+/** What the support draft is doing while it writes, one after another. */
+export function supportThinking(words: Words): string[] {
+  return [words("admin.support.thinkingSteps.read"), words("admin.support.thinkingSteps.look"), words("admin.support.thinkingSteps.write")];
+}

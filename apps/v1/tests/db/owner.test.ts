@@ -148,8 +148,8 @@ describe("the owner's reads on /v1", () => {
       made.push({ id: Number(e.id), at: "", actor, action, targetKind: "account", targetId: `${rows}${i}`, reason: null, before, after } as AuditEntry);
     }
     for (const entry of made) {
-      const [{ words }] = await admin`select public.audit_row_words(a, ${owner}::uuid) as words from public.admin_audit a where a.id = ${entry.id}`;
-      expect(words).toBe(auditRowWords(entry, owner));
+      const [{ words: said }] = await admin`select public.audit_row_words(a, ${owner}::uuid) as words from public.admin_audit a where a.id = ${entry.id}`;
+      expect(said).toBe(auditRowWords(entry, owner, wordsFor("en", "housemates")));
     }
     const found = async (q: string) =>
       (await call("owner", "GET", `/v1/admin/audit?q=${encodeURIComponent(`${rows} ${q}`)}`)).json().data.map((e: { id: number }) => e.id);

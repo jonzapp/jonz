@@ -1,4 +1,15 @@
-import { HOUSE_FACETS, HOUSE_WHEN, HOUSES_COPY, houseAgo, houseMeta, passLabel, passNow, percentOf, type HouseRow, type ListAsk } from '@app/core';
+import {
+  type Words,
+  HOUSE_FACETS,
+  HOUSE_WHEN,
+  houseAgo,
+  houseMeta,
+  passLabel,
+  passNow,
+  percentOf,
+  type HouseRow,
+  type ListAsk,
+} from '@app/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { HouseIcon } from 'lucide-react-native';
 import { useState } from 'react';
@@ -14,15 +25,16 @@ import { Chip } from '@/components/status-mark';
 import { Meta } from '@/components/text';
 import { TitleBar } from '@/components/title-bar';
 import { SPACE } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /** Every house's columns on a laptop. */
-const HOUSE_TABLE: readonly ListColumn[] = [
-  { key: 'house', label: HOUSES_COPY.columns.house, flex: 1 },
-  { key: 'people', label: HOUSES_COPY.columns.people, width: 64, end: true },
-  { key: 'pass', label: HOUSES_COPY.columns.pass, width: 112 },
-  { key: 'active', label: HOUSES_COPY.columns.active, width: 112 },
-  { key: 'onTime', label: HOUSES_COPY.columns.onTime, width: 72, end: true },
-  { key: 'started', label: HOUSES_COPY.columns.started, width: 72, end: true },
+const HOUSE_TABLE = (words: Words): readonly ListColumn[] => [
+  { key: 'house', label: words('admin.houses.columns.house'), flex: 1 },
+  { key: 'people', label: words('admin.houses.columns.people'), width: 64, end: true },
+  { key: 'pass', label: words('admin.houses.columns.pass'), width: 112 },
+  { key: 'active', label: words('admin.houses.columns.active'), width: 112 },
+  { key: 'onTime', label: words('admin.houses.columns.onTime'), width: 72, end: true },
+  { key: 'started', label: words('admin.houses.columns.started'), width: 72, end: true },
 ];
 
 const MONTH = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -36,6 +48,7 @@ const started = (iso: string) => `${new Date(iso).getDate()} ${MONTH[new Date(is
  * Read only: nothing here changes a house.
  */
 export default function HousesPage() {
+  const words = useWords();
   const busy = useBusyList({
     key: HOUSES_KEY,
     facets: HOUSE_FACETS,
@@ -44,20 +57,22 @@ export default function HousesPage() {
     count: (ask) => housesCount(houseFilter(ask)),
   });
   return (
-    <Screen spreads bar={<TitleBar title={HOUSES_COPY.page} />} onNearEnd={busy.onNearEnd} testID="admin-houses">
+    <Screen spreads bar={<TitleBar title={words('admin.houses.page')} />} onNearEnd={busy.onNearEnd} testID="admin-houses">
       <Houses busy={busy} />
     </Screen>
   );
 }
 
 function PassCell({ house, now }: { house: HouseRow; now: Date }) {
+  const words = useWords();
   const state = passNow(house.passPlan, house.passUntil, now);
-  const label = passLabel(house.passPlan, house.passUntil, now);
+  const label = passLabel(house.passPlan, house.passUntil, now, words);
   if (state === 'none') return <Meta>{label}</Meta>;
   return <Chip label={label} />;
 }
 
 function Houses({ busy }: { busy: BusyList<HouseRow> }) {
+  const words = useWords();
   const two = useColumns();
   // A link in (the Overview's Needs you, a pushed page opened on a laptop) names the one to open with ?open=.
   const { open } = useLocalSearchParams<{ open?: string }>();
@@ -68,26 +83,26 @@ function Houses({ busy }: { busy: BusyList<HouseRow> }) {
     <BusyListView
       busy={busy}
       name="houses"
-      placeholder={HOUSES_COPY.searchPlaceholder}
-      noun={HOUSES_COPY.count}
-      columns={HOUSE_TABLE}
+      placeholder={words('admin.houses.searchPlaceholder')}
+      noun={(count: string) => words('admin.houses.count', { count })}
+      columns={HOUSE_TABLE(words)}
       tableRow={(house) => (
         <ListTableRow
           key={house.id}
-          columns={HOUSE_TABLE}
+          columns={HOUSE_TABLE(words)}
           cells={{
             house: house.name,
             people: String(house.people),
             pass: <PassCell house={house} now={now} />,
-            active: house.lastActive ? houseAgo(house.lastActive, now) : HOUSES_COPY.neverActive,
-            onTime: percentOf(house.onTime, house.settled) ?? HOUSES_COPY.noneDue,
+            active: house.lastActive ? houseAgo(house.lastActive, now) : words('admin.houses.neverActive'),
+            onTime: percentOf(house.onTime, house.settled) ?? words('admin.houses.noneDue'),
             started: started(house.createdAt),
           }}
           quiet={['started']}
           strong={['house']}
           chosen={shownId === house.id}
           onPress={() => setChosen(house.id)}
-          accessibilityLabel={`${house.name}, ${houseMeta(house, now)}`}
+          accessibilityLabel={`${house.name}, ${houseMeta(house, now, words)}`}
           testID={`house-${house.id}`}
         />
       )}
@@ -96,14 +111,14 @@ function Houses({ busy }: { busy: BusyList<HouseRow> }) {
           key={house.id}
           leading={<RowIcon icon={HouseIcon} />}
           title={house.name}
-          meta={houseMeta(house, now)}
+          meta={houseMeta(house, now, words)}
           metaLines={2}
           onPress={() => router.push(`/admin/houses/${house.id}` as never)}
           chevron
           testID={`house-${house.id}`}
         />
       )}
-      empty={{ icon: HouseIcon, title: HOUSES_COPY.empty, body: HOUSES_COPY.emptyBody }}
+      empty={{ icon: HouseIcon, title: words('admin.houses.empty'), body: words('admin.houses.emptyBody') }}
     />
   );
   if (two) return <Columns main={list} side={shownId ? <HousePanel key={shownId} id={shownId} /> : <View style={styles.none} />} />;

@@ -1,10 +1,10 @@
-import { PROMOTIONS_COPY } from '@app/core';
 import { Redirect } from 'expo-router';
 
 import { PromotionForm } from '@/components/admin/promotion-form';
 import { useOwnerMay } from '@/components/admin/use-owner-may';
 import { Screen, useColumns } from '@/components/screen';
 import { TitleBar } from '@/components/title-bar';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * A new promotion as a page of its own, on a phone: pushed from Promotions'
@@ -13,8 +13,9 @@ import { TitleBar } from '@/components/title-bar';
  * app role can't make one.
  */
 export default function NewPromotionPage() {
+  const words = useWords();
   return (
-    <Screen spreads bar={<TitleBar title={PROMOTIONS_COPY.newPromotion} back={'/admin/promotions' as never} backLabel={PROMOTIONS_COPY.page} />} testID="admin-promotion-new">
+    <Screen spreads bar={<TitleBar title={words('admin.promotions.newPromotion')} back={'/admin/promotions' as never} backLabel={words('admin.promotions.page')} />} testID="admin-promotion-new">
       <NewPromotion />
     </Screen>
   );

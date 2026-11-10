@@ -139,7 +139,8 @@ describe("a family's words", () => {
   it("never names housemates or admins in a family's line", () => {
     const family = wordsFor("en", "family");
     const wrong = (Object.keys(EN) as WordId[])
-      .filter((id) => !HOUSEMATES_ONLY[id])
+      // The owner's admin pages (admin.*) are read by the owner, never by a family.
+      .filter((id) => !HOUSEMATES_ONLY[id] && !id.startsWith("admin."))
       .flatMap((id) => readings(id).map((v) => `${id}: ${family(id, v)}`))
       .filter((line) => HOUSE_ONLY.test(line.slice(line.indexOf(": ") + 2)));
     expect(wrong, "give the line a family sentence: {kind, select, family {…} other {…}}").toEqual([]);

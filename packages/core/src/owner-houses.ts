@@ -1,3 +1,4 @@
+import type { Words } from "./words-for";
 import type { ListFacet, ListWhen } from "./admin-list";
 import { monthLabel, weekRange } from "./format";
 import type { HouseKind } from "./domain";
@@ -65,14 +66,14 @@ export function passNow(plan: PassPlan, until: string | null, now: Date): PassNo
 }
 
 /** The Pass column: "Pass", "Founding", "Trial", "None". */
-export function passLabel(plan: PassPlan, until: string | null, now: Date): string {
-  return HOUSES_COPY.passNow[passNow(plan, until, now)];
+export function passLabel(plan: PassPlan, until: string | null, now: Date, words: Words): string {
+  return words(`admin.houses.passNow.${passNow(plan, until, now)}` as const);
 }
 
 /** A house's line under its name on a phone: "5 people, Pass, active 2 min ago, 74% on time". */
-export function houseMeta(row: HouseRow, now: Date): string {
-  const parts = [row.people === 1 ? "1 person" : `${n(row.people)} people`, passLabel(row.passPlan, row.passUntil, now)];
-  parts.push(row.lastActive ? `active ${houseAgo(row.lastActive, now)}` : HOUSES_COPY.neverActive.toLowerCase());
+export function houseMeta(row: HouseRow, now: Date, words: Words): string {
+  const parts = [row.people === 1 ? "1 person" : `${n(row.people)} people`, passLabel(row.passPlan, row.passUntil, now, words)];
+  parts.push(row.lastActive ? `active ${houseAgo(row.lastActive, now)}` : words('admin.houses.neverActive').toLowerCase());
   const onTime = percentOf(row.onTime, row.settled);
   if (onTime) parts.push(`${onTime} on time`);
   return parts.join(", ");
@@ -156,37 +157,15 @@ export function passDetail(house: HouseDetail, now: Date): { title: string; meta
  * (housemates or a family), its time zone, its currency, its join code and
  * how many Johns it has.
  */
-export function houseFacts(house: HouseDetail): { key: "kind" | "zone" | "currency" | "code" | "johns"; label: string; value: string }[] {
+export function houseFacts(house: HouseDetail, words: Words): { key: "kind" | "zone" | "currency" | "code" | "johns"; label: string; value: string }[] {
   return [
-    { key: "kind", label: HOUSES_COPY.facts.kind, value: HOUSES_COPY.kinds[house.kind] },
-    { key: "zone", label: HOUSES_COPY.facts.zone, value: house.timezone },
-    { key: "currency", label: HOUSES_COPY.facts.currency, value: house.currency },
-    { key: "code", label: HOUSES_COPY.facts.code, value: house.joinCode },
-    { key: "johns", label: HOUSES_COPY.facts.johns, value: n(house.johns) },
+    { key: "kind", label: words('admin.houses.facts.kind'), value: words(`admin.houses.kinds.${house.kind}` as const) },
+    { key: "zone", label: words('admin.houses.facts.zone'), value: house.timezone },
+    { key: "currency", label: words('admin.houses.facts.currency'), value: house.currency },
+    { key: "code", label: words('admin.houses.facts.code'), value: house.joinCode },
+    { key: "johns", label: words('admin.houses.facts.johns'), value: n(house.johns) },
   ];
 }
-
-export const HOUSES_COPY = {
-  page: "Houses",
-  searchPlaceholder: "House, person, email or join code",
-  count: (count: string) => (count === "1" ? "1 house" : `${count} houses`),
-  columns: { house: "House", people: "People", pass: "Pass", active: "Last active", onTime: "On time", started: "Started" },
-  passNow: { pass: "Pass", founding: "Founding", trial: "Trial", none: "None" } satisfies Record<PassNow, string>,
-  neverActive: "Never",
-  noneDue: "None due",
-  empty: "No houses yet",
-  emptyBody: "Houses show here as soon as someone starts one.",
-  people: "People",
-  money: "Money",
-  details: "Details",
-  /** Details' rows: what each value is. */
-  facts: { kind: "Who lives here", zone: "Time zone", currency: "Currency", code: "Join code", johns: "Johns" },
-  /** Who lives here, as the Details row says it. */
-  kinds: { housemates: "Housemates", family: "A family" } satisfies Record<HouseKind, string>,
-  readOnly: "Read only. Nothing here changes the house.",
-  gone: "That house isn’t there any more.",
-  pick: "Pick a house to see its people and Pass.",
-};
 
 /** The Houses list's filters: its Pass and how lately it was used. When is when it started. */
 export const HOUSE_FACETS: readonly ListFacet[] = [
@@ -269,7 +248,7 @@ export function overviewRange(o: Pick<Overview, "span" | "from">, zone: string):
 }
 
 /** The six figures, in reading order. */
-export function ownerFigures(o: Overview): Figure[] {
+export function ownerFigures(o: Overview, words: Words): Figure[] {
   const paid = o.passes.monthly + o.passes.yearly + o.passes.founding;
   const settled = o.onTime.onTime + o.onTime.late + o.onTime.missed;
   const perHouse = o.houses > 0 ? (o.inHouses / o.houses).toFixed(1) : "0";
@@ -286,7 +265,7 @@ export function ownerFigures(o: Overview): Figure[] {
     {
       key: "onTime",
       label: "Johns on time",
-      value: percentOf(o.onTime.onTime, settled) ?? HOUSES_COPY.noneDue,
+      value: percentOf(o.onTime.onTime, settled) ?? words('admin.houses.noneDue'),
       meta: `${n(o.onTime.late + o.onTime.missed)} late or missed`,
     },
     {
@@ -328,25 +307,3 @@ export function needRow(need: OverviewNeed, now: Date): { title: string; meta: s
     href: "/admin/deletions",
   };
 }
-
-export const OVERVIEW_COPY = {
-  page: "Overview",
-  needsYou: "Needs you",
-  nothingNeeds: "Nothing needs you",
-  nothingNeedsBody: "New reports and deletions due within a day show here.",
-  openInbox: (count: number) => (count === 0 ? "Open the Inbox" : `Open the Inbox, ${n(count)} new`),
-  rightNow: "Right now",
-  database: "Database",
-  clock: "The clock",
-  up: "Up",
-  late: "Late",
-  slow: "Slow",
-  spanLabel: "Show",
-  spans: { week: "Week", month: "Month" } as Record<OverviewSpan, string>,
-  chart: "Active houses each week",
-  chartNote: "a house is active when someone ticks a John",
-  thisWeek: "This week",
-  inTheApp: "In the app now",
-  noNotice: "No notice is showing.",
-  changeNotice: "Change it in Notices",
-};

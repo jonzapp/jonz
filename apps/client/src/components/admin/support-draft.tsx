@@ -1,4 +1,4 @@
-import { reportGist, SUPPORT_DRAFT_COPY, type SupportDraft } from '@app/core';
+import { type Words, supportThinking, reportGist, type SupportDraft } from '@app/core';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { CopyIcon, SendIcon, SparklesIcon, UserXIcon } from 'lucide-react-native';
 import { useState } from 'react';
@@ -17,8 +17,9 @@ import { Row, RowIcon } from '@/components/row';
 import { Sheet } from '@/components/sheet';
 import { Body, Meta } from '@/components/text';
 import { SPACE, useTheme } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
-const PIECES = ownerPieces();
+const PIECES = (words: Words) => ownerPieces(words);
 
 /** Whether the support agent has something to suggest on this report: it's waiting, and there's someone to answer. */
 export function draftable(report: Report): boolean {
@@ -50,6 +51,7 @@ export function SupportDraftCard({
   onEdit: (text: string, draftId: string) => void;
   onDone: () => Promise<void>;
 }) {
+  const words = useWords();
   const client = useQueryClient();
   // A new word from the sender is a new suggestion.
   const key = [...queryKey, 'draft', report.messages.length];
@@ -63,12 +65,12 @@ export function SupportDraftCard({
     refetchInterval: (query) => (query.state.data?.state === 'drafting' ? 4000 : false),
   });
   if (!draftable(report)) return null;
-  if (draft.isPending) return <Thinking steps={SUPPORT_DRAFT_COPY.thinkingSteps} />;
+  if (draft.isPending) return <Thinking steps={supportThinking(words)} />;
   // No suggestion (no Claude here, or today's are used up) leaves the reply box as it was.
   if (draft.isError || !draft.data) return null;
   const one = draft.data;
-  if (one.state === 'drafting') return <Thinking steps={SUPPORT_DRAFT_COPY.thinkingSteps} />;
-  if (one.state === 'failed') return <Meta testID="support-draft-failed">{SUPPORT_DRAFT_COPY.failed}</Meta>;
+  if (one.state === 'drafting') return <Thinking steps={supportThinking(words)} />;
+  if (one.state === 'failed') return <Meta testID="support-draft-failed">{words('admin.support.failed')}</Meta>;
   if (one.state !== 'ready') return null;
   return (
     <Ready
@@ -103,6 +105,7 @@ function Ready({
   onDone: () => Promise<void>;
   onDismiss: () => Promise<void>;
 }) {
+  const words = useWords();
   const { colors } = useTheme();
   const [busy, setBusy] = useState(false);
   const [asking, setAsking] = useState(false);
@@ -111,10 +114,10 @@ function Ready({
   const foldName = draft.sameAs?.name?.split(' ')[0] ?? '';
   const label =
     draft.action === 'same_as' && draft.sameAs
-      ? SUPPORT_DRAFT_COPY.sendAndFold(foldName)
+      ? words('admin.support.sendAndFold', { name: foldName })
       : draft.action === 'delete'
-        ? SUPPORT_DRAFT_COPY.sendAndDelete
-        : SUPPORT_DRAFT_COPY.send;
+        ? words('admin.support.sendAndDelete')
+        : words('admin.support.send');
 
   const run = async (step: () => Promise<void>) => {
     setBusy(true);
@@ -137,7 +140,7 @@ function Ready({
     run(async () => {
       setAsking(false);
       await onReply(draft.reply);
-      if (report.email) await deleteByEmail(report.email, SUPPORT_DRAFT_COPY.deleteReason);
+      if (report.email) await deleteByEmail(report.email, words('admin.support.deleteReason'));
       await setSupportDraft(draft.id, 'used');
     });
 
@@ -145,9 +148,9 @@ function Ready({
     <View style={styles.card} testID="support-draft">
       <View style={styles.label}>
         <SparklesIcon size={16} color={colors.mutedForeground} aria-hidden />
-        <Meta>{SUPPORT_DRAFT_COPY.label}</Meta>
+        <Meta>{words('admin.support.label')}</Meta>
       </View>
-      {draft.why ? <Reply source={draft.why} pieces={PIECES} testID="support-draft-why" /> : null}
+      {draft.why ? <Reply source={draft.why} pieces={PIECES(words)} testID="support-draft-why" /> : null}
       <Group>
         <GroupItem testID="support-draft-reply">
           <View style={styles.reply}>
@@ -157,38 +160,38 @@ function Ready({
         {draft.action === 'same_as' && draft.sameAs ? (
           <Row
             leading={<RowIcon icon={CopyIcon} />}
-            title={SUPPORT_DRAFT_COPY.sameAs(foldName)}
+            title={words('admin.support.sameAs', { name: foldName })}
             meta={reportGist(draft.sameAs.words)}
             href={`/admin/inbox/${draft.sameAs.id}`}
             chevron
             testID="support-draft-same-as"
           />
         ) : null}
-        {draft.action === 'delete' ? <Row leading={<RowIcon icon={UserXIcon} />} title={SUPPORT_DRAFT_COPY.deleteStep} testID="support-draft-delete" /> : null}
+        {draft.action === 'delete' ? <Row leading={<RowIcon icon={UserXIcon} />} title={words('admin.support.deleteStep')} testID="support-draft-delete" /> : null}
       </Group>
       {problem ? <Alert message={problem} testID="support-draft-problem" /> : null}
       <ButtonRow>
         <Button
           label={label}
-          busyLabel={SUPPORT_DRAFT_COPY.sending}
+          busyLabel={words('admin.support.sending')}
           icon={SendIcon}
           busy={busy}
           onPress={() => (draft.action === 'delete' ? setAsking(true) : void approve())}
           testID="support-draft-send"
         />
-        <Button label={SUPPORT_DRAFT_COPY.edit} variant="outline" onPress={() => onEdit(draft.reply, draft.id)} testID="support-draft-edit" />
-        <Button label={SUPPORT_DRAFT_COPY.dismiss} variant="ghost" onPress={() => void onDismiss().catch((e) => setProblem(String(e)))} testID="support-draft-dismiss" />
+        <Button label={words('admin.support.edit')} variant="outline" onPress={() => onEdit(draft.reply, draft.id)} testID="support-draft-edit" />
+        <Button label={words('admin.support.dismiss')} variant="ghost" onPress={() => void onDismiss().catch((e) => setProblem(String(e)))} testID="support-draft-dismiss" />
       </ButtonRow>
-      <Meta>{SUPPORT_DRAFT_COPY.note}</Meta>
+      <Meta>{words('admin.support.note')}</Meta>
       <Sheet
         visible={asking}
-        title={SUPPORT_DRAFT_COPY.deleteTitle}
-        description={SUPPORT_DRAFT_COPY.deleteBody(first)}
+        title={words('admin.support.deleteTitle')}
+        description={words('admin.support.deleteBody', { name: first })}
         onClose={() => setAsking(false)}
         testID="support-draft-delete-sheet"
       >
         <ButtonRow>
-          <Button label={SUPPORT_DRAFT_COPY.deleteYes} variant="hazard" icon={UserXIcon} onPress={() => void approveDelete()} testID="support-draft-delete-yes" />
+          <Button label={words('admin.support.deleteYes')} variant="hazard" icon={UserXIcon} onPress={() => void approveDelete()} testID="support-draft-delete-yes" />
         </ButtonRow>
       </Sheet>
     </View>

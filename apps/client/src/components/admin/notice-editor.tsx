@@ -1,4 +1,4 @@
-import { ADMIN_COPY, formatLocalDateTime, NOTICE_ENDS, NOTICE_ENDS_LABEL, NOTICE_KINDS, NOTICE_PRESETS, noticeEndsAt, noticeProblems, parseLocalDateTime, type Notice, type NoticeDraft, type NoticeEnds, type NoticeKind } from '@app/core';
+import { formatLocalDateTime, NOTICE_ENDS, NOTICE_ENDS_LABEL, NOTICE_KINDS, NOTICE_PRESETS, noticeEndsAt, noticeProblems, parseLocalDateTime, type Notice, type NoticeDraft, type NoticeEnds, type NoticeKind } from '@app/core';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -77,8 +77,8 @@ export function NoticeEditor({
   const endsAt = noticeEndsAt(form.ends, start, form.ends === 'date' ? parseLocalDateTime(form.endsAt) : null);
   const draft: NoticeDraft = { ...form, startsAt, endsAt };
   const problems = noticeProblems(draft, now);
-  if (!showing && form.starts === 'later' && startsAt === null) problems.startsAt = ADMIN_COPY.startsAtLabel;
-  if (form.ends === 'date' && endsAt === null) problems.endsAt = ADMIN_COPY.endsAtLabel;
+  if (!showing && form.starts === 'later' && startsAt === null) problems.startsAt = words('admin.shell.startsAtLabel');
+  if (form.ends === 'date' && endsAt === null) problems.endsAt = words('admin.shell.endsAtLabel');
   const ok = Object.keys(problems).length === 0;
   const shown = (key: keyof typeof problems) => (tried ? problems[key] : undefined);
 
@@ -103,7 +103,7 @@ export function NoticeEditor({
     <View style={styles.form} testID="notice-editor">
       {notice === null && presets.length > 0 ? (
         <View style={styles.group}>
-          <FieldLabel>{ADMIN_COPY.startFrom}</FieldLabel>
+          <FieldLabel>{words('admin.shell.startFrom')}</FieldLabel>
           <View style={styles.presets}>
             {presets.map((preset) => (
               <Button
@@ -118,9 +118,9 @@ export function NoticeEditor({
         </View>
       ) : null}
       <View style={styles.group}>
-        <FieldLabel>{ADMIN_COPY.kind}</FieldLabel>
+        <FieldLabel>{words('admin.shell.kind')}</FieldLabel>
         <Segmented
-          label={ADMIN_COPY.kind}
+          label={words('admin.shell.kind')}
           options={NOTICE_KINDS.map((kind) => ({ value: kind, label: words(`common.notice.kinds.${kind}` as const) }))}
           value={form.kind}
           onChange={(kind) => set({ kind })}
@@ -128,11 +128,11 @@ export function NoticeEditor({
         />
         <Meta>{words(`common.notice.kindHints.${form.kind}` as const)}</Meta>
       </View>
-      <Field label={ADMIN_COPY.title} value={form.title} onChangeText={(title) => set({ title })} problem={shown('title')} maxLength={80} testID="notice-title" />
-      <Field label={ADMIN_COPY.more} value={form.body} onChangeText={(body) => set({ body })} problem={shown('body')} multiline maxLength={240} testID="notice-body" />
-      <Field label={ADMIN_COPY.buttonLabel} value={form.linkLabel} onChangeText={(linkLabel) => set({ linkLabel })} problem={shown('linkLabel')} maxLength={30} />
+      <Field label={words('admin.shell.title')} value={form.title} onChangeText={(title) => set({ title })} problem={shown('title')} maxLength={80} testID="notice-title" />
+      <Field label={words('admin.shell.more')} value={form.body} onChangeText={(body) => set({ body })} problem={shown('body')} multiline maxLength={240} testID="notice-body" />
+      <Field label={words('admin.shell.buttonLabel')} value={form.linkLabel} onChangeText={(linkLabel) => set({ linkLabel })} problem={shown('linkLabel')} maxLength={30} />
       <Field
-        label={ADMIN_COPY.buttonLink}
+        label={words('admin.shell.buttonLink')}
         value={form.linkUrl}
         onChangeText={(linkUrl) => set({ linkUrl })}
         problem={shown('linkUrl')}
@@ -142,26 +142,26 @@ export function NoticeEditor({
       />
       {showing ? null : (
         <View style={styles.group}>
-          <FieldLabel>{ADMIN_COPY.starts}</FieldLabel>
+          <FieldLabel>{words('admin.shell.starts')}</FieldLabel>
           <Segmented
-            label={ADMIN_COPY.starts}
+            label={words('admin.shell.starts')}
             options={[
-              { value: 'now', label: ADMIN_COPY.startsNow },
-              { value: 'later', label: ADMIN_COPY.startsLater },
+              { value: 'now', label: words('admin.shell.startsNow') },
+              { value: 'later', label: words('admin.shell.startsLater') },
             ]}
             value={form.starts}
             onChange={(starts: Starts) => set({ starts, startsAt: form.startsAt || formatLocalDateTime(new Date(now.getTime() + 86_400_000)) })}
             equal
           />
           {form.starts === 'later' ? (
-            <Field label={ADMIN_COPY.startsAtLabel} value={form.startsAt} onChangeText={(text) => set({ startsAt: text })} problem={shown('startsAt')} />
+            <Field label={words('admin.shell.startsAtLabel')} value={form.startsAt} onChangeText={(text) => set({ startsAt: text })} problem={shown('startsAt')} />
           ) : null}
         </View>
       )}
       <View style={styles.group}>
-        <FieldLabel>{ADMIN_COPY.ends}</FieldLabel>
+        <FieldLabel>{words('admin.shell.ends')}</FieldLabel>
         <Segmented
-          label={ADMIN_COPY.ends}
+          label={words('admin.shell.ends')}
           options={NOTICE_ENDS.map((ends) => ({ value: ends, label: NOTICE_ENDS_LABEL[ends] }))}
           value={form.ends}
           onChange={(ends) => set({ ends, endsAt: form.endsAt || formatLocalDateTime(new Date(start.getTime() + 7 * 86_400_000)) })}
@@ -169,18 +169,18 @@ export function NoticeEditor({
           perRow={2}
         />
         {form.ends === 'date' ? (
-          <Field label={ADMIN_COPY.endsAtLabel} value={form.endsAt} onChangeText={(text) => set({ endsAt: text })} problem={shown('endsAt')} />
+          <Field label={words('admin.shell.endsAtLabel')} value={form.endsAt} onChangeText={(text) => set({ endsAt: text })} problem={shown('endsAt')} />
         ) : (
           shown('endsAt') ? <Meta>{problems.endsAt}</Meta> : null
         )}
       </View>
       <View style={styles.actions}>
         <ButtonRow stacked>
-          <Button label={notice === null && form.starts === 'now' ? ADMIN_COPY.saveAndShow : ADMIN_COPY.save} onPress={save} busy={waiting === 'save'} busyLabel={words('common.busy.saving')} testID="notice-save" />
-          {onEnd ? <Button label={ADMIN_COPY.endNow} variant="hazard" onPress={onEnd} busy={waiting === 'end'} busyLabel={words('common.busy.ending')} testID="notice-end" /> : null}
+          <Button label={notice === null && form.starts === 'now' ? words('admin.shell.saveAndShow') : words('admin.shell.save')} onPress={save} busy={waiting === 'save'} busyLabel={words('common.busy.saving')} testID="notice-save" />
+          {onEnd ? <Button label={words('admin.shell.endNow')} variant="hazard" onPress={onEnd} busy={waiting === 'end'} busyLabel={words('common.busy.ending')} testID="notice-end" /> : null}
         </ButtonRow>
       </View>
-      <Meta>{ADMIN_COPY.auditNote}</Meta>
+      <Meta>{words('admin.shell.auditNote')}</Meta>
     </View>
   );
 }

@@ -1,4 +1,4 @@
-import { PASS_PURCHASES, personStage, promotionPersonMeta, promotionPrice, promotionSentence, promotionTitle, promotionWhoSentence, PROMOTIONS_COPY, planPrice, type PromotionAudience, type PromotionPerson, type PromotionTerms } from '@app/core';
+import { PASS_PURCHASES, personStage, promotionPersonMeta, promotionPrice, promotionSentence, promotionTitle, promotionWhoSentence, planPrice, type PromotionAudience, type PromotionPerson, type PromotionTerms } from '@app/core';
 import { CheckIcon, CopyIcon, Share2Icon, TicketIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { Platform, Share, StyleSheet, View } from 'react-native';
@@ -46,7 +46,7 @@ export function PromotionPreview({
   const card = (
     <Card>
       <View style={styles.words}>
-        <Meta>{PROMOTIONS_COPY.giftFrom}</Meta>
+        <Meta>{words('admin.promotions.giftFrom')}</Meta>
         <Lead testID="promotion-preview-title">{promotionTitle(terms)}</Lead>
         {note ? <Body>{note}</Body> : null}
         <Body muted testID="promotion-preview-sentence">
@@ -58,16 +58,16 @@ export function PromotionPreview({
   return (
     <View style={styles.preview} testID="promotion-preview">
       {titled ? (
-        <Section label={PROMOTIONS_COPY.whatTheyGet} bare>
+        <Section label={words('admin.promotions.whatTheyGet')} bare>
           {card}
         </Section>
       ) : (
         card
       )}
       {gift ? null : (
-        <Section label={PROMOTIONS_COPY.whatTheyPay} testID="promotion-preview-prices">
+        <Section label={words('admin.promotions.whatTheyPay')} testID="promotion-preview-prices">
           {terms.plans.length === 0 ? (
-            <Row title={PROMOTIONS_COPY.noPlans} />
+            <Row title={words('admin.promotions.noPlans')} />
           ) : (
             PASS_PURCHASES.map((plan) => {
               const price = promotionPrice(terms, plan, 'USD');
@@ -75,13 +75,13 @@ export function PromotionPreview({
               return price ? (
                 <Row key={plan} title={price.label} meta={price.then ?? undefined} trailing={price.first} testID={`promotion-price-${plan}`} />
               ) : (
-                <Row key={plan} title={label} meta={PROMOTIONS_COPY.notIn} trailing={planPrice(plan)} testID={`promotion-price-${plan}`} />
+                <Row key={plan} title={label} meta={words('admin.promotions.notIn')} trailing={planPrice(plan)} testID={`promotion-price-${plan}`} />
               );
             })
           )}
         </Section>
       )}
-      <Section label={PROMOTIONS_COPY.whoTitle} bare>
+      <Section label={words('admin.promotions.whoTitle')} bare>
         <Meta testID="promotion-preview-who">{promotionWhoSentence(audience, emails, maxUses, terms.endsAt, zone)}</Meta>
       </Section>
     </View>
@@ -105,6 +105,7 @@ function webNavigator(): WebNavigator | undefined {
  * and, where the browser has a share sheet, Share.
  */
 export function PromotionLink({ code, title }: { code: string; title: string }) {
+  const words = useWords();
   const [copied, setCopied] = useState(false);
   const url = promotionLink(code);
   const web = webNavigator();
@@ -128,13 +129,13 @@ export function PromotionLink({ code, title }: { code: string; title: string }) 
   }
 
   return (
-    <Section label={PROMOTIONS_COPY.link} testID="promotion-link">
-      <Row leading={<RowIcon icon={TicketIcon} />} title={url.replace(/^https:\/\//, '')} meta={PROMOTIONS_COPY.linkMeta} testID="promotion-url" />
+    <Section label={words('admin.promotions.link')} testID="promotion-link">
+      <Row leading={<RowIcon icon={TicketIcon} />} title={url.replace(/^https:\/\//, '')} meta={words('admin.promotions.linkMeta')} testID="promotion-url" />
       <View style={styles.inset}>
         <ButtonRow>
           {web?.clipboard ? (
             <Button
-              label={copied ? PROMOTIONS_COPY.copied : PROMOTIONS_COPY.copy}
+              label={copied ? words('admin.promotions.copied') : words('admin.promotions.copy')}
               icon={copied ? CheckIcon : CopyIcon}
               onPress={() => void copy()}
               testID="promotion-copy"
@@ -142,7 +143,7 @@ export function PromotionLink({ code, title }: { code: string; title: string }) 
           ) : null}
           {canShare ? (
             <Button
-              label={PROMOTIONS_COPY.share}
+              label={words('admin.promotions.share')}
               icon={Share2Icon}
               variant={web?.clipboard ? 'outline' : 'primary'}
               onPress={() => void share()}
@@ -157,9 +158,10 @@ export function PromotionLink({ code, title }: { code: string; title: string }) 
 
 /** The people a named promotion is for, each with where they've got to. */
 export function PromotionPeople({ people }: { people: readonly PromotionPerson[] }) {
+  const words = useWords();
   const zone = ZONE();
   return (
-    <Section label={PROMOTIONS_COPY.peopleTitle} count={people.length} testID="promotion-people">
+    <Section label={words('admin.promotions.peopleTitle')} count={people.length} testID="promotion-people">
       {people.map((p) => {
         const stage = personStage(p);
         return (
@@ -167,7 +169,7 @@ export function PromotionPeople({ people }: { people: readonly PromotionPerson[]
             key={p.email}
             title={p.email}
             meta={promotionPersonMeta(p, zone)}
-            trailing={<Chip label={PROMOTIONS_COPY.stage[stage]} tone={stage === 'used' ? 'good' : 'quiet'} icon={stage === 'used' ? CheckIcon : undefined} />}
+            trailing={<Chip label={words(`admin.promotions.stage.${stage}` as const)} tone={stage === 'used' ? 'good' : 'quiet'} icon={stage === 'used' ? CheckIcon : undefined} />}
             testID={`promotion-person-${p.email}`}
           />
         );

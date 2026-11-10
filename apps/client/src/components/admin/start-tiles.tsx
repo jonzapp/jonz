@@ -1,9 +1,10 @@
-import { ADMIN_COPY, NOTICE_KINDS, type NoticeKind } from '@app/core';
+import { NOTICE_KINDS, type NoticeKind } from '@app/core';
 import { GiftIcon, NewspaperIcon, TriangleAlertIcon, type LucideIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { GROUP_RADIUS, SPACE, TAP, useTheme } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 const ICON: Record<NoticeKind, LucideIcon> = { status: TriangleAlertIcon, offer: GiftIcon, news: NewspaperIcon };
 
@@ -29,10 +30,12 @@ export function StartTiles({ chosen, onStart }: { chosen: NoticeKind | null; onS
 }
 
 function Tile({ kind, tight, chosen, onPress }: { kind: NoticeKind; tight: boolean; chosen: boolean; onPress: () => void }) {
+  const words = useWords();
   const { colors, type } = useTheme();
   const [pressed, setPressed] = useState(false);
   const Icon = ICON[kind];
-  const { title, meta } = ADMIN_COPY.start[kind];
+  const title = words(`admin.shell.start.${kind}.title` as const);
+  const meta = words(`admin.shell.start.${kind}.meta` as const);
   return (
     <Pressable
       accessibilityRole="button"

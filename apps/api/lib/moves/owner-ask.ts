@@ -1,10 +1,10 @@
 import "server-only";
 
 import {
+  wordsFor,
   auditSearchFilter,
   DEFAULT_RULES,
   howItWorks,
-  OWNER_ASK_COPY,
   OWNER_MOVE_PERMISSION,
   OWNER_MOVES_MAX,
   OWNER_PERMISSION_NAMES,
@@ -21,12 +21,14 @@ import {
   tidyReply,
   type ChatMessage,
   type OwnerAskResponse,
-  wordsFor,
 } from "@app/core";
 
 import { canAsk, type AgentAnswer } from "@/lib/ai/agent";
 import { askOwnerClaude, type OwnerReads, type OwnerWrites } from "@/lib/ai/owner-ask";
 import type { Caller, Refusal } from "@/lib/moves/disputes";
+
+/** The owner's admin pages, and what they send, are in English for now. */
+const words = wordsFor("en", "housemates");
 
 // The owner's Ask Jonz (lib/ai/owner-ask.ts): one turn, as the owner's own
 // session. Every read and the turn's own record go through that session, so
@@ -329,7 +331,7 @@ export async function ownerTurn(
   const role = OWNER_ROLES.find((r) => r === appRole);
   if (!mfa || !role) return { refusal: { code: "42501", message: "owner_only" } };
 
-  const offline: OwnerAskResponse = { reply: OWNER_ASK_COPY.offline, ask: null, source: "offline" };
+  const offline: OwnerAskResponse = { reply: words('admin.ask.offline'), ask: null, source: "offline" };
   if (!canAsk() && ask === askOwnerClaude) return offline;
 
   const question = messages.at(-1)?.text ?? "";

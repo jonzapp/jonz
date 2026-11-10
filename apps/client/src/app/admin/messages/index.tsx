@@ -1,4 +1,4 @@
-import { listTime, MESSAGE_COPY, MESSAGE_FACETS, MESSAGE_WHEN, reportAge, sentMeta, sentTo, sentWays, type ListAsk } from '@app/core';
+import { type Words, listTime, MESSAGE_FACETS, MESSAGE_WHEN, reportAge, sentMeta, sentTo, sentWays, type ListAsk } from '@app/core';
 import { useRouter } from 'expo-router';
 import { MessageSquareIcon, PlusIcon } from 'lucide-react-native';
 import { useState } from 'react';
@@ -20,13 +20,14 @@ import { Sheet } from '@/components/sheet';
 import { Body, Lead, Meta } from '@/components/text';
 import { TitleBar } from '@/components/title-bar';
 import { SPACE } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /** Every sent message's columns on a laptop. */
-const SENT_TABLE: readonly ListColumn[] = [
-  { key: 'subject', label: MESSAGE_COPY.columns.subject, flex: 1 },
-  { key: 'to', label: MESSAGE_COPY.columns.to, width: 160 },
-  { key: 'ways', label: MESSAGE_COPY.columns.ways, width: 168 },
-  { key: 'when', label: MESSAGE_COPY.columns.when, width: 64, end: true },
+const SENT_TABLE = (words: Words): readonly ListColumn[] => [
+  { key: 'subject', label: words('admin.messages.columns.subject'), flex: 1 },
+  { key: 'to', label: words('admin.messages.columns.to'), width: 160 },
+  { key: 'ways', label: words('admin.messages.columns.ways'), width: 168 },
+  { key: 'when', label: words('admin.messages.columns.when'), width: 64, end: true },
 ];
 
 /**
@@ -40,6 +41,7 @@ const SENT_TABLE: readonly ListColumn[] = [
  * list alone.
  */
 export default function MessagesPage() {
+  const words = useWords();
   const busy = useBusyList({
     key: [...SENT_KEY, 'all'],
     facets: MESSAGE_FACETS,
@@ -48,7 +50,7 @@ export default function MessagesPage() {
     count: (ask) => sentCount(sentFilter(ask)),
   });
   return (
-    <Screen spreads bar={<TitleBar title={MESSAGE_COPY.page} />} onNearEnd={busy.onNearEnd} testID="admin-messages">
+    <Screen spreads bar={<TitleBar title={words('admin.messages.page')} />} onNearEnd={busy.onNearEnd} testID="admin-messages">
       <AdminSwitch page="messages" />
       <Messages busy={busy} />
     </Screen>
@@ -56,6 +58,7 @@ export default function MessagesPage() {
 }
 
 function Messages({ busy }: { busy: BusyList<SentRow> }) {
+  const words = useWords();
   const two = useColumns();
   const may = useOwnerMay('messages:write');
   const router = useRouter();
@@ -69,7 +72,7 @@ function Messages({ busy }: { busy: BusyList<SentRow> }) {
       {may ? (
         <ButtonRow atEdge>
           <Button
-            label={MESSAGE_COPY.newMessage}
+            label={words('admin.messages.newMessage')}
             icon={PlusIcon}
             // On a laptop the form's own Send is the page's one amber button.
             variant={beside ? 'outline' : 'primary'}
@@ -81,32 +84,32 @@ function Messages({ busy }: { busy: BusyList<SentRow> }) {
       <BusyListView
         busy={busy}
         name="sent"
-        placeholder={MESSAGE_COPY.searchPlaceholder}
-        noun={MESSAGE_COPY.sentCount}
-        columns={SENT_TABLE}
+        placeholder={words('admin.messages.searchPlaceholder')}
+        noun={(count: string) => words('admin.messages.sentCount', { count })}
+        columns={SENT_TABLE(words)}
         tableRow={(m) => (
           <ListTableRow
             key={m.id}
-            columns={SENT_TABLE}
-            cells={{ subject: m.subject, to: sentTo(m), ways: sentWays(m), when: reportAge(m.sentAt, now) }}
+            columns={SENT_TABLE(words)}
+            cells={{ subject: m.subject, to: sentTo(m, words), ways: sentWays(m), when: reportAge(m.sentAt, now) }}
             quiet={['ways', 'when']}
             strong={['subject']}
             chosen={beside && open?.id === m.id}
             onPress={() => setOpen(m)}
-            accessibilityLabel={`${m.subject}, ${sentMeta(m)}`}
+            accessibilityLabel={`${m.subject}, ${sentMeta(m, words)}`}
             testID={`sent-${m.id}`}
           />
         )}
         row={(m) => (
-          <Row key={m.id} title={m.subject} meta={`${sentMeta(m)}, ${reportAge(m.sentAt, now)}`} metaLines={2} chevron onPress={() => setOpen(m)} testID={`sent-${m.id}`} />
+          <Row key={m.id} title={m.subject} meta={`${sentMeta(m, words)}, ${reportAge(m.sentAt, now)}`} metaLines={2} chevron onPress={() => setOpen(m)} testID={`sent-${m.id}`} />
         )}
-        empty={{ icon: MessageSquareIcon, title: MESSAGE_COPY.nothingSent, body: MESSAGE_COPY.nothingSentBody }}
+        empty={{ icon: MessageSquareIcon, title: words('admin.messages.nothingSent'), body: words('admin.messages.nothingSentBody') }}
       />
     </>
   );
   const sent = open ? (
     <>
-      <Meta>{`${sentMeta(open)}, ${listTime(open.sentAt, now, ownerZone(), false)}`}</Meta>
+      <Meta>{`${sentMeta(open, words)}, ${listTime(open.sentAt, now, ownerZone(), false)}`}</Meta>
       <Body>{open.body}</Body>
     </>
   ) : null;
@@ -127,7 +130,7 @@ function Messages({ busy }: { busy: BusyList<SentRow> }) {
               ) : null}
               {/* The new message keeps its words while a sent one is read in its place. */}
               <View style={[styles.side, open ? styles.away : null]}>
-                <Lead header>{MESSAGE_COPY.newMessage}</Lead>
+                <Lead header>{words('admin.messages.newMessage')}</Lead>
                 <MessageForm beside />
               </View>
             </View>

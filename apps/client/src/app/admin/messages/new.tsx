@@ -1,10 +1,10 @@
-import { MESSAGE_COPY } from '@app/core';
 import { Redirect, useRouter } from 'expo-router';
 
 import { MessageForm } from '@/components/admin/message-form';
 import { useOwnerMay } from '@/components/admin/use-owner-may';
 import { Screen, useColumns } from '@/components/screen';
 import { TitleBar } from '@/components/title-bar';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * A new message as a page of its own, on a phone: pushed from Messages'
@@ -13,8 +13,9 @@ import { TitleBar } from '@/components/title-bar';
  * app role can't send.
  */
 export default function NewMessagePage() {
+  const words = useWords();
   return (
-    <Screen spreads bar={<TitleBar title={MESSAGE_COPY.newMessage} back={'/admin/messages' as never} backLabel={MESSAGE_COPY.page} />} testID="admin-message-new">
+    <Screen spreads bar={<TitleBar title={words('admin.messages.newMessage')} back={'/admin/messages' as never} backLabel={words('admin.messages.page')} />} testID="admin-message-new">
       <NewMessage />
     </Screen>
   );

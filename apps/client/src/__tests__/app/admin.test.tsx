@@ -1,4 +1,4 @@
-import { ADMIN_COPY, AUDIT_LIST_COPY, DELETION_LIST_COPY, NOTICE_LIST_COPY, OWNER_ASK_COPY, OWNER_MOVES_COPY, OVERVIEW_COPY, OWNER_PERMISSION_NAMES, type AuditEntry, type Notice, wordsFor } from '@app/core';
+import { OWNER_PERMISSION_NAMES, type AuditEntry, type Notice, wordsFor } from '@app/core';
 import * as Clipboard from 'expo-clipboard';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 import { Platform, useWindowDimensions, type ViewStyle } from 'react-native';
@@ -201,7 +201,7 @@ describe('who gets in', () => {
     jest.mocked(verifiedFactor).mockResolvedValue('f1');
     await renderPages(ROUTES, '/admin/notices');
     expect(await screen.findByTestId('code-gate')).toBeVisible();
-    expect(screen.getByText(ADMIN_COPY.codeTitle)).toBeVisible();
+    expect(screen.getByText(words('admin.shell.codeTitle'))).toBeVisible();
     expect(noticesPage).not.toHaveBeenCalled();
     expect(liveNotices).not.toHaveBeenCalled();
   });
@@ -211,13 +211,13 @@ describe('who gets in', () => {
     jest.mocked(verifiedFactor).mockResolvedValue('f1');
     jest.mocked(checkCode).mockResolvedValue(false);
     await renderPages(ROUTES, '/admin/notices');
-    const code = await screen.findByLabelText(ADMIN_COPY.codeLabel);
+    const code = await screen.findByLabelText(words('admin.shell.codeLabel'));
     expect(code.props).toMatchObject({ textContentType: 'oneTimeCode', autoComplete: 'one-time-code' });
     await fireEvent.changeText(code, '48291');
     expect(checkCode).not.toHaveBeenCalled();
     await fireEvent.changeText(code, '482913');
     expect(checkCode).toHaveBeenCalledWith('f1', '482913');
-    expect(await screen.findByRole('alert')).toHaveTextContent(ADMIN_COPY.wrongCode);
+    expect(await screen.findByRole('alert')).toHaveTextContent(words('admin.shell.wrongCode'));
     await fireEvent.changeText(code, '4829137');
     expect(code.props.value).toBe('7');
     expect(screen.queryByRole('alert')).toBeNull();
@@ -230,8 +230,8 @@ describe('who gets in', () => {
     supabaseEnrolls(SUPABASE_QR);
     await renderPages(ROUTES, '/admin/notices');
     expect(await screen.findByTestId('admin-qr')).toBeVisible();
-    expect(screen.getByText(ADMIN_COPY.lockTitle)).toBeVisible();
-    expect(screen.getByText(ADMIN_COPY.copyKey)).toBeVisible();
+    expect(screen.getByText(words('admin.shell.lockTitle'))).toBeVisible();
+    expect(screen.getByText(words('admin.shell.copyKey'))).toBeVisible();
     expect(screen.queryByTestId('admin-no-qr')).toBeNull();
     expect(screen.getByTestId('admin-key')).toHaveTextContent('JBSW Y3DP EHPK 3PXP');
   });
@@ -255,9 +255,9 @@ describe('who gets in', () => {
     jest.mocked(verifiedFactor).mockResolvedValue(null);
     supabaseEnrolls(SUPABASE_QR);
     await renderPages(ROUTES, '/admin/notices');
-    await fireEvent.press(await screen.findByRole('button', { name: ADMIN_COPY.copyKeyButton }));
+    await fireEvent.press(await screen.findByRole('button', { name: words('admin.shell.copyKeyButton') }));
     expect(Clipboard.setStringAsync).toHaveBeenCalledWith('JBSWY3DPEHPK3PXP');
-    expect(await screen.findByRole('button', { name: ADMIN_COPY.keyCopied })).toBeVisible();
+    expect(await screen.findByRole('button', { name: words('admin.shell.keyCopied') })).toBeVisible();
   });
 
   it('says to type the key, never a blank, when the QR code can’t be drawn', async () => {
@@ -265,7 +265,7 @@ describe('who gets in', () => {
     jest.mocked(verifiedFactor).mockResolvedValue(null);
     supabaseEnrolls('<svg width="30" height="30"><path d="M0 0h3v3h-3z"/></svg>');
     await renderPages(ROUTES, '/admin/notices');
-    expect(await screen.findByTestId('admin-no-qr')).toHaveTextContent(ADMIN_COPY.noQr);
+    expect(await screen.findByTestId('admin-no-qr')).toHaveTextContent(words('admin.shell.noQr'));
     expect(screen.queryByTestId('admin-qr')).toBeNull();
     expect(screen.getByTestId('admin-key')).toHaveTextContent('JBSW Y3DP EHPK 3PXP');
   });
@@ -273,7 +273,7 @@ describe('who gets in', () => {
   it('opens /admin on the Overview', async () => {
     await renderPages(ROUTES, '/admin');
     expect(await screen.findByTestId('admin-overview')).toBeVisible();
-    expect(await screen.findByText(OVERVIEW_COPY.nothingNeeds)).toBeVisible();
+    expect(await screen.findByText(words('admin.overview.nothingNeeds'))).toBeVisible();
   });
 });
 
@@ -284,12 +284,12 @@ describe('the owner’s Ask Jonz', () => {
     await untilRead(words);
     expect(screen.queryByTestId('owner-ask')).toBeNull();
     const open = screen.getByTestId('owner-ask-open');
-    expect(open).toHaveAccessibleName(OWNER_ASK_COPY.open);
+    expect(open).toHaveAccessibleName(words('admin.ask.open'));
     await fireEvent.press(open);
     const sheet = screen.getByTestId('owner-ask-sheet');
-    expect(within(sheet).getByText(OWNER_ASK_COPY.label)).toBeVisible();
-    await fireEvent.changeText(within(sheet).getByLabelText(OWNER_ASK_COPY.box), 'What’s waiting?');
-    await fireEvent.press(within(sheet).getByLabelText(OWNER_ASK_COPY.send));
+    expect(within(sheet).getByText(words('admin.ask.label'))).toBeVisible();
+    await fireEvent.changeText(within(sheet).getByLabelText(words('admin.ask.box')), 'What’s waiting?');
+    await fireEvent.press(within(sheet).getByLabelText(words('admin.ask.send')));
     expect(await within(sheet).findByText('Two reports are waiting.')).toBeVisible();
     expect(askOwner).toHaveBeenCalledWith([{ role: 'user', text: 'What’s waiting?' }]);
     await fireEvent.press(within(sheet).getByTestId('owner-ask-close'));
@@ -315,8 +315,8 @@ describe('the owner’s Ask Jonz', () => {
     await fireEvent.press(screen.getByTestId('owner-ask-open'));
     const chat = () => within(screen.getByTestId('owner-ask-sheet'));
     expect(chat().getByTestId('chat-new')).toBeDisabled();
-    await fireEvent.changeText(chat().getByLabelText(OWNER_ASK_COPY.box), 'What’s waiting?');
-    await fireEvent.press(chat().getByLabelText(OWNER_ASK_COPY.send));
+    await fireEvent.changeText(chat().getByLabelText(words('admin.ask.box')), 'What’s waiting?');
+    await fireEvent.press(chat().getByLabelText(words('admin.ask.send')));
     expect(await chat().findByText('Two reports are waiting.')).toBeVisible();
     await waitFor(() =>
       expect(ownerChats.keep).toHaveBeenCalledWith(null, [
@@ -328,7 +328,7 @@ describe('the owner’s Ask Jonz', () => {
     expect(chat().queryByText('Two reports are waiting.')).toBeNull();
     await fireEvent.press(chat().getByTestId('chats-open'));
     expect(chat().getByText(words('ask.chats.all'))).toBeVisible();
-    expect(await chat().findByText(OWNER_ASK_COPY.chatsNote)).toBeVisible();
+    expect(await chat().findByText(words('admin.ask.chatsNote'))).toBeVisible();
     await fireEvent.press(await chat().findByText('What’s waiting?'));
     expect(await chat().findByText('Two reports are waiting.')).toBeVisible();
     expect(ownerChats.load).toHaveBeenCalledWith('c1');
@@ -352,17 +352,17 @@ describe('the owner’s Ask Jonz', () => {
     await untilRead(words);
     await fireEvent.press(screen.getByTestId('owner-ask-open'));
     const chat = () => within(screen.getByTestId('owner-ask-sheet'));
-    await fireEvent.changeText(chat().getByLabelText(OWNER_ASK_COPY.box), 'Keep Sam and end the slow notice');
-    await fireEvent.press(chat().getByLabelText(OWNER_ASK_COPY.send));
+    await fireEvent.changeText(chat().getByLabelText(words('admin.ask.box')), 'Keep Sam and end the slow notice');
+    await fireEvent.press(chat().getByLabelText(words('admin.ask.send')));
     const card = within(await chat().findByTestId('owner-moves-card'));
     expect(card.getByText('Stop deleting Sam’s account')).toBeVisible();
-    expect(card.getByTestId('owner-move-deletion_now')).toHaveTextContent(new RegExp(OWNER_MOVES_COPY.final));
+    expect(card.getByTestId('owner-move-deletion_now')).toHaveTextContent(new RegExp(words('admin.moves.final')));
     // Nothing happens before the tap.
     expect(stopDeletion).not.toHaveBeenCalled();
     await fireEvent.press(card.getByTestId('owner-move-deletion_now'));
-    expect(card.getByTestId('owner-moves-apply')).toHaveTextContent(OWNER_MOVES_COPY.apply(2));
+    expect(card.getByTestId('owner-moves-apply')).toHaveTextContent(words('admin.moves.apply', { n: 2 }));
     await fireEvent.press(card.getByTestId('owner-moves-apply'));
-    expect(await chat().findByText(OWNER_MOVES_COPY.done(2))).toBeVisible();
+    expect(await chat().findByText(words('admin.moves.done', { n: 2 }))).toBeVisible();
     expect(stopDeletion).toHaveBeenCalledWith(SAM_ID, 'Changed their mind');
     expect(endNotice).toHaveBeenCalledWith(NOTICE_ID);
     expect(deleteNow).not.toHaveBeenCalled();
@@ -401,7 +401,7 @@ describe('notices on a phone', () => {
     await renderPages(ROUTES, '/admin/notices');
     await untilRead(words);
     expect(noticesPage).toHaveBeenLastCalledWith(null, { q: '', kind: null, state: null, after: null, before: null });
-    const box = screen.getByLabelText(NOTICE_LIST_COPY.searchPlaceholder);
+    const box = screen.getByLabelText(words('admin.notices.searchPlaceholder'));
     await fireEvent(box, 'focus');
     await fireEvent.changeText(box, 'over');
     await fireEvent.press(screen.getByTestId('notices-search-suggestion-state-ended'));
@@ -423,7 +423,7 @@ describe('notices on a phone', () => {
     expect(within(sheet).getByDisplayValue('Jonz is slow right now')).toBeVisible();
     await fireEvent.press(within(sheet).getByTestId('notice-end'));
     await waitFor(() => expect(endNotice).toHaveBeenCalledWith('n1'));
-    expect(await screen.findByText(ADMIN_COPY.ended)).toBeVisible();
+    expect(await screen.findByText(words('admin.shell.ended'))).toBeVisible();
   });
 
   it('writes a new notice and says so when the copy for outages did not update', async () => {
@@ -435,7 +435,7 @@ describe('notices on a phone', () => {
     await fireEvent.changeText(within(sheet).getByTestId('notice-title'), 'Ticks may be slow');
     await fireEvent.press(within(sheet).getByTestId('notice-save'));
     await waitFor(() => expect(saveNotice).toHaveBeenCalledWith(expect.objectContaining({ id: null, kind: 'status', title: 'Ticks may be slow' })));
-    expect(await screen.findByText(ADMIN_COPY.copyFailed)).toBeVisible();
+    expect(await screen.findByText(words('admin.shell.copyFailed'))).toBeVisible();
   });
 });
 
@@ -445,14 +445,14 @@ describe('starting a notice', () => {
     await untilRead(words);
     await fireEvent.press(screen.getByTestId('start-status'));
     let sheet = await screen.findByTestId('notice-sheet');
-    expect(within(sheet).getByText(ADMIN_COPY.start.status.title)).toBeVisible();
-    expect(within(sheet).getByText(ADMIN_COPY.startFrom)).toBeVisible();
+    expect(within(sheet).getByText(words('admin.shell.start.status.title'))).toBeVisible();
+    expect(within(sheet).getByText(words('admin.shell.startFrom'))).toBeVisible();
     await fireEvent.press(within(sheet).getByLabelText('Close'));
     await fireEvent.press(screen.getByTestId('start-news'));
     sheet = await screen.findByTestId('notice-sheet');
-    expect(within(sheet).getByRole('header', { name: ADMIN_COPY.start.news.title })).toBeVisible();
+    expect(within(sheet).getByRole('header', { name: words('admin.shell.start.news.title') })).toBeVisible();
     expect(within(sheet).getByRole('radio', { name: 'News' })).toBeChecked();
-    expect(within(sheet).queryByText(ADMIN_COPY.startFrom)).toBeNull();
+    expect(within(sheet).queryByText(words('admin.shell.startFrom'))).toBeNull();
   });
 });
 
@@ -465,7 +465,7 @@ describe('notices on a laptop', () => {
     expect(screen.getByTestId('admin-rail')).toBeVisible();
     expect(screen.queryByTestId('admin-tabs')).toBeNull();
     const side = screen.getByTestId('notice-side');
-    expect(within(side).getByText(ADMIN_COPY.start.status.title)).toBeVisible();
+    expect(within(side).getByText(words('admin.shell.start.status.title'))).toBeVisible();
     expect(screen.getByTestId('notices-table-head', { includeHiddenElements: true })).toHaveTextContent(/Notice.*Kind.*State.*Starts/);
     expect(screen.getByTestId('notice-row-n1')).toHaveTextContent(/Jonz is slow right now.*Status.*Showing/);
     await fireEvent.press(within(screen.getByTestId('notice-row-n2')).getByRole('button'));
@@ -489,7 +489,7 @@ describe('deletions', () => {
     await renderPages(ROUTES, '/admin/deletions');
     await untilRead(words);
     expect(deletionsPage).toHaveBeenLastCalledWith(null, { q: '', by: null, goes: null, after: null, before: null });
-    const box = screen.getByLabelText(DELETION_LIST_COPY.searchPlaceholder);
+    const box = screen.getByLabelText(words('admin.deletions.searchPlaceholder'));
     await fireEvent(box, 'focus');
     expect(screen.getByTestId('deletions-search-panel')).toHaveTextContent(/Started.*In the app.*By you.*Goes.*Within a day.*Asked.*Today/);
     await fireEvent.changeText(box, 'emailed');
@@ -534,7 +534,7 @@ describe('deletions', () => {
     jest.mocked(deletionsCount).mockResolvedValue(0);
     await renderPages(ROUTES, '/admin/deletions');
     expect(await screen.findByTestId('deletions-empty')).toBeVisible();
-    expect(screen.getByText(ADMIN_COPY.noDeletions)).toBeVisible();
+    expect(screen.getByText(words('admin.shell.noDeletions'))).toBeVisible();
   });
 
   it('deletes now, with a reason, only once asked twice', async () => {
@@ -542,13 +542,13 @@ describe('deletions', () => {
     await untilRead(words);
     await fireEvent.press(within(screen.getByTestId('deletion-sam')).getByRole('button'));
     const sheet = within(await screen.findByTestId('deletion-sheet'));
-    await fireEvent.changeText(sheet.getByLabelText(ADMIN_COPY.reason), 'Emailed to ask for it sooner');
+    await fireEvent.changeText(sheet.getByLabelText(words('admin.shell.reason')), 'Emailed to ask for it sooner');
     await fireEvent.press(sheet.getByTestId('deletion-now'));
     expect(deleteNow).not.toHaveBeenCalled();
-    expect(sheet.getByRole('header', { name: ADMIN_COPY.deleteNowAsk('Sam') })).toBeVisible();
+    expect(sheet.getByRole('header', { name: words('admin.shell.deleteNowAsk', { name: 'Sam' }) })).toBeVisible();
     await fireEvent.press(sheet.getByTestId('deletion-confirm'));
     expect(deleteNow).toHaveBeenCalledWith('sam', 'Emailed to ask for it sooner');
-    expect(await screen.findByText(ADMIN_COPY.deletingSoon)).toBeVisible();
+    expect(await screen.findByText(words('admin.shell.deletingSoon'))).toBeVisible();
   });
 
   it('stops one, and can think better of it', async () => {
@@ -562,7 +562,7 @@ describe('deletions', () => {
     await fireEvent.press(sheet.getByTestId('deletion-stop'));
     await fireEvent.press(sheet.getByTestId('deletion-confirm'));
     expect(stopDeletion).toHaveBeenCalledWith('kit', '');
-    expect(await screen.findByText(ADMIN_COPY.stopped)).toBeVisible();
+    expect(await screen.findByText(words('admin.shell.stopped'))).toBeVisible();
   });
 
   it('starts the 30 days for someone who emailed, and says why it couldn’t', async () => {
@@ -572,14 +572,14 @@ describe('deletions', () => {
     await fireEvent.press(within(screen.getByTestId('delete-by-email')).getByRole('button'));
     const sheet = within(await screen.findByTestId('by-email-sheet'));
     expect(sheet.getByTestId('deletion-start')).toBeDisabled();
-    await fireEvent.changeText(sheet.getByLabelText(ADMIN_COPY.email), 'nobody@example.com');
+    await fireEvent.changeText(sheet.getByLabelText(words('admin.shell.email')), 'nobody@example.com');
     await fireEvent.press(sheet.getByTestId('deletion-start'));
     expect(await sheet.findByText('There’s no Jonz account with that email.')).toBeVisible();
-    await fireEvent.changeText(sheet.getByLabelText(ADMIN_COPY.email), 'ana@example.com');
-    await fireEvent.changeText(sheet.getByLabelText(ADMIN_COPY.reason), 'Email of 31 Oct');
+    await fireEvent.changeText(sheet.getByLabelText(words('admin.shell.email')), 'ana@example.com');
+    await fireEvent.changeText(sheet.getByLabelText(words('admin.shell.reason')), 'Email of 31 Oct');
     await fireEvent.press(sheet.getByTestId('deletion-start'));
     expect(deleteByEmail).toHaveBeenLastCalledWith('ana@example.com', 'Email of 31 Oct');
-    expect(await screen.findByText(ADMIN_COPY.started)).toBeVisible();
+    expect(await screen.findByText(words('admin.shell.started'))).toBeVisible();
   });
 });
 
@@ -597,7 +597,7 @@ describe('the audit log', () => {
     expect(await screen.findByTestId('audit-detail-2')).toBeVisible();
     expect(auditEntry).toHaveBeenCalledWith(2);
     expect(screen.getByText('Ticks may be slow')).toBeVisible();
-    expect(screen.getByText(ADMIN_COPY.appendOnly)).toBeVisible();
+    expect(screen.getByText(words('admin.shell.appendOnly'))).toBeVisible();
   });
 
   it('shows the entries as a table on a laptop, the chosen one beside it', async () => {
@@ -705,7 +705,7 @@ describe('the audit log', () => {
 describe('the search box every admin list has', () => {
   beforeEach(() => authStorage.clear());
 
-  const box = () => screen.getByLabelText(AUDIT_LIST_COPY.searchPlaceholder);
+  const box = () => screen.getByLabelText(words('admin.audit.searchPlaceholder'));
   const typeIn = async (text: string) => {
     await fireEvent(box(), 'focus');
     await fireEvent.changeText(box(), text);

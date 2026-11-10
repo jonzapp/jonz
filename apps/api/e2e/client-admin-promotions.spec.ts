@@ -1,9 +1,11 @@
 import { randomUUID } from "node:crypto";
 
-import { PROMOTIONS_COPY } from "@app/core";
 import { expect, test, type Page } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, ownerInClient } from "./auth";
+import { wordsFor } from '@app/core';
+
+const words = wordsFor('en', 'housemates');
 
 // The owner's Promotions in the Expo app's web build (docs/specs/promotions.md):
 // the owner, signed in with their code, makes a free year for three named
@@ -57,9 +59,9 @@ test("makes a free year for three people, then opens it with its link", async ({
   await shoot(page, "promotions-start");
 
   await form.getByTestId("promotion-name").fill("A free year for friends");
-  await form.getByTestId("promotion-kind").getByText(PROMOTIONS_COPY.kind.gift).click();
+  await form.getByTestId("promotion-kind").getByText(words('admin.promotions.kind.gift')).click();
   await form.getByTestId("promotion-months").fill("12");
-  await form.getByTestId("promotion-audience").getByText(PROMOTIONS_COPY.audiences.named).click();
+  await form.getByTestId("promotion-audience").getByText(words('admin.promotions.audiences.named')).click();
   await form.getByTestId("promotion-people-box").fill("sam.okafor@example.com\npriya.n@example.com, leo.marsh@example.com");
   await form.getByTestId("promotion-note").fill("Thanks for helping test Jonz.");
   await form.getByTestId("promotion-code").fill(code);
@@ -78,10 +80,10 @@ test("makes a free year for three people, then opens it with its link", async ({
 
   await page.getByTestId("promotion-make").click();
   await expect(page.getByTestId("admin-promotion")).toBeVisible();
-  await expect(page.getByTestId("promotion-state")).toHaveText(PROMOTIONS_COPY.stateChip.live);
+  await expect(page.getByTestId("promotion-state")).toHaveText(words('admin.promotions.stateChip.live'));
   await expect(page.getByTestId("promotion-url")).toContainText(`jonz.app/offer/${code}`);
   await expect(page.getByTestId("promotion-people")).toContainText("priya.n@example.com");
-  await expect(page.getByTestId("promotion-email")).toHaveText(PROMOTIONS_COPY.emailThem(3));
+  await expect(page.getByTestId("promotion-email")).toHaveText(words('admin.promotions.emailThem', { n: 3 }));
   await shoot(page, "promotion");
 
   // In the database as the form said: a year's free Pass, three people, no plans.

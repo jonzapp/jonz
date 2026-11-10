@@ -1,4 +1,4 @@
-import { promotionGives, PROMOTIONS_COPY, promotionSentence, promotionUsed, promotionWhoSentence, toEmail, wordsFor } from '@app/core';
+import { type Words, promotionGives, promotionSentence, promotionUsed, promotionWhoSentence, toEmail, wordsFor } from '@app/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
 import { MailIcon, RefreshCwIcon, TicketIcon } from 'lucide-react-native';
@@ -34,17 +34,18 @@ import { useWords } from '@/hooks/use-words';
  * it, sit beside.
  */
 export default function PromotionPage() {
+  const words = useWords();
   const { id } = useLocalSearchParams<{ id: string }>();
   const read = useQuery({ queryKey: [...PROMOTIONS_KEY, 'one', id], queryFn: () => promotion(id) });
-  const title = read.data?.name ?? PROMOTIONS_COPY.page;
+  const title = read.data?.name ?? words('admin.promotions.page');
   return (
-    <Screen spreads bar={<TitleBar title={title} back={'/admin/promotions' as never} backLabel={PROMOTIONS_COPY.page} />} testID="admin-promotion">
+    <Screen spreads bar={<TitleBar title={title} back={'/admin/promotions' as never} backLabel={words('admin.promotions.page')} />} testID="admin-promotion">
       {read.isPending ? (
         <Waiting ready={false} outline={<PanelOutline sections={[3, 2]} button />} />
       ) : read.isError ? (
         <ReadFailed onRetry={() => void read.refetch()} />
       ) : read.data === null ? (
-        <EmptyState icon={TicketIcon} title={PROMOTIONS_COPY.notFound} />
+        <EmptyState icon={TicketIcon} title={words('admin.promotions.notFound')} />
       ) : (
         <Promotion p={read.data} />
       )}
@@ -67,21 +68,21 @@ function Promotion({ p }: { p: PromotionDetail }) {
     mutationFn: () => stopPromotion(p.id),
     onSuccess: () => {
       setStopping(false);
-      toast.show(PROMOTIONS_COPY.stopped);
+      toast.show(words('admin.promotions.stopped'));
       fresh();
     },
   });
   const retry = useMutation({
     mutationFn: () => retryPromotion(p.id),
     onSuccess: (ready) => {
-      toast.show(ready ? PROMOTIONS_COPY.ready : PROMOTIONS_COPY.stillNotReady);
+      toast.show(ready ? words('admin.promotions.ready') : words('admin.promotions.stillNotReady'));
       fresh();
     },
   });
   const email = useMutation({
     mutationFn: () => emailPromotion(p.id),
     onSuccess: (sent) => {
-      toast.show(PROMOTIONS_COPY.emailed(sent));
+      toast.show(words('admin.promotions.emailed', { n: sent }));
       fresh();
     },
   });
@@ -95,19 +96,19 @@ function Promotion({ p }: { p: PromotionDetail }) {
     <View style={[styles.main, two && styles.capped]}>
       <View style={styles.words}>
         <View style={styles.chips}>
-          <Chip label={PROMOTIONS_COPY.stateChip[p.state]} tone={p.state === 'live' ? 'good' : 'quiet'} testID="promotion-state" />
+          <Chip label={words(`admin.promotions.stateChip.${p.state}` as const)} tone={p.state === 'live' ? 'good' : 'quiet'} testID="promotion-state" />
           <Chip label={p.code} />
         </View>
         {p.note ? <Body>{p.note}</Body> : null}
         <Body testID="promotion-sentence">{promotionSentence(p.terms, zone)}</Body>
         <Meta>{promotionWhoSentence(p.audience, emails, p.maxUses, p.terms.endsAt, zone)}</Meta>
-        <Meta testID="promotion-used">{`${promotionGives(p.terms)}. ${PROMOTIONS_COPY.usedLine(promotionUsed({ audience: p.audience, people: p.people.length, uses: p.uses, maxUses: p.maxUses }))}.`}</Meta>
+        <Meta testID="promotion-used">{`${promotionGives(p.terms)}. ${words('admin.promotions.usedLine', { used: promotionUsed({ audience: p.audience, people: p.people.length, uses: p.uses, maxUses: p.maxUses }) })}.`}</Meta>
       </View>
       {may && p.state === 'making' ? (
         <View style={styles.group}>
-          <Alert message={PROMOTIONS_COPY.notReadyBody} testID="promotion-not-ready" />
+          <Alert message={words('admin.promotions.notReadyBody')} testID="promotion-not-ready" />
           <ButtonRow>
-            <Button label={PROMOTIONS_COPY.tryAgain} icon={RefreshCwIcon} onPress={() => retry.mutate()} busy={retry.isPending} busyLabel={words('common.busy.trying')} testID="promotion-retry" />
+            <Button label={words('admin.promotions.tryAgain')} icon={RefreshCwIcon} onPress={() => retry.mutate()} busy={retry.isPending} busyLabel={words('common.busy.trying')} testID="promotion-retry" />
           </ButtonRow>
           {retry.error ? <Alert message={retry.error.message} /> : null}
         </View>
@@ -117,7 +118,7 @@ function Promotion({ p }: { p: PromotionDetail }) {
         <View style={styles.group}>
           <ButtonRow>
             <Button
-              label={waiting === 0 ? PROMOTIONS_COPY.emailedAll : PROMOTIONS_COPY.emailThem(waiting)}
+              label={waiting === 0 ? words('admin.promotions.emailedAll') : words('admin.promotions.emailThem', { n: waiting })}
               icon={MailIcon}
               variant="outline"
               onPress={() => email.mutate()}
@@ -127,13 +128,13 @@ function Promotion({ p }: { p: PromotionDetail }) {
               testID="promotion-email"
             />
           </ButtonRow>
-          <Meta>{PROMOTIONS_COPY.emailNote}</Meta>
+          <Meta>{words('admin.promotions.emailNote')}</Meta>
           {email.error ? <Alert message={email.error.message} /> : null}
         </View>
       ) : null}
       {!may || p.state === 'stopped' ? null : (
         <Group>
-          <Row title={PROMOTIONS_COPY.stop} tone="hazard" onPress={() => setStopping(true)} testID="promotion-stop" />
+          <Row title={words('admin.promotions.stop')} tone="hazard" onPress={() => setStopping(true)} testID="promotion-stop" />
         </Group>
       )}
     </View>
@@ -142,14 +143,14 @@ function Promotion({ p }: { p: PromotionDetail }) {
   const side = (
     <View style={styles.side}>
       {named ? <PromotionPeople people={p.people} /> : null}
-      <Section label={PROMOTIONS_COPY.uses} count={p.uses} testID="promotion-uses">
+      <Section label={words('admin.promotions.uses')} count={p.uses} testID="promotion-uses">
         {p.recent.length === 0 ? (
-          <Row title={PROMOTIONS_COPY.noUses} />
+          <Row title={words('admin.promotions.noUses')} />
         ) : (
           p.recent.map((u, i) => (
             <Row
               key={`${u.houseId}-${i}`}
-              title={u.house ?? PROMOTIONS_COPY.houseGone}
+              title={u.house ?? words('admin.promotions.houseGone')}
               meta={[u.plan ? planName(u.plan) : null, new Date(u.at).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })].filter(Boolean).join(', ')}
               href={u.houseId ? ({ pathname: '/admin/houses', params: { open: u.houseId } } as never) : undefined}
               chevron={Boolean(u.houseId)}
@@ -172,9 +173,9 @@ function Promotion({ p }: { p: PromotionDetail }) {
       )}
       <ConfirmSheet
         visible={stopping}
-        title={PROMOTIONS_COPY.stopTitle}
-        body={PROMOTIONS_COPY.stopBody}
-        confirmLabel={PROMOTIONS_COPY.stop}
+        title={words('admin.promotions.stopTitle')}
+        body={words('admin.promotions.stopBody')}
+        confirmLabel={words('admin.promotions.stop')}
         tone="hazard"
         busy={stop.isPending}
         busyLabel={words('common.busy.stopping')}
@@ -189,7 +190,7 @@ function Promotion({ p }: { p: PromotionDetail }) {
 
 // The owner's pages are in English for now (translation 6).
 const english = wordsFor('en', 'housemates');
-const PLAN_NAME: Record<string, string> = { yearly: english('house.pass.yearly'), monthly: english('house.pass.monthly'), founding: english('house.pass.foundingPlan'), trial: PROMOTIONS_COPY.kind.gift };
+const PLAN_NAME: Record<string, string> = { yearly: english('house.pass.yearly'), monthly: english('house.pass.monthly'), founding: english('house.pass.foundingPlan'), trial: english('admin.promotions.kind.gift') };
 const planName = (plan: string) => PLAN_NAME[plan] ?? plan;
 
 const styles = StyleSheet.create({

@@ -1,3 +1,4 @@
+import type { Words } from "./words-for";
 import { NOTICE_KINDS, type NoticeKind } from "./notices";
 
 // The owner's admin page (docs/specs/owner-admin.md): its words, how an
@@ -42,100 +43,6 @@ export function adminGroupOf(page: AdminPage): (typeof ADMIN_GROUPS)[number] {
 export function adminPage(page: AdminPage): (typeof ADMIN_PAGES)[number] {
   return ADMIN_PAGES.find((p) => p.key === page) ?? ADMIN_PAGES[0];
 }
-
-export const ADMIN_COPY = {
-  owner: "Owner",
-  signedInWithCode: "Signed in with a code",
-  /** The way back: the rail's foot on a laptop, Overview's foot on a phone. */
-  backToHouse: "Back to my house",
-  // Getting in.
-  lockTitle: "Lock the admin page",
-  lockBody:
-    "The admin page can change what everyone sees, so it needs a code from an authenticator app as well as your sign-in. Use 1Password, Google Authenticator or the iPhone Passwords app.",
-  addToPasswords: "Add to your passwords app",
-  copyKey: "Or type this key into the app",
-  copyKeyButton: "Copy key",
-  keyCopied: "Key copied",
-  /** In place of copyKey when the code to scan can’t be drawn. */
-  noQr: "The code to scan didn’t load, so type this key into the app instead.",
-  codeTitle: "Enter your code",
-  codeBody: "The 6 numbers from your authenticator app.",
-  codeLabel: "Code",
-  open: "Open the admin page",
-  added: "Check the code",
-  wrongCode: "That code didn’t work. Codes change every 30 seconds, so try the newest one.",
-  // Notices.
-  tellEveryone: "Tell everyone",
-  /** The ways in to a new notice, named by what's happening, outages first. */
-  start: {
-    status: { title: "Something’s wrong", meta: "an outage" },
-    offer: { title: "An offer", meta: "a price or a deal" },
-    news: { title: "News", meta: "something new" },
-  } satisfies Record<NoticeKind, { title: string; meta: string }>,
-  editNotice: "Edit notice",
-  whatPeopleSee: "What people see now",
-  nothingShowing: "Nothing is showing. People see the app as usual.",
-  onePerScreen: "One shows at a time: status first, then offers, then news. A status notice still shows when the database is down.",
-  startFrom: "Start from",
-  kind: "Kind",
-  title: "Title",
-  more: "More, optional",
-  button: "Button, optional",
-  buttonLabel: "Button words",
-  buttonLink: "Where it goes: a page like /house/pass, or an https link",
-  starts: "Starts",
-  ends: "Ends",
-  startsNow: "Now",
-  startsLater: "Later",
-  startsAtLabel: "Starts at, your time: 2026-11-30 09:00",
-  endsAtLabel: "Ends at, your time: 2026-11-30 23:59",
-  save: "Save",
-  saveAndShow: "Show it",
-  endNow: "End it now",
-  saved: "Saved.",
-  ended: "Ended.",
-  copyFailed: "Saved, but the copy for outages didn’t update. Save again to retry.",
-  auditNote: "Saving writes to the audit log with your name.",
-  noNotices: "No notices yet",
-  noNoticesBody: "A notice shows at the top of the app for everyone: an outage, an offer or news.",
-  // The audit log.
-  auditMeta: (count: number) => (count === 1 ? "1 entry" : `${count} entries`),
-  noAudit: "Nothing yet",
-  noAuditBody: "Everything you do here is written down, and can’t be changed or removed.",
-  whatChanged: "What changed",
-  appendOnly: "Entries can’t be changed or removed, not even by you.",
-  you: "You",
-  entry: "Entry",
-  details: "Details",
-  action: "Action",
-  when: "When",
-  openNotice: "Open the notice",
-  noEntry: "That entry isn’t in the log.",
-  // Deletions.
-  noDeletions: "Nobody is waiting to be deleted",
-  noDeletionsBody:
-    "When someone deletes their account it waits here for 30 days, in case they change their mind. Signing in again and pressing Keep my account stops it.",
-  goesIn: (days: number) => (days <= 0 ? "Goes within 10 minutes" : days === 1 ? "Goes tomorrow" : `Goes in ${days} days`),
-  askedInApp: "asked in the app",
-  startedByYou: "you started it",
-  noHouse: "in no house",
-  deleteNow: "Delete now",
-  deleteNowAsk: (name: string) => `Delete ${name} now?`,
-  deleteNowBody: "Their account goes within 10 minutes instead of waiting out the 30 days. Only do this when they’ve asked you to.",
-  stop: "Stop",
-  stopAsk: (name: string) => `Stop deleting ${name}?`,
-  stopBody: "Their account stays, the time away it put in ends, and a House Pass they pay for renews again.",
-  reason: "Why, for the audit log",
-  reasonPlaceholder: "They emailed on 31 Oct",
-  byEmail: "Delete an account someone emailed about",
-  byEmailBody:
-    "For someone who can’t sign in to do it themselves. Only when the email came from the address on the account. It waits 30 days like any other.",
-  email: "Their email",
-  startDeleting: "Start the 30 days",
-  started: "Started. It’s in the list.",
-  deletingSoon: "It goes within 10 minutes.",
-  stopped: "Stopped. Their account stays.",
-} as const;
 
 /** Whole days until a deletion is due, from now; 0 or less is due now. */
 export function daysUntil(iso: string, now: Date): number {
@@ -338,8 +245,8 @@ export interface AuditParts {
   detail: string;
 }
 
-export function auditParts(entry: AuditEntry, ownerId: string | null): AuditParts {
-  const who = entry.actor !== null && entry.actor === ownerId ? ADMIN_COPY.you : "The owner";
+export function auditParts(entry: AuditEntry, ownerId: string | null, words: Words): AuditParts {
+  const who = entry.actor !== null && entry.actor === ownerId ? words('admin.shell.you') : "The owner";
   const after = asRecord(entry.after);
   const kind = KIND_WORD[String(after?.kind ?? "")] ?? "a notice";
   const title = typeof after?.title === "string" ? after.title : "";
@@ -368,8 +275,8 @@ export function auditParts(entry: AuditEntry, ownerId: string | null): AuditPart
 }
 
 /** How an entry reads in a list of rows: who did what as its title, and its detail (or where) under it. */
-export function auditLine(entry: AuditEntry, ownerId: string | null): { title: string; meta: string } {
-  const parts = auditParts(entry, ownerId);
+export function auditLine(entry: AuditEntry, ownerId: string | null, words: Words): { title: string; meta: string } {
+  const parts = auditParts(entry, ownerId, words);
   const known = parts.what !== entry.action;
   return { title: known ? `${parts.who} ${parts.what}` : `${parts.who}: ${entry.action}`, meta: parts.detail || parts.where };
 }
@@ -379,8 +286,8 @@ export function auditLine(entry: AuditEntry, ownerId: string | null): { title: s
  * who, what, where and the notice's title. The database says the same
  * (audit_row_words), so typing what you see finds it.
  */
-export function auditRowWords(entry: AuditEntry, viewerId: string | null): string {
-  const { who, what, where, detail } = auditParts(entry, viewerId);
+export function auditRowWords(entry: AuditEntry, viewerId: string | null, words: Words): string {
+  const { who, what, where, detail } = auditParts(entry, viewerId, words);
   return [who, what, where, detail].filter(Boolean).join(" ");
 }
 

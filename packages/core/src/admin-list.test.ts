@@ -24,6 +24,9 @@ import {
   listTime,
   listWindow,
 } from "./admin-list";
+import { wordsFor } from "./words-for";
+
+const words = wordsFor("en", "housemates");
 
 const NOW = new Date("2026-10-30T16:44:00Z");
 const ZONE = "Europe/London";
@@ -155,7 +158,7 @@ describe("Show more like this, on an entry", () => {
   const at = "2026-10-30T16:41:07.000Z";
 
   it("offers everything by the same Who, of the same What, and around its moment", () => {
-    expect(auditLikeThis({ actor: "owner-1", action: "notice.save", at }, "owner-1")).toEqual([
+    expect(auditLikeThis({ actor: "owner-1", action: "notice.save", at }, "owner-1", words)).toEqual([
       { label: "Everything you did", meta: "Who: You", params: { who: "you" } },
       { label: "Every entry about notices", meta: "What: Notices", params: { what: "notices" } },
       { label: "Around this time", meta: "The list from five minutes after it, going back", params: { from: "2026-10-30T16:46:07.000Z" } },
@@ -163,12 +166,12 @@ describe("Show more like this, on an entry", () => {
   });
 
   it("names who did it as the drop-down does", () => {
-    expect(auditLikeThis({ actor: null, action: "account.delete_done", at }, "owner-1")[0].params).toEqual({ who: "jonz" });
-    expect(auditLikeThis({ actor: "someone", action: "account.delete_request", at }, "owner-1")[0].params).toEqual({ who: "others" });
+    expect(auditLikeThis({ actor: null, action: "account.delete_done", at }, "owner-1", words)[0].params).toEqual({ who: "jonz" });
+    expect(auditLikeThis({ actor: "someone", action: "account.delete_request", at }, "owner-1", words)[0].params).toEqual({ who: "others" });
   });
 
   it("leaves What out for a kind the drop-down doesn't have", () => {
-    expect(auditLikeThis({ actor: null, action: "house.open", at }, null).map((like) => like.label)).toEqual([
+    expect(auditLikeThis({ actor: null, action: "house.open", at }, null, words).map((like) => like.label)).toEqual([
       "Everything Jonz did by itself",
       "Around this time",
     ]);

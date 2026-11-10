@@ -1,4 +1,4 @@
-import { ADMIN_COPY, clockState, humanError, databaseState, needRow, noticeToShow, OVERVIEW_COPY, ownerFigures, overviewRange, type Overview, type OverviewSpan } from '@app/core';
+import { clockState, humanError, databaseState, needRow, noticeToShow, ownerFigures, overviewRange, type Overview, type OverviewSpan } from '@app/core';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeftIcon, CheckIcon, TriangleAlertIcon } from 'lucide-react-native';
 import { useState } from 'react';
@@ -23,6 +23,7 @@ import { TitleBar } from '@/components/title-bar';
 import { INSET, ROW_MIN, SPACE } from '@/theme';
 import { Waiting } from '@/components/waiting';
 import { OverviewOutline } from '@/components/page-outlines';
+import { useWords } from '@/hooks/use-words';
 
 const MONTH = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const day = (iso: string) => `${new Date(iso).getDate()} ${MONTH[new Date(iso).getMonth()]}`;
@@ -42,14 +43,16 @@ const FIGURE_HREF: Record<string, string | undefined> = {
  * people see, sit beside the figures.
  */
 export default function OverviewPage() {
+  const words = useWords();
   return (
-    <Screen spreads bar={<TitleBar title={OVERVIEW_COPY.page} />} testID="admin-overview">
+    <Screen spreads bar={<TitleBar title={words('admin.overview.page')} />} testID="admin-overview">
       <OverviewBody />
     </Screen>
   );
 }
 
 function OverviewBody() {
+  const words = useWords();
   const two = useColumns();
   const [span, setSpan] = useState<OverviewSpan>('week');
   const zone = ownerZone();
@@ -87,21 +90,22 @@ function OverviewBody() {
       <InTheApp />
       {/* On a phone there's no rail to carry it. */}
       <View style={styles.words}>
-        <TextButton label={ADMIN_COPY.backToHouse} icon={ArrowLeftIcon} href="/" align="start" testID="admin-to-house" />
+        <TextButton label={words('admin.shell.backToHouse')} icon={ArrowLeftIcon} href="/" align="start" testID="admin-to-house" />
       </View>
     </View>
   );
 }
 
 function NeedsYou({ overview, now }: { overview: Overview; now: Date }) {
+  const words = useWords();
   return (
     <Section
-      label={OVERVIEW_COPY.needsYou}
-      right={<TextButton label={OVERVIEW_COPY.openInbox(overview.reports)} href={'/admin/inbox' as never} testID="overview-inbox" />}
+      label={words('admin.overview.needsYou')}
+      right={<TextButton label={words('admin.overview.openInbox', { count: overview.reports })} href={'/admin/inbox' as never} testID="overview-inbox" />}
       testID="overview-needs"
     >
       {overview.needs.length === 0 ? (
-        <Row title={OVERVIEW_COPY.nothingNeeds} meta={OVERVIEW_COPY.nothingNeedsBody} metaLines={2} />
+        <Row title={words('admin.overview.nothingNeeds')} meta={words('admin.overview.nothingNeedsBody')} metaLines={2} />
       ) : (
         overview.needs.map((need) => {
           const row = needRow(need, now);
@@ -113,20 +117,22 @@ function NeedsYou({ overview, now }: { overview: Overview; now: Date }) {
 }
 
 function RightNow({ overview, ms, now }: { overview: Overview; ms: number; now: Date }) {
+  const words = useWords();
   const db = databaseState(ms);
   const clock = clockState(overview.clock, now);
   const mark = (up: boolean, bad: string) =>
-    up ? <Chip label={OVERVIEW_COPY.up} icon={CheckIcon} tone="good" /> : <Chip label={bad} icon={TriangleAlertIcon} tone="hazard" />;
+    up ? <Chip label={words('admin.overview.up')} icon={CheckIcon} tone="good" /> : <Chip label={bad} icon={TriangleAlertIcon} tone="hazard" />;
   return (
-    <Section label={OVERVIEW_COPY.rightNow} testID="overview-health">
-      <Row title={OVERVIEW_COPY.database} meta={db.meta} trailing={mark(db.up, OVERVIEW_COPY.slow)} testID="health-database" />
-      <Row title={OVERVIEW_COPY.clock} meta={clock.meta} trailing={mark(clock.up, OVERVIEW_COPY.late)} testID="health-clock" />
+    <Section label={words('admin.overview.rightNow')} testID="overview-health">
+      <Row title={words('admin.overview.database')} meta={db.meta} trailing={mark(db.up, words('admin.overview.slow'))} testID="health-database" />
+      <Row title={words('admin.overview.clock')} meta={clock.meta} trailing={mark(clock.up, words('admin.overview.late'))} testID="health-clock" />
     </Section>
   );
 }
 
 function Numbers({ overview, zone, onSpan }: { overview: Overview; zone: string; onSpan: (span: OverviewSpan) => void }) {
-  const figures: Figure[] = ownerFigures(overview).map((f) => ({
+  const words = useWords();
+  const figures: Figure[] = ownerFigures(overview, words).map((f) => ({
     key: f.key,
     value: f.value,
     label: f.label,
@@ -141,8 +147,8 @@ function Numbers({ overview, zone, onSpan }: { overview: Overview; zone: string;
         label={range}
         right={
           <Segmented
-            label={OVERVIEW_COPY.spanLabel}
-            options={(['week', 'month'] as const).map((value) => ({ value, label: OVERVIEW_COPY.spans[value] }))}
+            label={words('admin.overview.spanLabel')}
+            options={(['week', 'month'] as const).map((value) => ({ value, label: words(`admin.overview.spans.${value}` as const) }))}
             value={overview.span}
             onChange={onSpan}
             testID="overview-span"
@@ -152,12 +158,12 @@ function Numbers({ overview, zone, onSpan }: { overview: Overview; zone: string;
       >
         <Figures figures={figures} label={range} testID="overview-figures" />
       </Section>
-      <Section label={OVERVIEW_COPY.chart} right={OVERVIEW_COPY.chartNote} bare>
+      <Section label={words('admin.overview.chart')} right={words('admin.overview.chartNote')} bare>
         <WeekChart
           values={weeks.map((w) => Number(w.active))}
           first={weeks.length > 0 ? day(new Date(new Date(weeks[0].ends).getTime() - 7 * 86_400_000).toISOString()) : ''}
-          last={OVERVIEW_COPY.thisWeek}
-          label={OVERVIEW_COPY.chart}
+          last={words('admin.overview.thisWeek')}
+          label={words('admin.overview.chart')}
           testID="overview-chart"
         />
       </Section>
@@ -167,10 +173,11 @@ function Numbers({ overview, zone, onSpan }: { overview: Overview; zone: string;
 
 /** The notice people see now, as they see it, and the way to change it. */
 function InTheApp() {
+  const words = useWords();
   const live = useQuery({ queryKey: ['owner-notices', 'live'], queryFn: () => liveNotices() });
   const showing = live.data ? noticeToShow(live.data, {}, new Date()) : null;
   return (
-    <Section label={OVERVIEW_COPY.inTheApp} bare testID="overview-notice">
+    <Section label={words('admin.overview.inTheApp')} bare testID="overview-notice">
       {live.isError ? (
         <ReadFailed message={humanError(live.error)} onRetry={() => void live.refetch()} />
       ) : live.isPending ? (
@@ -179,11 +186,11 @@ function InTheApp() {
         <NoticePreview notice={showing} />
       ) : (
         <Group>
-          <Row title={OVERVIEW_COPY.noNotice} />
+          <Row title={words('admin.overview.noNotice')} />
         </Group>
       )}
       <View style={styles.words}>
-        <TextButton label={OVERVIEW_COPY.changeNotice} href={'/admin/notices' as never} align="start" testID="overview-notices" />
+        <TextButton label={words('admin.overview.changeNotice')} href={'/admin/notices' as never} align="start" testID="overview-notices" />
       </View>
     </Section>
   );

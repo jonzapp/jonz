@@ -1,4 +1,4 @@
-import { ADMIN_COPY, AUDIT_FACETS, AUDIT_LIST_COPY, listTime, type AuditEntry } from '@app/core';
+import { AUDIT_FACETS, listTime, type AuditEntry } from '@app/core';
 import { router } from 'expo-router';
 import { ScrollTextIcon } from 'lucide-react-native';
 import { useState } from 'react';
@@ -55,9 +55,9 @@ function AuditLog({ busy, ownerId }: { busy: BusyList<AuditEntry>; ownerId: stri
     <BusyListView
       busy={busy}
       name="audit"
-      placeholder={AUDIT_LIST_COPY.searchPlaceholder}
-      noun={AUDIT_LIST_COPY.count}
-      columns={AUDIT_TABLE}
+      placeholder={words('admin.audit.searchPlaceholder')}
+      noun={(count: string) => words('admin.audit.count', { count })}
+      columns={AUDIT_TABLE(words)}
       tableRow={(entry) => (
         <AuditTableRow
           key={entry.id}
@@ -69,7 +69,7 @@ function AuditLog({ busy, ownerId }: { busy: BusyList<AuditEntry>; ownerId: stri
         />
       )}
       row={(entry) => <AuditRow key={entry.id} entry={entry} ownerId={ownerId} now={now} onPress={() => open(entry)} />}
-      empty={{ icon: ScrollTextIcon, title: ADMIN_COPY.noAudit, body: ADMIN_COPY.noAuditBody }}
+      empty={{ icon: ScrollTextIcon, title: words('admin.shell.noAudit'), body: words('admin.shell.noAuditBody') }}
       foot={(last) => words('common.list.backTo', { day: listTime(last.at, now, ownerZone(), false) })}
     />
   );

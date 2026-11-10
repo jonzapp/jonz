@@ -18,6 +18,9 @@ import {
   type HouseRow,
   type Overview,
 } from "./owner-houses";
+import { wordsFor } from "./words-for";
+
+const words = wordsFor("en", "housemates");
 
 const NOW = new Date("2026-10-30T16:40:00Z");
 const minus = (ms: number) => new Date(NOW.getTime() - ms).toISOString();
@@ -57,16 +60,16 @@ const row = (over: Partial<HouseRow> = {}): HouseRow => ({
 
 describe("a house in the list", () => {
   it("names its Pass as it stands now", () => {
-    expect(passLabel("yearly", "2027-09-03T00:00:00Z", NOW)).toBe("Pass");
-    expect(passLabel("monthly", "2026-10-01T00:00:00Z", NOW)).toBe("None");
-    expect(passLabel("trial", "2026-11-20T00:00:00Z", NOW)).toBe("Trial");
-    expect(passLabel("trial", "2026-10-20T00:00:00Z", NOW)).toBe("None");
-    expect(passLabel("founding", null, NOW)).toBe("Founding");
+    expect(passLabel("yearly", "2027-09-03T00:00:00Z", NOW, words)).toBe("Pass");
+    expect(passLabel("monthly", "2026-10-01T00:00:00Z", NOW, words)).toBe("None");
+    expect(passLabel("trial", "2026-11-20T00:00:00Z", NOW, words)).toBe("Trial");
+    expect(passLabel("trial", "2026-10-20T00:00:00Z", NOW, words)).toBe("None");
+    expect(passLabel("founding", null, NOW, words)).toBe("Founding");
   });
 
   it("has one line under its name on a phone", () => {
-    expect(houseMeta(row(), NOW)).toBe("5 people, Pass, active 2 min ago, 74% on time");
-    expect(houseMeta(row({ people: 1, lastActive: null, settled: 0, passPlan: "founding", passUntil: null }), NOW)).toBe(
+    expect(houseMeta(row(), NOW, words)).toBe("5 people, Pass, active 2 min ago, 74% on time");
+    expect(houseMeta(row({ people: 1, lastActive: null, settled: 0, passPlan: "founding", passUntil: null }), NOW, words)).toBe(
       "1 person, Founding, never",
     );
   });
@@ -123,14 +126,14 @@ describe("one house", () => {
 
   it("gives its settings a row each: who lives there, time zone, currency, join code and how many Johns", () => {
     const house = detail();
-    expect(houseFacts(house)).toEqual([
+    expect(houseFacts(house, words)).toEqual([
       { key: "kind", label: "Who lives here", value: "Housemates" },
       { key: "zone", label: "Time zone", value: house.timezone },
       { key: "currency", label: "Currency", value: house.currency },
       { key: "code", label: "Join code", value: house.joinCode },
       { key: "johns", label: "Johns", value: String(house.johns) },
     ]);
-    expect(houseFacts(detail({ kind: "family" }))[0].value).toBe("A family");
+    expect(houseFacts(detail({ kind: "family" }), words)[0].value).toBe("A family");
   });
 
   it("says what the Pass is, who pays and when it renews or ends", () => {
@@ -169,7 +172,7 @@ const overview = (over: Partial<Overview> = {}): Overview => ({
 
 describe("the Overview", () => {
   it("gives six figures, each with what it means", () => {
-    expect(ownerFigures(overview()).map((f) => [f.label, f.value, f.meta])).toEqual([
+    expect(ownerFigures(overview(), words).map((f) => [f.label, f.value, f.meta])).toEqual([
       ["Houses", "128", "12 new, up 9 on last week"],
       ["People", "412", "3.2 to a house"],
       ["Active houses", "86%", "110 of 128"],
@@ -177,7 +180,7 @@ describe("the Overview", () => {
       ["Johns on time", "81%", "212 late or missed"],
       ["Ask Jonz", "1,210", "every one answered"],
     ]);
-    const quiet = ownerFigures(overview({ span: "month", houses: 0, housesNew: 0, housesNewBefore: 2, inHouses: 0, active: 0, onTime: { onTime: 0, late: 0, missed: 0 }, ask: { turns: 3, failed: 1 } }));
+    const quiet = ownerFigures(overview({ span: "month", houses: 0, housesNew: 0, housesNewBefore: 2, inHouses: 0, active: 0, onTime: { onTime: 0, late: 0, missed: 0 }, ask: { turns: 3, failed: 1 } }), words);
     expect(quiet.map((f) => f.meta)[0]).toBe("0 new, down 2 on last month");
     expect(quiet.map((f) => f.value)).toEqual(["0", "412", "0%", "37", "None due", "3"]);
     expect(quiet[5].meta).toBe("1 didn’t answer");

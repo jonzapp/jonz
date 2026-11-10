@@ -1,4 +1,4 @@
-import { MESSAGE_COPY, OWNER_PERMISSION_NAMES, wordsFor } from '@app/core';
+import { MESSAGE_LIMITS, OWNER_PERMISSION_NAMES, wordsFor } from '@app/core';
 import { act, fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 import { useWindowDimensions } from 'react-native';
 
@@ -83,7 +83,7 @@ describe('A new message', () => {
       subject: 'Testing pushes',
       ways: { push: true, wall: false, email: false },
     });
-    expect(await screen.findByText(MESSAGE_COPY.testToast)).toBeVisible();
+    expect(await screen.findByText(words('admin.messages.testToast'))).toBeVisible();
   });
 
   it('finds a house, says how many it reaches, and sends to them', async () => {
@@ -97,36 +97,36 @@ describe('A new message', () => {
     await fireEvent.press(screen.getByTestId('message-send'));
     await waitFor(() => expect(sendMessage).toHaveBeenCalled());
     expect(jest.mocked(sendMessage).mock.calls[0][0]).toMatchObject({ audience: 'house', houseId: 'h1', ways: { push: true, wall: true, email: false } });
-    expect(await screen.findByText(MESSAGE_COPY.sentToast(5))).toBeVisible();
+    expect(await screen.findByText(words('admin.messages.sentToast', { n: 5 }))).toBeVisible();
   });
 
   it('says what is missing rather than sending', async () => {
     await renderPages(ROUTES, '/admin/messages/new');
     await untilRead(words);
     await fireEvent.press(screen.getByTestId('message-send'));
-    expect(await screen.findByText(MESSAGE_COPY.pickHouse)).toBeVisible();
-    expect(screen.getByText(MESSAGE_COPY.subjectProblem)).toBeVisible();
+    expect(await screen.findByText(words('admin.messages.pickHouse'))).toBeVisible();
+    expect(screen.getByText(words('admin.messages.subjectProblem', { max: MESSAGE_LIMITS.subject }))).toBeVisible();
     expect(sendMessage).not.toHaveBeenCalled();
   });
 
   it('keeps a message to one person off the Wall', async () => {
     await renderPages(ROUTES, '/admin/messages/new');
     await untilRead(words);
-    await fireEvent.press(screen.getByText(MESSAGE_COPY.audience.person));
+    await fireEvent.press(screen.getByText(words('admin.messages.audience.person')));
     const wall = screen.getByTestId('message-way-wall');
     expect(wall).not.toBeChecked();
     expect(wall).toBeDisabled();
-    expect(within(wall).getByText(MESSAGE_COPY.wallNotPerson)).toBeVisible();
+    expect(within(wall).getByText(words('admin.messages.wallNotPerson'))).toBeVisible();
   });
 
   it('asks again, naming the number, before sending to everyone', async () => {
     await renderPages(ROUTES, '/admin/messages/new');
     await untilRead(words);
-    await fireEvent.press(screen.getByText(MESSAGE_COPY.audience.everyone));
+    await fireEvent.press(screen.getByText(words('admin.messages.audience.everyone')));
     await write('Welcome to the beta', 'Thanks for trying Jonz.');
     await fireEvent.press(await screen.findByText('Send to 5 people'));
     expect(sendMessage).not.toHaveBeenCalled();
-    await fireEvent.press(await screen.findByText(MESSAGE_COPY.confirmSend(5)));
+    await fireEvent.press(await screen.findByText(words('admin.messages.confirmSend', { n: 5 })));
     await waitFor(() => expect(sendMessage).toHaveBeenCalled());
     expect(jest.mocked(sendMessage).mock.calls[0][0]).toMatchObject({ audience: 'everyone' });
   });

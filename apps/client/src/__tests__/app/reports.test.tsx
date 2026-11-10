@@ -1,4 +1,4 @@
-import { OWNER_PERMISSION_NAMES, SUPPORT_DRAFT_COPY, wordsFor } from '@app/core';
+import { OWNER_PERMISSION_NAMES, wordsFor } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 import { useWindowDimensions } from 'react-native';
 
@@ -398,11 +398,11 @@ describe('the support agent', () => {
     jest.mocked(supportDraft).mockResolvedValue({ ...DRAFT, action: 'delete', sameAs: null });
     await renderPages(ROUTES, '/admin/inbox/r1');
     const card = await screen.findByTestId('support-draft');
-    expect(card).toHaveTextContent(new RegExp(SUPPORT_DRAFT_COPY.deleteStep));
+    expect(card).toHaveTextContent(new RegExp(words('admin.support.deleteStep')));
     await fireEvent.press(within(card).getByTestId('support-draft-send'));
     expect(deleteByEmail).not.toHaveBeenCalled();
     await fireEvent.press(await screen.findByTestId('support-draft-delete-yes'));
-    await waitFor(() => expect(deleteByEmail).toHaveBeenCalledWith('ava@example.com', SUPPORT_DRAFT_COPY.deleteReason));
+    await waitFor(() => expect(deleteByEmail).toHaveBeenCalledWith('ava@example.com', words('admin.support.deleteReason')));
     expect(replyToReport).toHaveBeenCalledWith('r1', DRAFT.reply);
   });
 

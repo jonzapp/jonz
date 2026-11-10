@@ -1,11 +1,14 @@
 import "server-only";
 
-import { DELETE_HOUSE_COPY, type DeleteHouseRequest, type DeleteHouseResponse } from "@app/core";
+import { wordsFor, type DeleteHouseRequest, type DeleteHouseResponse } from "@app/core";
 
 import type { PassStripe } from "@/lib/pass/stripe";
 
 import type { Caller, Refusal } from "./disputes";
 import { messageOutbox, sendOutbox, type MessageOutbox } from "./messages";
+
+/** The owner's admin pages, and what they send, are in English for now. */
+const words = wordsFor("en", "housemates");
 
 /**
  * The owner deletes a whole house (docs/specs/owner-admin.md, "Houses";
@@ -31,8 +34,8 @@ export async function deleteHouse(
   const { data, error } = await caller.db.rpc("owner_delete_house", {
     p_house: houseId,
     p_reason: request.reason,
-    p_subject: request.tell ? DELETE_HOUSE_COPY.subject(name) : undefined,
-    p_body: request.tell ? DELETE_HOUSE_COPY.message(name) : undefined,
+    p_subject: request.tell ? words('admin.deleteHouse.subject', { name }) : undefined,
+    p_body: request.tell ? words('admin.deleteHouse.message', { name }) : undefined,
   });
   if (error || !data) return { refusal: error ?? { message: "not_found" } };
   const done = data as { name: string; people: number; subscription: string | null; message: string | null };
