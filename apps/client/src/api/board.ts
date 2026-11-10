@@ -103,7 +103,7 @@ export async function loadHouse(houseId: string, _now: Date): Promise<HouseSnaps
     rules: rulesOf(house),
     members: today.members.map((m) => ({
       userId: m.userId,
-      name: m.name ?? 'Housemate',
+      name: m.name ?? 'Someone',
       photo: m.photo,
       role: m.role as Housemate['role'],
       streak: m.streak,

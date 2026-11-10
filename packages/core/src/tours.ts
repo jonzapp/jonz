@@ -90,7 +90,7 @@ export const TOURS = {
       {
         spot: "today.needsYou",
         title: "Needs you",
-        body: "Housemates' ticks and votes wait here for you. A quick look keeps it fair.",
+        body: "Ticks to check wait here for you. A quick look keeps it fair.",
         when: "toCheck",
       },
       {
@@ -124,7 +124,7 @@ export const TOURS = {
       {
         spot: "week.everyone",
         title: "Everyone's Johns",
-        body: "Each housemate's Johns this week, yours first. Tap any John to see it in full.",
+        body: "Everyone's Johns this week, yours first. Tap any John to see it in full.",
       },
       {
         spot: "week.more",

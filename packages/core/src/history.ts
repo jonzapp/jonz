@@ -1,7 +1,8 @@
 import { tz } from "@date-fns/tz";
 import { format } from "date-fns";
 
-import type { Currency } from "./domain";
+import { ROLE_WORDS } from "./copy";
+import type { Currency, HouseKind } from "./domain";
 import { dateRange, dayLabel } from "./format";
 import { formatMoney } from "./money";
 import { resetWhat } from "./resets";
@@ -135,6 +136,7 @@ export function actionLine(
   who: string,
   subject: string,
   currency: Currency,
+  house: HouseKind,
 ): string {
   const john = String(data.name ?? "a John");
   // "You" starts a sentence; anywhere else it's "you", "your".
@@ -160,7 +162,7 @@ export function actionLine(
     case "away":
       return `${who} booked time away, ${dateRange(String(data.starts_on), String(data.ends_on))}`;
     case "role":
-      return data.to === "admin" ? `${who} made ${obj(subject)} an admin` : `${who} made ${obj(subject)} a housemate`;
+      return `${who} made ${obj(subject)} ${data.to === "admin" ? ROLE_WORDS[house].anAdmin : ROLE_WORDS[house].aMember}`;
     case "remove":
       return `${who} removed ${obj(subject)} from the house`;
     case "reset":

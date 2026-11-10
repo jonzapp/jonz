@@ -77,7 +77,7 @@ describe("a reset in History and on the Wall", () => {
   it("says who did what", () => {
     expect(resetWhat({ what: "person_week" }, "Sam")).toBe("reset Sam’s week");
     expect(resetWhat({ what: "result", name: "Bins", outcome: "missed" }, "You")).toBe("marked your Bins missed");
-    expect(actionLine("reset", { what: "skip" }, "Glyn", "Someone", "GBP")).toBe("Glyn skipped the week");
+    expect(actionLine("reset", { what: "skip" }, "Glyn", "Someone", "GBP", "housemates")).toBe("Glyn skipped the week");
   });
 });
 

@@ -88,7 +88,7 @@ export const STATUS_LABEL: Record<LiveStatus, string> = {
   late: "Done late",
   missed: "Missed",
   excused: "Skipped",
-  covered: "Covered by a housemate",
+  covered: "Covered by someone else",
 };
 
 /** How loud a status is: nothing, a quiet outline, the done green, or hazard. */

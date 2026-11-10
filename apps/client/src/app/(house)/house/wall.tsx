@@ -176,6 +176,7 @@ function WallFor({ houseId, userId }: { houseId: string; userId: string }) {
       me: userId,
       zone: view.snapshot.rules.timezone,
       currency: view.snapshot.rules.currency,
+      kind: view.snapshot.house.kind,
       now: view.now,
       nameOf: (id) => (id === userId ? 'You' : ((id && names.get(id)) ?? HISTORY_COPY.someone)),
       fullName: (id) => (id && names.get(id)) ?? HISTORY_COPY.someone,

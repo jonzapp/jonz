@@ -1,5 +1,5 @@
 import {
-  FAMILY_COPY,
+  copyFor,
   HOUSE_PAGE_COPY,
   KIDS_COPY,
   localDate,
@@ -136,7 +136,7 @@ export function TableSection({
           ) : null}
           <Row
             leading={<RowIcon icon={UserPlusIcon} />}
-            title={view.snapshot.house.kind === 'family' ? FAMILY_COPY.invite : HOUSE_PAGE_COPY.invite}
+            title={copyFor(view.snapshot.house.kind).HOUSE_PAGE.invite}
             onPress={() => setSheet('invite')}
             chevron
             testID="invite"

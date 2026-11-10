@@ -60,7 +60,7 @@ export async function bookAway(caller: Caller, draft: AwayDraft, now: Date): Pro
     for (const a of handed) {
       await notify([a.user_id], {
         title: AWAY_COPY.handedTitle(a.name),
-        body: AWAY_COPY.handedBody(me?.display_name ?? "A housemate", dueInLine(new Date(a.due_at), now, zone)),
+        body: AWAY_COPY.handedBody(me?.display_name ?? "Someone", dueInLine(new Date(a.due_at), now, zone)),
         url: "/today",
         kind: "deal",
         zone,

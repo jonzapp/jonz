@@ -113,7 +113,7 @@ export const REPORT_COPY = {
   screenshots: "Screenshots",
   addScreenshot: "Add a screenshot",
   removeScreenshot: (n: number) => `Take out screenshot ${n}`,
-  screenshotsNote: "A screenshot can show your housemates’ names. Only Jonz sees it.",
+  screenshotsNote: "A screenshot can show the names of people in your house. Only Jonz sees it.",
   details: "Send the details that help",
   detailsMeta: "So we can find it faster",
   detail: { pages: "Pages", app: "App", house: "House", error: "Last error" },

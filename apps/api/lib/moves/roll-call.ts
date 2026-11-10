@@ -43,7 +43,7 @@ export async function rollCall(
     ? await caller.db.from("assignments").select("user_id").eq("job_id", place.job_id).not("absent_at", "is", null)
     : { data: [] };
   const { data: me } = await caller.db.from("profiles").select("display_name").eq("id", caller.userId).single();
-  const who = firstName(me?.display_name ?? "A housemate");
+  const who = firstName(me?.display_name ?? "Someone");
   const zone = rulesOf(place.houses).timezone;
   const message = { url: "/today", kind: "checks" as const, zone, tag: `john:${assignmentId}` };
   for (const c of place.crew ?? []) {

@@ -34,7 +34,7 @@ export async function tellHouse(db: Db, house: HouseRow, memberIds: readonly str
   const profiles = ok(await db.from("profiles").select("id, display_name").in("id", [...memberIds]), "profiles");
   const nameOf = (id: string | null) => {
     const p = profiles.find((x) => x.id === id);
-    return p ? firstName(p.display_name) : "A housemate";
+    return p ? firstName(p.display_name) : "Someone";
   };
   let sent = 0;
 

@@ -401,7 +401,7 @@ describe('on a phone', () => {
     expect(mockOpen).toHaveBeenCalledTimes(4);
     expect(mockOpen).toHaveBeenLastCalledWith('a5', 'vote');
     // Cal, who raised it, has left the house since.
-    expect(within(row('Mop the floor')).getByText('Disputed by a former housemate, 5h left')).toBeOnTheScreen();
+    expect(within(row('Mop the floor')).getByText('Disputed by someone who left, 5h left')).toBeOnTheScreen();
   });
 
   it('marks overdue Johns with the hazard mark', async () => {
@@ -496,7 +496,7 @@ describe('on a phone', () => {
     await open();
     const mop = row('Mop the floor');
     // The flag on its tick box and the meta line say it's disputed; its points trail, as on Today.
-    expect(within(mop).getByText('Disputed by a former housemate, 5h left')).toBeOnTheScreen();
+    expect(within(mop).getByText('Disputed by someone who left, 5h left')).toBeOnTheScreen();
     expect(within(mop).queryByTestId('status-disputed')).toBeNull();
     expect(within(mop).getByText('2 pts')).toBeOnTheScreen();
     await fireEvent.press(within(mop).getByRole('button'));

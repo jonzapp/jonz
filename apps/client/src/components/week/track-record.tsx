@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Avatar } from '@/components/avatar';
 import { Group, Hairline, useRowInset } from '@/components/group';
 import { Meta, RowTitle } from '@/components/text';
+import { useCopy } from '@/hooks/use-copy';
 import { INSET, ROW_GAP, SPACE, useTheme, type Theme } from '@/theme';
 
 /** A square's side. */
@@ -142,6 +143,7 @@ function RecordLine({
 
 /** What the colours mean, the marks that show on the grid only. */
 export function RecordKey({ marks, changed = false }: { marks: readonly RecordMark[]; changed?: boolean }) {
+  const changedBy = useCopy().RECORD.changed;
   return (
     <View accessibilityRole="list" accessibilityLabel={RECORD_COPY.key} style={styles.key} testID="record-key">
       {marks.map((mark) => (
@@ -153,7 +155,7 @@ export function RecordKey({ marks, changed = false }: { marks: readonly RecordMa
       {changed ? (
         <View style={styles.keyItem}>
           <Square mark="none" changed />
-          <Meta>{RECORD_COPY.changed}</Meta>
+          <Meta>{changedBy}</Meta>
         </View>
       ) : null}
     </View>

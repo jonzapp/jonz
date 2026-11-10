@@ -38,7 +38,7 @@ export async function raiseFlag(
     const zone = rulesOf(flag.houses).timezone;
     await notify([flag.user_id], {
       title: ON_CALL_COPY.pushTitle(flag.name),
-      body: ON_CALL_COPY.pushBody(me?.display_name ?? "A housemate", dueInLine(new Date(flag.due_at), now, zone)),
+      body: ON_CALL_COPY.pushBody(me?.display_name ?? "Someone", dueInLine(new Date(flag.due_at), now, zone)),
       url: "/today",
       kind: "flags",
       zone,

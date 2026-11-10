@@ -89,7 +89,7 @@ export const SIGN_IN_COPY = {
   microsoftBusy: "Opening Microsoft…",
   eitherAccount: "Your house’s Johns are kept with the account you sign in with.",
   sameAccount: "Already in a house? Use the account you joined with.",
-  terms: "By continuing you agree to the Terms and the Privacy Policy, and to the house rules your housemates set, and say you’re 13 or older.",
+  terms: "By continuing you agree to the Terms and the Privacy Policy, and to the rules of the house you join, and say you’re 13 or older.",
   privacy: "Privacy",
   termsLink: "Terms",
   failed: (provider: SignInProvider) => `${provider} didn’t finish signing you in. Try again.`,
@@ -137,39 +137,14 @@ export const FAMILY_COPY = {
   newIntro: "You’ll be a parent. Next you add the Johns and your kids.",
   submit: "Start the family",
   /** A join link to a family. */
-  /** House's Invite row, in a family. */
-  invite: "Invite your family",
   livesHere: (people: number) =>
     `${people} ${people === 1 ? "person is" : "people are"} in this family. Join and you’re dealt Johns from next week.`,
 } as const;
 
 /** The words for the two roles, by kind of house: what an admin and everyone else are called. */
 export const ROLE_WORDS = {
-  housemates: { admin: "admin", admins: "admins", member: "housemate", Admin: "Admin", Admins: "Admins", Member: "Housemate" },
-  family: { admin: "parent", admins: "parents", member: "kid", Admin: "Parent", Admins: "Parents", Member: "Kid" },
-} as const;
-
-/** House › Rules' list of parents, in a family (ADMINS_COPY for housemates). */
-export const PARENTS_COPY = {
-  title: "Parents",
-  meta: (admins: number, everyone: number) => `${admins} of ${everyone}`,
-  note: "Parents change the list, the rules and who’s in, and fix mistakes. What they change is posted on the Wall.",
-  you: (name: string) => `${name} (you)`,
-  add: "Add a parent",
-  addTitle: "Add a parent",
-  addBody: "They can change the list and the rules, and fix anyone’s mistakes.",
-  everyoneIs: "Everyone here is a parent already.",
-  make: (name: string) => `Make ${name} a parent`,
-  remove: "Remove",
-  removeLabel: (name: string) => `Remove ${name} as a parent`,
-  onlyAdmin: "The only parent can’t step down. Leaving hands the family over.",
-  /** On a person's page. */
-  makeParent: "Make a parent",
-  makeKid: "Make a kid",
-  makeKidMeta: "Stops being a parent",
-  /** Leaving, as the only parent. */
-  lastParent: "You’re the only parent. Pick who looks after the family when you go.",
-  handOver: (name: string) => `Make ${name} a parent and leave`,
+  housemates: { admin: "admin", admins: "admins", member: "housemate", Admin: "Admin", Admins: "Admins", Member: "Housemate", anAdmin: "an admin", aMember: "a housemate" },
+  family: { admin: "parent", admins: "parents", member: "kid", Admin: "Parent", Admins: "Parents", Member: "Kid", anAdmin: "a parent", aMember: "a kid" },
 } as const;
 
 /**
@@ -351,7 +326,7 @@ export const POCKET_COPY = {
 export const JOIN_COPY = {
   badLink: "That link doesn’t work",
   /** A mistyped or cut-off code, or a house everyone has left (it closes behind the last one out). */
-  badLinkBody: "It may be mistyped, or everyone has left that house. Ask a housemate for the link on their House screen, or start your own.",
+  badLinkBody: "It may be mistyped, or everyone has left that house. Ask whoever sent it for the link on their House screen, or start your own.",
   alreadyIn: (house: string) => `You’re already in ${house}`,
   goToJohns: "Go to your Johns",
   otherHouse: "You’re in another house",
@@ -510,7 +485,7 @@ export const FOCUS_SHELL_COPY = {
   /** A housemate's page for someone who isn't in the house any more. */
   gone: "They’re not in the house any more.",
   /** Someone in the house's history who has since left. */
-  formerHousemate: "A former housemate",
+  formerHousemate: "Someone who left",
 } as const;
 
 /** The Table: effort points for the week and the month, fair shares, streaks and perks. */
@@ -726,7 +701,7 @@ export const DEAL_COPY = {
   again: "Re-deal this week",
   dealing: "Dealing…",
   firstBody: "When the list is ready and the house has joined, deal the first week.",
-  againBody: "Re-deal this week to include new Johns or housemates. Only works while nothing this week has been ticked.",
+  againBody: "Re-deal this week to include new Johns or new people. Only works while nothing this week has been ticked.",
   openHouse: "Open House",
 } as const;
 
@@ -822,7 +797,7 @@ export const NOTIFY_COPY = {
   kindHints: {
     reminders: "The day before and a few hours before. Tick from the notification.",
     checks: "A tick of yours disputed, or a vote for you to answer.",
-    flags: "When a housemate flags an on-call John you have.",
+    flags: "When someone flags an on-call John you have.",
     deal: "Your Johns, when the week is dealt.",
   },
   quiet: "Quiet hours",
@@ -896,7 +871,7 @@ export const AWAY_COPY = {
         ? `${n} of your Johns ${n === 1 ? "falls" : "fall"} due while you’re away, so ${n === 1 ? "it’s" : "they’re"} now due before you go.`
         : "",
       handed > 0
-        ? `${handed} ${handed === 1 ? "was" : "were"} due too soon to do first, so ${handed === 1 ? "it’s gone" : "they’ve gone"} to a housemate, who’s been told. Cancel and ${handed === 1 ? "it comes" : "they come"} back to you.`
+        ? `${handed} ${handed === 1 ? "was" : "were"} due too soon to do first, so ${handed === 1 ? "it’s gone" : "they’ve gone"} to someone else, who’s been told. Cancel and ${handed === 1 ? "it comes" : "they come"} back to you.`
         : "",
       skipped > 0 ? `${skipped} ${skipped === 1 ? "was" : "were"} skipped, with nobody home to take ${skipped === 1 ? "it" : "them"}.` : "",
     ]
@@ -987,7 +962,7 @@ export const NEXT_UP_COPY = {
   waiting: (admin: string) => `${admin} will deal it soon.`,
   anAdmin: "An admin",
   /** Someone who has left, named mid-sentence. */
-  someoneGone: "a former housemate",
+  someoneGone: "someone who left",
   /** A John row's tick box, spoken (on Today and Week alike), when it isn't a tick. */
   stateLabel: {
     open: "Not done",
@@ -997,7 +972,7 @@ export const NEXT_UP_COPY = {
     disputed: "Disputed",
     missed: "Missed",
     excused: "Skipped",
-    covered: "Covered by a housemate",
+    covered: "Covered by someone else",
   },
   needsYou: "Needs you",
   /** Today's section, under your own Johns and On call: housemates' overdue Johns you could cover. */
@@ -1236,8 +1211,8 @@ export const WHY_COPY = {
   /** What slipping costs, while it's open. */
   missedBy: (when: string, holder: string) =>
     `If it isn’t done by ${when}, it’s missed. A miss counts for nobody, so the work comes back to ${holder} in the next deals.`,
-  coverFrom: (when: string) => `From ${when} a housemate can cover it, and then it counts as their work.`,
-  coverNow: "A housemate can cover it now, and then it counts as their work.",
+  coverFrom: (when: string) => `From ${when} someone else can cover it, and then it counts as their work.`,
+  coverNow: "Someone else can cover it now, and then it counts as their work.",
   /** Once done or settled: whose work it counted as. */
   counts: (whose: string) => `It counts as ${whose} work.`,
   coveredCounts: (who: string, whose: string) => `${who} covered it, so it counts as ${whose} work.`,
@@ -1248,7 +1223,7 @@ export const WHY_COPY = {
   you: "you",
   your: "your",
   yours: "yours",
-  someoneGone: "a former housemate",
+  someoneGone: "someone who left",
 } as const;
 
 /** Week: the summary bar, the person groups, the fair-share footer and the menu. */
@@ -1287,7 +1262,7 @@ export const WEEK_SUMMARY_COPY = {
   // A row's meta line, after the lid dot and the kind.
   beforeTheyGo: (name: string) => `before ${name} goes`,
   byYou: "you",
-  someoneGone: "a former housemate",
+  someoneGone: "someone who left",
   /** On a laptop, a John's row to a screen reader: its name, meta, whose, points and status. */
   spokenRow: (parts: readonly string[]) => parts.join(", "),
   /** The footer: the deal's fairness, from the fair shares. Pressed, it explains them. */
@@ -1314,9 +1289,6 @@ export const WEEK_SUMMARY_COPY = {
 
 /** House: the month card and settling up, and the Table with its invite and rules sheets. */
 export const HOUSE_PAGE_COPY = {
-  /** Under the house's name: "4 housemates, £20 a month each". */
-  sub: (housemates: number, stake: string) =>
-    `${housemates} ${housemates === 1 ? "housemate" : "housemates"}, ${stake} a month each`,
   /** The month card's label: "October so far". */
   soFar: (month: string) => `${month} so far`,
   /** The Lead, before the figure: "You’re up £4.01". */
@@ -1355,7 +1327,7 @@ export const HOUSE_PAGE_COPY = {
   /** A settle-up with someone who has left: the database only lets a housemate's payment be marked. */
   gone: "They’ve left, so it can’t be marked here",
   /** Someone who has left, mid-sentence: "You owe a former housemate £2", "Sam paid a former housemate". */
-  formerHousemate: "a former housemate",
+  formerHousemate: "someone who left",
   markReceived: (amount: string) => `Mark ${amount} received`,
   /** The same button, to a screen reader, which hears it away from its row: "Mark Tom’s £4.01 received". */
   markReceivedFrom: (name: string, amount: string) => `Mark ${name}’s ${amount} received`,
@@ -1419,7 +1391,7 @@ export const HOUSE_PAGE_COPY = {
   rulesImmunityBody: (every: number, cap: number) =>
     `Every ${every} clean weeks in a row earns a skip (you can hold ${cap}). Use one on any John and there’s no forfeit.`,
   rulesSwap: "Swap",
-  rulesSwapBody: "Top the week and you earn a swap: swap one of your open Johns for a housemate’s that week.",
+  rulesSwapBody: "Top the week and you earn a swap: swap one of your open Johns for someone else’s that week.",
   rulesShares: "Fair shares",
   rulesSharesBody: (makeup: string) =>
     `Johns are dealt so that everyone does their share, counted from the day they joined. What counts is what you did: a missed John comes back to you, and one you cover for someone counts as yours. Whoever is behind is dealt a little more, never more than half as much again. Time away is made up ${makeup}.`,
@@ -1471,7 +1443,7 @@ export const PERSON_COPY = {
   immunity: (n: number) => `${n} ${n === 1 ? "skip" : "skips"}`,
   immunityMeta: "Skips a John with no forfeit",
   swap: "Swap ready",
-  swapMeta: "Swaps an open John for a housemate’s",
+  swapMeta: "Swaps an open John for someone else’s",
   noTokens: "No skips",
   noTokensMeta: "Clean weeks and topping a week earn them",
   forfeited: "Forfeited",
@@ -1663,8 +1635,6 @@ export const WALL_FEED_COPY = {
     `${n} ${n === 1 ? "John" : "Johns"} due before ${you ? "you go" : "they go"}`,
   newHousemate: "New housemate",
   /** In a family: "Maya joined the family", "New in the family". */
-  joinedFamily: (who: string) => `${who} joined the family`,
-  newInFamily: "New in the family",
   // An on-call John someone flagged: who flagged it, for whom, and how it went.
   flagged: (by: string, john: string, whom: string) => `${by} flagged ${john} for ${whom}`,
   flaggedOwn: (who: string, john: string) => `${who} flagged ${john}`,
@@ -1879,7 +1849,7 @@ export const FRONT_DOOR_COPY = {
   zoneNote: (zone: string) => `The time zone is this phone’s, ${zone}. Change it later from House.`,
   submit: "Start the house",
   // Welcome: signed in with no house, the fallback.
-  welcome: "Paste the invite a housemate sent you, or start a house of your own.",
+  welcome: "Paste the invite someone sent you, or start a house of your own.",
   paste: "Paste your invite link or code",
   pasteHint: "The whole link, or just the eight letters and numbers at its end.",
   badInvite: "That isn’t an invite link or code. Check it against the one you were sent.",
@@ -2068,7 +2038,7 @@ export const PASS_COPY = {
   checkoutClosed: "Buying the House Pass isn’t open yet.",
   alreadyFounding: "This house has the House Pass for life already.",
   alreadyPaid: "This house has the House Pass already. Whoever bought it can change the plan from Manage plan.",
-  notBuyer: "Only the housemate who bought the House Pass can change it.",
+  notBuyer: "Only the person who bought the Pass can change it.",
   nothingToManage: "There’s no plan to manage yet.",
   free: "Free for every house, always: the deal, the housemate check, reminders, covering and time away. No ads.",
   /** Under the plans: what the Pass pays for, said plainly. */
@@ -2180,7 +2150,7 @@ export const RECORD_COPY = {
   totalYou: "You, this span",
   /** The breakdown's last word: what the deal does about it, over the weeks it remembers. */
   next: "What happens next",
-  someoneGone: "A former housemate",
+  someoneGone: "Someone who left",
 } as const;
 
 /** Budgets' names: Light, Usual and Busy. */
@@ -2277,7 +2247,7 @@ export const STEADY_COPY = {
   after: (who: string) => `after ${who}`,
 
   /** A John you'd rather not, on Today. */
-  someone: "A housemate",
+  someone: "Someone",
   ratherDoIt: (name: string) => `${name} would rather do it`,
   swapFor: (name: string, john: string, points: string) => `Swap it for ${name}’s ${john}, ${points}`,
   ask: (name: string) => `Ask ${name}`,
@@ -2345,4 +2315,22 @@ export const MOVING_COPY = {
   // The one reminder, two weeks after leaving.
   reminderTitle: "Settled into your new place?",
   reminderBody: `Bring ${APP_NAME} with you.`,
+} as const;
+
+/** What a pasted link's card says (share.ts draws it). */
+export const SHARE_COPY = {
+  /** The brand card's description: every page but a join link. */
+  description: TAGLINE,
+  imageAlt: `${APP_NAME}: fair shares of the housework.`,
+  joinTitle: (house: string) => `Join ${house} on ${APP_NAME}`,
+  joinGeneric: `You’re invited to a house on ${APP_NAME}`,
+  housemates: (n: number) => `${n} ${n === 1 ? "housemate" : "housemates"}`,
+  /** A join link's amber plate: "Join 4 housemates on Jonz." */
+  joinPlate: (n: number) => `Join ${n} ${n === 1 ? "housemate" : "housemates"} on ${APP_NAME}.`,
+  joinLine: "Sign in to join and get your Johns.",
+  /** A code that opens nothing: reset, or its house is empty. */
+  expiredTitle: "This invite has expired",
+  expiredLine: "Ask the house for a new link.",
+  offerEnded: "This offer has ended",
+  offerEndedLine: "Ask for a new link.",
 } as const;

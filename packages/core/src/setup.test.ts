@@ -216,22 +216,22 @@ describe("adminsLine", () => {
   const megan = { userId: "megan", name: "Megan Doyle", role: "admin" };
 
   it("names the one admin, by first name", () => {
-    expect(adminsLine([sam, priya], "priya")).toBe("Sam (admin) can change these.");
+    expect(adminsLine([sam, priya], "priya", "housemates")).toBe("Sam (admin) can change these.");
   });
 
   it("tells the one admin it's them", () => {
-    expect(adminsLine([sam, priya], "sam")).toBe("You can change these.");
+    expect(adminsLine([sam, priya], "sam", "housemates")).toBe("You can change these.");
   });
 
   it("names several admins, you first", () => {
-    expect(adminsLine([sam, priya, tom], "priya")).toBe("Sam and Tom (admins) can change these.");
-    expect(adminsLine([sam, priya, tom], "tom")).toBe("You and Sam (admins) can change these.");
-    expect(adminsLine([sam, tom, megan], "priya")).toBe("Sam, Tom and Megan (admins) can change these.");
+    expect(adminsLine([sam, priya, tom], "priya", "housemates")).toBe("Sam and Tom (admins) can change these.");
+    expect(adminsLine([sam, priya, tom], "tom", "housemates")).toBe("You and Sam (admins) can change these.");
+    expect(adminsLine([sam, tom, megan], "priya", "housemates")).toBe("Sam, Tom and Megan (admins) can change these.");
   });
 
   it("still says who can when nobody listed is an admin", () => {
-    expect(adminsLine([priya], "priya")).toBe("Only admins can change these.");
-    expect(adminsLine([], "priya")).toBe("Only admins can change these.");
+    expect(adminsLine([priya], "priya", "housemates")).toBe("Only admins can change these.");
+    expect(adminsLine([], "priya", "housemates")).toBe("Only admins can change these.");
   });
 });
 
@@ -241,14 +241,14 @@ describe("johnsComing", () => {
   const tom = { userId: "tom", name: "Tom Reilly", role: "admin" };
 
   it("names whoever will add the Johns", () => {
-    expect(johnsComing([sam, priya], "priya")).toBe("Sam will add the Johns.");
-    expect(johnsComing([sam, priya, tom], "priya")).toBe("Sam and Tom will add the Johns.");
+    expect(johnsComing([sam, priya], "priya", "housemates")).toBe("Sam will add the Johns.");
+    expect(johnsComing([sam, priya, tom], "priya", "housemates")).toBe("Sam and Tom will add the Johns.");
   });
 
   it("leaves you out, and says an admin will when nobody else is one", () => {
-    expect(johnsComing([sam, priya, tom], "sam")).toBe("Tom will add the Johns.");
-    expect(johnsComing([sam, priya], "sam")).toBe("An admin will add the Johns.");
-    expect(johnsComing([], "priya")).toBe("An admin will add the Johns.");
+    expect(johnsComing([sam, priya, tom], "sam", "housemates")).toBe("Tom will add the Johns.");
+    expect(johnsComing([sam, priya], "sam", "housemates")).toBe("An admin will add the Johns.");
+    expect(johnsComing([], "priya", "housemates")).toBe("An admin will add the Johns.");
   });
 });
 
@@ -288,9 +288,9 @@ describe("membersLine", () => {
     expect(membersLine([], people, "priya")).toBe(GROUPS_COPY.nobody);
   });
 
-  it("names someone who has left as a former housemate", () => {
-    expect(membersLine(["sam", "gone"], people, "priya")).toBe("Sam and a former housemate");
-    expect(membersLine(["gone"], people, "priya")).toBe("A former housemate");
+  it("names someone who has left as someone who left", () => {
+    expect(membersLine(["sam", "gone"], people, "priya")).toBe("Sam and someone who left");
+    expect(membersLine(["gone"], people, "priya")).toBe("Someone who left");
   });
 });
 

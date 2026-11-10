@@ -298,7 +298,7 @@ describe("GroupDraft", () => {
 
   it("says what’s missing in words", () => {
     expect(GroupDraft.safeParse({ name: "", members: [ava] }).error?.issues[0].message).toBe("Name the group.");
-    expect(GroupDraft.safeParse({ name: "Upstairs", members: [] }).error?.issues[0].message).toBe("Pick at least one housemate.");
+    expect(GroupDraft.safeParse({ name: "Upstairs", members: [] }).error?.issues[0].message).toBe("Pick at least one person.");
     expect(GroupDraft.safeParse({ name: "x".repeat(41), members: [ava] }).success).toBe(false);
     expect(GroupDraft.safeParse({ name: "Upstairs", members: ["ava"] }).success).toBe(false);
   });

@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import type { AwayPeriod } from "./away";
 import { weeklyEffort, type JohnDef } from "./board";
 import { FOCUS_SHELL_COPY, HOUSE_LOWER_COPY, KIND_SWITCH_COPY, MOVING_COPY, STEADY_COPY, WALL_FEED_COPY } from "./copy";
+import { copyFor } from "./copy-book";
 import type { Currency, HouseKind, HouseRules } from "./domain";
 import { dateRange, dayLabel, firstName, STATUS_MARK, type StatusIcon } from "./format";
 import { undoneWhat } from "./history";
@@ -276,6 +277,7 @@ const HOUSE_NEWS = new Set(["upheld", "rejected", "month_closed", "jonz_message"
  */
 export function wallFeedRow(event: WallEvent, scene: WallScene): WallFeedRow {
   const { me, members } = scene;
+  const feed = copyFor(scene.family ? "family" : "housemates").WALL_FEED;
   const who = named(event.userId, me, members);
   const john = typeof event.data.name === "string" ? event.data.name : null;
   const johnName = john ?? WALL_FEED_COPY.aJohn;
@@ -399,19 +401,19 @@ export function wallFeedRow(event: WallEvent, scene: WallScene): WallFeedRow {
       title = WALL_FEED_COPY.undid(by.subject, who.possessive, undoneWhat(text("what"), john));
       bold = [by.subject, who.subject, johnName];
       lead = text("by") || null;
-      detail = WALL_FEED_COPY.adminFix;
+      detail = feed.adminFix;
       break;
     }
     case "reset": {
       const subject = named(text("subject") || null, me, members);
       title = `${who.subject} ${resetWhat(event.data, subject.subject)}`;
       bold = [who.subject, subject.subject, johnName];
-      detail = WALL_FEED_COPY.adminFix;
+      detail = feed.adminFix;
       break;
     }
     case "joined":
-      title = scene.family ? WALL_FEED_COPY.joinedFamily(who.subject) : WALL_FEED_COPY.joined(who.subject);
-      detail = scene.family ? WALL_FEED_COPY.newInFamily : WALL_FEED_COPY.newHousemate;
+      title = feed.joined(who.subject);
+      detail = feed.newHousemate;
       break;
     case "moving_out": {
       const on = text("on");

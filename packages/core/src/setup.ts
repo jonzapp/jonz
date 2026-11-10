@@ -1,6 +1,7 @@
 // House setup's pages: the rules as label and value, the Johns by category, a John's schedule line and the admins' names.
 import { isoDayOf, shiftMonth, type AwayPeriod } from "./away";
 import type { BoardItem, JohnDef } from "./board";
+import { copyFor } from "./copy-book";
 import { CREW_COPY, FOCUS_SHELL_COPY, GROUPS_COPY, JOHN_LIST_COPY, PARENT_OK_COPY, POCKET_COPY, RULES_COPY, SETUP_COPY, STEADY_COPY } from "./copy";
 import { MAKEUP_LABEL } from "./deal";
 import { CATEGORIES, CATEGORY_LABEL, DOW_LABEL, type Category, type Currency, type DealMode, type HouseKind, type HouseRules, type IsoDow, type SettleIn } from "./domain";
@@ -154,17 +155,18 @@ function adminNames(members: readonly Member[], me: string): string[] {
 }
 
 /** Who can change the rules, under the read-out: "Sam (admin) can change these.", "You and Priya (admins) can change these." */
-export function adminsLine(members: readonly Member[], me: string): string {
+export function adminsLine(members: readonly Member[], me: string, kind: HouseKind): string {
   const names = adminNames(members, me);
-  if (names.length === 0) return SETUP_COPY.adminsNobody;
+  const words = copyFor(kind).SETUP;
+  if (names.length === 0) return words.adminsNobody;
   if (names.length === 1 && names[0] === SETUP_COPY.you) return SETUP_COPY.youCanChange;
-  return SETUP_COPY.canChange(listed(names), names.length);
+  return words.canChange(listed(names), names.length);
 }
 
 /** An empty John list, to a housemate who can't add to it: who will. "Sam will add the Johns." */
-export function johnsComing(members: readonly Member[], me: string): string {
+export function johnsComing(members: readonly Member[], me: string, kind: HouseKind): string {
   const names = adminNames(members, me).filter((n) => n !== SETUP_COPY.you);
-  return names.length === 0 ? SETUP_COPY.johnsComingAdmin : SETUP_COPY.johnsComing(listed(names));
+  return names.length === 0 ? copyFor(kind).SETUP.johnsComingAdmin : SETUP_COPY.johnsComing(listed(names));
 }
 
 /**

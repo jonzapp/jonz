@@ -1,4 +1,4 @@
-import { ADMINS_COPY, HISTORY_COPY, PAGE_TITLE, PARENTS_COPY, PARENT_OK_COPY, SETUP_COPY } from '@app/core';
+import { ADMINS_COPY, copyFor, HISTORY_COPY, PAGE_TITLE, PARENT_OK_COPY, SETUP_COPY } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 
 import { loadHouse } from '@/api/board';
@@ -8,6 +8,8 @@ import RulesScreen from '@/app/(house)/house/rules';
 import { ToastProvider } from '@/components/toast';
 import { snapshot } from '@/testing/house';
 import { renderPages } from '@/testing/pages';
+
+const PARENTS_COPY = copyFor('family').ADMINS;
 
 jest.mock('@/api/board', () => ({ loadHouse: jest.fn() }));
 jest.mock('@/api/house', () => ({ catchUp: jest.fn() }));

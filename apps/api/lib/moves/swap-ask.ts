@@ -38,7 +38,7 @@ export async function askSwap(caller: Caller, { mine, theirs }: SwapAskRequest):
     kind: "checks",
     zone: rulesOf(given.houses).timezone,
     tag: `swap:${offerId}`,
-    title: STEADY_COPY.pushTitle(firstName(me?.display_name ?? "A housemate")),
+    title: STEADY_COPY.pushTitle(firstName(me?.display_name ?? "Someone")),
     body: STEADY_COPY.pushBody(given.name, taken.name),
   });
   return { offerId };

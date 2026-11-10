@@ -211,7 +211,7 @@ describe("nextUpState", () => {
     expect(state(unstarted, [], { userId: "priya" })).toEqual({ kind: "waiting", admin: "Sam" });
     expect(state(unstarted, [], { userId: "priya", members: PEOPLE.slice(1) })).toEqual({
       kind: "waiting",
-      admin: NEXT_UP_COPY.anAdmin,
+      admin: null,
     });
   });
 
@@ -246,8 +246,8 @@ describe("whoDeals", () => {
   it("is the first admin to have joined, by first name, or an admin when none can be named", () => {
     expect(whoDeals(PEOPLE)).toBe("Sam");
     expect(whoDeals([...PEOPLE.slice(1), { userId: "tom", name: "Tom Reilly", role: "admin" }, PEOPLE[0]])).toBe("Tom");
-    expect(whoDeals(PEOPLE.slice(1))).toBe("An admin");
-    expect(whoDeals([])).toBe("An admin");
+    expect(whoDeals(PEOPLE.slice(1))).toBeNull();
+    expect(whoDeals([])).toBeNull();
   });
 });
 
@@ -445,10 +445,10 @@ describe("the vote's words", () => {
     expect(voteCloses(at(-1), now)).toBe("closing now");
   });
 
-  it("says who disputed it, by first name, or a former housemate", () => {
+  it("says who disputed it, by first name, or someone who left", () => {
     expect(voteMeta(dispute(), PEOPLE, now)).toBe("Megan says it’s not done, closes in 17h");
-    expect(voteMeta(dispute({ raisedBy: null }), PEOPLE, now)).toBe("A former housemate says it’s not done, closes in 17h");
-    expect(voteMeta(dispute({ raisedBy: "gone" }), PEOPLE, now)).toBe("A former housemate says it’s not done, closes in 17h");
+    expect(voteMeta(dispute({ raisedBy: null }), PEOPLE, now)).toBe("Someone who left says it’s not done, closes in 17h");
+    expect(voteMeta(dispute({ raisedBy: "gone" }), PEOPLE, now)).toBe("Someone who left says it’s not done, closes in 17h");
   });
 
   it("titles a vote with whose John it is, or just the John once they've left", () => {
@@ -515,7 +515,7 @@ describe("the sheet's header", () => {
     });
     expect(sheetWhen(item("a", { status: "checking", movedFrom: at(48) }), PEOPLE, ME, RULES, now)).toEqual({ sign: null, text: "Due today 21:00" });
     expect(sheetWhen(item("a", { status: "disputed", dispute: dispute({ raisedBy: null }) }), PEOPLE, ME, RULES, now).text).toBe(
-      "Disputed by a former housemate",
+      "Disputed by someone who left",
     );
   });
 

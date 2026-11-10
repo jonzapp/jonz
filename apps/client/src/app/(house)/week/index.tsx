@@ -21,6 +21,7 @@ import {
   weekTogether,
   weekUnticked,
   whoDeals,
+  copyFor,
   type JohnDef,
   type WeekPart,
 } from '@app/core';
@@ -170,7 +171,7 @@ function Board({
         houseId={house.id}
         notStarted={board.notStarted}
         isAdmin={memberCan(me, 'weeks:write')}
-        adminName={whoDeals(members)}
+        adminName={whoDeals(members) ?? copyFor(house.kind).NEXT_UP.anAdmin}
         johns={johns}
         memberCount={members.length}
       />

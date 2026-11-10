@@ -5,6 +5,7 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import { deletionStatus } from '@/api/account';
 import { getMyHouse, type MyHouse } from '@/api/house';
 import { followMicrosoftSignIns } from '@/api/microsoft-photo';
+import { HouseKindContext } from '@/hooks/use-copy';
 import { useSession } from '@/hooks/use-session';
 
 /** Who is signed in and which house they're in: what every screen's guard needs. */
@@ -80,7 +81,11 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
     failed: current !== null && 'failed' in current,
     refresh,
   };
-  return <MembershipContext.Provider value={value}>{children}</MembershipContext.Provider>;
+  return (
+    <MembershipContext.Provider value={value}>
+      <HouseKindContext.Provider value={value.house?.kind ?? 'housemates'}>{children}</HouseKindContext.Provider>
+    </MembershipContext.Provider>
+  );
 }
 
 export function useMembership(): Membership {

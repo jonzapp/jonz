@@ -24,6 +24,7 @@ import { PlanIt } from '@/components/plan-it';
 import { StreetPlate } from '@/components/street-plate';
 import { Lead, Meta, SectionLabel } from '@/components/text';
 import { TextButton } from '@/components/text-button';
+import { useCopy } from '@/hooks/use-copy';
 import { useTick } from '@/hooks/use-tick';
 import { CONTENT_MAX, GUTTER, INSET, NARROW, SPACE, TAP, useTheme } from '@/theme';
 
@@ -62,6 +63,7 @@ export function NextUp({
   /** Your best time (House, You, Preferences), which Plan it offers first. */
   bestTime?: BestTime | null;
 }) {
+  const copy = useCopy();
   switch (state.kind) {
     case 'john':
       // Keyed by the John, so a tick under way never carries over to the next one.
@@ -94,7 +96,7 @@ export function NextUp({
         </NextUpCard>
       );
     case 'waiting':
-      return <NextUpCard lead={NEXT_UP_COPY.waiting(state.admin)} />;
+      return <NextUpCard lead={NEXT_UP_COPY.waiting(state.admin ?? copy.NEXT_UP.anAdmin)} />;
     case 'undealt':
       return <NextUpCard lead={NOT_DEALT_COPY.nothingThisWeek} body={NOT_DEALT_COPY.nothingThisWeekBody} />;
   }

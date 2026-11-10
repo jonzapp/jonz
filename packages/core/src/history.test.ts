@@ -60,7 +60,7 @@ describe("historyFor", () => {
 
 describe("actionLine", () => {
   const say = (kind: Parameters<typeof actionLine>[0], data: Record<string, unknown>, who = "Ben", subject = "Ben") =>
-    actionLine(kind, data, who, subject, "GBP");
+    actionLine(kind, data, who, subject, "GBP", "housemates");
 
   it("says each move", () => {
     expect(say("tick", { name: "Bins" })).toBe("Ben ticked Bins");

@@ -11,3 +11,4 @@ export function useHouseKind(): HouseKind {
 export function useRoleCopy(): ReturnType<typeof roleCopy> {
   return roleCopy(useHouseKind());
 }
+

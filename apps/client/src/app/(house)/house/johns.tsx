@@ -75,7 +75,7 @@ function JohnListPage({ houseId, userId, view, list }: { houseId: string; userId
         groups={list.groups}
         editable={isAdmin}
         family={view.snapshot.house.kind === 'family'}
-        whoAdds={johnsComing(view.snapshot.members, userId)}
+        whoAdds={johnsComing(view.snapshot.members, userId, view.snapshot.house.kind)}
         // Until the first deal, the deal at the foot is the page's one amber button.
         quietAdd={!view.snapshot.house.everDealt}
         // A group's row is about two lines, with Add a group and the note under them.

@@ -3,6 +3,7 @@ import "server-only";
 import {
   askRef,
   actionLine,
+  houseKind,
   addDaysTo,
   buildStake,
   buildWeekBoard,
@@ -147,7 +148,7 @@ export function houseReads(caller: Caller, houseId: string, ctx: ReadsContext): 
       const { data: rows } = await caller.db.rpc("house_history", { p_house: houseId, p_limit: 40 });
       const lines = historyItems(rows ?? []).map((item) => {
         const who = item.actor === caller.userId ? "You" : nameOf(item.actor);
-        return `${when(item.at.toISOString())}: ${actionLine(item.kind, item.data, who, nameOf(item.subject), ctx.rules.currency)}${item.undoneAt ? " (undone)" : ""}, ref ${askRef(item.id)}`;
+        return `${when(item.at.toISOString())}: ${actionLine(item.kind, item.data, who, nameOf(item.subject), ctx.rules.currency, houseKind(ctx.house.kind))}${item.undoneAt ? " (undone)" : ""}, ref ${askRef(item.id)}`;
       });
       return lines.join("\n") || "Nothing in History yet.";
     },

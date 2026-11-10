@@ -200,7 +200,7 @@ export function describeEvent(e: WallEvent, nameOf: (userId: string | null) => s
       const before = Math.max(0, Number(e.data.moved ?? 0) - handed - skipped);
       const johns = (n: number) => `${n} ${n === 1 ? "John" : "Johns"}`;
       const due = before > 0 ? ` ${johns(before)} ${before === 1 ? "is" : "are"} due before ${you ? "you go" : "they go"}.` : "";
-      const gave = handed > 0 ? ` ${johns(handed)} went to housemates.` : "";
+      const gave = handed > 0 ? ` ${johns(handed)} went to others.` : "";
       const none = skipped > 0 ? ` ${johns(skipped)} skipped, with nobody home to take ${skipped === 1 ? "it" : "them"}.` : "";
       return { icon: "plane", parts: [b(who), t(` ${you ? "are" : "is"} away ${range}.${due}${gave}${none}`)] };
     }

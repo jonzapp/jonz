@@ -124,6 +124,7 @@ function HouseSections({
     me: userId,
     rules,
     housemates: members.length,
+    kind: view.snapshot.house.kind,
     johns: list.data?.johns,
   }).map((figure) => ({ ...figure, href: FIGURE_PAGE[figure.key] }));
   const me = view.me;

@@ -95,7 +95,7 @@ describe("overviewFigures", () => {
     month: "2026-10",
     projection: projection(net, forfeited),
   });
-  const base = { month: "2026-10", me: "sam", rules: { currency: "GBP" as const, stakeMinor: 2000 }, housemates: 4 };
+  const base = { month: "2026-10", me: "sam", rules: { currency: "GBP" as const, stakeMinor: 2000 }, housemates: 4, kind: "housemates" as const };
 
   it("gives your month, the stake, the housemates and the John list, in that order", () => {
     const johns = [
@@ -283,7 +283,7 @@ describe("settleRows", () => {
     expect(settleRows({ transfers: theirs, me: "megan", members: MEMBERS, currency: "GBP", ledger, closedMonths: [] })).toEqual([]);
   });
 
-  it("names someone who has left as a former housemate, with no button the database would refuse", () => {
+  it("names someone who has left as someone who left, with no button the database would refuse", () => {
     const transfers = [
       { from: "ben", to: "sam", amount: 50 },
       { from: "tom", to: "sam", amount: 300 },
@@ -295,7 +295,7 @@ describe("settleRows", () => {
       ["Tom owes you £3", HOUSE_PAGE_COPY.paidHowYouLike, "Mark £3 received", true],
     ]);
     const owing = settleRows({ transfers: [{ from: "sam", to: "ben", amount: 50 }], me: "sam", members: MEMBERS, currency: "GBP", ledger: [], closedMonths: [] });
-    expect(owing.map((r) => [r.title, r.meta])).toEqual([["You owe a former housemate £0.50", HOUSE_PAGE_COPY.gone]]);
+    expect(owing.map((r) => [r.title, r.meta])).toEqual([["You owe someone who left £0.50", HOUSE_PAGE_COPY.gone]]);
   });
 
   it("in a Splitwise house, gives what's owed to you its line to copy there and Added to Splitwise", () => {
@@ -420,7 +420,7 @@ describe("tableLines", () => {
     expect(line).toMatchObject({ money: null, losing: false, meta: [{ text: "0 pts, 6-week streak, 1 skip" }] });
   });
 
-  it("shows nobody for an empty table, and a former housemate by name", () => {
+  it("shows nobody for an empty table, and someone who left by name", () => {
     expect(tableLines({ ...base, rows: [] })).toEqual([]);
     expect(tableLines({ ...base, rows: [row("ben", 3)] })[0]).toMatchObject({
       title: FOCUS_SHELL_COPY.formerHousemate,
@@ -561,9 +561,9 @@ describe("a housemate's page", () => {
     expect(owingLines({ ...input, personId: "megan", me: "sam" })).toEqual([]);
     // With someone who has left, nobody can mark it: said as House's settle-up says it, whichever way it's owed.
     const left = owingLines({ ...input, transfers: [{ from: "sam", to: "ben", amount: 100 }], personId: "sam", me: "sam" });
-    expect(left.map((l) => [l.title, l.meta[0].text])).toEqual([["You owe a former housemate £1", HOUSE_PAGE_COPY.gone]]);
+    expect(left.map((l) => [l.title, l.meta[0].text])).toEqual([["You owe someone who left £1", HOUSE_PAGE_COPY.gone]]);
     const theirs = owingLines({ ...input, transfers: [{ from: "ben", to: "sam", amount: 100 }], personId: "sam", me: "sam" });
-    expect(theirs.map((l) => [l.title, l.meta[0].text])).toEqual([["A former housemate owes you £1", HOUSE_PAGE_COPY.gone]]);
+    expect(theirs.map((l) => [l.title, l.meta[0].text])).toEqual([["Someone who left owes you £1", HOUSE_PAGE_COPY.gone]]);
     const house = settleRows({ ...input, transfers: [{ from: "sam", to: "ben", amount: 100 }, { from: "ben", to: "sam", amount: 100 }], me: "sam" });
     expect(house.map((r) => r.meta)).toEqual([...theirs, ...left].map((l) => l.meta[0].text));
   });
@@ -643,7 +643,7 @@ describe("stakeHistory", () => {
     expect(stakeHistory({ ...input, ledger: late, zone: "America/Toronto", me: "sam", whole: false })[0].lines[0].meta).toBe("Wed 30 Sep");
   });
 
-  it("is empty for an empty ledger, and names a former housemate", () => {
+  it("is empty for an empty ledger, and names someone who left", () => {
     expect(stakeHistory({ ...input, ledger: [], me: "sam", whole: true })).toEqual([]);
     const gone = [
       h(entry("ben", "payment", 100, "2026-10", { counterparty_user_id: "sam" })),
@@ -657,7 +657,7 @@ describe("stakeHistory", () => {
       h(entry("ben", "payment", -100, "2026-10", { counterparty_user_id: "tom" })),
     ];
     expect(stakeHistory({ ...input, ledger: paidGone, me: "sam", whole: true })[0].lines.map((l) => [l.title, l.amount])).toEqual([
-      ["Tom paid a former housemate", null],
+      ["Tom paid someone who left", null],
     ]);
   });
 

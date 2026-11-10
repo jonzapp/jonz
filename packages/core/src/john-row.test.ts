@@ -194,7 +194,7 @@ describe("johnRow's meta line", () => {
       "Disputed by you, 17h left",
     );
     expect(meta({ status: "disputed", dispute: dispute({ raisedBy: null, closesAt: at(-1) }) })).toBe(
-      "Disputed by a former housemate, closing now",
+      "Disputed by someone who left, closing now",
     );
     expect(row({ status: "disputed", dispute: null })).toMatchObject({ meta: "Disputed", lid: false });
   });
@@ -210,7 +210,7 @@ describe("johnRow's meta line", () => {
     const moved = { status: "due-soon" as const, dueAt: new Date("2026-10-22T22:59:00Z"), movedFrom: at(48) };
     expect(meta(moved)).toBe("Kitchen, today 23:59, before you go");
     expect(meta({ ...moved, userId: "megan" })).toBe("Kitchen, today 23:59, before Megan goes");
-    expect(meta({ ...moved, userId: "cal" })).toBe("Kitchen, today 23:59, before a former housemate goes");
+    expect(meta({ ...moved, userId: "cal" })).toBe("Kitchen, today 23:59, before someone who left goes");
   });
 });
 
