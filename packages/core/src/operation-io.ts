@@ -288,8 +288,9 @@ const historyRow = z.object({
   createdAt: at,
   undoneAt: at.nullable(),
   undoneBy: id.nullable(),
-  // Null when no one may undo it now (undone already, or past its reach).
-  reach: text.nullable(),
+  // Who may undo it now: "own", "admin", or "none" (the database's null; the
+  // contract keeps a string, and the app reads any other word as no Undo).
+  reach: z.preprocess((r) => r ?? "none", text),
 });
 
 // The rows the table operations answer with (table-rows.ts is each table as the database has it).

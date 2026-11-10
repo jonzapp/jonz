@@ -3367,10 +3367,7 @@
               ]
             },
             "reach": {
-              "type": [
-                "string",
-                "null"
-              ]
+              "type": "string"
             }
           },
           "required": [
