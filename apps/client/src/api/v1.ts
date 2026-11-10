@@ -6,6 +6,7 @@ import type { z } from 'zod';
 
 import { apiBase, ApiRequestError } from './base';
 import { supabase } from './supabase';
+import { markTooOld } from './too-old';
 
 // The app's one way to the data: /v1 (docs/specs/api.md), one operation at a
 // time, by its name in the registry. Method, path, input and answer all come
@@ -83,6 +84,8 @@ export async function callV1<N extends OperationName>(name: N, input: V1Input<N>
   }
   const response = await fetch(url, { method, headers, body });
   const payload: unknown = await response.json().catch(() => null);
+  // 426: this phone's build is older than the API takes; the app turns to Update Jonz.
+  if (response.status === 426) markTooOld();
   if (!response.ok) throw new ApiRequestError(problemSentence(payload as { title?: unknown; detail?: unknown } | null), response.status);
   return io.output.parse(payload) as V1Output<N>;
 }
