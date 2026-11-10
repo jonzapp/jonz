@@ -16,7 +16,7 @@ import { Group, GroupItem } from '@/components/group';
 import { Row } from '@/components/row';
 import { Section } from '@/components/section';
 import { Lead, Meta } from '@/components/text';
-import { FONT, SPACE, TABULAR, useTheme } from '@/theme';
+import { FONT, INSET, SPACE, TABULAR, useTheme } from '@/theme';
 
 /** The audit log's columns on a laptop: when, who, what happened (with its detail), and where. */
 export const AUDIT_TABLE: readonly ListColumn[] = [
@@ -150,14 +150,16 @@ export function AuditDetail({
           </Group>
         </Section>
       ) : null}
-      <Meta>{ADMIN_COPY.appendOnly}</Meta>
+      <Meta style={styles.words}>{ADMIN_COPY.appendOnly}</Meta>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   detail: { gap: SPACE.xl },
-  head: { gap: SPACE.xs },
+  // Words on the page start where a card's do, as the section labels under them.
+  head: { gap: SPACE.xs, paddingHorizontal: INSET },
+  words: { paddingHorizontal: INSET },
   change: { gap: 2, paddingVertical: SPACE.md },
   was: { textDecorationLine: 'line-through' },
   now: { fontFamily: FONT.bold },

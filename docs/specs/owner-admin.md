@@ -110,7 +110,7 @@ last:
 - **A house** (`owner_house`): when it started and its admins, each person
   with their role, on time over four weeks, time away now and a move-out
   date, its Pass and who pays, and its zone, currency, join code and number
-  of Johns. In the side panel on a laptop, its own page on a phone
+  of Johns, a row each. In the side panel on a laptop, its own page on a phone
   (`/admin/houses/[id]`). Opening the house as its people see it is left
   for later.
 - **Delete house** (`houses:write`, the owner role only; a support helper
@@ -214,7 +214,8 @@ signed out says what goes and stays and signs in on the way back to itself.
 ## The pages
 
 - **On a laptop.** A rail down the left (232) has the wordmark, an Owner chip
-  and the pages. What a phone opens on its own sits in the side panel: the
+  and the pages, with Back to my house at its foot (on a phone it is at the
+  foot of Overview). What a phone opens on its own sits in the side panel: the
   notice editor, or the audit entry.
 - **On a phone.** Tabs run along the bottom, as the house's do. The notice
   editor rises as a sheet, and an audit entry opens as its own page

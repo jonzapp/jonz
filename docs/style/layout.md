@@ -81,9 +81,11 @@ still look right stretched (content capped, nothing pinned to far edges).
   housemate) the question mark takes the edge. (Bar buttons A, 5 Nov)
 - Ask Jonz's bar follows chat apps (ChatGPT, Claude) and Apple's toolbar
   rules: Your chats (a clock) is the one button on the leading edge, its
-  glyph on the content's edge, before the title; New chat (a pencil), and
-  Close in the laptop panel, at the trailing edge. Icons only: never words
-  beside icons in a bar. Your chats has "‹ Ask Jonz" above its title, back
+  glyph on the content's edge, before the title; New chat (a pencil) at the
+  trailing edge. In the laptop panel Help follows New chat and Close is
+  last, at the very edge: what puts a panel away is always the outermost
+  button (`TitleBar`'s `end`). Icons only: never words beside icons in a
+  bar. Your chats has "‹ Ask Jonz" above its title, back
   to the chat. (Ask Jonz bar A, 7 Nov)
 
 ## Laptop pages
@@ -162,6 +164,12 @@ still look right stretched (content capped, nothing pinned to far edges).
   (Owner admin, 30 Oct)
 - Content keeps a 16pt gutter (`GUTTER`) and is capped at `CONTENT_MAX`
   (680) on a phone or tablet. (Focus, #17)
+- **Words start on one line down the page.** A card starts at the gutter
+  and its words `INSET` further in; words that sit on the page itself (a
+  section's label, a panel's title, a list's count, a note, a link) start
+  on that same inner line, never out at the card's edge. Boxes (a card, a
+  search box, a field, a button) start at the gutter. (UI review small
+  fixes, 10 Nov)
 
 ## Sheets and menus
 
@@ -171,6 +179,10 @@ still look right stretched (content capped, nothing pinned to far edges).
   (avoid stacking modals) and Material's bottom sheets.
 - **A choice from a short list** is a `PickMenu`: a sheet on a phone, a
   drop-down from `WIDE`. Not a segmented switch squeezed into a label line.
+- A `Segmented` switch never cuts its words or runs off its panel: where
+  four choices won't fit one row of a side panel or a phone, it wraps in
+  equal parts (`perRow`, two to a row for a notice's Ends). (UI review small
+  fixes, 10 Nov)
   (Table B, #48)
 - A tap on a day, a John or a Wall item opens its sheet; a sheet opened
   from a link scrolls to what the link named (`openAt`). (Who's away F, #23)

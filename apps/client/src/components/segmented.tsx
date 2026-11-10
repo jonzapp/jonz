@@ -9,8 +9,11 @@ import { FONT, NARROW, RADIUS, SPACE, TAP, useTheme } from '@/theme';
  * reader, `label` naming it; the chosen part is `aria-checked`, and each
  * says its `spoken` name where what it shows is short for one ("Mon" for
  * Monday). `equal` spreads it across its container, the parts sharing the
- * width, so seven days fit across a phone. On a small phone its parts
- * pad their words less, so the row beside it keeps its name ("Look").
+ * width, so seven days fit across a phone. `perRow` wraps it instead, that
+ * many equal parts to a row, where the words of four or more would not fit
+ * one row of a panel or a phone ("When I end it", "On a date"): never cut
+ * short. On a small phone its parts pad their words less, so the row beside
+ * it keeps its name ("Look").
  */
 export function Segmented<T extends string | number>({
   options,
@@ -18,6 +21,7 @@ export function Segmented<T extends string | number>({
   onChange,
   label,
   equal = false,
+  perRow,
   testID,
 }: {
   options: readonly { value: T; label: string; spoken?: string }[];
@@ -25,6 +29,8 @@ export function Segmented<T extends string | number>({
   onChange: (value: T) => void;
   label: string;
   equal?: boolean;
+  /** Wrap, this many equal parts to a row, across the container. */
+  perRow?: number;
   testID?: string;
 }) {
   const { colors, type } = useTheme();
@@ -34,7 +40,7 @@ export function Segmented<T extends string | number>({
       accessibilityRole="radiogroup"
       accessibilityLabel={label}
       testID={testID}
-      style={[styles.track, equal && styles.across, { backgroundColor: colors.secondary }]}
+      style={[styles.track, equal || perRow ? styles.across : null, perRow ? styles.wraps : null, { backgroundColor: colors.secondary }]}
     >
       {options.map((option) => {
         const chosen = option.value === value;
@@ -52,6 +58,7 @@ export function Segmented<T extends string | number>({
               styles.part,
               narrow && styles.tight,
               equal && styles.share,
+              perRow ? [styles.cell, { flexBasis: `${100 / perRow}%` }] : null,
               { borderColor: colors.secondary },
               chosen && { backgroundColor: colors.card },
             ]}
@@ -72,6 +79,9 @@ export function Segmented<T extends string | number>({
 const styles = StyleSheet.create({
   track: { flexDirection: 'row', alignSelf: 'flex-start', borderRadius: RADIUS },
   across: { alignSelf: 'stretch' },
+  wraps: { flexWrap: 'wrap' },
+  // One of `perRow` to a row: its share of the track, whatever its words.
+  cell: { flexGrow: 0, flexShrink: 0, minWidth: 0, paddingHorizontal: SPACE.xs },
   part: {
     minHeight: TAP,
     minWidth: TAP,

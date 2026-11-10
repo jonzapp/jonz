@@ -4,6 +4,7 @@ import {
   clockState,
   databaseState,
   houseAgo,
+  houseFacts,
   houseLead,
   houseMeta,
   needRow,
@@ -106,6 +107,16 @@ describe("one house", () => {
     expect(personMeta(priya)).toBe("admin, 6 of 7 on time");
     expect(personMeta(jo)).toBe("away until 2 Nov, moving out 3 Dec");
     expect(personMeta(mika)).toBe("nothing due in four weeks");
+  });
+
+  it("gives its settings a row each: time zone, currency, join code and how many Johns", () => {
+    const house = detail();
+    expect(houseFacts(house)).toEqual([
+      { key: "zone", label: "Time zone", value: house.timezone },
+      { key: "currency", label: "Currency", value: house.currency },
+      { key: "code", label: "Join code", value: house.joinCode },
+      { key: "johns", label: "Johns", value: String(house.johns) },
+    ]);
   });
 
   it("says what the Pass is, who pays and when it renews or ends", () => {

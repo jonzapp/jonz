@@ -21,7 +21,7 @@ import { Sheet } from '@/components/sheet';
 import { Lead, Meta } from '@/components/text';
 import { useToast } from '@/components/toast';
 import { Waiting } from '@/components/waiting';
-import { SPACE } from '@/theme';
+import { INSET, SPACE } from '@/theme';
 
 /** The Houses list's reads, so the panel and the list share their cache. */
 export const HOUSES_KEY = ['owner-houses'] as const;
@@ -29,14 +29,14 @@ export const HOUSES_KEY = ['owner-houses'] as const;
 /**
  * One house: when it started and its admins, each person with how they're
  * doing and any time away, its Pass and who pays, and the settings that
- * help with a support email. The one thing that changes it is Delete house,
+ * help with a support email, a row each. The one thing that changes it is Delete house,
  * for an owner who may (houses:write).
  */
 export function HousePanel({ id }: { id: string }) {
   const house = useQuery({ queryKey: [...HOUSES_KEY, 'house', id], queryFn: () => ownerHouse(id) });
   if (house.isPending) return <Waiting ready={false} outline={<PanelOutline sections={[4, 3]} button />} />;
   if (house.isError) return <ReadFailed message={humanError(house.error)} onRetry={() => void house.refetch()} testID="house-panel-problem" />;
-  if (!house.data) return <Meta>{HOUSES_COPY.gone}</Meta>;
+  if (!house.data) return <Meta style={styles.words}>{HOUSES_COPY.gone}</Meta>;
   return <HouseBody house={house.data} />;
 }
 
@@ -63,7 +63,9 @@ function HouseBody({ house }: { house: HouseDetail }) {
         <Row title={pass.title} meta={pass.meta} testID="house-pass" />
       </Section>
       <Section label={HOUSES_COPY.details}>
-        <Row title={houseFacts(house)} titleLines={2} testID="house-facts" />
+        {houseFacts(house).map((fact) => (
+          <Row key={fact.key} title={fact.label} trailing={fact.value} testID={`house-fact-${fact.key}`} />
+        ))}
       </Section>
       <DeleteHouse house={house} />
     </View>
@@ -92,7 +94,7 @@ function DeleteHouse({ house }: { house: HouseDetail }) {
       router.replace('/admin/houses');
     },
   });
-  if (!may) return <Meta>{HOUSES_COPY.readOnly}</Meta>;
+  if (!may) return <Meta style={styles.words}>{HOUSES_COPY.readOnly}</Meta>;
   const named = typed.trim().toLowerCase() === house.name.trim().toLowerCase();
   return (
     <>
@@ -129,5 +131,7 @@ function DeleteHouse({ house }: { house: HouseDetail }) {
 
 const styles = StyleSheet.create({
   panel: { gap: SPACE.xl },
-  head: { gap: SPACE.xs },
+  words: { paddingHorizontal: INSET },
+  // Words on the page start where a card's do, as the section labels under them.
+  head: { gap: SPACE.xs, paddingHorizontal: INSET },
 });

@@ -23,6 +23,7 @@ const routes = {
   week: () => <TitleBar title="This week" right={<MoreButton onPress={more} />} ask />,
   ask: () => <TitleBar title="Ask Jonz" lead={<MoreButton onPress={chats} testID="chats" />} right={<MoreButton onPress={more} />} />,
   chats: () => <TitleBar title="Your chats" onBack={toChat} backLabel="Ask Jonz" />,
+  panel: () => <TitleBar title="Ask Jonz" right={<MoreButton onPress={more} />} end={<MoreButton onPress={more} testID="close" />} />,
 };
 
 it("is the screen's one heading", async () => {
@@ -106,4 +107,11 @@ it('goes back without leaving the page when given onBack, and shows no Help ther
   await fireEvent.press(screen.getByRole('button', { name: FOCUS_SHELL_COPY.backTo('Ask Jonz') }));
   expect(toChat).toHaveBeenCalledTimes(1);
   expect(screen.queryByTestId('bar-tools')).toBeNull();
+});
+
+it("puts a panel's Close last, at the edge, after the screen's own button and Help", async () => {
+  await renderRouter(routes, { initialUrl: '/panel' });
+  const tools = within(screen.getByTestId('bar-tools'));
+  expect(tools.getAllByTestId(/^(more|help-button|close)$/).map((b) => b.props.testID).at(-1)).toBe('close');
+  expect(tools.getAllByTestId(/^(more|close)$/).map((b) => b.props.testID)).toEqual(['more', 'close']);
 });

@@ -46,6 +46,8 @@ export function adminPage(page: AdminPage): (typeof ADMIN_PAGES)[number] {
 export const ADMIN_COPY = {
   owner: "Owner",
   signedInWithCode: "Signed in with a code",
+  /** The way back: the rail's foot on a laptop, Overview's foot on a phone. */
+  backToHouse: "Back to my house",
   // Getting in.
   lockTitle: "Lock the admin page",
   lockBody:

@@ -1,6 +1,6 @@
 import { ASK_CHATS_COPY, ASK_USAGE_COPY, type AskUsage, HOUSE_DRAFT_COPY, RESET_COPY, STEADY_COPY, type ChatReset, listAsDraft, NEW_JOHN, NEXT_UP_COPY, starterDraft, tidyDraft, type HouseRules, type JohnDef } from '@app/core';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import type { ReactNode } from 'react';
 
@@ -298,13 +298,26 @@ describe('with a list already', () => {
       wrapper: House,
     });
     expect(screen.getByText(HOUSE_DRAFT_COPY.greetingAsk)).toBeTruthy();
+    // Three questions to tap, so the chat never opens on nothing.
+    expect(within(screen.getByTestId('chat-examples')).getAllByRole('button')).toHaveLength(3);
     await say('Who has bins?');
     expect(await screen.findByText('Ben has bins this week.')).toBeTruthy();
     expect(screen.queryByTestId('draft-card')).toBeNull();
   });
 
+  it('sends a question tapped under the greeting as it is written, and the questions go once the chat has begun', async () => {
+    chat.mockResolvedValue({ reply: 'Ben has bins this week.', ask: null, draft: null, source: 'ai' });
+    await openList();
+    await fireEvent.press(screen.getByRole('button', { name: HOUSE_DRAFT_COPY.examples[0] }));
+    expect(chat).toHaveBeenCalledWith('h1', [{ role: 'user', text: HOUSE_DRAFT_COPY.examples[0] }], base);
+    expect(await screen.findByText('Ben has bins this week.')).toBeTruthy();
+    expect(screen.queryByTestId('chat-examples')).toBeNull();
+  });
+
   it('offers the House Pass in place of the message box when the house hasn’t got it', async () => {
     await openList(false);
+    // Nothing to tap that the house can't ask.
+    expect(screen.queryByTestId('chat-examples')).toBeNull();
     expect(screen.getByText(HOUSE_DRAFT_COPY.passNeeded)).toBeTruthy();
     expect(screen.queryByTestId('chat-input')).toBeNull();
   });

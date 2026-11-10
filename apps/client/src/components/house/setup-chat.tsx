@@ -345,7 +345,22 @@ export function SetupChat({
     >
       <Said testID="chat-greeting">
         <Body>{!canChange ? HOUSE_DRAFT_COPY.greetingAsk : editing ? HOUSE_DRAFT_COPY.greetingList : HOUSE_DRAFT_COPY.greeting}</Body>
-        {(editing || !canChange) && turns.length === 0 ? <Meta>{HOUSE_DRAFT_COPY.privacy}</Meta> : null}
+        {(editing || !canChange) && turns.length === 0 ? (
+          <>
+            {/* A chat never opens on nothing: three questions to tap, while it can be asked anything. */}
+            {!gated && week !== 'out' ? (
+              <>
+                <Meta>{HOUSE_DRAFT_COPY.orAsk}</Meta>
+                <View style={styles.choices} testID="chat-examples">
+                  {HOUSE_DRAFT_COPY.examples.map((question, at) => (
+                    <Button key={question} variant="outline" label={question} onPress={() => void send(question)} testID={`chat-example-${at}`} />
+                  ))}
+                </View>
+              </>
+            ) : null}
+            <Meta>{HOUSE_DRAFT_COPY.privacy}</Meta>
+          </>
+        ) : null}
         {!editing && canChange && turns.length === 0 ? (
           <>
             <Meta>{HOUSE_DRAFT_COPY.orStart}</Meta>

@@ -46,6 +46,8 @@ export const BarEdgeContext = createContext<ReactNode>(null);
  * content's edge as the last one's is on the trailing edge: Ask Jonz's Your
  * chats, where chat apps put the way to your chats. `onBack` is a back link
  * that doesn't leave the page (Your chats back to the chat), in place of `back`.
+ * `end` is a panel's Close, the last thing at the edge, after Help: what puts
+ * the panel away is always the outermost button.
  */
 export function TitleBar({
   title,
@@ -56,6 +58,7 @@ export function TitleBar({
   ask = false,
   lead,
   onBack,
+  end,
 }: {
   title: string;
   /** A pushed page's line under the Title ("Sam, admin"). */
@@ -71,6 +74,8 @@ export function TitleBar({
   lead?: ReactNode;
   /** A back link (named by `backLabel`) that stays on this page, in place of `back`. */
   onBack?: () => void;
+  /** A panel's Close: at the very edge, after Help. */
+  end?: ReactNode;
 }) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -101,9 +106,9 @@ export function TitleBar({
             </Title>
             {sub ? <Meta numberOfLines={1}>{sub}</Meta> : null}
           </View>
-          {right != null || help || ask || edge != null ? (
+          {right != null || help || ask || edge != null || end != null ? (
             // One group at the edge, in a fixed order with no gaps of its own: the
-            // screen's button, Help, then the sparkles at the edge.
+            // screen's button, Help, then the sparkles (or a panel's Close) at the edge.
             <View testID="bar-tools" style={[styles.tools, styles.trail]}>
               {right}
               {help ? (
@@ -112,6 +117,7 @@ export function TitleBar({
                 </TourSpot>
               ) : null}
               {ask ? <AskButton /> : edge}
+              {end}
             </View>
           ) : null}
         </View>
