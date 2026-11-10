@@ -18,7 +18,7 @@ picking who looks after the house: "Make Sam admin and leave" is one step
 
 | Reset | Where | What it does |
 | --- | --- | --- |
-| Change one result | John sheet › Change result (admins) | Done, late, missed or let off. Its forfeit goes or comes. The Track record square gets an amber dot. |
+| Change one result | John sheet › Admin › Fix the result | Done, late, missed or let off. Its forfeit goes or comes. The Track record square gets an amber dot. |
 | Reset one person's week | Their page | Their Johns this week go back to open: ticks, covers and their forfeits come off. |
 | Reset this week | Week ••• | Everyone's Johns this week go back to open; flags and open disputes are cleared. |
 | Re-deal this week | Week ••• | As reset, then the week is dealt again from the list as it is now. Allowed after ticks now. Only this week. |

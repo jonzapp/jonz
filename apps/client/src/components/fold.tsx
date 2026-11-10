@@ -3,6 +3,7 @@ import { useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Hairline, useRowInset } from '@/components/group';
+import { Meta } from '@/components/text';
 import { FONT, LEADING, ROW_GAP, ROW_MIN, SPACE, useTheme } from '@/theme';
 
 /**
@@ -10,17 +11,21 @@ import { FONT, LEADING, ROW_GAP, ROW_MIN, SPACE, useTheme } from '@/theme';
  * ("Done (2)", from FOCUS_SHELL_COPY.done) and shows its rows under it when
  * opened. `meta` follows the label on the same line, after a comma ("1 late"
  * with its hazard mark, or a time), and keeps its room while a long label
- * gives way. `aria-expanded` says whether it's open.
+ * gives way. `detail` is a line of its own under the label, as a row's meta
+ * is (who ticked, under "3 ticked on time"), whole on up to two lines.
+ * `aria-expanded` says whether it's open.
  */
 export function Fold({
   label,
   meta,
+  detail,
   children,
   initiallyOpen = false,
   testID,
 }: {
   label: string;
   meta?: ReactNode;
+  detail?: string;
   children: ReactNode;
   initiallyOpen?: boolean;
   testID?: string;
@@ -45,11 +50,14 @@ export function Fold({
         <View style={styles.leading}>
           <Chevron size={20} color={colors.mutedForeground} aria-hidden />
         </View>
-        <View style={styles.line}>
-          <Text numberOfLines={1} style={[type.body, styles.label]}>
-            {meta != null ? `${label},` : label}
-          </Text>
-          {meta != null ? <View style={styles.meta}>{meta}</View> : null}
+        <View style={styles.words}>
+          <View style={styles.line}>
+            <Text numberOfLines={1} style={[type.body, styles.label]}>
+              {meta != null ? `${label},` : label}
+            </Text>
+            {meta != null ? <View style={styles.meta}>{meta}</View> : null}
+          </View>
+          {detail ? <Meta numberOfLines={2}>{detail}</Meta> : null}
         </View>
       </Pressable>
       {open ? children : null}
@@ -67,7 +75,8 @@ const styles = StyleSheet.create({
   },
   leading: { width: LEADING, alignItems: 'center' },
   // The gap stands in for the space after the separator, which a line drops at its end.
-  line: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: SPACE.xs },
+  words: { flex: 1, minWidth: 0 },
+  line: { flexDirection: 'row', alignItems: 'center', gap: SPACE.xs },
   label: { flexShrink: 1, fontFamily: FONT.bold },
   meta: { flexShrink: 0 },
 });

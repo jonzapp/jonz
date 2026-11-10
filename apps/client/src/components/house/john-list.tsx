@@ -9,6 +9,7 @@ import {
   NEXT_UP_COPY,
   johnFacts,
   johnsByKind,
+  listLine,
   moneyInput,
   NEW_JOHN,
   KIDS_COPY,
@@ -18,7 +19,6 @@ import {
   POCKET_COPY,
   pointsLabel,
   RULES_COPY,
-  scheduleLine,
   SETUP_COPY,
   STEADY_COPY,
   weeklyEffort,
@@ -42,7 +42,7 @@ import { Group, GroupItem } from '@/components/group';
 import { TimingPicker, TimingSentence, type TimingWord } from '@/components/house/john-timing';
 import { useHouseWorkspace } from '@/components/house/workspace';
 import { Flow, type FlowItem } from '@/components/page-columns';
-import { Row, RowIcon } from '@/components/row';
+import { Row } from '@/components/row';
 import { useFilled } from '@/components/screen';
 import { Section } from '@/components/section';
 import { ChoiceRow } from '@/components/setup/choice-row';
@@ -61,8 +61,9 @@ const EFFORT = Array.from({ length: 20 }, (_, i) => ({ value: i + 1, label: poin
 const CREW = CREW_CHOICES.map((n) => ({ value: n, label: CREW_COPY.choice(n) }));
 
 /**
- * The house's list of Johns, a section per kind ("Kitchen, 3"), each John a
- * row: its lid bar, how often and when, and its points. Admins add and edit
+ * The house's list of Johns: what it adds up to and Add a John over it, then
+ * a section per kind with how many ("Kitchen", 3), each John a row: its lid
+ * bar, when it's due and only what sets it apart, and its points. Admins add and edit
  * in a sheet; everyone else reads a John's details there. Changes land in the
  * next deal. Several page children, so it goes straight in a Screen.
  */
@@ -169,9 +170,21 @@ export function JohnList({
                 />
               ) : null}
             </View>
-          ) : null}
+          ) : (
+            // On a phone, the same over the list: what it adds up to, then Add a John.
+            <View style={styles.top} testID="john-list-bar">
+              <Meta>{`${JOHN_LIST_COPY.count(johns.length)} ${JOHN_LIST_COPY.perWeek(weeklyEffort(johns))}`}</Meta>
+              {editable ? (
+                <ButtonRow>
+                  <Button variant={quietAdd ? 'outline' : undefined} icon={PlusIcon} label={JOHN_LIST_COPY.add} onPress={add} testID="add-john" />
+                </ButtonRow>
+              ) : null}
+            </View>
+          )}
           {/* The kinds, not the bar above them: a View round both would take the page's gap between them. */}
           <TourSpot id="johns.list">
+          {/* The spot is one box: on a phone it keeps the page's gap between the kinds itself. */}
+          <View style={filled ? undefined : styles.kinds}>
           <Flow
             testID="john-kinds"
             items={johnsByKind(johns)
@@ -180,12 +193,13 @@ export function JohnList({
                 // A John's row is about two lines; the kind's name about one.
                 weight: kind.johns.length + 1,
                 node: (
-                  <Section label={kind.label} testID={`kind-${kind.category}`}>
+                  <Section label={CATEGORY_LABEL[kind.category]} right={String(kind.johns.length)} testID={`kind-${kind.category}`}>
                     {kind.johns.map((j) => {
-                      const schedule = scheduleLine(j, groupName(j.groupId));
+                      const schedule = listLine(j, groupName(j.groupId));
                       const earns = family && j.payMinor ? POCKET_COPY.earns(pocketMoney(j.payMinor, rules.currency)) : null;
                       const aged = family && j.minAge ? KIDS_COPY.minAgeLine(j.minAge) : null;
-                      const line = [schedule, j.crew === 1 ? null : CREW_COPY.choice(j.crew), j.keepDay ? STEADY_COPY.keepsDay : null, earns, aged]
+                      // Whether it keeps its day is in its own sheet, with the rest of its details.
+                      const line = [schedule, j.crew === 1 ? null : CREW_COPY.choice(j.crew), earns, aged]
                         .filter(Boolean)
                         .join(', ');
                       return (
@@ -206,19 +220,10 @@ export function JohnList({
               }))
               .concat(more ?? [])}
           />
+          </View>
           </TourSpot>
         </>
       )}
-      {johns.length > 0 && !filled ? (
-        <View style={styles.foot}>
-          {editable ? (
-            <Group>
-              <Row leading={<RowIcon icon={PlusIcon} />} title={JOHN_LIST_COPY.add} onPress={add} testID="add-john" />
-            </Group>
-          ) : null}
-          <Meta style={styles.note}>{JOHN_LIST_COPY.perWeek(weeklyEffort(johns))}</Meta>
-        </View>
-      ) : null}
       <Sheet
         visible={editing !== null}
         title={editing?.id ? JOHN_LIST_COPY.edit(editing.name) : JOHN_LIST_COPY.add}
@@ -445,7 +450,9 @@ function JohnForm({
 
 const styles = StyleSheet.create({
   emptyActions: { gap: SPACE.sm, alignSelf: 'stretch' },
-  foot: { gap: LABEL_GAP },
+  // Over the kinds on a phone: the list's sum, then Add a John across the column.
+  top: { gap: SPACE.sm, paddingHorizontal: INSET },
+  kinds: { gap: SECTION_GAP },
   // Above the kinds on a laptop: how much the list adds up to, and Add a John at the right.
   toolbar: { flexDirection: 'row', alignItems: 'center', gap: SPACE.lg, paddingLeft: INSET },
   toolbarWords: { flex: 1 },

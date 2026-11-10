@@ -36,11 +36,12 @@ function looksLikeControl(node: ReactNode): boolean {
 /**
  * The one row, everywhere: a 32pt leading slot (a tick box, an avatar or
  * an icon), a one-line title (two where a name or a sentence must show whole,
- * as a John's or on the Wall: `titleLines`), one meta line (two where what
- * it ends with matters, a John's due time: `metaLines`), and one trailing item (a value, a chip
- * or a text button), 56 to 64 tall. A value in words takes what it needs, up
- * to about 60% of the row, and is cut short past that, so it never squeezes
- * the title out. With `onPress` or `href` it is a button or a link a whole
+ * as a John's or on the Wall: `titleLines`), a meta line that wraps onto a
+ * second rather than being cut short (`metaLines={1}` only where a table's
+ * rows must keep one height), and one trailing item (a value, a chip or a
+ * text button), 56 tall, 64 with a meta line, taller when it wraps. A value in words takes what it needs, up
+ * to about 60% of the row, and wraps onto a second line past that, so it
+ * never squeezes the title out. With `onPress` or `href` it is a button or a link a whole
  * thumb tall, `chevron` when it pushes a page. `selected` (true or false)
  * makes it one of several to choose from, a radio (`aria-checked`), the
  * chosen one on the tint; put the rows in a radiogroup. `current` marks the
@@ -71,7 +72,7 @@ export function Row({
   selected,
   current = false,
   titleLines = 1,
-  metaLines = 1,
+  metaLines = 2,
   cells,
   leadingControl,
   trailingControl,
@@ -110,7 +111,7 @@ export function Row({
   current?: boolean;
   /** How many lines the title may take before it's cut short: 2 for a John's name or a sentence (a Wall row). */
   titleLines?: 1 | 2;
-  /** How many lines a meta string may take before it's cut short: 2 for a John's, which ends with when it's due. */
+  /** How many lines a meta string may take before it's cut short: 2 unless said. */
   metaLines?: 1 | 2;
   /** Fixed columns between the words and the trailing item, part of the row's press target: Week's table on a laptop. */
   cells?: ReactNode;
@@ -133,7 +134,7 @@ export function Row({
   const leadingSlot = leading != null ? <View style={styles.leading}>{leading}</View> : null;
   const trailingItem =
     trailing == null ? null : typeof trailing === 'string' || typeof trailing === 'number' ? (
-      <Body numberOfLines={1} style={styles.value}>
+      <Body numberOfLines={2} style={styles.value}>
         {trailing}
       </Body>
     ) : (

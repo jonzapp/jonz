@@ -3,9 +3,21 @@
 ## Rows
 
 - **One `Row` everywhere:** a 32pt leading slot (tick box, avatar or icon),
-  a one-line title, one meta line, one trailing item (a value, a status mark
+  a one-line title, a meta line, one trailing item (a value, a status mark
   or a text button), 56 to 64pt tall with 48pt targets. A John is always a
   `JohnRow`. (Focus, #17)
+- **A row's words are never cut off with "…":** its meta line wraps onto a
+  second line, and so does a value in words, the row growing to hold them.
+  If two lines still aren't enough, shorten the words or move some into the
+  meta line. (Cut-off words A, 10 Nov)
+- **A row says what sets its thing apart, not what is usual.** On the John
+  list a row is when it's due, then only what is unusual (every 2 weeks, a
+  photo, its group, on call); the rest is in the John's own sheet. Each kind
+  is a section with its count on the right, and the page's sum and Add a
+  John sit over the list on a phone as on a laptop. (John list A, 10 Nov)
+- **An admin's fixes are one row, not a row of buttons:** in a John's sheet,
+  "Admin" holds one row, Fix the result, which opens the results to choose
+  from in its place. (Admin fixes A, 10 Nov)
 - A Wall item is a `Row` with a sentence that names its John and an icon
   that says what happened (a flag for a flag), never just "flagged". (Wall
   items A, #55)
@@ -23,6 +35,10 @@
   progressive disclosure, and Nielsen's "aesthetic and minimalist design".
 - Finished things fold away (`DoneFold`: "Done (3)", with how many were
   late). (Focus, #17)
+- **Quiet news folds, news that matters leads.** On the Wall a day's ticks
+  made on time (two or more) fold into one row at the day's foot, "3 ticked
+  on time" with who under it, so misses, late ticks, disputes, perks and
+  notices are read first. (The Wall A, 10 Nov)
 - One home per thing: a John, a person, a setting each have one page or
   sheet; other places link to it rather than repeat it. (Focus, #17; fair
   shares, 28 Oct)
