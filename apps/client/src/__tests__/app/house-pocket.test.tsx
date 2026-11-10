@@ -162,6 +162,24 @@ describe('adding a child', () => {
     await screen.findByTestId('house-table');
     expect(screen.queryByTestId('add-a-child')).toBeNull();
   });
+
+  it("gives a kid one short page: no switch, no invite, no Pass, the family's setup and You under the Wall", async () => {
+    mockMe = 'maya';
+    await open();
+    await screen.findByTestId('house-table');
+    expect(screen.queryByTestId('house-shows')).toBeNull();
+    expect(screen.queryByTestId('invite')).toBeNull();
+    expect(screen.queryByTestId('pass-section')).toBeNull();
+    expect(screen.getAllByTestId('lower').map((node) => node.props.children)).toContain('House setup');
+    expect(screen.getByTestId('to-you')).toBeOnTheScreen();
+  });
+
+  it('gives a parent the switch, with the invite on the Table', async () => {
+    await open();
+    await screen.findByTestId('house-table');
+    expect(screen.getByTestId('house-shows')).toBeOnTheScreen();
+    expect(screen.getByTestId('invite')).toBeOnTheScreen();
+  });
 });
 
 describe('Pocket money history', () => {

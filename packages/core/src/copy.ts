@@ -1315,6 +1315,19 @@ export const WEEK_SUMMARY_COPY = {
 } as const;
 
 /** House: the month card and settling up, and the Table with its invite and rules sheets. */
+/** House on a phone: the switch between what's going on in the house and what it's set to. */
+export const HOUSE_SHOWS_COPY = {
+  label: "Show",
+  overview: "Overview",
+  setup: "Setup and you",
+} as const;
+
+/** A kid's House: how the family is set up, to read. Their parents change it. */
+export const KID_HOUSE_COPY = {
+  setup: "How the family runs",
+  setupNote: "Set by your parents",
+} as const;
+
 export const HOUSE_PAGE_COPY = {
   /** Under the house's name: "4 housemates, £20 a month each". */
   sub: (housemates: number, stake: string) =>

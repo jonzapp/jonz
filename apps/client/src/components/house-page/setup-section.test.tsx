@@ -1,4 +1,4 @@
-import { FOCUS_SHELL_COPY, HOUSE_LOWER_COPY } from '@app/core';
+import { FOCUS_SHELL_COPY, HOUSE_LOWER_COPY, KID_HOUSE_COPY } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 import { Text } from 'react-native';
 
@@ -21,10 +21,10 @@ jest.mock('@/api/settings', () => ({ loadJohnList: jest.fn() }));
 jest.mock('@/api/supabase', () => ({ supabase: {} }));
 
 /** House setup on its own, once the house is read, with the pages it leads to standing in as their names. */
-async function open() {
+async function open({ kid = false } = {}) {
   function Host() {
     const { view } = useHouse('h1', 'priya');
-    return view ? <SetupSection houseId="h1" userId="priya" view={view} /> : null;
+    return view ? <SetupSection houseId="h1" userId="priya" view={view} kid={kid} /> : null;
   }
   await renderPages(
     {
@@ -58,6 +58,15 @@ it('says it affects everyone, under its label', async () => {
   const section = within(screen.getByTestId('setup-section'));
   expect(section.getByRole('header', { name: FOCUS_SHELL_COPY.setup })).toBeOnTheScreen();
   expect(section.getByText(HOUSE_LOWER_COPY.setupNote)).toBeOnTheScreen();
+});
+
+it("is a kid's to read: how the family runs, set by their parents, without Ask Jonz's usage", async () => {
+  await open({ kid: true });
+  const section = within(screen.getByTestId('setup-section'));
+  expect(section.getByRole('header', { name: KID_HOUSE_COPY.setup })).toBeOnTheScreen();
+  expect(section.getByText(KID_HOUSE_COPY.setupNote)).toBeOnTheScreen();
+  expect(section.getAllByRole('link')).toHaveLength(3);
+  expect(screen.queryByTestId('to-ask-usage')).toBeNull();
 });
 
 it('shows what each page is set to now', async () => {

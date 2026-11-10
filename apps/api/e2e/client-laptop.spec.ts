@@ -1,4 +1,4 @@
-import { HOUSE_LOWER_COPY, HOUSE_PAGE_COPY, JOHN_LIST_COPY, PAGE_TITLE, SECTION_LABEL } from "@app/core";
+import { HOUSE_LOWER_COPY, HOUSE_PAGE_COPY, HOUSE_SHOWS_COPY, JOHN_LIST_COPY, PAGE_TITLE, SECTION_LABEL } from "@app/core";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, dealtHouseInClient } from "./auth";
@@ -305,9 +305,11 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   await nav.getByRole("link", { name: HOUSE_LOWER_COPY.overview }).click();
 
   // The narrowest laptop leaves too little room for House's list beside the rail: the setup, the Pass and You
-  // are rows on the page again, under the Table and the Wall.
+  // are rows on the page again.
   await page.setViewportSize({ width: 1100, height: 900 });
   await expect(page.getByTestId("house-nav")).toHaveCount(0);
+  // As on a phone, they're the other half of House's switch.
+  await house.getByTestId("house-shows").getByRole("radio", { name: HOUSE_SHOWS_COPY.setup }).click();
   await expect(house.getByTestId("setup-section")).toBeVisible();
   await expect(house.getByTestId("to-you")).toBeVisible();
 });

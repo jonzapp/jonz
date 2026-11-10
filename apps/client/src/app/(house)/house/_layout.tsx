@@ -1,6 +1,7 @@
 import { Stack } from 'expo-router';
 
 import { HouseWorkspace } from '@/components/house/workspace';
+import { useKid } from '@/hooks/use-kid';
 import { useTheme } from '@/theme';
 
 // A page opened straight from a link (/house/wall, say) still has House
@@ -16,8 +17,9 @@ export const unstable_settings = { anchor: 'index' };
  */
 export default function HouseStack() {
   const { colors } = useTheme();
+  const kid = useKid();
   return (
-    <HouseWorkspace>
+    <HouseWorkspace kid={kid}>
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }} />
     </HouseWorkspace>
   );
