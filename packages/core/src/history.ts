@@ -1,12 +1,13 @@
 import { tz } from "@date-fns/tz";
 import { format } from "date-fns";
 
-import { ROLE_WORDS } from "./copy";
-import type { Currency, HouseKind } from "./domain";
+import type { Currency } from "./domain";
 import { dateRange, dayLabel } from "./format";
 import { formatMoney } from "./money";
 import { resetWhat } from "./resets";
 import { addDaysTo, localDate } from "./week";
+import { whomOf, whoseOf } from "./word-keys";
+import type { Words } from "./words-for";
 
 // History: everything people did in the house, newest first, in words, with
 // Undo where the database says it still reaches (house_history's `reach`).
@@ -31,42 +32,6 @@ export type ActionKind = (typeof ACTION_KINDS)[number];
 
 /** Who can undo it now: whoever did it, an admin, or nobody. */
 export type UndoReach = "own" | "admin" | null;
-
-export const HISTORY_COPY = {
-  title: "History",
-  meta: "Undo anything this month",
-  /** On a phone, the Wall's switch between what the house did and History: its name to a screen reader. */
-  show: "Show",
-  empty: "Ticks, flags, swaps and changes land here, with Undo while it still reaches.",
-  everyone: "Everyone",
-  mine: "Mine",
-  undo: "Undo",
-  undoLabel: (line: string) => `Undo: ${line}`,
-  today: "Today",
-  yesterday: "Yesterday",
-  undone: "Undone",
-  undoneBy: (name: string) => `Undone by ${name}`,
-  locked: "Can’t be undone now",
-  /** The toast after an undo. */
-  wasUndone: "Undone.",
-  /** The toasts that offer Undo after a move. */
-  ticked: "Marked done.",
-  covered: "Covered.",
-  flagged: "Flagged. Whoever’s on call has been told.",
-  /** After Mark done: Undo takes back the tick and its flag. */
-  doneIt: "Marked done. Counted once.",
-  immunity: "Skip used.",
-  swapped: "Swapped.",
-  disputed: "Dispute raised.",
-  paid: "Marked received.",
-  inSplitwise: "Marked as added to Splitwise.",
-  away: "Time away booked.",
-  removed: (name: string) => `${name} has been removed.`,
-  reading: "Reading the house’s history",
-  unreadable: "History couldn’t be read.",
-  /** A housemate who has since left. */
-  someone: "Someone",
-} as const;
 
 /** A row of house_history, as read. */
 export interface ActionRow {
@@ -134,80 +99,53 @@ export function actionLine(
   who: string,
   subject: string,
   currency: Currency,
-  house: HouseKind,
+  words: Words,
 ): string {
-  const john = String(data.name ?? "a John");
+  const john = String(data.name ?? words("wall.feed.aJohn"));
   // "You" starts a sentence; anywhere else it's "you", "your".
-  const obj = (name: string) => (name === "You" ? "you" : name);
-  const possessive = (name: string) => (name === "You" ? "your" : `${name}’s`);
+  const whose = whoseOf(subject, words);
+  const whom = whomOf(subject, words);
   switch (kind) {
     case "tick":
-      return `${who} ticked ${john}${data.late ? ", late" : ""}`;
+      return words("wall.history.line.tick", { who, john, late: Boolean(data.late) });
     case "cover":
-      return `${who} covered ${possessive(subject)} ${john}`;
-    case "flag":
-      return `${who} flagged ${john}`;
-    case "swap":
-      return `${who} swapped ${String(data.gave ?? "a John")} for ${possessive(subject)} ${john}`;
-    case "immunity":
-      return `${who} used a skip on ${john}`;
     case "dispute":
-      return `${who} disputed ${possessive(subject)} ${john}`;
+      return words(`wall.history.line.${kind}`, { who, whose, john });
+    case "flag":
+    case "immunity":
+      return words(`wall.history.line.${kind}`, { who, john });
+    case "swap":
+      return words("wall.history.line.swap", { who, gave: String(data.gave ?? words("wall.feed.aJohn")), whose, john });
     case "vote":
-      return `${who} voted to ${data.uphold ? "strike" : "keep"} ${possessive(subject)} ${john}`;
+      return words("wall.history.line.vote", { who, uphold: Boolean(data.uphold), whose, john });
     case "payment":
-      return `${who} got ${formatMoney(Number(data.amount ?? 0), currency)} from ${obj(subject)}`;
+      return words("wall.history.line.payment", { who, amount: formatMoney(Number(data.amount ?? 0), currency), whom });
     case "away":
-      return `${who} booked time away, ${dateRange(String(data.starts_on), String(data.ends_on))}`;
+      return words("wall.history.line.away", { who, range: dateRange(String(data.starts_on), String(data.ends_on)) });
     case "role":
-      return `${who} made ${obj(subject)} ${data.to === "admin" ? ROLE_WORDS[house].anAdmin : ROLE_WORDS[house].aMember}`;
+      return words("wall.history.line.role", { who, whom, to: data.to === "admin" ? "admin" : "member" });
     case "remove":
-      return `${who} removed ${obj(subject)} from the house`;
+      return words("wall.history.line.remove", { who, whom });
     case "reset":
-      return `${who} ${resetWhat(data, subject)}`;
+      return words("wall.history.line.reset", { who, what: resetWhat(data, subject, words) });
   }
 }
 
 /** What was undone, as the Wall says it to whoever's move it was: "your tick on Bins". */
-export function undoneWhat(kind: string, name: string | null): string {
-  const john = name ?? "a John";
-  switch (kind) {
-    case "tick":
-      return `tick on ${john}`;
-    case "cover":
-      return `cover of ${john}`;
-    case "flag":
-      return `flag on ${john}`;
-    case "swap":
-      return `swap for ${john}`;
-    case "immunity":
-      return `a skip on ${john}`;
-    case "dispute":
-      return `dispute of ${john}`;
-    case "vote":
-      return `vote on ${john}`;
-    case "payment":
-      return "payment";
-    case "away":
-      return "time away";
-    case "role":
-      return "admin change";
-    case "remove":
-      return "removal";
-    case "reset":
-      return "reset";
-    default:
-      return "change";
-  }
+export function undoneWhat(kind: string, name: string | null, words: Words): string {
+  const john = name ?? words("wall.feed.aJohn");
+  return (UNDONE_KINDS as readonly string[]).includes(kind) ? words(`wall.history.undoneWhat.${kind as (typeof UNDONE_KINDS)[number]}`, { john }) : words("wall.history.undoneWhat.other");
 }
 
+const UNDONE_KINDS = ["tick", "cover", "flag", "swap", "immunity", "dispute", "vote", "payment", "away", "role", "remove", "reset"] as const;
+
 /** The line under a row: when, and whether it was undone or can't be now. */
-export function historyMeta(item: HistoryItem, time: string, nameOf: (userId: string | null) => string): string {
+export function historyMeta(item: HistoryItem, time: string, nameOf: (userId: string | null) => string, words: Words): string {
   if (item.undoneAt) {
-    const by = item.undoneBy && item.undoneBy !== item.actor ? HISTORY_COPY.undoneBy(nameOf(item.undoneBy)) : HISTORY_COPY.undone;
+    const by = item.undoneBy && item.undoneBy !== item.actor ? words('wall.history.undoneBy', { name: nameOf(item.undoneBy) }) : words('wall.history.undone');
     return `${time}, ${by}`;
   }
-  return item.reach ? time : `${time}, ${HISTORY_COPY.locked}`;
+  return item.reach ? time : `${time}, ${words('wall.history.locked')}`;
 }
 
 export interface HistoryDay {
@@ -229,10 +167,10 @@ export function historyDays(items: readonly HistoryItem[], zone: string): Histor
 }
 
 /** "Today", "Yesterday", or the day: "Tue 27 Oct". */
-export function historyDayLabel(day: HistoryDay, now: Date, zone: string): string {
+export function historyDayLabel(day: HistoryDay, now: Date, zone: string, words: Words): string {
   const today = localDate(now, zone);
-  if (day.date === today) return HISTORY_COPY.today;
-  if (day.date === addDaysTo(today, -1)) return HISTORY_COPY.yesterday;
+  if (day.date === today) return words('wall.history.today');
+  if (day.date === addDaysTo(today, -1)) return words('wall.history.yesterday');
   return dayLabel(day.items[0].at, zone);
 }
 

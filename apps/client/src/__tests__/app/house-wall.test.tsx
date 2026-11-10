@@ -1,4 +1,4 @@
-import { FOCUS_SHELL_COPY, HISTORY_COPY, LIST_COPY, REACTION_LABEL, SECTION_LABEL, WALL_COPY, WALL_FEED_COPY, wallEvents, type WallRow } from '@app/core';
+import { FOCUS_SHELL_COPY, LIST_COPY, REACTION_LABEL, SECTION_LABEL, wallEvents, type WallRow } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 import { useWindowDimensions } from 'react-native';
 
@@ -9,6 +9,9 @@ import { loadWall, setReaction } from '@/api/wall';
 import WallScreen from '@/app/(house)/house/wall';
 import { snapshot } from '@/testing/house';
 import { renderPages } from '@/testing/pages';
+import { wordsFor } from '@app/core';
+
+const words = wordsFor('en', 'housemates');
 
 jest.mock('@/api/board', () => ({ loadHouse: jest.fn() }));
 jest.mock('@/api/house', () => ({ catchUp: jest.fn() }));
@@ -108,11 +111,11 @@ it('tells what the house did a day at a time, latest first, by the clock', async
   await open();
   expect(loadWall).toHaveBeenCalledWith('h1', 'priya', 40, undefined);
   const [today, yesterday] = screen.getAllByTestId('wall-day');
-  expect(within(today).getByRole('header', { name: WALL_FEED_COPY.today })).toBeOnTheScreen();
-  expect(within(yesterday).getByRole('header', { name: WALL_FEED_COPY.yesterday })).toBeOnTheScreen();
-  const [bath] = day(WALL_FEED_COPY.today).getAllByTestId('wall-event');
+  expect(within(today).getByRole('header', { name: words('wall.feed.today') })).toBeOnTheScreen();
+  expect(within(yesterday).getByRole('header', { name: words('wall.feed.yesterday') })).toBeOnTheScreen();
+  const [bath] = day(words('wall.feed.today')).getAllByTestId('wall-event');
   expect(bath).toHaveTextContent(/Sam ticked Clean the bath.*14:10/);
-  expect(day(WALL_FEED_COPY.yesterday).getAllByTestId('wall-event').at(-1)).toHaveTextContent(
+  expect(day(words('wall.feed.yesterday')).getAllByTestId('wall-event').at(-1)).toHaveTextContent(
     /Alex moved in.*New housemate.*09:00/,
   );
 });
@@ -121,12 +124,12 @@ it('shows a photo receipt under its tick', async () => {
   await open();
   const photo = screen.getByTestId('wall-photo-image', { includeHiddenElements: true });
   expect(photo).toHaveProp('source', { uri: 'https://signed/p' });
-  expect(screen.getByLabelText(WALL_COPY.photoOf('Clean the bath'))).toBeOnTheScreen();
+  expect(screen.getByLabelText(words('wall.page.photoOf', { john: 'Clean the bath' }))).toBeOnTheScreen();
 });
 
 it('shows a payment’s amount only to the two people in it', async () => {
   await open();
-  const [, mine, theirs] = day(WALL_FEED_COPY.today).getAllByTestId('wall-event');
+  const [, mine, theirs] = day(words('wall.feed.today')).getAllByTestId('wall-event');
   expect(mine).toHaveTextContent(/You paid Sam £4\.50/);
   expect(theirs).toHaveTextContent(/Alex paid Sam/);
   expect(theirs).not.toHaveTextContent(/£/);
@@ -134,15 +137,15 @@ it('shows a payment’s amount only to the two people in it', async () => {
 
 it("folds a day's on-time ticks into one row at its foot, and opens it", async () => {
   await open();
-  const yesterday = day(WALL_FEED_COPY.yesterday);
+  const yesterday = day(words('wall.feed.yesterday'));
   const fold = yesterday.getByTestId('wall-fold');
-  expect(fold).toHaveTextContent(`${WALL_FEED_COPY.onTimeMany(2)}You`);
+  expect(fold).toHaveTextContent(`${words('wall.feed.onTimeMany', { n: 2 })}You`);
   const [first] = yesterday.getAllByTestId('wall-event');
   expect(yesterday.getAllByTestId('wall-event')).toHaveLength(1);
   expect(first).toHaveTextContent(/Alex moved in/);
   await fireEvent.press(fold);
   expect(fold).toBeExpanded();
-  const [joined, bins, hob] = day(WALL_FEED_COPY.yesterday).getAllByTestId('wall-event');
+  const [joined, bins, hob] = day(words('wall.feed.yesterday')).getAllByTestId('wall-event');
   expect(joined).toHaveTextContent(/Alex moved in/);
   expect(bins).toHaveTextContent(/You ticked Bins out.*20:00/);
   expect(hob).toHaveTextContent(/You ticked Wipe the hob.*19:30/);
@@ -152,7 +155,7 @@ it("gives a housemate's tick its Nice one, and shows all four reactions on a lon
   // The database hasn't answered yet: the sheet already shows it.
   (setReaction as jest.Mock).mockReturnValue(new Promise<void>(() => undefined));
   await open();
-  const [bath] = day(WALL_FEED_COPY.today).getAllByTestId('wall-event');
+  const [bath] = day(words('wall.feed.today')).getAllByTestId('wall-event');
   expect(within(bath).getByTestId('nice-one')).toBeSelected();
   await fireEvent(within(bath).getByRole('button', { name: /^Sam ticked Clean the bath/ }), 'longPress');
   const sheet = within(screen.getByTestId('wall-sheet'));
@@ -163,32 +166,32 @@ it("gives a housemate's tick its Nice one, and shows all four reactions on a lon
   await fireEvent.press(sheet.getByTestId('react-sparkle'));
   expect(setReaction).toHaveBeenCalledWith('e1', 'priya', 'sparkle', true);
   await waitFor(() =>
-    expect(sheet.getByRole('button', { name: WALL_FEED_COPY.reactionCount(REACTION_LABEL.sparkle, 1) })).toBeSelected(),
+    expect(sheet.getByRole('button', { name: words('wall.feed.reactionCount', { label: REACTION_LABEL.sparkle, count: 1 }) })).toBeSelected(),
   );
 });
 
 it("opens this week's John in the John sheet, and anything else in full", async () => {
   await open();
-  const [bath, , theirs] = day(WALL_FEED_COPY.today).getAllByTestId('wall-event');
+  const [bath, , theirs] = day(words('wall.feed.today')).getAllByTestId('wall-event');
   await fireEvent.press(within(bath).getByRole('button', { name: /^Sam ticked Clean the bath/ }));
   expect(mockOpen).toHaveBeenCalledWith('a4', undefined);
   expect(screen.queryByTestId('wall-sheet')).toBeNull();
   await fireEvent.press(within(theirs).getByRole('button'));
   const sheet = within(screen.getByTestId('wall-sheet'));
   expect(sheet.getByRole('header', { name: 'Alex paid Sam' })).toBeOnTheScreen();
-  expect(sheet.getByText(`${WALL_FEED_COPY.settled} Today, 10:00`)).toBeOnTheScreen();
+  expect(sheet.getByText(`${words('wall.feed.settled')} Today, 10:00`)).toBeOnTheScreen();
 });
 
 it('puts a reaction back and says why under the row it was made on', async () => {
   (setReaction as jest.Mock).mockRejectedValue(new Error("You can’t do that."));
   await open();
-  const [bath] = day(WALL_FEED_COPY.today).getAllByTestId('wall-event');
+  const [bath] = day(words('wall.feed.today')).getAllByTestId('wall-event');
   await fireEvent.press(within(bath).getByTestId('nice-one'));
   expect(setReaction).toHaveBeenCalledWith('e1', 'priya', 'nice', false);
   const alert = await screen.findByRole('alert');
   expect(alert).toHaveTextContent("You can’t do that.");
   // In today's group, not at the top of the page.
-  expect(day(WALL_FEED_COPY.today).getByRole('alert')).toBe(alert);
+  expect(day(words('wall.feed.today')).getByRole('alert')).toBe(alert);
   await waitFor(() => expect(within(bath).getByTestId('nice-one')).toBeSelected());
 });
 
@@ -219,14 +222,14 @@ it('says what lands here before anything has', async () => {
   (loadWall as jest.Mock).mockResolvedValue({ events: [], photos: {}, older: null });
   await renderPages({ 'house/wall': WallScreen }, '/house/wall');
   const empty = within(await screen.findByTestId('wall-empty'));
-  expect(empty.getByRole('header', { name: WALL_FEED_COPY.emptyTitle })).toBeOnTheScreen();
-  expect(empty.getByText(WALL_COPY.empty)).toBeOnTheScreen();
+  expect(empty.getByRole('header', { name: words('wall.feed.emptyTitle') })).toBeOnTheScreen();
+  expect(empty.getByText(words('wall.page.empty'))).toBeOnTheScreen();
 });
 
 it("says when it can't read the house it needs for the Wall's rows, and tries again", async () => {
   (loadHouse as jest.Mock).mockRejectedValueOnce(new Error('offline'));
   await renderPages({ 'house/wall': WallScreen }, '/house/wall');
-  expect(await screen.findByRole('alert')).toHaveTextContent(WALL_FEED_COPY.unreadable);
+  expect(await screen.findByRole('alert')).toHaveTextContent(words('wall.feed.unreadable'));
   await fireEvent.press(screen.getByRole('button', { name: FOCUS_SHELL_COPY.retry }));
   expect(await screen.findAllByTestId('wall-day')).toHaveLength(2);
 });
@@ -234,7 +237,7 @@ it("says when it can't read the house it needs for the Wall's rows, and tries ag
 it("says when it can't read the Wall, and tries again", async () => {
   (loadWall as jest.Mock).mockRejectedValueOnce(new Error('offline'));
   await renderPages({ 'house/wall': WallScreen }, '/house/wall');
-  expect(await screen.findByRole('alert')).toHaveTextContent(WALL_FEED_COPY.unreadable);
+  expect(await screen.findByRole('alert')).toHaveTextContent(words('wall.feed.unreadable'));
   await fireEvent.press(screen.getByRole('button', { name: FOCUS_SHELL_COPY.retry }));
   expect(await screen.findAllByTestId('wall-day')).toHaveLength(2);
 });
@@ -242,13 +245,13 @@ it("says when it can't read the Wall, and tries again", async () => {
 it('sits under a title bar with the way back to House', async () => {
   await open();
   const bar = within(screen.getByTestId('title-bar'));
-  expect(bar.getByRole('header', { name: WALL_COPY.title })).toBeOnTheScreen();
+  expect(bar.getByRole('header', { name: words('wall.page.title') })).toBeOnTheScreen();
   expect(bar.getByRole('button', { name: FOCUS_SHELL_COPY.backTo(SECTION_LABEL.house) })).toBeOnTheScreen();
 });
 
 it('shows History beside the Wall on a laptop, under its name, and a switch between them on a phone', async () => {
   await open();
-  expect(within(screen.getByTestId('wall-shows')).getByRole('radio', { name: WALL_COPY.title })).toBeChecked();
+  expect(within(screen.getByTestId('wall-shows')).getByRole('radio', { name: words('wall.page.title') })).toBeChecked();
   expect(screen.queryByTestId('history-section')).toBeNull();
 
   (useWindowDimensions as jest.Mock).mockReturnValue({ width: 1440, height: 900, scale: 1, fontScale: 1 });
@@ -256,8 +259,8 @@ it('shows History beside the Wall on a laptop, under its name, and a switch betw
   expect(screen.queryByTestId('wall-shows')).toBeNull();
   expect(within(screen.getByTestId('wall-pair-start')).getAllByTestId('wall-day').length).toBeGreaterThan(0);
   const history = within(screen.getByTestId('wall-pair-end'));
-  expect(history.getAllByRole('header', { name: HISTORY_COPY.title })[0]).toBeOnTheScreen();
-  expect(history.getByText(HISTORY_COPY.meta)).toBeOnTheScreen();
+  expect(history.getAllByRole('header', { name: words('wall.history.title') })[0]).toBeOnTheScreen();
+  expect(history.getByText(words('wall.history.meta'))).toBeOnTheScreen();
   expect(await history.findByTestId('history-empty')).toBeOnTheScreen();
   (useWindowDimensions as jest.Mock).mockReturnValue({ width: 390, height: 844, scale: 1, fontScale: 1 });
 });

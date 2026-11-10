@@ -1,17 +1,4 @@
-import {
-  REACTION_LABEL,
-  struckAt,
-  WALL_COPY,
-  WALL_FEED_COPY,
-  type ReactionKind,
-  type StatusIcon,
-  type WallEvent,
-  type WallFamily,
-  type WallFeedRow,
-  type WallIcon,
-  type WallScene,
-  type Words,
-} from '@app/core';
+import { REACTION_LABEL, struckAt, type ReactionKind, type StatusIcon, type WallEvent, type WallFamily, type WallFeedRow, type WallIcon, type WallScene, type Words } from '@app/core';
 import {
   BadgeCheckIcon,
   BanknoteIcon,
@@ -49,6 +36,7 @@ import { Meta } from '@/components/text';
 import { Photo } from '@/components/photo';
 import type { HouseView } from '@/hooks/use-house';
 import { FONT, INSET, LEADING, RADIUS, ROW_GAP, SPACE, TABULAR, TAP, useTheme, type Theme } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 // Core says what happened and which icon fits; these draw it.
 const WALL_ICON: Record<WallIcon, LucideIcon> = {
@@ -334,12 +322,13 @@ export function NiceToggle({
   onPress: () => void;
   onLongPress?: () => void;
 }) {
+  const words = useWords();
   const { colors } = useTheme();
   const ink = mine ? colors.foreground : colors.mutedForeground;
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={count > 0 ? WALL_FEED_COPY.tally(REACTION_LABEL.nice, count) : REACTION_LABEL.nice}
+      accessibilityLabel={count > 0 ? words('wall.feed.tally', { label: REACTION_LABEL.nice, count }) : REACTION_LABEL.nice}
       {...toggleState(mine)}
       onPress={onPress}
       onLongPress={onLongPress}
@@ -354,12 +343,13 @@ export function NiceToggle({
 
 /** What the house gave an event most, in the toggle's place: pressing it shows all four. */
 export function ReactionTally({ kind, count, onPress }: { kind: ReactionKind; count: number; onPress: () => void }) {
+  const words = useWords();
   const { colors } = useTheme();
   const Icon = REACTION_ICON[kind];
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={WALL_FEED_COPY.tally(REACTION_LABEL[kind], count)}
+      accessibilityLabel={words('wall.feed.tally', { label: REACTION_LABEL[kind], count })}
       onPress={onPress}
       testID="reaction-tally"
       style={({ pressed }) => [styles.pill, pressed && { backgroundColor: colors.secondary }]}
@@ -376,11 +366,12 @@ export function ReactionTally({ kind, count, onPress }: { kind: ReactionKind; co
  * count, kept clear of the row's edge) beside a "Nice one" toggle.
  */
 export function ReactButton({ onPress, compact = false }: { onPress: () => void; compact?: boolean }) {
+  const words = useWords();
   const { colors } = useTheme();
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={WALL_FEED_COPY.react}
+      accessibilityLabel={words('wall.feed.react')}
       onPress={onPress}
       testID="react"
       style={({ pressed }) => [compact ? styles.compact : styles.pill, pressed && { backgroundColor: colors.secondary }]}
@@ -393,9 +384,10 @@ export function ReactButton({ onPress, compact = false }: { onPress: () => void;
 
 /** A tick's photo receipt, under its row and in line with its words. */
 export function WallPhoto({ uri, john }: { uri: string; john: string | null }) {
+  const words = useWords();
   return (
     <View style={styles.photoRow}>
-      <Photo uri={uri} label={WALL_COPY.photoOf(john ?? WALL_FEED_COPY.theJohn)} style={styles.photo} onCard={false} testID="wall-photo" />
+      <Photo uri={uri} label={words('wall.page.photoOf', { john: john ?? words('wall.feed.theJohn') })} style={styles.photo} onCard={false} testID="wall-photo" />
     </View>
   );
 }

@@ -10,7 +10,7 @@ through FormatJS. A family reads its own sentences (never "housemates" or
 
 - **The words files.** `packages/core/src/locales/en/<part>.json`, one per
   part of the app (`today`, `week`, `john`, `house`, `people`, `wall`,
-  `common`, and more as the lines move). Flat ids that start with the file's name
+  `email`, `common`, and more as the lines move). Flat ids that start with the file's name
   (`today.nextUp.invite`), each line an ICU message:
   - a family's own sentence: `{kind, select, family {Invite your family} other {Invite housemates}}`
   - a count: `{count, plural, one {# housemate} other {# housemates}}`
@@ -23,7 +23,8 @@ through FormatJS. A family reads its own sentences (never "housemates" or
   `useWords(view.snapshot.house.kind)`. Shared code, the API, emails and
   push use `wordsFor(language, kind)` from `@app/core`. The house's kind
   goes into every line by itself. Ids are typed, so a wrong id fails
-  typecheck; a missing gap throws in tests and development.
+  typecheck; a missing gap throws in tests and development. `kind` is the
+  house's kind in every line, so never name another gap `kind`.
 - **The checks.** `family-words.test.ts` reads every line every way it can
   be read (each select option, counts 0, 1, 2 and 5) and fails if a
   family's reading says housemate, flatmate or admin, or if a line doesn't

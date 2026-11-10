@@ -4,7 +4,9 @@ import {
   forfeitFor,
   passOf,
   passUnlocked,
+  houseKind,
   resetWhat,
+  wordsFor,
   ResetPreview,
   rulesOf,
   weekWindow,
@@ -92,19 +94,20 @@ export async function resetHouse(
 
   const notify = pushNotifier(admin);
   if (notify && done.told.length > 0) {
-    const by = (me?.profiles as { display_name: string } | null)?.display_name ?? "An admin";
+    const words = wordsFor("en", houseKind(house.kind));
+    const by = (me?.profiles as { display_name: string } | null)?.display_name ?? words("wall.tell.anAdmin");
     const { data: action } = await admin.from("house_actions").select("subject_user_id, data").eq("id", done.action).single();
-    const words = (action?.data ?? {}) as Record<string, unknown>;
+    const data = (action?.data ?? {}) as Record<string, unknown>;
     const subjectId = action?.subject_user_id ?? null;
     const { data: subject } = subjectId
       ? await admin.from("profiles").select("display_name").eq("id", subjectId).maybeSingle()
       : { data: null };
     for (const userId of done.told) {
       // "Glyn reset your week", "Glyn marked Sam’s Bins done".
-      const whose = userId === subjectId ? "You" : (subject?.display_name ?? "Someone");
+      const whose = userId === subjectId ? words("wall.feed.you") : (subject?.display_name ?? words("wall.feed.someone"));
       await notify([userId], {
-        title: `${by} ${resetWhat(words, whose)}`,
-        body: "Open Jonz to see what changed.",
+        title: words("wall.history.line.reset", { who: by, what: resetWhat(data, whose, words) }),
+        body: words("wall.tell.openToSee"),
         url: request.kind === "letoff" ? "/house/stake" : "/week",
         kind: "checks",
         zone: rules.timezone,

@@ -1,7 +1,5 @@
 import { APP_NAME, PAGE_TITLE, SHARE_COPY, pageTitle } from "./copy";
 import type { HouseKind } from "./domain";
-import { HISTORY_COPY } from "./history";
-import { WALL_COPY } from "./wall";
 import { wordsFor } from "./words-for";
 
 /** A link preview has no reader, so its words are English. */
@@ -95,9 +93,9 @@ const PAGES: [RegExp, string][] = [
   [/^\/week$/, PAGE_TITLE.week],
   [/^\/week\/record(\/[^/]+)?$/, PREVIEW_WORDS('week.record.title')],
   [/^\/house$/, PAGE_TITLE.house],
-  [/^\/house\/wall$/, WALL_COPY.title],
+  [/^\/house\/wall$/, PREVIEW_WORDS('wall.page.title')],
   [/^\/house\/stake$/, PREVIEW_WORDS('house.stake.title')],
-  [/^\/house\/history$/, HISTORY_COPY.title],
+  [/^\/house\/history$/, PREVIEW_WORDS('wall.history.title')],
   [/^\/house\/johns$/, PAGE_TITLE.johnList],
   [/^\/house\/rules$/, PAGE_TITLE.rules],
   [/^\/house\/away$/, PAGE_TITLE.away],

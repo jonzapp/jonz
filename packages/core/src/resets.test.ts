@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import { actionLine } from "./history";
+import { wordsFor } from "./words-for";
 import { resetItemLine, resetSheet, resetTitle, resetWhat, toldLine, type ResetPreview, type ResetWords } from "./resets";
+
+const english = wordsFor("en", "housemates");
 
 const names: Record<string, string> = { glyn: "Glyn Finck", sam: "Sam Lee", ada: "Ada Park" };
 
@@ -75,9 +78,9 @@ describe("the reset sheet", () => {
 
 describe("a reset in History and on the Wall", () => {
   it("says who did what", () => {
-    expect(resetWhat({ what: "person_week" }, "Sam")).toBe("reset Sam’s week");
-    expect(resetWhat({ what: "result", name: "Bins", outcome: "missed" }, "You")).toBe("marked your Bins missed");
-    expect(actionLine("reset", { what: "skip" }, "Glyn", "Someone", "GBP", "housemates")).toBe("Glyn skipped the week");
+    expect(resetWhat({ what: "person_week" }, "Sam", english)).toBe("reset Sam’s week");
+    expect(resetWhat({ what: "result", name: "Bins", outcome: "missed" }, "You", english)).toBe("marked your Bins missed");
+    expect(actionLine("reset", { what: "skip" }, "Glyn", "Someone", "GBP", english)).toBe("Glyn skipped the week");
   });
 });
 

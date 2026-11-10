@@ -1,17 +1,4 @@
-import {
-  actionLine,
-  HISTORY_COPY,
-  historyDayLabel,
-  historyDays,
-  historyFor,
-  historyMeta,
-  historyTime,
-  dayLabel,
-  LIST_COPY,
-  type Currency,
-  type HouseKind,
-  type HistoryItem,
-} from '@app/core';
+import { actionLine, historyDayLabel, historyDays, historyFor, historyMeta, historyTime, dayLabel, LIST_COPY, type Currency, type HouseKind, type HistoryItem } from '@app/core';
 import { HistoryIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -29,6 +16,7 @@ import { TextButton } from '@/components/text-button';
 import { useToastIfAny } from '@/components/toast';
 import { useMove } from '@/hooks/use-move';
 import { INSET } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 export interface HistoryScene {
   houseId: string;
@@ -61,6 +49,7 @@ export function HistoryList({
   scene: HistoryScene;
   more: ListMore;
 }) {
+  const words = useWords();
   const [mine, setMine] = useState(false);
   const shown = historyFor(items, scene.me, mine);
   const days = historyDays(shown, scene.zone);
@@ -70,20 +59,20 @@ export function HistoryList({
       <View style={styles.pick}>
         <Segmented
           options={[
-            { value: 'everyone', label: HISTORY_COPY.everyone },
-            { value: 'mine', label: HISTORY_COPY.mine },
+            { value: 'everyone', label: words('wall.history.everyone') },
+            { value: 'mine', label: words('wall.history.mine') },
           ]}
           value={mine ? 'mine' : 'everyone'}
           onChange={(v) => setMine(v === 'mine')}
-          label={HISTORY_COPY.title}
+          label={words('wall.history.title')}
           testID="history-whose"
         />
       </View>
       {days.length === 0 ? (
-        <EmptyState icon={HistoryIcon} title={HISTORY_COPY.title} body={HISTORY_COPY.empty} testID="history-empty" />
+        <EmptyState icon={HistoryIcon} title={words('wall.history.title')} body={words('wall.history.empty')} testID="history-empty" />
       ) : (
         days.map((day) => (
-          <Section key={day.date} label={historyDayLabel(day, scene.now, scene.zone)} testID="history-day">
+          <Section key={day.date} label={historyDayLabel(day, scene.now, scene.zone, words)} testID="history-day">
             {day.items.map((item) => (
               <HistoryRow key={item.id} item={item} scene={scene} />
             ))}
@@ -102,11 +91,12 @@ export function HistoryList({
 }
 
 function HistoryRow({ item, scene }: { item: HistoryItem; scene: HistoryScene }) {
+  const words = useWords(scene.kind);
   const undo = useMove(scene.houseId);
   const toast = useToastIfAny();
   const who = scene.nameOf(item.actor);
-  const line = actionLine(item.kind, item.data, who, scene.nameOf(item.subject), scene.currency, scene.kind);
-  const meta = historyMeta(item, historyTime(item.at, scene.zone), scene.nameOf);
+  const line = actionLine(item.kind, item.data, who, scene.nameOf(item.subject), scene.currency, words);
+  const meta = historyMeta(item, historyTime(item.at, scene.zone), scene.nameOf, words);
 
   return (
     <>
@@ -118,12 +108,12 @@ function HistoryRow({ item, scene }: { item: HistoryItem; scene: HistoryScene })
         trailing={
           item.reach && !item.undoneAt ? (
             <TextButton
-              label={HISTORY_COPY.undo}
-              accessibilityLabel={HISTORY_COPY.undoLabel(line)}
+              label={words('wall.history.undo')}
+              accessibilityLabel={words('wall.history.undoLabel', { line })}
               disabled={undo.pending}
               onPress={() =>
                 void undo.run(() => undoAction(item.id)).then((done) => {
-                  if (done) toast?.show(HISTORY_COPY.wasUndone);
+                  if (done) toast?.show(words('wall.history.wasUndone'));
                 })
               }
               testID="history-undo"

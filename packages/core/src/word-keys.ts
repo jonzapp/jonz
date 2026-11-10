@@ -91,3 +91,24 @@ export function recordCounts(c: RecordCounts, words: Words): string {
   const keys = ["late", "missed", "skipped", "covered", "helped"] as const;
   return [words("week.record.counts.onTime", { n: c.onTime }), ...keys.filter((k) => c[k]).map((k) => words(`week.record.counts.${k}`, { n: c[k] }))].join(", ");
 }
+
+/** Names as one phrase: "Sam, Jo and you", and past four "Sam, Jo, Priya, you and 2 more". */
+export function nameList(words: Words, names: readonly string[]): string {
+  const shown = names.length > 4 ? [...names.slice(0, 4), words("wall.feed.namesMore", { n: names.length - 4 })] : names;
+  return shown.length < 2 ? shown.join("") : words("wall.feed.namesAnd", { first: shown.slice(0, -1).join(", "), last: shown[shown.length - 1] });
+}
+
+/** A Wall row, to a screen reader: the sentence, its meta line if any, then when. */
+export function rowLabel(words: Words, title: string, detail: string | null, when: string): string {
+  return detail ? words("wall.feed.rowDetail", { title, detail, when }) : words("wall.feed.row", { title, when });
+}
+
+/** Whose, from a name that's "You" for the viewer: "your", "Sam’s". */
+export function whoseOf(name: string, words: Words): string {
+  return name === words("wall.feed.you") ? words("wall.feed.your") : words("wall.feed.whose", { name });
+}
+
+/** A name as a sentence's object: "you" for the viewer, else the name. */
+export function whomOf(name: string, words: Words): string {
+  return name === words("wall.feed.you") ? words("wall.feed.youObject") : name;
+}

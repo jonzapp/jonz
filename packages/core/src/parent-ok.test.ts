@@ -7,7 +7,8 @@ import { familyHides } from "./family";
 import { settleOutcome } from "./outcome";
 import { rulesRows } from "./setup";
 import { okMeta, okTitle, okWho, tickedLine } from "./today";
-import { describeEvent, type WallEvent } from "./wall";
+import { wallFeedRow } from "./house-lower";
+import { wallEvents } from "./wall";
 import { wordsFor } from "./words-for";
 
 const words = wordsFor("en", "housemates");
@@ -110,20 +111,14 @@ describe("a family's rules and words", () => {
   });
 
   it("puts a parent's answer on the Wall", () => {
-    const event = (kind: string): WallEvent => ({
-      id: kind,
-      kind,
-      userId: "sam",
-      assignmentId: "a1",
-      data: { name: "Feed the fish", against: "leo" },
-      createdAt: now,
-      photoPath: null,
-      reactions: { nice: { count: 0, mine: false }, fire: { count: 0, mine: false }, sparkle: { count: 0, mine: false }, eyes: { count: 0, mine: false } },
-    });
-    const nameOf = (id: string | null) => PEOPLE.find((p) => p.userId === id)?.name.split(" ")[0] ?? "?";
-    const words = (kind: string) => describeEvent(event(kind), nameOf, "GBP").parts.map((p) => p.text).join("");
-    expect(words("okayed")).toBe("Sam OK’d Leo’s Feed the fish.");
-    expect(words("not_yet")).toBe("Sam sent Leo’s Feed the fish back. It’s open again.");
+    const post = (kind: string) =>
+      wallFeedRow(
+        wallEvents([{ id: kind, kind, user_id: "sam", assignment_id: "a1", data: { name: "Feed the fish", against: "leo" }, created_at: now.toISOString(), assignments: null, reactions: [] }], "maya")[0],
+        { me: "maya", members: PEOPLE.map((p) => ({ userId: p.userId, name: p.name })), currency: "GBP", zone: "Europe/London", now },
+        wordsFor("en", "family"),
+      );
+    expect(post("okayed").title).toBe("Sam OK’d Leo’s Feed the fish");
+    expect(post("not_yet")).toMatchObject({ title: "Sam sent Leo’s Feed the fish back", detail: "Open again", family: "trouble" });
   });
 
   it("speaks the Today tab's badge as OKs in a family", () => {

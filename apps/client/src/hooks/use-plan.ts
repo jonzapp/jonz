@@ -1,4 +1,3 @@
-import { HISTORY_COPY } from '@app/core';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 
@@ -6,6 +5,7 @@ import { planJohn } from '@/api/johns';
 import { useToastIfAny } from '@/components/toast';
 import { houseKey } from '@/hooks/keys';
 import { useMove } from '@/hooks/use-move';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * Plan when you'll do one of your Johns (or clear the plan), then say so in
@@ -13,6 +13,7 @@ import { useMove } from '@/hooks/use-move';
  * `problem`; one on Undo is the next toast.
  */
 export function usePlan(houseId: string, assignmentId: string, before: Date | null) {
+  const words = useWords();
   const move = useMove(houseId);
   const toast = useToastIfAny();
   const client = useQueryClient();
@@ -21,12 +22,12 @@ export function usePlan(houseId: string, assignmentId: string, before: Date | nu
       const done = await move.run(() => planJohn(assignmentId, at));
       if (done) {
         toast?.show(message, {
-          label: HISTORY_COPY.undo,
+          label: words('wall.history.undo'),
           onPress: () => {
             planJohn(assignmentId, before).then(
               () => {
                 void client.invalidateQueries({ queryKey: houseKey(houseId) });
-                toast.show(HISTORY_COPY.wasUndone);
+                toast.show(words('wall.history.wasUndone'));
               },
               (reason: unknown) => toast.show(reason instanceof Error ? reason.message : String(reason)),
             );

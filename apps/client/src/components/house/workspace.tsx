@@ -1,4 +1,4 @@
-import { ASK_USAGE_COPY, FOCUS_SHELL_COPY, PAGE_TITLE, WALL_COPY, type Words } from '@app/core';
+import { ASK_USAGE_COPY, FOCUS_SHELL_COPY, PAGE_TITLE, type Words } from '@app/core';
 import { usePathname, useRouter, type Href } from 'expo-router';
 import {
   GaugeIcon,
@@ -135,7 +135,7 @@ const pages = (words: Words): { group: string | null; items: { href: Href; label
     group: null,
     items: [
       { href: '/house', label: words('house.lower.overview'), icon: HouseIcon, testID: 'nav-overview' },
-      { href: '/house/wall', label: WALL_COPY.title, icon: MessageSquareIcon, testID: 'nav-wall' },
+      { href: '/house/wall', label: words('wall.page.title'), icon: MessageSquareIcon, testID: 'nav-wall' },
     ],
   },
   {
