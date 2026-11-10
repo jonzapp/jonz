@@ -82,7 +82,8 @@ export const CONSENT_COPY = {
 /** Connected apps, on You: what each can do and how to stop it. */
 export const CONNECTED_APPS_COPY = {
   heading: "Connected apps",
-  none: "No apps are connected. An app you connect to Jonz over MCP shows here.",
+  none: "No apps are connected",
+  noneMeta: "An app you connect to Jonz over MCP shows here.",
   since: (date: string) => `Connected ${date}.`,
   disconnect: "Disconnect",
   disconnecting: "Disconnecting…",

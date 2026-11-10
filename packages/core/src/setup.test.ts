@@ -24,6 +24,7 @@ import {
   rulesDraft,
   rulesRefusalField,
   rulesRows,
+  listLine,
   scheduleLine,
   tripMeta,
   tripStarted,
@@ -63,6 +64,24 @@ describe("johnsByKind", () => {
 
   it("has nothing to show for an empty list", () => {
     expect(johnsByKind([])).toEqual([]);
+  });
+});
+
+describe("listLine", () => {
+  it("says when a weekly John is due and nothing more", () => {
+    expect(listLine(john({ everyWeeks: 1, dueDow: 7, dueTime: "21:00" }))).toBe("Sun 21:00");
+  });
+
+  it("adds what sets it apart: how often, the photo, the group", () => {
+    expect(listLine(john({ everyWeeks: 2, dueDow: 4, dueTime: "07:00", needsPhoto: true }), "Upstairs bathroom")).toBe(
+      "Thu 07:00, every 2 weeks, photo, Upstairs bathroom",
+    );
+    expect(listLine(john({ everyMonths: 6, weekOfMonth: 5, dueDow: 7, dueTime: "10:00" }))).toBe("last Sun 10:00, twice a year");
+  });
+
+  it("says an on-call John's window", () => {
+    expect(listLine(john({ when: "on_call", respondHours: 12, perWeek: 3 }), "Downstairs")).toBe("On call, within 12 hours, Downstairs");
+    expect(listLine(john({ when: "on_call", respondHours: 1 }))).toBe("On call, within 1 hour");
   });
 });
 

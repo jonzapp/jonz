@@ -114,15 +114,21 @@ it('sits under a title bar with the way back to House', async () => {
   expect(bar.getByRole('button', { name: FOCUS_SHELL_COPY.backTo(SECTION_LABEL.house) })).toBeOnTheScreen();
 });
 
-it('groups the Johns by kind, each with how often, when, the photo and its points', async () => {
+it('groups the Johns by kind, each with when, what sets it apart and its points', async () => {
   await open();
   // Kinds in the house's order, each counted.
-  expect(within(screen.getByTestId('kind-bathroom')).getByText(SETUP_COPY.kind('Bathroom', 1))).toBeOnTheScreen();
-  expect(within(screen.getByTestId('kind-bins')).getByText(SETUP_COPY.kind('Bins & recycling', 1))).toBeOnTheScreen();
+  expect(within(screen.getByTestId('kind-bathroom')).getByRole('header', { name: 'Bathroom' })).toBeOnTheScreen();
+  expect(screen.getByTestId('kind-bathroom')).toHaveTextContent(/^Bathroom1/);
+  expect(within(screen.getByTestId('kind-bins')).getByRole('header', { name: 'Bins & recycling' })).toBeOnTheScreen();
   const [bath, bins] = screen.getAllByTestId('john-def');
-  expect(bath).toHaveTextContent(/Bathroom.*Every 2 weeks, Sun 21:00, photo.*4 pts/);
-  expect(bins).toHaveTextContent(/Bins.*Every week, Thu 07:00.*1 pt/);
-  expect(screen.getByText(JOHN_LIST_COPY.perWeek(3))).toBeOnTheScreen();
+  expect(bath).toHaveTextContent(/Bathroom.*Sun 21:00, every 2 weeks, photo.*4 pts/);
+  expect(bins).toHaveTextContent(/Bins.*Thu 07:00.*1 pt/);
+  // Every week is the usual, so a row doesn't say it.
+  expect(bins).not.toHaveTextContent(/Every week/i);
+  // Over the list on a phone: what it adds up to, then Add a John.
+  const bar = within(screen.getByTestId('john-list-bar'));
+  expect(bar.getByText(`${JOHN_LIST_COPY.count(2)} ${JOHN_LIST_COPY.perWeek(3)}`)).toBeOnTheScreen();
+  expect(bar.getByRole('button', { name: JOHN_LIST_COPY.add })).toBeOnTheScreen();
 });
 
 it('says which group shares a John', async () => {
@@ -363,7 +369,7 @@ describe('an admin', () => {
 
   it('opens a John to edit it, or to take it off the list', async () => {
     await open();
-    await fireEvent.press(screen.getByRole('button', { name: /^Edit Bins, Every week, Thu 07:00, 1 pt$/ }));
+    await fireEvent.press(screen.getByRole('button', { name: /^Edit Bins, Thu 07:00, 1 pt$/ }));
     const form = within(screen.getByTestId('john-form'));
     expect(form.getByTestId('john-name')).toHaveDisplayValue('Bins');
     expect(form.getByRole('button', { name: `${JOHN_LIST_COPY.kind}, Bins & recycling` })).toBeOnTheScreen();

@@ -433,7 +433,7 @@ describe("wallDays", () => {
     ]);
   });
 
-  it("folds two or more ticks by one person in a row, and never across people or days", () => {
+  it("folds a day's on-time ticks into one row at its foot, naming who, and never across days", () => {
     const days = wallDays(
       [
         at("2026-10-26T14:00:00Z"),
@@ -443,26 +443,46 @@ describe("wallDays", () => {
         at("2026-10-26T10:00:00Z", { kind: "joined" }),
         at("2026-10-26T09:00:00Z", { user_id: "sam" }),
         at("2026-10-26T08:00:00Z", { user_id: "sam", kind: "missed" }),
-        at("2026-10-25T23:00:00Z", { user_id: "sam", kind: "missed" }),
+        at("2026-10-25T23:00:00Z", { user_id: "sam" }),
       ],
       ZONE,
       NOW,
     );
     const [today, yesterday] = days;
     expect(today.items.map((item) => ("fold" in item ? item.fold.label : item.row.title))).toEqual([
-      "Megan ticked 3 Johns",
-      "Tom ticked Wipe down the kitchen",
+      "Megan ticked Wipe down the kitchen",
       "Megan moved in",
-      "You ticked Wipe down the kitchen",
       "You missed Wipe down the kitchen",
+      "4 ticked on time",
     ]);
-    const fold = today.items[0];
+    const fold = today.items[3];
+    expect("fold" in fold && fold.fold.detail).toBe("Megan, Tom and you");
     expect("fold" in fold && fold.fold.rows.map((r) => r.id)).toEqual([
       "2026-10-26T14:00:00Z",
-      "2026-10-26T13:00:00Z",
       "2026-10-26T12:00:00Z",
+      "2026-10-26T11:00:00Z",
+      "2026-10-26T09:00:00Z",
     ]);
-    expect(yesterday.items).toHaveLength(1);
+    // One on-time tick in a day stays a row of its own.
+    expect(yesterday.items.map((item) => ("fold" in item ? item.fold.label : item.row.title))).toEqual([
+      "You ticked Wipe down the kitchen",
+    ]);
+  });
+
+  it("folds two or more late ticks by one person in a row", () => {
+    const [day] = wallDays(
+      [
+        at("2026-10-26T14:00:00Z", { kind: "late" }),
+        at("2026-10-26T13:00:00Z", { kind: "late" }),
+        at("2026-10-26T12:00:00Z", { user_id: "tom", kind: "late" }),
+      ],
+      ZONE,
+      NOW,
+    );
+    expect(day.items.map((item) => ("fold" in item ? item.fold.label : item.row.title))).toEqual([
+      "Megan ticked 2 Johns",
+      "Tom ticked Wipe down the kitchen",
+    ]);
   });
 
   it("folds misses by one person too, and leaves news that never repeats alone", () => {

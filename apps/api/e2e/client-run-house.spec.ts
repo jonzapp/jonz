@@ -9,7 +9,7 @@ import {
   NEXT_UP_COPY,
   pointsLabel,
   RULES_COPY,
-  scheduleLine,
+  listLine,
   SECTION_LABEL,
   SETUP_COPY,
   SIGN_IN_COPY,
@@ -82,7 +82,7 @@ test("run a house from nothing on the phone", async ({ browser }) => {
   await page.getByTestId("timing-done").click();
   await page.getByTestId("john-form").getByTestId("save-john").click();
   await expect(list.getByTestId("john-def").filter({ hasText: "Bins" })).toContainText(
-    scheduleLine({ everyWeeks: 1, dueDow: 4, dueTime: "21:00", needsPhoto: false }),
+    listLine({ everyWeeks: 1, dueDow: 4, dueTime: "21:00", needsPhoto: false }),
   );
   const { data: houseRow } = await db.from("houses").select("id, join_code, currency").eq("name", name).single();
   const { data: johns } = await db.from("johns").select("name, points, due_dow").eq("house_id", houseRow!.id).order("name");

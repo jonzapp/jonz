@@ -59,6 +59,8 @@ describe('Row', () => {
     // Two lines make the row 64; one line, ROW_MIN.
     expect(screen.getByTestId('row')).toHaveStyle({ minHeight: 64 });
     expect(screen.getByText('Bins out').props.numberOfLines).toBe(1);
+    // The meta line wraps onto a second rather than being cut short.
+    expect(screen.getByText('Thu 07:00, 2 pts').props.numberOfLines).toBe(2);
     await fireEvent.press(button);
     expect(onPress).toHaveBeenCalledTimes(1);
   });
@@ -142,10 +144,10 @@ describe('Row', () => {
     expect(choose).toHaveBeenCalledTimes(1);
   });
 
-  it('lets a value in words take up to 60% of the row, cut short past that', async () => {
+  it('lets a value in words take up to 60% of the row, on a second line past that', async () => {
     await render(<Row title="Shared by" trailing="The upstairs bathroom and the landing" />);
     const value = screen.getByText('The upstairs bathroom and the landing');
-    expect(value).toHaveProp('numberOfLines', 1);
+    expect(value).toHaveProp('numberOfLines', 2);
     expect(value).toHaveStyle({ flexShrink: 1, maxWidth: '60%', textAlign: 'right' });
   });
 

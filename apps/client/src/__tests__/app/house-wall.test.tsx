@@ -132,18 +132,20 @@ it('shows a payment’s amount only to the two people in it', async () => {
   expect(theirs).not.toHaveTextContent(/£/);
 });
 
-it('folds several ticks by one person in a row into one, and opens it', async () => {
+it("folds a day's on-time ticks into one row at its foot, and opens it", async () => {
   await open();
   const yesterday = day(WALL_FEED_COPY.yesterday);
   const fold = yesterday.getByTestId('wall-fold');
-  expect(fold).toHaveTextContent(/You ticked 2 Johns,.*20:00/);
+  expect(fold).toHaveTextContent(`${WALL_FEED_COPY.onTimeMany(2)}You`);
+  const [first] = yesterday.getAllByTestId('wall-event');
   expect(yesterday.getAllByTestId('wall-event')).toHaveLength(1);
+  expect(first).toHaveTextContent(/Alex moved in/);
   await fireEvent.press(fold);
   expect(fold).toBeExpanded();
-  const [bins, hob, joined] = day(WALL_FEED_COPY.yesterday).getAllByTestId('wall-event');
+  const [joined, bins, hob] = day(WALL_FEED_COPY.yesterday).getAllByTestId('wall-event');
+  expect(joined).toHaveTextContent(/Alex moved in/);
   expect(bins).toHaveTextContent(/You ticked Bins out.*20:00/);
   expect(hob).toHaveTextContent(/You ticked Wipe the hob.*19:30/);
-  expect(joined).toHaveTextContent(/Alex moved in/);
 });
 
 it("gives a housemate's tick its Nice one, and shows all four reactions on a long press", async () => {

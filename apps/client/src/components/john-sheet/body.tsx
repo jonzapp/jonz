@@ -74,7 +74,7 @@ export interface JohnSheetContext {
  * open flag: Remove flag, for whoever raised it or an admin. A John
  * done together, or with help, says who's on it (crew.ts); ticking one is
  * its roll call, "Who did it?", in place of the rest. Then, whatever its
- * state, an admin's "Change result", and "Why?": why it's whose it is, and
+ * state, an admin's "Fix the result", and "Why?": why it's whose it is, and
  * what's at stake.
  */
 export function JohnSheetBody({ item, context }: { item: BoardItem; context: JohnSheetContext }) {

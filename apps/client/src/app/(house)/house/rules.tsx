@@ -107,7 +107,8 @@ function RulesReadOut({ houseId, userId, view, onEdit }: { houseId: string; user
             snapshot.house.kind,
             snapshot.house.pocketCapMinor,
           ).map((rule) => (
-            <Row key={rule.label} title={rule.label} trailing={rule.value} testID="rule" />
+            // A rule and its value both show whole on a small phone, on two lines each if they must.
+            <Row key={rule.label} title={rule.label} titleLines={2} trailing={rule.value} testID="rule" />
           ))}
         </Section>
         </TourSpot>

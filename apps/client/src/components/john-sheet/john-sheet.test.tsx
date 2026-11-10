@@ -132,7 +132,7 @@ beforeEach(() => {
   (signPhoto as jest.Mock).mockResolvedValue('https://photos.test/a3.jpg');
 });
 
-/** The sheet's buttons, but for an admin's Change result. */
+/** The sheet's buttons, but for an admin's Fix the result. */
 function notChangeResult(body: ReturnType<typeof screen.getByTestId>) {
   const change = within(body).queryByTestId('change-result');
   const theirs = change ? within(change).queryAllByRole('button') : [];
@@ -530,6 +530,7 @@ describe("a housemate's John", () => {
     (applyReset as jest.Mock).mockResolvedValue('action-1');
     await show(house([binsOut(), samsBath()]));
     const body = await openOn('Open a4');
+    await fireEvent.press(within(body).getByTestId('fix-result'));
     await fireEvent.press(within(body).getByTestId('result-done'));
     const panel = within(await within(body).findByTestId('reset-panel'));
     expect(await panel.findByText('Sam gets a notification')).toBeOnTheScreen();
@@ -543,7 +544,7 @@ describe("a housemate's John", () => {
     await show(house([binsOut(), samsBath()]));
     const body = await openOn('Open a4');
     expect(within(body).getByText(JOHN_SHEET_COPY.theirs('Sam'))).toBeOnTheScreen();
-    // Only an admin's Change result, which every John has.
+    // Only an admin's Fix the result, which every John has.
     expect(notChangeResult(body)).toEqual([]);
   });
 
@@ -725,7 +726,7 @@ describe('a settled John', () => {
     const photo = await within(body).findByTestId('sheet-photo-image', { includeHiddenElements: true });
     expect(photo.props.source).toEqual({ uri: 'https://photos.test/a3.jpg' });
     expect(signPhoto).toHaveBeenCalledWith('h1/a3.jpg');
-    // Only an admin's Change result, which every John has.
+    // Only an admin's Fix the result, which every John has.
     expect(notChangeResult(body)).toEqual([]);
   });
 

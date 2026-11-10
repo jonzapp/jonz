@@ -519,6 +519,8 @@ export function wallFeedRow(event: WallEvent, scene: WallScene): WallFeedRow {
 export interface WallFold {
   id: string;
   label: string;
+  /** Under the label, for a day's on-time ticks: who ticked ("Sam, Jo and you"). */
+  detail?: string;
   rows: WallFeedRow[];
 }
 
@@ -538,10 +540,23 @@ function foldLabel(rows: readonly WallFeedRow[]): string {
     : WALL_FEED_COPY.tickedMany(first.who, rows.length);
 }
 
+/** A tick made on time with nothing open on it: the day's quiet news. */
+function onTimeTick(row: WallFeedRow): boolean {
+  return row.kind === "done" && row.open === null && row.detail === WALL_FEED_COPY.onTime;
+}
+
+/** Who ticked, each once in the order read, "you" in lower case after the first: "Sam, Jo and you". */
+function tickers(rows: readonly WallFeedRow[]): string {
+  const names = [...new Set(rows.map((row) => row.who))].map((who, i) => (i > 0 && who === "You" ? "you" : who));
+  return WALL_FEED_COPY.names(names);
+}
+
 /**
- * The Wall by day in the house's zone, latest first as read, with each run
- * of two or more of the same news by the same person in a row (ticks, or
- * misses) folded into one. A run never crosses midnight.
+ * The Wall by day in the house's zone, latest first as read. A day with two
+ * or more ticks made on time folds them into one row at its foot ("3 ticked
+ * on time", then who), so what went wrong, perks and notices lead. Of the
+ * rest, each run of two or more of the same news by the same person in a
+ * row (late ticks, or misses) folds into one. Nothing folds across midnight.
  */
 export function wallDays(rows: readonly WallFeedRow[], zone: string, now: Date): WallDay[] {
   const byDate = new Map<string, WallFeedRow[]>();
@@ -552,13 +567,20 @@ export function wallDays(rows: readonly WallFeedRow[], zone: string, now: Date):
 
   return [...byDate].map(([date, dayRows]) => {
     const items: WallDay["items"] = [];
-    for (let i = 0; i < dayRows.length; ) {
-      const row = dayRows[i];
+    const quiet = dayRows.filter(onTimeTick);
+    const loud = quiet.length > 1 ? dayRows.filter((row) => !onTimeTick(row)) : dayRows;
+    for (let i = 0; i < loud.length; ) {
+      const row = loud[i];
       let end = i + 1;
-      while (row.repeat !== null && end < dayRows.length && dayRows[end].repeat === row.repeat) end += 1;
-      const run = dayRows.slice(i, end);
+      while (row.repeat !== null && end < loud.length && loud[end].repeat === row.repeat) end += 1;
+      const run = loud.slice(i, end);
       items.push(run.length > 1 ? { fold: { id: `fold:${row.id}`, label: foldLabel(run), rows: run } } : { row });
       i = end;
+    }
+    if (quiet.length > 1) {
+      items.push({
+        fold: { id: `on-time:${date}`, label: WALL_FEED_COPY.onTimeMany(quiet.length), detail: tickers(quiet), rows: quiet },
+      });
     }
     const label = dayName(dayRows[0].at, zone, now);
     const sub = dayLabel(dayRows[0].at, zone);

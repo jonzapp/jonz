@@ -572,6 +572,8 @@ export const JOHN_LIST_COPY = {
   timesAWeekHint: "Only used to deal it fairly. Every time it’s flagged counts.",
   perWeekLabel: (n: number) => (n === 1 ? "Once a week" : `${n} times a week`),
   /** "On call, within 12 hours, about 3 times a week". */
+  /** On the John list, where how often is left to the John's own sheet: "On call, within 12 hours". */
+  onCallWithin: (hours: number) => `On call, within ${hours === 1 ? "1 hour" : `${hours} hours`}`,
   onCallWhen: (hours: number, perWeek: number) =>
     `On call, within ${hours === 1 ? "1 hour" : `${hours} hours`}, about ${perWeek === 1 ? "once" : `${perWeek} times`} a week`,
   save: "Save",
@@ -1623,6 +1625,13 @@ export const WALL_FEED_COPY = {
   // Several in a row by one person, folded into one.
   tickedMany: (who: string, n: number) => `${who} ticked ${n} Johns`,
   missedMany: (who: string, n: number) => `${who} missed ${n} Johns`,
+  /** A day's ticks made on time, folded into one row at the day's foot. */
+  onTimeMany: (n: number) => `${n} ticked on time`,
+  /** Who, under it: "Sam, Jo and you", and past four names "Sam, Jo, Priya, you and 2 more". */
+  names: (names: readonly string[]) => {
+    const shown = names.length > 4 ? [...names.slice(0, 4), `${names.length - 4} more`] : names;
+    return shown.length < 2 ? shown.join("") : `${shown.slice(0, -1).join(", ")} and ${shown[shown.length - 1]}`;
+  },
   /** An event's sheet: its meta words, then on a line of their own the day and the time. */
   meta: (detail: string | null, when: string) => (detail ? `${detail}\n${when}` : when),
   /** When, in full, in an event's sheet: "Today, 09:39", "Sat 24 Oct, 18:40". */
@@ -2147,8 +2156,8 @@ export const STEADY_COPY = {
   /** The John form. */
   keepDay: "Keep its day",
   keepDayMeta: "Always on its own day, whatever the budget, like bins night.",
-  /** In the list's line: "Every week, due Thu 20:00, keeps its day". */
-  keepsDay: "keeps its day",
+  /** A John's details, read by someone who can't edit it: "Keep its day", "Always". */
+  keepDayYes: "Always",
 
   /** Preferences, under House, You. */
   prefs: "Preferences",
