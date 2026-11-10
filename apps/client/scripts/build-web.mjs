@@ -6,9 +6,8 @@
 // calls staging's API, https://api.staging.jonz.app (EXPO_PUBLIC_API_URL in
 // Vercel's Preview environment), cross-origin: apps/api lets staging's
 // origins in through ALLOWED_ORIGINS. Every preview uses that name, never a
-// PR's own preview of apps/api: those sit behind Vercel Authentication,
-// which a browser on another origin can't pass, and the custom domain
-// doesn't. To try a PR's API, put the PR on staging (the Staging workflow).
+// PR's own preview of apps/api, so one API serves them all. To try a PR's
+// API, put the PR on staging (the Staging workflow).
 import { spawnSync } from "node:child_process";
 
 if (import.meta.url === `file://${process.argv[1]}`) {

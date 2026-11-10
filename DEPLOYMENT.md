@@ -294,10 +294,9 @@ How it works:
   calls staging's API, api.staging.jonz.app
   (`apps/client/scripts/build-web.mjs`), cross-origin: `apps/api` lets
   staging's origins in through `ALLOWED_ORIGINS`, which takes `*` for one
-  DNS label. Never the PR's own preview of `apps/api`: Vercel
-  Authentication stays on for previews, and a browser on another origin
-  can't get past it (the custom domain is exempt). To try a PR that
-  changes `apps/api`, put it on staging (below). Production's web
+  DNS label. Always staging's, never the PR's own preview of `apps/api`,
+  so one API serves every preview. To try a PR that changes `apps/api`,
+  put it on staging (below). Production's web
   build is unchanged: `/api/*` on its own origin.
 - **The `staging` branch follows `main`.** The **Staging** workflow
   (`.github/workflows/staging.yml`) puts `main` on it after every merge.
@@ -337,9 +336,12 @@ characters or more, your choice) to seed, and for sign-in the same
    and give Preview the sandbox key and the webhook secret of a second
    sandbox endpoint, `https://api.staging.jonz.app/api/stripe/webhook`.
 3. Attach staging.jonz.app to `jonz-web` and api.staging.jonz.app to
-   `jonz-api`, each for the git branch `staging`. Keep Vercel Authentication on as
-   "All except custom domains", so the two staging names stay reachable
-   and every other preview stays behind your Vercel sign-in.
+   `jonz-api`, each for the git branch `staging`. Vercel Authentication:
+   on for `jonz-web` (the site and every preview stay behind your Vercel
+   sign-in), off for `jonz-api`. Vercel's wall covers a branch's custom
+   domain too, and a browser can't pass it when the site calls the API
+   from another origin (preflights carry no cookies). The API needs a
+   Jonz sign-in or a secret on every call anyway, like api.jonz.app.
 4. Add staging's callback, `https://<staging ref>.supabase.co/auth/v1/callback`,
    to the Google web client's redirect URIs and the Azure app's.
 
