@@ -1,4 +1,4 @@
-import { OPERATION_IO, type AskCardOperation } from '@app/core';
+import { OPERATION_IO, type AskCardOperation, type Words } from '@app/core';
 import type { z } from 'zod';
 
 import { addKid } from './kids';
@@ -46,7 +46,7 @@ import { setReaction } from './wall';
 type Input<N extends AskCardOperation> = z.infer<(typeof OPERATION_IO)[N]['input']>;
 
 /** Who is doing it, for the calls that need them named. */
-export type OperationContext = { userId: string };
+export type OperationContext = { userId: string; words: Words };
 
 export const CARD_OPERATIONS: { [N in AskCardOperation]: (input: Input<N>, ctx: OperationContext) => Promise<unknown> } = {
   mark_done: (i) => markDone(i.assignmentId, i.photoPath),
@@ -70,7 +70,7 @@ export const CARD_OPERATIONS: { [N in AskCardOperation]: (input: Input<N>, ctx: 
   pass_checkout: async (i) => leaveFor(i.offer ? await takeOffer(i.houseId, i.plan, i.offer) : await passCheckoutUrl(i.houseId, i.plan)),
   react: (i, ctx) => setReaction(i.eventId, ctx.userId, i.kind, true),
   unreact: (i, ctx) => setReaction(i.eventId, ctx.userId, i.kind, false),
-  save_house_rules: ({ houseId, ...settings }) => updateHouse(houseId, settings),
+  save_house_rules: ({ houseId, ...settings }, ctx) => updateHouse(houseId, settings, ctx.words),
   set_deal_mode: (i) => saveDealMode(i.houseId, i.mode),
   answer_tick: (i) => answerTick(i.assignmentId, i.ok),
   board_tick: (i) => boardTick(i.assignmentId),

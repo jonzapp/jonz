@@ -7,11 +7,13 @@
  * tool, then walks the person through it with their numbers from the other
  * reads (balances, stake, why_john).
  */
-import { APP_NAME, HOUSE_PAGE_COPY, PASS_COPY, STEADY_COPY } from "./copy";
+import { APP_NAME, PASS_COPY } from "./copy";
 import type { HouseRules } from "./domain";
 import { formatMoney } from "./money";
 import { PASS_ENFORCED, PASS_PRICES, PASS_TRIAL_DAYS } from "./pass";
 import { TOURS, type TourId } from "./tours";
+import { makeupKey } from "./word-keys";
+import type { Words } from "./words-for";
 
 export const HOW_TOPICS = [
   "today",
@@ -51,11 +53,11 @@ const hours = (n: number) => `${n} ${n === 1 ? "hour" : "hours"}`;
 /** One topic, in plain lines, with the house's numbers. */
 export function howItWorks(
   topic: HowTopic,
-  { rules, family, awayMakeup }: HowFacts,
+  { rules, family, awayMakeup }: HowFacts, words: Words,
 ): string {
   const money = (minor: number) => formatMoney(minor, rules.currency);
   const makeup =
-    HOUSE_PAGE_COPY.makeup[awayMakeup] ?? HOUSE_PAGE_COPY.makeup[100];
+    words(`house.page.makeup.${makeupKey(awayMakeup)}`);
   const prices = PASS_PRICES[rules.currency];
   switch (topic) {
     case "today":
@@ -71,7 +73,7 @@ export function howItWorks(
       ].join("\n");
     case "fair_shares":
       return [
-        HOUSE_PAGE_COPY.rulesSharesBody(makeup),
+        words('house.page.rulesSharesBody', { makeup }),
         "The maths, per person, from the day they joined:",
         "- Their share: for every John dealt, its points are split between everyone who shares it (everyone at home that day, or the group it belongs to), and their part is added to their share.",
         "- Done: the points of every John they actually did, on time or late, plus any they covered for someone else. A John done together splits its points between the people who did it.",
@@ -82,11 +84,11 @@ export function howItWorks(
       ].join("\n");
     case "deal":
       return [
-        `The deal: at the start of each week ${APP_NAME} deals the John list out between the people at home. This house uses ${STEADY_COPY.modeName[rules.dealMode]}.`,
-        `- Smart: ${STEADY_COPY.modeMeta.smart}`,
-        `- Classic: ${STEADY_COPY.modeMeta.classic}`,
-        `- ${STEADY_COPY.modeFoot}`,
-        `- Effort each week: ${STEADY_COPY.budgetEach(rules.dealBudget)}. ${STEADY_COPY.budgetFoot}`,
+        `The deal: at the start of each week ${APP_NAME} deals the John list out between the people at home. This house uses ${words(`week.steady.modeName.${rules.dealMode}`)}.`,
+        `- Smart: ${words('week.steady.modeMeta.smart')}`,
+        `- Classic: ${words('week.steady.modeMeta.classic')}`,
+        `- ${words('week.steady.modeFoot')}`,
+        `- Effort each week: ${words('week.steady.budgetEach', { budget: rules.dealBudget })}. ${words('week.steady.budgetFoot')}`,
         "- Who gets a John is decided by fair shares: whoever is furthest behind, skipping anyone who did it last time when someone else is as far behind, and anyone already handed the most extra a week gives.",
         "- People away that day are left out. Every John on the list has a day; a John that keeps its day is always dealt on it.",
         "- Each John's sheet has a Why? that shows exactly how its deal added up.",
@@ -157,7 +159,7 @@ export function howItWorks(
     case "swaps":
       return [
         "You can ask someone to swap one of your Johns this week for one of theirs. Nothing changes until they say yes.",
-        HOUSE_PAGE_COPY.rulesSwapBody,
+        words('house.page.rulesSwapBody'),
       ].join("\n");
     case "ticks_and_questions":
       return [

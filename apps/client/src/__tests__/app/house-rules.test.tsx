@@ -1,4 +1,4 @@
-import { FAMILY_COPY, FOCUS_SHELL_COPY, KIND_SWITCH_COPY, NEW_JOHN, PAGE_TITLE, RULES_COPY, SECTION_LABEL, SETUP_COPY, STEADY_COPY } from '@app/core';
+import { FAMILY_COPY, FOCUS_SHELL_COPY, KIND_SWITCH_COPY, NEW_JOHN, PAGE_TITLE, SECTION_LABEL, makeupHint, wordsFor } from '@app/core';
 import { Slot } from 'expo-router';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 
@@ -9,6 +9,8 @@ import RulesScreen from '@/app/(house)/house/rules';
 import { ToastProvider } from '@/components/toast';
 import { snapshot } from '@/testing/house';
 import { renderPages, untilRead } from '@/testing/pages';
+
+const words = wordsFor('en', 'housemates');
 
 jest.mock('@/api/board', () => ({ loadHouse: jest.fn() }));
 jest.mock('@/api/house', () => ({ catchUp: jest.fn() }));
@@ -38,7 +40,7 @@ async function open(as: 'priya' | 'sam' = 'priya') {
 
 async function edit() {
   await open();
-  await fireEvent.press(screen.getByRole('button', { name: SETUP_COPY.edit }));
+  await fireEvent.press(screen.getByRole('button', { name: words('house.setup.edit') }));
 }
 
 /** A setting in the form, opened, and one of its choices picked. */
@@ -75,21 +77,21 @@ it('sits under a title bar with the way back to House', async () => {
 it('reads the rules out in plain words, with the admins who can change them', async () => {
   await open('sam');
   const panel = within(screen.getByTestId('rules-panel'));
-  expect(panel.getByText(SETUP_COPY.rules)).toBeOnTheScreen();
+  expect(panel.getByText(words('house.setup.rules'))).toBeOnTheScreen();
   expect(within(screen.getByTestId('admins-section')).getByTestId('admin-row')).toHaveTextContent(/Priya$/);
   const rules = panel.getAllByTestId('rule');
   [
-    [STEADY_COPY.mode, 'Smart'],
-    [STEADY_COPY.budget, 'Usual, 4 points each'],
-    [SETUP_COPY.stake, '£20 a month'],
-    [SETUP_COPY.late, '−£1'],
-    [SETUP_COPY.missed, '−£3'],
-    [SETUP_COPY.settleIn, 'In Jonz'],
-    [SETUP_COPY.disputes, 'within 24 hours'],
-    [SETUP_COPY.lateWindow, 'up to 24 hours after it’s due'],
-    [SETUP_COPY.cover, '3 hours after it’s due'],
-    [SETUP_COPY.away, 'made up in full'],
-    [SETUP_COPY.weekStarts, 'Monday, London time'],
+    [words('week.steady.mode'), 'Smart'],
+    [words('week.steady.budget'), 'Usual, 4 points each'],
+    [words('house.setup.stake'), '£20 a month'],
+    [words('house.setup.late'), '−£1'],
+    [words('house.setup.missed'), '−£3'],
+    [words('house.setup.settleIn'), 'In Jonz'],
+    [words('house.setup.disputes'), 'within 24 hours'],
+    [words('house.setup.lateWindow'), 'up to 24 hours after it’s due'],
+    [words('house.setup.cover'), '3 hours after it’s due'],
+    [words('house.setup.away'), 'made up in full'],
+    [words('house.setup.weekStarts'), 'Monday, London time'],
   ].forEach(([label, value], i) => expect(rules[i]).toHaveTextContent(`${label}${value}`));
 });
 
@@ -112,7 +114,7 @@ it('names every admin in full, however many there are', async () => {
 
 it('never shows a housemate who is not an admin a form, locked or not', async () => {
   await open('sam');
-  expect(screen.queryByRole('button', { name: SETUP_COPY.edit })).toBeNull();
+  expect(screen.queryByRole('button', { name: words('house.setup.edit') })).toBeNull();
   expect(screen.queryByTestId('house-stake')).toBeNull();
   expect(screen.queryByTestId('save-rules')).toBeNull();
 });
@@ -120,11 +122,11 @@ it('never shows a housemate who is not an admin a form, locked or not', async ()
 describe('an admin', () => {
   it('opens the form with Edit', async () => {
     await open();
-    await fireEvent.press(screen.getByRole('button', { name: SETUP_COPY.edit }));
+    await fireEvent.press(screen.getByRole('button', { name: words('house.setup.edit') }));
     expect(screen.queryByTestId('rules-panel')).toBeNull();
-    expect(within(screen.getByTestId('rules-money')).getByText(SETUP_COPY.money)).toBeOnTheScreen();
-    expect(within(screen.getByTestId('rules-fairness')).getByText(SETUP_COPY.fairness)).toBeOnTheScreen();
-    expect(within(screen.getByTestId('rules-house')).getByText(SETUP_COPY.house)).toBeOnTheScreen();
+    expect(within(screen.getByTestId('rules-money')).getByText(words('house.setup.money'))).toBeOnTheScreen();
+    expect(within(screen.getByTestId('rules-fairness')).getByText(words('house.setup.fairness'))).toBeOnTheScreen();
+    expect(within(screen.getByTestId('rules-house')).getByText(words('house.setup.house'))).toBeOnTheScreen();
     expect(screen.getByTestId('house-stake')).toHaveDisplayValue('20');
   });
 
@@ -132,7 +134,7 @@ describe('an admin', () => {
     await edit();
     const foot = within(screen.getByTestId('rules-foot'));
     expect(foot.getByTestId('save-rules')).toBeOnTheScreen();
-    expect(foot.getByRole('button', { name: SETUP_COPY.cancel })).toBeOnTheScreen();
+    expect(foot.getByRole('button', { name: words('house.setup.cancel') })).toBeOnTheScreen();
     expect(within(screen.getByTestId('rules-editing')).queryByTestId('save-rules')).toBeNull();
   });
 
@@ -149,37 +151,43 @@ describe('an admin', () => {
   it('saves what changed, the money in minor units, then reads the new rules out', async () => {
     await edit();
     await fireEvent.changeText(screen.getByTestId('house-stake'), '25.50');
-    await pick(SETUP_COPY.disputes, RULES_COPY.disputeHours(48));
-    await pick(RULES_COPY.currency, '€ EUR');
+    await pick(words('house.setup.disputes'), words('house.rules.disputeHours', { hours: 48 }));
+    await pick(words('house.rules.currency'), '€ EUR');
     // The picked value shows on its row, briefly.
-    expect(screen.getByRole('button', { name: `${SETUP_COPY.disputes}, ${SETUP_COPY.disputeShort(48)}` })).toBeOnTheScreen();
+    expect(
+      screen.getByRole('button', { name: `${words('house.setup.disputes')}, ${words('house.setup.disputeShort', { hours: 48 })}` }),
+    ).toBeOnTheScreen();
     (loadHouse as jest.Mock).mockResolvedValue(
       snapshot({ rules: { ...snapshot().rules, currency: 'EUR', stakeMinor: 2550, disputeHours: 48 } }),
     );
     await fireEvent.press(screen.getByTestId('save-rules'));
-    expect(updateHouse).toHaveBeenCalledWith('h1', {
-      name: 'Flat 3',
-      timezone: 'Europe/London',
-      currency: 'EUR',
-      weekStarts: 1,
-      stakeMinor: 2550,
-      lateForfeitMinor: 100,
-      missedForfeitMinor: 300,
-      disputeHours: 48,
-      coverGraceHours: 3,
-      lateHours: 24,
-      awayMakeup: 100,
-      settleIn: 'jonz',
-      dealMode: 'smart',
-      dealBudget: 4,
-    });
+    expect(updateHouse).toHaveBeenCalledWith(
+      'h1',
+      {
+        name: 'Flat 3',
+        timezone: 'Europe/London',
+        currency: 'EUR',
+        weekStarts: 1,
+        stakeMinor: 2550,
+        lateForfeitMinor: 100,
+        missedForfeitMinor: 300,
+        disputeHours: 48,
+        coverGraceHours: 3,
+        lateHours: 24,
+        awayMakeup: 100,
+        settleIn: 'jonz',
+        dealMode: 'smart',
+        dealBudget: 4,
+      },
+      expect.any(Function),
+    );
     expect(await screen.findByTestId('rules-panel')).toBeOnTheScreen();
-    expect(within(screen.getByTestId('toast')).getByText(SETUP_COPY.saved)).toBeOnTheScreen();
+    expect(within(screen.getByTestId('toast')).getByText(words('house.setup.saved'))).toBeOnTheScreen();
     await waitFor(() => expect(screen.getAllByTestId('rule')[2]).toHaveTextContent(/€25\.50 a month/));
     expect(screen.getAllByTestId('rule')[6]).toHaveTextContent(/within 48 hours/);
   });
 
-  it("in a family, sets the most each kid can earn in a month, in place of the stake", async () => {
+  it('in a family, sets the most each kid can earn in a month, in place of the stake', async () => {
     const base = snapshot();
     (loadHouse as jest.Mock).mockResolvedValue(
       snapshot({
@@ -191,32 +199,42 @@ describe('an admin', () => {
     expect(screen.queryByTestId('house-stake')).toBeNull();
     await fireEvent.changeText(screen.getByTestId('house-pocket'), '12.50');
     await fireEvent.press(screen.getByTestId('save-rules'));
-    expect(updateHouse).toHaveBeenCalledWith('h1', expect.objectContaining({ pocketCapMinor: 1250 }));
+    expect(updateHouse).toHaveBeenCalledWith('h1', expect.objectContaining({ pocketCapMinor: 1250 }), expect.any(Function));
   });
 
   it('picks how the house shares Johns and its budget, each saying what it does to the list', async () => {
     await edit();
     const workload = within(screen.getByTestId('rules-workload'));
-    expect(workload.getByText(STEADY_COPY.workload)).toBeOnTheScreen();
-    await fireEvent.press(screen.getByRole('button', { name: `${STEADY_COPY.mode}, Smart` }));
-    expect(screen.getByRole('radio', { name: `Smart, ${STEADY_COPY.suggested} ${STEADY_COPY.modeMeta.smart}` })).toBeChecked();
-    await fireEvent.press(screen.getByRole('radio', { name: `Classic, ${STEADY_COPY.modeMeta.classic}` }));
+    expect(workload.getByText(words('week.steady.workload'))).toBeOnTheScreen();
+    await fireEvent.press(screen.getByRole('button', { name: `${words('week.steady.mode')}, Smart` }));
+    expect(
+      screen.getByRole('radio', { name: `Smart, ${words('week.steady.suggested')} ${words('week.steady.modeMeta.smart')}` }),
+    ).toBeChecked();
+    await fireEvent.press(screen.getByRole('radio', { name: `Classic, ${words('week.steady.modeMeta.classic')}` }));
 
-    await fireEvent.press(screen.getByRole('button', { name: `${STEADY_COPY.budget}, ${STEADY_COPY.budgetName(4)}` }));
+    await fireEvent.press(
+      screen.getByRole('button', { name: `${words('week.steady.budget')}, ${words('week.steady.budgetName', { budget: 4 })}` }),
+    );
     // Light suits this list: one John each, each coming round every couple of weeks.
-    const light = await screen.findByRole('radio', { name: new RegExp(`^Light, 2 points, ${STEADY_COPY.suggested} About one John each\\.`) });
-    expect(screen.getByRole('radio', { name: `${STEADY_COPY.budgetName(0)}, ${STEADY_COPY.noLimit}` })).toBeOnTheScreen();
+    const light = await screen.findByRole('radio', {
+      name: new RegExp(`^Light, 2 points, ${words('week.steady.suggested')} About one John each\\.`),
+    });
+    expect(
+      screen.getByRole('radio', { name: `${words('week.steady.budgetName', { budget: 0 })}, ${words('week.steady.noLimit')}` }),
+    ).toBeOnTheScreen();
     await fireEvent.press(light);
-    expect(screen.getByTestId('rules-workload-note')).toHaveTextContent(`${STEADY_COPY.modeFoot} ${STEADY_COPY.budgetFoot}`);
+    expect(screen.getByTestId('rules-workload-note')).toHaveTextContent(
+      `${words('week.steady.modeFoot')} ${words('week.steady.budgetFoot')}`,
+    );
 
     await fireEvent.press(screen.getByTestId('save-rules'));
-    expect(updateHouse).toHaveBeenCalledWith('h1', expect.objectContaining({ dealMode: 'classic', dealBudget: 2 }));
+    expect(updateHouse).toHaveBeenCalledWith('h1', expect.objectContaining({ dealMode: 'classic', dealBudget: 2 }), expect.any(Function));
   });
 
   it('puts the form away unsaved with Cancel', async () => {
     await edit();
     await fireEvent.changeText(screen.getByTestId('house-stake'), '99');
-    await fireEvent.press(screen.getByRole('button', { name: SETUP_COPY.cancel }));
+    await fireEvent.press(screen.getByRole('button', { name: words('house.setup.cancel') }));
     expect(screen.getByTestId('rules-panel')).toBeOnTheScreen();
     expect(screen.getAllByTestId('rule')[2]).toHaveTextContent(/£20 a month/);
     expect(updateHouse).not.toHaveBeenCalled();
@@ -224,9 +242,9 @@ describe('an admin', () => {
 
   it("names the amounts in the house's currency", async () => {
     await edit();
-    expect(screen.getByText(RULES_COPY.missed('£'))).toBeOnTheScreen();
-    await pick(RULES_COPY.currency, '$ CAD');
-    expect(screen.getByText(RULES_COPY.missed('$'))).toBeOnTheScreen();
+    expect(screen.getByText(words('house.rules.missed', { symbol: '£' }))).toBeOnTheScreen();
+    await pick(words('house.rules.currency'), '$ CAD');
+    expect(screen.getByText(words('house.rules.missed', { symbol: '$' }))).toBeOnTheScreen();
   });
 
   it("says under the amount that isn't money what's wrong, and saves nothing", async () => {
@@ -234,7 +252,7 @@ describe('an admin', () => {
     await fireEvent.changeText(screen.getByTestId('house-late'), 'a quid');
     await fireEvent.press(screen.getByTestId('save-rules'));
     const money = within(screen.getByTestId('rules-money'));
-    expect(money.getByRole('alert')).toHaveTextContent(RULES_COPY.badAmount);
+    expect(money.getByRole('alert')).toHaveTextContent(words('house.rules.badAmount'));
     expect(screen.getAllByRole('alert')).toHaveLength(1);
     expect(updateHouse).not.toHaveBeenCalled();
     // Fixing it takes the problem away.
@@ -248,7 +266,7 @@ describe('an admin', () => {
     // Minus three pounds isn't three pounds: Save is there to say so.
     expect(screen.getByTestId('save-rules')).toBeEnabled();
     await fireEvent.press(screen.getByTestId('save-rules'));
-    expect(within(screen.getByTestId('rules-money')).getByRole('alert')).toHaveTextContent(RULES_COPY.badAmount);
+    expect(within(screen.getByTestId('rules-money')).getByRole('alert')).toHaveTextContent(words('house.rules.badAmount'));
     expect(updateHouse).not.toHaveBeenCalled();
   });
 
@@ -270,11 +288,11 @@ describe('an admin', () => {
   });
 
   it('shows a time zone the database refuses under Time zone', async () => {
-    (updateHouse as jest.Mock).mockRejectedValue(new Error("That time zone isn’t one we recognise."));
+    (updateHouse as jest.Mock).mockRejectedValue(new Error('That time zone isn’t one we recognise.'));
     await edit();
     await fireEvent.changeText(screen.getByTestId('rules-timezone'), 'Europe/Londn');
     await fireEvent.press(screen.getByTestId('save-rules'));
-    expect(await within(screen.getByTestId('rules-house')).findByRole('alert')).toHaveTextContent("That time zone isn’t one we recognise.");
+    expect(await within(screen.getByTestId('rules-house')).findByRole('alert')).toHaveTextContent('That time zone isn’t one we recognise.');
     expect(within(screen.getByTestId('rules-foot')).queryByRole('alert')).toBeNull();
     // Fixing it takes the problem away.
     await fireEvent.changeText(screen.getByTestId('rules-timezone'), 'Europe/London');
@@ -283,9 +301,9 @@ describe('an admin', () => {
 
   it('explains what time away still owes, at each rate', async () => {
     await edit();
-    expect(screen.getByText(`${RULES_COPY.awayNote} ${RULES_COPY.makeupHint[100]}`)).toBeOnTheScreen();
-    await pick(SETUP_COPY.away, 'Not at all');
-    expect(screen.getByText(`${RULES_COPY.awayNote} ${RULES_COPY.makeupHint[0]}`)).toBeOnTheScreen();
+    expect(screen.getByText(`${words('house.rules.awayNote')} ${makeupHint(100, words)}`)).toBeOnTheScreen();
+    await pick(words('house.setup.away'), 'Not at all');
+    expect(screen.getByText(`${words('house.rules.awayNote')} ${makeupHint(0, words)}`)).toBeOnTheScreen();
   });
 });
 

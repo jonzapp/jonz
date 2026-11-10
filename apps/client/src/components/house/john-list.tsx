@@ -1,31 +1,4 @@
-import {
-  CATEGORIES,
-  CATEGORY_LABEL,
-  CREW_CHOICES,
-  crewLine,
-  CURRENCY_SYMBOL,
-  JOHN_LIST_COPY,
-  johnFacts,
-  johnsByKind,
-  listLine,
-  moneyInput,
-  NEW_JOHN,
-  KIDS_COPY,
-  parseMinAge,
-  parseMoney,
-  pocketMoney,
-  POCKET_COPY,
-  pointsLabel,
-  RULES_COPY,
-  SETUP_COPY,
-  STEADY_COPY,
-  weeklyEffort,
-  type Category,
-  type GroupDef,
-  type HouseRules,
-  type JohnDef,
-  BUSY_COPY,
-} from '@app/core';
+import { CATEGORIES, CATEGORY_LABEL, CREW_CHOICES, crewLine, CURRENCY_SYMBOL, johnFacts, johnsByKind, listLine, moneyInput, NEW_JOHN, KIDS_COPY, parseMinAge, parseMoney, pocketMoney, POCKET_COPY, pointsLabel, weeklyEffort, type Category, type GroupDef, type HouseRules, type JohnDef, BUSY_COPY } from '@app/core';
 import { ListTodoIcon, PlusIcon, SparklesIcon, Trash2Icon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -102,8 +75,8 @@ export function JohnList({
       return;
     }
     panel.open({
-      title: draft.id ? JOHN_LIST_COPY.edit(draft.name) : JOHN_LIST_COPY.add,
-      description: JOHN_LIST_COPY.hint,
+      title: draft.id ? words('house.johns.edit', { name: draft.name }) : words('house.johns.add'),
+      description: words('house.johns.hint'),
       testID: 'john-panel',
       content: (
         <JohnForm
@@ -137,14 +110,14 @@ export function JohnList({
         <TourSpot id="johns.list">
         <EmptyState
           icon={ListTodoIcon}
-          title={SETUP_COPY.noJohns}
-          body={editable ? SETUP_COPY.noJohnsBody : whoAdds}
+          title={words('house.setup.noJohns')}
+          body={editable ? words('house.setup.noJohnsBody') : whoAdds}
           action={
             editable ? (
               <View style={styles.emptyActions}>
                 <ButtonRow stacked>
                   <Button icon={SparklesIcon} label={words('today.nextUp.describe')} {...ask} testID="describe-house" />
-                  <Button variant="outline" icon={PlusIcon} label={JOHN_LIST_COPY.add} onPress={add} testID="add-john" />
+                  <Button variant="outline" icon={PlusIcon} label={words('house.johns.add')} onPress={add} testID="add-john" />
                 </ButtonRow>
               </View>
             ) : undefined
@@ -156,14 +129,14 @@ export function JohnList({
           {filled ? (
             <View style={styles.toolbar} testID="john-list-bar">
               <Meta style={styles.toolbarWords}>
-                {`${JOHN_LIST_COPY.count(johns.length)} ${JOHN_LIST_COPY.perWeek(weeklyEffort(johns))}`}
+                {`${words('house.johns.count', { n: johns.length })} ${words('house.johns.perWeek', { points: weeklyEffort(johns) })}`}
               </Meta>
               {editable ? (
                 // eslint-disable-next-line jonz/button-in-row -- the page's tool beside its count, at the top right (docs/style/layout.md)
                 <Button
                   variant={quietAdd ? 'outline' : undefined}
                   icon={PlusIcon}
-                  label={JOHN_LIST_COPY.add}
+                  label={words('house.johns.add')}
                   onPress={add}
                   testID="add-john"
                 />
@@ -172,10 +145,10 @@ export function JohnList({
           ) : (
             // On a phone, the same over the list: what it adds up to, then Add a John.
             <View style={styles.top} testID="john-list-bar">
-              <Meta>{`${JOHN_LIST_COPY.count(johns.length)} ${JOHN_LIST_COPY.perWeek(weeklyEffort(johns))}`}</Meta>
+              <Meta>{`${words('house.johns.count', { n: johns.length })} ${words('house.johns.perWeek', { points: weeklyEffort(johns) })}`}</Meta>
               {editable ? (
                 <ButtonRow>
-                  <Button variant={quietAdd ? 'outline' : undefined} icon={PlusIcon} label={JOHN_LIST_COPY.add} onPress={add} testID="add-john" />
+                  <Button variant={quietAdd ? 'outline' : undefined} icon={PlusIcon} label={words('house.johns.add')} onPress={add} testID="add-john" />
                 </ButtonRow>
               ) : null}
             </View>
@@ -186,7 +159,7 @@ export function JohnList({
           <View style={filled ? undefined : styles.kinds}>
           <Flow
             testID="john-kinds"
-            items={johnsByKind(johns)
+            items={johnsByKind(johns, words)
               .map((kind): FlowItem => ({
                 key: kind.category,
                 // A John's row is about two lines; the kind's name about one.
@@ -194,7 +167,7 @@ export function JohnList({
                 node: (
                   <Section label={CATEGORY_LABEL[kind.category]} right={String(kind.johns.length)} testID={`kind-${kind.category}`}>
                     {kind.johns.map((j) => {
-                      const schedule = listLine(j, groupName(j.groupId));
+                      const schedule = listLine(j, words, groupName(j.groupId));
                       const earns = family && j.payMinor ? POCKET_COPY.earns(pocketMoney(j.payMinor, rules.currency)) : null;
                       const aged = family && j.minAge ? KIDS_COPY.minAgeLine(j.minAge) : null;
                       // Whether it keeps its day is in its own sheet, with the rest of its details.
@@ -209,7 +182,7 @@ export function JohnList({
                           meta={line}
                           trailing={pointsLabel(j.points)}
                           onPress={() => (editable ? edit(j) : read(j))}
-                          accessibilityLabel={editable ? `${JOHN_LIST_COPY.edit(j.name)}, ${line}, ${pointsLabel(j.points)}` : undefined}
+                          accessibilityLabel={editable ? `${words('house.johns.edit', { name: j.name })}, ${line}, ${pointsLabel(j.points)}` : undefined}
                           testID="john-def"
                         />
                       );
@@ -225,8 +198,8 @@ export function JohnList({
       )}
       <Sheet
         visible={editing !== null}
-        title={editing?.id ? JOHN_LIST_COPY.edit(editing.name) : JOHN_LIST_COPY.add}
-        description={JOHN_LIST_COPY.hint}
+        title={editing?.id ? words('house.johns.edit', { name: editing.name }) : words('house.johns.add')}
+        description={words('house.johns.hint')}
         flush
         onClose={() => setEditing(null)}
       >
@@ -299,10 +272,10 @@ function JohnForm({
   const [ageProblem, setAgeProblem] = useState<string | null>(null);
   const [picking, setPicking] = useState<TimingWord | null>(null);
   const set = (patch: Partial<Draft>) => setV((old) => ({ ...old, ...patch }));
-  const sharers = [{ value: '', label: JOHN_LIST_COPY.everyone }, ...groups.map((g) => ({ value: g.id, label: g.name }))];
+  const sharers = [{ value: '', label: words('house.johns.everyone') }, ...groups.map((g) => ({ value: g.id, label: g.name }))];
   // What "Shared by" means, under it: how to share with fewer when there's no
   // group yet, and what a group's John does once one is picked.
-  const sharing = groups.length === 0 ? JOHN_LIST_COPY.noGroups : v.groupId ? JOHN_LIST_COPY.groupOnly : null;
+  const sharing = groups.length === 0 ? words('house.johns.noGroups') : v.groupId ? words('house.johns.groupOnly') : null;
   // Done together: what its points add up to, and who shares them.
   const line = v.when === 'day' ? crewLine(v.crew, v.points, words) : null;
   const together = line ? `${line}. ${words('john.crew.hint')}` : null;
@@ -311,7 +284,7 @@ function JohnForm({
     setDoing('save');
     const payMinor = family ? parseMoney(pay) : undefined;
     if (payMinor === null || (payMinor !== undefined && payMinor < 0)) {
-      setPayProblem(RULES_COPY.badAmount);
+      setPayProblem(words('house.rules.badAmount'));
       return;
     }
     const minAge = family ? parseMinAge(age) : undefined;
@@ -341,8 +314,8 @@ function JohnForm({
       <Group>
         <GroupItem>
           <Field
-            label={JOHN_LIST_COPY.name}
-            placeholder={JOHN_LIST_COPY.namePlaceholder}
+            label={words('house.johns.name')}
+            placeholder={words('house.johns.namePlaceholder')}
             value={v.name}
             onChangeText={(name) => set({ name })}
             maxLength={60}
@@ -352,8 +325,8 @@ function JohnForm({
       </Group>
       <View style={styles.noted}>
         <Group>
-          <PickRow label={JOHN_LIST_COPY.kind} options={KINDS} value={v.category} onChange={(category: Category) => set({ category })} />
-          <PickRow label={JOHN_LIST_COPY.sharedBy} options={sharers} value={v.groupId ?? ''} onChange={(id) => set({ groupId: id || null })} />
+          <PickRow label={words('house.johns.kind')} options={KINDS} value={v.category} onChange={(category: Category) => set({ category })} />
+          <PickRow label={words('house.johns.sharedBy')} options={sharers} value={v.groupId ?? ''} onChange={(id) => set({ groupId: id || null })} />
         </Group>
         {sharing ? (
           <Meta style={styles.note} testID="sharing-note">
@@ -364,7 +337,7 @@ function JohnForm({
       <TimingSentence value={v} rules={rules} now={new Date()} onChange={set} onPick={setPicking} />
       <View style={styles.noted}>
         <Group>
-          <PickRow label={JOHN_LIST_COPY.effort} options={EFFORT} value={v.points} onChange={(points) => set({ points })} />
+          <PickRow label={words('house.johns.effort')} options={EFFORT} value={v.points} onChange={(points) => set({ points })} />
           {family ? (
             <GroupItem>
               <Field
@@ -406,8 +379,8 @@ function JohnForm({
           {v.when === 'day' ? (
             <ChoiceRow
               role="checkbox"
-              label={STEADY_COPY.keepDay}
-              meta={STEADY_COPY.keepDayMeta}
+              label={words('week.steady.keepDay')}
+              meta={words('week.steady.keepDayMeta')}
               metaLines={2}
               checked={v.keepDay}
               onPress={() => set({ keepDay: !v.keepDay })}
@@ -416,8 +389,8 @@ function JohnForm({
           ) : null}
           <ChoiceRow
             role="checkbox"
-            label={JOHN_LIST_COPY.photo}
-            meta={SETUP_COPY.photoMeta}
+            label={words('house.johns.photo')}
+            meta={words('house.setup.photoMeta')}
             checked={v.needsPhoto}
             onPress={() => set({ needsPhoto: !v.needsPhoto })}
             testID="john-photo"
@@ -433,15 +406,15 @@ function JohnForm({
         {move.problem ? <Alert message={move.problem} /> : null}
         <ButtonRow stacked>
           <Button
-            label={v.id ? JOHN_LIST_COPY.save : JOHN_LIST_COPY.create}
-            busyLabel={JOHN_LIST_COPY.saving}
+            label={v.id ? words('house.johns.save') : words('house.johns.create')}
+            busyLabel={words('house.johns.saving')}
             busy={move.pending && doing === 'save'}
             disabled={!v.name.trim()}
             onPress={() => void save()}
             testID="save-john"
           />
           {v.id ? (
-            <Button variant="hazard" icon={Trash2Icon} label={JOHN_LIST_COPY.remove} busy={move.pending && doing === 'remove'} busyLabel={BUSY_COPY.removing} onPress={() => void remove()} />
+            <Button variant="hazard" icon={Trash2Icon} label={words('house.johns.remove')} busy={move.pending && doing === 'remove'} busyLabel={BUSY_COPY.removing} onPress={() => void remove()} />
           ) : null}
         </ButtonRow>
       </View>

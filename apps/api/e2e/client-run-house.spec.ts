@@ -1,19 +1,4 @@
-import {
-  type Currency,
-  DEAL_COPY,
-  FOCUS_SHELL_COPY,
-  formatMoney,
-  FRONT_DOOR_COPY,
-  JOHN_LIST_COPY,
-  MOVING_COPY,
-  pointsLabel,
-  RULES_COPY,
-  listLine,
-  SECTION_LABEL,
-  SETUP_COPY,
-  SIGN_IN_COPY,
-  wordsFor,
-} from "@app/core";
+import { type Currency, FOCUS_SHELL_COPY, formatMoney, FRONT_DOOR_COPY, MOVING_COPY, pointsLabel, listLine, SECTION_LABEL, SIGN_IN_COPY, wordsFor } from "@app/core";
 import { expect, test, type Page } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, signInToClient } from "./auth";
@@ -39,8 +24,8 @@ async function addJohn(page: Page, name: string, points: number) {
   const list = page.getByTestId("johns-screen");
   await list.getByTestId("add-john").click();
   const form = page.getByTestId("john-form");
-  await form.getByLabel(JOHN_LIST_COPY.name).fill(name);
-  await pickRow(page, JOHN_LIST_COPY.effort).click();
+  await form.getByLabel(words('house.johns.name')).fill(name);
+  await pickRow(page, words('house.johns.effort')).click();
   await form.getByRole("radio", { name: pointsLabel(points), exact: true }).click();
   await form.getByTestId("save-john").click();
   await expect(form).toBeHidden();
@@ -68,20 +53,20 @@ test("run a house from nothing on the phone", async ({ browser }) => {
   await today.getByTestId("setup-johns").getByRole("link").click();
   await expect(page).toHaveURL(/\/house\/johns$/);
   const list = page.getByTestId("johns-screen");
-  await expect(list.getByText(SETUP_COPY.noJohns)).toBeVisible();
-  await expect(list.getByText(SETUP_COPY.noJohnsBody)).toBeVisible();
+  await expect(list.getByText(words('house.setup.noJohns'))).toBeVisible();
+  await expect(list.getByText(words('house.setup.noJohnsBody'))).toBeVisible();
 
   // The John list: two Johns, then one edited.
   await addJohn(page, "Bins", 2);
   await addJohn(page, "Bathroom", 4);
-  await list.getByRole("button", { name: JOHN_LIST_COPY.edit("Bins") }).click();
+  await list.getByRole("button", { name: words('house.johns.edit', { name: "Bins" }) }).click();
   // When it comes round is a sentence; its day opens the days, and Done goes back to it.
   await page.getByTestId("john-form").getByTestId("timing-day").click();
   await page.getByTestId("timing-days").getByRole("radio", { name: "Thursday" }).click();
   await page.getByTestId("timing-done").click();
   await page.getByTestId("john-form").getByTestId("save-john").click();
   await expect(list.getByTestId("john-def").filter({ hasText: "Bins" })).toContainText(
-    listLine({ everyWeeks: 1, dueDow: 4, dueTime: "21:00", needsPhoto: false }),
+    listLine({ everyWeeks: 1, dueDow: 4, dueTime: "21:00", needsPhoto: false }, words),
   );
   const { data: houseRow } = await db.from("houses").select("id, join_code, currency").eq("name", name).single();
   const { data: johns } = await db.from("johns").select("name, points, due_dow").eq("house_id", houseRow!.id).order("name");
@@ -111,7 +96,7 @@ test("run a house from nothing on the phone", async ({ browser }) => {
   await toHousePage(page, "to-johns").click();
   await expect(page).toHaveURL(/\/house\/johns$/);
   await list.getByTestId("deal-week").click();
-  await expect(list.getByTestId("deal-week")).toHaveText(new RegExp(DEAL_COPY.again));
+  await expect(list.getByTestId("deal-week")).toHaveText(new RegExp(words('house.deal.again')));
   await page.getByRole("tab", { name: SECTION_LABEL.today }).click();
   await expect(today.getByTestId("next-up-name")).toBeVisible();
   await expect(today.getByTestId("my-john")).toHaveCount(0);
@@ -125,19 +110,19 @@ test("run a house from nothing on the phone", async ({ browser }) => {
   const rulesPage = page.getByTestId("rules-screen");
   await rulesPage.getByTestId("edit-rules").click();
   await rulesPage.getByTestId("house-stake").fill("25");
-  await pickRow(page, SETUP_COPY.disputes).click();
-  await rulesPage.getByRole("radio", { name: RULES_COPY.disputeHours(12) }).click();
+  await pickRow(page, words('house.setup.disputes')).click();
+  await rulesPage.getByRole("radio", { name: words('house.rules.disputeHours', { hours: 12 }) }).click();
   await rulesPage.getByTestId("save-rules").click();
-  await expect(page.getByTestId("toast")).toHaveText(SETUP_COPY.saved);
+  await expect(page.getByTestId("toast")).toHaveText(words('house.setup.saved'));
   const { data: rules } = await db.from("houses").select("stake_minor, dispute_hours").eq("id", houseRow!.id).single();
   expect(rules).toEqual({ stake_minor: 2500, dispute_hours: 12 });
-  const stake = SETUP_COPY.perMonth(formatMoney(2500, houseRow!.currency as Currency));
+  const stake = words('house.setup.perMonth', { amount: formatMoney(2500, houseRow!.currency as Currency) });
 
   // Ben reads the rules but can't change them, nor the list.
   await benPage.goto("/house/rules");
   const benRules = benPage.getByTestId("rules-screen");
-  await expect(benRules.getByTestId("rule").filter({ hasText: SETUP_COPY.stake })).toContainText(stake);
-  await expect(benRules.getByTestId("rule").filter({ hasText: SETUP_COPY.disputes })).toContainText(SETUP_COPY.disputeWindow(12));
+  await expect(benRules.getByTestId("rule").filter({ hasText: words('house.setup.stake') })).toContainText(stake);
+  await expect(benRules.getByTestId("rule").filter({ hasText: words('house.setup.disputes') })).toContainText(words('house.setup.disputeWindow', { hours: 12 }));
   // Beside the rules, the admins who can change them.
   await expect(benRules.getByTestId("admins-section").getByTestId("admin-row")).toHaveText(/Ava/);
   await expect(benRules.getByTestId("admins-section").getByTestId("add-admin")).toHaveCount(0);

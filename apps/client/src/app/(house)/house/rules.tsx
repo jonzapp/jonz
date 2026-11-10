@@ -1,4 +1,4 @@
-import { memberCan, PAGE_TITLE, rulesRows, SETUP_COPY } from '@app/core';
+import { memberCan, PAGE_TITLE, rulesRows } from '@app/core';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -18,6 +18,7 @@ import { usePull, useReadOnFocus } from '@/hooks/use-refresh';
 import { SECTION_GAP } from '@/theme';
 import { TourSpot } from '@/components/tour/tour-spot';
 import { SettingsOutline } from '@/components/page-outlines';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * The house rules, pushed from House: the stake, the forfeits, disputes,
@@ -33,6 +34,7 @@ export default function RulesScreen() {
 }
 
 function RulesFor({ houseId, userId }: { houseId: string; userId: string }) {
+  const words = useWords();
   const toast = useToast();
   const { query, view } = useHouse(houseId, userId);
   // The rules don't come over Realtime: read them again on the way back here.
@@ -68,7 +70,7 @@ function RulesFor({ houseId, userId }: { houseId: string; userId: string }) {
         page={page}
         onSaved={() => {
           setEditing(false);
-          toast.show(SETUP_COPY.saved);
+          toast.show(words('house.setup.saved'));
         }}
         onCancel={() => setEditing(false)}
       />
@@ -87,6 +89,7 @@ function RulesFor({ houseId, userId }: { houseId: string; userId: string }) {
  * on a laptop (under them on a phone) the admins: who can change them.
  */
 function RulesReadOut({ houseId, userId, view, onEdit }: { houseId: string; userId: string; view: HouseView; onEdit: () => void }) {
+  const words = useWords();
   const { snapshot } = view;
   const isAdmin = memberCan(view.me, 'house:write');
   const roles = useRoleCopy(snapshot.house.kind);
@@ -96,14 +99,14 @@ function RulesReadOut({ houseId, userId, view, onEdit }: { houseId: string; user
       start={
         <TourSpot id="rules.form">
         <Section
-          label={SETUP_COPY.rules}
-          right={isAdmin ? <TextButton label={SETUP_COPY.edit} align="end" onPress={onEdit} testID="edit-rules" /> : undefined}
+          label={words('house.setup.rules')}
+          right={isAdmin ? <TextButton label={words('house.setup.edit')} align="end" onPress={onEdit} testID="edit-rules" /> : undefined}
           testID="rules-panel"
         >
           {rulesRows(
             snapshot.rules,
             snapshot.house.awayMakeup,
-            snapshot.house.settleIn,
+            words, snapshot.house.settleIn,
             snapshot.house.kind,
             snapshot.house.pocketCapMinor,
           ).map((rule) => (

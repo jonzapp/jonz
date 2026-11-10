@@ -1,9 +1,10 @@
-import { comingUp, pointsLabel, REPEAT_COPY, type IsoDow, type JohnDef } from '@app/core';
+import { comingUp, pointsLabel, type IsoDow, type JohnDef } from '@app/core';
 import { CalendarIcon } from 'lucide-react-native';
 
 import { Group } from '@/components/group';
 import { Row, RowIcon } from '@/components/row';
 import { Section } from '@/components/section';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * Week's "Coming up": the Johns that come round every few weeks or months
@@ -12,10 +13,11 @@ import { Section } from '@/components/section';
  * there are none.
  */
 export function ComingUpSection({ johns, startsOn, weekStarts }: { johns: readonly JohnDef[]; startsOn: string; weekStarts: IsoDow }) {
-  const rows = comingUp(johns, startsOn, weekStarts);
+  const words = useWords();
+  const rows = comingUp(johns, startsOn, weekStarts, words);
   if (rows.length === 0) return null;
   return (
-    <Section label={REPEAT_COPY.comingUp} right={REPEAT_COPY.comingUpNote} testID="coming-up">
+    <Section label={words('house.repeat.comingUp')} right={words('house.repeat.comingUpNote')} testID="coming-up">
       <Group>
         {rows.map((r) => (
           <Row

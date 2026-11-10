@@ -1,27 +1,4 @@
-import {
-  canSwap,
-  memberCan,
-  oneRowPerJob,
-  passUnlocked,
-  liveWeekFilter,
-  ON_CALL_COPY,
-  PAGE_TITLE,
-  RECORD_COPY,
-  toggleWeekFilter,
-  weekAwayLine,
-  weekAwayNote,
-  weekFairness,
-  weekList,
-  weekLookAhead,
-  weekPeople,
-  weekRangeLine,
-  weekSummary,
-  weekTogether,
-  weekUnticked,
-  whoDeals,
-  type JohnDef,
-  type WeekPart,
-} from '@app/core';
+import { canSwap, memberCan, oneRowPerJob, passUnlocked, liveWeekFilter, PAGE_TITLE, toggleWeekFilter, weekAwayLine, weekAwayNote, weekFairness, weekList, weekLookAhead, weekPeople, weekRangeLine, weekSummary, weekTogether, weekUnticked, whoDeals, type JohnDef, type WeekPart } from '@app/core';
 import { RepeatIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
@@ -188,7 +165,7 @@ function Board({
   const awayOf = (id: string) => (away ? weekAwayNote(away.periods, id, week.startsOn, away.today, words) : null);
   const onCallOf = (id: string) => {
     const names = snapshot.onCall.filter((r) => r.user_id === id && r.johns).map((r) => r.johns!.name);
-    return names.length > 0 ? ON_CALL_COPY.weekLine(names) : null;
+    return names.length > 0 ? words('today.onCall.weekLine', { names: names.join(', ') }) : null;
   };
   const swapReady = canSwap(board, me);
 
@@ -266,7 +243,7 @@ function Board({
     ) : null;
   // What the deal looked ahead to, once the list is read to name the Johns.
   const look = list
-    ? weekLookAhead({ list, state: snapshot.steady, mode: rules.dealMode, items: board.items, memberIds, viewerId: userId, nameOf, words })
+    ? weekLookAhead({ list, state: snapshot.steady, mode: rules.dealMode, items: board.items, memberIds, viewerId: userId, nameOf, words }, words)
     : null;
   const ahead = look ? (
     <>
@@ -278,7 +255,7 @@ function Board({
   const coming = look ? <ComingUpSection johns={look.comingUp} startsOn={week.startsOn} weekStarts={rules.weekStarts} /> : null;
   const record = (
     <View style={styles.record}>
-      <TextButton label={RECORD_COPY.open} href="/week/record" chevron align="start" testID="week-record" />
+      <TextButton label={words('week.record.open')} href="/week/record" chevron align="start" testID="week-record" />
     </View>
   );
 

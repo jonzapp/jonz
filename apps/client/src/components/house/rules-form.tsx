@@ -1,31 +1,4 @@
-import {
-  AWAY_MAKEUP,
-  checkRules,
-  familyHides,
-  CURRENCIES,
-  COVER_GRACE_HOURS,
-  LATE_HOURS,
-  CURRENCY_SYMBOL,
-  DISPUTE_HOURS,
-  DOW_LABEL,
-  MAKEUP_LABEL,
-  POCKET_COPY,
-  RULES_COPY,
-  rulesChanged,
-  rulesDraft,
-  rulesRefusalField,
-  SETTLE_IN,
-  SETUP_COPY,
-  STEADY_COPY,
-  DEAL_MODES,
-  type Currency,
-  type HouseKind,
-  type HouseRules,
-  type IsoDow,
-  type RulesDraft,
-  type RulesField,
-  type SettleIn,
-} from '@app/core';
+import { AWAY_MAKEUP, checkRules, makeupHint, phoneZoneLine, type Words, familyHides, CURRENCIES, COVER_GRACE_HOURS, LATE_HOURS, CURRENCY_SYMBOL, DISPUTE_HOURS, DOW_LABEL, MAKEUP_LABEL, POCKET_COPY, rulesChanged, rulesDraft, rulesRefusalField, SETTLE_IN, DEAL_MODES, type Currency, type HouseKind, type HouseRules, type IsoDow, type RulesDraft, type RulesField, type SettleIn } from '@app/core';
 import { useState } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
@@ -44,22 +17,25 @@ import { useBudgetChoices } from '@/hooks/use-budget';
 import { useMove } from '@/hooks/use-move';
 import { deviceTimeZone } from '@/locale';
 import { GUTTER, INSET, LABEL_GAP, SPACE, useTheme, WIDE } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 const CURRENCY_OPTIONS = CURRENCIES.map((c) => ({ value: c, label: `${CURRENCY_SYMBOL[c]} ${c}` }));
 const DAY_OPTIONS = (Object.entries(DOW_LABEL) as [string, string][]).map(([day, name]) => ({ value: Number(day) as IsoDow, label: name }));
-const DISPUTE_OPTIONS = DISPUTE_HOURS.map((h) => ({ value: h as number, label: RULES_COPY.disputeHours(h), short: SETUP_COPY.disputeShort(h) }));
-const LATE_OPTIONS = LATE_HOURS.map((h) => ({ value: h as number, label: RULES_COPY.lateHours(h), short: SETUP_COPY.lateShort(h) }));
-const COVER_OPTIONS = COVER_GRACE_HOURS.map((h) => ({ value: h as number, label: RULES_COPY.coverGrace(h), short: SETUP_COPY.coverShort(h) }));
+const disputeOptions = (words: Words) => DISPUTE_HOURS.map((h) => ({ value: h as number, label: words('house.rules.disputeHours', { hours: h }), short: words('house.setup.disputeShort', { hours: h }) }));
+const lateOptions = (words: Words) => LATE_HOURS.map((h) => ({ value: h as number, label: words('house.rules.lateHours', { hours: h }), short: words('house.setup.lateShort', { hours: h }) }));
+const coverOptions = (words: Words) => COVER_GRACE_HOURS.map((h) => ({ value: h as number, label: words('house.rules.coverGrace', { hours: h }), short: words('house.setup.coverShort', { hours: h }) }));
 const MAKEUP_OPTIONS = AWAY_MAKEUP.map((n) => ({ value: n as number, label: MAKEUP_LABEL[n] }));
-const SETTLE_OPTIONS = SETTLE_IN.map((s) => ({ value: s, label: RULES_COPY.settleInOption[s], short: SETUP_COPY.settleInValue[s] }));
+const settleOptions = (words: Words) =>
+  SETTLE_IN.map((s) => ({ value: s, label: words(`house.rules.settleInOption.${s}` as const), short: words(`house.setup.settleInValue.${s}` as const) }));
 
 // Smart is the suggested one.
-const MODE_OPTIONS = DEAL_MODES.map((m) => ({
-  value: m,
-  label: STEADY_COPY.modeName[m],
-  meta: m === 'smart' ? `${STEADY_COPY.suggested} ${STEADY_COPY.modeMeta[m]}` : STEADY_COPY.modeMeta[m],
-}));
-const BUDGET_PLAIN = [2, 4, 6, 0].map((b) => ({ value: b, label: STEADY_COPY.budgetName(b) }));
+const modeOptions = (words: Words) =>
+  DEAL_MODES.map((m) => ({
+    value: m,
+    label: words(`week.steady.modeName.${m}` as const),
+    meta: m === 'smart' ? `${words('week.steady.suggested')} ${words(`week.steady.modeMeta.${m}` as const)}` : words(`week.steady.modeMeta.${m}` as const),
+  }));
+const budgetPlain = (words: Words) => [2, 4, 6, 0].map((b) => ({ value: b, label: words('week.steady.budgetName', { budget: b }) }));
 
 /** What the form starts from: the house's name, its rules, its make-up rate, where it settles up, and who lives there (for the budget's effects). */
 export interface RulesValues {
@@ -83,6 +59,7 @@ export interface RulesValues {
  * once the database has the new rules.
  */
 export function useRulesForm(houseId: string, values: RulesValues, onSaved: () => void) {
+  const words = useWords();
   const move = useMove(houseId);
   const [start] = useState(() => rulesDraft(
       values.name,
@@ -102,7 +79,7 @@ export function useRulesForm(houseId: string, values: RulesValues, onSaved: () =
   };
 
   async function save() {
-    const checked = checkRules(draft);
+    const checked = checkRules(draft, words);
     if (checked.problems) {
       setProblems(checked.problems);
       return;
@@ -111,7 +88,7 @@ export function useRulesForm(houseId: string, values: RulesValues, onSaved: () =
     let refusal = '';
     const saved = await move.run(async () => {
       try {
-        await updateHouse(houseId, checked.settings);
+        await updateHouse(houseId, checked.settings, words);
       } catch (reason) {
         refusal = reason instanceof Error ? reason.message : String(reason);
         throw reason;
@@ -137,38 +114,39 @@ export type RulesFormState = ReturnType<typeof useRulesForm>;
  * pinned under that.
  */
 export function RulesForm({ form }: { form: RulesFormState }) {
+  const words = useWords();
   const { draft: v, set, problems, pending } = form;
   const phoneZone = deviceTimeZone();
   const symbol = CURRENCY_SYMBOL[v.currency];
   const budget = useBudgetChoices(form.houseId, form.memberIds, v.dealMode);
   const budgetOptions = budget
-    ? budget.choices.map((c) => ({ value: c.budget, label: c.label, meta: c.suggested ? `${STEADY_COPY.suggested} ${c.effect}` : c.effect }))
-    : BUDGET_PLAIN;
+    ? budget.choices.map((c) => ({ value: c.budget, label: c.label, meta: c.suggested ? `${words('week.steady.suggested')} ${c.effect}` : c.effect }))
+    : budgetPlain(words);
 
   const noStake = familyHides(form.kind).stake;
   // A family has no vote, so no window to dispute in: a kid's tick waits for a parent's OK.
   const noVote = familyHides(form.kind).vote;
   const money = [
-    { key: 'stake', label: RULES_COPY.stake(symbol), testID: 'house-stake' },
-    { key: 'late', label: RULES_COPY.late(symbol), testID: 'house-late' },
-    { key: 'missed', label: RULES_COPY.missed(symbol), testID: 'house-missed' },
+    { key: 'stake', label: words('house.rules.stake', { symbol }), testID: 'house-stake' },
+    { key: 'late', label: words('house.rules.late', { symbol }), testID: 'house-late' },
+    { key: 'missed', label: words('house.rules.missed', { symbol }), testID: 'house-missed' },
   ] as const;
   const moneyFields = noStake ? [] : money;
 
   return (
     <>
       <View style={styles.noted}>
-        <Section label={STEADY_COPY.workload} testID="rules-workload">
+        <Section label={words('week.steady.workload')} testID="rules-workload">
           <PickRow
-            label={STEADY_COPY.mode}
-            options={MODE_OPTIONS}
+            label={words('week.steady.mode')}
+            options={modeOptions(words)}
             value={v.dealMode}
             onChange={(dealMode) => set({ dealMode })}
             disabled={pending}
             testID="rules-mode"
           />
           <PickRow
-            label={STEADY_COPY.budget}
+            label={words('week.steady.budget')}
             options={budgetOptions}
             value={v.dealBudget}
             onChange={(dealBudget) => set({ dealBudget })}
@@ -177,12 +155,12 @@ export function RulesForm({ form }: { form: RulesFormState }) {
           />
         </Section>
         <Meta style={styles.note} testID="rules-workload-note">
-          {[STEADY_COPY.modeFoot, STEADY_COPY.budgetFoot, budget?.tooLong ? STEADY_COPY.tooLong(budget.need) : null].filter(Boolean).join(' ')}
+          {[words('week.steady.modeFoot'), words('week.steady.budgetFoot'), budget?.tooLong ? words('week.steady.tooLong', { need: budget.need }) : null].filter(Boolean).join(' ')}
         </Meta>
       </View>
-      <Section label={SETUP_COPY.money} testID="rules-money">
+      <Section label={words('house.setup.money')} testID="rules-money">
         <PickRow
-          label={RULES_COPY.currency}
+          label={words('house.rules.currency')}
           options={CURRENCY_OPTIONS}
           value={v.currency}
           onChange={(currency: Currency) => set({ currency })}
@@ -217,8 +195,8 @@ export function RulesForm({ form }: { form: RulesFormState }) {
         ) : null}
         {noStake ? null : (
           <PickRow
-            label={RULES_COPY.settleIn}
-            options={SETTLE_OPTIONS}
+            label={words('house.rules.settleIn')}
+            options={settleOptions(words)}
             value={v.settleIn}
             onChange={(settleIn: SettleIn) => set({ settleIn })}
             disabled={pending}
@@ -226,44 +204,44 @@ export function RulesForm({ form }: { form: RulesFormState }) {
         )}
       </Section>
       <View style={styles.noted}>
-        <Section label={SETUP_COPY.fairness} testID="rules-fairness">
+        <Section label={words('house.setup.fairness')} testID="rules-fairness">
           {noVote ? null : (
             <PickRow
-              label={SETUP_COPY.disputes}
-              options={DISPUTE_OPTIONS}
+              label={words('house.setup.disputes')}
+              options={disputeOptions(words)}
               value={v.disputeHours}
               onChange={(disputeHours) => set({ disputeHours })}
               disabled={pending}
             />
           )}
           <PickRow
-            label={SETUP_COPY.lateWindow}
-            options={LATE_OPTIONS}
+            label={words('house.setup.lateWindow')}
+            options={lateOptions(words)}
             value={v.lateHours}
             onChange={(lateHours) => set({ lateHours })}
             disabled={pending}
           />
           <PickRow
-            label={SETUP_COPY.cover}
-            options={COVER_OPTIONS}
+            label={words('house.setup.cover')}
+            options={coverOptions(words)}
             value={v.coverGraceHours}
             onChange={(coverGraceHours) => set({ coverGraceHours })}
             disabled={pending}
           />
           <PickRow
-            label={SETUP_COPY.away}
+            label={words('house.setup.away')}
             options={MAKEUP_OPTIONS}
             value={v.awayMakeup}
             onChange={(awayMakeup) => set({ awayMakeup })}
             disabled={pending}
           />
         </Section>
-        <Meta style={styles.note}>{`${RULES_COPY.awayNote} ${RULES_COPY.makeupHint[v.awayMakeup]}`}</Meta>
+        <Meta style={styles.note}>{`${words('house.rules.awayNote')} ${makeupHint(v.awayMakeup, words)}`}</Meta>
       </View>
-      <Section label={SETUP_COPY.house} testID="rules-house">
+      <Section label={words('house.setup.house')} testID="rules-house">
         <GroupItem>
           <Field
-            label={RULES_COPY.name}
+            label={words('house.rules.name')}
             value={v.name}
             onChangeText={(name) => set({ name })}
             maxLength={60}
@@ -273,7 +251,7 @@ export function RulesForm({ form }: { form: RulesFormState }) {
           />
         </GroupItem>
         <PickRow
-          label={RULES_COPY.weekStarts}
+          label={words('house.rules.weekStarts')}
           options={DAY_OPTIONS}
           value={v.weekStarts}
           onChange={(weekStarts) => set({ weekStarts })}
@@ -281,18 +259,18 @@ export function RulesForm({ form }: { form: RulesFormState }) {
         />
         <GroupItem>
           <Field
-            label={RULES_COPY.timezone}
+            label={words('house.rules.timezone')}
             value={v.timezone}
             onChangeText={(timezone) => set({ timezone })}
             autoCapitalize="none"
             autoCorrect={false}
-            hint={RULES_COPY.timezoneHint}
+            hint={words('house.rules.timezoneHint')}
             editable={!pending}
             problem={problems.timezone}
             testID="rules-timezone"
           />
           {phoneZone !== v.timezone ? (
-            <TextButton label={RULES_COPY.phoneZone(phoneZone)} align="start" onPress={() => set({ timezone: phoneZone })} />
+            <TextButton label={phoneZoneLine(phoneZone, words)} align="start" onPress={() => set({ timezone: phoneZone })} />
           ) : null}
         </GroupItem>
       </Section>
@@ -307,6 +285,7 @@ export function RulesForm({ form }: { form: RulesFormState }) {
  * unsaved. It keeps to the page's width, on the leading edge.
  */
 export function RulesFoot({ form, onCancel }: { form: RulesFormState; onCancel: () => void }) {
+  const words = useWords();
   const { colors } = useTheme();
   const width = useContentWidth();
   // From WIDE the page starts at its leading edge, and so does its foot.
@@ -317,14 +296,14 @@ export function RulesFoot({ form, onCancel }: { form: RulesFormState; onCancel: 
         {form.problems.form ? <Alert message={form.problems.form} /> : null}
         <ButtonRow>
           <Button
-            label={RULES_COPY.save}
-            busyLabel={RULES_COPY.saving}
+            label={words('house.rules.save')}
+            busyLabel={words('house.rules.saving')}
             busy={form.pending}
             disabled={!form.changed}
             onPress={() => void form.save()}
             testID="save-rules"
           />
-          <Button variant="outline" label={SETUP_COPY.cancel} onPress={onCancel} testID="cancel-rules" />
+          <Button variant="outline" label={words('house.setup.cancel')} onPress={onCancel} testID="cancel-rules" />
         </ButtonRow>
       </View>
     </View>

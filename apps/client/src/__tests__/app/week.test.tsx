@@ -1,15 +1,4 @@
-import {
-  BIN_NIGHT,
-  buildStake,
-  FOCUS_SHELL_COPY,
-  humanError,
-  NEW_JOHN,
-  PAGE_TITLE,
-  REPEAT_COPY,
-  STEADY_COPY,
-  TABLE_COPY,
-  type SteadyAheadWeek,
-} from '@app/core';
+import { BIN_NIGHT, buildStake, FOCUS_SHELL_COPY, humanError, NEW_JOHN, PAGE_TITLE, type SteadyAheadWeek, wordsFor } from '@app/core';
 import { QueryClientProvider, type QueryClient } from '@tanstack/react-query';
 import { Slot } from 'expo-router';
 import { act, fireEvent, renderRouter, screen, waitFor, within } from 'expo-router/testing-library';
@@ -28,7 +17,6 @@ import { ToastProvider } from '@/components/toast';
 import { houseKey } from '@/hooks/keys';
 import { assignment, snapshot } from '@/testing/house';
 import { testQueryClient } from '@/testing/query';
-import { wordsFor } from '@app/core';
 
 const words = wordsFor('en', 'housemates');
 
@@ -535,8 +523,8 @@ describe('the fairness footer', () => {
     await open();
     await fireEvent.press(await screen.findByRole('button', { name: words('week.summary.fairClose') }));
     const sheet = screen.getByTestId('fair-shares');
-    expect(within(sheet).getByRole('header', { name: TABLE_COPY.shares })).toBeOnTheScreen();
-    expect(within(sheet).getByText(TABLE_COPY.sharesBody)).toBeOnTheScreen();
+    expect(within(sheet).getByRole('header', { name: words('house.table.shares') })).toBeOnTheScreen();
+    expect(within(sheet).getByText(words('house.table.sharesBody'))).toBeOnTheScreen();
     const rows = within(sheet).getAllByTestId('fair-share');
     expect(within(rows[0]).getByText(words('week.table.you'))).toBeOnTheScreen();
     expect(within(rows[0]).getByText('+1')).toBeOnTheScreen();
@@ -554,7 +542,7 @@ describe('coming up', () => {
     (loadJohnList as jest.Mock).mockResolvedValue({ johns: [{ ...NEW_JOHN, id: 'j1', name: 'Bins out' }, fridge], groups: [] });
     await open();
     const section = await screen.findByTestId('coming-up');
-    expect(within(section).getByText(REPEAT_COPY.comingUp)).toBeOnTheScreen();
+    expect(within(section).getByText(words('house.repeat.comingUp'))).toBeOnTheScreen();
     const rows = within(section).getAllByTestId('coming-up-john');
     expect(rows).toHaveLength(1);
     expect(within(rows[0]).getByText('Fridge deep clean')).toBeOnTheScreen();
@@ -592,9 +580,9 @@ describe('the look ahead', () => {
     (loadJohnList as jest.Mock).mockResolvedValue({ johns: LIST, groups: [] });
     await open();
     const waiting = within(await screen.findByTestId('week-waiting'));
-    expect(waiting.getByText(STEADY_COPY.waiting)).toBeOnTheScreen();
+    expect(waiting.getByText(words('week.steady.waiting'))).toBeOnTheScreen();
     expect(waiting.getByTestId('waiting-john')).toHaveTextContent(/Mopping.*Floors, next week.*3 pts/);
-    expect(screen.getByText(STEADY_COPY.waitingNote)).toBeOnTheScreen();
+    expect(screen.getByText(words('week.steady.waitingNote'))).toBeOnTheScreen();
     const next = within(screen.getByTestId('week-turns-next'));
     expect(next.getAllByTestId('turn-next')).toHaveLength(1);
     expect(next.getByTestId('turn-next')).toHaveTextContent(/Kitchen.*Kitchen, your turn, week of 2 Nov/);

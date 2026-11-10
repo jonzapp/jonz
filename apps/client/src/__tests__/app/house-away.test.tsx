@@ -1,4 +1,4 @@
-import { AWAY_COPY, FOCUS_SHELL_COPY, PAGE_TITLE, SECTION_LABEL, SETUP_COPY } from '@app/core';
+import { FOCUS_SHELL_COPY, PAGE_TITLE, SECTION_LABEL, awayMovedLine, wordsFor } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 
 import { cancelAway, loadAway, setAway } from '@/api/away';
@@ -8,6 +8,8 @@ import { loadJohnList } from '@/api/settings';
 import AwayScreen from '@/app/(house)/house/away';
 import { snapshot } from '@/testing/house';
 import { renderPages, untilRead } from '@/testing/pages';
+
+const words = wordsFor('en', 'housemates');
 
 jest.mock('@/api/board', () => ({ loadHouse: jest.fn() }));
 jest.mock('@/api/away', () => ({ loadAway: jest.fn(), setAway: jest.fn(), cancelAway: jest.fn() }));
@@ -67,7 +69,7 @@ it('shows the month, each day saying how many are away', async () => {
   });
   await open();
   const panel = within(screen.getByTestId('away-panel'));
-  expect(panel.getByText(SETUP_COPY.whosAway)).toBeOnTheScreen();
+  expect(panel.getByText(words('house.setup.whosAway'))).toBeOnTheScreen();
   expect(panel.getByText('October 2026')).toBeOnTheScreen();
   // Weeks from the house's Monday, so October opens on 28 September.
   expect(panel.getAllByTestId('away-day')).toHaveLength(35);
@@ -79,14 +81,14 @@ it('shows the month, each day saying how many are away', async () => {
   expect(panel.getByRole('button', { name: 'Monday 26 October, 2 away' })).toBeOnTheScreen();
   expect(panel.getByRole('button', { name: 'Wednesday 28 October, 1 away' })).toBeOnTheScreen();
   expect(panel.getByRole('button', { name: 'Thursday 29 October, everyone home' })).toBeOnTheScreen();
-  expect(panel.getByText(AWAY_COPY.tapADay)).toBeOnTheScreen();
+  expect(panel.getByText(words('house.away.tapADay'))).toBeOnTheScreen();
   // What was read starts a week back, so there's no going to September.
-  expect(panel.getByRole('button', { name: AWAY_COPY.earlierMonth })).toBeDisabled();
-  await fireEvent.press(panel.getByRole('button', { name: AWAY_COPY.laterMonth }));
+  expect(panel.getByRole('button', { name: words('house.away.earlierMonth') })).toBeDisabled();
+  await fireEvent.press(panel.getByRole('button', { name: words('house.away.laterMonth') }));
   expect(panel.getByText('November 2026')).toBeOnTheScreen();
   expect(panel.getByRole('button', { name: 'Monday 2 November, 1 away' })).toBeOnTheScreen();
   expect(panel.queryByTestId('away-today')).toBeNull();
-  await fireEvent.press(panel.getByRole('button', { name: AWAY_COPY.earlierMonth }));
+  await fireEvent.press(panel.getByRole('button', { name: words('house.away.earlierMonth') }));
   expect(panel.getByText('October 2026')).toBeOnTheScreen();
 });
 
@@ -103,21 +105,21 @@ it("opens a day's sheet: who's away, when they're back, and who's home", async (
   await fireEvent.press(screen.getByRole('button', { name: 'Monday 26 October, 2 away' }));
   const sheet = within(screen.getByTestId('away-day-sheet'));
   expect(sheet.getByRole('header', { name: 'Monday 26 October' })).toBeOnTheScreen();
-  expect(sheet.getByText(AWAY_COPY.dayCount(2, 1))).toBeOnTheScreen();
+  expect(sheet.getByText(words('house.away.dayCount', { away: 2, home: 1 }))).toBeOnTheScreen();
   // The trip that began first first, by first name, with the day they're back.
   const [tom, sam] = sheet.getAllByTestId('day-away');
   expect(tom).toHaveTextContent(/Tom.*Back Tue 27 Oct$/);
   expect(sam).toHaveTextContent(/Sam.*Back Thu 29 Oct, Lisbon$/);
   expect(sheet.getByTestId('day-home')).toHaveTextContent(/You$/);
   // On a day, keeping the sheet open.
-  await fireEvent.press(sheet.getByRole('button', { name: AWAY_COPY.dayAfter }));
+  await fireEvent.press(sheet.getByRole('button', { name: words('house.away.dayAfter') }));
   expect(sheet.getByRole('header', { name: 'Tuesday 27 October' })).toBeOnTheScreen();
   expect(sheet.getAllByTestId('day-away')).toHaveLength(1);
   expect(sheet.getByTestId('day-home')).toHaveTextContent(/You.*Tom$/);
-  await fireEvent.press(sheet.getByRole('button', { name: AWAY_COPY.dayAfter }));
-  await fireEvent.press(sheet.getByRole('button', { name: AWAY_COPY.dayAfter }));
+  await fireEvent.press(sheet.getByRole('button', { name: words('house.away.dayAfter') }));
+  await fireEvent.press(sheet.getByRole('button', { name: words('house.away.dayAfter') }));
   expect(sheet.getByRole('header', { name: 'Thursday 29 October' })).toBeOnTheScreen();
-  expect(sheet.getByText(AWAY_COPY.everyoneHome)).toBeOnTheScreen();
+  expect(sheet.getByText(words('house.away.everyoneHome'))).toBeOnTheScreen();
   await fireEvent.press(screen.getByTestId('sheet-close'));
   await waitFor(() => expect(screen.queryByTestId('away-day-sheet')).toBeNull());
 });
@@ -132,15 +134,15 @@ it('calls your own trip yours on the calendar, and says when everyone is away', 
   const sheet = within(screen.getByTestId('away-day-sheet'));
   expect(sheet.getByTestId('day-away')).toHaveTextContent(/You.*Back Thu 29 Oct, Lisbon$/);
   expect(sheet.getByTestId('day-home')).toHaveTextContent(/Sam$/);
-  await fireEvent.press(sheet.getByRole('button', { name: AWAY_COPY.dayAfter }));
-  await fireEvent.press(sheet.getByRole('button', { name: AWAY_COPY.dayAfter }));
-  expect(sheet.getByText(AWAY_COPY.dayCount(2, 0))).toBeOnTheScreen();
-  expect(sheet.getByText(AWAY_COPY.nobodyHome)).toBeOnTheScreen();
+  await fireEvent.press(sheet.getByRole('button', { name: words('house.away.dayAfter') }));
+  await fireEvent.press(sheet.getByRole('button', { name: words('house.away.dayAfter') }));
+  expect(sheet.getByText(words('house.away.dayCount', { away: 2, home: 0 }))).toBeOnTheScreen();
+  expect(sheet.getByText(words('house.away.nobodyHome'))).toBeOnTheScreen();
 });
 
 it("says when nobody's away, and has no trips of yours to show", async () => {
   await open();
-  expect(within(screen.getByTestId('away-panel')).getByText(AWAY_COPY.nobody)).toBeOnTheScreen();
+  expect(within(screen.getByTestId('away-panel')).getByText(words('house.away.nobody'))).toBeOnTheScreen();
   expect(screen.queryByTestId('my-trips')).toBeNull();
 });
 
@@ -149,9 +151,9 @@ describe('your own trips', () => {
     (loadAway as jest.Mock).mockResolvedValue({ today: '2026-10-21', periods: [trip({ userId: 'priya' })] });
     await open();
     const mine = within(screen.getByTestId('my-trips'));
-    expect(mine.getByText(AWAY_COPY.yours)).toBeOnTheScreen();
+    expect(mine.getByText(words('house.away.yours'))).toBeOnTheScreen();
     expect(mine.getByTestId('my-trip')).toHaveTextContent(/26–28 Oct.*Lisbon/);
-    await fireEvent.press(mine.getByRole('button', { name: `${AWAY_COPY.cancel}, 26–28 Oct` }));
+    await fireEvent.press(mine.getByRole('button', { name: `${words('house.away.cancel')}, 26–28 Oct` }));
     expect(cancelAway).toHaveBeenCalledWith('p1');
   });
 
@@ -162,8 +164,8 @@ describe('your own trips', () => {
     });
     await open();
     const mine = within(screen.getByTestId('my-trip'));
-    expect(screen.getByTestId('my-trip')).toHaveTextContent(new RegExp(`20–24 Oct.*${SETUP_COPY.awayNow}, Cork`));
-    await fireEvent.press(mine.getByRole('button', { name: `${AWAY_COPY.back}, 20–24 Oct` }));
+    expect(screen.getByTestId('my-trip')).toHaveTextContent(new RegExp(`20–24 Oct.*${words('house.setup.awayNow')}, Cork`));
+    await fireEvent.press(mine.getByRole('button', { name: `${words('house.away.back')}, 20–24 Oct` }));
     expect(cancelAway).toHaveBeenCalledWith('p1');
   });
 
@@ -171,7 +173,7 @@ describe('your own trips', () => {
     (loadAway as jest.Mock).mockResolvedValue({ today: '2026-10-21', periods: [trip({ userId: 'priya' })] });
     (cancelAway as jest.Mock).mockRejectedValue(new Error('That trip has already ended.'));
     await open();
-    await fireEvent.press(screen.getByRole('button', { name: `${AWAY_COPY.cancel}, 26–28 Oct` }));
+    await fireEvent.press(screen.getByRole('button', { name: `${words('house.away.cancel')}, 26–28 Oct` }));
     expect(await within(screen.getByTestId('my-trips')).findByRole('alert')).toHaveTextContent('That trip has already ended.');
   });
 
@@ -182,7 +184,7 @@ describe('your own trips', () => {
     });
     await open();
     expect(screen.queryByTestId('my-trips')).toBeNull();
-    expect(within(screen.getByTestId('away-panel')).getByText(AWAY_COPY.nobody)).toBeOnTheScreen();
+    expect(within(screen.getByTestId('away-panel')).getByText(words('house.away.nobody'))).toBeOnTheScreen();
   });
 });
 
@@ -194,14 +196,14 @@ describe('booking', () => {
     // The week began on Monday; the days already gone can't be picked.
     expect(calendar.getByRole('button', { name: 'Monday 19 October' })).toBeDisabled();
     expect(calendar.getByRole('button', { name: 'Wednesday 21 October' })).toBeEnabled();
-    expect(calendar.getByRole('button', { name: SETUP_COPY.earlier })).toBeDisabled();
+    expect(calendar.getByRole('button', { name: words('house.setup.earlier') })).toBeDisabled();
     expect(calendar.queryByRole('button', { name: 'Monday 23 November' })).toBeNull();
-    await fireEvent.press(calendar.getByRole('button', { name: SETUP_COPY.later }));
+    await fireEvent.press(calendar.getByRole('button', { name: words('house.setup.later') }));
     // On four weeks, keeping the last in view.
     expect(calendar.getByRole('button', { name: 'Monday 16 November' })).toBeOnTheScreen();
     expect(calendar.getByRole('button', { name: 'Monday 14 December' })).toBeOnTheScreen();
     expect(calendar.queryByRole('button', { name: 'Wednesday 21 October' })).toBeNull();
-    await fireEvent.press(calendar.getByRole('button', { name: SETUP_COPY.earlier }));
+    await fireEvent.press(calendar.getByRole('button', { name: words('house.setup.earlier') }));
     expect(calendar.getByRole('button', { name: 'Wednesday 21 October' })).toBeOnTheScreen();
   });
 
@@ -209,18 +211,18 @@ describe('booking', () => {
     (setAway as jest.Mock).mockResolvedValue({ before: 2, handed: 1, skipped: 0 });
     await open();
     const form = within(screen.getByTestId('away-form'));
-    expect(form.getByText(AWAY_COPY.howItWorks)).toBeOnTheScreen();
-    expect(form.getByRole('button', { name: SETUP_COPY.book })).toBeDisabled();
-    expect(form.getByText(AWAY_COPY.pickFrom)).toBeOnTheScreen();
+    expect(form.getByText(words('house.away.howItWorks'))).toBeOnTheScreen();
+    expect(form.getByRole('button', { name: words('house.setup.book') })).toBeDisabled();
+    expect(form.getByText(words('house.away.pickFrom'))).toBeOnTheScreen();
     await fireEvent.press(form.getByRole('button', { name: 'Monday 26 October' }));
-    expect(form.getByText(AWAY_COPY.pickTo)).toBeOnTheScreen();
+    expect(form.getByText(words('house.away.pickTo'))).toBeOnTheScreen();
     await fireEvent.press(form.getByRole('button', { name: 'Wednesday 28 October' }));
-    expect(form.getByText(AWAY_COPY.picked('26–28 Oct'))).toBeOnTheScreen();
+    expect(form.getByText(words('house.away.picked', { range: '26–28 Oct' }))).toBeOnTheScreen();
     expect(form.getByRole('button', { name: 'Tuesday 27 October' })).toBeSelected();
     await fireEvent.changeText(form.getByTestId('away-note'), 'Lisbon');
-    await fireEvent.press(form.getByRole('button', { name: SETUP_COPY.book }));
+    await fireEvent.press(form.getByRole('button', { name: words('house.setup.book') }));
     expect(setAway).toHaveBeenCalledWith({ from: '2026-10-26', to: '2026-10-28', note: 'Lisbon' });
-    expect(await screen.findByText(AWAY_COPY.moved(2, 1, 0))).toBeOnTheScreen();
+    expect(await screen.findByText(awayMovedLine(2, 1, 0, words))).toBeOnTheScreen();
     // Ready for the next one.
     await waitFor(() => expect(form.getByTestId('book-away')).toBeDisabled());
     expect(form.getByTestId('away-note')).toHaveDisplayValue('');

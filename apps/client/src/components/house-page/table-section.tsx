@@ -1,15 +1,4 @@
-import {
-  HOUSE_PAGE_COPY,
-  KIDS_COPY,
-  localDate,
-  monthOf,
-  monthWord,
-  pocketMoney,
-  POCKET_COPY,
-  tableLines,
-  type PocketView,
-  type TableLine,
-} from '@app/core';
+import { KIDS_COPY, localDate, monthOf, monthWord, pocketMoney, POCKET_COPY, tableLines, type PocketView, type TableLine } from '@app/core';
 import type { UseQueryResult } from '@tanstack/react-query';
 import { InfoIcon, UserRoundPlusIcon, UserPlusIcon } from 'lucide-react-native';
 import { useState } from 'react';
@@ -88,7 +77,7 @@ export function TableSection({
         away: away.data?.periods ?? null,
         today: away.data?.today ?? localDate(now, zone),
         column,
-      }).map((line) =>
+      }, words).map((line) =>
         family
           ? { ...line, money: earned ? pocketMoney(earned[line.userId] ?? 0, snapshot.rules.currency) : null, losing: false }
           : line,
@@ -99,16 +88,16 @@ export function TableSection({
     <View>
       <TourSpot id="house.table">
         <Section
-          label={HOUSE_PAGE_COPY.table}
+          label={words('house.page.table')}
           right={
             <PickMenu
               options={[
-                { value: 'week', label: HOUSE_PAGE_COPY.week },
+                { value: 'week', label: words('house.page.week') },
                 { value: 'month', label: monthWord(month) },
               ]}
               value={span}
               onChange={setSpan}
-              label={HOUSE_PAGE_COPY.show}
+              label={words('house.page.show')}
               testID="table-span"
             />
           }
@@ -119,11 +108,11 @@ export function TableSection({
           ) : (
             table.isError ? (
               <GroupItem>
-                <ReadFailed message={HOUSE_PAGE_COPY.tableUnreadable} onRetry={() => void table.refetch()} />
+                <ReadFailed message={words('house.page.tableUnreadable')} onRetry={() => void table.refetch()} />
               </GroupItem>
             ) : (
               // A row for each housemate, in outline, so nothing below moves when the Table arrives.
-              <Waiting ready={false} label={HOUSE_PAGE_COPY.readingTable} outline={<OutlineRows count={snapshot.members.length} end />} />
+              <Waiting ready={false} label={words('house.page.readingTable')} outline={<OutlineRows count={snapshot.members.length} end />} />
             )
           )}
           {family && parent ? (
@@ -147,7 +136,7 @@ export function TableSection({
           )}
           <Row
             leading={<RowIcon icon={InfoIcon} />}
-            title={family ? POCKET_COPY.howItWorks : HOUSE_PAGE_COPY.rules}
+            title={family ? POCKET_COPY.howItWorks : words('house.page.rules')}
             // Whole on the narrowest phone, rather than cut at "How points and the…".
             titleLines={2}
             onPress={() => setSheet('rules')}

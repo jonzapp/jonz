@@ -1,4 +1,4 @@
-import { ASK_USAGE_COPY, FOCUS_SHELL_COPY, HOUSE_LOWER_COPY, houseSetupValues, KID_HOUSE_COPY, localDate, memberCan } from '@app/core';
+import { ASK_USAGE_COPY, FOCUS_SHELL_COPY, houseSetupValues, localDate, memberCan } from '@app/core';
 import { GaugeIcon, ListTodoIcon, PlaneIcon, ScrollTextIcon } from 'lucide-react-native';
 import { View } from 'react-native';
 
@@ -12,6 +12,7 @@ import { useJohnList } from '@/hooks/use-john-list';
 import { useReadOnFocus } from '@/hooks/use-refresh';
 import { OUTLINE, useTheme } from '@/theme';
 import { TourSpot } from '@/components/tour/tour-spot';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * House setup: a row to each of the house's setup pages, each showing what
@@ -37,6 +38,7 @@ export function SetupSection({
   /** Whether it's the tour's "House setup" spot: not under House's switch on a phone, which is. */
   spot?: boolean;
 }) {
+  const words = useWords();
   const pending = <PendingMeta />;
   const list = useJohnList(houseId);
   const away = useAway(houseId, view.snapshot);
@@ -55,17 +57,17 @@ export function SetupSection({
     members: view.snapshot.members,
     me: userId,
     admin: memberCan(view.me, 'johns:write'),
-  });
+  }, words);
 
   const section = (
     <Section
-      label={kid ? KID_HOUSE_COPY.setup : FOCUS_SHELL_COPY.setup}
-      right={kid ? KID_HOUSE_COPY.setupNote : HOUSE_LOWER_COPY.setupNote}
+      label={kid ? words('house.kid.setup') : FOCUS_SHELL_COPY.setup}
+      right={kid ? words('house.kid.setupNote') : words('house.lower.setupNote')}
       testID="setup-section"
     >
       <Row
         leading={<RowIcon icon={ListTodoIcon} />}
-        title={HOUSE_LOWER_COPY.johns}
+        title={words('house.lower.johns')}
         meta={values.johns ?? pending}
         href="/house/johns"
         chevron
@@ -73,7 +75,7 @@ export function SetupSection({
       />
       <Row
         leading={<RowIcon icon={ScrollTextIcon} />}
-        title={HOUSE_LOWER_COPY.rules}
+        title={words('house.lower.rules')}
         meta={values.rules}
         href="/house/rules"
         chevron
@@ -81,7 +83,7 @@ export function SetupSection({
       />
       <Row
         leading={<RowIcon icon={PlaneIcon} />}
-        title={HOUSE_LOWER_COPY.away}
+        title={words('house.lower.away')}
         meta={values.away ?? pending}
         href="/house/away"
         chevron

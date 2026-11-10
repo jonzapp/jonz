@@ -24,6 +24,9 @@ import {
   type Repeat,
 } from "./repeat";
 import { weekIndex } from "./week";
+import { wordsFor } from "./words-for";
+
+const words = wordsFor("en", "housemates");
 
 const NOV_2026 = monthIndex("2026-11");
 
@@ -174,8 +177,8 @@ describe("words", () => {
     expect(periodWords({ everyWeeks: 1, everyMonths: 3 })).toBe("3 months");
     expect(periodWords({ everyWeeks: 1, everyMonths: 12 })).toBe("year");
     expect(periodWords({ everyWeeks: 1, everyMonths: 24 })).toBe("2 years");
-    expect(oftenWords({ everyWeeks: 1, everyMonths: 6 })).toBe("Twice a year");
-    expect(oftenWords({ everyWeeks: 1, everyMonths: 3 })).toBe("Every 3 months");
+    expect(oftenWords({ everyWeeks: 1, everyMonths: 6 }, words)).toBe("Twice a year");
+    expect(oftenWords({ everyWeeks: 1, everyMonths: 3 }, words)).toBe("Every 3 months");
   });
 
   it("counts how many times a year it comes round", () => {
@@ -189,14 +192,14 @@ describe("previewLandings and nextLine", () => {
   it("previews a new quarterly John from its first Saturday after this week", () => {
     const dates = previewLandings({ ...fridge, anchorMonth: null }, now, "Europe/London", 1, 4);
     expect(dates).toEqual(["2026-11-07", "2027-02-06", "2027-05-01", "2027-08-07"]);
-    expect(nextLine(dates)).toBe("Next: Sat 7 Nov, then 6 Feb, 1 May, 7 Aug");
+    expect(nextLine(dates, words)).toBe("Next: Sat 7 Nov, then 6 Feb, 1 May, 7 Aug");
   });
 
   it("previews a new fortnightly John from this week, as saving it does", () => {
     const dates = previewLandings({ everyWeeks: 2, everyMonths: null, weekOfMonth: null, anchorMonth: null, dueDow: 7 }, now, "Europe/London", 1, 2);
     // This week (from Mon 26 Oct) is its first, so next week's is skipped: Sun 15 Nov, then 29 Nov.
     expect(dates).toEqual(["2026-11-15", "2026-11-29"]);
-    expect(nextLine([])).toBeNull();
+    expect(nextLine([], words)).toBeNull();
   });
 
   it("names months and dates", () => {
@@ -216,7 +219,7 @@ describe("comingUp", () => {
       { ...base, ...fridge, id: "call", name: "On call", when: "on_call" as const },
     ];
     // This week starts Mon 26 Oct; the four after it run to Sun 29 Nov.
-    expect(comingUp(johns, "2026-10-26", 1)).toEqual([
+    expect(comingUp(johns, "2026-10-26", 1, words)).toEqual([
       { johnId: "fridge", name: "Fridge deep clean", category: "kitchen", points: 8, date: "2026-11-07", meta: "Sat 7 Nov, every 3 months" },
       { johnId: "gutters", name: "Clear the gutters", category: "kitchen", points: 15, date: "2026-11-21", meta: "Sat 21 Nov, every year" },
     ]);
@@ -225,6 +228,6 @@ describe("comingUp", () => {
   it("includes an every-4-weeks John, from its anchor week", () => {
     const a = weekIndex("2026-10-26");
     const john = { ...base, id: "w", name: "Descale", everyWeeks: 4, everyMonths: null, weekOfMonth: null, anchorMonth: null, anchorWeek: a, dueDow: 6 as const };
-    expect(comingUp([john], "2026-10-26", 1).map((c) => c.date)).toEqual(["2026-11-28"]);
+    expect(comingUp([john], "2026-10-26", 1, words).map((c) => c.date)).toEqual(["2026-11-28"]);
   });
 });

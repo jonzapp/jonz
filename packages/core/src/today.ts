@@ -404,7 +404,7 @@ export function sheetKind(
   const often = item.flaggedAt
     ? words('john.sheet.onCall')
     : item.everyMonths
-      ? oftenWords({ everyWeeks: 1, everyMonths: item.everyMonths }).toLocaleLowerCase()
+      ? oftenWords({ everyWeeks: 1, everyMonths: item.everyMonths }, words).toLocaleLowerCase()
       : item.everyWeeks
         ? words('john.sheet.every', { weeks: item.everyWeeks })
         : null;
@@ -725,17 +725,17 @@ export function todayPage(input: {
     room: shown ? forfeitRoom(stake, userId, monthOf(shown.dueAt, rules.timezone)) : null,
     away: away && state.kind !== "away" ? awayLine(away.periods, userId, away.today, words) : null,
     standing: board.week ? standingLine({ table: board.table, userId, stake, currency: rules.currency }, words) : null,
-    ...swapsFor(input),
+    ...swapsFor(input, words),
   };
 }
 
 /** Today's swaps, once everyone's preferences and the open asks are read. */
-function swapsFor(input: Parameters<typeof todayPage>[0]): Pick<TodayPage, "swap" | "offers"> {
+function swapsFor(input: Parameters<typeof todayPage>[0], words: Words): Pick<TodayPage, "swap" | "offers"> {
   const { offers, now } = input;
   if (!offers || !now) return { swap: null, offers: [] };
   const members = input.members.map((m) => ({ userId: m.userId, name: m.name, prefs: m.prefs ?? NO_PREFS }));
   const args = { items: input.board.items, viewerId: input.userId, members, offers, now };
-  return { swap: swapAsk(args), offers: swapOffersToYou(args) };
+  return { swap: swapAsk(args, words), offers: swapOffersToYou(args, words) };
 }
 
 /** How your share catches up after time away, by houses.away_makeup: in full, half of it, or none (it goes to whoever's home). */

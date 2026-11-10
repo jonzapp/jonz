@@ -3,7 +3,7 @@ import { format } from "date-fns";
 
 import type { AwayPeriod } from "./away";
 import { weeklyEffort, type JohnDef } from "./board";
-import { FOCUS_SHELL_COPY, HOUSE_LOWER_COPY, KIND_SWITCH_COPY, MOVING_COPY, STEADY_COPY, WALL_FEED_COPY } from "./copy";
+import { FOCUS_SHELL_COPY, KIND_SWITCH_COPY, MOVING_COPY, WALL_FEED_COPY } from "./copy";
 import type { Currency, HouseKind, HouseRules } from "./domain";
 import { dateRange, dayLabel, firstName, STATUS_MARK, type StatusIcon } from "./format";
 import { undoneWhat } from "./history";
@@ -14,6 +14,7 @@ import type { Transfer } from "./stake";
 import { wordsFor, type Words } from "./words-for";
 import { REACTABLE, REACTIONS, type Part, type ReactionKind, type WallEvent, type WallIcon } from "./wall";
 import { addDaysTo, localDate } from "./week";
+import { perWeekLine, rulesLine } from "./word-keys";
 
 // House's lower half, as both the House tab and the whole Wall show it: each
 // event as a row's one sentence with first names and its meta line, the
@@ -621,14 +622,14 @@ export function houseSetupValues(input: {
   members: readonly WallPerson[];
   me: string;
   admin: boolean;
-}): HouseSetupValues {
+}, words: Words): HouseSetupValues {
   const { rules, johns, groups, away, today, members, me } = input;
   const money = (minor: number) => formatMoney(minor, rules.currency);
 
   let johnsValue: string | null = null;
   if (johns) {
     const perWeek = Math.round(weeklyEffort(johns));
-    johnsValue = johns.length === 0 ? HOUSE_LOWER_COPY.noJohns : HOUSE_LOWER_COPY.johnsValue(johns.length, HOUSE_LOWER_COPY.perWeek(perWeek));
+    johnsValue = johns.length === 0 ? words('house.lower.noJohns') : words('house.lower.johnsValue', { count: johns.length, perWeek: perWeekLine(perWeek, words) });
   }
 
   let awayValue: string | null = null;
@@ -643,22 +644,23 @@ export function houseSetupValues(input: {
           a.who.localeCompare(b.who),
       )[0];
     awayValue = next
-      ? HOUSE_LOWER_COPY.awayValue(next.who, dateRange(next.period.startsOn, next.period.endsOn))
-      : HOUSE_LOWER_COPY.nobodyAway;
+      ? words('house.lower.awayValue', { who: next.who, range: dateRange(next.period.startsOn, next.period.endsOn) })
+      : words('house.lower.nobodyAway');
   }
 
   return {
     johns: johnsValue,
     rules:
       input.kind === "family"
-        ? `${STEADY_COPY.modeName[rules.dealMode ?? "smart"]}, ${STEADY_COPY.budgetEach(rules.dealBudget ?? 4)}`
-        : HOUSE_LOWER_COPY.rulesValue(
+        ? `${words(`week.steady.modeName.${rules.dealMode ?? "smart"}`)}, ${words('week.steady.budgetEach', { budget: rules.dealBudget ?? 4 })}`
+        : rulesLine(
             rules.stakeMinor > 0 ? money(rules.stakeMinor) : null,
             money(rules.lateForfeitMinor),
             money(rules.missedForfeitMinor),
+            words,
           ),
     away: awayValue,
-    groups: groups === undefined ? null : groups === 0 ? HOUSE_LOWER_COPY.noGroups : HOUSE_LOWER_COPY.groupsValue(groups),
+    groups: groups === undefined ? null : groups === 0 ? words('house.lower.noGroups') : words('house.lower.groupsValue', { n: groups }),
     showGroups: input.admin || (groups ?? 0) > 0,
   };
 }
@@ -695,17 +697,21 @@ export function leaveCost(input: {
   transfers: readonly Transfer[];
   members: readonly WallPerson[];
   currency: Currency;
-}): string {
+}, words: Words): string {
   const { me, members } = input;
   const money = (minor: number) => formatMoney(minor, input.currency);
   const clauses: string[] = [];
-  if (input.share > 0) clauses.push(HOUSE_LOWER_COPY.loseShare(money(input.share), monthName(input.month)));
-  for (const t of input.transfers) {
-    if (t.to === me && t.from !== me) clauses.push(HOUSE_LOWER_COPY.owesYou(named(t.from, me, members).subject, money(t.amount)));
+  if (input.share > 0) {
+    const month = monthName(input.month);
+    clauses.push(month ? words('house.lower.loseShareFrom', { amount: money(input.share), month }) : words('house.lower.loseShare', { amount: money(input.share) }));
   }
   for (const t of input.transfers) {
-    if (t.from === me && t.to !== me) clauses.push(HOUSE_LOWER_COPY.youOwe(named(t.to, me, members).object, money(t.amount)));
+    if (t.to === me && t.from !== me) clauses.push(words('house.lower.owesYou', { who: named(t.from, me, members).subject, amount: money(t.amount) }));
   }
-  if (clauses.length === 0) return HOUSE_LOWER_COPY.costsNothing;
-  return `${upperFirst(HOUSE_LOWER_COPY.list(clauses))}.`;
+  for (const t of input.transfers) {
+    if (t.from === me && t.to !== me) clauses.push(words('house.lower.youOwe', { whom: named(t.to, me, members).object, amount: money(t.amount) }));
+  }
+  if (clauses.length === 0) return words('house.lower.costsNothing');
+  const list = clauses.length < 2 ? clauses.join("") : words('house.lower.listAnd', { rest: clauses.slice(0, -1).join(", "), last: clauses[clauses.length - 1] });
+  return `${upperFirst(list)}.`;
 }

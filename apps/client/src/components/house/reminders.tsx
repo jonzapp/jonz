@@ -1,4 +1,4 @@
-import { ME_COPY, REMINDERS_COPY, BUSY_COPY } from '@app/core';
+import { BUSY_COPY } from '@app/core';
 import { BellIcon, BellOffIcon } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -10,6 +10,7 @@ import { Button } from '@/components/button';
 import { ButtonRow } from '@/components/button-row';
 import { Meta, SectionLabel } from '@/components/text';
 import { SPACE } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * Reminders on this device, as the web's You card has them: a browser's push
@@ -20,6 +21,7 @@ import { SPACE } from '@/theme';
  * Once they're on, what to send and quiet hours follow.
  */
 export function Reminders({ userId, labelled = true }: { userId: string; labelled?: boolean }) {
+  const words = useWords();
   const support = reminderSupport();
   const [on, setOn] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
@@ -45,13 +47,13 @@ export function Reminders({ userId, labelled = true }: { userId: string; labelle
     setNotice(null);
     try {
       if ((await turnRemindersOn(userId)) === 'blocked') {
-        setProblem(REMINDERS_COPY.blocked);
+        setProblem(words('house.reminders.blocked'));
         return;
       }
       setOn(true);
-      setNotice(REMINDERS_COPY.turnedOn);
+      setNotice(words('house.reminders.turnedOn'));
     } catch {
-      setProblem(REMINDERS_COPY.failed);
+      setProblem(words('house.reminders.failed'));
     } finally {
       setBusy(false);
     }
@@ -71,17 +73,17 @@ export function Reminders({ userId, labelled = true }: { userId: string; labelle
 
   return (
     <View style={styles.stack} testID="reminders">
-      {labelled ? <SectionLabel>{ME_COPY.reminders}</SectionLabel> : null}
+      {labelled ? <SectionLabel>{words('people.me.reminders')}</SectionLabel> : null}
       {support === 'unsupported' ? (
-        <Meta>{REMINDERS_COPY.unsupported}</Meta>
+        <Meta>{words('house.reminders.unsupported')}</Meta>
       ) : on === null ? null : on ? (
         // Across the sheet, as every sheet's buttons are.
         <ButtonRow>
-          <Button variant="outline" icon={BellOffIcon} label={REMINDERS_COPY.off} busy={busy} busyLabel={BUSY_COPY.turningOff} onPress={() => void disable()} />
+          <Button variant="outline" icon={BellOffIcon} label={words('house.reminders.off')} busy={busy} busyLabel={BUSY_COPY.turningOff} onPress={() => void disable()} />
         </ButtonRow>
       ) : (
         <ButtonRow>
-          <Button icon={BellIcon} label={REMINDERS_COPY.on} busy={busy} busyLabel={BUSY_COPY.turningOn} onPress={() => void enable()} testID="enable-push" />
+          <Button icon={BellIcon} label={words('house.reminders.on')} busy={busy} busyLabel={BUSY_COPY.turningOn} onPress={() => void enable()} testID="enable-push" />
         </ButtonRow>
       )}
       {problem ? <Alert message={problem} /> : null}

@@ -1,4 +1,4 @@
-import { BIN_NIGHT, buildStake, type DisputeRow, FOCUS_SHELL_COPY, monthOf, ON_CALL_COPY, wordsFor } from '@app/core';
+import { BIN_NIGHT, buildStake, type DisputeRow, FOCUS_SHELL_COPY, monthOf, wordsFor } from '@app/core';
 import type { QueryClient } from '@tanstack/react-query';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
@@ -735,7 +735,7 @@ describe('an open flag', () => {
     (removeFlag as jest.Mock).mockResolvedValue(undefined);
     await show(house([binsOut(), samsBath({ ...flag, flagged_by: 'priya' })], priyaWith({ role: 'member' })));
     const body = within(await openOn('Open a4'));
-    expect(body.getByText(ON_CALL_COPY.removeBody('Sam'))).toBeOnTheScreen();
+    expect(body.getByText(words('today.onCall.removeBody', { holder: 'Sam' }))).toBeOnTheScreen();
     await fireEvent.press(body.getByTestId('remove-flag'));
     await waitFor(() => expect(removeFlag).toHaveBeenCalledWith('a4'));
     await waitFor(() => expect(screen.queryByTestId('john-sheet-body')).toBeNull());

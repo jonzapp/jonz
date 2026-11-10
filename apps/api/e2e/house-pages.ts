@@ -1,5 +1,7 @@
-import { HOUSE_SHOWS_COPY } from "@app/core";
 import { expect, type Locator, type Page } from "@playwright/test";
+import { wordsFor } from '@app/core';
+
+const words = wordsFor('en', 'housemates');
 
 // House's pages are reached two ways: on a phone (or a narrow window) by a
 // row on House and the title bar's back to it; on a laptop by the list of
@@ -19,7 +21,7 @@ export function toHousePage(page: Page, row: string): { click: () => Promise<voi
     .getByTestId(row)
     .filter({ visible: true })
     .or(page.getByTestId("house-nav").getByTestId(row.replace(/^to-/, "nav-")));
-  const setup = page.getByTestId("house-shows").filter({ visible: true }).getByRole("radio", { name: HOUSE_SHOWS_COPY.setup });
+  const setup = page.getByTestId("house-shows").filter({ visible: true }).getByRole("radio", { name: words('house.shows.setup') });
   return {
     click: async () => {
       await expect(target.or(setup).first()).toBeVisible();
@@ -31,7 +33,7 @@ export function toHousePage(page: Page, row: string): { click: () => Promise<voi
 
 /** House's Overview half on a phone (the Table, the Wall), after a test has been to "Setup and you". Nothing to do on a laptop. */
 export async function showHouseOverview(page: Page): Promise<void> {
-  const overview = page.getByTestId("house-shows").filter({ visible: true }).getByRole("radio", { name: HOUSE_SHOWS_COPY.overview });
+  const overview = page.getByTestId("house-shows").filter({ visible: true }).getByRole("radio", { name: words('house.shows.overview') });
   if (await overview.isVisible()) await overview.click();
 }
 

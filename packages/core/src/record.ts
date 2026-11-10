@@ -19,11 +19,11 @@ import { tz } from "@date-fns/tz";
 import { format } from "date-fns";
 
 import { awayDays, type AwayPeriod } from "./away";
-import { RECORD_COPY } from "./copy";
 import { andNames } from "./crew";
 import { creditedTo, excusedJohn, keptOfWeek } from "./deal";
 import { dayLabel, monthLabel, weekRange } from "./format";
 import { localDate, monthOf } from "./week";
+import type { Words } from "./words-for";
 
 export const RECORD_SPANS = ["week", "month", "year", "all"] as const;
 export type RecordSpan = (typeof RECORD_SPANS)[number];
@@ -145,14 +145,14 @@ export function spanWeeks(weeks: readonly RecordWeek[], span: RecordSpan, now: D
   return started.filter((w) => w.starts_on.slice(0, 4) === month.slice(0, 4));
 }
 
-function spanRange(span: RecordSpan, weeks: readonly RecordWeek[], now: Date, zone: string): string {
+function spanRange(span: RecordSpan, weeks: readonly RecordWeek[], now: Date, zone: string, words: Words): string {
   const first = weeks[0];
   const last = weeks[weeks.length - 1];
-  if (!first || !last) return RECORD_COPY.nothingYet;
+  if (!first || !last) return words('week.record.nothingYet');
   if (span === "week") return weekRange(new Date(first.starts_at), new Date(first.ends_at), zone);
   if (span === "month") return monthLabel(monthOf(now, zone));
-  if (span === "year") return RECORD_COPY.yearRange(monthOf(now, zone).slice(0, 4), weeks.length);
-  return RECORD_COPY.allRange(format(new Date(first.starts_at), "d MMM yyyy", { in: tz(zone) }), weeks.length);
+  if (span === "year") return words('week.record.yearRange', { year: monthOf(now, zone).slice(0, 4), weeks: weeks.length });
+  return words('week.record.allRange', { since: format(new Date(first.starts_at), "d MMM yyyy", { in: tz(zone) }), weeks: weeks.length });
 }
 
 function worst(marks: readonly RecordMark[]): RecordMark {
@@ -171,7 +171,7 @@ function weekMark(input: RecordInput, week: RecordWeek, userId: string): RecordM
   return awayDays(input.away, userId, week.starts_on, lastDay).length > 0 ? "away" : "none";
 }
 
-export function trackRecord(input: RecordInput, span: RecordSpan): TrackRecord {
+export function trackRecord(input: RecordInput, span: RecordSpan, words: Words): TrackRecord {
   const weeks = spanWeeks(input.weeks, span, input.now, input.zone);
   const ids = new Set(weeks.map((w) => w.id));
   const johns = input.johns.filter((j) => ids.has(j.week_id));
@@ -206,7 +206,7 @@ export function trackRecord(input: RecordInput, span: RecordSpan): TrackRecord {
     return { userId, cells, counts, onTimePct: settled > 0 ? Math.round((counts.onTime / settled) * 100) : null };
   });
   rows.sort((a, b) => (b.onTimePct ?? -1) - (a.onTimePct ?? -1));
-  return { span, range: spanRange(span, weeks, input.now, input.zone), weeks, rows };
+  return { span, range: spanRange(span, weeks, input.now, input.zone, words), weeks, rows };
 }
 
 // --- One person's breakdown ---------------------------------------------------------------
@@ -258,7 +258,7 @@ export function recordBreakdown(
   input: RecordInput,
   span: RecordSpan,
   userId: string,
-  nameOf: (userId: string) => string,
+  nameOf: (userId: string) => string, words: Words,
 ): Breakdown {
   const weeks = spanWeeks(input.weeks, span, input.now, input.zone);
   const ids = new Set(weeks.map((w) => w.id));
@@ -300,19 +300,19 @@ export function recordBreakdown(
   /** Who else did it: "with Sam and Mo", or null. */
   const doneWith = (j: RecordJohn) => {
     const others = crewOf(j).filter((c) => c.user_id !== userId).map((c) => nameOf(c.user_id));
-    return others.length ? RECORD_COPY.doneWith(andNames(others)) : null;
+    return others.length ? words('week.record.doneWith', { names: andNames(others) }) : null;
   };
 
   for (const j of johns) {
     if (j.user_id === userId) {
       const m = heldMark(j);
-      if (m === "missed") add("missed", j, j.covered_by ? RECORD_COPY.coveredIt(nameOf(j.covered_by)) : j.absent_at ? RECORD_COPY.leftOff : null);
+      if (m === "missed") add("missed", j, j.covered_by ? words('week.record.coveredIt', { name: nameOf(j.covered_by) }) : j.absent_at ? words('week.record.leftOff') : null);
       else if (m === "clean") add("onTime", j, doneWith(j));
       else if (m === "late") add("late", j, doneWith(j));
       else if (m === "skipped") add("skipped", j, null);
       else add("open", j, doneWith(j));
     } else if (j.covered_by === userId) {
-      add("covered", j, RECORD_COPY.coveredFor(nameOf(j.user_id)));
+      add("covered", j, words('week.record.coveredFor', { name: nameOf(j.user_id) }));
     }
   }
   // Helping: a John ticked from a place they didn't hold.
@@ -325,7 +325,7 @@ export function recordBreakdown(
   const kept = BREAKDOWN_ORDER.map((key) => lines.get(key)!).filter((l) => l.key === "share" || l.johns.length > 0);
   return {
     userId,
-    range: spanRange(span, weeks, input.now, input.zone),
+    range: spanRange(span, weeks, input.now, input.zone, words),
     weeks: weeks.length,
     lines: kept,
     total: round(kept.reduce((sum, l) => sum + l.points, 0)),

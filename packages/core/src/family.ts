@@ -1,16 +1,4 @@
-import {
-  ADMINS_COPY,
-  FAMILY_COPY,
-  FAMILY_PASS_COPY,
-  FRONT_DOOR,
-  FRONT_DOOR_COPY,
-  JOIN_COPY,
-  NEW_HOUSE_COPY,
-  PAGE_TITLE,
-  PASS_COPY,
-  PERSON_COPY,
-  ROLE_WORDS,
-} from "./copy";
+import { ADMINS_COPY, FAMILY_COPY, FAMILY_PASS_COPY, FRONT_DOOR, FRONT_DOOR_COPY, JOIN_COPY, NEW_HOUSE_COPY, PAGE_TITLE, PASS_COPY, ROLE_WORDS } from "./copy";
 import type { HouseKind } from "./domain";
 import type { Words } from "./words-for";
 
@@ -75,7 +63,7 @@ export function roleCopy(w: Words) {
     person: {
       section: w("people.person.role", role(true)),
       makeAdmin: w("people.person.makeAdmin"),
-      makeAdminMeta: PERSON_COPY.makeAdminMeta,
+      makeAdminMeta: w("people.person.makeAdminMeta"),
       makeMember: w("people.person.makeMember"),
       makeMemberMeta: w("people.person.makeMemberMeta"),
     },
