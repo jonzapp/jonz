@@ -743,12 +743,24 @@ describe('the search box every admin list has', () => {
     expect(screen.getByTestId('audit-clear')).toBeVisible();
   });
 
-  it('searches the words themselves once you pause', async () => {
+  it('searches the words themselves once you pause, spinning in the box until the answer is in', async () => {
     await renderPages(ROUTES, '/admin/audit');
     await untilRead();
     await typeIn('slow');
-    expect(screen.getByTestId('audit-search-suggestion-words')).toHaveTextContent(/Search for “slow”/);
+    // Nothing to pick for words alone: the list searches them, and the box says it's on it.
+    expect(screen.queryByTestId('audit-search-panel')).toBeNull();
+    expect(screen.getByTestId('audit-search-spinner', { includeHiddenElements: true })).toBeOnTheScreen();
+    expect(screen.getByTestId('audit-count')).toHaveTextContent(`${LIST_COPY.searching}…`);
     await waitFor(() => expect(auditPage).toHaveBeenLastCalledWith(null, expect.objectContaining({ q: 'slow' })));
+    await waitFor(() => expect(screen.queryByTestId('audit-search-spinner', { includeHiddenElements: true })).toBeNull());
+    expect(screen.getByTestId('audit-count')).toHaveTextContent(/^2 entries/);
+  });
+
+  it('floats its suggestions over the list, so the rows don’t move', async () => {
+    await renderPages(ROUTES, '/admin/audit');
+    await untilRead();
+    await typeIn('me');
+    expect(screen.getByTestId('audit-search-panel')).toHaveStyle({ position: 'absolute', top: '100%' });
   });
 
   it('starts the list from a moment typed into it', async () => {

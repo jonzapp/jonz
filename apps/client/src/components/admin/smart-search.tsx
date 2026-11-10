@@ -1,5 +1,6 @@
 import {
   applySuggestion,
+  withAlpha,
   dropTag,
   listQueryFromParams,
   listQueryToParams,
@@ -13,14 +14,14 @@ import {
 } from '@app/core';
 import { ClockIcon, HistoryIcon, SearchIcon, TagIcon, XIcon, type LucideIcon } from 'lucide-react-native';
 import { useEffect, useRef, useState, type ComponentRef } from 'react';
-import { Platform, Pressable, StyleSheet, Text, TextInput, View, type TextInputKeyPressEvent } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, TextInput, View, type TextInputKeyPressEvent } from 'react-native';
 
 import { authStorage } from '@/api/storage';
 import { Group } from '@/components/group';
 import { Row } from '@/components/row';
 import { Section } from '@/components/section';
 import { useNow } from '@/hooks/use-now';
-import { FONT, RADIUS, SPACE, TAP, useTheme } from '@/theme';
+import { FONT, RADIUS, SEARCH_LINE, SPACE, TAP, useTheme } from '@/theme';
 
 /** How long typing rests before the list is searched for it. */
 const SETTLE = 400;
@@ -67,9 +68,14 @@ function keepRecent(key: string, recent: Recent) {
  * "29 oct 23:30" a moment to start from. Tapping into the empty box lists
  * every filter there is and your recent searches, so nothing is hidden and
  * the common ones are a tap away. New kinds of filter join the suggestions
- * without another control on the page. The suggestions open under the box,
- * pushing the list down; on a laptop the arrow keys move through them and
- * Return takes the first.
+ * without another control on the page. The suggestions float over the list
+ * under the box, so nothing moves as you type; on a laptop the arrow keys
+ * move through them and Return takes the first. Words alone need no
+ * suggestion (the list already searches them as you pause), so none shows.
+ *
+ * From the first key until the list's answer is in, the magnifying glass is
+ * a spinner (docs/style/states.md, "Waiting": a spinner only in the control
+ * that is busy), so you see at once that it heard you.
  */
 export function SmartSearch({
   query,
@@ -80,7 +86,13 @@ export function SmartSearch({
   defaultWhen = 'any',
   when = {},
   testID = 'smart-search',
+  searching = false,
+  onPending,
 }: {
+  /** The list is reading a new search: the box spins until it's in. */
+  searching?: boolean;
+  /** Typing is waiting to settle into a search (true), or has (false). */
+  onPending?: (pending: boolean) => void;
   query: ListQuery;
   facets: readonly ListFacet[];
   onChange: (next: ListQuery) => void;
@@ -92,7 +104,7 @@ export function SmartSearch({
   when?: ListWhen;
   testID?: string;
 }) {
-  const { colors, type } = useTheme();
+  const { colors, scheme, type } = useTheme();
   const now = useNow();
   const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const [text, setText] = useState(query.q);
@@ -103,6 +115,8 @@ export function SmartSearch({
     setText(query.q);
   }
   const [open, setOpen] = useState(false);
+  // Typed, not yet searched: the pause before the list asks.
+  const [pending, setPending] = useState(false);
   const [lit, setLit] = useState(0);
   const input = useRef<ComponentRef<typeof TextInput>>(null);
   const closing = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -123,8 +137,13 @@ export function SmartSearch({
   );
   const recent = text.trim() ? [] : readRecent(recentKey);
 
+  const settled = () => {
+    setPending(false);
+    onPending?.(false);
+  };
   const stopSettling = () => {
     if (settling.current) clearTimeout(settling.current);
+    if (settling.current) settled();
     settling.current = null;
   };
 
@@ -158,7 +177,13 @@ export function SmartSearch({
     setOpen(true);
     stopSettling();
     // The list follows the words as you type, once you pause.
-    settling.current = setTimeout(() => onChange({ ...query, q: next.trim() }), SETTLE);
+    setPending(true);
+    onPending?.(true);
+    settling.current = setTimeout(() => {
+      settling.current = null;
+      settled();
+      onChange({ ...query, q: next.trim() });
+    }, SETTLE);
   }
 
   function onKey(e: TextInputKeyPressEvent) {
@@ -223,7 +248,11 @@ export function SmartSearch({
           open && styles.boxOpen,
         ]}
       >
-        <SearchIcon size={20} color={colors.mutedForeground} aria-hidden />
+        {pending || searching ? (
+          <ActivityIndicator size={20} color={colors.foreground} aria-hidden testID={`${testID}-spinner`} />
+        ) : (
+          <SearchIcon size={20} color={colors.mutedForeground} aria-hidden />
+        )}
         {tags.map((tag) => (
           <Pressable
             key={tag.key}
@@ -265,8 +294,19 @@ export function SmartSearch({
           testID={`${testID}-input`}
         />
       </Pressable>
-      {open ? (
-        <View style={styles.panel} testID={`${testID}-panel`}>
+      {open && (!text.trim() || suggestions.some((s) => s.kind !== 'words')) ? (
+        <View
+          style={[
+            styles.panel,
+            {
+              backgroundColor: colors.background,
+              borderColor: colors.border,
+              // It floats over the list, as a PickMenu does: a soft shadow lifts it off the rows.
+              boxShadow: `0 8px 24px ${withAlpha(scheme === 'dark' ? '#000000' : colors.foreground, scheme === 'dark' ? 0.5 : 0.16)}`,
+            },
+          ]}
+          testID={`${testID}-panel`}
+        >
           {text.trim() ? (
             <Group>{suggestions.map((s, i) => row(s, i))}</Group>
           ) : (
@@ -305,7 +345,8 @@ function SuggestionIcon({ icon: Icon }: { icon: LucideIcon }) {
 }
 
 const styles = StyleSheet.create({
-  wrap: { gap: SPACE.sm },
+  // Above the list, which the suggestions float over.
+  wrap: { gap: SPACE.sm, zIndex: 2 },
   box: {
     minHeight: TAP,
     flexDirection: 'row',
@@ -333,5 +374,16 @@ const styles = StyleSheet.create({
   // The box draws the focus (two points of ink), so the field inside it draws none of its own on the web
   // (a browser's `auto` ring ignores its width, hence solid). It fits beside two tags on a phone, and grows.
   input: { flexGrow: 1, flexBasis: 48, minWidth: 48, minHeight: 36, paddingVertical: 0, outlineStyle: 'solid', outlineWidth: 0 },
-  panel: { gap: SPACE.lg },
+  // Under the box and the search line beneath it, the box's width, over the rows.
+  panel: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    marginTop: SPACE.sm + SEARCH_LINE,
+    gap: SPACE.lg,
+    padding: SPACE.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: RADIUS,
+  },
 });

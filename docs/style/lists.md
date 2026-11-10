@@ -48,7 +48,8 @@ Built for very many rows from the start. (Admin lists, 31 Oct)
   box lists the page's filters (Who, What, When or the page's own) and recent
   searches, so nothing is hidden. Filters stay in the link. A count and
   Download, a "14 new" pill, and "Show more like this" on an entry. (Busy
-  lists B, 31 Oct)
+  lists B, 31 Oct) How it shows a search on its way is in
+  [states](states.md#waiting). (Search loading A, 10 Nov)
 - Lists of things page by 50; timelines load as you scroll and have a When
   filter. (Owner admin, 30 Oct)
 

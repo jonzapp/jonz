@@ -109,6 +109,7 @@ describe('shows an outline or a busy button while waiting, not a spinner alone',
     valid: [
       { code: "import { ActivityIndicator } from 'react-native';", filename: '/repo/apps/client/src/components/button.tsx' },
       { code: "import { ActivityIndicator } from 'react-native';", filename: '/repo/apps/client/src/components/list-foot.tsx' },
+      { code: "import { ActivityIndicator } from 'react-native';", filename: '/repo/apps/client/src/components/admin/smart-search.tsx' },
       { code: "import { Reading } from '@/components/read-state';", filename: '/repo/apps/client/src/components/style-page/kit.tsx' },
       { code: "import { ReadFailed } from '@/components/read-state';", filename: '/repo/apps/client/src/app/(tabs)/today.tsx' },
       { code: "import { Waiting } from '@/components/waiting';", filename: '/repo/apps/client/src/app/(tabs)/today.tsx' },

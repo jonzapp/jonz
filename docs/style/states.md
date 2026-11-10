@@ -36,10 +36,17 @@ progress indicators (a linear line for a list refreshing in place).
   row go pale until it's done. It can't be tapped twice. (`Button busy`,
   `busyLabel`; lint: `jonz/busy-not-disabled`.) The tick box spins the same
   way.
-- **A long list finding a new search** keeps its old rows, dimmed, with a
-  thin line running under the search box (`SearchLine`, `Dimmed`), so you
-  keep your place and can see it is working. Loading more at the bottom is
-  the list's foot ("Loading more"), unchanged.
+- **A long list finding a new search** shows it heard you from the first
+  key: the search box's magnifying glass becomes a spinner and the count
+  says "Searching…" (never the last search's number, which would pass for
+  this one's) until the answer is in. After 300ms the old rows dim and a
+  thin line runs under the box (`SearchLine`, `Dimmed`), so you keep your
+  place. Nothing on the page moves while you type: the box's suggestions
+  float over the rows, and words alone, which the list already searches as
+  you pause, offer none. The box is never drawn afresh while you type in
+  it, whatever the list does (no match, rows back), so the cursor stays.
+  Loading more at the bottom is the list's foot ("Loading more"),
+  unchanged. (Search loading A, 10 Nov)
 - **A photo** holds its space as a box in the outline's tint, breathing,
   then fades in over 200ms (`Photo`). Nothing below it moves. An avatar shows
   its initials, then fades to the photo.

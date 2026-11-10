@@ -2,6 +2,7 @@ import {
   AUDIT_LIST_COPY,
   DELETION_LIST_COPY,
   HOUSES_COPY,
+  LIST_COPY,
   MESSAGE_COPY,
   NOTICE_LIST_COPY,
   OWNER_PERMISSION_NAMES,
@@ -32,7 +33,9 @@ import AllPromotionsPage from '@/app/admin/promotions/all';
 import { authStorage } from '@/api/storage';
 import { renderPages } from '@/testing/pages';
 
-// Every admin list shares one search box. Typing in it must never take the
+// Every admin list shares one search box. From the first key the box spins
+// and the count says Searching… until the answer is in (search loading A,
+// picked 10 Nov). Typing in it must never take the
 // cursor out of it: not while the list reads, not when nothing matches, not
 // when rows come back. A box that is drawn again from scratch (a new one in
 // its place) loses the cursor, so each page is typed into on a phone and on
@@ -307,7 +310,6 @@ describe.each(SCREENS)('the search box keeps the cursor as you type, on %s', (_n
       const now = screen.getByLabelText(page.placeholder);
       expect(now).toBe(box);
       expect(now).toHaveDisplayValue(value);
-      expect(screen.getByTestId(`${page.name}-search-panel`)).toBeOnTheScreen();
     };
     await fireEvent(box, 'focus');
 
@@ -315,11 +317,18 @@ describe.each(SCREENS)('the search box keeps the cursor as you type, on %s', (_n
     let letGo = () => undefined as void;
     held = new Promise<void>((done) => (letGo = done));
     await fireEvent.changeText(box, 'zz');
+    // It heard you at once: the box spins and the count stops claiming the last search's number.
+    expect(screen.getByTestId(`${page.name}-search-spinner`, { includeHiddenElements: true })).toBeOnTheScreen();
+    expect(screen.getByTestId(`${page.name}-count-searching`)).toHaveTextContent(`${LIST_COPY.searching}…`);
+    // Words alone offer nothing to pick, so nothing opens over the list.
+    expect(screen.queryByTestId(`${page.name}-search-panel`)).toBeNull();
     await waitFor(() => expect(screen.getByTestId(`${page.name}-search-line`)).toHaveProp('accessibilityLabel', expect.any(String)), { timeout: 3000 });
     stillTheBox('zz');
     letGo();
     held = null;
     expect(await screen.findByTestId(`${page.name}-no-match`)).toBeOnTheScreen();
+    await waitFor(() => expect(screen.queryByTestId(`${page.name}-search-spinner`, { includeHiddenElements: true })).toBeNull());
+    expect(screen.getByTestId(`${page.name}-count`)).toHaveTextContent(/^0 /);
     stillTheBox('zz');
 
     // Back to words that find it: the rows come back, and the box is still the one being typed in.

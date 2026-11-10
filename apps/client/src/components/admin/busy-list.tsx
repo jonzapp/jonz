@@ -15,7 +15,7 @@ import {
 import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SearchXIcon, type LucideIcon } from 'lucide-react-native';
-import { useMemo, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Platform, StyleSheet, View, type ViewStyle } from 'react-native';
 
 import { ListTable, ListTableHead, type ListColumn } from '@/components/admin/list-table';
@@ -147,6 +147,9 @@ export function BusyListView<T>({
 }) {
   const wide = useColumns();
   const { colors } = useTheme();
+  // Typed, and waiting for the pause before it searches: already "searching", so it shows at once.
+  const [typing, setTyping] = useState(false);
+  const searching = typing || busy.searching;
   // On a laptop the search, the count and the column names stay in view at the top as the rows scroll under them.
   // Sticky is the web's, as the foot's is.
   const pinned = wide && Platform.OS === 'web';
@@ -154,7 +157,7 @@ export function BusyListView<T>({
   const head = (
     <>
       {/* The search box with its line under it, as one: the line takes no gap of its own. */}
-      <View>
+      <View style={styles.search}>
         <SmartSearch
           query={busy.query}
           facets={busy.facets}
@@ -164,17 +167,20 @@ export function BusyListView<T>({
           defaultWhen={busy.defaultWhen}
           when={busy.when}
           testID={`${name}-search`}
+          searching={busy.searching}
+          onPending={setTyping}
         />
-        <SearchLine searching={busy.searching} label={LIST_COPY.searching} testID={`${name}-search-line`} />
+        <SearchLine searching={searching} label={LIST_COPY.searching} testID={`${name}-search-line`} />
       </View>
       <View style={styles.count} testID={`${name}-count`}>
-        {busy.count === null ? (
+        {searching && busy.count !== null ? (
+          // Not the last search's count, which would pass for this one's.
+          <Meta testID={`${name}-count-searching`}>{LIST_COPY.searching}…</Meta>
+        ) : busy.count === null ? (
           // The count's room while it's first read, in outline.
           <OutlineBar width={120} height={OUTLINE.meta} onCard={false} />
         ) : (
-          <Dimmed searching={busy.searching}>
-            <Meta>{noun(listCount(busy.count, false))}</Meta>
-          </Dimmed>
+          <Meta>{noun(listCount(busy.count, false))}</Meta>
         )}
         {busy.narrowed ? <TextButton label={LIST_COPY.clear} onPress={() => busy.show({})} testID={`${name}-clear`} /> : null}
       </View>
@@ -222,12 +228,12 @@ export function BusyListView<T>({
   }
   return (
     <View style={styles.list}>
-      <View style={[styles.top, pinned && [STICKY_TOP, { backgroundColor: colors.background }]]} testID={`${name}-top`}>
+      <View style={[styles.top, styles.over, pinned && [STICKY_TOP, { backgroundColor: colors.background }]]} testID={`${name}-top`}>
         {head}
         {table ? <ListTableHead columns={columns} testID={`${name}-table-head`} /> : null}
       </View>
       {/* A new search's rows on their way: the last ones dimmed, so they don't pass for the answer. */}
-      <Dimmed searching={busy.searching} style={styles.list}>
+      <Dimmed searching={searching} style={styles.list}>
         {table ? <View style={styles.joined}>{body}</View> : body}
       </Dimmed>
     </View>
@@ -243,5 +249,8 @@ const styles = StyleSheet.create({
   top: { gap: SPACE.sm, marginTop: -SPACE.sm, paddingTop: SPACE.sm },
   // The rows meet the column names square, and the foot keeps its room under them.
   joined: { marginTop: -SPACE.sm, gap: SPACE.sm },
+  // The search's suggestions float over the rows, so the top sits above them.
+  over: { zIndex: 1 },
+  search: { zIndex: 2 },
   count: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: SPACE.md, minHeight: 32 },
 });
