@@ -1,4 +1,4 @@
-import { TOURS, tourSteps, type TourFacts, type TourId, wordsFor } from "@app/core";
+import { TOURS, tourName, tourStepWords, tourSteps, type TourFacts, type TourId, wordsFor } from "@app/core";
 import { expect, test, type Page } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, dealtHouseInClient } from "./auth";
@@ -41,7 +41,7 @@ const helpButton = (page: Page, screen: string) => page.getByTestId(screen).getB
  * words, its count, and the lit ring sitting round its spot, on screen.
  */
 async function playTour(page: Page, id: TourId, facts: TourFacts, shotName?: string) {
-  const steps = tourSteps(id, facts);
+  const steps = tourSteps(id, facts, words);
   const card = page.getByTestId("tour-card");
   for (const [i, step] of steps.entries()) {
     await expect(card.getByText(step.title, { exact: true })).toBeVisible();
@@ -107,7 +107,7 @@ test("every tour plays through, each step lit on screen", async ({ context, page
   const sheet = page.getByTestId("help-sheet");
   await expect(sheet.getByTestId("help-ask")).toBeVisible();
   await expect(sheet.getByTestId("help-guide")).toBeVisible();
-  await expect(sheet.getByTestId("help-guides").getByTestId(/^help-tour-/).first()).toContainText(TOURS.today.name);
+  await expect(sheet.getByTestId("help-guides").getByTestId(/^help-tour-/).first()).toContainText(tourName("today", words));
   await expect(sheet.getByTestId("help-tour-setUp")).toBeVisible();
   await expect(sheet.getByTestId("help-report")).toBeVisible();
   await shoot(page, `help-${wide ? "laptop" : "phone"}`);
@@ -116,7 +116,7 @@ test("every tour plays through, each step lit on screen", async ({ context, page
   await sheet.getByTestId("help-guide").click();
   await expect(page.getByTestId("guide")).toBeVisible();
   await page.getByTestId("guide-today").click();
-  await expect(page.getByTestId("guide-words")).toContainText(TOURS.today.steps[0].body);
+  await expect(page.getByTestId("guide-words")).toContainText(tourStepWords("today", TOURS.today.steps[0], words).body);
   // On a laptop the topic opens beside the list; on a phone it's a page of its own.
   await expect(page.getByTestId(wide ? "guide-open" : "guide-page").getByTestId("guide-ask")).toBeVisible();
   await page.goto("/today");

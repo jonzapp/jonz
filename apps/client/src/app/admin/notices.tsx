@@ -37,6 +37,9 @@ import { INSET, SPACE } from '@/theme';
 import { AdminSwitch } from '@/components/admin/admin-shell';
 import { useWords } from '@/hooks/use-words';
 
+/** Holds a line's height where there's nothing to say; not words. */
+const BLANK = ' ';
+
 const KIND_LABEL: Record<NoticeKind, string> = { status: 'Status', offer: 'Offer', news: 'News' };
 const STATE_LABEL: Record<NoticeState, string> = { live: 'Showing', scheduled: 'Starting later', ended: 'Ended' };
 
@@ -156,7 +159,7 @@ function NoticeList({ busy, chosen, choose }: { busy: BusyList<Notice>; chosen: 
   return (
     <>
       <Section label={words('admin.shell.whatPeopleSee')} bare testID="what-people-see">
-        {showing ? <NoticePreview notice={showing} /> : <Meta style={styles.words}>{live.data ? words('admin.shell.nothingShowing') : ' '}</Meta>}
+        {showing ? <NoticePreview notice={showing} /> : <Meta style={styles.words}>{live.data ? words('admin.shell.nothingShowing') : BLANK}</Meta>}
         <Meta style={styles.words}>{words('admin.shell.onePerScreen')}</Meta>
       </Section>
       {/* A new notice starts from what's happening, under what people see, not from a button up in the title bar. */}

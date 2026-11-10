@@ -9,6 +9,9 @@ import { Lead, Meta } from '@/components/text';
 import { FONT, INSET, SPACE, TABULAR, useTheme } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
+/** A value that's gone; a mark, not words. */
+const NONE = '–';
+
 /** The audit log's columns on a laptop: when, who, what happened (with its detail), and where. */
 export const AUDIT_TABLE = (words: Words): readonly ListColumn[] => [
   // As narrow as "Fri 30 Oct, 21:42", "Someone else" and "Account 5b1e9c40" allow, so what happened has the room.
@@ -65,7 +68,7 @@ export function AuditTableRow({
         what: (
           <Text numberOfLines={1} style={[type.body, { color: colors.foreground }]}>
             {parts.what}
-            {parts.detail ? <Text style={{ color: colors.mutedForeground }}>{`  ${parts.detail}`}</Text> : null}
+            {parts.detail ? <Text style={{ color: colors.mutedForeground }}>{words('common.join.indent', { text: parts.detail })}</Text> : null}
           </Text>
         ),
         where: parts.where,
@@ -102,7 +105,7 @@ export function AuditDetail({
   return (
     <View style={styles.detail} testID={`audit-detail-${entry.id}`}>
       <View style={styles.head}>
-        <Meta>{`#${entry.id}, ${formatWhen(entry.at)}`}</Meta>
+        <Meta>{words('common.join.comma', { first: words('common.join.id', { id: String(entry.id) }), second: formatWhen(entry.at) })}</Meta>
         <Lead header>{auditLine(entry, ownerId, words).title}</Lead>
       </View>
       {changes.length > 0 ? (
@@ -115,7 +118,7 @@ export function AuditDetail({
                   {change.from !== null ? (
                     <Text style={[type.body, styles.was, { color: colors.mutedForeground }]}>{change.from}</Text>
                   ) : null}
-                  <Text style={[type.body, styles.now, { color: colors.foreground }]}>{change.to ?? '–'}</Text>
+                  <Text style={[type.body, styles.now, { color: colors.foreground }]}>{change.to ?? NONE}</Text>
                 </View>
               </GroupItem>
             ))}

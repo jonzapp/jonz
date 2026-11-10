@@ -114,7 +114,7 @@ export function RollCall({ item, context, onCancel }: { item: BoardItem; context
           )}
           <GroupItem>
             <Meta testID="roll-call-split">
-              {`${words('john.crew.split', { total: pointsLabel(plan.total), people: crew.length })}, ${words('john.crew.splitEach', { each: shareLabel(plan.each) })}`}
+              {words('common.join.comma', { first: words('john.crew.split', { total: pointsLabel(plan.total), people: crew.length }), second: words('john.crew.splitEach', { each: shareLabel(plan.each) }) })}
             </Meta>
           </GroupItem>
         </Section>

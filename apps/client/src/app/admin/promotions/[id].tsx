@@ -1,4 +1,4 @@
-import { type Words, promotionGives, promotionSentence, promotionUsed, promotionWhoSentence, toEmail, wordsFor } from '@app/core';
+import { promotionGives, promotionSentence, promotionUsed, promotionWhoSentence, toEmail, wordsFor } from '@app/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
 import { MailIcon, RefreshCwIcon, TicketIcon } from 'lucide-react-native';
@@ -102,7 +102,7 @@ function Promotion({ p }: { p: PromotionDetail }) {
         {p.note ? <Body>{p.note}</Body> : null}
         <Body testID="promotion-sentence">{promotionSentence(p.terms, zone)}</Body>
         <Meta>{promotionWhoSentence(p.audience, emails, p.maxUses, p.terms.endsAt, zone)}</Meta>
-        <Meta testID="promotion-used">{`${promotionGives(p.terms)}. ${words('admin.promotions.usedLine', { used: promotionUsed({ audience: p.audience, people: p.people.length, uses: p.uses, maxUses: p.maxUses }) })}.`}</Meta>
+        <Meta testID="promotion-used">{words('common.join.twoSentences', { first: promotionGives(p.terms), second: words('admin.promotions.usedLine', { used: promotionUsed({ audience: p.audience, people: p.people.length, uses: p.uses, maxUses: p.maxUses }) }) })}</Meta>
       </View>
       {may && p.state === 'making' ? (
         <View style={styles.group}>

@@ -8,6 +8,9 @@ import { Avatar } from '@/components/avatar';
 import { LidBar } from '@/components/lid';
 import { Body, SectionLabel } from '@/components/text';
 import { FONT, RADIUS, SPACE, TABULAR, useTheme } from '@/theme';
+import { useWords } from '@/hooks/use-words';
+
+const NEW_LINE = '\n';
 
 /** What a chip in a reply stands for, once the app has found it. */
 export interface ChipTarget {
@@ -74,6 +77,7 @@ function Blocks({ blocks, tight = false }: { blocks: Block[]; tight?: boolean })
 
 function BlockView({ block }: { block: Block }) {
   const { colors, type } = useTheme();
+  const words = useWords();
   const pieces = useContext(Pieces);
   switch (block.t) {
     case 'p':
@@ -113,7 +117,7 @@ function BlockView({ block }: { block: Block }) {
                     {item.checked ? <CheckIcon size={12} strokeWidth={3} color={colors.background} /> : null}
                   </View>
                 ) : block.ordered ? (
-                  <Text style={[type.body, styles.number, tall && styles.chipLines]}>{`${block.start + i}.`}</Text>
+                  <Text style={[type.body, styles.number, tall && styles.chipLines]}>{words('common.join.number', { n: block.start + i })}</Text>
                 ) : (
                   <View style={[styles.bullet, { backgroundColor: colors.foreground }]} />
                 )}
@@ -192,7 +196,7 @@ function Runs({ kids }: { kids: Inline[] }) {
           case 'text':
             return <Fragment key={i}>{k.text}</Fragment>;
           case 'br':
-            return <Fragment key={i}>{'\n'}</Fragment>;
+            return <Fragment key={i}>{NEW_LINE}</Fragment>;
           case 'strong':
             return (
               <Text key={i} style={styles.strong}>

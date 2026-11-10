@@ -44,7 +44,7 @@ export function Disputed({ item, context }: { item: BoardItem; context: JohnShee
           userId={dispute.raisedBy}
           me={dispute.raisedBy === context.userId}
         />
-        <Body style={styles.shrink}>{`“${dispute.reason}”`}</Body>
+        <Body style={styles.shrink}>{words('common.join.quote', { text: dispute.reason })}</Body>
       </View>
       <Meta testID="tally">{voteTally(dispute, context.now, words)}</Meta>
       {mine ? (

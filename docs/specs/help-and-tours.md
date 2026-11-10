@@ -13,10 +13,12 @@ once, on Today; Not now puts it away for good.
 
 ## Inputs and outputs
 
-- Tours are data in `@app/core` (`TOURS` in `tours.ts`): a title, the page
-  it starts on, who it's for, and up to five steps. A step names a spot
-  (`TOUR_SPOTS`), its words, and optionally another page and a condition
-  (`admin`, `phone`, `laptop`, `toCheck`, `hasJohns`).
+- Tours are data in `@app/core` (`TOURS` in `tours.ts`): the page it
+  starts on, who it's for, and up to five steps. A step names a spot
+  (`TOUR_SPOTS`), and optionally another page and a condition (`admin`,
+  `phone`, `laptop`, `toCheck`, `hasJohns`). The words are in `door.json`:
+  `door.tour.<tour>.name` and `.title`, and each step's
+  `door.tour.<tour>.<spot>.title` and `.body`.
 - A screen tags a spot with `<TourSpot id="today.nextUp">`. It draws
   nothing; the tour player measures it and brings it into view.
 - `TourProvider` (in the house layout) plays a tour: it opens the step's
@@ -45,7 +47,8 @@ once, on Today; Not now puts it away for good.
 
 ## Adding a tour
 
-1. Add its spots to `TOUR_SPOTS` and its entry to `TOURS` in core. The core
+1. Add its spots to `TOUR_SPOTS`, its entry to `TOURS` in core, and its
+   words to `door.json`. The core
    tests check the limits (five steps, short words, sentence case, no
    "rota").
 2. Wrap each spot on its screen in `<TourSpot id=…>`.

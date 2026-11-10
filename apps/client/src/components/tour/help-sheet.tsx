@@ -1,4 +1,4 @@
-import { TOURS, tourForPage, tourLength, toursFor, tourSteps, type ReportKind, type TourId } from '@app/core';
+import { tourForPage, tourName, tourLength, toursFor, tourSteps, type ReportKind, type TourId } from '@app/core';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { BookOpenIcon, BugIcon, CheckIcon, LightbulbIcon, MessagesSquareIcon, SparklesIcon } from 'lucide-react-native';
@@ -132,11 +132,11 @@ function HelpMenu({
       {listed.length > 0 ? (
         <Section label={words('door.tour.showMeAround')} testID="help-guides">
           {listed.map((id) => {
-            const length = tourLength(tourSteps(id, tours.facts).length);
+            const length = tourLength(tourSteps(id, tours.facts, words).length, words);
             return (
               <Row
                 key={id}
-                title={TOURS[id].name}
+                title={tourName(id, words)}
                 meta={id === here ? words('door.tour.thisPage', { length }) : length}
                 trailing={tours.saved.seen.includes(id) ? <Chip label={words('door.tour.seen')} icon={CheckIcon} tone="good" /> : undefined}
                 onPress={() => onTour(id)}

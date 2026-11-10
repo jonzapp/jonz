@@ -301,7 +301,7 @@ function Count({ count, color }: { count: number; color: string }) {
   if (count > 0) return <Meta style={{ color }}>{count}</Meta>;
   return (
     <View aria-hidden style={styles.room}>
-      <Meta>0</Meta>
+      <Meta>{0}</Meta>
     </View>
   );
 }

@@ -37,6 +37,7 @@ const HOUSEMATES_ONLY: Partial<Record<WordId, string>> = {
   "house.kindSwitch.done.kept": "Rules' switch between the two kinds names both on purpose",
   "house.kindSwitch.wall.kept": "Rules' switch between the two kinds names both on purpose",
   "house.kindSwitch.wall.housemates": "Rules' switch between the two kinds names both on purpose",
+  "door.guide.page.family.not": "the guide's family page as a housemates house reads it",
   "house.pass.free": "a family reads house.familyPass.free through passWords",
 };
 

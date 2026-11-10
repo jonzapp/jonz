@@ -48,7 +48,7 @@ export default function GuideScreen() {
 function Guide({ view, open }: { view: HouseView; open: string | null }) {
   const words = useWords();
   const beside = useSideBySide();
-  const sections = guideSections(view.snapshot.house.kind === 'family');
+  const sections = guideSections(view.snapshot.house.kind === 'family', words);
   // A topic this house's guide doesn't have (a family's, in a house of housemates) opens the first.
   const chosen: HowTopic = sections.flatMap((s) => s.topics).find((t) => t === open) ?? sections[0].topics[0];
   const list = (

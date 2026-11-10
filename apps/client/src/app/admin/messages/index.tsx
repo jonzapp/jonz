@@ -109,7 +109,7 @@ function Messages({ busy }: { busy: BusyList<SentRow> }) {
   );
   const sent = open ? (
     <>
-      <Meta>{`${sentMeta(open, words)}, ${listTime(open.sentAt, now, ownerZone(), false)}`}</Meta>
+      <Meta>{words('common.join.comma', { first: sentMeta(open, words), second: listTime(open.sentAt, now, ownerZone(), false) })}</Meta>
       <Body>{open.body}</Body>
     </>
   ) : null;

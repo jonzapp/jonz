@@ -164,7 +164,7 @@ export function BusyListView<T>({
       <View style={styles.count} testID={`${name}-count`}>
         {searching && busy.count !== null ? (
           // Not the last search's count, which would pass for this one's.
-          <Meta testID={`${name}-count-searching`}>{words('common.list.searching')}…</Meta>
+          <Meta testID={`${name}-count-searching`}>{words('common.join.ongoing', { text: words('common.list.searching') })}</Meta>
         ) : busy.count === null ? (
           // The count's room while it's first read, in outline.
           <OutlineBar width={120} height={OUTLINE.meta} onCard={false} />

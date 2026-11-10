@@ -143,7 +143,7 @@ function PassReadOut({
       <View style={styles.words}>
         <Body testID="pass-lead">{founding ? sign.foundingLead : sign.lead}</Body>
         <Meta testID="pass-line">
-          {buyer ? `${passLine(pass, now, rules.timezone, words)}, ${words('house.pass.boughtBy', { name: buyer })}` : passLine(pass, now, rules.timezone, words)}
+          {buyer ? words('common.join.comma', { first: passLine(pass, now, rules.timezone, words), second: words('house.pass.boughtBy', { name: buyer }) }) : passLine(pass, now, rules.timezone, words)}
         </Meta>
         {waiting ? <Meta testID="pass-bought">{sign.bought}</Meta> : null}
       </View>

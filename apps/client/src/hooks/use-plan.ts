@@ -36,7 +36,7 @@ export function usePlan(houseId: string, assignmentId: string, before: Date | nu
       }
       return done;
     },
-    [move, toast, client, houseId, assignmentId, before],
+    [move, toast, client, houseId, assignmentId, before, words],
   );
   return { pending: move.pending, problem: move.problem, plan };
 }
