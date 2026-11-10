@@ -288,7 +288,8 @@ const historyRow = z.object({
   createdAt: at,
   undoneAt: at.nullable(),
   undoneBy: id.nullable(),
-  reach: text,
+  // Null when no one may undo it now (undone already, or past its reach).
+  reach: text.nullable(),
 });
 
 // The rows the table operations answer with (table-rows.ts is each table as the database has it).

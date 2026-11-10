@@ -2,7 +2,7 @@ import "server-only";
 
 import { AsyncLocalStorage } from "node:async_hooks";
 
-import { connect, type Claims, type Sql, type Tx } from "@app/server";
+import { connect, tokenVerifier, type Claims, type Sql, type TokenVerifier, type Tx } from "@app/server";
 
 import { poolClient, txClient, type Db } from "./rest";
 
@@ -65,10 +65,46 @@ export function serverDbInOperation(services?: () => Db): Db | null {
 
 let pool: Sql | null = null;
 
-/** The server's client outside an operation, from API_DATABASE_URL; null when that isn't set. */
-export function serverDbFromPool(services?: () => Db): Db | null {
+/** The pool outside an operation, from API_DATABASE_URL; null when that isn't set. */
+function ownPool(): Sql | null {
   const url = process.env.API_DATABASE_URL;
   if (!url) return null;
   pool ??= connect(url, 3);
-  return poolClient(pool, BECOME_SERVER, services);
+  return pool;
+}
+
+/** The server's client outside an operation, from API_DATABASE_URL; null when that isn't set. */
+export function serverDbFromPool(services?: () => Db): Db | null {
+  const sql = ownPool();
+  return sql ? poolClient(sql, BECOME_SERVER, services) : null;
+}
+
+/** Someone not signed in: RLS as Supabase's `anon` role. */
+const BECOME_VISITOR =
+  "select set_config('role', 'anon', true), set_config('request.jwt.claims', '', true)";
+
+/** A visitor's client outside an operation (the public notices, a promotion's link); null without API_DATABASE_URL. */
+export function visitorDbFromPool(services?: () => Db): Db | null {
+  const sql = ownPool();
+  return sql ? poolClient(sql, BECOME_VISITOR, services) : null;
+}
+
+let verifier: TokenVerifier | null = null;
+
+/**
+ * A signed-in person's client outside an operation (the older /api routes),
+ * as them under RLS. Their token is checked here, on our server, before the
+ * first statement: a token that doesn't check out reaches no table.
+ */
+export function personDbFromPool(accessToken: string, services?: () => Db): Db | null {
+  const sql = ownPool();
+  const supabaseUrl = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!sql || !supabaseUrl) return null;
+  verifier ??= tokenVerifier({ supabaseUrl, jwtSecret: process.env.SUPABASE_JWT_SECRET || undefined });
+  const check = verifier;
+  return poolClient(
+    sql,
+    async () => becomePerson(await check(`Bearer ${accessToken}`)),
+    services,
+  );
 }
