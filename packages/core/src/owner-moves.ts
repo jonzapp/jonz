@@ -4,6 +4,10 @@ import { MESSAGE_LIMITS } from "./owner-messages";
 import { NOTICE_KINDS } from "./notices";
 import { PromotionRequest } from "./promotions";
 import { REPORT_LIMITS } from "./reports";
+import { wordsFor } from "./words-for";
+
+/** The owner's admin pages are in English. */
+const ENGLISH = wordsFor("en", "housemates");
 
 // Who can do what on the owner's admin pages, and how the owner's Ask Jonz
 // does each of it: the same shape as a house's (permissions.ts and
@@ -112,7 +116,7 @@ export const OWNER_MOVES_FINAL: readonly OwnerMoveKind[] = ["deletion_now", "mes
 const ways = (m: { push: boolean; wall: boolean; email: boolean }) =>
   [m.push && "push", m.wall && "the Wall", m.email && "email"].filter(Boolean).join(", ");
 const quoted = (s: string) => `“${s}”`;
-const words = (s: string, n = 140) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
+const clip = (s: string, n = 140) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 
 export const OWNER_MOVES_COPY = {
   card: "To do",
@@ -155,21 +159,21 @@ export const OWNER_MOVES_COPY = {
   meta: (m: OwnerMove): string => {
     switch (m.kind) {
       case "report_reply":
-        return words(m.body);
+        return clip(m.body);
       case "report_fixed":
-        return m.note ? words(m.note) : m.tell ? "They’re told it’s fixed." : "Nobody’s told.";
+        return m.note ? clip(m.note) : m.tell ? "They’re told it’s fixed." : "Nobody’s told.";
       case "report_open":
         return "It goes back to waiting.";
       case "report_same_as":
         return m.main ? "Fixing that one fixes this one too." : "It stands on its own again.";
       case "notice_save":
-        return words([words(`common.notice.kinds.${m.notice}` as const), m.body].filter(Boolean).join(": "));
+        return clip([ENGLISH(`common.notice.kinds.${m.notice}` as const), m.body].filter(Boolean).join(": "));
       case "notice_end":
         return "It stops showing now.";
       case "message_send":
-        return `By ${ways(m)}. ${words(m.body, 100)}`;
+        return `By ${ways(m)}. ${clip(m.body, 100)}`;
       case "promotion_make":
-        return words([m.promotion.name, m.promotion.audience === "named" ? `for ${m.promotion.people.length} people` : "for anyone with the code"].join(", "));
+        return clip([m.promotion.name, m.promotion.audience === "named" ? `for ${m.promotion.people.length} people` : "for anyone with the code"].join(", "));
       case "promotion_stop":
         return "Nobody new can use it.";
       case "promotion_email":
@@ -177,13 +181,13 @@ export const OWNER_MOVES_COPY = {
       case "promotion_retry":
         return "Tries Stripe again so it can go live.";
       case "deletion_now":
-        return `Gone within ten minutes, for good.${m.reason ? ` ${words(m.reason, 80)}` : ""}`;
+        return `Gone within ten minutes, for good.${m.reason ? ` ${clip(m.reason, 80)}` : ""}`;
       case "deletion_stop":
-        return `As if they’d tapped Keep my account.${m.reason ? ` ${words(m.reason, 80)}` : ""}`;
+        return `As if they’d tapped Keep my account.${m.reason ? ` ${clip(m.reason, 80)}` : ""}`;
       case "deletion_start":
-        return `They have 30 days to change their mind.${m.reason ? ` ${words(m.reason, 80)}` : ""}`;
+        return `They have 30 days to change their mind.${m.reason ? ` ${clip(m.reason, 80)}` : ""}`;
       case "house_delete":
-        return `${DELETE_HOUSE_COPY.gone(m.people, m.tell)}${m.reason ? ` ${words(m.reason, 80)}` : ""}`;
+        return `${DELETE_HOUSE_COPY.gone(m.people, m.tell)}${m.reason ? ` ${clip(m.reason, 80)}` : ""}`;
     }
   },
   apply: (n: number) => (n === 0 ? "Pick at least one" : n === 1 ? "Do 1 thing" : `Do ${n} things`),
