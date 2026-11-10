@@ -1,4 +1,4 @@
-import { firstName, HISTORY_COPY, memberCan, roleCopy, BUSY_COPY } from '@app/core';
+import { firstName, memberCan, roleCopy, BUSY_COPY } from '@app/core';
 import { ShieldCheckIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -17,6 +17,7 @@ import type { HouseView } from '@/hooks/use-house';
 import { useMove } from '@/hooks/use-move';
 import { useUndoOffer } from '@/hooks/use-undo-offer';
 import { INSET, SECTION_GAP } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * Who looks after the house, on the Rules page beside the rules they can
@@ -35,12 +36,13 @@ export function AdminsList({ houseId, userId, view }: { houseId: string; userId:
   const admins = members.filter((m) => m.role === 'admin');
   const others = members.filter((m) => m.role !== 'admin');
   const amAdmin = memberCan(view.me, 'members:write');
-  const ADMINS_COPY = roleCopy(view.snapshot.house.kind).admins;
+  const say = useWords(view.snapshot.house.kind);
+  const words = roleCopy(say).admins;
 
   function change(person: Housemate, to: 'admin' | 'member') {
     const name = firstName(person.name);
     return role.run(() => setRole(houseId, person.userId, to)).then((done) => {
-      if (done) offer(to === 'admin' ? HISTORY_COPY.madeAdmin(name) : HISTORY_COPY.madeHousemate(name), 'role', person.userId);
+      if (done) offer(say(to === 'admin' ? 'wall.history.madeAdmin' : 'wall.history.madeMember', { name }), 'role', person.userId);
       return done;
     });
   }
@@ -53,12 +55,12 @@ export function AdminsList({ houseId, userId, view }: { houseId: string; userId:
           <Row
             key={m.userId}
             leading={<Avatar name={m.name} me={m.userId === userId} />}
-            title={m.userId === userId ? ADMINS_COPY.you(m.name) : m.name}
+            title={m.userId === userId ? words.you(m.name) : m.name}
             trailing={
               amAdmin && admins.length > 1 && m.userId !== userId ? (
                 <TextButton
-                  label={ADMINS_COPY.remove}
-                  accessibilityLabel={ADMINS_COPY.removeLabel(firstName(m.name))}
+                  label={words.remove}
+                  accessibilityLabel={words.removeLabel(firstName(m.name))}
                   disabled={role.pending}
                   onPress={() => void change(m, 'member')}
                   testID="remove-admin"
@@ -71,8 +73,8 @@ export function AdminsList({ houseId, userId, view }: { houseId: string; userId:
         {amAdmin ? (
           <Row
             leading={<RowIcon icon={ShieldCheckIcon} />}
-            title={ADMINS_COPY.add}
-            meta={others.length === 0 ? ADMINS_COPY.everyoneIs : undefined}
+            title={words.add}
+            meta={others.length === 0 ? words.everyoneIs : undefined}
             disabled={others.length === 0}
             onPress={() => {
               setPick(null);
@@ -87,12 +89,12 @@ export function AdminsList({ houseId, userId, view }: { houseId: string; userId:
           </GroupItem>
         ) : null}
       </Group>
-      <Meta style={styles.note}>{admins.length === 1 && amAdmin ? `${ADMINS_COPY.note} ${ADMINS_COPY.onlyAdmin}` : ADMINS_COPY.note}</Meta>
+      <Meta style={styles.note}>{admins.length === 1 && amAdmin ? `${words.note} ${words.onlyAdmin}` : words.note}</Meta>
       <ConfirmSheet
         visible={adding}
-        title={ADMINS_COPY.addTitle}
-        body={ADMINS_COPY.addBody}
-        confirmLabel={chosen ? ADMINS_COPY.make(firstName(chosen.name)) : null}
+        title={words.add}
+        body={words.addBody}
+        confirmLabel={chosen ? words.make(firstName(chosen.name)) : null}
         icon={ShieldCheckIcon}
         tone="primary"
         busy={role.pending}

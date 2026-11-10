@@ -18,8 +18,8 @@ export const CODE_LENGTH = 6;
 export const EMAIL_SIGN_IN_COPY = {
   or: "or use your email",
   name: "Your name",
-  nameHint: "What your housemates call you, like Sam or Sam Lee. You can change it later.",
-  noName: "Add your name, so your housemates know it’s you.",
+  nameHint: "What people at home call you, like Sam or Sam Lee. You can change it later.",
+  noName: "Add your name, so everyone at home knows it’s you.",
   /** The tick box on making an account: agreeing is a tick, not a line under the button. */
   agree: "I agree to the Terms and Privacy Policy",
   agreeMeta: "And I’m 13 or older.",

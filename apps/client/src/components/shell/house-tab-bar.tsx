@@ -1,4 +1,4 @@
-import { FOCUS_SHELL_COPY, SECTION_LABEL, SHELL_COPY } from '@app/core';
+import { FOCUS_SHELL_COPY, SECTION_LABEL } from '@app/core';
 import type { BottomTabBarProps } from 'expo-router/js-tabs';
 import { CalendarDaysIcon, HouseIcon, ListChecksIcon, type LucideIcon } from 'lucide-react-native';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -6,6 +6,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { CountBadge } from '@/components/badge';
 import { Meta, RowTitle } from '@/components/text';
 import { TourSpot } from '@/components/tour/tour-spot';
+import { useWords } from '@/hooks/use-words';
 import { FONT, GUTTER, INSET, RAIL, SPACE, TAP, useTheme } from '@/theme';
 
 /** The house's three places, in the order the tabs and the rail show them. */
@@ -48,6 +49,7 @@ export function HouseTabBar({
   house,
   toVote,
 }: BottomTabBarProps & { wide: boolean; house: ShellHouse | null; toVote: number }) {
+  const words = useWords();
   const { colors, type } = useTheme();
 
   const places = state.routes.map((route, index) => {
@@ -111,7 +113,7 @@ export function HouseTabBar({
       {house ? (
         <View style={styles.house}>
           <RowTitle numberOfLines={2}>{house.name}</RowTitle>
-          <Meta>{SHELL_COPY.housemates(house.memberCount)}</Meta>
+          <Meta>{words('common.members', { count: house.memberCount })}</Meta>
         </View>
       ) : null}
       <TourSpot id="shell.tabs">

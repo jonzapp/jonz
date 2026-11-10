@@ -141,7 +141,7 @@ export type JohnDraftInput = z.input<typeof JohnDraft>;
 export const GroupDraft = z.object({
   id: z.uuid().optional(),
   name: z.string().trim().min(1, "Name the group.").max(40),
-  members: z.array(z.uuid()).min(1, "Pick at least one housemate."),
+  members: z.array(z.uuid()).min(1, "Pick at least one person."),
 });
 export type GroupDraft = z.infer<typeof GroupDraft>;
 

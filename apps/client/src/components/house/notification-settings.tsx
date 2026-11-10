@@ -7,6 +7,7 @@ import { Alert } from '@/components/alert';
 import { Row } from '@/components/row';
 import { Segmented } from '@/components/segmented';
 import { Meta, SectionLabel } from '@/components/text';
+import { useWords } from '@/hooks/use-words';
 import { SPACE } from '@/theme';
 
 const ON_OFF = [
@@ -29,6 +30,7 @@ function quietIndex(prefs: NotificationPrefs): number {
  * the switch back and says so.
  */
 export function NotificationSettings({ userId }: { userId: string }) {
+  const words = useWords();
   const [prefs, setPrefs] = useState<NotificationPrefs | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -72,15 +74,15 @@ export function NotificationSettings({ userId }: { userId: string }) {
         {PUSH_KINDS.map((kind) => (
           <Row
             key={kind}
-            title={NOTIFY_COPY.kinds[kind]}
-            meta={NOTIFY_COPY.kindHints[kind]}
+            title={words(`house.notify.kind.${kind}`)}
+            meta={words(`house.notify.hint.${kind}`)}
             metaLines={2}
             trailing={
               <Segmented
                 options={ON_OFF}
                 value={prefs[kind] ? 'on' : 'off'}
                 onChange={(v) => setKind(kind, v === 'on')}
-                label={NOTIFY_COPY.kinds[kind]}
+                label={words(`house.notify.kind.${kind}`)}
                 testID={`push-${kind}`}
               />
             }

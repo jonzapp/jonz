@@ -1,8 +1,9 @@
-import { memberCan, PAGE_TITLE, roleCopy, rulesRows, SETUP_COPY } from '@app/core';
+import { memberCan, PAGE_TITLE, rulesRows, SETUP_COPY } from '@app/core';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { AdminsList } from '@/components/house/admins-list';
+import { useRoleCopy } from '@/hooks/use-kind';
 import { HousePage } from '@/components/house/house-page';
 import { KindSwitch } from '@/components/house/kind-switch';
 import { RulesFoot, RulesForm, useRulesForm, type RulesValues } from '@/components/house/rules-form';
@@ -88,6 +89,7 @@ function RulesFor({ houseId, userId }: { houseId: string; userId: string }) {
 function RulesReadOut({ houseId, userId, view, onEdit }: { houseId: string; userId: string; view: HouseView; onEdit: () => void }) {
   const { snapshot } = view;
   const isAdmin = memberCan(view.me, 'house:write');
+  const roles = useRoleCopy(snapshot.house.kind);
   return (
     <Pair
       testID="rules-pair"
@@ -114,7 +116,7 @@ function RulesReadOut({ houseId, userId, view, onEdit }: { houseId: string; user
       end={
         <View style={styles.stack}>
           <KindSwitch houseId={houseId} view={view} />
-          <Section label={roleCopy(snapshot.house.kind).admins.title} bare testID="admins-section">
+          <Section label={roles.admins.title} bare testID="admins-section">
             <AdminsList houseId={houseId} userId={userId} view={view} />
           </Section>
         </View>

@@ -55,6 +55,7 @@ import { usePull, useReadOnFocus } from '@/hooks/use-refresh';
 import { useStake } from '@/hooks/use-stake';
 import { useTable } from '@/hooks/use-table';
 import { INSET, WIDE } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * Week: how the whole house's week is going. The title bar's "•••" holds
@@ -156,6 +157,7 @@ function Board({
   const away = awayRead.data;
   const shares = sharesRead.data;
   const two = useColumns();
+  const words = useWords(view.snapshot.house.kind);
   const { snapshot, board, me, now } = view;
   const { house, members, rules } = snapshot;
   const [filter, setFilter] = useState<WeekPart | null>(null);
@@ -170,7 +172,7 @@ function Board({
         houseId={house.id}
         notStarted={board.notStarted}
         isAdmin={memberCan(me, 'weeks:write')}
-        adminName={whoDeals(members)}
+        adminName={whoDeals(members) ?? words('today.nextUp.anAdmin')}
         johns={johns}
         memberCount={members.length}
       />

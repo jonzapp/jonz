@@ -1,0 +1,7 @@
+{
+  "today.nextUp.invite": "{kind, select, family {Invite your family} other {Invite housemates}}",
+  "today.nextUp.soFar": "{kind, select, family {{count, plural, =0 {Just you so far} one {Just you so far} other {# in the family so far}}} other {{count, plural, =0 {Just you so far} one {Just you so far} other {# in the house so far}}}}",
+  "today.nextUp.anAdmin": "{kind, select, family {A parent} other {An admin}}",
+  "today.onCall.onlyRaiser": "{kind, select, family {{name} raised this flag, so only {name} or a parent can take it down.} other {{name} raised this flag, so only {name} or an admin can take it down.}}",
+  "today.onCall.onlyAdmin": "{kind, select, family {Jonz opened this again after a miss, so only a parent can take it down.} other {Jonz opened this again after a miss, so only an admin can take it down.}}"
+}

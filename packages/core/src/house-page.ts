@@ -10,6 +10,7 @@ import { formatMoney, formatSigned, moneyInput } from "./money";
 import type { TableRow } from "./points";
 import type { LedgerRow, StakeView, Transfer } from "./stake";
 import { IMMUNITY_CAP, IMMUNITY_EVERY } from "./streak";
+import type { Words } from "./words-for";
 
 // House's money half, shaped for its screens: the month card's lines,
 // settling up from your side, the Table's rows with points and money
@@ -173,6 +174,8 @@ export function overviewFigures(input: {
   me: string;
   rules: Pick<HouseRules, "currency" | "stakeMinor">;
   housemates: number;
+  /** The reader's words, which count the people. */
+  words: Words;
   /** The John list, once read. */
   johns?: readonly Pick<JohnDef, "points" | "everyWeeks">[];
 }): OverviewFigure[] {
@@ -201,7 +204,7 @@ export function overviewFigures(input: {
   return [
     mine,
     { key: "stake", value: money(rules.stakeMinor), label: HOUSE_PAGE_COPY.stakeEach, note: null, good: false },
-    { key: "people", value: String(housemates), label: HOUSE_PAGE_COPY.housemates(housemates), note: null, good: false },
+    { key: "people", value: String(housemates), label: input.words("house.page.membersLabel", { count: housemates }), note: null, good: false },
     {
       key: "johns",
       value: johns ? String(johns.length) : null,

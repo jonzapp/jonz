@@ -10,6 +10,7 @@ import {
   type WallFeedRow,
   type WallIcon,
   type WallScene,
+  type Words,
 } from '@app/core';
 import {
   BadgeCheckIcon,
@@ -140,7 +141,7 @@ export const REACTION_ICON: Record<ReactionKind, LucideIcon> = {
  * `events` the house struck out. `clock` sets the time as "14:10" (the
  * whole Wall, by day) rather than "3h" (House).
  */
-export function wallScene(view: HouseView, userId: string, events: readonly WallEvent[], clock = false): WallScene {
+export function wallScene(view: HouseView, userId: string, events: readonly WallEvent[], words: Words, clock = false): WallScene {
   const status = new Map(view.board.items.map((item) => [item.id, item.status]));
   return {
     me: userId,
@@ -151,7 +152,7 @@ export function wallScene(view: HouseView, userId: string, events: readonly Wall
     statusOf: (id) => status.get(id),
     struck: struckAt(events),
     clock,
-    family: view.snapshot.house.kind === 'family',
+    words,
   };
 }
 

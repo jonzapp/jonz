@@ -15,6 +15,7 @@ import { useReact, useWallLatest } from '@/hooks/use-wall';
 import { TourSpot } from '@/components/tour/tour-spot';
 import { Waiting } from '@/components/waiting';
 import { OutlineRows } from '@/components/outline';
+import { useWords } from '@/hooks/use-words';
 
 /** How many of the Wall's events House shows. */
 const LATEST = 4;
@@ -27,13 +28,14 @@ const LATEST = 4;
  * Holding a row down shows it with all four reactions.
  */
 export function WallSection({ houseId, userId, view }: { houseId: string; userId: string; view: HouseView }) {
+  const words = useWords(view.snapshot.house.kind);
   const johnSheet = useJohnSheet();
   const latest = useWallLatest(houseId, userId, LATEST);
   const { react, problem, problemAt, clear } = useReact(houseId, userId);
   const [open, setOpen] = useState<string | null>(null);
 
   const events = latest.data?.events ?? [];
-  const scene = wallScene(view, userId, events);
+  const scene = wallScene(view, userId, events, words);
   const rows = events.map((event) => wallFeedRow(event, scene));
   const shown = open ? rows.find((r) => r.id === open) : undefined;
   // Its event has gone from the latest (a newer one pushed it off): put the sheet away.

@@ -100,7 +100,7 @@ export function howItWorks(
       return [
         `A John is late once its due time passes. It can still be done late for ${hours(rules.lateHours)}; after that it's missed.`,
         `Late still counts as done for fair shares${rules.stakeMinor > 0 ? `, but costs ${money(rules.lateForfeitMinor)} from the Stake` : ""}. Missed counts for nobody${rules.stakeMinor > 0 ? ` and costs ${money(rules.missedForfeitMinor)}` : ""}.`,
-        `${hours(rules.coverGraceHours)} after it's due, a housemate can cover it instead.`,
+        `${hours(rules.coverGraceHours)} after it's due, someone else can cover it instead.`,
       ].join("\n");
     case "covering":
       return [
@@ -156,7 +156,7 @@ export function howItWorks(
       ].join("\n");
     case "swaps":
       return [
-        "You can ask a housemate to swap one of your Johns this week for one of theirs. Nothing changes until they say yes.",
+        "You can ask someone to swap one of your Johns this week for one of theirs. Nothing changes until they say yes.",
         HOUSE_PAGE_COPY.rulesSwapBody,
       ].join("\n");
     case "ticks_and_questions":
@@ -195,7 +195,7 @@ export const GUIDE_TOPIC: Record<HowTopic, { title: string; meta: string }> = {
   ticks_and_questions: { title: "Ticking and questioning", meta: "Marking done, and checking a tick" },
   late_and_missed: { title: "Late and missed", meta: "What happens after the due time" },
   covering: { title: "Covering for someone", meta: "Doing an overdue John for them" },
-  swaps: { title: "Swaps", meta: "Trading a John with a housemate" },
+  swaps: { title: "Swaps", meta: "Swapping a John with someone" },
   on_call: { title: "On-call Johns", meta: "Done when they're needed" },
   time_away: { title: "Time away", meta: "Being left out of the deal" },
   history_and_resets: { title: "History and fixing mistakes", meta: "Undo, and resets for admins" },

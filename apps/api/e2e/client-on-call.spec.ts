@@ -1,7 +1,9 @@
-import { HISTORY_COPY, JOHN_COPY, ON_CALL_COPY } from "@app/core";
+import { HISTORY_COPY, JOHN_COPY, ON_CALL_COPY, wordsFor } from "@app/core";
 import { expect, test, type Page } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, dealtHouseInClient } from "./auth";
+
+const words = wordsFor("en", "housemates");
 
 // On-call Johns in the Expo app's web build: a Done it counts once, taking
 // it back leaves nothing to do, and a flag comes down only at the hands of
@@ -84,7 +86,7 @@ test("whoever raised a flag can take it down; whoever has it can't", async ({ br
   await page.goto("/today");
   await onCall(page).getByTestId("on-call-flagged").click();
   const halSheet = page.getByTestId("john-sheet-body");
-  await expect(halSheet.getByTestId("flag-who-can-remove")).toContainText(ON_CALL_COPY.onlyRaiser("Sam"));
+  await expect(halSheet.getByTestId("flag-who-can-remove")).toContainText(words("today.onCall.onlyRaiser", { name: "Sam" }));
   await expect(halSheet.getByTestId("remove-flag")).toHaveCount(0);
 
   // Sam takes it down.

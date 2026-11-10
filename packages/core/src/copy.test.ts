@@ -10,7 +10,6 @@ import {
   DISPUTE_COPY,
   FRONT_DOOR,
   GROUPS_COPY,
-  HOUSE_PAGE_COPY,
   INVITE_COPY,
   JOHN_COPY,
   JOHN_LIST_COPY,
@@ -141,8 +140,6 @@ describe("SECTIONS", () => {
   });
 
   it("counts the house and your standing in words", () => {
-    expect(SHELL_COPY.housemates(1)).toBe("1 housemate");
-    expect(SHELL_COPY.housemates(4)).toBe("4 housemates");
     expect(SHELL_COPY.standing(0, 1)).toBe("0-week streak, 1 skip");
     expect(SHELL_COPY.standing(5, 0)).toBe("5-week streak, 0 skips");
   });
@@ -213,7 +210,7 @@ describe("AWAY_COPY", () => {
     expect(AWAY_COPY.moved(1)).toBe("1 of your Johns falls due while you’re away, so it’s now due before you go.");
     expect(AWAY_COPY.moved(3)).toBe("3 of your Johns fall due while you’re away, so they’re now due before you go.");
     expect(AWAY_COPY.moved(0, 1, 0)).toBe(
-      "1 was due too soon to do first, so it’s gone to a housemate, who’s been told. Cancel and it comes back to you.",
+      "1 was due too soon to do first, so it’s gone to someone else, who’s been told. Cancel and it comes back to you.",
     );
     expect(AWAY_COPY.moved(1, 0, 2)).toBe(
       "1 of your Johns falls due while you’re away, so it’s now due before you go. 2 were skipped, with nobody home to take them.",
@@ -290,9 +287,8 @@ describe("FOCUS_SHELL_COPY", () => {
 });
 
 describe("STAKE_HISTORY_COPY", () => {
-  it("says the stake under its title as House says it under the house’s name", () => {
+  it("says the stake under its title", () => {
     expect(STAKE_HISTORY_COPY.sub("£20")).toBe("£20 a month each");
-    expect(HOUSE_PAGE_COPY.sub(4, "£20").endsWith(STAKE_HISTORY_COPY.sub("£20"))).toBe(true);
   });
 });
 

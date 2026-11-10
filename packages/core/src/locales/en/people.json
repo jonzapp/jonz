@@ -1,0 +1,7 @@
+{
+  "people.person.role": "{kind, select, family {{role, select, admin {Parent} other {Kid}}} other {{role, select, admin {Admin} other {Housemate}}}}",
+  "people.person.roleYou": "{kind, select, family {{role, select, admin {You, parent} other {You, kid}}} other {{role, select, admin {You, admin} other {You, housemate}}}}",
+  "people.person.makeAdmin": "{kind, select, family {Make a parent} other {Make admin}}",
+  "people.person.makeMember": "{kind, select, family {Make a kid} other {Make housemate}}",
+  "people.person.makeMemberMeta": "{kind, select, family {Stops being a parent} other {Stops being an admin}}"
+}

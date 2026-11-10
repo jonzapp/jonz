@@ -1,6 +1,8 @@
-import { APP_NAME, PAGE_TITLE, RECORD_COPY, STAKE_HISTORY_COPY, TAGLINE, pageTitle } from "./copy";
+import { APP_NAME, PAGE_TITLE, RECORD_COPY, SHARE_COPY, STAKE_HISTORY_COPY, pageTitle } from "./copy";
+import type { HouseKind } from "./domain";
 import { HISTORY_COPY } from "./history";
 import { WALL_COPY } from "./wall";
+import { wordsFor } from "./words-for";
 
 /**
  * What a pasted jonz.app link shows in a chat (iMessage, WhatsApp, Slack,
@@ -27,20 +29,6 @@ export const SHARE_IMAGE = { width: 1200, height: 630 } as const;
  */
 export const SHARE_NAMES_HOUSE = true;
 
-export const SHARE_COPY = {
-  /** The brand card's description: every page but a join link. */
-  description: TAGLINE,
-  imageAlt: `${APP_NAME}: fair shares of the housework.`,
-  joinTitle: (house: string) => `Join ${house} on ${APP_NAME}`,
-  joinGeneric: `You're invited to a house on ${APP_NAME}`,
-  housemates: (n: number) => `${n} ${n === 1 ? "housemate" : "housemates"}`,
-  joinLine: "Sign in to join and get your Johns.",
-  /** A code that opens nothing: reset, or its house is empty. */
-  expiredTitle: "This invite has expired",
-  expiredLine: "Ask the house for a new link.",
-  offerEnded: "This offer has ended",
-  offerEndedLine: "Ask for a new link.",
-} as const;
 
 /**
  * What a card's sign says (packages/core/src/mark.ts, PLATE): the legend on
@@ -59,7 +47,7 @@ export const BRAND_SIGN: ShareSign = { legend: APP_NAME, plate: "Fair shares of 
 export function joinSign(invite: InviteCard | null, namesHouse = SHARE_NAMES_HOUSE): ShareSign {
   if (!invite) return { legend: "Invite expired", plate: SHARE_COPY.expiredLine };
   if (!namesHouse) return { legend: APP_NAME, plate: "You're invited to a house." };
-  return { legend: invite.name, plate: `Join ${SHARE_COPY.housemates(invite.members)} on ${APP_NAME}.` };
+  return { legend: invite.name, plate: wordsFor("en", invite.kind)("common.joinPlate", { count: invite.members }) };
 }
 
 /**
@@ -85,6 +73,8 @@ export interface OfferCard {
 export interface InviteCard {
   name: string;
   members: number;
+  /** Housemates or a family: the card says "Join the family" for a family. */
+  kind: HouseKind;
 }
 
 export interface SharePreview {
@@ -161,7 +151,7 @@ export function joinPreview(code: string, invite: InviteCard | null, namesHouse 
   const title = SHARE_COPY.joinTitle(invite.name);
   return {
     title,
-    description: `${SHARE_COPY.housemates(invite.members)}. ${SHARE_COPY.joinLine}`,
+    description: `${wordsFor("en", invite.kind)("common.members", { count: invite.members })}. ${SHARE_COPY.joinLine}`,
     url,
     image,
     imageAlt: title,

@@ -229,7 +229,7 @@ describe('the rest of House', () => {
   });
 
   it("says what's missing from a group before asking", async () => {
-    await expect(saveGroup(H1, { name: 'Upstairs', members: [] })).rejects.toThrow('Pick at least one housemate.');
+    await expect(saveGroup(H1, { name: 'Upstairs', members: [] })).rejects.toThrow('Pick at least one person.');
     expect(call).not.toHaveBeenCalled();
   });
 

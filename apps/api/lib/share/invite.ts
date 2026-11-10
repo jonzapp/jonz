@@ -1,6 +1,6 @@
 import "server-only";
 
-import { JoinCode, type HouseKind, type InviteCard } from "@app/core";
+import { houseKind, JoinCode, type HouseKind, type InviteCard } from "@app/core";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -27,7 +27,7 @@ export async function inviteFor(
     const { data: house } = await admin.from("houses").select("id, name, kind").eq("join_code", code).maybeSingle();
     if (!house) return { code, invite: null };
     const { count } = await admin.from("members").select("user_id", { count: "exact", head: true }).eq("house_id", house.id);
-    return { code, invite: count ? { name: house.name, members: count, kind: house.kind as HouseKind } : null };
+    return { code, invite: count ? { name: house.name, members: count, kind: houseKind(house.kind) } : null };
   } catch {
     return { code, invite: null };
   }

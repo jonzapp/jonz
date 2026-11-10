@@ -18,6 +18,7 @@ import type { HouseView } from '@/hooks/use-house';
 import { useMembership } from '@/hooks/use-membership';
 import { useStake } from '@/hooks/use-stake';
 import { INSET, SPACE, useTheme } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * Leaving the house, alone at the foot of House in hazard words, and the
@@ -58,7 +59,7 @@ export function LeaveSection({ houseId, userId, view }: { houseId: string; userI
     cost = HOUSE_LOWER_COPY.costUnread;
   }
   const bar = leaveBar(userId, members);
-  const roles = roleCopy(house.kind);
+  const roles = roleCopy(useWords(house.kind));
   const body = bar === 'last-admin' ? `${cost} ${roles.lastAdmin}` : bar === 'last-one' ? `${cost} ${HOUSE_LOWER_COPY.lastOne}` : cost;
   const heirName = heir ? firstName(members.find((m) => m.userId === heir)?.name ?? '') : null;
 

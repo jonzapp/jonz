@@ -51,7 +51,7 @@ export function OnCall({
   const move = useMove(houseId);
   const offer = useUndoOffer(houseId);
   if (items.length === 0) return null;
-  const nameOf = (id: string) => firstName(members.find((m) => m.userId === id)?.name ?? 'Housemate');
+  const nameOf = (id: string) => firstName(members.find((m) => m.userId === id)?.name ?? 'Someone');
 
   return (
     <Section label={ON_CALL_COPY.section} testID="on-call">

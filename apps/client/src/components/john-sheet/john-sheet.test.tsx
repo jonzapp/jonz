@@ -3,6 +3,7 @@ import {
   buildStake,
   CREW_COPY,
   DISPUTE_COPY,
+  type DisputeRow,
   FOCUS_SHELL_COPY,
   JOHN_COPY,
   JOHN_SHEET_COPY,
@@ -11,7 +12,7 @@ import {
   ON_CALL_COPY,
   SWAP_COPY,
   WHY_COPY,
-  type DisputeRow,
+  wordsFor,
 } from '@app/core';
 import type { QueryClient } from '@tanstack/react-query';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -32,6 +33,8 @@ import { measureAt, measureNowhere } from '@/testing/layout';
 import { testQueryClient } from '@/testing/query';
 
 import { JohnSheetProvider, useJohnSheet, type JohnSheetFocus } from '.';
+
+const words = wordsFor('en', 'housemates');
 
 jest.mock('@/api/board', () => ({ loadHouse: jest.fn() }));
 jest.mock('@/api/house', () => ({ catchUp: jest.fn(() => Promise.resolve(false)) }));
@@ -756,7 +759,7 @@ describe('an open flag', () => {
   it('tells whoever has a housemate’s flag who can take it down, with no way to do it themselves', async () => {
     await show(house([binsOut({ ...flag, flagged_by: 'sam' })], priyaWith({ role: 'member' })));
     const body = within(await openOn('Open a1'));
-    expect(body.getByText(ON_CALL_COPY.onlyRaiser('Sam'))).toBeOnTheScreen();
+    expect(body.getByText(words('today.onCall.onlyRaiser', { name: 'Sam' }))).toBeOnTheScreen();
     expect(body.queryByTestId('remove-flag')).toBeNull();
   });
 

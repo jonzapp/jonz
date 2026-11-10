@@ -4,16 +4,15 @@ import {
   FAMILY_PASS_COPY,
   FRONT_DOOR,
   FRONT_DOOR_COPY,
-  HOUSE_LOWER_COPY,
   JOIN_COPY,
   NEW_HOUSE_COPY,
-  PARENTS_COPY,
   PAGE_TITLE,
   PASS_COPY,
   PERSON_COPY,
   ROLE_WORDS,
 } from "./copy";
 import type { HouseKind } from "./domain";
+import type { Words } from "./words-for";
 
 /**
  * Whether anyone can pick Family. The family version landed one step at a
@@ -51,39 +50,39 @@ export function joinLine(kind: HouseKind, people: number): string {
 /**
  * Everything that names the two roles, for the kind of house: in a family an
  * admin is a parent and everyone else a kid. The roles themselves are the
- * same (members.role is still admin or member).
+ * same (members.role is still admin or member). The lines live in the words
+ * files (locales/en/house.json, people.json); this gathers the ones a person's
+ * page, Rules and the You page use.
  */
-export function roleCopy(kind: HouseKind) {
-  const w = ROLE_WORDS[kind];
-  const family = kind === "family";
+export function roleCopy(w: Words) {
+  const role = (admin: boolean) => ({ role: admin ? "admin" : "member" });
   return {
-    words: w,
+    words: ROLE_WORDS[w.kind],
     /** House › Rules' list of who looks after the house. */
-    admins: family ? PARENTS_COPY : ADMINS_COPY,
+    admins: {
+      ...ADMINS_COPY,
+      title: w("house.admins.title"),
+      note: w("house.admins.note"),
+      add: w("house.admins.add"),
+      everyoneIs: w("house.admins.everyoneIs"),
+      make: (name: string) => w("house.admins.make", { name }),
+      removeLabel: (name: string) => w("house.admins.remove", { name }),
+      onlyAdmin: w("house.admins.onlyAdmin"),
+    },
     /** Under a person's name: "Parent", or "You, kid" on your own page. */
-    sub: (admin: boolean, you: boolean) =>
-      family ? (you ? `You, ${admin ? w.admin : w.member}` : admin ? w.Admin : w.Member) : PERSON_COPY.sub(admin, you),
+    sub: (admin: boolean, you: boolean) => w(you ? "people.person.roleYou" : "people.person.role", role(admin)),
     /** A person page's role section. */
-    person: family
-      ? {
-          section: w.Admin,
-          makeAdmin: PARENTS_COPY.makeParent,
-          makeAdminMeta: PERSON_COPY.makeAdminMeta,
-          makeMember: PARENTS_COPY.makeKid,
-          makeMemberMeta: PARENTS_COPY.makeKidMeta,
-        }
-      : {
-          section: PERSON_COPY.admin,
-          makeAdmin: PERSON_COPY.makeAdmin,
-          makeAdminMeta: PERSON_COPY.makeAdminMeta,
-          makeMember: PERSON_COPY.makeHousemate,
-          makeMemberMeta: PERSON_COPY.makeHousemateMeta,
-        },
+    person: {
+      section: w("people.person.role", role(true)),
+      makeAdmin: w("people.person.makeAdmin"),
+      makeAdminMeta: PERSON_COPY.makeAdminMeta,
+      makeMember: w("people.person.makeMember"),
+      makeMemberMeta: w("people.person.makeMemberMeta"),
+    },
     /** Under your name on the You page: "The Parks, parent". */
-    youIn: (house: string, admin: boolean) =>
-      family ? `${house}, ${admin ? w.admin : w.member}` : HOUSE_LOWER_COPY.youIn(house, admin),
-    lastAdmin: family ? PARENTS_COPY.lastParent : HOUSE_LOWER_COPY.lastAdmin,
-    handOver: (name: string) => (family ? PARENTS_COPY.handOver(name) : HOUSE_LOWER_COPY.handOver(name)),
+    youIn: (house: string, admin: boolean) => w("house.leave.youIn", { house, ...role(admin) }),
+    lastAdmin: w("house.leave.lastAdmin"),
+    handOver: (name: string) => w("house.leave.handOver", { name }),
   };
 }
 

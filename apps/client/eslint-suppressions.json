@@ -1,11 +1,44 @@
 {
+  "src/app/(house)/house/pass.tsx": {
+    "formatjs/no-literal-string-in-jsx": {
+      "count": 1
+    }
+  },
+  "src/app/admin/messages/index.tsx": {
+    "formatjs/no-literal-string-in-jsx": {
+      "count": 1
+    }
+  },
+  "src/app/admin/notices.tsx": {
+    "formatjs/no-literal-string-in-jsx": {
+      "count": 1
+    }
+  },
+  "src/app/admin/promotions/[id].tsx": {
+    "formatjs/no-literal-string-in-jsx": {
+      "count": 1
+    }
+  },
+  "src/app/approve/[approvalId].tsx": {
+    "formatjs/no-literal-string-in-jsx": {
+      "count": 2
+    }
+  },
   "src/components/admin/admin-shell.tsx": {
     "jonz/spacing-from-scale": {
       "count": 3
     }
   },
   "src/components/admin/audit-entry.tsx": {
+    "formatjs/no-literal-string-in-jsx": {
+      "count": 3
+    },
     "jonz/spacing-from-scale": {
+      "count": 1
+    }
+  },
+  "src/components/admin/busy-list.tsx": {
+    "formatjs/no-literal-string-in-jsx": {
       "count": 1
     }
   },
@@ -42,6 +75,21 @@
       "count": 2
     }
   },
+  "src/components/chat/ask-usage.tsx": {
+    "formatjs/no-literal-string-in-jsx": {
+      "count": 1
+    }
+  },
+  "src/components/chat/chat.tsx": {
+    "formatjs/no-literal-string-in-jsx": {
+      "count": 1
+    }
+  },
+  "src/components/fold.tsx": {
+    "formatjs/no-literal-string-in-jsx": {
+      "count": 1
+    }
+  },
   "src/components/house-page/invite-sheet.tsx": {
     "jonz/no-raw-type-size": {
       "count": 1
@@ -52,6 +100,16 @@
       "count": 1
     }
   },
+  "src/components/house/admins-list.tsx": {
+    "formatjs/no-literal-string-in-jsx": {
+      "count": 1
+    }
+  },
+  "src/components/house/john-list.tsx": {
+    "formatjs/no-literal-string-in-jsx": {
+      "count": 2
+    }
+  },
   "src/components/house/john-timing.tsx": {
     "jonz/no-raw-type-size": {
       "count": 3
@@ -60,7 +118,20 @@
       "count": 3
     }
   },
+  "src/components/house/rules-form.tsx": {
+    "formatjs/no-literal-string-in-jsx": {
+      "count": 1
+    }
+  },
+  "src/components/house/setup-chat.tsx": {
+    "formatjs/no-literal-string-in-jsx": {
+      "count": 1
+    }
+  },
   "src/components/house/time-away.tsx": {
+    "formatjs/no-literal-string-in-jsx": {
+      "count": 1
+    },
     "jonz/no-raw-type-size": {
       "count": 1
     },
@@ -83,9 +154,34 @@
       "count": 1
     }
   },
+  "src/components/john-sheet/roll-call.tsx": {
+    "formatjs/no-literal-string-in-jsx": {
+      "count": 1
+    }
+  },
+  "src/components/john-sheet/vote.tsx": {
+    "formatjs/no-literal-string-in-jsx": {
+      "count": 1
+    }
+  },
   "src/components/lid.tsx": {
     "jonz/spacing-from-scale": {
       "count": 1
+    }
+  },
+  "src/components/notice-banner.tsx": {
+    "formatjs/no-literal-string-in-jsx": {
+      "count": 2
+    }
+  },
+  "src/components/reply/reply.tsx": {
+    "formatjs/no-literal-string-in-jsx": {
+      "count": 2
+    }
+  },
+  "src/components/report/report-parts.tsx": {
+    "formatjs/no-literal-string-in-jsx": {
+      "count": 2
     }
   },
   "src/components/row.tsx": {
@@ -128,6 +224,26 @@
       "count": 2
     }
   },
+  "src/components/style-page/kit.tsx": {
+    "formatjs/no-literal-string-in-jsx": {
+      "count": 16
+    }
+  },
+  "src/components/style-page/replies.tsx": {
+    "formatjs/no-literal-string-in-jsx": {
+      "count": 2
+    }
+  },
+  "src/components/style-page/samples.tsx": {
+    "formatjs/no-literal-string-in-jsx": {
+      "count": 3
+    }
+  },
+  "src/components/style-page/style-book.tsx": {
+    "formatjs/no-literal-string-in-jsx": {
+      "count": 4
+    }
+  },
   "src/components/title-bar.tsx": {
     "jonz/spacing-from-scale": {
       "count": 3
@@ -139,6 +255,9 @@
     }
   },
   "src/components/today/next-up.tsx": {
+    "formatjs/no-literal-string-in-jsx": {
+      "count": 2
+    },
     "jonz/spacing-from-scale": {
       "count": 2
     }
@@ -154,6 +273,9 @@
     }
   },
   "src/components/wall/wall-row.tsx": {
+    "formatjs/no-literal-string-in-jsx": {
+      "count": 1
+    },
     "jonz/no-raw-type-size": {
       "count": 4
     },

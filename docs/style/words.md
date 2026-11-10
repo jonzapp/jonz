@@ -24,12 +24,19 @@
   layout breaking: rows grow taller, buttons wrap, nothing overlaps. (**New**)
   *Backed by* the HIG's Dynamic Type and WCAG 1.4.4. *Differs today:* not yet
   tested above the default size.
-- The words themselves follow the voice in [feel.md](feel.md) and the
-  shared sentences in `packages/core/src/copy.ts`.
-- **A family's words.** In a family house an admin is a **Parent** and
-  everyone else a **Kid**, wherever the app names a role (`roleCopy(kind)`
-  in `packages/core/src/family.ts`); the roles underneath are the same.
-  Never call a family's people housemates. (Family houses, this PR)
+- The words themselves follow the voice in [feel.md](feel.md). They live
+  in the words files, `packages/core/src/locales/en/<part>.json`, read with
+  `useWords()` in the app and `wordsFor(language, kind)` elsewhere; the
+  lines not moved yet are still in `packages/core/src/copy.ts`
+  ([translation.md](../specs/translation.md)).
+- **Families.** In a family house an admin is a **Parent** and everyone
+  else a **Kid**, wherever the app names a role; the roles underneath are
+  the same. Never call a family's people housemates or admins. A line that
+  names them either says it so it suits both kinds of house ("someone who
+  left", "someone else can cover it"), or is a words-file line with a whole
+  family sentence: `{kind, select, family {Invite your family} other {Invite
+  housemates}}`. `family-words.test.ts` reads every line as a family would
+  and fails on housemate, flatmate or admin. (Family houses; translation, PR 1)
 
 ## One word for each thing
 

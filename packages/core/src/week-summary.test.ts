@@ -289,8 +289,8 @@ describe("weekAwayLine", () => {
     ).toBe("You’re away all week. Megan is away 28–31 Oct.");
   });
 
-  it("names someone who has left as a former housemate", () => {
-    expect(weekAwayLine([{ userId: "cal", away: "away 21–22 Oct" }], "sam", nameOf)).toBe("A former housemate is away 21–22 Oct.");
+  it("names someone who has left as someone who left", () => {
+    expect(weekAwayLine([{ userId: "cal", away: "away 21–22 Oct" }], "sam", nameOf)).toBe("Someone who left is away 21–22 Oct.");
   });
 
   it("is nothing when nobody's away", () => {
@@ -381,10 +381,10 @@ describe("weekShareRows", () => {
 });
 
 describe("weekWho", () => {
-  it("says You, a first name, or a former housemate", () => {
+  it("says You, a first name, or someone who left", () => {
     expect(weekWho("sam", "sam", nameOf)).toBe("You");
     expect(weekWho("megan", "sam", nameOf)).toBe("Megan");
-    expect(weekWho("cal", "sam", nameOf)).toBe("A former housemate");
+    expect(weekWho("cal", "sam", nameOf)).toBe("Someone who left");
   });
 });
 

@@ -2,6 +2,8 @@
 const { defineConfig } = require('eslint/config');
 const expoConfig = require('eslint-config-expo/flat');
 
+const formatjs = require('eslint-plugin-formatjs');
+
 const jonz = require('./eslint-rules/jonz');
 
 module.exports = defineConfig([
@@ -25,6 +27,17 @@ module.exports = defineConfig([
       'jonz/no-bare-spinner': 'error',
       'jonz/busy-not-disabled': 'error',
       'jonz/owner-only': 'error',
+    },
+  },
+  // The app's words (docs/specs/translation.md): text on screen comes from
+  // useWords() or the copy, never written into a screen. The screens that
+  // still do are listed in eslint-suppressions.json until their words move.
+  {
+    files: ['src/**/*.tsx'],
+    ignores: ['src/**/*.test.tsx', 'src/__tests__/**'],
+    plugins: { formatjs: formatjs.default ?? formatjs },
+    rules: {
+      'formatjs/no-literal-string-in-jsx': 'error',
     },
   },
 ]);

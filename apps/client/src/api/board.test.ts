@@ -87,7 +87,7 @@ it('reads the house, its people and this week in one go on /v1', async () => {
       signsIn: true,
       bornYear: null,
     },
-    { userId: 'u2', name: 'Housemate', photo: null, role: 'member', streak: 0, immunityTokens: 0, swapTokens: 1, prefs: { days: [], bestTime: null, rather: {} }, movingOutOn: null, signsIn: true, bornYear: null },
+    { userId: 'u2', name: 'Someone', photo: null, role: 'member', streak: 0, immunityTokens: 0, swapTokens: 1, prefs: { days: [], bestTime: null, rather: {} }, movingOutOn: null, signsIn: true, bornYear: null },
   ]);
   expect(snapshot.week).toEqual({ id: 'w1', starts_on: '2026-10-19', starts_at: '2026-10-18T23:00:00Z', ends_at: '2026-10-25T23:00:00Z' });
   expect(snapshot.disputes).toEqual([

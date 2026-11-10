@@ -11,6 +11,7 @@ import { formatMoney } from "./money";
 import type { LiveStatus } from "./outcome";
 import { resetWhat } from "./resets";
 import type { Transfer } from "./stake";
+import { wordsFor, type Words } from "./words-for";
 import { REACTABLE, REACTIONS, type Part, type ReactionKind, type WallEvent, type WallIcon } from "./wall";
 import { addDaysTo, localDate } from "./week";
 
@@ -40,8 +41,8 @@ export interface WallScene {
   struck?: ReadonlyMap<string, Date>;
   /** The time as a clock ("14:10"), for the Wall's days; otherwise how long ago ("3h"), for House. */
   clock?: boolean;
-  /** A family's Wall says "joined the family" where housemates "moved in". */
-  family?: boolean;
+  /** The reader's words: a family's Wall says "joined the family" where housemates "moved in". Housemates' English when left out. */
+  words?: Words;
 }
 
 /**
@@ -276,6 +277,7 @@ const HOUSE_NEWS = new Set(["upheld", "rejected", "month_closed", "jonz_message"
  */
 export function wallFeedRow(event: WallEvent, scene: WallScene): WallFeedRow {
   const { me, members } = scene;
+  const say = scene.words ?? wordsFor("en", "housemates");
   const who = named(event.userId, me, members);
   const john = typeof event.data.name === "string" ? event.data.name : null;
   const johnName = john ?? WALL_FEED_COPY.aJohn;
@@ -399,19 +401,19 @@ export function wallFeedRow(event: WallEvent, scene: WallScene): WallFeedRow {
       title = WALL_FEED_COPY.undid(by.subject, who.possessive, undoneWhat(text("what"), john));
       bold = [by.subject, who.subject, johnName];
       lead = text("by") || null;
-      detail = WALL_FEED_COPY.adminFix;
+      detail = say("wall.feed.adminFix");
       break;
     }
     case "reset": {
       const subject = named(text("subject") || null, me, members);
       title = `${who.subject} ${resetWhat(event.data, subject.subject)}`;
       bold = [who.subject, subject.subject, johnName];
-      detail = WALL_FEED_COPY.adminFix;
+      detail = say("wall.feed.adminFix");
       break;
     }
     case "joined":
-      title = scene.family ? WALL_FEED_COPY.joinedFamily(who.subject) : WALL_FEED_COPY.joined(who.subject);
-      detail = scene.family ? WALL_FEED_COPY.newInFamily : WALL_FEED_COPY.newHousemate;
+      title = say("wall.feed.joined", { who: who.subject });
+      detail = say("wall.feed.newMember");
       break;
     case "moving_out": {
       const on = text("on");

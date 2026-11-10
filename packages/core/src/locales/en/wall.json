@@ -1,0 +1,7 @@
+{
+  "wall.feed.joined": "{kind, select, family {{who} joined the family} other {{who} moved in}}",
+  "wall.feed.newMember": "{kind, select, family {New in the family} other {New housemate}}",
+  "wall.feed.adminFix": "{kind, select, family {A parent’s fix} other {An admin’s fix}}",
+  "wall.history.madeAdmin": "{kind, select, family {{name} is a parent now.} other {{name} is an admin now.}}",
+  "wall.history.madeMember": "{kind, select, family {{name} is a kid now.} other {{name} is a housemate now.}}"
+}

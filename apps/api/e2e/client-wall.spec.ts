@@ -1,8 +1,10 @@
-import { firstName, JOHN_COPY, REACTION_LABEL, SECTION_LABEL, WALL_COPY, WALL_FEED_COPY } from "@app/core";
+import { firstName, JOHN_COPY, REACTION_LABEL, SECTION_LABEL, WALL_COPY, WALL_FEED_COPY, wordsFor } from "@app/core";
 import { expect, test, type BrowserContext } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, dealtHouseInClient } from "./auth";
 import { photo } from "./photo";
+
+const words = wordsFor("en", "housemates");
 
 // The Wall in the Expo app's web build: ticks land on it live, a photo
 // receipt shows, and a reaction sticks.
@@ -45,7 +47,7 @@ test("ticks land on the Wall with their photos, and take reactions", async ({ br
   await expect(wall.getByRole("heading", { name: WALL_COPY.title })).toBeVisible();
   // (House stays laid out under the pushed page, with its own latest rows: look on the Wall's.)
   const events = wall.getByTestId("wall-screen").getByTestId("wall-event");
-  await expect(events.filter({ hasText: WALL_FEED_COPY.joined(them) })).toBeVisible();
+  await expect(events.filter({ hasText: words("wall.feed.joined", { who: them }) })).toBeVisible();
 
   // The hob is the hobber's one John, so it's their Next up. Ticked, it lands
   // on the Wall without a reload.

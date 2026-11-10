@@ -9,6 +9,7 @@ import {
   dayLabel,
   LIST_COPY,
   type Currency,
+  type HouseKind,
   type HistoryItem,
 } from '@app/core';
 import { HistoryIcon } from 'lucide-react-native';
@@ -34,6 +35,8 @@ export interface HistoryScene {
   me: string;
   zone: string;
   currency: Currency;
+  /** Housemates or a family: "made Sam an admin", or "a parent". */
+  kind: HouseKind;
   now: Date;
   /** "You" for the viewer, as on the Wall. */
   nameOf: (userId: string | null) => string;
@@ -102,7 +105,7 @@ function HistoryRow({ item, scene }: { item: HistoryItem; scene: HistoryScene })
   const undo = useMove(scene.houseId);
   const toast = useToastIfAny();
   const who = scene.nameOf(item.actor);
-  const line = actionLine(item.kind, item.data, who, scene.nameOf(item.subject), scene.currency);
+  const line = actionLine(item.kind, item.data, who, scene.nameOf(item.subject), scene.currency, scene.kind);
   const meta = historyMeta(item, historyTime(item.at, scene.zone), scene.nameOf);
 
   return (

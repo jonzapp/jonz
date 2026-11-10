@@ -9,6 +9,7 @@ import { humanError } from "./errors";
 import { dateRange, firstName, joinRange, monthLabel, pointsLabel } from "./format";
 import { formatMoney, formatSigned, moneyInput, parseMoney } from "./money";
 import { HouseSettings } from "./schemas";
+import type { Words } from "./words-for";
 import { dueWords, oftenWords, placeWord } from "./repeat";
 import { addDaysTo } from "./week";
 
@@ -179,17 +180,17 @@ function adminNames(members: readonly Member[], me: string): string[] {
 }
 
 /** Who can change the rules, under the read-out: "Sam (admin) can change these.", "You and Priya (admins) can change these." */
-export function adminsLine(members: readonly Member[], me: string): string {
+export function adminsLine(members: readonly Member[], me: string, w: Words): string {
   const names = adminNames(members, me);
-  if (names.length === 0) return SETUP_COPY.adminsNobody;
+  if (names.length === 0) return w("house.setup.adminsNobody");
   if (names.length === 1 && names[0] === SETUP_COPY.you) return SETUP_COPY.youCanChange;
-  return SETUP_COPY.canChange(listed(names), names.length);
+  return w("house.setup.canChange", { names: listed(names), count: names.length });
 }
 
 /** An empty John list, to a housemate who can't add to it: who will. "Sam will add the Johns." */
-export function johnsComing(members: readonly Member[], me: string): string {
+export function johnsComing(members: readonly Member[], me: string, w: Words): string {
   const names = adminNames(members, me).filter((n) => n !== SETUP_COPY.you);
-  return names.length === 0 ? SETUP_COPY.johnsComingAdmin : SETUP_COPY.johnsComing(listed(names));
+  return names.length === 0 ? w("house.setup.johnsComingAdmin") : SETUP_COPY.johnsComing(listed(names));
 }
 
 /**

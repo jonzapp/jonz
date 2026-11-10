@@ -2,6 +2,7 @@ import {
   BIN_NIGHT,
   buildStake,
   DISPUTE_COPY,
+  type DisputeRow,
   FOCUS_SHELL_COPY,
   HOUSE_PAGE_COPY,
   JOHN_COPY,
@@ -10,15 +11,15 @@ import {
   monthOf,
   MOVING_COPY,
   NEXT_UP_COPY,
-  PARENT_OK_COPY,
   NOT_DEALT_COPY,
   ON_CALL_COPY,
   PAGE_TITLE,
+  PARENT_OK_COPY,
   planLabel,
   STEADY_COPY,
-  WEEK_SUMMARY_COPY,
-  type DisputeRow,
   TODAY_COPY,
+  WEEK_SUMMARY_COPY,
+  wordsFor,
 } from '@app/core';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Slot } from 'expo-router';
@@ -42,6 +43,8 @@ import { ToastProvider } from '@/components/toast';
 import { assignment, snapshot } from '@/testing/house';
 import { BINS } from '@/testing/pages';
 import { testQueryClient } from '@/testing/query';
+
+const words = wordsFor('en', 'housemates');
 
 jest.mock('@/api/board', () => ({ loadHouse: jest.fn() }));
 jest.mock('@/api/away', () => ({ loadAway: jest.fn(), setAway: jest.fn(), cancelAway: jest.fn() }));
@@ -370,7 +373,7 @@ describe('what takes Next up’s place', () => {
       const card = await open();
       expect(within(card).getByText('Set up Flat 3')).toBeOnTheScreen();
       expect(await within(card).findByText(NEXT_UP_COPY.onTheList(1))).toBeOnTheScreen();
-      expect(within(card).getByText(NEXT_UP_COPY.housemates(2))).toBeOnTheScreen();
+      expect(within(card).getByText(words('today.nextUp.soFar', { count: 2 }))).toBeOnTheScreen();
       const deal = within(card).getByRole('button', { name: NEXT_UP_COPY.dealWeek1 });
       expect(deal).toHaveStyle({ backgroundColor: BIN_NIGHT.light.hivis });
       await fireEvent.press(deal);
@@ -393,11 +396,11 @@ describe('what takes Next up’s place', () => {
     it('opens the John list, and the invite in a sheet', async () => {
       read.mockResolvedValue({ ...first(), members: first().members.slice(0, 1) });
       await open();
-      expect(screen.getByText(NEXT_UP_COPY.housemates(1))).toBeOnTheScreen();
-      await fireEvent.press(screen.getByRole('button', { name: new RegExp(NEXT_UP_COPY.invite) }));
+      expect(screen.getByText(words('today.nextUp.soFar', { count: 1 }))).toBeOnTheScreen();
+      await fireEvent.press(screen.getByRole('button', { name: new RegExp(words('today.nextUp.invite')) }));
       // House's invite sheet: the code to read out, the link, and the sheet's one amber button.
       const sheet = within(await screen.findByTestId('invite-sheet'));
-      expect(sheet.getByRole('header', { name: HOUSE_PAGE_COPY.invite })).toBeOnTheScreen();
+      expect(sheet.getByRole('header', { name: words('house.page.invite') })).toBeOnTheScreen();
       expect(sheet.getByTestId('invite-code')).toHaveTextContent('AB3DEF7H');
       expect(sheet.getByTestId('invite-url')).toHaveTextContent('https://jonz.app/join/AB3DEF7H');
       expect(sheet.getByRole('button', { name: HOUSE_PAGE_COPY.shareInvite })).toHaveStyle({

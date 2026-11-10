@@ -114,7 +114,7 @@ export type NextUpState =
   /** Nothing has ever been dealt, and you're an admin: the setup checklist. */
   | { kind: "setup" }
   /** Nothing has ever been dealt, and someone else deals: who. */
-  | { kind: "waiting"; admin: string }
+  | { kind: "waiting"; admin: string | null }
   /** The house has started, but this week isn't out yet. */
   | { kind: "undealt" }
   /** You're away today, until this local date (the last day away). */
@@ -130,9 +130,9 @@ export type NextUpState =
  * first admin to have joined (`members` in the order they joined), by first
  * name.
  */
-export function whoDeals(members: readonly (Person & { role: string })[]): string {
+export function whoDeals(members: readonly (Person & { role: string })[]): string | null {
   const admin = members.find((m) => can(m.role as HouseRole, "weeks:write"));
-  return admin ? firstName(admin.name) : NEXT_UP_COPY.anAdmin;
+  return admin ? firstName(admin.name) : null;
 }
 
 /** Which of Today's card states shows, from the week, your Johns, who deals and your time away. */

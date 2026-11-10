@@ -1,9 +1,11 @@
-import { DEFAULT_PREFS, NOTIFY_COPY } from '@app/core';
+import { DEFAULT_PREFS, NOTIFY_COPY, wordsFor } from '@app/core';
 import { fireEvent, render, screen, within } from '@testing-library/react-native';
 
 import { loadPrefs, savePrefs } from '@/api/notification-prefs';
 
 import { NotificationSettings } from './notification-settings';
+
+const words = wordsFor('en', 'housemates');
 
 jest.mock('@/api/notification-prefs', () => ({
   loadPrefs: jest.fn(),
@@ -22,7 +24,7 @@ beforeEach(() => {
 it('lists every kind, on until you say otherwise, and no quiet hours', async () => {
   await render(<NotificationSettings userId="ava" />);
   for (const kind of ['reminders', 'checks', 'flags', 'deal'] as const) {
-    expect(await screen.findByText(NOTIFY_COPY.kinds[kind])).toBeOnTheScreen();
+    expect(await screen.findByText(words(`house.notify.kind.${kind}`))).toBeOnTheScreen();
     expect(within(screen.getByTestId(`push-${kind}`)).getByRole('radio', { name: NOTIFY_COPY.on })).toBeChecked();
   }
   expect(within(screen.getByTestId('quiet-hours')).getByRole('radio', { name: 'Off' })).toBeChecked();

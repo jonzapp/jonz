@@ -39,7 +39,7 @@ export const TELL_COPY = {
   rulesBody: (who: string, changes: string) => `${who} changed ${changes}.`,
   /** Covering opens on your overdue John: the one chance to hold it off. */
   coverOpenTitle: (john: string) => `${john} is overdue`,
-  coverOpenBody: "Housemates can cover it now and take its points. On it? Say so and covers wait 2 hours.",
+  coverOpenBody: "Others can cover it now and take its points. On it? Say so and covers wait 2 hours.",
 } as const;
 
 /** One rule's change in words: "the stake from £20 to £10". */
