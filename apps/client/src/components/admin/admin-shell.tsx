@@ -2,6 +2,7 @@ import { ADMIN_COPY, ADMIN_GROUPS, adminGroupOf, adminPage, type AdminGroup, typ
 import { Link, useRouter } from 'expo-router';
 import {
   ArchiveIcon,
+  ArrowLeftIcon,
   HouseIcon,
   InboxIcon,
   LayoutGridIcon,
@@ -21,6 +22,7 @@ import { Segmented } from '@/components/segmented';
 import { Wordmark } from '@/components/wordmark';
 import { Chip } from '@/components/status-mark';
 import { Meta } from '@/components/text';
+import { TextButton } from '@/components/text-button';
 import { FONT, RAIL, SPACE, TAP, useTheme, WIDE } from '@/theme';
 
 /** Each page's icon, on the rail and the tabs. */
@@ -49,8 +51,9 @@ export const ADMIN_TAB_BAR = 56;
 
 /**
  * The owner's pages: a rail down the left from WIDE, as the house's, with
- * the wordmark and an Owner chip so it is never mistaken for a house; on a
- * phone, tabs along the bottom, as the house's tabs are. `aside` sits
+ * the wordmark and an Owner chip so it is never mistaken for a house, and
+ * Back to my house at its foot; on a phone, tabs along the bottom, as the
+ * house's tabs are (Back to my house is at Overview's foot there). `aside` sits
  * down the right from WIDE (the owner's Ask Jonz, when it's open).
  */
 export function AdminShell({ page, aside, children }: { page: AdminPage; aside?: ReactNode; children: ReactNode }) {
@@ -111,7 +114,11 @@ function AdminRail({ page }: { page: AdminPage }) {
           </View>
         ))}
       </View>
-      <Meta style={styles.foot}>{ADMIN_COPY.signedInWithCode}</Meta>
+      <View style={styles.foot}>
+        {/* The way back to the owner's own house: "/" opens it. */}
+        <TextButton label={ADMIN_COPY.backToHouse} icon={ArrowLeftIcon} href="/" align="start" testID="admin-to-house" />
+        <Meta>{ADMIN_COPY.signedInWithCode}</Meta>
+      </View>
     </View>
   );
 }
@@ -199,7 +206,7 @@ const styles = StyleSheet.create({
   },
   marker: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 3 },
   label: { fontFamily: FONT.bold },
-  foot: { marginTop: 'auto', paddingHorizontal: SPACE.md },
+  foot: { marginTop: 'auto', paddingHorizontal: SPACE.md, alignItems: 'flex-start' },
   bar: { flexDirection: 'row', paddingHorizontal: SPACE.sm, borderTopWidth: StyleSheet.hairlineWidth },
   tab: { flex: 1, minHeight: ADMIN_TAB_BAR, alignItems: 'center', justifyContent: 'center', gap: SPACE.xs },
   tabMarker: {

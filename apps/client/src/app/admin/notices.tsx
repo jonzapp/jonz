@@ -35,7 +35,7 @@ import { TitleBar } from '@/components/title-bar';
 import { useToast } from '@/components/toast';
 import { useNow } from '@/hooks/use-now';
 import { useOwnerMay } from '@/components/admin/use-owner-may';
-import { SPACE } from '@/theme';
+import { INSET, SPACE } from '@/theme';
 import { AdminSwitch } from '@/components/admin/admin-shell';
 
 const KIND_LABEL: Record<NoticeKind, string> = { status: 'Status', offer: 'Offer', news: 'News' };
@@ -155,8 +155,8 @@ function NoticeList({ busy, chosen, choose }: { busy: BusyList<Notice>; chosen: 
   return (
     <>
       <Section label={ADMIN_COPY.whatPeopleSee} bare testID="what-people-see">
-        {showing ? <NoticePreview notice={showing} /> : <Meta>{live.data ? ADMIN_COPY.nothingShowing : ' '}</Meta>}
-        <Meta>{ADMIN_COPY.onePerScreen}</Meta>
+        {showing ? <NoticePreview notice={showing} /> : <Meta style={styles.words}>{live.data ? ADMIN_COPY.nothingShowing : ' '}</Meta>}
+        <Meta style={styles.words}>{ADMIN_COPY.onePerScreen}</Meta>
       </Section>
       {/* A new notice starts from what's happening, under what people see, not from a button up in the title bar. */}
       {choose ? (
@@ -214,4 +214,6 @@ function NoticeList({ busy, chosen, choose }: { busy: BusyList<Notice>; chosen: 
 
 const styles = StyleSheet.create({
   side: { gap: SPACE.lg },
+  // Words on the page start where a card's do, as the section's label over them.
+  words: { paddingHorizontal: INSET },
 });

@@ -30,7 +30,7 @@ import { Dimmed, SearchLine } from '@/components/search-line';
 import { Meta } from '@/components/text';
 import { TextButton } from '@/components/text-button';
 import { Waiting } from '@/components/waiting';
-import { OUTLINE, SPACE, useTheme } from '@/theme';
+import { INSET, OUTLINE, SPACE, useTheme } from '@/theme';
 
 /** A page of a busy list, whether there's another after it, and (from /v1) where that one starts. */
 export interface ListPage<T, C = unknown> {
@@ -252,5 +252,5 @@ const styles = StyleSheet.create({
   // The search's suggestions float over the rows, so the top sits above them.
   over: { zIndex: 1 },
   search: { zIndex: 2 },
-  count: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: SPACE.md, minHeight: 32 },
+  count: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: SPACE.md, minHeight: 32, paddingHorizontal: INSET },
 });

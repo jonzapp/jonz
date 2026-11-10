@@ -1,6 +1,6 @@
-import { clockState, humanError, databaseState, needRow, noticeToShow, OVERVIEW_COPY, ownerFigures, overviewRange, type Overview, type OverviewSpan } from '@app/core';
+import { ADMIN_COPY, clockState, humanError, databaseState, needRow, noticeToShow, OVERVIEW_COPY, ownerFigures, overviewRange, type Overview, type OverviewSpan } from '@app/core';
 import { useQuery } from '@tanstack/react-query';
-import { CheckIcon, TriangleAlertIcon } from 'lucide-react-native';
+import { ArrowLeftIcon, CheckIcon, TriangleAlertIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -20,7 +20,7 @@ import { Chip } from '@/components/status-mark';
 import { OutlinePlate } from '@/components/outline';
 import { TextButton } from '@/components/text-button';
 import { TitleBar } from '@/components/title-bar';
-import { ROW_MIN, SPACE } from '@/theme';
+import { INSET, ROW_MIN, SPACE } from '@/theme';
 import { Waiting } from '@/components/waiting';
 import { OverviewOutline } from '@/components/page-outlines';
 
@@ -85,6 +85,10 @@ function OverviewBody() {
       {health}
       {numbers}
       <InTheApp />
+      {/* On a phone there's no rail to carry it. */}
+      <View style={styles.words}>
+        <TextButton label={ADMIN_COPY.backToHouse} icon={ArrowLeftIcon} href="/" align="start" testID="admin-to-house" />
+      </View>
     </View>
   );
 }
@@ -178,11 +182,15 @@ function InTheApp() {
           <Row title={OVERVIEW_COPY.noNotice} />
         </Group>
       )}
-      <TextButton label={OVERVIEW_COPY.changeNotice} href={'/admin/notices' as never} align="start" testID="overview-notices" />
+      <View style={styles.words}>
+        <TextButton label={OVERVIEW_COPY.changeNotice} href={'/admin/notices' as never} align="start" testID="overview-notices" />
+      </View>
     </Section>
   );
 }
 
 const styles = StyleSheet.create({
   stack: { gap: SPACE.xxl },
+  // Words on the page start where a card's do, as the section labels.
+  words: { paddingHorizontal: INSET, alignItems: 'flex-start' },
 });

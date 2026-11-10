@@ -1,4 +1,4 @@
-import { DELETE_HOUSE_COPY, HOUSES_COPY, OVERVIEW_COPY, OWNER_PERMISSION_NAMES, type HouseDetail, type HouseRow, type Overview } from '@app/core';
+import { ADMIN_COPY, DELETE_HOUSE_COPY, HOUSES_COPY, OVERVIEW_COPY, OWNER_PERMISSION_NAMES, type HouseDetail, type HouseRow, type Overview } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 import { useWindowDimensions } from 'react-native';
 
@@ -215,7 +215,13 @@ describe('Houses', () => {
     expect(screen.getByTestId('house-h1')).toHaveTextContent(/Elm Street.*5.*Pass.*2 min ago.*74%.*12 Sep/);
     expect(screen.getByTestId('house-h2')).toHaveTextContent(/Flat 4B.*3.*None.*Never.*None due/);
     expect(await screen.findByTestId('house-panel')).toHaveTextContent(/Elm Street/);
+    // Its settings, a row each.
+    expect(screen.getByTestId('house-fact-zone')).toHaveTextContent(/^Time zone/);
+    expect(screen.getByTestId('house-fact-code')).toHaveTextContent('Join codeK7P2QX');
+    expect(screen.getByTestId('house-fact-johns')).toHaveTextContent('Johns9');
     expect(screen.getByTestId('admin-nav-houses')).toBeSelected();
+    // The way back to the owner's own house, at the rail's foot.
+    expect(within(screen.getByTestId('admin-rail')).getByRole('link', { name: ADMIN_COPY.backToHouse })).toBeOnTheScreen();
   });
 });
 
