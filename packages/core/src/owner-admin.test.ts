@@ -4,6 +4,7 @@ import {
   auditChanges,
   auditLine,
   auditParts,
+  auditRowWords,
   daysUntil,
   formatLocalDateTime,
   noticeEndsAt,
@@ -144,6 +145,14 @@ describe("the audit log", () => {
       where: "h1",
       detail: "",
     });
+  });
+
+  it("gives every word a row shows, for the search box to find", () => {
+    expect(auditRowWords(entry({}), owner)).toBe("You wrote a status notice Notices Jonz is slow right now");
+    expect(auditRowWords(entry({}), "someone-else")).toBe("The owner wrote a status notice Notices Jonz is slow right now");
+    const done = entry({ action: "account.delete_done", actor: null, targetKind: "account", targetId: "a1b2c3d4-0000", after: null });
+    expect(auditRowWords(done, owner)).toBe("Jonz deleted an account Account a1b2c3d4");
+    expect(auditRowWords(entry({ action: "house.open", actor: null, targetId: "h1" }), owner)).toBe("Jonz house.open h1");
   });
 
   it("lists what changed on a deletion in words", () => {
