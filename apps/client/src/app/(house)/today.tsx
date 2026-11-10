@@ -147,6 +147,7 @@ function TodayView({
   const standing = earned ?? page.standing;
   const nameOf = (id: string) => members.find((m) => m.userId === id)?.name ?? null;
   const two = useColumns();
+  const beside = useSideBySide();
   const day = <TopLine>{dayLabel(now, rules.timezone)}</TopLine>;
 
   const next = (
@@ -269,6 +270,35 @@ function TodayView({
             {ask}
             {onCall}
             {couldCover}
+            <WeekGlance view={view} away={away} />
+          </>
+        }
+      />
+    );
+  }
+  // On a laptop with no room for the panel (a smaller window, or beside the chat with Jonz) the page still fills
+  // the room: Next up and what the house wants of you, beside the rest of your week and how the week's going.
+  if (beside) {
+    return (
+      <Pair
+        testID="today-pair"
+        start={
+          <>
+            {day}
+            {offer}
+            {next}
+            {swap}
+            {needsOk}
+            {needsYou}
+            {ask}
+            {onCall}
+            {couldCover}
+            {lines}
+          </>
+        }
+        end={
+          <>
+            {rest}
             <WeekGlance view={view} away={away} />
           </>
         }

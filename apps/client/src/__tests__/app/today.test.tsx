@@ -884,11 +884,13 @@ describe('on a laptop', () => {
     expect(within(glance).getByRole('link', { name: new RegExp(words('today.page.seeWeek')) })).toBeOnTheScreen();
   });
 
-  it('stays in one column, in the phone’s order, at the narrowest laptop', async () => {
+  it('still fills the room with no space for the panel: Next up beside the rest of your week and the week', async () => {
     (useWindowDimensions as jest.Mock).mockReturnValue({ ...LAPTOP, width: 1100 });
     await open();
     expect(screen.queryByTestId('columns')).toBeNull();
-    expect(screen.queryByTestId('week-glance')).toBeNull();
+    expect(within(screen.getByTestId('today-pair-start')).getByTestId('next-up')).toBeOnTheScreen();
+    expect(within(screen.getByTestId('today-pair-end')).getByTestId('rest-of-week')).toBeOnTheScreen();
+    expect(within(screen.getByTestId('today-pair-end')).getByTestId('week-glance')).toBeOnTheScreen();
   });
 });
 

@@ -122,6 +122,20 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   expect(await topOf(today.getByTestId("today-pair-start"))).toBeCloseTo(await topOf(today.getByTestId("today-pair-end")), 0);
   await runsToThePanel(today);
   await shoot(page, "today");
+  // Beside the chat with Jonz there's no room for the panel, but the page still fills the room up to the chat: Next up
+  // beside the rest of your week and the week, never one phone-wide column with the room blank beside it.
+  await today.getByTestId("ask-jonz").click();
+  const chat = page.getByTestId("ask-panel");
+  await expect(chat).toBeVisible();
+  await expect(today.getByTestId("columns")).toHaveCount(0);
+  await expect(today.getByTestId("today-pair-start").getByTestId("next-up")).toBeVisible();
+  await expect(today.getByTestId("today-pair-end").getByTestId("rest-of-week")).toBeVisible();
+  await expect(today.getByTestId("today-pair-end").getByTestId("week-glance")).toBeVisible();
+  const chatEdge = (await chat.boundingBox())?.x ?? 0;
+  expect(Math.abs(rightOf(await today.getByTestId("today-pair-end").boundingBox()) - (chatEdge - 16))).toBeLessThan(2);
+  await shoot(page, "today-ask");
+  await today.getByTestId("ask-jonz").click();
+  await expect(chat).toHaveCount(0);
 
   await page.getByRole("tab", { name: SECTION_LABEL.week }).click();
   await expect(page.getByRole("heading", { name: PAGE_TITLE.week })).toBeVisible();
@@ -133,6 +147,13 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   await holdsTheEdges(page, week, week.getByTestId("week-summary"));
   await runsToThePanel(week);
   await shoot(page, "week");
+  // Beside the chat with Jonz, Week's one column runs up to the chat too.
+  await week.getByTestId("ask-jonz").click();
+  await expect(chat).toBeVisible();
+  await expect(week.getByTestId("columns")).toHaveCount(0);
+  expect(Math.abs(rightOf(await week.getByTestId("week-table").boundingBox()) - (chatEdge - 16))).toBeLessThan(2);
+  await week.getByTestId("ask-jonz").click();
+  await expect(chat).toHaveCount(0);
 
   // On a big screen the main column still runs to the panel, on Week and on Today.
   await page.setViewportSize({ width: 1920, height: 1080 });

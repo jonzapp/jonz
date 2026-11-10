@@ -96,12 +96,19 @@ still look right stretched (content capped, nothing pinned to far edges).
   alike), so no room is left blank between them on a big screen, and a
   `Pair` or `Flow` in it shares that width out as on a page that fills the
   room. Nothing floats centred in empty space; a one-column page sits at
-  the left. (Option C, #59; Laptop width B, 10 Nov) *Backed by* Material's
-  list-detail and supporting-pane layouts and the HIG's split view.
+  the left. Where there's no room for the panel (a smaller laptop window,
+  or beside the chat with Jonz), the page's one column still fills the room
+  up to the chat, never a phone-wide column with the room blank beside it.
+  (Option C, #59; Laptop width B, 10 Nov; beside the chat, 10 Nov) *Backed
+  by* Material's list-detail and supporting-pane layouts and the HIG's split
+  view.
 - **Today on a laptop:** Next up (under the day's line) beside the rest of
   your week (`Pair`), the two sharing a top edge; what the house wants of
   you (Needs you, On call, This week) in the panel. Where the main column
-  has no room for two, they stack as on a phone. (Laptop width B, 10 Nov)
+  has no room for two, they stack as on a phone. With no room for the
+  panel (beside the chat with Jonz), Next up and what the house wants of
+  you sit beside the rest of your week and This week. (Laptop width B,
+  10 Nov)
 - **The owner's pages use the whole room:** their lists are tables, so the
   main column running to the panel suits them. (Owner admin, 7 Nov; Laptop
   width B, 10 Nov)
