@@ -5,7 +5,7 @@
 
 import { randomBytes, randomUUID } from "node:crypto";
 
-import { chatTitle, type SavedTurn } from "@app/core";
+import { auditRowWords, chatTitle, type AuditEntry, type SavedTurn } from "@app/core";
 import { connect, createExecutor, type Claims, type Sql, type TokenVerifier } from "@app/server";
 import type { FastifyInstance } from "fastify";
 import postgres from "postgres";
@@ -119,6 +119,50 @@ describe("the owner's reads on /v1", () => {
     const first = (await call("owner", "GET", `/v1/admin/audit?q=${tag}&limit=2`)).json();
     const next = (await call("owner", "GET", `/v1/admin/audit?q=${tag}&limit=2&startingAfter=${first.startingAfter}`)).json();
     expect(next.data.map((e: { id: number }) => e.id)).toEqual([entries[0]]);
+  });
+
+  it("finds the words each row shows, in any order, as core says them", async () => {
+    // One entry of every kind the log names in words, and one it doesn't. Each
+    // account id starts with words only these entries have.
+    const rows = `zr${randomBytes(4).toString("hex")}`;
+    const kinds: [string, string | null, unknown, unknown][] = [
+      ["notice.save", owner, null, { kind: "news", title: "Bins day moved" }],
+      ["notice.save", person, { title: "Old" }, { kind: "offer", title: "Founding pass" }],
+      ["notice.end", owner, null, { kind: "status", title: "Ticks slow" }],
+      ["account.delete_request", null, null, { requested_by: "self" }],
+      ["account.delete_request", owner, null, { requested_by: "owner" }],
+      ["account.delete_keep", person, null, null],
+      ["account.delete_stop", owner, null, null],
+      ["account.delete_now", owner, null, null],
+      ["account.delete_done", null, null, null],
+      ["house.open", null, null, null],
+    ];
+    const made: AuditEntry[] = [];
+    for (const [i, [action, actor, before, after]] of kinds.entries()) {
+      const [e] = await admin`insert into public.admin_audit (created_at, actor, action, target_kind, target_id, before, after)
+                              values (${new Date(Date.UTC(2027, 0, 2, 12, i))}, ${actor}, ${action}, 'account', ${`${rows}${i}`},
+                                      ${before === null ? null : admin.json(before as never)}, ${after === null ? null : admin.json(after as never)})
+                              returning id`;
+      made.push({ id: Number(e.id), at: "", actor, action, targetKind: "account", targetId: `${rows}${i}`, reason: null, before, after } as AuditEntry);
+    }
+    for (const entry of made) {
+      const [{ words }] = await admin`select public.audit_row_words(a, ${owner}::uuid) as words from public.admin_audit a where a.id = ${entry.id}`;
+      expect(words).toBe(auditRowWords(entry, owner));
+    }
+    const found = async (q: string) =>
+      (await call("owner", "GET", `/v1/admin/audit?q=${encodeURIComponent(`${rows} ${q}`)}`)).json().data.map((e: { id: number }) => e.id);
+    const id = (i: number) => made[i].id;
+    // What the row says, in any order and any case.
+    expect(await found("deleted")).toEqual([id(8), id(7)]);
+    expect(await found("ACCOUNT deleted")).toEqual([id(8), id(7)]);
+    expect(await found("changed an offer")).toEqual([id(1)]);
+    expect(await found("you ended")).toEqual([id(2)]);
+    expect(await found("the owner")).toEqual([id(1)]);
+    expect(await found("someone")).toEqual([id(5), id(3)]);
+    expect(await found("bins moved")).toEqual([id(0)]);
+    expect(await found("house.open")).toEqual([id(9)]);
+    // Every word has to be there.
+    expect(await found("deleted offer")).toEqual([]);
   });
 
   it("reads one entry, or null", async () => {
