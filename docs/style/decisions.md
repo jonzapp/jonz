@@ -6,6 +6,7 @@ pages are private artifacts on claude.ai.
 
 | Date | Decision | Where | Rule |
 | --- | --- | --- | --- |
+| 2026-11-10 | Help, the Privacy Policy and the Terms list their sections On this page beside the words on a laptop, a heading jumping to its section (Help and legal B) | this PR | [layout](layout.md#laptop-pages) |
 | 2026-11-10 | Track record and the Guide open beside their list on a laptop (a housemate's record beside the grid, a topic beside the topics, the open one marked), and the owner's Messages and Promotions forms sit in two columns (Track record B, Guide B, Owner B) | this PR | [layout](layout.md#laptop-pages) |
 | 2026-11-10 | Laptop pages leave no room blank: a two-column page's main column runs to the panel at any width (Today, Week, owner pages); Today puts Next up beside the rest of your week (Today B; the rest of the laptop-width B picks follow in the next PRs) | this PR | [layout](layout.md#laptop-pages) |
 | 2026-11-09 | One way to wait: nothing for 300ms, then the page's or part's own outline (breathing, still for reduced motion) held at least 300ms; a busy button spins in its icon's place with -ing words while its row's other buttons go pale; lists dim with a search line; photos hold their space and fade in; the J sign while Jonz opens; every failed read gets the sentence and Try again (all eight A picks) | this PR | [states](states.md#waiting) |

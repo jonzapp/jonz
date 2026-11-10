@@ -1,7 +1,7 @@
-import { ERROR_COPY, FOCUS_SHELL_COPY, HELP_PAGE, NOT_FOUND_COPY, PRIVACY_POLICY, REPORT_COPY, TERMS } from '@app/core';
+import { ERROR_COPY, FOCUS_SHELL_COPY, HELP_PAGE, LEGAL_COPY, NOT_FOUND_COPY, PRIVACY_POLICY, REPORT_COPY, TERMS } from '@app/core';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 import { renderRouter, screen as routed } from 'expo-router/testing-library';
-import { Text } from 'react-native';
+import { Text, useWindowDimensions } from 'react-native';
 
 import NotFound from '@/app/+not-found';
 import { ErrorBoundary } from '@/app/_layout';
@@ -18,6 +18,12 @@ jest.mock('@/api/account', () => ({ keepAccount: jest.fn() }));
 jest.mock('@/api/auth', () => ({ signOut: jest.fn() }));
 jest.mock('@/api/supabase', () => ({ supabase: { auth: { getSession: jest.fn() } } }));
 jest.mock('@/api/reports', () => ({ ...jest.requireActual<typeof import('@/api/reports')>('@/api/reports'), sendReport: jest.fn() }));
+jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({ __esModule: true, default: jest.fn() }));
+
+const PHONE = { width: 390, height: 844, scale: 1, fontScale: 1 };
+const LAPTOP = { width: 1440, height: 900, scale: 1, fontScale: 1 };
+
+beforeEach(() => (useWindowDimensions as jest.Mock).mockReturnValue(PHONE));
 
 it.each([
   ['the Privacy Policy', Privacy, PRIVACY_POLICY],
@@ -33,6 +39,24 @@ it.each([
     for (const paragraph of body) expect(screen.getByText(paragraph)).toBeOnTheScreen();
     for (const link of links ?? []) expect(screen.getByRole('link', { name: link.label })).toHaveProp('href', link.href);
   }
+});
+
+it('lists a page to read On this page beside its words on a laptop, and only there', async () => {
+  await render(<Privacy />);
+  expect(screen.queryByTestId('legal-contents')).toBeNull();
+
+  (useWindowDimensions as jest.Mock).mockReturnValue(LAPTOP);
+  await render(<Privacy />);
+  const contents = within(screen.getByTestId('legal-pair-start'));
+  expect(contents.getByRole('header', { name: LEGAL_COPY.contents })).toBeOnTheScreen();
+  expect(contents.getAllByRole('button').map((row) => row.props.accessibilityLabel ?? '')).toHaveLength(PRIVACY_POLICY.sections.length);
+  for (const { heading } of PRIVACY_POLICY.sections) {
+    expect(contents.getByText(heading)).toBeOnTheScreen();
+    expect(within(screen.getByTestId('legal-pair-end')).getByRole('header', { name: heading })).toBeOnTheScreen();
+  }
+  // A heading jumps to its section without leaving the page.
+  await fireEvent.press(contents.getByText(PRIVACY_POLICY.sections[3].heading));
+  expect(screen.getByTestId('legal-pair')).toBeOnTheScreen();
 });
 
 it('goes back to the front door from privacy opened cold', async () => {

@@ -100,6 +100,12 @@ still look right stretched (content capped, nothing pinned to far edges).
   to the pushed page lands on the list with it open; on a phone it's still
   a page of its own. (Owner admin, 7 Nov; Laptop width B, 10 Nov) *Backed
   by* Material's list-detail layout and the HIG's split view.
+- **A page to read lists its sections beside the words on a laptop** (Help,
+  the Privacy Policy, the Terms): On this page, a row per heading, and the
+  words beside it in one column in their order, about a phone's width; a
+  heading jumps to its section. On a phone, the words alone. (Laptop width
+  B, 10 Nov) *Not* the sections as cards in columns: a page meant to be
+  read in order then reads across and down.
 - Things side by side share a top edge: the page's first line sits in the
   main column so a bare card in main lines up with the side's first group.
   (#48)

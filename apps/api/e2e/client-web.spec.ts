@@ -1,4 +1,16 @@
-import { GOOGLE_LIMITED_USE, HELP_PAGE, HOUSE_LOWER_COPY, LOOK_LABEL, NOT_FOUND_COPY, REMINDERS_COPY, SECTION_LABEL, SIGN_IN_COPY, TERMS } from "@app/core";
+import {
+  GOOGLE_LIMITED_USE,
+  HELP_PAGE,
+  HOUSE_LOWER_COPY,
+  LEGAL_COPY,
+  LOOK_LABEL,
+  NOT_FOUND_COPY,
+  PRIVACY_POLICY,
+  REMINDERS_COPY,
+  SECTION_LABEL,
+  SIGN_IN_COPY,
+  TERMS,
+} from "@app/core";
 import { expect, test } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, dealtHouseInClient } from "./auth";
@@ -37,6 +49,48 @@ test("privacy, the terms, help, and a link to nowhere, open for anyone", async (
   await page.getByRole("link", { name: NOT_FOUND_COPY.backToDoor }).click();
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByRole("link", { name: SIGN_IN_COPY.privacy })).toBeVisible();
+});
+
+test("a page to read lists its sections beside the words on a laptop, each jumping to its own", async ({ page }, info) => {
+  test.skip(info.project.name !== "laptop-chrome", "The laptop's layout");
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/privacy");
+  const contents = page.getByTestId("legal-contents");
+  await expect(contents.getByRole("heading", { name: LEGAL_COPY.contents })).toBeVisible();
+  await expect(contents.getByRole("button")).toHaveCount(PRIVACY_POLICY.sections.length);
+  // The list beside the words, the two sharing a top edge.
+  const start = await page.getByTestId("legal-pair-start").boundingBox();
+  const end = await page.getByTestId("legal-pair-end").boundingBox();
+  expect(start?.y ?? 0).toBeCloseTo(end?.y ?? 1, 0);
+  expect(end?.x ?? 0).toBeGreaterThan((start?.x ?? 0) + (start?.width ?? 0));
+  const shots = process.env.SHOTS;
+  for (const colorScheme of shots ? (["light", "dark"] as const) : []) {
+    await page.emulateMedia({ colorScheme });
+    await page.screenshot({ path: `${shots}/privacy-laptop-${colorScheme}.png` });
+  }
+  await page.emulateMedia({ colorScheme: "light" });
+  // The last heading is off the bottom until its row in the list jumps to it.
+  const last = PRIVACY_POLICY.sections.at(-1)!.heading;
+  const heading = page.getByTestId("legal-pair-end").getByRole("heading", { name: last, exact: true });
+  await expect(heading).not.toBeInViewport();
+  await contents.getByRole("button", { name: last, exact: true }).click();
+  await expect(heading).toBeInViewport();
+  await expect(page).toHaveURL(/\/privacy$/);
+
+  for (const [path, sections] of [["/terms", TERMS.sections], ["/help", HELP_PAGE.sections]] as const) {
+    await page.goto(path);
+    await expect(page.getByTestId("legal-contents").getByRole("button")).toHaveCount(sections.length);
+  }
+  for (const colorScheme of shots ? (["light", "dark"] as const) : []) {
+    await page.emulateMedia({ colorScheme });
+    await page.screenshot({ path: `${shots}/help-laptop-${colorScheme}.png` });
+  }
+  await page.emulateMedia({ colorScheme: "light" });
+
+  // A phone's width keeps the words alone.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.getByText(HELP_PAGE.lead)).toBeVisible();
+  await expect(page.getByTestId("legal-contents")).toHaveCount(0);
 });
 
 test("installable: the manifest, its icons and the service worker are served", async ({ request }) => {
