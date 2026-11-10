@@ -181,14 +181,16 @@ export function googleConsoleValues(c, ref) {
 }
 
 /**
- * The browser key and the server key. Prefers the legacy JWT keys, which is
- * what local dev runs on, and falls back to the publishable and secret keys a
- * newer project may have instead.
+ * The browser key and the server key. Prefers the publishable and secret
+ * keys, so the legacy JWT keys can be switched off (C5); falls back to the
+ * legacy ones while a project has no new key yet. A disabled key is never
+ * picked.
  */
 export function pickKeys(keys) {
-  const legacy = (name) => keys.find((k) => k.type === "legacy" && k.name === name && k.api_key);
-  const anon = legacy("anon") ?? keys.find((k) => k.type === "publishable" && k.api_key);
-  const service = legacy("service_role") ?? keys.find((k) => k.type === "secret" && k.api_key);
+  const usable = keys.filter((k) => k.api_key && !k.disabled);
+  const legacy = (name) => usable.find((k) => k.type === "legacy" && k.name === name);
+  const anon = usable.find((k) => k.type === "publishable") ?? legacy("anon");
+  const service = usable.find((k) => k.type === "secret") ?? legacy("service_role");
   return { anon: anon?.api_key ?? null, service: service?.api_key ?? null };
 }
 

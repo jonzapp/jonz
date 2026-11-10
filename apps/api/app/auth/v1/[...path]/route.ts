@@ -66,7 +66,11 @@ async function pass(request: Request, { params }: Params): Promise<Response> {
   const secret = env.supabaseSecretKey();
   headers.set("apikey", secret ?? env.supabaseAnonKey());
   // Without the person's own token, they ask as anyone would: never as our key.
-  if (!headers.has("authorization")) headers.set("authorization", `Bearer ${env.supabaseAnonKey()}`);
+  // A new publishable key ("sb_publishable_…") isn't a JWT and never goes as
+  // a Bearer token (Supabase's rule, which supabase-js follows): the apikey
+  // alone says it. A legacy anon key still does.
+  const anon = env.supabaseAnonKey();
+  if (!headers.has("authorization") && !anon.startsWith("sb_")) headers.set("authorization", `Bearer ${anon}`);
   const address = clientAddress(request);
   if (secret && address) headers.set("sb-forwarded-for", address);
 
