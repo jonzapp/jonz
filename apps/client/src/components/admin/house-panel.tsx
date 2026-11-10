@@ -54,7 +54,7 @@ function HouseBody({ house }: { house: HouseDetail }) {
             key={person.id}
             leading={<Avatar name={person.name} userId={person.id} />}
             title={person.name}
-            meta={personMeta(person)}
+            meta={personMeta(person, house.kind)}
             testID={`house-person-${person.id}`}
           />
         ))}
