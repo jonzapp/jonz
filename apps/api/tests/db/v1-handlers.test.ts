@@ -33,6 +33,7 @@ const parent = randomUUID();
 const housemate = randomUUID();
 const stranger = randomUUID();
 const owner = randomUUID();
+const mover = randomUUID();
 
 const bearer = async (sub: string, extra: Record<string, unknown> = {}) =>
   `Bearer ${await new SignJWT({ sub, role: "authenticated", aud: "authenticated", email: `h-${sub}@test.jonz.app`, ...extra })
@@ -55,7 +56,7 @@ beforeAll(async () => {
   url.username = "jonz_api";
   url.password = password;
   api = connect(url.toString(), 2);
-  for (const id of [parent, housemate, stranger, owner]) await admin`insert into auth.users (id, email) values (${id}::uuid, ${`h-${id}@test.jonz.app`})`;
+  for (const id of [parent, housemate, stranger, owner, mover]) await admin`insert into auth.users (id, email) values (${id}::uuid, ${`h-${id}@test.jonz.app`})`;
   const operations = [apiOperation("create_house"), ...withHandlers(V1_HANDLERS).filter((o) => o.handler)];
   execute = createExecutor({
     sql: api,
@@ -72,7 +73,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await admin`delete from public.houses where id = ${houseId}::uuid`;
-  await admin`delete from auth.users where id in ${admin([parent, housemate, stranger, owner])}`;
+  await admin`delete from auth.users where id in ${admin([parent, housemate, stranger, owner, mover])}`;
   await restoreApiRole(admin);
   await api.end();
   await admin.end();
@@ -112,12 +113,12 @@ describe("/v1 server operations", () => {
 
   it("lets the owner delete a house through the API, even one someone moved into", async () => {
     // A house someone started after leaving the first one: their move points at it.
-    const made = await run(housemate, "create_house", { name: "Moved-into house", timezone: "Europe/London", currency: "GBP", weekStarts: 1 });
+    const made = await run(mover, "create_house", { name: "Moved-into house", timezone: "Europe/London", currency: "GBP", weekStarts: 1 });
     if (!made.ok) throw made.problem;
     const movedInto = made.body as unknown as string;
     const [move] = await admin<{ id: string }[]>`
       insert into public.moves (user_id, from_house_id, to_house_id, how, moved_at)
-      values (${housemate}::uuid, ${houseId}::uuid, ${movedInto}::uuid, 'started', now()) returning id`;
+      values (${mover}::uuid, ${houseId}::uuid, ${movedInto}::uuid, 'started', now()) returning id`;
     await admin`insert into public.app_owners (user_id) values (${owner}::uuid)`;
     try {
       const gone = await run(owner, "owner_delete_house", { houseId: movedInto, reason: "Test house", tell: false }, { aal: "aal2" });
