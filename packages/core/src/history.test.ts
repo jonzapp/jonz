@@ -11,6 +11,9 @@ import {
   type ActionRow,
   undoneWhat,
 } from "./history";
+import { wordsFor } from "./words-for";
+
+const words = wordsFor("en", "housemates");
 
 const ZONE = "Europe/London";
 
@@ -60,7 +63,7 @@ describe("historyFor", () => {
 
 describe("actionLine", () => {
   const say = (kind: Parameters<typeof actionLine>[0], data: Record<string, unknown>, who = "Ben", subject = "Ben") =>
-    actionLine(kind, data, who, subject, "GBP", "housemates");
+    actionLine(kind, data, who, subject, "GBP", words);
 
   it("says each move", () => {
     expect(say("tick", { name: "Bins" })).toBe("Ben ticked Bins");
@@ -76,6 +79,7 @@ describe("actionLine", () => {
     expect(say("away", { starts_on: "2026-11-02", ends_on: "2026-11-04" }, "Cal")).toMatch(/^Cal booked time away, /);
     expect(say("role", { from: "member", to: "admin" }, "You", "Cal")).toBe("You made Cal an admin");
     expect(say("role", { from: "admin", to: "member" }, "Cal", "You")).toBe("Cal made you a housemate");
+    expect(actionLine("role", { to: "admin" }, "You", "Cal", "GBP", wordsFor("en", "family"))).toBe("You made Cal a parent");
     expect(say("remove", {}, "You", "Cal")).toBe("You removed Cal from the house");
   });
 
@@ -86,23 +90,23 @@ describe("actionLine", () => {
 
 describe("undoneWhat", () => {
   it("names the thing taken back", () => {
-    expect(undoneWhat("tick", "Bins")).toBe("tick on Bins");
-    expect(undoneWhat("payment", null)).toBe("payment");
-    expect(undoneWhat("cover", null)).toBe("cover of a John");
-    expect(undoneWhat("nope", "x")).toBe("change");
+    expect(undoneWhat("tick", "Bins", words)).toBe("tick on Bins");
+    expect(undoneWhat("payment", null, words)).toBe("payment");
+    expect(undoneWhat("cover", null, words)).toBe("cover of a John");
+    expect(undoneWhat("nope", "x", words)).toBe("change");
   });
 });
 
 describe("historyMeta", () => {
   it("is the time, plus undone or locked", () => {
     const [open] = historyItems([row()]);
-    expect(historyMeta(open, "21:04", nameOf)).toBe("21:04");
+    expect(historyMeta(open, "21:04", nameOf, words)).toBe("21:04");
     const [locked] = historyItems([row({ reach: null })]);
-    expect(historyMeta(locked, "21:04", nameOf)).toBe("21:04, Can’t be undone now");
+    expect(historyMeta(locked, "21:04", nameOf, words)).toBe("21:04, Can’t be undone now");
     const [own] = historyItems([row({ undone_at: "2026-10-29T21:00:00Z", undone_by: "ben" })]);
-    expect(historyMeta(own, "21:04", nameOf)).toBe("21:04, Undone");
+    expect(historyMeta(own, "21:04", nameOf, words)).toBe("21:04, Undone");
     const [admin] = historyItems([row({ undone_at: "2026-10-29T21:00:00Z", undone_by: "ava", reach: null })]);
-    expect(historyMeta(admin, "21:04", nameOf)).toBe("21:04, Undone by You");
+    expect(historyMeta(admin, "21:04", nameOf, words)).toBe("21:04, Undone by You");
   });
 });
 
@@ -121,7 +125,7 @@ describe("historyDays", () => {
       ["2026-10-20", ["4"]],
     ]);
     const now = new Date("2026-10-29T23:45:00Z");
-    expect(days.map((d) => historyDayLabel(d, now, ZONE))).toEqual(["Today", "Yesterday", "Tue 20 Oct"]);
+    expect(days.map((d) => historyDayLabel(d, now, ZONE, words))).toEqual(["Today", "Yesterday", "Tue 20 Oct"]);
   });
 
   it("splits at midnight in the house's zone, not UTC", () => {

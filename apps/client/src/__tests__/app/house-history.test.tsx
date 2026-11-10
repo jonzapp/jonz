@@ -1,4 +1,4 @@
-import { HISTORY_COPY, historyItems, LIST_COPY, WALL_COPY, type ActionRow } from '@app/core';
+import { historyItems, LIST_COPY, type ActionRow } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 
 import { loadHouse } from '@/api/board';
@@ -9,6 +9,9 @@ import HistoryScreen from '@/app/(house)/house/history';
 import WallScreen from '@/app/(house)/house/wall';
 import { snapshot } from '@/testing/house';
 import { renderPages } from '@/testing/pages';
+import { wordsFor } from '@app/core';
+
+const words = wordsFor('en', 'housemates');
 
 jest.mock('@/api/board', () => ({ loadHouse: jest.fn() }));
 jest.mock('@/api/house', () => ({ catchUp: jest.fn() }));
@@ -82,10 +85,10 @@ async function show() {
 
 it('is on the Wall, switched to History by an old link, and switches back', async () => {
   await open();
-  expect(within(screen.getByTestId('title-bar')).getByRole('header', { name: WALL_COPY.title })).toBeOnTheScreen();
+  expect(within(screen.getByTestId('title-bar')).getByRole('header', { name: words('wall.page.title') })).toBeOnTheScreen();
   const switcher = within(screen.getByTestId('wall-shows'));
-  expect(switcher.getByRole('radio', { name: HISTORY_COPY.title })).toBeChecked();
-  await fireEvent.press(switcher.getByRole('radio', { name: WALL_COPY.title }));
+  expect(switcher.getByRole('radio', { name: words('wall.history.title') })).toBeChecked();
+  await fireEvent.press(switcher.getByRole('radio', { name: words('wall.page.title') }));
   expect(screen.queryByTestId('history-day')).toBeNull();
   expect(await screen.findByTestId('wall-empty')).toBeOnTheScreen();
 });
@@ -94,8 +97,8 @@ it('tells every move a day at a time, with Undo only where it still reaches', as
   await open();
   expect(loadHistory).toHaveBeenCalledWith('h1', undefined);
   const [today, yesterday] = screen.getAllByTestId('history-day');
-  expect(within(today).getByRole('header', { name: HISTORY_COPY.today })).toBeOnTheScreen();
-  expect(within(yesterday).getByRole('header', { name: HISTORY_COPY.yesterday })).toBeOnTheScreen();
+  expect(within(today).getByRole('header', { name: words('wall.history.today') })).toBeOnTheScreen();
+  expect(within(yesterday).getByRole('header', { name: words('wall.history.yesterday') })).toBeOnTheScreen();
 
   const [mine, flag, settled] = within(today).getAllByTestId('history-row');
   expect(mine).toHaveTextContent(/You ticked Bins out.*20:04/);
@@ -128,7 +131,7 @@ it('says a refusal under the row it came from', async () => {
 
 it('shows only yours under Mine', async () => {
   await open();
-  await fireEvent.press(screen.getByRole('radio', { name: HISTORY_COPY.mine }));
+  await fireEvent.press(screen.getByRole('radio', { name: words('wall.history.mine') }));
   const rows = screen.getAllByTestId('history-row');
   expect(rows).toHaveLength(2);
   for (const r of rows) expect(r).toHaveTextContent(/You (ticked|made)/);
@@ -137,7 +140,7 @@ it('shows only yours under Mine', async () => {
 it('says what lands here when nothing has yet', async () => {
   (loadHistory as jest.Mock).mockResolvedValue([]);
   await show();
-  expect(await screen.findByTestId('history-empty')).toHaveTextContent(new RegExp(HISTORY_COPY.title));
+  expect(await screen.findByTestId('history-empty')).toHaveTextContent(new RegExp(words('wall.history.title')));
   // Nothing to say "That's everything" under.
   expect(screen.queryByTestId('history-foot')).toBeNull();
 });

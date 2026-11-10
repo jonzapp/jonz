@@ -1,4 +1,3 @@
-import { HISTORY_COPY } from '@app/core';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -37,7 +36,7 @@ export function DisputeForm({
     if (await move.run(() => raiseDispute(assignmentId, reason))) {
       setReason('');
       onSent?.();
-      offer(HISTORY_COPY.disputed, 'dispute', assignmentId);
+      offer(words('wall.history.disputed'), 'dispute', assignmentId);
     }
   }
 

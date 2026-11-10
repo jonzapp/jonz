@@ -69,6 +69,10 @@ const ALLOWED: Record<string, RegExp[]> = {
 /** The same, for lines in the words files: the Stake's "Let off" is a month an admin waived. */
 const ALLOWED_IDS: Record<string, RegExp[]> = {
   "house.stake.letOff": [/\blet (it |\w+ )?off\b/i],
+  // An admin's reset that waived someone's John, or a month's forfeits (resets.ts).
+  "wall.history.reset.excused": [/\blet (it |\w+ )?off\b/i],
+  "wall.history.reset.letoff": [/\blet (it |\w+ )?off\b/i],
+  "wall.history.reset.letoffAny": [/\blet (it |\w+ )?off\b/i],
 };
 
 describe("the Jonz words", () => {
@@ -101,5 +105,11 @@ describe("the Jonz words", () => {
       for (const [word, say] of RETIRED) if (word.test(line) && !(ALLOWED_IDS[id] ?? []).some((a) => a.source === word.source)) found.push(`${id} "${line}": say ${say}`);
     }
     expect(found).toEqual([]);
+  });
+
+  it("keeps the gap named kind for the house's kind", () => {
+    // wordsFor fills {kind} with the house's kind, over anything the screen passes.
+    const misused = Object.entries(EN).filter(([, line]) => /\{kind(\}|,\s*(plural|number|date|time))/.test(line));
+    expect(misused).toEqual([]);
   });
 });

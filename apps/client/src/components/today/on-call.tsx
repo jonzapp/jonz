@@ -1,4 +1,4 @@
-import { dueInLine, firstName, heldDoneIt, HISTORY_COPY, sinceLabel, type HouseRules, type OnCallItem } from '@app/core';
+import { dueInLine, firstName, heldDoneIt, sinceLabel, type HouseRules, type OnCallItem } from '@app/core';
 import { BellRingIcon, CheckIcon } from 'lucide-react-native';
 
 import type { Housemate } from '@/api/board';
@@ -84,7 +84,7 @@ export function OnCall({
         const raised = { id: '' };
         const flagIt = async () => {
           if (await move.run(async () => (raised.id = await raiseFlag(item.johnId)))) {
-            offer(HISTORY_COPY.flagged, 'flag', raised.id);
+            offer(words('wall.history.flagged'), 'flag', raised.id);
           }
         };
         // Whoever is on call did it before anyone asked: flag it and tick it. A
@@ -94,8 +94,8 @@ export function OnCall({
             raised.id = await raiseFlag(item.johnId);
             if (!item.needsPhoto) await markDone(raised.id);
           });
-          if (ok && !item.needsPhoto) offer(HISTORY_COPY.doneIt, 'tick', raised.id);
-          else if (ok) offer(HISTORY_COPY.flagged, 'flag', raised.id);
+          if (ok && !item.needsPhoto) offer(words('wall.history.doneIt'), 'tick', raised.id);
+          else if (ok) offer(words('wall.history.flagged'), 'flag', raised.id);
         };
         return (
           <Row

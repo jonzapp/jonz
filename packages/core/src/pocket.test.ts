@@ -5,7 +5,8 @@ import { DEFAULT_RULES } from "./domain";
 import { payRows, pocketCard, pocketHistory, pocketMoney, pocketRules, pocketView } from "./pocket";
 import { checkRules, rulesDraft, rulesRows } from "./setup";
 import { nextUpMeta } from "./today";
-import { describeEvent, type WallEvent } from "./wall";
+import { wallFeedRow } from "./house-lower";
+import { wallEvents } from "./wall";
 import { wordsFor } from "./words-for";
 
 const words = wordsFor("en", "housemates");
@@ -144,9 +145,16 @@ describe("the month's pocket money", () => {
   });
 
   it("says Paid on the Wall", () => {
-    const e = { id: "e", kind: "pocket_paid", userId: "sam", data: { to: "maya", amount: 650, month: "2026-09" } } as unknown as WallEvent;
-    const line = describeEvent(e, (id) => (id === "sam" ? "Sam" : "Maya"), "GBP");
-    expect(line.parts.map((p) => p.text).join("")).toBe("Sam paid Maya £6.50 for September.");
+    const [e] = wallEvents(
+      [{ id: "e", kind: "pocket_paid", user_id: "sam", assignment_id: null, data: { to: "maya", amount: 650, month: "2026-09" }, created_at: "2026-10-01T12:00:00Z", assignments: null, reactions: [] }],
+      "leo",
+    );
+    const members = [
+      { userId: "sam", name: "Sam" },
+      { userId: "maya", name: "Maya" },
+    ];
+    const row = wallFeedRow(e, { me: "leo", members, currency: "GBP", zone: "Europe/London", now: new Date("2026-10-02T12:00:00Z") }, wordsFor("en", "family"));
+    expect(row).toMatchObject({ title: "Sam paid Maya £6.50 for September", detail: "Pocket money", icon: "banknote" });
   });
 });
 

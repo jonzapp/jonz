@@ -1,4 +1,4 @@
-import { firstName, HISTORY_COPY, RESET_COPY, BUSY_COPY } from '@app/core';
+import { firstName, RESET_COPY, BUSY_COPY } from '@app/core';
 import { RotateCcwIcon, ShieldCheckIcon, ShieldOffIcon, UserMinusIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -95,7 +95,7 @@ export function PersonAdmin({ houseId, userId, person }: { houseId: string; user
           void remove.run(() => removeMember(houseId, person.userId)).then((done) => {
             if (!done) return;
             setConfirming(false);
-            offer(HISTORY_COPY.removed(name), 'remove', person.userId);
+            offer(words('wall.history.removed', { name }), 'remove', person.userId);
           })
         }
         onClose={() => setConfirming(false)}

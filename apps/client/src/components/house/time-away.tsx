@@ -1,4 +1,4 @@
-import { addDaysTo, awayMovedLine, awayShade, backOn, dateRange, dayName, DOW_LABEL, firstName, FOCUS_SHELL_COPY, HISTORY_COPY, monthLabel, monthWeeks, shiftMonth, tripMeta, tripStarted, tripsOn, upcomingTrips, withAlpha, type AwayPeriod, type IsoDow } from '@app/core';
+import { addDaysTo, awayMovedLine, awayShade, backOn, dateRange, dayName, DOW_LABEL, firstName, FOCUS_SHELL_COPY, monthLabel, monthWeeks, shiftMonth, tripMeta, tripStarted, tripsOn, upcomingTrips, withAlpha, type AwayPeriod, type IsoDow } from '@app/core';
 import { ChevronLeftIcon, ChevronRightIcon, PlaneIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -289,7 +289,7 @@ export function AwayForm({ houseId, today, weekStarts }: { houseId: string; toda
       count = await setAway({ from: range.from!, to: range.to!, note });
     });
     if (!ok) return;
-    offer(HISTORY_COPY.away, 'away');
+    offer(words('wall.history.away'), 'away');
     setMoved(count);
     setRange({ from: null, to: null });
     setNote('');

@@ -1,4 +1,4 @@
-import { REACTION_LABEL, REACTIONS, WALL_FEED_COPY, type ReactionKind, type WallFeedRow } from '@app/core';
+import { REACTION_LABEL, REACTIONS, type ReactionKind, type WallFeedRow } from '@app/core';
 import { StyleSheet, View } from 'react-native';
 
 import { Alert } from '@/components/alert';
@@ -7,6 +7,7 @@ import { Sheet } from '@/components/sheet';
 import { SPACE } from '@/theme';
 
 import { REACTION_ICON } from './wall-row';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * One event in full, from a Wall row: its sentence as the sheet's Lead and
@@ -28,6 +29,7 @@ export function WallEventSheet({
   onReact: (kind: ReactionKind, on: boolean) => void;
   onClose: () => void;
 }) {
+  const words = useWords();
   return (
     <Sheet visible={row !== null} title={row?.title} description={row?.full} onClose={onClose} testID="wall-sheet">
       {problem ? <Alert message={problem} /> : null}
@@ -40,7 +42,7 @@ export function WallEventSheet({
                 key={kind}
                 variant="outline"
                 icon={REACTION_ICON[kind]}
-                label={WALL_FEED_COPY.reactionCount(REACTION_LABEL[kind], r.count)}
+                label={words('wall.feed.reactionCount', { label: REACTION_LABEL[kind], count: r.count })}
                 chosen={r.mine}
                 onPress={() => onReact(kind, !r.mine)}
                 testID={`react-${kind}`}

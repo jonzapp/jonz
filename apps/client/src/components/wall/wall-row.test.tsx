@@ -1,10 +1,13 @@
-import { REACTION_LABEL, STATUS_MARK, WALL_FEED_COPY, type WallFeedRow } from '@app/core';
+import { REACTION_LABEL, STATUS_MARK, type WallFeedRow } from '@app/core';
 import { fireEvent, render, screen, within } from '@testing-library/react-native';
 import { Platform } from 'react-native';
 
 import { NiceToggle, ReactButton, ReactionTally, WallEventRow } from './wall-row';
 
 import { useTheme } from '@/theme';
+import { wordsFor } from '@app/core';
+
+const words = wordsFor('en', 'housemates');
 
 afterEach(() => jest.restoreAllMocks());
 
@@ -12,7 +15,7 @@ it('says how many gave a Nice one, and is pressed in a browser once it is yours'
   jest.replaceProperty(Platform, 'OS', 'web');
   const onPress = jest.fn();
   await render(<NiceToggle count={2} mine onPress={onPress} />);
-  const toggle = screen.getByRole('button', { name: WALL_FEED_COPY.tally(REACTION_LABEL.nice, 2) });
+  const toggle = screen.getByRole('button', { name: words('wall.feed.tally', { label: REACTION_LABEL.nice, count: 2 }) });
   expect(toggle).toHaveProp('aria-pressed', true);
   expect(toggle).not.toHaveProp('aria-selected');
   await fireEvent.press(toggle);
@@ -38,7 +41,7 @@ it('shows all four when held down, as the row does', async () => {
 it('says what the house gave most, and opens all four reactions', async () => {
   const onPress = jest.fn();
   await render(<ReactionTally kind="fire" count={3} onPress={onPress} />);
-  const tally = screen.getByRole('button', { name: WALL_FEED_COPY.tally(REACTION_LABEL.fire, 3) });
+  const tally = screen.getByRole('button', { name: words('wall.feed.tally', { label: REACTION_LABEL.fire, count: 3 }) });
   expect(tally).toHaveTextContent('3');
   await fireEvent.press(tally);
   expect(onPress).toHaveBeenCalledTimes(1);
@@ -47,7 +50,7 @@ it('says what the house gave most, and opens all four reactions', async () => {
 it('offers a way to react where there are none yet', async () => {
   const onPress = jest.fn();
   await render(<ReactButton onPress={onPress} />);
-  await fireEvent.press(screen.getByRole('button', { name: WALL_FEED_COPY.react }));
+  await fireEvent.press(screen.getByRole('button', { name: words('wall.feed.react') }));
   expect(onPress).toHaveBeenCalledTimes(1);
 });
 
@@ -62,7 +65,7 @@ const feedRow = (overrides: Partial<WallFeedRow> = {}): WallFeedRow => ({
   title: 'Megan ticked Food waste caddy out',
   parts: [{ text: 'Megan', bold: true }, { text: ' ticked ' }, { text: 'Food waste caddy out', bold: true }],
   open: null,
-  detail: WALL_FEED_COPY.checking,
+  detail: words('wall.feed.checking'),
   mark: null,
   when: '6h',
   reactable: true,
@@ -83,9 +86,9 @@ it("gives a housemate's tick a key's way to all four reactions beside its Nice o
   const onReactions = jest.fn();
   const onReact = jest.fn();
   await render(<WallEventRow row={feedRow()} onReact={onReact} onPress={jest.fn()} onReactions={onReactions} />);
-  await fireEvent.press(screen.getByRole('button', { name: WALL_FEED_COPY.react }));
+  await fireEvent.press(screen.getByRole('button', { name: words('wall.feed.react') }));
   expect(onReactions).toHaveBeenCalledTimes(1);
-  await fireEvent.press(screen.getByRole('button', { name: WALL_FEED_COPY.tally(REACTION_LABEL.nice, 2) }));
+  await fireEvent.press(screen.getByRole('button', { name: words('wall.feed.tally', { label: REACTION_LABEL.nice, count: 2 }) }));
   expect(onReact).toHaveBeenCalledWith('nice', true);
 });
 
@@ -99,16 +102,16 @@ it('marks a John that went wrong in hazard, and leaves the rest quiet', async ()
     <>
       <Probe />
       <WallEventRow
-        row={feedRow({ kind: 'missed', detail: WALL_FEED_COPY.missedWord, mark: STATUS_MARK.missed.icon, nice: false })}
+        row={feedRow({ kind: 'missed', detail: words('wall.feed.missedWord'), mark: STATUS_MARK.missed.icon, nice: false })}
         onReact={jest.fn()}
         onPress={jest.fn()}
         onReactions={jest.fn()}
       />
     </>,
   );
-  expect(screen.getByText(WALL_FEED_COPY.missedWord)).toHaveStyle({ color: hazard });
+  expect(screen.getByText(words('wall.feed.missedWord'))).toHaveStyle({ color: hazard });
   await screen.rerender(<WallEventRow row={feedRow()} onReact={jest.fn()} onPress={jest.fn()} onReactions={jest.fn()} />);
-  expect(screen.getByText(WALL_FEED_COPY.checking)).not.toHaveStyle({ color: hazard });
+  expect(screen.getByText(words('wall.feed.checking'))).not.toHaveStyle({ color: hazard });
 });
 
 it('shows the time on every row, and the kind of news as a plate on the face that leads it', async () => {
@@ -140,5 +143,5 @@ it('gives a flag still open its time left in place of a reaction, and the house 
   );
   expect(screen.getByTestId('flag-left')).toHaveTextContent('11h left');
   expect(screen.getByTestId('wall-plate-flag', { includeHiddenElements: true })).toBeTruthy();
-  expect(screen.queryByRole('button', { name: WALL_FEED_COPY.react })).toBeNull();
+  expect(screen.queryByRole('button', { name: words('wall.feed.react') })).toBeNull();
 });

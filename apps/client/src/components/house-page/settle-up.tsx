@@ -1,4 +1,4 @@
-import { HISTORY_COPY, settleRows, type SettleRow } from '@app/core';
+import { settleRows, type SettleRow } from '@app/core';
 import * as Clipboard from 'expo-clipboard';
 import { CheckIcon, CopyIcon, ExternalLinkIcon } from 'lucide-react-native';
 import { Linking, StyleSheet, View } from 'react-native';
@@ -129,7 +129,7 @@ function SettleUp({ houseId, row }: { houseId: string; row: SettleRow }) {
                       : confirmPayment(houseId, row.userId, row.amount),
                   )
                   .then((done) => {
-                    if (done) offer(splitwise ? HISTORY_COPY.inSplitwise : HISTORY_COPY.paid, 'payment', row.userId);
+                    if (done) offer(splitwise ? words('wall.history.inSplitwise') : words('wall.history.paid'), 'payment', row.userId);
                   })
               }
             />
