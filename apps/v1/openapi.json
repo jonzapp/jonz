@@ -3797,7 +3797,10 @@
                         ]
                       },
                       "reach": {
-                        "type": "string"
+                        "type": [
+                          "string",
+                          "null"
+                        ]
                       }
                     },
                     "required": [
