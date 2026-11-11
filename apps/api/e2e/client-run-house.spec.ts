@@ -157,10 +157,14 @@ test("run a house from nothing on the phone", async ({ browser }) => {
   const { data: profile } = await db.from("profiles").select("display_name").eq("id", ava).single();
   expect(profile!.display_name).toBe("Ava R");
 
-  // Ben leaves, after its confirm, and is back at starting or joining one.
+  // Ben leaves from You's Danger zone, after typing the house's name in its
+  // confirm, and is back at starting or joining one.
   await benPage.goto("/house/you");
   await benPage.getByTestId("you-screen").getByTestId("leave").click();
-  await benPage.getByTestId("leave-sheet").getByTestId("confirm").click();
+  const leaveSheet = benPage.getByTestId("leave-sheet");
+  await expect(leaveSheet.getByTestId("confirm")).toBeDisabled();
+  await leaveSheet.getByTestId("leave-name").fill(name);
+  await leaveSheet.getByTestId("confirm").click();
   await expect(benPage).toHaveURL(/\/welcome$/);
   const { data: left } = await db.from("members").select("user_id").eq("house_id", houseRow!.id);
   expect(left).toEqual([{ user_id: ava }]);

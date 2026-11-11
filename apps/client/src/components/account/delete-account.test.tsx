@@ -6,7 +6,7 @@ import { signOut } from '@/api/auth';
 import { loadHouse } from '@/api/board';
 import { reminderSupport } from '@/api/push';
 import DeletePage from '@/app/delete';
-import { YouSection } from '@/components/house-page/you-section';
+import { LeaveSection } from '@/components/house-page/leave-section';
 import { useHouse } from '@/hooks/use-house';
 import { useMembership } from '@/hooks/use-membership';
 import { snapshot } from '@/testing/house';
@@ -21,6 +21,8 @@ jest.mock('@/api/auth', () => ({ signOut: jest.fn() }));
 jest.mock('@/api/board', () => ({ loadHouse: jest.fn() }));
 jest.mock('@/api/house', () => ({ catchUp: jest.fn() }));
 jest.mock('@/api/profile', () => ({ renameMe: jest.fn() }));
+jest.mock('@/api/settings', () => ({ removeMember: jest.fn(), handOver: jest.fn() }));
+jest.mock('@/api/stake', () => ({ loadStake: jest.fn(() => new Promise(() => undefined)) }));
 jest.mock('@/api/push', () => ({ reminderSupport: jest.fn(), remindersOn: jest.fn(), turnRemindersOn: jest.fn(), turnRemindersOff: jest.fn() }));
 jest.mock('@/api/supabase', () => ({ supabase: {} }));
 jest.mock('@/hooks/use-membership', () => ({ useMembership: jest.fn() }));
@@ -31,14 +33,16 @@ function signedIn(house: { id: string; name: string } | null = { id: 'h1', name:
   jest.mocked(useMembership).mockReturnValue({ session: { user: { id: 'priya' } }, house, refresh } as unknown as ReturnType<typeof useMembership>);
 }
 
-/** House's You, with the Delete sheet open. */
+/** You's Danger zone. */
+function Host() {
+  const { view } = useHouse('h1', 'priya');
+  return view ? <LeaveSection houseId="h1" userId="priya" view={view} /> : null;
+}
+
+/** You's Danger zone, with the Delete sheet open. */
 async function openSheet() {
-  function Host() {
-    const { view } = useHouse('h1', 'priya');
-    return view ? <YouSection houseId="h1" userId="priya" view={view} /> : null;
-  }
   await renderPages({ 'house/index': Host }, '/house');
-  await fireEvent.press(within(await screen.findByTestId('to-delete-account')).getByRole('button'));
+  await fireEvent.press(within(await screen.findByTestId('to-delete-account-row')).getByRole('button', { name: words('people.delete.button') }));
   return within(await screen.findByTestId('delete-sheet'));
 }
 
@@ -54,16 +58,11 @@ beforeEach(() => {
 });
 
 describe('in House', () => {
-  it('sits under Leave with Moving out, in hazard, saying it’s on the web too', async () => {
-    function Host() {
-      const { view } = useHouse('h1', 'priya');
-      return view ? <YouSection houseId="h1" userId="priya" view={view} /> : null;
-    }
+  it('sits in the Danger zone, saying what goes and that it’s on the web too', async () => {
     await renderPages({ 'house/index': Host }, '/house');
-    expect(await screen.findByRole('header', { name: words('people.delete.leave') })).toBeOnTheScreen();
-    expect(screen.getByTestId('to-moving')).toBeOnTheScreen();
-    expect(screen.getByTestId('to-delete-account')).toHaveTextContent(words('people.delete.row'));
-    expect(screen.getByText(words('people.delete.elsewhere'))).toBeOnTheScreen();
+    const row = within(await screen.findByTestId('to-delete-account-row'));
+    expect(row.getByText(words('people.delete.row'))).toBeOnTheScreen();
+    expect(row.getByText(words('people.delete.meta', { days: DELETION_DAYS }))).toBeOnTheScreen();
   });
 
   it('says what goes, what stays with the house, and that the Pass stops renewing', async () => {

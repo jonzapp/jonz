@@ -1,4 +1,4 @@
-import { BIN_NIGHT, wordsFor } from '@app/core';
+import { wordsFor } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 import { Text } from 'react-native';
 
@@ -34,9 +34,12 @@ async function open() {
   await screen.findByTestId('leave-section');
 }
 
-async function ask() {
-  await fireEvent.press(within(screen.getByTestId('leave')).getByRole('button'));
-  return within(screen.getByTestId('leave-sheet'));
+/** Opens Leave's sheet and, unless told not to, types the house's name as its confirm asks. */
+async function ask({ type = true } = {}) {
+  await fireEvent.press(within(screen.getByTestId('leave-row')).getByRole('button', { name: words('house.lower.leaveButton') }));
+  const sheet = within(screen.getByTestId('leave-sheet'));
+  if (type) await fireEvent.changeText(sheet.getByTestId('leave-name'), ' flat 3 ');
+  return sheet;
 }
 
 /** The Stake as House reads it, with what matters here: your share so far, and the settle-ups. */
@@ -60,11 +63,15 @@ beforeEach(() => {
   mockMembership.refresh.mockResolvedValue(undefined);
 });
 
-it('names the house to leave, in hazard words', async () => {
+it('names the house to leave, in the Danger zone with Delete my account', async () => {
   await open();
-  const row = within(screen.getByTestId('leave'));
-  expect(row.getByRole('button', { name: words('house.lower.leave', { house: 'Flat 3' }) })).toBeOnTheScreen();
-  expect(row.getByText(words('house.lower.leave', { house: 'Flat 3' }))).toHaveStyle({ color: BIN_NIGHT.light.hazard });
+  const zone = within(screen.getByTestId('you-danger-zone'));
+  expect(zone.getByRole('header', { name: words('house.danger.label') })).toBeOnTheScreen();
+  const row = within(zone.getByTestId('leave-row'));
+  expect(row.getByText(words('house.lower.leave', { house: 'Flat 3' }))).toBeOnTheScreen();
+  expect(row.getByText(words('house.lower.leaveMeta'))).toBeOnTheScreen();
+  expect(row.getByRole('button', { name: words('house.lower.leaveButton') })).toBeOnTheScreen();
+  expect(within(zone.getByTestId('to-delete-account-row')).getByRole('button', { name: words('people.delete.button') })).toBeOnTheScreen();
 });
 
 it('asks first, saying what leaving costs in money', async () => {
@@ -166,6 +173,18 @@ it("says why you can't leave, where you asked", async () => {
   await fireEvent.press(sheet.getByTestId('confirm'));
   expect(await sheet.findByRole('alert')).toHaveTextContent('Make someone else an admin before you leave.');
   expect(mockMembership.refresh).not.toHaveBeenCalled();
+});
+
+it("waits for the house's name to be typed, as the resets do", async () => {
+  await open();
+  const sheet = await ask({ type: false });
+  expect(sheet.getByText(words('house.lower.leaveTypeName'))).toBeOnTheScreen();
+  expect(sheet.getByTestId('confirm')).toBeDisabled();
+  await fireEvent.changeText(sheet.getByTestId('leave-name'), 'Flat');
+  expect(sheet.getByTestId('confirm')).toBeDisabled();
+  await fireEvent.changeText(sheet.getByTestId('leave-name'), 'Flat 3');
+  expect(sheet.getByTestId('confirm')).toBeEnabled();
+  expect(removeMember).not.toHaveBeenCalled();
 });
 
 it('stays when you cancel', async () => {
