@@ -209,8 +209,8 @@ function WallFor({ houseId, userId }: { houseId: string; userId: string }) {
 }
 
 /**
- * The Wall and History: side by side on a laptop, History under its name
- * and what it's for; on a phone, a switch at the top and whichever is
+ * The Wall and History: side by side on a laptop, each under its name so
+ * their first days start on the same line; on a phone, a switch at the top and whichever is
  * picked. Tells the page which way it went (`onBeside`).
  */
 function WallAndHistory({
@@ -237,7 +237,11 @@ function WallAndHistory({
       <Pair
         testID="wall-pair"
         ratio={1.25}
-        start={wall}
+        start={
+          <Section label={words('wall.page.title')} bare testID="wall-section">
+            {wall}
+          </Section>
+        }
         end={
           <Section label={words('wall.history.title')} right={whose} bare testID="history-section">
             {history}

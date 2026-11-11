@@ -249,7 +249,7 @@ it('sits under a title bar with the way back to House', async () => {
   expect(bar.getByRole('button', { name: words('common.shell.backTo', { place: words('common.section.house') }) })).toBeOnTheScreen();
 });
 
-it('shows History beside the Wall on a laptop, under its name, and a switch between them on a phone', async () => {
+it('shows the Wall and History side by side on a laptop, each under its name, and a switch between them on a phone', async () => {
   await open();
   expect(within(screen.getByTestId('wall-shows')).getByRole('radio', { name: words('wall.page.title') })).toBeChecked();
   expect(screen.queryByTestId('history-section')).toBeNull();
@@ -257,7 +257,10 @@ it('shows History beside the Wall on a laptop, under its name, and a switch betw
   (useWindowDimensions as jest.Mock).mockReturnValue({ width: 1440, height: 900, scale: 1, fontScale: 1 });
   await open();
   expect(screen.queryByTestId('wall-shows')).toBeNull();
-  expect(within(screen.getByTestId('wall-pair-start')).getAllByTestId('wall-day').length).toBeGreaterThan(0);
+  // Each under its name, so their first days start on the same line.
+  const wall = within(screen.getByTestId('wall-pair-start'));
+  expect(within(wall.getByTestId('wall-section')).getAllByRole('header', { name: words('wall.page.title') })[0]).toBeOnTheScreen();
+  expect(wall.getAllByTestId('wall-day').length).toBeGreaterThan(0);
   const history = within(screen.getByTestId('wall-pair-end'));
   expect(history.getAllByRole('header', { name: words('wall.history.title') })[0]).toBeOnTheScreen();
   // Everyone's moves or only yours, in History's header.
