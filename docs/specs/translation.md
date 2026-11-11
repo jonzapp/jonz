@@ -33,10 +33,19 @@ through FormatJS. A family reads its own sentences (never "housemates" or
   files for retired words too. In the app, ESLint's
   `formatjs/no-literal-string-in-jsx` stops new text typed into a screen;
   the screens that still have some are listed in `eslint-suppressions.json`.
-- **Another language** (later): a folder beside `en/` with the same ids. A
-  line it hasn't got yet is read in English. Each person picks their own
-  language (`profiles.language`, from the phone's language at first).
-  Privacy and Terms stay in English.
+- **Each person's language.** `profiles.language`, null until the app first
+  saves the phone's language (one Jonz has, else English). You's Language
+  row changes it, with a menu shown only when there's more than one to
+  pick. The app reads it in `MembershipProvider` (`my_language`, saved with
+  `set_my_language`) and `useWords()` reads in it. Ask Jonz is told to
+  answer in it.
+- **The test language** (`en-XA`, `pseudo.ts`): every English line with its
+  letters accented and held in brackets, `[Ţíçķ íţ óƒƒ]`. Offered on You only
+  locally and on staging. A line still written into a screen reads plain,
+  and one cut short loses its closing bracket.
+- **Another language** (later): a folder beside `en/` with the same ids,
+  added to `LANGUAGES` and to `profiles_language_check`. A line it hasn't
+  got yet is read in English. Privacy and Terms stay in English.
 
 ## The moves
 
@@ -61,8 +70,10 @@ The lines move part by part, one pull request each, merged one at a time:
    joins included (`common.join.*`: a language may join two lines with
    something other than ", "); the lint rule's suppressions go, and only
    the style page (/style, a sample book) keeps written-in text.
-7. The language setting, dates and money in the reader's language, Ask Jonz
-   answering in it, and a pseudo-language to spot lines that never moved.
+7. In two parts. 7a: each person's language (`profiles.language`, You's
+   Language row), the test language, and Ask Jonz answering in it. 7b:
+   pushes, emails and errors in each reader's language, and dates and money
+   in it (`Words` gets a locale; `en-GB` stops being written in).
 
 ## Edge cases
 

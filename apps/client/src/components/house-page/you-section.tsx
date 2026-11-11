@@ -1,10 +1,11 @@
-import { codeProblem, dateRange, emailAuthProblem, LOOKS, PASSWORD_MIN, passwordProblem, prefsLine } from '@app/core';
-import { BellIcon, KeyRoundIcon, LogOutIcon, SlidersHorizontalIcon, SunMoonIcon, Trash2Icon, TruckIcon } from 'lucide-react-native';
+import { codeProblem, dateRange, emailAuthProblem, LANGUAGE_NAMES, LOOKS, PASSWORD_MIN, passwordProblem, prefsLine } from '@app/core';
+import { BellIcon, KeyRoundIcon, LanguagesIcon, LogOutIcon, SlidersHorizontalIcon, SunMoonIcon, Trash2Icon, TruckIcon } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 
 import { signOut } from '@/api/auth';
 import { emailSignIn, setPassword } from '@/api/email-auth';
+import { LANGUAGES_OFFERED } from '@/api/language';
 import { renameMe } from '@/api/profile';
 import { reminderSupport, remindersOn } from '@/api/push';
 import { DeleteAccountForm } from '@/components/account/delete-account';
@@ -21,19 +22,21 @@ import { Row, RowIcon } from '@/components/row';
 import { Section } from '@/components/section';
 import { Segmented } from '@/components/segmented';
 import { Sheet } from '@/components/sheet';
+import { PickMenu } from '@/components/pick-menu';
 import { HiddenUsername, SignInForm } from '@/components/sign-in-form';
 import { Meta } from '@/components/text';
 import { useLook } from '@/hooks/look';
 import type { HouseView } from '@/hooks/use-house';
 import { useMove } from '@/hooks/use-move';
 import { INSET, SECTION_GAP, SPACE, useTheme } from '@/theme';
-import { useWords } from '@/hooks/use-words';
+import { useLanguage, useWords } from '@/hooks/use-words';
 
 /**
  * You: your name (a sheet to change it), reminders on this device (a sheet
  * holding their switch, where there are any to offer), your preferences in
  * this house (their own page; on a laptop it's in the list beside House
- * instead), the look in the row itself, a password to sign in with by
+ * instead), the look in the row itself, your language from a menu in its
+ * row (where there's more than one to pick), a password to sign in with by
  * email (a sheet), and signing out. Reminders and the look are this
  * device's own. Then Leave: your moving-out date (its own page) and Delete
  * my account, in hazard (a sheet), with a line saying it's on the web too.
@@ -53,6 +56,7 @@ export function YouSection({
 }) {
   const words = useWords();
   const [look, setLook] = useLook();
+  const language = useLanguage();
   const { colors } = useTheme();
   const [sheet, setSheet] = useState<'name' | 'reminders' | 'password' | 'delete' | null>(null);
   const account = useEmailSignIn(sheet);
@@ -119,6 +123,23 @@ export function YouSection({
             title={words('house.lower.look')}
             trailing={<Segmented options={LOOKS.map((value) => ({ value, label: words(`common.look.${value}` as const) }))} value={look} onChange={setLook} label={words('people.me.look')} testID="look" />}
           />
+          {LANGUAGES_OFFERED.length > 1 ? (
+            <Row
+              leading={<RowIcon icon={LanguagesIcon} />}
+              title={words('house.lower.language')}
+              trailing={
+                <PickMenu
+                  options={LANGUAGES_OFFERED.map((value) => ({ value, label: LANGUAGE_NAMES[value] }))}
+                  value={language.language}
+                  // It changes at once; one that can't be saved goes back.
+                  onChange={(value) => void language.change(value).catch((reason: unknown) => console.warn('Saving your language failed', reason))}
+                  label={words('house.lower.language')}
+                  testID="language"
+                />
+              }
+              testID="language-row"
+            />
+          ) : null}
           {email ? (
             <Row
               leading={<RowIcon icon={KeyRoundIcon} />}

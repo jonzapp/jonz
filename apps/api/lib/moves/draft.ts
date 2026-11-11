@@ -1,6 +1,6 @@
 import "server-only";
 
-import { CHAT_RESETS_MAX, houseKind, wordsFor, ASK_TURN_RESERVE, askAllowance, CHAT_TURNS_PER_PERSON_PER_DAY, draftForModel, editDraft, firstName, groupDef, johnDef, listAsDraft, localDate, offlineTurn, passOf, passUnlocked, PERMISSIONS, rulesOf, tidyAsk, tidyDraft, tidyReply, type ChatMessage, type ChatMove, type ChatReset, type ChatResponse, type EditResult, type HouseDraft, askOperationsFor, type Permission, type RawDraft } from "@app/core";
+import { CHAT_RESETS_MAX, houseKind, LANGUAGE_IN_ENGLISH, languageOf, wordsFor, ASK_TURN_RESERVE, askAllowance, CHAT_TURNS_PER_PERSON_PER_DAY, draftForModel, editDraft, firstName, groupDef, johnDef, listAsDraft, localDate, offlineTurn, passOf, passUnlocked, PERMISSIONS, rulesOf, tidyAsk, tidyDraft, tidyReply, type ChatMessage, type ChatMove, type ChatReset, type ChatResponse, type EditResult, type HouseDraft, askOperationsFor, type Permission, type RawDraft } from "@app/core";
 
 import { askClaude, canDraft, type DraftAnswer, type DraftContext, type JonzTools } from "@/lib/ai/house-draft";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -60,7 +60,7 @@ export async function chatTurn(
 
   const [{ data: house }, { data: members }, { data: johns }, { data: groups }] = await Promise.all([
     caller.db.from("houses").select("*").eq("id", houseId).single(),
-    caller.db.from("members").select("user_id, role, joined_at, profiles(display_name)").eq("house_id", houseId).order("joined_at"),
+    caller.db.from("members").select("user_id, role, joined_at, profiles(display_name, language)").eq("house_id", houseId).order("joined_at"),
     caller.db
       .from("johns")
       .select("id, name, category, points, every_weeks, every_months, week_of_month, anchor_month, due_dow, due_time, needs_photo, group_id, kind, respond_hours, per_week, crew")
@@ -70,7 +70,9 @@ export async function chatTurn(
     caller.db.from("groups").select("id, name, group_members(user_id)").eq("house_id", houseId).order("name"),
   ]);
   if (!house) return { refusal: { code: "42501", message: "not_in_house" } };
-  const words = wordsFor("en", houseKind(house.kind));
+  // The person asking reads Jonz's words, and its answers, in their own language.
+  const language = languageOf((members ?? []).find((m) => m.user_id === caller.userId)?.profiles?.language);
+  const words = wordsFor(language, houseKind(house.kind));
   // A house with a list already: the House Pass's assistant. Setting up a new house is free.
   const list = johns && johns.length > 0 ? listAsDraft(johns.map(johnDef), (groups ?? []).map(groupDef)) : null;
   if (list && !passUnlocked(passOf(house), now)) return { refusal: { code: "P0001", message: "pass_needed" } };
@@ -194,6 +196,7 @@ export async function chatTurn(
         me: { name: firstName(people[0]?.name ?? "") || "the person writing", role: roleWords },
         houseName: house.name,
         family,
+        language: LANGUAGE_IN_ENGLISH[language],
         weekStarts: rules.weekStarts,
         today: `${new Intl.DateTimeFormat("en-GB", { timeZone: rules.timezone, weekday: "long" }).format(now)} ${localDate(now, rules.timezone)}, ${new Intl.DateTimeFormat("en-GB", { timeZone: rules.timezone, hour: "2-digit", minute: "2-digit" }).format(now)}`,
         allowed: allowed.map((p) => PERMISSIONS[p]).filter(Boolean),

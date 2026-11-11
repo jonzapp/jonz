@@ -145,6 +145,8 @@ export const OPERATIONS = {
   my_report: op({ about: "One of the problems you've reported, with its replies", scope: "account", effect: "read", guard: ACCOUNT_READ, rpc: { name: "my_report" }, tables: ["reports", "report_messages"] }),
   my_house: op({ about: "The house you're in, if any", scope: "account", effect: "read", guard: ACCOUNT_READ, rpc: { name: "my_house" }, tables: ["members", "houses"] }),
   set_my_name: op({ about: "Change the name you go by", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "set_my_name" }, tables: ["profiles"] }),
+  my_language: op({ about: "The language you read Jonz in", scope: "account", effect: "read", guard: ACCOUNT_READ, rpc: { name: "my_language" }, tables: ["profiles"] }),
+  set_my_language: op({ about: "Change the language you read Jonz in", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "set_my_language" }, tables: ["profiles"] }),
   my_notifications: op({ about: "Which notifications you get, and your quiet hours", scope: "account", effect: "read", guard: ACCOUNT_READ, rpc: { name: "my_notifications" }, tables: ["notification_prefs"] }),
   save_notifications: op({ about: "Change which notifications you get, and your quiet hours", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "save_notifications" }, tables: ["notification_prefs"] }),
   add_push_device: op({ about: "Get pushes on this device", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "add_push_device" }, tables: ["push_subscriptions"] }),
@@ -341,7 +343,7 @@ const reads = (about: string, read: Guard): TableAccess => ({ about, grants: ["s
 export const TABLES = {
   houses: { about: "Houses: name, rules and settings", grants: ["select", "update"], read: perm("house:read"), write: perm("house:write") },
   johns: { about: "The John list", grants: ["select", "insert", "update"], read: perm("johns:read"), write: perm("johns:write") },
-  profiles: { about: "People's names and photos", grants: ["select", "update"], read: MEMBER, write: OWN },
+  profiles: { about: "People's names, photos and languages", grants: ["select", "update"], read: MEMBER, write: OWN },
   notification_prefs: { about: "Each person's notification settings", grants: ["select", "insert", "update"], read: OWN, write: OWN },
   push_subscriptions: { about: "Each person's devices for pushes", grants: ["select", "insert", "delete"], read: OWN, write: OWN },
   reactions: { about: "Reactions on the Wall", grants: ["select", "insert", "delete"], read: perm("wall:read"), write: OWN },

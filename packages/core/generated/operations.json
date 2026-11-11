@@ -2197,6 +2197,94 @@
       }
     },
     {
+      "name": "my_language",
+      "about": "The language you read Jonz in",
+      "scope": "account",
+      "effect": "read",
+      "guard": {
+        "by": "permission",
+        "permission": "account:read"
+      },
+      "entitlement": null,
+      "entitlementWhen": null,
+      "destructive": false,
+      "method": "GET",
+      "path": "/v1/me/language",
+      "pathKeys": [],
+      "rpc": {
+        "name": "my_language",
+        "server": false,
+        "args": {}
+      },
+      "tables": [
+        "profiles"
+      ],
+      "page": null,
+      "input": {
+        "type": "object",
+        "properties": {}
+      },
+      "output": {
+        "anyOf": [
+          {
+            "type": "string",
+            "enum": [
+              "en",
+              "en-XA"
+            ]
+          },
+          {
+            "type": "null"
+          }
+        ]
+      }
+    },
+    {
+      "name": "set_my_language",
+      "about": "Change the language you read Jonz in",
+      "scope": "account",
+      "effect": "write",
+      "guard": {
+        "by": "permission",
+        "permission": "account:write_own"
+      },
+      "entitlement": null,
+      "entitlementWhen": null,
+      "destructive": false,
+      "method": "PATCH",
+      "path": "/v1/me/language",
+      "pathKeys": [],
+      "rpc": {
+        "name": "set_my_language",
+        "server": false,
+        "args": {
+          "language": "p_language"
+        }
+      },
+      "tables": [
+        "profiles"
+      ],
+      "page": null,
+      "input": {
+        "type": "object",
+        "properties": {
+          "language": {
+            "type": "string",
+            "enum": [
+              "en",
+              "en-XA"
+            ]
+          }
+        },
+        "required": [
+          "language"
+        ]
+      },
+      "output": {
+        "type": "null"
+      }
+    },
+    {
       "name": "my_notifications",
       "about": "Which notifications you get, and your quiet hours",
       "scope": "account",

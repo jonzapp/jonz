@@ -96,6 +96,8 @@ export interface DraftContext {
   me: { name: string; role: string };
   houseName: string;
   family: boolean;
+  /** The language the person reads Jonz in, by its English name: Claude answers in it. */
+  language: string;
   weekStarts: IsoDow;
   /** Today in the house, "Thursday 2026-11-05", and the time. */
   today: string;
@@ -158,6 +160,7 @@ function chatMessages(ctx: DraftContext): { role: "user" | "assistant"; content:
   const house = [
     `House: ${ctx.houseName}, ${ctx.family ? "a family" : "housemates"}. Today is ${ctx.today}.`,
     `You're talking with ${ctx.me.name}, ${ctx.family ? "a" : "an"} ${ctx.me.role}. In the house: ${people} (the first is ${ctx.me.name}). Others they name haven't joined yet.`,
+    `${ctx.me.name} reads ${APP_NAME} in ${ctx.language}: answer in ${ctx.language}, unless they write to you in another language.`,
     `The house's week starts on ${DOW_LABEL[ctx.weekStarts]}.`,
     ctx.editing ? "The house has a John list: list_johns shows it." : "The house is new: its John list is empty, so you're helping set it up.",
     `${ctx.me.name} may: ${ctx.allowed.join("; ")}.`,

@@ -1889,6 +1889,7 @@ export type Database = {
           deleted_at: string | null
           display_name: string
           id: string
+          language: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -1896,6 +1897,7 @@ export type Database = {
           deleted_at?: string | null
           display_name: string
           id: string
+          language?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -1903,6 +1905,7 @@ export type Database = {
           deleted_at?: string | null
           display_name?: string
           id?: string
+          language?: string | null
         }
         Relationships: []
       }

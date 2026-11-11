@@ -3,11 +3,16 @@ import { Pressable, Text } from 'react-native';
 
 import { deletionStatus } from '@/api/account';
 import { getMyHouse } from '@/api/house';
+import { myLanguage, setMyLanguage } from '@/api/language';
 import { MembershipProvider, useMembership } from '@/hooks/use-membership';
 import { useSession } from '@/hooks/use-session';
+import { useLanguage, useWords } from '@/hooks/use-words';
+import { deviceLanguage } from '@/locale';
 
 jest.mock('@/api/house', () => ({ getMyHouse: jest.fn() }));
 jest.mock('@/api/account', () => ({ deletionStatus: jest.fn().mockResolvedValue(null) }));
+jest.mock('@/api/language', () => ({ myLanguage: jest.fn().mockResolvedValue('en'), setMyLanguage: jest.fn().mockResolvedValue(undefined) }));
+jest.mock('@/locale', () => ({ deviceLanguage: jest.fn(() => 'en') }));
 jest.mock('@/hooks/use-session', () => ({ useSession: jest.fn() }));
 jest.mock('@/api/microsoft-photo', () => ({ followMicrosoftSignIns: () => () => undefined }));
 
@@ -93,7 +98,7 @@ it('knows when the account is waiting to be deleted, and lets the house decide i
     </MembershipProvider>,
   );
   expect(await screen.findByText('2026-11-29T09:00:00Z')).toBeOnTheScreen();
-  view.unmount();
+  await view.unmount();
 
   jest.mocked(deletionStatus).mockRejectedValueOnce(new Error('offline'));
   await render(
@@ -102,4 +107,64 @@ it('knows when the account is waiting to be deleted, and lets the house decide i
     </MembershipProvider>,
   );
   expect(await screen.findByText('staying')).toBeOnTheScreen();
+});
+
+describe('your language', () => {
+  function Speaking() {
+    const { loading } = useMembership();
+    const { language, change } = useLanguage();
+    const words = useWords();
+    return (
+      <Pressable accessibilityRole="button" accessibilityLabel="test language" onPress={() => void change('en-XA').catch(() => undefined)}>
+        <Text>{loading ? 'loading' : `${language}: ${words('house.lower.language')}`}</Text>
+      </Pressable>
+    );
+  }
+
+  async function speak() {
+    await render(
+      <MembershipProvider>
+        <Speaking />
+      </MembershipProvider>,
+    );
+  }
+
+  beforeEach(() => {
+    session.mockReturnValue({ session: { user: { id: 'u1' } }, loading: false });
+    myHouse.mockResolvedValue(FLAT);
+  });
+
+  it('reads the words in the language you picked', async () => {
+    jest.mocked(myLanguage).mockResolvedValueOnce('en-XA');
+    await speak();
+    expect(await screen.findByText('en-XA: [Ļáñĝúáĝé]')).toBeOnTheScreen();
+    expect(setMyLanguage).not.toHaveBeenCalled();
+  });
+
+  it("saves your phone's language the first time, when none is saved", async () => {
+    jest.mocked(myLanguage).mockResolvedValueOnce(null);
+    await speak();
+    expect(await screen.findByText('en: Language')).toBeOnTheScreen();
+    expect(setMyLanguage).toHaveBeenCalledWith('en');
+  });
+
+  it("reads your phone's language before you've signed in, and when yours can't be read", async () => {
+    jest.mocked(deviceLanguage).mockReturnValue('en');
+    jest.mocked(myLanguage).mockRejectedValueOnce(new Error('offline'));
+    await speak();
+    expect(await screen.findByText('en: Language')).toBeOnTheScreen();
+    expect(setMyLanguage).not.toHaveBeenCalled();
+  });
+
+  it('changes at once, and goes back if it can’t be saved', async () => {
+    await speak();
+    expect(await screen.findByText('en: Language')).toBeOnTheScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'test language' }));
+    expect(await screen.findByText('en-XA: [Ļáñĝúáĝé]')).toBeOnTheScreen();
+    expect(setMyLanguage).toHaveBeenCalledWith('en-XA');
+
+    jest.mocked(setMyLanguage).mockRejectedValueOnce(new Error('offline'));
+    await fireEvent.press(screen.getByRole('button', { name: 'test language' }));
+    expect(await screen.findByText('en-XA: [Ļáñĝúáĝé]')).toBeOnTheScreen();
+  });
 });

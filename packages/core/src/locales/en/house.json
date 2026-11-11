@@ -354,6 +354,7 @@
   "house.lower.on": "On",
   "house.lower.off": "Off",
   "house.lower.look": "Look",
+  "house.lower.language": "Language",
   "house.lower.signOut": "Sign out",
   "house.lower.leave": "Leave {house}",
   "house.lower.leaveAsk": "Leave {house}?",
