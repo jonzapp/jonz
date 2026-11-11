@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { requireUser } from "@/lib/auth";
 import { supportDraft } from "@/lib/moves/support-draft";
-import { error, json, preflight, refused } from "@/lib/respond";
+import { error, json, preflight, refused, wordsOf } from "@/lib/respond";
 
 /**
  * POST /api/reports/:id/draft: the support agent's suggestion on a report
@@ -17,7 +17,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if ("response" in auth) return auth.response;
 
   const id = z.uuid().safeParse((await params).id);
-  if (!id.success) return error(request, 404, humanError({ message: "not_found" }));
+  if (!id.success) return error(request, 404, humanError({ message: "not_found" }, wordsOf(request)));
 
   const result = await supportDraft({ db: auth.supabase, userId: auth.user.id }, id.data, new Date());
   if ("refusal" in result) return refused(request, result.refusal);

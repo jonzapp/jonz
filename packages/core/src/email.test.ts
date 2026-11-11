@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { accountDeletedEmail, noticeEmail, renderEmail, safeEmailUrl, EMAIL_ASSETS } from "./email";
+import { accountDeletedEmail, noticeEmail, ownerMessageEmail, renderEmail, safeEmailUrl, EMAIL_ASSETS } from "./email";
+import { wordsFor } from "./words-for";
 
 describe("renderEmail", () => {
   it("escapes everything a person typed", () => {
@@ -73,5 +74,27 @@ describe("accountDeletedEmail", () => {
   it("has no exclamation marks, as the brand asks", () => {
     const email = accountDeletedEmail({ name: "Sam", deletedOn: "1 November 2026" });
     expect(email.text).not.toContain("!");
+  });
+});
+
+describe("an email in its reader's language", () => {
+  const english = wordsFor("en", "housemates");
+  const test = wordsFor("en-XA", "housemates");
+  const message = { name: "Ava Lin", subject: "Bins day moved", body: "It's Tuesday now.", url: "https://jonz.app" };
+
+  it("says Jonz's words in their language, down to the foot", () => {
+    const email = ownerMessageEmail({ ...message, language: "en-XA" });
+    expect(email.text).toContain(test("email.hi", { name: "Ava" }));
+    expect(email.text).toContain(test("email.message.why"));
+    expect(email.text).toContain(test("email.foot.tagline"));
+    expect(email.text).not.toContain(english("email.foot.tagline"));
+  });
+
+  it("keeps what the owner wrote as they wrote it", () => {
+    expect(ownerMessageEmail({ ...message, language: "en-XA" }).text).toContain("It's Tuesday now.");
+  });
+
+  it("is English when it's left out", () => {
+    expect(ownerMessageEmail(message).text).toContain(english("email.foot.tagline"));
   });
 });

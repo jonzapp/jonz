@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { pushIn } from "@/lib/engine/tick";
 import { sendMessage, sendOutbox, type MessageOutbox } from "@/lib/moves/messages";
 import { adminClient, signedInUser, visitor, type Actor } from "@/tests/support/clients";
 import { expectDenied, expectOk, expectRule } from "@/tests/support/expect";
@@ -48,7 +49,7 @@ const watching = (): MessageOutbox & { told: Told[]; emails: { to: string; subje
     told,
     emails,
     notify: async (to, message) => {
-      told.push({ to, title: message.title, body: message.body, url: message.url, kind: message.kind });
+      told.push({ to, title: pushIn(message, "en").title, body: pushIn(message, "en").body, url: message.url, kind: message.kind });
     },
     email: vi.fn(async (to: string, message: { subject: string }, options: { idempotencyKey?: string }) => {
       emails.push({ to, subject: message.subject, key: options.idempotencyKey });

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { firstName, wordsFor } from "@app/core";
+import { firstName } from "@app/core";
 
 import { tickHouse } from "@/lib/engine/tick";
 import { pushNotifier } from "@/lib/push";
@@ -8,8 +8,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 import type { Caller, Refusal } from "./disputes";
 
-// Server lines read the housemates' words for now; each person's own language comes with translation 7.
-const words = wordsFor("en", "housemates");
 
 /**
  * A parent answers a kid's tick (family step 2). The caller's own call to
@@ -29,8 +27,10 @@ export async function answerTick(caller: Caller, assignmentId: string, ok: boole
   if (!ok && notify && kid && kid !== caller.userId) {
     const { data: me } = await caller.db.from("profiles").select("display_name").eq("id", caller.userId).single();
     await notify([kid], {
-      title: words('today.parentOk.notYetTitle', { john: a.name }),
-      body: words('today.parentOk.notYetBody', { parent: me ? firstName(me.display_name) : words('today.parentOk.aParent') }),
+      // Only a family has OKs.
+      houseKind: "family",
+      title: (w) => w('today.parentOk.notYetTitle', { john: a.name }),
+      body: (w) => w('today.parentOk.notYetBody', { parent: me ? firstName(me.display_name) : w('today.parentOk.aParent') }),
       url: "/today",
       kind: "checks",
       zone: a.houses?.timezone ?? "UTC",

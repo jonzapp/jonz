@@ -1,4 +1,4 @@
-import { humanError } from "@app/core";
+import { humanError, languageOf, wordsFor, type Words } from "@app/core";
 
 import { corsHeaders } from "./cors";
 import { env } from "./env";
@@ -8,6 +8,16 @@ import { env } from "./env";
 
 function cors(request: Request): Record<string, string> {
   return corsHeaders(request.headers.get("origin"), env.allowedOrigins());
+}
+
+/**
+ * The caller's words, for a sentence fit to show them: the app sends the
+ * language they read Jonz in as Accept-Language (apps/client src/api/base.ts).
+ * Anything else, or none, reads English.
+ */
+export function wordsOf(request: Request): Words {
+  const first = request.headers.get("accept-language")?.split(",")[0]?.split(";")[0]?.trim();
+  return wordsFor(languageOf(first), "housemates");
 }
 
 /** A JSON response, with CORS headers for an allowed web origin. */
@@ -27,7 +37,7 @@ export function error(request: Request, status: number, message: string): Respon
  */
 export function refused(request: Request, refusal: { message?: string; code?: string }): Response {
   const status = refusal.code === "42501" ? 403 : refusal.code === "P0001" ? 409 : 500;
-  return error(request, status, humanError(refusal));
+  return error(request, status, humanError(refusal, wordsOf(request)));
 }
 
 /** Answers a browser's CORS preflight. Export it as OPTIONS from every route. */

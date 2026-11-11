@@ -4,7 +4,7 @@ import { tz } from "@date-fns/tz";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { POST as pushActionRoute } from "@/app/api/push-actions/route";
-import { tickHouse, type PushMessage } from "@/lib/engine/tick";
+import { tickHouse, pushIn, type PushMessage, type SaidPush } from "@/lib/engine/tick";
 import { payloadFor } from "@/lib/push";
 import { pushToken } from "@/lib/push-token";
 import { adminClient } from "@/tests/support/clients";
@@ -32,8 +32,8 @@ afterAll(() => {
 
 /** Records what the engine would push, and to whom. */
 function recorder() {
-  const sent: { to: string[]; message: PushMessage }[] = [];
-  return { sent, notify: async (to: string[], message: PushMessage) => void sent.push({ to, message }) };
+  const sent: { to: string[]; message: SaidPush }[] = [];
+  return { sent, notify: async (to: string[], message: PushMessage) => void sent.push({ to, message: pushIn(message, "en") }) };
 }
 
 /**
@@ -131,8 +131,8 @@ describe("what each person's push carries", () => {
   it("gives each person their own token, and a vote two answers", () => {
     const now = new Date();
     const message: PushMessage = { title: "Vote", body: "", url: "/week", kind: "checks", zone: ZONE, act: { disputeId: crypto.randomUUID() } };
-    const a = payloadFor("user-a", message, false, now);
-    const b = payloadFor("user-b", message, true, now);
+    const a = payloadFor("user-a", pushIn(message, "en"), false, now);
+    const b = payloadFor("user-b", pushIn(message, "en"), true, now);
     expect(a.actions.map((x) => x.action)).toEqual(["held", "struck"]);
     expect(a.token).toBeTruthy();
     expect(a.token).not.toBe(b.token);

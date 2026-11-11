@@ -1,6 +1,6 @@
 import type { User } from "@supabase/supabase-js";
 
-import { error } from "@/lib/respond";
+import { error, wordsOf } from "@/lib/respond";
 import { userClient, type UserClient } from "@/lib/supabase/user";
 
 // The native app signs in with Supabase and sends its access token on every
@@ -21,11 +21,11 @@ export async function requireUser(
   request: Request,
 ): Promise<{ user: User; supabase: UserClient } | { response: Response }> {
   const token = getBearerToken(request.headers.get("authorization"));
-  if (!token) return { response: error(request, 401, "Sign in first.") };
+  if (!token) return { response: error(request, 401, wordsOf(request)("errors.api.signInFirst")) };
 
   const supabase = userClient(token);
   const { data, error: authError } = await supabase.auth.getUser(token);
-  if (authError || !data.user) return { response: error(request, 401, "Your sign-in has expired. Sign in again.") };
+  if (authError || !data.user) return { response: error(request, 401, wordsOf(request)("errors.api.signInExpired")) };
 
   return { user: data.user, supabase };
 }

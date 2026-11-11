@@ -1,5 +1,6 @@
 import type { ResetPreview, ResetRequest } from '@app/core';
 
+import { apiWords } from './base';
 import { callV1 } from './v1';
 
 // An admin's resets go through the server (reset_house on /v1,
@@ -15,13 +16,13 @@ const resetInput = ({ week, user, assignment, ...ask }: ResetAsk, apply: boolean
 /** What a reset would change, for the reset sheet. Nothing changes yet. */
 export async function previewReset(ask: ResetAsk): Promise<ResetPreview> {
   const { preview } = await callV1('reset_house', resetInput(ask, false));
-  if (!preview) throw new Error('Something went wrong. Try again.');
+  if (!preview) throw new Error(apiWords()('errors.other'));
   return preview;
 }
 
 /** Make the reset. Answers its History action, for Undo. */
 export async function applyReset(ask: ResetAsk): Promise<string> {
   const { action } = await callV1('reset_house', resetInput(ask, true));
-  if (!action) throw new Error('Something went wrong. Try again.');
+  if (!action) throw new Error(apiWords()('errors.other'));
   return action;
 }

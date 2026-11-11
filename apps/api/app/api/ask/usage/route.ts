@@ -4,7 +4,7 @@ import { AskUsage } from "@app/core";
 
 import { requireUser } from "@/lib/auth";
 import { houseUsage } from "@/lib/moves/ask-usage";
-import { error, json, preflight, refused } from "@/lib/respond";
+import { error, json, preflight, refused, wordsOf } from "@/lib/respond";
 
 const Body = z.object({ houseId: z.uuid() });
 
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
   if ("response" in auth) return auth.response;
 
   const body = Body.safeParse(await request.json().catch(() => null));
-  if (!body.success) return error(request, 400, "Which house?");
+  if (!body.success) return error(request, 400, wordsOf(request)("errors.api.whichHouse"));
 
   const result = await houseUsage({ db: auth.supabase, userId: auth.user.id }, body.data.houseId, new Date());
   if ("refusal" in result) return refused(request, result.refusal);

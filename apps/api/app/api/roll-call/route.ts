@@ -2,7 +2,7 @@ import { RollCallRequest, RollCallResponse } from "@app/core";
 
 import { requireUser } from "@/lib/auth";
 import { rollCall } from "@/lib/moves/roll-call";
-import { error, json, preflight, refused } from "@/lib/respond";
+import { error, json, preflight, refused, wordsOf } from "@/lib/respond";
 
 /**
  * POST /api/roll-call `{ assignmentId, crew, photoPath? }`: tick a John with
@@ -14,7 +14,7 @@ export async function POST(request: Request) {
   if ("response" in auth) return auth.response;
 
   const body = RollCallRequest.safeParse(await request.json().catch(() => null));
-  if (!body.success) return error(request, 400, "Say which John and who did it.");
+  if (!body.success) return error(request, 400, wordsOf(request)("errors.api.sayJohnAndWho"));
 
   const result = await rollCall({ db: auth.supabase, userId: auth.user.id }, body.data);
   if ("refusal" in result) return refused(request, result.refusal);

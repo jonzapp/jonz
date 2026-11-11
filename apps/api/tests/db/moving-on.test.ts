@@ -1,7 +1,7 @@
 import { addDaysTo, localDate, weekWindow } from "@app/core";
 import { describe, expect, it } from "vitest";
 
-import { remindMovers, type PushMessage } from "@/lib/engine/tick";
+import { remindMovers, pushIn, type PushMessage, type SaidPush } from "@/lib/engine/tick";
 import { adminClient, signedInUser } from "@/tests/support/clients";
 import { expectDenied, expectOk, expectRule } from "@/tests/support/expect";
 import { addJohns, deal, makeHouse, thisWeek, ZONE } from "@/tests/support/factories";
@@ -16,8 +16,8 @@ const db = adminClient();
 const DAY = 86_400_000;
 
 function recorder() {
-  const sent: { to: string[]; message: PushMessage }[] = [];
-  return { sent, notify: async (to: string[], message: PushMessage) => void sent.push({ to, message }) };
+  const sent: { to: string[]; message: SaidPush }[] = [];
+  return { sent, notify: async (to: string[], message: PushMessage) => void sent.push({ to, message: pushIn(message, "en") }) };
 }
 
 async function movesOf(userId: string) {

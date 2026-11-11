@@ -1,14 +1,12 @@
 import "server-only";
 
-import { dueInLine, type AwayDraft, wordsFor } from "@app/core";
+import { dueInLine, houseKind, type AwayDraft } from "@app/core";
 
 import { pushNotifier } from "@/lib/push";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 import type { Caller, Refusal } from "./disputes";
 
-// Pushes and server lines read the housemates' words for now; each person's own language comes with translation 7.
-const words = wordsFor("en", "housemates");
 
 // Booking time away needs a server for one thing: telling whoever it hands a
 // John to. The booking itself is the caller's own call to set_away, which
@@ -58,12 +56,13 @@ export async function bookAway(caller: Caller, draft: AwayDraft, now: Date): Pro
   const notify = handed?.length ? pushNotifier(admin) : null;
   if (notify && handed) {
     const { data: me } = await admin.from("profiles").select("display_name").eq("id", caller.userId).single();
-    const { data: house } = await admin.from("houses").select("timezone").eq("id", trip.house_id).single();
+    const { data: house } = await admin.from("houses").select("timezone, kind").eq("id", trip.house_id).single();
     const zone = house?.timezone ?? "UTC";
     for (const a of handed) {
       await notify([a.user_id], {
-        title: words('house.away.handedTitle', { john: a.name }),
-        body: words('house.away.handedBody', { name: me?.display_name ?? "Someone", due: dueInLine(new Date(a.due_at), now, zone) }),
+        houseKind: houseKind(house?.kind ?? null),
+        title: (w) => w('house.away.handedTitle', { john: a.name }),
+        body: (w) => w('house.away.handedBody', { name: me?.display_name ?? "Someone", due: dueInLine(new Date(a.due_at), now, zone) }),
         url: "/today",
         kind: "deal",
         zone,

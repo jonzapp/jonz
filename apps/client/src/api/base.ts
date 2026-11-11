@@ -1,3 +1,4 @@
+import { wordsFor, type HouseKind, type Language, type Words } from '@app/core';
 import { Platform } from 'react-native';
 
 // Kept apart from http.ts, which signs requests in, so a call that needs no
@@ -13,6 +14,27 @@ export function apiBase(): string {
   if (base) return base;
   if (Platform.OS === 'web') return '';
   throw new Error('Missing EXPO_PUBLIC_API_URL. Copy .env.example to .env.local and fill it in.');
+}
+
+let reader: { language: Language; kind: HouseKind } = { language: 'en', kind: 'housemates' };
+
+/**
+ * Who's reading what the API says back: your language and your house's
+ * kind, kept by MembershipProvider. A call sends the language as
+ * Accept-Language, so a sentence the API writes is in it too.
+ */
+export function setApiReader(language: Language, kind: HouseKind): void {
+  reader = { language, kind };
+}
+
+/** Your words, for a refusal's sentence outside a screen. */
+export function apiWords(): Words {
+  return wordsFor(reader.language, reader.kind);
+}
+
+/** The headers that tell the API who's reading. */
+export function readerHeaders(): Record<string, string> {
+  return { 'Accept-Language': reader.language };
 }
 
 /** A refusal from the API, with a sentence fit to show. */

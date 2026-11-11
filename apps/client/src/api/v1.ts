@@ -4,7 +4,7 @@ import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import type { z } from 'zod';
 
-import { apiBase, ApiRequestError } from './base';
+import { apiBase, ApiRequestError, apiWords, readerHeaders } from './base';
 import { supabase } from './supabase';
 import { markTooOld } from './too-old';
 
@@ -18,17 +18,17 @@ type Io = typeof OPERATION_IO;
 export type V1Input<N extends OperationName> = z.input<Io[N]['input']>;
 export type V1Output<N extends OperationName> = z.output<Io[N]['output']>;
 
-const GENERIC = 'Something went wrong. Try again.';
-
 /** What the API's problem says, as a sentence fit to show. */
 export function problemSentence(problem: { title?: unknown; detail?: unknown } | null): string {
+  const words = apiWords();
+  const generic = words('errors.other');
   const detail = typeof problem?.detail === 'string' ? problem.detail : '';
   // A database function's refusal word ("vote_closed") has the app's own sentence.
-  const known = humanError({ message: detail });
-  if (known !== GENERIC) return known;
-  if (problem?.title === 'forbidden') return 'You can’t do that.';
+  const known = humanError({ message: detail }, words);
+  if (known !== generic) return known;
+  if (problem?.title === 'forbidden') return words('errors.denied');
   // A word we have no sentence for, or the API's own "on our side": the general one.
-  if (!detail || /^[a-z][a-z_]*$/.test(detail) || problem?.title === 'internal') return GENERIC;
+  if (!detail || /^[a-z][a-z_]*$/.test(detail) || problem?.title === 'internal') return generic;
   return detail;
 }
 
@@ -74,10 +74,10 @@ export async function callV1<N extends OperationName>(name: N, input: V1Input<N>
   // The session straight from Supabase Auth, not auth.ts: a call needs no sign-in modules.
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
-  if (!token) throw new ApiRequestError('Sign in first.', 401);
+  if (!token) throw new ApiRequestError(apiWords()('errors.api.signInFirst'), 401);
 
   const { method, url, body } = v1Request(name, checked);
-  const headers: Record<string, string> = { Authorization: `Bearer ${token}`, 'Jonz-Client': clientHeader() };
+  const headers: Record<string, string> = { Authorization: `Bearer ${token}`, 'Jonz-Client': clientHeader(), ...readerHeaders() };
   if (method !== 'GET') {
     headers['Content-Type'] = 'application/json';
     headers['Idempotency-Key'] = randomUUID();

@@ -28,7 +28,7 @@ describe('apiPost', () => {
     await expect(apiPost('/api/fresh', { houseId: 'h1' }, FreshResponse)).resolves.toEqual({ ticked: true });
     expect(fetchMock).toHaveBeenCalledWith('http://localhost:3205/api/fresh', {
       method: 'POST',
-      headers: { Authorization: 'Bearer access-token', 'Content-Type': 'application/json' },
+      headers: { Authorization: 'Bearer access-token', 'Content-Type': 'application/json', 'Accept-Language': 'en' },
       body: JSON.stringify({ houseId: 'h1' }),
     });
   });
