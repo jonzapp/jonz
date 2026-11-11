@@ -16,7 +16,7 @@ A family can use it too: parents OK the kids' ticks, and kids earn pocket
 money in place of the Stake.
 
 <p align="center">
-  <img alt="Johns, dealt fair: the Today screen. The bathroom moves around: the Week screen." src="docs/brand/readme-screens.png" width="540">
+  <img alt="Johns, dealt fair: the Today screen. Just ask Jonz: Ask Jonz answering about the week. Families too: a parent's Today, with kids' ticks to OK." src="docs/brand/readme-screens.png" width="720">
 </p>
 
 ## What it does
