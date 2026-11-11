@@ -101,7 +101,7 @@ describe("Checkout", () => {
   it("doesn't sell Founding any more", async () => {
     const house = await makeHouse(["Ava"]);
     const { stripe, calls } = fakeStripe();
-    expect(await startCheckout(caller(house.admin), stripe, house.id, "yearly", APP, "local", now())).toMatchObject({ status: 409 });
+    expect(await startCheckout(caller(house.admin), stripe, house.id, "founding", APP, "local", now())).toMatchObject({ status: 409 });
     expect(calls.checkout).toHaveLength(0);
   });
 
@@ -112,7 +112,7 @@ describe("Checkout", () => {
     expect(await startCheckout(caller(stranger), stripe, house.id, "yearly", APP, "local", now())).toMatchObject({ status: 403 });
 
     await db.from("houses").update({ pass_plan: "founding", pass_ends_at: null }).eq("id", house.id);
-    expect(await startCheckout(caller(house.admin), stripe, house.id, "founding", APP, "local", now())).toMatchObject({ status: 409 });
+    expect(await startCheckout(caller(house.admin), stripe, house.id, "yearly", APP, "local", now())).toMatchObject({ status: 409 });
     expect(calls.checkout).toHaveLength(0);
   });
 
