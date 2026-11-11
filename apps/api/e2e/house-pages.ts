@@ -26,7 +26,9 @@ export function toHousePage(page: Page, row: string): { click: () => Promise<voi
     click: async () => {
       await expect(target.or(setup).first()).toBeVisible();
       if (!(await target.first().isVisible())) await setup.click();
-      await target.click();
+      // On a laptop a row can show in both places (the Pass row closes the
+      // Free and House Pass card on House, beside the list): either opens it.
+      await target.first().click();
     },
   };
 }
