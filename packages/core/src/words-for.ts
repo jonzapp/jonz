@@ -1,9 +1,10 @@
 import { createIntl, createIntlCache, type IntlShape } from "@formatjs/intl";
 
 import type { HouseKind } from "./domain";
-import { MESSAGES, type Language, type WordId } from "./locales";
+import { MESSAGES, TEST_LANGUAGE, type Language, type WordId } from "./locales";
+import { pseudoMessages } from "./pseudo";
 
-export { LANGUAGES, type Language, type WordId } from "./locales";
+export { LANGUAGE_IN_ENGLISH, LANGUAGE_NAMES, LANGUAGES, languageOf, TEST_LANGUAGE, type Language, type WordId } from "./locales";
 
 /** What a line fills its gaps with. The house's kind is filled in for you. */
 export type WordValues = Record<string, string | number | boolean | Date | null | undefined>;
@@ -32,10 +33,11 @@ function intlFor(language: Language): IntlShape<string> {
   if (!intl) {
     intl = createIntl<string>(
       {
-        locale: language,
+        // The test language counts, dates and plurals as English does.
+        locale: language === TEST_LANGUAGE ? "en" : language,
         defaultLocale: "en",
         // A line another language hasn't got yet is read in English.
-        messages: { ...MESSAGES.en, ...MESSAGES[language] },
+        messages: language === TEST_LANGUAGE ? pseudoMessages() : { ...MESSAGES.en, ...MESSAGES[language] },
         // A missing line or gap is a bug: loud while building, quiet (the
         // line's id or English) for people using the app.
         onError: (err) => {

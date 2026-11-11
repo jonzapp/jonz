@@ -57,6 +57,7 @@ const houseCtx: DraftContext = {
   me: { name: "Ava", role: "admin" },
   houseName: "Elm Road",
   family: false,
+  language: "English",
   weekStarts: 1,
   today: "Friday 2026-11-06, 09:00",
   allowed: ["Everything"],

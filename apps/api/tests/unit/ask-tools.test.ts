@@ -117,6 +117,7 @@ describe("askClaude", () => {
     me: { name: "Ava", role: "admin" },
     houseName: "Elm Road",
     family: false,
+    language: "English",
     weekStarts: 1,
     today: "Thursday 2026-11-05, 17:00",
     allowed: ["Take a John off the list"],
@@ -152,6 +153,8 @@ describe("askClaude", () => {
     // The house rides on the first message; the tools Claude was given are the ones this person may use.
     const call = model.doGenerateCalls[0];
     expect(JSON.stringify(call.prompt)).toContain("Elm Road");
+    // And the language Ava reads Jonz in, for Claude to answer in.
+    expect(JSON.stringify(call.prompt)).toContain("Ava reads Jonz in English: answer in English");
     expect((call.tools ?? []).map((t) => t.name)).toContain("remove_john");
     expect((call.tools ?? []).map((t) => t.name)).not.toContain("add_john");
   });

@@ -1,12 +1,14 @@
-import type { DeletionStatus } from '@app/core';
+import type { DeletionStatus, Language } from '@app/core';
 import type { Session } from '@supabase/supabase-js';
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { deletionStatus } from '@/api/account';
 import { getMyHouse, type MyHouse } from '@/api/house';
+import { myLanguage, setMyLanguage } from '@/api/language';
 import { followMicrosoftSignIns } from '@/api/microsoft-photo';
-import { HouseKindContext } from '@/hooks/use-words';
+import { HouseKindContext, LanguageContext } from '@/hooks/use-words';
 import { useSession } from '@/hooks/use-session';
+import { deviceLanguage } from '@/locale';
 
 /** Who is signed in and which house they're in: what every screen's guard needs. */
 export interface Membership {
@@ -26,15 +28,27 @@ export interface Membership {
 
 const MembershipContext = createContext<Membership | null>(null);
 
-type Known = { userId: string; house: MyHouse | null; deletion: DeletionStatus | null } | { userId: string; failed: true };
+type Read = { house: MyHouse | null; deletion: DeletionStatus | null; language: Language | null };
+type Known = ({ userId: string } & Read) | { userId: string; failed: true };
 
 /**
- * The house, and whether the account is being deleted. A deletion that
- * can't be read counts as none: the house decides whether the app can open.
+ * The house, whether the account is being deleted, and your language. A
+ * deletion or language that can't be read counts as none: the house decides
+ * whether the app can open. With no language saved yet, your phone's is
+ * saved, so emails and pushes know it too.
  */
-async function readMembership(userId: string): Promise<{ house: MyHouse | null; deletion: DeletionStatus | null }> {
-  const [house, deletion] = await Promise.all([getMyHouse(userId), deletionStatus().catch(() => null)]);
-  return { house, deletion };
+async function readMembership(userId: string): Promise<Read> {
+  const [house, deletion, language] = await Promise.all([
+    getMyHouse(userId),
+    deletionStatus().catch(() => null),
+    myLanguage().catch(() => undefined),
+  ]);
+  if (language === null) {
+    const phone = deviceLanguage();
+    setMyLanguage(phone).catch((reason: unknown) => console.warn('Saving your language failed', reason));
+    return { house, deletion, language: phone };
+  }
+  return { house, deletion, language: language ?? null };
 }
 
 export function MembershipProvider({ children }: { children: ReactNode }) {
@@ -72,6 +86,25 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
 
   // What's known only counts for the person signed in now.
   const current = userId && known?.userId === userId ? known : null;
+  const language = (current && 'language' in current ? current.language : null) ?? deviceLanguage();
+
+  const change = useCallback(
+    async (next: Language) => {
+      if (!userId) return;
+      const speak = (said: Language) =>
+        setKnown((now) => (now && now.userId === userId && 'house' in now ? { ...now, language: said } : now));
+      speak(next);
+      try {
+        await setMyLanguage(next);
+      } catch (reason) {
+        // Back to the one that's saved, so this device never reads a language the others don't.
+        speak(language);
+        throw reason;
+      }
+    },
+    [userId, language],
+  );
+
   const value: Membership = {
     session,
     signedOut: ended === true,
@@ -81,9 +114,12 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
     failed: current !== null && 'failed' in current,
     refresh,
   };
+  const yours = useMemo(() => ({ language, change }), [language, change]);
   return (
     <MembershipContext.Provider value={value}>
-      <HouseKindContext.Provider value={value.house?.kind ?? 'housemates'}>{children}</HouseKindContext.Provider>
+      <LanguageContext.Provider value={yours}>
+        <HouseKindContext.Provider value={value.house?.kind ?? 'housemates'}>{children}</HouseKindContext.Provider>
+      </LanguageContext.Provider>
     </MembershipContext.Provider>
   );
 }
