@@ -1,3 +1,4 @@
+import type { Words } from "./words-for";
 
 // Deleting an account (supabase/migrations/*_delete_account.sql): its
 // words, the day it goes, and the typed word that confirms it. Asked for in
@@ -19,8 +20,8 @@ export function confirmsDelete(typed: string): boolean {
 }
 
 /** A day as the being-deleted screen says it: "Sun 29 Nov". */
-export function deletionDay(iso: string, zone?: string): string {
-  return new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: zone }).format(
+export function deletionDay(iso: string, words: Words, zone?: string): string {
+  return new Intl.DateTimeFormat(words.locale, { weekday: "short", day: "numeric", month: "short", timeZone: zone }).format(
     new Date(iso),
   );
 }
@@ -29,9 +30,9 @@ export function deletionDay(iso: string, zone?: string): string {
  * The day an account went, as its last email says it: "31 October 2026",
  * where they were. A zone that isn't one (or none) reads as UTC.
  */
-export function deletedOnDay(at: Date, zone?: string | null): string {
+export function deletedOnDay(at: Date, words: Words, zone?: string | null): string {
   const day = (timeZone: string) =>
-    new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone }).format(at);
+    new Intl.DateTimeFormat(words.locale, { day: "numeric", month: "long", year: "numeric", timeZone }).format(at);
   try {
     return day(zone || "UTC");
   } catch {
@@ -40,9 +41,9 @@ export function deletedOnDay(at: Date, zone?: string | null): string {
 }
 
 /** A date as the sheet says how long a Pass lasts: "12 Oct 2027". */
-export function passDay(date: string): string {
+export function passDay(date: string, words: Words): string {
   const [y, m, d] = date.split("-").map(Number);
-  return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(
+  return new Intl.DateTimeFormat(words.locale, { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(
     new Date(Date.UTC(y, m - 1, d)),
   );
 }

@@ -107,7 +107,7 @@ function togetherPart(
       ? first.weighed.map((w) => ({
           userId: w.userId,
           name: say.Who(w.userId),
-          value: formatBalance(w.standing),
+          value: formatBalance(w.standing, words),
           meta: [tos.includes(w.userId) ? words('john.why.dealtIt') : null, w.last ? words('john.why.hadItLast') : null].filter((m) => m !== null).join(", ") || null,
           chosen: tos.includes(w.userId),
         }))
@@ -177,7 +177,7 @@ function dealtPart(
           return {
             userId: w.userId,
             name: say.Who(w.userId),
-            value: classic && w.place !== undefined ? words('john.why.inLine', { place: w.place }) : formatBalance(w.standing),
+            value: classic && w.place !== undefined ? words('john.why.inLine', { place: w.place }) : formatBalance(w.standing, words),
             meta: meta.length ? meta.join(", ") : null,
             chosen: w.userId === to,
           };
@@ -195,9 +195,9 @@ function stakesLine(
 ): string | null {
   const holder = item.userId;
   if (isOpen(item.status)) {
-    const missed = words('john.why.missedBy', { when: dueInLine(item.closesAt, now, rules.timezone), holder: say.who(holder) });
+    const missed = words('john.why.missedBy', { when: dueInLine(item.closesAt, now, rules.timezone, words), holder: say.who(holder) });
     const opens = coverOpensAt(item.dueAt, rules.coverGraceHours, item.closesAt);
-    const cover = opens.getTime() <= now.getTime() ? words('john.why.coverNow') : words('john.why.coverFrom', { when: dueInLine(opens, now, rules.timezone) });
+    const cover = opens.getTime() <= now.getTime() ? words('john.why.coverNow') : words('john.why.coverFrom', { when: dueInLine(opens, now, rules.timezone, words) });
     return `${missed} ${cover}`;
   }
   // Disputed: whose work it is waits on the vote.
@@ -207,7 +207,7 @@ function stakesLine(
     const crew = item.crew;
     const ids = [...crew.people.filter((c) => c.userId === viewerId), ...crew.people.filter((c) => c.userId !== viewerId)].map((c) => c.userId);
     const names = andList(ids.map((id, i) => (i === 0 ? say.Who(id) : say.who(id))));
-    return words('john.crew.sharedCounts', { names, each: shareLabel(crew.total / crew.people.length) });
+    return words('john.crew.sharedCounts', { names, each: shareLabel(crew.total / crew.people.length, words) });
   }
   if (item.coveredBy) return words('john.why.coveredCounts', { who: say.Who(item.coveredBy), whose: say.whose(item.coveredBy) });
   if (item.status === "missed") return words('john.why.missedCounts', { holder: say.who(holder) });

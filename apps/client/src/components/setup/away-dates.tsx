@@ -1,4 +1,4 @@
-import { bookingWeeks, dayName, DOW_LABEL, monthLabel, monthsSpanned, type IsoDow } from '@app/core';
+import { bookingWeeks, dayName, weekdayName, monthLabel, monthsSpanned, type IsoDow } from '@app/core';
 import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -40,8 +40,8 @@ export function AwayDates({
   const [from, setFrom] = useState(0);
   const [picking, setPicking] = useState(false);
   const weeks = bookingWeeks(today, weekStarts, from, WEEKS);
-  const days = Array.from({ length: 7 }, (_, i) => DOW_LABEL[(((weekStarts - 1 + i) % 7) + 1) as IsoDow]);
-  const span = monthsSpanned(weeks[0][0], weeks[WEEKS - 1][6]);
+  const days = Array.from({ length: 7 }, (_, i) => (((weekStarts - 1 + i) % 7) + 1) as IsoDow);
+  const span = monthsSpanned(weeks[0][0], weeks[WEEKS - 1][6], words);
 
   function tap(date: string) {
     if (picking && value.from && date >= value.from) {
@@ -71,7 +71,7 @@ export function AwayDates({
       <View style={styles.week} aria-hidden>
         {days.map((d) => (
           <Text key={d} style={[type.caps, styles.dow]}>
-            {d.slice(0, 1)}
+            {weekdayName(d, words, 'narrow')}
           </Text>
         ))}
       </View>
@@ -88,7 +88,7 @@ export function AwayDates({
               <Pressable
                 key={date}
                 accessibilityRole="button"
-                accessibilityLabel={dayName(date)}
+                accessibilityLabel={dayName(date, words)}
                 {...picked}
                 aria-disabled={past}
                 disabled={past}
@@ -102,7 +102,7 @@ export function AwayDates({
               >
                 {/* The 1st of a month says which month it starts, over its number. */}
                 {date.endsWith('-01') ? (
-                  <Text style={[type.caps, styles.month, { color: ink }]}>{monthLabel(date.slice(0, 7)).slice(0, 3)}</Text>
+                  <Text style={[type.caps, styles.month, { color: ink }]}>{monthLabel(date.slice(0, 7), words).slice(0, 3)}</Text>
                 ) : null}
                 {/* A day gone by stays readable, muted and in a lighter weight, not faded. */}
                 <Text style={[type.body, styles.date, past && styles.pastDate, { color: ink }]}>{Number(date.slice(8))}</Text>

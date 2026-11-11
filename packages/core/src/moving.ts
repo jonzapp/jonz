@@ -40,7 +40,7 @@ export function movingOutAway(members: readonly Mover[], startsOn: string, until
 /** Today's line for whoever is moving out: the day ahead, or (on it and after) that it's time to leave. */
 export function movingLine(movingOutOn: string | null, today: string, houseName: string, words: Words): string | null {
   if (movingOutOn === null) return null;
-  return movingOutOn <= today ? words('house.moving.movingDay', { house: houseName }) : words('house.moving.youMoveOut', { day: dateRange(movingOutOn, movingOutOn) });
+  return movingOutOn <= today ? words('house.moving.movingDay', { house: houseName }) : words('house.moving.youMoveOut', { day: dateRange(movingOutOn, movingOutOn, words) });
 }
 
 /** How long after someone moves out the people who stay are still asked who's moving in. */

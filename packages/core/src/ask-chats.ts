@@ -57,7 +57,7 @@ export function chatWhen(at: Date, now: Date, zone: string, words: Words): strin
   const today = localDate(now, zone);
   if (day === today) return words('ask.chats.today');
   if (day === addDaysTo(today, -1)) return words('ask.chats.yesterday');
-  return dayLabel(at, zone);
+  return dayLabel(at, zone, words);
 }
 
 /** Your chats in groups by when each was last used, as chat apps list them: Today, Last 7 days, Earlier. Empty groups are left out. */

@@ -35,8 +35,8 @@ export const CHAT_MOVES_MAX = 6;
 
 /** A move's title on its card: time away says its dates. */
 export function moveTitle(m: ChatMove, words: Words): string {
-  if (m.kind === "away") return words("ask.moves.awayTitle", { range: dateRange(m.from, m.to) });
-  if (m.kind === "cancel_away") return words("ask.moves.cancelTitle", { range: dateRange(m.from, m.to) });
+  if (m.kind === "away") return words("ask.moves.awayTitle", { range: dateRange(m.from, m.to, words) });
+  if (m.kind === "cancel_away") return words("ask.moves.cancelTitle", { range: dateRange(m.from, m.to, words) });
   return m.title;
 }
 

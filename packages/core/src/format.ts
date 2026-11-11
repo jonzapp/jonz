@@ -2,94 +2,142 @@ import { tz } from "@date-fns/tz";
 import { differenceInCalendarDays, format } from "date-fns";
 
 import type { LiveStatus } from "./outcome";
+import type { Words } from "./words-for";
 
 /**
- * How times read on screen, in the house's own time zone. Pure: the caller
- * passes `now`, so "tomorrow" means the same thing in a test as on a phone.
+ * How times read on screen, in the house's own time zone and the reader's
+ * language. Pure: the caller passes `now`, so "tomorrow" means the same thing
+ * in a test as on a phone. Each date's shape is a line in the words files
+ * (`common.date.pattern.*`), so a language can put the day before the month.
  */
 
+type Pattern =
+  | "time"
+  | "timeSeconds"
+  | "weekday"
+  | "weekdayLong"
+  | "weekdayTiny"
+  | "weekdayNarrow"
+  | "day"
+  | "dayMonth"
+  | "dayMonthLong"
+  | "dayMonthYear"
+  | "dayMonthLongYear"
+  | "weekdayDayMonth"
+  | "weekdayDayMonthYear"
+  | "weekdayLongDayMonthLong"
+  | "month"
+  | "monthShort"
+  | "monthYear";
+
+/** `at` in one of the words files' date shapes, in `zone`, with the reader's day and month names. */
+export function dateIn(at: Date, pattern: Pattern, zone: string, words: Words): string {
+  return format(at, words(`common.date.pattern.${pattern}`), { in: tz(zone), locale: words.dates });
+}
+
+/** A local `yyyy-MM-dd` date in one of the words files' shapes: the same day in every time zone. */
+export function localDay(date: string, pattern: Pattern, words: Words): string {
+  const [y, m, d] = date.split("-").map(Number);
+  return dateIn(new Date(Date.UTC(y, m - 1, d, 12)), pattern, "UTC", words);
+}
+
+const WEEKDAY_WIDTH = { long: "weekdayLong", short: "weekday", tiny: "weekdayTiny", narrow: "weekdayNarrow" } as const;
+
+/**
+ * A day of the week (1 = Monday … 7 = Sunday) in the reader's language:
+ * "Monday", "Mon" when short, "Mo" tiny (a row of day chips), "M" narrow
+ * (a calendar's heading).
+ */
+export function weekdayName(dow: number, words: Words, width: keyof typeof WEEKDAY_WIDTH = "long"): string {
+  // 1 January 2024 was a Monday.
+  return dateIn(new Date(Date.UTC(2024, 0, dow, 12)), WEEKDAY_WIDTH[width], "UTC", words);
+}
+
+/** A month (0 = January) in the reader's language: "November", or "Nov" when short. */
+export function monthNameOf(index: number, words: Words, short = false): string {
+  return dateIn(new Date(Date.UTC(2024, ((index % 12) + 12) % 12, 15, 12)), short ? "monthShort" : "month", "UTC", words);
+}
+
 /** "Today 21:00", "Tomorrow 07:30", "Thu 21:00", "Mon 6 Oct". */
-export function dueLabel(due: Date, now: Date, zone: string): string {
-  const inZone = tz(zone);
-  const days = differenceInCalendarDays(due, now, { in: inZone });
-  const time = format(due, "HH:mm", { in: inZone });
-  if (days === 0) return `Today ${time}`;
-  if (days === 1) return `Tomorrow ${time}`;
-  if (days === -1) return `Yesterday ${time}`;
-  if (days > 1 && days < 7) return `${format(due, "EEE", { in: inZone })} ${time}`;
-  return format(due, "EEE d MMM", { in: inZone });
+export function dueLabel(due: Date, now: Date, zone: string, words: Words): string {
+  return dueSaid(due, now, zone, words, false);
 }
 
 /** "today 21:00", "tomorrow 07:30", "Thu 21:00", "Mon 6 Oct": a due label mid-sentence. */
-export function dueInLine(due: Date, now: Date, zone: string): string {
-  return dueLabel(due, now, zone).replace(/^(Today|Tomorrow|Yesterday)/, (word) => word.toLowerCase());
+export function dueInLine(due: Date, now: Date, zone: string, words: Words): string {
+  return dueSaid(due, now, zone, words, true);
+}
+
+function dueSaid(due: Date, now: Date, zone: string, words: Words, inLine: boolean): string {
+  const days = differenceInCalendarDays(due, now, { in: tz(zone) });
+  const time = dateIn(due, "time", zone, words);
+  const near = days === 0 ? "today" : days === 1 ? "tomorrow" : days === -1 ? "yesterday" : null;
+  if (near) return words(inLine ? `common.date.inLine.${near}` : `common.date.${near}`, { time });
+  if (days > 1 && days < 7) return words("common.date.weekdayTime", { day: dateIn(due, "weekday", zone, words), time });
+  return dateIn(due, "weekdayDayMonth", zone, words);
 }
 
 /**
  * When something already past fell due, as short as a line beside a mark
  * needs: the time today, the weekday within the week, the date before that.
  */
-export function sinceLabel(at: Date, now: Date, zone: string): string {
-  const inZone = tz(zone);
-  const days = differenceInCalendarDays(now, at, { in: inZone });
-  return format(at, days <= 0 ? "HH:mm" : days < 7 ? "EEE" : "EEE d MMM", { in: inZone });
+export function sinceLabel(at: Date, now: Date, zone: string, words: Words): string {
+  const days = differenceInCalendarDays(now, at, { in: tz(zone) });
+  return dateIn(at, days <= 0 ? "time" : days < 7 ? "weekday" : "weekdayDayMonth", zone, words);
 }
 
 /** "in 3h", "in 2 days", "3h ago" — for the line under a John. */
-export function relative(target: Date, now: Date): string {
+export function relative(target: Date, now: Date, words: Words): string {
   const ms = target.getTime() - now.getTime();
   const abs = Math.abs(ms);
   const minutes = Math.round(abs / 60_000);
   const hours = Math.round(abs / 3_600_000);
   const days = Math.round(abs / 86_400_000);
-  const body =
-    minutes < 60 ? `${Math.max(1, minutes)} min` : hours < 36 ? `${hours}h` : `${days} ${days === 1 ? "day" : "days"}`;
-  return ms >= 0 ? `in ${body}` : `${body} ago`;
+  const span =
+    minutes < 60
+      ? words("common.date.minutes", { n: Math.max(1, minutes) })
+      : hours < 36
+        ? words("common.date.hours", { n: hours })
+        : words("common.date.days", { n: days });
+  return words(ms >= 0 ? "common.date.in" : "common.date.ago", { span });
 }
 
 /** "1 pt", "4 pts": a John's effort points as a label. */
-export function pointsLabel(points: number): string {
+export function pointsLabel(points: number, words: Words): string {
   // A John done together shares its points: to a tenth ("1.3 pts").
-  const shown = Math.round(points * 10) / 10;
-  return `${shown} ${shown === 1 ? "pt" : "pts"}`;
+  return words("common.points", { n: Math.round(points * 10) / 10 });
 }
 
 /**
  * A range's two ends, written one way everywhere, as the mockups write it:
  * an en dash with no spaces, "6–12 Oct", "29 Oct–1 Nov".
  */
-export function joinRange(first: string, last: string): string {
-  return `${first}–${last}`;
+export function joinRange(first: string, last: string, words: Words): string {
+  return words("common.date.range", { first, last });
 }
 
 /** "6–12 Oct", "28 Sep–4 Oct". The end is the last day, not the instant the week ends. */
-export function weekRange(startsAt: Date, endsAt: Date, zone: string): string {
-  const inZone = tz(zone);
+export function weekRange(startsAt: Date, endsAt: Date, zone: string, words: Words): string {
   const last = new Date(endsAt.getTime() - 1);
-  const sameMonth = format(startsAt, "MM", { in: inZone }) === format(last, "MM", { in: inZone });
-  return sameMonth
-    ? joinRange(format(startsAt, "d", { in: inZone }), format(last, "d MMM", { in: inZone }))
-    : joinRange(format(startsAt, "d MMM", { in: inZone }), format(last, "d MMM", { in: inZone }));
+  const sameMonth = format(startsAt, "MM", { in: tz(zone) }) === format(last, "MM", { in: tz(zone) });
+  return joinRange(dateIn(startsAt, sameMonth ? "day" : "dayMonth", zone, words), dateIn(last, "dayMonth", zone, words), words);
 }
 
 /** "October 2026" from "2026-10". */
-export function monthLabel(month: string): string {
+export function monthLabel(month: string, words: Words): string {
   const [y, m] = month.split("-").map(Number);
-  return format(new Date(Date.UTC(y, m - 1, 15)), "MMMM yyyy");
+  return dateIn(new Date(Date.UTC(y, m - 1, 15)), "monthYear", "UTC", words);
 }
 
-export const STATUS_LABEL: Record<LiveStatus, string> = {
-  upcoming: "Upcoming",
-  "due-soon": "Due soon",
-  overdue: "Overdue",
-  checking: "Done, being checked",
-  disputed: "Disputed",
-  done: "Done",
-  late: "Done late",
-  missed: "Missed",
-  excused: "Skipped",
-  covered: "Covered by someone else",
-};
+/** A status as a sentence says it: "Done, being checked", "Covered by someone else". */
+export function statusLabel(status: LiveStatus, words: Words): string {
+  return words(`common.status.${status}`);
+}
+
+/** A status as its mark's one word says it: "Checking", "Covered". Sentence case: a chip sets it in caps by style. */
+export function statusWord(status: LiveStatus, words: Words): string {
+  return words(`common.statusMark.${status}`);
+}
 
 /** How loud a status is: nothing, a quiet outline, the done green, or hazard. */
 export type StatusTone = "none" | "quiet" | "good" | "hazard";
@@ -100,33 +148,31 @@ export type StatusIcon = "clock" | "check" | "triangle" | "x" | "flag" | "shield
 export interface StatusMark {
   tone: StatusTone;
   icon: StatusIcon | null;
-  /** Sentence case: a chip sets it in caps by style. */
-  label: string;
 }
 
 /**
  * Focus's one status map, for Today, Week, the John sheet and the Wall alike:
  * upcoming shows nothing (its time is in the meta line), hazard only for
  * what is late, overdue, missed, covered or disputed, green only for done, and every
- * mark that shows carries an icon and a word.
+ * mark that shows carries an icon and a word (`statusWord`).
  */
 export const STATUS_MARK: Record<LiveStatus, StatusMark> = {
-  upcoming: { tone: "none", icon: null, label: "Upcoming" },
-  "due-soon": { tone: "quiet", icon: "clock", label: "Due soon" },
-  checking: { tone: "quiet", icon: "check", label: "Checking" },
-  done: { tone: "good", icon: "check", label: "Done" },
-  late: { tone: "hazard", icon: "clock", label: "Late" },
-  overdue: { tone: "hazard", icon: "triangle", label: "Overdue" },
-  missed: { tone: "hazard", icon: "x", label: "Missed" },
-  disputed: { tone: "hazard", icon: "flag", label: "Disputed" },
-  excused: { tone: "quiet", icon: "shield", label: "Skipped" },
+  upcoming: { tone: "none", icon: null },
+  "due-soon": { tone: "quiet", icon: "clock" },
+  checking: { tone: "quiet", icon: "check" },
+  done: { tone: "good", icon: "check" },
+  late: { tone: "hazard", icon: "clock" },
+  overdue: { tone: "hazard", icon: "triangle" },
+  missed: { tone: "hazard", icon: "x" },
+  disputed: { tone: "hazard", icon: "flag" },
+  excused: { tone: "quiet", icon: "shield" },
   // Done, but not by the person it was dealt to: for them it counts as missed.
-  covered: { tone: "hazard", icon: "x", label: "Covered" },
+  covered: { tone: "hazard", icon: "x" },
 };
 
 /** "Sun 25 Oct": a day in the house's zone, as a title bar shows today's date. */
-export function dayLabel(at: Date, zone: string): string {
-  return format(at, "EEE d MMM", { in: tz(zone) });
+export function dayLabel(at: Date, zone: string, words: Words): string {
+  return dateIn(at, "weekdayDayMonth", zone, words);
 }
 
 /** First letters of up to two words: "Priya Shah" → "PS". */
@@ -161,25 +207,16 @@ export function firstName(name: string): string {
 }
 
 /** "14–21 Oct", "28 Oct–2 Nov", "Fri 16 Oct" for a single day. Local `yyyy-MM-dd` dates. */
-export function dateRange(from: string, to: string): string {
-  const day = (d: string) => {
-    const [y, m, dd] = d.split("-").map(Number);
-    return new Date(Date.UTC(y, m - 1, dd, 12));
-  };
-  const a = day(from);
-  const b = day(to);
-  const utc = tz("UTC");
-  if (from === to) return format(a, "EEE d MMM", { in: utc });
-  if (format(a, "yyyy-MM", { in: utc }) === format(b, "yyyy-MM", { in: utc })) {
-    return joinRange(format(a, "d", { in: utc }), format(b, "d MMM", { in: utc }));
-  }
-  return joinRange(format(a, "d MMM", { in: utc }), format(b, "d MMM", { in: utc }));
+export function dateRange(from: string, to: string, words: Words): string {
+  if (from === to) return localDay(from, "weekdayDayMonth", words);
+  const sameMonth = from.slice(0, 7) === to.slice(0, 7);
+  return joinRange(localDay(from, sameMonth ? "day" : "dayMonth", words), localDay(to, "dayMonth", words), words);
 }
 
 /** A balance against your share: "+3.5", "−9", "level". */
-export function formatBalance(points: number): string {
+export function formatBalance(points: number, words: Words): string {
   const rounded = Math.round(points * 2) / 2;
-  if (rounded === 0) return "level";
-  const body = Math.abs(rounded).toString();
+  if (rounded === 0) return words("common.balance.level");
+  const body = words.intl.formatNumber(Math.abs(rounded), { useGrouping: false });
   return rounded > 0 ? `+${body}` : `−${body}`;
 }

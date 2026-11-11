@@ -126,13 +126,13 @@ function TodayView({
   // A kid in a family sees what they've earned this month in place of where they stand.
   const earned =
     house.kind === 'family' && me?.role !== 'admin' && pocket
-      ? words('house.pocket.kidMonth', { money: pocketMoney(pocket.earned[userId] ?? 0, rules.currency), month: monthWord(pocket.month) })
+      ? words('house.pocket.kidMonth', { money: pocketMoney(pocket.earned[userId] ?? 0, rules.currency, words), month: monthWord(pocket.month, words) })
       : null;
   const standing = earned ?? page.standing;
   const nameOf = (id: string) => members.find((m) => m.userId === id)?.name ?? null;
   const two = useColumns();
   const beside = useSideBySide();
-  const day = <TopLine>{dayLabel(now, rules.timezone)}</TopLine>;
+  const day = <TopLine>{dayLabel(now, rules.timezone, words)}</TopLine>;
 
   const next = (
     <TourSpot id="today.nextUp">

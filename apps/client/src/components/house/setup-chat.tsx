@@ -1,5 +1,7 @@
 import {
   askExamples,
+  dayChoices,
+  weekdayName,
   changesMeta,
   thinkingSteps,
   CATEGORIES,
@@ -8,7 +10,6 @@ import {
   DEAL_MODES,
   draftChanges,
   groupChanges,
-  DOW_LABEL,
   listAsDraft,
   MESSAGE_MAX,
   membersLine,
@@ -515,8 +516,8 @@ function AskCard({ ask, weekStarts, onAnswer }: { ask: ChatAsk; weekStarts: IsoD
       equal
       label={words('ask.draft.pickDay')}
       value={0}
-      options={days.map((d) => ({ value: d, label: DOW_LABEL[d].slice(0, 3), spoken: DOW_LABEL[d] }))}
-      onChange={(d) => onAnswer(DOW_LABEL[d as IsoDow])}
+      options={days.map((d) => dayChoices(words)[d - 1])}
+      onChange={(d) => onAnswer(weekdayName(d, words))}
       testID="ask-day"
     />
   );
@@ -568,7 +569,7 @@ function DraftCard({
   const groups = draft.groups.filter((g) => changes.some((c) => c.kind !== 'remove' && c.john.group === g.name));
   const waiting = groups.filter((g) => g.memberIds.length === 0);
   const after = afterApplying(base, changes, keep);
-  const line = (j: DraftedJohn) => [scheduleLine({ ...j, dueDow: j.dueDow as IsoDow }, words, j.group), pointsLabel(j.points)].join(', ');
+  const line = (j: DraftedJohn) => [scheduleLine({ ...j, dueDow: j.dueDow as IsoDow }, words, j.group), pointsLabel(j.points, words)].join(', ');
   const row = (c: DraftChange) => {
     const j = c.kind === 'remove' ? c.before : c.john;
     const meta = c.kind === 'change' ? changedLine(c.before, c.john, words) : [line(j), editing ? null : j.why || null].filter(Boolean).join(', ');

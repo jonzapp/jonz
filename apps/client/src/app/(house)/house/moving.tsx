@@ -96,7 +96,7 @@ function MovingForm({
           {saved ? (
             <Section label={words('house.moving.title')}>
               <GroupItem>
-                <Body testID="moving-saved">{words('house.moving.saved', { day: dateRange(saved, saved) })}</Body>
+                <Body testID="moving-saved">{words('house.moving.saved', { day: dateRange(saved, saved, words) })}</Body>
                 <TextButton
                   label={words('house.moving.staying')}
                   icon={CalendarXIcon}
@@ -123,7 +123,7 @@ function MovingForm({
               <View style={styles.action}>
                 <ButtonRow atEdge>
                   <Button
-                    label={picked ? words('house.moving.save', { day: dateRange(picked, picked) }) : words('house.moving.pick')}
+                    label={picked ? words('house.moving.save', { day: dateRange(picked, picked, words) }) : words('house.moving.pick')}
                     disabled={!picked || !changed}
                     busy={move.pending}
                     busyLabel={words('common.busy.saving')}

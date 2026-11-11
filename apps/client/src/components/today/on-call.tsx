@@ -57,7 +57,7 @@ export function OnCall({
               key={item.johnId}
               title={item.name}
               lid={item.category}
-              meta={`${withMe ? words('today.onCall.flaggedYou') : words('today.onCall.flagged', { name: nameOf(flag.userId) })}, due ${dueInLine(flag.dueAt, now, rules.timezone)}`}
+              meta={`${withMe ? words('today.onCall.flaggedYou') : words('today.onCall.flagged', { name: nameOf(flag.userId) })}, due ${dueInLine(flag.dueAt, now, rules.timezone, words)}`}
               chevron
               onPress={() => sheet.open(flag.id)}
               testID="on-call-flagged"
@@ -72,7 +72,7 @@ export function OnCall({
               key={item.johnId}
               title={item.name}
               lid={item.category}
-              meta={words('today.onCall.didIt', { time: sinceLabel(held.doneAt, now, rules.timezone) })}
+              meta={words('today.onCall.didIt', { time: sinceLabel(held.doneAt, now, rules.timezone, words) })}
               trailing={<Chip label={words('today.onCall.done')} icon={CheckIcon} tone="good" />}
               onPress={() => sheet.open(held.id)}
               testID="on-call-done-it"

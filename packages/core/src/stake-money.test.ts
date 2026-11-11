@@ -3,6 +3,9 @@ import { describe, expect, it } from "vitest";
 import { CURRENCIES } from "./domain";
 import { CURRENCY_SYMBOL, currencyForCountry, formatMoney, formatSigned, moneyInput, parseMoney } from "./money";
 import { balances, buildStake, forfeitFor, HISTORY_LENGTH, settleMonth, settleUp, type LedgerEntry, type LedgerRow } from "./stake";
+import { wordsFor } from "./words-for";
+
+const words = wordsFor("en", "housemates");
 
 const RULES = { lateForfeitMinor: 100, missedForfeitMinor: 300 };
 
@@ -184,16 +187,16 @@ describe("settleUp", () => {
 
 describe("money", () => {
   it("formats by currency, dropping zero pence", () => {
-    expect(formatMoney(1400, "GBP")).toBe("£14");
-    expect(formatMoney(250, "GBP")).toBe("£2.50");
-    expect(formatMoney(2000, "CAD")).toBe("$20");
-    expect(formatMoney(150, "EUR")).toBe("€1.50");
+    expect(formatMoney(1400, "GBP", words)).toBe("£14");
+    expect(formatMoney(250, "GBP", words)).toBe("£2.50");
+    expect(formatMoney(2000, "CAD", words)).toBe("$20");
+    expect(formatMoney(150, "EUR", words)).toBe("€1.50");
   });
 
   it("always shows a sign", () => {
-    expect(formatSigned(200, "GBP")).toBe("+£2");
-    expect(formatSigned(-350, "GBP")).toBe("−£3.50");
-    expect(formatSigned(0, "GBP")).toBe("£0");
+    expect(formatSigned(200, "GBP", words)).toBe("+£2");
+    expect(formatSigned(-350, "GBP", words)).toBe("−£3.50");
+    expect(formatSigned(0, "GBP", words)).toBe("£0");
   });
 
   it("parses what people type", () => {

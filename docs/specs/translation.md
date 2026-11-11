@@ -47,6 +47,18 @@ through FormatJS. A family reads its own sentences (never "housemates" or
   language as `Accept-Language`, and the API's own sentences
   (`errors.api.*`, refusals) read it with `wordsOf(request)`; a refusal word
   from `/v1` is turned into a sentence in the app, with your house's words.
+- **Dates and money, in each reader's language.** A date's shape is a line
+  too (`common.date.pattern.*`: "EEE d MMM" in English), so a language can
+  put the day after the month, and `Words.dates` gives date-fns its day and
+  month names. `format.ts` says them: `dateIn(at, pattern, zone, words)`,
+  `localDay(date, …)`, `weekdayName(dow, words, width)`, `monthNameOf`, and
+  `dueLabel`, `dateRange`, `pointsLabel` and the rest, each taking the
+  reader's `words` last. A status's word is `statusWord`/`statusLabel`.
+  Money is `formatMoney(minor, currency, words)`: English writes it as the
+  currency's own country does ("$2.50" in Canada), another language its own
+  way ("2,50 €"), always with the plain sign. `Words.locale` is the tag for
+  `Intl` ("en-GB" for English). The owner's pages and what Ask Jonz is told
+  stay in English, so their dates do too.
 - **The test language** (`en-XA`, `pseudo.ts`): every English line with its
   letters accented and held in brackets, `[Ţíçķ íţ óƒƒ]`. Offered on You only
   locally and on staging. A line still written into a screen reads plain,
@@ -78,10 +90,13 @@ The lines move part by part, one pull request each, merged one at a time:
    joins included (`common.join.*`: a language may join two lines with
    something other than ", "); the lint rule's suppressions go, and only
    the style page (/style, a sample book) keeps written-in text.
-7. In two parts. 7a: each person's language (`profiles.language`, You's
+7. In three parts. 7a: each person's language (`profiles.language`, You's
    Language row), the test language, and Ask Jonz answering in it. 7b:
    pushes, emails and errors in each reader's language. 7c: dates and money
-   in it (`Words` gets a locale; `en-GB` stops being written in).
+   in it (`Words` gets `dates` and `locale`; `en-GB` stops being written in
+   outside the owner's pages).
+8. French, the first language beside English: a `fr` folder, drafted with
+   the glossary and read by a French speaker on staging before it's offered.
 
 ## Edge cases
 

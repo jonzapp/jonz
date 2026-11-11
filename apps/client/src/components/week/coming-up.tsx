@@ -25,7 +25,7 @@ export function ComingUpSection({ johns, startsOn, weekStarts }: { johns: readon
             leading={<RowIcon icon={CalendarIcon} />}
             title={r.name}
             meta={r.meta}
-            trailing={pointsLabel(r.points)}
+            trailing={pointsLabel(r.points, words)}
             testID="coming-up-john"
           />
         ))}

@@ -1,30 +1,39 @@
 import type { Currency } from "./domain";
+import type { Words } from "./words-for";
 
 /**
  * Money is whole minor units everywhere (pence, cents). It becomes a
  * decimal only here, at the moment it is printed.
  */
 
-const LOCALE: Record<Currency, string> = {
+/** How an amount reads in English: as its currency's own country writes it, "$2.50" in Canada rather than "CA$2.50". */
+const ENGLISH: Record<Currency, string> = {
   GBP: "en-GB",
   CAD: "en-CA",
   USD: "en-US",
   EUR: "en-IE",
 };
 
-export function formatMoney(minor: number, currency: Currency): string {
-  return new Intl.NumberFormat(LOCALE[currency], {
+/**
+ * An amount in the reader's language. English writes it as the currency's own
+ * country does ("$2.50" in Canada); another language writes it its own way
+ * ("2,50 €"). Always the plain sign ("£", never "£GB"): a house has one
+ * currency, so it can't be mistaken.
+ */
+export function formatMoney(minor: number, currency: Currency, words: Words): string {
+  return new Intl.NumberFormat(words.locale.startsWith("en") ? ENGLISH[currency] : words.locale, {
     style: "currency",
     currency,
+    currencyDisplay: "narrowSymbol",
     minimumFractionDigits: minor % 100 === 0 ? 0 : 2,
     maximumFractionDigits: 2,
   }).format(minor / 100);
 }
 
 /** "+£2", "−£3.50" — the sign is the point, so it is always shown. */
-export function formatSigned(minor: number, currency: Currency): string {
-  if (minor === 0) return formatMoney(0, currency);
-  const body = formatMoney(Math.abs(minor), currency);
+export function formatSigned(minor: number, currency: Currency, words: Words): string {
+  if (minor === 0) return formatMoney(0, currency, words);
+  const body = formatMoney(Math.abs(minor), currency, words);
   return minor > 0 ? `+${body}` : `−${body}`;
 }
 

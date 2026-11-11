@@ -51,9 +51,9 @@ it('sits under a title bar with the way back to House', async () => {
 it('saves the one day you tap, whichever you tapped last', async () => {
   await open();
   expect(screen.getByTestId('moving-save')).toBeDisabled();
-  await fireEvent.press(screen.getByRole('button', { name: dayName(tomorrow) }));
-  await fireEvent.press(screen.getByRole('button', { name: dayName(nextDay) }));
-  const save = screen.getByRole('button', { name: words('house.moving.save', { day: dateRange(nextDay, nextDay) }) });
+  await fireEvent.press(screen.getByRole('button', { name: dayName(tomorrow, words) }));
+  await fireEvent.press(screen.getByRole('button', { name: dayName(nextDay, words) }));
+  const save = screen.getByRole('button', { name: words('house.moving.save', { day: dateRange(nextDay, nextDay, words) }) });
   await fireEvent.press(save);
   expect(setMovingOut).toHaveBeenCalledWith(nextDay);
 });
@@ -61,7 +61,7 @@ it('saves the one day you tap, whichever you tapped last', async () => {
 it('says the date once set, and lets you stay after all', async () => {
   (loadHouse as jest.Mock).mockResolvedValue(movingOn(tomorrow));
   await open();
-  expect(screen.getByTestId('moving-saved')).toHaveTextContent(words('house.moving.saved', { day: dateRange(tomorrow, tomorrow) }));
+  expect(screen.getByTestId('moving-saved')).toHaveTextContent(words('house.moving.saved', { day: dateRange(tomorrow, tomorrow, words) }));
   // The same day again is nothing to save.
   expect(screen.getByTestId('moving-save')).toBeDisabled();
   await fireEvent.press(screen.getByRole('button', { name: words('house.moving.staying') }));
@@ -71,7 +71,7 @@ it('says the date once set, and lets you stay after all', async () => {
 it("says so when the database refuses", async () => {
   (setMovingOut as jest.Mock).mockRejectedValue(new Error('Your moving-out day can be today at the earliest.'));
   await open();
-  await fireEvent.press(screen.getByRole('button', { name: dayName(tomorrow) }));
+  await fireEvent.press(screen.getByRole('button', { name: dayName(tomorrow, words) }));
   await fireEvent.press(screen.getByTestId('moving-save'));
   expect(await screen.findByRole('alert')).toHaveTextContent('Your moving-out day can be today at the earliest.');
 });

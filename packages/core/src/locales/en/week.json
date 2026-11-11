@@ -188,5 +188,7 @@
   "week.record.counts.skipped": "{n} skipped",
   "week.record.counts.covered": "covered {n}",
   "week.record.counts.helped": "helped {n}",
-  "week.steady.weeklyEveryRange": "{all, select, true {Each comes round every {lo} to {hi} weeks.} other {Weekly Johns come round every {lo} to {hi} weeks.}}"
+  "week.steady.weeklyEveryRange": "{all, select, true {Each comes round every {lo} to {hi} weeks.} other {Weekly Johns come round every {lo} to {hi} weeks.}}",
+  "week.away.allWeek": "Away all week",
+  "week.away.days": "Away {days}"
 }

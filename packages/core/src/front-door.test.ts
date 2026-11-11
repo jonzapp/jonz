@@ -5,7 +5,7 @@ import { CURRENCIES } from "./domain";
 import {
   afterSignIn,
   CURRENCY_CHOICES,
-  DAY_CHOICES,
+  dayChoices,
   DOOR,
   googleReturn,
   signedOutTo,
@@ -177,9 +177,10 @@ describe("the choices behind Change", () => {
   });
 
   it("offers the seven days from Monday, three letters to see and the whole day to hear", () => {
-    expect(DAY_CHOICES.map((d) => d.value)).toEqual([1, 2, 3, 4, 5, 6, 7]);
-    expect(DAY_CHOICES.map((d) => d.label)).toEqual(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]);
-    expect(DAY_CHOICES[6].spoken).toBe("Sunday");
+    const days = dayChoices(words);
+    expect(days.map((d) => d.value)).toEqual([1, 2, 3, 4, 5, 6, 7]);
+    expect(days.map((d) => d.label)).toEqual(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]);
+    expect(days[6].spoken).toBe("Sunday");
   });
 });
 

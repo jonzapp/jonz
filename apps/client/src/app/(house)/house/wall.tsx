@@ -145,7 +145,7 @@ function WallFor({ houseId, userId }: { houseId: string; userId: string }) {
             )}
           </Section>
         ))}
-        <ListFoot more={more} shown={oldest && scene ? words('common.list.backTo', { day: dayLabel(oldest.createdAt, scene.zone) }) : null} testID="wall-foot" />
+        <ListFoot more={more} shown={oldest && scene ? words('common.list.backTo', { day: dayLabel(oldest.createdAt, scene.zone, words) }) : null} testID="wall-foot" />
       </>
     );
   }

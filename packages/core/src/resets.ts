@@ -127,8 +127,8 @@ export interface ResetWords {
 }
 
 /** "October" from "2026-10". */
-function monthOnly(month: string): string {
-  return monthLabel(month).split(" ")[0];
+function monthOnly(month: string, words: Words): string {
+  return monthLabel(month, words).split(" ")[0];
 }
 
 function and(names: readonly string[]): string {
@@ -149,9 +149,9 @@ export function resetSheet(preview: ResetPreview, w: ResetWords, words: Words): 
   const short = (id: string) => (id === w.viewerId ? words('house.resets.you') : firstName(w.nameOf(id)));
   const people = Object.entries(preview.people).sort(([a], [b]) => short(a).localeCompare(short(b)));
   const range = preview.week
-    ? weekRange(new Date(preview.week.starts_at), new Date(preview.week.ends_at), w.zone)
+    ? weekRange(new Date(preview.week.starts_at), new Date(preview.week.ends_at), w.zone, words)
     : "";
-  const monthName = preview.month ? monthOnly(preview.month) : "";
+  const monthName = preview.month ? monthOnly(preview.month, words) : "";
   const { title, body, confirm } = resetHead(w, range, monthName, words);
 
   const lines: ResetLine[] = [];
@@ -180,8 +180,8 @@ export function resetSheet(preview: ResetPreview, w: ResetWords, words: Words): 
   const back = people.reduce((n, [, t]) => n + Math.max(t.forfeit ?? 0, 0), 0);
   const owed = people.reduce((n, [, t]) => n + Math.max(-(t.forfeit ?? 0), 0), 0);
   const money: string[] = [];
-  if (back > 0) money.push(words('house.resets.removed', { money: formatMoney(back, w.currency) }));
-  if (owed > 0) money.push(words('house.resets.added', { money: formatMoney(owed, w.currency) }));
+  if (back > 0) money.push(words('house.resets.removed', { money: formatMoney(back, w.currency, words) }));
+  if (owed > 0) money.push(words('house.resets.added', { money: formatMoney(owed, w.currency, words) }));
   lines.push({
     key: "stake",
     label: words('house.resets.stake'),
@@ -202,14 +202,14 @@ export function resetSheet(preview: ResetPreview, w: ResetWords, words: Words): 
     body,
     lines,
     told: told.length === 0 ? words('house.resets.toldNobody') : resetTold(and(told.sort()), words),
-    undo: words('house.resets.undo', { until: preview.month ? monthOnly(preview.month) : "this month" }),
+    undo: words('house.resets.undo', { until: preview.month ? monthOnly(preview.month, words) : "this month" }),
     confirm,
   };
 }
 
 /** A reset's question before its numbers are in: the sheet's title while it works them out. */
 export function resetTitle(w: ResetWords, words: Words): string {
-  return resetHead(w, "", w.month ? monthOnly(w.month) : "", words).title;
+  return resetHead(w, "", w.month ? monthOnly(w.month, words) : "", words).title;
 }
 
 function resetHead(w: ResetWords, range: string, monthName: string, words: Words): { title: string; body: string; confirm: string } {
@@ -318,7 +318,7 @@ export function resetWhat(data: Record<string, unknown>, subject: string, words:
     case "skip":
       return words(`wall.history.reset.${data.what}`);
     case "letoff":
-      return data.month ? words("wall.history.reset.letoff", { month: monthOnly(String(data.month)) }) : words("wall.history.reset.letoffAny");
+      return data.month ? words("wall.history.reset.letoff", { month: monthOnly(String(data.month), words) }) : words("wall.history.reset.letoffAny");
     default:
       return words("wall.history.reset.other");
   }

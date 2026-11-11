@@ -2,6 +2,7 @@ import type { Database } from "./db-types";
 import type { IsoDow } from "./domain";
 import { dateRange } from "./format";
 import { addDaysTo } from "./week";
+import type { Words } from "./words-for";
 
 /**
  * Time away, as the house's local calendar dates. A period runs from its
@@ -96,10 +97,10 @@ export function isoDayOf(date: string): IsoDow {
 }
 
 /** What Week says under someone away this week: "Away all week", "Away 21–23 Oct", or nothing. */
-export function awayThisWeek(periods: readonly AwayPeriod[], userId: string, weekStartsOn: string): string | null {
+export function awayThisWeek(periods: readonly AwayPeriod[], userId: string, weekStartsOn: string, words: Words): string | null {
   const days = awayDays(periods, userId, weekStartsOn, addDaysTo(weekStartsOn, 6));
   if (days.length === 0) return null;
-  return days.length === 7 ? "Away all week" : `Away ${dateRange(days[0], days[days.length - 1])}`;
+  return days.length === 7 ? words("week.away.allWeek") : words("week.away.days", { days: dateRange(days[0], days[days.length - 1], words) });
 }
 
 /** The month after (or, with -1, before) a `yyyy-MM` month. */

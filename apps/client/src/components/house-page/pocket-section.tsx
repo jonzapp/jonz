@@ -59,7 +59,7 @@ export function PocketSection({
   const card = pocketCard(pocket.data, rules.currency, words);
   const rows = payRows({ owed: pocket.data.owed, members, me: userId, parent, currency: rules.currency }, words);
   const parents = members.filter((m) => m.role === 'admin').length;
-  const line = words('house.pocket.family', { parents, kids: members.length - parents, cap: formatMoney(view.snapshot.house.pocketCapMinor ?? 0, rules.currency) });
+  const line = words('house.pocket.family', { parents, kids: members.length - parents, cap: formatMoney(view.snapshot.house.pocketCapMinor ?? 0, rules.currency, words) });
   return (
     <>
     <Meta style={{ paddingHorizontal: inset }} testID="family-line">{line}</Meta>

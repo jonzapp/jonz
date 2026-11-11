@@ -1,4 +1,4 @@
-import { type Currency, CURRENCY_CHOICES, DAY_CHOICES, DOOR, FAMILY_OPEN, houseDefaults, type HouseKind, type IsoDow, kindParam, newHouseWords, timeZoneName } from '@app/core';
+import { type Currency, CURRENCY_CHOICES, dayChoices, DOOR, FAMILY_OPEN, houseDefaults, type HouseKind, type IsoDow, kindParam, newHouseWords, timeZoneName } from '@app/core';
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -122,7 +122,7 @@ export default function NewHouse() {
               <Segmented
                 equal
                 label={words('door.newHouse.weekStarts')}
-                options={DAY_CHOICES}
+                options={dayChoices(words)}
                 value={weekStarts}
                 onChange={setWeekStarts}
                 testID="house-week-starts"

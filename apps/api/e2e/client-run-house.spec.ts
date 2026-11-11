@@ -26,7 +26,7 @@ async function addJohn(page: Page, name: string, points: number) {
   const form = page.getByTestId("john-form");
   await form.getByLabel(words('house.johns.name')).fill(name);
   await pickRow(page, words('house.johns.effort')).click();
-  await form.getByRole("radio", { name: pointsLabel(points), exact: true }).click();
+  await form.getByRole("radio", { name: pointsLabel(points, words), exact: true }).click();
   await form.getByTestId("save-john").click();
   await expect(form).toBeHidden();
   await expect(list.getByTestId("john-def").filter({ hasText: name })).toBeVisible();
@@ -116,7 +116,7 @@ test("run a house from nothing on the phone", async ({ browser }) => {
   await expect(page.getByTestId("toast")).toHaveText(words('house.setup.saved'));
   const { data: rules } = await db.from("houses").select("stake_minor, dispute_hours").eq("id", houseRow!.id).single();
   expect(rules).toEqual({ stake_minor: 2500, dispute_hours: 12 });
-  const stake = words('house.setup.perMonth', { amount: formatMoney(2500, houseRow!.currency as Currency) });
+  const stake = words('house.setup.perMonth', { amount: formatMoney(2500, houseRow!.currency as Currency, words) });
 
   // Ben reads the rules but can't change them, nor the list.
   await benPage.goto("/house/rules");

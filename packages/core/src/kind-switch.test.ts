@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import { familyWaits, nextFirst, switchWords } from "./kind-switch";
+import { wordsFor } from "./words-for";
+
+const words = wordsFor("en", "housemates");
 
 describe("switching a house to a family", () => {
   it("waits for the 1st only when there's money in it", () => {
@@ -18,7 +21,7 @@ describe("switching a house to a family", () => {
   });
 
   it("says the day and the month settled up before it", () => {
-    expect(switchWords("2026-12-01")).toEqual({ day: "Tue 1 Dec", month: "November" });
-    expect(switchWords("2027-01-01")).toEqual({ day: "Fri 1 Jan", month: "December" });
+    expect(switchWords("2026-12-01", words)).toEqual({ day: "Tue 1 Dec", month: "November" });
+    expect(switchWords("2027-01-01", words)).toEqual({ day: "Fri 1 Jan", month: "December" });
   });
 });

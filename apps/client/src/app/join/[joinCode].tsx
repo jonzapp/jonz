@@ -143,7 +143,7 @@ export default function Join() {
           {invite.kind === 'family' ? null : (
             <Body testID="join-stake">
               {invite.stakeMinor > 0 || invite.lateMinor > 0 || invite.missedMinor > 0
-                ? words('door.join.stake', { stake: formatMoney(invite.stakeMinor, invite.currency), late: formatMoney(invite.lateMinor, invite.currency), missed: formatMoney(invite.missedMinor, invite.currency) })
+                ? words('door.join.stake', { stake: formatMoney(invite.stakeMinor, invite.currency, words), late: formatMoney(invite.lateMinor, invite.currency, words), missed: formatMoney(invite.missedMinor, invite.currency, words) })
                 : words('door.join.noStake')}
             </Body>
           )}

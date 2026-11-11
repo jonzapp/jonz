@@ -1,10 +1,8 @@
-import { format } from "date-fns";
-
 import { currentOrNext, shiftMonth, type AwayPeriod } from "./away";
 import { weeklyEffort, type JohnDef } from "./board";
 import type { BalanceRow } from "./deal";
 import type { Currency, HouseRules, SettleIn } from "./domain";
-import { dateRange, dayLabel, firstName, formatBalance, monthLabel, pointsLabel, STATUS_MARK, type StatusIcon } from "./format";
+import { dateIn, dateRange, dayLabel, firstName, formatBalance, monthLabel, pointsLabel, STATUS_MARK, type StatusIcon } from "./format";
 import { formatMoney, formatSigned, moneyInput } from "./money";
 import type { TableRow } from "./points";
 import type { LedgerRow, StakeView, Transfer } from "./stake";
@@ -46,18 +44,18 @@ function midMonth(month: string): Date {
 }
 
 /** "October" from "2026-10". */
-export function monthWord(month: string): string {
-  return format(midMonth(month), "MMMM");
+export function monthWord(month: string, words: Words): string {
+  return dateIn(midMonth(month), "month", "UTC", words);
 }
 
 /** "Oct" from "2026-10": the Table's switch, and "in Oct". */
-export function monthAbbr(month: string): string {
-  return format(midMonth(month), "MMM");
+export function monthAbbr(month: string, words: Words): string {
+  return dateIn(midMonth(month), "monthShort", "UTC", words);
 }
 
 /** When a month's forfeits are shared out: the 1st of the next, "1 Nov". */
-export function shareOutDay(month: string): string {
-  return `1 ${monthAbbr(shiftMonth(month, 1))}`;
+export function shareOutDay(month: string, words: Words): string {
+  return `1 ${monthAbbr(shiftMonth(month, 1), words)}`;
 }
 
 /** A housemate's whole name, or "A former housemate" for someone who has left. */
@@ -107,7 +105,7 @@ function lateMissedPart(late: number, missed: number, words: Words): MetaPart {
 
 /** Two or more months in words: "September", "August and September", "July, August and September". */
 export function monthsInWords(months: readonly string[], words: Words): string {
-  const names = months.map(monthWord);
+  const names = months.map((month) => monthWord(month, words));
   if (names.length <= 1) return names[0] ?? "";
   return `${names.slice(0, -1).join(", ")} ${words('house.page.and')} ${names[names.length - 1]}`;
 }
@@ -132,14 +130,14 @@ export function monthCard(stake: Pick<StakeView, "month" | "projection">, me: st
   const mine = stake.projection.find((p) => p.userId === me);
   const forfeited = mine?.forfeited ?? 0;
   const net = mine?.net ?? 0;
-  const day = shareOutDay(stake.month);
-  const label = words('house.page.soFar', { month: monthWord(stake.month) });
+  const day = shareOutDay(stake.month, words);
+  const label = words('house.page.soFar', { month: monthWord(stake.month, words) });
   const meta = [
-    forfeited > 0 ? words('house.page.forfeited', { amount: formatMoney(forfeited, currency) }) : words('house.page.nothingForfeited'),
+    forfeited > 0 ? words('house.page.forfeited', { amount: formatMoney(forfeited, currency, words) }) : words('house.page.nothingForfeited'),
     words('house.page.sharedOut', { day }),
   ].join(COMMA);
-  if (net > 0) return { label, lead: words('house.page.up'), figure: formatMoney(net, currency), good: true, meta };
-  if (net < 0) return { label, lead: words('house.page.down'), figure: formatMoney(-net, currency), good: false, meta };
+  if (net > 0) return { label, lead: words('house.page.up'), figure: formatMoney(net, currency, words), good: true, meta };
+  if (net < 0) return { label, lead: words('house.page.down'), figure: formatMoney(-net, currency, words), good: false, meta };
   if (forfeited === 0) {
     return { label, lead: words('house.page.nothingYet'), figure: null, good: false, meta: words('house.page.sharedOutAlone', { day }) };
   }
@@ -180,8 +178,8 @@ export function overviewFigures(input: {
   johns?: readonly Pick<JohnDef, "points" | "everyWeeks">[];
 }, words: Words): OverviewFigure[] {
   const { stake, me, rules, housemates, johns } = input;
-  const money = (minor: number) => formatMoney(minor, rules.currency);
-  const month = monthWord(stake?.month ?? input.month);
+  const money = (minor: number) => formatMoney(minor, rules.currency, words);
+  const month = monthWord(stake?.month ?? input.month, words);
   let mine: OverviewFigure = { key: "money", value: null, label: words('house.page.forfeitedIn', { month }), note: null, good: false };
   if (stake) {
     const card = monthCard(stake, me, rules.currency, words);
@@ -197,7 +195,7 @@ export function overviewFigures(input: {
               key: "money",
               value: money(forfeited),
               label: words('house.page.forfeitedIn', { month }),
-              note: words('house.page.sharedOutAlone', { day: shareOutDay(stake.month) }),
+              note: words('house.page.sharedOutAlone', { day: shareOutDay(stake.month, words) }),
               good: false,
             };
   }
@@ -309,7 +307,7 @@ export function settleRows(input: {
   const owed = transfers
     .filter((t) => t.to === me && t.from !== me)
     .map((t): SettleRow => {
-      const amount = formatMoney(t.amount, currency);
+      const amount = formatMoney(t.amount, currency, words);
       const who = firstNameIn(members, t.from, words);
       const months = monthsOf(t.from);
       const inSplitwise = splitwise && here(t.from);
@@ -353,8 +351,8 @@ export function settleRows(input: {
         owedToYou: false,
         amount: t.amount,
         title: months
-          ? words('house.page.youOweFor', { name, amount: formatMoney(t.amount, currency), months })
-          : words('house.page.youOwe', { name, amount: formatMoney(t.amount, currency) }),
+          ? words('house.page.youOweFor', { name, amount: formatMoney(t.amount, currency, words), months })
+          : words('house.page.youOwe', { name, amount: formatMoney(t.amount, currency, words) }),
         meta: splitwise && here(t.to) ? words('house.page.splitwiseWaiting', { name }) : settleMeta(t, me, members, words),
         action: null,
         spoken: null,
@@ -440,19 +438,19 @@ export function tableLines(input: {
     const period = input.away ? currentOrNext(input.away, row.userId, input.today) : null;
     const extras: MetaPart[][] = [
       record && (record.late || record.missed)
-        ? [lateMissedPart(record.late, record.missed, words), { text: words('house.page.inMonth', { month: monthAbbr(input.month) }) }]
+        ? [lateMissedPart(record.late, record.missed, words), { text: words('house.page.inMonth', { month: monthAbbr(input.month, words) }) }]
         : [],
       record && record.covered ? [{ text: words('house.page.covered', { n: record.covered }) }] : [],
-      period ? [{ text: words('house.page.away', { range: dateRange(period.startsOn, period.endsOn) }) }] : [],
+      period ? [{ text: words('house.page.away', { range: dateRange(period.startsOn, period.endsOn, words) }) }] : [],
       member && member.streak > 0 ? [{ text: words('house.page.streak', { weeks: member.streak }) }] : [],
       member && member.immunityTokens > 0 ? [{ text: words('house.page.immunity', { skips: member.immunityTokens }) }] : [],
       member && member.swapTokens > 0 ? [{ text: words('house.page.swap') }] : [],
     ].filter((parts) => parts.length > 0);
     const net = projection ? (projection.find((p) => p.userId === row.userId)?.net ?? 0) : null;
-    const money = net === null ? null : formatSigned(net, input.currency);
+    const money = net === null ? null : formatSigned(net, input.currency, words);
     const fit = tableMetaFit(input.column ?? NARROWEST, money);
     // The most important first; after the first, only what still fits.
-    const said: MetaPart[][] = [[{ text: pointsLabel(row.points) }]];
+    const said: MetaPart[][] = [[{ text: pointsLabel(row.points, words) }]];
     for (const extra of extras) {
       if (said.length > TABLE_EXTRAS) break;
       if (said.length > 1 && letters(joinParts([...said, extra])) > fit) break;
@@ -475,7 +473,7 @@ export function stakeRules(
   rules: Pick<HouseRules, "currency" | "stakeMinor" | "lateForfeitMinor" | "missedForfeitMinor">,
   awayMakeup: number, words: Words,
 ): { label: string; body: string }[] {
-  const money = (minor: number) => formatMoney(minor, rules.currency);
+  const money = (minor: number) => formatMoney(minor, rules.currency, words);
   return [
     { label: words('house.page.rulesPoints'), body: words('house.page.rulesPointsBody') },
     {
@@ -512,7 +510,7 @@ function recordLine(key: string, title: string, row: TableRow, words: Words): Pe
       row.late || row.missed ? [lateMissedPart(row.late, row.missed, words)] : [],
       row.covered ? [{ text: words('people.person.coveredFor', { n: row.covered }) }] : [],
     ]),
-    value: pointsLabel(row.points),
+    value: pointsLabel(row.points, words),
   };
 }
 
@@ -524,7 +522,7 @@ export function recordLines(
 ): PersonLine[] {
   return [
     week ? recordLine("week", words('people.person.thisWeek'), week, words) : null,
-    month ? recordLine("month", monthWord(monthKey), month, words) : null,
+    month ? recordLine("month", monthWord(monthKey, words), month, words) : null,
   ].filter((line): line is PersonLine => line !== null);
 }
 
@@ -536,7 +534,7 @@ export function shareLine(balance: BalanceRow | null | undefined, you: boolean, 
   const points = balance?.balance ?? 0;
   const rounded = Math.round(points * 2) / 2;
   const figure = Math.abs(rounded).toString();
-  const value = formatBalance(points);
+  const value = formatBalance(points, words);
   const weeks = balance?.weeksToEven ?? 0;
   if (rounded < 0) {
     const meta = weeks > 0 ? words('people.person.catchingUp', { weeks }) : words('people.person.sinceJoining');
@@ -589,25 +587,25 @@ export function moneyLines(input: {
   const p = input.projection ?? { forfeited: 0, forfeitedRaw: 0, received: 0, net: 0 };
   const why: MetaPart[] =
     p.forfeitedRaw > p.forfeited
-      ? [{ text: words('people.person.capped', { stake: formatMoney(input.stakeMinor, currency) }) }]
+      ? [{ text: words('people.person.capped', { stake: formatMoney(input.stakeMinor, currency, words) }) }]
       : record && (record.late || record.missed)
-        ? [lateMissedPart(record.late, record.missed, words), { text: words('house.page.inMonth', { month: monthAbbr(month) }) }]
+        ? [lateMissedPart(record.late, record.missed, words), { text: words('house.page.inMonth', { month: monthAbbr(month, words) }) }]
         : [{ text: words('people.person.noneForfeited') }];
   return [
     {
       key: "forfeited",
       title: words('people.person.forfeited'),
       meta: why,
-      value: formatSigned(-p.forfeited, currency),
+      value: formatSigned(-p.forfeited, currency, words),
       losing: p.forfeited > 0,
     },
     {
       key: "received",
       title: words('people.person.share'),
-      meta: [{ text: words('people.person.sharedOut', { day: shareOutDay(month) }) }],
-      value: formatSigned(p.received, currency),
+      meta: [{ text: words('people.person.sharedOut', { day: shareOutDay(month, words) }) }],
+      value: formatSigned(p.received, currency, words),
     },
-    { key: "net", title: words('people.person.net'), meta: [{ text: words('people.person.ifNow') }], value: formatSigned(p.net, currency), losing: p.net < 0 },
+    { key: "net", title: words('people.person.net'), meta: [{ text: words('people.person.ifNow') }], value: formatSigned(p.net, currency, words), losing: p.net < 0 },
   ];
 }
 
@@ -629,7 +627,7 @@ export function owingLines(input: {
   return input.transfers
     .filter((t) => (t.from === input.personId || t.to === input.personId) && (t.from === me || t.to === me) && t.from !== t.to)
     .map((t) => {
-      const amount = formatMoney(t.amount, currency);
+      const amount = formatMoney(t.amount, currency, words);
       const months = monthsInWords(owedMonths(input.ledger, input.closedMonths, t.from), words);
       const title =
         t.from === me
@@ -650,7 +648,7 @@ export function awayLines(periods: readonly AwayPeriod[], personId: string, toda
     .sort((a, b) => a.startsOn.localeCompare(b.startsOn));
   return theirs.map((p) => ({
     key: p.id,
-    title: dateRange(p.startsOn, p.endsOn),
+    title: dateRange(p.startsOn, p.endsOn, words),
     meta: [{ text: [p.startsOn <= today ? words('people.person.awayNow') : words('people.person.booked'), p.note ?? ""].filter(Boolean).join(COMMA) }],
   }));
 }
@@ -697,9 +695,9 @@ export interface HistoryMonth {
 
 function historyLine(row: HistoryRow, input: { me: string; whole: boolean; members: readonly Named[]; currency: Currency; zone: string }, words: Words): HistoryLine {
   const { me, whole, members, currency } = input;
-  const day = dayLabel(new Date(happened(row)), input.zone);
+  const day = dayLabel(new Date(happened(row)), input.zone, words);
   const whose = (text: string) => (whole ? [called(members, row.user_id, me, words), text] : [text]).join(COMMA);
-  const signed = formatSigned(row.amount_minor, currency);
+  const signed = formatSigned(row.amount_minor, currency, words);
   switch (row.kind) {
     case "forfeit": {
       const outcome = row.john?.outcome;
@@ -730,7 +728,7 @@ function historyLine(row: HistoryRow, input: { me: string; whole: boolean; membe
         meta: words('house.stake.received', { day }),
         // stakeHistory hands over your own row of a payment you're in.
         // Unsigned: the ledger books it the other way round from the cash, so a sign would read backwards.
-        amount: row.user_id === me ? formatMoney(Math.abs(row.amount_minor), currency) : null,
+        amount: row.user_id === me ? formatMoney(Math.abs(row.amount_minor), currency, words) : null,
         losing: false,
       };
     }
@@ -776,5 +774,5 @@ export function stakeHistory(input: {
   }
   return [...months.keys()]
     .sort((a, b) => b.localeCompare(a))
-    .map((month) => ({ month, label: monthLabel(month), lines: months.get(month)! }));
+    .map((month) => ({ month, label: monthLabel(month, words), lines: months.get(month)! }));
 }

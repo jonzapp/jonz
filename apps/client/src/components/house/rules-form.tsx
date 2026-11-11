@@ -1,4 +1,4 @@
-import { AWAY_MAKEUP, checkRules, makeupHint, phoneZoneLine, type Words, familyHides, CURRENCIES, COVER_GRACE_HOURS, LATE_HOURS, CURRENCY_SYMBOL, DISPUTE_HOURS, DOW_LABEL, MAKEUP_LABEL, rulesChanged, rulesDraft, rulesRefusalField, SETTLE_IN, DEAL_MODES, type Currency, type HouseKind, type HouseRules, type IsoDow, type RulesDraft, type RulesField, type SettleIn } from '@app/core';
+import { AWAY_MAKEUP, checkRules, makeupHint, phoneZoneLine, type Words, familyHides, CURRENCIES, COVER_GRACE_HOURS, LATE_HOURS, CURRENCY_SYMBOL, DISPUTE_HOURS, dayChoices, MAKEUP_LABEL, rulesChanged, rulesDraft, rulesRefusalField, SETTLE_IN, DEAL_MODES, type Currency, type HouseKind, type HouseRules, type IsoDow, type RulesDraft, type RulesField, type SettleIn } from '@app/core';
 import { useState } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
@@ -20,7 +20,6 @@ import { GUTTER, INSET, LABEL_GAP, SPACE, useTheme, WIDE } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
 const CURRENCY_OPTIONS = CURRENCIES.map((c) => ({ value: c, label: `${CURRENCY_SYMBOL[c]} ${c}` }));
-const DAY_OPTIONS = (Object.entries(DOW_LABEL) as [string, string][]).map(([day, name]) => ({ value: Number(day) as IsoDow, label: name }));
 const disputeOptions = (words: Words) => DISPUTE_HOURS.map((h) => ({ value: h as number, label: words('house.rules.disputeHours', { hours: h }), short: words('house.setup.disputeShort', { hours: h }) }));
 const lateOptions = (words: Words) => LATE_HOURS.map((h) => ({ value: h as number, label: words('house.rules.lateHours', { hours: h }), short: words('house.setup.lateShort', { hours: h }) }));
 const coverOptions = (words: Words) => COVER_GRACE_HOURS.map((h) => ({ value: h as number, label: words('house.rules.coverGrace', { hours: h }), short: words('house.setup.coverShort', { hours: h }) }));
@@ -252,7 +251,7 @@ export function RulesForm({ form }: { form: RulesFormState }) {
         </GroupItem>
         <PickRow
           label={words('house.rules.weekStarts')}
-          options={DAY_OPTIONS}
+          options={dayChoices(words).map((d) => ({ value: d.value, label: d.spoken }))}
           value={v.weekStarts}
           onChange={(weekStarts) => set({ weekStarts })}
           disabled={pending}

@@ -42,7 +42,7 @@ export function ruleChanges(data: Record<string, unknown>, currency: Currency, w
   const changes = (data.changes ?? {}) as Record<string, [number, number]>;
   const said = Object.entries(changes).flatMap(([rule, [from, to]]) => {
     if (!(rule in RULE_IDS)) return [];
-    const say = (n: number) => (MONEY_RULES.includes(rule) ? formatMoney(n, currency) : Number(n));
+    const say = (n: number) => (MONEY_RULES.includes(rule) ? formatMoney(n, currency, words) : Number(n));
     return [words(RULE_IDS[rule as keyof typeof RULE_IDS], { from: say(Number(from)), to: say(Number(to)) })];
   });
   if (said.length <= 1) return said[0] ?? words("wall.tell.rule.none");

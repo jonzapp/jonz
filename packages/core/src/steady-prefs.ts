@@ -4,13 +4,13 @@
  * left before a John is due and the times on each, your best time chosen
  * already. Pure: every function takes `now`.
  */
-import { TZDate, tz } from "@date-fns/tz";
-import { format, set } from "date-fns";
+import { TZDate } from "@date-fns/tz";
+import { set } from "date-fns";
 
 import type { BoardItem } from "./board";
 import type { Json } from "./db-types";
-import { BEST_TIME_HOUR, BEST_TIMES, DOW_LABEL, type BestTime, type IsoDow } from "./domain";
-import { dueLabel } from "./format";
+import { BEST_TIME_HOUR, BEST_TIMES, type BestTime, type IsoDow } from "./domain";
+import { dateIn, dueLabel, weekdayName } from "./format";
 import { addDaysTo, localDate } from "./week";
 import type { Words } from "./words-for";
 
@@ -48,7 +48,7 @@ export function withRather(prefs: MyPrefs, johnId: string, rather: 1 | 0 | -1): 
 
 /** You's line for them: "Wed, Thu, Sat, mornings", "Mornings", or "No preferences". */
 export function prefsLine(prefs: MyPrefs, words: Words): string {
-  const days = prefs.days.map((d) => DOW_LABEL[d].slice(0, 3));
+  const days = prefs.days.map((d) => weekdayName(d, words, "short"));
   const parts = [...days, ...(prefs.bestTime ? [words(`week.steady.timeOften.${prefs.bestTime}`)] : [])];
   if (!parts.length) return Object.keys(prefs.rather).length ? words('week.steady.johns') : words('week.steady.prefsNone');
   const line = parts.join(", ");
@@ -98,22 +98,22 @@ export function planChoices(
       const at = atHour(date, BEST_TIME_HOUR[t], zone);
       return {
         at,
-        label: format(at, "HH:mm", { in: tz(zone) }),
+        label: dateIn(at, "time", zone, words),
         meta: t === bestTime ? words('week.steady.yourBest', { time: words(`week.steady.time.${t}`).toLowerCase() }) : words(`week.steady.time.${t}`),
         best: t === best,
       };
     }).filter((t) => t.at.getTime() > now.getTime() && t.at.getTime() < dueAt.getTime());
-    if (times.length) days.push({ date, label: format(atHour(date, 12, zone), "EEE", { in: tz(zone) }), times });
+    if (times.length) days.push({ date, label: dateIn(atHour(date, 12, zone), "weekday", zone, words), times });
   }
   if (!days.length) return null;
   const withBest = [...days].reverse().find((d) => d.times.some((t) => t.best));
   const chosen = withBest ? withBest.times.find((t) => t.best)! : days[days.length - 1].times[days[days.length - 1].times.length - 1];
-  return { days, chosen, dueWords: dueLabel(dueAt, now, zone) };
+  return { days, chosen, dueWords: dueLabel(dueAt, now, zone, words) };
 }
 
 /** A plan's time as the John says it: "Thu 08:30", "Today 19:00". */
-export function planLabel(at: Date, now: Date, zone: string): string {
-  return dueLabel(at, now, zone);
+export function planLabel(at: Date, now: Date, zone: string, words: Words): string {
+  return dueLabel(at, now, zone, words);
 }
 
 /** An hour on a local date, in a zone. */

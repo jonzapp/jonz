@@ -47,7 +47,7 @@ export function RollCall({ item, context, onCancel }: { item: BoardItem; context
   return (
     <>
       <SheetLines>
-        <Body testID="roll-call-sub">{words('john.crew.sub', { total: pointsLabel(plan.total) })}</Body>
+        <Body testID="roll-call-sub">{words('john.crew.sub', { total: pointsLabel(plan.total, words) })}</Body>
       </SheetLines>
       <SheetSection>
         <Section label={words('john.crew.title')} testID="roll-call">
@@ -114,7 +114,7 @@ export function RollCall({ item, context, onCancel }: { item: BoardItem; context
           )}
           <GroupItem>
             <Meta testID="roll-call-split">
-              {words('common.join.comma', { first: words('john.crew.split', { total: pointsLabel(plan.total), people: crew.length }), second: words('john.crew.splitEach', { each: shareLabel(plan.each) }) })}
+              {words('common.join.comma', { first: words('john.crew.split', { total: pointsLabel(plan.total, words), people: crew.length }), second: words('john.crew.splitEach', { each: shareLabel(plan.each, words) }) })}
             </Meta>
           </GroupItem>
         </Section>
@@ -198,7 +198,7 @@ export function CrewPart({ item, context }: { item: BoardItem; context: JohnShee
             leading={avatar(c.userId)}
             title={name(c.userId)}
             meta={c.helper ? words('john.crew.helped') : undefined}
-            trailing={shareLabel(c.points)}
+            trailing={shareLabel(c.points, words)}
             testID="crew-member"
           />
         ))}

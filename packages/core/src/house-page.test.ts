@@ -59,14 +59,14 @@ const projection = (net: Record<string, number>, forfeited: Record<string, numbe
 
 describe("month words", () => {
   it("names a month, short and long, the same in every time zone", () => {
-    expect(monthWord("2026-10")).toBe("October");
-    expect(monthAbbr("2026-10")).toBe("Oct");
-    expect(monthWord("2026-01")).toBe("January");
+    expect(monthWord("2026-10", words)).toBe("October");
+    expect(monthAbbr("2026-10", words)).toBe("Oct");
+    expect(monthWord("2026-01", words)).toBe("January");
   });
 
   it("shares a month out on the 1st of the next, over the new year too", () => {
-    expect(shareOutDay("2026-10")).toBe("1 Nov");
-    expect(shareOutDay("2026-12")).toBe("1 Jan");
+    expect(shareOutDay("2026-10", words)).toBe("1 Nov");
+    expect(shareOutDay("2026-12", words)).toBe("1 Jan");
   });
 
   it("lists months in words", () => {

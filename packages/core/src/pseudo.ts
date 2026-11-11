@@ -39,8 +39,13 @@ export function pseudoLine(message: string): MessageFormatElement[] {
 
 let made: Record<WordId, MessageFormatElement[]> | null = null;
 
+/** A date's pattern ("EEE d MMM") is letters date-fns reads, not words: the test language keeps it as it is. */
+const isPattern = (id: string) => id.startsWith("common.date.pattern.");
+
 /** Every line in the test language, made once, the first time someone reads it. */
 export function pseudoMessages(): Record<WordId, MessageFormatElement[]> {
-  made ??= Object.fromEntries(Object.entries(EN).map(([id, line]) => [id, pseudoLine(line)])) as Record<WordId, MessageFormatElement[]>;
+  made ??= Object.fromEntries(
+    Object.entries(EN).map(([id, line]) => [id, isPattern(id) ? parse(line) : pseudoLine(line)]),
+  ) as Record<WordId, MessageFormatElement[]>;
   return made;
 }

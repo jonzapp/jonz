@@ -52,7 +52,7 @@ export function ConnectedAppsSection({ zone }: { zone: string }) {
             key={grant.client.id}
             leading={<RowIcon icon={PlugIcon} />}
             title={grant.client.name}
-            meta={words('people.connectedApps.since', { date: dayLabel(new Date(grant.granted_at), zone) })}
+            meta={words('people.connectedApps.since', { date: dayLabel(new Date(grant.granted_at), zone, words) })}
             trailing={
               <TextButton
                 label={words('people.connectedApps.disconnect')}

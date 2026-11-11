@@ -10,8 +10,8 @@
 import { z } from "zod";
 
 import type { GroupDef, JohnDef } from "./board";
-import { CATEGORIES, CATEGORY_LABEL, DOW_LABEL, JOHN_WHEN, type Category, type IsoDow } from "./domain";
-import { firstName } from "./format";
+import { CATEGORIES, CATEGORY_LABEL, JOHN_WHEN, type Category, type IsoDow } from "./domain";
+import { dateIn, firstName, pointsLabel, weekdayName } from "./format";
 import { dueWords, LAST_OF_MONTH, MAX_EVERY_MONTHS, MAX_EVERY_WEEKS, oftenWords } from "./repeat";
 import { CHAT_MOVES_MAX, ChatMove } from "./chat-moves";
 import { CHAT_RESETS_MAX, ChatReset } from "./resets";
@@ -83,11 +83,9 @@ export const AskUsage = AskAllowance.extend({
 export type AskUsage = z.infer<typeof AskUsage>;
 
 /** When the week's Ask Jonz comes back, in the house's time: "Monday at 00:00". */
-export function askBackOn(resetsAt: string, zone: string): string {
+export function askBackOn(resetsAt: string, zone: string, words: Words): string {
   const at = new Date(resetsAt);
-  const day = new Intl.DateTimeFormat("en-GB", { weekday: "long", timeZone: zone }).format(at);
-  const time = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: zone }).format(at);
-  return `${day} at ${time}`;
+  return words("common.date.dayAt", { day: dateIn(at, "weekdayLong", zone, words), time: dateIn(at, "time", zone, words) });
 }
 
 /** The usage page's figures, from the pool, who lives in the house, and the tokens each has used this week. */
@@ -587,10 +585,10 @@ export function changedLine(before: DraftedJohn, after: DraftedJohn, words: Word
   if (before.name !== after.name) parts.push(`was “${before.name}”`);
   // How often and when, each only if it moved: "Every week → every 2 weeks", "Sat 18:00 → Sun 10:00".
   const often = (j: DraftedJohn) => (j.when === "on_call" ? "On call" : oftenWords(j, words));
-  const due = (j: DraftedJohn) => dueWords(j, j.dueTime, DOW_LABEL[j.dueDow as IsoDow].slice(0, 3), words);
+  const due = (j: DraftedJohn) => dueWords(j, j.dueTime, weekdayName(j.dueDow, words, "short"), words);
   if (often(before) !== often(after)) parts.push(arrow(often(before), often(after)));
   if (before.when !== "on_call" && after.when !== "on_call" && due(before) !== due(after)) parts.push(`${due(before)} → ${due(after)}`);
-  if (before.points !== after.points) parts.push(`${before.points} → ${after.points} ${after.points === 1 ? "pt" : "pts"}`);
+  if (before.points !== after.points) parts.push(arrow(String(before.points), pointsLabel(after.points, words)));
   if (before.crew !== after.crew) parts.push(arrow(words('john.crew.choice', { crew: before.crew }), words('john.crew.choice', { crew: after.crew })));
   if (before.group !== after.group) parts.push(arrow(before.group ?? "Everyone’s", after.group ?? "everyone’s"));
   if (before.category !== after.category) parts.push(arrow(CATEGORY_LABEL[before.category], CATEGORY_LABEL[after.category]));

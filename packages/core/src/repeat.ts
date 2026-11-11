@@ -2,6 +2,7 @@ import type { JohnDef } from "./board";
 import type { Category, IsoDow } from "./domain";
 import { addDaysTo, isDueInWeek, nextWeek, weekIndex, weekWindow } from "./week";
 import type { Words } from "./words-for";
+import { localDay, monthNameOf } from "./format";
 
 /**
  * How often a John comes round, on any period.
@@ -165,7 +166,8 @@ export function placeWord(weekOfMonth: number, words: Words): string {
 
 /** When in the week or month, short, for a list's meta line: "Sun 21:00", or "first Sat 21:00" for a monthly John. */
 export function dueWords(repeat: Pick<Repeat, "weekOfMonth">, dueTime: string, dayShort: string, words: Words): string {
-  return repeat.weekOfMonth === null ? `${dayShort} ${dueTime}` : `${placeWord(repeat.weekOfMonth, words)} ${dayShort} ${dueTime}`;
+  const day = repeat.weekOfMonth === null ? dayShort : words("house.repeat.placeDay", { place: placeWord(repeat.weekOfMonth, words), day: dayShort });
+  return words("common.date.weekdayTime", { day, time: dueTime });
 }
 
 /** The week after the one `now` is in, where a new or changed John's timing starts: this week is already dealt. */
@@ -192,33 +194,15 @@ export function repeatColumns(
   return { every_weeks: 1, every_months: john.everyMonths, week_of_month: john.weekOfMonth, anchor_month: anchor };
 }
 
-const MONTH_NAMES = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-] as const;
-const DAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
-
 /** A monthIndex as its month's name: "November". */
-export function monthName(index: number): string {
-  return MONTH_NAMES[((index % 12) + 12) % 12];
+export function monthName(index: number, words: Words): string {
+  return monthNameOf(index, words);
 }
 
 /** A local date in a short line: "Sat 7 Nov", or "7 Nov" without the day, with the year when `year` says so. */
-export function landingLabel(date: string, opts: { day?: boolean; year?: boolean } = {}): string {
-  const [y, m, d] = date.split("-").map(Number);
-  const weekday = DAY_SHORT[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
-  const words = `${d} ${MONTH_NAMES[m - 1].slice(0, 3)}${opts.year ? ` ${y}` : ""}`;
-  return opts.day ? `${weekday} ${words}` : words;
+export function landingLabel(date: string, words: Words, opts: { day?: boolean; year?: boolean } = {}): string {
+  const pattern = opts.day ? (opts.year ? "weekdayDayMonthYear" : "weekdayDayMonth") : opts.year ? "dayMonthYear" : "dayMonth";
+  return localDay(date, pattern, words);
 }
 
 /**
@@ -248,9 +232,9 @@ export function previewLandings(
 export function nextLine(dates: readonly string[], words: Words): string | null {
   if (dates.length === 0) return null;
   const [first, ...rest] = dates;
-  const firstLabel = landingLabel(first, { day: true });
+  const firstLabel = landingLabel(first, words, { day: true });
   return rest.length
-    ? words('house.repeat.nextThen', { first: firstLabel, rest: rest.map((d) => landingLabel(d)).join(", ") })
+    ? words('house.repeat.nextThen', { first: firstLabel, rest: rest.map((d) => landingLabel(d, words)).join(", ") })
     : words('house.repeat.next', { first: firstLabel });
 }
 
@@ -291,7 +275,7 @@ export function comingUp(
         category: j.category,
         points: j.points,
         date,
-        meta: words('house.repeat.comingUpWhen', { date: landingLabel(date, { day: true }), often: oftenWords(j, words).toLocaleLowerCase() }),
+        meta: words('house.repeat.comingUpWhen', { date: landingLabel(date, words, { day: true }), often: oftenWords(j, words).toLocaleLowerCase() }),
       });
       break;
     }

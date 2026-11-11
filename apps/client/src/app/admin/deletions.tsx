@@ -93,7 +93,7 @@ function Deletions({ busy }: { busy: BusyList<PendingDeletion> }) {
             name: person.name,
             email: person.email ?? '–',
             house: person.house ?? words('admin.deletions.noHouse'),
-            asked: deletionDay(person.requestedAt, ownerZone()),
+            asked: deletionDay(person.requestedAt, words, ownerZone()),
             goes: words('admin.deletions.goesShort', { days: Math.max(0, daysUntil(person.deleteAfter, now)) }),
           };
           return (
@@ -239,7 +239,7 @@ function ChosenSheet({ person, inline = false, onClose }: { person: PendingDelet
       ? words('admin.shell.deleteNowBody')
       : asking === 'stop'
         ? words('admin.shell.stopBody')
-        : `${person.email ?? ''}${person.email ? ', ' : ''}${words('admin.shell.goesIn', { days: Math.max(0, daysUntil(person.deleteAfter, new Date())) }).toLowerCase()} (${deletionDay(person.deleteAfter)})`;
+        : `${person.email ?? ''}${person.email ? ', ' : ''}${words('admin.shell.goesIn', { days: Math.max(0, daysUntil(person.deleteAfter, new Date())) }).toLowerCase()} (${deletionDay(person.deleteAfter, words)})`;
   return (
     <Holder inline={inline} visible title={title} description={description} onClose={onClose} testID="deletion-sheet">
       <Field

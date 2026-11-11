@@ -621,7 +621,7 @@ async function reopenFlag(db: Db, house: HouseRow, johnId: string, now: Date, no
   if (!notify || flag.flagged_by !== null || !flag.flagged_at || Date.parse(flag.flagged_at) !== now.getTime()) return;
   await notify([flag.user_id], {
     title: (w) => w('today.onCall.pushTitle', { john: flag.name }),
-    body: (w) => w('today.onCall.pushAgainBody', { due: dueInLine(new Date(flag.due_at), now, rulesOf(house).timezone) }),
+    body: (w) => w('today.onCall.pushAgainBody', { due: dueInLine(new Date(flag.due_at), now, rulesOf(house).timezone, w) }),
     houseKind: houseKind(house.kind),
     url: "/today",
     kind: "flags",
@@ -821,7 +821,7 @@ async function sendReminders(db: Db, house: HouseRow, now: Date, notify: Notify)
       "claim reminder",
     );
     if (claimed.length === 0 || when === "skip") continue;
-    const due = dueInLine(new Date(a.due_at), now, zone);
+    const due = (w: Words) => dueInLine(new Date(a.due_at), now, zone, w);
     await notify([a.user_id], {
       title: (w) =>
         stage === PLANNED
@@ -831,12 +831,12 @@ async function sendReminders(db: Db, house: HouseRow, now: Date, notify: Notify)
             : w('house.notify.dueTomorrowTitle', { john: a.name }),
       body: (w) =>
         a.needs_photo
-          ? w('house.notify.needsPhotoBody', { due })
+          ? w('house.notify.needsPhotoBody', { due: due(w) })
           : stage === PLANNED
-            ? w('house.notify.plannedBody', { due })
+            ? w('house.notify.plannedBody', { due: due(w) })
             : stage === 2
-              ? w('house.notify.dueSoonBody', { due })
-              : w('house.notify.dueTomorrowBody', { due }),
+              ? w('house.notify.dueSoonBody', { due: due(w) })
+              : w('house.notify.dueTomorrowBody', { due: due(w) }),
       houseKind: houseKind(house.kind),
       url: "/today",
       kind: "reminders",

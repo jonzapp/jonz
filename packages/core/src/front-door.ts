@@ -1,10 +1,11 @@
 import { DELETE_PATH } from "./account-deletion";
 import { APPROVE_PATH, CONSENT_PATH_WITH_ID } from "./approvals";
 import { safeNext, signInPath, signInReason } from "./auth-paths";
-import { CURRENCIES, type Currency, DEFAULT_RULES, DOW_LABEL, FAMILY_POCKET_CAP, type HouseKind, type IsoDow } from "./domain";
+import { CURRENCIES, type Currency, DEFAULT_RULES, FAMILY_POCKET_CAP, type HouseKind, type IsoDow } from "./domain";
 import { moneyInput } from "./money";
 import { normaliseJoinCode } from "./schemas";
 import type { Words } from "./words-for";
+import { weekdayName } from "./format";
 
 // Before you have a house: where the front door's choice leads after
 // sign-in, reading an invite link or code, and the new house's defaults line.
@@ -109,7 +110,7 @@ export function houseDefaults({
     kind === "family"
       ? words('house.pocket.defaults', { cap: `${currency} ${moneyInput(FAMILY_POCKET_CAP)}` })
       : words('door.welcome.stakeEach', { amount: `${currency} ${moneyInput(stakeMinor)}` }),
-    words('door.welcome.weekStarts', { day: DOW_LABEL[weekStarts] }),
+    words('door.welcome.weekStarts', { day: weekdayName(weekStarts, words) }),
     timeZoneName(timezone),
   ];
 }
@@ -120,7 +121,7 @@ export const CURRENCY_CHOICES: readonly { value: Currency; label: string }[] = C
   label: currency,
 }));
 
-/** What Change offers for the first day of the week: three letters to see, the whole day to hear. */
-export const DAY_CHOICES: readonly { value: IsoDow; label: string; spoken: string }[] = (
-  Object.entries(DOW_LABEL) as [string, string][]
-).map(([day, name]) => ({ value: Number(day) as IsoDow, label: name.slice(0, 3), spoken: name }));
+/** What Change offers for the first day of the week: the short name to see, the whole day to hear. */
+export function dayChoices(words: Words): { value: IsoDow; label: string; spoken: string }[] {
+  return ([1, 2, 3, 4, 5, 6, 7] as const).map((day) => ({ value: day, label: weekdayName(day, words, "short"), spoken: weekdayName(day, words) }));
+}

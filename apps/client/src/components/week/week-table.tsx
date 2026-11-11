@@ -110,7 +110,7 @@ function TableRow({ item, context }: { item: BoardItem; context: JohnRowContext 
         trailingControl
         hazardEdge={john.plan.hazardEdge}
         onPress={john.open}
-        accessibilityLabel={weekSpokenRow(item, john.plan.meta, who, john.plan.points)}
+        accessibilityLabel={weekSpokenRow(item, john.plan.meta, who, john.plan.points, words)}
         testID="week-row"
       />
       {john.confirm}

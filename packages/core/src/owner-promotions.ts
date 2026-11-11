@@ -1,5 +1,3 @@
-import { tz } from "@date-fns/tz";
-import { format } from "date-fns";
 import { z } from "zod";
 
 import type { ListFacet } from "./admin-list";
@@ -15,6 +13,7 @@ import {
   type PromotionState,
   type PromotionTerms,
 } from "./promotions";
+import { dateIn } from "./format";
 import { wordsFor } from "./words-for";
 
 // The owner's pages are in English for now (translation 6).
@@ -168,7 +167,7 @@ export function promotionEnds(p: Pick<PromotionRow, "state" | "terms">, zone: st
   if (p.state === "stopped") return "Stopped";
   if (p.state === "ended") return "Ended";
   if (p.state === "making") return "Not ready";
-  return p.terms.endsAt ? format(p.terms.endsAt, "d MMM", { in: tz(zone) }) : "Never";
+  return p.terms.endsAt ? dateIn(p.terms.endsAt, "dayMonth", zone, words) : "Never";
 }
 
 /** One line for a phone's list and Recent: "Half off, first payment, 3 people, 1 of 3 used". */
@@ -178,7 +177,7 @@ export function promotionMeta(p: PromotionRow): string {
 
 /** Who can use it, in a sentence, for the preview and its page. */
 export function promotionWhoSentence(audience: PromotionAudience, emails: readonly string[], maxUses: number | null, endsAt: Date | null, zone: string): string {
-  const until = endsAt ? `, until ${format(endsAt, "d MMMM", { in: tz(zone) })}` : "";
+  const until = endsAt ? `, until ${dateIn(endsAt, "dayMonthLong", zone, words)}` : "";
   if (audience === "anyone") {
     const limit = maxUses === null ? "Anyone with the link" : `The first ${maxUses === 1 ? "house" : `${maxUses} houses`} with the link`;
     return `${limit}, once a house${until}.`;
@@ -195,7 +194,7 @@ export function promotionWhoSentence(audience: PromotionAudience, emails: readon
 
 /** What a plan costs without a promotion, for the form's plan rows. */
 export function planPrice(plan: PassPurchase): string {
-  const price = formatMoney(PASS_PRICES.USD[plan], "USD");
+  const price = formatMoney(PASS_PRICES.USD[plan], "USD", words);
   return plan === "yearly" ? words('house.pass.perYear', { price }) : plan === "monthly" ? words('house.pass.perMonth', { price }) : words('house.pass.once', { price });
 }
 
@@ -219,7 +218,7 @@ export function personStage(p: PromotionPerson): PersonStage {
 
 /** The line under someone's email: "Used it 4 Nov", "Opened the link 6 Nov, not used", "Emailed 5 Nov, not opened", "Not sent yet". */
 export function promotionPersonMeta(p: PromotionPerson, zone: string): string {
-  const day = (iso: string) => format(new Date(iso), "d MMM", { in: tz(zone) });
+  const day = (iso: string) => dateIn(new Date(iso), "dayMonth", zone, words);
   const what = {
     used: () => `used it ${day(p.usedAt!)}`,
     opened: () => `opened the link ${day(p.openedAt!)}, not used`,

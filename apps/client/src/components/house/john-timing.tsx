@@ -1,4 +1,4 @@
-import { DOW_LABEL, LAST_OF_MONTH, landingLabel, MAX_EVERY_MONTHS, MAX_EVERY_WEEKS, monthName, nextLine, REPEAT_CLOCK, REPEAT_QUICK, nextStartsOn, periodWords, placeWord, previewLandings, RESPOND_HOURS, startMonths, type HouseRules, type IsoDow, type JohnDef } from '@app/core';
+import { dayChoices, LAST_OF_MONTH, landingLabel, MAX_EVERY_MONTHS, MAX_EVERY_WEEKS, monthName, nextLine, REPEAT_CLOCK, REPEAT_QUICK, nextStartsOn, periodWords, placeWord, previewLandings, RESPOND_HOURS, startMonths, weekdayName, type HouseRules, type IsoDow, type JohnDef } from '@app/core';
 import { MinusIcon, PlusIcon } from 'lucide-react-native';
 import { useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -28,7 +28,6 @@ export type Timing = Pick<
 /** A word in the sentence that opens its choices. */
 export type TimingWord = 'often' | 'from' | 'which' | 'day' | 'time' | 'times' | 'within';
 
-const DAYS = ([1, 2, 3, 4, 5, 6, 7] as IsoDow[]).map((d) => ({ value: d, label: DOW_LABEL[d].slice(0, 3), spoken: DOW_LABEL[d] }));
 type Unit = 'weeks' | 'months' | 'years';
 const UNIT_KEYS = ['weeks', 'months', 'years'] as const;
 /** How far each unit's stepper goes. */
@@ -64,7 +63,7 @@ export function TimingSentence({
   const words = useWords();
   const onCall = value.when === 'on_call';
   const from = nextStartsOn(now, rules.timezone, rules.weekStarts);
-  const day = DOW_LABEL[value.dueDow];
+  const day = weekdayName(value.dueDow, words);
   const parts: (string | { word: TimingWord; label: string; what: string })[] = onCall
     ? [
         words('house.repeat.onCallUpTo'),
@@ -87,7 +86,7 @@ export function TimingSentence({
                           startMonths({ everyMonths: value.everyMonths, weekOfMonth: value.weekOfMonth, dueDow: value.dueDow }, from, rules.weekStarts)[0]
                             ?.month ??
                           0,
-                      ),
+                       words),
                       what: words('house.repeat.startsIn'),
                     },
                   ]
@@ -237,9 +236,9 @@ export function TimingPicker({
   const words = useWords();
   const [unit, setUnit] = useState<Unit>(unitOf(value));
   const from = nextStartsOn(now, rules.timezone, rules.weekStarts);
-  const day = DOW_LABEL[value.dueDow];
+  const day = weekdayName(value.dueDow, words);
   const preview = (patch: Partial<Timing>, count: number) =>
-    previewLandings({ ...value, ...patch }, now, rules.timezone, rules.weekStarts, count).map((d) => landingLabel(d));
+    previewLandings({ ...value, ...patch }, now, rules.timezone, rules.weekStarts, count).map((d) => landingLabel(d, words));
 
   const setCount = (n: number, inUnit: Unit = unit) =>
     onChange(inUnit === 'weeks' ? period(value, n, null) : period(value, 1, inUnit === 'years' ? n * 12 : n));
@@ -300,8 +299,8 @@ export function TimingPicker({
             <ChoiceRow
               key={m.month}
               role="radio"
-              label={monthName(m.month)}
-              meta={landingLabel(m.date, { day: true, year: true })}
+              label={monthName(m.month, words)}
+              meta={landingLabel(m.date, words, { day: true, year: true })}
               checked={m.month === chosen}
               onPress={() => onChange({ anchorMonth: m.month })}
             />
@@ -334,7 +333,7 @@ export function TimingPicker({
       body = (
         <View style={styles.noted}>
           <View style={styles.inset}>
-            <Segmented label={words('house.repeat.day')} options={DAYS} value={value.dueDow} onChange={(dueDow) => onChange({ dueDow })} equal testID="timing-days" />
+            <Segmented label={words('house.repeat.day')} options={dayChoices(words)} value={value.dueDow} onChange={(dueDow) => onChange({ dueDow })} equal testID="timing-days" />
           </View>
           {first ? <Meta style={styles.note}>{nextLine([first], words)}</Meta> : null}
         </View>

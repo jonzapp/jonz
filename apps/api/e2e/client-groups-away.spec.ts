@@ -20,14 +20,14 @@ test.afterAll(async () => cleanUp(made));
  * months, so the next few days are always on it.
  */
 async function tapDay(page: Page, date: string) {
-  await page.getByTestId("away-form").getByRole("button", { name: dayName(date), exact: true }).click();
+  await page.getByTestId("away-form").getByRole("button", { name: dayName(date, words), exact: true }).click();
 }
 
 /** Opens a day's sheet from Who's away, a month on if the day is in the next one. */
 async function openDay(page: Page, today: string, date: string, away: number) {
   const month = page.getByTestId("away-month");
   if (date.slice(0, 7) !== today.slice(0, 7)) await month.getByRole("button", { name: words('house.away.laterMonth') }).click();
-  await month.getByRole("button", { name: words('house.away.dayLabel', { day: dayName(date), away }) }).click();
+  await month.getByRole("button", { name: words('house.away.dayLabel', { day: dayName(date, words), away }) }).click();
 }
 
 test("make a group, give it a John, and book time away", async ({ browser }) => {
@@ -86,7 +86,7 @@ test("make a group, give it a John, and book time away", async ({ browser }) => 
   await away.getByLabel(words('house.away.note')).fill("Lisbon");
   await away.getByTestId("book-away").click();
   // Yours, to cancel, and on the month as yours.
-  await expect(awayPage.getByTestId("my-trip")).toContainText(dateRange(from, to));
+  await expect(awayPage.getByTestId("my-trip")).toContainText(dateRange(from, to, words));
   await expect(awayPage.getByTestId("my-trip")).toContainText("Lisbon");
   await openDay(page, today, from, 1);
   await expect(page.getByTestId("away-day-sheet").getByTestId("day-away")).toContainText(words('house.setup.you'));
@@ -96,13 +96,13 @@ test("make a group, give it a John, and book time away", async ({ browser }) => 
 
   // Today says so, under the week; Ben sees it on Time away, and can't change the groups.
   await page.getByRole("tab", { name: words('common.section.today') }).click();
-  await expect(page.getByTestId("today-screen").getByTestId("away-line")).toContainText(words('today.nextUp.awaySoon', { range: dateRange(from, to) }));
+  await expect(page.getByTestId("today-screen").getByTestId("away-line")).toContainText(words('today.nextUp.awaySoon', { range: dateRange(from, to, words) }));
   const benPage = await benContext.newPage();
   await benPage.goto("/house/away");
   await openDay(benPage, today, to, 1);
   const avasTrip = benPage.getByTestId("away-day-sheet").getByTestId("day-away");
   await expect(avasTrip).toContainText("Ava");
-  await expect(avasTrip).toContainText(words('house.away.backOn', { day: dateRange(addDaysTo(to, 1), addDaysTo(to, 1)) }));
+  await expect(avasTrip).toContainText(words('house.away.backOn', { day: dateRange(addDaysTo(to, 1), addDaysTo(to, 1), words) }));
   await expect(avasTrip).toContainText("Lisbon");
   await benPage.getByTestId("sheet-close").click();
   // An old link to Groups lands on the John list.

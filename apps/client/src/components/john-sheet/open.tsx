@@ -138,7 +138,7 @@ function OnIt({ item, context }: { item: BoardItem; context: JohnSheetContext })
   const move = useMove(context.houseId);
   const { now, rules, userId } = context;
   if (item.heldUntil && item.heldUntil > now && !item.doneAt) {
-    return <Body testID="cover-held">{words('john.sheet.held', { when: dueInLine(item.heldUntil, now, rules.timezone) })}</Body>;
+    return <Body testID="cover-held">{words('john.sheet.held', { when: dueInLine(item.heldUntil, now, rules.timezone, words) })}</Body>;
   }
   if (!holdable({ ...item, excused: item.status === 'excused' }, userId, now, rules.coverGraceHours)) return null;
   return (

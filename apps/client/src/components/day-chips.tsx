@@ -1,6 +1,7 @@
-import { DOW_LABEL, type IsoDow } from '@app/core';
+import { weekdayName, type IsoDow } from '@app/core';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { useWords } from '@/hooks/use-words';
 import { FONT, RADIUS, TAP, useTheme } from '@/theme';
 
 const DAYS: readonly IsoDow[] = [1, 2, 3, 4, 5, 6, 7];
@@ -24,6 +25,7 @@ export function DayChips({
   testID?: string;
 }) {
   const { colors, type } = useTheme();
+  const words = useWords();
   return (
     <View role="group" aria-label={label} testID={testID} style={[styles.track, { backgroundColor: colors.secondary }]}>
       {DAYS.map((day) => {
@@ -32,14 +34,14 @@ export function DayChips({
           <Pressable
             key={day}
             accessibilityRole="checkbox"
-            accessibilityLabel={DOW_LABEL[day]}
+            accessibilityLabel={weekdayName(day, words)}
             aria-checked={picked}
             onPress={() => onChange(picked ? value.filter((d) => d !== day) : [...value, day].sort((a, b) => a - b))}
             style={[styles.part, { borderColor: colors.secondary }, picked && { backgroundColor: colors.card }]}
             testID={`${testID ?? 'day'}-${day}`}
           >
             <Text numberOfLines={1} style={[type.meta, picked ? { fontFamily: FONT.bold, color: colors.foreground } : null]}>
-              {DOW_LABEL[day].slice(0, 2)}
+              {weekdayName(day, words, 'tiny')}
             </Text>
           </Pressable>
         );

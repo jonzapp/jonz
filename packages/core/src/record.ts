@@ -15,13 +15,11 @@
  * (crew.ts) counts for everyone on it, their share each, helpers included
  * (a "Helped" line); a holder it left off has a miss.
  */
-import { tz } from "@date-fns/tz";
-import { format } from "date-fns";
 
 import { awayDays, type AwayPeriod } from "./away";
 import { andNames } from "./crew";
 import { creditedTo, excusedJohn, keptOfWeek } from "./deal";
-import { dayLabel, monthLabel, weekRange } from "./format";
+import { dayLabel, monthLabel, weekRange, dateIn } from "./format";
 import { localDate, monthOf } from "./week";
 import type { Words } from "./words-for";
 
@@ -149,10 +147,10 @@ function spanRange(span: RecordSpan, weeks: readonly RecordWeek[], now: Date, zo
   const first = weeks[0];
   const last = weeks[weeks.length - 1];
   if (!first || !last) return words('week.record.nothingYet');
-  if (span === "week") return weekRange(new Date(first.starts_at), new Date(first.ends_at), zone);
-  if (span === "month") return monthLabel(monthOf(now, zone));
+  if (span === "week") return weekRange(new Date(first.starts_at), new Date(first.ends_at), zone, words);
+  if (span === "month") return monthLabel(monthOf(now, zone), words);
   if (span === "year") return words('week.record.yearRange', { year: monthOf(now, zone).slice(0, 4), weeks: weeks.length });
-  return words('week.record.allRange', { since: format(new Date(first.starts_at), "d MMM yyyy", { in: tz(zone) }), weeks: weeks.length });
+  return words('week.record.allRange', { since: dateIn(new Date(first.starts_at), "dayMonthYear", zone, words), weeks: weeks.length });
 }
 
 function worst(marks: readonly RecordMark[]): RecordMark {
@@ -295,7 +293,7 @@ export function recordBreakdown(
           ? j.points
           : 0);
     if (!skipped.has(j.week_id)) line.points += earned;
-    line.johns.push({ id: j.id, name: j.name, day: dayLabel(new Date(j.due_at), input.zone), points: mine ? round(earned) : j.points, note });
+    line.johns.push({ id: j.id, name: j.name, day: dayLabel(new Date(j.due_at), input.zone, words), points: mine ? round(earned) : j.points, note });
   };
   /** Who else did it: "with Sam and Mo", or null. */
   const doneWith = (j: RecordJohn) => {

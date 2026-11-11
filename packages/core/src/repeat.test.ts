@@ -203,8 +203,8 @@ describe("previewLandings and nextLine", () => {
   });
 
   it("names months and dates", () => {
-    expect(monthName(NOV_2026)).toBe("November");
-    expect(landingLabel("2027-02-06", { day: true, year: true })).toBe("Sat 6 Feb 2027");
+    expect(monthName(NOV_2026, words)).toBe("November");
+    expect(landingLabel("2027-02-06", words, { day: true, year: true })).toBe("Sat 6 Feb 2027");
   });
 });
 

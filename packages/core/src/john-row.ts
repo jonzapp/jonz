@@ -1,7 +1,7 @@
 import { isOpen, type BoardItem } from "./board";
 import { andNames } from "./crew";
 import { CATEGORY_SHORT } from "./domain";
-import { dueInLine, firstName, relative, sinceLabel, STATUS_LABEL } from "./format";
+import { dueInLine, firstName, relative, sinceLabel, statusLabel } from "./format";
 import type { LiveStatus } from "./outcome";
 import { pointsEarned } from "./points";
 import type { Words } from "./words-for";
@@ -187,12 +187,12 @@ function metaLine(
     meta: [johnKind(item.category), ...(flagged ? [flagged] : []), ...parts, ...(together ? [together] : [])].join(", "),
     lid: true,
   });
-  const due = dueInLine(item.dueAt, now, zone);
+  const due = dueInLine(item.dueAt, now, zone, words);
 
   switch (item.status) {
     case "disputed": {
       const dispute = item.dispute;
-      if (!dispute) return { meta: STATUS_LABEL.disputed, lid: false };
+      if (!dispute) return { meta: statusLabel("disputed", words), lid: false };
       const by =
         dispute.raisedBy === null
           ? words('today.nextUp.someoneGone')
@@ -200,20 +200,20 @@ function metaLine(
             ? words('week.summary.byYou')
             : called(nameOf(dispute.raisedBy), words);
       const left =
-        dispute.closesAt > now ? words('today.nextUp.left', { time: relative(dispute.closesAt, now).replace(/^in /, "") }) : words('today.nextUp.closingNow');
+        dispute.closesAt > now ? words('today.nextUp.left', { time: relative(dispute.closesAt, now, words).replace(/^in /, "") }) : words('today.nextUp.closingNow');
       return { meta: `${words('john.sheet.disputedBy', { name: by })}, ${left}`, lid: false };
     }
     case "checking":
       // In a family a kid's tick has no closing time: it waits for a parent.
       if (item.awaitsOk) return line(words('today.parentOk.waiting'));
       if (!item.standsAt) return line();
-      return line(item.standsAt > now ? words('john.sheet.standsIn', { when: relative(item.standsAt, now) }) : words('john.sheet.standsSoon'));
+      return line(item.standsAt > now ? words('john.sheet.standsIn', { when: relative(item.standsAt, now, words) }) : words('john.sheet.standsSoon'));
     case "overdue":
     case "missed":
-      return line(words('today.nextUp.wasDue', { when: sinceLabel(item.dueAt, now, zone) }));
+      return line(words('today.nextUp.wasDue', { when: sinceLabel(item.dueAt, now, zone, words) }));
     case "done":
     case "late":
-      return line(item.doneAt ? words('today.nextUp.done', { when: dueInLine(item.doneAt, now, zone) }) : due);
+      return line(item.doneAt ? words('today.nextUp.done', { when: dueInLine(item.doneAt, now, zone, words) }) : due);
     case "excused":
       return line(words('today.nextUp.excused'));
     case "covered": {

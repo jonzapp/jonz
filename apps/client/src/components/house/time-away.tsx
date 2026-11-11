@@ -1,4 +1,4 @@
-import { addDaysTo, awayMovedLine, awayShade, backOn, dateRange, dayName, DOW_LABEL, firstName, monthLabel, monthWeeks, shiftMonth, tripMeta, tripStarted, tripsOn, upcomingTrips, withAlpha, type AwayPeriod, type IsoDow } from '@app/core';
+import { addDaysTo, awayMovedLine, awayShade, backOn, dateRange, dayName, weekdayName, firstName, monthLabel, monthWeeks, shiftMonth, tripMeta, tripStarted, tripsOn, upcomingTrips, withAlpha, type AwayPeriod, type IsoDow } from '@app/core';
 import { ChevronLeftIcon, ChevronRightIcon, PlaneIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -52,7 +52,7 @@ export function AwayMonth({
   const [month, setMonth] = useState(today.slice(0, 7));
   const [day, setDay] = useState<string | null>(null);
   const weeks = monthWeeks(month, weekStarts);
-  const days = Array.from({ length: 7 }, (_, i) => DOW_LABEL[(((weekStarts - 1 + i) % 7) + 1) as IsoDow]);
+  const days = Array.from({ length: 7 }, (_, i) => (((weekStarts - 1 + i) % 7) + 1) as IsoDow);
   const nobody = upcomingTrips(periods, today).length === 0;
 
   function open(date: string) {
@@ -72,7 +72,7 @@ export function AwayMonth({
               onPress={() => setMonth((was) => shiftMonth(was, -1))}
             />
             <Text style={[type.rowTitle, styles.month]} accessibilityLiveRegion="polite">
-              {monthLabel(month)}
+              {monthLabel(month, words)}
             </Text>
             <IconButton
               icon={ChevronRightIcon}
@@ -83,7 +83,7 @@ export function AwayMonth({
           <View style={styles.week} aria-hidden>
             {days.map((d) => (
               <Text key={d} style={[type.caps, styles.dow]}>
-                {d.slice(0, 1)}
+                {weekdayName(d, words, 'narrow')}
               </Text>
             ))}
           </View>
@@ -99,7 +99,7 @@ export function AwayMonth({
                   <Pressable
                     key={date}
                     accessibilityRole="button"
-                    accessibilityLabel={words('house.away.dayLabel', { day: dayName(date), away })}
+                    accessibilityLabel={words('house.away.dayLabel', { day: dayName(date, words), away })}
                     onPress={() => open(date)}
                     style={[styles.day, { backgroundColor: shade }]}
                     testID="away-day"
@@ -171,7 +171,7 @@ function DaySheet({
   return (
     <Sheet
       visible={day !== null}
-      title={day ? dayName(day) : undefined}
+      title={day ? dayName(day, words) : undefined}
       description={words('house.away.dayCount', { away: trips.length, home: home.length })}
       flush
       onClose={onClose}
@@ -192,7 +192,7 @@ function DaySheet({
                   key={t.id}
                   leading={<Avatar name={who?.name ?? words('common.shell.formerHousemate')} userId={t.userId} me={t.userId === me} />}
                   title={who ? name(who) : words('common.shell.formerHousemate')}
-                  meta={[words('house.away.backOn', { day: dateRange(back, back) }), t.note || null].filter(Boolean).join(', ')}
+                  meta={[words('house.away.backOn', { day: dateRange(back, back, words) }), t.note || null].filter(Boolean).join(', ')}
                   testID="day-away"
                 />
               );
@@ -243,7 +243,7 @@ export function MyTrips({ houseId, periods, today }: { houseId: string; periods:
 function TripRow({ houseId, period, today }: { houseId: string; period: AwayPeriod; today: string }) {
   const words = useWords();
   const move = useMove(houseId);
-  const range = dateRange(period.startsOn, period.endsOn);
+  const range = dateRange(period.startsOn, period.endsOn, words);
   const label = tripStarted(period, today) ? words('house.away.back') : words('house.away.cancel');
   return (
     <>
@@ -298,7 +298,7 @@ export function AwayForm({ houseId, today, weekStarts }: { houseId: string; toda
     setNote('');
   }
 
-  const status = picking ? words('house.away.pickTo') : range.from && range.to ? words('house.away.picked', { range: dateRange(range.from, range.to) }) : words('house.away.pickFrom');
+  const status = picking ? words('house.away.pickTo') : range.from && range.to ? words('house.away.picked', { range: dateRange(range.from, range.to, words) }) : words('house.away.pickFrom');
 
   return (
     <GroupItem testID="away-form">

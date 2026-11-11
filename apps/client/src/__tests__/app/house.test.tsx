@@ -387,7 +387,7 @@ describe('the Table', () => {
     (loadTable as jest.Mock).mockRejectedValue(new Error('offline'));
     await open();
     // With no Table read, the menu offers this month on the house's clock, whenever the test runs.
-    await showSpan(monthWord(monthOf(new Date(), 'Europe/London')));
+    await showSpan(monthWord(monthOf(new Date(), 'Europe/London'), words));
     expect(screen.getByRole('alert')).toHaveTextContent(words('house.page.tableUnreadable'));
   });
 

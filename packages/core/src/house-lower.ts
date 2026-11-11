@@ -1,10 +1,7 @@
-import { tz } from "@date-fns/tz";
-import { format } from "date-fns";
-
 import type { AwayPeriod } from "./away";
 import { weeklyEffort, type JohnDef } from "./board";
 import type { Currency, HouseKind, HouseRules } from "./domain";
-import { dateRange, dayLabel, firstName, STATUS_MARK, type StatusIcon } from "./format";
+import { dateIn, dateRange, dayLabel, firstName, monthNameOf, STATUS_MARK, type StatusIcon } from "./format";
 import { monthWord } from "./house-page";
 import { undoneWhat } from "./history";
 import { formatMoney } from "./money";
@@ -131,10 +128,10 @@ function named(userId: string | null | undefined, me: string, members: readonly 
 }
 
 /** "September" from "2026-09"; null for anything that isn't a month. */
-function monthName(month: string): string | null {
+function monthName(month: string, words: Words): string | null {
   const [y, m] = month.split("-").map(Number);
   if (!Number.isInteger(y) || !Number.isInteger(m) || m < 1 || m > 12) return null;
-  return format(new Date(Date.UTC(y, m - 1, 15)), "MMMM", { in: tz("UTC") });
+  return monthNameOf(m - 1, words);
 }
 
 /** A day as the Wall names it: "Today", "Yesterday", else "Sat 24 Oct", in the house's zone. */
@@ -143,7 +140,7 @@ function dayName(at: Date, zone: string, now: Date, words: Words): string {
   const today = localDate(now, zone);
   if (date === today) return words('wall.feed.today');
   if (date === addDaysTo(today, -1)) return words('wall.feed.yesterday');
-  return dayLabel(at, zone);
+  return dayLabel(at, zone, words);
 }
 
 /** How long ago, for a meta line: "just now", "5 min", "3h", "2 days", then the date ("12 Oct"). */
@@ -155,7 +152,7 @@ export function wallAge(at: Date, now: Date, zone: string, words: Words): string
   if (hours < 24) return words('wall.feed.hours', { n: hours });
   const days = Math.floor(hours / 24);
   if (days < 7) return words('wall.feed.days', { n: days });
-  return format(at, "d MMM", { in: tz(zone) });
+  return dateIn(at, "dayMonth", zone, words);
 }
 
 /** A payment's amount is for the two people in it: who paid and who was paid. */
@@ -360,7 +357,7 @@ export function wallFeedRow(event: WallEvent, scene: WallScene, words: Words): W
       detail = words('wall.feed.swap');
       break;
     case "away": {
-      const range = dateRange(text("starts_on"), text("ends_on"));
+      const range = dateRange(text("starts_on"), text("ends_on"), words);
       const moved = Number(event.data.moved ?? 0);
       title = who.you ? words('wall.feed.youAway', { range }) : words('wall.feed.away', { who: who.subject, range });
       detail = moved > 0 ? words('wall.feed.awayMoved', { due: words('wall.feed.dueBefore', { n: moved, you: who.you }) }) : words('wall.feed.timeAway');
@@ -381,7 +378,8 @@ export function wallFeedRow(event: WallEvent, scene: WallScene, words: Words): W
         const onCall = words('wall.feed.onCall', { who: who.subject, you: who.you });
         if (due && !Number.isNaN(due.getTime())) {
           const sameDay = localDate(due, scene.zone) === localDate(scene.now, scene.zone);
-          const clock = format(due, sameDay ? "HH:mm" : "EEE HH:mm", { in: tz(scene.zone) });
+          const time = dateIn(due, "time", scene.zone, words);
+          const clock = sameDay ? time : words("common.date.weekdayTime", { day: dateIn(due, "weekday", scene.zone, words), time });
           detail = words('wall.feed.dueBy', { onCall, when: clock });
           open = countdown(due, scene.now, words);
         } else {
@@ -434,8 +432,8 @@ export function wallFeedRow(event: WallEvent, scene: WallScene, words: Words): W
       title = words("wall.feed.pocketPaid", {
         who: who.subject,
         whom: to.object,
-        amount: pocketMoney(Number(event.data.amount ?? 0), scene.currency),
-        month: monthWord(text("month")),
+        amount: pocketMoney(Number(event.data.amount ?? 0), scene.currency, words),
+        month: monthWord(text("month"), words),
       });
       bold = [who.subject, to.subject];
       detail = words("house.pocket.card");
@@ -447,7 +445,7 @@ export function wallFeedRow(event: WallEvent, scene: WallScene, words: Words): W
       break;
     case "moving_out": {
       const on = text("on");
-      title = on ? words("house.moving.movesOut", { who: who.subject, you: who.you, day: dateRange(on, on) }) : words("house.moving.stayingAfterAll", { who: who.subject, you: who.you });
+      title = on ? words("house.moving.movesOut", { who: who.subject, you: who.you, day: dateRange(on, on, words) }) : words("house.moving.stayingAfterAll", { who: who.subject, you: who.you });
       detail = words('house.moving.movingDetail');
       break;
     }
@@ -471,7 +469,7 @@ export function wallFeedRow(event: WallEvent, scene: WallScene, words: Words): W
       // Rules' Who lives here: a family from the 1st, kept, housemates again, or a family now.
       const on = text("on");
       if (on) {
-        title = words("house.kindSwitch.wall.later", { who: who.subject, on: dateRange(on, on) });
+        title = words("house.kindSwitch.wall.later", { who: who.subject, on: dateRange(on, on, words) });
         detail = words("house.kindSwitch.wall.laterDetail");
       } else if (event.data.kept) {
         title = words("house.kindSwitch.wall.kept", { who: who.subject });
@@ -487,14 +485,14 @@ export function wallFeedRow(event: WallEvent, scene: WallScene, words: Words): W
     }
     case "month_closed":
       {
-        const month = monthName(text("month"));
+        const month = monthName(text("month"), words);
         title = month ? words("wall.feed.monthClosed", { month }) : words("wall.feed.monthClosedAny");
       }
       detail = words('wall.feed.sharedOut');
       break;
     case "paid": {
       const to = named(text("to") || null, me, members, words);
-      const amount = formatMoney(Number(event.data.amount ?? 0), scene.currency);
+      const amount = formatMoney(Number(event.data.amount ?? 0), scene.currency, words);
       title = !paymentShown(event, me)
         ? words('wall.feed.paid', { who: who.subject, whom: to.object })
         : who.you
@@ -510,9 +508,9 @@ export function wallFeedRow(event: WallEvent, scene: WallScene, words: Words): W
   const member = members.find((m) => m.userId === lead);
   const status = event.assignmentId ? scene.statusOf?.(event.assignmentId) : undefined;
   const when = scene.clock
-    ? format(event.createdAt, "HH:mm", { in: tz(scene.zone) })
+    ? dateIn(event.createdAt, "time", scene.zone, words)
     : wallAge(event.createdAt, scene.now, scene.zone, words);
-  const stamp = words('wall.feed.stamp', { day: dayName(event.createdAt, scene.zone, scene.now, words), clock: format(event.createdAt, "HH:mm", { in: tz(scene.zone) }) });
+  const stamp = words('wall.feed.stamp', { day: dayName(event.createdAt, scene.zone, scene.now, words), clock: dateIn(event.createdAt, "time", scene.zone, words) });
   return {
     id: event.id,
     kind: event.kind,
@@ -612,7 +610,7 @@ export function wallDays(rows: readonly WallFeedRow[], zone: string, now: Date, 
       });
     }
     const label = dayName(dayRows[0].at, zone, now, words);
-    const sub = dayLabel(dayRows[0].at, zone);
+    const sub = dayLabel(dayRows[0].at, zone, words);
     return { date, label, sub: sub === label ? null : sub, items };
   });
 }
@@ -652,7 +650,7 @@ export function houseSetupValues(input: {
   admin: boolean;
 }, words: Words): HouseSetupValues {
   const { rules, johns, groups, away, today, members, me } = input;
-  const money = (minor: number) => formatMoney(minor, rules.currency);
+  const money = (minor: number) => formatMoney(minor, rules.currency, words);
 
   let johnsValue: string | null = null;
   if (johns) {
@@ -672,7 +670,7 @@ export function houseSetupValues(input: {
           a.who.localeCompare(b.who),
       )[0];
     awayValue = next
-      ? words('house.lower.awayValue', { who: next.who, range: dateRange(next.period.startsOn, next.period.endsOn) })
+      ? words('house.lower.awayValue', { who: next.who, range: dateRange(next.period.startsOn, next.period.endsOn, words) })
       : words('house.lower.nobodyAway');
   }
 
@@ -727,10 +725,10 @@ export function leaveCost(input: {
   currency: Currency;
 }, words: Words): string {
   const { me, members } = input;
-  const money = (minor: number) => formatMoney(minor, input.currency);
+  const money = (minor: number) => formatMoney(minor, input.currency, words);
   const clauses: string[] = [];
   if (input.share > 0) {
-    const month = monthName(input.month);
+    const month = monthName(input.month, words);
     clauses.push(month ? words('house.lower.loseShareFrom', { amount: money(input.share), month }) : words('house.lower.loseShare', { amount: money(input.share) }));
   }
   for (const t of input.transfers) {

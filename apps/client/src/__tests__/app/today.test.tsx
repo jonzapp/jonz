@@ -177,7 +177,7 @@ describe('Next up', () => {
     read.mockResolvedValue(snapshot({ assignments: [assignment({ planned_at: plannedAt }), ...snapshot().assignments.slice(1)] }));
     await open();
     expect(screen.getByTestId('plan-it-when')).toHaveTextContent(
-      words('week.steady.planned', { when: planLabel(new Date(plannedAt), new Date(), 'Europe/London') }),
+      words('week.steady.planned', { when: planLabel(new Date(plannedAt), new Date(), 'Europe/London', words) }),
     );
     expect(screen.queryByRole('button', { name: words('week.steady.plan') })).toBeNull();
   });

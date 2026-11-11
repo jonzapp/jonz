@@ -1,8 +1,5 @@
-import { tz } from "@date-fns/tz";
-import { format } from "date-fns";
-
 import type { Currency } from "./domain";
-import { dateRange, dayLabel } from "./format";
+import { dateRange, dayLabel, dateIn } from "./format";
 import { formatMoney } from "./money";
 import { resetWhat } from "./resets";
 import { addDaysTo, localDate } from "./week";
@@ -119,9 +116,9 @@ export function actionLine(
     case "vote":
       return words("wall.history.line.vote", { who, uphold: Boolean(data.uphold), whose, john });
     case "payment":
-      return words("wall.history.line.payment", { who, amount: formatMoney(Number(data.amount ?? 0), currency), whom });
+      return words("wall.history.line.payment", { who, amount: formatMoney(Number(data.amount ?? 0), currency, words), whom });
     case "away":
-      return words("wall.history.line.away", { who, range: dateRange(String(data.starts_on), String(data.ends_on)) });
+      return words("wall.history.line.away", { who, range: dateRange(String(data.starts_on), String(data.ends_on), words) });
     case "role":
       return words("wall.history.line.role", { who, whom, to: data.to === "admin" ? "admin" : "member" });
     case "remove":
@@ -171,10 +168,10 @@ export function historyDayLabel(day: HistoryDay, now: Date, zone: string, words:
   const today = localDate(now, zone);
   if (day.date === today) return words('wall.history.today');
   if (day.date === addDaysTo(today, -1)) return words('wall.history.yesterday');
-  return dayLabel(day.items[0].at, zone);
+  return dayLabel(day.items[0].at, zone, words);
 }
 
 /** "21:04": when a move was, in the house's zone (its day is the section's label). */
-export function historyTime(at: Date, zone: string): string {
-  return format(at, "HH:mm", { in: tz(zone) });
+export function historyTime(at: Date, zone: string, words: Words): string {
+  return dateIn(at, "time", zone, words);
 }
