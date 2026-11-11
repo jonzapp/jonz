@@ -23,7 +23,9 @@ export function DangerZone({ children, testID }: { children: ReactNode; testID?:
   return (
     <Section label={words('house.danger.label')} testID={testID}>
       <View style={[styles.edge, { borderColor: colors.hazard }]} pointerEvents="box-none">
-        {children}
+        <View style={styles.clip} pointerEvents="box-none">
+          {children}
+        </View>
       </View>
     </Section>
   );
@@ -66,6 +68,8 @@ export function DangerRow({
 const styles = StyleSheet.create({
   // Drawn over the group's own edge, so its rows keep their insets and hairlines.
   edge: { borderWidth: 1, borderRadius: GROUP_RADIUS, overflow: 'hidden' },
+  // As the group does: the first row's hairline rises under the edge, which clips it.
+  clip: { marginTop: -StyleSheet.hairlineWidth },
   // Words and button share the line when there's room; the button wraps under them when there isn't.
   row: {
     flexDirection: 'row',
