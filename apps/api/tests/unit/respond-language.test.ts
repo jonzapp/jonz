@@ -10,10 +10,11 @@ describe("the caller's words", () => {
   it("reads the language the app sends", () => {
     expect(wordsOf(asked("en-XA")).language).toBe("en-XA");
     expect(wordsOf(asked("en-XA,en;q=0.8")).language).toBe("en-XA");
+    expect(wordsOf(asked("fr-FR")).language).toBe("fr");
   });
 
   it("reads English for a language Jonz hasn't got, or none", () => {
-    expect(wordsOf(asked("fr-FR")).language).toBe("en");
+    expect(wordsOf(asked("de-DE")).language).toBe("en");
     expect(wordsOf(asked()).language).toBe("en");
   });
 

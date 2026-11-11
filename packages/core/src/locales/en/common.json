@@ -236,6 +236,7 @@
   "common.join.ongoing": "{text}…",
   "common.join.trailingComma": "{text},",
   "common.join.id": "#{id}",
+  "common.join.and": "{rest} and {last}",
   "common.date.pattern.time": "HH:mm",
   "common.date.pattern.weekday": "EEE",
   "common.date.pattern.dayMonth": "d MMM",

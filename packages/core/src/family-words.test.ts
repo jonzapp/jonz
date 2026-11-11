@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { parse, TYPE, type MessageFormatElement } from "@formatjs/icu-messageformat-parser";
 import { describe, expect, it } from "vitest";
 
-import { EN, EN_FILES, type WordId } from "./locales";
+import { EN, EN_FILES, FR_FILES, type WordId } from "./locales";
 import { joinPreview, joinSign } from "./share";
 import { stringsOf } from "./strings-of";
 import { LANGUAGES, wordsFor, type WordValues } from "./words-for";
@@ -18,12 +18,16 @@ import { LANGUAGES, wordsFor, type WordValues } from "./words-for";
 /** Words a family must never read. */
 const HOUSE_ONLY = /\b(housemates?|flatmates?|admins?)\b/i;
 
+/** The same in French: coloc, colocataire, colocation, admin. */
+const HOUSE_ONLY_FR = /(^|[^\p{L}])(colocs?|colocataires?|colocations?|admins?)(?![\p{L}])/iu;
+
 /** Lines a family never sees, so they need no family sentence, and why. */
 const HOUSEMATES_ONLY: Partial<Record<WordId, string>> = {
   "common.report.role.admin": "the owner's Inbox names a reporter's role as the database does",
   "common.report.role.member": "the owner's Inbox names a reporter's role as the database does",
   "common.staging.demoBody": "staging's demo house is a housemates house",
   "ask.draft.starter.flat_share.meta": "names the flat-share starter list, picked by name in any house",
+  "ask.draft.starter.flat_share.title": "the flat-share starter list's name (in French, Colocation), picked by name in any house",
   "errors.ask_limit": "the owner's Ask Jonz limit, which points at the owner's admin pages",
   "door.newHouse.intro": "a family reads house.family.newIntro through newHouseWords",
   "house.family.kinds.housemates": "Rules' switch between the two kinds names both on purpose",
@@ -52,10 +56,11 @@ function gaps(elements: MessageFormatElement[], out = new Map<string, MessageFor
   return out;
 }
 
-/** The ways a line can be read: every select's options and a few counts, with names in the other gaps. */
+/** The ways a line can be read, in English or French: every select's options and a few counts, with names in the other gaps. */
 function readings(id: WordId): WordValues[] {
   let all: WordValues[] = [{}];
-  for (const [name, e] of gaps(parse(EN[id]))) {
+  const french: string | undefined = (Object.assign({}, ...Object.values(FR_FILES)) as Record<string, string>)[id];
+  for (const [name, e] of gaps(parse(EN[id]), french ? gaps(parse(french)) : undefined)) {
     if (name === "kind") continue;
     const values: (string | number)[] =
       e.type === TYPE.select ? Object.keys(e.options) : e.type === TYPE.plural || e.type === TYPE.number ? [0, 1, 2, 5] : ["Sam"];
@@ -138,6 +143,45 @@ describe("the words files", () => {
   });
 });
 
+/** Every gap in a line as "name:kind", each once and sorted, so two languages' lines can be compared. */
+function gapShape(elements: MessageFormatElement[], out = new Set<string>()): string[] {
+  for (const e of elements) {
+    if (e.type === TYPE.literal || e.type === TYPE.pound) continue;
+    out.add(`${e.value}:${e.type}`);
+    if (e.type === TYPE.select || e.type === TYPE.plural) for (const o of Object.values(e.options)) gapShape(o.value, out);
+    if (e.type === TYPE.tag) gapShape(e.children, out);
+  }
+  return [...out].sort();
+}
+
+describe("the French words (locales/fr/)", () => {
+  it("has every line English has, but the owner's pages, each in its own file", () => {
+    for (const [file, lines] of Object.entries(EN_FILES)) {
+      const fr: Record<string, string> = FR_FILES[file as keyof typeof FR_FILES];
+      for (const id of Object.keys(fr)) expect(id in lines, `${id} isn't an English line`).toBe(true);
+      if (file === "admin") continue;
+      for (const id of Object.keys(lines)) expect(id in fr, `${id} has no French`).toBe(true);
+    }
+  });
+
+  it("has the same gaps as English, line by line", () => {
+    for (const lines of Object.values(FR_FILES) as Record<string, string>[]) {
+      for (const [id, line] of Object.entries(lines)) {
+        const en = gapShape(parse(EN[id as WordId]));
+        // The Wall gives `you` with every `who`, so a French verb can follow "Tu" where English says "You ticked".
+        const fr = gapShape(parse(line)).filter((g) => g !== `you:${TYPE.select}` || en.includes(g) || !en.includes(`who:${TYPE.argument}`));
+        expect(fr, id).toEqual(en);
+      }
+    }
+  });
+
+  it("writes an apostrophe as ’, since ' starts quoted text in a line", () => {
+    for (const lines of Object.values(FR_FILES) as Record<string, string>[]) {
+      for (const [id, line] of Object.entries(lines)) expect(line.includes("'"), id).toBe(false);
+    }
+  });
+});
+
 describe("a family's words", () => {
   it("never names housemates or admins in a family's line", () => {
     const family = wordsFor("en", "family");
@@ -146,6 +190,15 @@ describe("a family's words", () => {
       .filter((id) => !HOUSEMATES_ONLY[id] && !id.startsWith("admin."))
       .flatMap((id) => readings(id).map((v) => `${id}: ${family(id, v)}`))
       .filter((line) => HOUSE_ONLY.test(line.slice(line.indexOf(": ") + 2)));
+    expect(wrong, "give the line a family sentence: {kind, select, family {…} other {…}}").toEqual([]);
+  });
+
+  it("never names housemates or admins in a family's French line", () => {
+    const family = wordsFor("fr", "family");
+    const wrong = (Object.keys(EN) as WordId[])
+      .filter((id) => !HOUSEMATES_ONLY[id] && !id.startsWith("admin."))
+      .flatMap((id) => readings(id).map((v) => `${id}: ${family(id, v)}`))
+      .filter((line) => HOUSE_ONLY_FR.test(line.slice(line.indexOf(": ") + 2)));
     expect(wrong, "give the line a family sentence: {kind, select, family {…} other {…}}").toEqual([]);
   });
 

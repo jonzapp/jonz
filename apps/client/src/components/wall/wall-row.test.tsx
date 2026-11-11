@@ -79,6 +79,7 @@ const feedRow = (overrides: Partial<WallFeedRow> = {}): WallFeedRow => ({
   photoPath: null,
   repeat: 'tick:megan',
   who: 'Megan',
+  you: false,
   ...overrides,
 });
 

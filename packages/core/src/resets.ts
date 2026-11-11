@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { andNames } from "./crew";
 import type { Currency } from "./domain";
 import { firstName, monthLabel, weekRange } from "./format";
 import { formatMoney } from "./money";
@@ -131,10 +132,6 @@ function monthOnly(month: string, words: Words): string {
   return monthLabel(month, words).split(" ")[0];
 }
 
-function and(names: readonly string[]): string {
-  if (names.length < 2) return names.join("");
-  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
-}
 
 const RESULT_WORDS: Record<string, string> = {
   done: "done",
@@ -194,14 +191,14 @@ export function resetSheet(preview: ResetPreview, w: ResetWords, words: Words): 
   const cleared: string[] = [];
   if (preview.flags > 0) cleared.push(preview.flags === 1 ? "1 flag" : `${preview.flags} flags`);
   if (preview.disputes > 0) cleared.push(preview.disputes === 1 ? "1 dispute" : `${preview.disputes} disputes`);
-  if (cleared.length > 0) lines.push({ key: "cleared", label: words('house.resets.cleared'), value: and(cleared) });
+  if (cleared.length > 0) lines.push({ key: "cleared", label: words('house.resets.cleared'), value: andNames(cleared, words) });
 
   const told = preview.told.filter((id) => id !== w.viewerId).map((id) => firstName(w.nameOf(id)));
   return {
     title,
     body,
     lines,
-    told: told.length === 0 ? words('house.resets.toldNobody') : resetTold(and(told.sort()), words),
+    told: told.length === 0 ? words('house.resets.toldNobody') : resetTold(told.sort(), words),
     undo: words('house.resets.undo', { until: preview.month ? monthOnly(preview.month, words) : "this month" }),
     confirm,
   };
@@ -299,7 +296,7 @@ export function resetItemLine(
 /** "Ada and Sam get a notification", for a whole card. */
 export function toldLine(ids: readonly string[], nameOf: (id: string) => string, words: Words): string {
   const names = [...new Set(ids)].map((id) => firstName(nameOf(id))).sort();
-  return names.length === 0 ? words('house.resets.toldNobody') : resetTold(and(names), words);
+  return names.length === 0 ? words('house.resets.toldNobody') : resetTold(names, words);
 }
 
 /** History's and the Wall's words for a reset: "reset Sam’s week", "marked Bins done". */
@@ -325,6 +322,6 @@ export function resetWhat(data: Record<string, unknown>, subject: string, words:
 }
 
 /** Who a reset tells: "Sam gets a notification", "Sam and Priya get one". */
-export function resetTold(names: string, words: Words): string {
-  return words("house.resets.told", { names, many: names.includes(" and ") });
+export function resetTold(names: readonly string[], words: Words): string {
+  return words("house.resets.told", { names: andNames(names, words), many: names.length > 1 });
 }

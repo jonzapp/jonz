@@ -298,7 +298,7 @@ export function recordBreakdown(
   /** Who else did it: "with Sam and Mo", or null. */
   const doneWith = (j: RecordJohn) => {
     const others = crewOf(j).filter((c) => c.user_id !== userId).map((c) => nameOf(c.user_id));
-    return others.length ? words('week.record.doneWith', { names: andNames(others) }) : null;
+    return others.length ? words('week.record.doneWith', { names: andNames(others, words) }) : null;
   };
 
   for (const j of johns) {

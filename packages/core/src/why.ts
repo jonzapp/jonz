@@ -6,7 +6,7 @@
  */
 import type { BoardItem } from "./board";
 import { isOpen } from "./board";
-import { shareLabel } from "./crew";
+import { andNames, shareLabel } from "./crew";
 import type { HouseRules } from "./domain";
 import { dueInLine, firstName, formatBalance } from "./format";
 import { coverOpensAt } from "./outcome";
@@ -40,11 +40,6 @@ export interface WhyView {
   stakes: string | null;
 }
 
-/** "Ben", "Ben and Cal", "Ben, Cal and Dee". */
-function andList(names: readonly string[]): string {
-  if (names.length <= 1) return names[0] ?? "";
-  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
-}
 
 export function johnWhy(
   item: BoardItem,
@@ -64,7 +59,7 @@ export function johnWhy(
   const Who = (id: string) => (id === viewerId ? words('john.why.You') : name(id));
   /** Mid-sentence: "you", "Ben". */
   const who = (id: string) => (id === viewerId ? words('john.why.you') : name(id));
-  const whose = (id: string) => (id === viewerId ? words('john.why.your') : `${name(id)}’s`);
+  const whose = (id: string) => (id === viewerId ? words('john.why.your') : words('wall.feed.whose', { name: name(id) }));
 
   const together = places.length > 1 ? togetherPart(places, viewerId, { Who, who }, words) : null;
   const dealt = item.dealt;
@@ -94,13 +89,13 @@ function togetherPart(
   const home = first.weighed.length;
   // You first, then in the order they were dealt.
   const ordered = [...tos.filter((id) => id === viewerId), ...tos.filter((id) => id !== viewerId)];
-  const names = andList(ordered.map((id, i) => (i === 0 ? say.Who(id) : say.who(id))));
+  const names = andNames(ordered.map((id, i) => (i === 0 ? say.Who(id) : say.who(id))), words);
   const one = ordered.length === 1 && ordered[0] !== viewerId;
   const lines = [words('john.crew.needs', { n: places.length })];
   lines.push(home <= places.length ? words('john.crew.allHome', { names, home }) : words('john.crew.furthest', { names, one, home }));
   if (first.away.length) {
     const away = first.away.map((id, i) => (i === 0 ? say.Who(id) : say.who(id)));
-    lines.push(words('john.why.away', { names: andList(away), one: away.length === 1 && first.away[0] !== viewerId }));
+    lines.push(words('john.why.away', { names: andNames(away, words), one: away.length === 1 && first.away[0] !== viewerId }));
   }
   const rows: WhyRow[] =
     first.weighed.length > 1
@@ -145,7 +140,7 @@ function dealtPart(
   else lines.push(words('john.why.draw', { who: say.who(to) }));
 
   /** Starting a sentence: "You and Ben", "Ben and you". */
-  const names = (ids: readonly string[]) => andList(ids.map((id, i) => (i === 0 ? say.Who(id) : say.who(id))));
+  const names = (ids: readonly string[]) => andNames(ids.map((id, i) => (i === 0 ? say.Who(id) : say.who(id))), words);
   /** One of them, and not you: "was", "is". */
   const one = (ids: readonly string[]) => ids.length === 1 && ids[0] !== viewerId;
   if (why.waited) lines.push(words('john.why.waited', { weeks: why.waited }));
@@ -206,7 +201,7 @@ function stakesLine(
   if (item.crew && item.crew.people.length > 1) {
     const crew = item.crew;
     const ids = [...crew.people.filter((c) => c.userId === viewerId), ...crew.people.filter((c) => c.userId !== viewerId)].map((c) => c.userId);
-    const names = andList(ids.map((id, i) => (i === 0 ? say.Who(id) : say.who(id))));
+    const names = andNames(ids.map((id, i) => (i === 0 ? say.Who(id) : say.who(id))), words);
     return words('john.crew.sharedCounts', { names, each: shareLabel(crew.total / crew.people.length, words) });
   }
   if (item.coveredBy) return words('john.why.coveredCounts', { who: say.Who(item.coveredBy), whose: say.whose(item.coveredBy) });

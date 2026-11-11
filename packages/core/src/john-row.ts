@@ -181,7 +181,7 @@ function metaLine(
   // Done together: who with ("with Sam and Ada"), or once ticked, who did it.
   const others = (item.crew ? item.crew.people.map((c) => c.userId) : (item.together ?? [])).filter((id) => id !== item.userId);
   const together = others.length
-    ? words('john.crew.with', { names: andNames(others.map((id) => (id === viewerId ? words('week.summary.byYou') : called(nameOf(id), words)))) })
+    ? words('john.crew.with', { names: andNames(others.map((id) => (id === viewerId ? words('week.summary.byYou') : called(nameOf(id), words))), words) })
     : null;
   const line = (...parts: string[]) => ({
     meta: [johnKind(item.category), ...(flagged ? [flagged] : []), ...parts, ...(together ? [together] : [])].join(", "),

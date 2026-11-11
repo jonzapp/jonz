@@ -519,7 +519,7 @@ export function settledLine(item: BoardItem, people: readonly Person[], viewerId
       const coverer = item.coveredBy === viewerId ? words('john.sheet.you') : firstNameIn(people, item.coveredBy, words);
       const yours = item.userId === viewerId;
       const owner = yours ? words('john.sheet.byYou') : called(people, item.userId, words);
-      const whose = yours ? words('john.sheet.your') : `${owner}’s`;
+      const whose = yours ? words('john.sheet.your') : words('wall.feed.whose', { name: owner });
       return ticked
         ? words('john.sheet.coveredSettledWhen', { who: coverer, owner, whose, when: ticked })
         : words('john.sheet.coveredSettled', { who: coverer, owner, whose });
@@ -551,7 +551,7 @@ export function coverOffer(item: BoardItem, people: readonly Person[], viewerId:
     const each = rules.missedForfeitMinor * holders.length;
     const money = each > 0 ? formatMoney(each, rules.currency, words) : null;
     if (holders.length > 1) {
-      const owners = andNames(holders.map((id) => called(people, id, words)));
+      const owners = andNames(holders.map((id) => called(people, id, words)), words);
       const values = { owners: upperFirst(owners), points: pointsLabel(item.points * holders.length, words), money };
       return { kind: "cover", text: money ? words('john.crew.coverBodyMoney', values) : words('john.crew.coverBody', values) };
     }

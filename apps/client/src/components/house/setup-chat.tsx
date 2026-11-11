@@ -1,4 +1,5 @@
 import {
+  andNames,
   askExamples,
   dayChoices,
   weekdayName,
@@ -121,10 +122,6 @@ const CHANGES_FOLDED = 6;
 /** The card's sections, in the order it shows them: what goes first, so it's never missed. */
 const KINDS = ['remove', 'change', 'add'] as const;
 
-/** "Sam", "Sam and Priya", "Sam, Priya and Tom". */
-function namesList(names: readonly string[]): string {
-  return names.length <= 1 ? (names[0] ?? '') : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
-}
 
 /** Roughly how many points a week Johns come to: one due every few weeks or months counts its share, one on call as often as it comes up. */
 function pointsAWeek(johns: readonly DraftedJohn[]): number {
@@ -641,7 +638,7 @@ function DraftCard({
               title={g.name}
               meta={[
                 g.memberIds.length > 0 ? membersLine(g.memberIds, people, me, words) : null,
-                g.waitingFor.length > 0 ? words('ask.draft.waiting', { names: namesList(g.waitingFor) }) : null,
+                g.waitingFor.length > 0 ? words('ask.draft.waiting', { names: andNames(g.waitingFor, words) }) : null,
               ]
                 .filter(Boolean)
                 .join(', ')}
@@ -651,7 +648,7 @@ function DraftCard({
         </Section>
       ) : null}
       {open && waiting.length > 0 ? (
-        <Meta style={styles.inset}>{words('ask.draft.everyoneForNow', { groups: namesList(waiting.map((g) => g.name)) })}</Meta>
+        <Meta style={styles.inset}>{words('ask.draft.everyoneForNow', { groups: andNames(waiting.map((g) => g.name), words) })}</Meta>
       ) : null}
       {draft.note ? (
         <Meta style={styles.inset} testID="draft-note">
