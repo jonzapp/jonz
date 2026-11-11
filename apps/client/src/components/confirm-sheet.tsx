@@ -18,7 +18,9 @@ import { useWords } from '@/hooks/use-words';
  * it (Leave's Try again, when the Stake couldn't be read). `busy` holds both
  * buttons while the move is on its way, and `problem` is the refusal's
  * sentence, shown above them. A null `confirmLabel` is a move that can't be
- * made yet: the body says why, and only Cancel shows.
+ * made yet: the body says why, and only Cancel shows. `ready={false}` keeps
+ * the move unpressable until what `children` ask for is given (the house's
+ * name, typed, before starting it over).
  */
 export function ConfirmSheet({
   visible,
@@ -28,6 +30,7 @@ export function ConfirmSheet({
   icon,
   tone = 'hazard',
   busy = false,
+  ready = true,
   busyLabel,
   problem,
   onConfirm,
@@ -43,6 +46,8 @@ export function ConfirmSheet({
   tone?: 'primary' | 'hazard';
   /** Waiting on the server after Confirm: it shows a spinner and `busyLabel` ("Deleting"), and Cancel holds still. */
   busy?: boolean;
+  /** Whether the move may be pressed yet. */
+  ready?: boolean;
   busyLabel?: string;
   problem?: string | null;
   onConfirm: () => void;
@@ -58,7 +63,7 @@ export function ConfirmSheet({
       <View style={styles.buttons}>
         <ButtonRow stacked>
           {confirmLabel === null ? null : (
-            <Button variant={tone} icon={icon} label={confirmLabel} busy={busy} busyLabel={busyLabel} onPress={onConfirm} testID="confirm" />
+            <Button variant={tone} icon={icon} label={confirmLabel} busy={busy} busyLabel={busyLabel} disabled={!ready} onPress={onConfirm} testID="confirm" />
           )}
           <Button variant="outline" label={words('common.shell.cancel')} onPress={onClose} testID="cancel" />
         </ButtonRow>

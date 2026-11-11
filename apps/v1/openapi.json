@@ -8873,6 +8873,7 @@
                                   "reset_join_code",
                                   "set_house_kind",
                                   "deal_week",
+                                  "reset_house_data",
                                   "pay_pocket_money",
                                   "add_kid",
                                   "remove_member",
@@ -10947,6 +10948,90 @@
                 "required": [
                   "kind"
                 ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/houses/{houseId}/reset": {
+      "post": {
+        "operationId": "reset_house_data",
+        "summary": "Reset the house back to before its first deal: its history (weeks dealt, ticks, money, History), or everything (the John list, groups, time away and rules too)",
+        "tags": [
+          "house"
+        ],
+        "parameters": [
+          {
+            "name": "houseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/JonzClient"
+          }
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "x-jonz-effect": "write",
+        "x-jonz-permission": "house_reset:write",
+        "x-jonz-destructive": true,
+        "responses": {
+          "201": {
+            "description": "Done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "weeks": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "people": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "weeks",
+                    "people"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "everything": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [],
                 "additionalProperties": false
               }
             }
@@ -16281,6 +16366,46 @@
                               "tell"
                             ],
                             "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "house_reset"
+                              },
+                              "houseId": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              "name": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 120
+                              },
+                              "people": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              },
+                              "everything": {
+                                "type": "boolean"
+                              },
+                              "reason": {
+                                "type": "string",
+                                "maxLength": 500
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "houseId",
+                              "name",
+                              "people",
+                              "everything",
+                              "reason"
+                            ],
+                            "additionalProperties": false
                           }
                         ]
                       }
@@ -18031,6 +18156,93 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "required": [],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/houses/{houseId}/reset": {
+      "post": {
+        "operationId": "owner_reset_house_data",
+        "summary": "Reset a house back to before its first deal: its history (weeks dealt, ticks, money, History), or everything (the John list, groups, time away and rules too)",
+        "tags": [
+          "app"
+        ],
+        "parameters": [
+          {
+            "name": "houseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/JonzClient"
+          }
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "x-jonz-effect": "write",
+        "x-jonz-permission": "houses:write",
+        "x-jonz-destructive": true,
+        "responses": {
+          "201": {
+            "description": "Done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "weeks": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "people": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "weeks",
+                    "people"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "everything": {
+                    "type": "boolean"
+                  },
                   "reason": {
                     "type": "string"
                   }

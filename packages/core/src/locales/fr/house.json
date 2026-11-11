@@ -694,5 +694,18 @@
   "house.promotion.endedPlate": "Demande un nouveau lien.",
   "house.promotion.useIt": "L’utiliser",
   "house.promotion.smallPrint": "Ça marche quand tu te connectes à Jonz avec {email}{hasUntil, select, true {, jusqu’au {until}} other {}}.{gift, select, true { Pas besoin de carte.} other { Tu paies à la page suivante et tu peux résilier quand tu veux.}}",
-  "house.promotion.emailWhy": "Un cadeau de Jonz, envoyé seulement à toi."
+  "house.promotion.emailWhy": "Un cadeau de Jonz, envoyé seulement à toi.",
+  "house.danger.label": "Zone dangereuse",
+  "house.reset.title": "{everything, select, true {Tout réinitialiser} other {Réinitialiser l’historique}}",
+  "house.reset.meta": "{everything, select, true {Une page blanche. L’historique part, ainsi que la liste de Johns, les groupes, les absences et les règles. Le nom de la maison et les gens restent.} other {Retour à avant la première distribution. Semaines distribuées, coches, argent et historique partent. Ta liste de Johns, les gens et les règles restent.}}",
+  "house.reset.button": "Réinitialiser",
+  "house.reset.sheetTitle": "{everything, select, true {Tout réinitialiser dans {house} ?} other {Réinitialiser l’historique de {house} ?}}",
+  "house.reset.historyBody": "Chaque semaine distribuée jusqu’ici part, avec ses coches, questions, argent{kind, select, family {, argent de poche} other {}}, historique, et les séries, jokers et échanges de chacun. Ta liste de Johns reste telle quelle, ainsi que tout le monde, les groupes, les règles, les absences et le {kind, select, family {Family Pass} other {House Pass}}. Rien n’est distribué tant qu’{kind, select, family {un parent} other {un admin}} ne distribue pas la première semaine. C’est définitif.",
+  "house.reset.everythingBody": "Tout part : chaque semaine distribuée avec ses coches, questions, argent{kind, select, family {, argent de poche} other {}} et historique, les séries, jokers et échanges de chacun, et aussi la liste de Johns, les groupes, les absences et les règles, remises comme pour une nouvelle maison. Le nom de la maison, tout le monde et le {kind, select, family {Family Pass} other {House Pass}} restent. C’est définitif.",
+  "house.reset.confirm": "Tape le nom de la maison pour la réinitialiser",
+  "house.reset.go": "Réinitialiser pour de bon",
+  "house.reset.done": "{everything, select, true {{house} repart de zéro. Ajoute tes Johns, puis distribue la première semaine.} other {{house} est revenue à avant sa première distribution. Distribue la première semaine quand tout le monde est là.}}",
+  "house.reset.wall": "{everything, select, true {{you, select, true {Tu as tout réinitialisé dans la maison} other {{who} a tout réinitialisé dans la maison}}} other {{you, select, true {Tu as réinitialisé l’historique de la maison} other {{who} a réinitialisé l’historique de la maison}}}}",
+  "house.reset.wallNow": "{everything, select, true {Tout a été réinitialisé dans la maison} other {L’historique de la maison a été réinitialisé}}",
+  "house.reset.wallDetail": "Retour à avant la première distribution"
 }

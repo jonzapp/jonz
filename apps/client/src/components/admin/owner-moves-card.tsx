@@ -21,7 +21,7 @@ import {
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { deleteHouse } from '@/api/houses';
+import { deleteHouse, ownerResetHouse } from '@/api/houses';
 import { deleteByEmail, deleteNow, endNotice, saveNotice, stopDeletion } from '@/api/owner';
 import { emailPromotion, makePromotion, retryPromotion, stopPromotion } from '@/api/promotions';
 import { fixReport, replyToReport, setReportState, setSameAs } from '@/api/reports';
@@ -51,6 +51,7 @@ const ICON: Record<OwnerMoveKind, LucideIcon> = {
   deletion_stop: RotateCcwIcon,
   deletion_start: UserXIcon,
   house_delete: HouseIcon,
+  house_reset: RotateCcwIcon,
 };
 
 /** Does one move through the admin page's own call, as the owner: the database checks it and the audit log keeps it. */
@@ -103,6 +104,8 @@ export async function doOwnerMove(m: OwnerMove): Promise<void> {
     case 'house_delete':
       await deleteHouse(m.houseId, m.reason, m.tell);
       return;
+    case 'house_reset':
+      return ownerResetHouse(m.houseId, m.everything, m.reason);
   }
 }
 

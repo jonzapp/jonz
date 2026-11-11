@@ -171,5 +171,7 @@
   "wall.history.reset.letoffAny": "let everyone off a month’s forfeits",
   "wall.history.reset.other": "reset something",
   "wall.tell.anAdmin": "{kind, select, family {A parent} other {An admin}}",
-  "wall.tell.openToSee": "Open Jonz to see what changed."
+  "wall.tell.openToSee": "Open Jonz to see what changed.",
+  "wall.tell.resetTitle": "{everything, select, true {The house was reset} other {The house’s history was reset}}",
+  "wall.tell.resetBody": "{who} took the house back to before its first deal{everything, select, true {, John list and rules included} other {}}. Nothing is dealt until {kind, select, family {a parent} other {an admin}} deals the first week."
 }

@@ -44,6 +44,7 @@ export const HOUSE_MATRIX: Record<Permission, { member: boolean; admin: boolean 
   "flags:write": { member: false, admin: true },
   "ticks:write": { member: false, admin: true },
   "pocket_money:write": { member: false, admin: true },
+  "house_reset:write": { member: false, admin: true },
   "members:write": { member: false, admin: true },
 };
 

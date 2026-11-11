@@ -44,6 +44,7 @@ export const OWNER_ASK_OPERATIONS = {
   owner_stop_deletion: { tool: "stop_deletion", move: "deletion_stop" },
   owner_request_deletion: { tool: "start_deletion", move: "deletion_start" },
   owner_delete_house: { tool: "delete_house", move: "house_delete" },
+  owner_reset_house_data: { tool: "reset_house", move: "house_reset" },
 } as const satisfies Record<OwnerCardOperation, { tool: string; move: OwnerMoveKind }>;
 
 type CardEntry = (typeof OWNER_ASK_OPERATIONS)[OwnerCardOperation];
