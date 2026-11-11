@@ -22,6 +22,7 @@ import { Row, RowIcon } from '@/components/row';
 import { Section } from '@/components/section';
 import { Segmented } from '@/components/segmented';
 import { Sheet } from '@/components/sheet';
+import { useToastIfAny } from '@/components/toast';
 import { PickMenu } from '@/components/pick-menu';
 import { HiddenUsername, SignInForm } from '@/components/sign-in-form';
 import { Meta } from '@/components/text';
@@ -57,6 +58,7 @@ export function YouSection({
   const words = useWords();
   const [look, setLook] = useLook();
   const language = useLanguage();
+  const toasts = useToastIfAny();
   const { colors } = useTheme();
   const [sheet, setSheet] = useState<'name' | 'reminders' | 'password' | 'delete' | null>(null);
   const account = useEmailSignIn(sheet);
@@ -131,8 +133,13 @@ export function YouSection({
                 <PickMenu
                   options={LANGUAGES_OFFERED.map((value) => ({ value, label: LANGUAGE_NAMES[value] }))}
                   value={language.language}
-                  // It changes at once; one that can't be saved goes back.
-                  onChange={(value) => void language.change(value).catch((reason: unknown) => console.warn('Saving your language failed', reason))}
+                  // It changes at once; one that can't be saved goes back, and says so.
+                  onChange={(value) =>
+                    void language.change(value).catch((reason: unknown) => {
+                      console.warn('Saving your language failed', reason);
+                      toasts?.show(words('house.lower.languageFailed'));
+                    })
+                  }
                   label={words('house.lower.language')}
                   testID="language"
                 />

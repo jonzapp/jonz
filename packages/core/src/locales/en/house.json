@@ -355,6 +355,7 @@
   "house.lower.off": "Off",
   "house.lower.look": "Look",
   "house.lower.language": "Language",
+  "house.lower.languageFailed": "Your language couldn’t be changed. Try again in a moment.",
   "house.lower.signOut": "Sign out",
   "house.lower.leave": "Leave {house}",
   "house.lower.leaveAsk": "Leave {house}?",

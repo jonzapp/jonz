@@ -6,6 +6,7 @@ import { loadHouse } from '@/api/board';
 import { renameMe } from '@/api/profile';
 import { reminderSupport, remindersOn } from '@/api/push';
 import { authStorage } from '@/api/storage';
+import { ToastProvider } from '@/components/toast';
 import { useHouse } from '@/hooks/use-house';
 import { LanguageContext } from '@/hooks/use-words';
 import { snapshot } from '@/testing/house';
@@ -162,9 +163,11 @@ it('picks your language from a menu in its row, the test language among them whi
   function Host() {
     const { view } = useHouse('h1', 'priya');
     return view ? (
-      <LanguageContext.Provider value={{ language: 'en', change }}>
-        <YouSection houseId="h1" userId="priya" view={view} />
-      </LanguageContext.Provider>
+      <ToastProvider>
+        <LanguageContext.Provider value={{ language: 'en', change }}>
+          <YouSection houseId="h1" userId="priya" view={view} />
+        </LanguageContext.Provider>
+      </ToastProvider>
     ) : null;
   }
   await renderPages({ 'house/index': Host }, '/house');
@@ -173,6 +176,13 @@ it('picks your language from a menu in its row, the test language among them whi
   await fireEvent.press(within(row).getByRole('button', { name: 'English' }));
   await fireEvent.press(screen.getByRole('radio', { name: LANGUAGE_NAMES['en-XA'] }));
   expect(change).toHaveBeenCalledWith('en-XA');
+
+  // One that can't be saved goes back, and says so.
+  jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+  change.mockRejectedValueOnce(new Error('offline'));
+  await fireEvent.press(within(row).getByRole('button', { name: 'English' }));
+  await fireEvent.press(screen.getByRole('radio', { name: LANGUAGE_NAMES['en-XA'] }));
+  expect(await screen.findByText(words('house.lower.languageFailed'))).toBeOnTheScreen();
 });
 
 it('signs you out', async () => {
