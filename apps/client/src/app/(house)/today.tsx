@@ -183,10 +183,11 @@ function TodayView({
       <NeedsYourOk items={today.toOk} members={members} now={now} />
     </TourSpot>
   );
+  const onCallList = onCallItems(snapshot.onCall, board);
   const onCall = (
     <OnCall
       houseId={house.id}
-      items={onCallItems(snapshot.onCall, board)}
+      items={onCallList}
       members={members}
       userId={userId}
       rules={rules}
@@ -250,6 +251,12 @@ function TodayView({
       <WeekGlance view={view} away={away} />
     </>
   );
+  // Whether the panel has anything to show. Before the first deal (and in a week not yet out) the house's week
+  // isn't there for WeekGlance, and often nothing else is either: then there's no panel, and Next up runs across.
+  const panel =
+    today.toOk.length + today.toVote.length + onCallList.length + today.toCover.length > 0 ||
+    ask != null ||
+    (board.week != null && board.items.length > 0);
   // On a laptop Next up runs across the main column, with the rest of your week and the quiet lines under it, and
   // what the house wants of you sits in the panel beside them, over its week. The day's line heads the main column,
   // a section label's height, so Next up's plate and the first group in the panel share a top edge.
@@ -266,12 +273,13 @@ function TodayView({
             {lines}
           </>
         }
-        side={theirs}
+        side={panel ? theirs : null}
       />
     );
   }
   // On a laptop with no room for the panel (a smaller window, or beside the chat with Jonz) the page still fills
-  // the room: Next up across it, then the rest of your week beside what the house wants of you and its week.
+  // the room: Next up across it, then the rest of your week beside what the house wants of you and its week (one
+  // under the other when the house has nothing to show, so no column stands empty).
   if (beside) {
     return (
       <>
@@ -279,7 +287,7 @@ function TodayView({
         {offer}
         {next}
         {swap}
-        {rest || lines ? (
+        {(rest || lines) && panel ? (
           <Pair
             testID="today-pair"
             start={
@@ -291,7 +299,11 @@ function TodayView({
             end={theirs}
           />
         ) : (
-          theirs
+          <>
+            {rest}
+            {lines}
+            {theirs}
+          </>
         )}
       </>
     );

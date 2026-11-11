@@ -1,7 +1,7 @@
 import { wordsFor } from "@app/core";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
-import { admin, CLIENT_URL, cleanUp, dealtHouseInClient } from "./auth";
+import { admin, CLIENT_URL, cleanUp, dealtHouseInClient, undealtHouseInClient } from "./auth";
 
 const words = wordsFor("en", "housemates");
 
@@ -93,6 +93,39 @@ async function holdsTheEdges(page: Page, screen: Locator, firstCard: Locator) {
   expect((side?.x ?? 0) + (side?.width ?? 0)).toBeCloseTo(window, 0);
   expect(side?.y ?? 0).toBeCloseTo((bar?.y ?? 0) + (bar?.height ?? 0), 0);
 }
+
+test("before the first deal Today has no empty panel: the setup card runs across the page", async ({ browser }, info) => {
+  test.skip(info.project.name !== "laptop-chrome", "The laptop's layout");
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const { userId } = await undealtHouseInClient(context, "Glyn Undealt", "Glyn's new house", ["Bins out", "Wipe the hob"]);
+  made.push(userId);
+  const page = await context.newPage();
+  await page.goto("/today");
+  const today = page.getByTestId("today-screen");
+  await expect(today.getByTestId("column-main").getByTestId("next-up")).toBeVisible();
+  // Nothing for the panel yet (no week, nothing to vote on or cover), so there's no panel and no hairline.
+  await expect(today.getByTestId("column-side")).toHaveCount(0);
+  // The card runs across the page to the window's gutter, never stopping where the panel would have been.
+  await acrossTheColumn(today.getByTestId("next-up"), today.getByTestId("column-main"));
+  const window = page.viewportSize()?.width ?? 0;
+  expect(Math.abs(rightOf(await today.getByTestId("next-up").boundingBox()) - (window - 16))).toBeLessThan(2);
+  await shoot(page, "today-undealt");
+  // Beside the chat with Jonz it still runs up to the chat, with no empty column under it.
+  await today.getByTestId("ask-jonz").click();
+  const chat = page.getByTestId("ask-panel");
+  await expect(chat).toBeVisible();
+  await expect(today.getByTestId("today-pair")).toHaveCount(0);
+  const chatEdge = (await chat.boundingBox())?.x ?? 0;
+  expect(Math.abs(rightOf(await today.getByTestId("next-up").boundingBox()) - (chatEdge - 16))).toBeLessThan(2);
+  await shoot(page, "today-undealt-ask");
+  // On a big screen it stops at FILL_MAX, as a page that fills the room does.
+  await today.getByTestId("ask-jonz").click();
+  await expect(chat).toHaveCount(0);
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  expect((await today.getByTestId("next-up").boundingBox())?.width ?? 0).toBeLessThanOrEqual(1600);
+  await shoot(page, "today-undealt-wide");
+  await context.close();
+});
 
 test("each place spreads out on a laptop, and a narrow window keeps the phone's way", async ({ browser }, info) => {
   test.skip(info.project.name !== "laptop-chrome", "The laptop's layout");

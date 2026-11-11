@@ -179,8 +179,12 @@ export function Screen({
  * does what scrolling the page would (reads more near the end, pulls to
  * refresh). The two fill the page under the title bar, laid over the
  * page's own scroll, which then has nothing to scroll.
+ *
+ * With nothing for the panel (`side` null: Today before the first deal) no
+ * panel is drawn, not even its hairline: the main column runs across the
+ * page, up to FILL_MAX, as a page that fills does.
  */
-export function Columns({ main, side }: { main: ReactNode; side: ReactNode }) {
+export function Columns({ main, side }: { main: ReactNode; side: ReactNode | null }) {
   const { colors } = useTheme();
   const scroll = useContext(PageScrollContext);
   const mainRef = useRef<ScrollViewInstance>(null);
@@ -189,14 +193,15 @@ export function Columns({ main, side }: { main: ReactNode; side: ReactNode }) {
   // measured itself, so a page opens in its columns rather than switching to them.
   const page = useContext(PageWidth);
   const [measured, setMeasured] = useState<number | null>(null);
-  const width = measured ?? (page === null ? null : page - SIDE - GUTTER - SECTION_GAP);
+  const alone = side == null;
+  const width = measured ?? (page === null ? null : alone ? Math.min(page - 2 * GUTTER, FILL_MAX) : page - SIDE - GUTTER - SECTION_GAP);
   return (
     <View style={styles.columns} testID="columns">
       <ScrollView
         ref={mainRef}
         testID="column-main-scroll"
         style={styles.mainScroll}
-        contentContainerStyle={styles.mainPage}
+        contentContainerStyle={[styles.mainPage, alone && styles.mainAlone]}
         scrollEventThrottle={scroll.onNearEnd ? 200 : undefined}
         onScroll={nearEnd(scroll.onNearEnd)}
         refreshControl={
@@ -208,23 +213,25 @@ export function Columns({ main, side }: { main: ReactNode; side: ReactNode }) {
         <ContentWidth.Provider value={CONTENT_MAX}>
           <TourScrollContext.Provider value={mainRef}>
             <Filled.Provider value={width}>
-              <View style={styles.main} onLayout={(e) => setMeasured(e.nativeEvent.layout.width)} testID="column-main">
+              <View style={[styles.main, alone && styles.mainFills]} onLayout={(e) => setMeasured(e.nativeEvent.layout.width)} testID="column-main">
                 {main}
               </View>
             </Filled.Provider>
           </TourScrollContext.Provider>
         </ContentWidth.Provider>
       </ScrollView>
-      <ScrollView
-        ref={sideRef}
-        testID="column-side"
-        style={[styles.side, { borderLeftColor: colors.border }]}
-        contentContainerStyle={styles.sidePage}
-      >
-        <ContentWidth.Provider value={ASIDE}>
-          <TourScrollContext.Provider value={sideRef}>{side}</TourScrollContext.Provider>
-        </ContentWidth.Provider>
-      </ScrollView>
+      {alone ? null : (
+        <ScrollView
+          ref={sideRef}
+          testID="column-side"
+          style={[styles.side, { borderLeftColor: colors.border }]}
+          contentContainerStyle={styles.sidePage}
+        >
+          <ContentWidth.Provider value={ASIDE}>
+            <TourScrollContext.Provider value={sideRef}>{side}</TourScrollContext.Provider>
+          </ContentWidth.Provider>
+        </ScrollView>
+      )}
     </View>
   );
 }
@@ -251,6 +258,9 @@ const styles = StyleSheet.create({
   mainScroll: { flex: 1, minWidth: 0 },
   mainPage: { paddingLeft: GUTTER, paddingRight: SECTION_GAP, paddingTop: GUTTER, paddingBottom: SECTION_GAP },
   main: { width: '100%', gap: SECTION_GAP },
+  // No panel: a GUTTER at the page's right edge, as on its left, and the column stops at FILL_MAX.
+  mainAlone: { paddingRight: GUTTER },
+  mainFills: { maxWidth: FILL_MAX },
   // Docked to the right edge, the page's whole height under the title bar.
   side: { flexGrow: 0, flexShrink: 0, width: SIDE, borderLeftWidth: StyleSheet.hairlineWidth },
   sidePage: { paddingTop: GUTTER, paddingHorizontal: GUTTER, paddingBottom: SECTION_GAP, gap: SECTION_GAP },
