@@ -2533,11 +2533,7 @@
                   "anyOf": [
                     {
                       "type": "string",
-                      "enum": [
-                        "en",
-                        "fr",
-                        "en-XA"
-                      ]
+                      "description": "A language tag, such as en or fr"
                     },
                     {
                       "type": "null"

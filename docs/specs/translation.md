@@ -61,7 +61,7 @@ through FormatJS. A family reads its own sentences (never "housemates" or
   stay in English, so their dates do too.
 - **The test language** (`en-XA`, `pseudo.ts`): every English line with its
   letters accented and held in brackets, `[Ţíçķ íţ óƒƒ]`. Offered on You only
-  locally and on staging. A line still written into a screen reads plain,
+  locally (staging dropped it once French was there to read). A line still written into a screen reads plain,
   and one cut short loses its closing bracket.
 - **Another language** (later): a folder beside `en/` with the same ids,
   added to `LANGUAGES` and to `profiles_language_check`. A line it hasn't
