@@ -3,3 +3,8 @@
 # 2026-11-11, Glyn: my_language answers any language Jonz has, not only "en" (French, PR #213).
 GET /v1/me/language removed the enum constraint from the `anyOf[subschema #1]` response property for the response status `200`
 GET /v1/me/language removed the enum constraint from the 'anyOf[subschema #1]' response property for the response status '200'
+# 2026-11-11, Glyn: Ask Jonz's cards may gain new moves from now on; adding a move to `moves` is never a break (PR #218, Reset a house).
+POST /v1/admin/ask added `subschema #16` to the `moves/items` response property `oneOf` list for the response status `201`
+POST /v1/admin/ask added 'subschema #16' to the 'moves/items' response property 'oneOf' list for the response status '201'
+POST /v1/houses/{houseId}/ask added the new `reset_house_data` enum value to the `moves/items/oneOf[subschema #3]/operation` response property for the response status `201`
+POST /v1/houses/{houseId}/ask added the new 'reset_house_data' enum value to the 'moves/items/oneOf[subschema #3]/operation' response property for the response status '201'
