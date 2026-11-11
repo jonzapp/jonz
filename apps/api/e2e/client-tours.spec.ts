@@ -28,10 +28,10 @@ async function shoot(page: Page, name: string) {
 
 /**
  * A tab you've been to stays drawn behind the one showing, at the same place
- * on screen, with its wrapper aria-hidden: this finds the copy on the tab
- * that's showing.
+ * on screen, with its wrapper inert on web (aria-hidden before expo-router
+ * 58.0.31): this finds the copy on the tab that's showing.
  */
-const shown = (page: Page, testId: string) => page.locator(`[data-testid="${testId}"]:not([aria-hidden="true"] *)`);
+const shown = (page: Page, testId: string) => page.locator(`[data-testid="${testId}"]:not([aria-hidden="true"] *):not([inert] *)`);
 
 /** The question mark on the page showing (its screen's testID): every tab has one. */
 const helpButton = (page: Page, screen: string) => page.getByTestId(screen).getByTestId("help-button");

@@ -216,7 +216,7 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   await shoot(page, "today-wide");
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.getByRole("tab", { name: words('common.section.week') }).click();
-  await expect(page.getByRole("heading", { name: words('common.title.week') })).toBeVisible();
+  await expect(week.getByRole("heading", { name: words('common.title.week') })).toBeVisible();
 
   // The Table shows the week or the month from the menu in its header, dropped from its words.
   const span = week.getByTestId("table-span");
