@@ -9,9 +9,28 @@ import { dateIn } from "./format";
 /**
  * Whether a house without the Pass loses the extras. Off until the store
  * release: until then every house keeps everything, and the Pass is only
- * shown. Turning it on is the one change that starts locking.
+ * shown. Turning it on here is the one change that starts locking.
+ *
+ * Staging turns it on early, so the locked app can be tried there: the API
+ * with PASS_ENFORCED=on and the web build with EXPO_PUBLIC_PASS_ENFORCED=on
+ * (scripts/provision/lib.mjs sets both on the Preview environments only).
  */
-export const PASS_ENFORCED = false;
+export const PASS_ENFORCED = passEnforcedBy(envOf("PASS_ENFORCED"), envOf("EXPO_PUBLIC_PASS_ENFORCED"));
+
+/** Whether either switch says on. */
+export function passEnforcedBy(...switches: (string | undefined)[]): boolean {
+  return switches.some((value) => value === "on");
+}
+
+function envOf(name: "PASS_ENFORCED" | "EXPO_PUBLIC_PASS_ENFORCED"): string | undefined {
+  // Spelled out in full: Expo writes an EXPO_PUBLIC_ value into the web build
+  // only where the code names it, so there it never reads `process` at all.
+  try {
+    return name === "PASS_ENFORCED" ? process.env.PASS_ENFORCED : process.env.EXPO_PUBLIC_PASS_ENFORCED;
+  } catch {
+    return undefined;
+  }
+}
 
 /** How long every new house has the Pass free, from when it's made. */
 export const PASS_TRIAL_DAYS = 30;
