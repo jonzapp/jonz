@@ -1,6 +1,6 @@
 import "server-only";
 
-import { bornYearOk, PASS_ENFORCED, promotionProblems, type AwayDraft, type ChatRequest, type DeleteHouseRequest, type OwnerAskRequest, type OwnerMessageRequest, type PassCheckoutRequest, type PromotionRequest, type ReportFixRequest, type ReportMessageRequest, type ReportRequest, type RollCallRequest, type SwapAskRequest, wordsFor } from "@app/core";
+import { bornYearOk, promotionProblems, type AwayDraft, type ChatRequest, type DeleteHouseRequest, type OwnerAskRequest, type OwnerMessageRequest, type PassCheckoutRequest, type PromotionRequest, type ReportFixRequest, type ReportMessageRequest, type ReportRequest, type RollCallRequest, type SwapAskRequest, wordsFor } from "@app/core";
 import { fromDatabase, Problem, type HandlerContext } from "@app/server";
 import type { Handlers } from "v1";
 
@@ -131,7 +131,6 @@ const HANDLERS: Handlers = {
 
   async pass_checkout(ctx: HandlerContext) {
     const { plan, offer } = ctx.input as PassCheckoutRequest;
-    if (!PASS_ENFORCED && !offer) throw new Problem("rejected", words('house.pass.betaFree'));
     const email = typeof ctx.claims.email === "string" ? ctx.claims.email : undefined;
     const answer = await startCheckout({ ...callerOf(ctx), email }, passStripe(), houseId(ctx), plan, appUrl(ctx), env.stage(), ctx.now, offer ?? null);
     return passAnswer(answer);

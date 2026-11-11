@@ -4,7 +4,7 @@ import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library'
 import { loadHouse } from '@/api/board';
 import { catchUp } from '@/api/house';
 import { ApiRequestError } from '@/api/http';
-import { leaveFor, passBillingUrl, passCheckoutOpen, passCheckoutUrl, passSelling } from '@/api/pass';
+import { leaveFor, passBillingUrl, passCheckoutOpen, passCheckoutUrl } from '@/api/pass';
 import PassScreen from '@/app/(house)/house/pass';
 import { ToastProvider } from '@/components/toast';
 import { snapshot } from '@/testing/house';
@@ -17,7 +17,6 @@ jest.mock('@/api/house', () => ({ catchUp: jest.fn() }));
 jest.mock('@/api/auth', () => ({ getAccessToken: jest.fn() }));
 jest.mock('@/api/pass', () => ({
   passCheckoutOpen: jest.fn(() => false),
-  passSelling: jest.fn(() => false),
   passCheckoutUrl: jest.fn(),
   passBillingUrl: jest.fn(),
   leaveFor: jest.fn(),
@@ -53,7 +52,6 @@ beforeEach(() => {
   (loadHouse as jest.Mock).mockResolvedValue(snapshot());
   (catchUp as jest.Mock).mockResolvedValue(false);
   (passCheckoutOpen as jest.Mock).mockReturnValue(false);
-  (passSelling as jest.Mock).mockReturnValue(false);
 });
 
 it('sits under a title bar with the way back to House', async () => {
@@ -121,7 +119,6 @@ it('says who bought it', async () => {
 describe('selling on the web', () => {
   beforeEach(() => {
     (passCheckoutOpen as jest.Mock).mockReturnValue(true);
-    (passSelling as jest.Mock).mockReturnValue(true);
   });
 
   it('sends a house on its free month to Checkout for the plan pressed, and says when it first pays', async () => {
@@ -170,22 +167,3 @@ describe('selling on the web', () => {
   });
 });
 
-describe('during the beta, with checkout on and nothing locked', () => {
-  beforeEach(() => {
-    (passCheckoutOpen as jest.Mock).mockReturnValue(true);
-  });
-
-  it('says it is free and sells nothing', async () => {
-    withPass({ plan: 'trial', until: new Date(Date.now() + 12 * DAY), buyerId: null });
-    await open();
-    expect(screen.getByTestId('pass-soon')).toHaveTextContent(words('house.pass.betaFree'));
-    await fireEvent.press(screen.getByTestId('plan-yearly'));
-    expect(passCheckoutUrl).not.toHaveBeenCalled();
-  });
-
-  it('still lets a buyer manage the plan they hold', async () => {
-    withPass({ plan: 'monthly', until: new Date(Date.now() + 20 * DAY), buyerId: 'priya' });
-    await open();
-    expect(screen.getByTestId('pass-manage')).toBeOnTheScreen();
-  });
-});

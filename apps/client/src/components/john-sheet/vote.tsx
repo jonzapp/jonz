@@ -52,11 +52,13 @@ export function Disputed({ item, context }: { item: BoardItem; context: JohnShee
           <Body testID="your-tick">
             {dispute.answered
               ? words('john.sheet.answered')
-              : voters.length === 1
+              : context.board.photos === false
+                ? words('john.sheet.votingOnYours')
+                : voters.length === 1
                 ? words('john.sheet.onlyVoter', { name: context.nameOf(voters[0]), closes: voteCloses(dispute.closesAt, context.now, words) })
                 : words('john.sheet.yourTick')}
           </Body>
-          {dispute.answered ? null : <AnswerWithPhoto houseId={context.houseId} assignmentId={dispute.assignmentId} disputeId={dispute.id} onDone={context.close} />}
+          {dispute.answered || context.board.photos === false ? null : <AnswerWithPhoto houseId={context.houseId} assignmentId={dispute.assignmentId} disputeId={dispute.id} onDone={context.close} />}
         </>
       ) : ownsCover ? (
         <Body testID="cover-of-yours">{words('john.sheet.coverOfYours', { name: context.nameOf(ticker) })}</Body>

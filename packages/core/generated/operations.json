@@ -3324,7 +3324,7 @@
         "by": "permission",
         "permission": "history:read"
       },
-      "entitlement": "history",
+      "entitlement": null,
       "entitlementWhen": null,
       "destructive": false,
       "method": "GET",

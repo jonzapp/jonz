@@ -1,4 +1,4 @@
-import { dayLabel, wallDays, wallFeedRow, type WallFeedRow } from '@app/core';
+import { dayLabel, passUnlocked, wallDays, wallFeedRow, type WallFeedRow } from '@app/core';
 import { useLocalSearchParams } from 'expo-router';
 import { MegaphoneIcon } from 'lucide-react-native';
 import { useEffect, useState, type ReactNode } from 'react';
@@ -175,6 +175,7 @@ function WallFor({ houseId, userId }: { houseId: string; userId: string }) {
       now: view.now,
       nameOf: (id) => (id === userId ? 'You' : ((id && names.get(id)) ?? words('wall.history.someone'))),
       fullName: (id) => (id && names.get(id)) ?? words('wall.history.someone'),
+      locked: !passUnlocked(view.snapshot.house.pass, view.now),
     };
     historyBody = <HistoryList items={history.data.pages.flat()} scene={historyScene} more={historyMore} />;
   }

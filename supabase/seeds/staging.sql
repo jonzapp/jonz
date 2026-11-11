@@ -65,8 +65,8 @@ begin
   values ('Demo House', 'Europe/London', 'GBP', 1, ids[1])
   returning id into house;
 
-  -- Its free month is already over and nobody has bought the Pass, so with
-  -- the Pass enforced on staging (PASS_ENFORCED) it shows the locked app.
+  -- Its free month is already over and nobody has bought the Pass, so it
+  -- shows the locked app.
   -- Buy one in Stripe's sandbox (card 4242 4242 4242 4242) to see the rest.
   update public.houses set pass_plan = 'trial', pass_ends_at = now() - interval '1 day' where id = house;
 

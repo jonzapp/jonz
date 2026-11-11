@@ -297,6 +297,16 @@ describe("buildWeekBoard", () => {
     expect(board([], [], null).table.map((r) => r.userId).sort()).toEqual([ME, YOU]);
   });
 
+  it("asks for a photo only while photo receipts are open (the House Pass)", () => {
+    const rows = [john("oven", { needs_photo: true })];
+    const open = board(rows);
+    expect(open.photos).toBe(true);
+    expect(open.items[0].needsPhoto).toBe(true);
+    const shut = buildWeekBoard({ week: WEEK, assignments: rows, disputes: [], memberIds: [ME, YOU], userId: ME, everDealt: true, disputeHours: 24, now, photos: false });
+    expect(shut.photos).toBe(false);
+    expect(shut.items[0].needsPhoto).toBe(false);
+  });
+
   it("gives every John its live status, in due order", () => {
     const items = board([
       john("later", { due_at: at(48) }),

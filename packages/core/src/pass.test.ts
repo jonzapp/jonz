@@ -4,7 +4,6 @@ import { CURRENCIES } from "./domain";
 import {
   hasPass,
   PASS_ENFORCED,
-  passEnforcedBy,
   PASS_LOOKUP_KEYS,
   PASS_PURCHASES,
   passAfterSubscription,
@@ -69,21 +68,16 @@ describe("hasPass", () => {
   });
 });
 
-describe("passEnforcedBy", () => {
-  it("is on only when a switch says on", () => {
-    expect(passEnforcedBy(undefined, undefined)).toBe(false);
-    expect(passEnforcedBy("off", "")).toBe(false);
-    expect(passEnforcedBy("on", undefined)).toBe(true);
-    expect(passEnforcedBy(undefined, "on")).toBe(true);
-  });
-});
-
 describe("passUnlocked", () => {
   const ended = pass("monthly", "2026-11-01T00:00:00Z");
 
-  it("unlocks every house while the Pass isn't enforced", () => {
-    expect(PASS_ENFORCED).toBe(false);
-    expect(passUnlocked(ended, now)).toBe(true);
+  it("locks a house without the Pass: the Pass is on", () => {
+    expect(PASS_ENFORCED).toBe(true);
+    expect(passUnlocked(ended, now)).toBe(false);
+  });
+
+  it("unlocks every house when told it isn't enforced", () => {
+    expect(passUnlocked(ended, now, false)).toBe(true);
   });
 
   it("follows the Pass once enforced", () => {

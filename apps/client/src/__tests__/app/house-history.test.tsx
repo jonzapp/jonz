@@ -166,3 +166,16 @@ it('reads older moves as you scroll near the end, from the last one shown', asyn
   expect(await screen.findByText(/Dishes/)).toBeOnTheScreen();
   expect(screen.getByTestId('history-foot')).toHaveTextContent(words('common.list.everything'));
 });
+
+it('ends at four weeks back without the House Pass, with a row to the Pass page', async () => {
+  const base = snapshot();
+  (loadHouse as jest.Mock).mockResolvedValue({ ...base, house: { ...base.house, pass: { plan: 'trial', until: new Date('2026-10-01T00:00:00Z'), buyerId: null } } });
+  await open();
+  const locked = await screen.findByTestId('history-locked');
+  expect(locked).toHaveTextContent(words('house.pass.olderHistory'), { exact: false });
+});
+
+it('has no Pass row with the House Pass', async () => {
+  await open();
+  expect(screen.queryByTestId('history-locked')).toBeNull();
+});

@@ -3802,7 +3802,6 @@
         ],
         "x-jonz-effect": "read",
         "x-jonz-permission": "history:read",
-        "x-jonz-entitlement": "history",
         "responses": {
           "200": {
             "description": "Done.",

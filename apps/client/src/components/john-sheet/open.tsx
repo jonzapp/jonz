@@ -88,15 +88,18 @@ label={words('john.row.markDone')}
               onPress={() => void tick.tick()}
               testID="sheet-mark-done"
             />
-            <Button
-              variant="outline"
-              icon={CameraIcon}
+            {/* Photo receipts are a House Pass extra. */}
+            {context.board.photos !== false ? (
+              <Button
+                variant="outline"
+                icon={CameraIcon}
 label={words('john.sheet.addPhoto')}
-              busy={tick.waiting === 'camera'}
-              busyLabel={tick.busyLabel}
-              disabled={tick.held('camera')}
-              onPress={() => void tick.tickWithPhoto('camera')}
-            />
+                busy={tick.waiting === 'camera'}
+                busyLabel={tick.busyLabel}
+                disabled={tick.held('camera')}
+                onPress={() => void tick.tickWithPhoto('camera')}
+              />
+            ) : null}
           </>
         )}
         {item.jobId ? null : (

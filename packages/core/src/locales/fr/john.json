@@ -54,6 +54,7 @@
   "john.sheet.tally": "{done} fait, {notDone} pas fait, {closes}",
   "john.sheet.yourTick": "La maison vote sur ta coche. Une photo du travail fait l’aide à décider.",
   "john.sheet.onlyVoter": "Seul {name} peut voter, donc une photo tranche. Ajoutes-en une avant la fin du vote {closes}. Sans photo, la coche est annulée, et tu as 12 heures de plus pour le faire.",
+  "john.sheet.votingOnYours": "La maison vote sur ta coche.",
   "john.sheet.answered": "Ta photo est sur le John pour que la maison la voie.",
   "john.sheet.coverOfYours": "{name} l’a fait à ta place. C’est le reste de la maison qui vérifie, pas toi.",
   "john.sheet.answerPhoto": "Ajouter une photo du travail fait",

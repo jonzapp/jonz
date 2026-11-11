@@ -47,6 +47,7 @@ export function NextUp({
   room,
   awayMakeup,
   bestTime = null,
+  photos = true,
 }: {
   houseId: string;
   state: Exclude<NextUpState, { kind: 'setup' }>;
@@ -60,6 +61,8 @@ export function NextUp({
   awayMakeup: number;
   /** Your best time (House, You, Preferences), which Plan it offers first. */
   bestTime?: BestTime | null;
+  /** Whether photo receipts are open (the House Pass): without them, no Photo button. */
+  photos?: boolean;
 }) {
   const words = useWords();
   switch (state.kind) {
@@ -75,6 +78,7 @@ export function NextUp({
           cant={cant}
           room={room}
           bestTime={bestTime}
+          photos={photos}
         />
       );
     case 'clear':
@@ -134,6 +138,7 @@ function NextJohn({
   cant,
   room,
   bestTime,
+  photos,
 }: {
   houseId: string;
   item: BoardItem;
@@ -142,6 +147,7 @@ function NextJohn({
   cant: CantHeld;
   room: number | null;
   bestTime: BestTime | null;
+  photos: boolean;
 }) {
   const words = useWords();
   const { colors, type } = useTheme();
@@ -231,7 +237,7 @@ function NextJohn({
             onPress={() => void tick.tickWithPhoto('library')}
             testID="choose-photo"
           />
-        ) : (
+        ) : photos ? (
           <Button
             variant="outline"
             icon={CameraIcon}
@@ -242,7 +248,7 @@ function NextJohn({
             onPress={() => void tick.tickWithPhoto('camera')}
             testID="done-with-photo"
           />
-        )}
+        ) : null}
       </View>
       {tick.problem ? (
         <View style={styles.problem}>

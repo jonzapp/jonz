@@ -34,7 +34,7 @@ week before and after. Nothing changes until they press Apply, and the
 chat carries on after it, from the list as it now is. Anyone in the house
 can ask; someone who can't change the list (a member, a kid) gets answers
 and no card. This part is the House Pass's: without it the message
-box gives way to the Pass (shown only once `PASS_ENFORCED` is on).
+box gives way to the Pass (for a house without the Pass).
 
 The message box is one line while empty (a lighter hint that never
 wraps) and grows with what's typed, up to about five lines, then scrolls

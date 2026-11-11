@@ -38,9 +38,11 @@ link); give it as a Founding plan by hand until there is an admin tool.
   `houses.pass_until` (null only for Founding) and `houses.pass_buyer`.
   Written only by the service role; housemates read them with the house.
 - `@app/core` `pass.ts`: `passOf`, `hasPass`, `passUnlocked`, `passLine`,
-  `passOffers`, and `PASS_ENFORCED`, the one switch. Staging turns it on
-  early (`PASS_ENFORCED=on` for the API, `EXPO_PUBLIC_PASS_ENFORCED=on` for
-  the web build), so the locked app can be tried on its Demo House.
+  `passOffers`, and `PASS_ENFORCED`, on since 11 Nov 2026
+  (`20270104090000_pass_on.sql` made every house made before then a
+  Founding house). The database's own `house_has_pass` answers the same
+  question for its checks. Staging's Demo House starts with its free month
+  ended, so the locked app can be tried there.
 - House shows Free and House Pass (`PassSection`; the Family Pass in a
   family): six groups in plain words, `freeGroups` then `passWords().extras`
   from `@app/core` `family.ts`, with a Free and a Pass column of ticks. Its
@@ -108,7 +110,7 @@ The Pass belongs to whoever paid for it, and covers the house they live in
   renewing once it's left with the old house, or has waited 30 days for a
   house ('lapsed'; it can still go on a house while what was paid lasts).
 
-## What happens without the Pass (once `PASS_ENFORCED` is on)
+## What happens without the Pass
 
 - The Stake: settled Johns forfeit nothing (the engine's `settleDue`).
   Months already counted still close.
@@ -118,19 +120,23 @@ The Pass belongs to whoever paid for it, and covers the house they live in
   Table.
 - Nothing is ever deleted. Buying the Pass again brings everything back.
 
+- Photo receipts: no John asks for a photo, and none can be added. A photo
+  John ticks like any other (`mark_done`, `roll_call`, `cover_john` and
+  `board_tick` ask for a photo only while `house_has_pass`); the app hides
+  the photo buttons (`WeekBoard.photos`), and the executor refuses
+  `proof_upload` and a tick with a photo (`pass_required`). Answering a
+  question on your tick with a photo goes too; the house just votes.
+- History: the last four weeks (`house_history` reads older moves only with
+  the Pass), and the end of the list goes to the Pass page.
+
 ## Still to build
 
-1. Photo receipts and history beyond four weeks lock with the switch, with
-   the database checks (`mark_done`'s photo, `use_immunity`, `use_swap`) in
-   the same change.
-2. Store purchases: RevenueCat (`react-native-purchases`, a development
+1. Store purchases: RevenueCat (`react-native-purchases`, a development
    build), one RevenueCat customer per house (`house_<id>`), Restore
    purchases.
-3. A RevenueCat webhook to `apps/api` that writes the three columns for
+2. A RevenueCat webhook to `apps/api` that writes the three columns for
    store purchases, and a refresh on open so a missed webhook heals itself.
    RevenueCat can import the web's Stripe subscriptions then.
-4. At the store release, a migration that makes every house made before it
-   a Founding house, then `PASS_ENFORCED = true`.
 
 ## Edge cases
 

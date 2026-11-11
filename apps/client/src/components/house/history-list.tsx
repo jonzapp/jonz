@@ -1,5 +1,5 @@
 import { actionLine, historyDayLabel, historyDays, historyFor, historyMeta, historyTime, dayLabel, type Currency, type HouseKind, type HistoryItem } from '@app/core';
-import { HistoryIcon } from 'lucide-react-native';
+import { HistoryIcon, LockIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -7,9 +7,9 @@ import { undoAction } from '@/api/history';
 import { Alert } from '@/components/alert';
 import { Avatar } from '@/components/avatar';
 import { EmptyState } from '@/components/empty-state';
-import { GroupItem } from '@/components/group';
+import { Group, GroupItem } from '@/components/group';
 import { ListFoot, type ListMore } from '@/components/list-foot';
-import { Row } from '@/components/row';
+import { Row, RowIcon } from '@/components/row';
 import { Section } from '@/components/section';
 import { Segmented } from '@/components/segmented';
 import { TextButton } from '@/components/text-button';
@@ -30,6 +30,8 @@ export interface HistoryScene {
   nameOf: (userId: string | null) => string;
   /** Their own name, for an avatar's initials. */
   fullName: (userId: string | null) => string;
+  /** Without the House Pass: only the last four weeks read, and the end of the list says older moves need it. */
+  locked?: boolean;
 }
 
 /**
@@ -38,7 +40,8 @@ export interface HistoryScene {
  * says still reach (yours while they're open; anyone's, to an admin, until
  * the month is shared out). A refusal stays under the row it came from.
  * Older moves load as you scroll (the screen's `nearEnd`), under the foot
- * every long list has.
+ * every long list has. Without the House Pass the list stops at four weeks
+ * back, and its last row goes to the Pass page.
  */
 export function HistoryList({
   items,
@@ -85,6 +88,17 @@ export function HistoryList({
           shown={items.length > 0 ? words('common.list.backTo', { day: dayLabel(items[items.length - 1].at, scene.zone, words) }) : null}
           testID="history-foot"
         />
+      ) : null}
+      {scene.locked && !more.has ? (
+        <Group testID="history-locked">
+          <Row
+            leading={<RowIcon icon={LockIcon} />}
+            title={words('house.pass.olderHistory')}
+            meta={words('house.pass.unlock')}
+            href="/house/pass"
+            chevron
+          />
+        </Group>
       ) : null}
     </>
   );

@@ -154,6 +154,7 @@ function TodayView({
         room={page.room}
         awayMakeup={house.awayMakeup}
         bestTime={me?.prefs.bestTime ?? null}
+        photos={board.photos !== false}
       />
       )}
     </TourSpot>
