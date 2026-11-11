@@ -1,6 +1,6 @@
-import { hasPass, LEGAL, passWords, type Words, type PassExtra, PASS_FREE_HISTORY_WEEKS, passFirstChargeNote, passLine, passOffers, passPurchaseRefusal, type PassPurchase } from '@app/core';
+import { hasPass, LEGAL, passWords, type Words, type PassExtra, passFirstChargeNote, passLine, passOffers, passPurchaseRefusal, type PassPurchase } from '@app/core';
 import { useLocalSearchParams } from 'expo-router';
-import { CameraIcon, CoinsIcon, CreditCardIcon, HistoryIcon, TrophyIcon, UserRoundIcon, type LucideIcon } from 'lucide-react-native';
+import { CameraIcon, CheckIcon, CoinsIcon, CreditCardIcon, SparklesIcon, UserRoundIcon, type LucideIcon } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -126,7 +126,7 @@ function PassReadOut({
   const { now } = view;
   const { pass } = house;
   // A family's Pass is the Family Pass, with a family's extras.
-  const sign = passWords(house.kind, PASS_FREE_HISTORY_WEEKS, words);
+  const sign = passWords(house.kind, words);
   const founding = pass.plan === 'founding';
   const buyer = pass.buyerId ? members.find((m) => m.userId === pass.buyerId)?.name : undefined;
   const checkout = passCheckoutOpen();
@@ -142,6 +142,7 @@ function PassReadOut({
     <>
       <View style={styles.words}>
         <Body testID="pass-lead">{founding ? sign.foundingLead : sign.lead}</Body>
+        {founding ? null : <Body testID="pass-promise">{sign.promise}</Body>}
         <Meta testID="pass-line">
           {buyer ? words('common.join.comma', { first: passLine(pass, now, rules.timezone, words), second: words('house.pass.boughtBy', { name: buyer }) }) : passLine(pass, now, rules.timezone, words)}
         </Meta>
@@ -153,7 +154,7 @@ function PassReadOut({
         start={
           <Section label={sign.includes}>
             {sign.extras.map((extra) => (
-              <Row key={extra.key} leading={<RowIcon icon={EXTRA_ICON[extra.key]} />} title={extra.title} meta={extra.meta} />
+              <Row key={extra.key} leading={<RowIcon icon={EXTRA_ICON[extra.key] ?? CheckIcon} />} title={extra.title} meta={extra.meta} />
             ))}
           </Section>
         }
@@ -207,11 +208,10 @@ function PassReadOut({
   );
 }
 
-const EXTRA_ICON: Record<PassExtra['key'], LucideIcon> = {
-  stake: CoinsIcon,
-  table: TrophyIcon,
-  photos: CameraIcon,
-  history: HistoryIcon,
+const EXTRA_ICON: Partial<Record<PassExtra['key'], LucideIcon>> = {
+  money: CoinsIcon,
+  proof: CameraIcon,
+  help: SparklesIcon,
   pocket: CoinsIcon,
   kids: UserRoundIcon,
 };

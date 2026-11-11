@@ -77,12 +77,12 @@ describe("a John's youngest age", () => {
 
 describe("the Family Pass", () => {
   it("is the same Pass with a family's words and extras", () => {
-    const family = passWords("family", 4, words);
+    const family = passWords("family", words);
     expect(family.title).toBe("Family Pass");
-    expect(family.extras.map((e) => e.key)).toEqual(["pocket", "kids", "photos", "history"]);
+    expect(family.extras.map((e) => e.key)).toEqual(["pocket", "kids", "proof", "help"]);
     expect(family.lead).toContain("Only a parent can buy it");
-    const house = passWords("housemates", 4, words);
+    const house = passWords("housemates", words);
     expect(house.title).toBe("House Pass");
-    expect(house.extras.map((e) => e.key)).toEqual(["stake", "table", "photos", "history"]);
+    expect(house.extras.map((e) => e.key)).toEqual(["money", "proof", "help"]);
   });
 });

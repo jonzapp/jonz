@@ -89,40 +89,55 @@ export function familyHides(kind: HouseKind): { stake: boolean; vote: boolean } 
   return { stake: family, vote: family };
 }
 
-/** One extra the Pass brings, as its page lists it. */
-export interface PassExtra {
-  key: "stake" | "table" | "photos" | "history" | "pocket" | "kids";
+/** One thing on Free and House Pass: a group of features, said in plain words. */
+export interface PassGroup {
+  key: "fair" | "honest" | "setup" | "money" | "proof" | "help" | "pocket" | "kids";
   title: string;
   meta: string;
+}
+
+/** One extra the Pass brings, as its page lists it: one of the Pass's groups. */
+export type PassExtra = PassGroup;
+
+/**
+ * What every house gets free, as House's Free and House Pass card shows it:
+ * three groups, in plain words, never the app's own (no deal, Stake or Table).
+ */
+export function freeGroups(words: Words): PassGroup[] {
+  return [
+    { key: "fair", title: words("house.pass.card.fair"), meta: words("house.pass.card.fairMeta") },
+    { key: "honest", title: words("house.pass.card.honest"), meta: words("house.pass.card.honestMeta") },
+    { key: "setup", title: words("house.pass.card.setup"), meta: words("house.pass.card.setupMeta") },
+  ];
 }
 
 /**
  * The Pass's words for the kind of house: in a family it is the Family Pass
  * (the same Pass and price), with pocket money, kid profiles and photos to
- * check as its extras. `historyWeeks` is how far back a house without it sees.
+ * check among its extras. Its extras are the groups House's card and the
+ * Pass page both show.
  */
-export function passWords(kind: HouseKind, historyWeeks: number, words: Words) {
-  const history: PassExtra = { key: "history", title: words('house.pass.history'), meta: words('house.pass.historyMeta', { weeks: historyWeeks }) };
+export function passWords(kind: HouseKind, words: Words) {
   const p = kind === "family" ? "house.familyPass" : "house.pass";
+  const proof: PassGroup = { key: "proof", title: words("house.pass.card.proof"), meta: words("house.pass.card.proofMeta") };
+  const help: PassGroup = { key: "help", title: words("house.pass.card.help"), meta: words("house.pass.card.helpMeta") };
+  const extras: PassGroup[] =
+    kind === "family"
+      ? [
+          { key: "pocket", title: words("house.familyPass.pocket"), meta: words("house.familyPass.pocketMeta") },
+          { key: "kids", title: words("house.familyPass.kids"), meta: words("house.familyPass.kidsMeta") },
+          proof,
+          help,
+        ]
+      : [{ key: "money", title: words("house.pass.card.money"), meta: words("house.pass.card.moneyMeta") }, proof, help];
   return {
     title: words(`${p}.title`),
     sectionNote: words(`${p}.sectionNote`),
     lead: words(`${p}.lead`),
     foundingLead: words(`${p}.foundingLead`),
     includes: words(`${p}.includes`),
-    extras: (kind === "family"
-      ? [
-          { key: "pocket", title: words("house.familyPass.pocket"), meta: words("house.familyPass.pocketMeta") },
-          { key: "kids", title: words("house.familyPass.kids"), meta: words("house.familyPass.kidsMeta") },
-          { key: "photos", title: words("house.familyPass.photos"), meta: words("house.familyPass.photosMeta") },
-          history,
-        ]
-      : [
-          { key: "stake", title: words("house.pass.stake"), meta: words("house.pass.stakeMeta") },
-          { key: "table", title: words("house.pass.table"), meta: words("house.pass.tableMeta") },
-          { key: "photos", title: words("house.pass.photos"), meta: words("house.pass.photosMeta") },
-          history,
-        ]) as PassExtra[],
+    promise: words(`${p}.promise`),
+    extras,
     free: words(`${p}.free`),
     bought: words(`${p}.bought`),
     locked: (feature: string) => words(`${p}.locked`, { feature }),

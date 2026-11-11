@@ -6,6 +6,7 @@ pages are private artifacts on claude.ai.
 
 | Date | Decision | Where | Rule |
 | --- | --- | --- | --- |
+| 2026-11-11 | Free and House Pass on House: one tick grid (six groups in plain words, a Free and a Pass column), sold as "chores that actually get done", with about what the Pass costs each person a month. Selling copy says what a thing does, in everyday words ("chores", "put money on it"), not the app's own names (the deal, the Stake, the Table) | this PR | [words](words.md#selling-the-pass) |
 | 2026-11-11 | No empty panel: before the first deal Today draws no side panel (or hairline), and Next up runs across the page | this PR | [layout](layout.md#laptop-pages) |
 | 2026-11-10 | Ask Jonz on a laptop: the panel's bar lines up with the page's (one 52 line; Your chats' back a ‹ on the leading edge; the owner's Owner label a chip under the bar), and Enter sends while Shift+Enter starts a new line (a touch screen keeps Return for new lines) | this PR | [layout](layout.md#the-title-bar), [controls](controls.md#inputs) |
 | 2026-11-10 | Today on a laptop: Next up runs across the whole main column, the rest of your week under it, with Needs you, On call and This week kept in the panel (Today on a laptop A). Replaces Next up beside the rest of your week (Laptop width B) | this PR | [layout](layout.md#laptop-pages) |
