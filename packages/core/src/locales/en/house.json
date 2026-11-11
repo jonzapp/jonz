@@ -165,7 +165,7 @@
   "house.notify.dueSoonBody": "Due {due}. A few hours left to do it on time.",
   "house.notify.plannedTitle": "Time for {john}",
   "house.notify.plannedBody": "You planned it for now. Due {due}.",
-  "house.notify.needsPhoto": "It needs a photo, so tick it in the app.",
+  "house.notify.needsPhotoBody": "Due {due}. It needs a photo, so tick it in the app.",
   "house.notify.dealTitle": "This week’s Johns",
   "house.notify.disputedTitle": "Your {john} tick is disputed",
   "house.notify.voteTitle": "Vote: was {john} really done?",

@@ -64,7 +64,7 @@ export async function sendReport(caller: Caller, report: ReportRequest, out: Out
   if (out.notify) {
     const [to, name] = await Promise.all([owners(out.db), nameOf(out.db, caller.userId)]);
     await out.notify(to, {
-      title: REPORT_PUSH.sent(report.kind, name),
+      title: (w) => REPORT_PUSH.sent(report.kind, name, w),
       body: reportGist(report.words),
       url: `/admin/inbox/${id}`,
       kind: "support",
@@ -83,7 +83,7 @@ export async function writeBack(caller: Caller, reportId: string, { body }: Repo
   if (out.notify) {
     const [to, name] = await Promise.all([owners(out.db), nameOf(out.db, caller.userId)]);
     await out.notify(to, {
-      title: REPORT_PUSH.wroteBack(name),
+      title: (w) => REPORT_PUSH.wroteBack(name, w),
       body: reportGist(body),
       url: `/admin/inbox/${reportId}`,
       kind: "support",
@@ -116,7 +116,7 @@ async function tell(out: Outbox, to: Recipient, said: { body: string; signed: st
   const url = to.user_id ? reportUrl(to.report) : null;
   if (to.user_id) {
     await out.notify?.([to.user_id], {
-      title: said.fixed ? REPORT_PUSH.fixed : REPORT_PUSH.replied(said.signed),
+      title: (w) => (said.fixed ? REPORT_PUSH.fixed(w) : REPORT_PUSH.replied(said.signed, w)),
       body: reportGist(said.body),
       url: `/house/reports/${to.report}`,
       kind: "support",
@@ -222,7 +222,7 @@ export async function receiveEmail(email: Inbound, out: Outbox = outbox()): Prom
   if (result.did === "skipped" || !result.report || !out.notify) return result;
   const name = (result.user_id ? await nameOf(out.db, result.user_id) : null) ?? (email.name ? firstName(email.name) : email.from);
   await out.notify(await owners(out.db), {
-    title: result.did === "report" ? REPORT_PUSH.emailed(name) : REPORT_PUSH.wroteBack(name),
+    title: (w) => (result.did === "report" ? REPORT_PUSH.emailed(name, w) : REPORT_PUSH.wroteBack(name, w)),
     body: reportGist(email.words),
     url: `/admin/inbox/${result.report}`,
     kind: "support",

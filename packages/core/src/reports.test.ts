@@ -53,10 +53,10 @@ describe("the Inbox", () => {
 
 describe("telling the other side", () => {
   it("pushes in plain words", () => {
-    expect(REPORT_PUSH.sent("idea", "Ava")).toBe("Ava sent an idea");
-    expect(REPORT_PUSH.sent("problem", null)).toBe("Someone sent a problem");
-    expect(REPORT_PUSH.replied("Glyn")).toBe("Glyn at Jonz replied");
-    expect(REPORT_PUSH.replied(null)).toBe("Jonz replied");
+    expect(REPORT_PUSH.sent("idea", "Ava", words)).toBe("Ava sent an idea");
+    expect(REPORT_PUSH.sent("problem", null, words)).toBe("Someone sent a problem");
+    expect(REPORT_PUSH.replied("Glyn", words)).toBe("Glyn at Jonz replied");
+    expect(REPORT_PUSH.replied(null, words)).toBe("Jonz replied");
   });
 
   it("sends a reply's push whatever the push switches say, quietly in quiet hours", () => {
@@ -113,6 +113,6 @@ describe("telling the other side", () => {
     });
     expect(email.subject).toBe("Fixed: The bins John vanished (ref 1a2b3c4d)");
     expect(email.text).toContain("Glyn at Jonz fixed what you reported.");
-    expect(REPORT_PUSH.fixed).toBe("Fixed: the problem you reported");
+    expect(REPORT_PUSH.fixed(words)).toBe("Fixed: the problem you reported");
   });
 });

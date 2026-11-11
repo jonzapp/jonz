@@ -1,14 +1,12 @@
 import "server-only";
 
-import { firstName, rulesOf, type SwapAskRequest, wordsFor } from "@app/core";
+import { firstName, houseKind, rulesOf, type SwapAskRequest } from "@app/core";
 
 import { pushNotifier } from "@/lib/push";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 import type { Caller, Refusal } from "./disputes";
 
-// Pushes and server lines read the housemates' words for now; each person's own language comes with translation 7.
-const words = wordsFor("en", "housemates");
 
 // Asking to swap a John you'd rather not needs a server for one thing:
 // telling the person asked. The ask itself is the caller's own call to
@@ -26,7 +24,7 @@ export async function askSwap(caller: Caller, { mine, theirs }: SwapAskRequest):
     caller.db
       .from("assignments")
       .select(
-        "id, name, houses(timezone, currency, week_starts, stake_minor, late_forfeit_minor, missed_forfeit_minor, dispute_hours, cover_grace_hours, late_hours, deal_mode, deal_budget)",
+        "id, name, houses(kind, timezone, currency, week_starts, stake_minor, late_forfeit_minor, missed_forfeit_minor, dispute_hours, cover_grace_hours, late_hours, deal_mode, deal_budget)",
       )
       .in("id", [mine, theirs]),
     caller.db.from("profiles").select("display_name").eq("id", caller.userId).single(),
@@ -41,8 +39,9 @@ export async function askSwap(caller: Caller, { mine, theirs }: SwapAskRequest):
     kind: "checks",
     zone: rulesOf(given.houses).timezone,
     tag: `swap:${offerId}`,
-    title: words('week.steady.pushTitle', { name: firstName(me?.display_name ?? "Someone") }),
-    body: words('week.steady.pushBody', { theirs: given.name, yours: taken.name }),
+    houseKind: houseKind(given.houses.kind),
+    title: (w) => w('week.steady.pushTitle', { name: firstName(me?.display_name ?? "Someone") }),
+    body: (w) => w('week.steady.pushBody', { theirs: given.name, yours: taken.name }),
   });
   return { offerId };
 }

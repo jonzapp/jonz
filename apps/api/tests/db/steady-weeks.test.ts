@@ -4,7 +4,7 @@ import { getHours } from "date-fns";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { POST as swapsRoute } from "@/app/api/swaps/route";
-import { dealWeek, loadBalances, loadHouse, tickHouse, type PushMessage } from "@/lib/engine/tick";
+import { dealWeek, loadBalances, loadHouse, tickHouse, pushIn, type PushMessage, type SaidPush } from "@/lib/engine/tick";
 import { adminClient, signedInUser } from "@/tests/support/clients";
 import { expectDenied, expectOk, expectRule } from "@/tests/support/expect";
 import { actorFor, addJohns, deal, makeHouse, reread, someoneElse, thisWeek, weeksAgo, ZONE, type House } from "@/tests/support/factories";
@@ -509,8 +509,8 @@ describe("POST /api/swaps", () => {
 
 describe("Plan it reminders", () => {
   function recorder() {
-    const sent: { to: string[]; message: PushMessage }[] = [];
-    return { sent, notify: async (to: string[], message: PushMessage) => void sent.push({ to, message }) };
+    const sent: { to: string[]; message: SaidPush }[] = [];
+    return { sent, notify: async (to: string[], message: PushMessage) => void sent.push({ to, message: pushIn(message, "en") }) };
   }
 
   it("come at the planned time instead of the usual ones, once, and again for a new plan", async () => {
