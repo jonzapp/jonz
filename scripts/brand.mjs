@@ -213,6 +213,8 @@ const EMAIL_PICTURES = [
 /** Headlines for the store frames, in order: five words at most, each on its own sign. */
 const STORE_HEADLINES = [
   "Johns, dealt fair.",
+  "Just ask Jonz.",
+  "Families too.",
   "The bathroom moves around.",
   "Tick it. The house checks.",
   "Away? Your share waits.",
@@ -298,15 +300,15 @@ for (const [i, screen] of screens.entries()) {
   }
 }
 
-// One picture, not two: two images side by side wrap onto separate lines on
+// One picture, not three: images side by side wrap onto separate lines on
 // a phone's narrow README, each pushed off centre by the gap. One shrinks to
 // fit whole. The gap is clear, so it is GitHub's own page in light and dark.
-if (framed.length >= 2) {
+if (framed.length >= 3) {
   const [width, height, gap] = [600, 1300, 40];
   const frame = (png) => `<img src="data:image/png;base64,${png.toString("base64")}" style="width:${width}px;height:${height}px;display:block">`;
   await draw(
-    `<div style="display:flex;gap:${gap}px">${frame(framed[0])}${frame(framed[1])}</div>`,
-    width * 2 + gap,
+    `<div style="display:flex;gap:${gap}px">${framed.slice(0, 3).map(frame).join("")}</div>`,
+    width * 3 + gap * 2,
     height,
     `${BRAND}/readme-screens.png`,
   );
