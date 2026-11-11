@@ -52,10 +52,10 @@ language, until a French speaker has read it through there.
 | cover (someone’s John) | remplacer, faire à sa place | |
 | dispute | contester, contestation | |
 | Done, Not done | Fait, Pas fait | |
-| missed | oublié | |
+| missed | oublié | "Counts for nobody": ne compte comme travail pour personne ("ne compte pour personne" reads as "doesn’t matter to anyone"). |
 | late | en retard | |
 | skip | joker | "utiliser un joker". |
-| swap | échange, échanger | |
+| swap | échange, échanger | Swap ready: échange disponible, never "échange prêt" (prêt also means a loan). |
 | top the week | finir premier de la semaine | |
 | settle up | faire les comptes | |
 | square (owing nobody) | quittes | |

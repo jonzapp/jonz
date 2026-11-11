@@ -36,7 +36,7 @@
   "wall.feed.away": "{who} n’est pas là {range}",
   "wall.feed.youAway": "Tu n’es pas là {range}",
   "wall.feed.monthClosed": "{month} est clôturé",
-  "wall.feed.paidYou": "{who} t’a payé {amount}",
+  "wall.feed.paidYou": "{who} t’a versé {amount}",
   "wall.feed.youPaid": "Tu as payé {amount} à {whom}",
   "wall.feed.paid": "{you, select, true {Tu as payé {whom}} other {{who} a payé {whom}}}",
   "wall.feed.checking": "En vérification",

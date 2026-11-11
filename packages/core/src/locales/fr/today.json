@@ -8,7 +8,7 @@
   "today.page.thisWeekRange": "Cette semaine, {range}",
   "today.page.left": "{count, plural, one {John restant cette semaine} other {Johns restants cette semaine}}",
   "today.page.streak": "{weeks, plural, one {# semaine} other {# semaines}}",
-  "today.page.swapReady": "échange prêt",
+  "today.page.swapReady": "échange disponible",
   "today.page.nothingYours": "Rien sur ta liste cette semaine. Profites-en tant que ça dure.",
   "today.page.toVote": "La maison attend ton vote",
   "today.page.yours": "Les tiens",
