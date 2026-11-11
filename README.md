@@ -90,31 +90,20 @@ and why.
 
 ## Repo map
 
-```
-packages/core/                 @app/core, the pure rules: week, deal, outcome, points, streak, stake, dispute;
-                               the operation registry, Bin Night's colours and the mark
-  src/locales/en/              the words files, one per part of the app
-packages/server/               @app/server, the one way in: every operation's checks, in order
-apps/client/                   the Expo app for iOS, Android and the web, at jonz.app
-  src/app/                     screens (Expo Router)
-  src/components/ src/theme.ts Bin Night in React Native
-  public/                      the web's page, icons, favicon and link card
-apps/api/                      the API (Next.js route handlers only), at api.jonz.app
-  app/v1/ app/mcp/             the API and MCP, both from the operation registry
-  app/api/                     the app's other routes: the clock, Stripe, push, email
-  app/api/cron/tick/           the clock (called by pg_cron)
-  app/api/share/ app/api/og/   the cards a pasted link shows in a chat
-  lib/engine/                  the tick: applies the rules to the database
-  tests/db/                    the database attacked (the rules' tests sit beside them in core)
-  e2e/                         the web build on phones and a laptop, end to end
-supabase/migrations/           schema, RLS, the housemate functions, the cron job
-supabase/seeds/                staging's demo house
-scripts/                       provision, staging, the clock by hand, VAPID keys, the brand images, the store release gate
-docs/specs/                    one short spec per feature
-docs/style/                    the house style: how Jonz looks, reads and behaves, and each design pick
-docs/standards/                how the database is built (CI checks it)
-docs/brand/                    the brand guide and every brand image
-```
+| Folder | What's in it |
+| --- | --- |
+| [`packages/core`](packages/core) | The pure rules (week, deal, points, streaks, the Stake, disputes), the operation registry, the words files, and Bin Night's colours and mark |
+| [`packages/server`](packages/server) | The one way in: every operation's checks, in order |
+| [`apps/client`](apps/client) | The Expo app for iOS, Android and the web, at jonz.app: screens in `src/app`, Bin Night in `src/components` |
+| [`apps/api`](apps/api) | The API at api.jonz.app: `/v1` and MCP, the clock, Stripe, push, email and link cards; the engine in `lib/engine`; database tests in `tests/db`; end-to-end tests in `e2e` |
+| [`supabase`](supabase) | Migrations (schema, RLS, the housemate functions, the cron job) and staging's demo house |
+| [`scripts`](scripts) | Provision, staging, the clock by hand, VAPID keys, the brand images, the store release gate |
+| [`docs/specs`](docs/specs) | One short spec per feature |
+| [`docs/style`](docs/style) | The house style, and each design pick |
+| [`docs/standards`](docs/standards) | How the database is built (CI checks it) |
+| [`docs/brand`](docs/brand) | The brand guide and every brand image |
+
+`AGENTS.md` has the detail.
 
 ## Develop
 
