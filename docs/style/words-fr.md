@@ -14,6 +14,9 @@ language, until a French speaker has read it through there.
 
 - **Tu, always.** Jonz talks to you like a housemate does. "Coche-le",
   "Ta mise", never "vous".
+- **The same to anyone.** Jonz doesn't know whether you're a man or a
+  woman, so nothing it says to you agrees with you: "Tu n’es pas là", not
+  "Tu es absent"; "Tu as une invitation", not "Tu es invité".
 - **Short and plain.** The same as English: a sentence says one thing, and
   a button says what it does ("Marquer fait", "Envoyer l’invitation").
 - **French typography.**

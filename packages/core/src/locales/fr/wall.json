@@ -34,7 +34,7 @@
   "wall.feed.skipped": "{you, select, true {Tu as utilisé un joker sur {john}} other {{who} a utilisé un joker sur {john}}}",
   "wall.feed.swapped": "{you, select, true {Tu as échangé {gave} contre {took} {whose}} other {{who} a échangé {gave} contre {took} {whose}}}",
   "wall.feed.away": "{who} est absent {range}",
-  "wall.feed.youAway": "Tu es absent {range}",
+  "wall.feed.youAway": "Tu n’es pas là {range}",
   "wall.feed.monthClosed": "{month} est clôturé",
   "wall.feed.paidYou": "{who} t’a payé {amount}",
   "wall.feed.youPaid": "Tu as payé {amount} à {whom}",
