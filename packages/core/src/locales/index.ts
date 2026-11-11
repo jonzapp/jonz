@@ -60,11 +60,12 @@ export type Language = (typeof LANGUAGES)[number];
 export const TEST_LANGUAGE = "en-XA" satisfies Language;
 
 /**
- * Languages drafted but not yet read through by someone who speaks them:
- * offered only where Jonz is being tried out, like the test language, and
- * never taken from a phone. A language leaves this list once it's been read.
+ * Languages drafted but not yet checked: offered only where Jonz is being
+ * tried out, like the test language, and never taken from a phone. A language
+ * leaves this list once it has passed the checks French passed (see
+ * docs/style/words-fr.md, "How it was checked").
  */
-export const BEING_CHECKED: readonly Language[] = ["fr"];
+export const BEING_CHECKED: readonly Language[] = [];
 
 /** Each language by its own name, as the picker lists it: a person finds theirs without reading another. */
 export const LANGUAGE_NAMES: Record<Language, string> = { en: "English", fr: "Français", "en-XA": "[Ţëšţ Ëñĝļîšĥ]" };

@@ -96,9 +96,10 @@ The lines move part by part, one pull request each, merged one at a time:
    in it (`Words` gets `dates` and `locale`; `en-GB` stops being written in
    outside the owner's pages).
 8. French, the first language beside English: a `fr` folder, drafted with
-   its glossary (`docs/style/words-fr.md`) and read by a French speaker on
-   staging before it's offered. Until then it's in `BEING_CHECKED`: offered
-   only on staging and locally, and never taken from a phone. The owner's
+   its glossary (`docs/style/words-fr.md`) and checked by machine (grammar,
+   back-translation, real apps' translations, Google Translate) before it's
+   offered. A language not yet checked goes in `BEING_CHECKED`: offered only
+   on staging and locally, and never taken from a phone. The owner's
    pages stay English. Tests check every French line has English's gaps,
    writes ’ for an apostrophe, and never says coloc or admin to a family.
 

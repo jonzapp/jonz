@@ -6,9 +6,8 @@ hasn't got is read in English. This page is what a translator keeps to, so
 the app says the same thing the same way everywhere. `words.md` is the same
 page for English, and comes first: French says what English says.
 
-French is still being checked (`BEING_CHECKED` in `locales/index.ts`): it's
-offered only on staging and locally, and never taken from a phone's
-language, until a French speaker has read it through there.
+French is offered to everyone, and a phone set to French gets it. It was
+checked by machine, not by a French reader (see "How it was checked").
 
 ## How it talks
 
@@ -81,9 +80,25 @@ language, until a French speaker has read it through there.
 - The legal pages, Supabase's sign-in emails, a pasted link's preview and an
   offer emailed to an address: see `docs/specs/translation.md`.
 
-## For the reader on staging
+## How it was checked
 
-Rough spots worth a look first:
+Every reading of every line (each `select` and plural, family and
+housemates) went through four checks, in November 2026:
+
+1. **Grammar.** LanguageTool (run from Maven Central) over every reading.
+2. **Back-translation.** Translated back to English without seeing the
+   English, then compared with it for meaning.
+3. **Real apps.** Compared with how Nextcloud, Signal, Element, Mastodon,
+   Firefox, Grocy, Cospend, IHateMoney and Tasks.org translate the same
+   English (about 21,700 lines).
+4. **Google Translate.** Every line both ways through Google's Cloud
+   Translation API (`GOOGLE_TRANSLATE_API_KEY` in the cloud environment).
+
+A new or changed French line goes through the same checks before it ships.
+
+## Rough spots
+
+Worth a look when these parts change:
 
 - Someone's thing reads "de Sam" or "à toi" (`wall.feed.whose`), put after
   the noun. A few lines may read oddly with "à toi".

@@ -34,6 +34,10 @@ describe("the phone's language", () => {
     locales.mockReturnValueOnce([{ languageTag: 'en-CA' }]);
     expect(deviceLanguage()).toBe('en');
     locales.mockReturnValueOnce([{ languageTag: 'fr-FR' }]);
+    expect(deviceLanguage()).toBe('fr');
+    locales.mockReturnValueOnce([{ languageTag: 'fr-CA' }]);
+    expect(deviceLanguage()).toBe('fr');
+    locales.mockReturnValueOnce([{ languageTag: 'de-DE' }]);
     expect(deviceLanguage()).toBe('en');
     locales.mockReturnValueOnce([]);
     expect(deviceLanguage()).toBe('en');
