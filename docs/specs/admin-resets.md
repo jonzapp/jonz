@@ -25,6 +25,10 @@ picking who looks after the house: "Make Sam admin and leave" is one step
 | Skip this week | Week ••• | The week counts for nothing: no shares, no credit, no forfeits. Whatever wasn't done is let off. Streaks neither grow nor break. The Track record shows it grey. |
 | Let everyone off a month | Stake history | The month's forfeits go. Marks stay; the month is labelled "Let off". |
 
+To take the whole house back to before its first deal, see
+`docs/specs/house-reset.md` (Reset history and Reset everything, in House
+rules' Danger zone).
+
 Every reset opens the same **reset sheet** (`components/reset-sheet.tsx`). It
 asks the server what the reset would change (`POST /api/resets` without
 `apply`) and says it in numbers before anything changes: ticks cleared per

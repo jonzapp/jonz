@@ -221,6 +221,7 @@ const ICON: Record<string, WallIcon> = {
   away: "plane",
   joined: "user-plus",
   kind_changed: "home",
+  started_over: "undo",
   moving_out: "truck",
   moved_out: "truck",
   month_closed: "calendar-check",
@@ -467,6 +468,14 @@ export function wallFeedRow(event: WallEvent, scene: WallScene, words: Words): W
       bold = [];
       detail = text("body") || null;
       lead = null;
+      break;
+    case "started_over":
+      // An admin reset the house; the owner's own reset names nobody.
+      title = event.userId
+        ? words("house.reset.wall", { who: who.subject, you: who.you, everything: event.data.everything === true })
+        : words("house.reset.wallNow", { everything: event.data.everything === true });
+      bold = event.userId ? bold : [];
+      detail = words("house.reset.wallDetail");
       break;
     case "kind_changed": {
       // Rules' Who lives here: a family from the 1st, kept, housemates again, or a family now.

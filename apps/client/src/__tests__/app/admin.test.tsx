@@ -1,4 +1,4 @@
-import { OWNER_PERMISSION_NAMES, type AuditEntry, type Notice, wordsFor } from '@app/core';
+import { BIN_NIGHT, OWNER_PERMISSION_NAMES, type AuditEntry, type Notice, wordsFor } from '@app/core';
 import * as Clipboard from 'expo-clipboard';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 import { Platform, useWindowDimensions, type ViewStyle } from 'react-native';
@@ -357,9 +357,17 @@ describe('the owner’s Ask Jonz', () => {
     const card = within(await chat().findByTestId('owner-moves-card'));
     expect(card.getByText('Stop deleting Sam’s account')).toBeVisible();
     expect(card.getByTestId('owner-move-deletion_now')).toHaveTextContent(new RegExp(words('admin.moves.final')));
+    // Deleting an account now can't be undone: it sits apart in the Danger zone, and the button turns hazard while it's ticked.
+    const zone = within(card.getByTestId('owner-moves-list-danger'));
+    expect(zone.getByText(words('house.danger.label'))).toBeVisible();
+    expect(zone.getByTestId('owner-move-deletion_now')).toBeVisible();
+    expect(zone.queryByTestId('owner-move-deletion_stop')).toBeNull();
+    expect(within(card.getByTestId('owner-moves-list')).getByTestId('owner-move-deletion_stop')).toBeVisible();
+    expect(card.getByTestId('owner-moves-apply')).toHaveStyle({ borderColor: BIN_NIGHT.dark.hazard });
     // Nothing happens before the tap.
     expect(stopDeletion).not.toHaveBeenCalled();
     await fireEvent.press(card.getByTestId('owner-move-deletion_now'));
+    expect(card.getByTestId('owner-moves-apply')).not.toHaveStyle({ borderColor: BIN_NIGHT.dark.hazard });
     expect(card.getByTestId('owner-moves-apply')).toHaveTextContent(words('admin.moves.apply', { n: 2 }));
     await fireEvent.press(card.getByTestId('owner-moves-apply'));
     expect(await chat().findByText(words('admin.moves.done', { n: 2 }))).toBeVisible();

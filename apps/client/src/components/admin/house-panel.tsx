@@ -1,17 +1,19 @@
 import { humanError, houseFacts, houseLead, passDetail, personMeta, type HouseDetail } from '@app/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { MegaphoneIcon } from 'lucide-react-native';
+import { MegaphoneIcon, RotateCcwIcon, Trash2Icon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { deleteHouse, ownerHouse } from '@/api/houses';
+import { deleteHouse, ownerHouse, ownerResetHouse } from '@/api/houses';
 import { useOwnerMay } from '@/components/admin/use-owner-may';
 import { Alert } from '@/components/alert';
 import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/button';
 import { ButtonRow } from '@/components/button-row';
+import { DangerRow, DangerZone } from '@/components/danger-zone';
 import { Field } from '@/components/field';
+import { namesHouse } from '@/components/house/house-danger-zone';
 import { Row, RowIcon } from '@/components/row';
 import { Section } from '@/components/section';
 import { ChoiceRow } from '@/components/setup/choice-row';
@@ -30,8 +32,9 @@ export const HOUSES_KEY = ['owner-houses'] as const;
 /**
  * One house: when it started and its admins, each person with how they're
  * doing and any time away, its Pass and who pays, and the settings that
- * help with a support email, a row each. The one thing that changes it is Delete house,
- * for an owner who may (houses:write).
+ * help with a support email, a row each. What changes it is in the Danger
+ * zone at its foot, for an owner who may (houses:write): Reset history,
+ * Reset everything and Delete house.
  */
 export function HousePanel({ id }: { id: string }) {
   const words = useWords();
@@ -70,22 +73,24 @@ function HouseBody({ house }: { house: HouseDetail }) {
           <Row key={fact.key} title={fact.label} trailing={fact.value} testID={`house-fact-${fact.key}`} />
         ))}
       </Section>
-      <DeleteHouse house={house} />
+      <HouseDanger house={house} />
     </View>
   );
 }
 
 /**
- * Delete house, at the foot of the house: a sheet that says what goes, asks
- * why (for the audit log) and whether to tell everyone, and only deletes once
- * the house's name is typed. Then it's back to Houses.
+ * The house's Danger zone (houses:write): Start over and Delete house, each
+ * with its own sheet that says what goes, asks why (for the audit log) and
+ * only goes ahead once the house's name is typed. A reset keeps the panel
+ * open, the house back to before its first deal; deleting goes back to
+ * Houses.
  */
-function DeleteHouse({ house }: { house: HouseDetail }) {
+function HouseDanger({ house }: { house: HouseDetail }) {
   const words = useWords();
   const may = useOwnerMay('houses:write');
   const toast = useToast();
   const queryClient = useQueryClient();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState<'history' | 'everything' | 'delete' | null>(null);
   const [reason, setReason] = useState('');
   const [tell, setTell] = useState(true);
   const [typed, setTyped] = useState('');
@@ -94,22 +99,81 @@ function DeleteHouse({ house }: { house: HouseDetail }) {
     onSuccess: (done) => {
       toast.show(done.passStopped === false ? `${words('admin.deleteHouse.done', { name: done.name })} ${words('admin.deleteHouse.passNotStopped')}` : words('admin.deleteHouse.done', { name: done.name }));
       void queryClient.invalidateQueries();
-      setOpen(false);
+      setOpen(null);
       router.replace('/admin/houses');
     },
   });
+  const restart = useMutation({
+    mutationFn: (everything: boolean) => ownerResetHouse(house.id, everything, reason),
+    onSuccess: (_done, everything) => {
+      toast.show(words('admin.reset.done', { everything, name: house.name }));
+      void queryClient.invalidateQueries();
+      setOpen(null);
+    },
+  });
   if (!may) return <Meta style={styles.words}>{words('admin.houses.readOnly')}</Meta>;
-  const named = typed.trim().toLowerCase() === house.name.trim().toLowerCase();
+  const named = namesHouse(typed, house.name);
+  const everything = open === 'everything';
+  function ask(which: 'history' | 'everything' | 'delete') {
+    setReason('');
+    setTyped('');
+    setTell(true);
+    remove.reset();
+    restart.reset();
+    setOpen(which);
+  }
   return (
     <>
-      <ButtonRow>
-        <Button variant="hazard" label={words('admin.deleteHouse.button')} onPress={() => setOpen(true)} testID="house-delete" />
-      </ButtonRow>
+      <DangerZone testID="house-danger">
+        {(['history', 'everything'] as const).map((which) => (
+          <DangerRow
+            key={which}
+            title={words('house.reset.title', { everything: which === 'everything' })}
+            meta={words('admin.reset.gone', { everything: which === 'everything', people: house.people.length })}
+            action={words('house.reset.button')}
+            icon={RotateCcwIcon}
+            onPress={() => ask(which)}
+            testID={`house-reset-${which}`}
+          />
+        ))}
+        <DangerRow
+          title={words('admin.deleteHouse.button')}
+          meta={words('admin.deleteHouse.rowMeta')}
+          action={words('admin.deleteHouse.button')}
+          icon={Trash2Icon}
+          onPress={() => ask('delete')}
+          testID="house-delete"
+        />
+      </DangerZone>
       <Sheet
-        visible={open}
+        visible={open === 'history' || open === 'everything'}
+        title={words('admin.reset.title', { everything, name: house.name })}
+        description={words('admin.reset.body', { everything })}
+        onClose={() => setOpen(null)}
+        testID="house-reset-sheet"
+      >
+        <Field label={words('admin.reset.reason')} value={reason} onChangeText={setReason} maxLength={500} testID="house-reset-reason" />
+        <Field label={words('admin.reset.confirm')} value={typed} onChangeText={setTyped} placeholder={house.name} testID="house-reset-name" />
+        {restart.error ? <Alert message={restart.error.message} /> : null}
+        <ButtonRow stacked>
+          <Button
+            variant="hazard"
+            icon={RotateCcwIcon}
+            label={words('admin.reset.go')}
+            busyLabel={words('admin.reset.going')}
+            disabled={!named}
+            busy={restart.isPending}
+            onPress={() => restart.mutate(everything)}
+            testID="house-reset-confirm"
+          />
+          <Button variant="outline" label={words('common.shell.cancel')} onPress={() => setOpen(null)} testID="house-reset-cancel" />
+        </ButtonRow>
+      </Sheet>
+      <Sheet
+        visible={open === 'delete'}
         title={words('admin.deleteHouse.title', { name: house.name })}
         description={words('admin.deleteHouse.body')}
-        onClose={() => setOpen(false)}
+        onClose={() => setOpen(null)}
         testID="house-delete-sheet"
       >
         <Field label={words('admin.deleteHouse.reason')} value={reason} onChangeText={setReason} maxLength={500} testID="house-delete-reason" />
@@ -126,7 +190,7 @@ function DeleteHouse({ house }: { house: HouseDetail }) {
             onPress={() => remove.mutate()}
             testID="house-delete-confirm"
           />
-          <Button variant="outline" label={words('common.shell.cancel')} onPress={() => setOpen(false)} testID="house-delete-cancel" />
+          <Button variant="outline" label={words('common.shell.cancel')} onPress={() => setOpen(null)} testID="house-delete-cancel" />
         </ButtonRow>
       </Sheet>
     </>

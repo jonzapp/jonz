@@ -78,3 +78,8 @@ export async function ownerHouse(id: string): Promise<HouseDetail | null> {
 export function deleteHouse(id: string, reason: string, tell: boolean): Promise<DeleteHouseResponse> {
   return callV1('owner_delete_house', { houseId: id, reason: reason.trim(), tell });
 }
+
+/** Resets any house's history, or everything in it, for good (houses:write), with why for the audit log. */
+export async function ownerResetHouse(id: string, everything: boolean, reason: string): Promise<void> {
+  await callV1('owner_reset_house_data', { houseId: id, everything, reason: reason.trim() });
+}

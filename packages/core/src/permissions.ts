@@ -60,6 +60,7 @@ export const PERMISSIONS = {
   "flags:write": "Remove anyone's flag",
   "ticks:write": "OK a kid's tick, or send it back",
   "pocket_money:write": "Mark pocket money paid",
+  "house_reset:write": "Reset the house's history, or everything in it, back to before its first deal: it can't be undone",
   "members:write": "Remove someone from the house, make someone an admin or hand admin over, and add a child without a sign-in and act for them",
 } as const;
 export type Permission = keyof typeof PERMISSIONS;

@@ -1,4 +1,4 @@
-import { ownerMoveMeta, ownerMoveTitle, OWNER_MOVES_FINAL, type OwnerMove, type OwnerMoveKind, type Words } from '@app/core';
+import { ownerMoveMeta, ownerMoveIsDangerous, ownerMoveTitle, OWNER_MOVES_FINAL, type OwnerMove, type OwnerMoveKind, type Words } from '@app/core';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   BanIcon,
@@ -15,13 +15,14 @@ import {
   SendIcon,
   TicketIcon,
   Trash2Icon,
+  TriangleAlertIcon,
   UserXIcon,
   type LucideIcon,
 } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { deleteHouse } from '@/api/houses';
+import { deleteHouse, ownerResetHouse } from '@/api/houses';
 import { deleteByEmail, deleteNow, endNotice, saveNotice, stopDeletion } from '@/api/owner';
 import { emailPromotion, makePromotion, retryPromotion, stopPromotion } from '@/api/promotions';
 import { fixReport, replyToReport, setReportState, setSameAs } from '@/api/reports';
@@ -30,7 +31,7 @@ import { Alert } from '@/components/alert';
 import { Button } from '@/components/button';
 import { ButtonRow } from '@/components/button-row';
 import { Row, RowIcon } from '@/components/row';
-import { Section } from '@/components/section';
+import { anyDangerous, MoveList } from '@/components/move-list';
 import { ChoiceRow } from '@/components/setup/choice-row';
 import { SPACE } from '@/theme';
 import { useWords } from '@/hooks/use-words';
@@ -51,6 +52,7 @@ const ICON: Record<OwnerMoveKind, LucideIcon> = {
   deletion_stop: RotateCcwIcon,
   deletion_start: UserXIcon,
   house_delete: HouseIcon,
+  house_reset: RotateCcwIcon,
 };
 
 /** Does one move through the admin page's own call, as the owner: the database checks it and the audit log keeps it. */
@@ -103,6 +105,8 @@ export async function doOwnerMove(m: OwnerMove): Promise<void> {
     case 'house_delete':
       await deleteHouse(m.houseId, m.reason, m.tell);
       return;
+    case 'house_reset':
+      return ownerResetHouse(m.houseId, m.everything, m.reason);
   }
 }
 
@@ -156,10 +160,15 @@ export function OwnerMovesCard({ items, run = doOwnerMove }: { items: readonly O
   }
 
   const toggle = (at: number) => setKeep((was) => (was.includes(at) ? was.filter((k) => k !== at) : [...was, at].sort((a, b) => a - b)));
+  const danger = anyDangerous(items, keep, (m: OwnerMove) => ownerMoveIsDangerous(m.kind));
   return (
     <View style={styles.card} testID="owner-moves-card">
-      <Section label={words('admin.moves.card')} right={words('admin.moves.cardMeta')}>
-        {items.map((item, at) => (
+      <MoveList
+        label={words('admin.moves.card')}
+        meta={words('admin.moves.cardMeta')}
+        items={items}
+        dangerous={(m) => ownerMoveIsDangerous(m.kind)}
+        row={(item, at) => (
           <ChoiceRow
             key={at}
             role="checkbox"
@@ -172,11 +181,13 @@ export function OwnerMovesCard({ items, run = doOwnerMove }: { items: readonly O
             metaLines={3}
             testID={`owner-move-${item.kind}`}
           />
-        ))}
-      </Section>
+        )}
+        testID="owner-moves-list"
+      />
       {problem ? <Alert message={problem} /> : null}
       <ButtonRow>
         <Button
+          {...(danger ? { variant: 'hazard' as const, icon: TriangleAlertIcon } : {})}
           label={words('admin.moves.apply', { n: keep.length })}
           busyLabel={words('admin.moves.applying')}
           onPress={() => void apply()}

@@ -30,7 +30,7 @@ export const OWNER_PERMISSIONS = {
   "messages:write": "Send a message to a person, a house or everyone, by push, the Wall or email",
   "promotions:write": "Make a promotion, stop one, email the people it names, or try its Stripe set-up again",
   "deletions:write": "Delete an account now, stop a deletion, or start one for someone who asked by email",
-  "houses:write": "Delete a whole house: everyone in it is told, its Pass stops renewing, and it can't be undone",
+  "houses:write": "Reset or delete a whole house: everyone in it is told, and it can't be undone",
 } as const;
 export type OwnerPermission = keyof typeof OWNER_PERMISSIONS;
 export const OWNER_PERMISSION_NAMES = Object.keys(OWNER_PERMISSIONS) as OwnerPermission[];
@@ -100,6 +100,7 @@ export const OwnerMove = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("deletion_stop"), userId: z.uuid(), who: Label, reason: Reason }),
   z.object({ kind: z.literal("deletion_start"), email: z.email(), reason: Reason }),
   z.object({ kind: z.literal("house_delete"), houseId: z.uuid(), name: Label, people: z.number().int().min(0), reason: Reason, tell: z.boolean() }),
+  z.object({ kind: z.literal("house_reset"), houseId: z.uuid(), name: Label, people: z.number().int().min(0), everything: z.boolean(), reason: Reason }),
 ]);
 export type OwnerMove = z.infer<typeof OwnerMove>;
 export type OwnerMoveKind = OwnerMove["kind"];
@@ -108,7 +109,7 @@ export type OwnerMoveKind = OwnerMove["kind"];
 export const OWNER_MOVES_MAX = 6;
 
 /** Moves that can’t be taken back: the card says so under each. */
-export const OWNER_MOVES_FINAL: readonly OwnerMoveKind[] = ["deletion_now", "message_send", "promotion_email", "report_reply", "promotion_stop", "house_delete"];
+export const OWNER_MOVES_FINAL: readonly OwnerMoveKind[] = ["deletion_now", "message_send", "promotion_email", "report_reply", "promotion_stop", "house_delete", "house_reset"];
 
 const ways = (m: { push: boolean; wall: boolean; email: boolean }) =>
   [m.push && "push", m.wall && "the Wall", m.email && "email"].filter(Boolean).join(", ");
@@ -159,6 +160,8 @@ export function ownerMoveTitle(m: OwnerMove, words: Words): string {
       return words("admin.moves.title.deletion_start", { email: m.email });
     case "house_delete":
       return words("admin.moves.title.house_delete", { name: m.name });
+    case "house_reset":
+      return words("admin.moves.title.house_reset", { name: m.name, everything: m.everything });
   }
 }
 
@@ -190,5 +193,7 @@ export function ownerMoveMeta(m: OwnerMove, words: Words): string {
       return `${words(`admin.moves.meta.${m.kind}`)}${why(m.reason)}`;
     case "house_delete":
       return `${words("admin.deleteHouse.gone", { people: m.people, tell: m.tell })}${why(m.reason)}`;
+    case "house_reset":
+      return `${words("admin.reset.gone", { people: m.people, everything: m.everything })}${why(m.reason)}`;
   }
 }

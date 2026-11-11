@@ -33,6 +33,7 @@ import {
   saveDealMode,
   setHouseKind,
   setRole,
+  resetHouseData,
   updateHouse,
 } from './settings';
 import { confirmPayment } from './stake';
@@ -77,6 +78,7 @@ export const CARD_OPERATIONS: { [N in AskCardOperation]: (input: Input<N>, ctx: 
   remove_flag: (i) => removeFlag(i.assignmentId),
   delete_group: (i) => deleteGroup(i.groupId),
   reset_join_code: (i) => resetJoinCode(i.houseId),
+  reset_house_data: (i) => resetHouseData(i.houseId, i.everything ?? false),
   set_house_kind: (i) => setHouseKind(i.houseId, i.kind),
   deal_week: (i) => dealThisWeek(i.houseId),
   pay_pocket_money: (i) => payPocketMoney(i.houseId, i.kidId, i.month),

@@ -151,6 +151,15 @@ export async function resetJoinCode(houseId: string) {
   await callV1('reset_join_code', { houseId });
 }
 
+/**
+ * Takes the house back to before its first deal, for good: its history, or
+ * (everything) its John list, groups, time away and rules too. Admins only
+ * (house_reset:write; the database checks).
+ */
+export async function resetHouseData(houseId: string, everything: boolean) {
+  await callV1('reset_house_data', { houseId, everything });
+}
+
 /** Make a group, or change who's in one. save_group checks they all live here. */
 export async function saveGroup(houseId: string, draft: Omit<GroupDraft, 'id'> & { id?: string }) {
   const parsed = GroupDraft.safeParse(draft);

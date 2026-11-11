@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { ASK_CARD_OPERATIONS, type AskCardOperation } from "./ask-operations";
 import { dateRange } from "./format";
+import { isDangerous } from "./operations";
 import { AwayDraft } from "./schemas";
 
 /**
@@ -45,4 +46,9 @@ export function moveMeta(m: ChatMove, words: Words): string {
   if (m.kind === "away") return words("ask.moves.awayMeta", { hasNote: Boolean(m.note), note: m.note ?? "" });
   if (m.kind === "cancel_away") return words("ask.moves.cancelMeta");
   return m.meta;
+}
+
+/** Whether a move on the card can't be taken back: its operation's own `destructive` (time away always can). */
+export function moveIsDangerous(m: ChatMove): boolean {
+  return m.kind === "operation" && isDangerous(m.operation);
 }

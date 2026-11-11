@@ -1,4 +1,4 @@
-import { OPERATIONS, OPERATION_NAMES, type Operation, type OperationName } from "./operations";
+import { OPERATIONS, OPERATION_NAMES, isDangerous, type Operation, type OperationName } from "./operations";
 import { OWNER_PERMISSION_NAMES, type OwnerAskCoverage, type OwnerMoveKind, type OwnerPermission } from "./owner-moves";
 
 // How the owner's Ask Jonz does each of the admin pages' writes, made from
@@ -44,6 +44,7 @@ export const OWNER_ASK_OPERATIONS = {
   owner_stop_deletion: { tool: "stop_deletion", move: "deletion_stop" },
   owner_request_deletion: { tool: "start_deletion", move: "deletion_start" },
   owner_delete_house: { tool: "delete_house", move: "house_delete" },
+  owner_reset_house_data: { tool: "reset_house", move: "house_reset" },
 } as const satisfies Record<OwnerCardOperation, { tool: string; move: OwnerMoveKind }>;
 
 type CardEntry = (typeof OWNER_ASK_OPERATIONS)[OwnerCardOperation];
@@ -84,3 +85,8 @@ export const OWNER_WRITE_TOOLS: readonly string[] = [...new Set(Object.values(OW
 
 /** Every app write, for the tests: on the card or not a move. */
 export const APP_WRITES = OPERATION_NAMES.filter((n) => OPERATIONS[n].scope === "app" && OPERATIONS[n].effect === "write");
+
+/** Whether an owner's card move can't be taken back: the `destructive` of the operation it makes. */
+export function ownerMoveIsDangerous(kind: OwnerMoveKind): boolean {
+  return isDangerous(OWNER_MOVE_OPERATION[kind]);
+}
