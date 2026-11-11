@@ -2,7 +2,7 @@ import { ReportRequest, ReportResponse } from "@app/core";
 
 import { requireUser } from "@/lib/auth";
 import { sendReport } from "@/lib/moves/reports";
-import { error, json, preflight, refused } from "@/lib/respond";
+import { error, json, preflight, refused, wordsOf } from "@/lib/respond";
 
 /**
  * POST /api/reports `{ kind, words, details, shots }`: report a problem, send
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
   if ("response" in auth) return auth.response;
 
   const body = ReportRequest.safeParse(await request.json().catch(() => null));
-  if (!body.success) return error(request, 400, "Say what happened, in up to 2,000 letters.");
+  if (!body.success) return error(request, 400, wordsOf(request)("errors.api.sayWhatHappened"));
 
   const result = await sendReport({ db: auth.supabase, userId: auth.user.id }, body.data);
   if ("refusal" in result) return refused(request, result.refusal);

@@ -2,7 +2,7 @@ import { DealRequest, MoveResponse } from "@app/core";
 
 import { requireUser } from "@/lib/auth";
 import { dealThisWeek } from "@/lib/moves/deal";
-import { error, json, preflight, refused } from "@/lib/respond";
+import { error, json, preflight, refused, wordsOf } from "@/lib/respond";
 
 /**
  * POST /api/deal `{ houseId }`: an admin hands out this week's Johns, or
@@ -14,7 +14,7 @@ export async function POST(request: Request) {
   if ("response" in auth) return auth.response;
 
   const body = DealRequest.safeParse(await request.json().catch(() => null));
-  if (!body.success) return error(request, 400, "Say which house to deal.");
+  if (!body.success) return error(request, 400, wordsOf(request)("errors.api.sayHouseToDeal"));
 
   const refusal = await dealThisWeek({ db: auth.supabase, userId: auth.user.id }, body.data.houseId, new Date());
   if (refusal) return refused(request, refusal);

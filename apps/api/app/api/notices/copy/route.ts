@@ -2,7 +2,7 @@ import { noticeFromRow, noticeState, type Notice } from "@app/core";
 
 import { requireUser } from "@/lib/auth";
 import { canWriteCopy, writeCopy } from "@/lib/notices/copy";
-import { error, json, preflight } from "@/lib/respond";
+import { error, json, preflight, wordsOf } from "@/lib/respond";
 
 /**
  * POST /api/notices/copy: after the owner saves or ends a notice, the admin
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
   if ("response" in auth) return auth.response;
 
   const { data: owner } = await auth.supabase.rpc("is_owner");
-  if (owner !== true) return error(request, 403, "Only the owner can do that, signed in with their code.");
+  if (owner !== true) return error(request, 403, wordsOf(request)("errors.api.ownerOnly"));
   if (!canWriteCopy()) return json(request, { copied: false });
 
   // The owner reads every notice; keep the ones that aren't over.
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     .select("id, kind, title, body, link_label, link_url, starts_at, ends_at")
     .order("starts_at", { ascending: false })
     .limit(50);
-  if (readError || !data) return error(request, 500, "The notices couldn't be read. Try again.");
+  if (readError || !data) return error(request, 500, wordsOf(request)("errors.api.noticesUnread"));
 
   const now = new Date();
   const notices = data
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
   try {
     await writeCopy(notices, now);
   } catch {
-    return error(request, 502, "The notice saved, but its copy for outages didn't. Try again.");
+    return error(request, 502, wordsOf(request)("errors.api.noticeCopyFailed"));
   }
   return json(request, { copied: true });
 }

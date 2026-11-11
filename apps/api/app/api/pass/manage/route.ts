@@ -4,7 +4,7 @@ import { requireUser } from "@/lib/auth";
 import { env } from "@/lib/env";
 import { openBilling } from "@/lib/moves/pass";
 import { passStripe } from "@/lib/pass/stripe";
-import { error, json, preflight } from "@/lib/respond";
+import { error, json, preflight, wordsOf } from "@/lib/respond";
 
 // Server lines read the housemates' words for now; each person's own language comes with translation 7.
 const words = wordsFor("en", "housemates");
@@ -19,13 +19,13 @@ export async function POST(request: Request) {
   if ("response" in auth) return auth.response;
 
   const body = PassManageRequest.safeParse(await request.json().catch(() => null));
-  if (!body.success) return error(request, 400, "Say which house.");
+  if (!body.success) return error(request, 400, wordsOf(request)("errors.api.sayWhichHouse"));
 
   const stripe = passStripe();
   if (!stripe) return error(request, 503, words('house.pass.checkoutClosed'));
 
   const answer = await openBilling({ db: auth.supabase, userId: auth.user.id }, stripe, body.data.houseId, env.appUrlFor(request));
-  if ("status" in answer) return error(request, answer.status, answer.message);
+  if ("status" in answer) return error(request, answer.status, answer.say(wordsOf(request)));
   return json(request, PassRedirect.parse(answer));
 }
 

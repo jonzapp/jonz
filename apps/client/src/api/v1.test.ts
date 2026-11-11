@@ -1,6 +1,8 @@
 import { Platform } from 'react-native';
 
-import { ApiRequestError } from './base';
+import { wordsFor } from '@app/core';
+
+import { ApiRequestError, setApiReader } from './base';
 import { supabase } from './supabase';
 import { isTooOld, resetTooOld } from './too-old';
 import { callV1, problemSentence, v1Request } from './v1';
@@ -53,6 +55,7 @@ describe('callV1', () => {
       headers: {
         Authorization: 'Bearer access-token',
         'Jonz-Client': `${Platform.OS === 'android' ? 'android' : 'ios'}/1.4.2 (57)`,
+        'Accept-Language': 'en',
         'Content-Type': 'application/json',
         'Idempotency-Key': 'idem-1',
       },
@@ -105,5 +108,19 @@ describe('problemSentence', () => {
     expect(problemSentence({ title: 'rejected', detail: 'some_new_word' })).toBe('Something went wrong. Try again.');
     expect(problemSentence({ title: 'internal', detail: 'Something went wrong on our side.' })).toBe('Something went wrong. Try again.');
     expect(problemSentence(null)).toBe('Something went wrong. Try again.');
+  });
+
+  it("says it in your language and with your house's words, and asks the API to", async () => {
+    setApiReader('en-XA', 'family');
+    try {
+      const yours = wordsFor('en-XA', 'family');
+      expect(problemSentence({ title: 'rejected', detail: 'admins_only' })).toBe(yours('errors.admins_only'));
+      expect(problemSentence(null)).toBe(yours('errors.other'));
+      fetchMock.mockResolvedValue(reply(200, { ok: true }));
+      await callV1('cast_vote', { disputeId: DISPUTE, uphold: true });
+      expect(fetchMock.mock.calls.at(-1)?.[1].headers['Accept-Language']).toBe('en-XA');
+    } finally {
+      setApiReader('en', 'housemates');
+    }
   });
 });

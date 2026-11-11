@@ -2,7 +2,7 @@ import { humanError, OfferView } from "@app/core";
 
 import { getBearerToken, requireUser } from "@/lib/auth";
 import { readOffer } from "@/lib/moves/promotions";
-import { error, json, preflight } from "@/lib/respond";
+import { error, json, preflight, wordsOf } from "@/lib/respond";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
@@ -19,7 +19,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ code
     viewer = { db: auth.supabase, userId: auth.user.id, email: auth.user.email };
   }
   const offer = await readOffer(createAdminClient(), code, viewer, new Date());
-  if (!offer) return error(request, 404, humanError({ message: "offer_unknown" }));
+  if (!offer) return error(request, 404, humanError({ message: "offer_unknown" }, wordsOf(request)));
   return json(request, OfferView.parse(offer));
 }
 

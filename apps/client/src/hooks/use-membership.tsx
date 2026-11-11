@@ -3,6 +3,7 @@ import type { Session } from '@supabase/supabase-js';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { deletionStatus } from '@/api/account';
+import { setApiReader } from '@/api/base';
 import { getMyHouse, type MyHouse } from '@/api/house';
 import { myLanguage, setMyLanguage } from '@/api/language';
 import { followMicrosoftSignIns } from '@/api/microsoft-photo';
@@ -115,10 +116,13 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
     refresh,
   };
   const yours = useMemo(() => ({ language, change }), [language, change]);
+  const kind = value.house?.kind ?? 'housemates';
+  // What the API says back is read in your language, with your house's words.
+  useEffect(() => setApiReader(language, kind), [language, kind]);
   return (
     <MembershipContext.Provider value={value}>
       <LanguageContext.Provider value={yours}>
-        <HouseKindContext.Provider value={value.house?.kind ?? 'housemates'}>{children}</HouseKindContext.Provider>
+        <HouseKindContext.Provider value={kind}>{children}</HouseKindContext.Provider>
       </LanguageContext.Provider>
     </MembershipContext.Provider>
   );

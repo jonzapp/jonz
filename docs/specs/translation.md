@@ -39,6 +39,14 @@ through FormatJS. A family reads its own sentences (never "housemates" or
   pick. The app reads it in `MembershipProvider` (`my_language`, saved with
   `set_my_language`) and `useWords()` reads in it. Ask Jonz is told to
   answer in it.
+- **What the server says, in each reader's language.** A push's title and
+  body are a `PushLine`: what someone wrote, sent as written, or
+  `(words) => words('…')`, said when it's sent in each recipient's
+  language with the house's kind (`pushIn`, lib/push.ts). An email takes
+  `language` (English for someone without an account). The app sends your
+  language as `Accept-Language`, and the API's own sentences
+  (`errors.api.*`, refusals) read it with `wordsOf(request)`; a refusal word
+  from `/v1` is turned into a sentence in the app, with your house's words.
 - **The test language** (`en-XA`, `pseudo.ts`): every English line with its
   letters accented and held in brackets, `[Ţíçķ íţ óƒƒ]`. Offered on You only
   locally and on staging. A line still written into a screen reads plain,
@@ -72,12 +80,14 @@ The lines move part by part, one pull request each, merged one at a time:
    the style page (/style, a sample book) keeps written-in text.
 7. In two parts. 7a: each person's language (`profiles.language`, You's
    Language row), the test language, and Ask Jonz answering in it. 7b:
-   pushes, emails and errors in each reader's language, and dates and money
+   pushes, emails and errors in each reader's language. 7c: dates and money
    in it (`Words` gets a locale; `en-GB` stops being written in).
 
 ## Edge cases
 
 - A link preview (a pasted join link) has no reader, so it's English.
+- Supabase's sign-in emails are templates set once for everyone, so they're
+  English; so is an offer emailed to an address, which may have no account.
 - A line with a count of 0 or 1 says "Just you so far" where the house has
   only you.
 

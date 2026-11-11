@@ -64,7 +64,7 @@ const STATUS_PROBLEM: Record<number, Problem["code"]> = { 403: "forbidden", 404:
 /** A Pass move's answer: the page to send the browser to, or the Problem its status means. */
 export function passAnswer(answer: PassAnswer): { url: string } {
   if ("url" in answer) return answer;
-  throw new Problem(STATUS_PROBLEM[answer.status] ?? "internal", answer.message);
+  throw new Problem(STATUS_PROBLEM[answer.status] ?? "internal", answer.say(words));
 }
 
 const houseId = (ctx: HandlerContext) => ctx.input.houseId as string;

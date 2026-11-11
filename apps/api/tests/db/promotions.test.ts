@@ -1,11 +1,11 @@
 import { randomUUID } from "node:crypto";
 
-import { PromotionRequest, type PromotionRequest as Draft } from "@app/core";
+import { PromotionRequest, type PromotionRequest as Draft, wordsFor } from "@app/core";
 import type Stripe from "stripe";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { GET as shareCard } from "@/app/api/share/[[...path]]/route";
-import { startCheckout } from "@/lib/moves/pass";
+import { startCheckout, type PassAnswer } from "@/lib/moves/pass";
 import { emailPromotion, makePromotion, readOffer, retryPromotion, stopPromotion } from "@/lib/moves/promotions";
 import { applyPassEvent } from "@/lib/pass/events";
 import type { CheckoutParams, OfferCoupon, OfferStripe, PassStripe } from "@/lib/pass/stripe";
@@ -13,6 +13,9 @@ import { adminClient, signedInUser, type Actor } from "@/tests/support/clients";
 import { expectDenied, expectOk, expectRule } from "@/tests/support/expect";
 import { makeHouse, type House } from "@/tests/support/factories";
 import { passSecondFactor } from "@/tests/support/mfa";
+
+/** A Pass refusal as an English reader gets it. */
+const said = (answer: PassAnswer) => ("say" in answer ? { status: answer.status, message: answer.say(wordsFor("en", "housemates")) } : answer);
 
 /**
  * Promotions (docs/specs/promotions.md), against the local stack: only the
@@ -187,9 +190,9 @@ describe("using one at checkout", () => {
     });
 
     const notBens = await startCheckout(buyer(ben), s.pass, house.id, "yearly", APP, "local", new Date(), made.code);
-    expect(notBens).toMatchObject({ status: 409, message: expect.stringContaining("someone else") });
+    expect(said(notBens)).toMatchObject({ status: 409, message: expect.stringContaining("someone else") });
     const notFounding = await startCheckout(buyer(ava), s.pass, house.id, "founding", APP, "local", new Date(), made.code);
-    expect(notFounding).toMatchObject({ status: 409, message: expect.stringContaining("plan") });
+    expect(said(notFounding)).toMatchObject({ status: 409, message: expect.stringContaining("plan") });
     expect(s.calls.checkout).toHaveLength(1);
 
     // Stripe says it's paid, twice: one use.
@@ -205,7 +208,7 @@ describe("using one at checkout", () => {
     expect(person!.used_at).not.toBeNull();
 
     const twice = await startCheckout(buyer(ava), s.pass, house.id, "yearly", APP, "local", new Date(), made.code);
-    expect(twice).toMatchObject({ status: 409, message: expect.stringContaining("used already") });
+    expect(said(twice)).toMatchObject({ status: 409, message: expect.stringContaining("used already") });
   });
 
   it("puts the first charge off by its months free, with no code for Stripe", async () => {
@@ -231,7 +234,7 @@ describe("using one at checkout", () => {
     expect(audit).toHaveLength(1);
 
     const ended = await startCheckout(buyer(ava), s.pass, house.id, "yearly", APP, "local", new Date(), made.code);
-    expect(ended).toMatchObject({ status: 409, message: expect.stringContaining("ended") });
+    expect(said(ended)).toMatchObject({ status: 409, message: expect.stringContaining("ended") });
   });
 });
 

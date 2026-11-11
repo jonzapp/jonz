@@ -27,7 +27,7 @@ describe("/v1 server operations", () => {
     expect(passAnswer({ url: "https://checkout.stripe.com/x" })).toEqual({ url: "https://checkout.stripe.com/x" });
     const thrown = (status: number) => {
       try {
-        passAnswer({ status, message: "No." });
+        passAnswer({ status, say: () => "No." });
       } catch (e) {
         return e as Problem;
       }
