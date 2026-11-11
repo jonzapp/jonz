@@ -43,7 +43,7 @@ test("a closed month's debt is settled once the person paid marks it received", 
   expect((await db.from("month_closes").insert({ house_id: houseId, month })).error).toBeNull();
 
   // Ben's own history has the forfeit. The old link still lands on it, now one of House's pages.
-  const four = formatMoney(400, "GBP");
+  const four = formatMoney(400, "GBP", words);
   const benPage = await benContext.newPage();
   await benPage.goto("/stake");
   await expect(benPage).toHaveURL(/\/house\/stake$/);

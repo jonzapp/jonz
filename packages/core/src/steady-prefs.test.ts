@@ -112,7 +112,7 @@ describe("plannable", () => {
 
 describe("planLabel", () => {
   it("says a plan the way a John says its time", () => {
-    expect(planLabel(new Date("2026-10-08T07:30:00Z"), now, LONDON)).toBe("Tomorrow 08:30");
-    expect(planLabel(new Date("2026-10-07T18:00:00Z"), now, LONDON)).toBe("Today 19:00");
+    expect(planLabel(new Date("2026-10-08T07:30:00Z"), now, LONDON, words)).toBe("Tomorrow 08:30");
+    expect(planLabel(new Date("2026-10-07T18:00:00Z"), now, LONDON, words)).toBe("Today 19:00");
   });
 });

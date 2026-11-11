@@ -1,7 +1,8 @@
-import { STATUS_MARK, type LiveStatus, type StatusIcon } from '@app/core';
+import { STATUS_MARK, statusWord, type LiveStatus, type StatusIcon } from '@app/core';
 import { CheckIcon, ClockIcon, FlagIcon, ShieldIcon, TriangleAlertIcon, XIcon, type LucideIcon } from 'lucide-react-native';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { useWords } from '@/hooks/use-words';
 import { RADIUS, SPACE, useTheme } from '@/theme';
 
 /** Core names the icon; this is lucide's drawing of it. */
@@ -53,11 +54,12 @@ export function Chip({
  * card colour behind them, so a mark lives in a group.
  */
 export function StatusMark({ status }: { status: LiveStatus }) {
+  const words = useWords();
   const mark = STATUS_MARK[status];
   if (mark.tone === 'none') return null;
   return (
     <Chip
-      label={mark.label}
+      label={statusWord(status, words)}
       icon={mark.icon ? STATUS_ICON[mark.icon] : undefined}
       tone={mark.tone}
       testID={`status-${status}`}

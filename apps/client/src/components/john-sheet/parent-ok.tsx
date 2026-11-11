@@ -53,7 +53,7 @@ export function AwaitsOk({ item, context }: { item: BoardItem; context: JohnShee
                 variant="outline"
                 icon={ThumbsUpIcon}
                 // A John that earns says so: "OK, pay 20p".
-                label={item.payMinor ? words('house.pocket.okPay', { money: pocketMoney(item.payMinor, context.rules.currency) }) : words('today.parentOk.ok')}
+                label={item.payMinor ? words('house.pocket.okPay', { money: pocketMoney(item.payMinor, context.rules.currency, words) }) : words('today.parentOk.ok')}
                 busy={move.pending && said}
                 busyLabel={words('common.busy.approving')}
                 onPress={() => void answer(true)}

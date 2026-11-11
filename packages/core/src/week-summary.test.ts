@@ -336,16 +336,16 @@ describe("weekRangeLine", () => {
 
 describe("weekSpokenRow", () => {
   it("says every column in a sentence: name, meta, whose, points and status", () => {
-    expect(weekSpokenRow({ name: "Descale the kettle", status: "overdue" }, "Kitchen, was due Sun", "Tom", 1)).toBe(
+    expect(weekSpokenRow({ name: "Descale the kettle", status: "overdue" }, "Kitchen, was due Sun", "Tom", 1, words)).toBe(
       "Descale the kettle, Kitchen, was due Sun, Tom, 1 pt, Overdue",
     );
-    expect(weekSpokenRow({ name: "Bins out", status: "checking" }, "Bins, stands in 21h", "You", 0)).toBe(
+    expect(weekSpokenRow({ name: "Bins out", status: "checking" }, "Bins, stands in 21h", "You", 0, words)).toBe(
       "Bins out, Bins, stands in 21h, You, 0 pts, Done, being checked",
     );
   });
 
   it("says no status for an upcoming John, which shows none", () => {
-    expect(weekSpokenRow({ name: "Bins out", status: "upcoming" }, "Bins, Thu 07:00", "Megan", 2)).toBe(
+    expect(weekSpokenRow({ name: "Bins out", status: "upcoming" }, "Bins, Thu 07:00", "Megan", 2, words)).toBe(
       "Bins out, Bins, Thu 07:00, Megan, 2 pts",
     );
   });

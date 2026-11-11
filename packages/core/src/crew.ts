@@ -203,15 +203,15 @@ export function rollCallStart(places: readonly RollCallPlace[], userId: string):
 }
 
 /** "4 pts", "1.5 pts", "1.3 pts": a share, to a tenth. */
-export function shareLabel(points: number): string {
-  return pointsLabel(points);
+export function shareLabel(points: number, words: Words): string {
+  return pointsLabel(points, words);
 }
 
 /** The John editor's line under "Done by": "4 pts each, so 12 in all". Null for one person. */
 export function crewLine(crew: number, points: number, words: Words): string | null {
   if (crew === 1) return null;
-  if (crew === 0) return words('john.crew.everyoneEach', { each: pointsLabel(points) });
-  return words('john.crew.inAll', { each: pointsLabel(points), total: pointsLabel(points * crew) });
+  if (crew === 0) return words('john.crew.everyoneEach', { each: pointsLabel(points, words) });
+  return words('john.crew.inAll', { each: pointsLabel(points, words), total: pointsLabel(points * crew, words) });
 }
 
 /** "Ben", "Ben and Cal", "Ben, Cal and Dee". */

@@ -16,6 +16,9 @@ import {
   type AwayPeriod,
 } from "./away";
 import { addDaysTo, localDate } from "./week";
+import { wordsFor } from "./words-for";
+
+const words = wordsFor("en", "housemates");
 
 const ben = (startsOn: string, endsOn: string, id = "p1"): AwayPeriod => ({
   id,
@@ -116,15 +119,15 @@ describe("awayThisWeek", () => {
   const week = "2026-10-19";
 
   it("says which days of the week someone is away", () => {
-    expect(awayThisWeek([ben("2026-10-21", "2026-10-23")], "ben", week)).toBe("Away 21–23 Oct");
-    expect(awayThisWeek([ben("2026-10-25", "2026-10-30")], "ben", week)).toBe("Away Sun 25 Oct");
+    expect(awayThisWeek([ben("2026-10-21", "2026-10-23")], "ben", week, words)).toBe("Away 21–23 Oct");
+    expect(awayThisWeek([ben("2026-10-25", "2026-10-30")], "ben", week, words)).toBe("Away Sun 25 Oct");
   });
 
   it("says all week for a trip that covers it, and nothing for anyone home", () => {
-    expect(awayThisWeek([ben("2026-10-10", "2026-11-10")], "ben", week)).toBe("Away all week");
-    expect(awayThisWeek([ben("2026-10-26", "2026-10-30")], "ben", week)).toBeNull();
-    expect(awayThisWeek([ben("2026-10-21", "2026-10-23")], "ava", week)).toBeNull();
-    expect(awayThisWeek([], "ben", week)).toBeNull();
+    expect(awayThisWeek([ben("2026-10-10", "2026-11-10")], "ben", week, words)).toBe("Away all week");
+    expect(awayThisWeek([ben("2026-10-26", "2026-10-30")], "ben", week, words)).toBeNull();
+    expect(awayThisWeek([ben("2026-10-21", "2026-10-23")], "ava", week, words)).toBeNull();
+    expect(awayThisWeek([], "ben", week, words)).toBeNull();
   });
 });
 

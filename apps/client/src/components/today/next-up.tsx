@@ -89,7 +89,7 @@ export function NextUp({
       return <NextUpCard lead={words('today.nextUp.voting')} body={words('today.nextUp.votingBody', { john: state.item.name })} />;
     case 'away':
       return (
-        <NextUpCard lead={words('today.nextUp.away', { day: dateRange(state.until, state.until) })} body={words('today.nextUp.awayBody', { share: awayShare(awayMakeup) })}>
+        <NextUpCard lead={words('today.nextUp.away', { day: dateRange(state.until, state.until, words) })} body={words('today.nextUp.awayBody', { share: awayShare(awayMakeup) })}>
           <TextButton label={words('today.nextUp.changeDates')} href="/house/away" chevron align="start" testID="change-dates" />
         </NextUpCard>
       );

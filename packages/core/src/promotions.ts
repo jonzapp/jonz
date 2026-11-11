@@ -1,11 +1,10 @@
 import type { Words } from "./words-for";
-import { tz } from "@date-fns/tz";
-import { format } from "date-fns";
 import { z } from "zod";
 
 import { CURRENCIES, type Currency } from "./domain";
 import { formatMoney } from "./money";
 import { hasPass, PASS_PRICES, PASS_PURCHASES, type HousePass, type PassPurchase } from "./pass";
+import { dateIn } from "./format";
 import { wordsFor } from "./words-for";
 
 // Promotions (docs/specs/promotions.md): money off a House Pass, some months
@@ -127,7 +126,7 @@ export function promotionLegend(t: PromotionTerms, currency: Currency = "USD"): 
     case "percent":
       return t.percentOff === 50 ? "Half off" : t.percentOff === 100 ? "Free" : `${t.percentOff}% off`;
     case "amount":
-      return `${formatMoney(t.amountOff?.[currency] ?? t.amountOff?.USD ?? 0, currency)} off`;
+      return `${formatMoney(t.amountOff?.[currency] ?? t.amountOff?.USD ?? 0, currency, words)} off`;
     case "trial":
       return `${months(t.months ?? 1)} free`;
     case "gift":
@@ -180,7 +179,7 @@ export function promotionSentence(t: PromotionTerms, zone: string, currency: Cur
         ? `${legend} for ${months(t.months ?? 1)}`
         : `${legend} the first payment`);
   const plans = t.kind === "gift" ? "" : `, on ${orList(t.plans.map((p) => planLabel(p)))}`;
-  const by = t.endsAt ? ` Use it by ${format(t.endsAt, "d MMMM", { in: tz(zone) })}.` : "";
+  const by = t.endsAt ? ` Use it by ${dateIn(t.endsAt, "dayMonthLong", zone, words)}.` : "";
   return `${off}${plans}, for your whole house.${by}`;
 }
 
@@ -200,7 +199,7 @@ export interface PromotionPrice {
 export function promotionPrice(t: PromotionTerms, plan: PassPurchase, currency: Currency): PromotionPrice | null {
   if (t.kind === "gift" || !t.plans.includes(plan)) return null;
   const price = PASS_PRICES[currency][plan];
-  const money = (m: number) => formatMoney(m, currency);
+  const money = (m: number) => formatMoney(m, currency, words);
   const per = (price: string) => (plan === "yearly" ? words("house.pass.perYear", { price }) : words("house.pass.perMonth", { price }));
   const then = plan === "founding" ? null : `then ${per(money(price))}`;
   if (t.kind === "trial") return { plan, label: planLabel(plan), first: `Free for ${months(t.months ?? 1)}`, then, firstMinor: 0 };

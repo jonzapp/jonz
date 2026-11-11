@@ -419,7 +419,7 @@ export function offerEmail(args: {
   const currency = args.currency ?? "USD";
   const title = promotionTitle(args.terms, currency);
   const sentence = promotionSentence({ ...args.terms, endsAt: null }, args.zone, currency);
-  const until = args.terms.endsAt ? new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", timeZone: args.zone }).format(args.terms.endsAt) : null;
+  const until = args.terms.endsAt ? new Intl.DateTimeFormat(words.locale, { day: "numeric", month: "long", timeZone: args.zone }).format(args.terms.endsAt) : null;
   const rows = promotionPrices(args.terms, currency).map((p) => [p.label, p.then ? `${p.first}, ${p.then}` : p.first] as const);
   return renderEmail({
     subject: title,

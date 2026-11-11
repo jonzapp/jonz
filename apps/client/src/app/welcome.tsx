@@ -108,7 +108,7 @@ function PassNote({ moving, onChanged }: { moving: MovingOn; onChanged: () => vo
   const [problem, setProblem] = useState<string | undefined>();
   if (moving.pass === 'left') return <Meta testID="pass-left">{words('house.moving.passLeft', { house: moving.houseName })}</Meta>;
   if (moving.pass !== 'waiting') return null;
-  const until = moving.houseKeepsUntil ? dateRange(moving.houseKeepsUntil, moving.houseKeepsUntil) : null;
+  const until = moving.houseKeepsUntil ? dateRange(moving.houseKeepsUntil, moving.houseKeepsUntil, words) : null;
   return (
     <View style={styles.pass}>
       <Meta testID="pass-comes">{until ? words('house.moving.passComesUntil', { house: moving.houseName, until }) : words('house.moving.passComes')}</Meta>

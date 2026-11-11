@@ -137,7 +137,7 @@ function trailingFor(
       );
     case 'points':
       // A kid's John in a family says what it earns.
-      return item.payMinor ? pocketMoney(item.payMinor, currency) : pointsLabel(plan.points);
+      return item.payMinor ? pocketMoney(item.payMinor, currency, words) : pointsLabel(plan.points, words);
     case 'status':
       return <StatusMark status={item.status} />;
     default:

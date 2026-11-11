@@ -241,10 +241,10 @@ const change = (now: number, before: number, which: OverviewSpan) => {
 };
 
 /** The figures' heading, as the Track record names its span: "2–8 Nov", or "November 2026". */
-export function overviewRange(o: Pick<Overview, "span" | "from">, zone: string): string {
+export function overviewRange(o: Pick<Overview, "span" | "from">, zone: string, words: Words): string {
   const from = new Date(o.from);
-  if (o.span === "month") return monthLabel(monthOf(from, zone));
-  return weekRange(from, new Date(from.getTime() + 7 * 86_400_000), zone);
+  if (o.span === "month") return monthLabel(monthOf(from, zone), words);
+  return weekRange(from, new Date(from.getTime() + 7 * 86_400_000), zone, words);
 }
 
 /** The six figures, in reading order. */

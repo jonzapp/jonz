@@ -1,10 +1,7 @@
-import { tz } from "@date-fns/tz";
-import { format } from "date-fns";
-
 import { awayDays, currentOrNext, type AwayPeriod } from "./away";
 import { byDoneLatest, type BoardItem } from "./board";
 import { MAKEUP_LABEL } from "./deal";
-import { dateRange, firstName, formatBalance, pointsLabel, STATUS_LABEL, STATUS_MARK, weekRange } from "./format";
+import { dateRange, firstName, formatBalance, pointsLabel, statusLabel, STATUS_MARK, weekRange, dateIn } from "./format";
 import type { LiveStatus } from "./outcome";
 import { addDaysTo, localDate } from "./week";
 import type { Words } from "./words-for";
@@ -201,7 +198,7 @@ export function weekList<T extends { status: LiveStatus; dueAt: Date; doneAt?: D
  */
 export function weekPersonMeta(p: { done: number; total: number; points: number }, words: Words): string | null {
   if (p.total === 0) return null;
-  return `${words('week.summary.doneOf', { done: p.done, total: p.total })}, ${pointsLabel(p.points)}`;
+  return `${words('week.summary.doneOf', { done: p.done, total: p.total })}, ${pointsLabel(p.points, words)}`;
 }
 
 /**
@@ -225,7 +222,7 @@ export function weekAwayNote(
     inWeek.find((p) => p.endsOn >= today) ??
     inWeek[0] ??
     (next && next.startsOn <= addDaysTo(today, 7) ? next : null);
-  return period ? words('week.summary.away', { days: dateRange(period.startsOn, period.endsOn) }) : null;
+  return period ? words('week.summary.away', { days: dateRange(period.startsOn, period.endsOn, words) }) : null;
 }
 
 /**
@@ -250,7 +247,7 @@ export function weekAwayLine(
  * zone. "19–25 Oct, ends tonight", ", ends tomorrow", ", ends Sun".
  */
 export function weekRangeLine(startsAt: Date, endsAt: Date, now: Date, zone: string, words: Words): string {
-  const days = weekRange(startsAt, endsAt, zone);
+  const days = weekRange(startsAt, endsAt, zone, words);
   if (now >= endsAt) return words('week.summary.range', { days, ends: words('week.summary.ended') });
   const last = new Date(endsAt.getTime() - 1);
   const lastDay = localDate(last, zone);
@@ -260,7 +257,7 @@ export function weekRangeLine(startsAt: Date, endsAt: Date, now: Date, zone: str
       ? words('week.summary.endsTonight')
       : lastDay === addDaysTo(today, 1)
         ? words('week.summary.endsTomorrow')
-        : words('week.summary.endsOn', { day: format(last, "EEE", { in: tz(zone) }) });
+        : words('week.summary.endsOn', { day: dateIn(last, "weekday", zone, words) });
   return words('week.summary.range', { days, ends });
 }
 
@@ -285,10 +282,10 @@ export function weekSpokenRow(
   item: Pick<BoardItem, "name" | "status">,
   meta: string,
   who: string,
-  points: number,
+  points: number, words: Words,
 ): string {
-  const status = STATUS_MARK[item.status].tone === "none" ? [] : [STATUS_LABEL[item.status]];
-  return [item.name, meta, who, pointsLabel(points), ...status].join(", ");
+  const status = STATUS_MARK[item.status].tone === "none" ? [] : [statusLabel(item.status, words)];
+  return [item.name, meta, who, pointsLabel(points, words), ...status].join(", ");
 }
 
 /**
@@ -308,7 +305,7 @@ export function weekShareRows(
   const rank = (id: string) => (order.includes(id) ? order.indexOf(id) : order.length);
   const rows = [...balances]
     .sort((a, b) => rank(a.userId) - rank(b.userId))
-    .map((b) => ({ userId: b.userId, balance: formatBalance(b.balance) }));
+    .map((b) => ({ userId: b.userId, balance: formatBalance(b.balance, words) }));
   const makeup = MAKEUP_LABEL[awayMakeup] ?? MAKEUP_LABEL[100];
   return { rows, key: words('week.summary.sharesKey', { key: words('house.table.sharesKey'), makeup: makeup.toLowerCase() }) };
 }
@@ -338,7 +335,7 @@ export function weekFairness(
   if (off < 0.5) return words('week.summary.fairLevel');
   const john = johnPoints.length > 0 ? johnPoints.reduce((a, b) => a + b, 0) / johnPoints.length : 1;
   if (off <= john / 2) return words('week.summary.fairClose');
-  const points = pointsLabel(Math.round(off * 2) / 2);
+  const points = pointsLabel(Math.round(off * 2) / 2, words);
   const you = furthest.userId === viewerId;
   const who = called(nameOf(furthest.userId), words);
   return furthest.balance < 0

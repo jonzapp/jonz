@@ -55,7 +55,7 @@ export function DeleteAccountForm({ onKeep }: { onKeep: () => void }) {
       {/* What stays with your house, in outline while it's read: a sentence's lines. */}
       {preview.isPending ? <Waiting ready={false} label={words('people.delete.reading')} outline={<OutlineText lines={2} />} /> : null}
       {house ? <Said lead={words('people.delete.staysLead', { house })} words={words('people.delete.stays')} testID="delete-stays" /> : null}
-      {passUntil ? <Said lead={words('people.delete.passLead')} words={words('people.delete.pass', { until: passDay(passUntil) })} testID="delete-pass" /> : null}
+      {passUntil ? <Said lead={words('people.delete.passLead')} words={words('people.delete.pass', { until: passDay(passUntil, words) })} testID="delete-pass" /> : null}
       <Note>{words('people.delete.wait', { days: DELETION_DAYS })}</Note>
       <Field
         label={words('people.delete.typeLabel')}

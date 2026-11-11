@@ -63,12 +63,12 @@ function board(rows: AssignmentRow[], earners?: string[]) {
 
 describe("what a John earns", () => {
   it("says pence and cents the way a kid would", () => {
-    expect(pocketMoney(50, "GBP")).toBe("50p");
-    expect(pocketMoney(50, "USD")).toBe("50¢");
-    expect(pocketMoney(50, "EUR")).toBe("€0.50");
-    expect(pocketMoney(100, "GBP")).toBe("£1");
-    expect(pocketMoney(650, "GBP")).toBe("£6.50");
-    expect(pocketMoney(0, "GBP")).toBe("£0");
+    expect(pocketMoney(50, "GBP", words)).toBe("50p");
+    expect(pocketMoney(50, "USD", words)).toBe("50¢");
+    expect(pocketMoney(50, "EUR", words)).toBe("€0.50");
+    expect(pocketMoney(100, "GBP", words)).toBe("£1");
+    expect(pocketMoney(650, "GBP", words)).toBe("£6.50");
+    expect(pocketMoney(0, "GBP", words)).toBe("£0");
   });
 
   it("is a kid's to earn, never a parent's or a housemate's", () => {

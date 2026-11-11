@@ -1,4 +1,4 @@
-import { CATEGORIES, CATEGORY_LABEL, CREW_CHOICES, crewLine, CURRENCY_SYMBOL, johnFacts, johnsByKind, listLine, moneyInput, NEW_JOHN, parseMinAge, parseMoney, pocketMoney, pointsLabel, weeklyEffort, type Category, type GroupDef, type HouseRules, type JohnDef } from '@app/core';
+import { CATEGORIES, CATEGORY_LABEL, CREW_CHOICES, crewLine, CURRENCY_SYMBOL, johnFacts, johnsByKind, listLine, moneyInput, NEW_JOHN, parseMinAge, parseMoney, pocketMoney, pointsLabel, weeklyEffort, type Category, type GroupDef, type HouseRules, type JohnDef, type Words } from '@app/core';
 import { ListTodoIcon, PlusIcon, SparklesIcon, Trash2Icon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -29,7 +29,7 @@ import { useWords } from '@/hooks/use-words';
 type Draft = Omit<JohnDef, 'id'> & { id?: string };
 
 const KINDS = CATEGORIES.map((c) => ({ value: c, label: CATEGORY_LABEL[c] }));
-const EFFORT = Array.from({ length: 20 }, (_, i) => ({ value: i + 1, label: pointsLabel(i + 1) }));
+const effort = (words: Words) => Array.from({ length: 20 }, (_, i) => ({ value: i + 1, label: pointsLabel(i + 1, words) }));
 
 /**
  * The house's list of Johns: what it adds up to and Add a John over it, then
@@ -168,7 +168,7 @@ export function JohnList({
                   <Section label={CATEGORY_LABEL[kind.category]} right={String(kind.johns.length)} testID={`kind-${kind.category}`}>
                     {kind.johns.map((j) => {
                       const schedule = listLine(j, words, groupName(j.groupId));
-                      const earns = family && j.payMinor ? words('house.pocket.earns', { money: pocketMoney(j.payMinor, rules.currency) }) : null;
+                      const earns = family && j.payMinor ? words('house.pocket.earns', { money: pocketMoney(j.payMinor, rules.currency, words) }) : null;
                       const aged = family && j.minAge ? words('people.kids.minAgeLine', { age: j.minAge }) : null;
                       // Whether it keeps its day is in its own sheet, with the rest of its details.
                       const line = [schedule, j.crew === 1 ? null : words('john.crew.choice', { crew: j.crew }), earns, aged]
@@ -180,9 +180,9 @@ export function JohnList({
                           title={j.name}
                           lid={j.category}
                           meta={line}
-                          trailing={pointsLabel(j.points)}
+                          trailing={pointsLabel(j.points, words)}
                           onPress={() => (editable ? edit(j) : read(j))}
-                          accessibilityLabel={editable ? `${words('house.johns.edit', { name: j.name })}, ${line}, ${pointsLabel(j.points)}` : undefined}
+                          accessibilityLabel={editable ? `${words('house.johns.edit', { name: j.name })}, ${line}, ${pointsLabel(j.points, words)}` : undefined}
                           testID="john-def"
                         />
                       );
@@ -337,7 +337,7 @@ function JohnForm({
       <TimingSentence value={v} rules={rules} now={new Date()} onChange={set} onPick={setPicking} />
       <View style={styles.noted}>
         <Group>
-          <PickRow label={words('house.johns.effort')} options={EFFORT} value={v.points} onChange={(points) => set({ points })} />
+          <PickRow label={words('house.johns.effort')} options={effort(words)} value={v.points} onChange={(points) => set({ points })} />
           {family ? (
             <GroupItem>
               <Field

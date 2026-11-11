@@ -1,4 +1,4 @@
-import type { Words } from "./words-for";
+import { wordsFor, type Words } from "./words-for";
 import { NOTICE_KINDS, type NoticeKind } from "./notices";
 
 // The owner's admin page (docs/specs/owner-admin.md): its words, how an
@@ -203,7 +203,8 @@ function shown(value: unknown, field: string, zone?: string): string | null {
 
 /** A moment as the audit log says it: "Fri 30 Oct, 16:41". */
 export function formatWhen(iso: string, zone?: string): string {
-  return new Intl.DateTimeFormat("en-GB", {
+  // The owner's pages are written in English, so their times are too.
+  return new Intl.DateTimeFormat(wordsFor("en", "housemates").locale, {
     weekday: "short",
     day: "numeric",
     month: "short",

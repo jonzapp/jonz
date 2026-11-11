@@ -47,11 +47,11 @@ test("a tick scores on the Table at once, beside fair shares and streaks", async
   const standings = table.getByTestId("standing");
   await expect(standings).toHaveCount(2);
   await expect(standings.first()).toContainText(words('house.page.you'));
-  await expect(standings.first()).toContainText(pointsLabel(mine![0].points));
+  await expect(standings.first()).toContainText(pointsLabel(mine![0].points, words));
   await expect(standings.nth(1)).toContainText("Ben");
-  await expect(standings.nth(1)).toContainText(pointsLabel(0));
+  await expect(standings.nth(1)).toContainText(pointsLabel(0, words));
   // The month's Table has everyone on it too, chosen from the menu in its header.
-  const month = monthWord(monthOf(new Date(), "Europe/London"));
+  const month = monthWord(monthOf(new Date(), "Europe/London"), words);
   await table.getByTestId("table-span").click();
   await ava.getByRole("radio", { name: month }).click();
   await expect(table.getByTestId("table-span")).toHaveText(month);

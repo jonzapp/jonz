@@ -1,4 +1,6 @@
 import { createIntl, createIntlCache, type IntlShape } from "@formatjs/intl";
+import type { Locale } from "date-fns";
+import { enGB } from "date-fns/locale/en-GB";
 
 import type { HouseKind } from "./domain";
 import { MESSAGES, TEST_LANGUAGE, type Language, type WordId } from "./locales";
@@ -20,7 +22,18 @@ export type Words = {
   readonly kind: HouseKind;
   /** The FormatJS object underneath, for dates, numbers and lists in this language. */
   readonly intl: IntlShape<string>;
+  /** Its date-fns locale: day and month names, for dates written in this language (format.ts). */
+  readonly dates: Locale;
+  /** Its tag for `Intl` (money, `Intl.DateTimeFormat`): English reads the British way, "en-GB". */
+  readonly locale: string;
 };
+
+/**
+ * Each language's day and month names. English reads them as Jonz always
+ * has, the British way ("Tue 10 Nov", 21:00); so does the test language.
+ */
+const DATE_LOCALES: Record<Language, Locale> = { en: enGB, "en-XA": enGB };
+const INTL_LOCALES: Record<Language, string> = { en: "en-GB", "en-XA": "en-GB" };
 
 const inProduction = () => typeof process !== "undefined" && process.env.NODE_ENV === "production";
 
@@ -62,7 +75,7 @@ export function wordsFor(language: Language, kind: HouseKind): Words {
   if (!words) {
     const intl = intlFor(language);
     const say = (id: WordId, values?: WordValues) => intl.formatMessage({ id }, { ...values, kind });
-    words = Object.assign(say, { language, kind, intl });
+    words = Object.assign(say, { language, kind, intl, dates: DATE_LOCALES[language], locale: INTL_LOCALES[language] });
     made.set(key, words);
   }
   return words;

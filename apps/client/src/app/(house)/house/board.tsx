@@ -58,7 +58,7 @@ function BoardFor({ houseId, userId }: { houseId: string; userId: string }) {
         const kids = members.filter((m) => m.role !== 'admin').map((m) => ({ userId: m.userId, name: firstName(m.name) }));
         if (kids.length === 0) return <EmptyState icon={UsersIcon} title={words('today.board.title')} body={words('today.board.noKids')} />;
         const columns = boardColumns(board.items, kids, now, rules.timezone);
-        const month = pocket.data ? monthWord(pocket.data.month) : null;
+        const month = pocket.data ? monthWord(pocket.data.month, words) : null;
         return (
           <>
             <Meta>{words('today.board.intro')}</Meta>
@@ -73,7 +73,7 @@ function BoardFor({ houseId, userId }: { houseId: string; userId: string }) {
                     column={column}
                     earned={
                       pocket.data && month
-                        ? words('today.board.earned', { money: pocketMoney(pocket.data.earned[column.userId] ?? 0, rules.currency), month })
+                        ? words('today.board.earned', { money: pocketMoney(pocket.data.earned[column.userId] ?? 0, rules.currency, words), month })
                         : undefined
                     }
                     now={now}
@@ -164,7 +164,7 @@ function BoardRow({
         metaLines={2}
         lid={plan.lid ? item.category : undefined}
         leading={leading}
-        trailing={item.payMinor ? pocketMoney(item.payMinor, currency) : undefined}
+        trailing={item.payMinor ? pocketMoney(item.payMinor, currency, words) : undefined}
         hazardEdge={plan.hazardEdge}
         onPress={() => sheet.open(item.id)}
         testID="board-john"

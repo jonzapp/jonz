@@ -44,7 +44,7 @@ describe("howItWorks", () => {
     };
     const stake = howItWorks("stake", { ...facts, rules: own }, words);
     for (const m of [1500, 50, 200, 250])
-      expect(stake).toContain(formatMoney(m, "GBP"));
+      expect(stake).toContain(formatMoney(m, "GBP", words));
     const late = howItWorks("late_and_missed", { ...facts, rules: own }, words);
     expect(late).toContain("12 hours");
     expect(late).toContain("2 hours");
@@ -64,10 +64,10 @@ describe("howItWorks", () => {
         rules: { ...rules, currency },
       }, words);
       expect(said).toContain(
-        formatMoney(PASS_PRICES[currency].yearly, currency),
+        formatMoney(PASS_PRICES[currency].yearly, currency, words),
       );
       expect(said).toContain(
-        formatMoney(PASS_PRICES[currency].monthly, currency),
+        formatMoney(PASS_PRICES[currency].monthly, currency, words),
       );
       expect(said).toMatch(/Where the money goes|servers/);
     }

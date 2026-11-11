@@ -82,7 +82,7 @@ export function swapAsk<I extends Swappable>(args: {
       theirs,
       withUserId: theirs.userId,
       title: words('week.steady.ratherDoIt', { name }),
-      meta: words('week.steady.swapFor', { name, john: theirs.name, points: pointsLabel(theirs.points) }),
+      meta: words('week.steady.swapFor', { name, john: theirs.name, points: pointsLabel(theirs.points, words) }),
       button: words('week.steady.ask', { name }),
       note: words('week.steady.askNote', { name, john: item.name }),
     };
@@ -124,7 +124,7 @@ export function swapOffersToYou<I extends Swappable>(args: {
         theirs,
         yours,
         title: words('week.steady.offerTitle', { name: nameOf(o.asked_by) }),
-        body: words('week.steady.offerBody', { theirs: theirs.name, yours: yours.name, points: pointsLabel(theirs.points) }),
+        body: words('week.steady.offerBody', { theirs: theirs.name, yours: yours.name, points: pointsLabel(theirs.points, words) }),
       },
     ];
   });

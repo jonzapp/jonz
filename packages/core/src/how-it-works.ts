@@ -50,7 +50,7 @@ const tourLines = (id: TourId, words: Words) =>
 
 /** One topic, in plain lines, with the house's numbers. */
 export function howItWorks(topic: HowTopic, { rules, family, awayMakeup }: HowFacts, words: Words): string {
-  const money = (minor: number) => formatMoney(minor, rules.currency);
+  const money = (minor: number) => formatMoney(minor, rules.currency, words);
   const makeup = words(`house.page.makeup.${makeupKey(awayMakeup)}`);
   const prices = PASS_PRICES[rules.currency];
   const staked = rules.stakeMinor > 0;

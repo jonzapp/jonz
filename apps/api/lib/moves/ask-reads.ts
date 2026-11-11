@@ -210,7 +210,7 @@ export function houseReads(caller: Caller, houseId: string, ctx: ReadsContext): 
 
     async rules() {
       const r = ctx.rules;
-      const money = (minor: number) => formatMoney(minor, r.currency);
+      const money = (minor: number) => formatMoney(minor, r.currency, wordsFor("en", houseKind(ctx.house.kind)));
       return [
         `House: ${ctx.house.name} (${ctx.house.kind === "family" ? "a family" : "housemates"}), time zone ${r.timezone}.`,
         `The week starts on ${DOW_LABEL[r.weekStarts]}.`,
@@ -223,7 +223,7 @@ export function houseReads(caller: Caller, houseId: string, ctx: ReadsContext): 
     async stake() {
       const r = ctx.rules;
       if (r.stakeMinor <= 0) return "This house has no Stake: nothing costs money.";
-      const money = (minor: number) => formatMoney(minor, r.currency);
+      const money = (minor: number) => formatMoney(minor, r.currency, wordsFor("en", houseKind(ctx.house.kind)));
       const month = monthOf(ctx.now, zone);
       // The whole ledger, a page at a time below the last id read, as the Stake page reads it: every balance is a sum of all of it.
       type Entry = LedgerRow & { assignments: { name: string; outcome: string | null; due_at: string } | null };

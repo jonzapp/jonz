@@ -17,16 +17,16 @@ describe("deleting an account", () => {
   });
 
   it("says the day it goes, and the day a Pass runs to", () => {
-    expect(deletionDay("2026-11-29T09:00:00Z", "Europe/London")).toBe("Sun 29 Nov");
-    expect(passDay("2027-10-12")).toBe("12 Oct 2027");
+    expect(deletionDay("2026-11-29T09:00:00Z", words, "Europe/London")).toBe("Sun 29 Nov");
+    expect(passDay("2027-10-12", words)).toBe("12 Oct 2027");
   });
 
   it("says the day it went in their own zone, and in UTC when the zone isn't one", () => {
     const late = new Date("2026-10-31T23:30:00Z");
-    expect(deletedOnDay(late, "Europe/London")).toBe("31 October 2026");
-    expect(deletedOnDay(late, "Pacific/Auckland")).toBe("1 November 2026");
-    expect(deletedOnDay(late, null)).toBe("31 October 2026");
-    expect(deletedOnDay(late, "Not/AZone")).toBe("31 October 2026");
+    expect(deletedOnDay(late, words, "Europe/London")).toBe("31 October 2026");
+    expect(deletedOnDay(late, words, "Pacific/Auckland")).toBe("1 November 2026");
+    expect(deletedOnDay(late, words, null)).toBe("31 October 2026");
+    expect(deletedOnDay(late, words, "Not/AZone")).toBe("31 October 2026");
   });
 
   it("reads the database's answers, and nothing it doesn't recognise", () => {

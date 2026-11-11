@@ -140,7 +140,7 @@ function Numbers({ overview, zone, onSpan }: { overview: Overview; zone: string;
     href: FIGURE_HREF[f.key] as never,
   }));
   const weeks = overview.weeks;
-  const range = overviewRange(overview, zone);
+  const range = overviewRange(overview, zone, words);
   return (
     <>
       <Section

@@ -24,7 +24,7 @@ it('lists the apps you let in, since when, and disconnects one', async () => {
   await open();
   const row = await screen.findByTestId('connected-app');
   expect(row).toHaveTextContent(/^Claude/);
-  expect(row).toHaveTextContent(words('people.connectedApps.since', { date: dayLabel(new Date(CLAUDE.granted_at), 'Europe/London') }), { exact: false });
+  expect(row).toHaveTextContent(words('people.connectedApps.since', { date: dayLabel(new Date(CLAUDE.granted_at), 'Europe/London', words) }), { exact: false });
   await fireEvent.press(within(row).getByRole('button', { name: words('people.connectedApps.disconnect') }));
   expect(screen.getByText(words('people.connectedApps.confirm', { app: 'Claude' }))).toBeOnTheScreen();
   await fireEvent.press(within(screen.getByTestId('disconnect-sheet')).getByRole('button', { name: words('people.connectedApps.disconnect') }));

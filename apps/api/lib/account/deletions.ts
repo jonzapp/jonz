@@ -1,4 +1,4 @@
-import { accountDeletedEmail, deletedOnDay, languageOf, type Language } from "@app/core";
+import { accountDeletedEmail, deletedOnDay, languageOf, wordsFor, type Language } from "@app/core";
 
 import { sendEmail } from "@/lib/email";
 import type { AdminClient } from "@/lib/supabase/admin";
@@ -198,7 +198,7 @@ async function lastLetter(db: AdminClient, userId: string): Promise<LastLetter> 
 async function sendLastLetter(send: SendEmail, last: LastLetter, deletionId: string, now: Date): Promise<boolean> {
   if (!last.address) return false;
   try {
-    const result = await send(last.address, accountDeletedEmail({ name: last.name, deletedOn: deletedOnDay(now, last.zone), language: last.language }), {
+    const result = await send(last.address, accountDeletedEmail({ name: last.name, deletedOn: deletedOnDay(now, wordsFor(last.language, "housemates"), last.zone), language: last.language }), {
       tag: "account-deleted",
       idempotencyKey: `account-deleted-${deletionId}`,
     });

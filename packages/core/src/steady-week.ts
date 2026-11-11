@@ -5,12 +5,10 @@
  * Classic's next two weeks, person by person. Nothing silently disappears:
  * a John that waits stays on Week until its turn. Pure.
  */
-import { tz } from "@date-fns/tz";
-import { format } from "date-fns";
 
 import type { JohnDef } from "./board";
 import type { Words } from "./words-for";
-import { firstName } from "./format";
+import { firstName, dateIn } from "./format";
 import { johnKind } from "./john-row";
 import type { SteadyAheadWeek } from "./steady-deal";
 import type { DealMode } from "./domain";
@@ -55,7 +53,7 @@ export interface AheadSection {
 /** A week ahead in a sentence: "next week" for the first, "week of 16 Nov" after. */
 function whenOf(startsOn: string, k: number, words: Words): string {
   if (k === 0) return words('week.steady.nextWeek');
-  return words('week.steady.weekOf', { date: format(new Date(`${startsOn}T12:00:00Z`), "d MMM", { in: tz("UTC") }) });
+  return words('week.steady.weekOf', { date: dateIn(new Date(`${startsOn}T12:00:00Z`), "dayMonth", "UTC", words) });
 }
 
 const capital = (s: string) => s[0].toUpperCase() + s.slice(1);

@@ -82,7 +82,7 @@ export function HistoryList({
       {items.length > 0 || more.has ? (
         <ListFoot
           more={more}
-          shown={items.length > 0 ? words('common.list.backTo', { day: dayLabel(items[items.length - 1].at, scene.zone) }) : null}
+          shown={items.length > 0 ? words('common.list.backTo', { day: dayLabel(items[items.length - 1].at, scene.zone, words) }) : null}
           testID="history-foot"
         />
       ) : null}
@@ -96,7 +96,7 @@ function HistoryRow({ item, scene }: { item: HistoryItem; scene: HistoryScene })
   const toast = useToastIfAny();
   const who = scene.nameOf(item.actor);
   const line = actionLine(item.kind, item.data, who, scene.nameOf(item.subject), scene.currency, words);
-  const meta = historyMeta(item, historyTime(item.at, scene.zone), scene.nameOf, words);
+  const meta = historyMeta(item, historyTime(item.at, scene.zone, words), scene.nameOf, words);
 
   return (
     <>

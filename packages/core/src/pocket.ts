@@ -1,9 +1,6 @@
-import { tz } from "@date-fns/tz";
-import { format } from "date-fns";
-
 import type { Currency } from "./domain";
 import { monthWord, shareOutDay } from "./house-page";
-import { firstName, monthLabel } from "./format";
+import { firstName, monthLabel, dateIn } from "./format";
 import { formatMoney } from "./money";
 import type { Words } from "./words-for";
 
@@ -59,12 +56,12 @@ export interface PocketView {
 }
 
 /** Money as a kid says it: "50p" or "50¢" under a pound or a dollar, otherwise as usual. */
-export function pocketMoney(minor: number, currency: Currency): string {
+export function pocketMoney(minor: number, currency: Currency, words: Words): string {
   if (minor > 0 && minor < 100) {
     if (currency === "GBP") return `${minor}p`;
     if (currency === "USD" || currency === "CAD") return `${minor}¢`;
   }
-  return formatMoney(minor, currency);
+  return formatMoney(minor, currency, words);
 }
 
 /** The month card, the Table and the history from what was earned and paid. */
@@ -116,9 +113,9 @@ export function pocketView(input: {
 /** The month card's top: "November so far", "£7.20 earned so far", "Pay day is 1 Dec". */
 export function pocketCard(view: Pick<PocketView, "month" | "soFar">, currency: Currency, words: Words) {
   return {
-    label: words('house.pocket.monthSoFar', { month: monthWord(view.month) }),
-    title: words('house.pocket.earnedSoFar', { money: pocketMoney(view.soFar, currency) }),
-    payDay: words('house.pocket.payDay', { day: shareOutDay(view.month) }),
+    label: words('house.pocket.monthSoFar', { month: monthWord(view.month, words) }),
+    title: words('house.pocket.earnedSoFar', { money: pocketMoney(view.soFar, currency, words) }),
+    payDay: words('house.pocket.payDay', { day: shareOutDay(view.month, words) }),
   };
 }
 
@@ -151,8 +148,8 @@ export function payRows(input: {
   const owed = parent ? input.owed : input.owed.filter((o) => o.userId === me);
   return owed.map((o, i) => {
     const name = firstName(members.find((m) => m.userId === o.userId)?.name ?? "");
-    const money = pocketMoney(o.amount, currency);
-    const month = monthWord(o.month);
+    const money = pocketMoney(o.amount, currency, words);
+    const month = monthWord(o.month, words);
     return {
       key: `${o.month} ${o.userId}`,
       userId: o.userId,
@@ -169,7 +166,7 @@ export function payRows(input: {
 /** How pocket money works, in plain words with the family's own cap: the Table's sheet in a family. */
 export function pocketRules(capMinor: number, currency: Currency, words: Words): { label: string; body: string }[] {
   return [
-    { label: words('house.pocket.earningLabel'), body: words('house.pocket.earningBody', { cap: formatMoney(capMinor, currency) }) },
+    { label: words('house.pocket.earningLabel'), body: words('house.pocket.earningBody', { cap: formatMoney(capMinor, currency, words) }) },
     { label: words('house.pocket.payDayLabel'), body: words('house.pocket.payDayBody') },
     { label: words('house.pocket.pointsLabel'), body: words('house.pocket.pointsBody') },
   ];
@@ -197,7 +194,7 @@ export function pocketHistory(input: {
   const nameOf = (userId: string | null) => firstName(members.find((m) => m.userId === userId)?.name ?? words('house.pocket.someone'));
   return view.history.map((m) => ({
     month: m.month,
-    label: monthLabel(m.month),
+    label: monthLabel(m.month, words),
     lines: m.kids.map((k) => {
       const owed = k.earned - k.paid;
       const last = k.pays.at(-1);
@@ -205,11 +202,11 @@ export function pocketHistory(input: {
         m.month >= view.month
           ? words('house.pocket.historySoFar')
           : owed > 0
-            ? words('house.pocket.historyOwed', { money: pocketMoney(owed, currency) })
+            ? words('house.pocket.historyOwed', { money: pocketMoney(owed, currency, words) })
             : last
-              ? words('house.pocket.historyPaid', { parent: nameOf(last.paidBy), day: format(new Date(last.at), "d MMM", { in: tz(zone) }) })
+              ? words('house.pocket.historyPaid', { parent: nameOf(last.paidBy), day: dateIn(new Date(last.at), "dayMonth", zone, words) })
               : words('house.pocket.historySoFar');
-      return { key: `${m.month} ${k.userId}`, userId: k.userId, name: nameOf(k.userId), value: pocketMoney(k.earned, currency), meta };
+      return { key: `${m.month} ${k.userId}`, userId: k.userId, name: nameOf(k.userId), value: pocketMoney(k.earned, currency, words), meta };
     }),
   }));
 }

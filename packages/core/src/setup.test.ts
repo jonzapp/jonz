@@ -331,8 +331,8 @@ describe("time away lines", () => {
   });
 
   it("gives a housemate's trip its dates and where", () => {
-    expect(awayMeta(trip)).toBe("28–31 Oct, Mum's 60th in Cork");
-    expect(awayMeta({ ...trip, endsOn: "2026-11-01", note: "" })).toBe("28 Oct–1 Nov");
+    expect(awayMeta(trip, words)).toBe("28–31 Oct, Mum's 60th in Cork");
+    expect(awayMeta({ ...trip, endsOn: "2026-11-01", note: "" }, words)).toBe("28 Oct–1 Nov");
   });
 });
 
@@ -424,16 +424,16 @@ describe("monthWeeks", () => {
 
 describe("monthsSpanned", () => {
   it("names one month, two in a year, or two across a new year", () => {
-    expect(monthsSpanned("2026-10-01", "2026-10-31")).toBe("October 2026");
-    expect(monthsSpanned("2026-10-21", "2026-11-24")).toBe("October–November 2026");
-    expect(monthsSpanned("2026-12-21", "2027-01-24")).toBe("December 2026–January 2027");
+    expect(monthsSpanned("2026-10-01", "2026-10-31", words)).toBe("October 2026");
+    expect(monthsSpanned("2026-10-21", "2026-11-24", words)).toBe("October–November 2026");
+    expect(monthsSpanned("2026-12-21", "2027-01-24", words)).toBe("December 2026–January 2027");
   });
 });
 
 describe("dayName", () => {
   it("says a day in full", () => {
-    expect(dayName("2026-10-26")).toBe("Monday 26 October");
-    expect(dayName("2027-01-01")).toBe("Friday 1 January");
+    expect(dayName("2026-10-26", words)).toBe("Monday 26 October");
+    expect(dayName("2027-01-01", words)).toBe("Friday 1 January");
   });
 });
 

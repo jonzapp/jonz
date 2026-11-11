@@ -54,7 +54,7 @@ export function PlanIt({
   const choices = planChoices(item.dueAt, now, zone, bestTime, words);
   if (!planned && !choices) return null;
 
-  const take = (at: PlanTime['at']) => plan(at, words('week.steady.plannedToast', { when: planLabel(at, now, zone) }));
+  const take = (at: PlanTime['at']) => plan(at, words('week.steady.plannedToast', { when: planLabel(at, now, zone, words) }));
   const picker = choices ? (
     <PlanPicker
       key={opened}
@@ -88,7 +88,7 @@ export function PlanIt({
         <View style={styles.line}>
           <BellIcon size={16} color={colors.mutedForeground} aria-hidden />
           <Meta style={styles.grow} testID={`${testID}-when`}>
-            {words('week.steady.planned', { when: planLabel(planned, now, zone) })}
+            {words('week.steady.planned', { when: planLabel(planned, now, zone, words) })}
           </Meta>
           {choices ? <TextButton label={words('week.steady.change')} align="end" onPress={change} testID={`${testID}-change`} /> : null}
         </View>

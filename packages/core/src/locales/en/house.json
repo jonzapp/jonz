@@ -81,6 +81,7 @@
   "house.johns.saving": "Saving…",
   "house.johns.remove": "Remove",
   "house.repeat.twiceAYear": "Twice a year",
+  "house.repeat.placeDay": "{place} {day}",
   "house.repeat.places.1": "first",
   "house.repeat.places.2": "second",
   "house.repeat.places.3": "third",

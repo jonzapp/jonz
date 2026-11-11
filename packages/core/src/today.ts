@@ -1,11 +1,12 @@
 import { tz } from "@date-fns/tz";
-import { differenceInCalendarDays, format } from "date-fns";
+import { differenceInCalendarDays } from "date-fns";
 
 import { currentOrNext, type AwayPeriod } from "./away";
 import { byDoneLatest, isOpen, TODAY_ORDER, type BoardItem, type DisputeView, type WeekBoard } from "./board";
 import { andNames } from "./crew";
 import type { Currency, HouseRules } from "./domain";
-import { dateRange, dueInLine, firstName, pointsLabel, relative, sinceLabel, STATUS_LABEL, STATUS_MARK } from "./format";
+import { dateIn, dateRange, dueInLine, firstName, pointsLabel, relative, sinceLabel, statusLabel, STATUS_MARK } from "./format";
+import { monthWord } from "./house-page";
 import { johnKind } from "./john-row";
 import { formatMoney } from "./money";
 import { canCover, coverOpensAt, type LiveStatus } from "./outcome";
@@ -103,10 +104,10 @@ const AWAY_NOTICE_DAYS = 14;
  */
 export function awayLine(periods: readonly AwayPeriod[], userId: string, today: string, words: Words): string | null {
   const until = awayTodayUntil(periods, userId, today);
-  if (until) return words('today.nextUp.away', { day: dateRange(until, until) });
+  if (until) return words('today.nextUp.away', { day: dateRange(until, until, words) });
   const next = currentOrNext(periods, userId, today);
   if (!next || next.startsOn > addDaysTo(today, AWAY_NOTICE_DAYS)) return null;
-  return words('today.nextUp.awaySoon', { range: dateRange(next.startsOn, next.endsOn) });
+  return words('today.nextUp.awaySoon', { range: dateRange(next.startsOn, next.endsOn, words) });
 }
 
 /** What takes the Next up card's place: the setup, a wait, time away, your next John, or nothing to do. */
@@ -168,7 +169,7 @@ export function nextUpState(input: {
 export function clearUntil(until: Date, zone: string, now: Date, words: Words): string {
   const inZone = tz(zone);
   const days = differenceInCalendarDays(until, now, { in: inZone });
-  return words('today.nextUp.clear', { day: format(until, days >= 6 || days % 7 === 0 ? "EEE d MMM" : "EEE", { in: inZone }) });
+  return words('today.nextUp.clear', { day: dateIn(until, days >= 6 || days % 7 === 0 ? "weekdayDayMonth" : "weekday", zone, words) });
 }
 
 /**
@@ -190,17 +191,17 @@ export function forfeitRoom(
 }
 
 /** The late and missed forfeits as they'd land on you, each capped at `room` when it's known; null when free. */
-function forfeits(rules: HouseRules, room: number | null): { late: string | null; missed: string | null } {
+function forfeits(rules: HouseRules, room: number | null, words: Words): { late: string | null; missed: string | null } {
   const money = (amount: number) => {
     const capped = Math.max(0, room === null ? amount : Math.min(amount, room));
-    return capped > 0 ? formatMoney(capped, rules.currency) : null;
+    return capped > 0 ? formatMoney(capped, rules.currency, words) : null;
   };
   return { late: money(rules.lateForfeitMinor), missed: money(rules.missedForfeitMinor) };
 }
 
 /** What an overdue John costs: "£1 now, £3 if missed", or less when a forfeit is zero. */
 function overdueCost(rules: HouseRules, room: number | null, words: Words): string | null {
-  const { late, missed } = forfeits(rules, room);
+  const { late, missed } = forfeits(rules, room, words);
   if (late && missed) return words('today.nextUp.nowOrMissed', { late, missed });
   if (late) return words('today.nextUp.now', { late });
   if (missed) return words('today.nextUp.ifMissed', { amount: missed });
@@ -229,14 +230,14 @@ export function nextUpMeta(item: BoardItem, rules: HouseRules, now: Date, words:
     return {
       kind,
       due: null,
-      overdue: { since: words('today.nextUp.overdueSince', { when: sinceLabel(item.dueAt, now, zone) }), cost: overdueCost(rules, room, words) },
+      overdue: { since: words('today.nextUp.overdueSince', { when: sinceLabel(item.dueAt, now, zone, words) }), cost: overdueCost(rules, room, words) },
     };
   }
-  const due = words('today.nextUp.due', { when: dueInLine(item.dueAt, now, zone) }) + (item.movedFrom ? `, ${words('today.nextUp.beforeYouGo')}` : "");
-  const { late, missed } = forfeits(rules, room);
+  const due = words('today.nextUp.due', { when: dueInLine(item.dueAt, now, zone, words) }) + (item.movedFrom ? `, ${words('today.nextUp.beforeYouGo')}` : "");
+  const { late, missed } = forfeits(rules, room, words);
   const cost = late ? words('today.nextUp.ifLate', { amount: late }) : missed ? words('today.nextUp.ifMissed', { amount: missed }) : null;
   // A kid's John in a family says what it earns instead (there's nothing to lose).
-  const earns = item.payMinor ? words('house.pocket.earns', { money: pocketMoney(item.payMinor, rules.currency) }) : null;
+  const earns = item.payMinor ? words('house.pocket.earns', { money: pocketMoney(item.payMinor, rules.currency, words) }) : null;
   return { kind, due: [due, cost ?? earns].filter(Boolean).join(", "), overdue: null };
 }
 
@@ -253,9 +254,8 @@ export function standingPlace(rank: number, joint: boolean, words: Words): strin
 }
 
 /** "October" from "2026-10". */
-function monthName(month: string): string {
-  const [y, m] = month.split("-").map(Number);
-  return format(new Date(Date.UTC(y, m - 1, 15)), "MMMM", { in: tz("UTC") });
+function monthName(month: string, words: Words): string {
+  return monthWord(month, words);
 }
 
 /**
@@ -280,14 +280,14 @@ export function standingLine(input: {
       ? words('today.nextUp.thisWeek', { place: standingPlace(me.rank, table.some((r) => r.userId !== userId && r.rank === me.rank), words) })
       : null;
   const net = stake?.projection.find((p) => p.userId === userId)?.net ?? null;
-  const month = stake ? monthName(stake.month) : null;
+  const month = stake ? monthName(stake.month, words) : null;
   const money =
     net === null || month === null
       ? null
       : net > 0
-        ? words('today.nextUp.up', { amount: formatMoney(net, currency), month })
+        ? words('today.nextUp.up', { amount: formatMoney(net, currency, words), month })
         : net < 0
-          ? words('today.nextUp.down', { amount: formatMoney(-net, currency), month })
+          ? words('today.nextUp.down', { amount: formatMoney(-net, currency, words), month })
           : words('today.nextUp.square', { month });
   const line = [place, money].filter(Boolean).join(", ");
   return line ? line[0].toUpperCase() + line.slice(1) : null;
@@ -313,7 +313,7 @@ export function setupChecklist(list: readonly unknown[] | null, memberCount: num
 
 /** "closes in 17h", or "closing now" once its time has come and the clock hasn't closed it yet. */
 export function voteCloses(closesAt: Date, now: Date, words: Words): string {
-  return closesAt.getTime() > now.getTime() ? words('today.nextUp.closes', { when: relative(closesAt, now) }) : words('today.nextUp.closingNow');
+  return closesAt.getTime() > now.getTime() ? words('today.nextUp.closes', { when: relative(closesAt, now, words) }) : words('today.nextUp.closingNow');
 }
 
 /** Needs you's title for a dispute: "Vote on Priya’s Clean the bathroom" ("Vote on Clean the bathroom" once she's left). */
@@ -339,7 +339,7 @@ export function okTitle(item: Pick<BoardItem, "userId" | "name"> & Partial<Pick<
 
 /** Its meta line: "Ticked 2h ago". */
 export function okMeta(item: Pick<BoardItem, "doneAt">, now: Date, words: Words): string {
-  return words('today.parentOk.rowMeta', { ago: relative(item.doneAt ?? now, now) });
+  return words('today.parentOk.rowMeta', { ago: relative(item.doneAt ?? now, now, words) });
 }
 
 /**
@@ -407,7 +407,7 @@ export function sheetKind(
       : item.everyWeeks
         ? words('john.sheet.every', { weeks: item.everyWeeks })
         : null;
-  const points = (item.together?.length ?? 1) > 1 ? words('john.crew.each', { points: pointsLabel(item.points) }) : pointsLabel(item.points);
+  const points = (item.together?.length ?? 1) > 1 ? words('john.crew.each', { points: pointsLabel(item.points, words) }) : pointsLabel(item.points, words);
   return [johnKind(item.category), item.groupName, points, often]
     .filter(Boolean)
     .join(", ");
@@ -415,7 +415,7 @@ export function sheetKind(
 
 /** What lateness costs, for the sheet: "late costs £1, missed £3". Null when both are free. */
 function lateCosts(rules: HouseRules, room: number | null, words: Words): string | null {
-  const { late, missed } = forfeits(rules, room);
+  const { late, missed } = forfeits(rules, room, words);
   if (late && missed) return words('john.sheet.costs', { late, missed });
   if (late) return words('john.sheet.lateCosts', { late });
   if (missed) return words('john.sheet.missedCosts', { missed });
@@ -443,7 +443,7 @@ export function sheetWhen(
 ): { sign: "overdue" | "disputed" | "late" | "missed" | "covered" | null; text: string } {
   const zone = rules.timezone;
   if (item.status === "covered" && !item.outcome) {
-    return { sign: "covered", text: words('john.sheet.coveredWasDue', { when: sinceLabel(item.dueAt, now, zone) }) };
+    return { sign: "covered", text: words('john.sheet.coveredWasDue', { when: sinceLabel(item.dueAt, now, zone, words) }) };
   }
   if (item.status === "covered") return { sign: "covered", text: settledLine(item, people, viewerId, rules, now, words) };
   if (SETTLED.has(item.status)) {
@@ -451,14 +451,14 @@ export function sheetWhen(
     return { sign, text: settledLine(item, people, viewerId, rules, now, words) };
   }
   if (item.status === "overdue") {
-    const text = [words('today.nextUp.overdueSince', { when: sinceLabel(item.dueAt, now, zone) }), overdueCost(rules, room, words)].filter(Boolean).join(", ");
+    const text = [words('today.nextUp.overdueSince', { when: sinceLabel(item.dueAt, now, zone, words) }), overdueCost(rules, room, words)].filter(Boolean).join(", ");
     return { sign: "overdue", text };
   }
   if (item.status === "disputed" && item.dispute) {
     const raiser = item.dispute.raisedBy === viewerId ? words('john.sheet.byYou') : called(people, item.dispute.raisedBy, words);
     return { sign: "disputed", text: words('john.sheet.disputedBy', { name: raiser }) };
   }
-  const due = words('john.sheet.due', { when: dueInLine(item.dueAt, now, zone) });
+  const due = words('john.sheet.due', { when: dueInLine(item.dueAt, now, zone, words) });
   if (!isOpen(item.status)) return { sign: null, text: due };
   return {
     sign: null,
@@ -470,10 +470,10 @@ export function sheetWhen(
 function tickedAt(at: Date, now: Date, zone: string, words: Words): string {
   const inZone = tz(zone);
   const days = differenceInCalendarDays(now, at, { in: inZone });
-  const time = format(at, "HH:mm", { in: inZone });
+  const time = dateIn(at, "time", zone, words);
   if (days <= 0) return words('john.sheet.at', { time });
   if (days === 1) return words('john.sheet.yesterdayAt', { time });
-  return words('john.sheet.onAt', { day: format(at, days < 7 ? "EEE" : "EEE d MMM", { in: inZone }), time });
+  return words('john.sheet.onAt', { day: dateIn(at, days < 7 ? "weekday" : "weekdayDayMonth", zone, words), time });
 }
 
 /**
@@ -494,7 +494,7 @@ export function tickedLine(item: BoardItem, people: readonly Person[], viewerId:
     : item.standsAt === null
       ? null
       : item.standsAt.getTime() > now.getTime()
-        ? words('john.sheet.standsIn', { when: relative(item.standsAt, now) })
+        ? words('john.sheet.standsIn', { when: relative(item.standsAt, now, words) })
         : words('john.sheet.standsSoon');
   return [ticked, stands].filter(Boolean).join(", ");
 }
@@ -549,21 +549,21 @@ export function coverOffer(item: BoardItem, people: readonly Person[], viewerId:
   if (holders.includes(viewerId)) return { kind: null, text: null };
   if (canCover(item, viewerId, now, rules.coverGraceHours)) {
     const each = rules.missedForfeitMinor * holders.length;
-    const money = each > 0 ? formatMoney(each, rules.currency) : null;
+    const money = each > 0 ? formatMoney(each, rules.currency, words) : null;
     if (holders.length > 1) {
       const owners = andNames(holders.map((id) => called(people, id, words)));
-      const values = { owners: upperFirst(owners), points: pointsLabel(item.points * holders.length), money };
+      const values = { owners: upperFirst(owners), points: pointsLabel(item.points * holders.length, words), money };
       return { kind: "cover", text: money ? words('john.crew.coverBodyMoney', values) : words('john.crew.coverBody', values) };
     }
-    const values = { owner: upperFirst(owner), points: pointsLabel(item.points), money };
+    const values = { owner: upperFirst(owner), points: pointsLabel(item.points, words), money };
     return { kind: "cover", text: money ? words('john.sheet.coverBodyMoney', values) : words('john.sheet.coverBody', values) };
   }
   if (item.userId !== viewerId && item.status === "overdue") {
     const opens = coverOpensAt(item.dueAt, rules.coverGraceHours, item.closesAt);
     if (item.heldUntil && item.heldUntil > now && item.heldUntil >= opens) {
-      return { kind: "soon", text: words('john.sheet.coverHeld', { owner: upperFirst(owner), when: dueInLine(item.heldUntil, now, rules.timezone) }) };
+      return { kind: "soon", text: words('john.sheet.coverHeld', { owner: upperFirst(owner), when: dueInLine(item.heldUntil, now, rules.timezone, words) }) };
     }
-    return { kind: "soon", text: words('john.sheet.coverSoon', { owner: upperFirst(owner), when: dueInLine(opens, now, rules.timezone) }) };
+    return { kind: "soon", text: words('john.sheet.coverSoon', { owner: upperFirst(owner), when: dueInLine(opens, now, rules.timezone, words) }) };
   }
   return { kind: null, text: null };
 }
@@ -622,9 +622,9 @@ export function canSwap(board: WeekBoard, me: { userId: string; swapTokens: numb
 export function swapMeta(item: BoardItem, people: readonly Person[], rules: HouseRules, now: Date, words: Words): string {
   const due =
     item.status === "overdue"
-      ? words('today.nextUp.wasDue', { when: sinceLabel(item.dueAt, now, rules.timezone) })
-      : dueInLine(item.dueAt, now, rules.timezone);
-  return [firstNameIn(people, item.userId, words), due, pointsLabel(item.points)].join(", ");
+      ? words('today.nextUp.wasDue', { when: sinceLabel(item.dueAt, now, rules.timezone, words) })
+      : dueInLine(item.dueAt, now, rules.timezone, words);
+  return [firstNameIn(people, item.userId, words), due, pointsLabel(item.points, words)].join(", ");
 }
 
 /**
@@ -640,7 +640,7 @@ export function swapChoice(
   chosen: boolean, words: Words,
 ): { meta: string; label: string } {
   const meta = swapMeta(item, people, rules, now, words);
-  const word = STATUS_MARK[item.status].tone === "none" ? null : STATUS_LABEL[item.status];
+  const word = STATUS_MARK[item.status].tone === "none" ? null : statusLabel(item.status, words);
   return {
     meta: chosen && word ? `${word}, ${meta}` : meta,
     label: [item.name, word, meta].filter(Boolean).join(", "),
@@ -665,7 +665,7 @@ export function undoWarning(
   if (item.coveredBy) return null;
   if (now.getTime() <= item.dueAt.getTime()) return null;
   if (item.doneAt && item.doneAt.getTime() > item.dueAt.getTime()) return null;
-  const late = forfeits(rules, room).late;
+  const late = forfeits(rules, room, words).late;
   return late ? words('john.sheet.undoLateCost', { late }) : words('john.sheet.undoLate');
 }
 

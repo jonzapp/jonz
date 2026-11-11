@@ -50,7 +50,7 @@ export async function rollCall(
     if (c.user_id === caller.userId) continue;
     await notify([c.user_id], {
       ...message,
-      title: (w) => w('john.crew.pushAdded', { who, john: place.name, points: shareLabel(Number(c.points)) }),
+      title: (w) => w('john.crew.pushAdded', { who, john: place.name, points: shareLabel(Number(c.points), w) }),
       body: (w) => w('john.crew.pushAddedBody'),
     });
   }

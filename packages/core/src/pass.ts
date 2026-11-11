@@ -1,9 +1,7 @@
-import { tz } from "@date-fns/tz";
-import { format } from "date-fns";
-
 import type { Currency } from "./domain";
 import { formatMoney } from "./money";
 import type { Words } from "./words-for";
+import { dateIn } from "./format";
 
 // The House Pass (docs/specs/house-pass.md): one subscription per house that
 // unlocks the extras for everyone in it. Running a fair house stays free.
@@ -65,7 +63,7 @@ export function passDaysLeft(pass: HousePass, now: Date): number | null {
 /** The Pass in a few words, for its row on House: "Founding house", "Free month, 12 days left", "Yearly, renews 12 Nov". */
 export function passLine(pass: HousePass, now: Date, zone: string, words: Words): string {
   if (pass.plan === "founding") return words('house.pass.founding');
-  const day = format(pass.until!, "d MMM", { in: tz(zone) });
+  const day = dateIn(pass.until!, "dayMonth", zone, words);
   const left = passDaysLeft(pass, now)!;
   if (left === 0) return pass.plan === "trial" ? words('house.pass.trialEnded') : words('house.pass.ended', { day });
   if (pass.plan === "trial") return left > PASS_TRIAL_DAYS ? words('house.pass.freeUntil', { day }) : words('house.pass.trialLeft', { days: left });
@@ -95,9 +93,9 @@ export interface PassOffer {
 export function passOffers(currency: Currency, words: Words): PassOffer[] {
   const p = PASS_PRICES[currency];
   return [
-    { plan: "yearly", label: words('house.pass.yearly'), price: words('house.pass.perYear', { price: formatMoney(p.yearly, currency) }), meta: words('house.pass.perMonthish', { price: formatMoney(Math.round(p.yearly / 12), currency) }) },
-    { plan: "monthly", label: words('house.pass.monthly'), price: words('house.pass.perMonth', { price: formatMoney(p.monthly, currency) }), meta: words('house.pass.monthlyMeta') },
-    { plan: "founding", label: words('house.pass.foundingPlan'), price: words('house.pass.once', { price: formatMoney(p.founding, currency) }), meta: words('house.pass.foundingMeta') },
+    { plan: "yearly", label: words('house.pass.yearly'), price: words('house.pass.perYear', { price: formatMoney(p.yearly, currency, words) }), meta: words('house.pass.perMonthish', { price: formatMoney(Math.round(p.yearly / 12), currency, words) }) },
+    { plan: "monthly", label: words('house.pass.monthly'), price: words('house.pass.perMonth', { price: formatMoney(p.monthly, currency, words) }), meta: words('house.pass.monthlyMeta') },
+    { plan: "founding", label: words('house.pass.foundingPlan'), price: words('house.pass.once', { price: formatMoney(p.founding, currency, words) }), meta: words('house.pass.foundingMeta') },
   ];
 }
 
@@ -151,7 +149,7 @@ export function passFirstCharge(pass: HousePass, now: Date): Date | null {
 /** The line under the plans while a first charge can wait for the free month to end: "Nothing to pay until your free month ends on 22 Nov." */
 export function passFirstChargeNote(pass: HousePass, now: Date, zone: string, words: Words): string | null {
   const first = passFirstCharge(pass, now);
-  return first ? words('house.pass.firstCharge', { day: format(first, "d MMM", { in: tz(zone) }) }) : null;
+  return first ? words('house.pass.firstCharge', { day: dateIn(first, "dayMonth", zone, words) }) : null;
 }
 
 /**

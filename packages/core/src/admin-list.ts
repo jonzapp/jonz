@@ -1,6 +1,10 @@
-import type { Words } from "./words-for";
 import { TZDate, tz } from "@date-fns/tz";
 import { format, startOfDay } from "date-fns";
+import { dateIn } from "./format";
+import { wordsFor, type Words } from "./words-for";
+
+/** The owner's lists are written in English (their searches read English words), so their times are too. */
+const ENGLISH = wordsFor("en", "housemates");
 
 /**
  * How every owner admin list is searched and filtered, the same on every
@@ -82,8 +86,8 @@ export function listTime(iso: string, now: Date, zone: string, seconds = true): 
   const at = new Date(iso);
   const inZone = { in: tz(zone) };
   const sameDay = format(at, "yyyy-MM-dd", inZone) === format(now, "yyyy-MM-dd", inZone);
-  if (sameDay) return format(at, seconds ? "HH:mm:ss" : "HH:mm", inZone);
-  return format(at, "EEE d MMM, HH:mm", inZone);
+  if (sameDay) return dateIn(at, seconds ? "timeSeconds" : "time", zone, ENGLISH);
+  return momentLabel(iso, zone);
 }
 
 type Params = Record<string, string | string[] | undefined>;
@@ -298,7 +302,8 @@ export function parseMoment(text: string, now: Date, zone: string): Date | null 
 
 /** A moment as a tag or a suggestion says it: "Thu 29 Oct, 23:30". */
 export function momentLabel(iso: string, zone: string): string {
-  return format(new Date(iso), "EEE d MMM, HH:mm", { in: tz(zone) });
+  const at = new Date(iso);
+  return ENGLISH("common.date.dayAtTime", { day: dateIn(at, "weekdayDayMonth", zone, ENGLISH), time: dateIn(at, "time", zone, ENGLISH) });
 }
 
 /**

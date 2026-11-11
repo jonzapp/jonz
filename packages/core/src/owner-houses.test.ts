@@ -210,8 +210,8 @@ describe("the Overview", () => {
 
 describe("overviewRange", () => {
   it("names this week by its days and this month by its name, as the Track record does", () => {
-    expect(overviewRange({ span: "week", from: "2026-11-02T00:00:00Z" }, "Europe/London")).toBe("2–8 Nov");
-    expect(overviewRange({ span: "week", from: "2026-10-26T00:00:00Z" }, "Europe/London")).toBe("26 Oct–1 Nov");
-    expect(overviewRange({ span: "month", from: "2026-11-01T00:00:00Z" }, "Europe/London")).toBe("November 2026");
+    expect(overviewRange({ span: "week", from: "2026-11-02T00:00:00Z" }, "Europe/London", words)).toBe("2–8 Nov");
+    expect(overviewRange({ span: "week", from: "2026-10-26T00:00:00Z" }, "Europe/London", words)).toBe("26 Oct–1 Nov");
+    expect(overviewRange({ span: "month", from: "2026-11-01T00:00:00Z" }, "Europe/London", words)).toBe("November 2026");
   });
 });

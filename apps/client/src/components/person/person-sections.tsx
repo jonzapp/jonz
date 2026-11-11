@@ -134,7 +134,7 @@ export function PersonSections({
         key: 'money',
         weight: 4,
         node: (
-          <Section label={words('house.page.soFar', { month: monthWord(month) })} testID="person-money">
+          <Section label={words('house.page.soFar', { month: monthWord(month, words) })} testID="person-money">
             {stake.data ? (
               <PersonLines
                 lines={moneyLines({

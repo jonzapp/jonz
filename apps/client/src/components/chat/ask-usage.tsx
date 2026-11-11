@@ -64,11 +64,11 @@ export function LowWarning({ usage, zone }: { usage: AskUsage; zone: string }) {
       <Pressable
         style={StyleSheet.flatten([styles.low, { backgroundColor: colors.card, borderColor: colors.border }])}
         role="link"
-        aria-label={words('common.join.then', { first: words('ask.usage.low', { left: wholePercent(usage.left), house: usage.house, backOn: askBackOn(usage.resetsAt, zone) }), second: words('ask.usage.lowLabel') })}
+        aria-label={words('common.join.then', { first: words('ask.usage.low', { left: wholePercent(usage.left), house: usage.house, backOn: askBackOn(usage.resetsAt, zone, words) }), second: words('ask.usage.lowLabel') })}
         testID="chat-low"
       >
         <GaugeIcon size={18} color={colors.foreground} aria-hidden />
-        <Body style={styles.flex}>{words('ask.usage.low', { left: wholePercent(usage.left), house: usage.house, backOn: askBackOn(usage.resetsAt, zone) })}</Body>
+        <Body style={styles.flex}>{words('ask.usage.low', { left: wholePercent(usage.left), house: usage.house, backOn: askBackOn(usage.resetsAt, zone, words) })}</Body>
         <ChevronRightIcon size={18} color={colors.mutedForeground} aria-hidden />
       </Pressable>
     </Link>
@@ -84,7 +84,7 @@ export function LowWarning({ usage, zone }: { usage: AskUsage; zone: string }) {
 export function OutNotice({ usage, zone }: { usage: AskUsage; zone: string }) {
   const words = useWords();
   const { colors } = useTheme();
-  const backOn = askBackOn(usage.resetsAt, zone);
+  const backOn = askBackOn(usage.resetsAt, zone, words);
   const house = usage.house;
   return (
     <ComposerBar testID="chat-out">
@@ -119,7 +119,7 @@ export function UsageDetail({
   const halves = usage.people >= 2;
   return (
     <View style={styles.page}>
-      <Section label={words('ask.usage.thisWeek')} right={words('ask.usage.resets', { backOn: askBackOn(usage.resetsAt, zone) })} testID="usage-week">
+      <Section label={words('ask.usage.thisWeek')} right={words('ask.usage.resets', { backOn: askBackOn(usage.resetsAt, zone, words) })} testID="usage-week">
         <Group>
           <GroupItem>
             <UsageBar label={words('ask.usage.house')} used={usage.houseUsed} note={words('ask.usage.houseNote', { people: usage.people })} testID="usage-house" />

@@ -44,7 +44,7 @@ export function BeingDeleted({ deletion }: { deletion: DeletionStatus }) {
     }
   }
 
-  const body = `${words('people.delete.goesOn', { day: deletionDay(deletion.deleteAfter) })} ${house ? words('people.delete.nothingGone') : words('people.delete.nothingGoneNoHouse')}`;
+  const body = `${words('people.delete.goesOn', { day: deletionDay(deletion.deleteAfter, words) })} ${house ? words('people.delete.nothingGone') : words('people.delete.nothingGoneNoHouse')}`;
   return (
     <Door home testID="being-deleted">
       <PageTitle page={words('common.title.deleteAccount')} />

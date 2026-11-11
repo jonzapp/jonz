@@ -141,7 +141,7 @@ describe("historyDays", () => {
 
 describe("historyTime", () => {
   it("is the time in the house's zone", () => {
-    expect(historyTime(new Date("2026-07-01T20:04:00Z"), ZONE)).toBe("21:04");
-    expect(historyTime(new Date("2026-12-01T20:04:00Z"), ZONE)).toBe("20:04");
+    expect(historyTime(new Date("2026-07-01T20:04:00Z"), ZONE, words)).toBe("21:04");
+    expect(historyTime(new Date("2026-12-01T20:04:00Z"), ZONE, words)).toBe("20:04");
   });
 });

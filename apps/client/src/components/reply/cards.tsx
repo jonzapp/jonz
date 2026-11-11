@@ -80,7 +80,7 @@ export function JohnsCard({ johns, groupOf, href }: { johns: JohnDef[]; groupOf:
               title={j.name}
               titleLines={2}
               lid={j.category}
-              meta={[scheduleLine(j, words, groupOf(j.groupId)), pointsLabel(j.points)].join(', ')}
+              meta={[scheduleLine(j, words, groupOf(j.groupId)), pointsLabel(j.points, words)].join(', ')}
               metaLines={2}
               href={href}
               chevron={href !== undefined}

@@ -441,9 +441,9 @@ describe("askUsage", () => {
 
 describe("askBackOn", () => {
   it("says the day and time the house's week starts, in the house's time", () => {
-    expect(askBackOn("2026-11-09T00:00:00.000Z", "Europe/London")).toBe("Monday at 00:00");
-    expect(askBackOn("2026-11-09T05:00:00.000Z", "America/New_York")).toBe("Monday at 00:00");
-    expect(askBackOn("2026-11-08T23:00:00.000Z", "Europe/Paris")).toBe("Monday at 00:00");
+    expect(askBackOn("2026-11-09T00:00:00.000Z", "Europe/London", words)).toBe("Monday at 00:00");
+    expect(askBackOn("2026-11-09T05:00:00.000Z", "America/New_York", words)).toBe("Monday at 00:00");
+    expect(askBackOn("2026-11-08T23:00:00.000Z", "Europe/Paris", words)).toBe("Monday at 00:00");
   });
 });
 

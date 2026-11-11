@@ -27,7 +27,7 @@ export function WaitingSection({ rows }: { rows: readonly WaitingRow[] }) {
             leading={<RowIcon icon={HourglassIcon} />}
             title={r.name}
             meta={r.meta}
-            trailing={pointsLabel(r.points)}
+            trailing={pointsLabel(r.points, words)}
             testID="waiting-john"
           />
         ))}
@@ -65,7 +65,7 @@ export function TurnsNextSection({
           }
           title={r.name}
           meta={r.meta}
-          trailing={pointsLabel(r.points)}
+          trailing={pointsLabel(r.points, words)}
           testID="turn-next"
         />
       ))}
@@ -83,6 +83,7 @@ export function AheadWeeks({
   userId: string;
   nameOf: (userId: string) => string | null;
 }) {
+  const words = useWords();
   return (
     <>
       {sections.map((s) => (
@@ -101,7 +102,7 @@ export function AheadWeeks({
               title={p.who}
               meta={p.johns.join(", ")}
               metaLines={2}
-              trailing={pointsLabel(p.points)}
+              trailing={pointsLabel(p.points, words)}
               testID="ahead-person"
             />
           ))}

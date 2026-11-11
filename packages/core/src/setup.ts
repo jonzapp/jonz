@@ -2,10 +2,10 @@
 import { isoDayOf, shiftMonth, type AwayPeriod } from "./away";
 import type { BoardItem, JohnDef } from "./board";
 import { MAKEUP_LABEL } from "./deal";
-import { CATEGORIES, CATEGORY_LABEL, DOW_LABEL, type Category, type Currency, type DealMode, type HouseKind, type HouseRules, type IsoDow, type SettleIn } from "./domain";
+import { CATEGORIES, CATEGORY_LABEL, type Category, type Currency, type DealMode, type HouseKind, type HouseRules, type IsoDow, type SettleIn } from "./domain";
 import { familyHides } from "./family";
 import { humanError } from "./errors";
-import { dateRange, firstName, joinRange, monthLabel, pointsLabel } from "./format";
+import { dateRange, firstName, joinRange, localDay, monthLabel, pointsLabel, weekdayName } from "./format";
 import { formatMoney, formatSigned, moneyInput, parseMoney } from "./money";
 import { HouseSettings } from "./schemas";
 import type { Words } from "./words-for";
@@ -43,7 +43,7 @@ function cadence(john: Pick<JohnDef, "everyWeeks"> & Partial<Pick<JohnDef, "ever
 
 /** When it's due: "Sun 21:00", or "first Sat 21:00" for a John that repeats in months. */
 function dueLine(john: Pick<JohnDef, "dueDow" | "dueTime"> & Partial<Pick<JohnDef, "weekOfMonth">>, words: Words): string {
-  return dueWords({ weekOfMonth: john.weekOfMonth ?? null }, john.dueTime, DOW_LABEL[john.dueDow].slice(0, 3), words);
+  return dueWords({ weekOfMonth: john.weekOfMonth ?? null }, john.dueTime, weekdayName(john.dueDow, words, "short"), words);
 }
 
 /** A John's meta line on the list: "Every week, Sun 21:00, photo", then the group that shares it, if one does. */
@@ -90,7 +90,7 @@ export function johnFacts(john: JohnDef, groupName: string | null | undefined, w
   return [
     { label: words('house.setup.kindLabel'), value: CATEGORY_LABEL[john.category] },
     { label: words('house.johns.sharedBy'), value: groupName || words('house.johns.everyone') },
-    { label: words('house.johns.effort'), value: pointsLabel(john.points) },
+    { label: words('house.johns.effort'), value: pointsLabel(john.points, words) },
     ...(john.crew === 1 ? [] : [{ label: words('john.crew.doneBy'), value: words('john.crew.choice', { crew: john.crew }) }]),
     ...(john.when === "on_call"
       ? [
@@ -104,8 +104,8 @@ export function johnFacts(john: JohnDef, groupName: string | null | undefined, w
             label: words('house.johns.due'),
             value:
               john.weekOfMonth === null
-                ? `${DOW_LABEL[john.dueDow]} ${john.dueTime}`
-                : `${capitalise(placeWord(john.weekOfMonth, words))} ${DOW_LABEL[john.dueDow]} ${john.dueTime}`,
+                ? words("common.date.weekdayTime", { day: weekdayName(john.dueDow, words), time: john.dueTime })
+                : words("common.date.weekdayTime", { day: capitalise(words("house.repeat.placeDay", { place: placeWord(john.weekOfMonth, words), day: weekdayName(john.dueDow, words) })), time: john.dueTime }),
           },
         ]),
     // Only said when it does: the list's rows leave it to here.
@@ -122,7 +122,7 @@ export function zonePlace(timezone: string): string {
 
 /** A forfeit as the rules show it: "−£1", or nothing at all. */
 function forfeit(minor: number, currency: Currency, words: Words): string {
-  return minor === 0 ? words('house.setup.nothing') : formatSigned(-minor, currency);
+  return minor === 0 ? words('house.setup.nothing') : formatSigned(-minor, currency, words);
 }
 
 /** The house rules in plain words, one line each, as everyone reads them. */
@@ -140,7 +140,7 @@ export function rulesRows(
     const rows = rulesRows(rules, awayMakeup, words)
       .filter((row) => row.label !== words('house.setup.stake') && row.label !== words('house.setup.late') && row.label !== words('house.setup.missed'))
       .map((row) => (row.label === words('house.setup.disputes') ? { label: words('today.parentOk.rulesLabel'), value: words('today.parentOk.rulesValue') } : row));
-    rows.splice(2, 0, { label: words('house.pocket.rulesLabel'), value: words('house.pocket.rulesValue', { cap: formatMoney(pocketCapMinor, rules.currency) }) });
+    rows.splice(2, 0, { label: words('house.pocket.rulesLabel'), value: words('house.pocket.rulesValue', { cap: formatMoney(pocketCapMinor, rules.currency, words) }) });
     return rows;
   }
   const rows: LabelValue[] = [
@@ -148,7 +148,7 @@ export function rulesRows(
     { label: words('week.steady.budget'), value: words('week.steady.budgetEach', { budget: rules.dealBudget }) },
     {
       label: words('house.setup.stake'),
-      value: rules.stakeMinor === 0 ? words('house.setup.noStake') : words('house.setup.perMonth', { amount: formatMoney(rules.stakeMinor, rules.currency) }),
+      value: rules.stakeMinor === 0 ? words('house.setup.noStake') : words('house.setup.perMonth', { amount: formatMoney(rules.stakeMinor, rules.currency, words) }),
     },
     { label: words('house.setup.late'), value: forfeit(rules.lateForfeitMinor, rules.currency, words) },
     { label: words('house.setup.missed'), value: forfeit(rules.missedForfeitMinor, rules.currency, words) },
@@ -156,7 +156,7 @@ export function rulesRows(
     { label: words('house.setup.lateWindow'), value: words('house.setup.lateFor', { hours: rules.lateHours }) },
     { label: words('house.setup.cover'), value: words('house.setup.coverWindow', { hours: rules.coverGraceHours }) },
     { label: words('house.setup.away'), value: (awayMakeup === 100 || awayMakeup === 50 || awayMakeup === 0 ? words(`house.setup.makeup.${makeupKey(awayMakeup)}`) : null) ?? MAKEUP_LABEL[awayMakeup] ?? words('house.setup.makeupPercent', { percent: awayMakeup }) },
-    { label: words('house.setup.weekStarts'), value: words('house.setup.weekStartsAt', { day: DOW_LABEL[rules.weekStarts], place: zonePlace(rules.timezone) }) },
+    { label: words('house.setup.weekStarts'), value: words('house.setup.weekStartsAt', { day: weekdayName(rules.weekStarts, words), place: zonePlace(rules.timezone) }) },
   ];
   // After the money it's about, when it's known.
   if (settleIn) rows.splice(5, 0, { label: words('house.setup.settleIn'), value: words(`house.setup.settleInValue.${settleIn}`) });
@@ -238,8 +238,8 @@ export function tripMeta(period: AwayPeriod, today: string, words: Words): strin
 }
 
 /** A housemate's time away as a meta line: "28–31 Oct, Mum's 60th in Cork". */
-export function awayMeta(period: AwayPeriod): string {
-  return [dateRange(period.startsOn, period.endsOn), period.note || null].filter(Boolean).join(", ");
+export function awayMeta(period: AwayPeriod, words: Words): string {
+  return [dateRange(period.startsOn, period.endsOn, words), period.note || null].filter(Boolean).join(", ");
 }
 
 /**
@@ -271,17 +271,15 @@ export function monthWeeks(month: string, weekStarts: IsoDow): string[][] {
 }
 
 /** What a run of dates spans, by month: "October 2026", "October–November 2026", "December 2026–January 2027". */
-export function monthsSpanned(first: string, last: string): string {
-  const [a, b] = [monthLabel(first.slice(0, 7)), monthLabel(last.slice(0, 7))];
+export function monthsSpanned(first: string, last: string, words: Words): string {
+  const [a, b] = [monthLabel(first.slice(0, 7), words), monthLabel(last.slice(0, 7), words)];
   if (a === b) return a;
-  const [aMonth, aYear] = a.split(" ");
-  const [, bYear] = b.split(" ");
-  return aYear === bYear ? joinRange(aMonth, b) : joinRange(a, b);
+  return first.slice(0, 4) === last.slice(0, 4) ? joinRange(localDay(first, "month", words), b, words) : joinRange(a, b, words);
 }
 
 /** A local date said in full, for a screen reader: "Monday 26 October". */
-export function dayName(date: string): string {
-  return `${DOW_LABEL[isoDayOf(date)]} ${Number(date.slice(8))} ${monthLabel(date.slice(0, 7)).split(" ")[0]}`;
+export function dayName(date: string, words: Words): string {
+  return localDay(date, "weekdayLongDayMonthLong", words);
 }
 
 /** The house rules as the form holds them while an admin changes them: amounts as typed. */

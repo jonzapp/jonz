@@ -33,12 +33,12 @@ export function KindSwitch({ houseId, view }: { houseId: string; view: HouseView
   const shown: HouseKind = waiting?.kind ?? house.kind;
   const meta = (kind: HouseKind) =>
     waiting && waiting.kind === kind
-      ? words('house.kindSwitch.waits', { on: switchWords(waiting.on).day, month: switchWords(waiting.on).month })
+      ? words('house.kindSwitch.waits', { on: switchWords(waiting.on, words).day, month: switchWords(waiting.on, words).month })
       : words(`house.family.kindBody.${kind}` as const);
 
   function done(kind: HouseKind, on: string | null) {
     setAsking(null);
-    if (on) toast.show(words('house.kindSwitch.later', { on: switchWords(on).day }));
+    if (on) toast.show(words('house.kindSwitch.later', { on: switchWords(on, words).day }));
     else toast.show(words(`house.kindSwitch.done.${kind}` as const));
   }
 
@@ -54,8 +54,8 @@ export function KindSwitch({ houseId, view }: { houseId: string; view: HouseView
     setAsking(kind);
   }
 
-  const cap = formatMoney(house.pocketCapMinor || 1000, rules.currency);
-  const later = familyWaits(rules) ? switchWords(nextFirst(now, rules.timezone)) : null;
+  const cap = formatMoney(house.pocketCapMinor || 1000, rules.currency, words);
+  const later = familyWaits(rules) ? switchWords(nextFirst(now, rules.timezone), words) : null;
   const sheet =
     asking === 'family'
       ? {

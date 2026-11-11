@@ -1,6 +1,7 @@
 import { dateRange } from "./format";
 import { monthWord } from "./house-page";
 import { monthOf } from "./week";
+import type { Words } from "./words-for";
 
 /**
  * Rules' Who lives here (docs/specs/family-houses.md, "Switching a house"):
@@ -20,8 +21,8 @@ export function nextFirst(now: Date, zone: string): string {
 }
 
 /** A switch's day in words, and the month settled up before it: "Tue 1 Dec", "November". */
-export function switchWords(on: string): { day: string; month: string } {
+export function switchWords(on: string, words: Words): { day: string; month: string } {
   const [y, m] = on.split("-").map(Number);
   const before = m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, "0")}`;
-  return { day: dateRange(on, on), month: monthWord(before) };
+  return { day: dateRange(on, on, words), month: monthWord(before, words) };
 }

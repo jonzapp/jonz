@@ -79,7 +79,7 @@ export function TableSection({
         column,
       }, words).map((line) =>
         family
-          ? { ...line, money: earned ? pocketMoney(earned[line.userId] ?? 0, snapshot.rules.currency) : null, losing: false }
+          ? { ...line, money: earned ? pocketMoney(earned[line.userId] ?? 0, snapshot.rules.currency, words) : null, losing: false }
           : line,
       )
     : null;
@@ -93,7 +93,7 @@ export function TableSection({
             <PickMenu
               options={[
                 { value: 'week', label: words('house.page.week') },
-                { value: 'month', label: monthWord(month) },
+                { value: 'month', label: monthWord(month, words) },
               ]}
               value={span}
               onChange={setSpan}

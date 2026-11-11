@@ -70,7 +70,7 @@ function StakeFor({ houseId, userId }: { houseId: string; userId: string }) {
           <Row
             key={month}
             leading={<RowIcon icon={RotateCcwIcon} />}
-            title={words('house.resets.letOff', { month: monthLabel(month).split(' ')[0] })}
+            title={words('house.resets.letOff', { month: monthLabel(month, words).split(' ')[0] })}
             meta={words('house.resets.letOffMeta')}
             onPress={() => setLetOff(month)}
             testID={`let-off-${month}`}
@@ -84,7 +84,7 @@ function StakeFor({ houseId, userId }: { houseId: string; userId: string }) {
       bar={
         <TitleBar
           title={words('house.stake.title')}
-          sub={rules ? words('house.stake.sub', { stake: formatMoney(rules.stakeMinor, rules.currency) }) : undefined}
+          sub={rules ? words('house.stake.sub', { stake: formatMoney(rules.stakeMinor, rules.currency, words) }) : undefined}
           back="/house"
           backLabel={words('common.section.house')}
         />
