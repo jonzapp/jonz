@@ -18,7 +18,11 @@ language, until a French speaker has read it through there.
   woman, so nothing it says to you agrees with you: "Tu n’es pas là", not
   "Tu es absent"; "Tu as une invitation", not "Tu es invité".
 - **Short and plain.** The same as English: a sentence says one thing, and
-  a button says what it does ("Marquer fait", "Envoyer l’invitation").
+  a button says what it does ("Marquer comme fait", "Envoyer l’invitation").
+- **What other apps say.** A common button or label reads the way well-known
+  French apps already say it (Nextcloud, Signal, Element, Mastodon, Firefox,
+  Grocy): "Afficher plus", "Tout afficher", "Réessayer", "Quitter",
+  "Une erreur est survenue", "Échéance", "Actualités".
 - **French typography.**
   - An apostrophe is ’, never '. A plain ' starts quoted text in a line and
     would swallow the words after it (a test checks).
@@ -43,7 +47,7 @@ language, until a French speaker has read it through there.
 | deal (the week's Johns) | distribuer, la distribution | Re-deal: redistribuer. |
 | the Stake | la Mise | "ta mise", "pas de mise". |
 | forfeit | pénalité | |
-| Mark done | Marquer fait | |
+| Mark done | Marquer comme fait | As Nextcloud Tasks says it. |
 | tick (noun and verb) | coche, cocher | Untick: décocher. |
 | cover (someone’s John) | remplacer, faire à sa place | |
 | dispute | contester, contestation | |
