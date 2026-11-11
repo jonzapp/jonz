@@ -48,6 +48,9 @@ export const BarEdgeContext = createContext<ReactNode>(null);
  * that doesn't leave the page (Your chats back to the chat), in place of `back`.
  * `end` is a panel's Close, the last thing at the edge, after Help: what puts
  * the panel away is always the outermost button.
+ * `docked` is a panel's bar beside the page: it stays the page bar's 52 so
+ * the two read as one strip across the window, so its back (`onBack`) is a
+ * chevron on the leading edge rather than a line of its own above the Title.
  */
 export function TitleBar({
   title,
@@ -59,6 +62,7 @@ export function TitleBar({
   lead,
   onBack,
   end,
+  docked = false,
 }: {
   title: string;
   /** A pushed page's line under the Title ("Sam, admin"). */
@@ -76,6 +80,8 @@ export function TitleBar({
   onBack?: () => void;
   /** A panel's Close: at the very edge, after Help. */
   end?: ReactNode;
+  /** A panel beside the page: always 52 tall, its back a chevron before the Title. */
+  docked?: boolean;
 }) {
   const words = useWords();
   backLabel ??= words('common.shell.back');
@@ -87,19 +93,31 @@ export function TitleBar({
   const way = useHouseWorkspace().listed && back === '/house' ? undefined : back;
   const tours = useTour();
   const help = tours != null && back == null && onBack == null;
-  const pushed = way != null || onBack != null;
+  // A docked panel's back is a chevron on the leading edge, in the bar's one line.
+  const inlineBack = docked && onBack != null;
+  const pushed = way != null || (onBack != null && !inlineBack);
   const edge = useContext(BarEdgeContext);
+  const leading = inlineBack ? (
+    <IconButton
+      icon={ChevronLeftIcon}
+      label={backLabel === words('common.shell.back') ? backLabel : words('common.shell.backTo', { place: backLabel })}
+      onPress={onBack}
+      testID="back"
+    />
+  ) : (
+    lead
+  );
   return (
     <View
       testID="title-bar"
       style={[styles.bar, { paddingTop: insets.top, backgroundColor: colors.background, borderBottomColor: colors.border }]}
     >
       <View style={[styles.inner, { maxWidth }]}>
-        {way != null ? <BackLink to={way} label={backLabel} /> : onBack ? <BackLink onPress={onBack} label={backLabel} /> : null}
+        {way != null ? <BackLink to={way} label={backLabel} /> : onBack && !inlineBack ? <BackLink onPress={onBack} label={backLabel} /> : null}
         <View style={[styles.line, sub ? styles.withSub : null, pushed && styles.pushed]}>
-          {lead != null ? (
+          {leading != null ? (
             <View testID="bar-lead" style={[styles.tools, styles.lead]}>
-              {lead}
+              {leading}
             </View>
           ) : null}
           <View style={styles.words}>

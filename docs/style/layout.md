@@ -87,6 +87,12 @@ still look right stretched (content capped, nothing pinned to far edges).
   button (`TitleBar`'s `end`). Icons only: never words beside icons in a
   bar. Your chats has "‹ Ask Jonz" above its title, back
   to the chat. (Ask Jonz bar A, 7 Nov)
+- A panel docked beside the page (Ask Jonz, the owner's Ask Jonz) keeps
+  its bar the page bar's 52 tall, so the two read as one strip across the
+  window: Your chats' back is a ‹ on the leading edge in place of the clock
+  (`TitleBar`'s `docked`), and the owner's Owner label is a chip on the
+  panel's first line, not a second line in the bar. On a phone the bar is
+  the page's own and keeps "‹ Ask Jonz" above the title.
 
 ## Laptop pages
 
