@@ -3,11 +3,11 @@ import { StyleSheet, View } from 'react-native';
 
 import { Button, type ButtonIcon } from '@/components/button';
 import { ButtonRow } from '@/components/button-row';
-import { Hairline } from '@/components/group';
+import { Group, Hairline } from '@/components/group';
 import { Section } from '@/components/section';
 import { Meta, RowTitle } from '@/components/text';
 import { useWords } from '@/hooks/use-words';
-import { BUTTON_MIN, GROUP_RADIUS, INSET, ROW_GAP, SPACE, useTheme } from '@/theme';
+import { BUTTON_MIN, INSET, ROW_GAP, SPACE, useTheme } from '@/theme';
 
 /**
  * The Danger zone, GitHub's way: the moves that can't be taken back, together
@@ -21,12 +21,8 @@ export function DangerZone({ children, testID }: { children: ReactNode; testID?:
   const words = useWords();
   const { colors } = useTheme();
   return (
-    <Section label={words('house.danger.label')} testID={testID}>
-      <View style={[styles.edge, { borderColor: colors.hazard }]} pointerEvents="box-none">
-        <View style={styles.clip} pointerEvents="box-none">
-          {children}
-        </View>
-      </View>
+    <Section label={words('house.danger.label')} testID={testID} bare>
+      <Group style={[styles.edge, { borderColor: colors.hazard }]}>{children}</Group>
     </Section>
   );
 }
@@ -66,10 +62,9 @@ export function DangerRow({
 }
 
 const styles = StyleSheet.create({
-  // Drawn over the group's own edge, so its rows keep their insets and hairlines.
-  edge: { borderWidth: 1, borderRadius: GROUP_RADIUS, overflow: 'hidden' },
-  // As the group does: the first row's hairline rises under the edge, which clips it.
-  clip: { marginTop: -StyleSheet.hairlineWidth },
+  // The group's own edge, so the hazard line runs whole round its corners and the
+  // group still hides the first row's hairline under it.
+  edge: { borderWidth: 1 },
   // Words and button share the line when there's room; the button wraps under them when there isn't.
   row: {
     flexDirection: 'row',
