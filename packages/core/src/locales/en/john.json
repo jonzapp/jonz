@@ -54,6 +54,7 @@
   "john.sheet.tally": "{done} done, {notDone} not done, {closes}",
   "john.sheet.yourTick": "The house is voting on your tick. A photo of it done helps them decide.",
   "john.sheet.onlyVoter": "Only {name} can vote, so a photo settles it. Add one before the vote {closes}. With no photo the tick is struck, and you get 12 more hours to do it.",
+  "john.sheet.votingOnYours": "The house is voting on your tick.",
   "john.sheet.answered": "Your photo is on the John for the house to see.",
   "john.sheet.coverOfYours": "{name} covered this. The rest of the house checks it, not you.",
   "john.sheet.answerPhoto": "Add a photo of it done",

@@ -212,6 +212,19 @@ describe('Next up', () => {
     expect(pickPhoto).toHaveBeenLastCalledWith('camera');
   });
 
+  it('without the House Pass, ticks a photo John plainly and offers no photo', async () => {
+    const ended = { plan: 'trial' as const, until: new Date(0), buyerId: null };
+    const base = snapshot({ assignments: [assignment({ needs_photo: true })] });
+    read.mockResolvedValue({ ...base, house: { ...base.house, pass: ended } });
+    await open();
+    expect(screen.getByTestId('mark-done')).toHaveTextContent(words('john.row.markDone'));
+    expect(screen.queryByTestId('done-with-photo')).toBeNull();
+    expect(screen.queryByTestId('choose-photo')).toBeNull();
+    await fireEvent.press(screen.getByTestId('mark-done'));
+    expect(markDone).toHaveBeenCalledWith('a1');
+    expect(pickPhoto).not.toHaveBeenCalled();
+  });
+
   it('says a refusal on the card', async () => {
     (markDone as jest.Mock).mockRejectedValue(new Error('That week has closed.'));
     const card = await open();

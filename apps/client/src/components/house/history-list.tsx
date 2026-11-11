@@ -1,21 +1,18 @@
 import { actionLine, historyDayLabel, historyDays, historyFor, historyMeta, historyTime, dayLabel, type Currency, type HouseKind, type HistoryItem } from '@app/core';
-import { HistoryIcon } from 'lucide-react-native';
-import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { HistoryIcon, LockIcon } from 'lucide-react-native';
 
 import { undoAction } from '@/api/history';
 import { Alert } from '@/components/alert';
 import { Avatar } from '@/components/avatar';
 import { EmptyState } from '@/components/empty-state';
-import { GroupItem } from '@/components/group';
+import { Group, GroupItem } from '@/components/group';
 import { ListFoot, type ListMore } from '@/components/list-foot';
-import { Row } from '@/components/row';
+import { Row, RowIcon } from '@/components/row';
 import { Section } from '@/components/section';
-import { Segmented } from '@/components/segmented';
+import { PickMenu } from '@/components/pick-menu';
 import { TextButton } from '@/components/text-button';
 import { useToastIfAny } from '@/components/toast';
 import { useMove } from '@/hooks/use-move';
-import { INSET } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
 export interface HistoryScene {
@@ -30,44 +27,37 @@ export interface HistoryScene {
   nameOf: (userId: string | null) => string;
   /** Their own name, for an avatar's initials. */
   fullName: (userId: string | null) => string;
+  /** Without the House Pass: only the last four weeks read, and the end of the list says older moves need it. */
+  locked?: boolean;
 }
 
 /**
- * History's body: Everyone or Mine, then the moves a day at a time, newest
- * first, each in words with its time, and Undo on the ones the database
+ * History's body: the moves a day at a time, newest first (everyone's, or
+ * with `mine` only yours: the screen's HistoryWhose picks), each in words with its time, and Undo on the ones the database
  * says still reach (yours while they're open; anyone's, to an admin, until
  * the month is shared out). A refusal stays under the row it came from.
  * Older moves load as you scroll (the screen's `nearEnd`), under the foot
- * every long list has.
+ * every long list has. Without the House Pass the list stops at four weeks
+ * back, and its last row goes to the Pass page.
  */
 export function HistoryList({
   items,
   scene,
   more,
+  mine = false,
 }: {
   items: readonly HistoryItem[];
   scene: HistoryScene;
   more: ListMore;
+  /** Only your own moves. */
+  mine?: boolean;
 }) {
   const words = useWords();
-  const [mine, setMine] = useState(false);
   const shown = historyFor(items, scene.me, mine);
   const days = historyDays(shown, scene.zone);
 
   return (
     <>
-      <View style={styles.pick}>
-        <Segmented
-          options={[
-            { value: 'everyone', label: words('wall.history.everyone') },
-            { value: 'mine', label: words('wall.history.mine') },
-          ]}
-          value={mine ? 'mine' : 'everyone'}
-          onChange={(v) => setMine(v === 'mine')}
-          label={words('wall.history.title')}
-          testID="history-whose"
-        />
-      </View>
       {days.length === 0 ? (
         <EmptyState icon={HistoryIcon} title={words('wall.history.title')} body={words('wall.history.empty')} testID="history-empty" />
       ) : (
@@ -86,7 +76,40 @@ export function HistoryList({
           testID="history-foot"
         />
       ) : null}
+      {scene.locked && !more.has ? (
+        <Group testID="history-locked">
+          <Row
+            leading={<RowIcon icon={LockIcon} />}
+            title={words('house.pass.olderHistory')}
+            titleLines={2}
+            meta={words('house.pass.unlock')}
+            href="/house/pass"
+            chevron
+          />
+        </Group>
+      ) : null}
     </>
+  );
+}
+
+/**
+ * Everyone's moves or only yours, as a section header's menu (the Table's
+ * This week ⌄): beside the Wall | History switch on a phone, in History's
+ * header beside the Wall.
+ */
+export function HistoryWhose({ mine, onChange }: { mine: boolean; onChange: (mine: boolean) => void }) {
+  const words = useWords();
+  return (
+    <PickMenu
+      options={[
+        { value: 'everyone', label: words('wall.history.everyone') },
+        { value: 'mine', label: words('wall.history.mine') },
+      ]}
+      value={mine ? 'mine' : 'everyone'}
+      onChange={(v) => onChange(v === 'mine')}
+      label={words('wall.history.whose')}
+      testID="history-whose"
+    />
   );
 }
 
@@ -130,7 +153,3 @@ function HistoryRow({ item, scene }: { item: HistoryItem; scene: HistoryScene })
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  pick: { paddingHorizontal: INSET, alignItems: 'flex-start' },
-});

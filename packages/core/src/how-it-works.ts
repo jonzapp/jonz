@@ -11,7 +11,7 @@ import { APP_NAME } from "./app";
 import type { HouseRules } from "./domain";
 import { passWords } from "./family";
 import { formatMoney } from "./money";
-import { PASS_ENFORCED, PASS_PRICES, PASS_TRIAL_DAYS } from "./pass";
+import { PASS_PRICES, PASS_TRIAL_DAYS } from "./pass";
 import { TOURS, tourStepWords, type TourId } from "./tours";
 import { makeupKey } from "./word-keys";
 import type { Words } from "./words-for";
@@ -143,7 +143,6 @@ export function howItWorks(topic: HowTopic, { rules, family, awayMakeup }: HowFa
         }),
         words("house.pass.money"),
         words("house.pass.hardship"),
-        PASS_ENFORCED ? "" : words("door.guide.page.pass.open"),
       );
     case "time_away":
       return lines(words("door.guide.page.away.book"), words("door.guide.page.away.makeup", { makeup }));

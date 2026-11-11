@@ -129,9 +129,12 @@ it('says a refusal under the row it came from', async () => {
   expect(await screen.findByText('That can’t be undone any more.')).toBeOnTheScreen();
 });
 
-it('shows only yours under Mine', async () => {
+it('shows only yours under Mine, picked beside the Wall | History switch', async () => {
   await open();
-  await fireEvent.press(screen.getByRole('radio', { name: words('wall.history.mine') }));
+  const switchRow = screen.getByTestId('wall-shows').parent!;
+  expect(within(switchRow).getByTestId('history-whose')).toHaveTextContent(words('wall.history.everyone'));
+  await fireEvent.press(screen.getByTestId('history-whose'));
+  await fireEvent.press(await screen.findByRole('radio', { name: words('wall.history.mine') }));
   const rows = screen.getAllByTestId('history-row');
   expect(rows).toHaveLength(2);
   for (const r of rows) expect(r).toHaveTextContent(/You (ticked|made)/);
@@ -165,4 +168,17 @@ it('reads older moves as you scroll near the end, from the last one shown', asyn
   await waitFor(() => expect(loadHistory).toHaveBeenLastCalledWith('h1', last));
   expect(await screen.findByText(/Dishes/)).toBeOnTheScreen();
   expect(screen.getByTestId('history-foot')).toHaveTextContent(words('common.list.everything'));
+});
+
+it('ends at four weeks back without the House Pass, with a row to the Pass page', async () => {
+  const base = snapshot();
+  (loadHouse as jest.Mock).mockResolvedValue({ ...base, house: { ...base.house, pass: { plan: 'trial', until: new Date('2026-10-01T00:00:00Z'), buyerId: null } } });
+  await open();
+  const locked = await screen.findByTestId('history-locked');
+  expect(locked).toHaveTextContent(words('house.pass.olderHistory'), { exact: false });
+});
+
+it('has no Pass row with the House Pass', async () => {
+  await open();
+  expect(screen.queryByTestId('history-locked')).toBeNull();
 });

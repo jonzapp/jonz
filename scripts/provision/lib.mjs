@@ -474,8 +474,6 @@ export function stagingApiEnvPlan(c, { supabaseUrl, anonKey, serviceKey, cronSec
     plain("APP_URL", stagingUrl(c)),
     plain("ALLOWED_ORIGINS", stagingOrigins(c).join(",")),
     plain("VAPID_SUBJECT", stagingUrl(c)),
-    // Staging locks the extras for a house without the Pass, as the app will at launch.
-    plain("PASS_ENFORCED", "on"),
   ];
   if (cronSecret) plan.push(secret("CRON_SECRET", cronSecret));
   if (vapid) plan.push(plain("NEXT_PUBLIC_VAPID_PUBLIC_KEY", vapid.publicKey), secret("VAPID_PRIVATE_KEY", vapid.privateKey));
@@ -496,7 +494,6 @@ export function stagingWebEnvPlan(c, { supabaseUrl, anonKey, vapidPublicKey }) {
     plain("EXPO_PUBLIC_API_URL", stagingApiUrl(c)),
     plain("EXPO_PUBLIC_STAGE", "staging"),
     plain("EXPO_PUBLIC_PASS_CHECKOUT", "on"),
-    plain("EXPO_PUBLIC_PASS_ENFORCED", "on"),
   ];
   if (vapidPublicKey) plan.push(plain("EXPO_PUBLIC_VAPID_PUBLIC_KEY", vapidPublicKey));
   return plan;

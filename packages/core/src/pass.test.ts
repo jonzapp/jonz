@@ -3,8 +3,8 @@ import { describe, expect, it } from "vitest";
 import { CURRENCIES } from "./domain";
 import {
   hasPass,
+  rulesAsStaked,
   PASS_ENFORCED,
-  passEnforcedBy,
   PASS_LOOKUP_KEYS,
   PASS_PURCHASES,
   passAfterSubscription,
@@ -69,21 +69,16 @@ describe("hasPass", () => {
   });
 });
 
-describe("passEnforcedBy", () => {
-  it("is on only when a switch says on", () => {
-    expect(passEnforcedBy(undefined, undefined)).toBe(false);
-    expect(passEnforcedBy("off", "")).toBe(false);
-    expect(passEnforcedBy("on", undefined)).toBe(true);
-    expect(passEnforcedBy(undefined, "on")).toBe(true);
-  });
-});
-
 describe("passUnlocked", () => {
   const ended = pass("monthly", "2026-11-01T00:00:00Z");
 
-  it("unlocks every house while the Pass isn't enforced", () => {
-    expect(PASS_ENFORCED).toBe(false);
-    expect(passUnlocked(ended, now)).toBe(true);
+  it("locks a house without the Pass: the Pass is on", () => {
+    expect(PASS_ENFORCED).toBe(true);
+    expect(passUnlocked(ended, now)).toBe(false);
+  });
+
+  it("unlocks every house when told it isn't enforced", () => {
+    expect(passUnlocked(ended, now, false)).toBe(true);
   });
 
   it("follows the Pass once enforced", () => {
@@ -253,5 +248,14 @@ describe("passAfterSubscription", () => {
     expect(passAfterSubscription(pass("trial", "2026-11-22T12:00:00Z"), sub("incomplete", "2027-11-22T12:00:00Z"), freeUntil, now)).toBeNull();
     expect(passAfterSubscription(pass("trial", "2026-11-22T12:00:00Z"), sub("incomplete_expired", "2027-11-22T12:00:00Z"), freeUntil, now)).toBeNull();
     expect(passAfterSubscription(pass("founding", null), sub("active", "2027-11-22T12:00:00Z"), freeUntil, now)).toBeNull();
+  });
+});
+
+describe("rulesAsStaked", () => {
+  const rules = { stakeMinor: 2000, lateForfeitMinor: 100, missedForfeitMinor: 300, currency: "GBP" };
+
+  it("keeps the rules with the Stake, and costs nothing without it", () => {
+    expect(rulesAsStaked(rules, true)).toBe(rules);
+    expect(rulesAsStaked(rules, false)).toEqual({ ...rules, stakeMinor: 0, lateForfeitMinor: 0, missedForfeitMinor: 0 });
   });
 });

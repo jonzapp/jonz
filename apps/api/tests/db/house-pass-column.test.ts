@@ -52,7 +52,6 @@ interface Fixture {
 
 /** Each gated operation's input in a house: with the input that turns its feature on, and without it where there's one. */
 const INPUTS: Record<string, (f: Fixture) => { on: Record<string, unknown>; off?: Record<string, unknown> }> = {
-  house_history: (f) => ({ on: { houseId: f.house.id } }),
   mark_done: (f) => ({ on: { assignmentId: f.assignmentId, photoPath: f.photoPath }, off: { assignmentId: f.assignmentId } }),
   roll_call: (f) => ({
     on: { assignmentId: f.assignmentId, crew: [f.house.admin.userId], photoPath: f.photoPath },
@@ -198,7 +197,6 @@ for (const [transport, call] of Object.entries(transports)) {
       // It reaches the operation itself: done, refused by its own rules (a tick outside its week), or held for the person to approve.
       expect(await call(bearer, op.name, INPUTS[op.name](f).on), `${transport} ${op.name}`).toMatch(/^(ok|rejected|approval)$/);
     }
-    expect(await call(bearer, "house_history", { houseId: f.house.id })).toBe("ok");
   });
 
   it(`${transport}: without a Pass, an operation gated by one input is free without it`, async () => {

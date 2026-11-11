@@ -1,4 +1,4 @@
-import { buildWeekBoard, todayView, type WeekBoard } from '@app/core';
+import { buildWeekBoard, passUnlocked, todayView, type WeekBoard } from '@app/core';
 import { useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect } from 'react';
@@ -42,6 +42,8 @@ export function useHouse(houseId: string, userId: string): { query: UseQueryResu
     everDealt: snapshot.house.everDealt,
     disputeHours: snapshot.rules.disputeHours,
     now,
+    // Photo receipts are a House Pass extra: without it, no John asks for one.
+    photos: passUnlocked(snapshot.house.pass, now),
     // In a family each kid's John earns what it says.
     ...(family ? { earners: snapshot.members.filter((m) => m.role !== 'admin').map((m) => m.userId) } : {}),
   });

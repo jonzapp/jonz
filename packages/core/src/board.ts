@@ -306,6 +306,12 @@ export interface WeekBoard {
   table: TableRow[];
   /** Nothing has ever been dealt in this house. */
   notStarted: boolean;
+  /**
+   * Whether photo receipts are open to the house (a House Pass extra).
+   * Without them no John asks for a photo, and none can be added; absent
+   * reads as open.
+   */
+  photos?: boolean;
 }
 
 /**
@@ -325,9 +331,12 @@ export function buildWeekBoard(input: {
   now: Date;
   /** In a family: the kids, whose Johns earn what they say (pocket money). Absent, nothing earns. */
   earners?: readonly string[];
+  /** Whether photo receipts are open (the House Pass): without them, no John needs a photo. Absent, they are. */
+  photos?: boolean;
 }): WeekBoard {
   const { week, now, disputeHours, memberIds } = input;
-  if (!week) return { week: null, items: [], table: standings([], memberIds), notStarted: !input.everDealt };
+  const photos = input.photos ?? true;
+  if (!week) return { week: null, items: [], table: standings([], memberIds), notStarted: !input.everDealt, photos };
 
   // A job has one check, raised on one of its places: every place shows it.
   const jobOf = new Map(input.assignments.map((a) => [a.id, jobKey({ id: a.id, jobId: a.job_id })]));
@@ -383,7 +392,7 @@ export function buildWeekBoard(input: {
         name: a.name,
         category: a.category,
         points: a.points,
-        needsPhoto: a.needs_photo,
+        needsPhoto: a.needs_photo && photos,
         dueAt,
         movedFrom: a.original_due_at ? new Date(a.original_due_at) : null,
         groupName: a.group_name,
@@ -417,6 +426,7 @@ export function buildWeekBoard(input: {
     items,
     table: standings(rows, memberIds, jobs),
     notStarted: false,
+    photos,
   };
 }
 
@@ -470,7 +480,7 @@ export function onCallItems(rows: readonly OnCallRow[], board: WeekBoard): OnCal
         johnId: r.john_id,
         name: r.johns!.name,
         category: r.johns!.category,
-        needsPhoto: r.johns!.needs_photo ?? false,
+        needsPhoto: (r.johns!.needs_photo ?? false) && board.photos !== false,
         holderId: r.user_id,
         openFlag: open[0] ?? null,
         times: flags.filter((i) => !i.carried).length,

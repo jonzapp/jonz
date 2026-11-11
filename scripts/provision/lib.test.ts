@@ -418,7 +418,6 @@ describe("staging", () => {
     expect(api.every((e) => e.target.length === 1 && e.target[0] === "preview")).toBe(true);
     const value = (key: string) => api.find((e) => e.key === key)?.value;
     expect(value("APP_URL")).toBe("https://staging.jonz.app");
-    expect(value("PASS_ENFORCED")).toBe("on");
     expect(value("ALLOWED_ORIGINS")).toBe("https://staging.jonz.app,https://*-glynfincks-projects.vercel.app");
     expect(api.find((e) => e.key === "SUPABASE_SERVICE_ROLE_KEY")?.type).toBe("sensitive");
     expect(api.some((e) => e.key.startsWith("STRIPE_"))).toBe(false);
@@ -431,7 +430,6 @@ describe("staging", () => {
       EXPO_PUBLIC_API_URL: "https://api.staging.jonz.app",
       EXPO_PUBLIC_STAGE: "staging",
       EXPO_PUBLIC_PASS_CHECKOUT: "on",
-      EXPO_PUBLIC_PASS_ENFORCED: "on",
       EXPO_PUBLIC_VAPID_PUBLIC_KEY: "pub",
     });
     expect(web.every((e) => e.type === "plain" && e.target[0] === "preview")).toBe(true);

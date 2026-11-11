@@ -44,7 +44,7 @@ test("ticks land on the Wall with their photos, and take reactions", async ({ br
   await wall.getByRole("tab", { name: words('common.section.house') }).click();
   await wall.getByTestId("house-screen").getByTestId("to-wall").getByRole("link").click();
   await expect(wall).toHaveURL(/\/house\/wall$/);
-  await expect(wall.getByRole("heading", { name: words('wall.page.title') })).toBeVisible();
+  await expect(wall.getByRole("heading", { name: words('wall.page.title'), level: 1 })).toBeVisible();
   // (House stays laid out under the pushed page, with its own latest rows: look on the Wall's.)
   const events = wall.getByTestId("wall-screen").getByTestId("wall-event");
   await expect(events.filter({ hasText: words("wall.feed.joined", { who: them }) })).toBeVisible();
