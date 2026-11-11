@@ -8,6 +8,7 @@ import {
   LogOutIcon,
   MegaphoneIcon,
   PlusIcon,
+  RotateCcwIcon,
   ShieldIcon,
   SparklesIcon,
   TriangleAlertIcon,
@@ -23,6 +24,7 @@ import { CountBadge } from '@/components/badge';
 import { Button } from '@/components/button';
 import { ButtonRow } from '@/components/button-row';
 import { CodeBoxes } from '@/components/code-boxes';
+import { DangerRow, DangerZone } from '@/components/danger-zone';
 import { DayChips } from '@/components/day-chips';
 import { EmptyState } from '@/components/empty-state';
 import { Field } from '@/components/field';
@@ -282,6 +284,23 @@ export function Lists() {
       </Group>
       <EmptyState icon={InboxIcon} title="Nothing here yet" body="An empty list says what would be here, and how to add the first." />
     </Section>
+  );
+}
+
+/** The moves that can't be taken back, together in one hazard-edged group (docs/style/controls.md, "Danger zone"). */
+export function Danger() {
+  return (
+    <DangerZone testID="style-danger">
+      <DangerRow
+        title="Reset history"
+        meta="Back to before the first deal. Weeks dealt, ticks, money and History go."
+        action="Reset"
+        icon={RotateCcwIcon}
+        onPress={none}
+        testID="style-danger-reset"
+      />
+      <DangerRow title="Delete house" meta="The house and everything in it go for good." action="Delete" icon={TriangleAlertIcon} onPress={none} />
+    </DangerZone>
   );
 }
 

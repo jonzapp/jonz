@@ -10,18 +10,22 @@ import { useWords } from '@/hooks/use-words';
 import { BUTTON_MIN, INSET, ROW_GAP, SPACE, useTheme } from '@/theme';
 
 /**
- * The Danger zone, GitHub's way: the moves that can't be taken back, together
- * at the foot of the page that owns them, in one group edged in hazard. Each
- * is a DangerRow: what it does and what it costs on the left, its hazard
- * button on the right; on a phone, or wherever the row is too narrow for
- * both, the button goes under the words at full width. A button opens the
- * move's own "Are you sure?" sheet; nothing happens on the tap itself.
+ * The Danger zone, GitHub's way: the moves that can't be taken back
+ * (`isDangerous` in core: the registry's `destructive`), together, in one
+ * group edged in hazard. It's the one way the app marks them, wherever they
+ * are: at the foot of the page that owns them, each a DangerRow (what it
+ * does on the left, its hazard button on the right; on a phone, or wherever
+ * the row is too narrow, the button goes under the words at full width,
+ * opening the move's own "Are you sure?" sheet), or on an Ask Jonz card,
+ * where MoveList puts the ticked rows that can't be undone in one. Its label
+ * is "Danger zone" unless the zone is all there is (a card of nothing else
+ * keeps the card's own label and meta).
  */
-export function DangerZone({ children, testID }: { children: ReactNode; testID?: string }) {
+export function DangerZone({ children, label, right, testID }: { children: ReactNode; label?: string; right?: string; testID?: string }) {
   const words = useWords();
   const { colors } = useTheme();
   return (
-    <Section label={words('house.danger.label')} testID={testID} bare>
+    <Section label={label ?? words('house.danger.label')} right={right} testID={testID} bare>
       <Group style={[styles.edge, { borderColor: colors.hazard }]}>{children}</Group>
     </Section>
   );

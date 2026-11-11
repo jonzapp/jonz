@@ -294,6 +294,16 @@ export const OPERATIONS = {
 export type OperationName = keyof typeof OPERATIONS;
 export const OPERATION_NAMES = Object.keys(OPERATIONS) as OperationName[];
 
+/**
+ * Whether an operation can't be taken back (`destructive`): over /v1 and MCP
+ * it waits for the person's approval, and wherever the app offers it, it sits
+ * in a Danger zone (the app's DangerZone) with a hazard button.
+ */
+export function isDangerous(name: OperationName): boolean {
+  const o: Operation = OPERATIONS[name];
+  return o.destructive === true;
+}
+
 /** Every operation the database runs for a signed-in person (not the service role). */
 export const CALLABLE_FUNCTIONS: readonly string[] = OPERATION_NAMES.flatMap((n) => {
   const o: Operation = OPERATIONS[n];

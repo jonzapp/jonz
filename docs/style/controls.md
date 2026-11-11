@@ -59,6 +59,26 @@
 - A primary and its secondary are the same height and width, whether side
   by side or stacked. (**New**)
 
+## Danger zone
+
+- **A move that can't be taken back sits in a Danger zone** (`DangerZone`),
+  GitHub's way: one group edged in hazard, labelled "Danger zone". What
+  counts is the registry's `destructive` (`isDangerous` in core), the same
+  flag that holds a move for approval over /v1 and MCP, so the app, the API
+  and Ask Jonz never disagree. (House reset, #218, 11 Nov)
+- On a page it goes at the foot of the page that owns the moves, each a
+  `DangerRow`: what it does on the left, a `hazard` button with an icon on
+  the right, under the words at full width when the row is too narrow. The
+  button only opens the move's own sheet, which says what goes and what
+  stays; a move as big as resetting or deleting a house also asks for the
+  house's name typed.
+- On an Ask Jonz card (a house's or the owner's), `MoveList` puts the moves
+  that can't be undone after the others, in their own Danger zone, and the
+  card's button turns `hazard` with a warning icon while one is ticked. A
+  card of nothing else keeps its own label on the zone.
+- Screens never draw a hazard edge by hand: a new danger move goes in a
+  `DangerZone`. The style page shows one.
+
 ## Icon buttons
 
 - Close, `•••`, the sparkles and any other icon-only control are an
