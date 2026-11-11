@@ -6,7 +6,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { EmptyState } from '@/components/empty-state';
 import { Fold } from '@/components/fold';
-import { HistoryList, type HistoryScene } from '@/components/house/history-list';
+import { HistoryList, HistoryWhose, type HistoryScene } from '@/components/house/history-list';
 import { useJohnSheet } from '@/components/john-sheet';
 import { ListFoot, nearEnd, type ListMore } from '@/components/list-foot';
 import { Pair, useSideBySide } from '@/components/page-columns';
@@ -63,6 +63,8 @@ function WallFor({ houseId, userId }: { houseId: string; userId: string }) {
   const [shown, setShown] = useState<Shown>(asked === 'history' ? 'history' : 'wall');
   // Whether the two sit side by side, as the page lays them out, so scrolling to the end reads more of each.
   const [beside, setBeside] = useState(false);
+  // History: everyone's moves, or only yours.
+  const [mine, setMine] = useState(false);
 
   const { events, photos } = wallPages(feed.data?.pages ?? []);
   const scene = view ? wallScene(view, userId, events, words, true) : null;
@@ -177,7 +179,7 @@ function WallFor({ houseId, userId }: { houseId: string; userId: string }) {
       fullName: (id) => (id && names.get(id)) ?? words('wall.history.someone'),
       locked: !passUnlocked(view.snapshot.house.pass, view.now),
     };
-    historyBody = <HistoryList items={history.data.pages.flat()} scene={historyScene} more={historyMore} />;
+    historyBody = <HistoryList items={history.data.pages.flat()} scene={historyScene} more={historyMore} mine={mine} />;
   }
 
   const wallNear = nearEnd(more);
@@ -195,7 +197,7 @@ function WallFor({ houseId, userId }: { houseId: string; userId: string }) {
       testID="wall-screen"
     >
       <PageTitle page={words('wall.page.title')} />
-      <WallAndHistory wall={body} history={historyBody} shown={shown} onShow={setShown} onBeside={setBeside} />
+      <WallAndHistory wall={body} history={historyBody} whose={<HistoryWhose mine={mine} onChange={setMine} />} shown={shown} onShow={setShown} onBeside={setBeside} />
       <WallEventSheet
         row={openRow ?? null}
         problem={openRow && problemAt === openRow.id ? problem : null}
@@ -214,12 +216,15 @@ function WallFor({ houseId, userId }: { houseId: string; userId: string }) {
 function WallAndHistory({
   wall,
   history,
+  whose,
   shown,
   onShow,
   onBeside,
 }: {
   wall: ReactNode;
   history: ReactNode;
+  /** Everyone's moves or only yours: in History's header beside the Wall, and beside the switch on a phone. */
+  whose: ReactNode;
   shown: Shown;
   onShow: (shown: Shown) => void;
   onBeside: (beside: boolean) => void;
@@ -234,7 +239,7 @@ function WallAndHistory({
         ratio={1.25}
         start={wall}
         end={
-          <Section label={words('wall.history.title')} right={words('wall.history.meta')} bare testID="history-section">
+          <Section label={words('wall.history.title')} right={whose} bare testID="history-section">
             {history}
           </Section>
         }
@@ -254,6 +259,7 @@ function WallAndHistory({
           label={words('wall.history.show')}
           testID="wall-shows"
         />
+        {shown === 'history' ? whose : null}
       </View>
       {shown === 'wall' ? wall : history}
     </>
@@ -262,5 +268,6 @@ function WallAndHistory({
 
 const styles = StyleSheet.create({
   // On the leading edge, where the sections' labels start.
-  pick: { paddingHorizontal: INSET, alignItems: 'flex-start' },
+  // The switch on the leading edge; History's Whose menu on the trailing one, as a section header's.
+  pick: { paddingHorizontal: INSET, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
 });

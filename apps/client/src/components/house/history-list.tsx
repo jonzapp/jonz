@@ -1,7 +1,5 @@
 import { actionLine, historyDayLabel, historyDays, historyFor, historyMeta, historyTime, dayLabel, type Currency, type HouseKind, type HistoryItem } from '@app/core';
 import { HistoryIcon, LockIcon } from 'lucide-react-native';
-import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
 
 import { undoAction } from '@/api/history';
 import { Alert } from '@/components/alert';
@@ -11,11 +9,10 @@ import { Group, GroupItem } from '@/components/group';
 import { ListFoot, type ListMore } from '@/components/list-foot';
 import { Row, RowIcon } from '@/components/row';
 import { Section } from '@/components/section';
-import { Segmented } from '@/components/segmented';
+import { PickMenu } from '@/components/pick-menu';
 import { TextButton } from '@/components/text-button';
 import { useToastIfAny } from '@/components/toast';
 import { useMove } from '@/hooks/use-move';
-import { INSET } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
 export interface HistoryScene {
@@ -35,8 +32,8 @@ export interface HistoryScene {
 }
 
 /**
- * History's body: Everyone or Mine, then the moves a day at a time, newest
- * first, each in words with its time, and Undo on the ones the database
+ * History's body: the moves a day at a time, newest first (everyone's, or
+ * with `mine` only yours: the screen's HistoryWhose picks), each in words with its time, and Undo on the ones the database
  * says still reach (yours while they're open; anyone's, to an admin, until
  * the month is shared out). A refusal stays under the row it came from.
  * Older moves load as you scroll (the screen's `nearEnd`), under the foot
@@ -47,30 +44,20 @@ export function HistoryList({
   items,
   scene,
   more,
+  mine = false,
 }: {
   items: readonly HistoryItem[];
   scene: HistoryScene;
   more: ListMore;
+  /** Only your own moves. */
+  mine?: boolean;
 }) {
   const words = useWords();
-  const [mine, setMine] = useState(false);
   const shown = historyFor(items, scene.me, mine);
   const days = historyDays(shown, scene.zone);
 
   return (
     <>
-      <View style={styles.pick}>
-        <Segmented
-          options={[
-            { value: 'everyone', label: words('wall.history.everyone') },
-            { value: 'mine', label: words('wall.history.mine') },
-          ]}
-          value={mine ? 'mine' : 'everyone'}
-          onChange={(v) => setMine(v === 'mine')}
-          label={words('wall.history.title')}
-          testID="history-whose"
-        />
-      </View>
       {days.length === 0 ? (
         <EmptyState icon={HistoryIcon} title={words('wall.history.title')} body={words('wall.history.empty')} testID="history-empty" />
       ) : (
@@ -102,6 +89,27 @@ export function HistoryList({
         </Group>
       ) : null}
     </>
+  );
+}
+
+/**
+ * Everyone's moves or only yours, as a section header's menu (the Table's
+ * This week ⌄): beside the Wall | History switch on a phone, in History's
+ * header beside the Wall.
+ */
+export function HistoryWhose({ mine, onChange }: { mine: boolean; onChange: (mine: boolean) => void }) {
+  const words = useWords();
+  return (
+    <PickMenu
+      options={[
+        { value: 'everyone', label: words('wall.history.everyone') },
+        { value: 'mine', label: words('wall.history.mine') },
+      ]}
+      value={mine ? 'mine' : 'everyone'}
+      onChange={(v) => onChange(v === 'mine')}
+      label={words('wall.history.whose')}
+      testID="history-whose"
+    />
   );
 }
 
@@ -145,7 +153,3 @@ function HistoryRow({ item, scene }: { item: HistoryItem; scene: HistoryScene })
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  pick: { paddingHorizontal: INSET, alignItems: 'flex-start' },
-});

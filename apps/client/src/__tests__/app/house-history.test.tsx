@@ -129,9 +129,12 @@ it('says a refusal under the row it came from', async () => {
   expect(await screen.findByText('That can’t be undone any more.')).toBeOnTheScreen();
 });
 
-it('shows only yours under Mine', async () => {
+it('shows only yours under Mine, picked beside the Wall | History switch', async () => {
   await open();
-  await fireEvent.press(screen.getByRole('radio', { name: words('wall.history.mine') }));
+  const switchRow = screen.getByTestId('wall-shows').parent!;
+  expect(within(switchRow).getByTestId('history-whose')).toHaveTextContent(words('wall.history.everyone'));
+  await fireEvent.press(screen.getByTestId('history-whose'));
+  await fireEvent.press(await screen.findByRole('radio', { name: words('wall.history.mine') }));
   const rows = screen.getAllByTestId('history-row');
   expect(rows).toHaveLength(2);
   for (const r of rows) expect(r).toHaveTextContent(/You (ticked|made)/);

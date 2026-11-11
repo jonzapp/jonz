@@ -260,7 +260,8 @@ it('shows History beside the Wall on a laptop, under its name, and a switch betw
   expect(within(screen.getByTestId('wall-pair-start')).getAllByTestId('wall-day').length).toBeGreaterThan(0);
   const history = within(screen.getByTestId('wall-pair-end'));
   expect(history.getAllByRole('header', { name: words('wall.history.title') })[0]).toBeOnTheScreen();
-  expect(history.getByText(words('wall.history.meta'))).toBeOnTheScreen();
+  // Everyone's moves or only yours, in History's header.
+  expect(history.getByTestId('history-whose')).toHaveTextContent(words('wall.history.everyone'));
   expect(await history.findByTestId('history-empty')).toBeOnTheScreen();
   (useWindowDimensions as jest.Mock).mockReturnValue({ width: 390, height: 844, scale: 1, fontScale: 1 });
 });
