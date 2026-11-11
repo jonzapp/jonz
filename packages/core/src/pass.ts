@@ -28,9 +28,9 @@ export type PassFeature = (typeof PASS_FEATURES)[number];
 
 export interface HousePass {
   plan: PassPlan;
-  /** When it ends; null only for a Founding house, whose Pass never does. */
+  /** When it ends; null only for a free Pass for good (plan "founding", a gift), which never does. */
   until: Date | null;
-  /** Who bought it; null for the free month or a Founding house given free. */
+  /** Who bought it; null for the free month or a free Pass given as a gift. */
   buyerId: string | null;
 }
 
@@ -42,7 +42,7 @@ export function passOf(row: { pass_plan: string; pass_ends_at: string | null; pa
   return { plan, until: until ?? new Date(0), buyerId: row.pass_bought_by };
 }
 
-/** Whether the house has the Pass at `now`: Founding, or not yet ended. */
+/** Whether the house has the Pass at `now`: free for good, or not yet ended. */
 export function hasPass(pass: HousePass, now: Date): boolean {
   if (pass.plan === "founding") return true;
   return pass.until !== null && pass.until.getTime() > now.getTime();
@@ -60,7 +60,7 @@ export function passDaysLeft(pass: HousePass, now: Date): number | null {
   return ms <= 0 ? 0 : Math.ceil(ms / 86_400_000);
 }
 
-/** The Pass in a few words, for its row on House: "Founding house", "Free month, 12 days left", "Yearly, renews 12 Nov". */
+/** The Pass in a few words, for its row on House: "Free House Pass", "Free month, 12 days left", "Yearly, renews 12 Nov". */
 export function passLine(pass: HousePass, now: Date, zone: string, words: Words): string {
   if (pass.plan === "founding") return words('house.pass.founding');
   const day = dateIn(pass.until!, "dayMonth", zone, words);
@@ -75,11 +75,11 @@ export function passLine(pass: HousePass, now: Date, zone: string, words: Words)
  * house currency. The stores' local price tiers replace these once buying
  * opens; they're set to land on the same tiers.
  */
-export const PASS_PRICES: Record<Currency, { yearly: number; monthly: number; founding: number }> = {
-  USD: { yearly: 4999, monthly: 599, founding: 6900 },
-  CAD: { yearly: 6499, monthly: 799, founding: 8999 },
-  GBP: { yearly: 3999, monthly: 499, founding: 5499 },
-  EUR: { yearly: 4999, monthly: 599, founding: 6900 },
+export const PASS_PRICES: Record<Currency, Record<PassOnSale, number>> = {
+  USD: { yearly: 3999, monthly: 499 },
+  CAD: { yearly: 5499, monthly: 699 },
+  GBP: { yearly: 2999, monthly: 399 },
+  EUR: { yearly: 3999, monthly: 499 },
 };
 
 export interface PassOffer {
@@ -95,7 +95,6 @@ export function passOffers(currency: Currency, words: Words): PassOffer[] {
   return [
     { plan: "yearly", label: words('house.pass.yearly'), price: words('house.pass.perYear', { price: formatMoney(p.yearly, currency, words) }), meta: words('house.pass.perMonthish', { price: formatMoney(Math.round(p.yearly / 12), currency, words) }) },
     { plan: "monthly", label: words('house.pass.monthly'), price: words('house.pass.perMonth', { price: formatMoney(p.monthly, currency, words) }), meta: words('house.pass.monthlyMeta') },
-    { plan: "founding", label: words('house.pass.foundingPlan'), price: words('house.pass.once', { price: formatMoney(p.founding, currency, words) }), meta: words('house.pass.foundingMeta') },
   ];
 }
 
@@ -103,9 +102,22 @@ export function passOffers(currency: Currency, words: Words): PassOffer[] {
 // apps/api). These are the rules; apps/api only carries them to Stripe and
 // back.
 
-/** What can be bought: every plan but the free month. */
+/**
+ * The plans /v1 takes when buying: every plan but the free month. Founding is
+ * still among them so the contract only grows, but it isn't sold any more
+ * (2026-11-11): a free Pass for good is a gift, from a promotion.
+ */
 export const PASS_PURCHASES = ["yearly", "monthly", "founding"] as const;
 export type PassPurchase = (typeof PASS_PURCHASES)[number];
+
+/** What can be bought now: yearly or monthly. */
+export const PASS_ON_SALE = ["yearly", "monthly"] as const;
+export type PassOnSale = (typeof PASS_ON_SALE)[number];
+
+/** Whether a plan is on sale now. */
+export function onSale(plan: string): plan is PassOnSale {
+  return (PASS_ON_SALE as readonly string[]).includes(plan);
+}
 
 /** Each plan's Stripe price, by lookup key, so no code names a price id. One price holds every house currency. */
 export const PASS_LOOKUP_KEYS: Record<PassPurchase, string> = {
@@ -154,18 +166,19 @@ export function passFirstChargeNote(pass: HousePass, now: Date, zone: string, wo
 
 /**
  * Why the house can't buy `plan` at `now`, in words fit to show, or null when
- * it can. A Founding house has nothing to buy; a house on a paid plan changes
- * it from Manage, except to buy Founding, which ends the plan for it.
+ * it can. Only yearly and monthly are sold; a house with a free Pass for good
+ * has nothing to buy; a house on a paid plan changes it from Manage.
  */
 export function passPurchaseRefusal(pass: HousePass, plan: PassPurchase, now: Date, words: Words): string | null {
+  if (!onSale(plan)) return words('house.pass.notSold');
   if (pass.plan === "founding") return words('house.pass.alreadyFounding');
-  if (plan !== "founding" && pass.plan !== "trial" && hasPass(pass, now)) return words('house.pass.alreadyPaid');
+  if (pass.plan !== "trial" && hasPass(pass, now)) return words('house.pass.alreadyPaid');
   return null;
 }
 
 /** A house's Stripe subscription, as the webhook reads it back from Stripe. */
 export interface PassSubscription {
-  plan: Exclude<PassPurchase, "founding">;
+  plan: PassOnSale;
   status: string;
   /** The end of the period paid for (or of Stripe's trial, during the free month). */
   periodEnd: Date;

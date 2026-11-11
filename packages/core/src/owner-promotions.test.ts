@@ -45,7 +45,7 @@ describe("the form as typed", () => {
     expect(req).toMatchObject({ amount: 950, percent: null, duration: "months", months: 6 });
   });
 
-  it("drops Founding from months free, and plans and how long from a free Pass", () => {
+  it("drops Founding from any plan list, and plans and how long from a free Pass", () => {
     expect(draftRequest({ ...PROMOTION_DRAFT, kind: "trial", plans: ["yearly", "founding"] }).plans).toEqual(["yearly"]);
     const gift = draftRequest({ ...PROMOTION_DRAFT, kind: "gift", gift: "forever" });
     expect(gift).toMatchObject({ plans: [], duration: null, months: null });

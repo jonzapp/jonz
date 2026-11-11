@@ -1,4 +1,4 @@
-import { PASS_PURCHASES, personStage, promotionPersonMeta, promotionPrice, promotionSentence, promotionTitle, promotionWhoSentence, planPrice, type PromotionAudience, type PromotionPerson, type PromotionTerms } from '@app/core';
+import { PASS_ON_SALE, personStage, promotionPersonMeta, promotionPrice, promotionSentence, promotionTitle, promotionWhoSentence, planPrice, type PromotionAudience, type PromotionPerson, type PromotionTerms } from '@app/core';
 import { CheckIcon, CopyIcon, Share2Icon, TicketIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { Platform, Share, StyleSheet, View } from 'react-native';
@@ -69,9 +69,9 @@ export function PromotionPreview({
           {terms.plans.length === 0 ? (
             <Row title={words('admin.promotions.noPlans')} />
           ) : (
-            PASS_PURCHASES.map((plan) => {
+            PASS_ON_SALE.map((plan) => {
               const price = promotionPrice(terms, plan, 'USD');
-              const label = plan === 'yearly' ? words('house.pass.yearly') : plan === 'monthly' ? words('house.pass.monthly') : words('house.pass.foundingPlan');
+              const label = plan === 'yearly' ? words('house.pass.yearly') : words('house.pass.monthly');
               return price ? (
                 <Row key={plan} title={price.label} meta={price.then ?? undefined} trailing={price.first} testID={`promotion-price-${plan}`} />
               ) : (

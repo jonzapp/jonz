@@ -64,8 +64,8 @@ money in place of the Stake.
   the app, answered by email.
 - **The House Pass**, for houses that want chores to actually get done:
   money on the line, photo proof and more help from Jonz, for the whole
-  house at $49.99 a year (about $1 a person a month in a house of four), or
-  $5.99 a month, with a free month first. Sharing chores fairly stays free.
+  house at $39.99 a year (under $1 a person a month in a house of four), or
+  $4.99 a month, with a free month first. Sharing chores fairly stays free.
 
 It works on any phone and spreads out on a laptop, in the Bin Night house
 style: council signage, hi-vis amber, a bin-lid colour per kind of John.

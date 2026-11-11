@@ -77,7 +77,8 @@ async function writeBilling(db: AdminClient, houseId: string, customer: string, 
 }
 
 /**
- * A Founding purchase paid: the house has the Pass for life. A plan it was
+ * A one-off Founding purchase paid: the house has the Pass for good. Founding
+ * isn't sold since 2026-11-11, so this only finishes a checkout begun before. A plan it was
  * paying for stops renewing (it was paid to the end of its period), and
  * nothing that subscription does from here changes the house.
  */

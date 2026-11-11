@@ -138,7 +138,6 @@ export function howItWorks(topic: HowTopic, { rules, family, awayMakeup }: HowFa
           yearly: money(prices.yearly),
           perMonth: money(Math.round(prices.yearly / 12)),
           monthly: money(prices.monthly),
-          founding: money(prices.founding),
           days: PASS_TRIAL_DAYS,
         }),
         words("house.pass.money"),

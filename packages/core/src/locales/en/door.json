@@ -219,7 +219,7 @@
   "door.guide.page.settle.splitwise": "A house can settle in Jonz, or copy the amounts to Splitwise instead.",
   "door.guide.page.pass.adds": "What it adds: {extras}",
   "door.guide.page.pass.extra": "{title}: {meta}",
-  "door.guide.page.pass.prices": "Prices: {yearly} a year (about {perMonth} a month), or {monthly} a month; Founding houses {founding} once, for life. Every new house gets a free month ({days} days) first.",
+  "door.guide.page.pass.prices": "Prices: {yearly} a year (about {perMonth} a month), or {monthly} a month. Every new house gets a free month ({days} days) first.",
   "door.guide.page.away.book": "Book time away on the Days and time away page. On days away you’re left out of the deal, so nothing is dealt to you.",
   "door.guide.page.away.makeup": "Your share for those days is made up {makeup} ({kind, select, family {a parent} other {an admin}} sets this in House rules).",
   "door.guide.page.onCall.what": "On-call Johns are done when they’re needed (the bin when it’s full) rather than on a day. Each week one person is on call for each.",

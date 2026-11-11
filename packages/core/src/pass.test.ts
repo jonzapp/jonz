@@ -104,7 +104,7 @@ describe("passDaysLeft", () => {
 
 describe("passLine", () => {
   it("says each state in a few words", () => {
-    expect(passLine(pass("founding", null), now, "Europe/London", words)).toBe("Founding house");
+    expect(passLine(pass("founding", null), now, "Europe/London", words)).toBe("Free House Pass");
     expect(passLine(pass("trial", "2026-11-22T12:00:00Z"), now, "Europe/London", words)).toBe("Free month, 12 days left");
     expect(passLine(pass("trial", "2026-11-11T00:00:00Z"), now, "Europe/London", words)).toBe("Free month, 1 day left");
     expect(passLine(pass("trial", "2026-11-01T00:00:00Z"), now, "Europe/London", words)).toBe("Free month ended");
@@ -124,20 +124,18 @@ describe("passLine", () => {
 describe("passOffers", () => {
   it("puts Yearly first, with what it works out at a month", () => {
     const offers = passOffers("USD", words);
-    expect(offers.map((o) => o.plan)).toEqual(["yearly", "monthly", "founding"]);
-    expect(offers[0].price).toBe("$49.99 a year");
-    expect(offers[0].meta).toBe("About $4.17 a month");
-    expect(offers[1].price).toBe("$5.99 a month");
-    expect(offers[2].price).toBe("$69 once");
+    expect(offers.map((o) => o.plan)).toEqual(["yearly", "monthly"]);
+    expect(offers[0].price).toBe("$39.99 a year");
+    expect(offers[0].meta).toBe("About $3.33 a month");
+    expect(offers[1].price).toBe("$4.99 a month");
   });
 
-  it("has a whole-minor-unit price in every house currency, Yearly cheaper than twelve months, Founding dearer than a year", () => {
+  it("has a whole-minor-unit price in every house currency, and Yearly cheaper than twelve months", () => {
     for (const currency of CURRENCIES) {
       const p = PASS_PRICES[currency];
-      for (const minor of [p.yearly, p.monthly, p.founding]) expect(Number.isInteger(minor) && minor > 0).toBe(true);
+      for (const minor of [p.yearly, p.monthly]) expect(Number.isInteger(minor) && minor > 0).toBe(true);
       expect(p.yearly).toBeLessThan(p.monthly * 12);
-      expect(p.founding).toBeGreaterThan(p.yearly);
-      expect(passOffers(currency, words)).toHaveLength(3);
+      expect(passOffers(currency, words)).toHaveLength(2);
     }
   });
 });
@@ -185,23 +183,27 @@ describe("passFirstCharge", () => {
 });
 
 describe("passPurchaseRefusal", () => {
-  it("lets a house in or after its free month buy any plan", () => {
-    for (const plan of PASS_PURCHASES) {
+  it("lets a house in or after its free month buy yearly or monthly", () => {
+    for (const plan of ["yearly", "monthly"] as const) {
       expect(passPurchaseRefusal(pass("trial", "2026-11-22T12:00:00Z"), plan, now, words)).toBeNull();
       expect(passPurchaseRefusal(pass("trial", "2026-11-01T00:00:00Z"), plan, now, words)).toBeNull();
       expect(passPurchaseRefusal(pass("yearly", "2026-11-01T00:00:00Z"), plan, now, words)).toBeNull();
     }
   });
 
-  it("sends a house on a paid plan to Manage, except for Founding", () => {
+  it("sends a house on a paid plan to Manage", () => {
     const paid = pass("monthly", "2026-12-01T00:00:00Z");
     expect(passPurchaseRefusal(paid, "yearly", now, words)).toMatch(/Manage plan/);
     expect(passPurchaseRefusal(paid, "monthly", now, words)).toMatch(/Manage plan/);
-    expect(passPurchaseRefusal(paid, "founding", now, words)).toBeNull();
   });
 
-  it("has nothing to sell a Founding house", () => {
-    expect(passPurchaseRefusal(pass("founding", null), "founding", now, words)).toMatch(/for life/);
+  it("doesn't sell Founding any more, to anyone", () => {
+    expect(passPurchaseRefusal(pass("trial", "2026-11-22T12:00:00Z"), "founding", now, words)).toBe("The House Pass comes yearly or monthly.");
+    expect(passPurchaseRefusal(pass("monthly", "2026-12-01T00:00:00Z"), "founding", now, words)).toBe("The House Pass comes yearly or monthly.");
+  });
+
+  it("has nothing to sell a house given the Pass for good", () => {
+    expect(passPurchaseRefusal(pass("founding", null), "yearly", now, words)).toBe("This house has the House Pass free already.");
   });
 });
 

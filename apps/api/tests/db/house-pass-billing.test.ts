@@ -98,14 +98,14 @@ describe("Checkout", () => {
     expect(row.pass_plan).toBe("trial");
   });
 
-  it("sells Founding as one payment", async () => {
+  it("doesn't sell Founding any more", async () => {
     const house = await makeHouse(["Ava"]);
     const { stripe, calls } = fakeStripe();
-    await startCheckout(caller(house.admin), stripe, house.id, "founding", APP, "local", now());
-    expect(calls.checkout[0]).toMatchObject({ mode: "payment", price: "price_pass_founding", trialEnd: null });
+    expect(await startCheckout(caller(house.admin), stripe, house.id, "yearly", APP, "local", now())).toMatchObject({ status: 409 });
+    expect(calls.checkout).toHaveLength(0);
   });
 
-  it("sells nothing to someone outside the house, or to a Founding house", async () => {
+  it("sells nothing to someone outside the house, or to a house given the Pass for good", async () => {
     const house = await makeHouse(["Ava"]);
     const stranger = await signedInUser("Zed");
     const { stripe, calls } = fakeStripe();
