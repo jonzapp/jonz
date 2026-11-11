@@ -1,4 +1,4 @@
-import { accountDeletedEmail, deletedOnDay } from "@app/core";
+import { accountDeletedEmail, deletedOnDay, languageOf, type Language } from "@app/core";
 
 import { sendEmail } from "@/lib/email";
 import type { AdminClient } from "@/lib/supabase/admin";
@@ -170,12 +170,14 @@ interface LastLetter {
   name: string | null;
   /** Their own zone, else their house's: the day it went is said where they are. */
   zone: string | null;
+  /** The language they read Jonz in, for the email's words. */
+  language: Language;
 }
 
 async function lastLetter(db: AdminClient, userId: string): Promise<LastLetter> {
   const [account, profile, prefs, member] = await Promise.all([
     db.auth.admin.getUserById(userId),
-    db.from("profiles").select("display_name, deleted_at").eq("id", userId).maybeSingle(),
+    db.from("profiles").select("display_name, deleted_at, language").eq("id", userId).maybeSingle(),
     db.from("notification_prefs").select("timezone").eq("user_id", userId).maybeSingle(),
     db.from("members").select("houses(timezone)").eq("user_id", userId).limit(1).maybeSingle(),
   ]);
@@ -184,6 +186,7 @@ async function lastLetter(db: AdminClient, userId: string): Promise<LastLetter> 
     address: account.error || account.data.user?.deleted_at ? null : (account.data.user?.email ?? null),
     name: profile.data && !profile.data.deleted_at ? profile.data.display_name : null,
     zone: prefs.data?.timezone ?? member.data?.houses?.timezone ?? null,
+    language: languageOf(profile.data?.language),
   };
 }
 
@@ -195,7 +198,7 @@ async function lastLetter(db: AdminClient, userId: string): Promise<LastLetter> 
 async function sendLastLetter(send: SendEmail, last: LastLetter, deletionId: string, now: Date): Promise<boolean> {
   if (!last.address) return false;
   try {
-    const result = await send(last.address, accountDeletedEmail({ name: last.name, deletedOn: deletedOnDay(now, last.zone) }), {
+    const result = await send(last.address, accountDeletedEmail({ name: last.name, deletedOn: deletedOnDay(now, last.zone), language: last.language }), {
       tag: "account-deleted",
       idempotencyKey: `account-deleted-${deletionId}`,
     });

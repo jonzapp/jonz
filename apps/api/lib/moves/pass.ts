@@ -1,6 +1,6 @@
 import "server-only";
 
-import { humanError, PASS_LOOKUP_KEYS, passFirstCharge, passOf, passPurchaseRefusal, type PassPurchase, wordsFor } from "@app/core";
+import { humanError, PASS_LOOKUP_KEYS, passFirstCharge, passOf, passPurchaseRefusal, type PassPurchase, type Words, wordsFor } from "@app/core";
 
 import type { Stage } from "@/lib/env";
 import type { PassStripe } from "@/lib/pass/stripe";
@@ -9,14 +9,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { Caller } from "./disputes";
 import { checkOffer, giveGift } from "./promotions";
 
-// Server lines read the housemates' words for now; each person's own language comes with translation 7.
-const words = wordsFor("en", "housemates");
-
-/** A refusal with the status to answer it with, or where to send the browser. */
-export type PassAnswer = { url: string } | { status: number; message: string };
+/** A refusal with the status to answer it with, said in the caller's words, or where to send the browser. */
+export type PassAnswer = { url: string } | { status: number; say: (words: Words) => string };
 
 /** The house wasn't readable as the caller: they aren't in it. */
-const NOT_IN_HOUSE = { status: 403, message: humanError({ code: "42501", message: "not_in_house" }) };
+const NOT_IN_HOUSE = { status: 403, say: (words: Words) => humanError({ code: "42501", message: "not_in_house" }, words) };
 
 /** Where Stripe sends the browser back to: the Pass page, which reads the house again. */
 function passPage(appUrl: string, bought: boolean): string {
@@ -69,31 +66,31 @@ export async function startCheckout(
       .eq("house_id", house.id)
       .eq("user_id", caller.userId)
       .maybeSingle();
-    if (me?.role !== "admin") return { status: 403, message: words('house.familyPass.parentsOnly') };
+    if (me?.role !== "admin") return { status: 403, say: (words) => words('house.familyPass.parentsOnly') };
   }
 
   const pass = passOf(house);
   const checked = offer ? await checkOffer(createAdminClient(), offer, caller.email, { id: house.id, pass }, plan, now) : null;
-  if (checked && "refusal" in checked) return { status: 409, message: humanError({ message: checked.refusal }) };
+  if (checked && "refusal" in checked) return { status: 409, say: (words) => humanError({ message: checked.refusal }, words) };
 
   if (checked?.facts.terms.kind === "gift") {
     const refused = await giveGift(createAdminClient(), checked, { id: house.id, pass }, { userId: caller.userId, email: caller.email ?? "" }, now);
-    if (refused) return { status: 409, message: humanError({ message: refused }) };
+    if (refused) return { status: 409, say: (words) => humanError({ message: refused }, words) };
     return { url: passPage(appUrl, true) };
   }
 
-  const refusal = passPurchaseRefusal(pass, plan, now, words);
-  if (refusal) return { status: 409, message: refusal };
+  const english = wordsFor("en", "housemates");
+  if (passPurchaseRefusal(pass, plan, now, english)) return { status: 409, say: (words) => passPurchaseRefusal(pass, plan, now, words)! };
 
-  if (!stripe) return { status: 503, message: words('house.pass.checkoutClosed') };
+  if (!stripe) return { status: 503, say: (words) => words('house.pass.checkoutClosed') };
   const price = await stripe.priceId(PASS_LOOKUP_KEYS[plan]);
-  if (!price) return { status: 503, message: words('house.pass.checkoutClosed') };
+  if (!price) return { status: 503, say: (words) => words('house.pass.checkoutClosed') };
 
   // Months free start now, or when the free month ends if that's later.
   const freeMonths = checked?.facts.terms.kind === "trial" ? checked.facts.terms.months : null;
   const firstCharge = plan === "founding" ? null : latest(passFirstCharge(pass, now), freeMonths ? addMonths(now, freeMonths) : null);
   if (checked && checked.facts.terms.kind !== "trial" && !checked.row.stripe_promotion_code_id) {
-    return { status: 409, message: humanError({ message: "offer_ended" }) };
+    return { status: 409, say: (words) => humanError({ message: "offer_ended" }, words) };
   }
   const url = await stripe.checkout({
     mode: plan === "founding" ? "payment" : "subscription",
@@ -134,7 +131,7 @@ function addMonths(from: Date, months: number): Date {
 export async function openBilling(caller: Caller, stripe: PassStripe, houseId: string, appUrl: string): Promise<PassAnswer> {
   const house = await houseOf(caller, houseId);
   if (!house) return NOT_IN_HOUSE;
-  if (house.pass_bought_by !== caller.userId) return { status: 403, message: words('house.pass.notBuyer') };
+  if (house.pass_bought_by !== caller.userId) return { status: 403, say: (words) => words('house.pass.notBuyer') };
 
   // The Stripe ids are the service role's alone; the house was read as the caller above.
   const { data: billing } = await createAdminClient()
@@ -142,7 +139,7 @@ export async function openBilling(caller: Caller, stripe: PassStripe, houseId: s
     .select("stripe_customer_id")
     .eq("house_id", house.id)
     .maybeSingle();
-  if (!billing) return { status: 404, message: words('house.pass.nothingToManage') };
+  if (!billing) return { status: 404, say: (words) => words('house.pass.nothingToManage') };
 
   return { url: await stripe.portal(billing.stripe_customer_id, passPage(appUrl, false)) };
 }

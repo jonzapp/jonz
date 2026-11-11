@@ -1,7 +1,7 @@
 import { ApiError, OfferView, PassCheckoutRequest, type PassPurchase } from '@app/core';
 
 import { getAccessToken } from './auth';
-import { apiBase, ApiRequestError } from './base';
+import { apiBase, ApiRequestError, apiWords, readerHeaders } from './base';
 import { callV1 } from './v1';
 
 // An offer's link (docs/specs/promotions.md): what it gives, read by anyone
@@ -12,13 +12,13 @@ import { callV1 } from './v1';
 export async function readOffer(code: string): Promise<OfferView | null> {
   const token = await getAccessToken();
   const response = await fetch(`${apiBase()}/api/offer/${encodeURIComponent(code)}`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    headers: token ? { Authorization: `Bearer ${token}`, ...readerHeaders() } : readerHeaders(),
   });
   if (response.status === 404) return null;
   const payload: unknown = await response.json().catch(() => null);
   if (!response.ok) {
     const refusal = ApiError.safeParse(payload);
-    throw new ApiRequestError(refusal.success ? refusal.data.error : 'Something went wrong. Try again.', response.status);
+    throw new ApiRequestError(refusal.success ? refusal.data.error : apiWords()('errors.other'), response.status);
   }
   return OfferView.parse(payload);
 }

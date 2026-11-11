@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { POST as fixedRoute } from "@/app/api/reports/[id]/fixed/route";
 import { POST as inboundRoute } from "@/app/api/email/inbound/route";
+import { pushIn } from "@/lib/engine/tick";
 import { readInbound, verifySvix } from "@/lib/inbound";
 import { fixReport, receiveEmail, replyToReport, type Inbound, type Outbox } from "@/lib/moves/reports";
 import { adminClient, signedInUser, type Actor } from "@/tests/support/clients";
@@ -50,7 +51,7 @@ const quiet = (): Outbox & { told: { to: string[]; title: string; url: string }[
     told,
     emails,
     notify: async (to, message) => {
-      told.push({ to, title: message.title, url: message.url });
+      told.push({ to, title: pushIn(message, "en").title, url: message.url });
     },
     email: vi.fn(async (to: string, message: { subject: string; text: string }) => {
       emails.push({ to, subject: message.subject, text: message.text });

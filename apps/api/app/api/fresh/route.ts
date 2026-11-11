@@ -2,7 +2,7 @@ import { FreshRequest, FreshResponse, humanError } from "@app/core";
 
 import { requireUser } from "@/lib/auth";
 import { ensureFresh } from "@/lib/engine/fresh";
-import { error, json, preflight } from "@/lib/respond";
+import { error, json, preflight, wordsOf } from "@/lib/respond";
 
 /**
  * POST /api/fresh `{ houseId }`: catch a house up before the app shows it,
@@ -14,7 +14,7 @@ export async function POST(request: Request) {
   if ("response" in auth) return auth.response;
 
   const body = FreshRequest.safeParse(await request.json().catch(() => null));
-  if (!body.success) return error(request, 400, "Say which house to catch up.");
+  if (!body.success) return error(request, 400, wordsOf(request)("errors.api.sayHouseToCatchUp"));
 
   // Read through the caller's own session: RLS shows a house to its members
   // only, so someone else's (or no) house reads as nothing. Only then does
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     .select("id, ticked_at")
     .eq("id", body.data.houseId)
     .maybeSingle();
-  if (!house) return error(request, 404, humanError({ message: "not_in_house" }));
+  if (!house) return error(request, 404, humanError({ message: "not_in_house" }, wordsOf(request)));
 
   const ticked = await ensureFresh(house.id, house.ticked_at, new Date());
   return json(request, FreshResponse.parse({ ticked }));

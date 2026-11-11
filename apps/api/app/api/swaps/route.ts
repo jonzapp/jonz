@@ -2,7 +2,7 @@ import { SwapAskRequest, SwapAskResponse } from "@app/core";
 
 import { requireUser } from "@/lib/auth";
 import { askSwap } from "@/lib/moves/swap-ask";
-import { error, json, preflight, refused } from "@/lib/respond";
+import { error, json, preflight, refused, wordsOf } from "@/lib/respond";
 
 /**
  * POST /api/swaps `{ mine, theirs }`: ask a housemate who'd rather do your
@@ -14,7 +14,7 @@ export async function POST(request: Request) {
   if ("response" in auth) return auth.response;
 
   const body = SwapAskRequest.safeParse(await request.json().catch(() => null));
-  if (!body.success) return error(request, 400, "Say which two Johns to swap.");
+  if (!body.success) return error(request, 400, wordsOf(request)("errors.api.sayWhichSwap"));
 
   const result = await askSwap({ db: auth.supabase, userId: auth.user.id }, body.data);
   if ("refusal" in result) return refused(request, result.refusal);

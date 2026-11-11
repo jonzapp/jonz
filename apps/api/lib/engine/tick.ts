@@ -1,10 +1,7 @@
-import { addDaysTo, AHEAD_WEEKS, crewByJob, dealtMembers, dueInLine, firstName, earnsImmunity, forfeitFor, isCleanWeek, localDate, monthOf, monthWindow, movingOutAway, ON_CALL_WEEKS, onCallUsual, passOf, passUnlocked, prefsOf, recentBalances, reminderFor, remindMoverNow, REMIND_AFTER_DAYS, REMIND_UNTIL_DAYS, rulesOf, settleMonth, settleOutcome, standings, steadyAhead, steadyDeal, stillHere, tableInputs, USUAL_WEEKS, verdict, votersOn, weekStateOf, weekWindow, weekWinners, oldEnough, type AwayPeriod, type Database, type IsoDow, type Json, type Outcome, type PushKind, type SteadyDealArgs, type SteadyLastTurn, type WeekWindow, wordsFor } from "@app/core";
+import { addDaysTo, AHEAD_WEEKS, crewByJob, dealtMembers, dueInLine, firstName, earnsImmunity, forfeitFor, isCleanWeek, localDate, monthOf, monthWindow, movingOutAway, ON_CALL_WEEKS, onCallUsual, passOf, passUnlocked, prefsOf, recentBalances, reminderFor, remindMoverNow, REMIND_AFTER_DAYS, REMIND_UNTIL_DAYS, rulesOf, houseKind, settleMonth, settleOutcome, standings, steadyAhead, steadyDeal, stillHere, tableInputs, USUAL_WEEKS, verdict, votersOn, weekStateOf, weekWindow, weekWinners, oldEnough, type AwayPeriod, type Database, type IsoDow, type Json, type Outcome, type PushKind, type SteadyDealArgs, type SteadyLastTurn, type WeekWindow, type HouseKind, type Language, type Words, wordsFor } from "@app/core";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { tellHouse } from "./tell";
-
-// Pushes and server lines read the housemates' words for now; each person's own language comes with translation 7.
-const words = wordsFor("en", "housemates");
 
 /**
  * The engine: everything the clock does to a house.
@@ -26,9 +23,17 @@ type MemberRow = Pick<
   "user_id" | "role" | "joined_at" | "streak" | "immunity_tokens" | "swap_tokens" | "suits_days" | "rather" | "moving_out_on" | "born_year"
 >;
 
+/**
+ * A line of a push: what someone wrote, as they wrote it, or Jonz's words,
+ * said in each reader's own language when it's sent (lib/push.ts).
+ */
+export type PushLine = string | ((words: Words) => string);
+
 export interface PushMessage {
-  title: string;
-  body: string;
+  title: PushLine;
+  body: PushLine;
+  /** Whose words its lines read: a family's or housemates' (housemates when left out). */
+  houseKind?: HouseKind;
   url: string;
   /** Which setting it answers to (@app/core notify.ts); `support` has none. */
   kind: PushKind | "support";
@@ -38,6 +43,15 @@ export interface PushMessage {
   act?: { assignmentId: string } | { disputeId: string };
   /** A later push with the same tag replaces this one, rather than stacking. */
   tag?: string;
+}
+
+/** A push as one reader gets it: each line said in their language. */
+export type SaidPush = Omit<PushMessage, "title" | "body"> & { title: string; body: string; language: Language };
+
+export function pushIn(message: PushMessage, language: Language): SaidPush {
+  const words = wordsFor(language, message.houseKind ?? "housemates");
+  const say = (line: PushLine) => (typeof line === "string" ? line : line(words));
+  return { ...message, title: say(message.title), body: say(message.body), language };
 }
 
 /** Sends a push to some housemates. Absent when nothing should be sent. */
@@ -192,9 +206,9 @@ export async function dealWeek(
   week: WeekWindow,
   now: Date,
   replace: boolean,
-): Promise<{ weekId: string | null; byUser: Map<string, string[]> }> {
+): Promise<{ weekId: string | null; byUser: Map<string, PushLine[]> }> {
   const rules = rulesOf(house);
-  const byUser = new Map<string, string[]>();
+  const byUser = new Map<string, PushLine[]>();
   const [list, existing, previous] = await Promise.all([
     db.from("johns").select("*").eq("house_id", house.id).is("archived_at", null).order("created_at"),
     db.from("weeks").select("created_at").eq("house_id", house.id).eq("starts_on", week.startsOn).maybeSingle(),
@@ -380,7 +394,7 @@ export async function dealWeek(
   const onCallDealt = plan.places.flatMap((p) => {
     if (p.dueAt) return [];
     const j = johnOf.get(p.johnId)!;
-    byUser.set(p.userId, [...(byUser.get(p.userId) ?? []), words('today.onCall.dealtAs', { john: j.name })]);
+    byUser.set(p.userId, [...(byUser.get(p.userId) ?? []), (w: Words) => w('today.onCall.dealtAs', { john: j.name })]);
     return [{ john_id: j.id, user_id: p.userId }];
   });
   if (assignments.length === 0 && onCallDealt.length === 0 && Object.keys(plan.state.waiting).length === 0) {
@@ -427,8 +441,9 @@ async function ensureCurrentWeek(
   if (weekId && notify) {
     for (const [userId, names] of byUser) {
       await notify([userId], {
-        title: words('house.notify.dealTitle'),
-        body: names.join(", "),
+        title: (w) => w('house.notify.dealTitle'),
+        body: (w) => names.map((n) => (typeof n === "string" ? n : n(w))).reduce((first, second) => w('common.join.comma', { first, second })),
+        houseKind: houseKind(house.kind),
         url: "/today",
         kind: "deal",
         zone: rules.timezone,
@@ -512,8 +527,9 @@ async function askParents(db: Db, house: HouseRow, members: readonly MemberRow[]
     await notify(
       parents.filter((p) => p !== kid),
       {
-        title: words('today.parentOk.askTitle', { kid: names.get(kid) ?? words('common.shell.formerHousemate'), john: a.name }),
-        body: words('today.parentOk.askBody'),
+        title: (w) => w('today.parentOk.askTitle', { kid: names.get(kid) ?? w('common.shell.formerHousemate'), john: a.name }),
+        body: (w) => w('today.parentOk.askBody'),
+        houseKind: houseKind(house.kind),
         url: "/today",
         kind: "checks",
         zone: house.timezone,
@@ -604,8 +620,9 @@ async function reopenFlag(db: Db, house: HouseRow, johnId: string, now: Date, no
   // An older flag already open, from a housemate, was told about when it was raised.
   if (!notify || flag.flagged_by !== null || !flag.flagged_at || Date.parse(flag.flagged_at) !== now.getTime()) return;
   await notify([flag.user_id], {
-    title: words('today.onCall.pushTitle', { john: flag.name }),
-    body: words('today.onCall.pushAgainBody', { due: dueInLine(new Date(flag.due_at), now, rulesOf(house).timezone) }),
+    title: (w) => w('today.onCall.pushTitle', { john: flag.name }),
+    body: (w) => w('today.onCall.pushAgainBody', { due: dueInLine(new Date(flag.due_at), now, rulesOf(house).timezone) }),
+    houseKind: houseKind(house.kind),
     url: "/today",
     kind: "flags",
     zone: rulesOf(house).timezone,
@@ -805,16 +822,22 @@ async function sendReminders(db: Db, house: HouseRow, now: Date, notify: Notify)
     );
     if (claimed.length === 0 || when === "skip") continue;
     const due = dueInLine(new Date(a.due_at), now, zone);
-    const body =
-      stage === PLANNED ? words('house.notify.plannedBody', { due }) : stage === 2 ? words('house.notify.dueSoonBody', { due }) : words('house.notify.dueTomorrowBody', { due });
     await notify([a.user_id], {
-      title:
+      title: (w) =>
         stage === PLANNED
-          ? words('house.notify.plannedTitle', { john: a.name })
+          ? w('house.notify.plannedTitle', { john: a.name })
           : stage === 2
-            ? words('house.notify.dueSoonTitle', { john: a.name })
-            : words('house.notify.dueTomorrowTitle', { john: a.name }),
-      body: a.needs_photo ? `Due ${due}. ${words('house.notify.needsPhoto')}` : body,
+            ? w('house.notify.dueSoonTitle', { john: a.name })
+            : w('house.notify.dueTomorrowTitle', { john: a.name }),
+      body: (w) =>
+        a.needs_photo
+          ? w('house.notify.needsPhotoBody', { due })
+          : stage === PLANNED
+            ? w('house.notify.plannedBody', { due })
+            : stage === 2
+              ? w('house.notify.dueSoonBody', { due })
+              : w('house.notify.dueTomorrowBody', { due }),
+      houseKind: houseKind(house.kind),
       url: "/today",
       kind: "reminders",
       zone,
@@ -877,8 +900,8 @@ export async function remindMovers(db: Db, now: Date, notify: Notify) {
     );
     if (claimed.length === 0 || when === "skip") continue;
     await notify([m.user_id], {
-      title: words('house.moving.reminderTitle'),
-      body: words('house.moving.reminderBody'),
+      title: (w) => w('house.moving.reminderTitle'),
+      body: (w) => w('house.moving.reminderBody'),
       url: "/welcome",
       kind: "reminders",
       zone,

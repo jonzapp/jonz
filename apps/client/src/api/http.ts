@@ -1,7 +1,7 @@
 import { ApiError } from '@app/core';
 
 import { getAccessToken } from './auth';
-import { apiBase, ApiRequestError } from './base';
+import { apiBase, ApiRequestError, apiWords, readerHeaders } from './base';
 
 export { apiBase, ApiRequestError };
 
@@ -16,17 +16,17 @@ export { apiBase, ApiRequestError };
 export async function apiPost<T>(path: string, body: unknown, schema: { parse: (value: unknown) => T }): Promise<T> {
   const base = apiBase();
   const token = await getAccessToken();
-  if (!token) throw new ApiRequestError('Sign in first.', 401);
+  if (!token) throw new ApiRequestError(apiWords()('errors.api.signInFirst'), 401);
 
   const response = await fetch(`${base}${path}`, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', ...readerHeaders() },
     body: JSON.stringify(body),
   });
   const payload: unknown = await response.json().catch(() => null);
   if (!response.ok) {
     const refusal = ApiError.safeParse(payload);
-    throw new ApiRequestError(refusal.success ? refusal.data.error : 'Something went wrong. Try again.', response.status);
+    throw new ApiRequestError(refusal.success ? refusal.data.error : apiWords()('errors.other'), response.status);
   }
   return schema.parse(payload);
 }

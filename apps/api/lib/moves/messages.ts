@@ -1,6 +1,6 @@
 import "server-only";
 
-import { messagePush, ownerMessageEmail, testWays, type OwnerMessageRequest } from "@app/core";
+import { languageOf, messagePush, ownerMessageEmail, testWays, type OwnerMessageRequest } from "@app/core";
 
 import { sendEmail } from "@/lib/email";
 import type { Notify } from "@/lib/engine/tick";
@@ -80,11 +80,16 @@ export async function sendOutbox(
       );
     }
 
-    for (const row of rows.filter((r) => r.by_email && r.email)) {
+    const emailed = rows.filter((r) => r.by_email && r.email);
+    const { data: people } = emailed.length
+      ? await out.db.from("profiles").select("id, language").in("id", emailed.map((r) => r.user_id))
+      : { data: [] };
+    for (const row of emailed) {
+      const language = languageOf(people?.find((p) => p.id === row.user_id)?.language);
       // A failed email is logged by sendEmail and never holds the rest up.
       await out.email(
         row.email!,
-        ownerMessageEmail({ name: row.name, subject: row.subject, body: row.body, url: row.by_wall ? `${SITE}/house/wall` : SITE, test }),
+        ownerMessageEmail({ name: row.name, subject: row.subject, body: row.body, url: row.by_wall ? `${SITE}/house/wall` : SITE, test, language }),
         { tag: test ? "message-test" : "message", idempotencyKey: `message-${row.message_id}-${row.user_id}` },
       );
     }

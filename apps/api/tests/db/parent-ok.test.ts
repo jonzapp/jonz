@@ -1,7 +1,7 @@
 import { nextWeek, wordsFor } from "@app/core";
 import { describe, expect, it } from "vitest";
 
-import { tickHouse, type PushMessage } from "@/lib/engine/tick";
+import { tickHouse, pushIn, type PushMessage, type SaidPush } from "@/lib/engine/tick";
 import { adminClient } from "@/tests/support/clients";
 import { expectDenied, expectOk, expectRule } from "@/tests/support/expect";
 import { addJohns, deal, makeHouse, reread, thisWeek, ZONE } from "@/tests/support/factories";
@@ -37,8 +37,8 @@ async function family(to: "Sam" | "Leo" | "Maya" = "Leo", john = { name: "Feed t
 }
 
 function recorder() {
-  const sent: { to: string[]; message: PushMessage }[] = [];
-  return { sent, notify: async (to: string[], message: PushMessage) => void sent.push({ to, message }) };
+  const sent: { to: string[]; message: SaidPush }[] = [];
+  return { sent, notify: async (to: string[], message: PushMessage) => void sent.push({ to, message: pushIn(message, "en") }) };
 }
 
 describe("a kid's tick in a family", () => {

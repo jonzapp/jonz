@@ -2,7 +2,7 @@ import { ResetRequest, ResetResponse } from "@app/core";
 
 import { requireUser } from "@/lib/auth";
 import { resetHouse } from "@/lib/moves/resets";
-import { error, json, preflight, refused } from "@/lib/respond";
+import { error, json, preflight, refused, wordsOf } from "@/lib/respond";
 
 /**
  * POST /api/resets `{ houseId, kind, week?, user?, assignment?, outcome?,
@@ -14,7 +14,7 @@ export async function POST(request: Request) {
   if ("response" in auth) return auth.response;
 
   const body = ResetRequest.safeParse(await request.json().catch(() => null));
-  if (!body.success) return error(request, 400, "Say what to reset.");
+  if (!body.success) return error(request, 400, wordsOf(request)("errors.api.sayWhatToReset"));
 
   const result = await resetHouse({ db: auth.supabase, userId: auth.user.id }, body.data, new Date());
   if ("refusal" in result) return refused(request, result.refusal);

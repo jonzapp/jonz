@@ -3,7 +3,7 @@ import { humanError, PromotionMade, promotionProblems, PromotionRequest } from "
 import { requireUser } from "@/lib/auth";
 import { makePromotion } from "@/lib/moves/promotions";
 import { offerStripe } from "@/lib/pass/stripe";
-import { error, json, preflight, refused } from "@/lib/respond";
+import { error, json, preflight, refused, wordsOf } from "@/lib/respond";
 
 /**
  * POST /api/admin/promotions: the owner, signed in with their code, makes a
@@ -17,7 +17,7 @@ export async function POST(request: Request) {
   if ("response" in auth) return auth.response;
 
   const body = PromotionRequest.safeParse(await request.json().catch(() => null));
-  if (!body.success) return error(request, 400, humanError({ message: "promotion_bad" }));
+  if (!body.success) return error(request, 400, humanError({ message: "promotion_bad" }, wordsOf(request)));
   const problem = Object.values(promotionProblems(body.data, new Date()))[0];
   if (problem) return error(request, 400, problem);
 

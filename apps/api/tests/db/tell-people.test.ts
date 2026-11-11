@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { tickHouse, type PushMessage } from "@/lib/engine/tick";
+import { tickHouse, pushIn, type PushMessage, type SaidPush } from "@/lib/engine/tick";
 import { adminClient } from "@/tests/support/clients";
 import { expectOk, expectRule } from "@/tests/support/expect";
 import { actorFor, addJohns, deal, makeHouse, reread, someoneElse, thisWeek } from "@/tests/support/factories";
@@ -20,11 +20,11 @@ const words = wordsFor('en', 'housemates');
 const HOUR = 3_600_000;
 const db = adminClient();
 
-type Sent = { to: string[]; message: PushMessage };
+type Sent = { to: string[]; message: SaidPush };
 
 function recorder() {
   const sent: Sent[] = [];
-  return { sent, notify: async (to: string[], message: PushMessage) => void sent.push({ to, message }) };
+  return { sent, notify: async (to: string[], message: PushMessage) => void sent.push({ to, message: pushIn(message, "en") }) };
 }
 
 /** A John dealt this week, made `overdueHours` late. */

@@ -80,16 +80,17 @@ export function reportGist(words: string, max = 80): string {
   return `${end.replace(/[\s,;:.\-–—]+$/, "")}…`;
 }
 
-/** The pushes a report sends. */
+/** The pushes a report sends, each said in its reader's words. */
 export const REPORT_PUSH = {
   /** To the owner. */
-  sent: (kind: ReportKind, name: string | null) =>
-    `${name ?? "Someone"} sent ${kind === "problem" ? "a problem" : kind === "idea" ? "an idea" : "a question"}`,
-  wroteBack: (name: string | null) => `${name ?? "Someone"} wrote back`,
-  emailed: (name: string | null) => `${name ?? "Someone"} emailed support`,
+  sent: (kind: ReportKind, name: string | null, words: Words) =>
+    words("admin.inbox.push.sent", { name: name ?? words("admin.inbox.push.someone"), what: kind }),
+  wroteBack: (name: string | null, words: Words) => words("admin.inbox.push.wroteBack", { name: name ?? words("admin.inbox.push.someone") }),
+  emailed: (name: string | null, words: Words) => words("admin.inbox.push.emailed", { name: name ?? words("admin.inbox.push.someone") }),
   /** To its sender. */
-  replied: (signed: string | null) => (signed ? `${signed} at Jonz replied` : "Jonz replied"),
-  fixed: "Fixed: the problem you reported",
+  replied: (signed: string | null, words: Words) =>
+    signed ? words("common.report.push.repliedBy", { signed }) : words("common.report.push.replied"),
+  fixed: (words: Words) => words("common.report.push.fixed"),
 } as const;
 
 /** The Inbox's filters: what state it's in, and what kind it is. It opens on what's waiting for you. */

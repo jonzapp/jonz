@@ -1,4 +1,4 @@
-import { ApiRequestError } from './base';
+import { ApiRequestError, apiWords } from './base';
 
 // Pictures go through our own address (docs/specs/api.md, C3): /v1 hands
 // out a link to put one at (proof_upload, file_upload), and the bytes go
@@ -8,6 +8,6 @@ import { ApiRequestError } from './base';
 export async function putFile(upload: string, bytes: ArrayBuffer, type: 'image/jpeg' | 'image/png'): Promise<void> {
   const response = await fetch(upload, { method: 'PUT', headers: { 'Content-Type': type }, body: bytes });
   if (response.ok) return;
-  if (response.status === 413) throw new ApiRequestError('That picture is too big. Try a smaller one.', 413);
-  throw new ApiRequestError('The picture didn’t upload. Try again.', response.status);
+  if (response.status === 413) throw new ApiRequestError(apiWords()('errors.api.pictureTooBig'), 413);
+  throw new ApiRequestError(apiWords()('errors.api.pictureFailed'), response.status);
 }

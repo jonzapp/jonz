@@ -1,4 +1,4 @@
-import { closesAt, coverOpensAt, firstName, houseKind, rulesOf, TOLD_KINDS, tellOf, wordsFor, type Currency, type Database } from "@app/core";
+import { closesAt, coverOpensAt, firstName, houseKind, rulesOf, TOLD_KINDS, tellOf, wordsFor, type Currency, type Database, type Words } from "@app/core";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Notify } from "./tick";
@@ -20,8 +20,8 @@ function ok<T>(result: { data: T | null; error: { message: string } | null }, wh
 
 /** Push what's new since the last tick. Answers how many pushes it sent. */
 export async function tellHouse(db: Db, house: HouseRow, memberIds: readonly string[], now: Date, notify: Notify): Promise<number> {
-  // The house's words; each person's own language comes with translation step 7.
-  const words = wordsFor("en", houseKind(house.kind));
+  // Each push is said in its reader's language when it's sent; who it goes to is the same in any.
+  const kind = houseKind(house.kind);
   const zone = rulesOf(house).timezone;
   const profiles = ok(await db.from("profiles").select("id, display_name").in("id", [...memberIds]), "profiles");
   const nameOf = (id: string | null) => {
@@ -42,15 +42,19 @@ export async function tellHouse(db: Db, house: HouseRow, memberIds: readonly str
   );
   for (const e of untold) {
     if (!(TOLD_KINDS as readonly string[]).includes(e.kind) || Date.parse(e.created_at) < now.getTime() - DAY) continue;
-    const told = tellOf(
-      { kind: e.kind, userId: e.user_id, assignmentId: e.assignment_id, data: (e.data ?? {}) as Record<string, unknown> },
-      nameOf,
-      memberIds,
-      house.currency as Currency,
-      words,
-    );
+    const post = { kind: e.kind, userId: e.user_id, assignmentId: e.assignment_id, data: (e.data ?? {}) as Record<string, unknown> };
+    const tellIn = (words: Words) => tellOf(post, nameOf, memberIds, house.currency as Currency, words)!;
+    const told = tellOf(post, nameOf, memberIds, house.currency as Currency, wordsFor("en", kind));
     if (!told) continue;
-    await notify(told.to, { title: told.title, body: told.body, url: told.url, kind: told.kind, zone, tag: told.tag });
+    await notify(told.to, {
+      title: (w) => tellIn(w).title,
+      body: (w) => tellIn(w).body,
+      houseKind: kind,
+      url: told.url,
+      kind: told.kind,
+      zone,
+      tag: told.tag,
+    });
     sent += 1;
   }
   if (untold.length) {
@@ -95,8 +99,9 @@ export async function tellHouse(db: Db, house: HouseRow, memberIds: readonly str
     opened.push(a.id);
     if (!memberIds.includes(a.user_id)) continue;
     await notify([a.user_id], {
-      title: words('wall.tell.coverOpenTitle', { john: a.name }),
-      body: words('wall.tell.coverOpenBody'),
+      title: (w) => w('wall.tell.coverOpenTitle', { john: a.name }),
+      body: (w) => w('wall.tell.coverOpenBody'),
+      houseKind: kind,
       url: "/today",
       kind: "reminders",
       zone,

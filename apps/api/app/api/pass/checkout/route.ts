@@ -4,7 +4,7 @@ import { requireUser } from "@/lib/auth";
 import { env } from "@/lib/env";
 import { startCheckout } from "@/lib/moves/pass";
 import { passStripe } from "@/lib/pass/stripe";
-import { error, json, preflight } from "@/lib/respond";
+import { error, json, preflight, wordsOf } from "@/lib/respond";
 
 // Server lines read the housemates' words for now; each person's own language comes with translation 7.
 const words = wordsFor("en", "housemates");
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
   if ("response" in auth) return auth.response;
 
   const body = PassCheckoutRequest.safeParse(await request.json().catch(() => null));
-  if (!body.success) return error(request, 400, "Say which house, and which plan.");
+  if (!body.success) return error(request, 400, wordsOf(request)("errors.api.sayHouseAndPlan"));
   if (!PASS_ENFORCED && !body.data.offer) return error(request, 503, words('house.pass.betaFree'));
 
   // Null while Stripe isn't set up: then only a free Pass's link works (503 otherwise).
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     new Date(),
     body.data.offer ?? null,
   );
-  if ("status" in answer) return error(request, answer.status, answer.message);
+  if ("status" in answer) return error(request, answer.status, answer.say(wordsOf(request)));
   return json(request, PassRedirect.parse(answer));
 }
 

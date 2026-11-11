@@ -1,6 +1,6 @@
 import "server-only";
 
-import { firstName, houseKind, rulesOf, shareLabel, wordsFor, type RollCallRequest } from "@app/core";
+import { firstName, houseKind, rulesOf, shareLabel, type RollCallRequest } from "@app/core";
 
 import { pushNotifier } from "@/lib/push";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -45,20 +45,18 @@ export async function rollCall(
   const { data: me } = await caller.db.from("profiles").select("display_name").eq("id", caller.userId).single();
   const who = firstName(me?.display_name ?? "Someone");
   const zone = rulesOf(place.houses).timezone;
-  // Pushes are in English until each person picks a language (translation step 7).
-  const words = wordsFor("en", houseKind(place.houses.kind));
-  const message = { url: "/today", kind: "checks" as const, zone, tag: `john:${assignmentId}` };
+  const message = { url: "/today", kind: "checks" as const, zone, tag: `john:${assignmentId}`, houseKind: houseKind(place.houses.kind) };
   for (const c of place.crew ?? []) {
     if (c.user_id === caller.userId) continue;
     await notify([c.user_id], {
       ...message,
-      title: words('john.crew.pushAdded', { who, john: place.name, points: shareLabel(Number(c.points)) }),
-      body: words('john.crew.pushAddedBody'),
+      title: (w) => w('john.crew.pushAdded', { who, john: place.name, points: shareLabel(Number(c.points)) }),
+      body: (w) => w('john.crew.pushAddedBody'),
     });
   }
   const leftOff = (absent ?? []).map((a) => a.user_id);
   if (leftOff.length > 0) {
-    await notify(leftOff, { ...message, title: words('john.crew.pushLeftOff', { who, john: place.name }), body: words('john.crew.pushLeftOffBody') });
+    await notify(leftOff, { ...message, title: (w) => w('john.crew.pushLeftOff', { who, john: place.name }), body: (w) => w('john.crew.pushLeftOffBody') });
   }
   return { people };
 }
