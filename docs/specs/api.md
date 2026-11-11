@@ -59,6 +59,10 @@ when the executor's check is taken away.
   fields. Anything else is `/v2`. CI compares `apps/v1/openapi.json` with
   `main`'s (oasdiff) and fails on a break. A unit test fails while the file
   is out of date (`npm run openapi`).
+- **Allowed breaks.** A break the owner agrees to keep in `/v1` goes in
+  `apps/v1/oasdiff-ignore.txt`, with the date, who agreed and why. The one so
+  far: `my_language` answers any language Jonz has, not only `en`, so a new
+  language never needs `/v2` (2026-11-11, for French).
 - **The OpenAPI document.** It is OpenAPI 3.1, built from the operations
   themselves and served at `/v1/openapi.json`.
 - **Retiring an operation.** It gets `Deprecation` (RFC 9745) and `Sunset`
