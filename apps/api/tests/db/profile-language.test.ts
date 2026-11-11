@@ -25,7 +25,7 @@ describe("your language", () => {
 
   it("takes only a language Jonz has", async () => {
     const ava = await signedInUser("Ava");
-    const { error } = await ava.db.rpc("set_my_language", { p_language: "fr" });
+    const { error } = await ava.db.rpc("set_my_language", { p_language: "de" });
     expect(error?.message).toMatch(/profiles_language_check/);
     expect(await languageOf(ava.userId)).toBeNull();
   });
