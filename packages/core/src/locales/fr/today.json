@@ -74,7 +74,7 @@
   "today.nextUp.thisWeek": "{place} cette semaine",
   "today.nextUp.up": "+{amount} en {month}",
   "today.nextUp.down": "−{amount} en {month}",
-  "today.nextUp.square": "quitte en {month}",
+  "today.nextUp.square": "tu seras quitte en {month}",
   "today.onCall.section": "De garde",
   "today.onCall.needsDoing": "À faire",
   "today.onCall.flagging": "Signalement…",

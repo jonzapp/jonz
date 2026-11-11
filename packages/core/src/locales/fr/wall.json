@@ -28,7 +28,7 @@
   "wall.feed.coveredWord": "Remplacé",
   "wall.feed.disputed": "{you, select, true {Tu as contesté la coche {whose} sur {john}} other {{who} a contesté la coche {whose} sur {john}}}",
   "wall.feed.struckOut": "{john} {whose} a été annulé",
-  "wall.feed.stands": "{john} {whose} est maintenu",
+  "wall.feed.stands": "{john} {whose} : la coche est maintenue",
   "wall.feed.earnedImmunity": "{you, select, true {Tu as gagné un joker} other {{who} a gagné un joker}}",
   "wall.feed.toppedWeek": "{you, select, true {Tu as fini en tête de la semaine} other {{who} a fini en tête de la semaine}}",
   "wall.feed.skipped": "{you, select, true {Tu as utilisé un joker sur {john}} other {{who} a utilisé un joker sur {john}}}",
