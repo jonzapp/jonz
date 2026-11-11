@@ -73,6 +73,10 @@
 
 - A chat's message box grows as you type to about 5 lines, then scrolls;
   the send arrow sits inside the box. (Ask Jonz, #37)
+- In a chat's message box on a computer, Enter sends and Shift+Enter
+  starts a new line, as in other chat apps. On a touch screen (a phone, a
+  tablet without a mouse) and in the phone apps, Return is a new line and
+  the arrow sends. (Ask Jonz Enter, 10 Nov)
 - Forms sit in a column capped at `FORM_MAX` (520) on a laptop. (**New**)
 - A short select opens in place (`PickRow`); a radio or checkbox is a
   `ChoiceRow`. (AGENTS.md)

@@ -48,6 +48,39 @@ const SEND = 34;
 const SEND_INSET = (LINE - SEND) / 2;
 
 /**
+ * Whether Enter sends, as in other chat apps: on a computer's keyboard Enter
+ * sends and Shift+Enter starts a new line. On a phone or tablet (a touch
+ * screen with no mouse) Return stays a new line and the arrow sends, since
+ * there's no Shift+Return to fall back on. Phone apps keep Return too.
+ */
+export function enterSends(): boolean {
+  if (Platform.OS !== "web" || typeof window === "undefined") return false;
+  const touchOnly = window.matchMedia?.("(hover: none) and (pointer: coarse)").matches ?? false;
+  return !touchOnly;
+}
+
+/** The key the box was given, as the browser hands it to a TextInput's onKeyPress on the web. */
+type WebKey = {
+  key: string;
+  shiftKey?: boolean;
+  altKey?: boolean;
+  ctrlKey?: boolean;
+  metaKey?: boolean;
+  isComposing?: boolean;
+  keyCode?: number;
+};
+
+/**
+ * Whether a key press in the box is "send": Enter alone, not while an input
+ * method is still putting a word together (Japanese, Chinese, Korean), and
+ * not with Shift (a new line) or another modifier.
+ */
+export function isSendKey(e: WebKey): boolean {
+  if (e.key !== "Enter" || e.isComposing || e.keyCode === 229) return false;
+  return !e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey;
+}
+
+/**
  * The chat: its turns in a log that keeps to the newest, over whatever sits
  * at its foot (the message box, or why there isn't one), lifted clear of the
  * keyboard.
@@ -212,6 +245,16 @@ export function Composer({
   const [wordsHeight, setWordsHeight] = useState(0);
   // The bubble shows the focus, not the words inside it.
   const [focused, setFocused] = useState(false);
+  const canSend = !busy && !!value.trim();
+  // Enter sends on a computer (Shift+Enter is a new line); it never adds a
+  // line of its own there, even while Jonz is still answering.
+  const onKeyPress = enterSends()
+    ? (e: { nativeEvent: unknown; preventDefault: () => void }) => {
+        if (!isSendKey(e.nativeEvent as WebKey)) return;
+        e.preventDefault();
+        if (canSend) onSend();
+      }
+    : undefined;
   const box = (
     <>
       {problem ? (
@@ -246,6 +289,7 @@ export function Composer({
             onChangeText={onChangeText}
             onFocus={() => setFocused(true)}
             onBlur={() => setFocused(false)}
+            onKeyPress={onKeyPress}
             maxLength={maxLength}
             multiline
             numberOfLines={1}
@@ -271,7 +315,7 @@ export function Composer({
         <SendButton
           label={sendLabel}
           onPress={onSend}
-          disabled={busy || !value.trim()}
+          disabled={!canSend}
           testID={`${testID}-send`}
         />
       </View>
