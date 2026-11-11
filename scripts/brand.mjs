@@ -8,7 +8,7 @@
 //
 // `npm run brand -- --store today.png week.png …` also frames phone
 // screenshots for the App Store and Google Play, one headline each, and puts
-// the first two iPhone frames side by side for the README.
+// the first three iPhone frames side by side for the README.
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { chromium } from "@playwright/test";
