@@ -6,11 +6,13 @@ import { refTag } from "./inbound-email";
 import { offerSmallPrint, promotionPrices, promotionSentence, promotionTitle, type PromotionTerms } from "./promotions";
 import { type ReportKind, reportGist } from "./reports";
 import { escapeHtml } from "./share";
-import { wordsFor } from "./words-for";
+import type { Language } from "./locales";
+import { wordsFor, type Words } from "./words-for";
 
-// The emails' words (locales/en/email.json), in English until each person
-// picks their language (translation step 7).
-const words = wordsFor("en", "housemates");
+// The emails' words (locales/en/email.json), in the language the person it's
+// to reads Jonz in: `language` on each email, English when it's left out
+// (someone without an account, or before they've opened the app).
+const wordsIn = (language: Language = "en") => wordsFor(language, "housemates");
 
 // Jonz's emails, drawn once for every sender: the API sends them through
 // Resend, and Supabase's sign-in emails are written from the same parts.
@@ -93,6 +95,8 @@ export interface EmailSpec {
   why: string;
   /** For optional email: a link that turns this kind off. */
   unsubscribe?: { label: string; url: string };
+  /** The language it's written in, for the words at its foot. English when left out. */
+  language?: Language;
 }
 
 /**
@@ -184,11 +188,8 @@ function blockText(block: EmailBlock): string {
   }
 }
 
-/** The words at the foot of every email. */
-export const EMAIL_FOOT = {
-  tagline: words("email.foot.tagline"),
-  site: "jonz.app",
-};
+/** The address at the head and foot of every email; its tagline is in the email's language. */
+const EMAIL_SITE = "jonz.app";
 
 /** The one <style> block: dark mode where the mail app follows the phone, and a narrower gutter on a phone. */
 const STYLE = `<style>
@@ -209,6 +210,7 @@ const STYLE = `<style>
 
 /** An email, drawn: its HTML and the plain-text copy beside it. */
 export function renderEmail(spec: EmailSpec): EmailMessage {
+  const tagline = wordsIn(spec.language)("email.foot.tagline");
   const sign = EMAIL_IMAGES.sign;
   const top = spec.panel
     ? panelHtml(spec.panel)
@@ -229,7 +231,7 @@ ${STYLE}</head>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;"><tr><td class="jz-pad" style="padding:28px 32px 36px;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="jz-headrule" style="border-bottom:3px solid ${C.ink};"><tr>
 <td style="padding:0 0 18px;">${img(sign.path, sign.width, sign.height, sign.alt)}</td>
-<td align="right" class="jz-muted" style="padding:0 0 18px;font-family:${FONT};font-size:13px;color:${C.muted};">${EMAIL_FOOT.site}</td>
+<td align="right" class="jz-muted" style="padding:0 0 18px;font-family:${FONT};font-size:13px;color:${C.muted};">${EMAIL_SITE}</td>
 </tr></table>
 <div style="height:24px;line-height:24px;font-size:0;">&nbsp;</div>
 ${top}
@@ -237,8 +239,8 @@ ${top}
 ${spec.blocks.map(blockHtml).join("\n")}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="jz-rule" style="border-top:1px solid ${C.line};margin-top:8px;"><tr><td class="jz-muted" style="padding:16px 0 0;font-family:${FONT};font-size:12.5px;line-height:1.55;color:${C.muted};">
 <p style="margin:0 0 6px;">${escapeHtml(spec.why)}</p>${unsubscribe}
-<p style="margin:0 0 6px;">${EMAIL_FOOT.tagline}</p>
-<p style="margin:0;"><a href="${LEGAL.site}" style="color:${C.muted};text-decoration:none;">${EMAIL_FOOT.site}</a></p>
+<p style="margin:0 0 6px;">${escapeHtml(tagline)}</p>
+<p style="margin:0;"><a href="${LEGAL.site}" style="color:${C.muted};text-decoration:none;">${EMAIL_SITE}</a></p>
 </td></tr></table>
 </td></tr></table>
 </td></tr></table>
@@ -252,7 +254,7 @@ ${spec.blocks.map(blockHtml).join("\n")}
     "--",
     spec.why,
     ...(spec.unsubscribe ? [`${spec.unsubscribe.label}: ${spec.unsubscribe.url}`] : []),
-    EMAIL_FOOT.tagline,
+    tagline,
     LEGAL.site,
     "",
   ].join("\n");
@@ -262,20 +264,22 @@ ${spec.blocks.map(blockHtml).join("\n")}
 // ── The emails ──────────────────────────────────────────────────────────────
 
 /** Hi, by first name when there is one. */
-const hi = (name: string | null | undefined) => {
+const hi = (name: string | null | undefined, words: Words) => {
   const first = name?.trim().split(/\s+/)[0];
   return first ? words("email.hi", { name: first }) : words("email.hiAnon");
 };
 
 /** When an account is deleted, to the address it had. Sent once, after the delete has finished. */
-export function accountDeletedEmail(args: { name: string | null; deletedOn: string }): EmailMessage {
+export function accountDeletedEmail(args: { name: string | null; deletedOn: string; language?: Language }): EmailMessage {
+  const words = wordsIn(args.language);
   return renderEmail({
+    language: args.language,
     subject: words("email.deleted.subject"),
     preheader: words("email.deleted.preheader"),
     headline: words("email.deleted.headline"),
     lead: words("email.deleted.lead", { date: args.deletedOn }),
     blocks: [
-      { type: "text", text: hi(args.name) },
+      { type: "text", text: hi(args.name, words) },
       { type: "text", text: words("email.deleted.gone") },
       { type: "text", text: words("email.deleted.again") },
       { type: "small", text: words("email.deleted.notYou") },
@@ -305,7 +309,9 @@ export function reportReplyEmail(args: {
   reply: string;
   url: string | null;
   fixed?: boolean;
+  language?: Language;
 }): EmailMessage {
+  const words = wordsIn(args.language);
   const who = args.signed ? words("email.report.signed", { name: args.signed }) : APP_NAME;
   const paragraphs = args.reply
     .split(/\n\s*\n/)
@@ -314,12 +320,13 @@ export function reportReplyEmail(args: {
   const about = args.subject?.trim() ? args.subject.trim().replace(/^\s*((re|fwd?)\s*:\s*)+/i, "").replace(/\(ref [0-9a-f]{8}\)/gi, "").trim() : "";
   const topic = about ? reportGist(about, 60) : reportGist(args.words, 60);
   return renderEmail({
+    language: args.language,
     subject: words("email.report.subject", { fixed: Boolean(args.fixed), topic, ref: refTag(args.id) }),
     preheader: reportGist(args.reply, 90),
     headline: args.fixed ? words("email.report.headlineFixed") : words("email.report.headline"),
     lead: args.fixed ? words("email.report.leadFixed", { who }) : words("email.report.lead", { who }),
     blocks: [
-      { type: "text", text: hi(args.name) },
+      { type: "text", text: hi(args.name, words) },
       ...paragraphs.map((text) => ({ type: "text" as const, text })),
       ...(args.url ? [{ type: "button" as const, label: words("email.report.open"), url: args.url }] : []),
       { type: "small", text: words("email.report.youWrote", { words: reportGist(args.words, 140) }) },
@@ -329,11 +336,7 @@ export function reportReplyEmail(args: {
 }
 
 /** Who gets a notice by email: a status goes to everyone, offers and news only to those who said yes. */
-export const NOTICE_EMAIL_WHY = {
-  status: words("email.notice.whyStatus"),
-  offer: words("email.notice.whyNews"),
-  news: words("email.notice.whyNews"),
-} satisfies Record<NoticeKind, string>;
+const noticeEmailWhy = (kind: NoticeKind, words: Words) => (kind === "status" ? words("email.notice.whyStatus") : words("email.notice.whyNews"));
 
 /**
  * A notice from the owner, by email: the same title, words and link as its
@@ -347,8 +350,10 @@ export function noticeEmail(args: {
   more?: string | null;
   link?: { label: string; url: string } | null;
   unsubscribeUrl?: string | null;
+  language?: Language;
 }): EmailMessage {
-  const blocks: EmailBlock[] = [{ type: "text", text: hi(args.name) }];
+  const words = wordsIn(args.language);
+  const blocks: EmailBlock[] = [{ type: "text", text: hi(args.name, words) }];
   if (args.more) blocks.push({ type: "text", text: args.more });
   if (args.link) blocks.push({ type: "button", label: args.link.label, url: args.link.url });
   return renderEmail({
@@ -356,7 +361,8 @@ export function noticeEmail(args: {
     preheader: args.body,
     panel: { kind: args.kind, title: args.title, body: args.body },
     blocks,
-    why: NOTICE_EMAIL_WHY[args.kind],
+    why: noticeEmailWhy(args.kind, words),
+    language: args.language,
     unsubscribe:
       args.kind !== "status" && args.unsubscribeUrl ? { label: words("email.notice.stop"), url: args.unsubscribeUrl } : undefined,
   });
@@ -367,7 +373,15 @@ export function noticeEmail(args: {
  * email: the subject, then the words as they were written, paragraph by
  * paragraph, and a way back to the app. Replying reaches support@jonz.app.
  */
-export function ownerMessageEmail(args: { name: string | null; subject: string; body: string; url: string; test?: boolean }): EmailMessage {
+export function ownerMessageEmail(args: {
+  name: string | null;
+  subject: string;
+  body: string;
+  url: string;
+  test?: boolean;
+  language?: Language;
+}): EmailMessage {
+  const words = wordsIn(args.language);
   const paragraphs = args.body
     .split(/\n\s*\n/)
     .map((p) => p.trim())
@@ -377,11 +391,12 @@ export function ownerMessageEmail(args: { name: string | null; subject: string; 
     preheader: args.body.slice(0, 90),
     headline: args.subject,
     blocks: [
-      { type: "text", text: hi(args.name) },
+      { type: "text", text: hi(args.name, words) },
       ...paragraphs.map((text) => ({ type: "text" as const, text })),
       { type: "button", label: words("email.message.open"), url: args.url },
     ],
     why: args.test ? words("email.message.whyTest") : words("email.message.why"),
+    language: args.language,
   });
 }
 
@@ -398,7 +413,9 @@ export function offerEmail(args: {
   currency?: Currency;
   url: string;
   zone: string;
+  language?: Language;
 }): EmailMessage {
+  const words = wordsIn(args.language);
   const currency = args.currency ?? "USD";
   const title = promotionTitle(args.terms, currency);
   const sentence = promotionSentence({ ...args.terms, endsAt: null }, args.zone, currency);
@@ -409,12 +426,13 @@ export function offerEmail(args: {
     preheader: args.note ?? sentence,
     panel: { kind: "offer", title: `${title}.`, body: sentence },
     blocks: [
-      { type: "text", text: hi(args.name) },
+      { type: "text", text: hi(args.name, words) },
       ...(args.note ? [{ type: "text" as const, text: args.note }] : []),
       ...(rows.length ? [{ type: "rows" as const, rows }] : []),
       { type: "button", label: words('house.promotion.useIt'), url: args.url },
       { type: "small", text: offerSmallPrint(args.email, until, args.terms.kind === "gift", words) },
     ],
     why: words('house.promotion.emailWhy'),
+    language: args.language,
   });
 }

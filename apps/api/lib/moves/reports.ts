@@ -2,6 +2,8 @@ import "server-only";
 
 import {
   firstName,
+  languageOf,
+  type Language,
   refOf,
   REPORT_PUSH,
   type ReportFixRequest,
@@ -126,10 +128,16 @@ async function tell(out: Outbox, to: Recipient, said: { body: string; signed: st
   }
   let address = to.email;
   let name = to.name ? firstName(to.name) : null;
+  let language: Language = "en";
   if (to.user_id) {
-    const [{ data: who }, named] = await Promise.all([out.db.auth.admin.getUserById(to.user_id), nameOf(out.db, to.user_id)]);
+    const [{ data: who }, named, { data: profile }] = await Promise.all([
+      out.db.auth.admin.getUserById(to.user_id),
+      nameOf(out.db, to.user_id),
+      out.db.from("profiles").select("language").eq("id", to.user_id).maybeSingle(),
+    ]);
     address = who?.user?.email ?? null;
     name = named;
+    language = languageOf(profile?.language);
   }
   if (!address) return;
   // A failed email is logged by sendEmail; what Jonz said is on the report either way.
@@ -145,6 +153,7 @@ async function tell(out: Outbox, to: Recipient, said: { body: string; signed: st
       reply: said.body,
       url,
       fixed: said.fixed,
+      language,
     }),
     { tag: said.fixed ? "report-fixed" : "report-reply" },
   );
