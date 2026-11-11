@@ -9,7 +9,7 @@ import { dateIn } from "./format";
 /**
  * Whether a house without the Pass loses the extras: on since 11 Nov 2026,
  * when every house made before then became a Founding house
- * (20270104090000_pass_on.sql). Tests pass their own to `passUnlocked`.
+ * (20270106090000_pass_on.sql). Tests pass their own to `passUnlocked`.
  */
 export const PASS_ENFORCED: boolean = true;
 

@@ -39,7 +39,7 @@ link); give it as a Founding plan by hand until there is an admin tool.
   Written only by the service role; housemates read them with the house.
 - `@app/core` `pass.ts`: `passOf`, `hasPass`, `passUnlocked`, `passLine`,
   `passOffers`, and `PASS_ENFORCED`, on since 11 Nov 2026
-  (`20270104090000_pass_on.sql` made every house made before then a
+  (`20270106090000_pass_on.sql` made every house made before then a
   Founding house). The database's own `house_has_pass` answers the same
   question for its checks. Staging's Demo House starts with its free month
   ended, so the locked app can be tried there.
