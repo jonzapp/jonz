@@ -24,7 +24,8 @@ export async function buttonBreaks(page: Page, { oneAmber = true }: { oneAmber?:
   return page.evaluate((oneAmber) => {
     const breaks: string[] = [];
     const shown = (element: Element) => {
-      if (element.closest('[aria-hidden="true"]')) return false;
+      // A tab you've left stays drawn behind: aria-hidden before expo-router 58.0.31, inert on web since.
+      if (element.closest('[aria-hidden="true"], [inert]')) return false;
       const box = element.getBoundingClientRect();
       const style = getComputedStyle(element);
       return box.width > 0 && box.height > 0 && style.visibility !== "hidden" && style.display !== "none";
