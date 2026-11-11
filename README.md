@@ -12,38 +12,56 @@ In our house the week's chores were always called Johns, so that is what
 Jonz calls them: one chore is a **John**. List the house's Johns once, and
 every week Jonz shares them out so the work evens out over the month. The
 house checks each tick, and the month's Stake settles who did their share.
+A family can use it too: parents OK the kids' ticks, and kids earn pocket
+money in place of the Stake.
 
 <p align="center">
-  <img alt="Johns, dealt fair: the Today screen. The bathroom moves around: the Week screen." src="docs/brand/readme-screens.png" width="540">
+  <img alt="Johns, dealt fair: the Today screen. Just ask Jonz: Ask Jonz answering about the week. Families too: a parent's Today, with kids' ticks to OK." src="docs/brand/readme-screens.png" width="720">
 </p>
 
 ## What it does
 
-- **Fair shares, dealt for you.** Every John has an effort score (1–10), a
-  kind, a due day and a repeat. Each week the Johns are dealt so effort evens
-  out over the month, and the bathroom moves around.
+- **Fair shares, dealt for you.** Every John has points (1 to 20), a kind,
+  a due day and a repeat. Each week the Johns are dealt so the work evens
+  out, and the bathroom moves around. Smart mode weighs who's behind, who
+  did it last and what each person would rather do; Classic takes turns in
+  order. A points budget keeps anyone's week from getting too full.
 - **Groups.** Three of you share the upstairs bathroom and two the
   downstairs one? Put each bathroom's Johns in a group, and only that group
   is dealt them, and only they count toward its share.
+- **On call, covering and shared Johns.** An on-call John (the bins when
+  they're full) goes to whoever is on call that week when anyone flags it.
+  An overdue John can be covered by someone else, who earns it. A big John
+  can be done together, with the points split among whoever helped.
+- **Plan it and swap.** Pick the day you'll do a John, or offer it to a
+  housemate in a swap.
 - **Time away that stays fair.** Book your dates and you aren't dealt Johns
   due while you're gone, but your share keeps counting, so you catch up a
   little each week when you're back (the house can make that half, or none).
+  A month calendar shows who's away.
 - **Housemate check.** A tick stands after 24 hours unless someone disputes
   it; disputes go to a quick house vote. Photo receipts are optional, or
-  required on the Johns you choose.
+  required on the Johns you choose. Most things can be undone.
 - **The Stake.** Everyone stakes the same each month. Late and missed Johns
   forfeit part of it, and at month end the forfeits are shared among
-  everyone else. Jonz keeps the ledger and works out who pays whom; it never
-  moves money.
+  everyone else. Jonz keeps the ledger and works out who pays whom, or the
+  house settles up in Splitwise; Jonz never moves money.
+- **Families.** A family house has parents and kids. A parent OKs each
+  kid's tick, kids earn pocket money up to a monthly cap, and kids under 13
+  can have a profile a parent runs, with no sign-in. Every sentence speaks
+  to a family, never to housemates.
 - **The Table, streaks and perks.** Points for every John done (half for
   late). Four clean weeks in a row earn an immunity token; topping the week
-  earns a swap.
+  earns a swap. The track record shows each person's weeks at a glance.
 - **The Wall.** Ticks, photos, misses, disputes and perks as they happen,
   with reactions.
 - **Ask Jonz.** Describe the house in a sentence and Jonz drafts the John
-  list; ask it for changes later.
-- **Reminders** by push notification. Tick a John, or answer a
-  housemate's dispute, from the notification itself.
+  list. Later, ask it anything about the house, or to make a change: it
+  shows each change on a card for you to OK first. Chats are saved.
+- **Reminders** by push notification, with quiet hours. Tick a John, or
+  answer a housemate's dispute, from the notification itself.
+- **Help built in.** Short tours, a guide, and Report a problem from inside
+  the app, answered by email.
 - **The House Pass.** One price for the whole house, $49.99 a year (or
   $5.99 a month), with a free month first.
 
@@ -57,9 +75,14 @@ Invite links show the house's name when you paste them into the group chat.
 | --- | --- |
 | The app | Expo (SDK 58, Expo Router) for iOS, Android and the web, at [jonz.app](https://jonz.app) |
 | The API | Next.js 16 route handlers on Vercel, at api.jonz.app |
-| Data | Supabase: Postgres with RLS, Auth (Google, Microsoft, and Apple on iOS), Storage, Realtime, pg_cron |
+| The way in | One list of every operation (`@app/server`): the app, Ask Jonz, the `/v1` API and MCP all go through it, so nothing reaches the database directly |
+| Data | Supabase: Postgres with RLS, Auth (Google, Microsoft, email and password, and Apple on iOS), Storage, Realtime, pg_cron |
+| Words | Every sentence in words files, read with FormatJS, with a family's own sentences; ready for other languages |
+| Ask Jonz | Claude, calling the same operations as the app |
 | Money | Stripe Checkout for the House Pass |
-| Tests | Vitest, Jest and Playwright |
+| Email | Resend, both ways |
+| Tests | Vitest, Jest and Playwright, on GitHub Actions |
+| Staging | staging.jonz.app, with its own database and a demo house |
 
 The same shape as Pub Golf, Graph Editor and glyn.dev, in an npm workspace
 shaped like `glynfinck/app-template`. `AGENTS.md` says how it fits together
@@ -69,20 +92,27 @@ and why.
 
 ```
 packages/core/                 @app/core, the pure rules: week, deal, outcome, points, streak, stake, dispute;
-                               Bin Night's colours, the mark, the shared words and the link cards' words
+                               the operation registry, Bin Night's colours and the mark
+  src/locales/en/              the words files, one per part of the app
+packages/server/               @app/server, the one way in: every operation's checks, in order
 apps/client/                   the Expo app for iOS, Android and the web, at jonz.app
   src/app/                     screens (Expo Router)
   src/components/ src/theme.ts Bin Night in React Native
   public/                      the web's page, icons, favicon and link card
 apps/api/                      the API (Next.js route handlers only), at api.jonz.app
-  app/api/                     the routes the app calls
+  app/v1/ app/mcp/             the API and MCP, both from the operation registry
+  app/api/                     the app's other routes: the clock, Stripe, push, email
   app/api/cron/tick/           the clock (called by pg_cron)
   app/api/share/ app/api/og/   the cards a pasted link shows in a chat
   lib/engine/                  the tick: applies the rules to the database
   tests/db/                    the database attacked (the rules' tests sit beside them in core)
   e2e/                         the web build on phones and a laptop, end to end
 supabase/migrations/           schema, RLS, the housemate functions, the cron job
-scripts/                       provision, the clock by hand, VAPID keys, the brand images, the store release gate
+supabase/seeds/                staging's demo house
+scripts/                       provision, staging, the clock by hand, VAPID keys, the brand images, the store release gate
+docs/specs/                    one short spec per feature
+docs/style/                    the house style: how Jonz looks, reads and behaves, and each design pick
+docs/standards/                how the database is built (CI checks it)
 docs/brand/                    the brand guide and every brand image
 ```
 
@@ -116,6 +146,9 @@ npm run test:db     # RLS, the housemate functions and the engine, on the local 
 npm run test:e2e    # Playwright on the web build: Pixel 7, iPhone 15, desktop Firefox, a 1440px laptop
 ```
 
+CI runs these side by side on every pull request, and `main` merges only
+when `verify` is green.
+
 ## Brand
 
 Every icon, favicon, card and banner is drawn from one mark with
@@ -130,8 +163,9 @@ the store accounts exist.
 
 ## Later
 
-Bounties, swapping Johns by agreement, pay links to settle up, a calendar
-feed, more than one house per person, and posts in the house group chat.
+The iPhone and Android apps in the stores, other languages, bounties, pay
+links to settle up, a calendar feed, more than one house per person, and
+posts in the house group chat.
 
 ## Contributing, security and licence
 
