@@ -39,8 +39,19 @@ link); give it as a Founding plan by hand until there is an admin tool.
   Written only by the service role; housemates read them with the house.
 - `@app/core` `pass.ts`: `passOf`, `hasPass`, `passUnlocked`, `passLine`,
   `passOffers`, and `PASS_ENFORCED`, the one switch.
-- House shows a House Pass row (`PassSection`) that pushes `/house/pass`:
-  where the house stands, what the Pass includes, and the plans.
+- House shows Free and House Pass (`PassSection`; the Family Pass in a
+  family): six groups in plain words, `freeGroups` then `passWords().extras`
+  from `@app/core` `family.ts`, with a Free and a Pass column of ticks. Its
+  last row says where the house stands (and, during the free month, about
+  what the Pass costs each person a month) and pushes `/house/pass`: the
+  promise, the same groups, and the plans. On a phone it is under Setup and
+  you; on a laptop, under the Table and the Wall.
+- The Pass's groups: Put money on it (the Stake, the Table and its perks),
+  Proof, not arguments (photos, every week on record, track record) and
+  More help from Jonz (five times the Ask Jonz pool, changing the list with
+  Jonz). A family's are Pocket money, Kid profiles, Proof and More help.
+- Stripe's `house_pass` product carries the promise as its description
+  (live and test), so Checkout shows it.
 
 ## Buying on the web
 

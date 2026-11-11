@@ -196,8 +196,13 @@ it('shows where the house stands on the House Pass, with the way to its page', a
   expect(screen.getByTestId('house-figures')).toBeOnTheScreen();
   await showSetup();
   const row = screen.getByTestId('to-pass');
-  expect(within(row).getByText(words('house.pass.title'))).toBeOnTheScreen();
+  expect(within(row).getByText(words('house.pass.unlock'))).toBeOnTheScreen();
+  // A Founding house has paid for good: no price, just where it stands.
   expect(within(row).getByText(words('house.pass.founding'))).toBeOnTheScreen();
+  // Free and House Pass side by side: what's free, then what the Pass adds.
+  expect(screen.getByText(words('house.pass.card.label'))).toBeOnTheScreen();
+  expect(screen.getByTestId('pass-group-fair')).toHaveTextContent(new RegExp(words('house.pass.card.fair')));
+  expect(screen.getByTestId('pass-group-money')).toHaveTextContent(new RegExp(words('house.pass.card.money')));
   expect(screen.queryByTestId('stake-locked')).toBeNull();
 });
 
@@ -508,7 +513,8 @@ describe('on a laptop', () => {
     await open({ workspace: true });
     expect(screen.getByTestId('house-nav')).toBeOnTheScreen();
     expect(screen.getAllByTestId('lower').map((node) => node.props.children)).toEqual(['the Wall']);
-    expect(screen.queryByTestId('pass-section')).toBeNull();
+    // Free and House Pass stays on the page, under the Table and the Wall.
+    expect(screen.getByTestId('pass-section')).toBeOnTheScreen();
     expect(screen.queryByTestId('to-you')).toBeNull();
     // The list is the way to them, so there's no switch.
     expect(screen.queryByTestId('house-shows')).toBeNull();

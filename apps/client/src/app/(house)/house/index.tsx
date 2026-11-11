@@ -179,6 +179,8 @@ function HouseSections({
         }
         end={<WallSection houseId={houseId} userId={userId} view={view} />}
       />
+      {/* On a laptop the setup half is House's list beside the page, so Free and House Pass comes under the Table and the Wall. */}
+      {listed && !kid ? <PassSection view={view} /> : null}
     </>
   );
   const setup = (

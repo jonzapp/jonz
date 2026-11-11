@@ -72,14 +72,14 @@ it('is the Family Pass in a family, with what a family gets', async () => {
   expect(screen.getByText(words('house.familyPass.includes'))).toBeOnTheScreen();
   expect(screen.getByText(words('house.familyPass.pocket'))).toBeOnTheScreen();
   expect(screen.getByText(words('house.familyPass.kids'))).toBeOnTheScreen();
-  expect(screen.queryByText(words('house.pass.stake'))).toBeNull();
+  expect(screen.queryByText(words('house.pass.card.money'))).toBeNull();
 });
 
 it('thanks a Founding house, and offers it no plans', async () => {
   await open();
   expect(screen.getByTestId('pass-lead')).toHaveTextContent(words('house.pass.foundingLead'));
   expect(screen.getByTestId('pass-line')).toHaveTextContent(words('house.pass.founding'));
-  expect(screen.getByText(words('house.pass.stake'))).toBeOnTheScreen();
+  expect(screen.getByText(words('house.pass.card.money'))).toBeOnTheScreen();
   expect(screen.queryByTestId('pass-plans')).toBeNull();
   expect(screen.queryByTestId('pass-soon')).toBeNull();
   expect(screen.getByTestId('pass-money')).toHaveTextContent(words('house.pass.money'));

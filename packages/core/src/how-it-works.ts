@@ -9,6 +9,7 @@
  */
 import { APP_NAME } from "./app";
 import type { HouseRules } from "./domain";
+import { passWords } from "./family";
 import { formatMoney } from "./money";
 import { PASS_ENFORCED, PASS_PRICES, PASS_TRIAL_DAYS } from "./pass";
 import { TOURS, tourStepWords, type TourId } from "./tours";
@@ -126,14 +127,11 @@ export function howItWorks(topic: HowTopic, { rules, family, awayMakeup }: HowFa
     case "house_pass":
       return lines(
         words("house.pass.lead"),
+        words("house.pass.promise"),
         words("door.guide.page.pass.adds", {
-          stake: words("house.pass.stake"),
-          stakeMeta: words("house.pass.stakeMeta").toLowerCase(),
-          table: words("house.pass.table"),
-          tableMeta: words("house.pass.tableMeta").toLowerCase(),
-          photos: words("house.pass.photos"),
-          photosMeta: words("house.pass.photosMeta").toLowerCase(),
-          history: words("house.pass.history").toLowerCase(),
+          extras: passWords(family ? "family" : "housemates", words)
+            .extras.map((e) => words("door.guide.page.pass.extra", { title: e.title, meta: e.meta }))
+            .join(" "),
         }),
         words("house.pass.free"),
         words("door.guide.page.pass.prices", {

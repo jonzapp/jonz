@@ -37,6 +37,16 @@
   housemates}}`. `family-words.test.ts` reads every line as a family would
   and fails on housemate, flatmate or admin. (Family houses; translation, PR 1)
 
+## Selling the Pass
+
+Where Jonz sells the House Pass (House's Free and House Pass card, the Pass
+page's list, the Help guide), say what each thing does in everyday words a
+newcomer knows: "share chores fairly", "put money on it", "photo proof".
+Not the app's own names for things (the deal, the Stake, the Table, the
+Wall), which mean nothing until you've used them. Group features, three or
+four a side, each with one short line, and keep the long list on the Pass
+page. (Free and House Pass, 11 Nov)
+
 ## One word for each thing
 
 The Jonz words (glossary, 2026-10-29). Say the word in the middle column;
