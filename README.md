@@ -71,50 +71,26 @@ Invite links show the house's name when you paste them into the group chat.
 
 ## Stack
 
-| | |
-| --- | --- |
-| The app | Expo (SDK 58, Expo Router) for iOS, Android and the web, at [jonz.app](https://jonz.app) |
-| The API | Next.js 16 route handlers on Vercel, at api.jonz.app |
-| The way in | One list of every operation (`@app/server`): the app, Ask Jonz, the `/v1` API and MCP all go through it, so nothing reaches the database directly |
-| Data | Supabase: Postgres with RLS, Auth (Google, Microsoft, email and password, and Apple on iOS), Storage, Realtime, pg_cron |
-| Words | Every sentence in words files, read with FormatJS, with a family's own sentences; ready for other languages |
-| Ask Jonz | Claude, calling the same operations as the app |
-| Money | Stripe Checkout for the House Pass |
-| Email | Resend, both ways |
-| Tests | Vitest, Jest and Playwright, on GitHub Actions |
-| Staging | staging.jonz.app, with its own database and a demo house |
-
-The same shape as Pub Golf, Graph Editor and glyn.dev, in an npm workspace
-shaped like `glynfinck/app-template`. `AGENTS.md` says how it fits together
-and why.
+- **The app:** [Expo](https://expo.dev) (SDK 58) for iOS, Android and the web, at [jonz.app](https://jonz.app)
+- **The API:** [Next.js](https://nextjs.org) 16 on [Vercel](https://vercel.com), at api.jonz.app, with `/v1` and MCP
+- **The way in:** one list of operations (`@app/server`) for the app, Ask Jonz, the API and MCP
+- **Data:** [Supabase](https://supabase.com): Postgres with RLS, Auth, Storage, Realtime, pg_cron
+- **Ask Jonz:** [Claude](https://www.anthropic.com/claude)
+- **Words:** [FormatJS](https://formatjs.github.io) words files, ready for other languages
+- **Money and email:** [Stripe](https://stripe.com) and [Resend](https://resend.com)
+- **Tests:** [Vitest](https://vitest.dev), [Jest](https://jestjs.io) and [Playwright](https://playwright.dev) on GitHub Actions
+- **Staging:** staging.jonz.app, with its own database and a demo house
 
 ## Repo map
 
-```
-packages/core/                 @app/core, the pure rules: week, deal, outcome, points, streak, stake, dispute;
-                               the operation registry, Bin Night's colours and the mark
-  src/locales/en/              the words files, one per part of the app
-packages/server/               @app/server, the one way in: every operation's checks, in order
-apps/client/                   the Expo app for iOS, Android and the web, at jonz.app
-  src/app/                     screens (Expo Router)
-  src/components/ src/theme.ts Bin Night in React Native
-  public/                      the web's page, icons, favicon and link card
-apps/api/                      the API (Next.js route handlers only), at api.jonz.app
-  app/v1/ app/mcp/             the API and MCP, both from the operation registry
-  app/api/                     the app's other routes: the clock, Stripe, push, email
-  app/api/cron/tick/           the clock (called by pg_cron)
-  app/api/share/ app/api/og/   the cards a pasted link shows in a chat
-  lib/engine/                  the tick: applies the rules to the database
-  tests/db/                    the database attacked (the rules' tests sit beside them in core)
-  e2e/                         the web build on phones and a laptop, end to end
-supabase/migrations/           schema, RLS, the housemate functions, the cron job
-supabase/seeds/                staging's demo house
-scripts/                       provision, staging, the clock by hand, VAPID keys, the brand images, the store release gate
-docs/specs/                    one short spec per feature
-docs/style/                    the house style: how Jonz looks, reads and behaves, and each design pick
-docs/standards/                how the database is built (CI checks it)
-docs/brand/                    the brand guide and every brand image
-```
+- [`apps/client`](apps/client): the app for iOS, Android and the web
+- [`apps/api`](apps/api): the API, the clock and the end-to-end tests
+- [`packages`](packages): the rules, the words and the one way in
+- [`supabase`](supabase): the database
+- [`scripts`](scripts): setting up, the brand images, releases
+- [`docs`](docs): specs, the house style and the brand
+
+Every folder, and how they fit together: [AGENTS.md](AGENTS.md).
 
 ## Develop
 
