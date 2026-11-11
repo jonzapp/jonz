@@ -1,4 +1,4 @@
-import { type StakeView } from '@app/core';
+import { passUnlocked, rulesAsStaked, type StakeView } from '@app/core';
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 
 import { Sheet } from '@/components/sheet';
@@ -61,7 +61,8 @@ export function JohnSheetProvider({ houseId, userId, children }: { houseId: stri
       houseId,
       userId,
       zone: view.snapshot.rules.timezone,
-      rules: view.snapshot.rules,
+      // Without the Stake (a House Pass extra), nothing late costs anything.
+      rules: rulesAsStaked(view.snapshot.rules, passUnlocked(view.snapshot.house.pass, view.now)),
       now: view.now,
       nameOf: (id) => members.find((m) => m.userId === id)?.name ?? words('common.shell.formerHousemate'),
       members,

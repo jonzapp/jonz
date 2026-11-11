@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { CURRENCIES } from "./domain";
 import {
   hasPass,
+  rulesAsStaked,
   PASS_ENFORCED,
   PASS_LOOKUP_KEYS,
   PASS_PURCHASES,
@@ -247,5 +248,14 @@ describe("passAfterSubscription", () => {
     expect(passAfterSubscription(pass("trial", "2026-11-22T12:00:00Z"), sub("incomplete", "2027-11-22T12:00:00Z"), freeUntil, now)).toBeNull();
     expect(passAfterSubscription(pass("trial", "2026-11-22T12:00:00Z"), sub("incomplete_expired", "2027-11-22T12:00:00Z"), freeUntil, now)).toBeNull();
     expect(passAfterSubscription(pass("founding", null), sub("active", "2027-11-22T12:00:00Z"), freeUntil, now)).toBeNull();
+  });
+});
+
+describe("rulesAsStaked", () => {
+  const rules = { stakeMinor: 2000, lateForfeitMinor: 100, missedForfeitMinor: 300, currency: "GBP" };
+
+  it("keeps the rules with the Stake, and costs nothing without it", () => {
+    expect(rulesAsStaked(rules, true)).toBe(rules);
+    expect(rulesAsStaked(rules, false)).toEqual({ ...rules, stakeMinor: 0, lateForfeitMinor: 0, missedForfeitMinor: 0 });
   });
 });

@@ -1,4 +1,4 @@
-import { askWhosMovingIn, dayLabel, localDate, memberCan, monthWord, movingLine, onCallItems, pocketMoney, todayPage, type PocketView, type StakeView, switchChoices } from '@app/core';
+import { askWhosMovingIn, dayLabel, localDate, memberCan, monthWord, movingLine, onCallItems, passUnlocked, pocketMoney, rulesAsStaked, todayPage, type PocketView, type StakeView, switchChoices } from '@app/core';
 import { useState } from 'react';
 
 import type { AwayView } from '@/api/away';
@@ -120,7 +120,9 @@ function TodayView({
 }) {
   const words = useWords();
   const { snapshot, board, today, me, now } = view;
-  const { house, rules, members } = snapshot;
+  const { house, members } = snapshot;
+  // Without the Stake (a House Pass extra), nothing late costs anything.
+  const rules = rulesAsStaked(snapshot.rules, passUnlocked(house.pass, now));
   const userId = me?.userId ?? '';
   const page = todayPage({ board, mine: today.mine, userId, me, members, rules, away, stake, offers: snapshot.offers, now }, words);
   // A kid in a family sees what they've earned this month in place of where they stand.

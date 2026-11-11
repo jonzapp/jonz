@@ -94,6 +94,7 @@ export function HistoryList({
           <Row
             leading={<RowIcon icon={LockIcon} />}
             title={words('house.pass.olderHistory')}
+            titleLines={2}
             meta={words('house.pass.unlock')}
             href="/house/pass"
             chevron

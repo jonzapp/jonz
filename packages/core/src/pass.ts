@@ -199,3 +199,11 @@ export function passAfterSubscription(current: HousePass, sub: PassSubscription,
   if (freeUntil.getTime() > end.getTime()) return { plan: "trial", until: freeUntil, buyerId: null };
   return { plan: sub.plan, until: end, buyerId: sub.buyerId };
 }
+
+/**
+ * The house's rules as they cost now: without the Stake (a House Pass
+ * extra) nothing late or missed costs anything, so no screen says it does.
+ */
+export function rulesAsStaked<R extends { stakeMinor: number; lateForfeitMinor: number; missedForfeitMinor: number }>(rules: R, staked: boolean): R {
+  return staked ? rules : { ...rules, stakeMinor: 0, lateForfeitMinor: 0, missedForfeitMinor: 0 };
+}
