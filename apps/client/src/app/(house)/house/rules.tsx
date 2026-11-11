@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { AdminsList } from '@/components/house/admins-list';
+import { HouseDangerZone } from '@/components/house/house-danger-zone';
 import { useRoleCopy } from '@/hooks/use-kind';
 import { HousePage } from '@/components/house/house-page';
 import { KindSwitch } from '@/components/house/kind-switch';
@@ -86,7 +87,8 @@ function RulesFor({ houseId, userId }: { houseId: string; userId: string }) {
 
 /**
  * The rules as everyone reads them, with Edit for an admin, and beside them
- * on a laptop (under them on a phone) the admins: who can change them.
+ * on a laptop (under them on a phone) the admins: who can change them, and
+ * for an admin the Danger zone under them.
  */
 function RulesReadOut({ houseId, userId, view, onEdit }: { houseId: string; userId: string; view: HouseView; onEdit: () => void }) {
   const words = useWords();
@@ -122,6 +124,7 @@ function RulesReadOut({ houseId, userId, view, onEdit }: { houseId: string; user
           <Section label={roles.admins.title} bare testID="admins-section">
             <AdminsList houseId={houseId} userId={userId} view={view} />
           </Section>
+          <HouseDangerZone houseId={houseId} view={view} />
         </View>
       }
     />

@@ -694,5 +694,18 @@
   "house.promotion.endedPlate": "Ask for a new link.",
   "house.promotion.useIt": "Use it",
   "house.promotion.smallPrint": "It works when you sign in to Jonz as {email}{hasUntil, select, true {, until {until}} other {}}.{gift, select, true { No card needed.} other { You pay on the next page and can cancel any time.}}",
-  "house.promotion.emailWhy": "A gift from Jonz, sent only to you."
+  "house.promotion.emailWhy": "A gift from Jonz, sent only to you.",
+  "house.danger.label": "Danger zone",
+  "house.reset.title": "{everything, select, true {Reset everything} other {Reset history}}",
+  "house.reset.meta": "{everything, select, true {A clean slate. History goes, and so do the John list, groups, time away and rules. The house’s name and its people stay.} other {Back to before the first deal. Weeks dealt, ticks, money and History go. Your John list, people and rules stay.}}",
+  "house.reset.button": "Reset",
+  "house.reset.sheetTitle": "{everything, select, true {Reset everything in {house}?} other {Reset the history of {house}?}}",
+  "house.reset.historyBody": "Every week dealt so far goes, with its ticks, questions, money{kind, select, family {, pocket money} other {}}, History, and everyone’s streaks, skips and swaps. Your John list stays as it is, and so do everyone, the groups, rules, time away and the {kind, select, family {Family Pass} other {House Pass}}. Nothing is dealt until {kind, select, family {a parent} other {an admin}} deals the first week. This can’t be undone.",
+  "house.reset.everythingBody": "Everything goes: every week dealt with its ticks, questions, money{kind, select, family {, pocket money} other {}} and History, everyone’s streaks, skips and swaps, and the John list, groups, time away and rules too, back to a new house’s. The house’s name, everyone in it and the {kind, select, family {Family Pass} other {House Pass}} stay. This can’t be undone.",
+  "house.reset.confirm": "Type the house’s name to reset it",
+  "house.reset.go": "Reset for good",
+  "house.reset.done": "{everything, select, true {{house} is a clean slate. Add your Johns, then deal the first week.} other {{house} is back to before its first deal. Deal the first week when everyone’s in.}}",
+  "house.reset.wall": "{everything, select, true {{who} reset everything in the house} other {{who} reset the house’s history}}",
+  "house.reset.wallNow": "{everything, select, true {Everything in the house was reset} other {The house’s history was reset}}",
+  "house.reset.wallDetail": "Back to before the first deal"
 }

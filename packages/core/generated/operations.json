@@ -8005,6 +8005,7 @@
                         "reset_join_code",
                         "set_house_kind",
                         "deal_week",
+                        "reset_house_data",
                         "pay_pocket_money",
                         "add_kid",
                         "remove_member",
@@ -9851,6 +9852,68 @@
             "type": "string"
           }
         }
+      }
+    },
+    {
+      "name": "reset_house_data",
+      "about": "Reset the house back to before its first deal: its history (weeks dealt, ticks, money, History), or everything (the John list, groups, time away and rules too)",
+      "scope": "house",
+      "effect": "write",
+      "guard": {
+        "by": "permission",
+        "permission": "house_reset:write"
+      },
+      "entitlement": null,
+      "entitlementWhen": null,
+      "destructive": true,
+      "method": "POST",
+      "path": "/v1/houses/{houseId}/reset",
+      "pathKeys": [
+        "houseId"
+      ],
+      "rpc": {
+        "name": "reset_house_data",
+        "server": false,
+        "args": {
+          "houseId": "p_house",
+          "everything": "p_everything"
+        }
+      },
+      "tables": [],
+      "page": null,
+      "input": {
+        "type": "object",
+        "properties": {
+          "houseId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "everything": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "houseId"
+        ]
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "weeks": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "people": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "weeks",
+          "people"
+        ]
       }
     },
     {
@@ -14124,6 +14187,44 @@
                     "reason",
                     "tell"
                   ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "house_reset"
+                    },
+                    "houseId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    },
+                    "people": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "everything": {
+                      "type": "boolean"
+                    },
+                    "reason": {
+                      "type": "string",
+                      "maxLength": 500
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "houseId",
+                    "name",
+                    "people",
+                    "everything",
+                    "reason"
+                  ]
                 }
               ]
             }
@@ -15935,6 +16036,72 @@
           "people",
           "told",
           "passStopped"
+        ]
+      }
+    },
+    {
+      "name": "owner_reset_house_data",
+      "about": "Reset a house back to before its first deal: its history (weeks dealt, ticks, money, History), or everything (the John list, groups, time away and rules too)",
+      "scope": "app",
+      "effect": "write",
+      "guard": {
+        "by": "permission",
+        "permission": "houses:write"
+      },
+      "entitlement": null,
+      "entitlementWhen": null,
+      "destructive": true,
+      "method": "POST",
+      "path": "/v1/admin/houses/{houseId}/reset",
+      "pathKeys": [
+        "houseId"
+      ],
+      "rpc": {
+        "name": "owner_reset_house_data",
+        "server": false,
+        "args": {
+          "houseId": "p_house",
+          "everything": "p_everything",
+          "reason": "p_reason"
+        }
+      },
+      "tables": [],
+      "page": null,
+      "input": {
+        "type": "object",
+        "properties": {
+          "houseId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "everything": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "houseId"
+        ]
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "weeks": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "people": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "weeks",
+          "people"
         ]
       }
     },

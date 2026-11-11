@@ -228,6 +228,7 @@ export const OPERATIONS = {
   set_house_kind: op({ about: "Switch the house between housemates and family", scope: "house", effect: "write", guard: perm("house:write"), rpc: { name: "set_house_kind" }, destructive: true }),
   deal_week: op({ about: "Deal the week", scope: "house", effect: "write", guard: perm("weeks:write"), rpc: { name: "deal_week", server: true }, route: "POST /api/deal" }),
   reset_house: op({ about: "Put a result, a week or a month's forfeits right", scope: "house", effect: "write", guard: perm("history:write"), rpc: { name: "admin_reset", server: true }, route: "POST /api/resets", destructive: true }),
+  reset_house_data: op({ about: "Reset the house back to before its first deal: its history (weeks dealt, ticks, money, History), or everything (the John list, groups, time away and rules too)", scope: "house", effect: "write", guard: perm("house_reset:write"), rpc: { name: "reset_house_data" }, destructive: true }),
   pay_pocket_money: op({ about: "Mark a kid's pocket money paid", scope: "house", effect: "write", guard: perm("pocket_money:write"), rpc: { name: "pay_pocket_money" }, destructive: true }),
   add_kid: op({ about: "Add a child without a sign-in", scope: "house", effect: "write", guard: perm("members:write"), rpc: { name: "add_kid", server: true }, route: "POST /api/kids" }),
   remove_member: op({ about: "Leave the house, or remove someone from it with members:write", scope: "house", effect: "write", guard: perm("members:write_own"), rpc: { name: "remove_member" }, destructive: true }),
@@ -278,6 +279,7 @@ export const OPERATIONS = {
   owner_request_deletion: op({ about: "Start deleting an account for someone who asked by email", scope: "app", effect: "write", guard: perm("deletions:write"), rpc: { name: "owner_request_deletion" }, destructive: true }),
   owner_stop_deletion: op({ about: "Stop an account being deleted", scope: "app", effect: "write", guard: perm("deletions:write"), rpc: { name: "owner_stop_deletion" } }),
   owner_delete_house: op({ about: "Delete a whole house, telling its people why", scope: "app", effect: "write", guard: perm("houses:write"), rpc: { name: "owner_delete_house" }, route: "POST /api/admin/houses/[id]/delete", destructive: true }),
+  owner_reset_house_data: op({ about: "Reset a house back to before its first deal: its history (weeks dealt, ticks, money, History), or everything (the John list, groups, time away and rules too)", scope: "app", effect: "write", guard: perm("houses:write"), rpc: { name: "owner_reset_house_data" }, destructive: true }),
   owner_notices_page: op({ about: "Every notice, a page at a time", scope: "app", effect: "read", guard: perm("admin:read"), rpc: { name: "owner_notices_page" }, tables: ["notices"] }),
   owner_notices_count: op({ about: "How many notices match", scope: "app", effect: "read", guard: perm("admin:read"), rpc: { name: "owner_notices_count" }, tables: ["notices"] }),
   owner_audit_page: op({ about: "The audit log, a page at a time", scope: "app", effect: "read", guard: perm("admin:read"), rpc: { name: "owner_audit_page" }, tables: ["admin_audit"] }),
@@ -292,6 +294,16 @@ export const OPERATIONS = {
 
 export type OperationName = keyof typeof OPERATIONS;
 export const OPERATION_NAMES = Object.keys(OPERATIONS) as OperationName[];
+
+/**
+ * Whether an operation can't be taken back (`destructive`): over /v1 and MCP
+ * it waits for the person's approval, and wherever the app offers it, it sits
+ * in a Danger zone (the app's DangerZone) with a hazard button.
+ */
+export function isDangerous(name: OperationName): boolean {
+  const o: Operation = OPERATIONS[name];
+  return o.destructive === true;
+}
 
 /** Every operation the database runs for a signed-in person (not the service role). */
 export const CALLABLE_FUNCTIONS: readonly string[] = OPERATION_NAMES.flatMap((n) => {

@@ -2948,6 +2948,10 @@ export type Database = {
         Args: { p_action: string; p_draft: string; p_input: number; p_output: number; p_reply: string; p_same_as: string | null; p_why: string }
         Returns: Json
       }
+      owner_reset_house_data: {
+        Args: { p_everything?: boolean; p_house: string; p_reason?: string }
+        Returns: Json
+      }
       owner_delete_house: {
         Args: {
           p_body?: string
@@ -3285,6 +3289,10 @@ export type Database = {
       request_account_deletion: { Args: never; Returns: string }
       request_tick: { Args: never; Returns: undefined }
       require_user: { Args: never; Returns: string }
+      reset_house_data: {
+        Args: { p_everything?: boolean; p_house: string }
+        Returns: Json
+      }
       reset_bump: {
         Args: { acc: Json; field: string; n: number; p_user: string }
         Returns: Json

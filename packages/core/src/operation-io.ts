@@ -109,6 +109,8 @@ const nothing = z.null();
 const none = z.object({});
 const role = z.enum(["admin", "member"]);
 const plan = z.enum(PASS_PLANS);
+/** Resetting a house: how many weeks went, and how many people live there to be told. */
+const houseReset = z.object({ weeks: count, people: count });
 
 const io = <I extends z.ZodObject, O extends z.ZodType>(
   input: I,
@@ -647,6 +649,7 @@ export const OPERATION_IO = {
     toRequest: ({ weekId, userId, assignmentId, ...rest }: z.infer<typeof resetInput>): ResetRequest => ({ ...rest, week: weekId, user: userId, assignment: assignmentId }),
     asIs: true,
   }),
+  reset_house_data: io(z.object({ houseId: id, everything: bool.optional() }), houseReset, "POST /v1/houses/{houseId}/reset"),
   pay_pocket_money: io(z.object({ houseId: id, kidId: id, month }), int, "POST /v1/houses/{houseId}/kids/{kidId}/pocket-money"),
   add_kid: io(AddKid.extend({ houseId: id }), AddKidResponse, "POST /v1/houses/{houseId}/kids"),
   remove_member: io(z.object({ houseId: id, userId: id }), nothing, "DELETE /v1/houses/{houseId}/members/{userId}"),
@@ -752,6 +755,7 @@ export const OPERATION_IO = {
   owner_request_deletion: io(z.object({ email: z.email(), reason: text.optional() }), id, "POST /v1/admin/deletions"),
   owner_stop_deletion: io(z.object({ userId: id, reason: text.optional() }), nothing, "DELETE /v1/admin/deletions/{userId}"),
   owner_delete_house: io(DeleteHouseRequest.extend({ houseId: id }), DeleteHouseResponse, "DELETE /v1/admin/houses/{houseId}"),
+  owner_reset_house_data: io(z.object({ houseId: id, everything: bool.optional(), reason: text.optional() }), houseReset, "POST /v1/admin/houses/{houseId}/reset"),
   owner_notices_page: io(z.object({ ...noticeFilter, ...pageInput }), pageOutput(Notice), "GET /v1/admin/notices", { page: pageOf("startsAt") }),
   owner_notices_count: io(z.object(noticeFilter), count, "GET /v1/admin/notices/count"),
   owner_audit_page: io(z.object({ ...auditFilter, ...pageInput }), pageOutput(auditEntry), "GET /v1/admin/audit", { page: pageOf("createdAt") }),

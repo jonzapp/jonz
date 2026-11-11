@@ -1,3 +1,4 @@
+import { APP_NAME } from "./app";
 import type { Currency } from "./domain";
 import { formatMoney } from "./money";
 import type { PushKind } from "./notify";
@@ -15,7 +16,7 @@ import type { Words } from "./words-for";
  */
 
 /** The posts the clock tells someone about. */
-export const TOLD_KINDS = ["covered", "swap_used", "upheld", "rejected", "rules"] as const;
+export const TOLD_KINDS = ["covered", "swap_used", "upheld", "rejected", "rules", "started_over"] as const;
 
 /** One push to send: who to, and what it says. */
 export interface Telling {
@@ -91,6 +92,13 @@ export function tellOf(
       const to = here([...members]);
       return to.length
         ? { to, title: words('wall.tell.rulesTitle'), body: words('wall.tell.rulesBody', { who: nameOf(e.userId), changes: ruleChanges(e.data, currency, words) }), url: "/house/rules", kind: "deal" }
+        : null;
+    }
+    case "started_over": {
+      const to = here([...members]);
+      const everything = e.data.everything === true;
+      return to.length
+        ? { to, title: words('wall.tell.resetTitle', { everything }), body: words('wall.tell.resetBody', { who: e.userId ? nameOf(e.userId) : APP_NAME, everything }), url: "/today", kind: "deal" }
         : null;
     }
     default:

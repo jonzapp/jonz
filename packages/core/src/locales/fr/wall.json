@@ -171,5 +171,7 @@
   "wall.history.reset.letoffAny": "a annulé les pénalités d’un mois pour tout le monde",
   "wall.history.reset.other": "a réinitialisé quelque chose",
   "wall.tell.anAdmin": "{kind, select, family {Un parent} other {Un admin}}",
-  "wall.tell.openToSee": "Ouvre Jonz pour voir ce qui a changé."
+  "wall.tell.openToSee": "Ouvre Jonz pour voir ce qui a changé.",
+  "wall.tell.resetTitle": "{everything, select, true {La maison a été réinitialisée} other {L’historique de la maison a été réinitialisé}}",
+  "wall.tell.resetBody": "{who} a ramené la maison à avant sa première distribution{everything, select, true {, liste de Johns et règles comprises} other {}}. Rien n’est distribué tant qu’{kind, select, family {un parent} other {un admin}} ne distribue pas la première semaine."
 }
