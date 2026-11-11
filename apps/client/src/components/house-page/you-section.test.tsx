@@ -1,4 +1,4 @@
-import { PASSWORD_MIN, wordsFor } from '@app/core';
+import { LANGUAGE_NAMES, PASSWORD_MIN, wordsFor } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 
 import { signOut } from '@/api/auth';
@@ -6,7 +6,9 @@ import { loadHouse } from '@/api/board';
 import { renameMe } from '@/api/profile';
 import { reminderSupport, remindersOn } from '@/api/push';
 import { authStorage } from '@/api/storage';
+import { ToastProvider } from '@/components/toast';
 import { useHouse } from '@/hooks/use-house';
+import { LanguageContext } from '@/hooks/use-words';
 import { snapshot } from '@/testing/house';
 import { renderPages } from '@/testing/pages';
 
@@ -154,6 +156,33 @@ it('chooses the look in the row itself', async () => {
   await fireEvent.press(look.getByRole('radio', { name: 'Day' }));
   expect(look.getByRole('radio', { name: 'Day' })).toBeChecked();
   expect(look.getByRole('radio', { name: 'Auto' })).not.toBeChecked();
+});
+
+it('picks your language from a menu in its row, the test language among them while Jonz is being tried out', async () => {
+  const change = jest.fn(async () => undefined);
+  function Host() {
+    const { view } = useHouse('h1', 'priya');
+    return view ? (
+      <ToastProvider>
+        <LanguageContext.Provider value={{ language: 'en', change }}>
+          <YouSection houseId="h1" userId="priya" view={view} />
+        </LanguageContext.Provider>
+      </ToastProvider>
+    ) : null;
+  }
+  await renderPages({ 'house/index': Host }, '/house');
+  const row = await screen.findByTestId('language-row');
+  expect(row).toHaveTextContent(new RegExp(`${words('house.lower.language')}.*English`));
+  await fireEvent.press(within(row).getByRole('button', { name: 'English' }));
+  await fireEvent.press(screen.getByRole('radio', { name: LANGUAGE_NAMES['en-XA'] }));
+  expect(change).toHaveBeenCalledWith('en-XA');
+
+  // One that can't be saved goes back, and says so.
+  jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+  change.mockRejectedValueOnce(new Error('offline'));
+  await fireEvent.press(within(row).getByRole('button', { name: 'English' }));
+  await fireEvent.press(screen.getByRole('radio', { name: LANGUAGE_NAMES['en-XA'] }));
+  expect(await screen.findByText(words('house.lower.languageFailed'))).toBeOnTheScreen();
 });
 
 it('signs you out', async () => {

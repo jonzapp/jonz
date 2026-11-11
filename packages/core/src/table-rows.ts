@@ -340,6 +340,7 @@ export const TABLE_ROWS = {
     avatarUrl: text.nullable(),
     createdAt: at,
     deletedAt: at.nullable(),
+    language: text.nullable(),
   }),
   push_subscriptions: z.object({
     id,

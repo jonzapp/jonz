@@ -5,6 +5,7 @@ import { CHAT_SAVED_TURNS, SavedTurn } from "./ask-chats";
 import { BEST_TIMES, CURRENCIES, DEAL_MODES, HOUSE_KINDS } from "./domain";
 import { AskUsage, ChatRequest, ChatResponse } from "./house-draft";
 import { AddKid, AddKidResponse } from "./kids";
+import { LANGUAGES } from "./locales";
 import { Notice, NOTICE_KINDS } from "./notices";
 import { NotificationPrefsDraft } from "./notify";
 import type { OperationName } from "./operations";
@@ -457,6 +458,8 @@ export const OPERATION_IO = {
   ),
   my_house: io(none, z.object({ houseId: id, name: text, kind: z.enum(HOUSE_KINDS) }).nullable(), "GET /v1/me/house"),
   set_my_name: io(z.object({ name: DisplayName }), nothing, "PATCH /v1/me/name"),
+  my_language: io(none, z.enum(LANGUAGES).nullable(), "GET /v1/me/language"),
+  set_my_language: io(z.object({ language: z.enum(LANGUAGES) }), nothing, "PATCH /v1/me/language"),
   my_notifications: io(
     none,
     T.notification_prefs.pick({ reminders: true, checks: true, flags: true, deal: true, quietFrom: true, quietUntil: true, timezone: true }).nullable(),

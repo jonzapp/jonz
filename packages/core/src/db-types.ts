@@ -1889,6 +1889,7 @@ export type Database = {
           deleted_at: string | null
           display_name: string
           id: string
+          language: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -1896,6 +1897,7 @@ export type Database = {
           deleted_at?: string | null
           display_name: string
           id: string
+          language?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -1903,6 +1905,7 @@ export type Database = {
           deleted_at?: string | null
           display_name?: string
           id?: string
+          language?: string | null
         }
         Relationships: []
       }
@@ -2873,6 +2876,7 @@ export type Database = {
       }
       my_app_permissions: { Args: never; Returns: string[] }
       my_app_role: { Args: never; Returns: string }
+      my_language: { Args: never; Returns: string }
       my_permissions: { Args: { h: string }; Returns: string[] }
       my_open_assignment: {
         Args: { p_assignment: string; p_permission?: string }
@@ -3356,6 +3360,7 @@ export type Database = {
         Returns: undefined
       }
       set_moving_out: { Args: { p_on: string | null }; Returns: undefined }
+      set_my_language: { Args: { p_language: string }; Returns: undefined }
       set_my_photo: { Args: { photo: string }; Returns: undefined }
       settle_assignments: { Args: { p_items: Json }; Returns: number }
       shares_house: { Args: { other: string }; Returns: boolean }

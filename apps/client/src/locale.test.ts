@@ -1,6 +1,6 @@
 import { getCalendars, getLocales } from 'expo-localization';
 
-import { deviceCurrency, deviceTimeZone } from './locale';
+import { deviceCurrency, deviceLanguage, deviceTimeZone } from './locale';
 
 jest.mock('expo-localization', () => ({ getCalendars: jest.fn(), getLocales: jest.fn() }));
 
@@ -26,5 +26,25 @@ describe('a new house starts from the phone', () => {
     expect(deviceCurrency()).toBe('GBP');
     locales.mockReturnValueOnce([]);
     expect(deviceCurrency()).toBe('GBP');
+  });
+});
+
+describe("the phone's language", () => {
+  it('reads as one Jonz has, English where it has not got it', () => {
+    locales.mockReturnValueOnce([{ languageTag: 'en-CA' }]);
+    expect(deviceLanguage()).toBe('en');
+    locales.mockReturnValueOnce([{ languageTag: 'fr-FR' }]);
+    expect(deviceLanguage()).toBe('en');
+    locales.mockReturnValueOnce([]);
+    expect(deviceLanguage()).toBe('en');
+    locales.mockImplementationOnce(() => {
+      throw new Error('no locales');
+    });
+    expect(deviceLanguage()).toBe('en');
+  });
+
+  it("never takes the test language from a phone set to Android's", () => {
+    locales.mockReturnValueOnce([{ languageTag: 'en-XA' }]);
+    expect(deviceLanguage()).toBe('en');
   });
 });

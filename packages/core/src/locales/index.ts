@@ -36,8 +36,36 @@ export const EN = Object.assign({}, ...Object.values(EN_FILES)) as typeof admin 
 /** One line of the app's words, by its id. */
 export type WordId = keyof typeof EN;
 
-/** The languages Jonz speaks. */
-export const LANGUAGES = ["en"] as const;
+/**
+ * The languages a person can read Jonz in (profiles.language). en-XA is the
+ * test language: English made strange (pseudo.ts), so a line that never
+ * moved to the words files stands out. Another language adds its folder
+ * here, and to the database's profiles_language_check.
+ */
+export const LANGUAGES = ["en", "en-XA"] as const;
 export type Language = (typeof LANGUAGES)[number];
 
-export const MESSAGES: Record<Language, Record<WordId, string>> = { en: EN };
+/** The test language, offered only where Jonz is being tried out (locally and on staging). */
+export const TEST_LANGUAGE = "en-XA" satisfies Language;
+
+/** Each language by its own name, as the picker lists it: a person finds theirs without reading another. */
+export const LANGUAGE_NAMES: Record<Language, string> = { en: "English", "en-XA": "[Ţëšţ Ëñĝļîšĥ]" };
+
+/** Each language by its English name, for telling Ask Jonz which to answer in. */
+export const LANGUAGE_IN_ENGLISH: Record<Language, string> = { en: "English", "en-XA": "English" };
+
+/** The lines each real language has; the test language is made from English as it's read. */
+export const MESSAGES: Partial<Record<Language, Partial<Record<WordId, string>>>> = { en: EN };
+
+/**
+ * The language for a saved choice or a phone's language tag ("en-GB",
+ * "fr"): the language itself when Jonz has it, else its base language
+ * ("en-GB" reads English), else English. Nothing reads English too.
+ */
+export function languageOf(tag: string | null | undefined): Language {
+  if (!tag) return "en";
+  const exact = LANGUAGES.find((l) => l.toLowerCase() === tag.toLowerCase());
+  if (exact) return exact;
+  const base = tag.split(/[-_]/)[0].toLowerCase();
+  return LANGUAGES.find((l) => l === base) ?? "en";
+}

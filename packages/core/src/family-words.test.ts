@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { EN, EN_FILES, type WordId } from "./locales";
 import { joinPreview, joinSign } from "./share";
 import { stringsOf } from "./strings-of";
-import { wordsFor, type WordValues } from "./words-for";
+import { LANGUAGES, wordsFor, type WordValues } from "./words-for";
 
 /**
  * Families read their own words (docs/style/words.md, "Families"). A line
@@ -126,11 +126,13 @@ describe("the words files", () => {
     }
   });
 
-  it("are all ICU messages that read for both kinds of house", () => {
-    for (const id of Object.keys(EN) as WordId[]) {
-      for (const values of readings(id)) {
-        expect(wordsFor("en", "housemates")(id, values), id).not.toBe("");
-        expect(wordsFor("en", "family")(id, values), id).not.toBe("");
+  it("are all ICU messages that read for both kinds of house, in every language", () => {
+    for (const language of LANGUAGES) {
+      for (const id of Object.keys(EN) as WordId[]) {
+        for (const values of readings(id)) {
+          expect(wordsFor(language, "housemates")(id, values), id).not.toBe("");
+          expect(wordsFor(language, "family")(id, values), id).not.toBe("");
+        }
       }
     }
   });
