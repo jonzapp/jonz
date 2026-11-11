@@ -2535,6 +2535,7 @@
                       "type": "string",
                       "enum": [
                         "en",
+                        "fr",
                         "en-XA"
                       ]
                     },
@@ -2598,6 +2599,7 @@
                     "type": "string",
                     "enum": [
                       "en",
+                      "fr",
                       "en-XA"
                     ]
                   }
