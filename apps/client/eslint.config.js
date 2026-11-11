@@ -30,11 +30,13 @@ module.exports = defineConfig([
     },
   },
   // The app's words (docs/specs/translation.md): text on screen comes from
-  // useWords() or the copy, never written into a screen. The screens that
-  // still do are listed in eslint-suppressions.json until their words move.
+  // useWords(), never written into a screen. Even joins (", ", ": ", a full
+  // stop) are lines (common.join.*), since a language may join differently.
+  // The style page (/style, staging only) is a sample book, not the app, so
+  // its sample text stays written in.
   {
     files: ['src/**/*.tsx'],
-    ignores: ['src/**/*.test.tsx', 'src/__tests__/**'],
+    ignores: ['src/**/*.test.tsx', 'src/__tests__/**', 'src/components/style-page/**'],
     plugins: { formatjs: formatjs.default ?? formatjs },
     rules: {
       'formatjs/no-literal-string-in-jsx': 'error',

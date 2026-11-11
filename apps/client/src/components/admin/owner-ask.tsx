@@ -1,4 +1,4 @@
-import { CHAT_MAX_MESSAGES, MESSAGE_MAX, OWNER_ASK_COPY, type ChatMessage, type OwnerMove, type SavedTurn } from '@app/core';
+import { type Words, ownerAskThinking, CHAT_MAX_MESSAGES, MESSAGE_MAX, type ChatMessage, type OwnerMove, type SavedTurn } from '@app/core';
 import { useQueryClient } from '@tanstack/react-query';
 import { HistoryIcon, SquarePenIcon, XIcon } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -25,7 +25,7 @@ export type OwnerTurn =
   | { role: 'user'; text: string }
   | { role: 'assistant'; text: string; thought?: { seconds: number; steps: string[] }; moves?: OwnerMove[] };
 
-const PIECES = ownerPieces();
+const PIECES = (words: Words) => ownerPieces(words);
 
 /** A kept chat's turns as the chat shows them (how long Jonz thought isn't kept, nor its cards: they were for then). */
 function fromSaved(saved: readonly SavedTurn[]): OwnerTurn[] {
@@ -102,15 +102,15 @@ function OwnerChats({ initial, onClose, store }: { initial: OwnerTurn[]; onClose
   const tools = (
     <View style={styles.tools}>
       <IconButton icon={SquarePenIcon} label={words('ask.chats.newChat')} onPress={fresh} disabled={!talked && !all} testID="chat-new" />
-      {onClose ? <IconButton icon={XIcon} label={OWNER_ASK_COPY.close} onPress={onClose} testID="owner-ask-close" /> : null}
+      {onClose ? <IconButton icon={XIcon} label={words('admin.ask.close')} onPress={onClose} testID="owner-ask-close" /> : null}
     </View>
   );
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]} testID="owner-ask">
       <TitleBar
-        title={all ? words('ask.chats.all') : OWNER_ASK_COPY.title}
+        title={all ? words('ask.chats.all') : words('admin.ask.title')}
         // Docked, the bar keeps to one line like the page's; the Owner label goes just under it.
-        sub={docked ? undefined : OWNER_ASK_COPY.label}
+        sub={docked ? undefined : words('admin.ask.label')}
         docked={docked}
         lead={
           all ? undefined : (
@@ -126,12 +126,12 @@ function OwnerChats({ initial, onClose, store }: { initial: OwnerTurn[]; onClose
           )
         }
         onBack={all ? () => setAll(false) : undefined}
-        backLabel={all ? OWNER_ASK_COPY.title : undefined}
+        backLabel={all ? words('admin.ask.title') : undefined}
         right={tools}
       />
       {docked ? (
         <View style={styles.owner}>
-          <Chip label={OWNER_ASK_COPY.label} testID="owner-ask-label" />
+          <Chip label={words('admin.ask.label')} testID="owner-ask-label" />
         </View>
       ) : null}
       {problem ? (
@@ -151,8 +151,8 @@ function OwnerChats({ initial, onClose, store }: { initial: OwnerTurn[]; onClose
               setOpenId(null);
             }
           }}
-          note={OWNER_ASK_COPY.chatsNote}
-          deleteBody={OWNER_ASK_COPY.deleteBody}
+          note={words('admin.ask.chatsNote')}
+          deleteBody={words('admin.ask.deleteBody')}
         />
       ) : (
         <OwnerChat
@@ -181,12 +181,13 @@ function OwnerChat({
   onKept: (id: string) => void;
   onTalked: (talked: boolean) => void;
 }) {
+  const words = useWords();
   const client = useQueryClient();
   const [turns, setTurns] = useState<OwnerTurn[]>(initial);
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
-  const steps = OWNER_ASK_COPY.thinkingSteps;
+  const steps = ownerAskThinking(words);
   const chatId = useRef(savedId);
   // Keeping goes one at a time, so the first answer's new row is the one the next answer updates.
   const queue = useRef<Promise<void>>(Promise.resolve());
@@ -255,22 +256,22 @@ function OwnerChat({
             onChangeText={setText}
             onSend={() => void send()}
             busy={sending}
-            placeholder={OWNER_ASK_COPY.placeholder}
-            label={OWNER_ASK_COPY.box}
-            sendLabel={OWNER_ASK_COPY.send}
+            placeholder={words('admin.ask.placeholder')}
+            label={words('admin.ask.box')}
+            sendLabel={words('admin.ask.send')}
             maxLength={MESSAGE_MAX}
             problem={problem}
           />
         }
       >
         <Said testID="owner-ask-greeting">
-          <Body>{OWNER_ASK_COPY.greeting}</Body>
+          <Body>{words('admin.ask.greeting')}</Body>
         </Said>
         {turns.map((turn, i) =>
           turn.role === 'user' ? (
             <UserBubble key={i} text={turn.text} />
           ) : (
-            <JonzSaid key={i} text={turn.text} thought={turn.thought} pieces={PIECES}>
+            <JonzSaid key={i} text={turn.text} thought={turn.thought} pieces={PIECES(words)}>
               {turn.moves?.length ? <OwnerMovesCard items={turn.moves} /> : null}
             </JonzSaid>
           ),

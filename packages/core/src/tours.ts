@@ -4,6 +4,8 @@
 // Adding a tour is adding one entry to TOURS and tagging any new spots; the
 // app's tour player, Help sheet and tests pick it up from here.
 
+import type { WordId, Words } from "./words-for";
+
 /**
  * Every spot a tour can light, one id per piece of the app. The app tags
  * each with `<TourSpot id>`; a tour naming anything else doesn't compile.
@@ -48,21 +50,20 @@ export type TourWhen = "admin" | "phone" | "laptop" | "toCheck" | "hasJohns";
 
 export interface TourStep {
   spot: TourSpotId;
-  /** A few words, in sentence case: what the lit thing is. */
-  title: string;
-  /** One or two short sentences: what it's for, and why you'd care. */
-  body: string;
   /** The page the spot is on, when it isn't the tour's own: the player goes there first. */
   page?: TourPage;
   /** Only when this is true (all of them, given several). */
   when?: TourWhen | readonly TourWhen[];
 }
 
+/**
+ * A tour's words are in door.json: door.tour.<tour>.name (the Help sheet's
+ * row under Show me around, "Today"), .title (in full, "Show me around
+ * Today"), and per step door.tour.<tour>.<spot>.title (a few words, in
+ * sentence case: what the lit thing is) and .body (one or two short
+ * sentences: what it's for, and why you'd care).
+ */
 export interface Tour {
-  /** What it shows you round, in a few words: the Help sheet's row under Show me around ("Today"). */
-  name: string;
-  /** In full, where it stands alone: "Show me around Today". */
-  title: string;
   /** Who it's for, when not everyone: an admin's tour is listed for admins only. */
   forWhom?: "admin";
   /** Where it starts. */
@@ -78,122 +79,80 @@ export const TOUR_BODY_MAX = 140;
 
 export const TOURS = {
   today: {
-    name: "Today",
-    title: "Show me around Today",
     page: "/today",
     steps: [
       {
         spot: "today.nextUp",
-        title: "Your next John",
-        body: "The one to do next, and when it's due. Tap Mark done once it's done.",
       },
       {
         spot: "today.needsYou",
-        title: "Needs you",
-        body: "Ticks to check wait here for you. A quick look keeps it fair.",
         when: "toCheck",
       },
       {
         spot: "today.rest",
-        title: "The rest of your week",
-        body: "Everything else that's yours this week, soonest first. Tap one to see it in full.",
         when: "hasJohns",
       },
       {
         spot: "shell.tabs",
-        title: "Week and House",
-        body: "Week shows the whole house's Johns. House has the Table, the Stake and the house rules.",
       },
       {
         spot: "shell.help",
-        title: "Help, any time",
-        body: "Tap the question mark to ask Jonz, read the guide, take a tour again, or tell us about a problem.",
       },
     ],
   },
   week: {
-    name: "The week",
-    title: "Show me around the week",
     page: "/week",
     steps: [
       {
         spot: "week.summary",
-        title: "The week at a glance",
-        body: "How many Johns are done, being checked, late or still to go. Tap a part to show only those.",
       },
       {
         spot: "week.everyone",
-        title: "Everyone's Johns",
-        body: "Everyone's Johns this week, yours first. Tap any John to see it in full.",
       },
       {
         spot: "week.more",
-        title: "More",
-        body: "Book time away from here. Admins also change the John list and deal again.",
       },
       {
         spot: "week.fairness",
-        title: "Is it fair?",
-        body: "How even the deal is, in a sentence. Tap it to see everyone's fair share.",
       },
     ],
   },
   house: {
-    name: "House",
-    title: "Show me around House",
     page: "/house",
     steps: [
       {
         spot: "house.table",
-        title: "The Table",
-        body: "Everyone's effort points this week and this month. Done on time scores, late and missed cost.",
       },
       {
         spot: "house.wall",
-        title: "The Wall",
-        body: "What's been happening in the house: Johns done, swaps, flags and new people.",
       },
       {
         spot: "house.setup",
-        title: "House setup",
-        body: "The John list, the house rules and time away. Admins change the list and the rules.",
         when: "phone",
       },
       {
         spot: "shell.help",
-        title: "Help, any time",
-        body: "Tours again, and a way to report a problem or send an idea. We read every one.",
       },
     ],
   },
   setUp: {
-    name: "Setting up your house",
-    title: "Setting up your house",
     forWhom: "admin",
     page: "/house/johns",
     steps: [
       {
         spot: "johns.list",
-        title: "The John list",
-        body: "Everything the house does, how often and how many points. Add, change or take out Johns here.",
       },
       {
         spot: "rules.form",
-        title: "House rules",
         page: "/house/rules",
-        body: "The stake, what late and missed cost, and who checks a tick. Everyone sees them.",
       },
       {
         spot: "week.more",
-        title: "Deal again",
         page: "/week",
-        body: "After changing the list, deal again from here so this week follows it.",
       },
       {
         spot: "shell.ask",
-        title: "Ask Jonz",
         page: "/today",
-        body: "Or tell Jonz in your own words what to change, and tick the changes you want.",
       },
     ],
   },
@@ -211,17 +170,39 @@ export function stepShows(step: TourStep, facts: TourFacts): boolean {
   );
 }
 
-/** The steps of a tour you'll see, each with the page it's on. */
-export function tourSteps(id: TourId, facts: TourFacts): (TourStep & { page: TourPage })[] {
+/** A step as it reads: the page it's on, and its title and body from the words. */
+export interface TourStepSaid extends TourStep {
+  page: TourPage;
+  title: string;
+  body: string;
+}
+
+/** The steps of a tour you'll see, each with the page it's on and its words. */
+export function tourSteps(id: TourId, facts: TourFacts, words: Words): TourStepSaid[] {
   const tour: Tour = TOURS[id];
-  return tour.steps.filter((s) => stepShows(s, facts)).map((s) => ({ ...s, page: s.page ?? tour.page }));
+  return tour.steps
+    .filter((s) => stepShows(s, facts))
+    .map((s) => ({ ...s, page: s.page ?? tour.page, ...tourStepWords(id, s, words) }));
+}
+
+/** A step's title and body. */
+export function tourStepWords(id: TourId, step: TourStep, words: Words): { title: string; body: string } {
+  return {
+    title: words(`door.tour.${id}.${step.spot}.title` as WordId),
+    body: words(`door.tour.${id}.${step.spot}.body` as WordId),
+  };
+}
+
+/** What a tour shows you round, in a few words ("Today"). */
+export function tourName(id: TourId, words: Words): string {
+  return words(`door.tour.${id}.name`);
 }
 
 /** The tours someone can take, in the Help sheet's order: everyone's, then an admin's. */
 export function toursFor(facts: TourFacts): TourId[] {
   return TOUR_IDS.filter((id) => {
     const tour: Tour = TOURS[id];
-    return (tour.forWhom !== "admin" || facts.admin) && tourSteps(id, facts).length > 0;
+    return (tour.forWhom !== "admin" || facts.admin) && tour.steps.some((s) => stepShows(s, facts));
   });
 }
 
@@ -232,13 +213,13 @@ export function tourForPage(path: string): TourId | null {
 }
 
 /** "2 of 4". */
-export function stepCount(index: number, total: number): string {
-  return `${index + 1} of ${total}`;
+export function stepCount(index: number, total: number, words: Words): string {
+  return words("door.tour.stepCount", { step: index + 1, total });
 }
 
 /** How a step count reads in the Help sheet: "4 steps, about a minute". */
-export function tourLength(steps: number): string {
-  return steps === 1 ? "1 step" : `${steps} steps, about a minute`;
+export function tourLength(steps: number, words: Words): string {
+  return words("door.tour.length", { steps });
 }
 
 /**

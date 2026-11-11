@@ -1,3 +1,4 @@
+import type { Words } from "./words-for";
 import { TZDate, tz } from "@date-fns/tz";
 import { format, startOfDay } from "date-fns";
 
@@ -144,24 +145,6 @@ export type AuditWho = (typeof AUDIT_WHO)[number];
 export const AUDIT_WHAT = ["anything", "notices", "accounts"] as const;
 export type AuditWhat = (typeof AUDIT_WHAT)[number];
 
-export const AUDIT_LIST_COPY = {
-  search: "Search",
-  searchPlaceholder: "Entry number, account id or words",
-  who: "Who",
-  what: "What",
-  when: "When",
-  whoLabel: { anyone: "Anyone", you: "You", others: "Someone else", jonz: "Jonz itself" } satisfies Record<AuditWho, string>,
-  whatLabel: { anything: "Anything", notices: "Notices", accounts: "Accounts" } satisfies Record<AuditWhat, string>,
-  count: (count: string) => (count === "1" ? "1 entry" : `${count} entries`),
-  likeThis: "Show more like this",
-  byYou: "Everything you did",
-  byThem: "Everything by someone else",
-  byJonz: "Everything Jonz did by itself",
-  ofKind: (what: string) => `Every entry about ${what.toLowerCase()}`,
-  around: "Around this time",
-  aroundMeta: "The list from five minutes after it, going back",
-} as const;
-
 /** What each What reads: the start of the entries' action. */
 export const AUDIT_WHAT_ACTION: Record<AuditWhat, string | null> = { anything: null, notices: "notice.", accounts: "account." };
 
@@ -212,17 +195,17 @@ export interface LikeThis {
  * of the same What, and the list around its moment. Each is a whole query
  * (it clears the search), so it reads the same wherever it is opened from.
  */
-export function auditLikeThis(entry: { actor: string | null; action: string; at: string }, ownerId: string | null): LikeThis[] {
+export function auditLikeThis(entry: { actor: string | null; action: string; at: string }, ownerId: string | null, words: Words): LikeThis[] {
   const who: AuditWho = entry.actor === null ? "jonz" : entry.actor === ownerId ? "you" : "others";
-  const whoLabel = who === "you" ? AUDIT_LIST_COPY.byYou : who === "jonz" ? AUDIT_LIST_COPY.byJonz : AUDIT_LIST_COPY.byThem;
-  const like: LikeThis[] = [{ label: whoLabel, meta: `${AUDIT_LIST_COPY.who}: ${AUDIT_LIST_COPY.whoLabel[who]}`, params: { who } }];
+  const whoLabel = who === "you" ? words('admin.audit.byYou') : who === "jonz" ? words('admin.audit.byJonz') : words('admin.audit.byThem');
+  const like: LikeThis[] = [{ label: whoLabel, meta: `${words('admin.audit.who')}: ${words(`admin.audit.whoLabel.${who}` as const)}`, params: { who } }];
   const what = AUDIT_WHAT.find((kind) => AUDIT_WHAT_ACTION[kind] !== null && entry.action.startsWith(AUDIT_WHAT_ACTION[kind]!));
   if (what) {
-    const label = AUDIT_LIST_COPY.whatLabel[what];
-    like.push({ label: AUDIT_LIST_COPY.ofKind(label), meta: `${AUDIT_LIST_COPY.what}: ${label}`, params: { what } });
+    const label = words(`admin.audit.whatLabel.${what}` as const);
+    like.push({ label: words('admin.audit.ofKind', { what: label.toLowerCase() }), meta: `${words('admin.audit.what')}: ${label}`, params: { what } });
   }
   const from = new Date(Date.parse(entry.at) + 5 * 60_000).toISOString();
-  like.push({ label: AUDIT_LIST_COPY.around, meta: AUDIT_LIST_COPY.aroundMeta, params: { from } });
+  like.push({ label: words('admin.audit.around'), meta: words('admin.audit.aroundMeta'), params: { from } });
   return like;
 }
 
@@ -459,21 +442,6 @@ export const DELETION_FACETS: readonly ListFacet[] = [
 /** On Deletions, When is when they asked; the list goes soonest first, so it doesn't start from a moment. */
 export const DELETION_WHEN: ListWhen = { label: "Asked", moments: false };
 
-export const DELETION_LIST_COPY = {
-  searchPlaceholder: "Name, email, house or account id",
-  count: (count: string) => (count === "1" ? "1 person waiting" : `${count} people waiting`),
-  name: "Name",
-  email: "Email",
-  house: "House",
-  asked: "Asked",
-  goes: "Goes",
-  inTheApp: "In the app",
-  byYou: "By you",
-  noHouse: "No house",
-  /** In the table's Goes column, under its name. */
-  goesShort: (days: number) => (days <= 0 ? "now" : days === 1 ? "tomorrow" : `in ${days} days`),
-} as const;
-
 // --- Notices' search and filters --------------------------------------------------------
 
 /** The search box's words as the database's `or` filter on notices: a title or body that has them. */
@@ -509,16 +477,4 @@ export const NOTICE_FACETS: readonly ListFacet[] = [
 
 /** On Notices, When is when a notice started. */
 export const NOTICE_WHEN: ListWhen = { label: "Started" };
-
-export const NOTICE_LIST_COPY = {
-  every: "Every notice",
-  searchPlaceholder: "Words in a notice",
-  count: (count: string) => (count === "1" ? "1 notice" : `${count} notices`),
-  title: "Notice",
-  kind: "Kind",
-  state: "State",
-  starts: "Starts",
-  ends: "Ends",
-  untilEnded: "Until you end it",
-} as const;
 

@@ -1,4 +1,14 @@
-import { promotionEnds, promotionGives, promotionMeta, PROMOTION_FACETS, PROMOTIONS_COPY, promotionUsed, promotionWho, type ListAsk, type PromotionRow } from '@app/core';
+import {
+  type Words,
+  promotionEnds,
+  promotionGives,
+  promotionMeta,
+  PROMOTION_FACETS,
+  promotionUsed,
+  promotionWho,
+  type ListAsk,
+  type PromotionRow,
+} from '@app/core';
 import { useRouter } from 'expo-router';
 import { PlusIcon, TicketIcon, UsersIcon } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
@@ -18,14 +28,15 @@ import { Chip } from '@/components/status-mark';
 import { Lead } from '@/components/text';
 import { TitleBar } from '@/components/title-bar';
 import { SPACE } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /** Every promotion's columns on a laptop. */
-const TABLE: readonly ListColumn[] = [
-  { key: 'name', label: PROMOTIONS_COPY.columns.name, flex: 1 },
-  { key: 'gives', label: PROMOTIONS_COPY.columns.gives, width: 200 },
-  { key: 'who', label: PROMOTIONS_COPY.columns.who, width: 96 },
-  { key: 'used', label: PROMOTIONS_COPY.columns.used, width: 88 },
-  { key: 'ends', label: PROMOTIONS_COPY.columns.ends, width: 80, end: true },
+const TABLE = (words: Words): readonly ListColumn[] => [
+  { key: 'name', label: words('admin.promotions.columns.name'), flex: 1 },
+  { key: 'gives', label: words('admin.promotions.columns.gives'), width: 200 },
+  { key: 'who', label: words('admin.promotions.columns.who'), width: 96 },
+  { key: 'used', label: words('admin.promotions.columns.used'), width: 88 },
+  { key: 'ends', label: words('admin.promotions.columns.ends'), width: 80, end: true },
 ];
 
 /**
@@ -38,6 +49,7 @@ const TABLE: readonly ListColumn[] = [
  * list alone.
  */
 export default function PromotionsPage() {
+  const words = useWords();
   const busy = useBusyList({
     key: [...PROMOTIONS_KEY, 'all'],
     facets: PROMOTION_FACETS,
@@ -45,7 +57,7 @@ export default function PromotionsPage() {
     count: (ask) => promotionsCount(promotionFilter(ask)),
   });
   return (
-    <Screen spreads bar={<TitleBar title={PROMOTIONS_COPY.page} />} onNearEnd={busy.onNearEnd} testID="admin-promotions">
+    <Screen spreads bar={<TitleBar title={words('admin.promotions.page')} />} onNearEnd={busy.onNearEnd} testID="admin-promotions">
       <AdminSwitch page="promotions" />
       <Promotions busy={busy} />
     </Screen>
@@ -53,6 +65,7 @@ export default function PromotionsPage() {
 }
 
 function Promotions({ busy }: { busy: BusyList<PromotionRow> }) {
+  const words = useWords();
   const two = useColumns();
   const may = useOwnerMay('promotions:write');
   const router = useRouter();
@@ -65,19 +78,19 @@ function Promotions({ busy }: { busy: BusyList<PromotionRow> }) {
       {/* On a laptop the form is already beside the list. */}
       {may && !beside ? (
         <ButtonRow atEdge>
-          <Button label={PROMOTIONS_COPY.newPromotion} icon={PlusIcon} onPress={() => router.push('/admin/promotions/new' as never)} testID="promotion-new" />
+          <Button label={words('admin.promotions.newPromotion')} icon={PlusIcon} onPress={() => router.push('/admin/promotions/new' as never)} testID="promotion-new" />
         </ButtonRow>
       ) : null}
       <BusyListView
         busy={busy}
         name="promotions"
-        placeholder={PROMOTIONS_COPY.searchPlaceholder}
-        noun={PROMOTIONS_COPY.count}
-        columns={TABLE}
+        placeholder={words('admin.promotions.searchPlaceholder')}
+        noun={(count: string) => words('admin.promotions.count', { count })}
+        columns={TABLE(words)}
         tableRow={(p) => (
           <ListTableRow
             key={p.id}
-            columns={TABLE}
+            columns={TABLE(words)}
             cells={{ name: p.name, gives: promotionGives(p.terms), who: promotionWho(p), used: promotionUsed(p), ends: promotionEnds(p, zone) }}
             quiet={['who', 'ends']}
             strong={['name']}
@@ -93,13 +106,13 @@ function Promotions({ busy }: { busy: BusyList<PromotionRow> }) {
             title={p.name}
             meta={promotionMeta(p)}
             metaLines={2}
-            trailing={p.state === 'live' ? undefined : <Chip label={PROMOTIONS_COPY.stateChip[p.state]} />}
+            trailing={p.state === 'live' ? undefined : <Chip label={words(`admin.promotions.stateChip.${p.state}` as const)} />}
             href={open(p)}
             chevron
             testID={`promotion-${p.code}`}
           />
         )}
-        empty={{ icon: TicketIcon, title: PROMOTIONS_COPY.nothing, body: PROMOTIONS_COPY.nothingBody }}
+        empty={{ icon: TicketIcon, title: words('admin.promotions.nothing'), body: words('admin.promotions.nothingBody') }}
       />
     </>
   );
@@ -110,7 +123,7 @@ function Promotions({ busy }: { busy: BusyList<PromotionRow> }) {
       main={list}
       side={
         <View style={styles.side} testID="promotion-side">
-          <Lead header>{PROMOTIONS_COPY.newPromotion}</Lead>
+          <Lead header>{words('admin.promotions.newPromotion')}</Lead>
           <PromotionForm beside />
         </View>
       }

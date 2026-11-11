@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Hairline, useRowInset } from '@/components/group';
 import { Meta } from '@/components/text';
 import { FONT, LEADING, ROW_GAP, ROW_MIN, SPACE, useTheme } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * Finished things, folded away inside a group: a row that says what it holds
@@ -32,6 +33,7 @@ export function Fold({
 }) {
   const { colors, type } = useTheme();
   const inset = useRowInset();
+  const words = useWords();
   const [open, setOpen] = useState(initiallyOpen);
   const [pressed, setPressed] = useState(false);
   const Chevron = open ? ChevronUpIcon : ChevronDownIcon;
@@ -53,7 +55,7 @@ export function Fold({
         <View style={styles.words}>
           <View style={styles.line}>
             <Text numberOfLines={1} style={[type.body, styles.label]}>
-              {meta != null ? `${label},` : label}
+              {meta != null ? words('common.join.trailingComma', { text: label }) : label}
             </Text>
             {meta != null ? <View style={styles.meta}>{meta}</View> : null}
           </View>

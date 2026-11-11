@@ -1,3 +1,4 @@
+import type { Words } from "./words-for";
 import { z } from "zod";
 
 import { ChatAsk, ChatMessage, CHAT_MAX_MESSAGES } from "./house-draft";
@@ -31,26 +32,7 @@ export const OwnerAskResponse = z.object({
 });
 export type OwnerAskResponse = z.infer<typeof OwnerAskResponse>;
 
-export const OWNER_ASK_COPY = {
-  title: "Ask Jonz",
-  /** On the bar, so the owner's chat is never mistaken for a housemate's. */
-  label: "Owner",
-  greeting: "Ask me about anything on the admin pages, or ask me to do it: reply to a report, put up a notice, send a message, make a promotion, start or stop a deletion. Anything I’d do goes on a card first, and happens when you tap.",
-  placeholder: "Ask, or say what to do…",
-  send: "Send",
-  box: "Ask Jonz, owner",
-  offline: "I can’t reach Claude just now, so I can’t answer. Everything I’d read is on the admin pages.",
-  open: "Ask Jonz, owner",
-  close: "Close Ask Jonz",
-  /** Under Your chats: the owner's are theirs alone, apart from every house's. */
-  chatsNote: "Only you can see these chats. They’re kept until you delete them.",
-  deleteBody: "It’s gone for good.",
-  thinkingSteps: ["Reading the admin pages", "Looking it up", "Writing it down"],
-  /** What a screen reader says for an owner's chip. */
-  spoken: {
-    report: (label: string) => `${label}, report`,
-    audit: (label: string) => `${label}, audit entry`,
-    account: (label: string) => `${label}, account`,
-    admin: (label: string) => `${label}, page`,
-  },
-} as const;
+/** What Ask Jonz is doing while it answers the owner, one after another. */
+export function ownerAskThinking(words: Words): string[] {
+  return [words("admin.ask.thinkingSteps.read"), words("admin.ask.thinkingSteps.look"), words("admin.ask.thinkingSteps.write")];
+}

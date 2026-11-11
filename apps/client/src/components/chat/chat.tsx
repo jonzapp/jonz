@@ -27,6 +27,9 @@ import {
   useTheme,
 } from "@/theme";
 
+/** Keeps a trailing new line measured; not words. */
+const ZERO_WIDTH = '\u200b';
+
 // The chat's own pieces, shared by every chat with Jonz: a housemate's Ask
 // Jonz and Describe your house (components/house/setup-chat.tsx) and the
 // owner's Ask Jonz in /admin. Each chat brings its own cards and answers;
@@ -276,7 +279,7 @@ export function Composer({
             onLayout={(e) => setWordsHeight(e.nativeEvent.layout.height)}
             style={[styles.input, styles.measure, type.body]}
           >
-            {`${value}​`}
+            {value + ZERO_WIDTH}
           </Text>
           <TextInput
             accessibilityLabel={label}

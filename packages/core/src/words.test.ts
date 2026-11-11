@@ -71,9 +71,14 @@ const ALLOWED_IDS: Record<string, RegExp[]> = {
   "house.resets.fixResultMeta": [/\blet (it |\w+ )?off\b/i],
   "house.resets.letOff": [/\blet (it |\w+ )?off\b/i],
   "house.resets.choice.excused": [/\blet (it |\w+ )?off\b/i],
+  "door.guide.page.history.resets": [/\blet (it |\w+ )?off\b/i],
   // An admin's reset outcomes, as the database names them (errors.ts).
   "errors.unknown_outcome": [/\blet (it |\w+ )?off\b/i],
   "errors.already_let_off": [/\blet (it |\w+ )?off\b/i],
+  // The owner's Houses page finds a house by its join code, as the database names it.
+  "admin.houses.searchPlaceholder": [/\bjoin (link|code)\b/i],
+  "admin.houses.facts.code": [/\bjoin (link|code)\b/i],
+  "admin.messages.findHouse": [/\bjoin (link|code)\b/i],
   "wall.history.reset.excused": [/\blet (it |\w+ )?off\b/i],
   "wall.history.reset.letoff": [/\blet (it |\w+ )?off\b/i],
   "wall.history.reset.letoffAny": [/\blet (it |\w+ )?off\b/i],

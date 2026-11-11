@@ -1,4 +1,4 @@
-import { MESSAGE_AUDIENCES, MESSAGE_COPY, MESSAGE_LIMITS, messageProblems, messageWays, sendLabel, testWays, wayMeta, type MessageAudience, type MessageWays } from '@app/core';
+import { MESSAGE_AUDIENCES, MESSAGE_LIMITS, messageProblems, messageWays, sendLabel, testWays, wayMeta, type MessageAudience, type MessageWays } from '@app/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { EyeIcon, SendIcon } from 'lucide-react-native';
 import { useState } from 'react';
@@ -59,7 +59,7 @@ export function MessageForm({ beside = false, onSent }: { beside?: boolean; onSe
     queryFn: () => messageReach(form.audience, personId, houseId),
     enabled: form.audience === 'everyone' || form.picked !== null,
   });
-  const problems = messageProblems({ audience: form.audience, personId, houseId, subject: form.subject, body: form.body, ways: form.ways });
+  const problems = messageProblems({ audience: form.audience, personId, houseId, subject: form.subject, body: form.body, ways: form.ways }, words);
   const ok = Object.keys(problems).length === 0;
   const shown = (key: keyof typeof problems) => (tried ? problems[key] : undefined);
 
@@ -69,10 +69,10 @@ export function MessageForm({ beside = false, onSent }: { beside?: boolean; onSe
       void client.invalidateQueries({ queryKey: SENT_KEY });
       setConfirming(false);
       if (message.audience === 'test') {
-        toast.show(MESSAGE_COPY.testToast);
+        toast.show(words('admin.messages.testToast'));
         return;
       }
-      toast.show(MESSAGE_COPY.sentToast(sent.people));
+      toast.show(words('admin.messages.sentToast', { n: sent.people }));
       setForm((current) => ({ ...current, subject: '', body: '' }));
       setTried(false);
       onSent?.();
@@ -95,9 +95,9 @@ export function MessageForm({ beside = false, onSent }: { beside?: boolean; onSe
   };
   const onTest = () => {
     // A test needs only the words: who it's for doesn't matter yet.
-    const words = messageProblems({ audience: 'everyone', personId: null, houseId: null, subject: form.subject, body: form.body, ways: form.ways });
+    const problems = messageProblems({ audience: 'everyone', personId: null, houseId: null, subject: form.subject, body: form.body, ways: form.ways }, words);
     setTried(true);
-    if (words.subject || words.body) return;
+    if (problems.subject || problems.body) return;
     send.mutate(outgoing('test'));
   };
 
@@ -118,7 +118,7 @@ export function MessageForm({ beside = false, onSent }: { beside?: boolean; onSe
   );
   const testButton = (
     <Button
-      label={MESSAGE_COPY.sendTest}
+      label={words('admin.messages.sendTest')}
       variant="outline"
       onPress={onTest}
       busy={testing}
@@ -132,10 +132,10 @@ export function MessageForm({ beside = false, onSent }: { beside?: boolean; onSe
     <>
       <View style={styles.form} testID="message-form">
         <View style={styles.group}>
-          <FieldLabel>{MESSAGE_COPY.to}</FieldLabel>
+          <FieldLabel>{words('admin.messages.to')}</FieldLabel>
           <Segmented
-            label={MESSAGE_COPY.to}
-            options={MESSAGE_AUDIENCES.map((audience) => ({ value: audience, label: MESSAGE_COPY.audience[audience] }))}
+            label={words('admin.messages.to')}
+            options={MESSAGE_AUDIENCES.map((audience) => ({ value: audience, label: words(`admin.messages.audience.${audience}` as const) }))}
             value={form.audience}
             onChange={(audience) => set({ audience, picked: null })}
             equal
@@ -146,7 +146,7 @@ export function MessageForm({ beside = false, onSent }: { beside?: boolean; onSe
           <RecipientPicker key={form.audience} audience={form.audience} picked={form.picked} onPick={(picked) => set({ picked })} problem={shown('who')} />
         )}
         <Field
-          label={MESSAGE_COPY.subject}
+          label={words('admin.messages.subject')}
           value={form.subject}
           onChangeText={(subject) => set({ subject })}
           problem={shown('subject')}
@@ -154,23 +154,23 @@ export function MessageForm({ beside = false, onSent }: { beside?: boolean; onSe
           testID="message-subject"
         />
         <Field
-          label={MESSAGE_COPY.body}
+          label={words('admin.messages.body')}
           value={form.body}
           onChangeText={(body) => set({ body })}
           problem={shown('body')}
-          hint={MESSAGE_COPY.count(form.body.trim().length, MESSAGE_LIMITS.body)}
+          hint={words('admin.messages.count', { n: form.body.trim().length, max: MESSAGE_LIMITS.body })}
           multiline
           maxLength={MESSAGE_LIMITS.body}
           testID="message-body"
         />
 
         <View style={styles.group}>
-          <FieldLabel>{MESSAGE_COPY.sendAs}</FieldLabel>
+          <FieldLabel>{words('admin.messages.sendAs')}</FieldLabel>
           <Group>
             <ChoiceRow
               role="checkbox"
-              label={MESSAGE_COPY.wall}
-              meta={wayMeta('wall', form.audience, reach.data ?? null)}
+              label={words('admin.messages.wall')}
+              meta={wayMeta('wall', form.audience, reach.data ?? null, words)}
               metaLines={2}
               checked={ways.wall}
               disabled={form.audience === 'person'}
@@ -179,8 +179,8 @@ export function MessageForm({ beside = false, onSent }: { beside?: boolean; onSe
             />
             <ChoiceRow
               role="checkbox"
-              label={MESSAGE_COPY.push}
-              meta={wayMeta('push', form.audience, reach.data ?? null)}
+              label={words('admin.messages.push')}
+              meta={wayMeta('push', form.audience, reach.data ?? null, words)}
               metaLines={2}
               checked={ways.push}
               onPress={() => set({ ways: { ...form.ways, push: !form.ways.push } })}
@@ -188,8 +188,8 @@ export function MessageForm({ beside = false, onSent }: { beside?: boolean; onSe
             />
             <ChoiceRow
               role="checkbox"
-              label={MESSAGE_COPY.email}
-              meta={wayMeta('email', form.audience, reach.data ?? null)}
+              label={words('admin.messages.email')}
+              meta={wayMeta('email', form.audience, reach.data ?? null, words)}
               checked={ways.email}
               onPress={() => set({ ways: { ...form.ways, email: !form.ways.email } })}
               testID="message-way-email"
@@ -208,27 +208,27 @@ export function MessageForm({ beside = false, onSent }: { beside?: boolean; onSe
             <>
               <ButtonRow>{sendButton}</ButtonRow>
               <ButtonRow>
-                <Button label={MESSAGE_COPY.preview} variant="outline" icon={EyeIcon} onPress={() => setPreviewing(true)} testID="message-preview-open" />
+                <Button label={words('admin.messages.preview')} variant="outline" icon={EyeIcon} onPress={() => setPreviewing(true)} testID="message-preview-open" />
                 {testButton}
               </ButtonRow>
             </>
           )}
-          <Meta>{MESSAGE_COPY.auditNote}</Meta>
+          <Meta>{words('admin.messages.auditNote')}</Meta>
         </View>
         {beside ? (
-          <Section label={MESSAGE_COPY.howItLooks} bare>
+          <Section label={words('admin.messages.howItLooks')} bare>
             {preview}
           </Section>
         ) : null}
       </View>
-      <Sheet visible={previewing} title={MESSAGE_COPY.howItLooks} onClose={() => setPreviewing(false)} testID="message-preview-sheet">
+      <Sheet visible={previewing} title={words('admin.messages.howItLooks')} onClose={() => setPreviewing(false)} testID="message-preview-sheet">
         {preview}
       </Sheet>
       <ConfirmSheet
         visible={confirming}
-        title={MESSAGE_COPY.confirmEveryone(reach.data?.people ?? 0)}
-        body={MESSAGE_COPY.confirmEveryoneBody}
-        confirmLabel={MESSAGE_COPY.confirmSend(reach.data?.people ?? 0)}
+        title={words('admin.messages.confirmEveryone', { n: reach.data?.people ?? 0 })}
+        body={words('admin.messages.confirmEveryoneBody')}
+        confirmLabel={words('admin.messages.confirmSend', { n: reach.data?.people ?? 0 })}
         tone="primary"
         busy={send.isPending}
         busyLabel={words('common.busy.sending')}

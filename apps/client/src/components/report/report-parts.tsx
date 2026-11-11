@@ -122,7 +122,7 @@ export function ReportThread({
         if (mine) {
           return (
             <View key={at} style={styles.mineWrap}>
-              <Meta style={styles.right}>{`${who}, ${said(message.at)}`}</Meta>
+              <Meta style={styles.right}>{words('common.join.comma', { first: who, second: said(message.at) })}</Meta>
               <UserBubble text={message.text}>
                 {message.shots?.length ? (
                   <View style={styles.shots}>
@@ -137,7 +137,7 @@ export function ReportThread({
         }
         return (
           <View key={at} style={styles.theirs}>
-            <Meta>{`${who}, ${said(message.at)}`}</Meta>
+            <Meta>{words('common.join.comma', { first: who, second: said(message.at) })}</Meta>
             <Body>{message.text}</Body>
             {message.shots?.length ? (
               <View style={styles.shots}>

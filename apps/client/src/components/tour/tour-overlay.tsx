@@ -1,4 +1,4 @@
-import { placeTourCard, stepCount, withAlpha, type TourRect, type TourStep } from '@app/core';
+import { placeTourCard, stepCount, withAlpha, type TourRect, type TourStepSaid } from '@app/core';
 import { useEffect, useState } from 'react';
 import { Modal, Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
@@ -36,7 +36,7 @@ export function TourOverlay({
   onBack,
   onSkip,
 }: {
-  step: TourStep;
+  step: TourStepSaid;
   index: number;
   total: number;
   rect: TourRect | null;
@@ -110,7 +110,7 @@ export function TourOverlay({
           >
             <View style={styles.head}>
               <RowTitle style={styles.title}>{step.title}</RowTitle>
-              <Meta testID="tour-count">{stepCount(index, total)}</Meta>
+              <Meta testID="tour-count">{stepCount(index, total, words)}</Meta>
             </View>
             <Body testID="tour-body">{step.body}</Body>
             <View style={styles.way}>

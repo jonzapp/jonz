@@ -55,8 +55,12 @@ The lines move part by part, one pull request each, merged one at a time:
    link previews and Ask Jonz's chat and usage (`common.json`, `ask.json`);
    `copy.ts` is deleted and what wasn't words (the name, sections, looks)
    lives in `app.ts`. 6b: the other screens' leftover objects (resets,
-   offers, reports, notices, tours, the Guide's sections). 6c: owner admin
-   and text typed into screens; the lint rule's suppressions go.
+   offers, reports, notices, approvals, account deletion, saved chats).
+   6c: owner admin (`admin.json`), tours and the Guide's pages
+   (`door.tour.*`, `door.guide.page.*`), and text typed into screens,
+   joins included (`common.join.*`: a language may join two lines with
+   something other than ", "); the lint rule's suppressions go, and only
+   the style page (/style, a sample book) keeps written-in text.
 7. The language setting, dates and money in the reader's language, Ask Jonz
    answering in it, and a pseudo-language to spot lines that never moved.
 

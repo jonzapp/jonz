@@ -11,6 +11,9 @@ import { useNotices } from '@/hooks/use-notices';
 import { CONTENT_MAX, GROUP_RADIUS, GUTTER, SPACE, useTheme } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
+/** Holds a line's height where there's nothing to say; not words. */
+const BLANK = ' ';
+
 // The band at the top of every screen that carries a notice from the owner
 // (an outage, an offer, news) or says Jonz can't be reached. One at a time;
 // packages/core/src/notices.ts decides which. It takes the top safe area
@@ -146,8 +149,8 @@ export function NoticeView({
         <Icon size={20} color={look.icon} strokeWidth={2.5} style={styles.icon} />
         <Text style={[type.body, styles.words, { color: look.ink }]}>
           <Text style={{ fontFamily: type.rowTitle.fontFamily }}>{title}</Text>
-          {body ? ` ${body}` : ''}
-          {action ? ' ' : ''}
+          {body ? words('common.join.lead', { text: body }) : null}
+          {action ? BLANK : null}
           {action ? (
             <Text
               accessibilityRole="link"

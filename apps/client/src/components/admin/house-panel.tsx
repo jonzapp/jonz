@@ -1,4 +1,4 @@
-import { humanError, DELETE_HOUSE_COPY, HOUSES_COPY, houseFacts, houseLead, passDetail, personMeta, type HouseDetail } from '@app/core';
+import { humanError, houseFacts, houseLead, passDetail, personMeta, type HouseDetail } from '@app/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { MegaphoneIcon } from 'lucide-react-native';
@@ -34,14 +34,16 @@ export const HOUSES_KEY = ['owner-houses'] as const;
  * for an owner who may (houses:write).
  */
 export function HousePanel({ id }: { id: string }) {
+  const words = useWords();
   const house = useQuery({ queryKey: [...HOUSES_KEY, 'house', id], queryFn: () => ownerHouse(id) });
   if (house.isPending) return <Waiting ready={false} outline={<PanelOutline sections={[4, 3]} button />} />;
   if (house.isError) return <ReadFailed message={humanError(house.error)} onRetry={() => void house.refetch()} testID="house-panel-problem" />;
-  if (!house.data) return <Meta style={styles.words}>{HOUSES_COPY.gone}</Meta>;
+  if (!house.data) return <Meta style={styles.words}>{words('admin.houses.gone')}</Meta>;
   return <HouseBody house={house.data} />;
 }
 
 function HouseBody({ house }: { house: HouseDetail }) {
+  const words = useWords();
   const pass = passDetail(house, new Date());
   return (
     <View style={styles.panel} testID="house-panel">
@@ -49,7 +51,7 @@ function HouseBody({ house }: { house: HouseDetail }) {
         <Lead header>{house.name}</Lead>
         <Meta>{houseLead(house)}</Meta>
       </View>
-      <Section label={HOUSES_COPY.people}>
+      <Section label={words('admin.houses.people')}>
         {house.people.map((person) => (
           <Row
             key={person.id}
@@ -60,11 +62,11 @@ function HouseBody({ house }: { house: HouseDetail }) {
           />
         ))}
       </Section>
-      <Section label={HOUSES_COPY.money}>
+      <Section label={words('admin.houses.money')}>
         <Row title={pass.title} meta={pass.meta} testID="house-pass" />
       </Section>
-      <Section label={HOUSES_COPY.details}>
-        {houseFacts(house).map((fact) => (
+      <Section label={words('admin.houses.details')}>
+        {houseFacts(house, words).map((fact) => (
           <Row key={fact.key} title={fact.label} trailing={fact.value} testID={`house-fact-${fact.key}`} />
         ))}
       </Section>
@@ -90,35 +92,35 @@ function DeleteHouse({ house }: { house: HouseDetail }) {
   const remove = useMutation({
     mutationFn: () => deleteHouse(house.id, reason, tell),
     onSuccess: (done) => {
-      toast.show(done.passStopped === false ? `${DELETE_HOUSE_COPY.done(done.name)} ${DELETE_HOUSE_COPY.passNotStopped}` : DELETE_HOUSE_COPY.done(done.name));
+      toast.show(done.passStopped === false ? `${words('admin.deleteHouse.done', { name: done.name })} ${words('admin.deleteHouse.passNotStopped')}` : words('admin.deleteHouse.done', { name: done.name }));
       void queryClient.invalidateQueries();
       setOpen(false);
       router.replace('/admin/houses');
     },
   });
-  if (!may) return <Meta style={styles.words}>{HOUSES_COPY.readOnly}</Meta>;
+  if (!may) return <Meta style={styles.words}>{words('admin.houses.readOnly')}</Meta>;
   const named = typed.trim().toLowerCase() === house.name.trim().toLowerCase();
   return (
     <>
       <ButtonRow>
-        <Button variant="hazard" label={DELETE_HOUSE_COPY.button} onPress={() => setOpen(true)} testID="house-delete" />
+        <Button variant="hazard" label={words('admin.deleteHouse.button')} onPress={() => setOpen(true)} testID="house-delete" />
       </ButtonRow>
       <Sheet
         visible={open}
-        title={DELETE_HOUSE_COPY.title(house.name)}
-        description={DELETE_HOUSE_COPY.body}
+        title={words('admin.deleteHouse.title', { name: house.name })}
+        description={words('admin.deleteHouse.body')}
         onClose={() => setOpen(false)}
         testID="house-delete-sheet"
       >
-        <Field label={DELETE_HOUSE_COPY.reason} value={reason} onChangeText={setReason} maxLength={500} testID="house-delete-reason" />
-        <ChoiceRow role="checkbox" leading={<RowIcon icon={MegaphoneIcon} />} label={DELETE_HOUSE_COPY.tell} checked={tell} onPress={() => setTell(!tell)} testID="house-delete-tell" />
-        <Field label={DELETE_HOUSE_COPY.confirm} value={typed} onChangeText={setTyped} placeholder={house.name} testID="house-delete-name" />
+        <Field label={words('admin.deleteHouse.reason')} value={reason} onChangeText={setReason} maxLength={500} testID="house-delete-reason" />
+        <ChoiceRow role="checkbox" leading={<RowIcon icon={MegaphoneIcon} />} label={words('admin.deleteHouse.tell')} checked={tell} onPress={() => setTell(!tell)} testID="house-delete-tell" />
+        <Field label={words('admin.deleteHouse.confirm')} value={typed} onChangeText={setTyped} placeholder={house.name} testID="house-delete-name" />
         {remove.error ? <Alert message={remove.error.message} /> : null}
         <ButtonRow stacked>
           <Button
             variant="hazard"
-            label={DELETE_HOUSE_COPY.delete}
-            busyLabel={DELETE_HOUSE_COPY.deleting}
+            label={words('admin.deleteHouse.delete')}
+            busyLabel={words('admin.deleteHouse.deleting')}
             disabled={!named}
             busy={remove.isPending}
             onPress={() => remove.mutate()}

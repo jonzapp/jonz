@@ -11,7 +11,7 @@ import { APP_NAME } from "./app";
 import type { HouseRules } from "./domain";
 import { formatMoney } from "./money";
 import { PASS_ENFORCED, PASS_PRICES, PASS_TRIAL_DAYS } from "./pass";
-import { TOURS, type TourId } from "./tours";
+import { TOURS, tourStepWords, type TourId } from "./tours";
 import { makeupKey } from "./word-keys";
 import type { Words } from "./words-for";
 
@@ -45,140 +45,122 @@ export interface HowFacts {
 }
 
 /** A page's tour as the guide's lines: what each lit thing is, and what it's for. */
-const tourLines = (id: TourId) => TOURS[id].steps.map((step) => `- ${step.title}: ${step.body}`);
-
-/** "2 hours", "1 hour". */
-const hours = (n: number) => `${n} ${n === 1 ? "hour" : "hours"}`;
+const tourLines = (id: TourId, words: Words) =>
+  TOURS[id].steps.map((step) => words("door.guide.page.tourStep", tourStepWords(id, step, words)));
 
 /** One topic, in plain lines, with the house's numbers. */
-export function howItWorks(
-  topic: HowTopic,
-  { rules, family, awayMakeup }: HowFacts, words: Words,
-): string {
+export function howItWorks(topic: HowTopic, { rules, family, awayMakeup }: HowFacts, words: Words): string {
   const money = (minor: number) => formatMoney(minor, rules.currency);
-  const makeup =
-    words(`house.page.makeup.${makeupKey(awayMakeup)}`);
+  const makeup = words(`house.page.makeup.${makeupKey(awayMakeup)}`);
   const prices = PASS_PRICES[rules.currency];
+  const staked = rules.stakeMinor > 0;
+  const lines = (...said: string[]) => said.filter(Boolean).join("\n");
   switch (topic) {
     case "today":
-      return ["Today is your own page: what's yours to do, and what needs you.", ...tourLines("today")].join("\n");
+      return lines(words("door.guide.page.today.lead"), ...tourLines("today", words));
     case "week":
-      return ["The week shows the whole house: who has which John, and how it's going.", ...tourLines("week")].join("\n");
+      return lines(words("door.guide.page.week.lead"), ...tourLines("week", words));
     case "house":
-      return [
-        "House is the house as a whole: how everyone's doing, what's been happening, and how it's set up.",
-        ...tourLines("house"),
-        "Admins set the house up:",
-        ...tourLines("setUp"),
-      ].join("\n");
+      return lines(
+        words("door.guide.page.house.lead"),
+        ...tourLines("house", words),
+        words("door.guide.page.house.setUp"),
+        ...tourLines("setUp", words),
+      );
     case "fair_shares":
-      return [
-        words('house.page.rulesSharesBody', { makeup }),
-        "The maths, per person, from the day they joined:",
-        "- Their share: for every John dealt, its points are split between everyone who shares it (everyone at home that day, or the group it belongs to), and their part is added to their share.",
-        "- Done: the points of every John they actually did, on time or late, plus any they covered for someone else. A John done together splits its points between the people who did it.",
-        "- A missed John counts for nobody: it adds to the share but nobody's done.",
-        "- Standing = done minus share. Below zero is behind, above zero is ahead. Everyone's numbers are under Is it fair? on the Week page.",
-        "- The deal hands the next John to whoever is furthest behind, so standings drift back towards even. Someone behind gets a little more, but never more than half as much again as a usual week.",
-        `- Time away is made up ${makeup}: the share for days away ${awayMakeup >= 100 ? "is caught up a little each week once back" : awayMakeup > 0 ? "is half caught up, a little each week once back" : "goes to whoever is home, so there's nothing to catch up"}.`,
-      ].join("\n");
+      return lines(
+        words("house.page.rulesSharesBody", { makeup }),
+        words("door.guide.page.fair.maths"),
+        words("door.guide.page.fair.share"),
+        words("door.guide.page.fair.done"),
+        words("door.guide.page.fair.missed"),
+        words("door.guide.page.fair.standing"),
+        words("door.guide.page.fair.deal"),
+        words(`door.guide.page.fair.away.${awayMakeup >= 100 ? "full" : awayMakeup > 0 ? "half" : "none"}`, { makeup }),
+      );
     case "deal":
-      return [
-        `The deal: at the start of each week ${APP_NAME} deals the John list out between the people at home. This house uses ${words(`week.steady.modeName.${rules.dealMode}`)}.`,
-        `- Smart: ${words('week.steady.modeMeta.smart')}`,
-        `- Classic: ${words('week.steady.modeMeta.classic')}`,
-        `- ${words('week.steady.modeFoot')}`,
-        `- Effort each week: ${words('week.steady.budgetEach', { budget: rules.dealBudget })}. ${words('week.steady.budgetFoot')}`,
-        "- Who gets a John is decided by fair shares: whoever is furthest behind, skipping anyone who did it last time when someone else is as far behind, and anyone already handed the most extra a week gives.",
-        "- People away that day are left out. Every John on the list has a day; a John that keeps its day is always dealt on it.",
-        "- Each John's sheet has a Why? that shows exactly how its deal added up.",
-      ].join("\n");
+      return lines(
+        words("door.guide.page.deal.lead", { app: APP_NAME, mode: words(`week.steady.modeName.${rules.dealMode}`) }),
+        words("door.guide.page.deal.smart", { meta: words("week.steady.modeMeta.smart") }),
+        words("door.guide.page.deal.classic", { meta: words("week.steady.modeMeta.classic") }),
+        words("door.guide.page.deal.line", { line: words("week.steady.modeFoot") }),
+        words("door.guide.page.deal.effort", { budget: words("week.steady.budgetEach", { budget: rules.dealBudget }), foot: words("week.steady.budgetFoot") }),
+        words("door.guide.page.deal.who"),
+        words("door.guide.page.deal.away"),
+        words("door.guide.page.deal.why"),
+      );
     case "points":
-      return [
-        "Points are effort, not time exactly: 1 is about 5 minutes, 2 about 15, 3 about 30, 5 about an hour, 8 to 10 half a day, up to 20 a whole day.",
-        "Fair shares and the weekly budget both count points, so a big John counts for more than a small one. Similar jobs should have similar points; an admin can change a John's points on the John list.",
-      ].join("\n");
+      return lines(words("door.guide.page.points.scale"), words("door.guide.page.points.count"));
     case "late_and_missed":
-      return [
-        `A John is late once its due time passes. It can still be done late for ${hours(rules.lateHours)}; after that it's missed.`,
-        `Late still counts as done for fair shares${rules.stakeMinor > 0 ? `, but costs ${money(rules.lateForfeitMinor)} from the Stake` : ""}. Missed counts for nobody${rules.stakeMinor > 0 ? ` and costs ${money(rules.missedForfeitMinor)}` : ""}.`,
-        `${hours(rules.coverGraceHours)} after it's due, someone else can cover it instead.`,
-      ].join("\n");
+      return lines(
+        words("door.guide.page.late.late", { hours: rules.lateHours }),
+        staked
+          ? words("door.guide.page.late.countsStake", { late: money(rules.lateForfeitMinor), missed: money(rules.missedForfeitMinor) })
+          : words("door.guide.page.late.counts"),
+        words("door.guide.page.late.cover", { hours: rules.coverGraceHours }),
+      );
     case "covering":
-      return [
-        `For ${hours(rules.coverGraceHours)} after its due time a John is only its holder's. After that anyone in the house can do it for them: that's covering.`,
-        "A covered John counts as the coverer's work in fair shares, not the holder's.",
-        rules.stakeMinor > 0
-          ? "The holder's forfeit for it goes whole to whoever covered it, instead of being shared round the house."
-          : "",
-      ]
-        .filter(Boolean)
-        .join("\n");
-    case "stake":
-      return rules.stakeMinor <= 0
-        ? "This house has no Stake: nothing costs money. An admin can set one in House rules."
-        : [
-            `The Stake: everyone in the house stakes ${money(rules.stakeMinor)} a month. Nobody pays it in; it's just the most anyone can lose in a month.`,
-            `- Finish your Johns and you keep it all. A late John forfeits ${money(rules.lateForfeitMinor)}, a missed one ${money(rules.missedForfeitMinor)}.`,
-            `- Nobody loses more than ${money(rules.stakeMinor)} in a month: anything over that is given back at month end.`,
-            "- What someone forfeits is shared equally between the rest of the house at month end. A forfeit for a John someone else covered goes whole to the coverer instead. If it doesn't split evenly, the odd pennies take turns month by month.",
-            "- Only the differences change hands: the app adds up who owes whom and suggests the fewest payments. The app never moves money itself.",
-            `- Worked example: four people, ${money(rules.stakeMinor)} each. Sam is late once and misses once: ${money(rules.lateForfeitMinor)} + ${money(rules.missedForfeitMinor)} = ${money(rules.lateForfeitMinor + rules.missedForfeitMinor)}. The other three get a third each, about ${money(Math.floor((rules.lateForfeitMinor + rules.missedForfeitMinor) / 3))}, and Sam owes that between them.`,
-            "This month's real numbers so far are on the Stake page.",
-          ].join("\n");
+      return lines(
+        words("door.guide.page.covering.lead", { hours: rules.coverGraceHours }),
+        words("door.guide.page.covering.counts"),
+        staked ? words("door.guide.page.covering.forfeit") : "",
+      );
+    case "stake": {
+      if (!staked) return words("door.guide.page.stake.none");
+      const stake = money(rules.stakeMinor);
+      const late = money(rules.lateForfeitMinor);
+      const missed = money(rules.missedForfeitMinor);
+      const both = rules.lateForfeitMinor + rules.missedForfeitMinor;
+      return lines(
+        words("door.guide.page.stake.lead", { stake }),
+        words("door.guide.page.stake.keep", { late, missed }),
+        words("door.guide.page.stake.cap", { stake }),
+        words("door.guide.page.stake.shared"),
+        words("door.guide.page.stake.differences"),
+        words("door.guide.page.stake.example", { stake, late, missed, both: money(both), third: money(Math.floor(both / 3)) }),
+        words("door.guide.page.stake.real"),
+      );
+    }
     case "settle_up":
-      return [
-        "At the end of each month the forfeits are shared out and everyone's balance is added up: negative owes, positive is owed.",
-        "The app suggests the fewest payments that clear every balance. Whoever is owed marks a payment as arrived; nothing is taken automatically.",
-        "A house can settle in Jonz, or copy the amounts to Splitwise instead.",
-      ].join("\n");
+      return lines(words("door.guide.page.settle.balances"), words("door.guide.page.settle.payments"), words("door.guide.page.settle.splitwise"));
     case "house_pass":
-      return [
-        `${words('house.pass.lead')}`,
-        `What it adds: ${words('house.pass.stake')} (${words('house.pass.stakeMeta').toLowerCase()}), ${words('house.pass.table')} (${words('house.pass.tableMeta').toLowerCase()}), ${words('house.pass.photos')} (${words('house.pass.photosMeta').toLowerCase()}), ${words('house.pass.history').toLowerCase()}, and changing the John list with Ask Jonz.`,
-        words('house.pass.free'),
-        `Prices: ${formatMoney(prices.yearly, rules.currency)} a year (about ${formatMoney(Math.round(prices.yearly / 12), rules.currency)} a month), or ${formatMoney(prices.monthly, rules.currency)} a month; Founding houses ${formatMoney(prices.founding, rules.currency)} once, for life. Every new house gets a free month (${PASS_TRIAL_DAYS} days) first.`,
-        `Why it costs anything: ${words('house.pass.money').replace("Where the money goes: ", "")}`,
-        words('house.pass.hardship'),
-        PASS_ENFORCED
-          ? ""
-          : "Right now nothing is locked: every house keeps everything while the Pass is new.",
-      ]
-        .filter(Boolean)
-        .join("\n");
+      return lines(
+        words("house.pass.lead"),
+        words("door.guide.page.pass.adds", {
+          stake: words("house.pass.stake"),
+          stakeMeta: words("house.pass.stakeMeta").toLowerCase(),
+          table: words("house.pass.table"),
+          tableMeta: words("house.pass.tableMeta").toLowerCase(),
+          photos: words("house.pass.photos"),
+          photosMeta: words("house.pass.photosMeta").toLowerCase(),
+          history: words("house.pass.history").toLowerCase(),
+        }),
+        words("house.pass.free"),
+        words("door.guide.page.pass.prices", {
+          yearly: money(prices.yearly),
+          perMonth: money(Math.round(prices.yearly / 12)),
+          monthly: money(prices.monthly),
+          founding: money(prices.founding),
+          days: PASS_TRIAL_DAYS,
+        }),
+        words("house.pass.money"),
+        words("house.pass.hardship"),
+        PASS_ENFORCED ? "" : words("door.guide.page.pass.open"),
+      );
     case "time_away":
-      return [
-        "Book time away on the Days and time away page. On days away you're left out of the deal, so nothing is dealt to you.",
-        `Your share for those days is made up ${makeup} (an admin sets this in House rules).`,
-      ].join("\n");
+      return lines(words("door.guide.page.away.book"), words("door.guide.page.away.makeup", { makeup }));
     case "on_call":
-      return [
-        "On-call Johns are done when they're needed (the bin when it's full) rather than on a day. Each week one person is on call for each.",
-        "Anyone can flag that it needs doing; whoever is on call then has a set number of hours to do it. It counts towards fair shares like any other John.",
-      ].join("\n");
+      return lines(words("door.guide.page.onCall.what"), words("door.guide.page.onCall.flag"));
     case "swaps":
-      return [
-        "You can ask someone to swap one of your Johns this week for one of theirs. Nothing changes until they say yes.",
-        words('house.page.rulesSwapBody'),
-      ].join("\n");
+      return lines(words("door.guide.page.swaps.ask"), words("house.page.rulesSwapBody"));
     case "ticks_and_questions":
-      return [
-        `Tick a John when it's done. A housemate can question a tick for ${hours(rules.disputeHours)}: it goes to a house vote, and if the house agrees it wasn't done, the John opens again.`,
-        "Some Johns need a photo with the tick.",
-      ].join("\n");
+      return lines(words("door.guide.page.ticks.question", { hours: rules.disputeHours }), words("door.guide.page.ticks.photo"));
     case "history_and_resets":
-      return [
-        "History lists every move in the house, newest first, and most moves can be undone from it.",
-        "Admins can put mistakes right with resets: change a John's result, open someone's week again, re-deal or skip a week, or let off a month's forfeits.",
-      ].join("\n");
+      return lines(words("door.guide.page.history.list"), words("door.guide.page.history.resets"));
     case "family":
       return family
-        ? [
-            "In a family, admins are called parents and members kids.",
-            "A kid's tick waits for a parent's OK before it counts.",
-            "Johns can earn pocket money, up to a monthly cap a parent sets.",
-          ].join("\n")
-        : "This house is housemates, not a family.";
+        ? lines(words("door.guide.page.family.parents"), words("door.guide.page.family.ok"), words("door.guide.page.family.money"))
+        : words("door.guide.page.family.not");
   }
 }
 
@@ -191,20 +173,21 @@ export function guideTopic(topic: HowTopic, words: Words): { title: string; meta
   return { title: words(`door.guide.topic.${topic}.title`), meta: words(`door.guide.topic.${topic}.meta`) };
 }
 
-const GUIDE_SECTIONS: readonly { label: string; topics: readonly HowTopic[] }[] = [
-  { label: "Getting started", topics: ["today", "week", "house"] },
+/** The guide's sections, each labelled door.guide.section.<key>. */
+const GUIDE_SECTIONS: readonly { key: "start" | "how" | "money" | "family"; topics: readonly HowTopic[] }[] = [
+  { key: "start", topics: ["today", "week", "house"] },
   {
-    label: "How it works",
+    key: "how",
     topics: ["deal", "points", "fair_shares", "ticks_and_questions", "late_and_missed", "covering", "swaps", "on_call", "time_away", "history_and_resets"],
   },
-  { label: "Money", topics: ["stake", "settle_up", "house_pass"] },
-  { label: "Your family", topics: ["family"] },
+  { key: "money", topics: ["stake", "settle_up", "house_pass"] },
+  { key: "family", topics: ["family"] },
 ];
 
 /** The guide's sections for this kind of house: a family has no Stake to settle, and only a family reads about families. */
-export function guideSections(family: boolean): { label: string; topics: HowTopic[] }[] {
+export function guideSections(family: boolean, words: Words): { label: string; topics: HowTopic[] }[] {
   const leftOut: readonly HowTopic[] = family ? ["stake", "settle_up"] : ["family"];
-  return GUIDE_SECTIONS.map((s) => ({ label: s.label, topics: s.topics.filter((t) => !leftOut.includes(t)) })).filter((s) => s.topics.length > 0);
+  return GUIDE_SECTIONS.map((s) => ({ label: words(`door.guide.section.${s.key}`), topics: s.topics.filter((t) => !leftOut.includes(t)) })).filter((s) => s.topics.length > 0);
 }
 
 /** Whether a guide address names a topic. */

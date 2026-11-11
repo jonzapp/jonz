@@ -90,7 +90,7 @@ export function AdminsList({ houseId, userId, view }: { houseId: string; userId:
           </GroupItem>
         ) : null}
       </Group>
-      <Meta style={styles.note}>{admins.length === 1 && amAdmin ? `${copy.note} ${copy.onlyAdmin}` : copy.note}</Meta>
+      <Meta style={styles.note}>{admins.length === 1 && amAdmin ? words('common.join.then', { first: copy.note, second: copy.onlyAdmin }) : copy.note}</Meta>
       <ConfirmSheet
         visible={adding}
         title={copy.add}

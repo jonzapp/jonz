@@ -1,4 +1,4 @@
-import { ADMIN_COPY, daysUntil, DELETION_FACETS, DELETION_LIST_COPY, DELETION_WHEN, deletionDay, type PendingDeletion } from '@app/core';
+import { type Words, daysUntil, DELETION_FACETS, DELETION_WHEN, deletionDay, type PendingDeletion } from '@app/core';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { MailIcon, UserXIcon } from 'lucide-react-native';
 import { useState, type ReactNode } from 'react';
@@ -30,12 +30,12 @@ import { useWords } from '@/hooks/use-words';
 const KEY = ['owner-deletions'];
 
 /** Deletions' columns on a laptop. */
-const DELETION_TABLE: readonly ListColumn[] = [
-  { key: 'name', label: DELETION_LIST_COPY.name, width: 132 },
-  { key: 'email', label: DELETION_LIST_COPY.email, flex: 1 },
-  { key: 'house', label: DELETION_LIST_COPY.house, width: 112 },
-  { key: 'asked', label: DELETION_LIST_COPY.asked, width: 92 },
-  { key: 'goes', label: DELETION_LIST_COPY.goes, width: 92, end: true },
+const DELETION_TABLE = (words: Words): readonly ListColumn[] => [
+  { key: 'name', label: words('admin.deletions.name'), width: 132 },
+  { key: 'email', label: words('admin.deletions.email'), flex: 1 },
+  { key: 'house', label: words('admin.deletions.house'), width: 112 },
+  { key: 'asked', label: words('admin.deletions.asked'), width: 92 },
+  { key: 'goes', label: words('admin.deletions.goes'), width: 92, end: true },
 ];
 
 /**
@@ -66,6 +66,7 @@ export default function DeletionsPage() {
 }
 
 function Deletions({ busy }: { busy: BusyList<PendingDeletion> }) {
+  const words = useWords();
   const two = useColumns();
   const now = useNow();
   const [chosen, setChosen] = useState<PendingDeletion | null>(null);
@@ -78,27 +79,27 @@ function Deletions({ busy }: { busy: BusyList<PendingDeletion> }) {
       {/* On a laptop the side panel starts one by email, until someone is chosen. */}
       {two || !may ? null : (
         <Group>
-          <Row leading={<RowIcon icon={MailIcon} />} title={ADMIN_COPY.byEmail} onPress={() => setByEmail(true)} chevron testID="delete-by-email" />
+          <Row leading={<RowIcon icon={MailIcon} />} title={words('admin.shell.byEmail')} onPress={() => setByEmail(true)} chevron testID="delete-by-email" />
         </Group>
       )}
       <BusyListView
         busy={busy}
         name="deletions"
-        placeholder={DELETION_LIST_COPY.searchPlaceholder}
-        noun={DELETION_LIST_COPY.count}
-        columns={DELETION_TABLE}
+        placeholder={words('admin.deletions.searchPlaceholder')}
+        noun={(count: string) => words('admin.deletions.count', { count })}
+        columns={DELETION_TABLE(words)}
         tableRow={(person) => {
           const cells = {
             name: person.name,
             email: person.email ?? '–',
-            house: person.house ?? DELETION_LIST_COPY.noHouse,
+            house: person.house ?? words('admin.deletions.noHouse'),
             asked: deletionDay(person.requestedAt, ownerZone()),
-            goes: DELETION_LIST_COPY.goesShort(daysUntil(person.deleteAfter, now)),
+            goes: words('admin.deletions.goesShort', { days: Math.max(0, daysUntil(person.deleteAfter, now)) }),
           };
           return (
             <ListTableRow
               key={person.userId}
-              columns={DELETION_TABLE}
+              columns={DELETION_TABLE(words)}
               cells={cells}
               quiet={['email', 'house', 'asked']}
               strong={['name']}
@@ -108,9 +109,9 @@ function Deletions({ busy }: { busy: BusyList<PendingDeletion> }) {
                 person.name,
                 cells.email,
                 cells.house,
-                person.requestedBy === 'owner' ? DELETION_LIST_COPY.byYou : DELETION_LIST_COPY.inTheApp,
-                `${DELETION_LIST_COPY.asked} ${cells.asked}`,
-                ADMIN_COPY.goesIn(daysUntil(person.deleteAfter, now)),
+                person.requestedBy === 'owner' ? words('admin.deletions.byYou') : words('admin.deletions.inTheApp'),
+                `${words('admin.deletions.asked')} ${cells.asked}`,
+                words('admin.shell.goesIn', { days: Math.max(0, daysUntil(person.deleteAfter, now)) }),
               ].join(', ')}
               testID={`deletion-${person.userId}`}
             />
@@ -124,7 +125,7 @@ function Deletions({ busy }: { busy: BusyList<PendingDeletion> }) {
             // The email on a line of its own, so a long one is cut at its end rather than broken in two.
             meta={[
               person.email,
-              `${person.house ?? ADMIN_COPY.noHouse}, ${person.requestedBy === 'owner' ? ADMIN_COPY.startedByYou : ADMIN_COPY.askedInApp}`,
+              `${person.house ?? words('admin.shell.noHouse')}, ${person.requestedBy === 'owner' ? words('admin.shell.startedByYou') : words('admin.shell.askedInApp')}`,
             ]
               .filter(Boolean)
               .join('\n')}
@@ -135,7 +136,7 @@ function Deletions({ busy }: { busy: BusyList<PendingDeletion> }) {
             testID={`deletion-${person.userId}`}
           />
         )}
-        empty={{ icon: UserXIcon, title: ADMIN_COPY.noDeletions, body: ADMIN_COPY.noDeletionsBody }}
+        empty={{ icon: UserXIcon, title: words('admin.shell.noDeletions'), body: words('admin.shell.noDeletionsBody') }}
       />
     </>
   );
@@ -201,8 +202,9 @@ function Holder({
 
 /** How long is left, at the row's end. */
 function Left({ iso, now }: { iso: string; now: Date }) {
+  const words = useWords();
   const { type, colors } = useTheme();
-  return <Text style={[type.meta, TABULAR, { color: colors.mutedForeground }]}>{ADMIN_COPY.goesIn(daysUntil(iso, now))}</Text>;
+  return <Text style={[type.meta, TABULAR, { color: colors.mutedForeground }]}>{words('admin.shell.goesIn', { days: Math.max(0, daysUntil(iso, now)) })}</Text>;
 }
 
 /** What can be done to one person's deletion: Delete now or Stop, and why. */
@@ -220,31 +222,31 @@ function ChosenSheet({ person, inline = false, onClose }: { person: PendingDelet
   };
   const now = useMutation({
     mutationFn: (userId: string) => deleteNow(userId, reason),
-    onSuccess: () => done(ADMIN_COPY.deletingSoon),
+    onSuccess: () => done(words('admin.shell.deletingSoon')),
   });
   const stop = useMutation({
     mutationFn: (userId: string) => stopDeletion(userId, reason),
-    onSuccess: () => done(ADMIN_COPY.stopped),
+    onSuccess: () => done(words('admin.shell.stopped')),
   });
   const busy = now.isPending || stop.isPending;
   const problem = now.error?.message ?? stop.error?.message ?? null;
   if (!person) return null;
 
   const title =
-    asking === 'now' ? ADMIN_COPY.deleteNowAsk(person.name) : asking === 'stop' ? ADMIN_COPY.stopAsk(person.name) : person.name;
+    asking === 'now' ? words('admin.shell.deleteNowAsk', { name: person.name }) : asking === 'stop' ? words('admin.shell.stopAsk', { name: person.name }) : person.name;
   const description =
     asking === 'now'
-      ? ADMIN_COPY.deleteNowBody
+      ? words('admin.shell.deleteNowBody')
       : asking === 'stop'
-        ? ADMIN_COPY.stopBody
-        : `${person.email ?? ''}${person.email ? ', ' : ''}${ADMIN_COPY.goesIn(daysUntil(person.deleteAfter, new Date())).toLowerCase()} (${deletionDay(person.deleteAfter)})`;
+        ? words('admin.shell.stopBody')
+        : `${person.email ?? ''}${person.email ? ', ' : ''}${words('admin.shell.goesIn', { days: Math.max(0, daysUntil(person.deleteAfter, new Date())) }).toLowerCase()} (${deletionDay(person.deleteAfter)})`;
   return (
     <Holder inline={inline} visible title={title} description={description} onClose={onClose} testID="deletion-sheet">
       <Field
-        label={ADMIN_COPY.reason}
+        label={words('admin.shell.reason')}
         value={reason}
         onChangeText={setReason}
-        placeholder={ADMIN_COPY.reasonPlaceholder}
+        placeholder={words('admin.shell.reasonPlaceholder')}
         maxLength={500}
         testID="deletion-reason"
       />
@@ -252,14 +254,14 @@ function ChosenSheet({ person, inline = false, onClose }: { person: PendingDelet
       <View style={styles.buttons}>
         {asking === null ? (
           <ButtonRow stacked>
-            <Button variant="hazard" label={ADMIN_COPY.deleteNow} onPress={() => setAsking('now')} testID="deletion-now" />
-            <Button variant="outline" label={ADMIN_COPY.stop} onPress={() => setAsking('stop')} testID="deletion-stop" />
+            <Button variant="hazard" label={words('admin.shell.deleteNow')} onPress={() => setAsking('now')} testID="deletion-now" />
+            <Button variant="outline" label={words('admin.shell.stop')} onPress={() => setAsking('stop')} testID="deletion-stop" />
           </ButtonRow>
         ) : (
           <ButtonRow stacked>
             <Button
               variant={asking === 'now' ? 'hazard' : 'primary'}
-              label={asking === 'now' ? ADMIN_COPY.deleteNow : ADMIN_COPY.stop}
+              label={asking === 'now' ? words('admin.shell.deleteNow') : words('admin.shell.stop')}
               busy={busy}
               busyLabel={asking === 'now' ? words('common.busy.deleting') : words('common.busy.stopping')}
               onPress={() => (asking === 'now' ? now : stop).mutate(person.userId)}
@@ -284,7 +286,7 @@ function ByEmailSheet({ visible, inline = false, onClose }: { visible: boolean; 
   const start = useMutation({
     mutationFn: () => deleteByEmail(email, reason),
     onSuccess: () => {
-      toast.show(ADMIN_COPY.started);
+      toast.show(words('admin.shell.started'));
       void queryClient.invalidateQueries({ queryKey: KEY });
       void queryClient.invalidateQueries({ queryKey: ['owner-audit'] });
       setEmail('');
@@ -296,13 +298,13 @@ function ByEmailSheet({ visible, inline = false, onClose }: { visible: boolean; 
     <Holder
       inline={inline}
       visible={visible}
-      title={ADMIN_COPY.byEmail}
-      description={ADMIN_COPY.byEmailBody}
+      title={words('admin.shell.byEmail')}
+      description={words('admin.shell.byEmailBody')}
       onClose={onClose}
       testID="by-email-sheet"
     >
       <Field
-        label={ADMIN_COPY.email}
+        label={words('admin.shell.email')}
         value={email}
         onChangeText={setEmail}
         keyboardType="email-address"
@@ -311,16 +313,16 @@ function ByEmailSheet({ visible, inline = false, onClose }: { visible: boolean; 
         testID="deletion-email"
       />
       <Field
-        label={ADMIN_COPY.reason}
+        label={words('admin.shell.reason')}
         value={reason}
         onChangeText={setReason}
-        placeholder={ADMIN_COPY.reasonPlaceholder}
+        placeholder={words('admin.shell.reasonPlaceholder')}
         maxLength={500}
         testID="deletion-email-reason"
       />
       {start.error ? <Alert message={start.error.message} /> : null}
       <Button
-        label={ADMIN_COPY.startDeleting}
+        label={words('admin.shell.startDeleting')}
         disabled={!email.includes('@')}
         busy={start.isPending}
         busyLabel={words('common.busy.starting')}

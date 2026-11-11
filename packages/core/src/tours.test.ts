@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { wordsFor } from "./words-for";
 import {
   markTourSeen,
   placeTourCard,
@@ -15,6 +16,7 @@ import {
   tourLength,
   TOURS,
   toursFor,
+  tourStepWords,
   tourSteps,
   type Tour,
   type TourFacts,
@@ -27,6 +29,9 @@ const all: TourFacts[] = [false, true].flatMap((admin) =>
   ),
 );
 
+const housemates = wordsFor("en", "housemates");
+const family = wordsFor("en", "family");
+
 // A fixed pretend clock: these never read the real time.
 const NOW = new Date("2027-02-09T12:00:00Z");
 const daysAgo = (d: number) => new Date(NOW.getTime() - d * 24 * 60 * 60 * 1000);
@@ -37,7 +42,8 @@ describe("every tour", () => {
     it(`${id}: short, and only real spots`, () => {
       expect(tour.steps.length).toBeGreaterThan(0);
       expect(tour.steps.length).toBeLessThanOrEqual(TOUR_MAX_STEPS);
-      for (const step of tour.steps) {
+      // Each step as both kinds of house read it.
+      for (const step of tour.steps.flatMap((s) => [housemates, family].map((w) => ({ spot: s.spot, ...tourStepWords(id, s, w) })))) {
         expect(TOUR_SPOTS).toContain(step.spot);
         expect(step.title.length).toBeLessThanOrEqual(TOUR_TITLE_MAX);
         expect(step.body.length).toBeLessThanOrEqual(TOUR_BODY_MAX);
@@ -51,7 +57,7 @@ describe("every tour", () => {
     });
     it(`${id}: no spot twice in a row, and something to show whoever can take it`, () => {
       for (const facts of all) {
-        const steps = tourSteps(id, facts);
+        const steps = tourSteps(id, facts, housemates);
         steps.slice(1).forEach((s, i) => expect(s.spot === steps[i].spot && s.page === steps[i].page).toBe(false));
         if (tour.forWhom !== "admin" || facts.admin) expect(steps.length).toBeGreaterThanOrEqual(2);
       }
@@ -61,20 +67,20 @@ describe("every tour", () => {
 
 describe("tourSteps", () => {
   it("leaves out the steps whose when doesn't hold, and fills in each step's page", () => {
-    const quiet = tourSteps("today", { ...everyone, toCheck: false, hasJohns: false }).map((s) => s.spot);
+    const quiet = tourSteps("today", { ...everyone, toCheck: false, hasJohns: false }, housemates).map((s) => s.spot);
     expect(quiet).toEqual(["today.nextUp", "shell.tabs", "shell.help"]);
-    const busy = tourSteps("today", { ...everyone, toCheck: true }).map((s) => s.spot);
+    const busy = tourSteps("today", { ...everyone, toCheck: true }, housemates).map((s) => s.spot);
     expect(busy).toEqual(["today.nextUp", "today.needsYou", "today.rest", "shell.tabs", "shell.help"]);
-    expect(tourSteps("today", everyone).every((s) => s.page === "/today")).toBe(true);
+    expect(tourSteps("today", everyone, housemates).every((s) => s.page === "/today")).toBe(true);
   });
 
   it("keeps House's setup step to a phone, where setup is on the page", () => {
-    expect(tourSteps("house", everyone).map((s) => s.spot)).toContain("house.setup");
-    expect(tourSteps("house", { ...everyone, wide: true }).map((s) => s.spot)).not.toContain("house.setup");
+    expect(tourSteps("house", everyone, housemates).map((s) => s.spot)).toContain("house.setup");
+    expect(tourSteps("house", { ...everyone, wide: true }, housemates).map((s) => s.spot)).not.toContain("house.setup");
   });
 
   it("walks the admin's tour across pages", () => {
-    expect(tourSteps("setUp", { ...everyone, admin: true }).map((s) => s.page)).toEqual([
+    expect(tourSteps("setUp", { ...everyone, admin: true }, housemates).map((s) => s.page)).toEqual([
       "/house/johns",
       "/house/rules",
       "/week",
@@ -102,9 +108,9 @@ describe("tourForPage", () => {
 
 describe("words", () => {
   it("counts steps", () => {
-    expect(stepCount(1, 4)).toBe("2 of 4");
-    expect(tourLength(4)).toBe("4 steps, about a minute");
-    expect(tourLength(1)).toBe("1 step");
+    expect(stepCount(1, 4, housemates)).toBe("2 of 4");
+    expect(tourLength(4, housemates)).toBe("4 steps, about a minute");
+    expect(tourLength(1, housemates)).toBe("1 step");
   });
 });
 

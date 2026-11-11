@@ -1,4 +1,4 @@
-import { ADMIN_COPY, BIN_NIGHT, type QrShape } from '@app/core';
+import { BIN_NIGHT, type QrShape } from '@app/core';
 import { useQuery } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
 import { CheckIcon, CopyIcon } from 'lucide-react-native';
@@ -19,6 +19,7 @@ import { CONTENT_MAX, FONT, GUTTER, INSET, SPACE, TABULAR, useTheme } from '@/th
 import { Waiting } from '@/components/waiting';
 import { OutlinePlate } from '@/components/outline';
 import { DoorOutline } from '@/components/page-outlines';
+import { useWords } from '@/hooks/use-words';
 
 /**
  * The second lock on the admin page: the owner's code from an authenticator
@@ -40,6 +41,7 @@ export function CodeGate({ onPassed }: { onPassed: () => void }) {
  * keyboard is up, so Check the code works first time.
  */
 function Frame({ title, body, children }: { title: string; body: string; children: React.ReactNode }) {
+  const words = useWords();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   return (
@@ -52,7 +54,7 @@ function Frame({ title, body, children }: { title: string; body: string; childre
       <View style={styles.column}>
         <View style={styles.brand}>
           <Wordmark size={20} />
-          <Chip label={ADMIN_COPY.owner} />
+          <Chip label={words('admin.shell.owner')} />
         </View>
         <Title>{title}</Title>
         <Body muted>{body}</Body>
@@ -63,6 +65,7 @@ function Frame({ title, body, children }: { title: string; body: string; childre
 }
 
 function CodeForm({ factorId, label, onPassed }: { factorId: string; label: string; onPassed: () => void }) {
+  const words = useWords();
   const [code, setCode] = useState('');
   const [problem, setProblem] = useState<string | undefined>();
   const [checking, setChecking] = useState(false);
@@ -71,12 +74,12 @@ function CodeForm({ factorId, label, onPassed }: { factorId: string; label: stri
     const ok = await checkCode(factorId, typed);
     setChecking(false);
     if (ok) onPassed();
-    else setProblem(ADMIN_COPY.wrongCode);
+    else setProblem(words('admin.shell.wrongCode'));
   };
   return (
     <>
       <CodeBoxes
-        label={ADMIN_COPY.codeLabel}
+        label={words('admin.shell.codeLabel')}
         value={code}
         onChangeText={(typed) => {
           setCode(typed);
@@ -95,33 +98,35 @@ function CodeForm({ factorId, label, onPassed }: { factorId: string; label: stri
 }
 
 function EnterCode({ factorId, onPassed }: { factorId: string; onPassed: () => void }) {
+  const words = useWords();
   return (
-    <Frame title={ADMIN_COPY.codeTitle} body={ADMIN_COPY.codeBody}>
-      <CodeForm factorId={factorId} label={ADMIN_COPY.open} onPassed={onPassed} />
+    <Frame title={words('admin.shell.codeTitle')} body={words('admin.shell.codeBody')}>
+      <CodeForm factorId={factorId} label={words('admin.shell.open')} onPassed={onPassed} />
     </Frame>
   );
 }
 
 function AddAuthenticator({ onPassed }: { onPassed: () => void }) {
+  const words = useWords();
   const { colors } = useTheme();
   const factor = useQuery({ queryKey: ['owner-enroll'], queryFn: enrollFactor, staleTime: Infinity, gcTime: 0 });
   return (
-    <Frame title={ADMIN_COPY.lockTitle} body={ADMIN_COPY.lockBody}>
+    <Frame title={words('admin.shell.lockTitle')} body={words('admin.shell.lockBody')}>
       {factor.isPending ? <Waiting ready={false} outline={<OutlinePlate height={QR_SIZE} />} /> : null}
       {factor.isError ? <ReadFailed onRetry={() => void factor.refetch()} /> : null}
       {factor.data ? (
         <>
           {factor.data.qr ? <QrCode qr={factor.data.qr} /> : null}
           {Platform.OS !== 'web' ? (
-            <TextButton label={ADMIN_COPY.addToPasswords} onPress={() => void Linking.openURL(factor.data.uri)} />
+            <TextButton label={words('admin.shell.addToPasswords')} onPress={() => void Linking.openURL(factor.data.uri)} />
           ) : null}
           {/* Never a silent gap: without a code to scan, say to type the key. */}
-          <Meta testID={factor.data.qr ? undefined : 'admin-no-qr'}>{factor.data.qr ? ADMIN_COPY.copyKey : ADMIN_COPY.noQr}</Meta>
+          <Meta testID={factor.data.qr ? undefined : 'admin-no-qr'}>{factor.data.qr ? words('admin.shell.copyKey') : words('admin.shell.noQr')}</Meta>
           <Text selectable style={[styles.key, { color: colors.foreground }]} testID="admin-key">
             {factor.data.secret.replace(/(.{4})/g, '$1 ').trim()}
           </Text>
           <CopyKey secret={factor.data.secret} />
-          <CodeForm factorId={factor.data.id} label={ADMIN_COPY.added} onPassed={onPassed} />
+          <CodeForm factorId={factor.data.id} label={words('admin.shell.added')} onPassed={onPassed} />
         </>
       ) : null}
     </Frame>
@@ -134,6 +139,7 @@ function AddAuthenticator({ onPassed }: { onPassed: () => void }) {
  * seconds, like Copy link on the invite sheet.
  */
 function CopyKey({ secret }: { secret: string }) {
+  const words = useWords();
   const [copied, setCopied] = useState(false);
   useEffect(() => {
     if (!copied) return;
@@ -144,7 +150,7 @@ function CopyKey({ secret }: { secret: string }) {
     <Button
       variant="outline"
       icon={copied ? CheckIcon : CopyIcon}
-      label={copied ? ADMIN_COPY.keyCopied : ADMIN_COPY.copyKeyButton}
+      label={copied ? words('admin.shell.keyCopied') : words('admin.shell.copyKeyButton')}
       onPress={() =>
         void Clipboard.setStringAsync(secret).then(
           () => setCopied(true),

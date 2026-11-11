@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import { messagePush, messageProblems, messageWays, sendLabel, sentMeta, sentWays, testWays, wayMeta } from "./owner-messages";
+import { wordsFor } from "./words-for";
+
+const words = wordsFor("en", "housemates");
 
 const ALL = { push: true, wall: true, email: true };
 
@@ -21,18 +24,18 @@ describe("checking a draft", () => {
   const draft = { audience: "house" as const, personId: null, houseId: "h1", subject: "About the reset", body: "Fixed.", ways: ALL };
 
   it("is happy with a house, a subject, words and a way", () => {
-    expect(messageProblems(draft)).toEqual({});
+    expect(messageProblems(draft, words)).toEqual({});
   });
 
   it("says who's missing, words too long, and no way to send it", () => {
-    expect(Object.keys(messageProblems({ ...draft, houseId: null, subject: " ", body: "x".repeat(501), ways: { push: false, wall: false, email: false } }))).toEqual([
+    expect(Object.keys(messageProblems({ ...draft, houseId: null, subject: " ", body: "x".repeat(501), ways: { push: false, wall: false, email: false } }, words))).toEqual([
       "who",
       "subject",
       "body",
       "ways",
     ]);
     // A Wall alone can't reach one person.
-    expect(messageProblems({ ...draft, audience: "person", personId: "u1", ways: { push: false, wall: true, email: false } }).ways).toBeDefined();
+    expect(messageProblems({ ...draft, audience: "person", personId: "u1", ways: { push: false, wall: true, email: false } }, words).ways).toBeDefined();
   });
 });
 
@@ -46,8 +49,8 @@ describe("the words around it", () => {
   });
 
   it("says how many have pushes on", () => {
-    expect(wayMeta("push", "house", reach)).toBe("4 of 5 people have them on, silent in quiet hours");
-    expect(wayMeta("push", "person", { ...reach, people: 1, push: 0 })).toMatch(/won’t arrive/);
+    expect(wayMeta("push", "house", reach, words)).toBe("4 of 5 people have them on, silent in quiet hours");
+    expect(wayMeta("push", "person", { ...reach, people: 1, push: 0 }, words)).toMatch(/won’t arrive/);
   });
 
   it("opens the Wall from the push when it went there too", () => {
@@ -57,10 +60,10 @@ describe("the words around it", () => {
 
   it("describes a sent message in one line", () => {
     expect(sentWays({ push: true, wall: true, email: true })).toBe("Push, Wall and email");
-    expect(sentMeta({ audience: "house", toName: "Elm Street", people: 5, waiting: 2, push: true, wall: false, email: false })).toBe(
+    expect(sentMeta({ audience: "house", toName: "Elm Street", people: 5, waiting: 2, push: true, wall: false, email: false }, words)).toBe(
       "Elm Street, 5 people, Push, 2 still sending",
     );
     expect(sentWays({ push: false, wall: true, email: true })).toBe("Wall and email");
-    expect(sentMeta({ audience: "test", toName: null, people: 1, waiting: 0, push: true, wall: false, email: true })).toBe("You, a test, Push and email");
+    expect(sentMeta({ audience: "test", toName: null, people: 1, waiting: 0, push: true, wall: false, email: true }, words)).toBe("You, a test, Push and email");
   });
 });

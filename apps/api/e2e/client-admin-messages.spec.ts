@@ -1,9 +1,11 @@
 import { randomUUID } from "node:crypto";
 
-import { MESSAGE_COPY } from "@app/core";
 import { expect, test, type Page } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, houseOf, ownerInClient } from "./auth";
+import { wordsFor } from '@app/core';
+
+const words = wordsFor('en', 'housemates');
 
 // The owner's Messages in the Expo app's web build (docs/specs/owner-admin.md,
 // "Messages"): the owner, signed in with their code, sends themself a test,
@@ -66,14 +68,14 @@ test("sends the owner a test, then a message to a house that lands on its Wall",
 
   // A test first: only the owner, never a Wall.
   await page.getByTestId("message-test").click();
-  await expect(page.getByText(MESSAGE_COPY.testToast)).toBeVisible();
+  await expect(page.getByText(words('admin.messages.testToast'))).toBeVisible();
   const db = admin();
   const { data: test } = await db.from("owner_messages").select("audience, people, by_wall").eq("subject", subject).single();
   expect(test).toEqual({ audience: "test", people: 1, by_wall: false });
 
   // Then the house.
   await page.getByTestId("message-send").click();
-  await expect(page.getByText(MESSAGE_COPY.sentToast(1))).toBeVisible();
+  await expect(page.getByText(words('admin.messages.sentToast', { n: 1 }))).toBeVisible();
   const { data: wall } = await db.from("events").select("kind, data").eq("kind", "jonz_message").contains("data", { subject });
   expect(wall).toHaveLength(1);
 

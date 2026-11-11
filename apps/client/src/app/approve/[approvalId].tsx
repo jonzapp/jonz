@@ -92,11 +92,11 @@ function Request({ row }: { row: ApprovalRow }) {
         <SignHeading title={words(ENDED[state][0])} body={words(ENDED[state][1])} />
       )}
       <View style={styles.group}>
-        <Body testID="approve-ask">{approvalAsk(row)}.</Body>
+        <Body testID="approve-ask">{words('common.join.sentence', { text: approvalAsk(row) })}</Body>
         {row.house_name ? <Meta>{words('people.approve.inHouse', { house: row.house_name })}</Meta> : null}
         {details.map((d) => (
           <Meta key={d.label}>
-            {d.label}: {d.value}
+            {words('common.join.label', { label: d.label, value: d.value })}
           </Meta>
         ))}
       </View>

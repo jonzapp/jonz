@@ -236,7 +236,7 @@ export function RulesForm({ form }: { form: RulesFormState }) {
             disabled={pending}
           />
         </Section>
-        <Meta style={styles.note}>{`${words('house.rules.awayNote')} ${makeupHint(v.awayMakeup, words)}`}</Meta>
+        <Meta style={styles.note}>{words('common.join.then', { first: words('house.rules.awayNote'), second: makeupHint(v.awayMakeup, words) })}</Meta>
       </View>
       <Section label={words('house.setup.house')} testID="rules-house">
         <GroupItem>

@@ -37,6 +37,7 @@ const HOUSEMATES_ONLY: Partial<Record<WordId, string>> = {
   "house.kindSwitch.done.kept": "Rules' switch between the two kinds names both on purpose",
   "house.kindSwitch.wall.kept": "Rules' switch between the two kinds names both on purpose",
   "house.kindSwitch.wall.housemates": "Rules' switch between the two kinds names both on purpose",
+  "door.guide.page.family.not": "the guide's family page as a housemates house reads it",
   "house.pass.free": "a family reads house.familyPass.free through passWords",
 };
 
@@ -139,7 +140,8 @@ describe("a family's words", () => {
   it("never names housemates or admins in a family's line", () => {
     const family = wordsFor("en", "family");
     const wrong = (Object.keys(EN) as WordId[])
-      .filter((id) => !HOUSEMATES_ONLY[id])
+      // The owner's admin pages (admin.*) are read by the owner, never by a family.
+      .filter((id) => !HOUSEMATES_ONLY[id] && !id.startsWith("admin."))
       .flatMap((id) => readings(id).map((v) => `${id}: ${family(id, v)}`))
       .filter((line) => HOUSE_ONLY.test(line.slice(line.indexOf(": ") + 2)));
     expect(wrong, "give the line a family sentence: {kind, select, family {…} other {…}}").toEqual([]);

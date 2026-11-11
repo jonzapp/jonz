@@ -33,6 +33,6 @@ export function useUndoOffer(houseId: string) {
         },
       });
     },
-    [toast, client, houseId],
+    [toast, client, houseId, words],
   );
 }

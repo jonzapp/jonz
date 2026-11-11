@@ -129,7 +129,7 @@ export function JohnList({
           {filled ? (
             <View style={styles.toolbar} testID="john-list-bar">
               <Meta style={styles.toolbarWords}>
-                {`${words('house.johns.count', { n: johns.length })} ${words('house.johns.perWeek', { points: weeklyEffort(johns) })}`}
+                {words('common.join.then', { first: words('house.johns.count', { n: johns.length }), second: words('house.johns.perWeek', { points: weeklyEffort(johns) }) })}
               </Meta>
               {editable ? (
                 // eslint-disable-next-line jonz/button-in-row -- the page's tool beside its count, at the top right (docs/style/layout.md)
@@ -145,7 +145,7 @@ export function JohnList({
           ) : (
             // On a phone, the same over the list: what it adds up to, then Add a John.
             <View style={styles.top} testID="john-list-bar">
-              <Meta>{`${words('house.johns.count', { n: johns.length })} ${words('house.johns.perWeek', { points: weeklyEffort(johns) })}`}</Meta>
+              <Meta>{words('common.join.then', { first: words('house.johns.count', { n: johns.length }), second: words('house.johns.perWeek', { points: weeklyEffort(johns) }) })}</Meta>
               {editable ? (
                 <ButtonRow>
                   <Button variant={quietAdd ? 'outline' : undefined} icon={PlusIcon} label={words('house.johns.add')} onPress={add} testID="add-john" />

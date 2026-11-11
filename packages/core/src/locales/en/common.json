@@ -219,5 +219,18 @@
   "common.staging.passwordHint": "The one you set for staging. This browser keeps it.",
   "common.staging.as": "Sign in as {name}",
   "common.staging.busy": "Signing in…",
-  "common.staging.failed": "That password didn’t work for the demo house."
+  "common.staging.failed": "That password didn’t work for the demo house.",
+  "common.join.comma": "{first}, {second}",
+  "common.join.after": ", {text}",
+  "common.join.then": "{first} {second}",
+  "common.join.lead": " {text}",
+  "common.join.indent": "  {text}",
+  "common.join.label": "{label}: {value}",
+  "common.join.quote": "“{text}”",
+  "common.join.number": "{n}.",
+  "common.join.sentence": "{text}.",
+  "common.join.twoSentences": "{first}. {second}.",
+  "common.join.ongoing": "{text}…",
+  "common.join.trailingComma": "{text},",
+  "common.join.id": "#{id}"
 }

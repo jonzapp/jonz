@@ -1,4 +1,4 @@
-import { ADMIN_COPY, ADMIN_GROUPS, adminGroupOf, adminPage, type AdminGroup, type AdminPage } from '@app/core';
+import { ADMIN_GROUPS, adminGroupOf, adminPage, type AdminGroup, type AdminPage } from '@app/core';
 import { Link, useRouter } from 'expo-router';
 import {
   ArchiveIcon,
@@ -24,6 +24,7 @@ import { Chip } from '@/components/status-mark';
 import { Meta } from '@/components/text';
 import { TextButton } from '@/components/text-button';
 import { FONT, RAIL, SPACE, TAP, useTheme, WIDE } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /** Each page's icon, on the rail and the tabs. */
 export const ADMIN_ICON: Record<AdminPage, LucideIcon> = {
@@ -77,6 +78,7 @@ export function AdminShell({ page, aside, children }: { page: AdminPage; aside?:
 }
 
 function AdminRail({ page }: { page: AdminPage }) {
+  const words = useWords();
   const { colors, type } = useTheme();
   const insets = useSafeAreaInsets();
   return (
@@ -86,7 +88,7 @@ function AdminRail({ page }: { page: AdminPage }) {
     >
       <View style={styles.brand}>
         <Wordmark size={20} />
-        <Chip label={ADMIN_COPY.owner} />
+        <Chip label={words('admin.shell.owner')} />
       </View>
       <View role="tablist" style={styles.items}>
         {ADMIN_GROUPS.map((group) => (
@@ -116,8 +118,8 @@ function AdminRail({ page }: { page: AdminPage }) {
       </View>
       <View style={styles.foot}>
         {/* The way back to the owner's own house: "/" opens it. */}
-        <TextButton label={ADMIN_COPY.backToHouse} icon={ArrowLeftIcon} href="/" align="start" testID="admin-to-house" />
-        <Meta>{ADMIN_COPY.signedInWithCode}</Meta>
+        <TextButton label={words('admin.shell.backToHouse')} icon={ArrowLeftIcon} href="/" align="start" testID="admin-to-house" />
+        <Meta>{words('admin.shell.signedInWithCode')}</Meta>
       </View>
     </View>
   );

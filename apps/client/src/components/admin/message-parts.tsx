@@ -1,4 +1,4 @@
-import { MESSAGE_COPY, type MessageAudience } from '@app/core';
+import { type MessageAudience } from '@app/core';
 import { useQuery } from '@tanstack/react-query';
 import { HouseIcon, MegaphoneIcon } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
@@ -14,6 +14,7 @@ import { Meta } from '@/components/text';
 import { TextButton } from '@/components/text-button';
 import { SignMark } from '@/components/wordmark';
 import { FONT, GROUP_RADIUS, INSET, SPACE, useTheme } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /** Who a message goes to, once picked: a person or a house, with the line under it. */
 export interface Picked {
@@ -48,6 +49,7 @@ export function RecipientPicker({
   onPick: (picked: Picked | null) => void;
   problem?: string;
 }) {
+  const words = useWords();
   const [q, setQ] = useState('');
   const settled = useSettled(q).trim();
   const found = useQuery({
@@ -57,13 +59,13 @@ export function RecipientPicker({
         ? (await findPeople(settled)).map((p) => ({
             id: p.id,
             name: p.name,
-            line: [p.email, p.houseName ?? MESSAGE_COPY.noHouse].filter(Boolean).join(', '),
+            line: [p.email, p.houseName ?? words('admin.messages.noHouse')].filter(Boolean).join(', '),
           }))
         : (await findHouses(settled)).map((h) => ({ id: h.id, name: h.name, line: h.people === 1 ? '1 person' : `${h.people} people` })),
     enabled: settled.length > 0 && picked === null,
     staleTime: 30_000,
   });
-  const label = audience === 'person' ? MESSAGE_COPY.whichPerson : MESSAGE_COPY.whichHouse;
+  const label = audience === 'person' ? words('admin.messages.whichPerson') : words('admin.messages.whichHouse');
 
   if (picked) {
     return (
@@ -74,7 +76,7 @@ export function RecipientPicker({
             title={picked.name}
             meta={picked.line}
             leading={audience === 'person' ? <Avatar name={picked.name} userId={picked.id} /> : <RowIcon icon={HouseIcon} />}
-            trailing={<TextButton label={MESSAGE_COPY.change} onPress={() => onPick(null)} testID="message-change-who" />}
+            trailing={<TextButton label={words('admin.messages.change')} onPress={() => onPick(null)} testID="message-change-who" />}
             testID="message-picked"
           />
         </Group>
@@ -87,7 +89,7 @@ export function RecipientPicker({
         label={label}
         value={q}
         onChangeText={setQ}
-        placeholder={audience === 'person' ? MESSAGE_COPY.findPerson : MESSAGE_COPY.findHouse}
+        placeholder={audience === 'person' ? words('admin.messages.findPerson') : words('admin.messages.findHouse')}
         autoCapitalize="none"
         autoCorrect={false}
         problem={problem}
@@ -95,7 +97,7 @@ export function RecipientPicker({
       />
       {settled && found.data ? (
         found.data.length === 0 ? (
-          <Meta>{audience === 'person' ? MESSAGE_COPY.noneFound : MESSAGE_COPY.noHouseFound}</Meta>
+          <Meta>{audience === 'person' ? words('admin.messages.noneFound') : words('admin.messages.noHouseFound')}</Meta>
         ) : (
           <Group testID="message-found">
             {found.data.map((one) => (
@@ -123,25 +125,26 @@ export function RecipientPicker({
  * a post on the Wall, From Jonz. Only the ways it's going are offered.
  */
 export function MessagePreview({ subject, body, push, wall }: { subject: string; body: string; push: boolean; wall: boolean }) {
+  const words = useWords();
   const [view, setView] = useState<'push' | 'wall'>('push');
   const showing = push && wall ? view : wall ? 'wall' : 'push';
-  const title = subject.trim() || MESSAGE_COPY.subject;
-  const words = body.trim() || MESSAGE_COPY.body;
+  const title = subject.trim() || words('admin.messages.subject');
+  const text = body.trim() || words('admin.messages.body');
   return (
     <View style={styles.group} testID="message-preview">
       {push && wall ? (
         <Segmented
-          label={MESSAGE_COPY.howItLooks}
+          label={words('admin.messages.howItLooks')}
           options={[
-            { value: 'push', label: MESSAGE_COPY.previewPush },
-            { value: 'wall', label: MESSAGE_COPY.previewWall },
+            { value: 'push', label: words('admin.messages.previewPush') },
+            { value: 'wall', label: words('admin.messages.previewWall') },
           ]}
           value={showing}
           onChange={setView}
           equal
         />
       ) : null}
-      {showing === 'push' ? <PushPreview title={title} body={words} /> : <WallPreview title={title} body={words} />}
+      {showing === 'push' ? <PushPreview title={title} body={text} /> : <WallPreview title={title} body={text} />}
     </View>
   );
 }
@@ -168,9 +171,10 @@ function PushPreview({ title, body }: { title: string; body: string }) {
 
 /** A post on the Wall, as housemates see it: From Jonz, the subject, the words. */
 function WallPreview({ title, body }: { title: string; body: string }) {
+  const words = useWords();
   return (
     <Group>
-      <Row title={title} meta={`${MESSAGE_COPY.fromJonz}, ${body}`} metaLines={2} titleLines={2} leading={<RowIcon icon={MegaphoneIcon} />} />
+      <Row title={title} meta={`${words('admin.messages.fromJonz')}, ${body}`} metaLines={2} titleLines={2} leading={<RowIcon icon={MegaphoneIcon} />} />
     </Group>
   );
 }

@@ -1,4 +1,4 @@
-import { TOURS, type TourFacts, wordsFor } from '@app/core';
+import { TOURS, tourName, tourStepWords, tourSteps, type TourFacts, wordsFor } from '@app/core';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import { router } from 'expo-router';
@@ -87,7 +87,7 @@ it('walks a tour a step at a time: the count, Back, and Done on the last', async
   await show();
   await fireEvent.press(screen.getByText('start'));
   await settle();
-  const steps = TOURS.today.steps;
+  const steps = tourSteps('today', { admin: false, wide: false, toCheck: true, hasJohns: true }, words);
   expect(screen.getByText(steps[0].title)).toBeTruthy();
   expect(screen.getByTestId('tour-count')).toHaveTextContent('1 of 5');
   expect(screen.queryByTestId('tour-back')).toBeNull();
@@ -128,7 +128,7 @@ it("leaves out a spot that isn't drawn on the page you're on, so the count is wh
   expect(screen.getByTestId('tour-count')).toHaveTextContent('1 of 3');
   await fireEvent.press(screen.getByTestId('tour-next'));
   await settle();
-  expect(screen.getByText(TOURS.today.steps[3].title)).toBeTruthy();
+  expect(screen.getByText(tourStepWords('today', TOURS.today.steps[3], words).title)).toBeTruthy();
 });
 
 it('passes over a step whose spot never shows on another page, rather than dimming nothing', async () => {
@@ -145,7 +145,7 @@ it('passes over a step whose spot never shows on another page, rather than dimmi
       await jest.advanceTimersByTimeAsync(3000);
     });
   }
-  expect(screen.getByText(TOURS.today.steps[3].title)).toBeTruthy();
+  expect(screen.getByText(tourStepWords('today', TOURS.today.steps[3], words).title)).toBeTruthy();
 });
 
 it('Skip ends it and saves it as seen', async () => {
@@ -182,7 +182,7 @@ describe('the Help sheet', () => {
     expect(screen.getByTestId('help-guide')).toHaveTextContent(new RegExp(words('door.tour.guide')));
     const tours = within(screen.getByTestId('help-guides')).getAllByTestId(/^help-tour-/);
     expect(tours[0]).toHaveProp('testID', 'help-tour-today');
-    expect(tours[0]).toHaveTextContent(new RegExp(TOURS.today.name));
+    expect(tours[0]).toHaveTextContent(new RegExp(tourName('today', words)));
     expect(tours[0]).toHaveTextContent(/This page/);
     expect(screen.getByTestId('help-tour-week')).toHaveTextContent(new RegExp(words('door.tour.seen')));
     expect(screen.getByTestId('help-tour-house')).toBeTruthy();

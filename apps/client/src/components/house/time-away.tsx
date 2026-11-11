@@ -23,6 +23,9 @@ import { useUndoOffer } from '@/hooks/use-undo-offer';
 import { FONT, RADIUS, SPACE, useTheme, type Theme } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
+/** Holds a line's height where there's nothing to say; not words. */
+const BLANK = ' ';
+
 /**
  * Who's away, on a month calendar for a group: weeks from the house's first
  * day, each day as dark as how many are away (one, two, three or more), with
@@ -111,7 +114,7 @@ export function AwayMonth({
                         {Number(date.slice(8))}
                       </Text>
                     </View>
-                    <Text style={[type.initials, { color: ink }]}>{away > 0 ? away : ' '}</Text>
+                    <Text style={[type.initials, { color: ink }]}>{away > 0 ? away : BLANK}</Text>
                   </Pressable>
                 );
               })}

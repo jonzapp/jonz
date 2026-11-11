@@ -64,7 +64,7 @@ export function LowWarning({ usage, zone }: { usage: AskUsage; zone: string }) {
       <Pressable
         style={StyleSheet.flatten([styles.low, { backgroundColor: colors.card, borderColor: colors.border }])}
         role="link"
-        aria-label={`${words('ask.usage.low', { left: wholePercent(usage.left), house: usage.house, backOn: askBackOn(usage.resetsAt, zone) })} ${words('ask.usage.lowLabel')}`}
+        aria-label={words('common.join.then', { first: words('ask.usage.low', { left: wholePercent(usage.left), house: usage.house, backOn: askBackOn(usage.resetsAt, zone) }), second: words('ask.usage.lowLabel') })}
         testID="chat-low"
       >
         <GaugeIcon size={18} color={colors.foreground} aria-hidden />

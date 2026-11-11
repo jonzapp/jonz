@@ -1,4 +1,16 @@
-import { ADMIN_COPY, listTime, NOTICE_FACETS, NOTICE_LIST_COPY, NOTICE_WHEN, noticeLine, noticeState, noticeToShow, noticeWindow, type Notice, type NoticeKind, type NoticeState } from '@app/core';
+import {
+  type Words,
+  listTime,
+  NOTICE_FACETS,
+  NOTICE_WHEN,
+  noticeLine,
+  noticeState,
+  noticeToShow,
+  noticeWindow,
+  type Notice,
+  type NoticeKind,
+  type NoticeState,
+} from '@app/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { MegaphoneIcon } from 'lucide-react-native';
 import { useState } from 'react';
@@ -25,15 +37,18 @@ import { INSET, SPACE } from '@/theme';
 import { AdminSwitch } from '@/components/admin/admin-shell';
 import { useWords } from '@/hooks/use-words';
 
+/** Holds a line's height where there's nothing to say; not words. */
+const BLANK = ' ';
+
 const KIND_LABEL: Record<NoticeKind, string> = { status: 'Status', offer: 'Offer', news: 'News' };
 const STATE_LABEL: Record<NoticeState, string> = { live: 'Showing', scheduled: 'Starting later', ended: 'Ended' };
 
 /** Every notice's columns on a laptop: its title, kind, whether it's on, and when it starts. */
-const NOTICE_TABLE: readonly ListColumn[] = [
-  { key: 'title', label: NOTICE_LIST_COPY.title, flex: 1 },
-  { key: 'kind', label: NOTICE_LIST_COPY.kind, width: 96 },
-  { key: 'state', label: NOTICE_LIST_COPY.state, width: 128 },
-  { key: 'starts', label: NOTICE_LIST_COPY.starts, width: 144 },
+const NOTICE_TABLE = (words: Words): readonly ListColumn[] => [
+  { key: 'title', label: words('admin.notices.title'), flex: 1 },
+  { key: 'kind', label: words('admin.notices.kind'), width: 96 },
+  { key: 'state', label: words('admin.notices.state'), width: 128 },
+  { key: 'starts', label: words('admin.notices.starts'), width: 144 },
 ];
 
 /** What's being edited: a notice, a new one of a kind, or nothing. */
@@ -67,25 +82,26 @@ export default function NoticesPage() {
 }
 
 function Notices({ busy, chosen, choose }: { busy: BusyList<Notice>; chosen: Chosen; choose: (next: Chosen) => void }) {
+  const words = useWords();
   const two = useColumns();
   // Someone whose app role can't write notices (support) sees the list, with nothing to open.
   const may = useOwnerMay('notices:write');
   const toast = useToast();
   const queryClient = useQueryClient();
   const done = (message: string, copied: boolean) => {
-    toast.show(copied ? message : ADMIN_COPY.copyFailed);
+    toast.show(copied ? message : words('admin.shell.copyFailed'));
     void queryClient.invalidateQueries({ queryKey: ['owner-notices'] });
     void queryClient.invalidateQueries({ queryKey: ['notices'] });
     choose(null);
   };
   const save = useMutation({
     mutationFn: (notice: SavedNotice) => saveNotice(notice),
-    onSuccess: ({ copied }) => done(ADMIN_COPY.saved, copied),
+    onSuccess: ({ copied }) => done(words('admin.shell.saved'), copied),
     onError: (error) => toast.show(error.message),
   });
   const end = useMutation({
     mutationFn: (id: string) => endNotice(id),
-    onSuccess: ({ copied }) => done(ADMIN_COPY.ended, copied),
+    onSuccess: ({ copied }) => done(words('admin.shell.ended'), copied),
     onError: (error) => toast.show(error.message),
   });
 
@@ -111,7 +127,7 @@ function Notices({ busy, chosen, choose }: { busy: BusyList<Notice>; chosen: Cho
         main={list}
         side={
           <View style={styles.side} testID="notice-side">
-            <Lead header>{editing ? ADMIN_COPY.editNotice : ADMIN_COPY.start[kind].title}</Lead>
+            <Lead header>{editing ? words('admin.shell.editNotice') : words(`admin.shell.start.${kind}.title` as const)}</Lead>
             {editor}
           </View>
         }
@@ -123,7 +139,7 @@ function Notices({ busy, chosen, choose }: { busy: BusyList<Notice>; chosen: Cho
       {list}
       <Sheet
         visible={chosen !== null}
-        title={editing ? ADMIN_COPY.editNotice : ADMIN_COPY.start[kind].title}
+        title={editing ? words('admin.shell.editNotice') : words(`admin.shell.start.${kind}.title` as const)}
         onClose={() => choose(null)}
         testID="notice-sheet"
       >
@@ -142,30 +158,30 @@ function NoticeList({ busy, chosen, choose }: { busy: BusyList<Notice>; chosen: 
   const picked = (notice: Notice) => chosen !== null && !isNew(chosen) && chosen.id === notice.id;
   return (
     <>
-      <Section label={ADMIN_COPY.whatPeopleSee} bare testID="what-people-see">
-        {showing ? <NoticePreview notice={showing} /> : <Meta style={styles.words}>{live.data ? ADMIN_COPY.nothingShowing : ' '}</Meta>}
-        <Meta style={styles.words}>{ADMIN_COPY.onePerScreen}</Meta>
+      <Section label={words('admin.shell.whatPeopleSee')} bare testID="what-people-see">
+        {showing ? <NoticePreview notice={showing} /> : <Meta style={styles.words}>{live.data ? words('admin.shell.nothingShowing') : BLANK}</Meta>}
+        <Meta style={styles.words}>{words('admin.shell.onePerScreen')}</Meta>
       </Section>
       {/* A new notice starts from what's happening, under what people see, not from a button up in the title bar. */}
       {choose ? (
-        <Section label={ADMIN_COPY.tellEveryone}>
+        <Section label={words('admin.shell.tellEveryone')}>
           <StartTiles chosen={isNew(chosen) ? chosen.start : null} onStart={(start) => choose({ start })} />
         </Section>
       ) : null}
-      <Section label={NOTICE_LIST_COPY.every} bare testID="notices-every">
+      <Section label={words('admin.notices.every')} bare testID="notices-every">
         <BusyListView
           busy={busy}
           name="notices"
-          placeholder={NOTICE_LIST_COPY.searchPlaceholder}
-          noun={NOTICE_LIST_COPY.count}
-          columns={NOTICE_TABLE}
+          placeholder={words('admin.notices.searchPlaceholder')}
+          noun={(count: string) => words('admin.notices.count', { count })}
+          columns={NOTICE_TABLE(words)}
           tableRow={(notice) => {
             const state = noticeState(notice, now);
             const starts = listTime(notice.startsAt, now, ownerZone(), false);
             return (
               <ListTableRow
                 key={notice.id}
-                columns={NOTICE_TABLE}
+                columns={NOTICE_TABLE(words)}
                 cells={{
                   title: notice.title,
                   kind: <Chip label={KIND_LABEL[notice.kind]} tone={notice.kind === 'status' ? 'hazard' : 'quiet'} />,
@@ -192,7 +208,7 @@ function NoticeList({ busy, chosen, choose }: { busy: BusyList<Notice>; chosen: 
               testID={`notice-row-${notice.id}`}
             />
           )}
-          empty={{ icon: MegaphoneIcon, title: ADMIN_COPY.noNotices, body: ADMIN_COPY.noNoticesBody }}
+          empty={{ icon: MegaphoneIcon, title: words('admin.shell.noNotices'), body: words('admin.shell.noNoticesBody') }}
           foot={(last) => words('common.list.backTo', { day: listTime(last.startsAt, now, ownerZone(), false) })}
         />
       </Section>

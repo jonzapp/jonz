@@ -4,10 +4,7 @@ import { MESSAGE_LIMITS } from "./owner-messages";
 import { NOTICE_KINDS } from "./notices";
 import { PromotionRequest } from "./promotions";
 import { REPORT_LIMITS } from "./reports";
-import { wordsFor } from "./words-for";
-
-/** The owner's admin pages are in English. */
-const ENGLISH = wordsFor("en", "housemates");
+import type { Words } from "./words-for";
 
 // Who can do what on the owner's admin pages, and how the owner's Ask Jonz
 // does each of it: the same shape as a house's (permissions.ts and
@@ -115,105 +112,7 @@ export const OWNER_MOVES_FINAL: readonly OwnerMoveKind[] = ["deletion_now", "mes
 
 const ways = (m: { push: boolean; wall: boolean; email: boolean }) =>
   [m.push && "push", m.wall && "the Wall", m.email && "email"].filter(Boolean).join(", ");
-const quoted = (s: string) => `“${s}”`;
 const clip = (s: string, n = 140) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
-
-export const OWNER_MOVES_COPY = {
-  card: "To do",
-  cardMeta: "Ticked ones happen when you tap",
-  final: "Can’t be undone",
-  title: (m: OwnerMove): string => {
-    switch (m.kind) {
-      case "report_reply":
-        return `Reply to ${m.who}`;
-      case "report_fixed":
-        return m.tell ? `Mark ${m.who}’s report fixed and tell them` : `Mark ${m.who}’s report fixed`;
-      case "report_open":
-        return `Open ${m.who}’s report again`;
-      case "report_same_as":
-        return m.main ? `Fold ${m.who}’s report into ${m.main}` : `Take ${m.who}’s report back out`;
-      case "notice_save":
-        return m.id ? `Change the notice ${quoted(m.title)}` : `Put up a notice: ${quoted(m.title)}`;
-      case "notice_end":
-        return `End the notice ${quoted(m.title)}`;
-      case "message_send":
-        return `Send ${quoted(m.subject)} to ${m.to}`;
-      case "promotion_make":
-        return `Make the promotion ${m.promotion.code}`;
-      case "promotion_stop":
-        return `Stop the promotion ${m.code}`;
-      case "promotion_email":
-        return `Email the people ${m.code} names`;
-      case "promotion_retry":
-        return `Set ${m.code} up in Stripe again`;
-      case "deletion_now":
-        return `Delete ${m.who}’s account now`;
-      case "deletion_stop":
-        return `Stop deleting ${m.who}’s account`;
-      case "deletion_start":
-        return `Start deleting ${m.email}’s account`;
-      case "house_delete":
-        return `Delete the house ${m.name}`;
-    }
-  },
-  meta: (m: OwnerMove): string => {
-    switch (m.kind) {
-      case "report_reply":
-        return clip(m.body);
-      case "report_fixed":
-        return m.note ? clip(m.note) : m.tell ? "They’re told it’s fixed." : "Nobody’s told.";
-      case "report_open":
-        return "It goes back to waiting.";
-      case "report_same_as":
-        return m.main ? "Fixing that one fixes this one too." : "It stands on its own again.";
-      case "notice_save":
-        return clip([ENGLISH(`common.notice.kinds.${m.notice}` as const), m.body].filter(Boolean).join(": "));
-      case "notice_end":
-        return "It stops showing now.";
-      case "message_send":
-        return `By ${ways(m)}. ${clip(m.body, 100)}`;
-      case "promotion_make":
-        return clip([m.promotion.name, m.promotion.audience === "named" ? `for ${m.promotion.people.length} people` : "for anyone with the code"].join(", "));
-      case "promotion_stop":
-        return "Nobody new can use it.";
-      case "promotion_email":
-        return "Each person it names gets its link.";
-      case "promotion_retry":
-        return "Tries Stripe again so it can go live.";
-      case "deletion_now":
-        return `Gone within ten minutes, for good.${m.reason ? ` ${clip(m.reason, 80)}` : ""}`;
-      case "deletion_stop":
-        return `As if they’d tapped Keep my account.${m.reason ? ` ${clip(m.reason, 80)}` : ""}`;
-      case "deletion_start":
-        return `They have 30 days to change their mind.${m.reason ? ` ${clip(m.reason, 80)}` : ""}`;
-      case "house_delete":
-        return `${DELETE_HOUSE_COPY.gone(m.people, m.tell)}${m.reason ? ` ${clip(m.reason, 80)}` : ""}`;
-    }
-  },
-  apply: (n: number) => (n === 0 ? "Pick at least one" : n === 1 ? "Do 1 thing" : `Do ${n} things`),
-  applying: "Doing it…",
-  done: (n: number) => (n === 1 ? "Done." : `All ${n} done.`),
-} as const;
-
-/** Deleting a whole house (houses:write): the Houses page's sheet, the card's lines, and what its people are told. */
-export const DELETE_HOUSE_COPY = {
-  button: "Delete house",
-  title: (name: string) => `Delete ${name}?`,
-  body: "Its Johns, weeks, Wall, history and Stake go for good. Everyone in it keeps their account, in no house. A House Pass it pays for stops renewing; any refund is yours to give in Stripe.",
-  reason: "Why (for the audit log)",
-  tell: "Tell everyone in it, by push and email",
-  confirm: "Type the house’s name to delete it",
-  delete: "Delete for good",
-  deleting: "Deleting…",
-  gone: (people: number, tell: boolean) =>
-    `Gone for good, with everything in it. ${people === 1 ? "The 1 person" : `The ${people} people`} in it keep their accounts${tell ? " and are told" : ""}; any House Pass stops renewing.`,
-  done: (name: string) => `${name} is deleted.`,
-  passNotStopped: "Its House Pass couldn’t be stopped in Stripe: stop it there so it doesn’t renew.",
-  /** What everyone in it gets, by push and email. */
-  subject: (name: string) => `${name} has been closed`,
-  message: (name: string) =>
-    `We've closed ${name} on Jonz, so its Johns and history are gone. Your account is still here: start a new house or join one any time. Questions? Reply to this email.`,
-} as const;
 
 /** POST /api/admin/houses/[id]/delete: why, and whether to tell everyone in it. */
 export const DeleteHouseRequest = z.object({
@@ -231,3 +130,65 @@ export const DeleteHouseResponse = z.object({
   passStopped: z.boolean().nullable(),
 });
 export type DeleteHouseResponse = z.infer<typeof DeleteHouseResponse>;
+
+/** A move's title on the To do card. */
+export function ownerMoveTitle(m: OwnerMove, words: Words): string {
+  switch (m.kind) {
+    case "report_reply":
+    case "report_open":
+    case "deletion_now":
+    case "deletion_stop":
+      return words(`admin.moves.title.${m.kind}`, { who: m.who });
+    case "report_fixed":
+      return words("admin.moves.title.report_fixed", { who: m.who, tell: m.tell });
+    case "report_same_as":
+      return words("admin.moves.title.report_same_as", { who: m.who, fold: Boolean(m.main), main: m.main ?? "" });
+    case "notice_save":
+      return words("admin.moves.title.notice_save", { change: Boolean(m.id), title: m.title });
+    case "notice_end":
+      return words("admin.moves.title.notice_end", { title: m.title });
+    case "message_send":
+      return words("admin.moves.title.message_send", { subject: m.subject, to: m.to });
+    case "promotion_make":
+      return words("admin.moves.title.promotion_make", { code: m.promotion.code });
+    case "promotion_stop":
+    case "promotion_email":
+    case "promotion_retry":
+      return words(`admin.moves.title.${m.kind}`, { code: m.code });
+    case "deletion_start":
+      return words("admin.moves.title.deletion_start", { email: m.email });
+    case "house_delete":
+      return words("admin.moves.title.house_delete", { name: m.name });
+  }
+}
+
+/** The line under a move's title: what doing it means, and the owner's own words, clipped. */
+export function ownerMoveMeta(m: OwnerMove, words: Words): string {
+  const why = (reason: string | null | undefined) => (reason ? ` ${clip(reason, 80)}` : "");
+  switch (m.kind) {
+    case "report_reply":
+      return clip(m.body);
+    case "report_fixed":
+      return m.note ? clip(m.note) : words("admin.moves.meta.report_fixed", { tell: m.tell });
+    case "report_same_as":
+      return words("admin.moves.meta.report_same_as", { fold: Boolean(m.main) });
+    case "notice_save":
+      return clip([words(`common.notice.kinds.${m.notice}`), m.body].filter(Boolean).join(": "));
+    case "message_send":
+      return words("admin.moves.meta.message_send", { ways: ways(m), body: clip(m.body, 100) });
+    case "promotion_make":
+      return clip([m.promotion.name, words("admin.moves.meta.promotion_for", { named: m.promotion.audience === "named", people: m.promotion.people.length })].join(", "));
+    case "report_open":
+    case "notice_end":
+    case "promotion_stop":
+    case "promotion_email":
+    case "promotion_retry":
+      return words(`admin.moves.meta.${m.kind}`);
+    case "deletion_now":
+    case "deletion_stop":
+    case "deletion_start":
+      return `${words(`admin.moves.meta.${m.kind}`)}${why(m.reason)}`;
+    case "house_delete":
+      return `${words("admin.deleteHouse.gone", { people: m.people, tell: m.tell })}${why(m.reason)}`;
+  }
+}

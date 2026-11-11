@@ -4,10 +4,9 @@ import {
   tourSteps,
   type TourFacts,
   type TourId,
-  type TourPage,
   type TourRect,
   type TourSpotId,
-  type TourStep,
+  type TourStepSaid,
   type ToursSaved,
 } from '@app/core';
 import { router, usePathname } from 'expo-router';
@@ -20,12 +19,13 @@ import { TourOverlay } from '@/components/tour/tour-overlay';
 import { TourContext, type TourControls } from '@/components/tour/tour-context';
 import { SpotRegistryContext, type SpotHandle, type SpotRegistry } from '@/components/tour/tour-spot';
 import { useMembership } from '@/hooks/use-membership';
+import { useWords } from '@/hooks/use-words';
 
 /** How long a step waits for its spot to show (a page to open, a read to land) before it's passed over. */
 const FIND_FOR = 2500;
 const FIND_EVERY = 100;
 
-type Running = { id: TourId; steps: (TourStep & { page: TourPage })[]; index: number };
+type Running = { id: TourId; steps: TourStepSaid[]; index: number };
 
 const trimmed = (path: string) => path.replace(/\/+$/, '') || '/';
 
@@ -42,6 +42,7 @@ const trimmed = (path: string) => path.replace(/\/+$/, '') || '/';
  * your account, so the offer on Today goes, and the Help sheet marks it.
  */
 export function TourProvider({ facts, canAsk = false, children }: { facts: TourFacts; canAsk?: boolean; children: ReactNode }) {
+  const words = useWords();
   const { session } = useMembership();
   const pathname = usePathname();
   const window = useWindowDimensions();
@@ -85,12 +86,12 @@ export function TourProvider({ facts, canAsk = false, children }: { facts: TourF
       // On the page you're on every spot that's drawn has signed in: leave out the ones that haven't
       // (nothing else this week, say), so the count is what you'll see. Other pages' are looked for as they open.
       const here = trimmed(pathname);
-      const steps = tourSteps(id, facts).filter((s) => s.page !== here || (spots.current.get(s.spot)?.length ?? 0) > 0);
+      const steps = tourSteps(id, facts, words).filter((s) => s.page !== here || (spots.current.get(s.spot)?.length ?? 0) > 0);
       if (steps.length === 0) return;
       setRect(null);
       setRunning({ id, steps, index: 0 });
     },
-    [facts, pathname],
+    [facts, pathname, words],
   );
 
   const move = useCallback(

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { DEFAULT_RULES, type HouseRules } from "./domain";
 import { guideMarkdown, guideTopic, guideSections, HOW_TOPICS, howItWorks, isHowTopic, type HowFacts } from "./how-it-works";
-import { TOURS } from "./tours";
+import { TOURS, tourStepWords } from "./tours";
 import { formatMoney } from "./money";
 import { PASS_PRICES } from "./pass";
 import { wordsFor } from "./words-for";
@@ -85,7 +85,7 @@ describe("howItWorks", () => {
   it("only talks about parents and kids in a family", () => {
     expect(howItWorks("family", facts, words)).toMatch(/not a family/);
     expect(howItWorks("family", { ...facts, family: true }, words)).toMatch(
-      /parent's OK/,
+      /parent’s OK/,
     );
   });
 });
@@ -93,7 +93,7 @@ describe("howItWorks", () => {
 describe("the guide", () => {
   it("lists every topic once, with a title and a line, for the kind of house", () => {
     for (const family of [false, true]) {
-      const topics = guideSections(family).flatMap((s) => s.topics);
+      const topics = guideSections(family, words).flatMap((s) => s.topics);
       expect(new Set(topics).size).toBe(topics.length);
       expect(topics.includes("family")).toBe(family);
       expect(topics.includes("stake")).toBe(!family);
@@ -104,8 +104,8 @@ describe("the guide", () => {
 
   it("reads each page from its tour, so the guide and the tour say the same", () => {
     const today = howItWorks("today", facts, words);
-    for (const step of TOURS.today.steps) expect(today).toContain(step.body);
-    expect(howItWorks("house", facts, words)).toContain(TOURS.setUp.steps[0].body);
+    for (const step of TOURS.today.steps) expect(today).toContain(tourStepWords("today", step, words).body);
+    expect(howItWorks("house", facts, words)).toContain(tourStepWords("setUp", TOURS.setUp.steps[0], words).body);
   });
 
   it("never talks about the tools Jonz reads with", () => {

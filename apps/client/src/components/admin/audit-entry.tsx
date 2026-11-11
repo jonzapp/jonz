@@ -1,14 +1,4 @@
-import {
-  ADMIN_COPY,
-  AUDIT_LIST_COPY,
-  auditChanges,
-  auditLikeThis,
-  auditLine,
-  auditParts,
-  formatWhen,
-  listTime,
-  type AuditEntry,
-} from '@app/core';
+import { type Words, auditChanges, auditLikeThis, auditLine, auditParts, formatWhen, listTime, type AuditEntry } from '@app/core';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { ListTableRow, type ListColumn } from '@/components/admin/list-table';
@@ -17,12 +7,16 @@ import { Row } from '@/components/row';
 import { Section } from '@/components/section';
 import { Lead, Meta } from '@/components/text';
 import { FONT, INSET, SPACE, TABULAR, useTheme } from '@/theme';
+import { useWords } from '@/hooks/use-words';
+
+/** A value that's gone; a mark, not words. */
+const NONE = '–';
 
 /** The audit log's columns on a laptop: when, who, what happened (with its detail), and where. */
-export const AUDIT_TABLE: readonly ListColumn[] = [
+export const AUDIT_TABLE = (words: Words): readonly ListColumn[] => [
   // As narrow as "Fri 30 Oct, 21:42", "Someone else" and "Account 5b1e9c40" allow, so what happened has the room.
-  { key: 'when', label: AUDIT_LIST_COPY.when, width: 144 },
-  { key: 'who', label: AUDIT_LIST_COPY.who, width: 112 },
+  { key: 'when', label: words('admin.audit.when'), width: 144 },
+  { key: 'who', label: words('admin.audit.who'), width: 112 },
   { key: 'what', label: 'What happened', flex: 1 },
   { key: 'where', label: 'Where', width: 136 },
 ];
@@ -34,7 +28,8 @@ export function ownerZone(): string {
 
 /** One entry on a phone: who did what, its detail (or where) under it, and the time. No icon: a busy list needs the room. */
 export function AuditRow({ entry, ownerId, now, onPress }: { entry: AuditEntry; ownerId: string | null; now: Date; onPress: () => void }) {
-  const { title, meta } = auditLine(entry, ownerId);
+  const words = useWords();
+  const { title, meta } = auditLine(entry, ownerId, words);
   return (
     <Row
       title={title}
@@ -60,19 +55,20 @@ export function AuditTableRow({
   chosen: boolean;
   onPress: () => void;
 }) {
+  const words = useWords();
   const { colors, type } = useTheme();
-  const parts = auditParts(entry, ownerId);
+  const parts = auditParts(entry, ownerId, words);
   const when = listTime(entry.at, now, ownerZone());
   return (
     <ListTableRow
-      columns={AUDIT_TABLE}
+      columns={AUDIT_TABLE(words)}
       cells={{
         when,
         who: parts.who,
         what: (
           <Text numberOfLines={1} style={[type.body, { color: colors.foreground }]}>
             {parts.what}
-            {parts.detail ? <Text style={{ color: colors.mutedForeground }}>{`  ${parts.detail}`}</Text> : null}
+            {parts.detail ? <Text style={{ color: colors.mutedForeground }}>{words('common.join.indent', { text: parts.detail })}</Text> : null}
           </Text>
         ),
         where: parts.where,
@@ -103,16 +99,17 @@ export function AuditDetail({
   /** Show more like this: the list, narrowed the way the row chosen says. */
   onLikeThis?: (params: Record<string, string>) => void;
 }) {
+  const words = useWords();
   const { colors, type } = useTheme();
   const changes = auditChanges(entry);
   return (
     <View style={styles.detail} testID={`audit-detail-${entry.id}`}>
       <View style={styles.head}>
-        <Meta>{`#${entry.id}, ${formatWhen(entry.at)}`}</Meta>
-        <Lead header>{auditLine(entry, ownerId).title}</Lead>
+        <Meta>{words('common.join.comma', { first: words('common.join.id', { id: String(entry.id) }), second: formatWhen(entry.at) })}</Meta>
+        <Lead header>{auditLine(entry, ownerId, words).title}</Lead>
       </View>
       {changes.length > 0 ? (
-        <Section label={ADMIN_COPY.whatChanged}>
+        <Section label={words('admin.shell.whatChanged')}>
           <Group>
             {changes.map((change) => (
               <GroupItem key={change.field}>
@@ -121,23 +118,23 @@ export function AuditDetail({
                   {change.from !== null ? (
                     <Text style={[type.body, styles.was, { color: colors.mutedForeground }]}>{change.from}</Text>
                   ) : null}
-                  <Text style={[type.body, styles.now, { color: colors.foreground }]}>{change.to ?? '–'}</Text>
+                  <Text style={[type.body, styles.now, { color: colors.foreground }]}>{change.to ?? NONE}</Text>
                 </View>
               </GroupItem>
             ))}
           </Group>
         </Section>
       ) : null}
-      <Section label={ADMIN_COPY.details}>
+      <Section label={words('admin.shell.details')}>
         <Group>
-          <Row title={ADMIN_COPY.action} meta={entry.action} />
+          <Row title={words('admin.shell.action')} meta={entry.action} />
           {entry.reason ? <Row title={entry.reason} /> : null}
         </Group>
       </Section>
       {onLikeThis ? (
-        <Section label={AUDIT_LIST_COPY.likeThis} testID="audit-like-this">
+        <Section label={words('admin.audit.likeThis')} testID="audit-like-this">
           <Group>
-            {auditLikeThis(entry, ownerId).map((like) => (
+            {auditLikeThis(entry, ownerId, words).map((like) => (
               <Row
                 key={like.label}
                 title={like.label}
@@ -150,7 +147,7 @@ export function AuditDetail({
           </Group>
         </Section>
       ) : null}
-      <Meta style={styles.words}>{ADMIN_COPY.appendOnly}</Meta>
+      <Meta style={styles.words}>{words('admin.shell.appendOnly')}</Meta>
     </View>
   );
 }

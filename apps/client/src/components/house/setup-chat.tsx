@@ -36,7 +36,7 @@ import {
 import { router } from 'expo-router';
 import { CheckIcon, MinusIcon, PencilIcon, PlusIcon } from 'lucide-react-native';
 import { useQueryClient } from '@tanstack/react-query';
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { keepChat, type SavedChat } from '@/api/ask-chats';
@@ -492,7 +492,7 @@ function ModeAsk({ houseId, start }: { houseId: string; start: DealMode }) {
         </View>
       </Group>
       {move.problem ? <Alert message={move.problem} /> : null}
-      <Meta>{`${words('week.steady.modeFoot')} ${words('week.steady.modeLater')}`}</Meta>
+      <Meta>{words('common.join.then', { first: words('week.steady.modeFoot'), second: words('week.steady.modeLater') })}</Meta>
     </>
   );
 }

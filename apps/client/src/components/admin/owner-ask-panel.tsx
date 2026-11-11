@@ -1,4 +1,3 @@
-import { OWNER_ASK_COPY } from '@app/core';
 import { usePathname } from 'expo-router';
 import { SparklesIcon } from 'lucide-react-native';
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
@@ -9,6 +8,7 @@ import { OwnerAsk } from '@/components/admin/owner-ask';
 import { IconButton } from '@/components/icon-button';
 import { BarEdgeContext } from '@/components/title-bar';
 import { LookContext, useTheme, WIDE } from '@/theme';
+import { useWords } from '@/hooks/use-words';
 
 /** The panel's width beside the page, as the house's chat; a little less on a narrow laptop. */
 const PANEL = 400;
@@ -36,12 +36,13 @@ export function OwnerAskProvider({ children }: { children: ReactNode }) {
 
 /** The sparkles: open and close the owner's chat. A screen reader hears whether it's open. */
 export function OwnerAskButton() {
+  const words = useWords();
   const ask = useContext(OwnerAskContext);
   if (!ask) return null;
   return (
     <IconButton
       icon={SparklesIcon}
-      label={OWNER_ASK_COPY.open}
+      label={words('admin.ask.open')}
       expanded={ask.open}
       onPress={() => ask.setOpen(!ask.open)}
       testID="owner-ask-open"

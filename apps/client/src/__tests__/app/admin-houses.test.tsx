@@ -1,4 +1,4 @@
-import { ADMIN_COPY, DELETE_HOUSE_COPY, HOUSES_COPY, OVERVIEW_COPY, OWNER_PERMISSION_NAMES, type HouseDetail, type HouseRow, type Overview } from '@app/core';
+import { OWNER_PERMISSION_NAMES, type HouseDetail, type HouseRow, type Overview, wordsFor } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 import { useWindowDimensions } from 'react-native';
 
@@ -10,7 +10,6 @@ import HousesPage from '@/app/admin/houses/index';
 import DeletionsPage from '@/app/admin/deletions';
 import OverviewPage from '@/app/admin/overview';
 import { renderPages, untilRead } from '@/testing/pages';
-import { wordsFor } from '@app/core';
 
 const words = wordsFor('en', 'housemates');
 
@@ -121,7 +120,7 @@ describe('Overview', () => {
     await renderPages(ROUTES, '/admin/overview');
     await untilRead(words);
     expect(within(screen.getByTestId('overview-needs')).getByTestId('need-r1')).toHaveTextContent(/Sam wrote in.*Charged twice, The Annexe, 2 h ago/);
-    expect(screen.getByTestId('overview-inbox')).toHaveTextContent(OVERVIEW_COPY.openInbox(2));
+    expect(screen.getByTestId('overview-inbox')).toHaveTextContent(words('admin.overview.openInbox', { count: 2 }));
     expect(screen.getByTestId('health-database')).toHaveTextContent(/Database.*120 ms.*Up/);
     expect(screen.getByTestId('health-clock')).toHaveTextContent(/The clock.*ticked 4 min ago.*Up/);
     expect(screen.getByTestId('figure-houses')).toHaveTextContent(/128.*Houses.*12 new, up 9 on last week/);
@@ -135,7 +134,7 @@ describe('Overview', () => {
     await renderPages(ROUTES, '/admin/overview');
     await untilRead(words);
     expect(screen.getByTestId('health-clock')).toHaveTextContent(/Late/);
-    await fireEvent.press(within(screen.getByTestId('overview-span')).getByText(OVERVIEW_COPY.spans.month));
+    await fireEvent.press(within(screen.getByTestId('overview-span')).getByText(words('admin.overview.spans.month')));
     await waitFor(() => expect(ownerOverview).toHaveBeenLastCalledWith('month', expect.any(String)));
   });
 
@@ -143,7 +142,7 @@ describe('Overview', () => {
     jest.mocked(ownerOverview).mockResolvedValue({ overview: { ...OVERVIEW, needs: [], reports: 0 }, ms: 80 });
     await renderPages(ROUTES, '/admin/overview');
     await untilRead(words);
-    expect(screen.getByText(OVERVIEW_COPY.nothingNeeds)).toBeVisible();
+    expect(screen.getByText(words('admin.overview.nothingNeeds'))).toBeVisible();
   });
 });
 
@@ -179,14 +178,14 @@ describe('Houses', () => {
     await untilRead(words);
     await fireEvent.press(await screen.findByTestId('house-delete'));
     const sheet = within(await screen.findByTestId('house-delete-sheet'));
-    expect(sheet.getByText(DELETE_HOUSE_COPY.title('Elm Street'))).toBeVisible();
+    expect(sheet.getByText(words('admin.deleteHouse.title', { name: 'Elm Street' }))).toBeVisible();
     expect(sheet.getByTestId('house-delete-confirm')).toBeDisabled();
     await fireEvent.changeText(sheet.getByTestId('house-delete-reason'), 'Test house');
     await fireEvent.changeText(sheet.getByTestId('house-delete-name'), 'elm street');
     expect(sheet.getByTestId('house-delete-confirm')).toBeEnabled();
     await fireEvent.press(sheet.getByTestId('house-delete-confirm'));
     await waitFor(() => expect(deleteHouse).toHaveBeenCalledWith('h1', 'Test house', true));
-    expect(await screen.findByText(DELETE_HOUSE_COPY.done('Elm Street'))).toBeVisible();
+    expect(await screen.findByText(words('admin.deleteHouse.done', { name: 'Elm Street' }))).toBeVisible();
     expect(await screen.findByTestId('house-h2')).toBeVisible();
   });
 
@@ -194,7 +193,7 @@ describe('Houses', () => {
     jest.mocked(ownerStatus).mockResolvedValue({ owner: true, mfa: true, permissions: ['admin:read', 'reports:write'] });
     await renderPages(ROUTES, '/admin/houses/h1');
     await untilRead(words);
-    expect(await screen.findByText(HOUSES_COPY.readOnly)).toBeVisible();
+    expect(await screen.findByText(words('admin.houses.readOnly'))).toBeVisible();
     expect(screen.queryByTestId('house-delete')).toBeNull();
   });
 
@@ -236,7 +235,7 @@ describe('Houses', () => {
     expect(screen.getByTestId('house-fact-johns')).toHaveTextContent('Johns9');
     expect(screen.getByTestId('admin-nav-houses')).toBeSelected();
     // The way back to the owner's own house, at the rail's foot.
-    expect(within(screen.getByTestId('admin-rail')).getByRole('link', { name: ADMIN_COPY.backToHouse })).toBeOnTheScreen();
+    expect(within(screen.getByTestId('admin-rail')).getByRole('link', { name: words('admin.shell.backToHouse') })).toBeOnTheScreen();
   });
 });
 

@@ -1,9 +1,11 @@
 import { randomUUID } from "node:crypto";
 
-import { OVERVIEW_COPY } from "@app/core";
 import { expect, test, type Page } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, houseOf, ownerInClient } from "./auth";
+import { wordsFor } from '@app/core';
+
+const words = wordsFor('en', 'housemates');
 
 // The owner's Overview and Houses in the Expo app's web build
 // (docs/specs/owner-admin.md): /admin opens on the Overview, with its
@@ -47,7 +49,7 @@ test("opens on the Overview, then finds a house and shows it, read only", async 
   await expect(overview.getByTestId("overview-chart")).toBeVisible();
   // The section's heading, not its words: on a stack where nothing needs the
   // owner yet, the empty row ("Nothing needs you") holds the same words.
-  await expect(overview.getByRole("heading", { name: OVERVIEW_COPY.needsYou, exact: true })).toBeVisible();
+  await expect(overview.getByRole("heading", { name: words('admin.overview.needsYou'), exact: true })).toBeVisible();
   await shoot(page, "overview");
 
   await page.goto("/admin/houses");
