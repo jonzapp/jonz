@@ -11,6 +11,7 @@ Read the page for the topic you're working on before you change a screen:
 | --- | --- |
 | [feel.md](feel.md) | Bin Night: colour, signage, voice, icons, Day and Night, drafts |
 | [words.md](words.md) | The six text roles, caps, cut-off labels, text size |
+| [words-fr.md](words-fr.md) | Jonz in French: tu, French typography, and the glossary |
 | [layout.md](layout.md) | Phone and laptop: sizes, tabs and rail, the title bar, side panels, sheets, menus, depth |
 | [lists.md](lists.md) | Rows, groups, spacing, order, long lists, admin lists, calendars, empty lists |
 | [controls.md](controls.md) | Buttons, button rows, icon buttons, tap sizes, toggles, focus |

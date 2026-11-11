@@ -35,7 +35,8 @@ describe("languageOf", () => {
   });
 
   it("reads English for a language Jonz hasn't got, or none", () => {
-    expect(languageOf("fr-FR")).toBe("en");
+    expect(languageOf("de-DE")).toBe("en");
+    expect(languageOf("fr-FR")).toBe("fr");
     expect(languageOf("")).toBe("en");
     expect(languageOf(null)).toBe("en");
     expect(languageOf(undefined)).toBe("en");

@@ -1,4 +1,4 @@
-import { LANGUAGES, languageOf, TEST_LANGUAGE, type Language } from '@app/core';
+import { BEING_CHECKED, LANGUAGES, languageOf, TEST_LANGUAGE, type Language } from '@app/core';
 
 import { ON_STAGING } from './staging';
 import { callV1 } from './v1';
@@ -19,8 +19,10 @@ export async function setMyLanguage(language: Language): Promise<void> {
 }
 
 /**
- * The languages You offers: every one Jonz has, and the test language only
- * where Jonz is being tried out (locally and on staging). With one to offer,
- * You shows no Language row.
+ * The languages You offers: every one Jonz has; any still being checked
+ * only where Jonz is being tried out (locally and on staging); and the test
+ * language only locally. With one to offer, You shows no Language row.
  */
-export const LANGUAGES_OFFERED: readonly Language[] = LANGUAGES.filter((l) => l !== TEST_LANGUAGE || __DEV__ || ON_STAGING);
+export const LANGUAGES_OFFERED: readonly Language[] = LANGUAGES.filter((l) =>
+  l === TEST_LANGUAGE ? __DEV__ : !BEING_CHECKED.includes(l) || __DEV__ || ON_STAGING,
+);

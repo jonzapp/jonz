@@ -113,7 +113,7 @@ export function turnRows(
         category: j.category,
         points: j.points,
         userId,
-        meta: `${johnKind(j.category)}, ${words('week.steady.turnOf', { whose: whose(userId, viewerId, nameOf, words), when })}`,
+        meta: `${johnKind(j.category)}, ${turnLine(userId, viewerId, nameOf, when, words)}`,
       },
     });
   }
@@ -154,9 +154,9 @@ function named(name: string | null, words: Words): string {
   return name ? firstName(name) : words('common.shell.formerHousemate');
 }
 
-/** "your", or "Ada’s". */
-function whose(userId: string, viewerId: string, nameOf: (userId: string) => string | null, words: Words): string {
-  return userId === viewerId ? words('week.steady.yourTurn') : `${named(nameOf(userId), words)}’s`;
+/** "your turn, next week", or "Ada’s turn, week of 9 Nov". */
+function turnLine(userId: string, viewerId: string, nameOf: (userId: string) => string | null, when: string, words: Words): string {
+  return userId === viewerId ? words('week.steady.yourTurn', { when }) : words('week.steady.turnOf', { name: named(nameOf(userId), words), when });
 }
 
 /**

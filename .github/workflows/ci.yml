@@ -71,7 +71,8 @@ jobs:
             exit 0
           fi
           docker run --rm -v /tmp:/base -v "$PWD/apps/v1:/head" tufin/oasdiff:v1.37.0 \
-            breaking /base/openapi-base.json /head/openapi.json --fail-on ERR --format githubactions
+            breaking /base/openapi-base.json /head/openapi.json --fail-on ERR --format githubactions \
+            --err-ignore /head/oasdiff-ignore.txt
 
       # The deal's deliberate breaks still fit its code (running them all takes minutes: npm run breaks -w @app/core).
       - name: Deal breaks fit

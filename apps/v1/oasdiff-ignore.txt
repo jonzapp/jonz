@@ -1,0 +1,5 @@
+# Breaks /v1 allows on purpose, each one agreed by the owner (docs/specs/api.md, "Allowed breaks").
+# oasdiff skips a change when a line holds its method, path and message.
+# 2026-11-11, Glyn: my_language answers any language Jonz has, not only "en" (French, PR #213).
+GET /v1/me/language removed the enum constraint from the `anyOf[subschema #1]` response property for the response status `200`
+GET /v1/me/language removed the enum constraint from the 'anyOf[subschema #1]' response property for the response status '200'

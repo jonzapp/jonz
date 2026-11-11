@@ -61,7 +61,7 @@ through FormatJS. A family reads its own sentences (never "housemates" or
   stay in English, so their dates do too.
 - **The test language** (`en-XA`, `pseudo.ts`): every English line with its
   letters accented and held in brackets, `[Ţíçķ íţ óƒƒ]`. Offered on You only
-  locally and on staging. A line still written into a screen reads plain,
+  locally (staging dropped it once French was there to read). A line still written into a screen reads plain,
   and one cut short loses its closing bracket.
 - **Another language** (later): a folder beside `en/` with the same ids,
   added to `LANGUAGES` and to `profiles_language_check`. A line it hasn't
@@ -96,7 +96,12 @@ The lines move part by part, one pull request each, merged one at a time:
    in it (`Words` gets `dates` and `locale`; `en-GB` stops being written in
    outside the owner's pages).
 8. French, the first language beside English: a `fr` folder, drafted with
-   the glossary and read by a French speaker on staging before it's offered.
+   its glossary (`docs/style/words-fr.md`) and checked by machine (grammar,
+   back-translation, real apps' translations, Google Translate) before it's
+   offered. A language not yet checked goes in `BEING_CHECKED`: offered only
+   on staging and locally, and never taken from a phone. The owner's
+   pages stay English. Tests check every French line has English's gaps,
+   writes ’ for an apostrophe, and never says coloc or admin to a family.
 
 ## Edge cases
 

@@ -10,6 +10,17 @@ import people from "./en/people.json";
 import today from "./en/today.json";
 import wall from "./en/wall.json";
 import week from "./en/week.json";
+import frAsk from "./fr/ask.json";
+import frCommon from "./fr/common.json";
+import frDoor from "./fr/door.json";
+import frEmail from "./fr/email.json";
+import frErrors from "./fr/errors.json";
+import frHouse from "./fr/house.json";
+import frJohn from "./fr/john.json";
+import frPeople from "./fr/people.json";
+import frToday from "./fr/today.json";
+import frWall from "./fr/wall.json";
+import frWeek from "./fr/week.json";
 
 /**
  * The app's words in English, one file per part of the app (locales/en/),
@@ -42,20 +53,49 @@ export type WordId = keyof typeof EN;
  * moved to the words files stands out. Another language adds its folder
  * here, and to the database's profiles_language_check.
  */
-export const LANGUAGES = ["en", "en-XA"] as const;
+export const LANGUAGES = ["en", "fr", "en-XA"] as const;
 export type Language = (typeof LANGUAGES)[number];
 
 /** The test language, offered only where Jonz is being tried out (locally and on staging). */
 export const TEST_LANGUAGE = "en-XA" satisfies Language;
 
+/**
+ * Languages drafted but not yet checked: offered only where Jonz is being
+ * tried out, like the test language, and never taken from a phone. A language
+ * leaves this list once it has passed the checks French passed (see
+ * docs/style/words-fr.md, "How it was checked").
+ */
+export const BEING_CHECKED: readonly Language[] = [];
+
 /** Each language by its own name, as the picker lists it: a person finds theirs without reading another. */
-export const LANGUAGE_NAMES: Record<Language, string> = { en: "English", "en-XA": "[Ţëšţ Ëñĝļîšĥ]" };
+export const LANGUAGE_NAMES: Record<Language, string> = { en: "English", fr: "Français", "en-XA": "[Ţëšţ Ëñĝļîšĥ]" };
 
 /** Each language by its English name, for telling Ask Jonz which to answer in. */
-export const LANGUAGE_IN_ENGLISH: Record<Language, string> = { en: "English", "en-XA": "English" };
+export const LANGUAGE_IN_ENGLISH: Record<Language, string> = { en: "English", fr: "French", "en-XA": "English" };
 
-/** The lines each real language has; the test language is made from English as it's read. */
-export const MESSAGES: Partial<Record<Language, Partial<Record<WordId, string>>>> = { en: EN };
+/**
+ * French, file by file, with the same ids as English's. The owner's pages
+ * (admin) stay in English for now, so French has none of their lines.
+ */
+export const FR_FILES = {
+  admin: {},
+  ask: frAsk,
+  common: frCommon,
+  door: frDoor,
+  email: frEmail,
+  errors: frErrors,
+  house: frHouse,
+  john: frJohn,
+  people: frPeople,
+  today: frToday,
+  wall: frWall,
+  week: frWeek,
+} satisfies Record<keyof typeof EN_FILES, Partial<Record<WordId, string>>>;
+
+export const MESSAGES: Partial<Record<Language, Partial<Record<WordId, string>>>> = {
+  en: EN,
+  fr: Object.assign({}, ...Object.values(FR_FILES)) as Partial<Record<WordId, string>>,
+};
 
 /**
  * The language for a saved choice or a phone's language tag ("en-GB",

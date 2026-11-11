@@ -1,12 +1,13 @@
 import { createIntl, createIntlCache, type IntlShape } from "@formatjs/intl";
 import type { Locale } from "date-fns";
 import { enGB } from "date-fns/locale/en-GB";
+import { fr } from "date-fns/locale/fr";
 
 import type { HouseKind } from "./domain";
 import { MESSAGES, TEST_LANGUAGE, type Language, type WordId } from "./locales";
 import { pseudoMessages } from "./pseudo";
 
-export { LANGUAGE_IN_ENGLISH, LANGUAGE_NAMES, LANGUAGES, languageOf, TEST_LANGUAGE, type Language, type WordId } from "./locales";
+export { BEING_CHECKED, LANGUAGE_IN_ENGLISH, LANGUAGE_NAMES, LANGUAGES, languageOf, TEST_LANGUAGE, type Language, type WordId } from "./locales";
 
 /** What a line fills its gaps with. The house's kind is filled in for you. */
 export type WordValues = Record<string, string | number | boolean | Date | null | undefined>;
@@ -32,8 +33,8 @@ export type Words = {
  * Each language's day and month names. English reads them as Jonz always
  * has, the British way ("Tue 10 Nov", 21:00); so does the test language.
  */
-const DATE_LOCALES: Record<Language, Locale> = { en: enGB, "en-XA": enGB };
-const INTL_LOCALES: Record<Language, string> = { en: "en-GB", "en-XA": "en-GB" };
+const DATE_LOCALES: Record<Language, Locale> = { en: enGB, fr, "en-XA": enGB };
+const INTL_LOCALES: Record<Language, string> = { en: "en-GB", fr: "fr-FR", "en-XA": "en-GB" };
 
 const inProduction = () => typeof process !== "undefined" && process.env.NODE_ENV === "production";
 

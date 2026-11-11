@@ -170,10 +170,10 @@ describe("the words", () => {
   });
 
   it("joins names as people say them", () => {
-    expect(andNames([])).toBe("");
-    expect(andNames(["Ben"])).toBe("Ben");
-    expect(andNames(["Ben", "Cal"])).toBe("Ben and Cal");
-    expect(andNames(["Ben", "Cal", "Dee"])).toBe("Ben, Cal and Dee");
+    expect(andNames([], wordsFor("en", "housemates"))).toBe("");
+    expect(andNames(["Ben"], wordsFor("en", "housemates"))).toBe("Ben");
+    expect(andNames(["Ben", "Cal"], wordsFor("en", "housemates"))).toBe("Ben and Cal");
+    expect(andNames(["Ben", "Cal", "Dee"], wordsFor("en", "housemates"))).toBe("Ben, Cal and Dee");
   });
 
   it("finds a John's places on the board: its job's, or itself", () => {

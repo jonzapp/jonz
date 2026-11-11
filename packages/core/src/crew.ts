@@ -215,7 +215,7 @@ export function crewLine(crew: number, points: number, words: Words): string | n
 }
 
 /** "Ben", "Ben and Cal", "Ben, Cal and Dee". */
-export function andNames(names: readonly string[]): string {
+export function andNames(names: readonly string[], words: Words): string {
   if (names.length <= 1) return names[0] ?? "";
-  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+  return words("common.join.and", { rest: names.slice(0, -1).join(", "), last: names[names.length - 1] });
 }

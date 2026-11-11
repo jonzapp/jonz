@@ -458,7 +458,8 @@ export const OPERATION_IO = {
   ),
   my_house: io(none, z.object({ houseId: id, name: text, kind: z.enum(HOUSE_KINDS) }).nullable(), "GET /v1/me/house"),
   set_my_name: io(z.object({ name: DisplayName }), nothing, "PATCH /v1/me/name"),
-  my_language: io(none, z.enum(LANGUAGES).nullable(), "GET /v1/me/language"),
+  // Any language tag, not a fixed list: a new language is an addition, not a change to /v1.
+  my_language: io(none, z.string().describe("A language tag, such as en or fr").nullable(), "GET /v1/me/language"),
   set_my_language: io(z.object({ language: z.enum(LANGUAGES) }), nothing, "PATCH /v1/me/language"),
   my_notifications: io(
     none,

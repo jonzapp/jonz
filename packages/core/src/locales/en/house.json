@@ -138,7 +138,7 @@
   "house.rules.late": "Late forfeit ({symbol})",
   "house.rules.missed": "Missed forfeit ({symbol})",
   "house.rules.disputes": "Disputes can be raised for",
-  "house.rules.disputeHours": "{hours, plural, =0 {No disputes (honour system)} other {{hours} hours after a tick}}",
+  "house.rules.disputeHours": "{hours, plural, =0 {No disputes (honour system)} one {{hours} hour after a tick} other {{hours} hours after a tick}}",
   "house.rules.lateHours": "{hours} hours after it’s due, then it’s missed",
   "house.rules.coverGrace": "{hours, plural, =0 {No grace: anyone can cover it once it’s due} other {{hours, plural, one {# hour} other {# hours}} after it’s due}}",
   "house.rules.away": "Time away is made up",
