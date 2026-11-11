@@ -115,6 +115,11 @@ still look right stretched (content capped, nothing pinned to far edges).
   panel (beside the chat with Jonz), Next up runs across the page and the
   rest of your week sits beside what the house wants of you and This week
   (`Pair`). (Laptop width B, 10 Nov; Today on a laptop A, 10 Nov)
+- **No empty panel:** a panel with nothing in it isn't drawn, not even its
+  hairline. Before the first deal (or in a week not out yet) Today has no
+  week for This week and usually nothing else for the panel, so Next up
+  (the setup card) runs across the page, up to `FILL_MAX`, and nothing is
+  set beside an empty column. (Today before the first deal, 11 Nov)
 - **The owner's pages use the whole room:** their lists are tables, so the
   main column running to the panel suits them. (Owner admin, 7 Nov; Laptop
   width B, 10 Nov)

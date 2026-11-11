@@ -6,6 +6,7 @@ pages are private artifacts on claude.ai.
 
 | Date | Decision | Where | Rule |
 | --- | --- | --- | --- |
+| 2026-11-11 | No empty panel: before the first deal Today draws no side panel (or hairline), and Next up runs across the page | this PR | [layout](layout.md#laptop-pages) |
 | 2026-11-10 | Ask Jonz on a laptop: the panel's bar lines up with the page's (one 52 line; Your chats' back a ‹ on the leading edge; the owner's Owner label a chip under the bar), and Enter sends while Shift+Enter starts a new line (a touch screen keeps Return for new lines) | this PR | [layout](layout.md#the-title-bar), [controls](controls.md#inputs) |
 | 2026-11-10 | Today on a laptop: Next up runs across the whole main column, the rest of your week under it, with Needs you, On call and This week kept in the panel (Today on a laptop A). Replaces Next up beside the rest of your week (Laptop width B) | this PR | [layout](layout.md#laptop-pages) |
 | 2026-11-10 | A laptop page never stops at a phone's width beside the chat with Jonz: with no room for the panel, Today, Week and the owner's pages fill the room up to the chat (Today: Next up across the page, the rest of your week beside This week); Pocket money and Your reports fill the room too | this PR | [layout](layout.md#laptop-pages) |
