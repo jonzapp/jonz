@@ -4,6 +4,7 @@ import { CURRENCIES } from "./domain";
 import {
   hasPass,
   PASS_ENFORCED,
+  passEnforcedBy,
   PASS_LOOKUP_KEYS,
   PASS_PURCHASES,
   passAfterSubscription,
@@ -65,6 +66,15 @@ describe("hasPass", () => {
     expect(hasPass(pass("trial", "2026-11-10T12:00:01Z"), now)).toBe(true);
     expect(hasPass(pass("trial", "2026-11-10T12:00:00Z"), now)).toBe(false);
     expect(hasPass(pass("yearly", "2026-11-01T00:00:00Z"), now)).toBe(false);
+  });
+});
+
+describe("passEnforcedBy", () => {
+  it("is on only when a switch says on", () => {
+    expect(passEnforcedBy(undefined, undefined)).toBe(false);
+    expect(passEnforcedBy("off", "")).toBe(false);
+    expect(passEnforcedBy("on", undefined)).toBe(true);
+    expect(passEnforcedBy(undefined, "on")).toBe(true);
   });
 });
 

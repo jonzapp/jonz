@@ -287,6 +287,7 @@ own with a demo house in it.
 | Reminders | Its VAPID pair | Its own pair, so staging never reminds a real phone |
 | The clock | Vault → jonz.app | Vault → api.staging.jonz.app |
 | Ask Jonz | AI Gateway (OIDC) | The same, on the preview's own OIDC token |
+| House Pass | Not enforced until launch: every house keeps the extras | Enforced (`PASS_ENFORCED=on`, `EXPO_PUBLIC_PASS_ENFORCED=on`): the Demo House has no Pass, so it shows the locked app; buy one in the sandbox to unlock it |
 
 How it works:
 

@@ -1,6 +1,7 @@
 -- ---------------------------------------------------------------------------
 -- Staging's demo house: four housemates who sign in with one password, a
--- John list with a group and an on-call John, and someone away next week.
+-- John list with a group and an on-call John, and someone away next week,
+-- and no House Pass.
 -- Nothing is dealt: sign in as Alex (the admin) and hand out the first week,
 -- as a real house would.
 --
@@ -63,6 +64,11 @@ begin
   insert into public.houses (name, timezone, currency, week_starts, created_by)
   values ('Demo House', 'Europe/London', 'GBP', 1, ids[1])
   returning id into house;
+
+  -- Its free month is already over and nobody has bought the Pass, so with
+  -- the Pass enforced on staging (PASS_ENFORCED) it shows the locked app.
+  -- Buy one in Stripe's sandbox (card 4242 4242 4242 4242) to see the rest.
+  update public.houses set pass_plan = 'trial', pass_ends_at = now() - interval '1 day' where id = house;
 
   for i in 1 .. array_length(ids, 1) loop
     insert into public.members (house_id, user_id, role)

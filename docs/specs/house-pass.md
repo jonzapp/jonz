@@ -38,7 +38,9 @@ link); give it as a Founding plan by hand until there is an admin tool.
   `houses.pass_until` (null only for Founding) and `houses.pass_buyer`.
   Written only by the service role; housemates read them with the house.
 - `@app/core` `pass.ts`: `passOf`, `hasPass`, `passUnlocked`, `passLine`,
-  `passOffers`, and `PASS_ENFORCED`, the one switch.
+  `passOffers`, and `PASS_ENFORCED`, the one switch. Staging turns it on
+  early (`PASS_ENFORCED=on` for the API, `EXPO_PUBLIC_PASS_ENFORCED=on` for
+  the web build), so the locked app can be tried on its Demo House.
 - House shows Free and House Pass (`PassSection`; the Family Pass in a
   family): six groups in plain words, `freeGroups` then `passWords().extras`
   from `@app/core` `family.ts`, with a Free and a Pass column of ticks. Its
