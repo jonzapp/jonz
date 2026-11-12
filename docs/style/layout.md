@@ -148,6 +148,12 @@ still look right stretched (content capped, nothing pinned to far edges).
   heading jumps to its section. On a phone, the words alone. (Laptop width
   B, 10 Nov) *Not* the sections as cards in columns: a page meant to be
   read in order then reads across and down.
+- **A page to read is written in Markdown** and drawn as Ask Jonz's replies
+  are (`Doc` in components/reply): steps as a numbered list, the names of
+  buttons and places in bold, links inside the sentence, and an address to
+  paste as a fenced line, which shows with Copy beside it (`CopyLine`).
+  (Help formatting, 12 Nov) *Not* MDX or raw HTML: one renderer for every
+  page, on the web and the phone apps.
 - Things side by side share a top edge: the page's first line sits in the
   main column so a bare card in main lines up with the side's first group.
   (#48)

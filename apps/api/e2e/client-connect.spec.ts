@@ -131,7 +131,7 @@ test("connects an app on Jonz's consent page, lists it on You, and approves what
   // How to connect one again: the steps and the address to paste.
   await page.getByTestId("connect-claude").click();
   const help = page.getByTestId("connect-claude-sheet");
-  await expect(help.getByTestId("mcp-address")).toHaveText(/\/mcp$/);
+  await expect(help.getByTestId("mcp-address-value")).toHaveText(/\/mcp$/);
   await expect(help.getByRole("button", { name: words('people.connectClaude.open') })).toBeVisible();
   await shoot(page, "connect-claude");
   await context.close();

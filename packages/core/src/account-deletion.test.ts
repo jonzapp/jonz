@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { confirmsDelete, DELETE_PATH, DELETION_DAYS, deletedOnDay, deletionDay, passDay, previewFromRow, statusFromRow } from "./account-deletion";
 import { signInPath, signInReason } from "./auth-paths";
 import { LEGAL, PRIVACY_POLICY } from "./legal";
+import { docText } from "./reply-format";
 import { wordsFor } from "./words-for";
 
 const words = wordsFor("en", "housemates");
@@ -54,7 +55,7 @@ describe("deleting an account", () => {
 
   it("is in the Privacy Policy as it works: in the app or on the web, 30 days to change your mind", () => {
     const section = PRIVACY_POLICY.sections.find((s) => s.heading === "Deleting your account")!;
-    const text = section.body.join(" ");
+    const text = docText(section.body);
     expect(text).toContain("jonz.app/delete");
     expect(text).toContain(`${DELETION_DAYS} days`);
     expect(text).toContain("Keep my account");

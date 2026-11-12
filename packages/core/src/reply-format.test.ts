@@ -1,7 +1,9 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
-import { attrsOf, cardOf, CARDS, CARDS_MAX, chipOf, OWNER_REPLY_GUIDE, PAGES, parseReply, REPLY_FORMAT_GUIDE, replyText, type Block, type Inline } from "./reply-format";
+import { attrsOf, cardOf, CARDS, CARDS_MAX, chipOf, docHref, docText, OWNER_REPLY_GUIDE, PAGES, parseDoc, parseReply, REPLY_FORMAT_GUIDE, replyText, type Block, type Inline } from "./reply-format";
+import { HELP_PAGE } from "./reports";
+import { PRIVACY_POLICY, TERMS } from "./legal";
 import { REPLY_SAMPLES } from "./reply-samples";
 
 // The same cases every run, so a check passes or fails the same any time and a failure can be
@@ -292,5 +294,66 @@ describe("parseReply, for any text", () => {
       }),
       { numRuns: 300 },
     );
+  });
+});
+
+describe("parseDoc: Jonz's own pages", () => {
+  it("keeps links to web pages, email addresses and the app's paths", () => {
+    expect(parseDoc("See [Stripe](https://stripe.com/privacy), [us](mailto:support@jonz.app) or [delete](/delete).")).toEqual([
+      {
+        t: "p",
+        kids: [
+          { t: "text", text: "See " },
+          { t: "link", href: "https://stripe.com/privacy", kids: [{ t: "text", text: "Stripe" }] },
+          { t: "text", text: ", " },
+          { t: "link", href: "mailto:support@jonz.app", kids: [{ t: "text", text: "us" }] },
+          { t: "text", text: " or " },
+          { t: "link", href: "/delete", kids: [{ t: "text", text: "delete" }] },
+          { t: "text", text: "." },
+        ],
+      },
+    ]);
+  });
+
+  it("turns any other link into its words", () => {
+    for (const href of ["http://jonz.app", "javascript:alert(1)", "//evil.example", "jonz:john/3f2a9c1e", "tel:123"]) {
+      expect(docHref(href)).toBeNull();
+      expect(allInlines(parseDoc(`[go](${href})`)).some((k) => k.t === "link")).toBe(false);
+    }
+  });
+
+  it("shows code as words to type, and a fenced line as one to copy", () => {
+    expect(parseDoc("Paste `this`:\n\n```\nhttps://api.jonz.app/mcp\n```")).toEqual([
+      { t: "p", kids: [{ t: "text", text: "Paste " }, { t: "code", text: "this" }, { t: "text", text: ":" }] },
+      { t: "copy", text: "https://api.jonz.app/mcp" },
+    ]);
+  });
+
+  it("draws no cards: a page has no house", () => {
+    expect(parseDoc("::week")).toEqual([]);
+  });
+
+  it("leaves chat replies as they were: no links out, no code", () => {
+    const blocks = parseReply("[Stripe](https://stripe.com) `code`\n\n```\nline\n```");
+    expect(allInlines(blocks).some((k) => k.t === "link" || k.t === "code")).toBe(false);
+    expect(blocks.some((b) => b.t === "copy")).toBe(false);
+  });
+
+  it("reads every section of Help, Privacy and Terms, its words and nothing of the Markdown", () => {
+    for (const page of [HELP_PAGE, PRIVACY_POLICY, TERMS]) {
+      for (const { body } of page.sections) {
+        const said = docText(body);
+        expect(said.trim()).not.toBe("");
+        expect(said).not.toMatch(/\*\*|\]\(|```|^#/m);
+      }
+    }
+  });
+
+  it("gives Help's steps to Claude as a numbered list, with the address to copy", () => {
+    const blocks = parseDoc(HELP_PAGE.sections.find((s) => s.heading === "Use Jonz from Claude")!.body);
+    const steps = blocks.find((b) => b.t === "list");
+    expect(steps).toMatchObject({ t: "list", ordered: true, start: 1 });
+    expect((steps as Extract<Block, { t: "list" }>).items).toHaveLength(3);
+    expect((steps as Extract<Block, { t: "list" }>).items[1].blocks).toContainEqual({ t: "copy", text: "https://api.jonz.app/mcp" });
   });
 });

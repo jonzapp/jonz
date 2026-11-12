@@ -62,6 +62,10 @@ export type Inline =
   | { t: "em"; kids: Inline[] }
   | { t: "del"; kids: Inline[] }
   | { t: "chip"; kind: ChipKind; ref: string; label: string }
+  /** A page's own link (parseDoc only): a web page, an email address, or a path in the app. */
+  | { t: "link"; href: string; kids: Inline[] }
+  /** Words to type exactly, like an address (parseDoc only). */
+  | { t: "code"; text: string }
   | { t: "br" };
 
 export type Block =
@@ -71,6 +75,8 @@ export type Block =
   | { t: "quote"; blocks: Block[] }
   | { t: "table"; head: Inline[][]; rows: Inline[][][]; align: ("left" | "right" | "center" | null)[] }
   | { t: "card"; card: ReplyCard }
+  /** A fenced line to copy, like an address to paste (parseDoc only): drawn with a Copy button. */
+  | { t: "copy"; text: string }
   | { t: "rule" };
 
 export interface ListItem {
@@ -189,31 +195,47 @@ function unescape(s: string): string {
     .replace(/&amp;/g, "&");
 }
 
-function inlines(tokens: readonly Token[] | undefined): Inline[] {
+/** Where a page's link may go: a web page, an email address, or a path in the app. Anything else is its words. */
+export function docHref(href: string): string | null {
+  return /^(https:\/\/|mailto:)/.test(href) || /^\/(?!\/)/.test(href) ? href : null;
+}
+
+/** How the text is read: a chat reply (the default), or one of Jonz's own pages (parseDoc), which may link out and show code to copy. */
+interface Mode {
+  doc: boolean;
+}
+const REPLY: Mode = { doc: false };
+
+function inlines(tokens: readonly Token[] | undefined, mode: Mode = REPLY): Inline[] {
   const out: Inline[] = [];
   for (const tok of tokens ?? []) {
     switch (tok.type) {
       case "text":
       case "escape":
-        out.push(...((tok as Tokens.Text).tokens ? inlines((tok as Tokens.Text).tokens) : [text(unescape(tok.text))]));
+        out.push(...((tok as Tokens.Text).tokens ? inlines((tok as Tokens.Text).tokens, mode) : [text(unescape(tok.text))]));
         break;
       case "strong":
-        out.push({ t: "strong", kids: merge(inlines(tok.tokens)) });
+        out.push({ t: "strong", kids: merge(inlines(tok.tokens, mode)) });
         break;
       case "em":
-        out.push({ t: "em", kids: merge(inlines(tok.tokens)) });
+        out.push({ t: "em", kids: merge(inlines(tok.tokens, mode)) });
         break;
       case "del":
-        out.push({ t: "del", kids: merge(inlines(tok.tokens)) });
+        out.push({ t: "del", kids: merge(inlines(tok.tokens, mode)) });
         break;
       case "codespan":
-        out.push(text(unescape(tok.text)));
+        out.push(mode.doc ? { t: "code", text: unescape(tok.text) } : text(unescape(tok.text)));
         break;
       case "br":
         out.push({ t: "br" });
         break;
       case "link": {
         const words = plain(tok.tokens);
+        const href = mode.doc ? docHref(tok.href) : null;
+        if (href) {
+          out.push({ t: "link", href, kids: merge(inlines(tok.tokens, mode)) });
+          break;
+        }
         out.push(chipOf(tok.href, words) ?? (words ? { t: "strong", kids: [text(words)] } : text("")));
         break;
       }
@@ -228,7 +250,7 @@ function inlines(tokens: readonly Token[] | undefined): Inline[] {
   return out;
 }
 
-function blocks(tokens: readonly Token[], depth: number, cards: { n: number }): Block[] {
+function blocks(tokens: readonly Token[], depth: number, cards: { n: number }, mode: Mode = REPLY): Block[] {
   const out: Block[] = [];
   for (const tok of tokens) {
     switch (tok.type) {
@@ -236,12 +258,12 @@ function blocks(tokens: readonly Token[], depth: number, cards: { n: number }): 
         break;
       case "paragraph":
       case "text": {
-        const kids = merge(inlines((tok as Tokens.Paragraph).tokens ?? [text(tok.text)] as never));
+        const kids = merge(inlines((tok as Tokens.Paragraph).tokens ?? [text(tok.text)] as never, mode));
         if (kids.length) out.push({ t: "p", kids });
         break;
       }
       case "heading":
-        out.push({ t: "heading", kids: merge(inlines(tok.tokens)) });
+        out.push({ t: "heading", kids: merge(inlines(tok.tokens, mode)) });
         break;
       case "list": {
         const list = tok as Tokens.List;
@@ -255,21 +277,21 @@ function blocks(tokens: readonly Token[], depth: number, cards: { n: number }): 
           start: typeof list.start === "number" ? list.start : 1,
           items: list.items.map((item) => ({
             checked: item.task ? Boolean(item.checked) : null,
-            blocks: blocks(item.tokens.filter((t) => t.type !== "checkbox"), depth + 1, cards),
+            blocks: blocks(item.tokens.filter((t) => t.type !== "checkbox"), depth + 1, cards, mode),
           })),
         });
         break;
       }
       case "blockquote":
         if (depth >= NEST_MAX) out.push({ t: "p", kids: [text(plain(tok.tokens).trim())] });
-        else out.push({ t: "quote", blocks: blocks(tok.tokens ?? [], depth + 1, cards) });
+        else out.push({ t: "quote", blocks: blocks(tok.tokens ?? [], depth + 1, cards, mode) });
         break;
       case "table": {
         const table = tok as Tokens.Table;
         out.push({
           t: "table",
-          head: table.header.map((c) => merge(inlines(c.tokens))),
-          rows: table.rows.map((r) => r.map((c) => merge(inlines(c.tokens)))),
+          head: table.header.map((c) => merge(inlines(c.tokens, mode))),
+          rows: table.rows.map((r) => r.map((c) => merge(inlines(c.tokens, mode)))),
           align: table.align,
         });
         break;
@@ -278,12 +300,16 @@ function blocks(tokens: readonly Token[], depth: number, cards: { n: number }): 
         out.push({ t: "rule" });
         break;
       case "code":
+        if (mode.doc) {
+          if (tok.text.trim()) out.push({ t: "copy", text: tok.text.trim() });
+          break;
+        }
         // No code in a chat about chores: its lines as words.
         for (const line of tok.text.split("\n").filter((l: string) => l.trim())) out.push({ t: "p", kids: [text(line)] });
         break;
       case "jonzCard": {
         const card = cardOf(tok.name as string, tok.attrs as Record<string, string>);
-        if (card && cards.n < CARDS_MAX) {
+        if (card && !mode.doc && cards.n < CARDS_MAX) {
           cards.n += 1;
           out.push({ t: "card", card });
         }
@@ -308,13 +334,38 @@ export function parseReply(source: string): Block[] {
 }
 
 /**
+ * One of Jonz's own pages (Help, the Privacy Policy, the Terms), written in
+ * Markdown and drawn like a reply, plus what only Jonz's own words may hold:
+ * links to web pages, email addresses and the app's paths, `code` for words
+ * to type exactly, and a fenced line to copy. No cards: a page has no house.
+ */
+export function parseDoc(source: string): Block[] {
+  try {
+    return blocks(parser.lexer(source), 0, { n: 0 }, { doc: true });
+  } catch {
+    return source.trim() ? [{ t: "p", kids: [text(source.trim())] }] : [];
+  }
+}
+
+/** A page's Markdown as plain words, a line a block (see replyText). */
+export function docText(source: string): string {
+  return wordsOf(parseDoc(source));
+}
+
+/**
  * A reply as plain words, a line a block: what a screen reader's summary,
  * a notification or a copy to the clipboard gets. Chips are their words;
  * cards say nothing (their rows speak for themselves).
  */
 export function replyText(source: string): string {
+  return wordsOf(parseReply(source));
+}
+
+function wordsOf(top: Block[]): string {
   const line = (kids: Inline[]): string =>
-    kids.map((k) => (k.t === "text" ? k.text : k.t === "chip" ? k.label : k.t === "br" ? "\n" : line(k.kids))).join("");
+    kids
+      .map((k) => (k.t === "text" || k.t === "code" ? k.text : k.t === "chip" ? k.label : k.t === "br" ? "\n" : line(k.kids)))
+      .join("");
   const walk = (bs: Block[], indent = ""): string[] =>
     bs.flatMap((b) => {
       switch (b.t) {
@@ -331,11 +382,13 @@ export function replyText(source: string): string {
           return walk(b.blocks, indent);
         case "table":
           return [b.head, ...b.rows].map((r) => indent + r.map(line).join(", "));
+        case "copy":
+          return [indent + b.text];
         default:
           return [];
       }
     });
-  return walk(parseReply(source)).join("\n");
+  return walk(top).join("\n");
 }
 
 /** What each card shows, for the prompt. */
