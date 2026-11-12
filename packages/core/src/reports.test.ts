@@ -74,13 +74,13 @@ describe("telling the other side", () => {
       kind: "problem",
       words: "The bins John vanished from Today right after I ticked the dishes.",
       reply: "Thanks Ava.\n\nIt's fixed in today's update.",
-      url: "https://jonz.app/house/reports/r1",
+      url: "https://jonz.app/you/reports/r1",
     });
     expect(email.subject).toBe("Re: The bins John vanished from Today right after I ticked the… (ref 1a2b3c4d)");
     expect(email.text).toContain("Hi Ava,");
     expect(email.text).toContain("Glyn at Jonz replied.");
     expect(email.text).toContain("It's fixed in today's update.");
-    expect(email.html).toContain("https://jonz.app/house/reports/r1");
+    expect(email.html).toContain("https://jonz.app/you/reports/r1");
     expect(email.text).toContain("You sent this problem to Jonz.");
   });
 
@@ -108,7 +108,7 @@ describe("telling the other side", () => {
       kind: "problem",
       words: "The bins John vanished",
       reply: "This is fixed now. Thank you for telling us.",
-      url: "https://jonz.app/house/reports/r1",
+      url: "https://jonz.app/you/reports/r1",
       fixed: true,
     });
     expect(email.subject).toBe("Fixed: The bins John vanished (ref 1a2b3c4d)");

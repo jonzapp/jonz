@@ -289,7 +289,7 @@ export function accountDeletedEmail(args: { name: string | null; deletedOn: stri
 }
 
 /** Where someone reads a report and its replies in the app. */
-export const reportUrl = (id: string) => `${LEGAL.site}/house/reports/${id}`;
+export const reportUrl = (id: string) => `${LEGAL.site}/you/reports/${id}`;
 
 /**
  * A reply to someone's report, to the address they sign in with beside the

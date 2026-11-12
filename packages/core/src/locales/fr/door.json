@@ -122,7 +122,7 @@
   "door.email.tooMany": "Trop d’essais. Attends quelques minutes, puis réessaie.",
   "door.email.failed": "Ça n’a pas marché. Réessaie.",
   "door.email.notOpen": "La connexion par e-mail n’est pas encore ouverte. Utilise Google ou Microsoft pour l’instant.",
-  "door.email.needsAuthenticator": "Ce compte a une app d’authentification, donc le mot de passe n’a pas été enregistré. Connecte-toi avec Google ou Microsoft, puis ajoute un mot de passe sur ta page Maison, dans Toi.",
+  "door.email.needsAuthenticator": "Ce compte a une app d’authentification, donc le mot de passe n’a pas été enregistré. Connecte-toi avec Google ou Microsoft, puis ajoute un mot de passe dans l’onglet Toi.",
   "door.password.label": "Mot de passe",
   "door.password.add": "Ajouter un mot de passe",
   "door.password.change": "Changer ton mot de passe",

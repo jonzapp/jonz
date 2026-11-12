@@ -8,7 +8,6 @@ import {
   PlaneIcon,
   ScrollTextIcon,
   TicketIcon,
-  UserRoundIcon,
   XIcon,
   type LucideIcon,
 } from 'lucide-react-native';
@@ -129,7 +128,7 @@ export function HouseWorkspace({ children, kid = false }: { children: ReactNode;
   );
 }
 
-/** House's pages in the list, in House's order: its top and the Wall, then its setup, then the Pass and you. */
+/** House's pages in the list, in House's order: its top and the Wall, then its setup, then the Pass. */
 const pages = (words: Words): { group: string | null; items: { href: Href; label: string; icon: LucideIcon; testID: string }[] }[] => [
   {
     group: null,
@@ -151,7 +150,6 @@ const pages = (words: Words): { group: string | null; items: { href: Href; label
     group: null,
     items: [
       { href: '/house/pass', label: words('house.pass.title'), icon: TicketIcon, testID: 'nav-pass' },
-      { href: '/house/you', label: words('common.title.you'), icon: UserRoundIcon, testID: 'nav-you' },
     ],
   },
 ];

@@ -178,7 +178,7 @@ export function YouSection({
               leading={<RowIcon icon={TruckIcon} />}
               title={words('house.moving.row')}
               meta={movingOutOn ? dateRange(movingOutOn, movingOutOn, words) : words('house.moving.notPlanned')}
-              href="/house/moving"
+              href="/you/moving"
               chevron
               testID="to-moving"
             />

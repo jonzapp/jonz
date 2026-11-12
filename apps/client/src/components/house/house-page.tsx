@@ -37,7 +37,8 @@ export function HousePage({
   onRetry: () => void;
   refreshing?: boolean;
   onRefresh?: () => void;
-  back?: Href;
+  /** Where back goes: House unless it says otherwise; null for a tab's own top page (You), which has none. */
+  back?: Href | null;
   /** Where `back` goes, in words: House unless it says otherwise. */
   backLabel?: string;
   /** On a laptop the page fills the room beside House's list, its sections in columns (Pair, Flow). */
@@ -52,7 +53,7 @@ export function HousePage({
   backLabel ??= words('common.section.house');
   return (
     <Screen
-      bar={<TitleBar title={title} back={back} backLabel={backLabel} />}
+      bar={<TitleBar title={title} back={back ?? undefined} backLabel={backLabel} />}
       fills={fills}
       refreshing={refreshing}
       onRefresh={onRefresh}

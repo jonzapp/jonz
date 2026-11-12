@@ -1,5 +1,5 @@
 import type { BottomTabBarProps } from 'expo-router/js-tabs';
-import { CalendarDaysIcon, HouseIcon, ListChecksIcon, type LucideIcon } from 'lucide-react-native';
+import { CalendarDaysIcon, HouseIcon, ListChecksIcon, UserRoundIcon, type LucideIcon } from 'lucide-react-native';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { CountBadge } from '@/components/badge';
@@ -8,14 +8,15 @@ import { TourSpot } from '@/components/tour/tour-spot';
 import { useWords } from '@/hooks/use-words';
 import { FONT, GUTTER, INSET, RAIL, SPACE, TAP, useTheme } from '@/theme';
 
-/** The house's three places, in the order the tabs and the rail show them. */
-export const PLACES = ['today', 'week', 'house'] as const;
+/** The house's four places, in the order the tabs and the rail show them. */
+export const PLACES = ['today', 'week', 'house', 'you'] as const;
 export type Place = (typeof PLACES)[number];
 
 const ICON: Record<Place, LucideIcon> = {
   today: ListChecksIcon,
   week: CalendarDaysIcon,
   house: HouseIcon,
+  you: UserRoundIcon,
 };
 
 /**
@@ -33,8 +34,8 @@ export interface ShellHouse {
 }
 
 /**
- * The house's three places: tabs along the bottom of a phone, a rail down
- * the left from WIDE on the web, the same three either way. The current one
+ * The house's four places: tabs along the bottom of a phone, a rail down
+ * the left from WIDE on the web, the same four either way. The current one
  * is ink with the 3pt hi-vis marker (amber's one job besides the primary
  * button); Today carries a badge counting the disputes waiting for your
  * vote, said in words to a screen reader.

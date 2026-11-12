@@ -82,8 +82,6 @@ const PUSHED = [
   { row: "to-rules", path: "/house/rules", title: words('common.title.rules') },
   { row: "to-away", path: "/house/away", title: words('common.title.away') },
   { row: "to-pass", path: "/house/pass", title: words('common.title.pass') },
-  // You: your name, look and sign-in, help, and leaving.
-  { row: "to-you", path: "/house/you", title: words('common.title.you') },
 ];
 
 test.describe("a house with its week dealt", () => {

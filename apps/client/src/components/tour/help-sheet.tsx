@@ -155,7 +155,7 @@ function HelpMenu({
           title={words('common.report.yours')}
           meta={words('common.report.yoursMeta', { count: mine.data?.length ?? 0, replies: unread })}
           trailing={<CountBadge count={unread} />}
-          onPress={() => go('/house/reports')}
+          onPress={() => go('/you/reports')}
           chevron
           testID="help-reports"
         />
@@ -177,7 +177,7 @@ function Reporting({ kind, onSent }: { kind: ReportKind; onSent: () => void }) {
       onSent={(id) => {
         onSent();
         void client.invalidateQueries({ queryKey: ['my-reports'] });
-        router.push(`/house/reports/${id}` as never);
+        router.push(`/you/reports/${id}` as never);
       }}
     />
   );
