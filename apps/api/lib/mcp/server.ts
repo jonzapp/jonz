@@ -1,6 +1,5 @@
 import "server-only";
 
-import { ACCOUNT_PERMISSIONS, OWNER_PERMISSION_NAMES, PERMISSION_NAMES } from "@app/core";
 import { CLIENT_CAPABILITIES_META_KEY, createMcpHandler, inputRequired, McpServer, UrlElicitationRequiredError } from "@modelcontextprotocol/server";
 import { randomUUID } from "node:crypto";
 import { V1_OPERATIONS, v1Instance } from "v1";
@@ -90,14 +89,20 @@ export function buildMcpServer(execute: Executor, authorization: string | null, 
   return server;
 }
 
+/** The scopes Supabase's OAuth server issues that a connected app needs: who you are, and staying signed in. */
+export const OAUTH_SCOPES = ["openid", "email", "profile", "offline_access"] as const;
+
 /** Where a client learns how to sign in for /mcp (RFC 9728). */
 export function protectedResource(origin: string, supabaseUrl: string) {
   return {
     resource: `${origin}/mcp`,
     authorization_servers: [`${supabaseUrl.replace(/\/$/, "")}/auth/v1`],
     bearer_methods_supported: ["header"],
-    // The same strings as the app's permissions: what a person may do is what their role holds.
-    scopes_supported: [...Object.keys(ACCOUNT_PERMISSIONS), ...PERMISSION_NAMES, ...OWNER_PERMISSION_NAMES],
+    // Only scopes Supabase's OAuth server can issue: a client such as Claude asks
+    // for every scope listed here, and one Supabase doesn't know turns the whole
+    // sign-in away (invalid_scope). What the app may do is still what the
+    // person's role holds, checked on every call.
+    scopes_supported: [...OAUTH_SCOPES],
     resource_name: "Jonz",
   };
 }

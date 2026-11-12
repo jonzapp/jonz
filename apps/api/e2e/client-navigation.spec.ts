@@ -202,7 +202,9 @@ test.describe("a house with its week dealt", () => {
     await expect(page.getByRole("heading", { name: words('common.title.today') })).toBeVisible();
     await page.getByRole("tab", { name: words('common.section.week') }).click();
     await expect(page).toHaveURL(/\/week$/);
-    await expect(page.getByRole("heading", { name: words('common.title.week') })).toBeVisible();
+    // Week's own title: on a laptop Today's This week panel has the same words,
+    // and Today stays drawn behind Week until the switch is done.
+    await expect(page.getByTestId("week-screen").getByRole("heading", { name: words('common.title.week') })).toBeVisible();
     await page.getByRole("tab", { name: words('common.section.house') }).click();
     await expectOnHouse(page, houseName);
     await toHousePage(page, "to-rules").click();
