@@ -13,7 +13,7 @@ import postgres from "postgres";
 import { afterAll, beforeAll, expect, it } from "vitest";
 import { apiOperation } from "v1";
 
-import { buildMcpServer } from "@/lib/mcp/server";
+import { buildMcpServer, protectedResource } from "@/lib/mcp/server";
 import { signedInUser } from "@/tests/support/clients";
 import { ANON_KEY, SUPABASE_URL } from "@/tests/support/env";
 import { restoreApiRole } from "../support/api-role";
@@ -54,10 +54,12 @@ it("lets an app in through Jonz's consent page, and then only through /mcp", asy
   expect(registered.status).toBe(201);
   const { client_id: clientId } = (await registered.json()) as { client_id: string };
 
-  // It sends the person to sign in: Supabase hands them to Jonz's consent page.
+  // It sends the person to sign in, asking for every scope /mcp names and for
+  // /mcp itself, as Claude does: Supabase hands them to Jonz's consent page.
+  const meta = protectedResource("https://api.jonz.app", SUPABASE_URL);
   const verifier = randomBytes(32).toString("base64url");
   const challenge = createHash("sha256").update(verifier).digest("base64url");
-  const asked = await auth(`/oauth/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(BACK)}&state=s1&code_challenge=${challenge}&code_challenge_method=S256`);
+  const asked = await auth(`/oauth/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(BACK)}&state=s1&code_challenge=${challenge}&code_challenge_method=S256&scope=${encodeURIComponent(meta.scopes_supported.join(" "))}&resource=${encodeURIComponent(meta.resource)}&prompt=consent`);
   expect(asked.status).toBe(302);
   const consent = new URL(asked.headers.get("location")!);
   expect(consent.pathname).toBe("/oauth/consent");

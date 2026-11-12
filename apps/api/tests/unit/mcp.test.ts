@@ -129,10 +129,15 @@ describe("/mcp", () => {
     expect(res.headers.get("www-authenticate")).toBe('Bearer resource_metadata="https://api.jonz.app/.well-known/oauth-protected-resource/mcp"');
   });
 
-  it("names Supabase Auth as where to sign in, and the permissions as scopes", () => {
+  it("names Supabase Auth as where to sign in, and only scopes it can issue", () => {
     const meta = protectedResource("https://api.jonz.app", "https://x.supabase.co/");
     expect(meta.resource).toBe("https://api.jonz.app/mcp");
     expect(meta.authorization_servers).toEqual(["https://x.supabase.co/auth/v1"]);
-    expect(meta.scopes_supported).toEqual(expect.arrayContaining(["johns:read", "ticks:write_own", "admin:read"]));
+    // Supabase's OAuth server turns a sign-in away over any scope not in this list
+    // (supabase/auth internal/models/oauth_scope.go), and Claude asks for all we name.
+    const supabaseScopes = ["openid", "email", "profile", "phone", "offline_access"];
+    expect(meta.scopes_supported.length).toBeGreaterThan(0);
+    for (const scope of meta.scopes_supported) expect(supabaseScopes).toContain(scope);
+    expect(meta.scopes_supported).toContain("offline_access");
   });
 });
