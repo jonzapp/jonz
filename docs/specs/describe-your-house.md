@@ -60,9 +60,16 @@ on Today, Week and House (not while a parent is acting for a kid).
   2,000,000 with the House Pass), back when the house's week starts. With
   two or more in the house nobody uses more than half (`ASK_SHARE_MAX`).
   A turn holds `ASK_TURN_RESERVE` tokens while Claude answers, so turns sent
-  together can't slip past. Refusals: 409 `ask_pool_used`,
-  `ask_share_used`, and `draft_limit` at a person's 40 turns a day from any
-  house. Each answer says what's left (`allowance`, an `AskUsage`), and
+  together can't slip past. A person's own use over the last 7 days, in
+  any house (`ASK_ACCOUNT_DAYS`), can't pass their house's pool either, so
+  leaving a house and starting another is no fresh start; a deleted
+  house's turns stay, with no house, for that count. Claude is told what's
+  left (the least of the three) and answers without more tools before a
+  turn would pass it (`shouldWrapUp`, `lib/ai/agent.ts`). Refusals: 409
+  `ask_pool_used`, `ask_share_used`, `ask_account_used`, and `draft_limit`
+  at a person's 40 turns a day from any house. `allowance.limit` says which
+  runs out first (`house`, `mine` or `account`); for `account`, `resetsAt`
+  is when its oldest turn drops off. Each answer says what's left (`allowance`, an `AskUsage`), and
   `POST /api/ask/usage` `{ houseId }` gives the same to anyone in the house
   (`lib/moves/ask-usage.ts`). The chat says nothing while there's plenty;
   under a quarter left (`ASK_LOW`) a card over the box says how much and

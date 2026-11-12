@@ -88,6 +88,7 @@ const CODES = [
   "draft_limit",
   "ask_pool_used",
   "ask_share_used",
+  "ask_account_used",
   "john_covered",
   "roll_call_needed",
   "not_in_crew",
