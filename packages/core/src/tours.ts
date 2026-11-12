@@ -271,9 +271,14 @@ export interface TourRect {
  * it when there's no room under, never covering it if it can help it. On a
  * phone the card spans the window inside the gutters. `card` is the card's
  * height as last drawn (a first guess before it has been).
+ *
+ * Wherever the spot is, the card is always inside the window, so its buttons
+ * can be reached: with no spot yet (still being looked for), or a spot that
+ * isn't in the window at all (a page that hasn't finished scrolling), it sits
+ * at the window's foot.
  */
 export function placeTourCard(
-  spot: TourRect,
+  spot: TourRect | null,
   window: { width: number; height: number },
   card: { width: number; height: number },
   opts: { gap: number; edge: number; wide: boolean },
@@ -282,6 +287,8 @@ export function placeTourCard(
   const width = Math.min(card.width, window.width - 2 * edge);
   const clampY = (y: number) => Math.max(edge, Math.min(y, window.height - card.height - edge));
   const clampX = (x: number) => Math.max(edge, Math.min(x, window.width - width - edge));
+  const foot = { x: wide ? clampX((window.width - width) / 2) : edge, y: clampY(window.height - card.height - edge), width };
+  if (!spot || !tourSpotInWindow(spot, window)) return foot;
   if (wide) {
     const right = spot.x + spot.width + gap;
     if (right + width <= window.width - edge) return { x: right, y: clampY(spot.y), width };
@@ -294,5 +301,10 @@ export function placeTourCard(
   const above = spot.y - gap - card.height;
   if (above >= edge) return { x, y: above, width };
   // A spot taller than the room: the card sits at the window's foot, over its end.
-  return { x, y: window.height - card.height - edge, width };
+  return { ...foot, x };
+}
+
+/** Whether any of the spot is inside the window. */
+export function tourSpotInWindow(spot: TourRect, window: { width: number; height: number }): boolean {
+  return spot.x < window.width && spot.x + spot.width > 0 && spot.y < window.height && spot.y + spot.height > 0;
 }
