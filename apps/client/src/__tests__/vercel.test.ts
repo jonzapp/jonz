@@ -123,8 +123,9 @@ describe("jonz.app's web build on Vercel", () => {
     // A phone keeps the page it opened; after a deploy, a tab it hadn't
     // opened yet asks for that older build's file. Given index.html instead
     // (kept a year, as every bundle is), the tab can never load: "Loading
-    // module … failed" (12 Nov 2026, Week). A 404 is never kept, and the app
-    // reloads itself onto the new build (api/new-build.ts).
+    // module … failed" (12 Nov 2026, Week). With a 404 the app reloads
+    // itself onto the new build (api/new-build.ts), whose page never asks
+    // for the old file again.
     const page = new RegExp(`^${config.rewrites.at(-1)!.source}$`);
     expect(page.test('/_expo/static/js/web/index-ede335d3d8516b6e53fbb866f9351ff5.js')).toBe(false);
     expect(page.test('/week')).toBe(true);
