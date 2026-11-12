@@ -9,6 +9,7 @@ import { Button } from '@/components/button';
 import { ButtonRow } from '@/components/button-row';
 import { ConfirmSheet } from '@/components/confirm-sheet';
 import { AppAccessChoice, useAppAccessWords } from '@/components/house-page/app-access-choice';
+import { ConnectClaude } from '@/components/house-page/connect-claude';
 import { Row, RowIcon } from '@/components/row';
 import { Section } from '@/components/section';
 import { Sheet } from '@/components/sheet';
@@ -28,8 +29,8 @@ interface App {
  * Connected apps, on You: each app you've let use Jonz as you (an MCP client
  * signed in through Supabase's OAuth server), what it may do and since when.
  * Tapping one opens its sheet: Read only or Read and change, saved as you
- * pick, and Disconnect, which signs it out at once. Nothing connected says
- * how one gets here.
+ * pick, and Disconnect, which signs it out at once. Last, Connect Jonz to
+ * Claude: the steps and the address to paste.
  */
 export function ConnectedAppsSection({ zone }: { zone: string }) {
   const words = useWords();
@@ -71,27 +72,24 @@ export function ConnectedAppsSection({ zone }: { zone: string }) {
   if (!apps.data) return null;
   return (
     <Section label={words('people.connectedApps.heading')} testID="connected-apps">
-      {apps.data.length === 0 ? (
-        <Row leading={<RowIcon icon={PlugIcon} />} title={words('people.connectedApps.none')} meta={words('people.connectedApps.noneMeta')} testID="connected-apps-none" />
-      ) : (
-        apps.data.map((grant) => {
-          const app = { id: grant.client.id, name: grant.client.name, since: dayLabel(new Date(grant.granted_at), zone, words) };
-          return (
-            <Row
-              key={app.id}
-              leading={<RowIcon icon={PlugIcon} />}
-              title={app.name}
-              meta={words('people.connectedApps.since', { access: say.name(accessOf(app.id)), date: app.since })}
-              chevron
-              onPress={() => {
-                change.reset();
-                setOpen(app);
-              }}
-              testID="connected-app"
-            />
-          );
-        })
-      )}
+      {apps.data.map((grant) => {
+        const app = { id: grant.client.id, name: grant.client.name, since: dayLabel(new Date(grant.granted_at), zone, words) };
+        return (
+          <Row
+            key={app.id}
+            leading={<RowIcon icon={PlugIcon} />}
+            title={app.name}
+            meta={words('people.connectedApps.since', { access: say.name(accessOf(app.id)), date: app.since })}
+            chevron
+            onPress={() => {
+              change.reset();
+              setOpen(app);
+            }}
+            testID="connected-app"
+          />
+        );
+      })}
+      <ConnectClaude />
       <Sheet
         visible={open !== null}
         title={open?.name ?? ''}
