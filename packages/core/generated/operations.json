@@ -5639,6 +5639,80 @@
       }
     },
     {
+      "name": "house_group_balances",
+      "about": "Each person's points owed and done on each group's Johns over every week before one: their standing in that group, which the deal keeps apart from the rest of the house's",
+      "scope": "house",
+      "effect": "read",
+      "guard": {
+        "by": "permission",
+        "permission": "weeks:read"
+      },
+      "entitlement": null,
+      "entitlementWhen": null,
+      "destructive": false,
+      "method": "GET",
+      "path": "/v1/houses/{houseId}/group-balances",
+      "pathKeys": [
+        "houseId"
+      ],
+      "rpc": {
+        "name": "house_group_balances",
+        "server": false,
+        "args": {
+          "houseId": "p_house",
+          "before": "p_before"
+        }
+      },
+      "tables": [],
+      "page": null,
+      "input": {
+        "type": "object",
+        "properties": {
+          "houseId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "before": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          }
+        },
+        "required": [
+          "houseId",
+          "before"
+        ]
+      },
+      "output": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "userId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "groupId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "owed": {
+              "type": "number"
+            },
+            "credited": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "userId",
+            "groupId",
+            "owed",
+            "credited"
+          ]
+        }
+      }
+    },
+    {
       "name": "house_record",
       "about": "Every week's Johns, shares and time away: the Track record",
       "scope": "house",

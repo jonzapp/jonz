@@ -571,6 +571,19 @@ describe("pools: a group's Johns are balanced within the group", () => {
     const other = doer === ava.userId ? ben.userId : ava.userId;
     expect(balances!.map((b) => [b.user_id, Number(b.credited) - Number(b.owed)]).sort()).toEqual([[doer, 1.5], [other, -1.5]].sort());
 
+    // Housemates read the group pools too (so do apps they connect, such as
+    // Claude through /mcp); someone from outside the house sees none of it.
+    const { data: seen } = await house.members[0].db.rpc("house_group_balances", { p_house: house.id, p_before: week.startsOn });
+    expect(seen!.map((b) => [b.user_id, Number(b.credited) - Number(b.owed)]).sort()).toEqual([[doer, 1.5], [other, -1.5]].sort());
+    const stranger = await signedInUser("Stranger");
+    const outside = await stranger.db.rpc("house_group_balances", { p_house: house.id, p_before: week.startsOn });
+    expectOk(outside);
+    expect(outside.data).toEqual([]);
+    const rows = await stranger.db.from("week_group_shares").select("user_id").eq("week_id", one.weekId);
+    expectOk(rows);
+    expect(rows.data).toEqual([]);
+    expectDenied(await house.members[0].db.from("week_group_shares").insert({ week_id: one.weekId, house_id: house.id, group_id: floor!.id, user_id: house.members[0].userId, share: 9 }));
+
     const two = await deal(house.id, week, week.startsAt);
     expect(two.assignments.find((a) => a.name === "Bathroom")!.user_id).toBe(other);
 

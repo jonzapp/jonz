@@ -200,12 +200,39 @@ export function houseReads(caller: Caller, houseId: string, ctx: ReadsContext): 
     },
 
     async balances() {
-      const { data } = await caller.db.rpc("house_balances", { p_house: houseId, p_before: addDaysTo(today, 1) });
-      const lines = (data ?? []).map((b) => {
-        const behind = Number(b.owed) - Number(b.credited);
-        return `${nameOf(b.user_id)}: given ${Math.round(Number(b.owed))} pts, done ${Math.round(Number(b.credited))} pts, ${behind > 0.5 ? `${Math.round(behind)} behind` : behind < -0.5 ? `${Math.round(-behind)} ahead` : "even"}`;
+      const before = addDaysTo(today, 1);
+      const [{ data }, { data: pooled }, { data: groups }] = await Promise.all([
+        caller.db.rpc("house_balances", { p_house: houseId, p_before: before }),
+        caller.db.rpc("house_group_balances", { p_house: houseId, p_before: before }),
+        caller.db.from("groups").select("id, name, group_members(user_id)").eq("house_id", houseId).order("name"),
+      ]);
+      const standing = (owed: number, credited: number) => {
+        const behind = owed - credited;
+        return `given ${Math.round(owed)} pts, done ${Math.round(credited)} pts, ${behind > 0.5 ? `${Math.round(behind)} behind` : behind < -0.5 ? `${Math.round(-behind)} ahead` : "even"}`;
+      };
+      const lines = (data ?? []).map((b) => `${nameOf(b.user_id)}: ${standing(Number(b.owed), Number(b.credited))}`);
+      if (!groups?.length) return ["Fair shares since each person joined (points they were given vs points of work they did):", ...lines].join("\n");
+      // The deal keeps each group's Johns apart: a standing per group someone
+      // is in now, and the rest of the house's (their whole balance less those).
+      const inGroup = new Map(groups.map((g) => [g.id, new Set((g.group_members ?? []).map((m) => m.user_id))]));
+      const rows = (pooled ?? []).filter((r) => inGroup.get(r.group_id)?.has(r.user_id));
+      const rest = (data ?? []).map((b) => {
+        const mine = rows.filter((r) => r.user_id === b.user_id);
+        const owed = Number(b.owed) - mine.reduce((t, r) => t + Number(r.owed), 0);
+        const credited = Number(b.credited) - mine.reduce((t, r) => t + Number(r.credited), 0);
+        return `${nameOf(b.user_id)}: ${standing(owed, credited)}`;
       });
-      return ["Fair shares since each person joined (points they were given vs points of work they did):", ...lines].join("\n");
+      const perGroup = groups.flatMap((g) => {
+        const of = rows.filter((r) => r.group_id === g.id);
+        return of.length ? [`Group ${g.name}'s Johns, kept apart from the rest:`, ...of.map((r) => `${nameOf(r.user_id)}: ${standing(Number(r.owed), Number(r.credited))}`)] : [];
+      });
+      return [
+        "Fair shares since each person joined (points they were given vs points of work they did), all Johns:",
+        ...lines,
+        "The deal evens out each group's Johns within the group, apart from the rest of the house's. The rest of the house's Johns:",
+        ...rest,
+        ...perGroup,
+      ].join("\n");
     },
 
     async rules() {

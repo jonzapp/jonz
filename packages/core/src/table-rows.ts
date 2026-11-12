@@ -417,6 +417,14 @@ export const TABLE_ROWS = {
     answeredAt: at.nullable(),
     createdAt: at,
   }),
+  week_group_shares: z.object({
+    weekId: id,
+    houseId: id,
+    groupId: id,
+    userId: id,
+    share: num,
+    createdAt: at,
+  }),
   week_shares: z.object({
     weekId: id,
     houseId: id,

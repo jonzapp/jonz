@@ -19,6 +19,18 @@ import { V1_HANDLERS } from "@/lib/v1/handlers";
 export const MCP_INFO = { name: "jonz", version: "1.0.0" } as const;
 
 /**
+ * What a client such as Claude reads before it calls a tool: how fair shares
+ * work, so it explains the numbers the way the deal counts them. The app's
+ * own words for each part are the guide (ask_house answers from it).
+ */
+export const MCP_INSTRUCTIONS = [
+  "Jonz shares a house's chores (Johns) out fairly each week. Each person's fair share counts points from the day they joined: their share of every John dealt (split between everyone who shares it) against the points of work they did, on time or late, including Johns they covered for someone. Standing = done minus share; below zero is behind.",
+  "A group's Johns (a John only that group shares, such as one floor's bathroom) are evened out within the group, apart from the rest of the house's: each person has a standing in each group they're in and one in the rest of the house's Johns, and a group John never changes anyone's turn at the rest. house_balances gives the whole balance; house_group_balances gives each group's part, and the rest of the house's is the whole less the groups someone is in now. Covering a group's John when you're not in the group counts toward the rest of the house's; leaving a group takes that standing into the rest of the house's, and joining one starts level.",
+  "The deal gives each John to whoever is furthest behind in its pool, with a weekly points budget as a guide, not a limit: in Smart whoever is behind may get up to half the budget more, and in Classic whoever's turn it is may go up to half the budget over. Time away is left out and made up as the house's rules say.",
+  "To explain a part of the app in its own words, use ask_house. Look numbers up rather than guess them.",
+].join("\n\n");
+
+/**
  * Every operation /v1 serves, but approving a connected app's request
  * (`firstParty`): that's for the person, in Jonz itself. What can't be undone
  * (`destructive`) is offered, and the executor holds it until the person
@@ -62,7 +74,7 @@ export function toolDescription(op: ApiOperation): string {
 
 /** The tools for one request: each runs `name` through the executor, as whoever the token says. */
 export function buildMcpServer(execute: Executor, authorization: string | null, operations: readonly ApiOperation[] = mcpOperations()): McpServer {
-  const server = new McpServer(MCP_INFO, { capabilities: { tools: {} } });
+  const server = new McpServer(MCP_INFO, { capabilities: { tools: {} }, instructions: MCP_INSTRUCTIONS });
   for (const op of operations) {
     const read = op.operation.effect === "read";
     server.registerTool(

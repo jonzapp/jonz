@@ -77,6 +77,7 @@ export function howItWorks(topic: HowTopic, { rules, family, awayMakeup }: HowFa
         words("door.guide.page.fair.missed"),
         words("door.guide.page.fair.standing"),
         words("door.guide.page.fair.deal"),
+        words("door.guide.page.fair.groups"),
         words(`door.guide.page.fair.away.${awayMakeup >= 100 ? "full" : awayMakeup > 0 ? "half" : "none"}`, { makeup }),
       );
     case "deal":
@@ -87,6 +88,8 @@ export function howItWorks(topic: HowTopic, { rules, family, awayMakeup }: HowFa
         words("door.guide.page.deal.line", { line: words("week.steady.modeFoot") }),
         words("door.guide.page.deal.effort", { budget: words("week.steady.budgetEach", { budget: rules.dealBudget }), foot: words("week.steady.budgetFoot") }),
         words("door.guide.page.deal.who"),
+        words("door.guide.page.deal.groups"),
+        words("door.guide.page.deal.classicOver"),
         words("door.guide.page.deal.away"),
         words("door.guide.page.deal.why"),
       );

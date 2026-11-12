@@ -37,6 +37,7 @@ insert into callable values
   ('house_away'),
   ('house_balances'),
   ('house_by_code'),
+  ('house_group_balances'),
   ('house_history'),
   ('house_live_since'),
   ('house_month'),
@@ -209,5 +210,6 @@ insert into table_grants values
   ('role_permissions', 'authenticated', 'select'),
   ('support_drafts', 'authenticated', 'select'),
   ('swap_offers', 'authenticated', 'select'),
+  ('week_group_shares', 'authenticated', 'select'),
   ('week_shares', 'authenticated', 'select'),
   ('weeks', 'authenticated', 'select');

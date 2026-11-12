@@ -308,6 +308,7 @@ const historyRow = z.object({
 const crew = z.array(T.crew_members.pick({ userId: true, helper: true, points: true }));
 const awayRow = T.away_periods.pick({ id: true, userId: true, startsOn: true, endsOn: true, note: true });
 const balanceRow = z.object({ userId: id, owed: z.number(), credited: z.number() });
+const groupBalanceRow = z.object({ userId: id, groupId: id, owed: z.number(), credited: z.number() });
 const chatSummary = z.object({ id, title: text, updatedAt: at });
 const savedChat = z.object({ id, title: text, turns: z.array(SavedTurn) });
 const turns = z.array(SavedTurn).max(CHAT_SAVED_TURNS);
@@ -545,6 +546,7 @@ export const OPERATION_IO = {
     "GET /v1/houses/{houseId}/month/{month}",
   ),
   house_balances: io(z.object({ houseId: id, before: day }), z.array(balanceRow), "GET /v1/houses/{houseId}/balances"),
+  house_group_balances: io(z.object({ houseId: id, before: day }), z.array(groupBalanceRow), "GET /v1/houses/{houseId}/group-balances"),
   house_record: io(
     z.object({ houseId: id }),
     z.object({
