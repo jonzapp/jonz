@@ -179,6 +179,21 @@ export function createExecutor(options: ExecutorOptions) {
     }
   }
 
+  /**
+   * A connected app (a token with a client_id) changes nothing unless the
+   * person let it read and change (connected_apps, set on the consent page or
+   * under Connected apps). No row is read only. Read as the API, before
+   * anything else runs, so a read-only app can't even ask for an approval.
+   */
+  async function appMayChange(claims: Claims, effect: "read" | "write") {
+    if (effect !== "write" || typeof claims.client_id !== "string") return;
+    const [row] = await sql<{ access: string }[]>`
+      select access from public.connected_apps where user_id = ${claims.sub}::uuid and client_id = ${claims.client_id}`;
+    if (row?.access !== "write") {
+      throw new Problem("forbidden", "This app can only read. To let it make changes, open You in Jonz, then Connected apps.");
+    }
+  }
+
   async function rateLimit(userId: string, effect: "read" | "write", at: Date) {
     const window = new Date(Math.floor(at.getTime() / 60_000) * 60_000);
     const [row] = await sql<{ hits: number }[]>`
@@ -300,6 +315,7 @@ export function createExecutor(options: ExecutorOptions) {
     const claims: Claims = await verify(context.authorization);
     const at = now();
     const effect = op.operation.effect;
+    await appMayChange(claims, effect);
     await rateLimit(claims.sub, effect, at);
 
     const parsed = op.input.safeParse(rawInput ?? {});

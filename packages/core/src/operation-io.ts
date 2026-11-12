@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { AUDIT_WHAT, AUDIT_WHO } from "./admin-list";
+import { APP_ACCESS } from "./app-access";
 import { CHAT_SAVED_TURNS, SavedTurn } from "./ask-chats";
 import { BEST_TIMES, CURRENCIES, DEAL_MODES, HOUSE_KINDS } from "./domain";
 import { AskUsage, ChatRequest, ChatResponse } from "./house-draft";
@@ -423,6 +424,8 @@ export const OPERATION_IO = {
     { args: { approvalId: "p_id" } },
   ),
   answer_api_approval: io(z.object({ approvalId: id, approve: z.boolean() }), nothing, "POST /v1/me/approvals/{approvalId}", { args: { approvalId: "p_id" } }),
+  my_app_access: io(none, z.array(z.object({ clientId: text, access: z.enum(APP_ACCESS) })), "GET /v1/me/apps"),
+  set_app_access: io(z.object({ clientId: z.string().min(1).max(100), access: z.enum(APP_ACCESS) }), nothing, "PATCH /v1/me/apps/{clientId}", { args: { clientId: "p_client_id" } }),
   my_reports: io(
     none,
     z.array(

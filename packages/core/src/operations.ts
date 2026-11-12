@@ -142,6 +142,8 @@ export const OPERATIONS = {
   see_report: op({ about: "Mark a reply to your report as seen", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "see_report" } }),
   api_approval: op({ about: "A connected app's request to do something that can't be undone, for you to approve", scope: "account", effect: "read", guard: ACCOUNT_READ, rpc: { name: "api_approval" }, firstParty: true }),
   answer_api_approval: op({ about: "Approve or decline a connected app's request", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "answer_api_approval" }, firstParty: true }),
+  my_app_access: op({ about: "What each app you connected to Jonz may do", scope: "account", effect: "read", guard: ACCOUNT_READ, rpc: { name: "my_app_access" }, firstParty: true }),
+  set_app_access: op({ about: "Let one of your connected apps read only, or read and change", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "set_app_access" }, firstParty: true }),
   my_report: op({ about: "One of the problems you've reported, with its replies", scope: "account", effect: "read", guard: ACCOUNT_READ, rpc: { name: "my_report" }, tables: ["reports", "report_messages"] }),
   my_house: op({ about: "The house you're in, if any", scope: "account", effect: "read", guard: ACCOUNT_READ, rpc: { name: "my_house" }, tables: ["members", "houses"] }),
   set_my_name: op({ about: "Change the name you go by", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "set_my_name" }, tables: ["profiles"] }),

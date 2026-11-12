@@ -275,7 +275,8 @@ describe("the executor", () => {
       });
     await expect(answer({ ...tokens.alice, client_id: "some-app" })).rejects.toMatchObject({ code: "42501" });
     await expect(answer(tokens.bob)).rejects.toThrow(/isn't there/);
-    // An OAuth client's token is held even outside /mcp.
+    // An OAuth client's token is held even outside /mcp (once Alice lets it change things at all).
+    await admin`insert into public.connected_apps (user_id, client_id, access) values (${people.alice}::uuid, 'some-app', 'write')`;
     await expect(run("set_house_kind", { ...as("alice"), authorization: "alice-app" }, ask)).rejects.toMatchObject({ code: "forbidden", extra: { approvalUrl: expect.any(String) } });
 
     // Alice approves it in Jonz: the retry runs, once.
@@ -310,8 +311,60 @@ describe("the executor", () => {
     expect(await kind()).toBe("family");
   });
 
+  it("lets a connected app only read until the person lets it change things, and only the person can", async () => {
+    const run = executor({ now: () => minute(11) });
+    const asApp = (token: string) => ({ authorization: token, via: "mcp" as const });
+    tokens["bob-app"] = { ...tokens.bob, client_id: "bobs-app" };
+    tokens["bob-other-app"] = { ...tokens.bob, client_id: "bobs-other-app" };
+    const access = async () => (await admin`select access from public.connected_apps where user_id = ${people.bob}::uuid and client_id = 'bobs-app'`)[0]?.access ?? null;
+    /** Calls a database function as a token, the way PostgREST would. */
+    const call = (claims: Claims, query: (tx: postgres.TransactionSql) => Promise<unknown>) =>
+      admin.begin(async (tx) => {
+        await tx`select set_config('role', 'authenticated', true), set_config('request.jwt.claims', ${JSON.stringify(claims)}, true)`;
+        return query(tx);
+      });
+
+    // Never picked (no row): it reads, and every change is refused before anything runs, even one that would need approval.
+    const approvalsBefore = Number((await admin`select count(*)::int as n from public.api_approvals where user_id = ${people.bob}::uuid`)[0].n);
+    await expect(run("my_permissions", asApp("bob-app"), { houseId })).resolves.toMatchObject({ status: 200 });
+    await expect(run("who_am_i", asApp("bob-app"), {})).rejects.toMatchObject({ code: "forbidden", message: expect.stringMatching(/can only read/) });
+    await expect(run("set_house_kind", asApp("bob-app"), { houseId, kind: "family" })).rejects.toMatchObject({ code: "forbidden", message: expect.stringMatching(/can only read/) });
+    // Not even outside /mcp, and no approval was asked for.
+    await expect(run("who_am_i", { authorization: "bob-app", via: "api" }, {})).rejects.toMatchObject({ code: "forbidden" });
+    expect(Number((await admin`select count(*)::int as n from public.api_approvals where user_id = ${people.bob}::uuid`)[0].n)).toBe(approvalsBefore);
+
+    // The app's own token can't raise its access, or read it; nor can it name another app's.
+    await expect(call(tokens["bob-app"], (tx) => tx`select public.set_app_access('bobs-app', 'write')`)).rejects.toMatchObject({ code: "42501" });
+    await expect(call(tokens["bob-other-app"], (tx) => tx`select public.set_app_access('bobs-app', 'write')`)).rejects.toMatchObject({ code: "42501" });
+    await expect(call(tokens["bob-app"], (tx) => tx`select public.my_app_access()`)).rejects.toMatchObject({ code: "42501" });
+    // Nor can anyone write the table directly.
+    await expect(call(tokens.bob, (tx) => tx`insert into public.connected_apps (user_id, client_id, access) values (${people.bob}::uuid, 'bobs-app', 'write')`)).rejects.toMatchObject({ code: "42501" });
+    await expect(api`insert into public.connected_apps (user_id, client_id, access) values (${people.bob}::uuid, 'bobs-app', 'write')`).rejects.toMatchObject({ code: "42501" });
+    expect(await access()).toBeNull();
+    // Only the two choices.
+    await expect(call(tokens.bob, (tx) => tx`select public.set_app_access('bobs-app', 'admin')`)).rejects.toMatchObject({ code: "22023" });
+    await expect(call(tokens.bob, (tx) => tx`select public.set_app_access('', 'write')`)).rejects.toMatchObject({ code: "22023" });
+
+    // Bob, in Jonz, picks Read only: still refused. Then Read and change: it runs.
+    await call(tokens.bob, (tx) => tx`select public.set_app_access('bobs-app', 'read')`);
+    expect(await access()).toBe("read");
+    await expect(run("who_am_i", asApp("bob-app"), {})).rejects.toMatchObject({ code: "forbidden" });
+    await call(tokens.bob, (tx) => tx`select public.set_app_access('bobs-app', 'write')`);
+    expect(await access()).toBe("write");
+    await expect(run("who_am_i", asApp("bob-app"), {})).resolves.toMatchObject({ status: 201, body: { uid: people.bob } });
+    // Only that app: his other one still only reads, and Alice's yes for her app is hers alone.
+    await expect(run("who_am_i", asApp("bob-other-app"), {})).rejects.toMatchObject({ code: "forbidden" });
+    const [mine] = (await call(tokens.bob, (tx) => tx`select public.my_app_access() as a`)) as { a: unknown }[];
+    expect(mine.a).toEqual([{ client_id: "bobs-app", access: "write" }]);
+    // Back to Read only: refused again from the next call.
+    await call(tokens.bob, (tx) => tx`select public.set_app_access('bobs-app', 'read')`);
+    await expect(run("who_am_i", asApp("bob-app"), {})).rejects.toMatchObject({ code: "forbidden" });
+    // The person's own token is never held to it.
+    await expect(run("who_am_i", as("bob"), {})).resolves.toMatchObject({ status: 201 });
+  });
+
   it("keeps its bookkeeping out of people's reach", async () => {
-    for (const table of ["api_audit_entries", "api_idempotency_keys", "api_rate_limits", "api_approvals"]) {
+    for (const table of ["api_audit_entries", "api_idempotency_keys", "api_rate_limits", "api_approvals", "connected_apps"]) {
       const refused = await api
         .begin(async (tx) => {
           await tx`select set_config('role', 'authenticated', true), set_config('request.jwt.claims', ${JSON.stringify(tokens.alice)}, true)`;

@@ -511,6 +511,41 @@ export type Database = {
           },
         ]
       }
+      connected_apps: {
+        Row: {
+          access: string
+          client_id: string
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access?: string
+          client_id: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access?: string
+          client_id?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "connected_apps_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crew_members: {
         Row: {
           assignment_id: string
@@ -2876,6 +2911,7 @@ export type Database = {
       }
       my_app_permissions: { Args: never; Returns: string[] }
       my_app_role: { Args: never; Returns: string }
+      my_app_access: { Args: never; Returns: Json }
       my_language: { Args: never; Returns: string }
       my_permissions: { Args: { h: string }; Returns: string[] }
       my_open_assignment: {
@@ -3368,6 +3404,10 @@ export type Database = {
         Returns: undefined
       }
       set_moving_out: { Args: { p_on: string | null }; Returns: undefined }
+      set_app_access: {
+        Args: { p_access: string; p_client_id: string }
+        Returns: undefined
+      }
       set_my_language: { Args: { p_language: string }; Returns: undefined }
       set_my_photo: { Args: { photo: string }; Returns: undefined }
       settle_assignments: { Args: { p_items: Json }; Returns: number }

@@ -43,6 +43,11 @@ describe("/mcp", () => {
     expect(names.length).toBeGreaterThan(0);
     for (const o of V1_OPERATIONS) expect(names.includes(o.name), o.name).toBe(!o.operation.firstParty);
     expect(V1_OPERATIONS.map((o) => o.name)).toContain("answer_api_approval");
+    // What a connected app may do is the person's to set, in Jonz: never a tool an app could call.
+    for (const name of ["set_app_access", "my_app_access", "answer_api_approval", "api_approval"]) {
+      expect(V1_OPERATIONS.map((o) => o.name), name).toContain(name);
+      expect(names, name).not.toContain(name);
+    }
     const read = tools.find((t) => OPERATIONS[t.name as keyof typeof OPERATIONS].effect === "read");
     expect(read?.annotations?.readOnlyHint).toBe(true);
     for (const t of tools) expect(t.annotations?.destructiveHint ?? false, t.name).toBe((OPERATIONS[t.name as keyof typeof OPERATIONS] as Operation).destructive === true);
