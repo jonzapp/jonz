@@ -1,4 +1,4 @@
-import { GOOGLE_LIMITED_USE, HELP_PAGE, LEGAL_COPY, PRIVACY_POLICY, TERMS, wordsFor } from "@app/core";
+import { GOOGLE_LIMITED_USE, HELP_PAGE, LEGAL_COPY, MCP_ADDRESS, PRIVACY_POLICY, TERMS, wordsFor } from "@app/core";
 import { expect, test } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, dealtHouseInClient } from "./auth";
@@ -81,6 +81,24 @@ test("a page to read lists its sections beside the words on a laptop, each jumpi
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.getByText(HELP_PAGE.lead)).toBeVisible();
   await expect(page.getByTestId("legal-contents")).toHaveCount(0);
+
+  // Help's Markdown: the steps to Claude numbered, the address with Copy, an email address as a link.
+  const claude = page.getByRole("heading", { name: "Use Jonz from Claude", exact: true });
+  await claude.scrollIntoViewIfNeeded();
+  await expect(page.getByTestId("reply-copy-value")).toHaveText(MCP_ADDRESS);
+  await expect(page.getByRole("link", { name: "support@jonz.app" }).first()).toHaveAttribute("href", "mailto:support@jonz.app");
+  for (const colorScheme of shots ? (["light", "dark"] as const) : []) {
+    await page.emulateMedia({ colorScheme });
+    await page.screenshot({ path: `${shots}/help-phone-top-${colorScheme}.png` });
+    await claude.scrollIntoViewIfNeeded();
+    await page.evaluate(() => window.scrollBy(0, -80));
+    await page.screenshot({ path: `${shots}/help-phone-claude-${colorScheme}.png` });
+    await page.goto("/privacy");
+    await page.getByRole("heading", { name: "What we keep", exact: true }).scrollIntoViewIfNeeded();
+    await page.screenshot({ path: `${shots}/privacy-phone-${colorScheme}.png` });
+    await page.goto("/help");
+  }
+  await page.emulateMedia({ colorScheme: "light" });
 });
 
 test("installable: the manifest, its icons and the service worker are served", async ({ request }) => {

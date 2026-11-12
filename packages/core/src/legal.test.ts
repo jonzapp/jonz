@@ -1,15 +1,16 @@
 import { describe, expect, it } from "vitest";
 
 import { GOOGLE_LIMITED_USE, LEGAL, PRIVACY_POLICY, TERMS } from "./legal";
+import { docText } from "./reply-format";
 
 const words = (page: typeof PRIVACY_POLICY) =>
-  [page.lead, ...page.sections.flatMap((s) => [s.heading, ...s.body])].join(" ");
+  [page.lead, ...page.sections.flatMap((s) => [s.heading, docText(s.body)])].join(" ");
 
 describe("the Privacy Policy", () => {
   const text = words(PRIVACY_POLICY);
 
   it("carries Google's Limited Use sentence word for word", () => {
-    expect(PRIVACY_POLICY.sections.some((s) => s.body.includes(GOOGLE_LIMITED_USE))).toBe(true);
+    expect(PRIVACY_POLICY.sections.some((s) => docText(s.body).split("\n").includes(GOOGLE_LIMITED_USE))).toBe(true);
     expect(GOOGLE_LIMITED_USE).toMatch(/Google API Services User Data Policy, including the Limited Use requirements\.$/);
   });
 
