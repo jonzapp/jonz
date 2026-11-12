@@ -1,4 +1,4 @@
-import { dayLabel, wordsFor } from '@app/core';
+import { ASSISTANTS, dayLabel, wordsFor } from '@app/core';
 import * as Clipboard from 'expo-clipboard';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 import { Linking } from 'react-native';
@@ -8,7 +8,6 @@ import { mcpAddress } from '@/api/base';
 import { appAccess, connectedApps, disconnectApp, setAppAccess } from '@/api/connected-apps';
 import { renderPages } from '@/testing/pages';
 
-import { CLAUDE_CONNECTORS } from './connect-claude';
 import { ConnectedAppsSection } from './connected-apps-section';
 
 const words = wordsFor('en', 'housemates');
@@ -48,7 +47,7 @@ it('lists the apps you let in, what each may do and since when, and disconnects 
   await fireEvent.press(within(screen.getByTestId('disconnect-sheet')).getByRole('button', { name: words('people.connectedApps.disconnect') }));
   expect(disconnect).toHaveBeenCalledWith('c1');
   await waitFor(() => expect(screen.queryByTestId('connected-app')).toBeNull());
-  expect(screen.getByTestId('connect-claude')).toBeOnTheScreen();
+  expect(screen.getByTestId('connect-assistant')).toBeOnTheScreen();
 });
 
 it('says an app you never picked for is read only, and changes it from its sheet', async () => {
@@ -79,20 +78,30 @@ it('keeps what it had when saving fails, and says why', async () => {
   expect(within(sheet).getByRole('radio', radio('read'))).toBeChecked();
 });
 
-it('shows how to connect Claude, with the address to copy and the way into Claude', async () => {
+it('shows how to connect each assistant from one sheet: a choice that switches the steps, the address to copy, and the way in', async () => {
   list.mockResolvedValue([]);
   await open();
-  const row = await screen.findByTestId('connect-claude');
-  expect(row).toHaveTextContent(words('people.connectClaude.title'), { exact: false });
+  const row = await screen.findByTestId('connect-assistant');
+  expect(row).toHaveTextContent(words('people.connectApp.title'), { exact: false });
   expect(screen.queryByTestId('connected-app')).toBeNull();
   await fireEvent.press(row);
-  const sheet = screen.getByTestId('connect-claude-sheet');
-  expect(within(sheet).getByText(words('people.connectClaude.step2'))).toBeOnTheScreen();
-  expect(within(sheet).getByTestId('mcp-address-value')).toHaveTextContent(mcpAddress());
-  await fireEvent.press(within(sheet).getByRole('button', { name: words('people.connectClaude.copySpoken') }));
-  expect(Clipboard.setStringAsync).toHaveBeenCalledWith(mcpAddress());
-  await fireEvent.press(within(sheet).getByRole('button', { name: words('people.connectClaude.open') }));
-  expect(Linking.openURL).toHaveBeenCalledWith(CLAUDE_CONNECTORS);
+  const sheet = screen.getByTestId('connect-assistant-sheet');
+  const choice = within(sheet).getByTestId('assistant-choice');
+  expect(choice).toHaveProp('accessibilityLabel', words('people.connectApp.which'));
+  // Every assistant in the list is a choice; the first is picked to start.
+  expect(within(choice).getAllByRole('radio').map((r) => r.props.accessibilityLabel)).toEqual(ASSISTANTS.map((a) => a.name));
+  for (const assistant of ASSISTANTS) {
+    await fireEvent.press(within(choice).getByRole('radio', { name: assistant.name }));
+    expect(within(choice).getByRole('radio', { name: assistant.name })).toBeChecked();
+    expect(within(sheet).getByTestId(`assistant-steps-${assistant.id}`)).toBeOnTheScreen();
+    expect(within(sheet).getByText(words(`people.connectApp.${assistant.id}.note`))).toBeOnTheScreen();
+    expect(within(sheet).getByTestId('reply-copy-value')).toHaveTextContent(mcpAddress());
+    await fireEvent.press(within(sheet).getByTestId('reply-copy-copy'));
+    expect(Clipboard.setStringAsync).toHaveBeenLastCalledWith(mcpAddress());
+    await fireEvent.press(within(sheet).getByRole('button', { name: words(`people.connectApp.${assistant.id}.open`) }));
+    expect(Linking.openURL).toHaveBeenLastCalledWith(assistant.settings);
+  }
+  expect(ASSISTANTS.map((a) => a.id)).toEqual(['claude', 'chatgpt']);
 });
 
 it('gives jonz.app’s own API address when the app has none set', async () => {

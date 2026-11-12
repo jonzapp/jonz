@@ -5,6 +5,7 @@ import { APP_ACCESS } from "./app-access";
 import { CHAT_SAVED_TURNS, SavedTurn } from "./ask-chats";
 import { BEST_TIMES, CURRENCIES, DEAL_MODES, HOUSE_KINDS } from "./domain";
 import { AskUsage, ChatRequest, ChatResponse } from "./house-draft";
+import { HOW_TOPICS } from "./how-it-works";
 import { AddKid, AddKidResponse } from "./kids";
 import { LANGUAGES } from "./locales";
 import { Notice, NOTICE_KINDS } from "./notices";
@@ -485,6 +486,11 @@ export const OPERATION_IO = {
   // A house: reading
   house_live: io(z.object({ houseId: id, after: z.int().min(0).optional() }), z.object({ latest: z.int().nullable() }), "GET /v1/houses/{houseId}/live/since"),
   house_history: io(z.object({ houseId: id, before: at.optional(), limit: z.int().min(1).max(200).optional() }), z.array(historyRow), "GET /v1/houses/{houseId}/history"),
+  house_guide: io(
+    z.object({ houseId: id, topic: z.enum(HOW_TOPICS).optional() }),
+    z.array(z.object({ topic: z.enum(HOW_TOPICS), words: z.string() })),
+    "GET /v1/houses/{houseId}/guide",
+  ),
   ask_usage: io(z.object({ houseId: id }), AskUsage, "GET /v1/houses/{houseId}/ask/usage"),
   catch_up: io(FreshRequest, FreshResponse, "POST /v1/houses/{houseId}/catch-up"),
   house_today: io(z.object({ houseId: id }), today, "GET /v1/houses/{houseId}/today"),

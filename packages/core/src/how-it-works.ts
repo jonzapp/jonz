@@ -12,6 +12,7 @@ import type { HouseRules } from "./domain";
 import { passWords } from "./family";
 import { formatMoney } from "./money";
 import { PASS_PRICES, PASS_TRIAL_DAYS } from "./pass";
+import { ON_CALL_WEEKS } from "./steady-deal";
 import { TOURS, tourStepWords, type TourId } from "./tours";
 import { makeupKey } from "./word-keys";
 import type { Words } from "./words-for";
@@ -36,6 +37,21 @@ export const HOW_TOPICS = [
   "family",
 ] as const;
 export type HowTopic = (typeof HOW_TOPICS)[number];
+
+/**
+ * How Jonz works, in brief, for any assistant that helps someone with it:
+ * Ask Jonz's own prompt, and the instructions an app connected over MCP
+ * (Claude, ChatGPT) reads before its first tool. The detail, with a house's
+ * own numbers, is howItWorks.
+ */
+export const HOW_JONZ_WORKS = `- A chore is called a John. The house's John list says what needs doing, how often, on which day, and how much effort it is in points.
+- Each week the app deals the Johns out fairly between the people at home, weighted by points and by who has done more or less so far (fair shares). A group's Johns (a John only that group shares) are evened out within the group, apart from the rest of the house's, so a group John never changes anyone's turn at the rest. Time away is left out of the deal. Smart deal balances points; Classic takes turns, and whoever's turn it is may go up to half the weekly budget over.
+- People tick a John when it's done; housemates can question a tick. A John not done by its due time is late, and later still missed; in a house with a Stake, late and missed Johns cost money at the end of the month. Someone else can cover an overdue John.
+- On-call Johns (the bin when it's full) are done when someone flags them, by whoever is on call that week.
+- Swaps: you can ask someone to swap one of your Johns for one of theirs.
+- History lists every move, and most can be undone. Admins can put mistakes right (resets).
+- In a family, admins are called parents and members kids; a kid's tick waits for a parent's OK, and Johns can earn pocket money.
+- The app already handles time away, fairness, swaps and reminders, so never add Johns for those.`;
 
 /** What the pieces need to know about the house to use its own numbers. */
 export interface HowFacts {
@@ -149,7 +165,7 @@ export function howItWorks(topic: HowTopic, { rules, family, awayMakeup }: HowFa
     case "time_away":
       return lines(words("door.guide.page.away.book"), words("door.guide.page.away.makeup", { makeup }));
     case "on_call":
-      return lines(words("door.guide.page.onCall.what"), words("door.guide.page.onCall.flag"));
+      return lines(words("door.guide.page.onCall.what"), words("door.guide.page.onCall.flag"), words("door.guide.page.onCall.deal", { weeks: ON_CALL_WEEKS }));
     case "swaps":
       return lines(words("door.guide.page.swaps.ask"), words("house.page.rulesSwapBody"));
     case "ticks_and_questions":

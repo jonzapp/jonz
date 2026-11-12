@@ -1,6 +1,6 @@
 import "server-only";
 
-import { bornYearOk, promotionProblems, type AwayDraft, type ChatRequest, type DeleteHouseRequest, type OwnerAskRequest, type OwnerMessageRequest, type PassCheckoutRequest, type PromotionRequest, type ReportFixRequest, type ReportMessageRequest, type ReportRequest, type RollCallRequest, type SwapAskRequest, wordsFor } from "@app/core";
+import { bornYearOk, houseKind, HOW_TOPICS, howItWorks, promotionProblems, rulesOf, type HowTopic, type AwayDraft, type ChatRequest, type DeleteHouseRequest, type OwnerAskRequest, type OwnerMessageRequest, type PassCheckoutRequest, type PromotionRequest, type ReportFixRequest, type ReportMessageRequest, type ReportRequest, type RollCallRequest, type SwapAskRequest, wordsFor } from "@app/core";
 import { fromDatabase, Problem, type HandlerContext } from "@app/server";
 import type { Handlers } from "v1";
 
@@ -91,6 +91,17 @@ const HANDLERS: Handlers = {
     const result = await houseUsage(callerOf(ctx), houseId(ctx), ctx.now);
     if ("refusal" in result) throw refusal(result.refusal);
     return result;
+  },
+
+  async house_guide(ctx: HandlerContext) {
+    // Read as the person, so a house they're not in reads as nothing.
+    type House = Parameters<typeof rulesOf>[0] & { kind: string; away_makeup: number };
+    const [house] = await ctx.tx<House[]>`select * from public.houses where id = ${houseId(ctx)}::uuid`;
+    if (!house) throw refusal({ code: "42501", message: "not_in_house" });
+    const facts = { rules: rulesOf(house), family: house.kind === "family", awayMakeup: house.away_makeup };
+    const said = wordsFor("en", houseKind(house.kind));
+    const topics: readonly HowTopic[] = ctx.input.topic ? [ctx.input.topic as HowTopic] : HOW_TOPICS;
+    return topics.map((topic) => ({ topic, words: howItWorks(topic, facts, said) }));
   },
 
   async catch_up(ctx: HandlerContext) {

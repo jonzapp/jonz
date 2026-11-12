@@ -80,8 +80,8 @@ const FILE_REASONS: Record<string, RegExp[]> = {
   // Ask Jonz's and the roles' own descriptions of paying the Stake, which a family hasn't got.
   "operations.ts": [/between housemates/i, /between housemates and family/i],
   "permissions.ts": [/between housemates/i],
-  // How it works says a family is not housemates.
-  "how-it-works.ts": [/is housemates, not a family/i, /a housemate can question a tick/i],
+  // How it works says a family is not housemates; the primer for an assistant (HOW_JONZ_WORKS) names both kinds.
+  "how-it-works.ts": [/is housemates, not a family/i, /a housemate can question a tick/i, /^- A chore is called a John\./],
   // The owner's house panel names the kind of house; only the owner reads it.
   "owner-houses.ts": [/^Housemates$/],
   // A bug report's role, read by the owner, not the house.

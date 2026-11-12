@@ -350,7 +350,7 @@ describe("parseDoc: Jonz's own pages", () => {
   });
 
   it("gives Help's steps to Claude as a numbered list, with the address to copy", () => {
-    const blocks = parseDoc(HELP_PAGE.sections.find((s) => s.heading === "Use Jonz from Claude")!.body);
+    const blocks = parseDoc(HELP_PAGE.sections.find((s) => s.heading === "Use Jonz from your AI assistant")!.body);
     const steps = blocks.find((b) => b.t === "list");
     expect(steps).toMatchObject({ t: "list", ordered: true, start: 1 });
     expect((steps as Extract<Block, { t: "list" }>).items).toHaveLength(3);

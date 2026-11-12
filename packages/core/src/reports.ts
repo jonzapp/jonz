@@ -1,7 +1,8 @@
-import type { Words } from "./words-for";
+import { wordsFor, type Words } from "./words-for";
 import { z } from "zod";
 
 import type { ListFacet, ListWhen } from "./admin-list";
+import { ASSISTANTS, MCP_ADDRESS } from "./assistants";
 import { LEGAL, type LegalPage } from "./legal";
 
 // Report a problem (docs/specs/report-a-problem.md): what someone tells Jonz
@@ -144,8 +145,17 @@ export function reportAge(iso: string, now: Date): string {
   return `${at.getDate()} ${MONTH[at.getMonth()]}`;
 }
 
-/** Where Claude, or any app that speaks MCP, connects to Jonz. */
-export const MCP_ADDRESS = "https://api.jonz.app/mcp";
+/** Help is in English: the steps for each assistant are the same words You shows. */
+const HELP_WORDS = wordsFor("en", "housemates");
+
+/** Each assistant's steps, under its name, from ASSISTANTS and its words. */
+const ASSISTANT_STEPS = ASSISTANTS.map(
+  ({ id, name }) => `### ${name}
+
+${HELP_WORDS(`people.connectApp.${id}.steps`, { address: MCP_ADDRESS })}
+
+${HELP_WORDS(`people.connectApp.${id}.note`)}`,
+).join("\n\n");
 
 /**
  * jonz.app/help: how to reach Jonz, for anyone, signed in or not, and
@@ -180,21 +190,15 @@ If you email from the address you sign in with, it shows under **Your reports** 
       links: [{ label: `Email ${SUPPORT_EMAIL}`, href: `mailto:${SUPPORT_EMAIL}` }],
     },
     {
-      heading: "Use Jonz from Claude",
-      body: `Claude can read your house and, if you let it, mark Johns done, plan the week or change the rules for you, as you.
+      heading: "Use Jonz from your AI assistant",
+      body: `${ASSISTANTS.map((a) => a.name).join(" or ")} can read your house and, if you let it, mark Johns done, plan the week or change the rules for you, as you. It does its own thinking, so it doesn’t use up your house’s Ask Jonz.
 
-1. On [claude.ai](https://claude.ai/settings/connectors), open **Settings**, then **Connectors**, and choose **Add custom connector**.
-2. Call it Jonz and paste this address:
+${ASSISTANT_STEPS}
 
-   \`\`\`
-   ${MCP_ADDRESS}
-   \`\`\`
-3. Claude sends you to Jonz to sign in. Pick **Read only** or **Read and change**, then press **Allow**.
+Anything that can’t be undone, like removing a John, still waits for you to approve it in Jonz. Change what an assistant may do, or disconnect it, on **You** under **Connected apps**.
 
-Anything that can’t be undone, like removing a John, still waits for you to approve it in Jonz. Change what Claude may do, or disconnect it, on **You** under **Connected apps**.
-
-Any other app that speaks MCP connects the same way.`,
-      links: [{ label: "Open Claude’s connectors", href: "https://claude.ai/settings/connectors" }],
+${HELP_WORDS("people.connectApp.other")}`,
+      links: ASSISTANTS.map(({ id, settings }) => ({ label: HELP_WORDS(`people.connectApp.${id}.open`), href: settings })),
     },
     {
       heading: "Your account and your data",

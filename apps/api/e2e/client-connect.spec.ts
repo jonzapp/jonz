@@ -129,10 +129,15 @@ test("connects an app on Jonz's consent page, lists it on You, and approves what
   await expect(page.getByTestId("connected-app")).toHaveCount(0);
 
   // How to connect one again: the steps and the address to paste.
-  await page.getByTestId("connect-claude").click();
-  const help = page.getByTestId("connect-claude-sheet");
-  await expect(help.getByTestId("mcp-address-value")).toHaveText(/\/mcp$/);
-  await expect(help.getByRole("button", { name: words('people.connectClaude.open') })).toBeVisible();
+  await page.getByTestId("connect-assistant").click();
+  const help = page.getByTestId("connect-assistant-sheet");
+  await expect(help.getByTestId("reply-copy-value")).toHaveText(/\/mcp$/);
+  await expect(help.getByRole("button", { name: words('people.connectApp.claude.open') })).toBeVisible();
   await shoot(page, "connect-claude");
+  // One sheet for every assistant: the choice switches the steps.
+  await help.getByRole("radio", { name: "ChatGPT" }).click();
+  await expect(help.getByTestId("assistant-steps-chatgpt")).toBeVisible();
+  await expect(help.getByRole("button", { name: words('people.connectApp.chatgpt.open') })).toBeVisible();
+  await shoot(page, "connect-chatgpt");
   await context.close();
 });

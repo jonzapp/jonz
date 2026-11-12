@@ -4057,6 +4057,114 @@
         }
       }
     },
+    "/v1/houses/{houseId}/guide": {
+      "get": {
+        "operationId": "house_guide",
+        "summary": "How a part of Jonz works, in the app's own guide with this house's numbers (its points, hours, Stake and prices): one topic, or every topic when none is given. Read it before explaining anything about the app",
+        "tags": [
+          "house"
+        ],
+        "parameters": [
+          {
+            "name": "houseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          {
+            "name": "topic",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "today",
+                "week",
+                "house",
+                "fair_shares",
+                "deal",
+                "points",
+                "late_and_missed",
+                "covering",
+                "stake",
+                "settle_up",
+                "house_pass",
+                "time_away",
+                "on_call",
+                "swaps",
+                "ticks_and_questions",
+                "history_and_resets",
+                "family"
+              ]
+            }
+          },
+          {
+            "$ref": "#/components/parameters/JonzClient"
+          }
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "x-jonz-effect": "read",
+        "x-jonz-permission": "house:read",
+        "responses": {
+          "200": {
+            "description": "Done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "topic": {
+                        "type": "string",
+                        "enum": [
+                          "today",
+                          "week",
+                          "house",
+                          "fair_shares",
+                          "deal",
+                          "points",
+                          "late_and_missed",
+                          "covering",
+                          "stake",
+                          "settle_up",
+                          "house_pass",
+                          "time_away",
+                          "on_call",
+                          "swaps",
+                          "ticks_and_questions",
+                          "history_and_resets",
+                          "family"
+                        ]
+                      },
+                      "words": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "topic",
+                      "words"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
     "/v1/houses/{houseId}/ask/usage": {
       "get": {
         "operationId": "ask_usage",
