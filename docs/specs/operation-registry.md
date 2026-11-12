@@ -18,6 +18,7 @@ One list of everything a person can do on Jonz, whichever way they reach it: the
   - `tables`: for an operation the app does today straight on the tables (the John list, the Wall, saved chats…), which ones, read or changed as the caller under each table's rules. It has no function or route of its own; under API-only, the /v1 server runs it;
   - `screen`: a read of everything one screen shows at once (Today, the Table, Track record, the Stake), in one round trip where the app makes several today;
   - `destructive`: it can't be undone, or it reaches people (push, email, notice), so an MCP client needs the person's approval in Jonz first;
+  - `additive`: a write that only adds something new, changing or removing nothing already there, so a connected app is told it isn't destructive;
   - `entitlement`: the House Pass feature it needs once the Pass is enforced. That is a plan feature, not a permission.
 - `guard` is one of:
   - `permission`: a named `resource:level`, asked with `can()` (house) or `can_app()` (admin pages);
@@ -58,7 +59,7 @@ A tool is given only to someone with the operation's permission. When Jonz calls
 
 `api.jonz.app/mcp` (`apps/api/lib/mcp/server.ts`, served by `app/mcp/route.ts`) is Jonz for MCP clients, on the MCP TypeScript SDK v2 (`@modelcontextprotocol/server`).
 
-- One tool per operation /v1 serves (`V1_OPERATIONS`), named after it, its input the operation's own, its description the registry's `about`. Reads are marked read-only, and `destructive` operations destructive. The `firstParty` operations (approving, below, and setting what an app may do) aren't offered: they're for the person in Jonz itself.
+- One tool per operation /v1 serves (`V1_OPERATIONS`), named after it, its input the operation's own, its description the registry's `about`. Reads are marked read-only; a write is marked destructive unless it's `additive` (it only adds, such as a tick or a new John), which is MCP's own meaning of the hint and what Claude's and ChatGPT's directories check (docs/specs/assistant-directories.md). The `firstParty` operations (approving, below, setting what an app may do, Ask Jonz, and buying or paying for the House Pass) aren't offered: they're for the person in Jonz itself.
 - Each call runs through the same executor as /v1 (`v1Instance()`, one pool per instance), with `via: "mcp"`: the same token check, rate limit, permission, House Pass and audit row. A refusal is a tool error starting with its problem code (`forbidden: …`).
 - Stateless: each request gets a fresh server instance and nothing is kept between requests, so any instance answers any request.
 - Signing in: with no bearer token it answers 401 with `WWW-Authenticate: Bearer resource_metadata=…`, and `/.well-known/oauth-protected-resource/mcp` names Supabase Auth as the authorization server (RFC 9728). Its `scopes_supported` lists only scopes Supabase's OAuth server can issue (`openid email profile offline_access`), because clients such as Claude ask for every scope listed and Supabase turns away a sign-in with any it doesn't know. What a connected app may do is what the person's role holds, checked on every call, not the token's scopes.

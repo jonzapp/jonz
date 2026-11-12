@@ -32,7 +32,8 @@
     "db:reset": "supabase db reset",
     "db:advisors": "supabase db advisors --local --type all --level warn --fail-on warn",
     "db:standards": "psql \"${DB_URL:-postgresql://postgres:postgres@127.0.0.1:54342/postgres}\" -q -f supabase/checks/standards.sql",
-    "email:preview": "node scripts/email-preview.mjs"
+    "email:preview": "node scripts/email-preview.mjs",
+    "package:chatgpt": "rm -f jonz-chatgpt.zip && cd integrations/chatgpt && zip -r ../../jonz-chatgpt.zip plugin.json mcp.json assets"
   },
   "devDependencies": {
     "eslint": "^9",

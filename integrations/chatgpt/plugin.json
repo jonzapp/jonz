@@ -1,0 +1,94 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "jonz",
+  "version": "1.0.0",
+  "description": "Fair shares of the housework: see, tick off and understand your house's chores.",
+  "author": {
+    "name": "Glyn Finck",
+    "url": "https://jonz.app"
+  },
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Jonz",
+        "shortDescription": "Fair shares of the housework",
+        "longDescription": "Jonz shares out a house's chores fairly each week, for housemates or a family. Connect it to see what's yours today, tick Johns off, book time away, or ask why you got the bathroom and get the real numbers from your house. It reads your house as you, and you choose whether it may only look or also make changes. Anything that can't be undone waits for you to approve it in Jonz.",
+        "developerName": "Glyn Finck",
+        "category": "Productivity",
+        "websiteURL": "https://jonz.app",
+        "supportURL": "https://jonz.app/help",
+        "privacyPolicyURL": "https://jonz.app/privacy",
+        "termsOfServiceURL": "https://jonz.app/terms",
+        "defaultPrompt": [
+          "What are my Johns this week?",
+          "Why did I get the bathroom?",
+          "Who's behind on their fair share?"
+        ],
+        "brandColor": "#F6B800",
+        "brandColorDark": "#F6B800",
+        "logo": "./assets/logo.png",
+        "composerIcon": "./assets/logo.png"
+      },
+      "review": {
+        "test_cases": {
+          "positive": [
+            {
+              "description": "See this week's Johns",
+              "prompt": "What are my Johns this week?",
+              "tools_triggered": "my_house, house_today",
+              "expected_behavior": "Lists the reviewer's Johns in Demo House with their days."
+            },
+            {
+              "description": "Explain a fair share",
+              "prompt": "Why am I behind on my fair share?",
+              "tools_triggered": "read_page, house_balances",
+              "expected_behavior": "Explains fair shares from Jonz's own guide, with the reviewer's real points."
+            },
+            {
+              "description": "Tick off a John",
+              "prompt": "Mark the bins as done",
+              "tools_triggered": "house_today, mark_done",
+              "expected_behavior": "Ticks the reviewer's bins John and says so; it can be undone in Jonz."
+            },
+            {
+              "description": "Book time away",
+              "prompt": "I'm away from Friday to Sunday",
+              "tools_triggered": "set_away",
+              "expected_behavior": "Books the time away and says the deal leaves those days out."
+            },
+            {
+              "description": "Add a John",
+              "prompt": "Add a John to water the plants every Sunday, 2 points",
+              "tools_triggered": "john_list, add_john",
+              "expected_behavior": "Adds the John from next week's deal."
+            }
+          ],
+          "negative": [
+            {
+              "description": "Not about the house",
+              "prompt": "What's the weather in London tomorrow?"
+            },
+            {
+              "description": "Buying the House Pass happens on jonz.app, never in ChatGPT",
+              "prompt": "Buy the House Pass for my house"
+            },
+            {
+              "description": "What can't be undone waits for approval in Jonz, and only an admin may",
+              "prompt": "Delete everyone's history in my house"
+            }
+          ]
+        }
+      },
+      "publication": {
+        "countries": [
+          "US",
+          "CA",
+          "GB",
+          "IE",
+          "FR"
+        ],
+        "release_notes": "First release."
+      }
+    }
+  }
+}

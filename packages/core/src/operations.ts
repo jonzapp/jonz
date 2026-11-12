@@ -81,6 +81,14 @@ export interface Operation {
    * the person's approval in Jonz before it runs.
    */
   destructive?: true;
+  /**
+   * A write that only adds something new (a tick, a John, a booking, a
+   * flag), changing or removing nothing already there. MCP's own meaning of
+   * destructiveHint false, which Claude's and ChatGPT's directories hold
+   * every tool to: every other write is marked destructive to a connected
+   * app, even one that can be undone, and Claude asks before each.
+   */
+  additive?: true;
   /** The House Pass feature it needs once the Pass is enforced (`PASS_ENFORCED`). */
   entitlement?: PassFeature;
   /**
@@ -91,9 +99,11 @@ export interface Operation {
   entitlementWhen?: string;
   /**
    * Only for the person in Jonz itself, never a connected app: approving a
-   * connected app's request, and Jonz's own AI (Ask Jonz, the support
-   * agent), which Jonz pays for: a connected app is an assistant already, so
-   * it does its own thinking with read_page and the house's reads. Not
+   * connected app's request; Jonz's own AI (Ask Jonz, the support agent),
+   * which Jonz pays for: a connected app is an assistant already, so it
+   * does its own thinking with read_page and the house's reads; and buying
+   * or paying for the House Pass, which an assistant's directory may not
+   * sell (it's bought on jonz.app). Not
    * offered over MCP, and the executor refuses an OAuth client's token for
    * it (the approval functions refuse one in the database too).
    */
@@ -123,16 +133,16 @@ export const OPERATIONS = {
   owner_status: op({ about: "Whether to show the admin pages, ask for the code, and what the caller may do there", scope: "app", effect: "read", guard: CHECK, rpc: { name: "owner_status" } }),
 
   // --- Your account ---------------------------------------------------------------------------
-  create_house: op({ about: "Start a new house", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "create_house" } }),
-  start_house_from: op({ about: "Start a new house from one you're moving on from", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "start_house_from" } }),
+  create_house: op({ about: "Start a new house", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "create_house" }, additive: true }),
+  start_house_from: op({ about: "Start a new house from one you're moving on from", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "start_house_from" }, additive: true }),
   house_by_code: op({ about: "Look up a house by its join code", scope: "account", effect: "read", guard: ACCOUNT_READ, rpc: { name: "house_by_code" } }),
-  join_house: op({ about: "Join a house with its code", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "join_house" } }),
+  join_house: op({ about: "Join a house with its code", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "join_house" }, additive: true }),
   set_my_photo: op({ about: "Change your photo", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "set_my_photo" } }),
   set_away: op({ about: "Book time away", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "set_away" }, route: "POST /api/away" }),
   cancel_away: op({ about: "Cancel your time away", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "cancel_away" } }),
   set_moving_out: op({ about: "Say the day you're moving out", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "set_moving_out" } }),
   moving_on: op({ about: "Where you're moving on from, and what comes with you", scope: "account", effect: "read", guard: ACCOUNT_READ, rpc: { name: "moving_on" } }),
-  leave_pass: op({ about: "Stop paying for a House Pass you bought for a house you've left", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "leave_pass" }, destructive: true }),
+  leave_pass: op({ about: "Stop paying for a House Pass you bought for a house you've left", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "leave_pass" }, destructive: true , firstParty: true }),
   account_deletion_preview: op({ about: "What deleting your account would remove", scope: "account", effect: "read", guard: ACCOUNT_READ, rpc: { name: "account_deletion_preview" } }),
   account_deletion_status: op({ about: "Whether your account is being deleted, and when", scope: "account", effect: "read", guard: ACCOUNT_READ, rpc: { name: "account_deletion_status" } }),
   request_account_deletion: op({ about: "Start deleting your account", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "request_account_deletion" }, destructive: true }),
@@ -142,8 +152,8 @@ export const OPERATIONS = {
   file_links: op({ about: "Links to look at photos and screenshots you may see", scope: "account", effect: "read", guard: ACCOUNT_READ, server: true, firstParty: true }),
   list_pages: op({ about: "Every page of Jonz you can read (each guide topic, Help, Privacy, Terms): its id, title and what it covers", scope: "account", effect: "read", guard: ACCOUNT_READ, server: true }),
   read_page: op({ about: "One page of Jonz, in Markdown, in the language you read Jonz in: a guide topic with your house's own numbers (its points, hours, Stake and prices), or Help, Privacy or Terms. Read the topic before explaining anything about the app", scope: "account", effect: "read", guard: ACCOUNT_READ, server: true }),
-  send_report: op({ about: "Report a problem", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "send_report" }, route: "POST /api/reports" }),
-  write_back: op({ about: "Write back on a problem you reported", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "write_back" }, route: "POST /api/reports/[id]/messages" }),
+  send_report: op({ about: "Report a problem", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "send_report" }, route: "POST /api/reports", additive: true }),
+  write_back: op({ about: "Write back on a problem you reported", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "write_back" }, route: "POST /api/reports/[id]/messages", additive: true }),
   see_report: op({ about: "Mark a reply to your report as seen", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "see_report" } }),
   api_approval: op({ about: "A connected app's request to do something that can't be undone, for you to approve", scope: "account", effect: "read", guard: ACCOUNT_READ, rpc: { name: "api_approval" }, firstParty: true }),
   answer_api_approval: op({ about: "Approve or decline a connected app's request", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "answer_api_approval" }, firstParty: true }),
@@ -156,11 +166,11 @@ export const OPERATIONS = {
   set_my_language: op({ about: "Change the language you read Jonz in", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "set_my_language" }, tables: ["profiles"] }),
   my_notifications: op({ about: "Which notifications you get, and your quiet hours", scope: "account", effect: "read", guard: ACCOUNT_READ, rpc: { name: "my_notifications" }, tables: ["notification_prefs"] }),
   save_notifications: op({ about: "Change which notifications you get, and your quiet hours", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "save_notifications" }, tables: ["notification_prefs"] }),
-  add_push_device: op({ about: "Get pushes on this device", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "add_push_device" }, tables: ["push_subscriptions"] }),
+  add_push_device: op({ about: "Get pushes on this device", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "add_push_device" }, tables: ["push_subscriptions"], additive: true }),
   remove_push_device: op({ about: "Stop pushes on this device", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "remove_push_device" }, tables: ["push_subscriptions"] }),
   my_ask_chats: op({ about: "Your saved Ask Jonz chats in a house, the latest first", scope: "account", effect: "read", guard: ACCOUNT_READ, rpc: { name: "my_ask_chats" }, tables: ["ask_chats"] }),
   my_ask_chat: op({ about: "One of your saved Ask Jonz chats, with its turns", scope: "account", effect: "read", guard: ACCOUNT_READ, rpc: { name: "my_ask_chat" }, tables: ["ask_chats"] }),
-  keep_ask_chat: op({ about: "Save a new Ask Jonz chat", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "keep_ask_chat" }, tables: ["ask_chats"] }),
+  keep_ask_chat: op({ about: "Save a new Ask Jonz chat", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "keep_ask_chat" }, tables: ["ask_chats"], additive: true }),
   update_ask_chat: op({ about: "Save an Ask Jonz chat as it now stands", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "update_ask_chat" }, tables: ["ask_chats"] }),
   delete_ask_chat: op({ about: "Delete one of your saved Ask Jonz chats", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "delete_ask_chat" }, tables: ["ask_chats"], destructive: true }),
   live_notices: op({ about: "The notices showing now, at the top of the app", scope: "account", effect: "read", guard: ACCOUNT_READ, rpc: { name: "live_notices" }, tables: ["notices"] }),
@@ -192,14 +202,14 @@ export const OPERATIONS = {
 
   // --- A house: your own Johns ----------------------------------------------------------------
   proof_upload: op({ about: "Get a link to upload a photo receipt for a John", scope: "house", effect: "write", guard: perm("ticks:write_own"), server: true, entitlement: "photos", firstParty: true }),
-  mark_done: op({ about: "Tick off a John", scope: "house", effect: "write", guard: perm("ticks:write_own"), rpc: { name: "mark_done" }, entitlement: "photos", entitlementWhen: "photoPath" }),
+  mark_done: op({ about: "Tick off a John", scope: "house", effect: "write", guard: perm("ticks:write_own"), rpc: { name: "mark_done" }, entitlement: "photos", entitlementWhen: "photoPath", additive: true }),
   undo_done: op({ about: "Take back a tick", scope: "house", effect: "write", guard: perm("ticks:write_own"), rpc: { name: "undo_done" } }),
   plan_john: op({ about: "Say when you'll do a John", scope: "house", effect: "write", guard: perm("ticks:write_own"), rpc: { name: "plan_john" } }),
-  roll_call: op({ about: "Tick off a shared John, with who helped", scope: "house", effect: "write", guard: perm("ticks:write_own"), rpc: { name: "roll_call" }, route: "POST /api/roll-call", entitlement: "photos", entitlementWhen: "photoPath" }),
+  roll_call: op({ about: "Tick off a shared John, with who helped", scope: "house", effect: "write", guard: perm("ticks:write_own"), rpc: { name: "roll_call" }, route: "POST /api/roll-call", entitlement: "photos", entitlementWhen: "photoPath", additive: true }),
   save_prefs: op({ about: "Change which days and times suit you, and Johns you'd rather", scope: "house", effect: "write", guard: perm("profile:write_own"), rpc: { name: "save_prefs" } }),
   use_immunity: op({ about: "Use an immunity on a John", scope: "house", effect: "write", guard: perm("perks:write_own"), rpc: { name: "use_immunity" } }),
   use_swap: op({ about: "Use a swap token to swap a John", scope: "house", effect: "write", guard: perm("perks:write_own"), rpc: { name: "use_swap" } }),
-  offer_swap: op({ about: "Ask someone to swap a John with you", scope: "house", effect: "write", guard: perm("swaps:write_own"), rpc: { name: "offer_swap" }, route: "POST /api/swaps" }),
+  offer_swap: op({ about: "Ask someone to swap a John with you", scope: "house", effect: "write", guard: perm("swaps:write_own"), rpc: { name: "offer_swap" }, route: "POST /api/swaps", additive: true }),
   answer_swap: op({ about: "Say yes or no to a swap ask", scope: "house", effect: "write", guard: perm("swaps:write_own"), rpc: { name: "answer_swap" } }),
   answer_dispute: op({ about: "Answer a question about your tick, with a photo", scope: "house", effect: "write", guard: perm("disputes:write_own"), rpc: { name: "answer_dispute" }, entitlement: "photos", entitlementWhen: "photoPath" }),
   undo_action: op({ about: "Undo a move from History", scope: "house", effect: "write", guard: perm("history:write_own"), rpc: { name: "undo_action" } }),
@@ -209,26 +219,26 @@ export const OPERATIONS = {
   cover_john: op({ about: "Do someone else's overdue John", scope: "house", effect: "write", guard: perm("swaps:write_own"), rpc: { name: "cover_john" }, entitlement: "photos", entitlementWhen: "photoPath" }),
   hold_cover: op({ about: "Say you're on someone else's overdue John", scope: "house", effect: "write", guard: perm("swaps:write_own"), rpc: { name: "hold_cover" } }),
   undo_cover: op({ about: "Take back a cover", scope: "house", effect: "write", guard: perm("swaps:write_own"), rpc: { name: "undo_cover" } }),
-  raise_flag: op({ about: "Flag an on-call John that needs doing", scope: "house", effect: "write", guard: perm("flags:write_own"), rpc: { name: "raise_flag" }, route: "POST /api/flags" }),
-  raise_dispute: op({ about: "Question a tick", scope: "house", effect: "write", guard: perm("disputes:write_own"), rpc: { name: "raise_dispute" }, route: "POST /api/disputes" }),
+  raise_flag: op({ about: "Flag an on-call John that needs doing", scope: "house", effect: "write", guard: perm("flags:write_own"), rpc: { name: "raise_flag" }, route: "POST /api/flags", additive: true }),
+  raise_dispute: op({ about: "Question a tick", scope: "house", effect: "write", guard: perm("disputes:write_own"), rpc: { name: "raise_dispute" }, route: "POST /api/disputes", additive: true }),
   cast_vote: op({ about: "Vote on a questioned tick", scope: "house", effect: "write", guard: perm("disputes:write_own"), rpc: { name: "cast_vote" }, route: "POST /api/disputes/[id]/votes" }),
   confirm_payment: op({ about: "Mark money paid between housemates", scope: "house", effect: "write", guard: perm("payments:write_own"), rpc: { name: "confirm_payment" }, destructive: true, entitlement: "stake" }),
   ask_house: op({ about: "Ask Jonz about the house, or ask it to change something", scope: "house", effect: "write", guard: perm("house:read"), route: "POST /api/setup/draft", firstParty: true }),
-  pass_checkout: op({ about: "Buy the House Pass", scope: "house", effect: "write", guard: perm("billing:write_own"), route: "POST /api/pass/checkout" }),
-  pass_billing: op({ about: "Open billing for a House Pass you bought", scope: "house", effect: "read", guard: perm("billing:write_own"), route: "POST /api/pass/manage" }),
+  pass_checkout: op({ about: "Buy the House Pass", scope: "house", effect: "write", guard: perm("billing:write_own"), route: "POST /api/pass/checkout" , firstParty: true }),
+  pass_billing: op({ about: "Open billing for a House Pass you bought", scope: "house", effect: "read", guard: perm("billing:write_own"), route: "POST /api/pass/manage" , firstParty: true }),
 
-  react: op({ about: "React to something on the Wall", scope: "house", effect: "write", guard: perm("wall:write_own"), rpc: { name: "react" }, tables: ["reactions"] }),
+  react: op({ about: "React to something on the Wall", scope: "house", effect: "write", guard: perm("wall:write_own"), rpc: { name: "react" }, tables: ["reactions"], additive: true }),
   unreact: op({ about: "Take back your reaction", scope: "house", effect: "write", guard: perm("wall:write_own"), rpc: { name: "unreact" }, tables: ["reactions"] }),
 
   // --- A house: admins (Parents) --------------------------------------------------------------
-  add_john: op({ about: "Add a John to the list", scope: "house", effect: "write", guard: perm("johns:write"), rpc: { name: "add_john" }, tables: ["johns"] }),
-  add_johns: op({ about: "Add several Johns at once, all or none", scope: "house", effect: "write", guard: perm("johns:write"), rpc: { name: "add_johns" }, tables: ["johns"] }),
+  add_john: op({ about: "Add a John to the list", scope: "house", effect: "write", guard: perm("johns:write"), rpc: { name: "add_john" }, tables: ["johns"], additive: true }),
+  add_johns: op({ about: "Add several Johns at once, all or none", scope: "house", effect: "write", guard: perm("johns:write"), rpc: { name: "add_johns" }, tables: ["johns"], additive: true }),
   change_john: op({ about: "Change a John on the list, from the next deal", scope: "house", effect: "write", guard: perm("johns:write"), rpc: { name: "change_john" }, tables: ["johns"] }),
   remove_john: op({ about: "Take a John off the list; weeks already dealt keep it", scope: "house", effect: "write", guard: perm("johns:write"), rpc: { name: "remove_john" }, tables: ["johns"] }),
   save_house_rules: op({ about: "Change the house's name and rules", scope: "house", effect: "write", guard: perm("house:write"), rpc: { name: "save_house_rules" }, tables: ["houses"] }),
   set_deal_mode: op({ about: "Choose how the house shares its Johns: Smart or Classic", scope: "house", effect: "write", guard: perm("house:write"), rpc: { name: "set_deal_mode" }, tables: ["houses"] }),
   answer_tick: op({ about: "OK a kid's tick, or send it back", scope: "house", effect: "write", guard: perm("ticks:write"), rpc: { name: "answer_tick" }, route: "POST /api/oks/[id]" }),
-  board_tick: op({ about: "Tick a kid's John from the kitchen board", scope: "house", effect: "write", guard: perm("ticks:write"), rpc: { name: "board_tick" } }),
+  board_tick: op({ about: "Tick a kid's John from the kitchen board", scope: "house", effect: "write", guard: perm("ticks:write"), rpc: { name: "board_tick" }, additive: true }),
   remove_flag: op({ about: "Remove a flag: your own, or anyone's with flags:write", scope: "house", effect: "write", guard: perm("flags:write_own"), rpc: { name: "remove_flag" } }),
   save_group: op({ about: "Make or change a group", scope: "house", effect: "write", guard: perm("groups:write"), rpc: { name: "save_group" } }),
   delete_group: op({ about: "Delete a group", scope: "house", effect: "write", guard: perm("groups:write"), rpc: { name: "delete_group" }, destructive: true }),
@@ -238,7 +248,7 @@ export const OPERATIONS = {
   reset_house: op({ about: "Put a result, a week or a month's forfeits right", scope: "house", effect: "write", guard: perm("history:write"), rpc: { name: "admin_reset", server: true }, route: "POST /api/resets", destructive: true }),
   reset_house_data: op({ about: "Reset the house back to before its first deal: its history (weeks dealt, ticks, money, History), or everything (the John list, groups, time away and rules too)", scope: "house", effect: "write", guard: perm("house_reset:write"), rpc: { name: "reset_house_data" }, destructive: true }),
   pay_pocket_money: op({ about: "Mark a kid's pocket money paid", scope: "house", effect: "write", guard: perm("pocket_money:write"), rpc: { name: "pay_pocket_money" }, destructive: true }),
-  add_kid: op({ about: "Add a child without a sign-in", scope: "house", effect: "write", guard: perm("members:write"), rpc: { name: "add_kid", server: true }, route: "POST /api/kids" }),
+  add_kid: op({ about: "Add a child without a sign-in", scope: "house", effect: "write", guard: perm("members:write"), rpc: { name: "add_kid", server: true }, route: "POST /api/kids", additive: true }),
   remove_member: op({ about: "Leave the house, or remove someone from it with members:write", scope: "house", effect: "write", guard: perm("members:write_own"), rpc: { name: "remove_member" }, destructive: true }),
   set_member_role: op({ about: "Make someone an admin, or not", scope: "house", effect: "write", guard: perm("members:write"), rpc: { name: "set_member_role" }, destructive: true }),
   hand_over: op({ about: "Hand admin over to someone else", scope: "house", effect: "write", guard: perm("members:write"), rpc: { name: "hand_over" }, destructive: true }),
@@ -295,7 +305,7 @@ export const OPERATIONS = {
   owner_audit_entry: op({ about: "One audit log entry in full, with what it changed", scope: "app", effect: "read", guard: perm("admin:read"), rpc: { name: "owner_audit_entry" }, tables: ["admin_audit"] }),
   owner_ask_chats: op({ about: "The owner's saved Ask Jonz chats, the latest first", scope: "app", effect: "read", guard: perm("admin:read"), rpc: { name: "owner_ask_chats" }, tables: ["owner_ask_chats"] }),
   owner_ask_chat: op({ about: "One of the owner's saved Ask Jonz chats, with its turns", scope: "app", effect: "read", guard: perm("admin:read"), rpc: { name: "owner_ask_chat" }, tables: ["owner_ask_chats"] }),
-  keep_owner_ask_chat: op({ about: "Save a new owner Ask Jonz chat", scope: "app", effect: "write", guard: perm("admin:read"), rpc: { name: "keep_owner_ask_chat" }, tables: ["owner_ask_chats"] }),
+  keep_owner_ask_chat: op({ about: "Save a new owner Ask Jonz chat", scope: "app", effect: "write", guard: perm("admin:read"), rpc: { name: "keep_owner_ask_chat" }, tables: ["owner_ask_chats"], additive: true }),
   update_owner_ask_chat: op({ about: "Save an owner Ask Jonz chat as it now stands", scope: "app", effect: "write", guard: perm("admin:read"), rpc: { name: "update_owner_ask_chat" }, tables: ["owner_ask_chats"] }),
   delete_owner_ask_chat: op({ about: "Delete one of the owner's saved Ask Jonz chats", scope: "app", effect: "write", guard: perm("admin:read"), rpc: { name: "delete_owner_ask_chat" }, tables: ["owner_ask_chats"], destructive: true }),
 } as const satisfies Record<string, Operation>;
