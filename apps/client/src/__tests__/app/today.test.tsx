@@ -93,7 +93,8 @@ async function show() {
       today: Today,
       'house/index': () => <Landed name="House" />,
       'house/away': () => <Landed name="Away" />,
-      'house/moving': () => <Landed name="Moving" />,
+      'you/index': () => <Landed name="You" />,
+      'you/moving': () => <Landed name="Moving" />,
       'house/johns': () => <Landed name="Johns" />,
     },
     { initialUrl: '/today' },
@@ -827,12 +828,12 @@ describe('moving out', () => {
     expect(await screen.findByText('Landed on Moving')).toBeOnTheScreen();
   });
 
-  it('on the day, says it is time to leave, onward to House', async () => {
+  it('on the day, says it is time to leave, onward to You', async () => {
     read.mockResolvedValue(snapshot({ members: priyaWith({ movingOutOn: today }) }));
     await open();
     expect(screen.getByTestId('moving-line')).toHaveTextContent(words('house.moving.movingDay', { house: 'Flat 3' }));
     await fireEvent.press(screen.getByTestId('moving-line'));
-    expect(await screen.findByText('Landed on House')).toBeOnTheScreen();
+    expect(await screen.findByText('Landed on You')).toBeOnTheScreen();
     // Never asked who's moving in: it's them moving out.
     expect(screen.queryByTestId('move-in-ask')).toBeNull();
   });

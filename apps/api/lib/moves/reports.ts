@@ -120,7 +120,7 @@ async function tell(out: Outbox, to: Recipient, said: { body: string; signed: st
     await out.notify?.([to.user_id], {
       title: (w) => (said.fixed ? REPORT_PUSH.fixed(w) : REPORT_PUSH.replied(said.signed, w)),
       body: reportGist(said.body),
-      url: `/house/reports/${to.report}`,
+      url: `/you/reports/${to.report}`,
       kind: "support",
       zone: to.zone ?? "UTC",
       tag: `report:${to.report}`,

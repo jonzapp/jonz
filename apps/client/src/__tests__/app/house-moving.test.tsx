@@ -4,7 +4,7 @@ import { fireEvent, screen, within } from 'expo-router/testing-library';
 import { loadHouse } from '@/api/board';
 import { catchUp } from '@/api/house';
 import { setMovingOut } from '@/api/moving';
-import MovingScreen from '@/app/(house)/house/moving';
+import MovingScreen from '@/app/(house)/you/moving';
 import { snapshot } from '@/testing/house';
 import { renderPages, untilRead } from '@/testing/pages';
 
@@ -28,7 +28,7 @@ function movingOn(on: string | null) {
 }
 
 async function open() {
-  await renderPages({ 'house/moving': MovingScreen }, '/house/moving');
+  await renderPages({ 'you/moving': MovingScreen }, '/you/moving');
   await untilRead(words);
 }
 
@@ -39,11 +39,11 @@ beforeEach(() => {
   (setMovingOut as jest.Mock).mockResolvedValue(undefined);
 });
 
-it('sits under a title bar with the way back to House', async () => {
+it('sits under a title bar with the way back to You', async () => {
   await open();
   const bar = within(screen.getByTestId('title-bar'));
   expect(bar.getByRole('header', { name: words('common.title.moving') })).toBeOnTheScreen();
-  expect(bar.getByRole('button', { name: words('common.shell.backTo', { place: words('common.section.house') }) })).toBeOnTheScreen();
+  expect(bar.getByRole('button', { name: words('common.shell.backTo', { place: words('common.section.you') }) })).toBeOnTheScreen();
   expect(screen.getByText(words('house.moving.intro'))).toBeOnTheScreen();
   expect(screen.getByText(words('house.moving.afterward'))).toBeOnTheScreen();
 });

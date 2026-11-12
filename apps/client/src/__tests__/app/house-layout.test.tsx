@@ -7,6 +7,7 @@ import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { loadHouse } from '@/api/board';
 import HouseLayout from '@/app/(house)/_layout';
 import HouseStack, { unstable_settings as houseStackSettings } from '@/app/(house)/house/_layout';
+import YouStack, { unstable_settings as youStackSettings } from '@/app/(house)/you/_layout';
 import { TitleBar } from '@/components/title-bar';
 import { assignment, snapshot } from '@/testing/house';
 import { testQueryClient } from '@/testing/query';
@@ -98,6 +99,8 @@ async function open(url = '/today') {
         </View>
       ),
       '(house)/house/wall': () => <Pushed name="Wall" />,
+      '(house)/you/_layout': { default: YouStack, unstable_settings: youStackSettings },
+      '(house)/you/index': () => <Text>You screen</Text>,
       '(house)/house/stake': () => <Pushed name="Stake" />,
       '(house)/house/johns': () => <Pushed name="Johns" />,
       // As the chat is once its Johns are added: a row on to the John list.
@@ -138,9 +141,9 @@ beforeEach(() => {
 });
 
 describe('on a phone', () => {
-  it('has a tab for each of the three places, and moves between them', async () => {
+  it('has a tab for each of the four places, and moves between them', async () => {
     await open();
-    expect(screen.getAllByRole('tab')).toHaveLength(3);
+    expect(screen.getAllByRole('tab')).toHaveLength(4);
     expect(screen.getByText('Today screen')).toBeOnTheScreen();
     expect(screen.getByRole('tab', { name: words('common.section.today') })).toBeSelected();
 
@@ -153,6 +156,11 @@ describe('on a phone', () => {
     await fireEvent.press(screen.getByRole('tab', { name: words('common.section.house') }));
     expect(screen).toHavePathname('/house');
     expect(screen.getByText('House screen')).toBeOnTheScreen();
+
+    // You, last: your own settings, help and leaving.
+    await fireEvent.press(screen.getByRole('tab', { name: words('common.section.you') }));
+    expect(screen).toHavePathname('/you');
+    expect(screen.getByText('You screen')).toBeOnTheScreen();
   });
 
   it('has no Wall, Table or Stake tab, and no wordmark strip', async () => {
@@ -184,7 +192,7 @@ describe('on a phone', () => {
     await fireEvent.press(screen.getByRole('link', { name: 'To the Wall' }));
     expect(screen).toHavePathname('/house/wall');
     expect(screen.getByText('Wall screen')).toBeOnTheScreen();
-    expect(screen.getAllByRole('tab')).toHaveLength(3);
+    expect(screen.getAllByRole('tab')).toHaveLength(4);
     expect(screen.getByRole('tab', { name: words('common.section.house') })).toBeSelected();
 
     await fireEvent.press(screen.getByRole('button', { name: words('common.shell.backTo', { place: words('common.section.house') }) }));
@@ -266,11 +274,11 @@ describe('on a laptop', () => {
     (useWindowDimensions as jest.Mock).mockReturnValue({ width: 1440, height: 900, scale: 1, fontScale: 1 });
   });
 
-  it('has a rail with the house above the same three places', async () => {
+  it('has a rail with the house above the same four places', async () => {
     await open('/week');
     expect(await screen.findByText('2 housemates')).toBeOnTheScreen();
     expect(screen.getByText('Flat 3')).toBeOnTheScreen();
-    expect(screen.getAllByRole('tab')).toHaveLength(3);
+    expect(screen.getAllByRole('tab')).toHaveLength(4);
     expect(screen.getByRole('tab', { name: words('common.section.week') })).toBeSelected();
     await fireEvent.press(screen.getByRole('tab', { name: words('common.section.house') }));
     expect(screen).toHavePathname('/house');

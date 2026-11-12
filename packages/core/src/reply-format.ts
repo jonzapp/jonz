@@ -38,7 +38,7 @@ export const PAGES = {
   groups: { label: "Groups", href: "/house/groups" },
   stake: { label: "Stake", href: "/house/stake" },
   pass: { label: "House Pass", href: "/house/pass" },
-  you: { label: "You (name, look, sign-in, help)", href: "/house/you" },
+  you: { label: "You (name, look, sign-in, help)", href: "/you" },
   wall: { label: "Wall", href: "/house/wall" },
   guide: { label: "Guide", href: "/house/guide" },
 } as const;
