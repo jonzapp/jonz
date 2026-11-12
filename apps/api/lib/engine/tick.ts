@@ -188,6 +188,24 @@ export async function loadBalances(
 }
 
 /**
+ * Each housemate's balance in each group's pool going into a week (the
+ * group's Johns only: work done minus share), summed by the database
+ * (house_group_balances). Server only: the deal splits balances by pool
+ * with it (steady.ts), so a group's Johns never move anyone's share of the
+ * whole house's. User id → group id → balance.
+ */
+export async function loadGroupBalances(db: Db, houseId: string, beforeStartsOn: string): Promise<Map<string, Map<string, number>>> {
+  const rows = must(await db.rpc("house_group_balances", { p_house: houseId, p_before: beforeStartsOn }), "group balances");
+  const out = new Map<string, Map<string, number>>();
+  for (const r of rows) {
+    const mine = out.get(r.user_id) ?? new Map<string, number>();
+    mine.set(r.group_id, Number(r.credited) - Number(r.owed));
+    out.set(r.user_id, mine);
+  }
+  return out;
+}
+
+/**
  * Deal a week's Johns with Steady weeks (@app/core steady-deal.ts): the
  * house's mode and points budget, everyone's preferences, Classic's orders of
  * turns and the Johns waiting from the week before. With `replace`, re-deal a
@@ -325,9 +343,21 @@ export async function dealWeek(
     const all = inGroup.length > 0 ? inGroup : memberIds;
     // In a family, a kid younger than the John's youngest age isn't dealt it (kids.ts).
     const sharers = all.filter((id) => oldEnough(bornYear.get(id), j.min_age, week.startsOn));
-    return { sharers, groupName: inGroup.length > 0 ? group!.name : null };
+    return { sharers, groupName: inGroup.length > 0 ? group!.name : null, groupId: inGroup.length > 0 ? group!.id : null };
   };
-  const { balances } = await loadBalances(db, house.id, week.startsOn, memberIds);
+  const [{ balances }, groupBalances] = await Promise.all([
+    loadBalances(db, house.id, week.startsOn, memberIds),
+    loadGroupBalances(db, house.id, week.startsOn),
+  ]);
+  // Each balance split by pool: each group they're in now with a John on the list, and the whole house's (the
+  // rest, which takes in a group they've left or a group's John they covered from outside it).
+  const poolGroups = [...new Set(list.map((j) => sharersOf(j).groupId).filter((g): g is string => !!g))];
+  const poolsOf = (userId: string, balance: number) => {
+    const mine = poolGroups.filter((g) => groups.find((x) => x.id === g)?.group_members.some((m) => m.user_id === userId));
+    const pools: Record<string, number> = Object.fromEntries(mine.map((g) => [g, groupBalances.get(userId)?.get(g) ?? 0]));
+    pools[""] = balance - mine.reduce((s, g) => s + pools[g], 0);
+    return pools;
+  };
   const args: SteadyDealArgs = {
     mode: house.deal_mode === "classic" ? "classic" : "smart",
     budget: house.deal_budget,
@@ -338,6 +368,7 @@ export async function dealWeek(
     members: dealt.map((m) => ({
       userId: m.user_id,
       balance: balances.get(m.user_id) ?? 0,
+      ...(poolGroups.length ? { pools: poolsOf(m.user_id, balances.get(m.user_id) ?? 0) } : {}),
       suits: m.suits_days,
       rather: ratherOf(m.rather),
     })),
@@ -358,6 +389,7 @@ export async function dealWeek(
       },
       dueTime: j.due_time,
       sharers: sharersOf(j).sharers,
+      groupId: sharersOf(j).groupId,
     })),
     away,
     last,
@@ -415,6 +447,16 @@ export async function dealWeek(
     }),
     "deal_week",
   );
+  if (weekId) {
+    // The part of the shares that was each group's Johns, for the next deal's pools (house_group_balances).
+    must(await db.from("week_group_shares").delete().eq("week_id", weekId), "clear group shares");
+    const rows = [...plan.groupShares].flatMap(([groupId, shares]) =>
+      [...shares]
+        .filter(([, share]) => share > 0)
+        .map(([userId, share]) => ({ week_id: weekId, house_id: house.id, group_id: groupId, user_id: userId, share: Math.round(share * 100) / 100 })),
+    );
+    if (rows.length) must(await db.from("week_group_shares").insert(rows), "group shares");
+  }
   return { weekId: weekId ?? null, byUser };
 }
 

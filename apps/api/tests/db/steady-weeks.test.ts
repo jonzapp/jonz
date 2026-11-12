@@ -544,3 +544,39 @@ describe("Plan it reminders", () => {
     expect((await reread("assignments", bins.id)).reminded).toBe(0);
   });
 });
+
+describe("pools: a group's Johns are balanced within the group", () => {
+  it("keeps each week's group share, sums it with the work done, and the next deal gives the group's John to whoever is behind in it", async () => {
+    const house = await makeHouse(["Ava", "Ben", "Cal", "Dee"]);
+    await rules(house, { deal_budget: 4 });
+    const [ava, ben] = house.everyone;
+    const { data: floor } = await db.from("groups").insert({ house_id: house.id, name: "Main floor" }).select("id").single();
+    expectOk(
+      await db.from("group_members").insert([ava, ben].map((m) => ({ group_id: floor!.id, house_id: house.id, user_id: m.userId }))),
+    );
+    let week = weeksAgo(4);
+    await addJohns(house.id, [{ name: "Bathroom", points: 3, groupId: floor!.id }, { name: "Kitchen", points: 3 }, { name: "Floors", points: 3 }], week);
+
+    const one = await deal(house.id, week, week.startsAt);
+    const bath = one.assignments.find((a) => a.name === "Bathroom")!;
+    const { data: shares } = await db.from("week_group_shares").select("group_id, user_id, share").eq("week_id", one.weekId);
+    expect(shares!.map((s) => [s.user_id, Number(s.share)]).sort()).toEqual([[ava.userId, 1.5], [ben.userId, 1.5]].sort());
+    expect(shares!.every((s) => s.group_id === floor!.id)).toBe(true);
+
+    // Everything done as dealt.
+    expectOk(await db.from("assignments").update({ outcome: "done", done_at: week.startsAt.toISOString(), settled_at: week.startsAt.toISOString() }).eq("week_id", one.weekId));
+    week = nextWeek(week, ZONE, 1);
+    const { data: balances } = await db.rpc("house_group_balances", { p_house: house.id, p_before: week.startsOn });
+    const doer = bath.user_id;
+    const other = doer === ava.userId ? ben.userId : ava.userId;
+    expect(balances!.map((b) => [b.user_id, Number(b.credited) - Number(b.owed)]).sort()).toEqual([[doer, 1.5], [other, -1.5]].sort());
+
+    const two = await deal(house.id, week, week.startsAt);
+    expect(two.assignments.find((a) => a.name === "Bathroom")!.user_id).toBe(other);
+
+    // A re-deal of the week keeps one set of group shares.
+    await dealWeek(db, (await loadHouse(db, house.id)).house, (await loadHouse(db, house.id)).members, week, week.startsAt, true);
+    const { count } = await db.from("week_group_shares").select("*", { count: "exact", head: true }).eq("week_id", two.weekId);
+    expect(count).toBe(2);
+  });
+});
