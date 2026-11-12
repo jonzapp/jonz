@@ -33,7 +33,7 @@ export function HelpSection({ house }: { house: string }) {
   const sent = (id: string) => {
     setOpen(null);
     void client.invalidateQueries({ queryKey: ['my-reports'] });
-    router.push(`/house/reports/${id}` as never);
+    router.push(`/you/reports/${id}` as never);
   };
   const unread = mine.data?.filter((r) => r.unread).length ?? 0;
   return (
@@ -64,7 +64,7 @@ export function HelpSection({ house }: { house: string }) {
           title={words('common.report.yours')}
           meta={words('common.report.yoursMeta', { count: mine.data?.length ?? 0, replies: unread })}
           trailing={<CountBadge count={unread} />}
-          href="/house/reports"
+          href="/you/reports"
           chevron
           testID="to-reports"
         />

@@ -86,7 +86,7 @@ test("connects an app on Jonz's consent page, lists it on You, and approves what
   expect(await access()).toEqual(["write"]);
 
   // Connected apps on You: what it may do, and its sheet changes it.
-  await page.goto("/house/you");
+  await page.goto("/you");
   const row = page.getByTestId("connected-app");
   await expect(row).toContainText(app);
   await expect(row).toContainText(words('people.appAccess.write'));
@@ -122,7 +122,7 @@ test("connects an app on Jonz's consent page, lists it on You, and approves what
   await sql.end();
 
   // Disconnect it, from its sheet.
-  await page.goto("/house/you");
+  await page.goto("/you");
   await page.getByTestId("connected-app").click();
   await page.getByTestId("app-sheet").getByRole("button", { name: words('people.connectedApps.disconnect') }).click();
   await page.getByTestId("disconnect-sheet").getByRole("button", { name: words('people.connectedApps.disconnect') }).click();

@@ -166,12 +166,12 @@ it('names the house in the title bar, and leads the page with its figures', asyn
   expect(bar.queryByRole('button', { name: words('common.shell.back') })).toBeNull();
 });
 
-/** On a phone, the switch's other half: the setup, the Pass and You. */
+/** On a phone, the switch's other half: the setup and the Pass. */
 async function showSetup() {
   await fireEvent.press(within(screen.getByTestId('house-shows')).getByRole('radio', { name: words('house.shows.setup') }));
 }
 
-it('is two halves under a switch on a phone: the Overview, then the setup, the Pass and the way to You', async () => {
+it('is two halves under a switch on a phone: the Overview, then the setup and the Pass', async () => {
   await open();
   const shows = within(screen.getByTestId('house-shows'));
   expect(shows.getByRole('radio', { name: words('house.shows.overview') })).toBeChecked();
@@ -184,10 +184,8 @@ it('is two halves under a switch on a phone: the Overview, then the setup, the P
   expect(screen.queryByTestId('house-figures')).toBeNull();
   expect(screen.queryByTestId('house-table')).toBeNull();
   expect(screen.getByTestId('pass-section')).toBeOnTheScreen();
-  const you = screen.getByTestId('to-you');
-  expect(you).toHaveTextContent(new RegExp(`Priya.*${words('house.lower.youMeta')}`));
-  await fireEvent.press(within(you).getByRole('link'));
-  expect(screen).toHavePathname('/house/you');
+  // You is a tab of its own, not part of House.
+  expect(screen.queryByTestId('to-you')).toBeNull();
 });
 
 it('shows where the house stands on the House Pass, with the way to its page', async () => {
@@ -509,7 +507,7 @@ describe('on a laptop', () => {
     ]);
   });
 
-  it('leaves the setup, the Pass and You to the list of House’s pages beside it', async () => {
+  it('leaves the setup and the Pass to the list of House’s pages beside it', async () => {
     await open({ workspace: true });
     expect(screen.getByTestId('house-nav')).toBeOnTheScreen();
     expect(screen.getAllByTestId('lower').map((node) => node.props.children)).toEqual(['the Wall']);
@@ -518,7 +516,8 @@ describe('on a laptop', () => {
     expect(screen.queryByTestId('to-you')).toBeNull();
     // The list is the way to them, so there's no switch.
     expect(screen.queryByTestId('house-shows')).toBeNull();
-    expect(screen.getByTestId('nav-you')).toHaveTextContent('You');
+    // You is the rail's last place, not one of House's pages.
+    expect(screen.queryByTestId('nav-you')).toBeNull();
   });
 
 });

@@ -21,9 +21,9 @@ import { useWords } from '@/hooks/use-words';
 const TAB_BAR = 56;
 
 /**
- * A house's three places, Today, Week and House, as tabs along the bottom of
- * a phone and a rail from laptop width on the web. House is a stack of its
- * own (house/_layout), so the pages it pushes keep the tabs. Each screen
+ * A house's four places, Today, Week, House and You, as tabs along the bottom of
+ * a phone and a rail from laptop width on the web. House and You are stacks of
+ * their own (house/_layout, you/_layout), so the pages they push keep the tabs. Each screen
  * draws its own title bar. The house is followed live here, once for every
  * tab, and the John sheet, the toasts and everyone's photos are mounted
  * here for all of them.
@@ -106,6 +106,10 @@ export default function HouseLayout() {
                     <Tabs.Screen
                       name="house"
                       options={{ title: words('common.section.house') }}
+                    />
+                    <Tabs.Screen
+                      name="you"
+                      options={{ title: words('common.section.you') }}
                     />
                   </Tabs>
                 </View>

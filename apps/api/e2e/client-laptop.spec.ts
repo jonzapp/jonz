@@ -329,16 +329,17 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   await shoot(page, "person");
   await noScrollbars(page);
 
-  // Groups, Admins, Preferences and History are parts of other pages now, You has its own, and so does Ask Jonz usage: eight in the list.
-  await expect(nav.getByRole("link")).toHaveCount(8);
-  // You: your settings beside help and leaving.
-  await nav.getByTestId("nav-you").click();
+  // Groups, Admins, Preferences and History are parts of other pages now, Ask Jonz usage has its own, and You is a tab: seven in the list.
+  await expect(nav.getByRole("link")).toHaveCount(7);
+  // You, the rail's last place: your settings beside help and leaving.
+  await page.getByTestId("tab-you").click();
   await expect(page.getByTestId("you-pair-start").getByTestId("sign-out")).toBeVisible();
   await expect(page.getByTestId("you-pair-end").getByTestId("to-delete-account")).toBeVisible();
   await expect(page.getByTestId("you-pair-end").getByTestId("leave")).toBeVisible();
   expect(await topOf(page.getByTestId("you-pair-start"))).toBeCloseTo(await topOf(page.getByTestId("you-pair-end")), 0);
   await shoot(page, "you");
   await noScrollbars(page);
+  await page.getByTestId("tab-house").click();
   await nav.getByTestId("nav-wall").click();
   // History beside the Wall, each under its name, so their first days start on the same line.
   const history = page.getByTestId("wall-pair-end").getByTestId("history-section");
@@ -407,12 +408,14 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   await page.keyboard.press("Escape");
   await nav.getByRole("link", { name: words('house.lower.overview') }).click();
 
-  // The narrowest laptop leaves too little room for House's list beside the rail: the setup, the Pass and You
+  // The narrowest laptop leaves too little room for House's list beside the rail: the setup and the Pass
   // are rows on the page again.
   await page.setViewportSize({ width: 1100, height: 900 });
   await expect(page.getByTestId("house-nav")).toHaveCount(0);
   // As on a phone, they're the other half of House's switch.
   await house.getByTestId("house-shows").getByRole("radio", { name: words('house.shows.setup') }).click();
   await expect(house.getByTestId("setup-section")).toBeVisible();
-  await expect(house.getByTestId("to-you")).toBeVisible();
+  // You is the rail's, not House's.
+  await expect(house.getByTestId("to-you")).toHaveCount(0);
+  await expect(page.getByTestId("tab-you")).toBeVisible();
 });

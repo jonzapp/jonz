@@ -4,7 +4,7 @@ import { useWindowDimensions } from 'react-native';
 
 import { loadHouse } from '@/api/board';
 import { catchUp } from '@/api/house';
-import YouScreen from '@/app/(house)/house/you';
+import YouScreen from '@/app/(house)/you/index';
 import { snapshot } from '@/testing/house';
 import { renderPages, untilRead } from '@/testing/pages';
 
@@ -30,7 +30,7 @@ jest.mock('@/hooks/use-membership', () => ({
 }));
 
 async function open() {
-  await renderPages({ 'house/you': YouScreen }, '/house/you');
+  await renderPages({ 'you/index': YouScreen }, '/you');
   await untilRead(words);
 }
 
@@ -41,11 +41,11 @@ beforeEach(() => {
   (catchUp as jest.Mock).mockResolvedValue(false);
 });
 
-it('sits under a title bar with the way back to House, your name at the top', async () => {
+it('is a tab’s top, with no way back, your name at the top', async () => {
   await open();
   const bar = within(screen.getByTestId('title-bar'));
   expect(bar.getByRole('header', { name: words('common.title.you') })).toBeOnTheScreen();
-  expect(bar.getByRole('button', { name: words('common.shell.backTo', { place: words('common.section.house') }) })).toBeOnTheScreen();
+  expect(bar.queryByRole('button', { name: words('common.shell.backTo', { place: words('common.section.house') }) })).toBeNull();
   const me = snapshot().members.find((m) => m.userId === 'priya')!;
   // Your picture (here your initials), then your name over the house and your part in it.
   expect(screen.getByTestId('you-head')).toHaveTextContent(`PR${me.name}${words('house.leave.youIn', { house: 'Flat 3', role: me.role })}`);

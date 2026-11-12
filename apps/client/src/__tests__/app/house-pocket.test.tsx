@@ -165,7 +165,7 @@ describe('adding a child', () => {
     expect(screen.queryByTestId('add-a-child')).toBeNull();
   });
 
-  it("gives a kid one short page: no switch, no invite, no Pass, the family's setup and You under the Wall", async () => {
+  it("gives a kid one short page: no switch, no invite, no Pass, the family's setup under the Wall", async () => {
     mockMe = 'maya';
     await open();
     await screen.findByTestId('house-table');
@@ -173,7 +173,7 @@ describe('adding a child', () => {
     expect(screen.queryByTestId('invite')).toBeNull();
     expect(screen.queryByTestId('pass-section')).toBeNull();
     expect(screen.getAllByTestId('lower').map((node) => node.props.children)).toContain('House setup');
-    expect(screen.getByTestId('to-you')).toBeOnTheScreen();
+    expect(screen.queryByTestId('to-you')).toBeNull();
   });
 
   it('gives a parent the switch, with the invite on the Table', async () => {

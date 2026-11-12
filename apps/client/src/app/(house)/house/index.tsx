@@ -3,7 +3,6 @@ import type { Href } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { Avatar } from '@/components/avatar';
 import { Figures } from '@/components/figures';
 import { PassLocked, PassSection } from '@/components/house-page/pass-section';
 import { PocketSection } from '@/components/house-page/pocket-section';
@@ -15,9 +14,7 @@ import { useHouseWorkspace } from '@/components/house/workspace';
 import { Pair } from '@/components/page-columns';
 import { PageTitle } from '@/components/page-title';
 import { ReadFailed } from '@/components/read-state';
-import { Row } from '@/components/row';
 import { Screen } from '@/components/screen';
-import { Section } from '@/components/section';
 import { Segmented } from '@/components/segmented';
 import { TitleBar } from '@/components/title-bar';
 import { TourSpot, useTourOffer } from '@/components/tour/tour-spot';
@@ -40,10 +37,10 @@ type Shown = 'overview' | 'setup';
 /**
  * House, the third tab: the house's Overview. Four figures, then settling
  * up while there's any, then the Table and the Wall's latest. On a phone a
- * switch at the top shows that, or "Setup and you": the house's setup, the
- * House Pass and the way to You. A kid's House is short enough for one
- * page: pocket money, the Table, the Wall, how the family runs (to read)
- * and You. Each section is its own component in components/house-page. Without the Pass
+ * switch at the top shows that, or Setup: the house's setup and the House
+ * Pass. Your own settings are the You tab's. A kid's House is short enough
+ * for one page: pocket money, the Table, the Wall and how the family runs
+ * (to read). Each section is its own component in components/house-page. Without the Pass
  * (once it's enforced) the figures and the Table give way to a row to the
  * Pass page. The pages it pushes keep the tabs (house/_layout is a stack).
  */
@@ -111,9 +108,9 @@ const FIGURE_PAGE: Record<OverviewFigure['key'], Href> = {
  * month, the stake, the housemates and the John list, each opening its
  * page), anything from a closed month still to settle, then the Table
  * beside the Wall's latest. On a phone the Wall comes under the Table, and
- * the setup, the Pass and the way to You are the switch's other half; on a
- * laptop those are in House's list beside the page. A kid has no switch:
- * the family's setup, to read, and You come under the Wall.
+ * the setup and the Pass are the switch's other half; on a laptop those are
+ * in House's list beside the page. A kid has no switch: the family's
+ * setup, to read, comes under the Wall.
  */
 function HouseSections({
   houseId,
@@ -197,18 +194,6 @@ function HouseSections({
     <>
       <SetupSection houseId={houseId} userId={userId} view={view} kid={kid} spot={!halves} />
       {kid ? null : <PassSection view={view} />}
-      {me ? (
-        <Section label={words('common.title.you')} testID="you-row">
-          <Row
-            leading={<Avatar name={me.name} userId={userId} me />}
-            title={me.name}
-            meta={words('house.lower.youMeta')}
-            href="/house/you"
-            chevron
-            testID="to-you"
-          />
-        </Section>
-      ) : null}
     </>
   );
   if (!halves) {

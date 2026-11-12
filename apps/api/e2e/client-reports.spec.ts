@@ -29,7 +29,7 @@ test("sends a problem with a screenshot from You, then reads the reply and write
   const { userId } = await dealtHouseInClient(context, "Ava Reports", "Flat 40", [{ name: "Wipe the hob", category: "kitchen" }]);
   made.push(userId);
   const page = await context.newPage();
-  await page.goto("/house/you");
+  await page.goto("/you");
 
   // You > Help > Report a problem opens the sheet, listing what it will send.
   await page.getByTestId("to-report").filter({ visible: true }).click();
@@ -44,10 +44,12 @@ test("sends a problem with a screenshot from You, then reads the reply and write
   await form.getByTestId("report-send").click();
 
   // Sent, it opens under Your reports.
-  await expect(page).toHaveURL(/\/house\/reports\/[0-9a-f-]{36}$/);
+  await expect(page).toHaveURL(/\/you\/reports\/[0-9a-f-]{36}$/);
   await expect(page.getByTestId("your-report-state")).toHaveText(words('common.report.state.new'));
   const id = page.url().split("/").pop()!;
   reports.push(id);
+  // Opening it marks it seen: wait for that, so the reply below comes after it.
+  await expect.poll(async () => (await admin().from("reports").select("seen_at").eq("id", id).single()).data?.seen_at).not.toBeNull();
   const { data: sent } = await admin().from("reports").select("user_id, kind, state, shots, details").eq("id", id).single();
   expect(sent).toMatchObject({ user_id: userId, kind: "problem", state: "new", details: expect.objectContaining({ house: "Flat 40" }) });
   expect(sent!.shots).toHaveLength(1);
@@ -58,9 +60,11 @@ test("sends a problem with a screenshot from You, then reads the reply and write
   await admin().from("reports").update({ state: "replied", last_activity_at: new Date().toISOString() }).eq("id", id);
 
   // You says a reply is waiting; the report shows it, and writing back sends it to the Inbox as new.
-  await page.goto("/house/you");
+  await page.goto("/you");
   await expect(page.getByTestId("to-reports").filter({ visible: true })).toContainText(words('common.report.yoursMeta', { count: 1, replies: 1 }));
+  // An email sent before You was a tab links to the report under House: it lands on the same report under You.
   await page.goto(`/house/reports/${id}`);
+  await expect(page).toHaveURL(new RegExp(`/you/reports/${id}$`));
   const thread = page.getByTestId("report-thread");
   await expect(thread).toContainText("Glyn at Jonz");
   await expect(thread).toContainText("Thanks Ava, fixed in today's update.");
@@ -74,7 +78,7 @@ test("sends a problem with a screenshot from You, then reads the reply and write
   await expect(page.getByTestId("your-report-state")).toHaveText(words('common.report.state.new'));
 
   // Read now: You no longer says a reply is waiting.
-  await page.goto("/house/you");
+  await page.goto("/you");
   await expect(page.getByTestId("to-reports").filter({ visible: true })).not.toContainText(words('common.report.yoursMeta', { count: 1, replies: 1 }));
   await context.close();
 });

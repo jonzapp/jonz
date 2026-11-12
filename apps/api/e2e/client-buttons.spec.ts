@@ -76,7 +76,7 @@ test("every page of a dealt house keeps the button rules", async ({ browser }) =
     ["/house/rules", "rules-screen"],
     ["/house/away", "away-screen"],
     ["/house/wall", "wall-screen"],
-    ["/house/you", "you-screen"],
+    ["/you", "you-screen"],
   ] as const) {
     await page.goto(path);
     await expect(page.getByTestId(screen)).toBeVisible();

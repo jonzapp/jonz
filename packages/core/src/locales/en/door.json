@@ -122,7 +122,7 @@
   "door.email.tooMany": "Too many tries. Wait a few minutes, then try again.",
   "door.email.failed": "That didn’t work. Try again.",
   "door.email.notOpen": "Email sign-in isn’t open yet. Use Google or Microsoft for now.",
-  "door.email.needsAuthenticator": "This account has an authenticator app, so the password wasn’t saved. Sign in with Google or Microsoft, then add a password on your House page under You.",
+  "door.email.needsAuthenticator": "This account has an authenticator app, so the password wasn’t saved. Sign in with Google or Microsoft, then add a password on the You tab.",
   "door.password.label": "Password",
   "door.password.add": "Add a password",
   "door.password.change": "Change your password",

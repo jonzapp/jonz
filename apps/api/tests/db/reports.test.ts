@@ -244,7 +244,7 @@ describe("telling the other side", () => {
     const id = await sent(ava);
     const out = quiet();
     expect(await replyToReport({ db: owner.db, userId: owner.userId }, id, { body: "Thanks, fixed." }, out)).toBeNull();
-    expect(out.told).toEqual([{ to: [ava.userId], title: "Glyn at Jonz replied", url: `/house/reports/${id}` }]);
+    expect(out.told).toEqual([{ to: [ava.userId], title: "Glyn at Jonz replied", url: `/you/reports/${id}` }]);
     const { data: who } = await db.auth.admin.getUserById(ava.userId);
     expect(out.emails).toEqual([{ to: who.user!.email!, subject: `Re: ${words.slice(0, 59)}… (ref ${id.slice(0, 8)})` }]);
   });

@@ -35,6 +35,7 @@
   "common.section.table": "Table",
   "common.section.stake": "Stake",
   "common.section.house": "House",
+  "common.section.you": "You",
   "common.shell.close": "Close",
   "common.shell.back": "Back",
   "common.shell.backTo": "Back to {place}",
