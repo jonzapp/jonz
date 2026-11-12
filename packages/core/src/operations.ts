@@ -91,8 +91,11 @@ export interface Operation {
   entitlementWhen?: string;
   /**
    * Only for the person in Jonz itself, never a connected app: approving a
-   * connected app's request. Not offered over MCP, and the database refuses
-   * an OAuth client's token for it.
+   * connected app's request, and Jonz's own AI (Ask Jonz, the support
+   * agent), which Jonz pays for: a connected app is an assistant already, so
+   * it does its own thinking with house_guide and the house's reads. Not
+   * offered over MCP, and the executor refuses an OAuth client's token for
+   * it (the approval functions refuse one in the database too).
    */
   firstParty?: true;
 }
@@ -164,6 +167,7 @@ export const OPERATIONS = {
   house_live: op({ about: "The house's newest change after one the app saw, for its live updates", scope: "house", effect: "read", guard: perm("house:read"), rpc: { name: "house_live_since" }, firstParty: true }),
   // Free for the last four weeks; older moves need the Pass, which house_history checks itself.
   house_history: op({ about: "The house's history, a page at a time", scope: "house", effect: "read", guard: perm("history:read"), rpc: { name: "house_history" } }),
+  house_guide: op({ about: "How a part of Jonz works, in the app's own guide with this house's numbers (its points, hours, Stake and prices): one topic, or every topic when none is given. Read it before explaining anything about the app", scope: "house", effect: "read", guard: perm("house:read"), server: true }),
   ask_usage: op({ about: "How much of the house's Ask Jonz this month each person has used", scope: "house", effect: "read", guard: perm("house:read"), rpc: { name: "ask_usage_people", server: true }, route: "POST /api/ask/usage" }),
   catch_up: op({ about: "Bring the house up to date: close a finished week, deal the next", scope: "house", effect: "write", guard: perm("house:read"), route: "POST /api/fresh" }),
   house_today: op({
@@ -208,7 +212,7 @@ export const OPERATIONS = {
   raise_dispute: op({ about: "Question a tick", scope: "house", effect: "write", guard: perm("disputes:write_own"), rpc: { name: "raise_dispute" }, route: "POST /api/disputes" }),
   cast_vote: op({ about: "Vote on a questioned tick", scope: "house", effect: "write", guard: perm("disputes:write_own"), rpc: { name: "cast_vote" }, route: "POST /api/disputes/[id]/votes" }),
   confirm_payment: op({ about: "Mark money paid between housemates", scope: "house", effect: "write", guard: perm("payments:write_own"), rpc: { name: "confirm_payment" }, destructive: true, entitlement: "stake" }),
-  ask_house: op({ about: "Ask Jonz about the house, or ask it to change something", scope: "house", effect: "write", guard: perm("house:read"), route: "POST /api/setup/draft" }),
+  ask_house: op({ about: "Ask Jonz about the house, or ask it to change something", scope: "house", effect: "write", guard: perm("house:read"), route: "POST /api/setup/draft", firstParty: true }),
   pass_checkout: op({ about: "Buy the House Pass", scope: "house", effect: "write", guard: perm("billing:write_own"), route: "POST /api/pass/checkout" }),
   pass_billing: op({ about: "Open billing for a House Pass you bought", scope: "house", effect: "read", guard: perm("billing:write_own"), route: "POST /api/pass/manage" }),
 
@@ -261,13 +265,13 @@ export const OPERATIONS = {
   owner_deletions_count: op({ about: "How many deletions match", scope: "app", effect: "read", guard: perm("admin:read"), rpc: { name: "owner_deletions_count" } }),
   claim_owner_ask: op({ about: "Start a turn of the owner's Ask Jonz", scope: "app", effect: "write", guard: perm("admin:read"), rpc: { name: "claim_owner_ask" } }),
   finish_owner_ask: op({ about: "Finish a turn of the owner's Ask Jonz", scope: "app", effect: "write", guard: perm("admin:read"), rpc: { name: "finish_owner_ask" } }),
-  ask_owner: op({ about: "Ask Jonz on the admin pages, or ask it to do something", scope: "app", effect: "write", guard: perm("admin:read"), route: "POST /api/admin/ask" }),
+  ask_owner: op({ about: "Ask Jonz on the admin pages, or ask it to do something", scope: "app", effect: "write", guard: perm("admin:read"), route: "POST /api/admin/ask", firstParty: true }),
   owner_reply_report: op({ about: "Reply to a report (its sender gets a push and an email)", scope: "app", effect: "write", guard: perm("reports:write"), rpc: { name: "owner_reply_report" }, route: "POST /api/reports/[id]/reply", destructive: true }),
   owner_fix_report: op({ about: "Mark a report fixed, and tell everyone who sent it", scope: "app", effect: "write", guard: perm("reports:write"), rpc: { name: "owner_fix_report" }, route: "POST /api/reports/[id]/fixed", destructive: true }),
   owner_open_report: op({ about: "Read a report in full, marking a new one open", scope: "app", effect: "write", guard: perm("reports:write"), rpc: { name: "owner_open_report" } }),
   owner_set_report_state: op({ about: "Change a report's state", scope: "app", effect: "write", guard: perm("reports:write"), rpc: { name: "owner_set_report_state" } }),
   owner_same_as: op({ about: "Fold a report into one that says the same thing", scope: "app", effect: "write", guard: perm("reports:write"), rpc: { name: "owner_same_as" } }),
-  claim_support_draft: op({ about: "Start the support agent's draft reply to a report", scope: "app", effect: "write", guard: perm("reports:write"), rpc: { name: "claim_support_draft" }, route: "POST /api/reports/[id]/draft" }),
+  claim_support_draft: op({ about: "Start the support agent's draft reply to a report", scope: "app", effect: "write", guard: perm("reports:write"), rpc: { name: "claim_support_draft" }, route: "POST /api/reports/[id]/draft", firstParty: true }),
   finish_support_draft: op({ about: "Save the support agent's draft reply", scope: "app", effect: "write", guard: perm("reports:write"), rpc: { name: "finish_support_draft" } }),
   owner_set_support_draft: op({ about: "Use or set aside a draft reply", scope: "app", effect: "write", guard: perm("reports:write"), rpc: { name: "owner_set_support_draft" } }),
   save_notice: op({ about: "Put up a notice, or change one", scope: "app", effect: "write", guard: perm("notices:write"), rpc: { name: "save_notice" }, destructive: true }),

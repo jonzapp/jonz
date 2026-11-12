@@ -194,6 +194,17 @@ export function createExecutor(options: ExecutorOptions) {
     }
   }
 
+  /**
+   * What's only for the person in Jonz itself (`firstParty`): approving a
+   * connected app's request, and Jonz's own AI, which Jonz pays for. A
+   * connected app does its own thinking, with house_guide and the reads.
+   */
+  function onlyInJonz(claims: Claims, op: Operation) {
+    if (op.firstParty && typeof claims.client_id === "string") {
+      throw new Problem("forbidden", "Only you can do this, in Jonz itself. Connected apps can't.");
+    }
+  }
+
   async function rateLimit(userId: string, effect: "read" | "write", at: Date) {
     const window = new Date(Math.floor(at.getTime() / 60_000) * 60_000);
     const [row] = await sql<{ hits: number }[]>`
@@ -315,6 +326,7 @@ export function createExecutor(options: ExecutorOptions) {
     const claims: Claims = await verify(context.authorization);
     const at = now();
     const effect = op.operation.effect;
+    onlyInJonz(claims, op.operation);
     await appMayChange(claims, effect);
     await rateLimit(claims.sub, effect, at);
 

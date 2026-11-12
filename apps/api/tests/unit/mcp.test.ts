@@ -1,9 +1,10 @@
-import { MCP_ADDRESS, OPERATIONS, type Operation } from "@app/core";
+import { HOW_JONZ_WORKS, MCP_ADDRESS, OPERATIONS, type Operation } from "@app/core";
 import { Problem, type Executor } from "@app/server";
 import { createMcpHandler } from "@modelcontextprotocol/server";
 import { describe, expect, it, vi } from "vitest";
 import { V1_OPERATIONS } from "v1";
 
+import { V1_HANDLERS } from "@/lib/v1/handlers";
 import { buildMcpServer, handleMcp, mcpOperations, protectedResource } from "@/lib/mcp/server";
 
 /**
@@ -64,8 +65,20 @@ describe("/mcp", () => {
       expect(said, tool).toContain(tool);
       expect(names, tool).toContain(tool);
     }
-    // ask_house joins the tools where the host hands in its handler (apps/api's /mcp).
-    expect(said).toContain("ask_house");
+    // What Ask Jonz knows, so the person's own assistant explains as it would, and reads the guide first.
+    expect(said).toContain(HOW_JONZ_WORKS);
+    expect(said).toContain("house_guide");
+    // house_guide joins the tools where the host hands in its handler (apps/api's /mcp), and it isn't first-party.
+    expect(V1_HANDLERS).toHaveProperty("house_guide");
+    expect("firstParty" in OPERATIONS.house_guide).toBe(false);
+  });
+
+  it("offers none of Jonz's own AI: the person's assistant does the thinking, and Jonz pays for no model", async () => {
+    const { result: listed } = await rpc(fake(), "tools/list");
+    const names = (listed!.tools as { name: string }[]).map((t) => t.name);
+    for (const ai of ["ask_house", "ask_owner", "claim_support_draft"]) expect(names, ai).not.toContain(ai);
+    const { result } = await rpc(fake(), "initialize", { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "test", version: "1" } });
+    expect(result!.instructions as string).not.toContain("ask_house");
   });
 
   const A = "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d";

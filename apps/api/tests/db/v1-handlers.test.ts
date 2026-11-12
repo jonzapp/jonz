@@ -10,6 +10,7 @@
 
 import { randomBytes, randomUUID } from "node:crypto";
 
+import { HOW_TOPICS } from "@app/core";
 import { connect, createExecutor, Problem, tokenVerifier, type Executor, type Sql } from "@app/server";
 import { SignJWT } from "jose";
 import postgres from "postgres";
@@ -87,6 +88,30 @@ describe("/v1 server operations", () => {
     const theirs = await run(stranger, "ask_usage", { houseId });
     expect(theirs.ok).toBe(false);
     if (!theirs.ok) expect(["forbidden", "not_found"]).toContain(theirs.problem.code);
+  });
+
+  it("reads the guide in the house's own numbers for anyone in it, one topic or all, and nothing for a stranger", async () => {
+    const all = await run(housemate, "house_guide", { houseId });
+    expect(all.ok, all.ok ? "" : all.problem.message).toBe(true);
+    if (all.ok) {
+      const topics = all.body as unknown as { topic: string; words: string }[];
+      expect(topics.map((t) => t.topic)).toEqual([...HOW_TOPICS]);
+      for (const t of topics) expect(t.words.trim(), t.topic).not.toBe("");
+    }
+    const one = await run(housemate, "house_guide", { houseId, topic: "fair_shares" });
+    expect(one.ok && (one.body as unknown as { topic: string }[]).map((t) => t.topic)).toEqual(["fair_shares"]);
+    // Asked by a connected app: a read, so Read only is enough.
+    const app = await run(housemate, "house_guide", { houseId, topic: "deal" }, { client_id: "some-app" });
+    expect(app.ok, app.ok ? "" : app.problem.message).toBe(true);
+    const theirs = await run(stranger, "house_guide", { houseId });
+    expect(theirs.ok).toBe(false);
+    if (!theirs.ok) expect(["forbidden", "not_found"]).toContain(theirs.problem.code);
+  });
+
+  it("keeps Ask Jonz, which Jonz pays for, from a connected app: the person's own assistant does the thinking", async () => {
+    const app = await run(housemate, "ask_house", { houseId, messages: [{ role: "user", text: "Who has the bins?" }], draft: null }, { client_id: "some-app" });
+    expect(app.ok).toBe(false);
+    if (!app.ok) expect(app.problem).toMatchObject({ code: "forbidden", message: expect.stringMatching(/Only you/) });
   });
 
   it("catches the house up for someone in it", async () => {

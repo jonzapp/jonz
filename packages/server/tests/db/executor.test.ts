@@ -69,7 +69,16 @@ const whoAmI: ApiOperation = {
   http: { method: "POST", path: "/v1/me/who" },
   handler: async ({ tx }) => (await tx<{ role: string; uid: string }[]>`select current_user as role, auth.uid()::text as uid`)[0],
 };
-const OPS = [createHouse, myPermissions, setHouseKind, whoAmI];
+/** One only the person in Jonz may run (firstParty), like Jonz's own AI: a read, so read-only is no reason to refuse it. */
+const inJonzOnly: ApiOperation = {
+  name: "in_jonz_only",
+  operation: { about: "Only in Jonz itself", scope: "account", effect: "read", guard: { by: "permission", permission: "account:read" }, server: true, firstParty: true } as Operation,
+  input: z.object({}),
+  output: z.object({ ran: z.boolean() }),
+  http: { method: "GET", path: "/v1/me/in-jonz-only" },
+  handler: async () => ({ ran: true }),
+};
+const OPS = [createHouse, myPermissions, setHouseKind, whoAmI, inJonzOnly];
 
 const executor = (o: Partial<ExecutorOptions> = {}) => createExecutor({ sql: api, verify, operations: OPS, now: () => minute(0), ...o });
 const house = { name: "Test House", timezone: "Europe/London", currency: "GBP", weekStarts: 1, kind: "housemates" as const };
@@ -309,6 +318,16 @@ describe("the executor", () => {
     const tooLate = executor({ now: () => new Date(minute(10).getTime() + 32 * 60_000) });
     await expect(tooLate("set_house_kind", app, { houseId, kind: "housemates" })).rejects.toMatchObject({ code: "forbidden", extra: { approvalUrl: expect.any(String) } });
     expect(await kind()).toBe("family");
+  });
+
+  it("keeps what's only for the person in Jonz (its own AI, approvals) from every connected app, even one that may change things", async () => {
+    const run = executor({ now: () => minute(10) });
+    tokens["alice-own-app"] = { ...tokens.alice, client_id: "alices-app" };
+    await admin`insert into public.connected_apps (user_id, client_id, access) values (${people.alice}::uuid, 'alices-app', 'write') on conflict do nothing`;
+    await expect(run("in_jonz_only", { authorization: "alice", via: "api" }, {})).resolves.toMatchObject({ body: { ran: true } });
+    for (const via of ["mcp", "api"] as const) {
+      await expect(run("in_jonz_only", { authorization: "alice-own-app", via }, {})).rejects.toMatchObject({ code: "forbidden", message: expect.stringMatching(/Only you/) });
+    }
   });
 
   it("lets a connected app only read until the person lets it change things, and only the person can", async () => {
