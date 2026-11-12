@@ -1,8 +1,8 @@
-import { HOW_JONZ_WORKS, MCP_ADDRESS, OPERATIONS, type Operation } from "@app/core";
+import { HOW_JONZ_WORKS, JOHN_LIST_ADVICE, MCP_ADDRESS, OPERATIONS, PAGE_IDS, type Operation } from "@app/core";
 import { Problem, type Executor } from "@app/server";
 import { createMcpHandler } from "@modelcontextprotocol/server";
 import { describe, expect, it, vi } from "vitest";
-import { V1_OPERATIONS } from "v1";
+import { V1_OPERATIONS, withHandlers } from "v1";
 
 import { V1_HANDLERS } from "@/lib/v1/handlers";
 import { buildMcpServer, handleMcp, mcpOperations, protectedResource } from "@/lib/mcp/server";
@@ -17,8 +17,8 @@ import { buildMcpServer, handleMcp, mcpOperations, protectedResource } from "@/l
 
 const TOKEN = "Bearer test-token";
 
-async function rpc(execute: Executor, method: string, params: Record<string, unknown> = {}) {
-  const handler = createMcpHandler(() => buildMcpServer(execute, TOKEN));
+async function rpc(execute: Executor, method: string, params: Record<string, unknown> = {}, operations = mcpOperations()) {
+  const handler = createMcpHandler(() => buildMcpServer(execute, TOKEN, operations));
   const res = await handler.fetch(
     new Request("https://api.jonz.app/mcp", {
       method: "POST",
@@ -32,6 +32,8 @@ async function rpc(execute: Executor, method: string, params: Record<string, unk
   const json = text.trimStart().startsWith("{") ? text : text.split("\n").filter((l) => l.startsWith("data: ")).map((l) => l.slice(6)).join("");
   return JSON.parse(json) as { result?: Record<string, unknown>; error?: unknown };
 }
+
+const rpcWith = (operations: ReturnType<typeof mcpOperations>, method: string) => rpc(fake(), method, {}, operations);
 
 const fake = (impl: Executor = vi.fn(async () => ({ status: 200 as const, body: { ok: true }, requestId: "r" }))) => impl;
 
@@ -67,10 +69,24 @@ describe("/mcp", () => {
     }
     // What Ask Jonz knows, so the person's own assistant explains as it would, and reads the guide first.
     expect(said).toContain(HOW_JONZ_WORKS);
-    expect(said).toContain("house_guide");
-    // house_guide joins the tools where the host hands in its handler (apps/api's /mcp), and it isn't first-party.
-    expect(V1_HANDLERS).toHaveProperty("house_guide");
-    expect("firstParty" in OPERATIONS.house_guide).toBe(false);
+    // And the same advice on the John list, from the one place Ask Jonz has it too.
+    expect(said).toContain(JOHN_LIST_ADVICE);
+    // Jonz's pages: one tool lists them, one reads any of them, whatever pages there are.
+    for (const tool of ["list_pages", "read_page"]) {
+      expect(said, tool).toContain(tool);
+      expect(V1_HANDLERS, tool).toHaveProperty(tool);
+      expect("firstParty" in OPERATIONS[tool as keyof typeof OPERATIONS], tool).toBe(false);
+    }
+    // As /mcp serves them, with apps/api's handlers: no tool for any one page, and read_page takes every page there is.
+    const served = (await rpcWith(mcpOperations(withHandlers(V1_HANDLERS)), "tools/list")).result!.tools as { name: string; inputSchema: { properties: Record<string, { enum?: string[] }> } }[];
+    expect(served.map((t) => t.name).filter((n) => /guide|help|privacy|terms|how_it_works/.test(n))).toEqual([]);
+    const read = served.find((t) => t.name === "read_page")!;
+    expect(read.inputSchema.properties.pageId.enum).toEqual([...PAGE_IDS]);
+    expect(served.map((t) => t.name)).toContain("list_pages");
+    // Every tool the instructions name is one /mcp serves.
+    const named = new Set(said.match(/\b[a-z]+(?:_[a-z]+)+\b/g));
+    expect(named.size).toBeGreaterThan(10);
+    for (const name of named) expect(served.map((t) => t.name), name).toContain(name);
   });
 
   it("offers none of Jonz's own AI: the person's assistant does the thinking, and Jonz pays for no model", async () => {

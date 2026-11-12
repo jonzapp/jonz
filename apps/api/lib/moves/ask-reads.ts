@@ -8,7 +8,7 @@ import {
   addDaysTo,
   buildStake,
   buildWeekBoard,
-  howItWorks,
+  pageMarkdown,
   jobPlaces,
   johnWhy,
   monthOf,
@@ -19,7 +19,7 @@ import {
   localDate,
   weekWindow,
   type HouseRules,
-  type HowTopic,
+  type PageId,
   type LedgerRow,
 } from "@app/core";
 
@@ -45,7 +45,7 @@ export interface HouseReads {
   /** Why the deal gave a John (this week or last, by name) to whom it did, and how it added up. */
   whyJohn(name: string, who: string | null): Promise<string>;
   /** How part of the app works, with this house's numbers (core how-it-works.ts). */
-  howItWorks(topic: HowTopic): string;
+  page(page: PageId): string;
   /** The Wall's latest posts, with refs and who reacted how. */
   wall(): Promise<string>;
   /** Questioned ticks still open, with refs and the votes so far. */
@@ -346,8 +346,9 @@ export function houseReads(caller: Caller, houseId: string, ctx: ReadsContext): 
       return `No John called “${name}”${who ? ` for ${who}` : ""} this week or last. The week read lists what was dealt.`;
     },
 
-    howItWorks(topic) {
-      return howItWorks(topic, { rules: ctx.rules, family: ctx.house.kind === "family", awayMakeup: ctx.house.awayMakeup }, wordsFor("en", houseKind(ctx.house.kind)));
+    page(page) {
+      const house = { rules: ctx.rules, family: ctx.house.kind === "family", awayMakeup: ctx.house.awayMakeup };
+      return pageMarkdown(page, { words: wordsFor("en", houseKind(ctx.house.kind)), house });
     },
   };
 }

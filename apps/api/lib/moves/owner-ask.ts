@@ -3,8 +3,8 @@ import "server-only";
 import {
   wordsFor,
   auditSearchFilter,
-  DEFAULT_RULES,
-  howItWorks,
+  newHouseFacts,
+  pageMarkdown,
   OWNER_MOVE_PERMISSION,
   OWNER_MOVES_MAX,
   OWNER_PERMISSION_NAMES,
@@ -154,8 +154,9 @@ export function ownerReads(caller: Caller, now: Date): OwnerReads {
         data.length > ROWS,
       );
     },
-    howItWorks(topic, family) {
-      return howItWorks(topic, { rules: { ...DEFAULT_RULES, timezone: OWNER_TZ, currency: "GBP" }, family, awayMakeup: 100 }, wordsFor("en", family ? "family" : "housemates"));
+    page(page, family) {
+      const kind = family ? "family" : "housemates";
+      return pageMarkdown(page, { words: wordsFor("en", kind), house: newHouseFacts(kind, OWNER_TZ, "GBP") });
     },
   };
 }

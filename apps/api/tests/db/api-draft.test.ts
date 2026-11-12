@@ -258,7 +258,7 @@ describe("chatTurn, with Claude stood in for", () => {
       // Even called, a write it wasn't given is refused.
       expect(tools.edit({ kind: "add", john: { name: "Sneaky" } }).ok).toBe(false);
       expect(tools.setGroup("Us", ["me"]).ok).toBe(false);
-      reads = [tools.listJohns(), await tools.reads.people(), await tools.reads.rules(), await tools.reads.timeAway(), await tools.reads.balances(), await tools.reads.week("this"), await tools.reads.history(), await tools.reads.stake(), await tools.reads.whyJohn("bathroom", null), tools.reads.howItWorks("stake")];
+      reads = [tools.listJohns(), await tools.reads.people(), await tools.reads.rules(), await tools.reads.timeAway(), await tools.reads.balances(), await tools.reads.week("this"), await tools.reads.history(), await tools.reads.stake(), await tools.reads.whyJohn("bathroom", null), tools.reads.page("stake")];
       return { raw: { reply: "Ava and you.", ask: { kind: "none" } }, inputTokens: 1, outputTokens: 1 };
     });
     expect(result).toEqual({ reply: "Ava and you.", ask: null, draft: null, source: "ai", allowance: expect.objectContaining({ left: expect.any(Number) }) });

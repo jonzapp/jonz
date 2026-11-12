@@ -45,6 +45,7 @@ export * from "./permission-matrix";
 export * from "./assistants";
 export * from "./reply-format";
 export * from "./how-it-works";
+export * from "./pages";
 export * from "./reply-samples";
 export * from "./owner-messages";
 export * from "./owner-houses";

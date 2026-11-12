@@ -21,9 +21,9 @@ const readsStub: SupportReads = {
   similar: async () => "similar",
   deletions: async () => "deletions",
   audit: async () => "audit",
-  howItWorks: () => "how",
+  page: () => "how",
 };
-const SUPPORT_TOOLS = ["audit", "deletions", "how_it_works", "similar_reports", "their_house", "their_reports"];
+const SUPPORT_TOOLS = ["audit", "deletions", "read_page", "similar_reports", "their_house", "their_reports"];
 
 const MAIN = "5c1e9a20-0000-4000-8000-000000000001";
 const REPORT = "8b2d4f10-0000-4000-8000-000000000002";
@@ -74,8 +74,8 @@ describe("the support agent's walls", () => {
     };
     const house = Object.keys(jonzToolSet(houseTools));
     const support = Object.keys(supportToolSet(readsStub));
-    for (const name of support.filter((t) => t !== "how_it_works")) expect(house).not.toContain(name);
-    for (const name of house.filter((t) => t !== "how_it_works")) expect(support).not.toContain(name);
+    for (const name of support.filter((t) => t !== "read_page")) expect(house).not.toContain(name);
+    for (const name of house.filter((t) => t !== "read_page")) expect(support).not.toContain(name);
     // The owner's Ask Jonz is a chat of its own: the support agent's report reads aren't in it.
     const owner = Object.keys(ownerToolSet(new Proxy({}, { get: () => async () => "" }) as OwnerReads));
     for (const name of ["their_house", "their_reports", "similar_reports"]) expect(owner).not.toContain(name);

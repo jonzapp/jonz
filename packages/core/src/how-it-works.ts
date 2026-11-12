@@ -53,6 +53,14 @@ export const HOW_JONZ_WORKS = `- A chore is called a John. The house's John list
 - In a family, admins are called parents and members kids; a kid's tick waits for a parent's OK, and Johns can earn pocket money.
 - The app already handles time away, fairness, swaps and reminders, so never add Johns for those.`;
 
+/**
+ * How to change or draft a house's John list, for Ask Jonz and for an app
+ * connected over MCP alike: who moving in or out touches, and what a new
+ * house's first list looks like.
+ */
+export const JOHN_LIST_ADVICE = `- If someone is moving out or in, the deal already deals between whoever lives there, so only change Johns that name them or a group they're in, and say so.
+- Setting up a new house (the list is empty): draft the Johns this house needs, usually 6 to 15, covering the usual (kitchen, bathroom, bins, floors) and anything they mention. If the first message says enough, draft straight away; otherwise ask one short question at a time, at most two before the first draft, then draft anyway and say what you assumed. Spread Johns across the week; bins go out the night before collection; bigger jobs suit the weekend. Similar jobs get similar points. Use exactly the period they ask for (quarterly is everyMonths 3, not every 4 weeks). Groups only when some people share something the others don't (two bathrooms, one per floor); “me” in a group is the person writing.`;
+
 /** What the pieces need to know about the house to use its own numbers. */
 export interface HowFacts {
   rules: HouseRules;

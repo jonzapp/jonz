@@ -2,7 +2,7 @@ import "server-only";
 
 import { CLIENT_CAPABILITIES_META_KEY, createMcpHandler, inputRequired, McpServer, UrlElicitationRequiredError } from "@modelcontextprotocol/server";
 import { randomUUID } from "node:crypto";
-import { APP_NAME, HOW_JONZ_WORKS } from "@app/core";
+import { APP_NAME, HOW_JONZ_WORKS, JOHN_LIST_ADVICE } from "@app/core";
 import { V1_OPERATIONS, v1Instance } from "v1";
 import { answersSafely, asProblem, notSetUpProblem, Problem, problemResponse, type ApiOperation, type Executor } from "@app/server";
 
@@ -24,14 +24,18 @@ export const MCP_INFO = { name: "jonz", version: "1.0.0" } as const;
  * Ask Jonz knows, so the person's own assistant does the thinking Ask Jonz
  * would (Jonz's own AI isn't offered here: it's firstParty, and Jonz pays
  * for it). How Jonz works and how fair shares count, the guide to read
- * before explaining (house_guide), and how changes and approvals go.
+ * before explaining (list_pages, read_page), and how changes and approvals go.
  */
 export const MCP_INSTRUCTIONS = [
   `${APP_NAME} shares a house's chores (Johns) out fairly each week. You act for one person: you see what they can see in ${APP_NAME} and can do what they may do, as them. How ${APP_NAME} works:\n${HOW_JONZ_WORKS}`,
   "Each person's fair share counts points from the day they joined: their share of every John dealt (split between everyone who shares it) against the points of work they did, on time or late, including Johns they covered for someone. Standing = done minus share; below zero is behind.",
   "A group's Johns (a John only that group shares, such as one floor's bathroom) are evened out within the group, apart from the rest of the house's: each person has a standing in each group they're in and one in the rest of the house's Johns, and a group John never changes anyone's turn at the rest. house_balances gives the whole balance; house_group_balances gives each group's part, and the rest of the house's is the whole less the groups someone is in now. Covering a group's John when you're not in the group counts toward the rest of the house's; leaving a group takes that standing into the rest of the house's, and joining one starts level.",
   "The deal gives each John to whoever is furthest behind in its pool, with a weekly points budget as a guide, not a limit: in Smart whoever is behind may get up to half the budget more, and in Classic whoever's turn it is may go up to half the budget over. Time away is left out and made up as the house's rules say.",
-  `Explaining: read house_guide for the topic first. It is ${APP_NAME}'s own guide with this house's numbers, word for word what people read in the app. Then read the person's own numbers (house_balances, house_stake, house_today and the like) and explain with those: a short numbered list of steps with the real numbers when the maths helps, rounded to whole points and to the penny. Be fair and kind: explain, don't scold. Never make up a rule or a number; look it up, or say you don't know.`,
+  `First read my_house for the house the person is in, my_permissions for what they may do there, and my_language: answer in that language unless they write in another. If they ask for something only an admin (a parent in a family) may do, say so plainly.`,
+  `Explaining: ${APP_NAME}'s own pages are yours to read. list_pages lists them (each guide topic, Help, Privacy, Terms); read_page reads one, word for word what people read, the guide with this house's numbers. Read the topic before explaining anything about the app, then the person's own numbers (house_balances, house_stake, house_today and the like) and explain with those: a short numbered list of steps with the real numbers when the maths helps, rounded to whole points and to the penny. Be fair and kind: explain, don't scold. Never make up a rule or a number; look it up, or say you don't know.`,
+  `Changing the John list: read john_list first and change only what they ask for: change_john with only the fields that change, remove_john to take one off, add_johns to add several at once.\n${JOHN_LIST_ADVICE}`,
+  "Fixing mistakes: offer the smallest fix that does what they ask. One move: undo_action, with its id from house_history. A result, someone's week, the whole week, a redeal, a week that counts for nothing or a month's forfeits: reset_house, first without apply to see what it would change, then with apply once they agree. reset_house_data takes the house back to before its first deal: only when they plainly ask to start over.",
+  "How to talk: plain, warm and brief, a short answer for a short question, and the working only when they ask how or why.",
   `Changes run as the person, through the same checks as the app's own buttons. Anything that can't be undone waits until they approve it in ${APP_NAME}. If a change comes back forbidden because this app may only read, tell them they can let it read and change on You, under Connected apps.`,
 ].join("\n\n");
 

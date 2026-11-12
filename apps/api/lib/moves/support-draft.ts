@@ -1,6 +1,6 @@
 import "server-only";
 
-import { DEFAULT_RULES, howItWorks, SUPPORT_DRAFTS_PER_DAY, SupportDraft, tidySuggestion, type SupportDraftResponse, wordsFor } from "@app/core";
+import { newHouseFacts, pageMarkdown, SUPPORT_DRAFTS_PER_DAY, SupportDraft, tidySuggestion, type SupportDraftResponse, wordsFor } from "@app/core";
 
 import { canAsk, type AgentAnswer } from "@/lib/ai/agent";
 import { askSupportClaude, type ReportForAgent, type SupportAnswer, type SupportReads } from "@/lib/ai/support-draft";
@@ -123,8 +123,8 @@ export function supportReads(caller: Caller, report: OpenedReport, now: Date): S
     },
     deletions: (q) => owner.deletions(q),
     audit: (q) => owner.audit(q, null, null),
-    howItWorks(topic, family) {
-      return howItWorks(topic, { rules: { ...DEFAULT_RULES, timezone: OWNER_TZ, currency: "GBP" }, family, awayMakeup: 100 }, words);
+    page(page, family) {
+      return pageMarkdown(page, { words, house: newHouseFacts(family ? "family" : "housemates", OWNER_TZ, "GBP") });
     },
   };
 }

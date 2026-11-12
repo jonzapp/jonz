@@ -1473,6 +1473,173 @@
       }
     },
     {
+      "name": "list_pages",
+      "about": "Every page of Jonz you can read (each guide topic, Help, Privacy, Terms): its id, title and what it covers",
+      "scope": "account",
+      "effect": "read",
+      "guard": {
+        "by": "permission",
+        "permission": "account:read"
+      },
+      "entitlement": null,
+      "entitlementWhen": null,
+      "destructive": false,
+      "method": "GET",
+      "path": "/v1/pages",
+      "pathKeys": [],
+      "rpc": null,
+      "tables": [],
+      "page": null,
+      "input": {
+        "type": "object",
+        "properties": {}
+      },
+      "output": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "enum": [
+                "today",
+                "week",
+                "house",
+                "fair_shares",
+                "deal",
+                "points",
+                "late_and_missed",
+                "covering",
+                "stake",
+                "settle_up",
+                "house_pass",
+                "time_away",
+                "on_call",
+                "swaps",
+                "ticks_and_questions",
+                "history_and_resets",
+                "family",
+                "help",
+                "privacy",
+                "terms"
+              ]
+            },
+            "title": {
+              "type": "string"
+            },
+            "about": {
+              "type": "string"
+            },
+            "url": {
+              "type": "string",
+              "format": "uri"
+            }
+          },
+          "required": [
+            "id",
+            "title",
+            "about",
+            "url"
+          ]
+        }
+      }
+    },
+    {
+      "name": "read_page",
+      "about": "One page of Jonz, in Markdown, in the language you read Jonz in: a guide topic with your house's own numbers (its points, hours, Stake and prices), or Help, Privacy or Terms. Read the topic before explaining anything about the app",
+      "scope": "account",
+      "effect": "read",
+      "guard": {
+        "by": "permission",
+        "permission": "account:read"
+      },
+      "entitlement": null,
+      "entitlementWhen": null,
+      "destructive": false,
+      "method": "GET",
+      "path": "/v1/pages/{pageId}",
+      "pathKeys": [
+        "pageId"
+      ],
+      "rpc": null,
+      "tables": [],
+      "page": null,
+      "input": {
+        "type": "object",
+        "properties": {
+          "pageId": {
+            "type": "string",
+            "enum": [
+              "today",
+              "week",
+              "house",
+              "fair_shares",
+              "deal",
+              "points",
+              "late_and_missed",
+              "covering",
+              "stake",
+              "settle_up",
+              "house_pass",
+              "time_away",
+              "on_call",
+              "swaps",
+              "ticks_and_questions",
+              "history_and_resets",
+              "family",
+              "help",
+              "privacy",
+              "terms"
+            ]
+          },
+          "houseId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "pageId"
+        ]
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "enum": [
+              "today",
+              "week",
+              "house",
+              "fair_shares",
+              "deal",
+              "points",
+              "late_and_missed",
+              "covering",
+              "stake",
+              "settle_up",
+              "house_pass",
+              "time_away",
+              "on_call",
+              "swaps",
+              "ticks_and_questions",
+              "history_and_resets",
+              "family",
+              "help",
+              "privacy",
+              "terms"
+            ]
+          },
+          "markdown": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "markdown"
+        ]
+      }
+    },
+    {
       "name": "send_report",
       "about": "Report a problem",
       "scope": "account",
@@ -3603,98 +3770,6 @@
               }
             ]
           }
-        }
-      }
-    },
-    {
-      "name": "house_guide",
-      "about": "How a part of Jonz works, in the app's own guide with this house's numbers (its points, hours, Stake and prices): one topic, or every topic when none is given. Read it before explaining anything about the app",
-      "scope": "house",
-      "effect": "read",
-      "guard": {
-        "by": "permission",
-        "permission": "house:read"
-      },
-      "entitlement": null,
-      "entitlementWhen": null,
-      "destructive": false,
-      "method": "GET",
-      "path": "/v1/houses/{houseId}/guide",
-      "pathKeys": [
-        "houseId"
-      ],
-      "rpc": null,
-      "tables": [],
-      "page": null,
-      "input": {
-        "type": "object",
-        "properties": {
-          "houseId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "topic": {
-            "type": "string",
-            "enum": [
-              "today",
-              "week",
-              "house",
-              "fair_shares",
-              "deal",
-              "points",
-              "late_and_missed",
-              "covering",
-              "stake",
-              "settle_up",
-              "house_pass",
-              "time_away",
-              "on_call",
-              "swaps",
-              "ticks_and_questions",
-              "history_and_resets",
-              "family"
-            ]
-          }
-        },
-        "required": [
-          "houseId"
-        ]
-      },
-      "output": {
-        "type": "array",
-        "items": {
-          "type": "object",
-          "properties": {
-            "topic": {
-              "type": "string",
-              "enum": [
-                "today",
-                "week",
-                "house",
-                "fair_shares",
-                "deal",
-                "points",
-                "late_and_missed",
-                "covering",
-                "stake",
-                "settle_up",
-                "house_pass",
-                "time_away",
-                "on_call",
-                "swaps",
-                "ticks_and_questions",
-                "history_and_resets",
-                "family"
-              ]
-            },
-            "words": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "topic",
-            "words"
-          ]
         }
       }
     },

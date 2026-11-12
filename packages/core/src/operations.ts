@@ -93,7 +93,7 @@ export interface Operation {
    * Only for the person in Jonz itself, never a connected app: approving a
    * connected app's request, and Jonz's own AI (Ask Jonz, the support
    * agent), which Jonz pays for: a connected app is an assistant already, so
-   * it does its own thinking with house_guide and the house's reads. Not
+   * it does its own thinking with read_page and the house's reads. Not
    * offered over MCP, and the executor refuses an OAuth client's token for
    * it (the approval functions refuse one in the database too).
    */
@@ -140,6 +140,8 @@ export const OPERATIONS = {
   my_reports: op({ about: "The problems you've reported, and their replies", scope: "account", effect: "read", guard: ACCOUNT_READ, rpc: { name: "my_reports" } }),
   file_upload: op({ about: "Get a link to upload a screenshot or your photo to", scope: "account", effect: "write", guard: ACCOUNT_WRITE, server: true, firstParty: true }),
   file_links: op({ about: "Links to look at photos and screenshots you may see", scope: "account", effect: "read", guard: ACCOUNT_READ, server: true, firstParty: true }),
+  list_pages: op({ about: "Every page of Jonz you can read (each guide topic, Help, Privacy, Terms): its id, title and what it covers", scope: "account", effect: "read", guard: ACCOUNT_READ, server: true }),
+  read_page: op({ about: "One page of Jonz, in Markdown, in the language you read Jonz in: a guide topic with your house's own numbers (its points, hours, Stake and prices), or Help, Privacy or Terms. Read the topic before explaining anything about the app", scope: "account", effect: "read", guard: ACCOUNT_READ, server: true }),
   send_report: op({ about: "Report a problem", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "send_report" }, route: "POST /api/reports" }),
   write_back: op({ about: "Write back on a problem you reported", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "write_back" }, route: "POST /api/reports/[id]/messages" }),
   see_report: op({ about: "Mark a reply to your report as seen", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "see_report" } }),
@@ -167,7 +169,6 @@ export const OPERATIONS = {
   house_live: op({ about: "The house's newest change after one the app saw, for its live updates", scope: "house", effect: "read", guard: perm("house:read"), rpc: { name: "house_live_since" }, firstParty: true }),
   // Free for the last four weeks; older moves need the Pass, which house_history checks itself.
   house_history: op({ about: "The house's history, a page at a time", scope: "house", effect: "read", guard: perm("history:read"), rpc: { name: "house_history" } }),
-  house_guide: op({ about: "How a part of Jonz works, in the app's own guide with this house's numbers (its points, hours, Stake and prices): one topic, or every topic when none is given. Read it before explaining anything about the app", scope: "house", effect: "read", guard: perm("house:read"), server: true }),
   ask_usage: op({ about: "How much of the house's Ask Jonz this month each person has used", scope: "house", effect: "read", guard: perm("house:read"), rpc: { name: "ask_usage_people", server: true }, route: "POST /api/ask/usage" }),
   catch_up: op({ about: "Bring the house up to date: close a finished week, deal the next", scope: "house", effect: "write", guard: perm("house:read"), route: "POST /api/fresh" }),
   house_today: op({

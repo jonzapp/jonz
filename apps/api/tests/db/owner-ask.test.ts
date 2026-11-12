@@ -46,7 +46,7 @@ describe("the owner's Ask Jonz", () => {
         await reads.messages(""),
         await reads.people("Ava"),
         await reads.houses(house.code),
-        reads.howItWorks("stake", false),
+        reads.page("stake", false),
       ];
       return answer;
     });
