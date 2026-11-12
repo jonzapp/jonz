@@ -1,10 +1,11 @@
-import { parseReply, type Block, type ChipKind, type Inline, type ReplyCard } from '@app/core';
-import { router, type Href } from 'expo-router';
+import { parseDoc, parseReply, type Block, type ChipKind, type Inline, type ReplyCard } from '@app/core';
+import { Link, router, type Href } from 'expo-router';
 import { ArrowUpRightIcon, CheckIcon } from 'lucide-react-native';
 import { createContext, Fragment, useContext, useMemo, useState, type ReactNode } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View, type TextStyle } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
+import { CopyLine } from '@/components/copy-line';
 import { LidBar } from '@/components/lid';
 import { Body, SectionLabel } from '@/components/text';
 import { FONT, RADIUS, SPACE, TABULAR, useTheme } from '@/theme';
@@ -62,6 +63,22 @@ export function Reply({ source, pieces = NO_PIECES, testID }: { source: string; 
         <Blocks blocks={blocks} />
       </View>
     </Pieces.Provider>
+  );
+}
+
+/**
+ * One of Jonz's own pages' words (Help, the Privacy Policy, the Terms):
+ * Markdown read by parseDoc and drawn as a reply is, plus links to web pages,
+ * email addresses and the app's paths, words to type in bold on the sunk
+ * tint, and a fenced line as a CopyLine. No chips or cards: a page has no
+ * house.
+ */
+export function Doc({ source, testID }: { source: string; testID?: string }) {
+  const blocks = useMemo(() => parseDoc(source), [source]);
+  return (
+    <View style={styles.reply} testID={testID}>
+      <Blocks blocks={blocks} />
+    </View>
   );
 }
 
@@ -141,6 +158,8 @@ function BlockView({ block }: { block: Block }) {
       );
     case 'table':
       return <Table head={block.head} rows={block.rows} align={block.align} />;
+    case 'copy':
+      return <CopyLine value={block.text} testID="reply-copy" />;
     case 'rule':
       return <View style={[styles.rule, { backgroundColor: colors.border }]} aria-hidden testID="reply-rule" />;
     case 'card': {
@@ -184,10 +203,12 @@ function hasChip(kids: Inline[]): boolean {
 }
 
 function plainOf(kids: Inline[]): string {
-  return kids.map((k) => (k.t === 'text' ? k.text : k.t === 'chip' ? k.label : k.t === 'br' ? ' ' : plainOf(k.kids))).join('');
+  return kids
+    .map((k) => (k.t === 'text' || k.t === 'code' ? k.text : k.t === 'chip' ? k.label : k.t === 'br' ? ' ' : plainOf(k.kids)))
+    .join('');
 }
 
-/** A paragraph's runs: words, bold, italic, struck, chips, line breaks. */
+/** A paragraph's runs: words, bold, italic, struck, chips, line breaks, and a page's links and code. */
 function Runs({ kids }: { kids: Inline[] }) {
   return (
     <>
@@ -217,9 +238,36 @@ function Runs({ kids }: { kids: Inline[] }) {
             );
           case 'chip':
             return <ChipRun key={i} chip={k} />;
+          case 'link':
+            return <LinkRun key={i} href={k.href}>{k.kids}</LinkRun>;
+          case 'code':
+            return <CodeRun key={i} text={k.text} />;
         }
       })}
     </>
+  );
+}
+
+/**
+ * A link inside a sentence, underlined in the words' own colour: a web page
+ * or an email address opens outside Jonz, a path opens in the app. A link in
+ * running text may be a line tall (WCAG's target-size rule allows it).
+ */
+function LinkRun({ href, children }: { href: string; children: Inline[] }) {
+  return (
+    <Link href={href as Href} style={styles.link} target={href.startsWith('https://') ? '_blank' : undefined} testID="reply-link">
+      <Runs kids={children} />
+    </Link>
+  );
+}
+
+/** Words to type exactly, in bold on the sunk tint. */
+function CodeRun({ text }: { text: string }) {
+  const { colors } = useTheme();
+  return (
+    <Text style={[styles.code, { backgroundColor: colors.secondary }]} testID="reply-code">
+      {text}
+    </Text>
   );
 }
 
@@ -292,6 +340,8 @@ const styles = StyleSheet.create({
   // Overpass has no italic of its own here, so emphasis is the bold's lighter cousin: the browser's slant on web, plain on phones.
   em: { fontStyle: 'italic' },
   del: { textDecorationLine: 'line-through' },
+  link: { textDecorationLine: 'underline' },
+  code: { fontFamily: FONT.bold, borderRadius: SPACE.xs, paddingHorizontal: SPACE.xs },
   list: { gap: SPACE.sm },
   item: { flexDirection: 'row', gap: SPACE.sm },
   mark: { width: 24, height: 24, alignItems: 'flex-end', justifyContent: 'center' },

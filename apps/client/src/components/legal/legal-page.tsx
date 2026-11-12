@@ -9,6 +9,7 @@ import { PageTitle } from '@/components/page-title';
 import { Row } from '@/components/row';
 import { Screen } from '@/components/screen';
 import { Section } from '@/components/section';
+import { Doc } from '@/components/reply/reply';
 import { Body, Meta } from '@/components/text';
 import { TextLink } from '@/components/text-link';
 import { TitleBar } from '@/components/title-bar';
@@ -17,9 +18,8 @@ import { CONTENT_MAX, SECTION_GAP, SPACE } from '@/theme';
 
 /**
  * A page to read (Help, the Privacy Policy, the Terms): the date and the
- * lead, then each section under its heading, its paragraphs in one card and
- * its links under them. A paragraph starting "• " is a list item, set in
- * from the rest. On a laptop the sections' headings are listed On this page
+ * lead, then each section under its heading, its words (Markdown, drawn
+ * by Doc) in one card and its links under them. On a laptop the sections' headings are listed On this page
  * beside the words, which keep to one column in their order; clicking one
  * jumps to it. Open to anyone, signed in or not; Back goes where you came
  * from, or to the front door (which, signed in, is your house).
@@ -70,15 +70,7 @@ function Part({ section: { heading, body, links }, spot }: { section: LegalSecti
       <Section label={heading}>
         <GroupItem>
           <View style={styles.words}>
-            {body.map((paragraph) =>
-              paragraph.startsWith('• ') ? (
-                <Body key={paragraph} style={styles.item}>
-                  {paragraph}
-                </Body>
-              ) : (
-                <Body key={paragraph}>{paragraph}</Body>
-              ),
-            )}
+            <Doc source={body} />
             {links?.map(({ label, href }) => (
               <TextLink key={href} href={href as Href} label={label} muted />
             ))}
@@ -94,5 +86,4 @@ const styles = StyleSheet.create({
   // A phone's width for the lead over the columns on a laptop.
   lead: { maxWidth: CONTENT_MAX },
   stack: { gap: SECTION_GAP },
-  item: { paddingLeft: SPACE.md },
 });

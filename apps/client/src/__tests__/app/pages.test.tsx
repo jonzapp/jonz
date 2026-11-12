@@ -1,4 +1,5 @@
-import { HELP_PAGE, LEGAL_COPY, PRIVACY_POLICY, TERMS, wordsFor } from '@app/core';
+import { docText, HELP_PAGE, LEGAL_COPY, MCP_ADDRESS, PRIVACY_POLICY, TERMS, wordsFor } from '@app/core';
+import * as Clipboard from 'expo-clipboard';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 import { renderRouter, screen as routed } from 'expo-router/testing-library';
 import { Text, useWindowDimensions } from 'react-native';
@@ -20,6 +21,7 @@ jest.mock('@/api/account', () => ({ keepAccount: jest.fn() }));
 jest.mock('@/api/auth', () => ({ signOut: jest.fn() }));
 jest.mock('@/api/supabase', () => ({ supabase: { auth: { getSession: jest.fn() } } }));
 jest.mock('@/api/reports', () => ({ ...jest.requireActual<typeof import('@/api/reports')>('@/api/reports'), sendReport: jest.fn() }));
+jest.mock('expo-clipboard', () => ({ setStringAsync: jest.fn(async () => true) }));
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({ __esModule: true, default: jest.fn() }));
 
 const PHONE = { width: 390, height: 844, scale: 1, fontScale: 1 };
@@ -38,9 +40,26 @@ it.each([
   expect(screen.getByText(page.lead)).toBeOnTheScreen();
   for (const { heading, body, links } of page.sections) {
     expect(screen.getByRole('header', { name: heading })).toBeOnTheScreen();
-    for (const paragraph of body) expect(screen.getByText(paragraph)).toBeOnTheScreen();
+    // Every line of its Markdown shows as words (a list's number or bullet drawn beside them).
+    for (const line of docText(body).split('\n')) {
+      expect(screen.getAllByText(line.replace(/^(\d+\.|•) /, '')).length).toBeGreaterThan(0);
+    }
     for (const link of links ?? []) expect(screen.getByRole('link', { name: link.label })).toHaveProp('href', link.href);
   }
+});
+
+it('draws Help’s Markdown: numbered steps, bold names, links, and the address with Copy', async () => {
+  await render(<Help />);
+  const claude = HELP_PAGE.sections.find((s) => s.heading === 'Use Jonz from Claude')!;
+  expect(claude.body).toContain('1. ');
+  expect(screen.getAllByTestId('reply-ol').length).toBeGreaterThanOrEqual(2);
+  expect(screen.getByTestId('reply-copy-value')).toHaveTextContent(MCP_ADDRESS);
+  await fireEvent.press(screen.getByRole('button', { name: words('common.copy.spoken', { plain: MCP_ADDRESS }) }));
+  expect(Clipboard.setStringAsync).toHaveBeenCalledWith(MCP_ADDRESS);
+  expect(screen.getByRole('button', { name: words('common.copy.spoken', { plain: MCP_ADDRESS }) })).toHaveTextContent(words('common.copy.done'));
+  const email = screen.getAllByTestId('reply-link').find((link) => link.props.href === 'mailto:support@jonz.app');
+  expect(email).toBeDefined();
+  expect(screen.getAllByText('Report a problem').length).toBeGreaterThan(0);
 });
 
 it('lists a page to read On this page beside its words on a laptop, and only there', async () => {

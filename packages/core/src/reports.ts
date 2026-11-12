@@ -144,12 +144,14 @@ export function reportAge(iso: string, now: Date): string {
   return `${at.getDate()} ${MONTH[at.getMonth()]}`;
 }
 
+/** Where Claude, or any app that speaks MCP, connects to Jonz. */
+export const MCP_ADDRESS = "https://api.jonz.app/mcp";
+
 /**
  * jonz.app/help: how to reach Jonz, for anyone, signed in or not, and
  * where the README and CONTRIBUTING send people instead of GitHub issues.
+ * Each section's body is Markdown (see LegalSection).
  */
-/** Where Claude, or any app that speaks MCP, connects to Jonz. */
-export const MCP_ADDRESS = "https://api.jonz.app/mcp";
 
 export const HELP_PAGE: LegalPage = {
   title: "Help",
@@ -158,38 +160,45 @@ export const HELP_PAGE: LegalPage = {
   sections: [
     {
       heading: "From inside Jonz",
-      body: [
-        "Open House, then Help. Report a problem or Send an idea opens a short form: say what happened, add up to three screenshots if they help, and send.",
-        "Leave “Send the details that help” ticked and it also says which pages you were on, your app or browser and the last error Jonz showed, so we can find it faster. You see exactly what goes before you send.",
-        "Our replies arrive under House, Help, Your reports, with a notification and an email. Write back there any time.",
-        "If Jonz ever shows “Something went wrong”, press Tell us what happened on that screen.",
-      ],
+      body: `1. Open **House**, then **Help**.
+2. Press **Report a problem** or **Send an idea**, and say what happened. Add up to three screenshots if they help.
+3. Press **Send**.
+
+Leave **Send the details that help** ticked and it also says which pages you were on, your app or browser and the last error Jonz showed, so we can find it faster. You see exactly what goes before you send.
+
+Our replies arrive under **House**, **Help**, **Your reports**, with a notification and an email. Write back there any time.
+
+If Jonz ever shows “Something went wrong”, press **Tell us what happened** on that screen.`,
     },
     {
       heading: "By email",
-      body: [
-        `Email ${SUPPORT_EMAIL} from any address. Say what you were doing and what you saw; you can paste in a screenshot, but we only read the words.`,
-        "We answer by email. Reply to our answer to keep the conversation going: it stays together with what you first sent.",
-        `If you email from the address you sign in with, it shows under Your reports in the app too.`,
-      ],
+      body: `Email [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}) from any address. Say what you were doing and what you saw; you can paste in a screenshot, but we only read the words.
+
+We answer by email. Reply to our answer to keep the conversation going: it stays together with what you first sent.
+
+If you email from the address you sign in with, it shows under **Your reports** in the app too.`,
       links: [{ label: `Email ${SUPPORT_EMAIL}`, href: `mailto:${SUPPORT_EMAIL}` }],
     },
     {
       heading: "Use Jonz from Claude",
-      body: [
-        "Claude can read your house and, if you let it, mark Johns done, plan the week or change the rules for you, as you.",
-        "1. On claude.ai, open Settings, then Connectors, and choose Add custom connector.",
-        `2. Call it Jonz and paste this address: ${MCP_ADDRESS}`,
-        "3. Claude sends you to Jonz to sign in. Pick Read only or Read and change, then press Allow.",
-        "Anything that can’t be undone, like removing a John, still waits for you to approve it in Jonz. Change what Claude may do, or disconnect it, on You under Connected apps. Any other app that speaks MCP connects the same way.",
-      ],
+      body: `Claude can read your house and, if you let it, mark Johns done, plan the week or change the rules for you, as you.
+
+1. On [claude.ai](https://claude.ai/settings/connectors), open **Settings**, then **Connectors**, and choose **Add custom connector**.
+2. Call it Jonz and paste this address:
+
+   \`\`\`
+   ${MCP_ADDRESS}
+   \`\`\`
+3. Claude sends you to Jonz to sign in. Pick **Read only** or **Read and change**, then press **Allow**.
+
+Anything that can’t be undone, like removing a John, still waits for you to approve it in Jonz. Change what Claude may do, or disconnect it, on **You** under **Connected apps**.
+
+Any other app that speaks MCP connects the same way.`,
       links: [{ label: "Open Claude’s connectors", href: "https://claude.ai/settings/connectors" }],
     },
     {
       heading: "Your account and your data",
-      body: [
-        "To delete your account, open House, then Delete my account, or use the page below. To ask what we keep about you, or to have it corrected, email us.",
-      ],
+      body: `To delete your account, open **House**, then **Delete my account**, or use the page below. To ask what we keep about you, or to have it corrected, [email us](mailto:${SUPPORT_EMAIL}).`,
       links: [
         { label: "Delete my account", href: "/delete" },
         { label: "Privacy Policy", href: LEGAL.privacyPath },
@@ -198,7 +207,7 @@ export const HELP_PAGE: LegalPage = {
     },
     {
       heading: "Security problems",
-      body: [`If you’ve found a way to see or change something you shouldn’t, email ${SUPPORT_EMAIL} with “Security” in the subject, and please don’t share it until we’ve fixed it.`],
+      body: `If you’ve found a way to see or change something you shouldn’t, email [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}) with “Security” in the subject, and please don’t share it until we’ve fixed it.`,
     },
   ],
 };

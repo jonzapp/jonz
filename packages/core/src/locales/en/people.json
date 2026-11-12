@@ -133,7 +133,6 @@
   "people.connectClaude.step2": "2. Tap Add custom connector. Call it Jonz and paste this address:",
   "people.connectClaude.step3": "3. Claude sends you here to sign in. Pick what it may do, then tap Allow.",
   "people.connectClaude.other": "Any other app that speaks MCP connects the same way.",
-  "people.connectClaude.copy": "Copy",
   "people.connectClaude.copySpoken": "Copy the address",
   "people.connectClaude.open": "Open Claude",
   "people.approve.page": "Approve a request",

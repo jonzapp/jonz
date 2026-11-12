@@ -88,7 +88,7 @@ it('shows how to connect Claude, with the address to copy and the way into Claud
   await fireEvent.press(row);
   const sheet = screen.getByTestId('connect-claude-sheet');
   expect(within(sheet).getByText(words('people.connectClaude.step2'))).toBeOnTheScreen();
-  expect(within(sheet).getByTestId('mcp-address')).toHaveTextContent(mcpAddress());
+  expect(within(sheet).getByTestId('mcp-address-value')).toHaveTextContent(mcpAddress());
   await fireEvent.press(within(sheet).getByRole('button', { name: words('people.connectClaude.copySpoken') }));
   expect(Clipboard.setStringAsync).toHaveBeenCalledWith(mcpAddress());
   await fireEvent.press(within(sheet).getByRole('button', { name: words('people.connectClaude.open') }));
