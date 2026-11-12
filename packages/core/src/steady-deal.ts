@@ -39,6 +39,8 @@ export interface SteadyListJohn {
   dueTime: string;
   /** Who shares it, of the people dealt this week: its group's, or everyone's. */
   sharers: readonly string[];
+  /** Its group's id when it's only the group's; null for the whole house's (or a group nobody here is in). */
+  groupId?: string | null;
 }
 
 /** A John's last turn before this week. */
@@ -54,6 +56,8 @@ export interface SteadyLastTurn {
 export interface SteadyDealMember {
   userId: string;
   balance: number;
+  /** The balance split by pool: "" the whole house's Johns, and each group they're in now by its id (steady.ts). */
+  pools?: Readonly<Record<string, number>>;
   /** Days that suit them, as ISO weekdays. */
   suits: readonly number[];
   /** John id → 1 rather do, −1 rather not. */
@@ -101,6 +105,8 @@ export interface SteadyDealResult {
   places: SteadyDealPlace[];
   /** Each person's share of the week, from what was dealt (on call adds its flags as they're raised). */
   shares: Map<string, number>;
+  /** The part of those shares that is each group's Johns: group id → person → share (week_group_shares). */
+  groupShares: Map<string, Map<string, number>>;
   /** What deal_week keeps on the week for the next deal. */
   state: SteadyState;
   result: SteadyResult;
@@ -205,6 +211,7 @@ export function steadyDeal(args: SteadyDealArgs): SteadyDealResult {
       crew: onCall ? 1 : j.crew,
       onCall,
       sharers,
+      pool: j.groupId ?? "",
       home,
       due: onCall || landsInWeek(j.repeat, week.startsOn, weekStarts),
       waited,
@@ -222,6 +229,7 @@ export function steadyDeal(args: SteadyDealArgs): SteadyDealResult {
     members: args.members.map((m) => ({
       userId: m.userId,
       balance: m.balance,
+      ...(m.pools ? { pools: m.pools } : {}),
       homeDays: homeDays.get(m.userId)!,
       suits: m.suits.map((d) => placeOfDow(d, weekStarts)),
       rather: m.rather,
@@ -243,17 +251,17 @@ export function steadyDeal(args: SteadyDealArgs): SteadyDealResult {
     if (p.why.moved === "away" && !open(j.day) && !awayOn(args.away, p.userId, dateOf(j.day))) p.why.moved = "gone";
     return { ...p, dueAt: due, dow, together: j.crew !== 1 };
   });
-  const shares = weekShares(
-    places
-      .filter((p) => p.dueAt)
-      .map((p) => {
-        const j = johnOf.get(p.johnId)!;
-        return { johnId: p.johnId, points: p.points, lastUserId: null, sharers: j.sharers, home: j.home };
-      }),
-    ids,
-    args.makeup,
-  );
-  return { places, shares, state: { turns: result.turns, waiting: { ...sitsOut, ...result.waiting } }, result };
+  const items = places
+    .filter((p) => p.dueAt)
+    .map((p) => {
+      const j = johnOf.get(p.johnId)!;
+      return { johnId: p.johnId, points: p.points, lastUserId: null, sharers: j.sharers, home: j.home, pool: j.pool ?? "" };
+    });
+  const shares = weekShares(items, ids, args.makeup);
+  const groupShares = new Map<string, Map<string, number>>();
+  for (const g of new Set(items.map((x) => x.pool).filter(Boolean)))
+    groupShares.set(g, weekShares(items.filter((x) => x.pool === g), ids, args.makeup));
+  return { places, shares, groupShares, state: { turns: result.turns, waiting: { ...sitsOut, ...result.waiting } }, result };
 }
 
 /**
@@ -264,6 +272,7 @@ export function steadyDeal(args: SteadyDealArgs): SteadyDealResult {
  */
 export function steadyAhead(args: SteadyDealArgs, plan: SteadyDealResult, weeks: number = AHEAD_WEEKS): SteadyAheadWeek[] {
   const out: SteadyAheadWeek[] = [];
+  const listOf = new Map(args.johns.map((j) => [j.id, j]));
   let at = args;
   let dealt = plan;
   for (let k = 1; k <= weeks; k++) {
@@ -271,6 +280,18 @@ export function steadyAhead(args: SteadyDealArgs, plan: SteadyDealResult, weeks:
     const balance = new Map(at.members.map((m) => [m.userId, m.balance]));
     for (const p of dealt.places) if (p.dueAt) balance.set(p.userId, (balance.get(p.userId) ?? 0) + p.points);
     for (const [id, share] of dealt.shares) balance.set(id, (balance.get(id) ?? 0) - share);
+    // And each group's pool by its own Johns; the whole house's pool is whatever's left.
+    const pool = (m: SteadyDealMember, g: string) => {
+      let v = m.pools![g];
+      for (const p of dealt.places) if (p.dueAt && p.userId === m.userId && listOf.get(p.johnId)?.groupId === g) v += p.points;
+      return v - (dealt.groupShares.get(g)?.get(m.userId) ?? 0);
+    };
+    const poolsOf = (m: SteadyDealMember) => {
+      if (!m.pools) return undefined;
+      const groups = Object.fromEntries(Object.keys(m.pools).filter(Boolean).map((g) => [g, pool(m, g)]));
+      const total = balance.get(m.userId) ?? m.balance;
+      return { ...groups, "": total - Object.values(groups).reduce((s, v) => s + v, 0) };
+    };
     const last = new Map(at.last);
     for (const [johnId, userIds] of Object.entries(holders(dealt.places))) last.set(johnId, { startsOn: at.week.startsOn, userIds });
     const week = nextWeek(at.week, at.zone, at.weekStarts);
@@ -278,7 +299,7 @@ export function steadyAhead(args: SteadyDealArgs, plan: SteadyDealResult, weeks:
       ...at,
       week,
       now: week.startsAt,
-      members: at.members.map((m) => ({ ...m, balance: balance.get(m.userId) ?? m.balance })),
+      members: at.members.map((m) => ({ ...m, balance: balance.get(m.userId) ?? m.balance, pools: poolsOf(m) })),
       last,
       previous: dealt.state,
       seed: `${args.seed}+${k}`,

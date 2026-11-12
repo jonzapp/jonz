@@ -2461,6 +2461,55 @@ export type Database = {
           },
         ]
       }
+      week_group_shares: {
+        Row: {
+          created_at: string
+          group_id: string
+          house_id: string
+          share: number
+          user_id: string
+          week_id: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          house_id: string
+          share: number
+          user_id: string
+          week_id: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          house_id?: string
+          share?: number
+          user_id?: string
+          week_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "week_group_shares_group_id_house_id_fkey"
+            columns: ["group_id", "house_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id", "house_id"]
+          },
+          {
+            foreignKeyName: "week_group_shares_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "week_group_shares_week_id_house_id_fkey"
+            columns: ["week_id", "house_id"]
+            isOneToOne: false
+            referencedRelation: "weeks"
+            referencedColumns: ["id", "house_id"]
+          },
+        ]
+      }
       week_shares: {
         Row: {
           house_id: string
@@ -2851,6 +2900,15 @@ export type Database = {
         Args: { p_before: string; p_house: string }
         Returns: {
           credited: number
+          owed: number
+          user_id: string
+        }[]
+      }
+      house_group_balances: {
+        Args: { p_before: string; p_house: string }
+        Returns: {
+          credited: number
+          group_id: string
           owed: number
           user_id: string
         }[]

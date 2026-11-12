@@ -332,3 +332,39 @@ describe("weekStateOf", () => {
     expect(weekStateOf({ turns: null, waiting: {}, ahead: [] })).toEqual({ turns: null, waiting: {}, ahead: [] });
   });
 });
+
+describe("pools: a group's Johns are balanced within the group", () => {
+  const three = ["ava", "ben", "cal"];
+  const house = (pools: Record<string, Record<string, number>>) =>
+    args({
+      members: three.map((userId) => ({ userId, balance: Object.values(pools[userId]).reduce((s, v) => s + v, 0), pools: pools[userId], suits: [], rather: {} })),
+      johns: [
+        john("bath", { points: 3, sharers: ["ava", "ben"], groupId: "g1", ...due(3) }),
+        john("kitchen", { points: 3, sharers: three, ...due(2) }),
+        john("bins", { points: 3, sharers: three, ...due(5) }),
+      ],
+    });
+
+  it("gives a group's John to whoever is furthest behind in the group, even if they're ahead overall", () => {
+    // Ava is behind on the bathroom but ahead overall; Ben is the other way round.
+    const r = steadyDeal(house({ ava: { "": 3, g1: -2 }, ben: { "": -3, g1: 2 }, cal: { "": 0 } }));
+    expect(placesOf(r, "bath").map((p) => p.userId)).toEqual(["ava"]);
+  });
+
+  it("splits each group's share out of the week's shares", () => {
+    const r = steadyDeal(house({ ava: { "": 0, g1: 0 }, ben: { "": 0, g1: 0 }, cal: { "": 0 } }));
+    expect(Object.fromEntries(r.groupShares.get("g1")!)).toEqual({ ava: 1.5, ben: 1.5, cal: 0 });
+    expect(r.shares.get("cal")).toBeCloseTo(2, 6);
+    expect(r.shares.get("ava")).toBeCloseTo(3.5, 6);
+  });
+
+  it("carries each pool forward in the weeks ahead", () => {
+    const a = house({ ava: { "": 0, g1: 0 }, ben: { "": 0, g1: 0 }, cal: { "": 0 } });
+    const r = steadyDeal(a);
+    const ahead = steadyAhead(a, r, 2);
+    // The bathroom takes turns between Ava and Ben, never Cal.
+    const bath = [placesOf(r, "bath")[0].userId, ...ahead.map((w) => w.johns.bath[0])];
+    expect(bath.every((id) => id !== "cal")).toBe(true);
+    expect(new Set(bath.slice(0, 2)).size).toBe(2);
+  });
+});

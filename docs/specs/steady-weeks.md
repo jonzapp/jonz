@@ -101,6 +101,12 @@ every rule. In short:
     written by `deal_week(…, p_state)`.
   - `swap_offers` (only the two people in an ask can read it), written by
     `offer_swap(p_mine, p_theirs)` and `answer_swap(p_offer, p_accept)`.
+- Migration `20270108090000_group_pools.sql` (server only):
+  `week_group_shares` (each week's share of each group's Johns, per person,
+  written by the deal after `deal_week`) and `house_group_balances(p_house,
+  p_before)` (share and work per group). The deal splits each balance into
+  pools with them: each group someone is in now, and the whole house for the
+  rest. Weeks dealt before it count as the whole house's.
 - `POST /api/swaps` with `SwapAskRequest {mine, theirs}` answers
   `SwapAskResponse {ok, offerId}` and pushes the housemate asked. A bad body is
   400 "Say which two Johns to swap."; refusals are 409 in words.
