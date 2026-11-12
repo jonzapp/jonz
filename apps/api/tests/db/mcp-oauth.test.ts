@@ -4,7 +4,7 @@
 // carrying its client_id, and then reaches Jonz through /mcp and nowhere
 // else. The person sees it under Connected apps and can disconnect it.
 
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 
 import { connect, createExecutor, tokenVerifier, type Sql } from "@app/server";
 import { createMcpHandler } from "@modelcontextprotocol/server";
@@ -91,19 +91,49 @@ it("lets an app in through Jonz's consent page, and then only through /mcp", asy
 
   // Through /mcp: the person's own Jonz, as the person.
   const execute = createExecutor({ sql: pool, verify: tokenVerifier({ supabaseUrl: SUPABASE_URL }), operations: ops });
-  const res = await createMcpHandler(() => buildMcpServer(execute, `Bearer ${accessToken}`, ops)).fetch(
-    new Request("https://api.jonz.app/mcp", {
-      method: "POST",
-      headers: { "content-type": "application/json", accept: "application/json, text/event-stream", "mcp-protocol-version": "2025-06-18" },
-      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "create_house", arguments: { name: "Connected house", timezone: "Europe/London", currency: "GBP", weekStarts: 1 } } }),
-    }),
-  );
-  const text = await res.text();
-  const json = text.trimStart().startsWith("{") ? text : text.split("\n").filter((l) => l.startsWith("data: ")).map((l) => l.slice(6)).join("");
-  const { result } = JSON.parse(json) as { result: { isError?: boolean; content: { text: string }[] } };
-  expect(result.isError, result.content[0]?.text).toBeFalsy();
+  const tool = async (name: string, args: Record<string, unknown>) => {
+    const res = await createMcpHandler(() => buildMcpServer(execute, `Bearer ${accessToken}`, ops)).fetch(
+      new Request("https://api.jonz.app/mcp", {
+        method: "POST",
+        headers: { "content-type": "application/json", accept: "application/json, text/event-stream", "mcp-protocol-version": "2025-06-18" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name, arguments: args } }),
+      }),
+    );
+    const text = await res.text();
+    const json = text.trimStart().startsWith("{") ? text : text.split("\n").filter((l) => l.startsWith("data: ")).map((l) => l.slice(6)).join("");
+    return (JSON.parse(json) as { result: { isError?: boolean; content: { text: string }[] } }).result;
+  };
+  const newHouse = { name: "Connected house", timezone: "Europe/London", currency: "GBP", weekStarts: 1 };
+
+  // The consent page saved Read only before Allow (as the page does, with the person's own session):
+  // the app reads, and every change is refused.
+  const { error: picked } = await person.db.rpc("set_app_access", { p_client_id: clientId, p_access: "read" });
+  expect(picked).toBeNull();
+  const reads = await tool("my_permissions", { houseId: randomUUID() });
+  expect(reads.content[0]?.text ?? "").not.toMatch(/can only read/);
+  const refused = await tool("create_house", newHouse);
+  expect(refused.isError).toBe(true);
+  expect(refused.content[0].text).toMatch(/^forbidden: This app can only read/);
+  // The app can't change that itself, straight to the database or through /mcp.
+  const { error: raised } = await (await import("@supabase/supabase-js"))
+    .createClient(SUPABASE_URL, ANON_KEY, { global: { headers: { authorization: `Bearer ${accessToken}` } }, auth: { persistSession: false } })
+    .rpc("set_app_access", { p_client_id: clientId, p_access: "write" });
+  expect(raised).not.toBeNull();
+  // Nor is it an MCP tool (firstParty, apps/api/tests/unit/mcp.test.ts).
+
+  // The person lets it read and change, under Connected apps (through /v1, as the app does): from its next call it can.
+  const v1 = createExecutor({ sql: pool, verify: tokenVerifier({ supabaseUrl: SUPABASE_URL }), operations: [apiOperation("set_app_access"), apiOperation("my_app_access")] });
+  const personToken = `Bearer ${(await person.db.auth.getSession()).data.session!.access_token}`;
+  await expect(v1("set_app_access", { authorization: personToken, via: "api" }, { clientId, access: "write" })).resolves.toMatchObject({ status: 201 });
+  await expect(v1("my_app_access", { authorization: personToken, via: "api" }, {})).resolves.toMatchObject({ body: [{ clientId, access: "write" }] });
+  const made = await tool("create_house", newHouse);
+  expect(made.isError, made.content[0]?.text).toBeFalsy();
   const [audit] = await admin<{ via: string }[]>`select via from public.api_audit_entries where user_id = ${person.userId}::uuid and operation = 'create_house'`;
   expect(audit?.via).toBe("mcp");
+  // Even able to change things, the app can't set or read its own access through /v1: only the person, in Jonz.
+  await expect(v1("set_app_access", { authorization: `Bearer ${accessToken}`, via: "api" }, { clientId, access: "read" })).rejects.toMatchObject({ code: "forbidden" });
+  await expect(v1("my_app_access", { authorization: `Bearer ${accessToken}`, via: "api" }, {})).rejects.toMatchObject({ code: "forbidden" });
+  await expect(v1("my_app_access", { authorization: personToken, via: "api" }, {})).resolves.toMatchObject({ body: [{ clientId, access: "write" }] });
   await admin`delete from public.houses where created_by = ${person.userId}::uuid`;
 
   // The person sees it under Connected apps, and disconnects it: its token's session ends.

@@ -66,7 +66,7 @@ it('signs you in right there, and Google brings you back to the same sign-in', a
   expect(read).not.toHaveBeenCalled();
 });
 
-it('names the app and what it may do, and allows it, back to the app', async () => {
+it('names the app, asks what it may do with Read only first, and allows it as picked, back to the app', async () => {
   as({ user: { id: 'u1' } });
   read.mockResolvedValue(ASK);
   answer.mockResolvedValue('https://claude.ai/api/mcp/auth_callback?code=xyz&state=s');
@@ -74,9 +74,25 @@ it('names the app and what it may do, and allows it, back to the app', async () 
   expect(await screen.findByRole('header', { name: words('people.consent.heading', { app: 'Claude' }) })).toBeOnTheScreen();
   expect(screen.getByText(words('people.consent.body', { app: 'Claude' }))).toBeOnTheScreen();
   expect(screen.getByText(words('people.consent.backTo', { uri: 'https://claude.ai/api/mcp/auth_callback' }))).toBeOnTheScreen();
+  expect(screen.getByText(words('people.appAccess.label', { app: 'Claude' }))).toBeOnTheScreen();
+  const readOnly = screen.getByRole('radio', { name: `${words('people.appAccess.read')}, ${words('people.appAccess.readMeta')}` });
+  const change = screen.getByRole('radio', { name: `${words('people.appAccess.write')}, ${words('people.appAccess.writeMeta')}` });
+  expect(readOnly).toBeChecked();
+  expect(change).not.toBeChecked();
   await fireEvent.press(screen.getByRole('button', { name: words('people.consent.allow') }));
-  expect(answer).toHaveBeenCalledWith('auth123', true);
+  expect(answer).toHaveBeenCalledWith('auth123', { clientId: 'c1', access: 'read' });
   await waitFor(() => expect(assign).toHaveBeenCalledWith('https://claude.ai/api/mcp/auth_callback?code=xyz&state=s'));
+});
+
+it('allows it to read and change when you pick that', async () => {
+  as({ user: { id: 'u1' } });
+  read.mockResolvedValue(ASK);
+  answer.mockResolvedValue('https://claude.ai/api/mcp/auth_callback?code=xyz&state=s');
+  await open();
+  await fireEvent.press(await screen.findByRole('radio', { name: `${words('people.appAccess.write')}, ${words('people.appAccess.writeMeta')}` }));
+  expect(screen.getByRole('radio', { name: `${words('people.appAccess.write')}, ${words('people.appAccess.writeMeta')}` })).toBeChecked();
+  await fireEvent.press(screen.getByRole('button', { name: words('people.consent.allow') }));
+  expect(answer).toHaveBeenCalledWith('auth123', { clientId: 'c1', access: 'write' });
 });
 
 it("says no, back to the app", async () => {
@@ -85,7 +101,7 @@ it("says no, back to the app", async () => {
   answer.mockResolvedValue('https://claude.ai/api/mcp/auth_callback?error=access_denied');
   await open();
   await fireEvent.press(await screen.findByRole('button', { name: words('people.consent.deny') }));
-  expect(answer).toHaveBeenCalledWith('auth123', false);
+  expect(answer).toHaveBeenCalledWith('auth123', null);
   await waitFor(() => expect(assign).toHaveBeenCalledWith('https://claude.ai/api/mcp/auth_callback?error=access_denied'));
 });
 

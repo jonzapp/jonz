@@ -11,8 +11,10 @@ const words = wordsFor("en", "housemates");
 // Connecting an app to Jonz over MCP, in the Expo app's web build
 // (docs/specs/operation-registry.md, "MCP"): the app registers with the local
 // stack's OAuth server and sends the person to Jonz's consent page, where
-// Allow sends them back to it with a code; the app then shows under
-// Connected apps on You. And a request it makes that can't be undone waits
+// they pick what it may do (Read only first, or Read and change) and Allow
+// sends them back to it with a code; the app then shows under Connected apps
+// on You, saying what it may do, and its sheet changes that or disconnects
+// it. And a request it makes that can't be undone waits
 // at jonz.app/approve/<id> until the person approves it there.
 //
 // With SHOTS=<folder> it also takes the PR's pictures there, Day and Night.
@@ -67,19 +69,42 @@ test("connects an app on Jonz's consent page, lists it on You, and approves what
   await page.goto(`/oauth/consent?authorization_id=${authorizationId}`);
   await expect(page.getByRole("heading", { name: words('people.consent.heading', { app }) })).toBeVisible();
   await expect(page.getByText(words('people.consent.body', { app }))).toBeVisible();
+  // What it may do: Read only until Sam picks otherwise.
+  await expect(page.getByText(words('people.appAccess.label', { app }))).toBeVisible();
+  const readOnly = page.getByTestId("app-access-read");
+  const change = page.getByTestId("app-access-write");
+  await expect(readOnly).toHaveAttribute("aria-checked", "true");
+  await expect(change).toHaveAttribute("aria-checked", "false");
   await shoot(page, "consent");
+  await change.click();
+  await expect(change).toHaveAttribute("aria-checked", "true");
+  await expect(readOnly).toHaveAttribute("aria-checked", "false");
   await page.getByRole("button", { name: words('people.consent.allow'), exact: true }).click();
   await page.waitForURL((url) => url.href.startsWith(BACK) && url.searchParams.has("code"));
+  const sql = postgres(DB_URL, { max: 1, onnotice: () => {} });
+  const access = async () => (await sql<{ access: string }[]>`select access from public.connected_apps where user_id = ${userId}::uuid`).map((r) => r.access);
+  expect(await access()).toEqual(["write"]);
 
-  // Connected apps on You.
+  // Connected apps on You: what it may do, and its sheet changes it.
   await page.goto("/house/you");
   const row = page.getByTestId("connected-app");
   await expect(row).toContainText(app);
+  await expect(row).toContainText(words('people.appAccess.write'));
   await row.scrollIntoViewIfNeeded();
   await shoot(page, "connected-apps");
+  await row.click();
+  const sheet = page.getByTestId("app-sheet");
+  await expect(sheet.getByTestId("app-access-write")).toHaveAttribute("aria-checked", "true");
+  await shoot(page, "app-sheet");
+  await sheet.getByTestId("app-access-read").click();
+  await expect(sheet.getByTestId("app-access-read")).toHaveAttribute("aria-checked", "true");
+  await expect.poll(access).toEqual(["read"]);
+  // The sheet's own close: Safari doesn't take Escape as a close.
+  await sheet.getByTestId("sheet-close").click();
+  await expect(page.getByTestId("sheet-scrim")).toHaveCount(0);
+  await expect(row).toContainText(words('people.appAccess.read'));
 
   // A request it can't undo, waiting for Sam.
-  const sql = postgres(DB_URL, { max: 1, onnotice: () => {} });
   const [{ id }] = await sql<{ id: string }[]>`
     insert into public.api_approvals (user_id, operation, request_hash, input, house_id, client_id, expires_at)
     values (${userId}::uuid, 'set_house_kind', ${"a".repeat(64)}, ${sql.json({ houseId, kind: "family" })}, ${houseId}::uuid, 'notes', now() + interval '15 minutes')
@@ -96,9 +121,10 @@ test("connects an app on Jonz's consent page, lists it on You, and approves what
   expect(row2.approved_at).not.toBeNull();
   await sql.end();
 
-  // Disconnect it.
+  // Disconnect it, from its sheet.
   await page.goto("/house/you");
-  await page.getByTestId("connected-app").getByRole("button", { name: words('people.connectedApps.disconnect') }).click();
+  await page.getByTestId("connected-app").click();
+  await page.getByTestId("app-sheet").getByRole("button", { name: words('people.connectedApps.disconnect') }).click();
   await page.getByTestId("disconnect-sheet").getByRole("button", { name: words('people.connectedApps.disconnect') }).click();
   await expect(page.getByTestId("connected-apps-none")).toBeVisible();
   await context.close();

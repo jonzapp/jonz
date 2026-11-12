@@ -1,4 +1,4 @@
-import { consentPath } from '@app/core';
+import { consentPath, DEFAULT_APP_ACCESS, type AppAccess } from '@app/core';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -16,21 +16,26 @@ import { useMembership } from '@/hooks/use-membership';
 import { SPACE } from '@/theme';
 import { Waiting } from '@/components/waiting';
 import { DoorOutline } from '@/components/page-outlines';
+import { FieldLabel } from '@/components/field';
+import { AppAccessChoice } from '@/components/house-page/app-access-choice';
 import { useWords } from '@/hooks/use-words';
 
 /**
  * jonz.app/oauth/consent?authorization_id=…: where Supabase's OAuth server
  * sends someone an app (an MCP client) wants to sign in as. Open to anyone,
  * signing in in place. Signed in: the app's name and site, what it will be
- * able to do (what you can, as you, with anything that can't be undone still
- * waiting for your approval here), and Allow or Don't allow, each going back
- * to the app. An app you've already allowed goes straight back.
+ * able to do, picked here (Read only, first, or Read and change: what you
+ * can, as you, with anything that can't be undone still waiting for your
+ * approval here), and Allow or Don't allow, each going back to the app.
+ * Allow saves the pick before letting the app in. An app you've already
+ * allowed goes straight back.
  */
 export default function Consent() {
   const words = useWords();
   const { authorization_id: authorizationId = '', error } = useLocalSearchParams<{ authorization_id?: string; error?: string }>();
   const { session } = useMembership();
   const [allowing, setAllowing] = useState<boolean | null>(null);
+  const [access, setAccess] = useState<AppAccess>(DEFAULT_APP_ACCESS);
   const read = useQuery({
     queryKey: ['oauth-consent', authorizationId, session?.user.id ?? null],
     queryFn: () => readConsent(authorizationId),
@@ -40,7 +45,7 @@ export default function Consent() {
   const answer = useMutation({
     mutationFn: (allow: boolean) => {
       setAllowing(allow);
-      return answerConsent(authorizationId, allow);
+      return answerConsent(authorizationId, allow && read.data?.kind === 'ask' ? { clientId: read.data.details.client.id, access } : null);
     },
     onSuccess: (url) => goBack(url),
   });
@@ -76,6 +81,10 @@ export default function Consent() {
             {details.client.uri ? <Meta>{words('people.consent.website', { uri: details.client.uri })}</Meta> : null}
             <Meta>{words('people.consent.backTo', { uri: details.redirect_uri })}</Meta>
             {details.user.email ? <Meta>{words('people.consent.signedInAs', { email: details.user.email })}</Meta> : null}
+          </View>
+          <View style={styles.group}>
+            <FieldLabel>{words('people.appAccess.label', { app: details.client.name })}</FieldLabel>
+            <AppAccessChoice value={access} onChange={setAccess} inCard disabled={answer.isPending || answer.isSuccess} />
           </View>
           {answer.error ? <Alert message={answer.error.message} /> : null}
           <ButtonRow>

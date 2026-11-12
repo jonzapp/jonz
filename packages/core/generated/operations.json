@@ -1900,6 +1900,107 @@
       }
     },
     {
+      "name": "my_app_access",
+      "about": "What each app you connected to Jonz may do",
+      "scope": "account",
+      "effect": "read",
+      "guard": {
+        "by": "permission",
+        "permission": "account:read"
+      },
+      "entitlement": null,
+      "entitlementWhen": null,
+      "destructive": false,
+      "method": "GET",
+      "path": "/v1/me/apps",
+      "pathKeys": [],
+      "rpc": {
+        "name": "my_app_access",
+        "server": false,
+        "args": {}
+      },
+      "tables": [],
+      "page": null,
+      "input": {
+        "type": "object",
+        "properties": {}
+      },
+      "output": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "clientId": {
+              "type": "string"
+            },
+            "access": {
+              "type": "string",
+              "enum": [
+                "read",
+                "write"
+              ]
+            }
+          },
+          "required": [
+            "clientId",
+            "access"
+          ]
+        }
+      }
+    },
+    {
+      "name": "set_app_access",
+      "about": "Let one of your connected apps read only, or read and change",
+      "scope": "account",
+      "effect": "write",
+      "guard": {
+        "by": "permission",
+        "permission": "account:write_own"
+      },
+      "entitlement": null,
+      "entitlementWhen": null,
+      "destructive": false,
+      "method": "PATCH",
+      "path": "/v1/me/apps/{clientId}",
+      "pathKeys": [
+        "clientId"
+      ],
+      "rpc": {
+        "name": "set_app_access",
+        "server": false,
+        "args": {
+          "clientId": "p_client_id",
+          "access": "p_access"
+        }
+      },
+      "tables": [],
+      "page": null,
+      "input": {
+        "type": "object",
+        "properties": {
+          "clientId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "access": {
+            "type": "string",
+            "enum": [
+              "read",
+              "write"
+            ]
+          }
+        },
+        "required": [
+          "clientId",
+          "access"
+        ]
+      },
+      "output": {
+        "type": "null"
+      }
+    },
+    {
       "name": "my_report",
       "about": "One of the problems you've reported, with its replies",
       "scope": "account",

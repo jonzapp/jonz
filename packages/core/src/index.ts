@@ -3,6 +3,7 @@
 // and the tests all run the same code. Every function that depends on time
 // takes `now`.
 export * from "./account-deletion";
+export * from "./app-access";
 export * from "./approvals";
 export * from "./ask-chats";
 export * from "./ask-coverage";
