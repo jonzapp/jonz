@@ -118,7 +118,7 @@ const SYSTEM = `You are ${APP_NAME}'s assistant, inside ${APP_NAME}, an app that
 
 How ${APP_NAME} works:
 - A chore is called a John. The house's John list says what needs doing, how often, on which day, and how much effort it is in points.
-- Each week the app deals the Johns out fairly between the people at home, weighted by points and by who has done more or less so far (fair shares). Time away is left out of the deal. Smart deal balances points; Classic takes turns.
+- Each week the app deals the Johns out fairly between the people at home, weighted by points and by who has done more or less so far (fair shares). A group's Johns (a John only that group shares) are evened out within the group, apart from the rest of the house's, so a group John never changes anyone's turn at the rest. Time away is left out of the deal. Smart deal balances points; Classic takes turns, and whoever's turn it is may go up to half the weekly budget over.
 - People tick a John when it's done; housemates can question a tick. A John not done by its due time is late, and later still missed; in a house with a Stake, late and missed Johns cost money at the end of the month. Someone else can cover an overdue John.
 - On-call Johns (the bin when it's full) are done when someone flags them, by whoever is on call that week.
 - Swaps: you can ask someone to swap one of your Johns for one of theirs.
@@ -206,7 +206,7 @@ export function jonzToolSet(t: JonzTools): ToolSet {
       execute: async () => t.reads.history(),
     }),
     balances: tool({
-      description: "Fair shares: each person's points given and done since they joined, and who's ahead or behind.",
+      description: "Fair shares: each person's points given and done since they joined, and who's ahead or behind, overall, on the rest of the house's Johns, and in each group.",
       inputSchema: z.object({}),
       execute: async () => t.reads.balances(),
     }),

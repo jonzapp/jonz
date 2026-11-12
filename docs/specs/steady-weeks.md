@@ -107,6 +107,11 @@ every rule. In short:
   p_before)` (share and work per group). The deal splits each balance into
   pools with them: each group someone is in now, and the whole house for the
   rest. Weeks dealt before it count as the whole house's.
+- Migration `20270109090000_group_pools_read.sql`: housemates read both
+  (`weeks:read`), as they read `week_shares`, through the `house_group_balances`
+  operation (`GET /v1/houses/{houseId}/group-balances`, and so an MCP tool).
+  Only the server writes group shares. The guide, the rules sheet, Ask Jonz's
+  fair shares read and the MCP server's instructions all explain the pools.
 - `POST /api/swaps` with `SwapAskRequest {mine, theirs}` answers
   `SwapAskResponse {ok, offerId}` and pushes the housemate asked. A bad body is
   400 "Say which two Johns to swap."; refusals are 409 in words.

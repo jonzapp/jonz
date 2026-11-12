@@ -53,6 +53,21 @@ describe("/mcp", () => {
     for (const t of tools) expect(t.annotations?.destructiveHint ?? false, t.name).toBe((OPERATIONS[t.name as keyof typeof OPERATIONS] as Operation).destructive === true);
   });
 
+  it("tells the client how fair shares count, groups' Johns apart, and which tools read them", async () => {
+    const { result } = await rpc(fake(), "initialize", { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "test", version: "1" } });
+    const said = result!.instructions as string;
+    expect(said).toContain("A group's Johns");
+    expect(said).toContain("half the budget over");
+    const { result: listed } = await rpc(fake(), "tools/list");
+    const names = (listed!.tools as { name: string }[]).map((t) => t.name);
+    for (const tool of ["house_balances", "house_group_balances"]) {
+      expect(said, tool).toContain(tool);
+      expect(names, tool).toContain(tool);
+    }
+    // ask_house joins the tools where the host hands in its handler (apps/api's /mcp).
+    expect(said).toContain("ask_house");
+  });
+
   const A = "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d";
 
   it("runs a tool through the executor as the caller, by MCP, and answers what it did", async () => {
