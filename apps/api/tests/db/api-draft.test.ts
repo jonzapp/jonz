@@ -303,7 +303,9 @@ describe("chatTurn, with Claude stood in for", () => {
       },
     );
     if ("refusal" in result) throw new Error("refused");
-    expect(fold).toBe(messages.length - CHAT_RECENT);
+    // All but the latest CHAT_RECENT at most, the rest starting with something the person said.
+    expect(messages[fold].role).toBe("user");
+    expect(messages.length - fold).toBeLessThanOrEqual(CHAT_RECENT);
     expect(notes).toEqual({ summary: "- Bins go out on Tuesday.", messages: fold, language: "English" });
     expect(told!.messages).toEqual(messages.slice(fold));
     expect(told!.earlier).toBe("- Bins go out on Tuesday.\n- Ben is away in May.");
