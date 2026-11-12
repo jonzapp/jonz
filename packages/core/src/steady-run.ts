@@ -55,11 +55,13 @@ export interface RunJohn {
   crew?: number;
   /** Only these people share it. */
   group?: string[];
+  /** Its group's name, which keeps its pool when the group's members change (`changes` with `group`). Default: the group's ids. */
+  pool?: string;
   /** The first and last week it's on the list. */
   from?: number;
   until?: number;
   /** From week `w`, a new schedule, size or day. */
-  changes?: { w: number; sched?: Sched; pts?: number; day?: number }[];
+  changes?: { w: number; sched?: Sched; pts?: number; day?: number; group?: string[] }[];
   /** How often, in words, for the simulator. */
   often?: string;
 }
@@ -100,6 +102,10 @@ export interface RunPreparedJohn extends RunJohn {
   ptsAt: Record<number, number>;
   periodAt: Record<number, number>;
   dayAt: Record<number, number>;
+  /** Its group's members in each week; undefined for the whole house. */
+  groupAt: Record<number, string[] | undefined>;
+  /** Whose fairness it counts in: its group's pool, or "" for the whole house. */
+  poolKey: string;
   from: number;
   until: number;
   pinned: boolean;
@@ -173,6 +179,8 @@ export interface RunWeek {
   excused: { pid: string; name: string }[];
   /** Balances at the end of the week. */
   bal: Record<string, number>;
+  /** The same, by pool ("" the whole house, then each group they're in), in a house with groups. */
+  pools?: Record<string, Record<string, number>>;
   missedTotal: number;
   people: RunPersonWeek[];
   weekOff: string[];
@@ -246,15 +254,16 @@ export function prepareRun(house: RunHouse, weeks: number, startsOn = RUN_STARTS
     stints: p.stints ?? [[p.from ?? 1, p.until ?? Infinity]],
   }));
   const johns: RunPreparedJohn[] = house.johns.map((j) => {
-    const parts = [{ w: j.from ?? 1, sched: j.sched, pts: j.pts, day: j.day }];
+    const parts = [{ w: j.from ?? 1, sched: j.sched, pts: j.pts, day: j.day, group: j.group }];
     for (const c of j.changes ?? []) {
       const prev = parts[parts.length - 1];
-      parts.push({ w: c.w, sched: c.sched ?? prev.sched, pts: c.pts ?? prev.pts, day: c.day ?? prev.day });
+      parts.push({ w: c.w, sched: c.sched ?? prev.sched, pts: c.pts ?? prev.pts, day: c.day ?? prev.day, group: c.group ?? prev.group });
     }
     const due = new Set<number>();
     const ptsAt: Record<number, number> = {};
     const periodAt: Record<number, number> = {};
     const dayAt: Record<number, number> = {};
+    const groupAt: Record<number, string[] | undefined> = {};
     parts.forEach((part, i) => {
       const to = Math.min(weeks, parts[i + 1] ? parts[i + 1].w - 1 : weeks, j.until ?? weeks);
       const lands = j.onCall ? range(part.w, to) : dueWeeks(part.sched ?? { every: 1 }, part.day, part.w, to, startsOn);
@@ -263,10 +272,13 @@ export function prepareRun(house: RunHouse, weeks: number, startsOn = RUN_STARTS
         ptsAt[w] = part.pts;
         periodAt[w] = j.onCall ? 1 : periodOf(part.sched);
         dayAt[w] = part.day;
+        groupAt[w] = part.group;
       }
     });
     const together = j.crew !== undefined && j.crew !== 1;
-    return { ...j, due, ptsAt, periodAt, dayAt, from: j.from ?? 1, until: j.until ?? Infinity, pinned: !!j.fixed || together, together };
+    const firstGroup = parts.find((x) => x.group)?.group;
+    const poolKey = j.pool ?? (firstGroup ? firstGroup.join("+") : "");
+    return { ...j, due, ptsAt, periodAt, dayAt, groupAt, poolKey, from: j.from ?? 1, until: j.until ?? Infinity, pinned: !!j.fixed || together, together };
   });
   const awayAt: Record<number, Set<string>> = {};
   for (const [w, ids] of Object.entries(val(house.away, weeks) ?? {})) {
@@ -285,6 +297,12 @@ export function prepareRun(house: RunHouse, weeks: number, startsOn = RUN_STARTS
     awayAt,
   };
 }
+
+/** They share a John in week `w`: it's the whole house's, or they're in its group that week. */
+export const inGroup = (j: RunPreparedJohn, id: string, w: number): boolean => {
+  const g = j.groupAt[w] ?? (w > j.until ? j.groupAt[j.until] : w < j.from ? j.groupAt[j.from] : undefined);
+  return !g || g.includes(id);
+};
 
 export const livesThere = (p: RunPreparedPerson, w: number): boolean => p.stints.some(([a, b]) => a <= w && w <= b);
 
@@ -308,6 +326,11 @@ export function steadyRun(house: RunHouse, opts: RunOptions): { prepared: RunPre
   const events = val(house.events, W) ?? [];
 
   const bal: Record<string, number> = Object.fromEntries(P.map((p) => [p.id, 0]));
+  // Balances in each group's pool, by person: work done minus share on that group's Johns. Their whole-house
+  // balance is everything else: the total minus the groups they're in now.
+  const groupBal: Record<string, Record<string, number>> = Object.fromEntries(P.map((p) => [p.id, {}]));
+  const poolOf = (j: RunPreparedJohn) => j.poolKey;
+  const anyGroups = S.johns.some((j) => j.poolKey);
   const last: Record<string, string[]> = {};
   const lastDealt: Record<string, number> = {};
   const firstDue: Record<string, number> = {};
@@ -361,7 +384,7 @@ export function steadyRun(house: RunHouse, opts: RunOptions): { prepared: RunPre
     for (const n of Object.keys(back)) if (!onList.has(n)) delete back[n];
     if (mode !== "classic") turns = null;
 
-    const sharersOf = (j: RunPreparedJohn) => ids.filter((id) => !j.group || j.group.includes(id));
+    const sharersOf = (j: RunPreparedJohn) => ids.filter((id) => inGroup(j, id, w));
     for (const j of active) if ((j.due.has(w) || waited[j.name] || back[j.name]) && !(j.name in firstDue)) firstDue[j.name] = w;
     const johns: SteadyJohn[] = active.map((j) => {
       const per = j.periodAt[w];
@@ -375,6 +398,7 @@ export function steadyRun(house: RunHouse, opts: RunOptions): { prepared: RunPre
         crew: j.crew ?? 1,
         onCall: !!j.onCall,
         sharers: sharersOf(j),
+        pool: poolOf(j),
         home: sharersOf(j).filter((id) => homeSet.has(id)),
         due: j.due.has(w),
         waited: waited[j.name] ?? 0,
@@ -384,9 +408,18 @@ export function steadyRun(house: RunHouse, opts: RunOptions): { prepared: RunPre
         ahead: range(w, w + 11).map((x) => j.due.has(x)),
       };
     });
+    // The groups someone is in now: the pools of the Johns on the list they share as one of a group.
+    const groupsNow = [...new Set(active.filter((j) => j.groupAt[w]).map(poolOf))];
+    const poolsFor = (id: string) => {
+      const mine = groupsNow.filter((k) => active.some((j) => j.poolKey === k && j.groupAt[w]?.includes(id)));
+      const pools: Record<string, number> = Object.fromEntries(mine.map((k) => [k, groupBal[id][k] ?? 0]));
+      pools[""] = bal[id] - mine.reduce((s, k) => s + pools[k], 0);
+      return pools;
+    };
     const members: SteadyMember[] = present.map((p) => ({
       userId: p.id,
       balance: bal[p.id],
+      ...(anyGroups ? { pools: poolsFor(p.id) } : {}),
       homeDays: homeSet.has(p.id) ? ALL_DAYS : [],
       suits: p.days,
       rather: p.prefs,
@@ -496,6 +529,21 @@ export function steadyRun(house: RunHouse, opts: RunOptions): { prepared: RunPre
       const r = result.people.find((x) => x.userId === p.id)!;
       return { id: p.id, name: p.name, away: awaySet.has(p.id), bal: bal[p.id], rel: r.rel, target: r.target, joined: joined.includes(p.id) };
     });
+    // The same, pool by pool: each group's Johns split among its sharers, and credited to whoever did them.
+    for (const k of groupsNow) {
+      const inPool = items.filter((i) => poolOf(johnByName[i.name]) === k);
+      const poolShare = weekShares(
+        inPool.map((i) => ({ johnId: i.name, points: i.pts, lastUserId: null, sharers: i.sharers, home: i.sharers.filter((id) => homeSet.has(id)) })),
+        ids,
+        S.makeup,
+      );
+      const poolDone: Record<string, number> = {};
+      for (const i of inPool) {
+        const who = i.missed ? null : (i.coveredBy ?? i.place.userId);
+        if (who) poolDone[who] = (poolDone[who] ?? 0) + i.pts;
+      }
+      for (const id of ids) groupBal[id][k] = (groupBal[id][k] ?? 0) + (poolDone[id] ?? 0) - poolShare.get(id)!;
+    }
     const end = present.map((p) => {
       const before = bal[p.id];
       bal[p.id] = before + done[p.id] - share.get(p.id)!;
@@ -515,6 +563,7 @@ export function steadyRun(house: RunHouse, opts: RunOptions): { prepared: RunPre
       covers: weekCovers,
       excused: weekExcused,
       bal: { ...bal },
+      ...(anyGroups ? { pools: Object.fromEntries(ids.map((id) => [id, poolsFor(id)])) } : {}),
       missedTotal,
       people: personWeeks,
       weekOff: result.people.filter((p) => p.weekOff).map((p) => p.userId),
