@@ -1,6 +1,6 @@
 import "server-only";
 
-import { ASK_POOL_TOKENS, askUsage, hasPass, passOf, rulesOf, weekWindow, type AskUsage, type Database } from "@app/core";
+import { ASK_ACCOUNT_DAYS, ASK_POOL_TOKENS, askUsage, type AccountUse, hasPass, passOf, rulesOf, weekWindow, type AskUsage, type Database } from "@app/core";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -21,13 +21,33 @@ export function askWeek(house: HouseRow, now: Date) {
   return { week, pass, pool: pass ? ASK_POOL_TOKENS.pass : ASK_POOL_TOKENS.free };
 }
 
+/** The start of the account's rolling window: ASK_ACCOUNT_DAYS ago. */
+export function accountSince(now: Date): Date {
+  return new Date(now.getTime() - ASK_ACCOUNT_DAYS * 24 * 60 * 60 * 1000);
+}
+
+/** What a person has used of Ask Jonz in any house over the account's window, and when its oldest turn drops off. */
+export async function accountUse(userId: string, now: Date): Promise<AccountUse> {
+  const { data, error } = await createAdminClient().rpc("ask_account_used", { p_user: userId, p_since: accountSince(now).toISOString() });
+  if (error) throw new Error(`Couldn't read the account's Ask Jonz: ${error.message}`);
+  const row = data?.[0];
+  const oldest = row?.oldest ? new Date(row.oldest) : null;
+  return {
+    used: Number(row?.used ?? 0),
+    backAt: oldest ? new Date(oldest.getTime() + ASK_ACCOUNT_DAYS * 24 * 60 * 60 * 1000) : null,
+  };
+}
+
 /** What the house and each person in it have used of this week's pool, as the usage page and the chat show it. */
 export async function usageNow(house: HouseRow, people: readonly string[], me: string, now: Date): Promise<AskUsage> {
   const { week, pass, pool } = askWeek(house, now);
-  const { data, error } = await createAdminClient().rpc("ask_usage_people", { p_house: house.id, p_since: week.startsAt.toISOString() });
+  const [{ data, error }, account] = await Promise.all([
+    createAdminClient().rpc("ask_usage_people", { p_house: house.id, p_since: week.startsAt.toISOString() }),
+    accountUse(me, now),
+  ]);
   if (error) throw new Error(`Couldn't read the week's Ask Jonz: ${error.message}`);
   const used = new Map((data ?? []).map((row) => [row.user_id, Number(row.used)]));
-  return askUsage({ pool, pass, people, me, used, resetsAt: week.endsAt });
+  return askUsage({ pool, pass, people, me, used, resetsAt: week.endsAt, account });
 }
 
 /**
