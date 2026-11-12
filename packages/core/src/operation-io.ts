@@ -5,7 +5,7 @@ import { APP_ACCESS } from "./app-access";
 import { CHAT_SAVED_TURNS, SavedTurn } from "./ask-chats";
 import { BEST_TIMES, CURRENCIES, DEAL_MODES, HOUSE_KINDS } from "./domain";
 import { AskUsage, ChatRequest, ChatResponse } from "./house-draft";
-import { HOW_TOPICS } from "./how-it-works";
+import { PAGE_IDS } from "./pages";
 import { AddKid, AddKidResponse } from "./kids";
 import { LANGUAGES } from "./locales";
 import { Notice, NOTICE_KINDS } from "./notices";
@@ -482,15 +482,17 @@ export const OPERATION_IO = {
   update_ask_chat: io(z.object({ chatId: id, turns }), nothing, "PATCH /v1/me/ask-chats/{chatId}"),
   delete_ask_chat: io(z.object({ chatId: id }), nothing, "DELETE /v1/me/ask-chats/{chatId}"),
   live_notices: io(none, z.array(Notice), "GET /v1/notices"),
+  list_pages: io(none, z.array(z.object({ id: z.enum(PAGE_IDS), title: text, about: text, url: z.url() })), "GET /v1/pages"),
+  read_page: io(
+    // A guide topic uses houseId's numbers, or your own house's, or a new house's if you have none.
+    z.object({ pageId: z.enum(PAGE_IDS), houseId: id.optional() }),
+    z.object({ id: z.enum(PAGE_IDS), markdown: z.string() }),
+    "GET /v1/pages/{pageId}",
+  ),
 
   // A house: reading
   house_live: io(z.object({ houseId: id, after: z.int().min(0).optional() }), z.object({ latest: z.int().nullable() }), "GET /v1/houses/{houseId}/live/since"),
   house_history: io(z.object({ houseId: id, before: at.optional(), limit: z.int().min(1).max(200).optional() }), z.array(historyRow), "GET /v1/houses/{houseId}/history"),
-  house_guide: io(
-    z.object({ houseId: id, topic: z.enum(HOW_TOPICS).optional() }),
-    z.array(z.object({ topic: z.enum(HOW_TOPICS), words: z.string() })),
-    "GET /v1/houses/{houseId}/guide",
-  ),
   ask_usage: io(z.object({ houseId: id }), AskUsage, "GET /v1/houses/{houseId}/ask/usage"),
   catch_up: io(FreshRequest, FreshResponse, "POST /v1/houses/{houseId}/catch-up"),
   house_today: io(z.object({ houseId: id }), today, "GET /v1/houses/{houseId}/today"),

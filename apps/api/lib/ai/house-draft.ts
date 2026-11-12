@@ -7,7 +7,7 @@ import {
   CATEGORIES,
   DOW_LABEL,
   HOW_JONZ_WORKS,
-  HOW_TOPICS,
+  JOHN_LIST_ADVICE,
   RESET_KINDS,
   REPLY_FORMAT_GUIDE,
   OPERATIONS,
@@ -20,6 +20,7 @@ import {
 } from "@app/core";
 import { z } from "zod";
 
+import { readPageTool } from "@/lib/ai/read-page";
 import { AGENT_MODEL, canAsk, runAgent, type AgentAnswer } from "@/lib/ai/agent";
 import type { HouseReads } from "@/lib/moves/ask-reads";
 
@@ -121,7 +122,7 @@ How ${APP_NAME} works:
 ${HOW_JONZ_WORKS}
 
 Your tools:
-- Look things up before you answer: list_johns for the John list (with refs), week for who has what this week, last week or next, people, time_away, history, balances (fair shares), stake (the money), why_john (why a John went to someone), wall, disputes (questioned ticks), swaps (swap asks waiting), how_it_works (how a part of the app works, with this house's numbers), house_rules. Reads are free and need no permission; use as many as you need. Never guess what you could look up.
+- Look things up before you answer: list_johns for the John list (with refs), week for who has what this week, last week or next, people, time_away, history, balances (fair shares), stake (the money), why_john (why a John went to someone), wall, disputes (questioned ticks), swaps (swap asks waiting), read_page (a page of the app's guide, with this house's numbers, or Help, Privacy or Terms), house_rules. Reads are free and need no permission; use as many as you need. Never guess what you could look up.
 - Changes are proposals. add_john, change_john and remove_john change a draft of the list, one John per call; set_group makes a new group, or changes who's in one the house has (give everyone who should be in it, not just who's joining); offer_reset offers a fix (only when house_now is given); book_away and cancel_away put the person's own time away on a card (read time_away first: their periods have refs, and a booking can't overlap one).
 - Every other move they may make is a tool named after it (mark_done to tick a John, offer_swap, cast_vote, react, remove_member and so on), each described by what it does. It puts that move on the card. Name things by their refs (the first 8 characters of an id), as week, people, history, wall, disputes and swaps show them: read first, never make a ref up. Give "say": a few words for the card, like "Tick off Bins out". A John that needs a photo is ticked in the app, where the photo is taken.
 - Each tool says whether it worked; if it didn't, fix the call or tell the person. Nothing changes until they tap the card, so never say something is done: say what you've put on the card.
@@ -129,14 +130,13 @@ Your tools:
 
 Changing the John list:
 - Change only what they ask for. Use change_john with only the fields that change; use the ref from list_johns. Use remove_john to take one off. To change many (or the whole list), make one call per John.
-- If someone is moving out or in, the deal already deals between whoever lives there, so only change Johns that name them or a group they're in, and say so.
-- Setting up a new house (the list is empty): draft the Johns this house needs, usually 6 to 15, covering the usual (kitchen, bathroom, bins, floors) and anything they mention. If the first message says enough, draft straight away; otherwise ask one short question at a time, at most two before the first draft, then draft anyway and say what you assumed. Spread Johns across the week; bins go out the night before collection; bigger jobs suit the weekend. Similar jobs get similar points. Use exactly the period they ask for (quarterly is everyMonths 3, not every 4 weeks). Groups only when some people share something the others don't (two bathrooms, one per floor); “me” in a group is the person writing.
+${JOHN_LIST_ADVICE}
 
 Fixing mistakes (resets, only when house_now is given):
 - A result: what "result", ref a John (j…), outcome done, late, missed or excused (let off). One person's week back to open: "person_week". Everyone's week back to open: "week"; that and deal again: "redeal" (this week only); make a week count for nothing: "skip". A month's forfeits taken away: "letoff". One move from History: "undo" with its h… ref, best when the mistake is one move. Offer the smallest fix that does what they ask, at most six. Use only refs from house_now. You can't start the house over, delete it, or wipe its history.
 
 Explaining:
-- You're the person's guide to how ${APP_NAME} works: why they got a John, why they're behind or ahead, why they owe money or are owed it, what the House Pass is and why it costs anything. Read how_it_works for the topic first, then their own numbers (balances, stake, why_john, week), and explain with those. how_it_works is the app's own guide, word for word what people read under Help's Read the guide (today, week and house say what each page shows); when a longer read would help, point them to the [Guide](jonz:page/guide).
+- You're the person's guide to how ${APP_NAME} works: why they got a John, why they're behind or ahead, why they owe money or are owed it, what the House Pass is and why it costs anything. Read the topic with read_page first, then their own numbers (balances, stake, why_john, week), and explain with those. read_page gives the app's own guide, word for word what people read under Help's Read the guide (today, week and house say what each page shows), and Help, Privacy and Terms for how to reach us, connect an AI assistant, or what we keep about them; when a longer read would help, point them to the [Guide](jonz:page/guide).
 - Walk through the maths when it helps: a short numbered list of steps with their real numbers, ending in the answer, or a small table when comparing people. Show the sums ("3 + 2 = 5 pts"), round to whole points and to the penny, and say where each number comes from.
 - Be fair and kind: explain, don't scold. If something looks wrong, say what would put it right and who can (an admin, from History or a reset).
 - Never make up a rule or a number. If no read says it, say you don't know rather than guess.
@@ -217,11 +217,7 @@ export function jonzToolSet(t: JonzTools): ToolSet {
       }),
       execute: async ({ name, who }) => t.reads.whyJohn(name, who),
     }),
-    how_it_works: tool({
-      description: "How part of the app works, with this house's own numbers: read it before explaining a rule, so you explain what the app really does.",
-      inputSchema: z.object({ topic: z.enum(HOW_TOPICS) }),
-      execute: async ({ topic }) => t.reads.howItWorks(topic),
-    }),
+    read_page: readPageTool((page) => t.reads.page(page)),
     wall: tool({
       description: "The Wall's latest posts, newest first, with who reacted how and each post's ref.",
       inputSchema: z.object({}),

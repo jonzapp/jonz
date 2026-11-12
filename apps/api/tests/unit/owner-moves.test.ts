@@ -25,7 +25,7 @@ import { ownerWrites } from "@/lib/moves/owner-ask";
  */
 
 const reads = new Proxy({}, { get: () => async () => "" }) as OwnerReads;
-const READS = ["audit", "deletions", "find_houses", "find_people", "house", "how_it_works", "inbox", "messages", "notices", "promotions"];
+const READS = ["audit", "deletions", "find_houses", "find_people", "house", "inbox", "messages", "notices", "promotions", "read_page"];
 const ok = async () => ({ ok: true, said: "ok" });
 const writes = (may: Partial<Record<OwnerPermission, boolean>>): OwnerWrites => ({
   replyToReport: ok,

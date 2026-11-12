@@ -51,7 +51,7 @@ describe("the support agent", () => {
     let read: string[] = [];
     const first = await supportDraft(as(owner), report, new Date(), async (r, _today, reads: SupportReads) => {
       expect(r.house).toBe(named?.name);
-      read = [await reads.theirHouse(), await reads.theirReports(), await reads.similar(tag), await reads.deletions(""), await reads.audit(""), reads.howItWorks("stake", false)];
+      read = [await reads.theirHouse(), await reads.theirReports(), await reads.similar(tag), await reads.deletions(""), await reads.audit(""), reads.page("stake", false)];
       return { raw: { reply: "Thanks Ava, I'm looking at it.", action: "same_as", same_as: main, why: "Ben said the same." }, inputTokens: 9, outputTokens: 4 };
     });
     expect(first).toMatchObject({

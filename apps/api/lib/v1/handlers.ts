@@ -1,6 +1,6 @@
 import "server-only";
 
-import { bornYearOk, houseKind, HOW_TOPICS, howItWorks, promotionProblems, rulesOf, type HowTopic, type AwayDraft, type ChatRequest, type DeleteHouseRequest, type OwnerAskRequest, type OwnerMessageRequest, type PassCheckoutRequest, type PromotionRequest, type ReportFixRequest, type ReportMessageRequest, type ReportRequest, type RollCallRequest, type SwapAskRequest, wordsFor } from "@app/core";
+import { bornYearOk, houseKind, languageOf, listPages, newHouseFacts, pageMarkdown, promotionProblems, rulesOf, type PageId, type AwayDraft, type ChatRequest, type DeleteHouseRequest, type OwnerAskRequest, type OwnerMessageRequest, type PassCheckoutRequest, type PromotionRequest, type ReportFixRequest, type ReportMessageRequest, type ReportRequest, type RollCallRequest, type SwapAskRequest, wordsFor } from "@app/core";
 import { fromDatabase, Problem, type HandlerContext } from "@app/server";
 import type { Handlers } from "v1";
 
@@ -93,15 +93,22 @@ const HANDLERS: Handlers = {
     return result;
   },
 
-  async house_guide(ctx: HandlerContext) {
-    // Read as the person, so a house they're not in reads as nothing.
+  async list_pages(ctx: HandlerContext) {
+    return listPages(wordsFor(await readerLanguage(ctx), "housemates"));
+  },
+
+  async read_page(ctx: HandlerContext) {
+    const { pageId, houseId: asked } = ctx.input as { pageId: PageId; houseId?: string };
+    // Read as the person, so a house they're not in reads as nothing. With no
+    // house named, the guide uses theirs, or a new house's numbers if they have none.
     type House = Parameters<typeof rulesOf>[0] & { kind: string; away_makeup: number };
-    const [house] = await ctx.tx<House[]>`select * from public.houses where id = ${houseId(ctx)}::uuid`;
-    if (!house) throw refusal({ code: "42501", message: "not_in_house" });
-    const facts = { rules: rulesOf(house), family: house.kind === "family", awayMakeup: house.away_makeup };
-    const said = wordsFor("en", houseKind(house.kind));
-    const topics: readonly HowTopic[] = ctx.input.topic ? [ctx.input.topic as HowTopic] : HOW_TOPICS;
-    return topics.map((topic) => ({ topic, words: howItWorks(topic, facts, said) }));
+    const [house] = asked
+      ? await ctx.tx<House[]>`select * from public.houses where id = ${asked}::uuid`
+      : await ctx.tx<House[]>`select h.* from public.houses h join public.members m on m.house_id = h.id where m.user_id = ${ctx.claims.sub}::uuid order by m.joined_at desc limit 1`;
+    if (asked && !house) throw refusal({ code: "42501", message: "not_in_house" });
+    const kind = houseKind(house?.kind ?? "housemates");
+    const facts = house ? { rules: rulesOf(house), family: kind === "family", awayMakeup: house.away_makeup } : newHouseFacts(kind, "Europe/London", "GBP");
+    return { id: pageId, markdown: pageMarkdown(pageId, { words: wordsFor(await readerLanguage(ctx), kind), house: facts }) };
   },
 
   async catch_up(ctx: HandlerContext) {
@@ -259,6 +266,12 @@ const HANDLERS: Handlers = {
  * Each handler with its operation's transaction as where its queries go
  * (lib/db/scope.ts): the person's client and the server's both run in it.
  */
+/** The language the person reads Jonz in, English until they've chosen: Jonz's pages come in it. */
+async function readerLanguage(ctx: HandlerContext) {
+  const [me] = await ctx.tx<{ language: string | null }[]>`select language from public.profiles where id = ${ctx.claims.sub}::uuid`;
+  return languageOf(me?.language);
+}
+
 export const V1_HANDLERS: Handlers = Object.fromEntries(
   Object.entries(HANDLERS).map(([name, handler]) => [name, (ctx: HandlerContext) => inOperation(ctx.tx, ctx.pool, ctx.claims, () => Promise.resolve(handler!(ctx)))]),
 ) as Handlers;

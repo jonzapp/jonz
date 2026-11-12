@@ -8,3 +8,5 @@ POST /v1/admin/ask added `subschema #16` to the `moves/items` response property 
 POST /v1/admin/ask added 'subschema #16' to the 'moves/items' response property 'oneOf' list for the response status '201'
 POST /v1/houses/{houseId}/ask added the new `reset_house_data` enum value to the `moves/items/oneOf[subschema #3]/operation` response property for the response status `201`
 POST /v1/houses/{houseId}/ask added the new 'reset_house_data' enum value to the 'moves/items/oneOf[subschema #3]/operation' response property for the response status '201'
+# 2026-11-12, Glyn: Jonz's pages are one list read by list_pages and read_page, which replace house_guide (added an hour before, in #229, and used by nothing yet).
+GET /v1/houses/{houseId}/guide API path removed without deprecation

@@ -24,9 +24,9 @@ const ownerReadsStub: OwnerReads = {
   houses: async () => "houses",
   house: async () => "house",
   promotions: async () => "promotions",
-  howItWorks: () => "how",
+  page: () => "how",
 };
-const OWNER_TOOLS = ["audit", "deletions", "find_houses", "find_people", "house", "how_it_works", "inbox", "messages", "notices", "promotions"];
+const OWNER_TOOLS = ["audit", "deletions", "find_houses", "find_people", "house", "inbox", "messages", "notices", "promotions", "read_page"];
 
 const houseTools = (): JonzTools => ({
   reads: new Proxy({}, { get: () => async () => "read" }) as JonzTools["reads"],
@@ -73,12 +73,12 @@ describe("two assistants, no shared access", () => {
 
   it("never gives a housemate, even a house's admin, an owner tool", () => {
     const house = Object.keys(jonzToolSet(houseTools()));
-    for (const name of OWNER_TOOLS.filter((t) => t !== "how_it_works")) expect(house).not.toContain(name);
+    for (const name of OWNER_TOOLS.filter((t) => t !== "read_page")) expect(house).not.toContain(name);
   });
 
   it("never gives the owner a house's tools", () => {
     const owner = Object.keys(ownerToolSet(ownerReadsStub));
-    for (const name of Object.keys(jonzToolSet(houseTools())).filter((t) => t !== "how_it_works")) expect(owner).not.toContain(name);
+    for (const name of Object.keys(jonzToolSet(houseTools())).filter((t) => t !== "read_page")) expect(owner).not.toContain(name);
   });
 
   it("keeps each one's instructions to itself", async () => {

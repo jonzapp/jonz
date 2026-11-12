@@ -10,7 +10,7 @@
 
 import { randomBytes, randomUUID } from "node:crypto";
 
-import { HOW_TOPICS } from "@app/core";
+import { PAGE_IDS, PRIVACY_POLICY, readingMarkdown, wordsFor } from "@app/core";
 import { connect, createExecutor, Problem, tokenVerifier, type Executor, type Sql } from "@app/server";
 import { SignJWT } from "jose";
 import postgres from "postgres";
@@ -90,20 +90,31 @@ describe("/v1 server operations", () => {
     if (!theirs.ok) expect(["forbidden", "not_found"]).toContain(theirs.problem.code);
   });
 
-  it("reads the guide in the house's own numbers for anyone in it, one topic or all, and nothing for a stranger", async () => {
-    const all = await run(housemate, "house_guide", { houseId });
-    expect(all.ok, all.ok ? "" : all.problem.message).toBe(true);
-    if (all.ok) {
-      const topics = all.body as unknown as { topic: string; words: string }[];
-      expect(topics.map((t) => t.topic)).toEqual([...HOW_TOPICS]);
-      for (const t of topics) expect(t.words.trim(), t.topic).not.toBe("");
+  it("lists every page of Jonz, and reads any of them: the guide in the house's own numbers, Help, Privacy and Terms as they stand", async () => {
+    const listed = await run(housemate, "list_pages", {});
+    expect(listed.ok, listed.ok ? "" : listed.problem.message).toBe(true);
+    if (listed.ok) expect((listed.body as unknown as { id: string }[]).map((p) => p.id)).toEqual([...PAGE_IDS]);
+    for (const pageId of PAGE_IDS) {
+      const page = await run(housemate, "read_page", { pageId, houseId });
+      expect(page.ok, `${pageId}: ${page.ok ? "" : page.problem.message}`).toBe(true);
+      if (page.ok) expect((page.body as unknown as { markdown: string }).markdown, pageId).toMatch(/^# \S/);
     }
-    const one = await run(housemate, "house_guide", { houseId, topic: "fair_shares" });
-    expect(one.ok && (one.body as unknown as { topic: string }[]).map((t) => t.topic)).toEqual(["fair_shares"]);
+    const privacy = await run(housemate, "read_page", { pageId: "privacy" });
+    expect(privacy.ok && (privacy.body as unknown as { markdown: string }).markdown).toContain(readingMarkdown(PRIVACY_POLICY));
+    // With no house named, the guide uses the person's own: the same words as naming it.
+    const named = await run(housemate, "read_page", { pageId: "stake", houseId });
+    const own = await run(housemate, "read_page", { pageId: "stake" });
+    expect(own.ok && own.body).toEqual(named.ok && named.body);
     // Asked by a connected app: a read, so Read only is enough.
-    const app = await run(housemate, "house_guide", { houseId, topic: "deal" }, { client_id: "some-app" });
+    const app = await run(housemate, "read_page", { pageId: "deal" }, { client_id: "some-app" });
     expect(app.ok, app.ok ? "" : app.problem.message).toBe(true);
-    const theirs = await run(stranger, "house_guide", { houseId });
+    // In the language they read Jonz in.
+    await admin`update public.profiles set language = 'fr' where id = ${housemate}::uuid`;
+    const fr = await run(housemate, "read_page", { pageId: "stake" });
+    await admin`update public.profiles set language = null where id = ${housemate}::uuid`;
+    expect(fr.ok && (fr.body as unknown as { markdown: string }).markdown).toMatch(new RegExp(`^# ${wordsFor("fr", "housemates")("door.guide.topic.stake.title")}`));
+    // A house that isn't theirs reads as nothing.
+    const theirs = await run(stranger, "read_page", { pageId: "stake", houseId });
     expect(theirs.ok).toBe(false);
     if (!theirs.ok) expect(["forbidden", "not_found"]).toContain(theirs.problem.code);
   });
