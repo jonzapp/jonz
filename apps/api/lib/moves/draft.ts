@@ -239,7 +239,8 @@ export async function chatTurn(
         earlier: summary,
         editing: list !== null,
         now: state?.text ?? null,
-        budget,
+        // Summing up came out of what was left.
+        budget: Math.max(0, budget - spent.input - spent.output),
       },
       tools,
     );

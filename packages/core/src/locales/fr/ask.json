@@ -119,5 +119,7 @@
   "ask.long.fullNote": "Continue dans une nouvelle conversation. Jonz y apporte un résumé de celle-ci, pour que tu n’aies pas à tout réexpliquer.",
   "ask.long.carryOn": "Continuer dans une nouvelle conversation",
   "ask.long.you": "Toi",
-  "ask.long.jonz": "Jonz"
+  "ask.long.jonz": "Jonz",
+  "ask.usage.outAccount": "Tu as utilisé ton Demande à Jonz cette semaine",
+  "ask.usage.outAccountNote": "Ça compte pour toutes les maisons où tu es. Une partie revient {backOn}, à mesure que les anciennes questions sortent du compte."
 }

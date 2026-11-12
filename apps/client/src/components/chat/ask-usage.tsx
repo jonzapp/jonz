@@ -69,18 +69,26 @@ export function LowWarning({ usage, zone }: { usage: AskUsage; zone: string }) {
 }
 
 /**
- * In the message box's place once it's all used: whose ran out, a full bar,
- * when it's back, and the usage page. When it's the whole house and it has
+ * In the message box's place once it's all used: whose ran out (the house's
+ * week, your half, or your account's across every house), a full bar, when
+ * it's back, and the usage page. When it's the whole house and it has
  * no Pass, the Pass too.
  */
 export function OutNotice({ usage, zone }: { usage: AskUsage; zone: string }) {
   const words = useWords();
   const backOn = askBackOn(usage.resetsAt, zone, words);
-  const house = usage.house;
+  const house = usage.limit === 'house';
+  const account = usage.limit === 'account';
   return (
     <ChatStop
-      title={house ? words('ask.usage.outHouse') : words('ask.usage.outMine')}
-      note={house ? words('ask.usage.outHouseNote', { backOn, pass: usage.pass }) : words('ask.usage.outMineNote', { backOn })}
+      title={account ? words('ask.usage.outAccount') : house ? words('ask.usage.outHouse') : words('ask.usage.outMine')}
+      note={
+        account
+          ? words('ask.usage.outAccountNote', { backOn })
+          : house
+            ? words('ask.usage.outHouseNote', { backOn, pass: usage.pass })
+            : words('ask.usage.outMineNote', { backOn })
+      }
       limit
       testID="chat-out"
     >

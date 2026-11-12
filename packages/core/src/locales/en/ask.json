@@ -119,5 +119,7 @@
   "ask.long.fullNote": "Carry on in a new chat. Jonz takes a summary of this one with it, so you won’t need to explain again.",
   "ask.long.carryOn": "Carry on in a new chat",
   "ask.long.you": "You",
-  "ask.long.jonz": "Jonz"
+  "ask.long.jonz": "Jonz",
+  "ask.usage.outAccount": "You’ve used your Ask Jonz this week",
+  "ask.usage.outAccountNote": "It counts across every house you’re in. Some comes back {backOn}, as older questions drop off."
 }

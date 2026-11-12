@@ -444,10 +444,19 @@ describe("the week's Ask Jonz", () => {
   });
 
   it('offers the Pass when the whole house has used its week and has no Pass', async () => {
-    (askUsageOf as jest.Mock).mockResolvedValue(usage({ left: 0, house: true, pass: false }));
+    (askUsageOf as jest.Mock).mockResolvedValue(usage({ left: 0, house: true, limit: 'house', pass: false }));
     await open();
     expect(await screen.findByTestId('chat-out')).toHaveTextContent(words('ask.usage.outHouse'), { exact: false });
     expect(screen.getByTestId('chat-out-pass')).toBeTruthy();
+  });
+
+  it('says when it’s their account across every house that ran out, and when some comes back', async () => {
+    (askUsageOf as jest.Mock).mockResolvedValue(usage({ left: 0, limit: 'account', resetsAt: '2026-11-07T14:20:00.000Z' }));
+    await open();
+    const out = await screen.findByTestId('chat-out');
+    expect(out).toHaveTextContent(words('ask.usage.outAccount'), { exact: false });
+    expect(out).toHaveTextContent(words('ask.usage.outAccountNote', { backOn: 'Saturday at 14:20' }), { exact: false });
+    expect(screen.queryByTestId('chat-out-pass')).toBeNull();
   });
 
   it('turns the box into the notice when an answer uses the last of it', async () => {
