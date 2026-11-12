@@ -896,7 +896,7 @@ export type Database = {
       house_drafts: {
         Row: {
           created_at: string
-          house_id: string
+          house_id: string | null
           id: string
           input_tokens: number
           johns: number
@@ -906,7 +906,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          house_id: string
+          house_id?: string | null
           id?: string
           input_tokens?: number
           johns?: number
@@ -916,7 +916,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          house_id?: string
+          house_id?: string | null
           id?: string
           input_tokens?: number
           johns?: number
@@ -2797,12 +2797,18 @@ export type Database = {
         Args: { p_house: string; p_since: string; p_user: string }
         Returns: { house_used: number; mine_used: number }[]
       }
+      ask_account_used: {
+        Args: { p_since: string; p_user: string }
+        Returns: { oldest: string; used: number }[]
+      }
       ask_usage_people: {
         Args: { p_house: string; p_since: string }
         Returns: { used: number; user_id: string }[]
       }
       claim_ask_turn: {
         Args: {
+          p_account: number
+          p_account_since: string
           p_house: string
           p_pool: number
           p_reserve: number
@@ -2811,7 +2817,7 @@ export type Database = {
           p_user: string
           p_user_day: number
         }
-        Returns: string
+        Returns: { room: number; turn: string }[]
       }
       claim_owner_ask: {
         Args: { p_limit: number; p_question: string }

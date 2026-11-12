@@ -401,7 +401,7 @@ describe("changing a list that's already there", () => {
 describe("askAllowance", () => {
   const resetsAt = new Date("2026-11-09T00:00:00Z");
   it("gives someone living alone the whole pool", () => {
-    expect(askAllowance({ pool: 1000, people: 1, houseUsed: 250, mineUsed: 250, resetsAt })).toEqual({ cap: 1000, left: 0.75, house: true, resetsAt: resetsAt.toISOString() });
+    expect(askAllowance({ pool: 1000, people: 1, houseUsed: 250, mineUsed: 250, resetsAt })).toEqual({ cap: 1000, room: 750, left: 0.75, house: true, limit: "house", resetsAt: resetsAt.toISOString() });
   });
   it("caps each person at half when two or more live there", () => {
     expect(askAllowance({ pool: 1000, people: 3, houseUsed: 300, mineUsed: 250, resetsAt })).toMatchObject({ cap: 500, left: 0.5, house: false });
@@ -409,6 +409,16 @@ describe("askAllowance", () => {
   it("says when the house runs out before their share does", () => {
     expect(askAllowance({ pool: 1000, people: 3, houseUsed: 900, mineUsed: 0, resetsAt })).toMatchObject({ left: 0.2, house: true });
     expect(askAllowance({ pool: 1000, people: 3, houseUsed: 1200, mineUsed: 0, resetsAt })).toMatchObject({ left: 0, house: true });
+  });
+  it("counts the account's use in any house, so a new house is no fresh start", () => {
+    const backAt = new Date("2026-11-07T12:00:00Z");
+    const a = askAllowance({ pool: 1000, people: 1, houseUsed: 0, mineUsed: 0, resetsAt, account: { used: 900, backAt } });
+    expect(a).toMatchObject({ room: 100, left: 0.1, limit: "account", resetsAt: backAt.toISOString() });
+    expect(askAllowance({ pool: 1000, people: 1, houseUsed: 0, mineUsed: 0, resetsAt, account: { used: 1200, backAt } })).toMatchObject({ room: 0, left: 0 });
+  });
+  it("keeps the house's week when the account isn't what runs out first", () => {
+    const backAt = new Date("2026-11-07T12:00:00Z");
+    expect(askAllowance({ pool: 1000, people: 3, houseUsed: 200, mineUsed: 400, resetsAt, account: { used: 400, backAt } })).toMatchObject({ room: 100, limit: "mine", resetsAt: resetsAt.toISOString() });
   });
   it("never says more than all of it, or less than none", () => {
     expect(askAllowance({ pool: 1000, people: 2, houseUsed: 0, mineUsed: 0, resetsAt }).left).toBe(1);
@@ -421,7 +431,7 @@ describe("askUsage", () => {
   const [ava, ben, cat] = ["11111111-1111-4111-8111-111111111111", "22222222-2222-4222-8222-222222222222", "33333333-3333-4333-8333-333333333333"];
   it("gives the house's use, theirs as a share of their half, and each person's, most first", () => {
     const usage = askUsage({ pool: 1000, pass: false, people: [ava, ben, cat], me: ben, used: new Map([[ava, 300], [ben, 100]]), resetsAt });
-    expect(usage).toMatchObject({ pass: false, people: 3, houseUsed: 0.4, mineUsed: 0.2, left: 0.8, house: false, resetsAt: resetsAt.toISOString() });
+    expect(usage).toMatchObject({ pass: false, people: 3, houseUsed: 0.4, mineUsed: 0.2, left: 0.8, house: false, limit: "mine", resetsAt: resetsAt.toISOString() });
     expect(usage.usedBy).toEqual([
       { userId: ava, used: 0.3 },
       { userId: ben, used: 0.1 },

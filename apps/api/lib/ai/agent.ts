@@ -18,6 +18,18 @@ export const AGENT_MODEL = "anthropic/claude-haiku-5.5";
 /** The most tool calls and answers in one turn, so a confused model can't loop. */
 export const STEPS_MAX = 12;
 
+/**
+ * Whether a turn should answer now rather than call more tools: when what
+ * it has used, plus another step as big as its last, would pass `budget`.
+ * Each step reads the whole chat again, so the next costs at least the last.
+ */
+export function shouldWrapUp(steps: readonly { usage: { inputTokens?: number; outputTokens?: number } }[], budget: number | undefined): boolean {
+  if (budget === undefined || steps.length === 0) return false;
+  const size = (s: (typeof steps)[number]) => (s.usage.inputTokens ?? 0) + (s.usage.outputTokens ?? 0);
+  const used = steps.reduce((sum, s) => sum + size(s), 0);
+  return used + size(steps[steps.length - 1]) > budget;
+}
+
 /** Jonz's last word in a turn, as Claude is asked to return it. */
 export const FinalAnswer = z.object({
   reply: z.string().describe("What you say to the person."),
@@ -50,6 +62,7 @@ export async function runAgent<T = { reply: string; ask: RawAsk }>({
   tools,
   model = AGENT_MODEL,
   answer,
+  budget,
 }: {
   /** Fixed, so it caches: who Jonz is here and how to use the tools. */
   system: string;
@@ -58,6 +71,8 @@ export async function runAgent<T = { reply: string; ask: RawAsk }>({
   model?: LanguageModel;
   /** The shape of its last word, when it isn't a chat's reply and question (the support agent's suggestion). */
   answer?: { schema: z.ZodType<T>; name: string };
+  /** The most tokens the turn should use (what's left of the person's Ask Jonz): near it, Claude answers without more tools. */
+  budget?: number;
 }): Promise<AgentAnswer<T>> {
   const result = await generateText({
     model,
@@ -66,6 +81,8 @@ export async function runAgent<T = { reply: string; ask: RawAsk }>({
     tools,
     output: Output.object({ schema: (answer?.schema ?? FinalAnswer) as z.ZodType<T>, name: answer?.name ?? "jonz_reply" }),
     stopWhen: isStepCount(STEPS_MAX),
+    // Near the budget, no more tools: Claude says its last word with what it has.
+    prepareStep: ({ steps }) => (shouldWrapUp(steps, budget) ? { activeTools: [] } : undefined),
     maxOutputTokens: 4000,
     maxRetries: 1,
     timeout: 45_000,
