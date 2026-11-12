@@ -39,3 +39,4 @@ next-env.d.ts
 /supabase/.temp
 # email previews (npm run email:preview)
 email-previews/
+jonz-chatgpt.zip

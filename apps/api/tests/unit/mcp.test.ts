@@ -53,7 +53,10 @@ describe("/mcp", () => {
     }
     const read = tools.find((t) => OPERATIONS[t.name as keyof typeof OPERATIONS].effect === "read");
     expect(read?.annotations?.readOnlyHint).toBe(true);
-    for (const t of tools) expect(t.annotations?.destructiveHint ?? false, t.name).toBe((OPERATIONS[t.name as keyof typeof OPERATIONS] as Operation).destructive === true);
+    for (const t of tools) {
+      const o = OPERATIONS[t.name as keyof typeof OPERATIONS] as Operation;
+      expect(t.annotations?.destructiveHint, t.name).toBe(o.effect !== "read" && o.additive !== true);
+    }
   });
 
   it("tells the client how fair shares count, groups' Johns apart, and which tools read them", async () => {

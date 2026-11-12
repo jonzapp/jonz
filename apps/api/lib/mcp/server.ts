@@ -40,12 +40,24 @@ export const MCP_INSTRUCTIONS = [
 ].join("\n\n");
 
 /**
- * Every operation /v1 serves, but approving a connected app's request
- * (`firstParty`): that's for the person, in Jonz itself. What can't be undone
- * (`destructive`) is offered, and the executor holds it until the person
- * approves it in Jonz.
+ * Every operation /v1 serves, but what's only for the person in Jonz itself
+ * (`firstParty`: approving a connected app's request, Jonz's own AI, buying
+ * the House Pass). What can't be undone (`destructive`) is offered, and the
+ * executor holds it until the person approves it in Jonz.
  */
 export const mcpOperations = (operations: readonly ApiOperation[] = V1_OPERATIONS) => operations.filter((o) => !o.operation.firstParty);
+
+/**
+ * What a tool tells the client about itself, as Claude's and ChatGPT's
+ * directories ask: every hint said outright. A write is destructive unless it
+ * only adds (`additive`), even when it can be undone, so Claude asks before
+ * it; the approval in Jonz for what can't be undone is `destructive`, apart.
+ * Jonz is the person's own house, never the open web.
+ */
+export function toolAnnotations({ operation }: ApiOperation) {
+  const read = operation.effect === "read";
+  return { title: operation.about, readOnlyHint: read, destructiveHint: !read && operation.additive !== true, idempotentHint: read, openWorldHint: false };
+}
 
 /** The id at the end of an approval link (https://jonz.app/approve/<id>), which the client is told to open. */
 const approvalId = (url: string) => url.slice(url.lastIndexOf("/") + 1);
@@ -85,14 +97,13 @@ export function toolDescription(op: ApiOperation): string {
 export function buildMcpServer(execute: Executor, authorization: string | null, operations: readonly ApiOperation[] = mcpOperations()): McpServer {
   const server = new McpServer(MCP_INFO, { capabilities: { tools: {} }, instructions: MCP_INSTRUCTIONS });
   for (const op of operations) {
-    const read = op.operation.effect === "read";
     server.registerTool(
       op.name,
       {
         title: op.operation.about,
         description: toolDescription(op),
         inputSchema: op.input,
-        annotations: { readOnlyHint: read, destructiveHint: op.operation.destructive === true, idempotentHint: read, openWorldHint: false },
+        annotations: toolAnnotations(op),
       },
       async (input: Record<string, unknown>, ctx: ToolContext) => {
         try {
