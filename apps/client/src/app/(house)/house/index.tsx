@@ -1,6 +1,6 @@
 import { familyHides, memberCan, monthOf, overviewFigures, passUnlocked, type OverviewFigure } from '@app/core';
 import type { Href } from 'expo-router';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
@@ -20,7 +20,7 @@ import { Screen } from '@/components/screen';
 import { Section } from '@/components/section';
 import { Segmented } from '@/components/segmented';
 import { TitleBar } from '@/components/title-bar';
-import { TourSpot } from '@/components/tour/tour-spot';
+import { TourSpot, useTourOffer } from '@/components/tour/tour-spot';
 import { useAway } from '@/hooks/use-away';
 import { useHouse, type HouseView } from '@/hooks/use-house';
 import { useJohnList } from '@/hooks/use-john-list';
@@ -94,6 +94,10 @@ function HouseFor({ houseId, userId }: { houseId: string; userId: string }) {
   );
 }
 
+/** What a phone's Setup half hides that a tour lights. */
+const HIDDEN_BY_SETUP = ['house.table', 'house.wall'] as const;
+const NONE = [] as const;
+
 /** The page each of the Overview's figures opens. */
 const FIGURE_PAGE: Record<OverviewFigure['key'], Href> = {
   money: '/house/stake',
@@ -155,6 +159,9 @@ function HouseSections({
   const kid = view.snapshot.house.kind === 'family' && me?.role !== 'admin';
   // On a phone the page is two halves under a switch; a kid's is short enough to be one.
   const halves = !listed && !kid;
+  // With Setup showing, a tour's Table and Wall steps turn the switch back to Overview.
+  const toOverview = useCallback(() => onShow('overview'), [onShow]);
+  useTourOffer(halves && shown === 'setup' ? HIDDEN_BY_SETUP : NONE, toOverview);
   const overview = (
     <>
       {noStake ? (
@@ -174,7 +181,10 @@ function HouseSections({
           unlocked ? (
             <TableSection userId={userId} view={view} table={table} stake={stake} away={away} pocket={pocket} />
           ) : (
-            <PassLocked label={words('house.pass.table')} feature={words('house.pass.table')} testID="table-locked" />
+            // Locked, the tour still lights where the Table would be.
+            <TourSpot id="house.table">
+              <PassLocked label={words('house.pass.table')} feature={words('house.pass.table')} testID="table-locked" />
+            </TourSpot>
           )
         }
         end={<WallSection houseId={houseId} userId={userId} view={view} />}

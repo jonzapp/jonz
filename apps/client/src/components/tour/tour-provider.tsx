@@ -1,6 +1,7 @@
 import {
   markTourSeen,
   readToursSaved,
+  tourSpotInWindow,
   tourSteps,
   type TourFacts,
   type TourId,
@@ -11,7 +12,7 @@ import {
 } from '@app/core';
 import { router, usePathname } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { useWindowDimensions } from 'react-native';
+import { Dimensions, useWindowDimensions } from 'react-native';
 
 import { saveToursSaved } from '@/api/tours';
 import { HelpSheet } from '@/components/tour/help-sheet';
@@ -24,6 +25,10 @@ import { useWords } from '@/hooks/use-words';
 /** How long a step waits for its spot to show (a page to open, a read to land) before it's passed over. */
 const FIND_FOR = 2500;
 const FIND_EVERY = 100;
+/** How long a step looks for its spot before its card shows anyway, at the window's foot, so Skip and Next are always there. */
+const CARD_AFTER = 400;
+/** Once lit, how often the spot is measured again: a page still settling (a read landing, a phone's toolbar, a slow scroll) moves it. */
+const WATCH_EVERY = 250;
 
 type Running = { id: TourId; steps: TourStepSaid[]; index: number };
 
@@ -37,8 +42,10 @@ const trimmed = (path: string) => path.replace(/\/+$/, '') || '/';
  *
  * Spots sign in as they mount (TourSpot). For each step the player opens
  * the step's page if it isn't the one showing, waits for the spot to show,
- * scrolls it into view and lights it; a spot that doesn't show within
- * FIND_FOR is passed over. Finishing or skipping saves the tour as seen on
+ * scrolls it into view and lights it, then keeps measuring it so the light
+ * follows it if the page moves; a spot that doesn't show within FIND_FOR is
+ * passed over. The card never waits on the spot for long: after CARD_AFTER
+ * it shows at the window's foot, so the way on is always there. Finishing or skipping saves the tour as seen on
  * your account, so the offer on Today goes, and the Help sheet marks it.
  */
 export function TourProvider({ facts, canAsk = false, children }: { facts: TourFacts; canAsk?: boolean; children: ReactNode }) {
@@ -47,8 +54,12 @@ export function TourProvider({ facts, canAsk = false, children }: { facts: TourF
   const pathname = usePathname();
   const window = useWindowDimensions();
   const spots = useRef(new Map<TourSpotId, SpotHandle[]>());
+  // Spots a page can bring out on asking (House's Table and Wall, behind a phone's switch).
+  const offers = useRef(new Map<TourSpotId, () => void>());
   const [running, setRunning] = useState<Running | null>(null);
   const [rect, setRect] = useState<TourRect | null>(null);
+  // Still looking for this step's spot, before its card shows without it.
+  const [looking, setLooking] = useState(true);
   const [help, setHelp] = useState(false);
   const pending = useRef<TourId | null>(null);
   // What the account says, until this device changes it: then what it changed it to, saved behind.
@@ -61,6 +72,10 @@ export function TourProvider({ facts, canAsk = false, children }: { facts: TourF
         const list = spots.current.get(id) ?? [];
         spots.current.set(id, [...list, handle]);
         return () => spots.current.set(id, (spots.current.get(id) ?? []).filter((h) => h !== handle));
+      },
+      offer(ids, show) {
+        for (const id of ids) offers.current.set(id, show);
+        return () => ids.forEach((id) => offers.current.get(id) === show && offers.current.delete(id));
       },
     }),
     [],
@@ -86,9 +101,13 @@ export function TourProvider({ facts, canAsk = false, children }: { facts: TourF
       // On the page you're on every spot that's drawn has signed in: leave out the ones that haven't
       // (nothing else this week, say), so the count is what you'll see. Other pages' are looked for as they open.
       const here = trimmed(pathname);
-      const steps = tourSteps(id, facts, words).filter((s) => s.page !== here || (spots.current.get(s.spot)?.length ?? 0) > 0);
+      // A spot the page can bring out (behind a switch) counts as there.
+      const steps = tourSteps(id, facts, words).filter(
+        (s) => s.page !== here || (spots.current.get(s.spot)?.length ?? 0) > 0 || offers.current.has(s.spot),
+      );
       if (steps.length === 0) return;
       setRect(null);
+      setLooking(true);
       setRunning({ id, steps, index: 0 });
     },
     [facts, pathname, words],
@@ -101,6 +120,7 @@ export function TourProvider({ facts, canAsk = false, children }: { facts: TourF
       if (index < 0) return;
       if (index >= running.steps.length) return finish(running.id);
       setRect(null);
+      setLooking(true);
       setRunning({ ...running, index });
     },
     [running, finish],
@@ -114,16 +134,38 @@ export function TourProvider({ facts, canAsk = false, children }: { facts: TourF
     let live = true;
     if (trimmed(pathname) !== step.page) router.navigate(step.page);
     const began = Date.now();
+    const timers: ReturnType<typeof setTimeout>[] = [setTimeout(() => live && setLooking(false), CARD_AFTER)];
+    const later = (fn: () => void, ms: number) => timers.push(setTimeout(fn, ms));
+    let last: TourRect | null = null;
+    const light = (where: TourRect) => {
+      if (last && sameRect(last, where)) return;
+      last = where;
+      setRect(where);
+    };
+    // Lit: measure it again now and then, and bring it back into view if the page has moved it off.
+    const watch = async (handle: SpotHandle): Promise<void> => {
+      if (!live) return;
+      const where = await handle.measure();
+      if (!live) return;
+      if (where) {
+        if (!tourSpotInWindow(where, { width: windowNow().width, height: windowNow().height })) handle.reveal();
+        else light(where);
+      }
+      later(() => void watch(handle), WATCH_EVERY);
+    };
     const look = async (): Promise<void> => {
       if (!live) return;
       const found = await showing(spots.current.get(step.spot) ?? []);
       if (!live) return;
+      // Not drawn, but its page can bring it out: ask, and look again.
+      if (!found) offers.current.get(step.spot)?.();
       if (found) {
         found.handle.reveal();
         // Once the scroll has moved it, measure again where it ended up.
         await frames(2);
-        const where = (await found.handle.measure()) ?? found.rect;
-        if (live) setRect(where);
+        if (!live) return;
+        light((await found.handle.measure()) ?? found.rect);
+        later(() => void watch(found.handle), WATCH_EVERY);
         return;
       }
       if (Date.now() - began >= FIND_FOR) {
@@ -131,11 +173,12 @@ export function TourProvider({ facts, canAsk = false, children }: { facts: TourF
         move(1);
         return;
       }
-      setTimeout(() => void look(), FIND_EVERY);
+      later(() => void look(), FIND_EVERY);
     };
     void look();
     return () => {
       live = false;
+      timers.forEach(clearTimeout);
     };
     // The step and the window's size: a turned phone or a resized window measures again.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -178,6 +221,7 @@ export function TourProvider({ facts, canAsk = false, children }: { facts: TourF
             index={running.index}
             total={running.steps.length}
             rect={rect}
+            looking={looking}
             wide={facts.wide}
             onNext={() => move(1)}
             onBack={() => move(-1)}
@@ -196,6 +240,16 @@ async function showing(handles: SpotHandle[]): Promise<{ handle: SpotHandle; rec
     if (rect) return { handle, rect };
   }
   return null;
+}
+
+/** Within a point: the same place, so the light doesn't redraw for nothing. */
+function sameRect(a: TourRect, b: TourRect): boolean {
+  return Math.abs(a.x - b.x) < 1 && Math.abs(a.y - b.y) < 1 && Math.abs(a.width - b.width) < 1 && Math.abs(a.height - b.height) < 1;
+}
+
+/** The window's size now, not as of the last render (a timer reads it). */
+function windowNow(): { width: number; height: number } {
+  return Dimensions.get('window');
 }
 
 function frames(n: number): Promise<void> {
