@@ -1,4 +1,4 @@
-import { docText, HELP_PAGE, LEGAL_COPY, MCP_ADDRESS, PRIVACY_POLICY, TERMS, wordsFor } from '@app/core';
+import { ASSISTANTS, docText, HELP_PAGE, LEGAL_COPY, MCP_ADDRESS, PRIVACY_POLICY, TERMS, wordsFor } from '@app/core';
 import * as Clipboard from 'expo-clipboard';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 import { renderRouter, screen as routed } from 'expo-router/testing-library';
@@ -50,13 +50,17 @@ it.each([
 
 it('draws Help’s Markdown: numbered steps, bold names, links, and the address with Copy', async () => {
   await render(<Help />);
-  const claude = HELP_PAGE.sections.find((s) => s.heading === 'Use Jonz from Claude')!;
+  const claude = HELP_PAGE.sections.find((s) => s.heading === 'Use Jonz from your AI assistant')!;
   expect(claude.body).toContain('1. ');
   expect(screen.getAllByTestId('reply-ol').length).toBeGreaterThanOrEqual(2);
-  expect(screen.getByTestId('reply-copy-value')).toHaveTextContent(MCP_ADDRESS);
-  await fireEvent.press(screen.getByRole('button', { name: words('common.copy.spoken', { plain: MCP_ADDRESS }) }));
+  // The address to copy under each assistant's steps.
+  const copies = screen.getAllByTestId('reply-copy-value');
+  expect(copies).toHaveLength(ASSISTANTS.length);
+  for (const copy of copies) expect(copy).toHaveTextContent(MCP_ADDRESS);
+  for (const { name } of ASSISTANTS) expect(screen.getByRole('header', { name })).toBeOnTheScreen();
+  await fireEvent.press(screen.getAllByRole('button', { name: words('common.copy.spoken', { plain: MCP_ADDRESS }) })[0]);
   expect(Clipboard.setStringAsync).toHaveBeenCalledWith(MCP_ADDRESS);
-  expect(screen.getByRole('button', { name: words('common.copy.spoken', { plain: MCP_ADDRESS }) })).toHaveTextContent(words('common.copy.done'));
+  expect(screen.getAllByRole('button', { name: words('common.copy.spoken', { plain: MCP_ADDRESS }) })[0]).toHaveTextContent(words('common.copy.done'));
   const email = screen.getAllByTestId('reply-link').find((link) => link.props.href === 'mailto:support@jonz.app');
   expect(email).toBeDefined();
   expect(screen.getAllByText('Report a problem').length).toBeGreaterThan(0);

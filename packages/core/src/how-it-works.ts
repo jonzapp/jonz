@@ -12,6 +12,7 @@ import type { HouseRules } from "./domain";
 import { passWords } from "./family";
 import { formatMoney } from "./money";
 import { PASS_PRICES, PASS_TRIAL_DAYS } from "./pass";
+import { ON_CALL_WEEKS } from "./steady-deal";
 import { TOURS, tourStepWords, type TourId } from "./tours";
 import { makeupKey } from "./word-keys";
 import type { Words } from "./words-for";
@@ -164,7 +165,7 @@ export function howItWorks(topic: HowTopic, { rules, family, awayMakeup }: HowFa
     case "time_away":
       return lines(words("door.guide.page.away.book"), words("door.guide.page.away.makeup", { makeup }));
     case "on_call":
-      return lines(words("door.guide.page.onCall.what"), words("door.guide.page.onCall.flag"));
+      return lines(words("door.guide.page.onCall.what"), words("door.guide.page.onCall.flag"), words("door.guide.page.onCall.deal", { weeks: ON_CALL_WEEKS }));
     case "swaps":
       return lines(words("door.guide.page.swaps.ask"), words("house.page.rulesSwapBody"));
     case "ticks_and_questions":

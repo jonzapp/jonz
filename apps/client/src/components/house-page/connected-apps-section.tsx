@@ -9,7 +9,7 @@ import { Button } from '@/components/button';
 import { ButtonRow } from '@/components/button-row';
 import { ConfirmSheet } from '@/components/confirm-sheet';
 import { AppAccessChoice, useAppAccessWords } from '@/components/house-page/app-access-choice';
-import { ConnectClaude } from '@/components/house-page/connect-claude';
+import { ConnectAssistant } from '@/components/house-page/connect-assistant';
 import { Row, RowIcon } from '@/components/row';
 import { Section } from '@/components/section';
 import { Sheet } from '@/components/sheet';
@@ -29,8 +29,8 @@ interface App {
  * Connected apps, on You: each app you've let use Jonz as you (an MCP client
  * signed in through Supabase's OAuth server), what it may do and since when.
  * Tapping one opens its sheet: Read only or Read and change, saved as you
- * pick, and Disconnect, which signs it out at once. Last, Connect Jonz to
- * Claude: the steps and the address to paste.
+ * pick, and Disconnect, which signs it out at once. Last, Connect your AI
+ * assistant: each assistant's steps and the address to paste.
  */
 export function ConnectedAppsSection({ zone }: { zone: string }) {
   const words = useWords();
@@ -89,7 +89,7 @@ export function ConnectedAppsSection({ zone }: { zone: string }) {
           />
         );
       })}
-      <ConnectClaude />
+      <ConnectAssistant />
       <Sheet
         visible={open !== null}
         title={open?.name ?? ''}

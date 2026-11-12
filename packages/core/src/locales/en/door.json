@@ -227,6 +227,7 @@
   "door.guide.page.away.makeup": "Your share for those days is made up {makeup} ({kind, select, family {a parent} other {an admin}} sets this in House rules).",
   "door.guide.page.onCall.what": "On-call Johns are done when they’re needed (the bin when it’s full) rather than on a day. Each week one person is on call for each.",
   "door.guide.page.onCall.flag": "Anyone can flag that it needs doing; whoever is on call then has a set number of hours to do it. It counts towards fair shares like any other John.",
+  "door.guide.page.onCall.deal": "When the week is dealt, an on-call John counts as its points times how often it comes up, so whoever is on call gets that much less of the rest. For its first {weeks} weeks that’s the “times a week” on the John list; after that, it’s how often it was really flagged, on average, over its last {weeks} weeks on call.",
   "door.guide.page.swaps.ask": "You can ask someone to swap one of your Johns this week for one of theirs. Nothing changes until they say yes.",
   "door.guide.page.ticks.question": "Tick a John when it’s done. {kind, select, family {Someone else in the family} other {A housemate}} can question a tick for {hours, plural, one {# hour} other {# hours}}: it goes to a house vote, and if the house agrees it wasn’t done, the John opens again.",
   "door.guide.page.ticks.photo": "Some Johns need a photo with the tick.",
