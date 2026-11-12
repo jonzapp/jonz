@@ -19,6 +19,8 @@ export interface SpotHandle {
 /** Where spots sign in: the tour player keeps them. */
 export interface SpotRegistry {
   add: (id: TourSpotId, handle: SpotHandle) => () => void;
+  /** Spots a page can bring out when a tour asks (a half behind a switch), and how. */
+  offer: (ids: readonly TourSpotId[], show: () => void) => () => void;
 }
 export const SpotRegistryContext = createContext<SpotRegistry | null>(null);
 
@@ -58,6 +60,24 @@ export function TourSpot({ id, children }: { id: TourSpotId; children: ReactNode
       {children}
     </View>
   );
+}
+
+/**
+ * For a page that hides some spots behind a switch (House's halves on a
+ * phone): while it's showing, a tour counts `ids` as on the page, and calls
+ * `show` to bring one out when its step comes. Pass no ids while nothing's hidden.
+ */
+export function useTourOffer(ids: readonly TourSpotId[], show: () => void) {
+  const registry = useContext(SpotRegistryContext);
+  const navigation = useContext(NavigationContext);
+  const key = ids.join(',');
+  useEffect(() => {
+    if (!registry || ids.length === 0) return;
+    // Only while its screen is the one showing: a tab behind can't be turned to.
+    if (navigation && !navigation.isFocused()) return;
+    return registry.offer(ids, show);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- ids by value
+  }, [registry, key, show, navigation]);
 }
 
 function measure(view: HostInstance | null): Promise<TourRect | null> {

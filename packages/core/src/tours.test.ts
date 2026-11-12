@@ -168,4 +168,21 @@ describe("placeTourCard", () => {
     // Too wide for either side: under it, lined up with it.
     expect(placeTourCard({ x: 240, y: 60, width: 1190, height: 300 }, laptop, card, wide)).toEqual({ x: 240, y: 372, width: 360 });
   });
+
+  it("keeps the card in the window while the spot is still being looked for", () => {
+    expect(placeTourCard(null, phone, card, opts)).toEqual({ x: 16, y: 668, width: 358 });
+    expect(placeTourCard(null, laptop, card, { ...opts, wide: true })).toEqual({ x: 540, y: 724, width: 360 });
+  });
+
+  it("keeps the card in the window when the spot is outside it", () => {
+    // Below the window (the page hadn't scrolled to it): over it would be off screen too.
+    expect(placeTourCard({ x: 16, y: 1500, width: 358, height: 200 }, phone, card, opts)).toEqual({ x: 16, y: 668, width: 358 });
+    // Above it.
+    expect(placeTourCard({ x: 16, y: -600, width: 358, height: 200 }, phone, card, opts)).toEqual({ x: 16, y: 668, width: 358 });
+  });
+
+  it("never puts the card above the window's top, even when it's taller than the window", () => {
+    const short = { width: 390, height: 300 };
+    expect(placeTourCard({ x: 16, y: 40, width: 358, height: 200 }, short, { width: 360, height: 400 }, opts).y).toBe(16);
+  });
 });

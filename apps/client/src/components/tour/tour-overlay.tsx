@@ -23,14 +23,16 @@ const RING = 3;
  * on (Skip, Back, Next; Done on the last). Over everything, tabs included,
  * as a sheet is. Taps on the dimmed page do nothing: the tour shows the app,
  * it never asks you to use it. Escape (or a phone's back) skips; on the web
- * the arrow keys step through. Until the spot is found and measured only
- * the dim shows.
+ * the arrow keys step through. While the spot is looked for only the dim
+ * shows, for a moment; then the card shows anyway, inside the window,
+ * so Skip and Next can always be reached.
  */
 export function TourOverlay({
   step,
   index,
   total,
   rect,
+  looking,
   wide,
   onNext,
   onBack,
@@ -40,6 +42,8 @@ export function TourOverlay({
   index: number;
   total: number;
   rect: TourRect | null;
+  /** Still looking for the spot: only the dim shows, for a moment, so the card doesn't jump once it's found. */
+  looking: boolean;
   wide: boolean;
   onNext: () => void;
   onBack: () => void;
@@ -67,9 +71,9 @@ export function TourOverlay({
   const lit = rect
     ? { x: rect.x - AROUND, y: rect.y - AROUND, width: rect.width + 2 * AROUND, height: rect.height + 2 * AROUND }
     : null;
-  const card = lit
-    ? placeTourCard(lit, window, { width: CARD_MAX, height: cardHeight }, { gap: SPACE.md, edge: GUTTER, wide })
-    : null;
+  // Once found, or once it's been looked for a moment, the card shows; with no spot, at the window's foot.
+  const card =
+    lit || !looking ? placeTourCard(lit, window, { width: CARD_MAX, height: cardHeight }, { gap: SPACE.md, edge: GUTTER, wide }) : null;
 
   return (
     <Modal visible transparent animationType="none" onRequestClose={onSkip} aria-label={words("door.tour.stepSpoken", { step: index + 1, total })}>

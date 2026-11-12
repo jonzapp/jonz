@@ -58,7 +58,7 @@ async function playTour(page: Page, id: TourId, facts: TourFacts, shotName?: str
     // The card doesn't cover the spot, unless the window hasn't room for both (a tall spot on a small phone).
     const viewport = page.viewportSize()!;
     const cardBox = (await card.boundingBox())!;
-    expect(cardBox.y + cardBox.height).toBeLessThanOrEqual(viewport.height);
+    await expectInWindow(page);
     const below = box!.y + box!.height + 8 + 12 + cardBox.height <= viewport.height - 16;
     const above = box!.y - 8 - 12 - cardBox.height >= 16;
     if (below || above) {
@@ -70,6 +70,18 @@ async function playTour(page: Page, id: TourId, facts: TourFacts, shotName?: str
     await page.getByTestId("tour-next").click();
   }
   await expect(page.getByTestId("tour")).toHaveCount(0);
+}
+
+/** The card, and its Next, are inside the window: never dimmed with no way on. */
+async function expectInWindow(page: Page) {
+  const viewport = page.viewportSize()!;
+  for (const id of ["tour-card", "tour-next"]) {
+    const box = (await page.getByTestId(id).boundingBox())!;
+    expect(box.x, `${id} inside the window`).toBeGreaterThanOrEqual(0);
+    expect(box.y, `${id} inside the window`).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+    expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
+  }
 }
 
 /** Opens Help and starts a tour from it, under Show me around. */
@@ -195,4 +207,45 @@ test("Not now puts the offer away for good", async ({ context, page }) => {
   await page.goto("/house/you");
   await page.getByTestId("you-screen").getByTestId("to-guides").click();
   await expect(page.getByTestId("help-sheet")).toBeVisible();
+});
+
+test("on a phone, House's tour turns Setup back to Overview, and every card stays in the window when a page won't scroll", async ({ context, page }, info) => {
+  test.skip(info.project.name === "laptop-chrome" || info.project.name === "desktop-firefox", "House's halves are a phone's");
+  test.setTimeout(120_000);
+  const mate = await context.browser()!.newContext();
+  const { userId, housemateIds } = await dealtHouseInClient(
+    context,
+    "Halves Admin",
+    "Halves House",
+    Array.from({ length: 10 }, (_, k) => ({ name: `John ${k + 1}`, category: ["bins", "bathroom", "floors", "kitchen"][k % 4] })),
+    [{ context: mate, name: "Halves Mate" }],
+  );
+  made.push(userId, ...housemateIds);
+  const facts: TourFacts = { admin: true, wide: false, toCheck: false, hasJohns: true };
+
+  // With Setup showing, the Table and the Wall aren't drawn: the tour still has all its steps, and turns to Overview for them.
+  await page.goto("/house");
+  await page.getByTestId("house-screen").getByTestId("house-shows").getByText(words("house.shows.setup"), { exact: true }).click();
+  await expect(shown(page, "tour-spot-house.table")).toHaveCount(0);
+  await startFromHelp(page, "house-screen", "house");
+  await playTour(page, "house", facts);
+
+  // A page that doesn't scroll when asked (as a phone's browser may not, under the dim): the spot can be out of
+  // the window, but the card is never with it. It stays in the window, so Next and Skip can always be reached.
+  await page.setViewportSize({ width: 375, height: 560 });
+  await page.evaluate(() => {
+    Element.prototype.scrollIntoView = () => undefined;
+  });
+  for (const [screen, id] of [["today-screen", "today"], ["week-screen", "week"], ["house-screen", "house"]] as const) {
+    await page.getByTestId(`tab-${id}`).click();
+    await startFromHelp(page, screen, id);
+    const steps = tourSteps(id, facts, words);
+    for (const [i] of steps.entries()) {
+      await expect(page.getByTestId("tour-count")).toHaveText(`${i + 1} of ${steps.length}`);
+      await expectInWindow(page);
+      await page.getByTestId("tour-next").click();
+    }
+    await expect(page.getByTestId("tour")).toHaveCount(0);
+  }
+  await mate.close();
 });
