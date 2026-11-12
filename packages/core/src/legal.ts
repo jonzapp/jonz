@@ -19,7 +19,7 @@ export const LEGAL = {
   /** Whose courts and law the Terms name. */
   law: "England and Wales",
   /** When either page last changed in substance. */
-  updated: "11 November 2026",
+  updated: "12 November 2026",
   privacyPath: "/privacy",
   helpPath: "/help",
   termsPath: "/terms",
@@ -112,6 +112,13 @@ export const PRIVACY_POLICY: LegalPage = {
       heading: "Ask Jonz",
       body: [
         "When you ask Jonz something, what you write and what Jonz looks up in your house to answer (first names, the Johns and the parts of the house you can see) are sent to Anthropic’s Claude, through Vercel’s AI Gateway, to write the answer. We keep your chats so you can come back to them; only you can see them, and you can delete any of them at any time. Anthropic doesn’t train on them. Please don’t put anything private in it that the house wouldn’t want shared.",
+      ],
+    },
+    {
+      heading: "Apps you connect",
+      body: [
+        "You can let another app, such as Claude, use Jonz as you. It signs in on Jonz’s own page, where you allow it, and it can only see and do what you could. It starts as Read only; it can change things only if you pick Read and change, and anything that can’t be undone still waits for you to approve it in Jonz.",
+        "What the app reads from Jonz goes to that app and is handled under its own privacy policy. We keep which apps you connected, when, what each may do, and the changes waiting for your approval. Disconnect an app any time on You, under Connected apps, and it is signed out at once.",
       ],
     },
     {

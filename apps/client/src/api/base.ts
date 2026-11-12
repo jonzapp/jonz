@@ -1,4 +1,4 @@
-import { wordsFor, type HouseKind, type Language, type Words } from '@app/core';
+import { MCP_ADDRESS, wordsFor, type HouseKind, type Language, type Words } from '@app/core';
 import { Platform } from 'react-native';
 
 // Kept apart from http.ts, which signs requests in, so a call that needs no
@@ -57,3 +57,13 @@ export const snakeKeys = (value: unknown): unknown =>
   value !== null && typeof value === 'object' && !Array.isArray(value)
     ? Object.fromEntries(Object.entries(value).map(([k, v]) => [k.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`), v]))
     : value;
+
+/**
+ * The address an app like Claude connects to: the API's /mcp. On the web
+ * with no API address set (jonz.app), that's Jonz's own (MCP_ADDRESS),
+ * since jonz.app doesn't pass /mcp on.
+ */
+export function mcpAddress(): string {
+  const base = process.env.EXPO_PUBLIC_API_URL?.replace(/\/+$/, '');
+  return base ? `${base}/mcp` : MCP_ADDRESS;
+}

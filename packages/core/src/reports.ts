@@ -148,6 +148,9 @@ export function reportAge(iso: string, now: Date): string {
  * jonz.app/help: how to reach Jonz, for anyone, signed in or not, and
  * where the README and CONTRIBUTING send people instead of GitHub issues.
  */
+/** Where Claude, or any app that speaks MCP, connects to Jonz. */
+export const MCP_ADDRESS = "https://api.jonz.app/mcp";
+
 export const HELP_PAGE: LegalPage = {
   title: "Help",
   updated: "Jonz support",
@@ -170,6 +173,17 @@ export const HELP_PAGE: LegalPage = {
         `If you email from the address you sign in with, it shows under Your reports in the app too.`,
       ],
       links: [{ label: `Email ${SUPPORT_EMAIL}`, href: `mailto:${SUPPORT_EMAIL}` }],
+    },
+    {
+      heading: "Use Jonz from Claude",
+      body: [
+        "Claude can read your house and, if you let it, mark Johns done, plan the week or change the rules for you, as you.",
+        "1. On claude.ai, open Settings, then Connectors, and choose Add custom connector.",
+        `2. Call it Jonz and paste this address: ${MCP_ADDRESS}`,
+        "3. Claude sends you to Jonz to sign in. Pick Read only or Read and change, then press Allow.",
+        "Anything that can’t be undone, like removing a John, still waits for you to approve it in Jonz. Change what Claude may do, or disconnect it, on You under Connected apps. Any other app that speaks MCP connects the same way.",
+      ],
+      links: [{ label: "Open Claude’s connectors", href: "https://claude.ai/settings/connectors" }],
     },
     {
       heading: "Your account and your data",

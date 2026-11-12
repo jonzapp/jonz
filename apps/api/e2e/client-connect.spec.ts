@@ -126,6 +126,13 @@ test("connects an app on Jonz's consent page, lists it on You, and approves what
   await page.getByTestId("connected-app").click();
   await page.getByTestId("app-sheet").getByRole("button", { name: words('people.connectedApps.disconnect') }).click();
   await page.getByTestId("disconnect-sheet").getByRole("button", { name: words('people.connectedApps.disconnect') }).click();
-  await expect(page.getByTestId("connected-apps-none")).toBeVisible();
+  await expect(page.getByTestId("connected-app")).toHaveCount(0);
+
+  // How to connect one again: the steps and the address to paste.
+  await page.getByTestId("connect-claude").click();
+  const help = page.getByTestId("connect-claude-sheet");
+  await expect(help.getByTestId("mcp-address")).toHaveText(/\/mcp$/);
+  await expect(help.getByRole("button", { name: words('people.connectClaude.open') })).toBeVisible();
+  await shoot(page, "connect-claude");
   await context.close();
 });
