@@ -13,7 +13,7 @@ const words = wordsFor('en', 'housemates');
 /**
  * The row on House that opens one of its setup pages ("to-johns"), or that
  * page in the list beside House on a laptop. On a phone the setup rows are
- * the other half of House's switch ("Setup and you"): `click()` shows that
+ * the other half of House's switch ("Setup"): `click()` shows that
  * half first when the row isn't on screen.
  */
 export function toHousePage(page: Page, row: string): { click: () => Promise<void> } {
@@ -33,7 +33,7 @@ export function toHousePage(page: Page, row: string): { click: () => Promise<voi
   };
 }
 
-/** House's Overview half on a phone (the Table, the Wall), after a test has been to "Setup and you". Nothing to do on a laptop. */
+/** House's Overview half on a phone (the Table, the Wall), after a test has been to "Setup". Nothing to do on a laptop. */
 export async function showHouseOverview(page: Page): Promise<void> {
   const overview = page.getByTestId("house-shows").filter({ visible: true }).getByRole("radio", { name: words('house.shows.overview') });
   if (await overview.isVisible()) await overview.click();

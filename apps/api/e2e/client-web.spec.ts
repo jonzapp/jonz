@@ -151,7 +151,7 @@ test("tab titles, the look, and reminders on this device", async ({ browser }) =
   await expect(page).toHaveTitle("House · Jonz");
 
   // Night, chosen on You, stays chosen on this device.
-  await page.goto("/house/you");
+  await page.goto("/you");
   await expect(page).toHaveTitle("You · Jonz");
   const house = page.getByTestId("you-screen");
   const ground = () => house.evaluate((el) => getComputedStyle(el).backgroundColor);

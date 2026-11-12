@@ -27,8 +27,8 @@ import {
   type Report,
   type SupportDraft,
 } from '@/api/reports';
-import ReportScreen from '@/app/(house)/house/reports/[id]';
-import ReportsScreen from '@/app/(house)/house/reports/index';
+import ReportScreen from '@/app/(house)/you/reports/[id]';
+import ReportsScreen from '@/app/(house)/you/reports/index';
 import AdminLayout from '@/app/admin/_layout';
 import InboxReportPage from '@/app/admin/inbox/[id]';
 import InboxPage from '@/app/admin/inbox/index';
@@ -142,7 +142,7 @@ beforeEach(() => {
 });
 
 describe('Help on House', () => {
-  const ROUTES = { 'house/index': () => <HelpSection house="The Annexe" />, 'house/reports/[id]': ReportScreen };
+  const ROUTES = { 'house/index': () => <HelpSection house="The Annexe" />, 'you/reports/[id]': ReportScreen };
 
   it('has Report a problem, Send an idea, and Your reports with the reply to read', async () => {
     await renderPages(ROUTES, '/house');
@@ -201,17 +201,17 @@ describe('Help on House', () => {
 });
 
 describe('Your reports', () => {
-  const ROUTES = { 'house/reports/index': ReportsScreen, 'house/reports/[id]': ReportScreen };
+  const ROUTES = { 'you/reports/index': ReportsScreen, 'you/reports/[id]': ReportScreen };
 
   it('lists what you sent, newest first, with the reply to read and where each has got to', async () => {
-    await renderPages(ROUTES, '/house/reports');
+    await renderPages(ROUTES, '/you/reports');
     const unread = await screen.findByTestId('report-r1');
     expect(unread).toHaveTextContent(/The bins John vanished.*A reply to read/);
     expect(screen.getByTestId('report-r2')).toHaveTextContent(/Let us pin a note.*Idea, sent.*Sent/);
   });
 
   it('opens one with the conversation, marks the reply read, and writes back', async () => {
-    await renderPages(ROUTES, '/house/reports/r1');
+    await renderPages(ROUTES, '/you/reports/r1');
     const thread = await screen.findByTestId('report-thread');
     expect(thread).toHaveTextContent(/You,.*The bins John vanished/);
     expect(thread).toHaveTextContent(/Glyn at Jonz,.*Thanks Ava, fixed/);
@@ -226,7 +226,7 @@ describe('Your reports', () => {
 
   it('says so when a report is not yours or not there', async () => {
     jest.mocked(myReport).mockResolvedValue(null);
-    await renderPages(ROUTES, '/house/reports/r404');
+    await renderPages(ROUTES, '/you/reports/r404');
     expect(await screen.findByText(words('common.report.missing'))).toBeVisible();
     expect(seeReport).not.toHaveBeenCalled();
   });

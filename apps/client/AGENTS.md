@@ -204,14 +204,16 @@ permanent once a store has seen them.
   happened. Under it, by whose it is and where it has got to (core's
   `johnSheetMode`): `open.tsx`, `checking.tsx`, `vote.tsx` and
   `settled.tsx` (the photo, signed by `usePhoto`).
-- **A house is three places, as tabs** (`src/app/(house)/_layout.tsx`, Expo
-  Router's JS tabs from `expo-router/js-tabs`): Today, Week and House,
+- **A house is four places, as tabs** (`src/app/(house)/_layout.tsx`, Expo
+  Router's JS tabs from `expo-router/js-tabs`): Today, Week, House and You,
   labelled from `SECTION_LABEL` in core. `HouseTabBar` draws them along the
   bottom of a phone and as a left rail from `WIDE` on the web. There is no
   header strip: each screen draws its own `TitleBar`. The layout follows the
   house live (`useLiveHouse`) once for every tab, and mounts the John sheet
   and the toasts for all of them. JS tabs makes every file in `(house)` a
-  tab, so nothing else goes there: House is a stack
+  tab, so nothing else goes there: You is a stack (`(house)/you/_layout.tsx`:
+  `index.tsx`, your settings, help and leaving, and the pages it pushes,
+  `moving` and `reports/`, whose back goes to `/you`); House is a stack
   (`(house)/house/_layout.tsx`): the group page (`index.tsx`) and the pages
   it pushes, `wall`, `stake`, `people/[userId]` (a housemate's page) and
   the setup pages `johns` (with the house's groups), `rules` (with its
@@ -230,7 +232,8 @@ permanent once a store has seen them.
   host's in `vercel.json` (a web page opened cold on one, where the router's
   own redirect screen would leave `/house/house/wall` in the address bar);
   `vercel.test.ts` keeps the two lists alike. The pages merged into
-  others on 1 Nov (`groups`, `admins`, `prefs` and `history`) stay as route
+  others on 1 Nov (`groups`, `admins`, `prefs` and `history`), and the ones
+  that moved to You on 12 Nov (`you`, `moving`, `reports/`), stay as route
   files that only `<Redirect>` to the page they joined, with an absolute
   href (so no `/house/house/…`): History's lands on the Wall with
   `?view=history`, a query the router's redirects can't carry.

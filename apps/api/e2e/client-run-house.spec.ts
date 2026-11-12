@@ -142,9 +142,9 @@ test("run a house from nothing on the phone", async ({ browser }) => {
   await expect(person.getByTestId("toggle-admin")).toContainText(words("people.person.makeMember"));
   await backToHouse(page, person.getByRole("button", { name: words('common.shell.backTo', { place: words('common.section.house') }) })).click();
   await expect(page).toHaveURL(/\/house$/);
-  // Your name is on You, a row at the foot of House on a phone and a page in its list on a laptop.
-  await toHousePage(page, "to-you").click();
-  await expect(page).toHaveURL(/\/house\/you$/);
+  // Your name is on You, the fourth tab (the rail's last place on a laptop).
+  await page.getByTestId("tab-you").click();
+  await expect(page).toHaveURL(/\/you$/);
   const you = page.getByTestId("you-screen");
   await you.getByTestId("to-name").click();
   const nameSheet = page.getByTestId("name-sheet");
@@ -159,7 +159,7 @@ test("run a house from nothing on the phone", async ({ browser }) => {
 
   // Ben leaves from You's Danger zone, after typing the house's name in its
   // confirm, and is back at starting or joining one.
-  await benPage.goto("/house/you");
+  await benPage.goto("/you");
   await benPage.getByTestId("you-screen").getByTestId("leave").click();
   const leaveSheet = benPage.getByTestId("leave-sheet");
   await expect(leaveSheet.getByTestId("confirm")).toBeDisabled();

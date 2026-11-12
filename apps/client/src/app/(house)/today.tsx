@@ -236,8 +236,8 @@ function TodayView({
           />
         ) : null}
         {moving ? (
-          // On the day it's time to leave, from the foot of House; before it, the date can change.
-          <PageLine text={moving} href={mover && mover <= localToday ? '/house' : '/house/moving'} testID="moving-line" />
+          // On the day it's time to leave, from the foot of You; before it, the date can change.
+          <PageLine text={moving} href={mover && mover <= localToday ? '/you' : '/you/moving'} testID="moving-line" />
         ) : null}
         {reading && !standing && !page.away ? <PendingLine label={words('common.shell.reading')} /> : null}
       </PageLines>
