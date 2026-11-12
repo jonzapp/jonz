@@ -6,6 +6,7 @@ pages are private artifacts on claude.ai.
 
 | Date | Decision | Where | Rule |
 | --- | --- | --- | --- |
+| 2026-11-12 | No scrollbar beside any scrolling area on the web, on every page and panel (a mouse drew a light bar down House, Time away and You, even at night) | this PR | [layout](layout.md#laptop-pages) |
 | 2026-11-12 | Connecting an app asks what it may do: Read only (picked first) or Read and change, two radio rows on the consent page; Connected apps says which, and tapping an app opens its sheet to change it or disconnect | this PR | [controls](controls.md) |
 | 2026-11-11 | Leave the house and Delete my account move into their own Danger zone at the foot of You, for everyone; leaving asks for the house's name typed, as the resets do (You Danger zone B) | this PR | [controls](controls.md#danger-zone) |
 | 2026-11-11 | Danger zone, GitHub's way: every move that can't be taken back (the registry's `destructive`) sits in one hazard-edged group, at the foot of its page or apart on an Ask Jonz card, whose button turns hazard while one is ticked | #218 | [controls](controls.md#danger-zone) |

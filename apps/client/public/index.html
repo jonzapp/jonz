@@ -51,6 +51,15 @@
         flex: 1;
       }
     </style>
+    <!-- No scrollbar beside any scrolling area, as on a phone and on a Mac's
+         trackpad: with a mouse plugged in (or "Always" in macOS's settings, or
+         on Windows) the browser otherwise draws a light bar down the page's
+         right edge, even at night. Scrolling by wheel, trackpad, keys and
+         touch is unchanged. -->
+    <style id="jonz-scrollbars">
+      * { scrollbar-width: none; }
+      *::-webkit-scrollbar { display: none; }
+    </style>
     <!-- While Jonz starts: the page's ground in the chosen look and the J sign
          in the middle, as the phone apps' splash and the app's StartSign
          (start-sign.tsx) draw it, so the start never flashes white. The
