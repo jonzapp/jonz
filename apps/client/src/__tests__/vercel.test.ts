@@ -115,8 +115,21 @@ describe("jonz.app's web build on Vercel", () => {
   });
 
   it('opens any other path on the app, which draws its own not-found', () => {
-    expect(config.rewrites.at(-1)).toEqual({ source: '/(.*)', destination: '/index.html' });
+    expect(config.rewrites.at(-1)).toEqual({ source: '/((?!_expo/).*)', destination: '/index.html' });
     expect(config.rewrites).toHaveLength(7);
+  });
+
+  it("answers a bundle an older build named, and this one doesn't have, with a 404, never the app's page", () => {
+    // A phone keeps the page it opened; after a deploy, a tab it hadn't
+    // opened yet asks for that older build's file. Given index.html instead
+    // (kept a year, as every bundle is), the tab can never load: "Loading
+    // module … failed" (12 Nov 2026, Week). A 404 is never kept, and the app
+    // reloads itself onto the new build (api/new-build.ts).
+    const page = new RegExp(`^${config.rewrites.at(-1)!.source}$`);
+    expect(page.test('/_expo/static/js/web/index-ede335d3d8516b6e53fbb866f9351ff5.js')).toBe(false);
+    expect(page.test('/week')).toBe(true);
+    expect(page.test('/house/wall')).toBe(true);
+    expect(page.test('/')).toBe(true);
   });
 
   it('sends the headers the Next app sends (apps/api/next.config.ts)', () => {
