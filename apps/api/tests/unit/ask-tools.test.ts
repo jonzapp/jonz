@@ -16,6 +16,7 @@ import {
 } from "@app/core";
 
 import { askClaude, jonzToolSet, type DraftContext, type JonzTools } from "@/lib/ai/house-draft";
+import { shouldWrapUp } from "@/lib/ai/agent";
 
 /** Ask Jonz's tools: every read for everyone, a write only for a move the person may make. */
 const asked: unknown[][] = [];
@@ -157,6 +158,41 @@ describe("askClaude", () => {
     expect(JSON.stringify(call.prompt)).toContain("Ava reads Jonz in English: answer in English");
     expect((call.tools ?? []).map((t) => t.name)).toContain("remove_john");
     expect((call.tools ?? []).map((t) => t.name)).not.toContain("add_john");
+  });
+
+  it("has Claude answer without more tools when another step would pass what's left", async () => {
+    const steps = () => [
+      {
+        content: [{ type: "tool-call" as const, toolCallId: "1", toolName: "list_johns", input: "{}" }],
+        finishReason: { unified: "tool-calls" as const, raw: "tool_use" },
+        usage,
+        warnings: [],
+      },
+      {
+        content: [{ type: "text" as const, text: JSON.stringify({ reply: "Here's the list.", ask: { kind: "none", options: [] } }) }],
+        finishReason: { unified: "stop" as const, raw: "end_turn" },
+        usage,
+        warnings: [],
+      },
+    ];
+    // A step here is 120 tokens: with 200 left, a second with tools would pass it.
+    const tight = new MockLanguageModelV4({ doGenerate: steps() });
+    await askClaude({ ...ctx, budget: 200 }, tools({ remove: true }), tight);
+    expect((tight.doGenerateCalls[0].tools ?? []).length).toBeGreaterThan(0);
+    expect(tight.doGenerateCalls[1].tools ?? []).toEqual([]);
+    // With room, the tools stay.
+    const roomy = new MockLanguageModelV4({ doGenerate: steps() });
+    await askClaude({ ...ctx, budget: 100_000 }, tools({ remove: true }), roomy);
+    expect((roomy.doGenerateCalls[1].tools ?? []).length).toBeGreaterThan(0);
+  });
+
+  it("works out when a turn should wrap up", () => {
+    const step = (inputTokens: number, outputTokens: number) => ({ usage: { inputTokens, outputTokens } });
+    expect(shouldWrapUp([], 10)).toBe(false);
+    expect(shouldWrapUp([step(100, 20)], undefined)).toBe(false);
+    expect(shouldWrapUp([step(100, 20)], 240)).toBe(false);
+    expect(shouldWrapUp([step(100, 20)], 239)).toBe(true);
+    expect(shouldWrapUp([step(100, 20), step(300, 20)], 700)).toBe(true);
   });
 
   it("tells Claude how to write: Markdown, chips and cards, from the same list the app draws", async () => {

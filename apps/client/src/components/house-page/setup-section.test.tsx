@@ -15,7 +15,7 @@ const words = wordsFor('en', 'housemates');
 
 jest.mock('@/api/away', () => ({ loadAway: jest.fn() }));
 jest.mock('@/api/draft', () => ({
-  askUsageOf: jest.fn(async () => ({ left: 0.62, house: false, resetsAt: '2026-11-09T00:00:00.000Z', pass: true, people: 2, houseUsed: 0.3, mineUsed: 0.38, usedBy: [] })),
+  askUsageOf: jest.fn(async () => ({ left: 0.62, house: false, limit: 'mine', resetsAt: '2026-11-09T00:00:00.000Z', pass: true, people: 2, houseUsed: 0.3, mineUsed: 0.38, usedBy: [] })),
 }));
 jest.mock('@/api/board', () => ({ loadHouse: jest.fn() }));
 jest.mock('@/api/house', () => ({ catchUp: jest.fn() }));
