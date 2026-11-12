@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { CURRENCIES, type Currency } from "./domain";
 import { formatMoney } from "./money";
-import { hasPass, PASS_PRICES, PASS_PURCHASES, type HousePass, type PassPurchase } from "./pass";
+import { hasPass, onSale, PASS_ON_SALE, PASS_PRICES, PASS_PURCHASES, type HousePass, type PassOnSale, type PassPurchase } from "./pass";
 import { dateIn } from "./format";
 import { wordsFor } from "./words-for";
 
@@ -116,7 +116,7 @@ export function termsOf(row: {
 const words = wordsFor("en", "housemates");
 
 /** A plan's name, as the Pass page says it. */
-const planLabel = (plan: PassPurchase) => words(`house.pass.${plan === "founding" ? "foundingPlan" : plan}`);
+const planLabel = (plan: PassOnSale) => words(`house.pass.${plan}`);
 
 const months = (n: number) => (n === 1 ? "1 month" : `${n} months`);
 
@@ -178,7 +178,7 @@ export function promotionSentence(t: PromotionTerms, zone: string, currency: Cur
       : t.duration === "months"
         ? `${legend} for ${months(t.months ?? 1)}`
         : `${legend} the first payment`);
-  const plans = t.kind === "gift" ? "" : `, on ${orList(t.plans.map((p) => planLabel(p)))}`;
+  const plans = t.kind === "gift" ? "" : `, on ${orList(t.plans.filter(onSale).map((p) => planLabel(p)))}`;
   const by = t.endsAt ? ` Use it by ${dateIn(t.endsAt, "dayMonthLong", zone, words)}.` : "";
   return `${off}${plans}, for your whole house.${by}`;
 }
@@ -187,9 +187,9 @@ export function promotionSentence(t: PromotionTerms, zone: string, currency: Cur
 export interface PromotionPrice {
   plan: PassPurchase;
   label: string;
-  /** "$24.99 the first year", "Free for 3 months", "$34.50 once". */
+  /** "$19.99 the first year", "Free for 3 months". */
   first: string;
-  /** "then $49.99 a year"; null when it's every payment, or Founding's one payment. */
+  /** "then $39.99 a year"; null when it's every payment. */
   then: string | null;
   /** The first payment, in minor units. */
   firstMinor: number;
@@ -197,15 +197,14 @@ export interface PromotionPrice {
 
 /** What a plan costs with the promotion, for the preview, the email and the offer page. Null for a plan it isn't on. */
 export function promotionPrice(t: PromotionTerms, plan: PassPurchase, currency: Currency): PromotionPrice | null {
-  if (t.kind === "gift" || !t.plans.includes(plan)) return null;
+  if (t.kind === "gift" || !onSale(plan) || !t.plans.includes(plan)) return null;
   const price = PASS_PRICES[currency][plan];
   const money = (m: number) => formatMoney(m, currency, words);
   const per = (price: string) => (plan === "yearly" ? words("house.pass.perYear", { price }) : words("house.pass.perMonth", { price }));
-  const then = plan === "founding" ? null : `then ${per(money(price))}`;
+  const then = `then ${per(money(price))}`;
   if (t.kind === "trial") return { plan, label: planLabel(plan), first: `Free for ${months(t.months ?? 1)}`, then, firstMinor: 0 };
   const off = t.kind === "percent" ? Math.round((price * (t.percentOff ?? 0)) / 100) : Math.min(price, t.amountOff?.[currency] ?? 0);
   const cut = price - off;
-  if (plan === "founding") return { plan, label: planLabel(plan), first: words('house.pass.once', { price: money(cut) }), then: null, firstMinor: cut };
   if (t.duration === "always") return { plan, label: planLabel(plan), first: per(money(cut)), then: null, firstMinor: cut };
   const span =
     plan === "yearly"
@@ -218,7 +217,7 @@ export function promotionPrice(t: PromotionTerms, plan: PassPurchase, currency: 
 
 /** Every plan it's on, with its price, in the Pass page's order. */
 export function promotionPrices(t: PromotionTerms, currency: Currency): PromotionPrice[] {
-  return PASS_PURCHASES.map((p) => promotionPrice(t, p, currency)).filter((p): p is PromotionPrice => p !== null);
+  return PASS_ON_SALE.map((p) => promotionPrice(t, p, currency)).filter((p): p is PromotionPrice => p !== null);
 }
 
 // --- The owner's form --------------------------------------------------------------------------
@@ -272,7 +271,7 @@ export function promotionProblems(d: PromotionRequest, now: Date): Partial<Recor
     out.months = "Say how many months.";
   }
   if (d.kind !== "gift" && d.plans.length === 0) out.plans = "Pick at least one plan.";
-  if (d.kind === "trial" && d.plans.includes("founding")) out.plans = "Months free work on Yearly and Monthly, not Founding.";
+  if (d.plans.some((p) => !onSale(p))) out.plans = "The Pass is sold yearly or monthly; a free Pass for good is a gift.";
   if (d.audience === "named") {
     const { emails, bad } = parsePeople(d.people.join("\n"));
     if (bad.length) out.people = `${bad[0]} isn’t an email.`;

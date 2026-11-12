@@ -8,29 +8,31 @@ and history beyond four weeks. Running a fair house stays free for every
 house: the deal, the housemate check, reminders, covering, on-call Johns and
 time away. No ads.
 
-Every new house gets the Pass free for its first 30 days. Every house made
-before the Pass existed is a Founding house, with the Pass for life.
+Every new house gets the Pass free for its first 30 days. The houses made
+before the Pass locked (11 Nov 2026) got it free for good (plan `founding`).
+There is no lifetime Pass for sale: on 2026-11-11 Glyn dropped the Founding
+Pass ("I don't want to promise a lifetime membership"). A free Pass for good
+is only ever a gift, from a Promotions gift named for someone's email.
 
 ## Plans
 
 | Plan | USD | GBP | EUR | CAD |
 | --- | --- | --- | --- | --- |
-| Yearly (the default) | 49.99 | 39.99 | 49.99 | 64.99 |
-| Monthly | 5.99 | 4.99 | 5.99 | 7.99 |
-| Founding house, once, for the first 3 months after the store release | 69 | 54.99 | 69 | 89.99 |
+| Yearly (the default) | 39.99 | 29.99 | 39.99 | 54.99 |
+| Monthly | 4.99 | 3.99 | 4.99 | 6.99 |
 
 `PASS_PRICES` in `@app/core` (`pass.ts`) holds these until the stores give
 their own local prices.
 
-Founding costs a little more than one year, so it reads as a lifetime for
-about the price of a year. Check on 1 May 2027: if fewer than 3% of houses
-pay after their free month, set the yearly price to $39.99 and £29.99 by
-moving the Stripe lookup keys.
+On 2026-11-11 Glyn lowered Yearly from
+$49.99 to $39.99 and Monthly from $5.99 to $4.99 (and the same step in each
+currency), moving the Stripe lookup keys to new prices; a subscription on an
+old price keeps it until it ends.
 
 Fair by design: the free version runs a whole house on its own, and the
 Pass page says where the money goes. Once its free month or plan has ended, a
 house that can't pay can email for a free Pass (the "Ask for a free Pass"
-link); give it as a Founding plan by hand until there is an admin tool.
+link); give it with a Promotions gift named for their email.
 
 ## Inputs and outputs
 
@@ -68,19 +70,21 @@ Android apps never link out to the web price.
   and the buyer. Any housemate can buy.
 - Bought during the free month, Yearly and Monthly first charge when the
   free month ends (`passFirstCharge`; Stripe needs at least two days), so
-  nobody pays for days the house already has. Founding is one payment.
+  nobody pays for days the house already has.
 - Stripe's webhook (`POST /api/stripe/webhook`) checks Stripe's signature,
   reads the subscription again from Stripe, and writes the house's Pass by
   `passAfterSubscription`: a live subscription (active, trialing, past due)
   runs the Pass to the end of its period; an ended one stops it then, and a
-  house still in its free month keeps the rest of it. A Founding payment
-  makes the house Founding and stops any plan it was paying for renewing.
+  house still in its free month keeps the rest of it. (A one-off Founding
+  payment, from before it came off sale, still makes the house free for good.)
 - `house_pass_billing` (service role only) holds the house's Stripe
   customer and its current subscription. Events for any other subscription
   leave the Pass alone, so an old plan ending can't undo a new one.
 - The buyer, and only the buyer, gets Manage plan: Stripe's billing page,
   to switch plan, change card or cancel (`POST /api/pass/manage`).
-- A house on a paid plan is offered only Founding; a Founding house nothing.
+- Only Yearly and Monthly are sold; checkout refuses `founding`, which /v1
+  still accepts so the contract only grows. A house on a paid plan is
+  offered nothing (the buyer has Manage plan); a house free for good nothing.
 - Back from Checkout (`/house/pass?bought=1`) the page says thanks and reads
   the house again every few seconds until the Pass shows.
 
@@ -95,13 +99,13 @@ The Pass belongs to whoever paid for it, and covers the house they live in
   its own. The Wall says "Ben moved out, and their House Pass went with
   them. The house keeps the extras until Sun 29 Nov."
 - The next house they start or join gets it (`record_moved_on`), unless it
-  has a paid Pass or Founding of its own; then it keeps waiting. Re-joining
+  has a paid Pass or a free Pass for good of its own; then it keeps waiting. Re-joining
   the old house brings it back there.
 - The Moving on screen says the Pass comes with them, and offers "Leave it
   for Flat 3 instead" (`leave_pass`): it goes back on the old house to the
   end of what was paid, then stops renewing.
 - A Pass moves at most once every 30 days; within that, leaving leaves it
-  with the house. Founding a house was given at launch (no buyer) stays.
+  with the house. A free Pass for good a house was given (no buyer) stays.
 - An admin removing the buyer leaves the Pass with the house.
 - Stripe never hears of a move. The webhook finds a subscription's house by
   `house_pass_billing.stripe_subscription`, then a move carrying it (whose
@@ -152,7 +156,7 @@ phones, Stripe on the web) and waits for the store release.
 
 ## Done when
 
-- [x] A new house starts a 30-day free month; existing houses are Founding.
+- [x] A new house starts a 30-day free month; houses from before the lock have it free for good.
 - [x] Nobody but the service role can write the Pass.
 - [x] House shows the Pass row and page on every platform.
 - [x] With the switch on, a house without the Pass forfeits nothing and earns no perks.

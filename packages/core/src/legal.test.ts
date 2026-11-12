@@ -40,7 +40,7 @@ describe("the Terms of Service", () => {
     expect(text).toMatch(/renew automatically/);
     expect(text).toMatch(/Cancel any time/);
     expect(text).toMatch(/seller of record/);
-    expect(text).toContain("$49.99 a year");
+    expect(text).toContain("$39.99 a year");
   });
 
   it("names the law and how to reach us", () => {

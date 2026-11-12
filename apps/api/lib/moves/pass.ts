@@ -88,12 +88,12 @@ export async function startCheckout(
 
   // Months free start now, or when the free month ends if that's later.
   const freeMonths = checked?.facts.terms.kind === "trial" ? checked.facts.terms.months : null;
-  const firstCharge = plan === "founding" ? null : latest(passFirstCharge(pass, now), freeMonths ? addMonths(now, freeMonths) : null);
+  const firstCharge = latest(passFirstCharge(pass, now), freeMonths ? addMonths(now, freeMonths) : null);
   if (checked && checked.facts.terms.kind !== "trial" && !checked.row.stripe_promotion_code_id) {
     return { status: 409, say: (words) => humanError({ message: "offer_ended" }, words) };
   }
   const url = await stripe.checkout({
-    mode: plan === "founding" ? "payment" : "subscription",
+    mode: "subscription",
     price,
     currency: house.currency.toLowerCase(),
     email: caller.email,

@@ -37,7 +37,7 @@ describe("what it gives, in words", () => {
   it("says half off, a percent, an amount, months free and a free Pass", () => {
     expect(promotionLegend(half)).toBe("Half off");
     expect(promotionLegend({ ...half, percentOff: 20 })).toBe("20% off");
-    expect(promotionLegend({ ...half, kind: "amount", percentOff: null, amountOff: promotionAmounts(1000) }, "GBP")).toBe("£8 off");
+    expect(promotionLegend({ ...half, kind: "amount", percentOff: null, amountOff: promotionAmounts(1000) }, "GBP")).toBe("£7 off");
     expect(promotionLegend({ ...half, kind: "trial", percentOff: null, duration: null, months: 3 })).toBe("3 months free");
     expect(promotionLegend({ ...half, kind: "gift", percentOff: null, duration: null, months: null, plans: [] })).toBe("Free Pass");
     expect(promotionLegend({ ...half, kind: "gift", percentOff: null, duration: null, months: 12, plans: [] })).toBe("A free year");
@@ -61,15 +61,15 @@ describe("what it gives, in words", () => {
 
 describe("what each plan costs with it", () => {
   it("takes half off the first payment, then the usual price", () => {
-    expect(promotionPrice(half, "yearly", "USD")).toMatchObject({ first: "$24.99 the first year", then: "then $49.99 a year", firstMinor: 2499 });
-    expect(promotionPrice(half, "monthly", "USD")).toMatchObject({ first: "$2.99 the first month", then: "then $5.99 a month" });
+    expect(promotionPrice(half, "yearly", "USD")).toMatchObject({ first: "$19.99 the first year", then: "then $39.99 a year", firstMinor: 1999 });
+    expect(promotionPrice(half, "monthly", "USD")).toMatchObject({ first: "$2.49 the first month", then: "then $4.99 a month" });
     expect(promotionPrice(half, "founding", "USD")).toBeNull();
   });
 
-  it("knows some months, every payment, Founding's one payment and months free", () => {
-    expect(promotionPrice({ ...half, duration: "months", months: 3 }, "monthly", "USD")?.first).toBe("$2.99 a month for 3 months");
-    expect(promotionPrice({ ...half, duration: "always" }, "yearly", "GBP")).toMatchObject({ first: "£19.99 a year", then: null });
-    expect(promotionPrice({ ...half, plans: ["founding"] }, "founding", "USD")).toMatchObject({ first: "$34.50 once", then: null });
+  it("knows some months, every payment and months free, and never prices Founding", () => {
+    expect(promotionPrice({ ...half, duration: "months", months: 3 }, "monthly", "USD")?.first).toBe("$2.49 a month for 3 months");
+    expect(promotionPrice({ ...half, duration: "always" }, "yearly", "GBP")).toMatchObject({ first: "£14.99 a year", then: null });
+    expect(promotionPrice({ ...half, plans: ["founding"] }, "founding", "USD")).toBeNull();
     expect(promotionPrice({ ...half, kind: "trial", percentOff: null, duration: null, months: 2 }, "yearly", "USD")).toMatchObject({ first: "Free for 2 months", firstMinor: 0 });
   });
 
@@ -84,7 +84,7 @@ describe("what each plan costs with it", () => {
   });
 
   it("scales an amount off to each currency, to the whole unit", () => {
-    expect(promotionAmounts(1000)).toEqual({ USD: 1000, CAD: 1300, GBP: 800, EUR: 1000 });
+    expect(promotionAmounts(1000)).toEqual({ USD: 1000, CAD: 1400, GBP: 700, EUR: 1000 });
   });
 });
 
@@ -116,7 +116,7 @@ describe("the owner's form", () => {
     });
     expect(promotionProblems({ ...draft, kind: "trial", months: null, plans: ["founding"] }, NOW)).toMatchObject({
       months: "Say how many months.",
-      plans: "Months free work on Yearly and Monthly, not Founding.",
+      plans: "The Pass is sold yearly or monthly; a free Pass for good is a gift.",
     });
   });
 
@@ -194,7 +194,7 @@ describe("the email", () => {
     expect(m.subject).toBe("Half off your House Pass");
     expect(m.text).toContain("Hi Priya,");
     expect(m.text).toContain("Thanks for helping test Jonz.");
-    expect(m.text).toContain("$24.99 the first year, then $49.99 a year");
+    expect(m.text).toContain("$19.99 the first year, then $39.99 a year");
     expect(m.text).toContain("It works when you sign in to Jonz as priya.n@outlook.com, until 31 December.");
     expect(m.html).toContain("jz-panel-offer");
     expect(m.html).toContain("https://jonz.app/offer/THANKS50");

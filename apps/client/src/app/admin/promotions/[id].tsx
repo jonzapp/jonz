@@ -190,7 +190,7 @@ function Promotion({ p }: { p: PromotionDetail }) {
 
 // The owner's pages are in English for now (translation 6).
 const english = wordsFor('en', 'housemates');
-const PLAN_NAME: Record<string, string> = { yearly: english('house.pass.yearly'), monthly: english('house.pass.monthly'), founding: english('house.pass.foundingPlan'), trial: english('admin.promotions.kind.gift') };
+const PLAN_NAME: Record<string, string> = { yearly: english('house.pass.yearly'), monthly: english('house.pass.monthly'), founding: english('house.pass.founding'), trial: english('admin.promotions.kind.gift') };
 const planName = (plan: string) => PLAN_NAME[plan] ?? plan;
 
 const styles = StyleSheet.create({

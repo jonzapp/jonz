@@ -19,7 +19,7 @@ export const LEGAL = {
   /** Whose courts and law the Terms name. */
   law: "England and Wales",
   /** When either page last changed in substance. */
-  updated: "6 November 2026",
+  updated: "11 November 2026",
   privacyPath: "/privacy",
   helpPath: "/help",
   termsPath: "/terms",
@@ -238,7 +238,7 @@ export const TERMS: LegalPage = {
     {
       heading: "The House Pass",
       body: [
-        "One person buys the House Pass for their whole house. It comes yearly or monthly, or, for houses that start at launch, as a one-off Founding Pass that lasts for life. The price, in your currency and with any tax, is shown before you pay; in the US it’s $49.99 a year, $5.99 a month, or $69 once.",
+        "One person buys the House Pass for their whole house. It comes yearly or monthly. The price, in your currency and with any tax, is shown before you pay; in the US it’s $39.99 a year or $4.99 a month.",
         "A new house gets its first 30 days free. If you buy during them, the first charge waits until the free month ends.",
         "The Pass belongs to the person who pays for it, and covers the house they live in. If they leave and start or join another house, it goes with them, and the house they left keeps the extras for 30 more days. A Pass can move once every 30 days. If they’d rather leave it with the house, it runs to the end of the period already paid for and then stops renewing.",
         "Yearly and monthly plans renew automatically at the same price until you cancel. Cancel any time from Manage plan on the House Pass page, or at link.com; the house keeps the Pass until the end of the period already paid for. If we ever change the price, we’ll tell you before your next renewal, and you can cancel before it applies.",

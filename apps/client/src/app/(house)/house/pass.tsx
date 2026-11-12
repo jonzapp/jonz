@@ -22,7 +22,7 @@ import { useWords } from '@/hooks/use-words';
 
 /**
  * The House Pass, pushed from House: where the house stands, what the Pass
- * gives everyone in it, and the plans. A Founding house sees its thanks in
+ * gives everyone in it, and the plans. A house given the Pass for good sees that in
  * place of the plans. On the web, with EXPO_PUBLIC_PASS_CHECKOUT=on, a plan
  * opens Stripe Checkout and a buyer can manage their plan; elsewhere buying
  * waits for the store release, and the page says so.
@@ -125,7 +125,7 @@ function PassReadOut({
   const { pass } = house;
   // A family's Pass is the Family Pass, with a family's extras.
   const sign = passWords(house.kind, words);
-  const founding = pass.plan === 'founding';
+  const founding = pass.plan === 'founding'; // a free Pass for good, a gift
   const buyer = pass.buyerId ? members.find((m) => m.userId === pass.buyerId)?.name : undefined;
   const selling = passCheckoutOpen();
   // Selling, a house sees only what it can buy now: a house on a paid plan changes it from Manage.
@@ -155,7 +155,8 @@ function PassReadOut({
           </Section>
         }
         end={
-          founding ? null : (
+          // Nothing to buy or manage (given the Pass for good, or someone else's paid plan): no Plans at all.
+          founding || (!canManage && offers.length === 0) ? null : (
             <Section label={words('house.pass.plans')} testID="pass-plans">
               {canManage ? (
                 <Row

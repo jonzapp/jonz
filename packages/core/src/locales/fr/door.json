@@ -219,7 +219,7 @@
   "door.guide.page.settle.splitwise": "Une maison peut faire ses comptes dans Jonz, ou copier les montants dans Splitwise.",
   "door.guide.page.pass.adds": "Ce qu’il ajoute : {extras}",
   "door.guide.page.pass.extra": "{title} : {meta}",
-  "door.guide.page.pass.prices": "Prix : {yearly} par an (environ {perMonth} par mois), ou {monthly} par mois ; les maisons fondatrices {founding} une fois, à vie. Chaque nouvelle maison a d’abord un mois gratuit ({days} jours).",
+  "door.guide.page.pass.prices": "Prix : {yearly} par an (environ {perMonth} par mois), ou {monthly} par mois. Chaque nouvelle maison a d’abord un mois gratuit ({days} jours).",
   "door.guide.page.away.book": "Enregistre tes absences dans la page Jours et absences. Les jours d’absence, on te laisse de côté dans la distribution, donc rien ne t’est donné.",
   "door.guide.page.away.makeup": "Ta part pour ces jours est rattrapée {makeup} ({kind, select, family {un parent} other {un admin}} règle ça dans les règles de la maison).",
   "door.guide.page.onCall.what": "Les Johns de garde se font quand il le faut (la poubelle quand elle est pleine) plutôt qu’un jour précis. Chaque semaine, une personne est de garde pour chacun.",
