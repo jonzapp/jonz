@@ -6,6 +6,7 @@ pages are private artifacts on claude.ai.
 
 | Date | Decision | Where | Rule |
 | --- | --- | --- | --- |
+| 2026-11-11 | Leave the house and Delete my account move into their own Danger zone at the foot of You, for everyone; leaving asks for the house's name typed, as the resets do (You Danger zone B) | this PR | [controls](controls.md#danger-zone) |
 | 2026-11-11 | Danger zone, GitHub's way: every move that can't be taken back (the registry's `destructive`) sits in one hazard-edged group, at the foot of its page or apart on an Ask Jonz card, whose button turns hazard while one is ticked | #218 | [controls](controls.md#danger-zone) |
 | 2026-11-11 | Free and House Pass on House: one tick grid (six groups in plain words, a Free and a Pass column), sold as "chores that actually get done", with about what the Pass costs each person a month. Selling copy says what a thing does, in everyday words ("chores", "put money on it"), not the app's own names (the deal, the Stake, the Table) | this PR | [words](words.md#selling-the-pass) |
 | 2026-11-11 | No empty panel: before the first deal Today draws no side panel (or hairline), and Next up runs across the page | this PR | [layout](layout.md#laptop-pages) |
