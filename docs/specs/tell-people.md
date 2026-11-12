@@ -14,7 +14,7 @@ Makes sure nobody is surprised by what happened to their John, by the house's ru
 - **Rule changes go on the Wall.** Changing the stake, a forfeit, the check window, the late window or the cover grace posts "Glyn changed the missed forfeit from £3 to £5." Only a change made by a person posts; the clock and servers don't.
 - **"I'm on it" against covers.** When covering opens on your overdue John you get a push ("Housemates can cover it now and take its points. On it? Say so and covers wait 2 hours."). The John sheet offers **I'm on it** once, which holds covers off for 2 hours, or until the John turns missed if that comes sooner. Housemates see "Sam is on it. Anyone else can cover it from 21:40."
 - **Covering sits lower on Today.** Housemates' overdue Johns moved out of Needs you into their own "You could cover" section, under your own Johns and On call, so covering is never your top task. Needs you keeps the votes.
-- **The Pass was free during the beta.** Until the extras locked (11 Nov 2026) the Pass page showed the plans but sold nothing; every house made by then became a Founding house when they did.
+- **The Pass was free during the beta.** Until the extras locked (11 Nov 2026) the Pass page showed the plans but sold nothing; every house made by then got the Pass free for good when they did. There is no lifetime Pass for sale.
 
 ## Inputs and outputs
 

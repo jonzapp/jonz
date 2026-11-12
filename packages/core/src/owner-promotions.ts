@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import type { ListFacet } from "./admin-list";
 import { formatMoney } from "./money";
-import { PASS_PRICES, type PassPurchase } from "./pass";
+import { onSale, PASS_PRICES, type PassOnSale, type PassPurchase } from "./pass";
 import {
   parsePeople,
   promotionGives,
@@ -112,7 +112,7 @@ export function draftRequest(d: PromotionDraft): PromotionRequest {
     amount: d.kind === "amount" ? dollars(d.amount) : null,
     duration: money ? d.duration : null,
     months,
-    plans: d.kind === "gift" ? [] : d.kind === "trial" ? d.plans.filter((p) => p !== "founding") : d.plans,
+    plans: d.kind === "gift" ? [] : d.plans.filter(onSale),
     audience: d.audience,
     people: d.audience === "named" ? parsePeople(d.people).emails.concat(parsePeople(d.people).bad) : [],
     endsAt: endsAt ? endsAt.toISOString() : null,
@@ -193,9 +193,9 @@ export function promotionWhoSentence(audience: PromotionAudience, emails: readon
 }
 
 /** What a plan costs without a promotion, for the form's plan rows. */
-export function planPrice(plan: PassPurchase): string {
+export function planPrice(plan: PassOnSale): string {
   const price = formatMoney(PASS_PRICES.USD[plan], "USD", words);
-  return plan === "yearly" ? words('house.pass.perYear', { price }) : plan === "monthly" ? words('house.pass.perMonth', { price }) : words('house.pass.once', { price });
+  return plan === "yearly" ? words('house.pass.perYear', { price }) : words('house.pass.perMonth', { price });
 }
 
 /** Where someone named on it is: used it, opened the link, sent the email, or nothing yet. */

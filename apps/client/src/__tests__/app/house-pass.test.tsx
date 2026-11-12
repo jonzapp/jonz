@@ -73,7 +73,7 @@ it('is the Family Pass in a family, with what a family gets', async () => {
   expect(screen.queryByText(words('house.pass.card.money'))).toBeNull();
 });
 
-it('thanks a Founding house, and offers it no plans', async () => {
+it('tells a house given the Pass for good, and offers it no plans', async () => {
   await open();
   expect(screen.getByTestId('pass-lead')).toHaveTextContent(words('house.pass.foundingLead'));
   expect(screen.getByTestId('pass-line')).toHaveTextContent(words('house.pass.founding'));
@@ -105,7 +105,7 @@ it('shows a house on its free month the plans in its own currency, Yearly first,
   expect(screen.getByTestId('pass-lead')).toHaveTextContent(words('house.pass.lead'));
   expect(screen.getByTestId('pass-line')).toHaveTextContent(words('house.pass.trialLeft', { days: 12 }));
   const plans = within(screen.getByTestId('pass-plans'));
-  for (const price of ['£39.99 a year', '£4.99 a month', '£54.99 once']) expect(plans.getByText(price)).toBeOnTheScreen();
+  for (const price of ['£29.99 a year', '£3.99 a month']) expect(plans.getByText(price)).toBeOnTheScreen();
   expect(within(screen.getByTestId('plan-yearly')).getByText(words('house.pass.yearly'))).toBeOnTheScreen();
   expect(screen.getByTestId('pass-soon')).toHaveTextContent(words('house.pass.buyingSoon'));
 });
@@ -142,13 +142,13 @@ describe('selling on the web', () => {
     expect(leaveFor).not.toHaveBeenCalled();
   });
 
-  it('gives the buyer of a paid plan Manage plan, and offers only Founding', async () => {
+  it('gives the buyer of a paid plan Manage plan, and no plans to buy', async () => {
     withPass({ plan: 'monthly', until: new Date(Date.now() + 20 * DAY), buyerId: 'priya' });
     (passBillingUrl as jest.Mock).mockResolvedValue('https://billing.stripe.com/p/session/test_1');
     await open();
     expect(screen.queryByTestId('plan-yearly')).toBeNull();
     expect(screen.queryByTestId('plan-monthly')).toBeNull();
-    expect(screen.getByTestId('plan-founding')).toBeOnTheScreen();
+    expect(screen.queryByTestId('plan-founding')).toBeNull();
     await fireEvent.press(screen.getByTestId('pass-manage'));
     await waitFor(() => expect(leaveFor).toHaveBeenCalledWith('https://billing.stripe.com/p/session/test_1'));
     expect(passBillingUrl).toHaveBeenCalledWith('h1');

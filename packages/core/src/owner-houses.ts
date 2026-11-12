@@ -56,7 +56,7 @@ export interface HouseRow {
   sortAt: string;
 }
 
-/** What a house's Pass is now: a paid Pass, Founding, the free month, or none. */
+/** What a house's Pass is now: a paid Pass, free for good ("founding"), the free month, or none. */
 export type PassNow = "pass" | "founding" | "trial" | "none";
 
 export function passNow(plan: PassPlan, until: string | null, now: Date): PassNow {
@@ -65,7 +65,7 @@ export function passNow(plan: PassPlan, until: string | null, now: Date): PassNo
   return plan === "trial" ? "trial" : "pass";
 }
 
-/** The Pass column: "Pass", "Founding", "Trial", "None". */
+/** The Pass column: "Pass", "Free for good", "Trial", "None". */
 export function passLabel(plan: PassPlan, until: string | null, now: Date, words: Words): string {
   return words(`admin.houses.passNow.${passNow(plan, until, now)}` as const);
 }
@@ -142,7 +142,7 @@ export function personMeta(person: HousePerson, kind: HouseKind = "housemates"):
 /** The Pass, as a title and a line: "House Pass, yearly" / "Priya pays, renews 3 Sep 2027". */
 export function passDetail(house: HouseDetail, now: Date): { title: string; meta: string } {
   const state = passNow(house.passPlan, house.passUntil, now);
-  if (state === "founding") return { title: "Founding Pass", meta: house.passBuyer ? `For life, bought by ${house.passBuyer}` : "For life" };
+  if (state === "founding") return { title: "Free Pass", meta: house.passBuyer ? `For good, bought by ${house.passBuyer}` : "For good, a gift" };
   if (state === "trial") return { title: "The free month", meta: `Ends ${dayYear(house.passUntil!)}` };
   if (state === "none") return { title: "No House Pass", meta: house.passUntil ? `Ended ${dayYear(house.passUntil)}` : "Never had one" };
   const payer = house.passBuyer ? `${house.passBuyer} pays` : "Paid";
@@ -260,7 +260,7 @@ export function ownerFigures(o: Overview, words: Words): Figure[] {
       key: "passes",
       label: "House Passes",
       value: n(paid),
-      meta: `${n(o.passes.yearly)} yearly, ${n(o.passes.monthly)} monthly, ${n(o.passes.founding)} Founding`,
+      meta: `${n(o.passes.yearly)} yearly, ${n(o.passes.monthly)} monthly, ${n(o.passes.founding)} free for good`,
     },
     {
       key: "onTime",

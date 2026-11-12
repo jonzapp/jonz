@@ -83,7 +83,7 @@ answers it, again every minute while the page is open.
   the heading, as the house's Track record does; the heading names it
   ("2–8 Nov", "November 2026"), in the owner's zone. Houses (new ones,
   against the same stretch of last week or month), People (to a house), Active houses
-  (where someone ticked a John), House Passes (yearly, monthly, Founding;
+  (where someone ticked a John), House Passes (yearly, monthly, free for good;
   the free month isn't one), Johns on time (done or covered, of those that
   came due and were settled; excused doesn't count) and Ask Jonz (house
   drafts asked for, and how many Claude didn't answer). Houses, Active and

@@ -64,13 +64,13 @@ describe("a house in the list", () => {
     expect(passLabel("monthly", "2026-10-01T00:00:00Z", NOW, words)).toBe("None");
     expect(passLabel("trial", "2026-11-20T00:00:00Z", NOW, words)).toBe("Trial");
     expect(passLabel("trial", "2026-10-20T00:00:00Z", NOW, words)).toBe("None");
-    expect(passLabel("founding", null, NOW, words)).toBe("Founding");
+    expect(passLabel("founding", null, NOW, words)).toBe("Free for good");
   });
 
   it("has one line under its name on a phone", () => {
     expect(houseMeta(row(), NOW, words)).toBe("5 people, Pass, active 2 min ago, 74% on time");
     expect(houseMeta(row({ people: 1, lastActive: null, settled: 0, passPlan: "founding", passUntil: null }), NOW, words)).toBe(
-      "1 person, Founding, never",
+      "1 person, Free for good, never",
     );
   });
 });
@@ -147,7 +147,7 @@ describe("one house", () => {
       title: "No House Pass",
       meta: "Ended 1 Oct 2026",
     });
-    expect(passDetail(detail({ passPlan: "founding", passUntil: null, passBuyer: null }), NOW)).toEqual({ title: "Founding Pass", meta: "For life" });
+    expect(passDetail(detail({ passPlan: "founding", passUntil: null, passBuyer: null }), NOW)).toEqual({ title: "Free Pass", meta: "For good, a gift" });
   });
 });
 
@@ -176,7 +176,7 @@ describe("the Overview", () => {
       ["Houses", "128", "12 new, up 9 on last week"],
       ["People", "412", "3.2 to a house"],
       ["Active houses", "86%", "110 of 128"],
-      ["House Passes", "37", "20 yearly, 10 monthly, 7 Founding"],
+      ["House Passes", "37", "20 yearly, 10 monthly, 7 free for good"],
       ["Johns on time", "81%", "212 late or missed"],
       ["Ask Jonz", "1,210", "every one answered"],
     ]);

@@ -17,11 +17,11 @@ picture in a chat (all below).
 | `percent` | 1 to 100% off | a coupon and one promotion code |
 | `amount` | money off, typed in dollars; the other currencies follow the Yearly price's ratio, to the whole unit (`promotionAmounts`) | a coupon with `currency_options`, and one code |
 | `trial` | 1 to 24 months free before the first charge, on Yearly or Monthly | none: a later `trial_end` |
-| `gift` | a free Pass with no card: some months (a free month made longer), or for good (a Founding house) | none |
+| `gift` | a free Pass with no card: some months (a free month made longer), or for good (plan `founding`, no end date) | none |
 
 Money off lasts for the first payment (`once`), some months (`months`), or
 every payment (`always`). A promotion works on the plans it names (Yearly,
-Monthly, Founding house); a free Pass on none of them.
+Monthly); a free Pass on none of them. Founding isn't sold (2026-11-11).
 
 ## Who can use it
 
