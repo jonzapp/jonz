@@ -26,6 +26,23 @@ async function shoot(page: Page, name: string) {
   await page.emulateMedia({ colorScheme: "light" });
 }
 
+/**
+ * No scrollbar beside any scrolling area: with a mouse plugged in a browser
+ * otherwise draws one down the page's right edge (and the panel's), a light
+ * bar even at night. Playwright's Chromium hides them itself, so this asks
+ * each area that scrolls whether it would draw one.
+ */
+async function noScrollbars(page: Page) {
+  const bars = await page.evaluate(() =>
+    [...document.querySelectorAll("*")].flatMap((el) => {
+      const style = getComputedStyle(el);
+      const scrolls = [style.overflowX, style.overflowY].some((o) => o === "auto" || o === "scroll");
+      return scrolls && style.scrollbarWidth !== "none" ? [(el as HTMLElement).dataset.testid ?? el.tagName] : [];
+    }),
+  );
+  expect(bars).toEqual([]);
+}
+
 /** Where a box's top edge is on the page. */
 async function topOf(box: Locator): Promise<number> {
   return (await box.boundingBox())?.y ?? Number.NaN;
@@ -172,6 +189,7 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   expect(await topOf(today.getByTestId("rest-of-week"))).toBeGreaterThan(await bottomOf(today.getByTestId("next-up")));
   await runsToThePanel(today);
   await shoot(page, "today");
+  await noScrollbars(page);
   // Beside the chat with Jonz there's no room for the panel, but the page still fills the room up to the chat: Next up
   // across it, then the rest of your week beside the week, never one phone-wide column with the room blank beside it.
   await today.getByTestId("ask-jonz").click();
@@ -198,6 +216,7 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   await holdsTheEdges(page, week, week.getByTestId("week-summary"));
   await runsToThePanel(week);
   await shoot(page, "week");
+  await noScrollbars(page);
   // Beside the chat with Jonz, Week's one column runs up to the chat too.
   await week.getByTestId("ask-jonz").click();
   await expect(chat).toBeVisible();
@@ -268,6 +287,7 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   expect(await topOf(house.getByTestId("house-pair-start"))).toBeCloseTo(await topOf(house.getByTestId("house-pair-end")), 0);
   await fillsTheRoom(page, house.getByTestId("house-pair-end"));
   await shoot(page, "house");
+  await noScrollbars(page);
 
   // House lists its pages beside them: the John list, and a John in the panel beside it.
   const nav = page.getByTestId("house-nav");
@@ -286,6 +306,7 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   const panel = page.getByTestId("john-panel");
   await expect(panel.getByRole("heading", { name: words('house.johns.edit', { name: "Bathroom clean" }) })).toBeVisible();
   await shoot(page, "johns");
+  await noScrollbars(page);
   await page.getByRole("button", { name: /^Edit Big shop, / }).click();
   await expect(panel.getByRole("heading", { name: words('house.johns.edit', { name: "Big shop" }) })).toBeVisible();
   await page.keyboard.press("Escape");
@@ -296,6 +317,7 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   await expect(page.getByTestId("pass-pair-end").getByTestId("pass-plans")).toBeVisible();
   expect(await topOf(page.getByTestId("pass-pair-start"))).toBeCloseTo(await topOf(page.getByTestId("pass-pair-end")), 0);
   await shoot(page, "pass");
+  await noScrollbars(page);
 
   // A housemate's page: their record, share, streak, money and time away in two columns, an admin's actions among them.
   await page.goto(`/house/people/${housemateIds[0]}`);
@@ -305,6 +327,7 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   await expect(person.getByTestId("person-admin")).toBeVisible();
   await fillsTheRoom(page, person.getByTestId("person-sections-column").last());
   await shoot(page, "person");
+  await noScrollbars(page);
 
   // Groups, Admins, Preferences and History are parts of other pages now, You has its own, and so does Ask Jonz usage: eight in the list.
   await expect(nav.getByRole("link")).toHaveCount(8);
@@ -315,6 +338,7 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   await expect(page.getByTestId("you-pair-end").getByTestId("leave")).toBeVisible();
   expect(await topOf(page.getByTestId("you-pair-start"))).toBeCloseTo(await topOf(page.getByTestId("you-pair-end")), 0);
   await shoot(page, "you");
+  await noScrollbars(page);
   await nav.getByTestId("nav-wall").click();
   // History beside the Wall, each under its name, so their first days start on the same line.
   const history = page.getByTestId("wall-pair-end").getByTestId("history-section");
@@ -337,6 +361,7 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   await expect(page.getByTestId("away-pair-start").getByTestId("prefs-time")).toBeVisible();
   await expect(page.getByTestId("away-pair-end").getByTestId("away-panel")).toBeVisible();
   await shoot(page, "days-away");
+  await noScrollbars(page);
   // The Guide: the topics, and beside them the one you click (the first, to start), on the same page.
   await page.goto("/house/guide");
   const guide = page.getByTestId("guide");
@@ -350,6 +375,7 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   await expect(guide.getByTestId("guide-open").getByTestId("guide-ask")).toBeVisible();
   await expect(page.getByTestId("guide-page")).toHaveCount(0);
   await shoot(page, "guide");
+  await noScrollbars(page);
   // A link to a topic's own page opens it beside the list too.
   await page.goto("/house/guide/points");
   await expect(page.getByTestId("guide").getByTestId("guide-points").getByRole("button")).toHaveAttribute("aria-current", "true");

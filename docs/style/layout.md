@@ -151,6 +151,11 @@ still look right stretched (content capped, nothing pinned to far edges).
 - Things side by side share a top edge: the page's first line sits in the
   main column so a bare card in main lines up with the side's first group.
   (#48)
+- **No scrollbars drawn**, on any page or panel: scrolling areas scroll by
+  wheel, trackpad, keys and touch with no bar beside them, as on a phone and
+  a Mac's trackpad. A mouse (or Windows, or macOS set to show them always)
+  would otherwise draw a light bar down the right edge, even at night. One
+  rule in `public/index.html` covers every page. (Stray scrollbar, 12 Nov)
 - A list and its side panel scroll separately; the search box, count and
   column names stay pinned while rows scroll. (Owner admin, 31 Oct, #82)
 - One right-hand slot: Ask Jonz and an open John share it, and opening one

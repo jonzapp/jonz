@@ -54,6 +54,11 @@ describe('the page template', () => {
     expect(html).toContain(`.start svg { width: ${START_SIGN}px; height: ${START_SIGN}px; }`);
   });
 
+  it('draws no scrollbar beside any scrolling area, even with a mouse plugged in', () => {
+    expect(html).toContain('* { scrollbar-width: none; }');
+    expect(html).toContain('*::-webkit-scrollbar { display: none; }');
+  });
+
   it('is installable, and fits under a notch', () => {
     expect(html).toContain('<link rel="manifest" href="/manifest.webmanifest" />');
     expect(html).toContain('viewport-fit=cover');
