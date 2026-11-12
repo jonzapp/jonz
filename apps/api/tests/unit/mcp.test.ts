@@ -1,4 +1,4 @@
-import { OPERATIONS, type Operation } from "@app/core";
+import { MCP_ADDRESS, OPERATIONS, type Operation } from "@app/core";
 import { Problem, type Executor } from "@app/server";
 import { createMcpHandler } from "@modelcontextprotocol/server";
 import { describe, expect, it, vi } from "vitest";
@@ -152,6 +152,7 @@ describe("/mcp", () => {
   it("names Supabase Auth as where to sign in, and only scopes it can issue", () => {
     const meta = protectedResource("https://api.jonz.app", "https://x.supabase.co/");
     expect(meta.resource).toBe("https://api.jonz.app/mcp");
+    expect(meta.resource).toBe(MCP_ADDRESS); // what jonz.app/help and You tell people to paste
     expect(meta.authorization_servers).toEqual(["https://x.supabase.co/auth/v1"]);
     // Supabase's OAuth server turns a sign-in away over any scope not in this list
     // (supabase/auth internal/models/oauth_scope.go), and Claude asks for all we name.
