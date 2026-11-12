@@ -23,15 +23,22 @@ import { callV1 } from './v1';
 // adding Johns and groups by hand does; the draft itself is never stored.
 
 /**
- * Jonz's answer to the chat so far, with the draft as it stands. A refusal
+ * Jonz's answer to the chat so far (`summary` of its start, when Jonz has
+ * summed it up, then the messages since), with the draft as it stands. A refusal
  * (not in the house, too many turns today) throws its sentence; if the API
  * can't be reached at all, offlineTurn answers here as the API would
  * (a starter list that fits, or the draft left as it is), so setting up a
  * house never stops here.
  */
-export async function sendChat(houseId: string, messages: readonly ChatMessage[], draft: HouseDraft | null, words: Words): Promise<ChatResponse> {
+export async function sendChat(
+  houseId: string,
+  messages: readonly ChatMessage[],
+  draft: HouseDraft | null,
+  words: Words,
+  summary: string | null = null,
+): Promise<ChatResponse> {
   try {
-    return await callV1('ask_house', { houseId, messages: [...messages], draft });
+    return await callV1('ask_house', { houseId, messages: [...messages], draft, ...(summary ? { summary } : {}) });
   } catch (e) {
     if (e instanceof ApiRequestError && e.status >= 400 && e.status < 500 && e.status !== 404) throw e;
     return offlineTurn(messages, draft, words);

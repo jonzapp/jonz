@@ -1,8 +1,9 @@
 import "server-only";
 
-import { CHAT_RESETS_MAX, houseKind, LANGUAGE_IN_ENGLISH, languageOf, wordsFor, ASK_TURN_RESERVE, askAllowance, CHAT_TURNS_PER_PERSON_PER_DAY, draftForModel, editDraft, firstName, groupDef, johnDef, listAsDraft, localDate, offlineTurn, passOf, passUnlocked, PERMISSIONS, rulesOf, tidyAsk, tidyDraft, tidyReply, type ChatMessage, type ChatMove, type ChatReset, type ChatResponse, type EditResult, type HouseDraft, askOperationsFor, type Permission, type RawDraft } from "@app/core";
+import { CHAT_RESETS_MAX, foldPoint, houseKind, LANGUAGE_IN_ENGLISH, languageOf, wordsFor, ASK_TURN_RESERVE, askAllowance, CHAT_TURNS_PER_PERSON_PER_DAY, draftForModel, editDraft, firstName, groupDef, johnDef, listAsDraft, localDate, offlineTurn, passOf, passUnlocked, PERMISSIONS, rulesOf, tidyAsk, tidyDraft, tidyReply, type ChatMessage, type ChatMove, type ChatReset, type ChatResponse, type ChatSummed, type EditResult, type HouseDraft, askOperationsFor, type Permission, type RawDraft } from "@app/core";
 
 import { askClaude, canDraft, type DraftAnswer, type DraftContext, type JonzTools } from "@/lib/ai/house-draft";
+import { sumUpChat, type SumUpChat } from "@/lib/ai/sum-up";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 import { houseReads } from "./ask-reads";
@@ -44,7 +45,14 @@ function listLines(raw: RawDraft): string {
  * starter list that fits, or the draft left as it is), so setup never stops
  * here.
  *
- * `ask` is Claude, unless a test stands in for it.
+ * A long chat (more than CHAT_SUM_AT messages since its last summary) is
+ * summed up first, all but its latest CHAT_RECENT messages, into one with
+ * the summary it came with (`earlier.summary`); Jonz reads the summary and
+ * the latest messages, and the answer brings the new summary back
+ * (`summed`) for the app to send from then on. Summing up counts towards
+ * the same turn. If it fails, Jonz reads the latest messages only.
+ *
+ * `ask` is Claude, and `earlier.sumUp` the summary's writer, unless a test stands in.
  */
 export async function chatTurn(
   caller: Caller,
@@ -53,6 +61,7 @@ export async function chatTurn(
   current: HouseDraft | null,
   now: Date,
   ask: (ctx: DraftContext, tools: JonzTools) => Promise<DraftAnswer> = askClaude,
+  earlier: { summary?: string | null; sumUp?: SumUpChat } = {},
 ): Promise<{ refusal: Refusal } | ChatResponse> {
   const allowed = await myPermissions(caller, houseId);
   if (allowed.length === 0) return { refusal: { code: "42501", message: "not_in_house" } };
@@ -187,6 +196,25 @@ export async function chatTurn(
     },
   };
 
+  // A long chat: its start summed up (with the summary it came with), the rest read as it is.
+  let summary = earlier.summary?.trim() || null;
+  let chat = messages;
+  let summed: ChatSummed | undefined;
+  const spent = { input: 0, output: 0 };
+  const fold = foldPoint(messages);
+  if (fold > 0) {
+    try {
+      const notes = await (earlier.sumUp ?? sumUpChat)(summary, messages.slice(0, fold), LANGUAGE_IN_ENGLISH[language]);
+      summary = notes.text;
+      summed = { text: notes.text, count: fold };
+      spent.input += notes.inputTokens;
+      spent.output += notes.outputTokens;
+    } catch (e) {
+      console.error("sum_up_failed", e instanceof Error ? e.message : e);
+    }
+    chat = messages.slice(fold);
+  }
+
   const roleWords = family ? (myRole === "admin" ? "parent" : "kid") : myRole;
   let answer: DraftAnswer;
   try {
@@ -200,7 +228,8 @@ export async function chatTurn(
         weekStarts: rules.weekStarts,
         today: `${new Intl.DateTimeFormat("en-GB", { timeZone: rules.timezone, weekday: "long" }).format(now)} ${localDate(now, rules.timezone)}, ${new Intl.DateTimeFormat("en-GB", { timeZone: rules.timezone, hour: "2-digit", minute: "2-digit" }).format(now)}`,
         allowed: allowed.map((p) => PERMISSIONS[p]).filter(Boolean),
-        messages,
+        messages: chat,
+        earlier: summary,
         editing: list !== null,
         now: state?.text ?? null,
       },
@@ -208,7 +237,7 @@ export async function chatTurn(
     );
   } catch (e) {
     console.error("draft_failed", e instanceof Error ? e.message : e);
-    await admin.from("house_drafts").update({ outcome: "failed", input_tokens: 0 }).eq("id", turn);
+    await admin.from("house_drafts").update({ outcome: "failed", input_tokens: spent.input, output_tokens: spent.output }).eq("id", turn);
     return offline();
   }
 
@@ -219,7 +248,7 @@ export async function chatTurn(
   const draft = tidied && (tidied.johns.length > 0 || list) ? tidied : null;
   await admin
     .from("house_drafts")
-    .update({ johns: draft?.johns.length ?? 0, input_tokens: answer.inputTokens, output_tokens: answer.outputTokens })
+    .update({ johns: draft?.johns.length ?? 0, input_tokens: answer.inputTokens + spent.input, output_tokens: answer.outputTokens + spent.output })
     .eq("id", turn);
   const reply = tidyReply(answer.raw.reply);
   // Nothing to say and nothing drafted before: a starter list does better than silence.
@@ -232,5 +261,6 @@ export async function chatTurn(
     ...(resets.length > 0 ? { resets } : {}),
     ...(moves.length > 0 ? { moves } : {}),
     allowance: await allowanceNow(),
+    ...(summed ? { summed } : {}),
   };
 }

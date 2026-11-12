@@ -6,6 +6,7 @@ pages are private artifacts on claude.ai.
 
 | Date | Decision | Where | Rule |
 | --- | --- | --- | --- |
+| 2026-11-12 | Ask Jonz's warnings, one way (option A): a line over the message box while the chat can carry on (week running low, chat getting long), a card in the box's place once nothing more can be sent (week used up, chat full, no House Pass); a long chat sums up its start with a line in the chat that opens the summary, and carries on in a new chat at 200 | this PR | [states](states.md#ask-jonzs-warnings) |
 | 2026-11-12 | Connect your AI assistant: one row and one sheet for every assistant, a choice at the top (Claude, ChatGPT) that switches the steps under it, each assistant one entry in ASSISTANTS with its own words; Help lists the same steps under each name | this PR | [lists](lists.md) |
 | 2026-11-12 | Help, the Privacy Policy and the Terms are written in Markdown and drawn like Ask Jonz's replies: numbered steps, bold names of buttons and places, links in the sentence, and an address to paste as a line with Copy beside it (Markdown, not MDX or HTML) | #228 | [layout](layout.md#laptop-pages) |
 | 2026-11-12 | Connected apps ends with Connect Jonz to Claude: a row that opens the three steps, the MCP address with Copy beside it, and Open Claude | #227 | [lists](lists.md) |

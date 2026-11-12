@@ -7,6 +7,13 @@ import {
   askAllowance,
   askBackOn,
   askUsage,
+  CHAT_MAX_MESSAGES,
+  CHAT_RECENT,
+  CHAT_SUM_AT,
+  chatCarryOver,
+  foldPoint,
+  SUMMARY_MAX,
+  type ChatMessage,
   DRAFT_MAX_GROUPS,
   DRAFT_MAX_JOHNS,
   CHOICES_MAX,
@@ -457,5 +464,37 @@ describe("Ask Jonz usage", () => {
   it("names whose Ask Jonz is low", () => {
     expect(words('ask.usage.low', { left: wholePercent(0.18), house: false, backOn: "Monday at 00:00" })).toBe("Only 18% of your Ask Jonz left this week. More on Monday at 00:00.");
     expect(words('ask.usage.low', { left: wholePercent(0.1), house: true, backOn: "Monday at 00:00" })).toContain("the house’s");
+  });
+});
+
+describe("long chats", () => {
+  const chat = (n: number): ChatMessage[] =>
+    Array.from({ length: n }, (_, i) => ({ role: (n - 1 - i) % 2 === 0 ? "user" : "assistant", text: `message ${i}` }));
+
+  it("sums up nothing while a chat is short", () => {
+    expect(foldPoint(chat(1))).toBe(0);
+    expect(foldPoint(chat(CHAT_SUM_AT))).toBe(0);
+  });
+
+  it("past CHAT_SUM_AT, sums up all but the latest CHAT_RECENT, keeping a reply with what it answers", () => {
+    for (let n = CHAT_SUM_AT + 1; n <= CHAT_MAX_MESSAGES; n++) {
+      const messages = chat(n);
+      const at = foldPoint(messages);
+      expect(messages[at].role).toBe("user");
+      expect(n - at).toBeLessThanOrEqual(CHAT_RECENT);
+      expect(n - at).toBeGreaterThanOrEqual(CHAT_RECENT - 1);
+    }
+  });
+
+  it("carries the summary and the latest messages over to a new chat, within SUMMARY_MAX", () => {
+    const names = { you: "You", jonz: "Jonz" };
+    expect(chatCarryOver("- Bins on Tuesday.", [{ role: "user", text: "And  the\nrecycling?" }, { role: "assistant", text: "Thursdays." }], names)).toBe(
+      "- Bins on Tuesday.\n\nYou: And the recycling?\nJonz: Thursdays.",
+    );
+    expect(chatCarryOver(null, [{ role: "user", text: "Hi" }], names)).toBe("You: Hi");
+    const long = chatCarryOver("- " + "a".repeat(3000), chat(40).map((m) => ({ ...m, text: "b".repeat(700) })), names);
+    expect(long.length).toBeLessThanOrEqual(SUMMARY_MAX);
+    // The latest messages are the ones that fit.
+    expect(long.endsWith("b".repeat(700))).toBe(true);
   });
 });

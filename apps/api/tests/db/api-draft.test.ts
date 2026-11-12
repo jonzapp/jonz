@@ -1,4 +1,4 @@
-import { addDaysTo, ASK_POOL_TOKENS, localDate, ASK_TURN_RESERVE, hasPass, passOf, CHAT_TURNS_PER_PERSON_PER_DAY, HouseDraft, PERMISSIONS, starterDraft, type DraftEdit } from "@app/core";
+import { addDaysTo, ASK_POOL_TOKENS, CHAT_RECENT, CHAT_SUM_AT, foldPoint, localDate, ASK_TURN_RESERVE, hasPass, passOf, CHAT_TURNS_PER_PERSON_PER_DAY, HouseDraft, PERMISSIONS, starterDraft, type DraftEdit } from "@app/core";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { OPTIONS, POST } from "@/app/api/setup/draft/route";
@@ -272,6 +272,85 @@ describe("chatTurn, with Claude stood in for", () => {
     expect(reads[7]).toContain("No forfeits yet.");
     expect(reads[8]).toMatch(/^Bathroom, week from \d{4}-\d{2}-\d{2}, dealt to (me|Ava):/);
     expect(reads[9]).toContain("Nobody loses more than");
+  });
+
+  /** A long chat: `n` messages, the person's and Jonz's in turn, ending with the person's. */
+  const longChat = (n: number) =>
+    Array.from({ length: n }, (_, i) => ({ role: (n - 1 - i) % 2 === 0 ? ("user" as const) : ("assistant" as const), text: `message ${i}` }));
+
+  it(`sums up a long chat's start before Jonz answers, and counts it to the turn`, async () => {
+    const house = await makeHouse(["Ava"]);
+    const messages = longChat(CHAT_SUM_AT + 5);
+    const fold = foldPoint(messages);
+    let told: DraftContext | null = null;
+    let notes: { summary: string | null; messages: number; language: string } | null = null;
+    const result = await chatTurn(
+      { db: house.admin.db, userId: house.admin.userId },
+      house.id,
+      messages,
+      null,
+      new Date(),
+      async (ctx) => {
+        told = ctx;
+        return { raw: { reply: "Noted.", ask: { kind: "none" } }, inputTokens: 1200, outputTokens: 600 };
+      },
+      {
+        summary: "- Bins go out on Tuesday.",
+        sumUp: async (summary, folded, language) => {
+          notes = { summary, messages: folded.length, language };
+          return { text: "- Bins go out on Tuesday.\n- Ben is away in May.", inputTokens: 300, outputTokens: 40 };
+        },
+      },
+    );
+    if ("refusal" in result) throw new Error("refused");
+    expect(fold).toBe(messages.length - CHAT_RECENT);
+    expect(notes).toEqual({ summary: "- Bins go out on Tuesday.", messages: fold, language: "English" });
+    expect(told!.messages).toEqual(messages.slice(fold));
+    expect(told!.earlier).toBe("- Bins go out on Tuesday.\n- Ben is away in May.");
+    expect(result.summed).toEqual({ text: "- Bins go out on Tuesday.\n- Ben is away in May.", count: fold });
+    expect(await turnsIn(house.id)).toEqual([{ outcome: "ai", johns: 0, input_tokens: 1500, output_tokens: 640, user_id: house.admin.userId }]);
+  });
+
+  it("carries on a short chat with the summary it was sent, summing up nothing", async () => {
+    const house = await makeHouse(["Ava"]);
+    let told: DraftContext | null = null;
+    const result = await chatTurn(
+      { db: house.admin.db, userId: house.admin.userId },
+      house.id,
+      said("And the recycling?"),
+      null,
+      new Date(),
+      async (ctx) => {
+        told = ctx;
+        return { raw: { reply: "Thursdays.", ask: { kind: "none" } }, inputTokens: 1200, outputTokens: 600 };
+      },
+      { summary: "- Bins go out on Tuesday.", sumUp: () => Promise.reject(new Error("not called")) },
+    );
+    if ("refusal" in result) throw new Error("refused");
+    expect(told!.earlier).toBe("- Bins go out on Tuesday.");
+    expect(result.summed).toBeUndefined();
+  });
+
+  it("reads only the latest messages when summing up fails, and says nothing was summed", async () => {
+    const house = await makeHouse(["Ava"]);
+    const messages = longChat(CHAT_SUM_AT + 3);
+    let told: DraftContext | null = null;
+    const result = await chatTurn(
+      { db: house.admin.db, userId: house.admin.userId },
+      house.id,
+      messages,
+      null,
+      new Date(),
+      async (ctx) => {
+        told = ctx;
+        return { raw: { reply: "Noted.", ask: { kind: "none" } }, inputTokens: 1200, outputTokens: 600 };
+      },
+      { sumUp: () => Promise.reject(new Error("gateway down")) },
+    );
+    if ("refusal" in result) throw new Error("refused");
+    expect(told!.messages).toEqual(messages.slice(foldPoint(messages)));
+    expect(told!.earlier).toBeNull();
+    expect(result.summed).toBeUndefined();
   });
 
   it("refuses someone outside the house", async () => {

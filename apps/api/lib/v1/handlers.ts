@@ -141,8 +141,8 @@ const HANDLERS: Handlers = {
   },
 
   async ask_house(ctx: HandlerContext) {
-    const { messages, draft } = ctx.input as Pick<ChatRequest, "messages" | "draft">;
-    const result = await chatTurn(callerOf(ctx), houseId(ctx), messages, draft ?? null, ctx.now);
+    const { summary, messages, draft } = ctx.input as Pick<ChatRequest, "summary" | "messages" | "draft">;
+    const result = await chatTurn(callerOf(ctx), houseId(ctx), messages, draft ?? null, ctx.now, undefined, { summary });
     if ("refusal" in result) throw refusal(result.refusal);
     return result;
   },

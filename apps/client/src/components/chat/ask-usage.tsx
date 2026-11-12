@@ -1,22 +1,22 @@
 import { wholePercent } from '@app/core';
 import { ASK_LOW, askBackOn, type AskUsage } from '@app/core';
-import { ChevronRightIcon, GaugeIcon, TicketIcon } from 'lucide-react-native';
-import { Pressable, StyleSheet, View } from 'react-native';
-import { Link, type Href } from 'expo-router';
+import { GaugeIcon, TicketIcon } from 'lucide-react-native';
+import { StyleSheet, View } from 'react-native';
+import { type Href } from 'expo-router';
 
 import { Button } from '@/components/button';
-import { ComposerBar } from '@/components/chat/chat';
-import { ButtonRow } from '@/components/button-row';
+import { ChatNotice, ChatStop } from '@/components/chat/chat-notice';
 import { Group, GroupItem } from '@/components/group';
 import { Section } from '@/components/section';
-import { Body, Meta, RowTitle } from '@/components/text';
-import { CONTENT_MAX, GROUP_RADIUS, RADIUS, GUTTER, INSET, SECTION_GAP, SPACE, useTheme } from '@/theme';
+import { Meta, RowTitle } from '@/components/text';
+import { RADIUS, SECTION_GAP, SPACE, useTheme } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
 // The week's Ask Jonz, as the chat and the usage page show it: a warning over
 // the message box once under a quarter is left, a notice in the box's place
-// once it's all used, and the page with the house's, your own and each
-// person's use. docs/specs/describe-your-house.md.
+// once it's all used (both the chat's standard pieces, chat-notice.tsx), and
+// the page with the house's, your own and each person's use.
+// docs/specs/describe-your-house.md.
 
 /** Where the usage page is. */
 export const ASK_USAGE_HREF = '/house/ask-usage' satisfies Href;
@@ -57,22 +57,14 @@ export function UsageBar({ label, used, note, testID }: { label: string; used: n
 /** Over the message box once under a quarter is left: how much, whose, and when more comes. Opens the usage page. */
 export function LowWarning({ usage, zone }: { usage: AskUsage; zone: string }) {
   const words = useWords();
-  const { colors } = useTheme();
   return (
-    <View style={styles.lowLine}>
-    <Link href={ASK_USAGE_HREF} asChild>
-      <Pressable
-        style={StyleSheet.flatten([styles.low, { backgroundColor: colors.card, borderColor: colors.border }])}
-        role="link"
-        aria-label={words('common.join.then', { first: words('ask.usage.low', { left: wholePercent(usage.left), house: usage.house, backOn: askBackOn(usage.resetsAt, zone, words) }), second: words('ask.usage.lowLabel') })}
-        testID="chat-low"
-      >
-        <GaugeIcon size={18} color={colors.foreground} aria-hidden />
-        <Body style={styles.flex}>{words('ask.usage.low', { left: wholePercent(usage.left), house: usage.house, backOn: askBackOn(usage.resetsAt, zone, words) })}</Body>
-        <ChevronRightIcon size={18} color={colors.mutedForeground} aria-hidden />
-      </Pressable>
-    </Link>
-    </View>
+    <ChatNotice
+      icon={GaugeIcon}
+      text={words('ask.usage.low', { left: wholePercent(usage.left), house: usage.house, backOn: askBackOn(usage.resetsAt, zone, words) })}
+      label={words('ask.usage.lowLabel')}
+      href={ASK_USAGE_HREF}
+      testID="chat-low"
+    />
   );
 }
 
@@ -83,23 +75,18 @@ export function LowWarning({ usage, zone }: { usage: AskUsage; zone: string }) {
  */
 export function OutNotice({ usage, zone }: { usage: AskUsage; zone: string }) {
   const words = useWords();
-  const { colors } = useTheme();
   const backOn = askBackOn(usage.resetsAt, zone, words);
   const house = usage.house;
   return (
-    <ComposerBar testID="chat-out">
-      <View style={[styles.outCard, { backgroundColor: colors.card }]}>
-        <RowTitle>{house ? words('ask.usage.outHouse') : words('ask.usage.outMine')}</RowTitle>
-        <View style={[styles.track, { backgroundColor: colors.muted }]}>
-          <View style={[styles.fill, { width: '100%', backgroundColor: colors.hazard }]} />
-        </View>
-        <Meta>{house ? words('ask.usage.outHouseNote', { backOn, pass: usage.pass }) : words('ask.usage.outMineNote', { backOn })}</Meta>
-        <ButtonRow>
-          {house && !usage.pass ? <Button label={words('ask.usage.getPass')} icon={TicketIcon} href="/house/pass" testID="chat-out-pass" /> : null}
-          <Button label={words('ask.usage.seeUsage')} variant="outline" href={ASK_USAGE_HREF} testID="chat-out-usage" />
-        </ButtonRow>
-      </View>
-    </ComposerBar>
+    <ChatStop
+      title={house ? words('ask.usage.outHouse') : words('ask.usage.outMine')}
+      note={house ? words('ask.usage.outHouseNote', { backOn, pass: usage.pass }) : words('ask.usage.outMineNote', { backOn })}
+      limit
+      testID="chat-out"
+    >
+      {house && !usage.pass ? <Button label={words('ask.usage.getPass')} icon={TicketIcon} href="/house/pass" testID="chat-out-pass" /> : null}
+      <Button label={words('ask.usage.seeUsage')} variant="outline" href={ASK_USAGE_HREF} testID="chat-out-usage" />
+    </ChatStop>
   );
 }
 
@@ -148,20 +135,9 @@ export function UsageDetail({
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1 },
   page: { gap: SECTION_GAP },
   bar: { gap: SPACE.xs },
   barTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: SPACE.sm },
   track: { height: SPACE.sm, borderRadius: RADIUS, overflow: 'hidden' },
   fill: { height: '100%', borderRadius: RADIUS },
-  lowLine: { width: '100%', maxWidth: CONTENT_MAX, alignSelf: 'center', paddingHorizontal: GUTTER, paddingBottom: SPACE.sm },
-  low: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACE.sm,
-    padding: SPACE.md,
-    borderRadius: GROUP_RADIUS,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  outCard: { borderRadius: GROUP_RADIUS, padding: INSET, gap: SPACE.sm },
 });

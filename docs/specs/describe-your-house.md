@@ -43,9 +43,10 @@ on Today, Week and House (not while a parent is acting for a kid).
 
 ## Inputs and outputs
 
-- `POST /api/setup/draft` `{ houseId, messages, draft }` (`ChatRequest`):
-  the chat so far (at most 24 messages of up to 800 characters, ending with
-  the admin's) and the draft as it stands, or null. It answers
+- `POST /api/setup/draft` `{ houseId, summary, messages, draft }` (`ChatRequest`):
+  the chat so far (at most 40 messages of up to 800 characters, ending with
+  the admin's), Jonz's `summary` of anything before them (or none), and the
+  draft as it stands, or null. It answers
   `{ reply, ask, draft, source }` (`ChatResponse`): Jonz's words; `ask`,
   null or a question to tap an answer to (`choices`, up to 5 quick answers,
   or `day`); `draft`, the whole new draft or null when this turn left it as
@@ -71,6 +72,22 @@ on Today, Week and House (not while a parent is acting for a kid).
   it resets. Once it's all used the box gives way to a notice saying whose
   ran out and when it's back, with See usage, and Get the House Pass when
   the whole house is out without one. Starter lists are unlimited.
+- Long chats. Past `CHAT_SUM_AT` (30) messages since the last summary, the
+  turn first sums up all but the latest `CHAT_RECENT` (10) into one summary
+  with the one sent (`apps/api/lib/ai/sum-up.ts`, at most 700 tokens,
+  counted to the same turn), then Jonz reads the summary and the latest
+  messages. The answer brings it back as `summed` `{ text, count }`, and the
+  app sends it as `summary` with only the messages since. A kept chat holds
+  it on that reply (`SavedTurn`'s `summed`), and the chat shows a line where
+  it was summed up that opens to the summary. Each turn so costs about the
+  same however long the chat runs. If summing up fails, Jonz reads the
+  latest messages only. From `CHAT_LONG_AT` (170) turns a line over the box
+  says the chat is getting long; at `CHAT_FULL` (200) the box gives way to
+  "This chat is full" with Carry on in a new chat, which opens a new chat
+  with the summary and the messages since (`chatCarryOver`).
+- Every warning is one of two pieces (`components/chat/chat-notice.tsx`,
+  docs/style/states.md "Ask Jonz's warnings"): a line over the box, or a
+  card in its place.
 - Claude is `anthropic/claude-haiku-5.5` through Vercel's AI Gateway (OIDC
   on Vercel, no key), with tools and a structured last word
   (`apps/api/lib/ai/house-draft.ts` on the shared loop in
@@ -171,6 +188,7 @@ keyboard.
   tapping, open the draft, untick Johns and add the rest.
 - [x] Starter lists work with no gateway, and when Claude fails.
 - [x] A house shares a weekly pool, nobody over half; the chat warns when it's low, gives way to a notice once it's used, and the usage page shows who used it.
+- [x] A long chat sums up its start and carries on; at 200 it carries on in a new chat with the summary; every warning is a line over the box or a card in its place.
 - [x] Anyone in the house can ask Jonz about the house; only what they
   may change is offered, and everything waits on the card.
 - [x] Jonz can change, add and take off any John, or the whole list, one

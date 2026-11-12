@@ -105,8 +105,10 @@ export interface DraftContext {
   today: string;
   /** What the person may do, in plain words (PERMISSIONS). */
   allowed: string[];
-  /** The chat so far, oldest first, ending with what the person just said. */
+  /** The chat so far, oldest first, ending with what the person just said: its latest messages when it's long. */
   messages: readonly ChatMessage[];
+  /** Jonz's summary of the chat before `messages`, when it's long; null otherwise. */
+  earlier?: string | null;
   /** Whether the house has a John list already. */
   editing: boolean;
   /** The last two weeks and what can be undone, in words with refs, when the person can reset; null otherwise. */
@@ -158,7 +160,10 @@ function chatMessages(ctx: DraftContext): { role: "user" | "assistant"; content:
     `The house's week starts on ${DOW_LABEL[ctx.weekStarts]}.`,
     ctx.editing ? "The house has a John list: list_johns shows it." : "The house is new: its John list is empty, so you're helping set it up.",
     `${ctx.me.name} may: ${ctx.allowed.join("; ")}.`,
-  ].join("\n");
+    ctx.earlier ? `This chat started earlier; your notes on it so far:\n${ctx.earlier}` : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
   // The chat starts with what the person said; Jonz's greeting is the app's, not part of it.
   const first = ctx.messages.findIndex((m) => m.role === "user");
   const chat = ctx.messages.slice(first).map((m) => ({ role: m.role, content: m.text }));

@@ -10,6 +10,9 @@ import {
   starterDraft,
   tidyDraft,
   type HouseRules,
+  type SavedTurn,
+  CHAT_FULL,
+  CHAT_LONG_AT,
   type JohnDef,
   wordsFor,
 } from '@app/core';
@@ -106,7 +109,7 @@ it('greets with the starter lists, says where messages go, and waits for words b
 it('shows the draft in the chat with every John kept, opens it into its groups, and adds only the ones still ticked', async () => {
   await open();
   await say(HOUSE);
-  expect(chat).toHaveBeenCalledWith('h1', [{ role: 'user', text: HOUSE }], null, expect.any(Function));
+  expect(chat).toHaveBeenCalledWith('h1', [{ role: 'user', text: HOUSE }], null, expect.any(Function), null);
   expect(await screen.findByText('Here’s a first go.')).toBeTruthy();
   expect(screen.getByTestId('chat-user')).toHaveTextContent(HOUSE);
   expect(screen.getByTestId('draft-note')).toHaveTextContent('I guessed the bins go out Monday night.');
@@ -167,7 +170,7 @@ it('sends the chat so far and the draft with each change, and keeps the draft wh
       { role: 'assistant', text: 'Here’s a first go.' },
       { role: 'user', text: 'Is that all?' },
     ],
-    drafted, expect.any(Function),
+    drafted, expect.any(Function), null,
   );
   expect(await screen.findByText('That’s all of it.')).toBeTruthy();
   expect(screen.getAllByTestId('draft-card')).toHaveLength(1);
@@ -202,12 +205,12 @@ it('answers a question with a tap: a quick answer, or a day', async () => {
   await open();
   await say(HOUSE);
   await fireEvent.press(await screen.findByRole('button', { name: 'Windows' }));
-  expect(chat).toHaveBeenLastCalledWith('h1', expect.arrayContaining([{ role: 'user', text: 'Windows' }]), null, expect.any(Function));
+  expect(chat).toHaveBeenLastCalledWith('h1', expect.arrayContaining([{ role: 'user', text: 'Windows' }]), null, expect.any(Function), null);
 
   chat.mockResolvedValueOnce({ reply: 'Which night are the bins?', ask: { kind: 'day' }, draft: null, source: 'ai' });
   await say('Bins too');
   await fireEvent.press(await screen.findByRole('radio', { name: 'Tuesday' }));
-  expect(chat).toHaveBeenLastCalledWith('h1', expect.arrayContaining([{ role: 'user', text: 'Tuesday' }]), drafted, expect.any(Function));
+  expect(chat).toHaveBeenLastCalledWith('h1', expect.arrayContaining([{ role: 'user', text: 'Tuesday' }]), drafted, expect.any(Function), null);
 });
 
 it('starts from a list without asking anyone, and opens it to see every John', async () => {
@@ -261,7 +264,7 @@ describe('with a list already', () => {
     expect(screen.getByText(words('ask.draft.greetingList'))).toBeTruthy();
     expect(screen.queryByTestId('starter-family')).toBeNull();
     await say('Bathroom is more work, and no bins');
-    expect(chat).toHaveBeenCalledWith('h1', [{ role: 'user', text: 'Bathroom is more work, and no bins' }], base, expect.any(Function));
+    expect(chat).toHaveBeenCalledWith('h1', [{ role: 'user', text: 'Bathroom is more work, and no bins' }], base, expect.any(Function), null);
     expect(await screen.findByTestId('draft-change')).toHaveTextContent(/3 → 4 pts/);
     // Sorted by what each does, taking off first so it's never missed.
     const headings = [words('ask.draft.removingHeading'), words('ask.draft.changingHeading'), words('ask.draft.addingHeading')];
@@ -279,7 +282,7 @@ describe('with a list already', () => {
     // The chat carries on, from the list as it now is.
     chat.mockResolvedValue({ reply: 'Anything else?', ask: null, draft: null, source: 'ai' });
     await say('And the oven?');
-    expect(chat).toHaveBeenLastCalledWith('h1', expect.any(Array), null, expect.any(Function));
+    expect(chat).toHaveBeenLastCalledWith('h1', expect.any(Array), null, expect.any(Function), null);
   });
 
   it('changes who’s in a group the house has, as a change to tick', async () => {
@@ -325,7 +328,7 @@ describe('with a list already', () => {
     chat.mockResolvedValue({ reply: 'Ben has bins this week.', ask: null, draft: null, source: 'ai' });
     await openList();
     await fireEvent.press(screen.getByRole('button', { name: askExamples(words)[0] }));
-    expect(chat).toHaveBeenCalledWith('h1', [{ role: 'user', text: askExamples(words)[0] }], base, expect.any(Function));
+    expect(chat).toHaveBeenCalledWith('h1', [{ role: 'user', text: askExamples(words)[0] }], base, expect.any(Function), null);
     expect(await screen.findByText('Ben has bins this week.')).toBeTruthy();
     expect(screen.queryByTestId('chat-examples')).toBeNull();
   });
@@ -527,5 +530,86 @@ describe('kept chats', () => {
     expect(talked).toHaveBeenLastCalledWith(true);
     await fireEvent.changeText(screen.getByTestId('chat-input'), '  ');
     expect(talked).toHaveBeenLastCalledWith(false);
+  });
+});
+
+describe('long chats', () => {
+  const kept = keepChat as jest.Mock;
+  const johns: JohnDef[] = [{ ...NEW_JOHN, id: 'j1', name: 'Bins out', category: 'bins' } as JohnDef];
+  /** A kept chat of `n` turns, the person's and Jonz's in turn, the last Jonz's; `summed` on the reply at `at`. */
+  function turnsOf(n: number, summed?: { at: number; text: string; count: number }): SavedTurn[] {
+    return Array.from({ length: n }, (_, i): SavedTurn =>
+      i % 2 === 0
+        ? { role: 'user', text: `Asked ${i}` }
+        : { role: 'assistant', text: `Answered ${i}`, ask: null, hadCard: false, ...(summed?.at === i ? { summed: { text: summed.text, count: summed.count } } : {}) },
+    );
+  }
+  async function openWith(turns: SavedTurn[], onCarryOn?: (seed: SavedTurn[]) => void, seed?: SavedTurn[]) {
+    await render(
+      <SetupChat
+        houseId="h1"
+        rules={RULES}
+        johns={johns}
+        groups={[]}
+        people={people}
+        me={ME}
+        passOpen
+        saved={turns.length > 0 ? { id: 'chat-9', title: 'Asked 0', turns } : null}
+        seed={seed}
+        onCarryOn={onCarryOn}
+      />,
+      { wrapper: House },
+    );
+  }
+
+  it('sends the summary and only the messages since, and keeps a new summary on the reply that brought it', async () => {
+    await openWith(turnsOf(36, { at: 21, text: '- Bins on Tuesday.', count: 20 }));
+    chat.mockResolvedValueOnce({ reply: 'Done.', ask: null, draft: null, source: 'ai', summed: { text: '- Bins on Tuesday.\n- Ben away.', count: 8 } });
+    await say('And the recycling?');
+    const [, sent, , , summary] = chat.mock.calls[0];
+    expect(summary).toBe('- Bins on Tuesday.');
+    expect(sent[0]).toEqual({ role: 'user', text: 'Asked 20' });
+    expect(sent).toHaveLength(17);
+    await waitFor(() => expect(kept).toHaveBeenCalled());
+    expect(kept.mock.calls[0][2].at(-1)).toEqual({ role: 'assistant', text: 'Done.', ask: null, hadCard: false, summed: { text: '- Bins on Tuesday.\n- Ben away.', count: 28 } });
+  });
+
+  it('draws a line where the chat was summed up that opens to the summary, with everything above it still there', async () => {
+    await openWith(turnsOf(36, { at: 21, text: '- Bins on Tuesday.', count: 20 }));
+    expect(screen.getByText('Asked 0')).toBeTruthy();
+    expect(screen.getByTestId('chat-summed')).toHaveTextContent(words('ask.long.summed', { n: 20 }));
+    expect(screen.queryByTestId('chat-summary')).toBeNull();
+    await fireEvent.press(screen.getByTestId('chat-summed-toggle'));
+    expect(screen.getByTestId('chat-summary')).toHaveTextContent('Bins on Tuesday.');
+  });
+
+  it(`says the chat is getting long from ${CHAT_LONG_AT} turns, and carries on in a new one from the line`, async () => {
+    const carry = jest.fn();
+    await openWith(turnsOf(CHAT_LONG_AT), carry);
+    expect(screen.getByTestId('chat-long')).toHaveTextContent(words('ask.long.nearlyFull', { max: CHAT_FULL }));
+    expect(screen.getByTestId('chat-input')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('chat-long'));
+    expect(carry).toHaveBeenCalledTimes(1);
+  });
+
+  it(`gives the box over to Carry on in a new chat at ${CHAT_FULL}, which takes the summary and what was said since`, async () => {
+    const carry = jest.fn();
+    await openWith(turnsOf(CHAT_FULL, { at: CHAT_FULL - 21, text: '- Bins on Tuesday.', count: CHAT_FULL - 22 }), carry);
+    expect(screen.queryByTestId('chat-input')).toBeNull();
+    expect(screen.getByTestId('chat-full')).toHaveTextContent(words('ask.long.full'), { exact: false });
+    await fireEvent.press(screen.getByTestId('chat-carry-on'));
+    const [seed] = carry.mock.calls[0];
+    expect(seed).toHaveLength(1);
+    expect(seed[0]).toMatchObject({ role: 'assistant', text: '', hadCard: false, summed: { count: 0 } });
+    expect(seed[0].summed.text).toMatch(/^- Bins on Tuesday\.\n\nYou: Asked 178\n/);
+    expect(seed[0].summed.text).toMatch(/Jonz: Answered 199$/);
+  });
+
+  it('opens a carried-on chat with the line from the last chat, and sends its summary', async () => {
+    await openWith([], undefined, [{ role: 'assistant', text: '', ask: null, hadCard: false, summed: { text: '- Bins on Tuesday.', count: 0 } }]);
+    expect(screen.getByTestId('chat-summed')).toHaveTextContent(words('ask.long.carried'));
+    await say('And the recycling?');
+    expect(chat.mock.calls[0][1]).toEqual([{ role: 'user', text: 'And the recycling?' }]);
+    expect(chat.mock.calls[0][4]).toBe('- Bins on Tuesday.');
   });
 });
