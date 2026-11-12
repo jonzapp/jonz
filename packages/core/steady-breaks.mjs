@@ -1,6 +1,7 @@
 // The deliberate breaks: each one breaks one rule of the Steady weeks deal on
 // purpose, and the tests have to fail on every one (mutation testing). They
-// are the Lighter weeks simulator's 45 breaks, made to fit this code.
+// are the Lighter weeks simulator's 45 breaks, made to fit this code, and
+// more since.
 //
 //   npm run breaks -w @app/core            every break
 //   npm run breaks -w @app/core -- keep-day days-pile
@@ -44,7 +45,10 @@ const BREAKS = [
   ["together-all", "“Done by two” goes to everyone", "steady.ts", [["(j.crew === 0 ? n : Math.min(j.crew, n))", "(j.crew >= 0 ? n : Math.min(j.crew, n))"]]],
   ["classic-stuck", "Classic doesn’t move on to the next person", "steady.ts", [["      q.splice(q.indexOf(to), 1);\n      q.push(to);\n      give(to", "      give(to"]]],
   ["classic-away-back", "Classic sends someone away to the back of the line", "steady.ts", [["      q.splice(q.indexOf(to), 1);\n      q.push(to);\n      give(to", "      const passed = q.slice(0, q.indexOf(to));\n      q.splice(q.indexOf(to), 1);\n      q.push(to);\n      for (const id of passed) {\n        q.splice(q.indexOf(id), 1);\n        q.push(id);\n      }\n      give(to"]]],
-  ["classic-no-budget", "Classic ignores the budget", "steady.ts", [["const to = fitsFor(first) ? first : inLine.slice(1).find(fitsFor);", "const to = fitsFor(first) || first ? first : inLine.slice(1).find(fitsFor);"]]],
+  ["classic-no-budget", "Classic ignores the budget", "steady.ts", [["const to = fitsFor(first) || stretches(first) ? first : inLine.slice(1).find(fitsFor);", "const to = fitsFor(first) || first ? first : inLine.slice(1).find(fitsFor);"]]],
+  ["classic-no-stretch", "Classic passes a turn on as soon as it doesn’t fit", "steady.ts", [["const to = fitsFor(first) || stretches(first) ? first", "const to = fitsFor(first) ? first"]]],
+  ["pools-ignored", "A group’s Johns move its members’ share of the house’s Johns", "steady.ts", [["const lead = (j: SteadyJohn, pid: string) => (usePools && B ?", "const lead = (j: SteadyJohn, pid: string) => (usePools && !B ?"], ["r.standing = (poolsOf(byId.get(pid)!)[P] ?? 0) + (poolDealt.get(`${P}|${pid}`) ?? 0) - (poolShare.get(P)?.get(pid) ?? 0);", "r.standing = byId.get(pid)!.balance + dealt.get(pid)! - (shareEst?.get(pid) ?? 0);"]]],
+  ["cover-wrong-pool", "A cover is credited to the John’s owner in its group’s pool", "steady-run.ts", [["const who = i.missed ? null : (i.coveredBy ?? i.place.userId);", "const who = i.missed ? null : i.place.userId;"]]],
   ["cap-first-john", "Today’s cap can block someone’s first John (no limit)", "steady.ts", [["r.roomy = own.get(pid)! === 0 || dealt", "r.roomy = dealt"]]],
   ["no-week-off", "No week off for someone well ahead", "steady.ts", [['const weekOff = (id: string) => mode === "smart" && B > 0 &&', "const weekOff = (id: string) => B < 0 &&"]]],
   ["smart-no-budget", "Smart ignores the budget for the rest", "steady.ts", [["fits: owed(pid) || j.points <= room + EPS,", "fits: room === room,"]]],
@@ -55,7 +59,7 @@ const BREAKS = [
   ["one-each-smallest", "One each takes the smallest, not the biggest", "steady.ts", [["js.sort((x, y) => size(y, id) - size(x, id) ||", "js.sort((x, y) => size(x, id) - size(y, id) ||"]]],
   ["one-each-ahead-first", "Whoever is furthest ahead chooses first", "steady.ts", [[".sort((a, b) => rel.get(a)! - rel.get(b)! ||", ".sort((a, b) => rel.get(b)! - rel.get(a)! ||"]]],
   ["no-only-you", "A group’s John nobody else could do isn’t kept for you", "steady.ts", [["const only = pool.filter(", "const only = pool.slice(0, 0).filter("]]],
-  ["groups-ignored", "A group’s John goes to anyone", "steady-run.ts", [["const sharersOf = (j: RunPreparedJohn) => ids.filter((id) => !j.group || j.group.includes(id));", "const sharersOf = (j: RunPreparedJohn) => ids.filter((id) => !j.group || id === id);"]]],
+  ["groups-ignored", "A group’s John goes to anyone", "steady-run.ts", [["const sharersOf = (j: RunPreparedJohn) => ids.filter((id) => inGroup(j, id, w));", "const sharersOf = (j: RunPreparedJohn) => ids.filter((id) => inGroup(j, id, w) || id === id);"]]],
   ["least-overdue", "Least overdue Johns go first", "steady.ts", [["(a, b) => rk.get(b)! - rk.get(a)! ||", "(a, b) => rk.get(a)! - rk.get(b)! ||"]]],
   ["miss-counts", "A miss still counts as done", "steady-run.ts", [["      done[pid] -= it.pts;\n      missedTotal += it.pts;\n      back[it.name] = pid;", "      back[it.name] = pid;"]]],
   ["cover-no-credit", "A cover doesn’t move the points", "steady-run.ts", [["      done[pid] -= it.pts;\n      done[by] += it.pts;\n", ""]]],
@@ -70,7 +74,7 @@ const BREAKS = [
   ["random-ties", "Ties broken at random", "steady.ts", [["const tie = (j: SteadyJohn, a: string, b: string) => stableHash(`${seed}:${j.johnId}:${a}`) - stableHash(`${seed}:${j.johnId}:${b}`);", "const tie = (j: SteadyJohn, a: string, b: string) => (j && a && b ? Math.random() - 0.5 : 0);"]]],
   ["prefs-ignored", "“Rather do” and “rather not” ignored", "steady.ts", [
     ["const pref = byId.get(pid)!.rather[j.johnId] ?? 0;", "const pref = 0;"],
-    ["const size = (j: SteadyJohn, id: string) => j.points + (byId.get(id)!.rather[j.johnId] ?? 0);", "const size = (j: SteadyJohn, id: string) => (id ? j.points : 0);"],
+    ["const size = (j: SteadyJohn, id: string) => j.points + (byId.get(id)!.rather[j.johnId] ?? 0) - lead(j, id);", "const size = (j: SteadyJohn, id: string) => (id ? j.points : 0) - lead(j, id);"],
   ]],
   ["every-n-off", "“Every 2 weeks” lands a week late", "steady-run.ts", [["return range(Math.max(from, s), to).filter((w) => landsInWeek(repeat, startsOf(w), weekStarts));", "return range(Math.max(from, s), to).filter((w) => landsInWeek(repeat, startsOf(w - 1), weekStarts));"]]],
   ["last-of-month", "“The last Sunday” can pick the one before", "repeat.ts", [["last: d + 7 > days", "last: d + 14 > days"]]],

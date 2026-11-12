@@ -5,7 +5,7 @@
  * with a bug.
  */
 import type { RunItem, RunPrepared, RunPreparedJohn, RunWeek } from "./steady-run";
-import { livesThere } from "./steady-run";
+import { inGroup, livesThere } from "./steady-run";
 
 export interface Check {
   id: string;
@@ -34,7 +34,7 @@ const range = (a: number, b: number) => Array.from({ length: Math.max(0, b - a +
 
 export const CHECKS: Check[] = [
   { id: "home", short: "Right people", label: "Johns only go to people who live there, are home that week, and share the John" },
-  { id: "budget", short: "Budget", label: "Leaving out Johns that have to go out (keep their day, done together, coming back), nobody gets more than their target, apart from their first John (Smart may go half the budget over, once a John has waited)", budgeted: true },
+  { id: "budget", short: "Budget", label: "Leaving out Johns that have to go out (keep their day, done together, coming back), nobody gets more than their target, apart from their first John (half the budget over is allowed: in Smart once a John has waited, in Classic for whoever's turn it is)", budgeted: true },
   { id: "oneday", short: "One a day", label: "Nobody gets two Johns on one day while they have a free day, unless both keep that day" },
   { id: "day", short: "Keeps its day", label: "A John that keeps its day (or is done together) is on its own day, and on call is all week" },
   { id: "suits", short: "Days that suit", label: "A John goes on a day that suits the person whenever one of those days is free" },
@@ -75,7 +75,7 @@ export function check(res: { prepared: RunPrepared; weeks: RunWeek[] }): CheckRe
     const { w, mode, B } = wk;
     const homeIds = wk.present.filter((id) => !wk.away.includes(id));
     const homeSet = new Set(homeIds);
-    const sharersHome = (j: RunPreparedJohn) => homeIds.filter((id) => !j.group || j.group.includes(id));
+    const sharersHome = (j: RunPreparedJohn) => homeIds.filter((id) => inGroup(j, id, w));
     const holders: Record<string, string[]> = {};
 
     for (const [pid, g] of Object.entries(wk.got)) {
@@ -84,14 +84,15 @@ export function check(res: { prepared: RunPrepared; weeks: RunWeek[] }): CheckRe
         const j = J[it.name];
         (holders[it.name] = holders[it.name] || []).push(pid);
         // home
-        if (!homeSet.has(pid) || (j.group && !j.group.includes(pid)) || !livesThere(S.byId[pid], w)) bad("home", w, `${it.name} went to ${pid}`);
+        if (!homeSet.has(pid) || !inGroup(j, pid, w) || !livesThere(S.byId[pid], w)) bad("home", w, `${it.name} went to ${pid}`);
       }
       // budget
       if (B && applies(CHECKS[1], mode, B)) {
         const must = g.filter((it) => it.pinned || it.back || it.together);
         const rest = g.filter((it) => !(it.pinned || it.back || it.together) && !it.swapped);
         const total = g.filter((it) => !it.swapped).reduce((s, it) => s + it.pts, 0);
-        const stretch = mode === "smart" ? B / 2 : 0;
+        // Smart may go half the budget over once a John has waited; Classic for whoever's turn it is.
+        const stretch = B / 2;
         const mustPts = must.reduce((s, it) => s + it.pts, 0);
         const allowed = Math.max(tgt + stretch, mustPts + (rest[0] ? rest[0].pts : 0), mustPts);
         if (rest.length >= 2 && total > allowed + 1e-9) bad("budget", w, `${pid} had ${total} against ${allowed}`);
@@ -124,7 +125,7 @@ export function check(res: { prepared: RunPrepared; weeks: RunWeek[] }): CheckRe
         for (let x = prev + 1; x <= w; x++) if (j.due.has(x)) { dueW = x; break; }
         // Allowed as someone"s only John when nothing else they share was left waiting.
         const ownJohns = g.filter((x) => !x.pinned && !x.back);
-        const leftOver = wk.waiting.filter((n) => { const k = J[n]; return (!k.group || k.group.includes(pid)) && lastWho[n] !== pid; });
+        const leftOver = wk.waiting.filter((n) => { const k = J[n]; return inGroup(k, pid, w) && lastWho[n] !== pid; });
         if (ownJohns.length === 1 && !leftOver.length) continue;
         // Allowed for someone more than half the budget behind going in: catching up comes first.
         const tp = wk.people.find((p) => p.id === pid);
@@ -250,7 +251,7 @@ export function check(res: { prepared: RunPrepared; weeks: RunWeek[] }): CheckRe
   const totalSet = waitable.reduce((s, j) => s + set[j.name], 0);
   const totalCame = waitable.reduce((s, j) => s + Math.min(came[j.name] || 0, set[j.name]), 0);
   const overall = totalSet ? totalCame / totalSet : 1;
-  const hands = (j: RunPreparedJohn) => { let a = 0, n = 0; for (const wk of weeks) if (j.due.has(wk.w) && wk.present.length) { a += wk.present.filter((id) => !j.group || j.group.includes(id)).length / wk.present.length; n++; } return n ? a / n : 1; };
+  const hands = (j: RunPreparedJohn) => { let a = 0, n = 0; for (const wk of weeks) if (j.due.has(wk.w) && wk.present.length) { a += wk.present.filter((id) => inGroup(j, id, wk.w)).length / wk.present.length; n++; } return n ? a / n : 1; };
   // Compared with a typical John: the lower of the median and the overall share of turns, so neither a few small
   // Johns that fit in leftover room nor a few that rarely fit move the bar.
   const shareOf = (j: RunPreparedJohn) => Math.min(came[j.name] || 0, set[j.name]) / set[j.name];

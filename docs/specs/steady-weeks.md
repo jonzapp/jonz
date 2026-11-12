@@ -70,8 +70,19 @@ every rule. In short:
   choose first, and never hands the same John twice running unless they'd
   rather do it, they're well behind, or it has waited two weeks.
 - **Classic** plans each John's order of turns so each week's points split
-  evenly; away or full, the next in line with room does it and they stay
-  first. Someone new joins the back of every order they share.
+  evenly. Whoever's turn it is may go up to half the budget over (Glyn,
+  2026-11-12: the budget is a guide, not a hard limit); away or fuller than
+  that, the next in line with room does it and they stay first. Someone new
+  joins the back of every order they share.
+- **Pools.** A group's Johns are balanced within the group, and the whole
+  house's Johns across everyone. Each member's balance is split by pool (the
+  whole house, and each group they're in now); Smart picks who gets a John
+  by how far behind they are in that John's pool, so a group's Johns never
+  cut anyone's share of the rest. The budget still caps the whole load.
+  A cover by someone outside the group counts toward their whole-house
+  balance; someone who leaves a group takes their balance there into their
+  whole-house balance; someone who joins starts at 0 in the group's pool.
+  Tests: `steady-pools.test.ts` (Glyn's main-floor bathroom example).
 - Research behind it (implementation intentions, fresh starts, choice, small
   wins) is in the Lighter weeks design, `johns-load/lighter-weeks.html`.
 

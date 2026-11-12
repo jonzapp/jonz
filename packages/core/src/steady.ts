@@ -34,6 +34,10 @@
  *   - A target each: the budget, plus up to half again for someone behind
  *     the house's average balance, or minus up to half for someone ahead.
  *     More than a week's budget ahead is a week off.
+ *   - Pools. A group's Johns are balanced within the group, and the whole
+ *     house's Johns across everyone: who gets a John goes by how far behind
+ *     they are in its own pool, so a group's Johns never move anyone's share
+ *     of the rest (members' `pools`). The target is still the whole load.
  *   - One each first. The most overdue Johns go out, one for each person
  *     still owed one; whoever is furthest behind chooses first and takes the
  *     biggest ("rather do" counts a point bigger, "rather not" a point
@@ -53,8 +57,9 @@
  *   - Each John has its own order of turns, planned when the house picks
  *     Classic (or the John is added) so each week's points split evenly.
  *     Someone new joins the back of every order they share.
- *   - The John goes to the next person in its order who is home. Away or
- *     full, the next person in line with room does it, and they stay first.
+ *   - The John goes to the next person in its order who is home, even if it
+ *     takes them up to half the budget over. Away, or fuller than that, the
+ *     next person in line with room does it, and they stay first.
  */
 import { stableHash, weekShares } from "./deal";
 import type { DealMode } from "./domain";
@@ -85,6 +90,8 @@ export interface SteadyJohn {
   onCall: boolean;
   /** Everyone living there who shares it: its group, or the whole house. */
   sharers: readonly string[];
+  /** Whose fairness it counts in: its group's id, or "" (the default) for the whole house. */
+  pool?: string;
   /** Those of them who can do it this week: home on its day if it keeps it, otherwise home on a day still open. */
   home: readonly string[];
   /** It lands this week. */
@@ -105,6 +112,12 @@ export interface SteadyMember {
   userId: string;
   /** Work done minus share over every week so far. */
   balance: number;
+  /**
+   * The same balance split by pool: "" the whole house, and a key for each
+   * group they're in now (their work done minus share on that group's Johns).
+   * They add up to `balance`. Left out, everything is the whole house's.
+   */
+  pools?: Readonly<Record<string, number>>;
   /** The days of this week they can do a John on: home, and still to come (ISO 1–7). Empty when away all week. */
   homeDays: readonly number[];
   /** Days that suit them (ISO 1–7). Empty is any day. */
@@ -314,6 +327,26 @@ export function steadyWeek(input: SteadyInput): SteadyResult {
   const count = new Map<string, number>();
   const own = new Map<string, number>();
   const pinnedDays = new Map<string, Set<number>>();
+  // Each pool is balanced on its own: a group's Johns among the group, the rest among everyone. Someone's standing
+  // in a pool is their balance there against the average of everyone in it, and it decides who gets that pool's
+  // Johns; behind or ahead overall still sets how much they're handed in all (their target, a week off).
+  const usePools = members.some((m) => m.pools);
+  const poolsOf = (m: SteadyMember): Readonly<Record<string, number>> => m.pools ?? { "": m.balance };
+  const poolAvg = new Map<string, number>();
+  {
+    const sum = new Map<string, [number, number]>();
+    for (const m of members)
+      for (const [k, v] of Object.entries(poolsOf(m))) {
+        const [a, n] = sum.get(k) ?? [0, 0];
+        sum.set(k, [a + v, n + 1]);
+      }
+    for (const [k, [a, n]] of sum) poolAvg.set(k, a / n);
+  }
+  const poolRel = (pid: string, pool: string) => {
+    const v = poolsOf(byId.get(pid)!)[pool];
+    return v === undefined ? 0 : v - poolAvg.get(pool)!;
+  };
+  const poolKey = (j: SteadyJohn) => (usePools ? (j.pool ?? "") : "");
   const avg = members.length ? members.reduce((s, m) => s + m.balance, 0) / members.length : 0;
   for (const m of members) {
     const r = m.balance - avg;
@@ -339,17 +372,25 @@ export function steadyWeek(input: SteadyInput): SteadyResult {
   const placesOf = (j: SteadyJohn, n: number) => (togetherOf(j) ? (j.crew === 0 ? n : Math.min(j.crew, n)) : 1);
 
   // With no limit, Smart weighs each person against their share of everything due (deal.ts).
+  // Each pool's share is weighed on its own, so a group's Johns never move anyone's share of the rest.
   let shareEst: Map<string, number> | null = null;
+  const poolShare = new Map<string, Map<string, number>>();
+  const poolDealt = new Map<string, number>();
   if (mode === "smart" && !B) {
     const items = due.flatMap((j) =>
-      Array.from({ length: placesOf(j, homeOf(j).length) }, () => ({ points: j.points, sharers: j.sharers, home: homeOf(j) })),
+      Array.from({ length: placesOf(j, homeOf(j).length) }, () => ({ points: j.points, sharers: j.sharers, home: homeOf(j), pool: poolKey(j) })),
     );
-    shareEst = weekShares(
-      items.map((x) => ({ johnId: "", lastUserId: null, ...x })),
-      ids,
-      makeup,
-    );
+    const sharesOf = (xs: typeof items) => weekShares(xs.map((x) => ({ johnId: "", lastUserId: null, ...x })), ids, makeup);
+    shareEst = sharesOf(items);
+    for (const P of new Set(items.map((x) => x.pool))) poolShare.set(P, sharesOf(items.filter((x) => x.pool === P)));
   }
+
+  /**
+   * With a budget, how much less room someone has for a John in its own pool than overall: their target is
+   * nudged by how far behind or ahead they are in that pool, not overall. 0 with one pool.
+   */
+  const nudgeFor = (r: number) => Math.max(-B / 2, Math.min(B / 2, -r));
+  const lead = (j: SteadyJohn, pid: string) => (usePools && B ? nudgeFor(rel.get(pid)!) - nudgeFor(poolRel(pid, poolKey(j))) : 0);
 
   const weekOff = (id: string) => mode === "smart" && B > 0 && rel.get(id)! > B + EPS;
   const owed = (id: string) => own.get(id)! === 0 && !weekOff(id);
@@ -366,10 +407,12 @@ export function steadyWeek(input: SteadyInput): SteadyResult {
     const pref = byId.get(pid)!.rather[j.johnId] ?? 0;
     const r: Row = { pid, room, fits: owed(pid) || j.points <= room + EPS, lastTime, pref, score: 0, standing: 0, roomy: true };
     if (B) {
-      r.score = -room - pref + (j.keepDay && pinnedDays.get(pid)!.has(j.day) ? 3 : 0);
-      r.standing = rel.get(pid)!;
+      const ahead = lead(j, pid);
+      r.score = -room - pref + ahead + (j.keepDay && pinnedDays.get(pid)!.has(j.day) ? 3 : 0);
+      r.standing = usePools ? poolRel(pid, poolKey(j)) : rel.get(pid)!;
     } else {
-      r.standing = byId.get(pid)!.balance + dealt.get(pid)! - (shareEst?.get(pid) ?? 0);
+      const P = poolKey(j);
+      r.standing = (poolsOf(byId.get(pid)!)[P] ?? 0) + (poolDealt.get(`${P}|${pid}`) ?? 0) - (poolShare.get(P)?.get(pid) ?? 0);
       r.score = r.standing + (lastTime ? REPEAT_COST : 0) - pref;
       // Today's cap never stops someone's first John: with it, someone with a small share could be passed over every week.
       r.roomy = own.get(pid)! === 0 || dealt.get(pid)! + j.points <= (shareEst?.get(pid) ?? 0) * CATCH_UP + EPS;
@@ -398,6 +441,7 @@ export function steadyWeek(input: SteadyInput): SteadyResult {
 
   const give = (pid: string, j: SteadyJohn, why: Omit<SteadyWhy, "to" | "mode" | "budget" | "away">, back = false) => {
     dealt.set(pid, dealt.get(pid)! + j.points);
+    poolDealt.set(`${poolKey(j)}|${pid}`, (poolDealt.get(`${poolKey(j)}|${pid}`) ?? 0) + j.points);
     count.set(pid, count.get(pid)! + 1);
     if (pinnedOf(j)) pinnedDays.get(pid)!.add(j.day);
     else own.set(pid, own.get(pid)! + 1);
@@ -489,7 +533,8 @@ export function steadyWeek(input: SteadyInput): SteadyResult {
       rel.get(id)! > -B / 2 + EPS &&
       j.waited < 2;
     const can = (j: SteadyJohn, id: string) => homeOf(j).includes(id) && !lastBy(j, id);
-    const size = (j: SteadyJohn, id: string) => j.points + (byId.get(id)!.rather[j.johnId] ?? 0);
+    // A John in a pool they're behind in counts as bigger for them, one they're ahead in as smaller.
+    const size = (j: SteadyJohn, id: string) => j.points + (byId.get(id)!.rather[j.johnId] ?? 0) - lead(j, id);
     const biggest = (js: SteadyJohn[], id: string) => js.sort((x, y) => size(y, id) - size(x, id) || rk.get(y)! - rk.get(x)!)[0];
     const match = new Map<string, SteadyJohn>();
     const held = new Map<SteadyJohn, string>();
@@ -579,7 +624,10 @@ export function steadyWeek(input: SteadyInput): SteadyResult {
       const inLine = q.filter((id) => cands.includes(id));
       const first = inLine[0];
       const fitsFor = (id: string) => own.get(id)! === 0 || j.points <= target.get(id)! - dealt.get(id)! + EPS;
-      const to = fitsFor(first) ? first : inLine.slice(1).find(fitsFor);
+      // Whoever's turn it is may go half the budget over before it passes on, as Smart lets a John that waited:
+      // otherwise someone with a group's John on top would pass their turns on week after week, and never get them back.
+      const stretches = (id: string) => j.points <= target.get(id)! - dealt.get(id)! + B / 2 + EPS;
+      const to = fitsFor(first) || stretches(first) ? first : inLine.slice(1).find(fitsFor);
       if (!to) {
         wait(j);
         continue;

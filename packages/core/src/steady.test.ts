@@ -415,8 +415,16 @@ describe("steadyWeek", () => {
     expect(r.turns).toEqual({ k: ["a", "c", "b"] });
   });
 
-  test("Classic: full means the next in line does it, and whoever's turn it was stays first", () => {
+  test("Classic: whoever's turn it is may go half the budget over", () => {
     const johns = [john("x", 2, 1), john("k", 1, 3)];
+    const r = steadyWeek(week({ mode: "classic", budget: 2, johns, turns: { x: ["a", "b"], k: ["a", "b"] } }));
+    expect(who(r, "x")).toEqual(["a"]);
+    expect(who(r, "k")).toEqual(["a"]);
+    expect(r.places.find((p) => p.johnId === "k")!.why.by).toBe("turn");
+  });
+
+  test("Classic: fuller than that means the next in line does it, and whoever's turn it was stays first", () => {
+    const johns = [john("x", 3, 1), john("k", 2, 3)];
     const r = steadyWeek(week({ mode: "classic", budget: 2, johns, turns: { x: ["a", "b"], k: ["a", "b"] } }));
     expect(who(r, "x")).toEqual(["a"]);
     expect(who(r, "k")).toEqual(["b"]);
