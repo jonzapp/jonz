@@ -1,14 +1,18 @@
-import { firstName, leaveBar, leaveCost, roleCopy } from '@app/core';
+import { DELETION_DAYS, firstName, leaveBar, leaveCost, roleCopy } from '@app/core';
 import { useQueryClient } from '@tanstack/react-query';
-import { DoorOpenIcon, RefreshCwIcon } from 'lucide-react-native';
+import { DoorOpenIcon, RefreshCwIcon, Trash2Icon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { handOver, removeMember } from '@/api/settings';
 import { Avatar } from '@/components/avatar';
+import { DeleteAccountForm } from '@/components/account/delete-account';
 import { ConfirmSheet } from '@/components/confirm-sheet';
+import { DangerRow, DangerZone } from '@/components/danger-zone';
+import { Field } from '@/components/field';
 import { Group } from '@/components/group';
-import { Row } from '@/components/row';
+import { namesHouse } from '@/components/house/house-danger-zone';
+import { Sheet } from '@/components/sheet';
 import { ChoiceRow } from '@/components/setup/choice-row';
 import { Meta } from '@/components/text';
 import { TextButton } from '@/components/text-button';
@@ -17,12 +21,15 @@ import { houseKey } from '@/hooks/keys';
 import type { HouseView } from '@/hooks/use-house';
 import { useMembership } from '@/hooks/use-membership';
 import { useStake } from '@/hooks/use-stake';
-import { INSET, SPACE, useTheme } from '@/theme';
+import { INSET, SPACE } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
 /**
- * Leaving the house, alone at the foot of House in hazard words, and the
- * footer under it. Its confirm says what leaving costs in money, from the
+ * Your Danger zone, at the foot of You for everyone (docs/specs/house-reset.md
+ * has the zone itself): Leave the house and Delete my account, each a
+ * DangerRow whose hazard button opens its own sheet, and the footer under
+ * it. Delete my account's sheet is DeleteAccountForm, which waits for the
+ * word to be typed; Leave's waits for the house's name, as the resets do. Its confirm says what leaving costs in money, from the
  * Stake once it's read (your share so far of the month's forfeits, and any
  * settling up still open with you), then leaves; the house's screens close
  * behind you as the guard moves you on. Until the Stake is read it says so,
@@ -34,7 +41,6 @@ import { useWords } from '@/hooks/use-words';
  */
 export function LeaveSection({ houseId, userId, view }: { houseId: string; userId: string; view: HouseView }) {
   const words = useWords();
-  const { colors } = useTheme();
   const client = useQueryClient();
   const { refresh } = useMembership();
   const stake = useStake(houseId, view.snapshot);
@@ -42,6 +48,8 @@ export function LeaveSection({ houseId, userId, view }: { houseId: string; userI
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const [heir, setHeir] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [typed, setTyped] = useState('');
   const { house, members, rules } = view.snapshot;
 
   // A read that failed, and isn't being tried again right now.
@@ -83,19 +91,29 @@ export function LeaveSection({ houseId, userId, view }: { houseId: string; userI
 
   return (
     <View testID="leave-section" style={styles.stack}>
-      <Group>
-        <Row
-          leading={<DoorOpenIcon size={24} color={colors.hazard} aria-hidden />}
+      <DangerZone testID="you-danger-zone">
+        <DangerRow
           title={words('house.lower.leave', { house: house.name })}
-          tone="hazard"
+          meta={words('house.lower.leaveMeta')}
+          action={words('house.lower.leaveButton')}
+          icon={DoorOpenIcon}
           onPress={() => {
             setProblem(null);
+            setTyped('');
             setAsking(true);
             if (stake.isError) void stake.refetch();
           }}
           testID="leave"
         />
-      </Group>
+        <DangerRow
+          title={words('people.delete.row')}
+          meta={words('people.delete.meta', { days: DELETION_DAYS })}
+          action={words('people.delete.button')}
+          icon={Trash2Icon}
+          onPress={() => setDeleting(true)}
+          testID="to-delete-account"
+        />
+      </DangerZone>
       <View style={styles.footer}>
         <Meta>{words('house.lower.noMoney')}</Meta>
         <TextLink href="/privacy" label={words('house.lower.privacy')} small testID="to-privacy" />
@@ -107,6 +125,7 @@ export function LeaveSection({ houseId, userId, view }: { houseId: string; userI
         body={body}
         confirmLabel={bar === 'last-admin' ? (heirName ? roles.handOver(heirName) : null) : words('house.lower.leaveConfirm')}
         icon={DoorOpenIcon}
+        ready={namesHouse(typed, house.name)}
         busy={busy}
         busyLabel={bar === 'last-admin' ? words('common.busy.handingOver') : words('common.busy.leaving')}
         problem={problem}
@@ -131,6 +150,15 @@ export function LeaveSection({ houseId, userId, view }: { houseId: string; userI
               ))}
           </Group>
         ) : null}
+        <Field
+          label={words('house.lower.leaveTypeName')}
+          value={typed}
+          onChangeText={setTyped}
+          placeholder={house.name}
+          autoCapitalize="none"
+          autoCorrect={false}
+          testID="leave-name"
+        />
         {unread ? (
           <TextButton
             label={words('common.shell.retry')}
@@ -141,6 +169,9 @@ export function LeaveSection({ houseId, userId, view }: { houseId: string; userI
           />
         ) : null}
       </ConfirmSheet>
+      <Sheet visible={deleting} title={words('people.delete.title')} onClose={() => setDeleting(false)} testID="delete-sheet">
+        <DeleteAccountForm onKeep={() => setDeleting(false)} />
+      </Sheet>
     </View>
   );
 }

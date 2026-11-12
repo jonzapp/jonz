@@ -13,7 +13,7 @@ kind of John. Calm by default, loud only for the moments that count.
   pavement would also fail contrast.
 - **Hazard** is only for late, overdue, missed, disputed, and money lost or
   owed, and it always comes with an icon and a word. Destructive rows
-  (Leave, Remove) use it as text. (Focus, #17) *Backed by* WCAG 1.4.1:
+  (Remove) use it as text; moves in a Danger zone wear it on their button. (Focus, #17) *Backed by* WCAG 1.4.1:
   colour is never the only way meaning is shown.
 - **Green** only for the done tick and a good headline figure. (Focus, #17)
 - **Colour stays neutral.** No colour per person, anywhere (the away

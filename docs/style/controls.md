@@ -70,8 +70,11 @@
   `DangerRow`: what it does on the left, a `hazard` button with an icon on
   the right, under the words at full width when the row is too narrow. The
   button only opens the move's own sheet, which says what goes and what
-  stays; a move as big as resetting or deleting a house also asks for the
-  house's name typed.
+  stays; resetting, deleting or leaving a house also asks for the house's
+  name typed, and deleting your account for DELETE.
+- Your own moves have their own Danger zone at the foot of You, for
+  everyone: Leave the house and Delete my account (moving out, which can
+  change, stays above it). (You Danger zone B, 11 Nov)
 - On an Ask Jonz card (a house's or the owner's), `MoveList` puts the moves
   that can't be undone after the others, in their own Danger zone, and the
   card's button turns `hazard` with a warning icon while one is ticked. A

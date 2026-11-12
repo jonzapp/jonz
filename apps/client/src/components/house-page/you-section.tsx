@@ -1,5 +1,5 @@
 import { codeProblem, dateRange, emailAuthProblem, LANGUAGE_NAMES, LOOKS, PASSWORD_MIN, passwordProblem, prefsLine } from '@app/core';
-import { BellIcon, KeyRoundIcon, LanguagesIcon, LogOutIcon, SlidersHorizontalIcon, SunMoonIcon, Trash2Icon, TruckIcon } from 'lucide-react-native';
+import { BellIcon, KeyRoundIcon, LanguagesIcon, LogOutIcon, SlidersHorizontalIcon, SunMoonIcon, TruckIcon } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 
@@ -8,7 +8,6 @@ import { emailSignIn, setPassword } from '@/api/email-auth';
 import { LANGUAGES_OFFERED } from '@/api/language';
 import { renameMe } from '@/api/profile';
 import { reminderSupport, remindersOn } from '@/api/push';
-import { DeleteAccountForm } from '@/components/account/delete-account';
 import { Alert } from '@/components/alert';
 import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/button';
@@ -29,7 +28,7 @@ import { Meta } from '@/components/text';
 import { useLook } from '@/hooks/look';
 import type { HouseView } from '@/hooks/use-house';
 import { useMove } from '@/hooks/use-move';
-import { INSET, SECTION_GAP, SPACE, useTheme } from '@/theme';
+import { SECTION_GAP, SPACE } from '@/theme';
 import { useLanguage, useWords } from '@/hooks/use-words';
 
 /**
@@ -39,8 +38,9 @@ import { useLanguage, useWords } from '@/hooks/use-words';
  * instead), the look in the row itself, your language from a menu in its
  * row (where there's more than one to pick), a password to sign in with by
  * email (a sheet), and signing out. Reminders and the look are this
- * device's own. Then Leave: your moving-out date (its own page) and Delete
- * my account, in hazard (a sheet), with a line saying it's on the web too.
+ * device's own. Then Leave: your moving-out date (its own page). Leaving
+ * the house and deleting your account are in the Danger zone under it
+ * (LeaveSection).
  * The You page shows it whole on a phone; on a laptop `account` (You) and
  * `rest` (help and Leave) sit side by side.
  */
@@ -59,8 +59,7 @@ export function YouSection({
   const [look, setLook] = useLook();
   const language = useLanguage();
   const toasts = useToastIfAny();
-  const { colors } = useTheme();
-  const [sheet, setSheet] = useState<'name' | 'reminders' | 'password' | 'delete' | null>(null);
+  const [sheet, setSheet] = useState<'name' | 'reminders' | 'password' | null>(null);
   const account = useEmailSignIn(sheet);
   const email = account?.email ?? null;
   const hasPassword = account?.hasPassword ?? false;
@@ -183,15 +182,7 @@ export function YouSection({
               chevron
               testID="to-moving"
             />
-            <Row
-              leading={<Trash2Icon size={24} color={colors.hazard} aria-hidden />}
-              title={words('people.delete.row')}
-              tone="hazard"
-              onPress={() => setSheet('delete')}
-              testID="to-delete-account"
-            />
           </Section>
-          <Meta style={styles.elsewhere}>{words('people.delete.elsewhere')}</Meta>
         </View>
       )}
 
@@ -222,9 +213,6 @@ export function YouSection({
           onClose={() => setSheet(null)}
         />
       ) : null}
-      <Sheet visible={sheet === 'delete'} title={words('people.delete.title')} onClose={() => setSheet(null)} testID="delete-sheet">
-        <DeleteAccountForm onKeep={() => setSheet(null)} />
-      </Sheet>
     </View>
   );
 }
@@ -423,5 +411,4 @@ function PasswordSheet({
 const styles = StyleSheet.create({
   sections: { gap: SECTION_GAP },
   leave: { gap: SPACE.sm },
-  elsewhere: { paddingLeft: INSET },
 });
