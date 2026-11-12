@@ -113,6 +113,8 @@ export interface DraftContext {
   editing: boolean;
   /** The last two weeks and what can be undone, in words with refs, when the person can reset; null otherwise. */
   now: string | null;
+  /** The most tokens this turn may use, what's left of the house's, person's and account's Ask Jonz; Claude wraps up before passing it. */
+  budget?: number;
 }
 
 export type DraftAnswer = AgentAnswer;
@@ -306,5 +308,5 @@ export const canDraft = canAsk;
 
 /** One turn of a housemate's Ask Jonz: the house's prompt and tools in the shared loop. */
 export function askClaude(ctx: DraftContext, tools: JonzTools, model: LanguageModel = DRAFT_MODEL): Promise<DraftAnswer> {
-  return runAgent({ system: SYSTEM, messages: chatMessages(ctx), tools: jonzToolSet(tools), model });
+  return runAgent({ system: SYSTEM, messages: chatMessages(ctx), tools: jonzToolSet(tools), model, budget: ctx.budget });
 }

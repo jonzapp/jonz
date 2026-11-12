@@ -80,6 +80,7 @@
   "errors.draft_limit": "Ça suffit pour aujourd’hui. Ajoute le brouillon tel quel et modifie-le dans la liste, ou réessaie demain.",
   "errors.ask_pool_used": "Ta maison a utilisé Demande à Jonz pour cette semaine. Ça revient quand la semaine de la maison recommence.",
   "errors.ask_share_used": "Tu as utilisé ta moitié de Demande à Jonz cette semaine. Ça revient quand la semaine de la maison recommence.",
+  "errors.ask_account_used": "Tu as utilisé Demande à Jonz pour les 7 derniers jours, dans toutes tes maisons. Un peu revient chaque jour, quand les plus anciennes questions s’effacent.",
   "errors.john_covered": "Quelqu’un d’autre l’a fait à ta place. Conteste-le s’il n’a pas été fait.",
   "errors.roll_call_needed": "Un John fait à plusieurs se coche en indiquant qui l’a fait. Ouvre-le et marque-le fait là-bas.",
   "errors.not_in_crew": "La personne qui coche l’a forcément fait, donc tu es sur la liste.",

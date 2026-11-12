@@ -80,6 +80,7 @@
   "errors.draft_limit": "That’s enough for one day. Add the draft as it is and change it on the list, or try again tomorrow.",
   "errors.ask_pool_used": "Your house has used this week’s Ask Jonz. It comes back when the house’s week starts.",
   "errors.ask_share_used": "You’ve used your half of the house’s Ask Jonz this week. It comes back when the house’s week starts.",
+  "errors.ask_account_used": "You’ve used your Ask Jonz for the last 7 days, across every house you’ve been in. Some comes back each day as older questions drop off.",
   "errors.john_covered": "Someone else covered this one. Dispute it if it wasn’t done.",
   "errors.roll_call_needed": "A John done together is ticked with who did it. Open it and mark it done there.",
   "errors.not_in_crew": "Whoever ticks it did it, so you’re on the list.",

@@ -3879,6 +3879,14 @@
           "house": {
             "type": "boolean"
           },
+          "limit": {
+            "type": "string",
+            "enum": [
+              "house",
+              "mine",
+              "account"
+            ]
+          },
           "resetsAt": {
             "type": "string"
           },
@@ -3925,6 +3933,7 @@
         "required": [
           "left",
           "house",
+          "limit",
           "resetsAt",
           "pass",
           "people",
@@ -8464,6 +8473,14 @@
               "house": {
                 "type": "boolean"
               },
+              "limit": {
+                "type": "string",
+                "enum": [
+                  "house",
+                  "mine",
+                  "account"
+                ]
+              },
               "resetsAt": {
                 "type": "string"
               },
@@ -8510,6 +8527,7 @@
             "required": [
               "left",
               "house",
+              "limit",
               "resetsAt",
               "pass",
               "people",

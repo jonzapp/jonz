@@ -35,7 +35,7 @@ const words = wordsFor('en', 'housemates');
 jest.mock('@/api/draft', () => ({
   applyDraft: jest.fn(),
   sendChat: jest.fn(),
-  askUsageOf: jest.fn(async () => ({ left: 1, house: false, resetsAt: '2026-11-09T00:00:00.000Z', pass: true, people: 2, houseUsed: 0, mineUsed: 0, usedBy: [] })),
+  askUsageOf: jest.fn(async () => ({ left: 1, house: false, limit: 'mine', resetsAt: '2026-11-09T00:00:00.000Z', pass: true, people: 2, houseUsed: 0, mineUsed: 0, usedBy: [] })),
 }));
 jest.mock('@/api/ask-chats', () => ({ keepChat: jest.fn(async () => 'chat-1') }));
 jest.mock('@/api/history', () => ({ undoAction: jest.fn() }));
@@ -409,6 +409,7 @@ describe("the week's Ask Jonz", () => {
   const usage = (over: Partial<AskUsage>): AskUsage => ({
     left: 1,
     house: false,
+    limit: 'mine',
     resetsAt: '2026-11-09T00:00:00.000Z',
     pass: true,
     people: 3,

@@ -449,6 +449,39 @@ describe("chatTurn, with Claude stood in for", () => {
     });
   });
 
+  it("counts a person's Ask Jonz in any house over the last 7 days, so a new house is no fresh start", async () => {
+    const house = await makeHouse(["Ava"]);
+    const POOL = await poolOf(house.id);
+    const now = new Date();
+    const daysAgo = (n: number) => new Date(now.getTime() - n * 24 * 60 * 60 * 1000).toISOString();
+    // Used in a house since deleted (its turns stay, with no house), and once before the 7 days.
+    const { error } = await db.from("house_drafts").insert([
+      { house_id: null, user_id: house.admin.userId, outcome: "ai", input_tokens: POOL - 5000, created_at: daysAgo(3) },
+      { house_id: null, user_id: house.admin.userId, outcome: "ai", input_tokens: POOL * 2, created_at: daysAgo(8) },
+    ]);
+    expect(error).toBeNull();
+    const caller = { db: house.admin.db, userId: house.admin.userId };
+    let budget: number | undefined;
+    const first = await chatTurn(caller, house.id, said(A_HOUSE), null, now, async (ctx, tools) => {
+      budget = ctx.budget;
+      return { ...(await answer(ctx, tools)), inputTokens: 4000, outputTokens: 1000 };
+    });
+    if ("refusal" in first) throw new Error("refused");
+    // Claude was told what's left of the account's, the least of the three.
+    expect(budget).toBe(5000);
+    expect(first.allowance).toMatchObject({ left: 0, limit: "account", resetsAt: new Date(new Date(daysAgo(3)).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString() });
+    expect(await chatTurn(caller, house.id, said(A_HOUSE), null, now, answer)).toEqual({ refusal: { code: "P0001", message: "ask_account_used" } });
+  });
+
+  it("keeps a deleted house's Ask Jonz turns, with no house, for the person's own count", async () => {
+    const house = await makeHouse(["Ava"]);
+    const { error } = await db.from("house_drafts").insert({ house_id: house.id, user_id: house.admin.userId, outcome: "ai", input_tokens: 1234 });
+    expect(error).toBeNull();
+    await db.from("houses").delete().eq("id", house.id);
+    const { data } = await db.from("house_drafts").select("house_id, input_tokens").eq("user_id", house.admin.userId);
+    expect(data).toEqual([{ house_id: null, input_tokens: 1234 }]);
+  });
+
   it("holds a burst of turns sent together to the pool", async () => {
     const house = await makeHouse(["Ava"]);
     const POOL = await poolOf(house.id);

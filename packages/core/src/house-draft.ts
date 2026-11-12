@@ -57,6 +57,13 @@ export const ASK_SHARE_MAX = 0.5;
  * so nobody gets more by leaving a house and starting another.
  */
 export const CHAT_TURNS_PER_PERSON_PER_DAY = 40;
+/**
+ * A person's Ask Jonz over the last this-many days, whichever house they
+ * were in, can't pass their house's weekly pool: leaving a house and
+ * starting another doesn't give them a fresh one. Rolling, so it comes back
+ * as their oldest turns drop off.
+ */
+export const ASK_ACCOUNT_DAYS = 7;
 
 /** How much of this week's Ask Jonz a person has left, shown under the chat. */
 export const AskAllowance = z.object({
@@ -64,19 +71,43 @@ export const AskAllowance = z.object({
   left: z.number().min(0).max(1),
   /** Whether the house's pool (not their own share) is what runs out first. */
   house: z.boolean(),
-  /** When it comes back: the start of the house's next week. */
+  /** Which runs out first: the house's pool, their share of it, or their account's (any house, last ASK_ACCOUNT_DAYS days). */
+  limit: z.enum(["house", "mine", "account"]),
+  /** When it comes back: the start of the house's next week, or when the account's oldest turn drops off. */
   resetsAt: z.string(),
 });
 export type AskAllowance = z.infer<typeof AskAllowance>;
 
-/** A person's cap and what's left of it, from the week's pool and how much the house and they have used. */
-export function askAllowance(input: { pool: number; people: number; houseUsed: number; mineUsed: number; resetsAt: Date }): AskAllowance & { cap: number } {
+/** What a person's account has used of Ask Jonz in the last ASK_ACCOUNT_DAYS days, in any house. */
+export interface AccountUse {
+  used: number;
+  /** When its oldest turn in the window drops off; null when there's none. */
+  backAt: Date | null;
+}
+
+/**
+ * A person's cap and what's left of it, from the week's pool, how much the
+ * house and they have used, and their account's use in any house (its cap is
+ * the pool too: a new house is no fresh start).
+ */
+export function askAllowance(input: {
+  pool: number;
+  people: number;
+  houseUsed: number;
+  mineUsed: number;
+  resetsAt: Date;
+  account?: AccountUse;
+}): AskAllowance & { cap: number; room: number } {
   const cap = input.people >= 2 ? Math.floor(input.pool * ASK_SHARE_MAX) : input.pool;
   const mine = Math.max(0, cap - input.mineUsed);
   const house = Math.max(0, input.pool - input.houseUsed);
-  const room = Math.min(mine, house);
+  const account = Math.max(0, input.pool - (input.account?.used ?? 0));
+  const room = Math.min(mine, house, account);
   // On your own the house's pool is yours, so it's the house's that runs out.
-  return { cap, left: cap > 0 ? Math.min(1, room / cap) : 0, house: input.people < 2 || house < mine, resetsAt: input.resetsAt.toISOString() };
+  const houseFirst = input.people < 2 || house < mine;
+  const limit = account < Math.min(mine, house) ? "account" : houseFirst ? "house" : "mine";
+  const resetsAt = limit === "account" && input.account?.backAt ? input.account.backAt : input.resetsAt;
+  return { cap, room, left: cap > 0 ? Math.min(1, room / cap) : 0, house: houseFirst, limit, resetsAt: resetsAt.toISOString() };
 }
 
 /** Under this much left, the chat warns over the message box. */
@@ -111,10 +142,19 @@ export function askUsage(input: {
   me: string;
   used: ReadonlyMap<string, number>;
   resetsAt: Date;
+  account?: AccountUse;
 }): AskUsage {
   const houseUsed = [...input.used.values()].reduce((a, b) => a + b, 0);
   const mineUsed = input.used.get(input.me) ?? 0;
-  const { cap, ...allowance } = askAllowance({ pool: input.pool, people: input.people.length, houseUsed, mineUsed, resetsAt: input.resetsAt });
+  const { cap, left, house, limit, resetsAt } = askAllowance({
+    pool: input.pool,
+    people: input.people.length,
+    houseUsed,
+    mineUsed,
+    resetsAt: input.resetsAt,
+    account: input.account,
+  });
+  const allowance = { left, house, limit, resetsAt };
   const share = (n: number, of: number) => (of > 0 ? Math.min(1, n / of) : 1);
   return {
     ...allowance,

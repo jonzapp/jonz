@@ -9,7 +9,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { houseReads } from "./ask-reads";
 import { awayMoves } from "./ask-away";
 import { operationMoves } from "./ask-operations";
-import { askWeek, usageNow } from "./ask-usage";
+import { accountSince, askWeek, usageNow } from "./ask-usage";
 import { offerResets, resetState, type ResetState } from "./ask-resets";
 import type { Caller, Refusal } from "./disputes";
 import { myPermissions } from "./permitted";
@@ -106,7 +106,7 @@ export async function chatTurn(
   const admin = createAdminClient();
   const { week, pool } = askWeek(house, now);
   const { cap } = askAllowance({ pool, people: everyone.length, houseUsed: 0, mineUsed: 0, resetsAt: week.endsAt });
-  const { data: turn, error: limit } = await admin.rpc("claim_ask_turn", {
+  const { data: claimed, error: limit } = await admin.rpc("claim_ask_turn", {
     p_house: houseId,
     p_user: caller.userId,
     p_since: week.startsAt.toISOString(),
@@ -114,11 +114,18 @@ export async function chatTurn(
     p_share: cap,
     p_user_day: CHAT_TURNS_PER_PERSON_PER_DAY,
     p_reserve: ASK_TURN_RESERVE,
+    // The account's cap is the house's pool too, over the last ASK_ACCOUNT_DAYS days in any house.
+    p_account: pool,
+    p_account_since: accountSince(now).toISOString(),
   });
   if (limit) {
-    if (["draft_limit", "ask_pool_used", "ask_share_used"].includes(limit.message)) return { refusal: { code: "P0001", message: limit.message } };
+    if (["draft_limit", "ask_pool_used", "ask_share_used", "ask_account_used"].includes(limit.message)) return { refusal: { code: "P0001", message: limit.message } };
     throw new Error(`Couldn't count the week's Ask Jonz: ${limit.message}`);
   }
+  const turn = claimed?.[0]?.turn;
+  if (!turn) throw new Error("Couldn't count the week's Ask Jonz: no turn");
+  // What's left before this turn: Claude wraps up rather than pass it (agent.ts).
+  const budget = Math.max(0, Number(claimed[0].room));
   /** What's left after this turn, for the chat's warning and the usage page. */
   const allowanceNow = () =>
     usageNow(
@@ -232,6 +239,7 @@ export async function chatTurn(
         earlier: summary,
         editing: list !== null,
         now: state?.text ?? null,
+        budget,
       },
       tools,
     );
