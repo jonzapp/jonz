@@ -6,15 +6,14 @@ import {
   houseSetupValues,
   leaveBar,
   leaveCost,
-  paymentShown,
   struckAt,
   topReaction,
   wallAge,
   wallDays,
   wallFeedRow,
   type WallFeedRow,
-  type WallScene,
 } from "./house-lower";
+import { paymentShown, type WallScene } from "./wall-sentence";
 import { wallEvents, type WallEvent, type WallRow } from "./wall";
 
 const words = wordsFor("en", "housemates");

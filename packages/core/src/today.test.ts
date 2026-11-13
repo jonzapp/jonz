@@ -5,38 +5,8 @@ import { buildWeekBoard, type BoardItem, type DisputeView, type WeekBoard } from
 import { DEFAULT_RULES, type HouseRules } from "./domain";
 import type { TableRow } from "./points";
 import { buildStake } from "./stake";
-import {
-  awayShare,
-  awayLine,
-  awayTodayUntil,
-  canSwap,
-  cantOptions,
-  clearUntil,
-  coverOffer,
-  coverTitle,
-  forfeitRoom,
-  johnSheetMode,
-  nextUp,
-  nextUpMeta,
-  nextUpState,
-  restOfWeek,
-  setupChecklist,
-  settledLine,
-  sheetKind,
-  sheetWhen,
-  standingLine,
-  standingPlace,
-  swapChoice,
-  swapMeta,
-  tickedLine,
-  todayPage,
-  undoWarning,
-  voteCloses,
-  voteMeta,
-  voteTally,
-  voteTitle,
-  whoDeals,
-} from "./today";
+import { canSwap, cantOptions, coverOffer, coverTitle, johnSheetMode, settledLine, sheetKind, sheetWhen, swapChoice, swapMeta, tickedLine, undoWarning, voteCloses, voteMeta, voteTally, voteTitle } from "./john-sheet";
+import { awayShare, awayLine, awayTodayUntil, clearUntil, forfeitRoom, nextUp, nextUpMeta, nextUpState, restOfWeek, setupChecklist, standingLine, standingPlace, todayPage, whoDeals } from "./today";
 import { wordsFor } from "./words-for";
 
 const words = wordsFor("en", "housemates");

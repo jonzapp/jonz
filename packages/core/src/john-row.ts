@@ -1,4 +1,5 @@
-import { isOpen, type BoardItem } from "./board";
+import { isOpen } from "./board-views";
+import { type BoardItem } from "./board";
 import { andNames } from "./crew";
 import { CATEGORY_SHORT } from "./domain";
 import { dueInLine, firstName, relative, sinceLabel, statusLabel } from "./format";
