@@ -5,7 +5,7 @@
     "apps/client/scripts/build-web.mjs"
   ],
   "ignoreBinaries": ["supabase", "psql"],
-  "ignoreDependencies": ["jscpd"],
+  "ignoreDependencies": ["jscpd", "expo-updates"],
   "workspaces": {
     ".": {
       "entry": ["scripts/*.mjs", "scripts/**/*.test.ts", "scripts/ci/*.mjs"]

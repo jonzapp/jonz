@@ -17,7 +17,7 @@ import { V1_HANDLERS } from "@/lib/v1/handlers";
 // with /v1 (v1Instance).
 
 /** The MCP server's name and version, as clients see it. */
-export const MCP_INFO = { name: "jonz", version: "1.0.0" } as const;
+const MCP_INFO = { name: "jonz", version: "1.0.0" } as const;
 
 /**
  * What a client such as Claude or ChatGPT reads before it calls a tool: what
@@ -122,7 +122,7 @@ export function buildMcpServer(execute: Executor, authorization: string | null, 
 }
 
 /** The scopes Supabase's OAuth server issues that a connected app needs: who you are, and staying signed in. */
-export const OAUTH_SCOPES = ["openid", "email", "profile", "offline_access"] as const;
+const OAUTH_SCOPES = ["openid", "email", "profile", "offline_access"] as const;
 
 /** Where a client learns how to sign in for /mcp (RFC 9728). */
 export function protectedResource(origin: string, supabaseUrl: string) {

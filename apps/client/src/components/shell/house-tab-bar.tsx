@@ -9,8 +9,7 @@ import { useWords } from '@/hooks/use-words';
 import { FONT, GUTTER, INSET, RAIL, SPACE, TAP, useTheme } from '@/theme';
 
 /** The house's four places, in the order the tabs and the rail show them. */
-export const PLACES = ['today', 'week', 'house', 'you'] as const;
-export type Place = (typeof PLACES)[number];
+type Place = 'today' | 'week' | 'house' | 'you';
 
 const ICON: Record<Place, LucideIcon> = {
   today: ListChecksIcon,

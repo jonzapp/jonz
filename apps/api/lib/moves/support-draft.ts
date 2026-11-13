@@ -80,7 +80,7 @@ function draftOf(row: DraftRow): SupportDraft {
 }
 
 /** The report's reads, as the owner's session. A refusal throws. */
-export function supportReads(caller: Caller, report: OpenedReport, now: Date): SupportReads {
+function supportReads(caller: Caller, report: OpenedReport, now: Date): SupportReads {
   const db = caller.db;
   const owner = ownerReads(caller, now);
   const fail = (what: string, error: { message: string }) => new Error(`${what}: ${error.message}`);

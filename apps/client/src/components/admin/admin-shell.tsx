@@ -27,7 +27,7 @@ import { FONT, RAIL, SPACE, TAP, useTheme, WIDE } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
 /** Each page's icon, on the rail and the tabs. */
-export const ADMIN_ICON: Record<AdminPage, LucideIcon> = {
+const ADMIN_ICON: Record<AdminPage, LucideIcon> = {
   overview: LayoutGridIcon,
   inbox: InboxIcon,
   houses: HouseIcon,

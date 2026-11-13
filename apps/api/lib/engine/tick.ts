@@ -69,12 +69,11 @@ export interface TickSummary {
 }
 
 // The house's rules from its row live in core, beside the board both apps build.
-export { rulesOf };
 
 type Ok<R> = Extract<R, { error: null }>;
 
 /** Unwrap a Supabase response, or throw with what was being attempted. */
-export function must<R extends { data: unknown; error: { message: string } | null }>(
+function must<R extends { data: unknown; error: { message: string } | null }>(
   result: R,
   what: string,
 ): Ok<R>["data"] {
@@ -194,7 +193,7 @@ export async function loadBalances(
  * with it (steady.ts), so a group's Johns never move anyone's share of the
  * whole house's. User id → group id → balance.
  */
-export async function loadGroupBalances(db: Db, houseId: string, beforeStartsOn: string): Promise<Map<string, Map<string, number>>> {
+async function loadGroupBalances(db: Db, houseId: string, beforeStartsOn: string): Promise<Map<string, Map<string, number>>> {
   const rows = must(await db.rpc("house_group_balances", { p_house: houseId, p_before: beforeStartsOn }), "group balances");
   const out = new Map<string, Map<string, number>>();
   for (const r of rows) {

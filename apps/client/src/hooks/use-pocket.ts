@@ -5,7 +5,7 @@ import { loadPocket } from '@/api/pocket';
 import { pocketKey } from '@/hooks/keys';
 
 /** The kids of a family: everyone who isn't a parent. */
-export function kidsOf(snapshot: HouseSnapshot): string[] {
+function kidsOf(snapshot: HouseSnapshot): string[] {
   return snapshot.members.filter((m) => m.role !== 'admin').map((m) => m.userId);
 }
 

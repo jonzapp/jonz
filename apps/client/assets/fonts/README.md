@@ -37,4 +37,6 @@ for weight in ['400Regular', '700Bold', '800ExtraBold', '900Black']:
 PY
 ```
 
-To take a newer Overpass, upgrade the package and run it again.
+The app does not depend on the package (it loads these copies), so fetch it
+first with `npm install --no-save @expo-google-fonts/overpass`. To take a
+newer Overpass, fetch the newer version and run it again.

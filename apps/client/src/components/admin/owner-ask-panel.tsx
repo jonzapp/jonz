@@ -35,7 +35,7 @@ export function OwnerAskProvider({ children }: { children: ReactNode }) {
 }
 
 /** The sparkles: open and close the owner's chat. A screen reader hears whether it's open. */
-export function OwnerAskButton() {
+function OwnerAskButton() {
   const words = useWords();
   const ask = useContext(OwnerAskContext);
   if (!ask) return null;

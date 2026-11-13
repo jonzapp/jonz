@@ -108,7 +108,7 @@ export function NextUp({
  * The card's shell, for the states that aren't a John: "Next up", the Lead,
  * a line under it, and a quiet way onward. No amber.
  */
-export function NextUpCard({ lead, body, children }: { lead: string; body?: string; children?: ReactNode }) {
+function NextUpCard({ lead, body, children }: { lead: string; body?: string; children?: ReactNode }) {
   const words = useWords();
   return (
     <Card testID="next-up" style={children ? styles.quietEnd : undefined}>

@@ -7,7 +7,7 @@
 import type { RunItem, RunPrepared, RunPreparedJohn, RunWeek } from "./steady-run";
 import { inGroup, livesThere } from "./steady-run";
 
-export interface Check {
+interface Check {
   id: string;
   short: string;
   label: string;
@@ -32,7 +32,7 @@ export interface CheckResult {
 
 const range = (a: number, b: number) => Array.from({ length: Math.max(0, b - a + 1) }, (_, i) => a + i);
 
-export const CHECKS: Check[] = [
+const CHECKS: Check[] = [
   { id: "home", short: "Right people", label: "Johns only go to people who live there, are home that week, and share the John" },
   { id: "budget", short: "Budget", label: "Leaving out Johns that have to go out (keep their day, done together, coming back), nobody gets more than their target, apart from their first John (half the budget over is allowed: in Smart once a John has waited, in Classic for whoever's turn it is)", budgeted: true },
   { id: "oneday", short: "One a day", label: "Nobody gets two Johns on one day while they have a free day, unless both keep that day" },
@@ -52,7 +52,7 @@ export const CHECKS: Check[] = [
   { id: "even", short: "Stays even", label: "Balances stay close: after any calm 12 weeks (no misses, covers, time away, moves or changes), they’re within twice the biggest John (plus half the budget) of each other, or closer than they started", smart: true },
 ];
 
-export function applies(c: Check, mode: string, B: number): boolean {
+function applies(c: Check, mode: string, B: number): boolean {
   return !(c.smart && mode !== "smart") && !(c.classic && mode !== "classic") && !(c.budgeted && !B);
 }
 

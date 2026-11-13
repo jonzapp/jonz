@@ -19,7 +19,7 @@ import { useWords } from '@/hooks/use-words';
 // docs/specs/describe-your-house.md.
 
 /** Where the usage page is. */
-export const ASK_USAGE_HREF = '/house/ask-usage' satisfies Href;
+const ASK_USAGE_HREF = '/house/ask-usage' satisfies Href;
 
 /** What the chat shows for the week: nothing, a warning when low, or the notice once it's all used. */
 export function usageState(usage: AskUsage | undefined): 'plenty' | 'low' | 'out' {
@@ -29,7 +29,7 @@ export function usageState(usage: AskUsage | undefined): 'plenty' | 'low' | 'out
 }
 
 /** One person's (or the house's) use: what, how much used, a bar, and a note under it. */
-export function UsageBar({ label, used, note, testID }: { label: string; used: number; note?: string; testID?: string }) {
+function UsageBar({ label, used, note, testID }: { label: string; used: number; note?: string; testID?: string }) {
   const words = useWords();
   const { colors } = useTheme();
   const fill = used >= 0.9 ? colors.hazard : colors.primary;

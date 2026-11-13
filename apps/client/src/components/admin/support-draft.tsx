@@ -22,7 +22,7 @@ import { useWords } from '@/hooks/use-words';
 const PIECES = (words: Words) => ownerPieces(words);
 
 /** Whether the support agent has something to suggest on this report: it's waiting, and there's someone to answer. */
-export function draftable(report: Report): boolean {
+function draftable(report: Report): boolean {
   const waiting = report.state === 'new' || report.state === 'open';
   const answerable = report.userId !== null || (report.source === 'email' && report.email !== null);
   return waiting && answerable && report.messages.at(-1)?.from !== 'jonz';

@@ -29,7 +29,7 @@ function accent(elements: MessageFormatElement[]): MessageFormatElement[] {
  * files read like that; anything still written into a screen reads plain,
  * and a line cut short loses its closing bracket.
  */
-export function pseudoLine(message: string): MessageFormatElement[] {
+function pseudoLine(message: string): MessageFormatElement[] {
   return [
     { type: TYPE.literal, value: "[" },
     ...accent(parse(message)),

@@ -9,7 +9,7 @@ import { track } from "./scope";
 export const ZONE = "Europe/London";
 
 /** When everyone in a test house moved in: long before any week a test deals. */
-export const SINCE = "2020-01-01T00:00:00Z";
+const SINCE = "2020-01-01T00:00:00Z";
 
 export interface House {
   id: string;

@@ -16,7 +16,7 @@ import { z } from "zod";
 export const AGENT_MODEL = "anthropic/claude-haiku-5.5";
 
 /** The most tool calls and answers in one turn, so a confused model can't loop. */
-export const STEPS_MAX = 12;
+const STEPS_MAX = 12;
 
 /**
  * Whether a turn should answer now rather than call more tools: when what
@@ -31,7 +31,7 @@ export function shouldWrapUp(steps: readonly { usage: { inputTokens?: number; ou
 }
 
 /** Jonz's last word in a turn, as Claude is asked to return it. */
-export const FinalAnswer = z.object({
+const FinalAnswer = z.object({
   reply: z.string().describe("What you say to the person."),
   ask: z.object({ kind: z.enum(["none", "choices", "day"]), options: z.array(z.string()) }),
 });

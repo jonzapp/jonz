@@ -6,7 +6,7 @@ import { loadWall, loadWallEvents, setReaction, signPhoto, type Wall, type WallC
 import { photoKey, wallKey } from '@/hooks/keys';
 
 /** How many events the whole Wall reads at a time. */
-export const WALL_PAGE = 40;
+const WALL_PAGE = 40;
 
 /** One receipt, signed on its own (a settled John's sheet), whatever the Wall has read. */
 export function usePhoto(houseId: string, path: string) {

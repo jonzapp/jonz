@@ -17,7 +17,7 @@ const CELL = 14;
  * grey (muted ink at 40%), not done yet an outline, nothing dealt the
  * hairline colour.
  */
-export function markColour({ colors }: Theme, mark: RecordMark): { fill: string; edge?: string } {
+function markColour({ colors }: Theme, mark: RecordMark): { fill: string; edge?: string } {
   switch (mark) {
     case 'clean':
       return { fill: colors.good };
@@ -38,7 +38,7 @@ export function markColour({ colors }: Theme, mark: RecordMark): { fill: string;
 }
 
 /** A square: its mark's colour, and a small amber dot in its corner when an admin changed something in it. */
-export function Square({ mark, changed = false }: { mark: RecordMark; changed?: boolean }) {
+function Square({ mark, changed = false }: { mark: RecordMark; changed?: boolean }) {
   const theme = useTheme();
   const { fill, edge } = markColour(theme, mark);
   return (

@@ -55,7 +55,7 @@ const SEND_INSET = (LINE - SEND) / 2;
  * screen with no mouse) Return stays a new line and the arrow sends, since
  * there's no Shift+Return to fall back on. Phone apps keep Return too.
  */
-export function enterSends(): boolean {
+function enterSends(): boolean {
   if (Platform.OS !== "web" || typeof window === "undefined") return false;
   const touchOnly = window.matchMedia?.("(hover: none) and (pointer: coarse)").matches ?? false;
   return !touchOnly;
@@ -77,7 +77,7 @@ type WebKey = {
  * method is still putting a word together (Japanese, Chinese, Korean), and
  * not with Shift (a new line) or another modifier.
  */
-export function isSendKey(e: WebKey): boolean {
+function isSendKey(e: WebKey): boolean {
   if (e.key !== "Enter" || e.isComposing || e.keyCode === 229) return false;
   return !e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey;
 }

@@ -17,7 +17,7 @@ import { useWords } from '@/hooks/use-words';
 const ZONE = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 /** A promotion's link, on this site. */
-export const promotionLink = (code: string) => `${SITE_URL}/offer/${encodeURIComponent(code)}`;
+const promotionLink = (code: string) => `${SITE_URL}/offer/${encodeURIComponent(code)}`;
 
 /**
  * What the people it's for get, before it's made or on its page: the

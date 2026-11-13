@@ -105,7 +105,7 @@ the glossary in `docs/style/words.md`, guarded by
 
 **New words go in the words files** (`packages/core/src/locales/en/*.json`,
 ICU messages read with `useWords()` in the app, `wordsFor(language, kind)`
-elsewhere), not in `copy.ts` or typed into a screen. A line that names
+elsewhere), not typed into a screen. A line that names
 housemates or admins gets a whole family sentence:
 `{kind, select, family {…} other {…}}`. See `docs/specs/translation.md`.
 
@@ -160,8 +160,7 @@ that list to get a feature through, split the function instead.
   app reads),
   `wall.ts` (the Wall's events in words, and their reactions),
   `proof.ts` (a photo receipt's size and bucket path), `money.ts`,
-  `format.ts`, `domain.ts` (the shared words), `copy.ts` (both apps'
-  sentences), `schemas.ts` (what crosses the API), `errors.ts`,
+  `format.ts`, `domain.ts` (the shared words), `schemas.ts` (what crosses the API), `errors.ts`,
   `auth-paths.ts`. Every function takes `now`.
 - **The engine** (`apps/api/lib/engine/tick.ts`): decides with those rules
   and applies each decision through one service-role SQL function that is
