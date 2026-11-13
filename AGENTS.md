@@ -52,6 +52,7 @@ npm ci                           # install everything, exactly as the lockfile s
 npm run dev                      # the web app on http://localhost:3205
 npm run dev:client               # the Expo app: Metro on 8205
 npm run typecheck && npm run lint && npm test
+npm run code:standards           # the clean code rules (docs/standards/code.md)
 npm run db:start                 # local Supabase on 54340–54344 (needs Docker)
 npm run test:db                  # RLS, the housemate functions and the engine
 npm run build && npm run test:e2e
@@ -135,6 +136,16 @@ changing any screen, component, sheet, email or draft, load the
 a design option, the PR that builds it updates the rule and adds a line to
 `docs/style/decisions.md`. For design options for Glyn,
 see "Design options for Glyn" in the `house-style` skill.
+
+## Code standards
+
+**Before a refactor, a new file or a long function, read
+`docs/standards/code.md`**: the 12 clean code rules (one home for each rule,
+no dead code, files under 500 lines, functions under 60, at most 3
+arguments, no import circles, no real clock in tests). `npm run
+code:standards` checks them and CI fails a PR that breaks one. Old breaks
+are listed in `scripts/ci/code-standards-exceptions.json`; never add to
+that list to get a feature through, split the function instead.
 
 ## Rules live in the lowest layer that can hold them
 

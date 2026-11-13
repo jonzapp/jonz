@@ -8,7 +8,7 @@ name: CI
 # The jobs run side by side, and `verify` (the required check) passes only
 # when every one of them did and the count guard finds every test ran:
 #
-#   checks          lint, typecheck, unit tests, /v1 contract, deal breaks
+#   checks          lint, code standards, typecheck, unit tests, /v1 contract, deal breaks
 #   client          the native app's own proof
 #   db (1/2, 2/2)   database tests, half the files each, own Supabase each
 #   e2e (<device>)  one job per device in playwright.config.ts, own Supabase each
@@ -55,6 +55,11 @@ jobs:
 
       - name: Lint
         run: npm run lint
+
+      # Size, dead code, repeats, import circles and the real clock in tests:
+      # docs/standards/code.md. Old breaks are listed; the list only shrinks.
+      - name: Code standards
+        run: npm run code:standards
 
       - name: Unit tests
         run: npm test
