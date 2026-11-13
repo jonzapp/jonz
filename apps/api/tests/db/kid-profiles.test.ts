@@ -6,6 +6,7 @@ import { adminClient, type Actor } from "@/tests/support/clients";
 import { expectDenied, expectOk } from "@/tests/support/expect";
 import { addJohns, deal, makeHouse, reread, thisWeek, ZONE } from "@/tests/support/factories";
 import { APP_ORIGIN, v1 } from "@/tests/support/v1";
+import { rightNow } from "@/tests/support/clock";
 
 /**
  * Kids without a sign-in, family step 4 (docs/specs/family-houses.md): a
@@ -22,7 +23,7 @@ const db = adminClient();
 const WEEK = nextWeek(thisWeek(), ZONE, 1);
 const LATER = new Date(WEEK.endsAt.getTime() + 2 * 24 * HOUR);
 const YEAR = Number(WEEK.startsOn.slice(0, 4));
-const THIS_YEAR = new Date().getUTCFullYear();
+const THIS_YEAR = rightNow().getUTCFullYear();
 const savedOrigins = process.env.ALLOWED_ORIGINS;
 
 beforeAll(() => {
@@ -55,7 +56,7 @@ describe("adding a child", () => {
     // Nobody can sign in as them.
     const { data: account } = await db.auth.admin.getUserById(maya);
     expect(account.user!.email).toMatch(/\.invalid$/);
-    expect(new Date(account.user!.banned_until!).getTime()).toBeGreaterThan(Date.now());
+    expect(new Date(account.user!.banned_until!).getTime()).toBeGreaterThan(rightNow().getTime());
     const { data: joined } = await db.from("events").select("kind").eq("house_id", house.id).eq("user_id", maya);
     expect(joined!.map((e) => e.kind)).toEqual(["joined"]);
   });

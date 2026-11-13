@@ -2,6 +2,7 @@ import { type HouseDraft, wordsFor } from "@app/core";
 import { expect, test, type Page } from "@playwright/test";
 
 import { CLIENT_URL, cleanUp, signInToClient } from "./auth";
+import { rightNow } from "../tests/support/clock";
 
 const words = wordsFor("en", "housemates");
 
@@ -21,7 +22,7 @@ function chat(page: Page) {
 test("a chat is kept, comes back from Your chats, and can be deleted", async ({ context, page }) => {
   made.push(await signInToClient(context, "Ava Chats"));
   await page.goto("/house/new");
-  await page.getByLabel(words('door.welcome.name')).fill(`Lodge ${Date.now() % 10_000}`);
+  await page.getByLabel(words('door.welcome.name')).fill(`Lodge ${rightNow().getTime() % 10_000}`);
   await page.getByTestId("create-house").click();
   await expect(page).toHaveURL(/\/today$/);
   // A list to ask about: a starter one, kept.
@@ -86,7 +87,7 @@ test("a chat is kept, comes back from Your chats, and can be deleted", async ({ 
 test("on a computer Enter sends and Shift+Enter starts a new line; on a phone Return is a new line", async ({ context, page }) => {
   made.push(await signInToClient(context, "Ava Enter"));
   await page.goto("/house/new");
-  await page.getByLabel(words('door.welcome.name')).fill(`Lodge ${Date.now() % 10_000}`);
+  await page.getByLabel(words('door.welcome.name')).fill(`Lodge ${rightNow().getTime() % 10_000}`);
   await page.getByTestId("create-house").click();
   await expect(page).toHaveURL(/\/today$/);
   await page.goto("/house/describe");

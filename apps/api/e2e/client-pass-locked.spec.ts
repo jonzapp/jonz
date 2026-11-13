@@ -2,6 +2,7 @@ import { wordsFor } from "@app/core";
 import { expect, test } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, dealtHouseInClient } from "./auth";
+import { fromNow } from "../tests/support/clock";
 
 const words = wordsFor("en", "housemates");
 
@@ -22,7 +23,7 @@ test("without the House Pass, a photo John ticks plainly", async ({ browser }) =
   // Ended a day before the database's own now, so this holds whatever the date.
   const { error } = await admin()
     .from("houses")
-    .update({ pass_plan: "trial", pass_ends_at: new Date(Date.now() - 86_400_000).toISOString() })
+    .update({ pass_plan: "trial", pass_ends_at: fromNow(-86_400_000).toISOString() })
     .eq("id", houseId);
   expect(error).toBeNull();
 

@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 
 import { CLIENT_URL, cleanUp, dealtHouseInClient, undealtHouseInClient } from "./auth";
 import { expectButtonRules } from "./button-rules";
+import { rightNow } from "../tests/support/clock";
 import { wordsFor } from '@app/core';
 
 const words = wordsFor('en', 'housemates');
@@ -19,7 +20,7 @@ test.afterAll(async () => cleanUp(made));
 
 test("Week before the first deal: Deal week 1 is across a phone, its own width on a laptop", async ({ browser }) => {
   const context = await browser.newContext();
-  const { userId } = await undealtHouseInClient(context, "Ava Buttons", `Flat ${Date.now() % 10_000}`, ["Bins", "Bathroom"]);
+  const { userId } = await undealtHouseInClient(context, "Ava Buttons", `Flat ${rightNow().getTime() % 10_000}`, ["Bins", "Bathroom"]);
   made.push(userId);
   const page = await context.newPage();
   await page.goto("/week");
@@ -47,7 +48,7 @@ test("Week before the first deal: Deal week 1 is across a phone, its own width o
 test("every page of a dealt house keeps the button rules", async ({ browser }) => {
   const context = await browser.newContext();
   const mate = await browser.newContext();
-  const { userId, housemateIds } = await dealtHouseInClient(context, "Ben Buttons", `Flat ${Date.now() % 10_000}`, [{ name: "Bins" }, { name: "Bathroom" }], [
+  const { userId, housemateIds } = await dealtHouseInClient(context, "Ben Buttons", `Flat ${rightNow().getTime() % 10_000}`, [{ name: "Bins" }, { name: "Bathroom" }], [
     { context: mate, name: "Cat Buttons" },
   ]);
   made.push(userId, ...housemateIds);

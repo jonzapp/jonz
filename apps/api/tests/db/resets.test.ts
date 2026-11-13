@@ -7,6 +7,7 @@ import { adminClient, type Actor } from "@/tests/support/clients";
 import { expectOk } from "@/tests/support/expect";
 import { actorFor, addJohns, deal, makeHouse, reread, thisWeek, ZONE } from "@/tests/support/factories";
 import { v1 } from "@/tests/support/v1";
+import { rightNow } from "@/tests/support/clock";
 
 /**
  * Resets (20261101100000_admin_resets.sql, lib/moves/resets.ts), called as
@@ -33,7 +34,7 @@ async function reset(actor: Actor, { houseId, ...body }: { houseId: string; [key
 async function dealtHouse() {
   const house = await makeHouse();
   await addJohns(house.id, [{ name: "Bins" }, { name: "Hoover", points: 3 }, { name: "Mop", points: 2 }], thisWeek());
-  const { weekId, assignments } = await deal(house.id, thisWeek(), new Date());
+  const { weekId, assignments } = await deal(house.id, thisWeek(), rightNow());
   const a = assignments.find((x) => x.user_id !== house.admin.userId) ?? assignments[0];
   return { house, weekId, assignments, a, owner: actorFor(house, a.user_id) };
 }
@@ -185,7 +186,7 @@ describe("Ask Jonz's resets", () => {
       house.id,
       [{ role: "user", text: "That tick was a mistake, and reset the week" }],
       null,
-      new Date(),
+      rightNow(),
       async (ctx, tools): Promise<DraftAnswer> => {
         told = ctx;
         const ref = [...ctx.now!.matchAll(/(h\d+) [^;]*ticked/g)][0][1];

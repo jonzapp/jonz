@@ -10,6 +10,7 @@ import { pushToken } from "@/lib/push-token";
 import { adminClient } from "@/tests/support/clients";
 import { expectDenied, expectOk } from "@/tests/support/expect";
 import { actorFor, addJohns, deal, makeHouse, someoneElse, thisWeek, ZONE, type House } from "@/tests/support/factories";
+import { fromNow, rightNow } from "@/tests/support/clock";
 
 /**
  * Notifications you can answer: reminders that say what's due and when, each
@@ -47,7 +48,7 @@ function pretendNow() {
 }
 
 /** A house with Bins and Bathroom dealt, Bins due `hours` after `now` (the real time unless given). */
-async function dueHouse(hours: number, { needsPhoto = false, now = new Date() } = {}) {
+async function dueHouse(hours: number, { needsPhoto = false, now = rightNow() } = {}) {
   const house = await makeHouse(["Ava", "Ben", "Cal"]);
   const week = thisWeek(now);
   await addJohns(house.id, [{ name: "Bins", needsPhoto }, { name: "Bathroom", points: 4 }], week);
@@ -129,7 +130,7 @@ describe("reminders", () => {
 
 describe("what each person's push carries", () => {
   it("gives each person their own token, and a vote two answers", () => {
-    const now = new Date();
+    const now = rightNow();
     const message: PushMessage = { title: "Vote", body: "", url: "/week", kind: "checks", zone: ZONE, act: { disputeId: crypto.randomUUID() } };
     const a = payloadFor("user-a", pushIn(message, "en"), false, now);
     const b = payloadFor("user-b", pushIn(message, "en"), true, now);
@@ -178,7 +179,7 @@ describe("notification_prefs", () => {
 describe("POST /api/push-actions", () => {
   it("ticks the John from the reminder, as its owner", async () => {
     const { bins } = await dueHouse(20);
-    const token = pushToken({ userId: bins.user_id, assignmentId: bins.id }, new Date())!;
+    const token = pushToken({ userId: bins.user_id, assignmentId: bins.id }, rightNow())!;
     const res = await action(token, "done");
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ ok: true, title: "Bins ticked", body: "The house can check it now." });
@@ -194,7 +195,7 @@ describe("POST /api/push-actions", () => {
 
   it("refuses a John that needs a photo, in the app's words", async () => {
     const { bins } = await dueHouse(20, { needsPhoto: true });
-    const res = await action(pushToken({ userId: bins.user_id, assignmentId: bins.id }, new Date())!, "done");
+    const res = await action(pushToken({ userId: bins.user_id, assignmentId: bins.id }, rightNow())!, "done");
     expect(res.status).toBe(409);
     const { data } = await db.from("assignments").select("done_at").eq("id", bins.id).single();
     expect(data!.done_at).toBeNull();
@@ -203,13 +204,13 @@ describe("POST /api/push-actions", () => {
   it("refuses a token for someone else's John", async () => {
     const { house, bins } = await dueHouse(20);
     const other = someoneElse(house, bins.user_id);
-    const res = await action(pushToken({ userId: other.userId, assignmentId: bins.id }, new Date())!, "done");
+    const res = await action(pushToken({ userId: other.userId, assignmentId: bins.id }, rightNow())!, "done");
     expect(res.status).toBe(403);
   });
 
   it("refuses a forged, mangled or expired token, and the wrong button", async () => {
     const { bins } = await dueHouse(20);
-    const good = pushToken({ userId: bins.user_id, assignmentId: bins.id }, new Date())!;
+    const good = pushToken({ userId: bins.user_id, assignmentId: bins.id }, rightNow())!;
     const [body, sig] = good.split(".");
     const forged = Buffer.from(JSON.stringify({ u: bins.user_id, a: crypto.randomUUID(), e: 9e9 })).toString("base64url");
     expect((await action(`${forged}.${sig}`, "done")).status).toBe(401);
@@ -217,7 +218,7 @@ describe("POST /api/push-actions", () => {
     const mangled = `${sig[0] === "x" ? "y" : "x"}${sig.slice(1)}`;
     expect((await action(`${body}.${mangled}`, "done")).status).toBe(401);
     expect((await action("nonsense", "done")).status).toBe(401);
-    const old = pushToken({ userId: bins.user_id, assignmentId: bins.id }, new Date(Date.now() - 9 * 24 * HOUR))!;
+    const old = pushToken({ userId: bins.user_id, assignmentId: bins.id }, fromNow(-9 * 24 * HOUR))!;
     expect((await action(old, "done")).status).toBe(401);
     expect((await action(good, "held")).status).toBe(400);
     const { data } = await db.from("assignments").select("done_at").eq("id", bins.id).single();
@@ -230,7 +231,7 @@ describe("POST /api/push-actions", () => {
     const [raiser, voter] = house.everyone.filter((a) => a.userId !== owner.userId);
     const { data: disputeId } = await raiser.db.rpc("raise_dispute", { p_assignment: bins.id, p_reason: "Still full" });
 
-    const res = await action(pushToken({ userId: voter.userId, disputeId: disputeId! }, new Date())!, "struck");
+    const res = await action(pushToken({ userId: voter.userId, disputeId: disputeId! }, rightNow())!, "struck");
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ ok: true, title: "Vote counted on Bins", body: "You said it wasn’t done." });
     const { data: d } = await db.from("disputes").select("resolution").eq("id", disputeId!).single();
@@ -242,7 +243,7 @@ describe("POST /api/push-actions", () => {
     expectOk(await owner.db.rpc("mark_done", { p_assignment: bins.id }));
     const raiser = someoneElse(house, owner.userId);
     const { data: disputeId } = await raiser.db.rpc("raise_dispute", { p_assignment: bins.id, p_reason: "Still full" });
-    const res = await action(pushToken({ userId: owner.userId, disputeId: disputeId! }, new Date())!, "held");
+    const res = await action(pushToken({ userId: owner.userId, disputeId: disputeId! }, rightNow())!, "held");
     expect(res.status).toBe(403);
   });
 });

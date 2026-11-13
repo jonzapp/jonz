@@ -2,6 +2,7 @@ import { wordsFor } from "@app/core";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, dealtHouseInClient, undealtHouseInClient } from "./auth";
+import { rightNow } from "../tests/support/clock";
 
 const words = wordsFor("en", "housemates");
 
@@ -171,7 +172,7 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   // Two of the housemates' Johns done, so the week has some of each.
   const { data: theirs } = await admin().from("assignments").select("id").eq("house_id", houseId).neq("user_id", userId).limit(2);
   for (const row of theirs ?? []) {
-    await admin().from("assignments").update({ done_at: new Date().toISOString() }).eq("id", row.id);
+    await admin().from("assignments").update({ done_at: rightNow().toISOString() }).eq("id", row.id);
   }
 
   const page = await contexts[0].newPage();
