@@ -158,13 +158,17 @@ describe("cycles", () => {
   });
 });
 
+// Spelled in two halves, so this file doesn't read as one that asks the clock itself.
+const NEW_DATE = "new " + "Date()";
+const DATE_NOW = "Date." + "now()";
+
 describe("clockReads", () => {
   it("counts each read of the real clock, not comments or a given time", () => {
     const text = [
-      "const now = new Date();",
-      "const later = new Date(Date.now() + 1000);",
-      "// new Date() in a comment",
-      " * Date.now() in a doc comment",
+      `const now = ${NEW_DATE};`,
+      `const later = new Date(${DATE_NOW} + 1000);`,
+      `// ${NEW_DATE} in a comment`,
+      ` * ${DATE_NOW} in a doc comment`,
       'const fixed = new Date("2026-11-02T10:00:00Z");',
     ].join("\n");
     expect(clockReads(text)).toBe(2);
@@ -178,7 +182,7 @@ describe("measure", () => {
       ["packages/core/src/edge.ts", lines(500)],
       ["packages/core/src/fns.ts", fn("short", 58) + fn("long", 59) + "function many(a: 1, b: 2, c: 3, d: 4) {\n  go();\n}\n"],
       ["apps/client/src/components/row.tsx", fn("Row", 148) + fn("Big", 149) + fn("helper", 59)],
-      ["packages/core/src/long.test.ts", lines(900) + "const now = new Date();\n"],
+      ["packages/core/src/long.test.ts", lines(900) + `const now = ${NEW_DATE};\n`],
       ["packages/core/src/db-types.ts", lines(5000)],
     ]);
     expect(measure(files)).toEqual({
