@@ -1,4 +1,4 @@
-import { CATEGORIES, CATEGORY_LABEL, CREW_CHOICES, crewLine, CURRENCY_SYMBOL, johnFacts, johnsByKind, listLine, moneyInput, NEW_JOHN, parseMinAge, parseMoney, pocketMoney, pointsLabel, weeklyEffort, type Category, type GroupDef, type HouseRules, type JohnDef, type Words } from '@app/core';
+import { CATEGORIES, CATEGORY_LABEL, CREW_CHOICES, crewLine, CURRENCY_SYMBOL, johnFacts, johnsByKind, listCells, listLine, moneyInput, NEW_JOHN, parseMinAge, parseMoney, pocketMoney, pointsLabel, weeklyEffort, type Category, type GroupDef, type HouseRules, type JohnDef, type Words } from '@app/core';
 import { ListTodoIcon, PlusIcon, SparklesIcon, Trash2Icon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -12,7 +12,8 @@ import { Field } from '@/components/field';
 import { Group, GroupItem } from '@/components/group';
 import { TimingPicker, TimingSentence, type TimingWord } from '@/components/house/john-timing';
 import { useHouseWorkspace } from '@/components/house/workspace';
-import { Flow, type FlowItem } from '@/components/page-columns';
+import { JohnLine } from '@/components/house/john-line';
+import { useSideBySide } from '@/components/page-columns';
 import { Row } from '@/components/row';
 import { useFilled } from '@/components/screen';
 import { Section } from '@/components/section';
@@ -33,8 +34,10 @@ const effort = (words: Words) => Array.from({ length: 20 }, (_, i) => ({ value: 
 
 /**
  * The house's list of Johns: what it adds up to and Add a John over it, then
- * a section per kind with how many ("Kitchen", 3), each John a row: its lid
- * bar, when it's due and only what sets it apart, and its points. Admins add and edit
+ * a section per kind with how many ("Kitchen", 3), one under another. On a
+ * phone each John is a row: its lid bar, when it's due and only what sets
+ * it apart, and its points; on a laptop a line of lined-up columns
+ * (`JohnLine`), read down like a timetable. Admins add and edit
  * in a sheet; everyone else reads a John's details there. Changes land in the
  * next deal. Several page children, so it goes straight in a Screen.
  */
@@ -46,7 +49,6 @@ export function JohnList({
   editable,
   whoAdds,
   quietAdd = false,
-  more,
   family = false,
 }: {
   houseId: string;
@@ -58,8 +60,6 @@ export function JohnList({
   whoAdds?: string;
   /** Add a John in outline over the list on a laptop, for a page whose one amber button is another (the first deal). */
   quietAdd?: boolean;
-  /** On a laptop, more sections to sit among the kinds (the house's groups). */
-  more?: readonly FlowItem[];
   /** In a family each John can earn pocket money: the form asks how much, and each row says. */
   family?: boolean;
 }) {
@@ -101,7 +101,7 @@ export function JohnList({
   const add = () => edit({ ...NEW_JOHN });
   // Describe your house: the chat's page on a phone, the panel beside the list from WIDE.
   const ask = useAskJonz();
-  // On a laptop the kinds sit in columns, with Add a John above them rather than at the foot.
+  // On a laptop Add a John sits at the top right over the kinds, and each John is a line of lined-up columns.
   const filled = useFilled() !== null;
 
   return (
@@ -155,43 +155,15 @@ export function JohnList({
           )}
           {/* The kinds, not the bar above them: a View round both would take the page's gap between them. */}
           <TourSpot id="johns.list">
-          {/* The spot is one box: on a phone it keeps the page's gap between the kinds itself. */}
-          <View style={filled ? undefined : styles.kinds}>
-          <Flow
-            testID="john-kinds"
-            items={johnsByKind(johns, words)
-              .map((kind): FlowItem => ({
-                key: kind.category,
-                // A John's row is about two lines; the kind's name about one.
-                weight: kind.johns.length + 1,
-                node: (
-                  <Section label={CATEGORY_LABEL[kind.category]} right={String(kind.johns.length)} testID={`kind-${kind.category}`}>
-                    {kind.johns.map((j) => {
-                      const schedule = listLine(j, words, groupName(j.groupId));
-                      const earns = family && j.payMinor ? words('house.pocket.earns', { money: pocketMoney(j.payMinor, rules.currency, words) }) : null;
-                      const aged = family && j.minAge ? words('people.kids.minAgeLine', { age: j.minAge }) : null;
-                      // Whether it keeps its day is in its own sheet, with the rest of its details.
-                      const line = [schedule, j.crew === 1 ? null : words('john.crew.choice', { crew: j.crew }), earns, aged]
-                        .filter(Boolean)
-                        .join(', ');
-                      return (
-                        <Row
-                          key={j.id}
-                          title={j.name}
-                          lid={j.category}
-                          meta={line}
-                          trailing={pointsLabel(j.points, words)}
-                          onPress={() => (editable ? edit(j) : read(j))}
-                          accessibilityLabel={editable ? `${words('house.johns.edit', { name: j.name })}, ${line}, ${pointsLabel(j.points, words)}` : undefined}
-                          testID="john-def"
-                        />
-                      );
-                    })}
-                  </Section>
-                ),
-              }))
-              .concat(more ?? [])}
-          />
+          {/* The spot is one box: it keeps the page's gap between the kinds itself. */}
+          <View style={styles.kinds} testID="john-kinds">
+            {johnsByKind(johns, words).map((kind) => (
+              <Section key={kind.category} label={CATEGORY_LABEL[kind.category]} right={String(kind.johns.length)} testID={`kind-${kind.category}`}>
+                {kind.johns.map((j) => (
+                  <ListedJohn key={j.id} john={j} group={groupName(j.groupId)} rules={rules} family={family} editable={editable} onOpen={() => (editable ? edit(j) : read(j))} />
+                ))}
+              </Section>
+            ))}
           </View>
           </TourSpot>
         </>
@@ -220,6 +192,57 @@ export function JohnList({
       </Sheet>
     </>
   );
+}
+
+/**
+ * One John on the list: on a laptop a line of lined-up columns, on a phone
+ * a row with when it's due and only what sets it apart. Pressing it opens
+ * the John, to edit for an admin and to read for everyone else.
+ */
+function ListedJohn({
+  john: j,
+  group,
+  rules,
+  family,
+  editable,
+  onOpen,
+}: {
+  john: JohnDef;
+  group: string | null;
+  rules: HouseRules;
+  family: boolean;
+  editable: boolean;
+  onOpen: () => void;
+}) {
+  const words = useWords();
+  const filled = useFilled() !== null;
+  const roomy = useSideBySide();
+  const earns = family && j.payMinor ? words('house.pocket.earns', { money: pocketMoney(j.payMinor, rules.currency, words) }) : null;
+  const aged = family && j.minAge ? words('people.kids.minAgeLine', { age: j.minAge }) : null;
+  // Whether it keeps its day is in its own sheet, with the rest of its details.
+  const line = [listLine(j, words, group), j.crew === 1 ? null : words('john.crew.choice', { crew: j.crew }), earns, aged]
+    .filter(Boolean)
+    .join(', ');
+  const points = pointsLabel(j.points, words);
+  const spoken = `${editable ? words('house.johns.edit', { name: j.name }) : j.name}, ${line}, ${points}`;
+  if (filled) {
+    const cells = listCells(j, words, group);
+    return (
+      <JohnLine
+        name={j.name}
+        category={j.category}
+        when={cells.when}
+        often={cells.often}
+        also={[...cells.also, ...[earns, aged].filter((x): x is string => x !== null)]}
+        points={points}
+        weekly={j.when !== 'on_call' && j.everyWeeks === 1 && !j.everyMonths}
+        roomy={roomy}
+        onPress={onOpen}
+        accessibilityLabel={spoken}
+      />
+    );
+  }
+  return <Row title={j.name} lid={j.category} meta={line} trailing={points} onPress={onOpen} accessibilityLabel={editable ? spoken : undefined} testID="john-def" />;
 }
 
 /** A John's details, to read: what an admin would edit, one row each. */

@@ -18,7 +18,7 @@ import { StyleSheet, View } from 'react-native';
 import { houseFilter, housesCount, housesPage, type HouseCursor } from '@/api/houses';
 import { BusyListView, useBusyList, type BusyList } from '@/components/admin/busy-list';
 import { HOUSES_KEY, HousePanel } from '@/components/admin/house-panel';
-import { ListTableRow, type ListColumn } from '@/components/admin/list-table';
+import { ListTableRow, type ListColumn } from '@/components/list-table';
 import { Row, RowIcon } from '@/components/row';
 import { Columns, Screen, useColumns } from '@/components/screen';
 import { Chip } from '@/components/status-mark';

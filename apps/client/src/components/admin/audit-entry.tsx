@@ -1,7 +1,7 @@
 import { type Words, auditChanges, auditLikeThis, auditLine, auditParts, formatWhen, listTime, type AuditEntry } from '@app/core';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { ListTableRow, type ListColumn } from '@/components/admin/list-table';
+import { ListTableRow, type ListColumn } from '@/components/list-table';
 import { Group, GroupItem } from '@/components/group';
 import { Row } from '@/components/row';
 import { Section } from '@/components/section';

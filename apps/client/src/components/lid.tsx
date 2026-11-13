@@ -13,6 +13,9 @@ export function LidBar({ category }: { category: string }) {
   return <View aria-hidden testID="lid-bar" style={[styles.bar, { backgroundColor: lidColour(colors, category) }]} />;
 }
 
+/** How wide a lid bar is: words that line up past it start this far in, plus their gap. */
+export const LID_BAR = 14;
+
 const styles = StyleSheet.create({
-  bar: { width: 14, height: 5, borderRadius: 1.5 },
+  bar: { width: LID_BAR, height: 5, borderRadius: 1.5 },
 });
