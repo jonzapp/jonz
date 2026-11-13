@@ -10,12 +10,8 @@ import { andNames, shareLabel } from "./crew";
 import type { HouseRules } from "./domain";
 import { dueInLine, firstName, formatBalance } from "./format";
 import { coverOpensAt } from "./outcome";
+import type { Viewing } from "./viewing";
 import type { Words } from "./words-for";
-
-interface Person {
-  userId: string;
-  name: string;
-}
 
 export interface WhyRow {
   userId: string;
@@ -43,11 +39,7 @@ export interface WhyView {
 
 export function johnWhy(
   item: BoardItem,
-  people: readonly Person[],
-  viewerId: string,
-  rules: HouseRules,
-  now: Date,
-  words: Words,
+  { people, viewerId, rules, now, words }: Viewing,
   /** A John done together's places on the board (its job's), to say why the people on it are. */
   places: readonly BoardItem[] = [item],
 ): WhyView {

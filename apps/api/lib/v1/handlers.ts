@@ -142,7 +142,7 @@ const HANDLERS: Handlers = {
 
   async ask_house(ctx: HandlerContext) {
     const { summary, messages, draft } = ctx.input as Pick<ChatRequest, "summary" | "messages" | "draft">;
-    const result = await chatTurn(callerOf(ctx), houseId(ctx), messages, draft ?? null, ctx.now, undefined, { summary });
+    const result = await chatTurn(callerOf(ctx), { houseId: houseId(ctx), messages, current: draft ?? null, now: ctx.now, earlier: { summary } });
     if ("refusal" in result) throw refusal(result.refusal);
     return result;
   },
@@ -150,7 +150,7 @@ const HANDLERS: Handlers = {
   async pass_checkout(ctx: HandlerContext) {
     const { plan, offer } = ctx.input as PassCheckoutRequest;
     const email = typeof ctx.claims.email === "string" ? ctx.claims.email : undefined;
-    const answer = await startCheckout({ ...callerOf(ctx), email }, passStripe(), houseId(ctx), plan, appUrl(ctx), env.stage(), ctx.now, offer ?? null);
+    const answer = await startCheckout({ ...callerOf(ctx), email }, passStripe(), { houseId: houseId(ctx), plan, appUrl: appUrl(ctx), stage: env.stage(), now: ctx.now, offer: offer ?? null });
     return passAnswer(answer);
   },
 

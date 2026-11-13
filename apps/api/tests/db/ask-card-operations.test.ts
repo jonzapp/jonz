@@ -19,7 +19,7 @@ const said = (text: string) => [{ role: "user" as const, text }];
 const done: DraftAnswer = { raw: { reply: "On the card.", ask: { kind: "none" } }, inputTokens: 1, outputTokens: 1 };
 
 async function turn(actor: { db: never; userId: string } | { db: unknown; userId: string }, houseId: string, play: (tools: JonzTools, ctx: DraftContext) => Promise<void>) {
-  const result = await chatTurn(actor as never, houseId, said("Do it"), null, rightNow(), async (ctx, tools) => {
+  const result = await chatTurn(actor as never, { houseId, messages: said("Do it"), current: null, now: rightNow() }, async (ctx, tools) => {
     await play(tools, ctx);
     return done;
   });

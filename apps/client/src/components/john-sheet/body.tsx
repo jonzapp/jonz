@@ -151,7 +151,7 @@ function JohnSheetHeader({ item, context }: { item: BoardItem; context: JohnShee
   const words = useWords();
   const { colors, type } = useTheme();
   const room = forfeitRoom(context.stake, item.userId, monthOf(item.dueAt, context.zone));
-  const when = sheetWhen(item, context.members, context.userId, context.rules, context.now, words, room);
+  const when = sheetWhen(item, { people: context.members, viewerId: context.userId, rules: context.rules, now: context.now, words }, room);
   const icon = when.sign ? STATUS_MARK[when.sign].icon : null;
   const Sign = icon ? STATUS_ICON[icon] : null;
   return (

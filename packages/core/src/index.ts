@@ -100,3 +100,4 @@ export * from "./operation-io";
 export * from "./operations-json";
 export * from "./table-rows";
 export * from "./operations";
+export * from "./viewing";

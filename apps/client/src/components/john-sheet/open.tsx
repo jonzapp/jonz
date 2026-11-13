@@ -340,7 +340,7 @@ function SwapChoice({
 export function TheirsOpen({ item, context }: { item: BoardItem; context: JohnSheetContext }) {
   const words = useWords();
   const owner = context.members.find((m) => m.userId === item.userId);
-  const offer = coverOffer(item, context.members, context.userId, context.rules, context.now, words);
+  const offer = coverOffer(item, { people: context.members, viewerId: context.userId, rules: context.rules, now: context.now, words });
   return (
     <SheetLines>
       <View style={styles.owner}>

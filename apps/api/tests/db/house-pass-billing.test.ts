@@ -81,7 +81,7 @@ describe("Checkout", () => {
   it("sends a housemate on the free month to Stripe for a plan, first charging when the free month ends", async () => {
     const house = await makeHouse(["Ava", "Ben"]);
     const { stripe, calls } = fakeStripe();
-    const answer = await startCheckout(caller(house.members[0]), stripe, house.id, "yearly", APP, "local", now());
+    const answer = await startCheckout(caller(house.members[0]), stripe, { houseId: house.id, plan: "yearly", appUrl: APP, stage: "local", now: now() });
     expect(answer).toEqual({ url: "https://checkout.stripe.com/c/pay/cs_test_1" });
 
     const row = await passOfHouse(house.id);
@@ -102,7 +102,7 @@ describe("Checkout", () => {
   it("doesn't sell Founding any more", async () => {
     const house = await makeHouse(["Ava"]);
     const { stripe, calls } = fakeStripe();
-    expect(await startCheckout(caller(house.admin), stripe, house.id, "founding", APP, "local", now())).toMatchObject({ status: 409 });
+    expect(await startCheckout(caller(house.admin), stripe, { houseId: house.id, plan: "founding", appUrl: APP, stage: "local", now: now() })).toMatchObject({ status: 409 });
     expect(calls.checkout).toHaveLength(0);
   });
 
@@ -110,10 +110,10 @@ describe("Checkout", () => {
     const house = await makeHouse(["Ava"]);
     const stranger = await signedInUser("Zed");
     const { stripe, calls } = fakeStripe();
-    expect(await startCheckout(caller(stranger), stripe, house.id, "yearly", APP, "local", now())).toMatchObject({ status: 403 });
+    expect(await startCheckout(caller(stranger), stripe, { houseId: house.id, plan: "yearly", appUrl: APP, stage: "local", now: now() })).toMatchObject({ status: 403 });
 
     await db.from("houses").update({ pass_plan: "founding", pass_ends_at: null }).eq("id", house.id);
-    expect(await startCheckout(caller(house.admin), stripe, house.id, "yearly", APP, "local", now())).toMatchObject({ status: 409 });
+    expect(await startCheckout(caller(house.admin), stripe, { houseId: house.id, plan: "yearly", appUrl: APP, stage: "local", now: now() })).toMatchObject({ status: 409 });
     expect(calls.checkout).toHaveLength(0);
   });
 
@@ -121,9 +121,9 @@ describe("Checkout", () => {
     const house = await makeHouse(["Sam", "Leo"], "family");
     const [sam, leo] = house.everyone;
     const { stripe, calls } = fakeStripe();
-    expect(await startCheckout(caller(leo), stripe, house.id, "yearly", APP, "local", now())).toMatchObject({ status: 403 });
+    expect(await startCheckout(caller(leo), stripe, { houseId: house.id, plan: "yearly", appUrl: APP, stage: "local", now: now() })).toMatchObject({ status: 403 });
     expect(calls.checkout).toHaveLength(0);
-    expect(await startCheckout(caller(sam), stripe, house.id, "yearly", APP, "local", now())).toHaveProperty("url");
+    expect(await startCheckout(caller(sam), stripe, { houseId: house.id, plan: "yearly", appUrl: APP, stage: "local", now: now() })).toHaveProperty("url");
   });
 });
 

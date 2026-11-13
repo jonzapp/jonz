@@ -183,16 +183,16 @@ describe("using one at checkout", () => {
     const s = stripes();
     const made = await make({ people: [ava.email] }, s);
 
-    const theirs = await startCheckout(buyer(ava), s.pass, house.id, "yearly", APP, "local", rightNow(), made.code.toLowerCase());
+    const theirs = await startCheckout(buyer(ava), s.pass, { houseId: house.id, plan: "yearly", appUrl: APP, stage: "local", now: rightNow(), offer: made.code.toLowerCase() });
     expect(theirs).toEqual({ url: "https://checkout.stripe.com/c/pay/cs_test_1" });
     expect(s.calls.checkout[0]).toMatchObject({
       promotionCode: `promo_${made.id.slice(0, 8)}`,
       metadata: { promotion: made.id, offer_email: ava.email, house_id: house.id },
     });
 
-    const notBens = await startCheckout(buyer(ben), s.pass, house.id, "yearly", APP, "local", rightNow(), made.code);
+    const notBens = await startCheckout(buyer(ben), s.pass, { houseId: house.id, plan: "yearly", appUrl: APP, stage: "local", now: rightNow(), offer: made.code });
     expect(said(notBens)).toMatchObject({ status: 409, message: expect.stringContaining("someone else") });
-    const notFounding = await startCheckout(buyer(ava), s.pass, house.id, "founding", APP, "local", rightNow(), made.code);
+    const notFounding = await startCheckout(buyer(ava), s.pass, { houseId: house.id, plan: "founding", appUrl: APP, stage: "local", now: rightNow(), offer: made.code });
     expect(said(notFounding)).toMatchObject({ status: 409, message: expect.stringContaining("plan") });
     expect(s.calls.checkout).toHaveLength(1);
 
@@ -208,7 +208,7 @@ describe("using one at checkout", () => {
     const { data: person } = await db.from("promotion_people").select("used_at").eq("promotion_id", made.id).single();
     expect(person!.used_at).not.toBeNull();
 
-    const twice = await startCheckout(buyer(ava), s.pass, house.id, "yearly", APP, "local", rightNow(), made.code);
+    const twice = await startCheckout(buyer(ava), s.pass, { houseId: house.id, plan: "yearly", appUrl: APP, stage: "local", now: rightNow(), offer: made.code });
     expect(said(twice)).toMatchObject({ status: 409, message: expect.stringContaining("used already") });
   });
 
@@ -216,7 +216,7 @@ describe("using one at checkout", () => {
     const s = stripes();
     const made = await make({ kind: "trial", percent: null, duration: null, months: 3, audience: "anyone" }, s);
     const now = rightNow();
-    await startCheckout(buyer(ben), s.pass, house.id, "monthly", APP, "local", now, made.code);
+    await startCheckout(buyer(ben), s.pass, { houseId: house.id, plan: "monthly", appUrl: APP, stage: "local", now, offer: made.code });
     const trialEnd = s.calls.checkout[0].trialEnd! * 1000;
     expect(trialEnd).toBeGreaterThan(now.getTime() + 2.5 * MONTH);
     expect(s.calls.checkout[0].promotionCode).toBeNull();
@@ -225,7 +225,7 @@ describe("using one at checkout", () => {
   it("refuses a code that opens nothing, and a stopped one, and turns its Stripe code off", async () => {
     const s = stripes();
     const made = await make({ audience: "anyone" }, s);
-    expect(await startCheckout(buyer(ava), s.pass, house.id, "yearly", APP, "local", rightNow(), "NOSUCHCODE")).toMatchObject({ status: 409 });
+    expect(await startCheckout(buyer(ava), s.pass, { houseId: house.id, plan: "yearly", appUrl: APP, stage: "local", now: rightNow(), offer: "NOSUCHCODE" })).toMatchObject({ status: 409 });
 
     expect(await stopPromotion(me(ava), s.offers, made.id)).toMatchObject({ code: "42501" });
     expect(await stopPromotion(me(owner), s.offers, made.id)).toBeNull();
@@ -234,7 +234,7 @@ describe("using one at checkout", () => {
     const { data: audit } = await db.from("admin_audit").select("action").eq("target_id", made.id).eq("action", "promotion.stop");
     expect(audit).toHaveLength(1);
 
-    const ended = await startCheckout(buyer(ava), s.pass, house.id, "yearly", APP, "local", rightNow(), made.code);
+    const ended = await startCheckout(buyer(ava), s.pass, { houseId: house.id, plan: "yearly", appUrl: APP, stage: "local", now: rightNow(), offer: made.code });
     expect(said(ended)).toMatchObject({ status: 409, message: expect.stringContaining("ended") });
   });
 });
@@ -244,7 +244,7 @@ describe("a free Pass", () => {
     const s = stripes();
     const made = await make({ kind: "gift", percent: null, duration: null, plans: [], months: 12, audience: "anyone", maxUses: 1 }, s);
     const before = rightNow();
-    const given = await startCheckout(buyer(ava), s.pass, house.id, "yearly", APP, "local", before, made.code);
+    const given = await startCheckout(buyer(ava), s.pass, { houseId: house.id, plan: "yearly", appUrl: APP, stage: "local", now: before, offer: made.code });
     expect(given).toEqual({ url: `${APP}/house/pass?bought=1` });
     expect(s.calls.checkout).toHaveLength(0);
     const { data: h } = await db.from("houses").select("pass_plan, pass_ends_at").eq("id", house.id).single();
@@ -252,15 +252,15 @@ describe("a free Pass", () => {
     expect(new Date(h!.pass_ends_at!).getTime()).toBeGreaterThan(before.getTime() + 12 * MONTH);
 
     const other = await makeHouse(["Cal"]);
-    const usedUp = await startCheckout(buyer(other.admin), s.pass, other.id, "yearly", APP, "local", rightNow(), made.code);
+    const usedUp = await startCheckout(buyer(other.admin), s.pass, { houseId: other.id, plan: "yearly", appUrl: APP, stage: "local", now: rightNow(), offer: made.code });
     expect(usedUp).toMatchObject({ status: 409 });
   });
 
   it("for good makes a Founding house, with Stripe not set up at all", async () => {
     const made = await make({ kind: "gift", percent: null, duration: null, plans: [], months: null, people: [ben.email] });
     const half = await make({ audience: "anyone" });
-    expect(await startCheckout(buyer(ben), null, house.id, "yearly", APP, "local", rightNow(), half.code)).toMatchObject({ status: 503 });
-    expect(await startCheckout(buyer(ben), null, house.id, "yearly", APP, "local", rightNow(), made.code)).toMatchObject({ url: expect.any(String) });
+    expect(await startCheckout(buyer(ben), null, { houseId: house.id, plan: "yearly", appUrl: APP, stage: "local", now: rightNow(), offer: half.code })).toMatchObject({ status: 503 });
+    expect(await startCheckout(buyer(ben), null, { houseId: house.id, plan: "yearly", appUrl: APP, stage: "local", now: rightNow(), offer: made.code })).toMatchObject({ url: expect.any(String) });
     const { data: h } = await db.from("houses").select("pass_plan, pass_ends_at, pass_bought_by").eq("id", house.id).single();
     expect(h).toEqual({ pass_plan: "founding", pass_ends_at: null, pass_bought_by: null });
   });
