@@ -6,6 +6,8 @@ pages are private artifacts on claude.ai.
 
 | Date | Decision | Where | Rule |
 | --- | --- | --- | --- |
+| 2026-11-13 | The "•••" menu drops from the "•••" on a laptop, as the Table's This week \| October does, one shared drop-down (`DropMenu`); a phone keeps the sheet (••• menu A) | this PR | [controls](controls.md#inputs) |
+| 2026-11-13 | The John editor's quick choices (How often, By what time, Done within) are the same grey switch as Weeks \| Months \| Years under them (`Segmented`, two or three to a row), not amber pills; its − and + are outline `IconButton`s (repeat picker A) | this PR | [controls](controls.md#inputs) |
 | 2026-11-13 | The John list on a laptop: the kinds one under another in their set order, each John one line with when, how often, what else and its points in lined-up columns (how often and the rest under the name when a John is open beside it); the groups beside the re-deal under them (John list C) | this PR | [lists](lists.md#rows), [layout](layout.md#laptop-pages) |
 | 2026-11-13 | A Wall row is a clean row lined up on its first line: time on the right, reaction counts on the meta line (every row one height), no buttons on it; reactions in the sheet it opens, the John sheet too (Wall row C) | this PR | [lists](lists.md#rows) |
 | 2026-11-13 | No History list: the Wall stays as it is, and every move History could undo is undone from the sheet that opens when you tap it, its Wall post's or its John's (Wall and History) | this PR | [layout](layout.md#navigation) |

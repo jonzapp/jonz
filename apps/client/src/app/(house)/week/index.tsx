@@ -10,6 +10,7 @@ import { Columns, Screen, useColumns } from '@/components/screen';
 import { Section } from '@/components/section';
 import { Chip } from '@/components/status-mark';
 import { TextButton } from '@/components/text-button';
+import { type MenuPlace } from '@/components/drop-menu';
 import { MoreButton, TitleBar } from '@/components/title-bar';
 import { TableSection } from '@/components/house-page/table-section';
 import { ComingUpSection } from '@/components/week/coming-up';
@@ -65,7 +66,8 @@ function WeekFor({ houseId, userId }: { houseId: string; userId: string }) {
   const { refreshing, pull } = usePull(houseId, () =>
     Promise.all([query.refetch(), ...(view ? [away.refetch(), shares.refetch()] : [])]),
   );
-  const [menu, setMenu] = useState(false);
+  // The "•••" menu while it's open, and where it drops from on a laptop.
+  const [menu, setMenu] = useState<{ place: MenuPlace | null } | null>(null);
   const board = view?.board;
 
   return (
@@ -76,14 +78,15 @@ function WeekFor({ houseId, userId }: { houseId: string; userId: string }) {
             title={words('common.title.week')}
             right={
               <TourSpot id="week.more">
-                <MoreButton onPress={() => setMenu(true)} />
+                <MoreButton onPress={(place) => setMenu({ place })} />
               </TourSpot>
             }
             ask={memberCan(view?.me, 'house:read')}
           />
           <WeekMenu
-            visible={menu}
-            onClose={() => setMenu(false)}
+            visible={menu !== null}
+            place={menu?.place ?? null}
+            onClose={() => setMenu(null)}
             houseId={houseId}
             admin={memberCan(view?.me, 'weeks:write')}
             canRedeal={board?.week != null && weekUnticked(board.items)}

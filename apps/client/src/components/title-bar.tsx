@@ -1,9 +1,10 @@
 import { useRouter, type Href } from 'expo-router';
 import { ChevronLeftIcon, CircleQuestionMarkIcon, EllipsisIcon, SparklesIcon } from 'lucide-react-native';
-import { createContext, useContext, type ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { createContext, useContext, useRef, type ReactNode } from 'react';
+import { Pressable, StyleSheet, Text, useWindowDimensions, View, type HostInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { measurePlace, type MenuPlace } from '@/components/drop-menu';
 import { useHouseWorkspace } from '@/components/house/workspace';
 import { useContentWidth } from '@/components/screen';
 import { Meta, Title } from '@/components/text';
@@ -213,10 +214,20 @@ function AskButton() {
   );
 }
 
-/** The title bar's "•••": opens the screen's ActionMenu. */
-export function MoreButton({ onPress, testID = 'more' }: { onPress: () => void; testID?: string }) {
+/**
+ * The title bar's "•••": opens the screen's ActionMenu, saying where it is
+ * from WIDE so the menu drops from it (null on a phone, for a sheet).
+ */
+export function MoreButton({ onPress, testID = 'more' }: { onPress: (place: MenuPlace | null) => void; testID?: string }) {
   const words = useWords();
-  return <IconButton icon={EllipsisIcon} label={words('common.shell.more')} onPress={onPress} testID={testID} />;
+  const width = useWindowDimensions().width;
+  const self = useRef<HostInstance>(null);
+  const open = () => (width >= WIDE ? measurePlace(self, width, onPress) : onPress(null));
+  return (
+    <View ref={self} collapsable={false}>
+      <IconButton icon={EllipsisIcon} label={words('common.shell.more')} onPress={open} testID={testID} />
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
