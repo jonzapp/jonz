@@ -1,6 +1,6 @@
 import { dueInLine, prefsOf, reminderFor, remindMoverNow, REMIND_AFTER_DAYS, REMIND_UNTIL_DAYS, rulesOf, houseKind, type Words } from "@app/core";
 
-import { must, type Db, type HouseRow, type Notify } from "./shared";
+import { must, type Db, type HouseRow, type Notify, type PushMessage } from "./shared";
 
 // Reminders, and the one to someone who moved out.
 
@@ -18,9 +18,9 @@ const HOUR = 3_600_000;
 /** A planned John's reminder: sent once at its planned time (Plan it), in place of the usual two. */
 const PLANNED = 3;
 
-export async function sendReminders(db: Db, house: HouseRow, now: Date, notify: Notify) {
-  const zone = rulesOf(house).timezone;
-  const [dueSoon, planned] = await Promise.all([
+/** The Johns due within a day that aren't planned, and the planned ones whose time has come (up to two hours ago, if the clock was away). */
+async function dueForReminder(db: Db, house: HouseRow, now: Date) {
+  return Promise.all([
     db
       .from("assignments")
       .select("id, user_id, name, due_at, needs_photo, reminded, job_id, planned_at")
@@ -43,8 +43,43 @@ export async function sendReminders(db: Db, house: HouseRow, now: Date, notify: 
       .lt("reminded", PLANNED)
       .lte("planned_at", now.toISOString())
       .gt("planned_at", new Date(now.getTime() - 2 * HOUR).toISOString()),
-  ]).then(([a, b]) => [must(a, "reminders"), must(b, "planned reminders")] as const);
-  const soon = [...dueSoon, ...planned];
+  ]).then(([a, b]) => [...must(a, "reminders"), ...must(b, "planned reminders")]);
+}
+
+type Due = Awaited<ReturnType<typeof dueForReminder>>[number];
+
+/** A reminder's push: planned, due soon (stage 2) or due tomorrow. */
+function reminderPush(a: Due, stage: number, { house, now }: { house: HouseRow; now: Date }): PushMessage {
+  const zone = rulesOf(house).timezone;
+  const due = (w: Words) => dueInLine(new Date(a.due_at), now, zone, w);
+  return {
+    title: (w) =>
+      stage === PLANNED
+        ? w('house.notify.plannedTitle', { john: a.name })
+        : stage === 2
+          ? w('house.notify.dueSoonTitle', { john: a.name })
+          : w('house.notify.dueTomorrowTitle', { john: a.name }),
+    body: (w) =>
+      a.needs_photo
+        ? w('house.notify.needsPhotoBody', { due: due(w) })
+        : stage === PLANNED
+          ? w('house.notify.plannedBody', { due: due(w) })
+          : stage === 2
+            ? w('house.notify.dueSoonBody', { due: due(w) })
+            : w('house.notify.dueTomorrowBody', { due: due(w) }),
+    houseKind: houseKind(house.kind),
+    url: "/today",
+    kind: "reminders",
+    zone,
+    // A John done together is ticked with who did it, in the app.
+    ...(a.needs_photo || a.job_id ? {} : { act: { assignmentId: a.id } }),
+    tag: `john:${a.id}`,
+  };
+}
+
+export async function sendReminders(db: Db, house: HouseRow, now: Date, notify: Notify) {
+  const zone = rulesOf(house).timezone;
+  const soon = await dueForReminder(db, house, now);
   if (soon.length === 0) return 0;
   const prefs = must(
     await db
@@ -71,30 +106,7 @@ export async function sendReminders(db: Db, house: HouseRow, now: Date, notify: 
       "claim reminder",
     );
     if (claimed.length === 0 || when === "skip") continue;
-    const due = (w: Words) => dueInLine(new Date(a.due_at), now, zone, w);
-    await notify([a.user_id], {
-      title: (w) =>
-        stage === PLANNED
-          ? w('house.notify.plannedTitle', { john: a.name })
-          : stage === 2
-            ? w('house.notify.dueSoonTitle', { john: a.name })
-            : w('house.notify.dueTomorrowTitle', { john: a.name }),
-      body: (w) =>
-        a.needs_photo
-          ? w('house.notify.needsPhotoBody', { due: due(w) })
-          : stage === PLANNED
-            ? w('house.notify.plannedBody', { due: due(w) })
-            : stage === 2
-              ? w('house.notify.dueSoonBody', { due: due(w) })
-              : w('house.notify.dueTomorrowBody', { due: due(w) }),
-      houseKind: houseKind(house.kind),
-      url: "/today",
-      kind: "reminders",
-      zone,
-      // A John done together is ticked with who did it, in the app.
-      ...(a.needs_photo || a.job_id ? {} : { act: { assignmentId: a.id } }),
-      tag: `john:${a.id}`,
-    });
+    await notify([a.user_id], reminderPush(a, stage, { house, now }));
     sent += 1;
   }
   return sent;

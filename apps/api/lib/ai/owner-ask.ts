@@ -162,8 +162,8 @@ const PromotionInput = z.object({
 });
 type PromotionInput = z.infer<typeof PromotionInput>;
 
-/** Every write tool, by name: OWNER_ASK_COVERAGE says which permission gives each. */
-function writeTools(w: OwnerWrites): Record<string, ToolSet[string]> {
+/** Reports, notices and messages. */
+function reportTools(w: OwnerWrites): Record<string, ToolSet[string]> {
   const said = (r: EditResult) => r.said;
   // Each starts with what its operation does, in the registry's words.
   const about = (tool: string, more: string) => `${ownerToolAbout(tool)}. ${more}`;
@@ -203,6 +203,15 @@ function writeTools(w: OwnerWrites): Record<string, ToolSet[string]> {
       inputSchema: MessageInput,
       execute: async (m) => said(await w.sendMessage(m)),
     }),
+  };
+}
+
+/** Promotions. */
+function promotionTools(w: OwnerWrites): Record<string, ToolSet[string]> {
+  const said = (r: EditResult) => r.said;
+  // Each starts with what its operation does, in the registry's words.
+  const about = (tool: string, more: string) => `${ownerToolAbout(tool)}. ${more}`;
+  return {
     make_promotion: tool({
       description: about("make_promotion", "Put a new promotion on the card. Its code must be new."),
       inputSchema: PromotionInput,
@@ -223,6 +232,15 @@ function writeTools(w: OwnerWrites): Record<string, ToolSet[string]> {
       inputSchema: z.object({ id: Id }),
       execute: async ({ id }) => said(await w.promotionMove("promotion_retry", id)),
     }),
+  };
+}
+
+/** Deleting accounts and houses, and resetting a house. */
+function removalTools(w: OwnerWrites): Record<string, ToolSet[string]> {
+  const said = (r: EditResult) => r.said;
+  // Each starts with what its operation does, in the registry's words.
+  const about = (tool: string, more: string) => `${ownerToolAbout(tool)}. ${more}`;
+  return {
     delete_account_now: tool({
       description: about("delete_account_now", "Put deleting an account now on the card, without waiting out its 30 days: gone for good within ten minutes. Only for an account already waiting to be deleted (deletions)."),
       inputSchema: z.object({ userId: Id, reason: Reason }),
@@ -253,9 +271,14 @@ function writeTools(w: OwnerWrites): Record<string, ToolSet[string]> {
   };
 }
 
-/** The owner's tools: every read, and (given `writes`) each write the owner's role allows. */
-export function ownerToolSet(t: OwnerReads, writes?: OwnerWrites): ToolSet {
-  const set: ToolSet = {
+/** Every write tool, by name: OWNER_ASK_COVERAGE says which permission gives each. */
+function writeTools(w: OwnerWrites): Record<string, ToolSet[string]> {
+  return { ...reportTools(w), ...promotionTools(w), ...removalTools(w) };
+}
+
+/** The reads: every owner list, by search. */
+function readTools(t: OwnerReads): ToolSet {
+  return {
     inbox: tool({
       description: "Reports people sent from the app, newest first: who, their house, kind, state and what they wrote.",
       inputSchema: z.object({
@@ -307,6 +330,11 @@ export function ownerToolSet(t: OwnerReads, writes?: OwnerWrites): ToolSet {
     }),
     read_page: readPageToolForAnyHouse((page, family) => t.page(page, family)),
   };
+}
+
+/** The owner's tools: every read, and (given `writes`) each write the owner's role allows. */
+export function ownerToolSet(t: OwnerReads, writes?: OwnerWrites): ToolSet {
+  const set: ToolSet = readTools(t);
   if (!writes) return set;
   const all = writeTools(writes);
   for (const permission of Object.keys(OWNER_PERMISSIONS) as OwnerPermission[]) {

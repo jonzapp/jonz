@@ -18,8 +18,17 @@ function ok<T>(result: { data: T | null; error: { message: string } | null }, wh
   return result.data as T;
 }
 
-/** Push what's new since the last tick. Answers how many pushes it sent. */
-export async function tellHouse(db: Db, house: HouseRow, memberIds: readonly string[], now: Date, notify: Notify): Promise<number> {
+/** What a telling is handed: the house, who lives there, and how to push. */
+interface Telling {
+  db: Db;
+  house: HouseRow;
+  memberIds: readonly string[];
+  now: Date;
+  notify: Notify;
+}
+
+/** Tells whoever each new Wall post is about. Answers how many pushes it sent. */
+async function tellPosts({ db, house, memberIds, now, notify }: Telling): Promise<number> {
   // Each push is said in its reader's language when it's sent; who it goes to is the same in any.
   const kind = houseKind(house.kind);
   const zone = rulesOf(house).timezone;
@@ -69,6 +78,14 @@ export async function tellHouse(db: Db, house: HouseRow, memberIds: readonly str
       "told",
     );
   }
+  return sent;
+}
+
+/** Tells an owner their overdue John can now be covered. Answers how many pushes it sent. */
+async function tellCoverOpen({ db, house, memberIds, now, notify }: Telling): Promise<number> {
+  const kind = houseKind(house.kind);
+  const zone = rulesOf(house).timezone;
+  let sent = 0;
 
   // Covering opens: tell the owner once, while it's still theirs to do.
   const overdue = ok(
@@ -114,4 +131,10 @@ export async function tellHouse(db: Db, house: HouseRow, memberIds: readonly str
     ok(await db.from("assignments").update({ cover_told_at: now.toISOString() }).in("id", opened), "cover told");
   }
   return sent;
+}
+
+/** Push what's new since the last tick. Answers how many pushes it sent. */
+export async function tellHouse(db: Db, house: HouseRow, memberIds: readonly string[], now: Date, notify: Notify): Promise<number> {
+  const telling: Telling = { db, house, memberIds, now, notify };
+  return (await tellPosts(telling)) + (await tellCoverOpen(telling));
 }
