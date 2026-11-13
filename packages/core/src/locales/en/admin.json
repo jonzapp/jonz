@@ -413,12 +413,12 @@
   "admin.moves.meta.deletion_start": "They have 30 days to change their mind.",
   "admin.deleteHouse.rowMeta": "The house and everything in it go for good. Its people keep their accounts, in no house.",
   "admin.reset.title": "{everything, select, true {Reset everything in {name}?} other {Reset the history of {name}?}}",
-  "admin.reset.body": "{everything, select, true {A clean slate: every week dealt, its ticks, money and History, everyone’s streaks, skips and swaps, and the John list, groups, time away and rules go. Its name, people and House Pass stay, and the Wall tells them. It can’t be undone.} other {Back to before its first deal: every week dealt, its ticks, money, History, streaks, skips and swaps go. Its people, John list, rules and House Pass stay, and the Wall tells them. It can’t be undone.}}",
+  "admin.reset.body": "{everything, select, true {A clean slate: every week dealt, its ticks, money and Wall posts, everyone’s streaks, skips and swaps, and the John list, groups, time away and rules go. Its name, people and House Pass stay, and the Wall tells them. It can’t be undone.} other {Back to before its first deal: every week dealt, its ticks, money, Wall posts, streaks, skips and swaps go. Its people, John list, rules and House Pass stay, and the Wall tells them. It can’t be undone.}}",
   "admin.reset.reason": "Why (for the audit log)",
   "admin.reset.confirm": "Type the house’s name to reset it",
   "admin.reset.go": "Reset for good",
   "admin.reset.going": "Resetting",
   "admin.reset.done": "{everything, select, true {{name} is a clean slate.} other {{name} is back to before its first deal.}}",
-  "admin.reset.gone": "{everything, select, true {A clean slate: History, the John list, groups, time away and rules go.} other {Back to before its first deal: every week, tick, forfeit and History goes.}} {people, plural, =1 {The 1 person} other {The {people} people}} in it stay, and the Wall tells them.",
+  "admin.reset.gone": "{everything, select, true {A clean slate: Wall posts, the John list, groups, time away and rules go.} other {Back to before its first deal: every week, tick, forfeit and Wall post goes.}} {people, plural, =1 {The 1 person} other {The {people} people}} in it stay, and the Wall tells them.",
   "admin.moves.title.house_reset": "{everything, select, true {Reset everything in {name}} other {Reset the history of {name}}}"
 }

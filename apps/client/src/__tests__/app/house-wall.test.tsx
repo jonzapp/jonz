@@ -16,8 +16,8 @@ const words = wordsFor('en', 'housemates');
 jest.mock('@/api/board', () => ({ loadHouse: jest.fn() }));
 jest.mock('@/api/house', () => ({ catchUp: jest.fn() }));
 jest.mock('@/api/wall', () => ({ loadWall: jest.fn(), setReaction: jest.fn() }));
-// History, beside the Wall on a laptop and behind a switch on a phone (house-history.test.tsx).
-jest.mock('@/api/history', () => ({ HISTORY_PAGE: 60, loadHistory: jest.fn(), undoAction: jest.fn() }));
+// What can still be undone, for a post's sheet (house-undo.test.tsx).
+jest.mock('@/api/history', () => ({ loadHistory: jest.fn(), undoAction: jest.fn() }));
 // A phone unless a test says otherwise.
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
   __esModule: true,
@@ -249,22 +249,15 @@ it('sits under a title bar with the way back to House', async () => {
   expect(bar.getByRole('button', { name: words('common.shell.backTo', { place: words('common.section.house') }) })).toBeOnTheScreen();
 });
 
-it('shows the Wall and History side by side on a laptop, each under its name, and a switch between them on a phone', async () => {
+it('is the Wall alone, on a phone and a laptop: no History beside it or behind a switch', async () => {
   await open();
-  expect(within(screen.getByTestId('wall-shows')).getByRole('radio', { name: words('wall.page.title') })).toBeChecked();
+  expect(screen.queryByTestId('wall-shows')).toBeNull();
   expect(screen.queryByTestId('history-section')).toBeNull();
 
   (useWindowDimensions as jest.Mock).mockReturnValue({ width: 1440, height: 900, scale: 1, fontScale: 1 });
   await open();
-  expect(screen.queryByTestId('wall-shows')).toBeNull();
-  // Each under its name, so their first days start on the same line.
-  const wall = within(screen.getByTestId('wall-pair-start'));
-  expect(within(wall.getByTestId('wall-section')).getAllByRole('header', { name: words('wall.page.title') })[0]).toBeOnTheScreen();
-  expect(wall.getAllByTestId('wall-day').length).toBeGreaterThan(0);
-  const history = within(screen.getByTestId('wall-pair-end'));
-  expect(history.getAllByRole('header', { name: words('wall.history.title') })[0]).toBeOnTheScreen();
-  // Everyone's moves or only yours, in History's header.
-  expect(history.getByTestId('history-whose')).toHaveTextContent(words('wall.history.everyone'));
-  expect(await history.findByTestId('history-empty')).toBeOnTheScreen();
+  expect(screen.queryByTestId('wall-pair')).toBeNull();
+  expect(screen.queryByTestId('history-section')).toBeNull();
+  expect(screen.getAllByTestId('wall-day').length).toBeGreaterThan(0);
   (useWindowDimensions as jest.Mock).mockReturnValue({ width: 390, height: 844, scale: 1, fontScale: 1 });
 });

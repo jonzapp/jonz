@@ -155,7 +155,7 @@ test.describe("a house with its week dealt", () => {
     { path: "/house/groups", lands: "/house/johns" },
     { path: "/house/admins", lands: "/house/rules" },
     { path: "/house/prefs", lands: "/house/away" },
-    { path: "/house/history", lands: "/house/wall?view=history" },
+    { path: "/house/history", lands: "/house/wall" },
   ]) {
     test(`${path} opened cold, and after a refresh, still goes back to House`, async ({ page }) => {
       const [where, query] = lands.split("?");

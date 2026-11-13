@@ -45,7 +45,7 @@
 
 ## Long lists
 
-- **Load as you scroll,** the same way everywhere (the Wall, History, the
+- **Load as you scroll,** the same way everywhere (the Wall, the
   audit log, any list that grows), with one shared foot: how far back,
   Loading more, That's everything, Try again. "Show more" stays for the
   keyboard and short pages. On a laptop the foot is pinned full width along

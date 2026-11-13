@@ -35,8 +35,8 @@ it('reads History with each move’s details in their own names', async () => {
       reach: 'own',
     },
   ]);
-  const [item] = await loadHistory('h1', new Date('2026-11-05T00:00:00Z'));
-  expect(call).toHaveBeenCalledWith('house_history', { houseId: 'h1', before: '2026-11-05T00:00:00.000Z', limit: 60 });
+  const [item] = await loadHistory('h1');
+  expect(call).toHaveBeenCalledWith('house_history', { houseId: 'h1', limit: 200 });
   expect(item).toMatchObject({ actor: 'ava', reach: 'own', data: { starts_on: '2026-11-01', ends_on: '2026-11-03' } });
   call.mockResolvedValue(null);
   await undoLatest('tick', 'j1');

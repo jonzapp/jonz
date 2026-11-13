@@ -96,7 +96,8 @@ const PAGES: [RegExp, string][] = [
   [/^\/house$/, words('common.title.house')],
   [/^\/house\/wall$/, PREVIEW_WORDS('wall.page.title')],
   [/^\/house\/stake$/, PREVIEW_WORDS('house.stake.title')],
-  [/^\/house\/history$/, PREVIEW_WORDS('wall.history.title')],
+  // History is gone: an old link lands on the Wall.
+  [/^\/house\/history$/, PREVIEW_WORDS('wall.page.title')],
   [/^\/house\/johns$/, words('common.title.johnList')],
   [/^\/house\/rules$/, words('common.title.rules')],
   [/^\/house\/away$/, words('common.title.away')],

@@ -79,7 +79,7 @@ it('shows what each page is set to now', async () => {
   await rowSays('to-away', new RegExp(`${words('house.lower.away')}.*Sam, 29 Oct–1 Nov`));
 });
 
-it('leaves Groups, the admins and History to the pages they are on now', async () => {
+it('leaves Groups and the admins to the pages they are on now, and has no History', async () => {
   await open();
   await rowSays('to-johns', /2 Johns,/);
   expect(within(screen.getByTestId('setup-section')).getAllByRole('link')).toHaveLength(4);

@@ -293,7 +293,7 @@ export function Danger() {
     <DangerZone testID="style-danger">
       <DangerRow
         title="Reset history"
-        meta="Back to before the first deal. Weeks dealt, ticks, money and History go."
+        meta="Back to before the first deal. Weeks dealt, ticks, money and Wall posts go."
         action="Reset"
         icon={RotateCcwIcon}
         onPress={none}

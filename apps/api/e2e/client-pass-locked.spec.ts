@@ -7,13 +7,13 @@ const words = wordsFor("en", "housemates");
 
 // A house whose free month has ended and that hasn't bought the Pass, in the
 // Expo app's web build: a photo John ticks plainly, nothing offers a photo,
-// lateness costs nothing (no Stake), and History ends with a row to the Pass page.
+// lateness costs nothing (no Stake).
 test.use({ baseURL: CLIENT_URL });
 
 const made: string[] = [];
 test.afterAll(async () => cleanUp(made));
 
-test("without the House Pass, a photo John ticks plainly and History says older moves need it", async ({ browser }) => {
+test("without the House Pass, a photo John ticks plainly", async ({ browser }) => {
   const context = await browser.newContext();
   const { userId, houseId } = await dealtHouseInClient(context, "Ava Locked", "Flat 41", [
     { name: "Clean the oven", category: "kitchen", needsPhoto: true },
@@ -36,12 +36,4 @@ test("without the House Pass, a photo John ticks plainly and History says older 
   await expect(next.getByTestId("choose-photo")).toHaveCount(0);
   await next.getByTestId("mark-done").click();
   await expect.poll(async () => (await admin().from("assignments").select("done_at").eq("house_id", houseId).single()).data?.done_at).not.toBeNull();
-
-  await page.goto("/house/history");
-  const history = page.getByTestId("wall-screen");
-  await expect(history.getByTestId("history-row").first()).toBeVisible();
-  const locked = history.getByTestId("history-locked");
-  await expect(locked).toContainText(words("house.pass.olderHistory"));
-  await locked.getByRole("link").click();
-  await expect(page).toHaveURL(/\/house\/pass$/);
 });

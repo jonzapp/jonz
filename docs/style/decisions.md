@@ -6,6 +6,7 @@ pages are private artifacts on claude.ai.
 
 | Date | Decision | Where | Rule |
 | --- | --- | --- | --- |
+| 2026-11-13 | No History list: the Wall stays as it is, and every move History could undo is undone from the sheet that opens when you tap it, its Wall post's or its John's (Wall and History) | this PR | [layout](layout.md#navigation) |
 | 2026-11-13 | The owner's Inbox opens on every report in two groups, each newest first with its count: Needs a reply (new, or read and not folded), then Everything else. The one search box looks through both, a group with no matches is left out, and picking a State shows that state as one plain list (Inbox two groups A) | this PR | [lists](lists.md#admin-lists) |
 | 2026-11-12 | Ask Jonz's warnings, one way (option A): a line over the message box while the chat can carry on (week running low, chat getting long), a card in the box's place once nothing more can be sent (week used up, chat full, no House Pass); a long chat sums up its start with a line in the chat that opens the summary, and carries on in a new chat at 200 | #235 | [states](states.md#ask-jonzs-warnings) |
 | 2026-11-12 | A fourth tab, You, at the end of the bar (the rail's last place on a laptop): your settings, help, moving out, your reports and leaving move out of House, whose phone switch now reads Overview or Setup; old /house/you, /house/moving and /house/reports links land on the new pages (Fourth tab A) | this PR | [layout](layout.md#navigation) |

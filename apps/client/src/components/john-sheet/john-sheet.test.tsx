@@ -1,4 +1,4 @@
-import { BIN_NIGHT, buildStake, type DisputeRow, monthOf, wordsFor } from '@app/core';
+import { BIN_NIGHT, buildStake, historyItems, type ActionRow, type DisputeRow, monthOf, wordsFor } from '@app/core';
 import type { QueryClient } from '@tanstack/react-query';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
@@ -6,6 +6,7 @@ import { Pressable, ScrollView, Text } from 'react-native';
 
 import type { Housemate, HouseSnapshot } from '@/api/board';
 import { loadHouse } from '@/api/board';
+import { loadHistory, undoAction } from '@/api/history';
 import { castVote } from '@/api/disputes';
 import { coverJohn, holdCover, markDone, removeFlag, rollCall, spendImmunity, spendSwap, undoCover, undoDone } from '@/api/johns';
 import { pickPhoto } from '@/api/photos';
@@ -39,6 +40,8 @@ jest.mock('@/api/photos', () => ({ pickPhoto: jest.fn(), uploadProof: jest.fn() 
 jest.mock('@/api/wall', () => ({ signPhoto: jest.fn() }));
 jest.mock('@/api/resets', () => ({ previewReset: jest.fn(), applyReset: jest.fn() }));
 jest.mock('@/api/supabase', () => ({ supabase: {} }));
+// What can still be undone: nothing, unless a test says so.
+jest.mock('@/api/history', () => ({ loadHistory: jest.fn(), undoAction: jest.fn() }));
 
 const HOUR = 3_600_000;
 const at = (hours: number) => new Date(Date.now() + hours * HOUR).toISOString();
@@ -105,6 +108,8 @@ const samsBath = (overrides: Parameters<typeof assignment>[0] = {}) =>
 beforeEach(() => {
   jest.clearAllMocks();
   (loadHouse as jest.Mock).mockResolvedValue(house([binsOut(), samsBath({ done_at: at(-1) })]));
+  (loadHistory as jest.Mock).mockResolvedValue([]);
+  (undoAction as jest.Mock).mockResolvedValue(undefined);
   (markDone as jest.Mock).mockResolvedValue(undefined);
   (rollCall as jest.Mock).mockResolvedValue(2);
   (undoDone as jest.Mock).mockResolvedValue(undefined);
@@ -494,6 +499,55 @@ describe('your tick, being checked', () => {
     const body = await openOn('Open a1');
     await fireEvent.press(within(body).getByRole('button', { name: words('john.row.undo') }));
     expect(await within(body).findByRole('alert')).toHaveTextContent('It has stood.');
+  });
+});
+
+describe('undo, now History is gone', () => {
+  const move = (overrides: Partial<ActionRow>): ActionRow => ({
+    id: 'm1',
+    kind: 'tick',
+    done_by: 'sam',
+    subject_user_id: 'sam',
+    assignment_id: 'a4',
+    ref: null,
+    data: { name: 'Clean the bath' },
+    created_at: at(-1),
+    undone_at: null,
+    undone_by: null,
+    reach: 'admin',
+    ...overrides,
+  });
+
+  it("offers an admin Undo for a housemate's tick, and undoes it", async () => {
+    (loadHistory as jest.Mock).mockResolvedValue(historyItems([move({})]));
+    await show();
+    const body = await openOn('Open a4');
+    const undo = await within(body).findByRole('button', { name: 'Undo: Sam ticked Clean the bath' });
+    expect(undo).toHaveTextContent(words('wall.history.undo'));
+    await fireEvent.press(undo);
+    expect(undoAction).toHaveBeenCalledWith('m1');
+  });
+
+  it('leaves your own tick, being checked, to its own Undo', async () => {
+    (loadHistory as jest.Mock).mockResolvedValue(historyItems([move({ done_by: 'priya', subject_user_id: 'priya', assignment_id: 'a1', data: { name: 'Bins out' }, reach: 'own' })]));
+    await show(house([binsOut({ done_at: at(-1) })]));
+    const body = await openOn('Open a1');
+    await waitFor(() => expect(loadHistory).toHaveBeenCalled());
+    expect(within(body).getByRole('button', { name: words('john.row.undo') })).toBeOnTheScreen();
+    expect(within(body).queryByTestId('undo-move')).toBeNull();
+  });
+
+  it('says what each undoes when there is more than one, a swap from either side', async () => {
+    (loadHistory as jest.Mock).mockResolvedValue(
+      historyItems([
+        move({ id: 'm1', kind: 'swap', done_by: 'priya', subject_user_id: 'sam', assignment_id: 'a1', ref: 'a4', data: { name: 'Bins out', gave: 'Clean the bath' }, reach: 'own' }),
+        move({ id: 'm2', kind: 'immunity', done_by: 'sam', data: { name: 'Clean the bath' } }),
+      ]),
+    );
+    await show(house([binsOut(), samsBath()]));
+    const body = await openOn('Open a4');
+    expect(await within(body).findByRole('button', { name: 'Undo: You swapped Clean the bath for Sam’s Bins out' })).toBeOnTheScreen();
+    expect(within(body).getByRole('button', { name: 'Undo: Sam used a skip on Clean the bath' })).toBeOnTheScreen();
   });
 });
 
