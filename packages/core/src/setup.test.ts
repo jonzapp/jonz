@@ -23,6 +23,7 @@ import {
   rulesDraft,
   rulesRefusalField,
   rulesRows,
+  listCells,
   listLine,
   scheduleLine,
   tripMeta,
@@ -83,6 +84,21 @@ describe("listLine", () => {
   it("says an on-call John's window", () => {
     expect(listLine(john({ when: "on_call", respondHours: 12, perWeek: 3 }), words, "Downstairs")).toBe("On call, within 12 hours, Downstairs");
     expect(listLine(john({ when: "on_call", respondHours: 1 }), words)).toBe("On call, within 1 hour");
+  });
+});
+
+describe("listCells", () => {
+  it("splits a John's line into when, how often and what else", () => {
+    expect(listCells(john({ everyWeeks: 1, dueDow: 7, dueTime: "21:00" }), words)).toEqual({ when: "Sun 21:00", often: "Every week", also: [] });
+    expect(listCells(john({ everyWeeks: 2, dueDow: 4, dueTime: "07:00", needsPhoto: true, crew: 2 }), words, "Upstairs")).toEqual({
+      when: "Thu 07:00",
+      often: "Every 2 weeks",
+      also: ["Photo", "Upstairs", "2 people"],
+    });
+  });
+
+  it("gives an on-call John its window for how often", () => {
+    expect(listCells(john({ when: "on_call", respondHours: 12 }), words)).toEqual({ when: "On call", often: "Do it within 12 hours", also: [] });
   });
 });
 

@@ -8,7 +8,7 @@ import { sentCount, sentFilter, sentPage, type SentCursor, type SentRow } from '
 import { AdminSwitch } from '@/components/admin/admin-shell';
 import { ownerZone } from '@/components/admin/audit-entry';
 import { BusyListView, useBusyList, type BusyList } from '@/components/admin/busy-list';
-import { ListTableRow, type ListColumn } from '@/components/admin/list-table';
+import { ListTableRow, type ListColumn } from '@/components/list-table';
 import { MessageForm, SENT_KEY } from '@/components/admin/message-form';
 import { MessagePreview } from '@/components/admin/message-parts';
 import { useOwnerMay } from '@/components/admin/use-owner-may';

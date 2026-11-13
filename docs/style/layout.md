@@ -174,12 +174,15 @@ still look right stretched (content capped, nothing pinned to far edges).
 - **House's pages fill the room beside House's list** (`Screen` with
   `fills`), up to `FILL_MAX` (1600), with our own sections (the name above
   a grey group) side by side. `Flow` shares out a page's sections of one
-  kind (the John list's kinds, a housemate's record) into as many columns
+  kind (a housemate's record) into as many columns
   of at least `COLUMN_MIN` (352) as fit, two on a 1440 laptop and three on
   a 1920 screen, each to the shortest column so the columns end near each
   other. `Pair` puts two stacks side by side: what a page gives or explains
   beside what you choose. A page's own tools sit at the top right over the
-  columns (Add a John, with the week's Johns and points). On a phone, and
+  columns (Add a John, with the week's Johns and points). The John list is
+  the exception to `Flow`: its kinds go one under another, full width, each
+  John a line of lined-up columns, with the groups beside the re-deal under
+  them (John list C, 13 Nov; see [lists](lists.md#rows)). On a phone, and
   where two columns don't fit, the same sections stack in their phone
   order. (House pages, 1 Nov) *Not* the section names hanging in a column
   left of their groups, one wide column, or cards on a blank page: each
