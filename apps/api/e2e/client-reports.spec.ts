@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, dealtHouseInClient } from "./auth";
 import { photo } from "./photo";
+import { rightNow } from "../tests/support/clock";
 import { wordsFor } from '@app/core';
 
 const words = wordsFor('en', 'housemates');
@@ -57,7 +58,7 @@ test("sends a problem with a screenshot from You, then reads the reply and write
 
   // The owner replies (as owner_reply_report would).
   await admin().from("report_messages").insert({ report_id: id, from_owner: true, author_name: "Glyn", body: "Thanks Ava, fixed in today's update." });
-  await admin().from("reports").update({ state: "replied", last_activity_at: new Date().toISOString() }).eq("id", id);
+  await admin().from("reports").update({ state: "replied", last_activity_at: rightNow().toISOString() }).eq("id", id);
 
   // You says a reply is waiting; the report shows it, and writing back sends it to the Inbox as new.
   await page.goto("/you");

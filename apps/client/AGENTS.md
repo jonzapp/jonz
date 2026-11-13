@@ -157,7 +157,9 @@ permanent once a store has seen them.
   ones with how many were late. `CodeBoxes` is every 6-digit code (the
   admin code, the codes we email). `CopyLine` is words to paste
   elsewhere (an address) with Copy beside them. `Doc` (in `reply/`) draws
-  Help, Privacy and Terms from their Markdown. Then one folder per place:
+  Help, Privacy and Terms from their Markdown. `ListTable` and
+  `ListTableRow` are a list as one-line rows in lined-up columns on a
+  laptop: the owner's busy lists, and the John list's `JohnLine`. Then one folder per place:
   - `today/`: Next up (`NextUp`, or `SetupCard`, an admin's checklist
     before the first deal), Needs you, the rest of your week and the page's
     tappable lines (`PageLine`).
@@ -406,7 +408,9 @@ the root layout's guard is tested that way with stand-in screens.
   `testQueryClient()` gives each test its own cache with no retries and no
   garbage collection (its five-minute timer would keep Jest running after a
   test that leaves a read pending); `house.ts` builds a house as `loadHouse`
-  reads it, dated around the real clock. A screen that reads a house renders
+  reads it, dated around the tests' pretend now (`clock.ts`: `NOW`, which
+  `jest.setup.js` sets every test's clock to; count from it, never from the
+  real clock). A screen that reads a house renders
   under a stand-in `_layout` with `QueryClientProvider` and `Slot`.
 
 The web build also runs end to end, in `apps/api`'s Playwright

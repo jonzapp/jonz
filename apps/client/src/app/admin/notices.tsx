@@ -19,7 +19,7 @@ import { StyleSheet, View } from 'react-native';
 import { endNotice, liveNotices, noticeFilter, noticesCount, noticesPage, saveNotice, type NoticeCursor, type SavedNotice } from '@/api/owner';
 import { ownerZone } from '@/components/admin/audit-entry';
 import { BusyListView, useBusyList, type BusyList } from '@/components/admin/busy-list';
-import { ListTableRow, type ListColumn } from '@/components/admin/list-table';
+import { ListTableRow, type ListColumn } from '@/components/list-table';
 import { NoticeEditor } from '@/components/admin/notice-editor';
 import { StartTiles } from '@/components/admin/start-tiles';
 import { NoticePreview } from '@/components/notice-banner';

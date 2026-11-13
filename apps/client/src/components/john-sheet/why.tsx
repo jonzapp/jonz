@@ -20,7 +20,7 @@ import { useWords } from '@/hooks/use-words';
  */
 export function JohnWhy({ item, context }: { item: BoardItem; context: JohnSheetContext }) {
   const words = useWords();
-  const why = johnWhy(item, context.members, context.userId, context.rules, context.now, words, jobPlaces(item, context.board.items));
+  const why = johnWhy(item, { people: context.members, viewerId: context.userId, rules: context.rules, now: context.now, words }, jobPlaces(item, context.board.items));
   return (
     <SheetSection>
       <Section label={words('john.why.label')} testID="john-why">

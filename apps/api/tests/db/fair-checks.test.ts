@@ -5,6 +5,7 @@ import { adminClient, type Actor } from "@/tests/support/clients";
 import { expectOk, expectRule } from "@/tests/support/expect";
 import { actorFor, addJohns, deal, makeHouse, reread, someoneElse, thisWeek } from "@/tests/support/factories";
 import { problemOf, v1 } from "@/tests/support/v1";
+import { fromNow, rightNow } from "@/tests/support/clock";
 
 /**
  * Fair checks (20261128090000_fair_checks.sql, docs/specs/fair-checks.md):
@@ -34,9 +35,9 @@ afterAll(() => {
 async function oneJohn(names: string[], dueInHours = 2) {
   const house = await makeHouse(names);
   await addJohns(house.id, [{ name: "Bathroom", points: 3 }], thisWeek());
-  const { assignments } = await deal(house.id, thisWeek(), new Date());
+  const { assignments } = await deal(house.id, thisWeek(), rightNow());
   const a = assignments[0];
-  expectOk(await db.from("assignments").update({ due_at: new Date(Date.now() + dueInHours * HOUR).toISOString() }).eq("id", a.id));
+  expectOk(await db.from("assignments").update({ due_at: fromNow(dueInHours * HOUR).toISOString() }).eq("id", a.id));
   const owner = actorFor(house, a.user_id);
   return { house, a, owner, other: someoneElse(house, a.user_id) };
 }
@@ -49,8 +50,8 @@ async function question(actor: Actor, assignmentId: string) {
 
 /** Bring a dispute's vote to its close, then run the clock now. */
 async function closeVote(houseId: string, disputeId: string) {
-  expectOk(await db.from("disputes").update({ closes_at: new Date(Date.now() - 1000).toISOString() }).eq("id", disputeId));
-  await tickHouse(db, houseId, new Date());
+  expectOk(await db.from("disputes").update({ closes_at: fromNow(-1000).toISOString() }).eq("id", disputeId));
+  await tickHouse(db, houseId, rightNow());
 }
 
 describe("one voter", () => {
@@ -58,7 +59,7 @@ describe("one voter", () => {
     const { house, a, owner, other } = await oneJohn(["Ava", "Ben"]);
     expectOk(await owner.db.rpc("mark_done", { p_assignment: a.id }));
     const d = await question(other, a.id);
-    await tickHouse(db, house.id, new Date());
+    await tickHouse(db, house.id, rightNow());
     expect((await reread("disputes", d)).resolution).toBeNull();
     expect((await reread("assignments", a.id)).done_at).not.toBeNull();
 
@@ -103,15 +104,15 @@ describe("a struck John", () => {
     // Due 20 hours ago, ticked late, its late window closing in a minute.
     const { house, a, owner, other } = await oneJohn(["Ava", "Ben"], -20);
     expectOk(await owner.db.rpc("mark_done", { p_assignment: a.id }));
-    expectOk(await db.from("assignments").update({ closes_at: new Date(Date.now() + 60_000).toISOString() }).eq("id", a.id));
+    expectOk(await db.from("assignments").update({ closes_at: fromNow(60_000).toISOString() }).eq("id", a.id));
     const d = await question(other, a.id);
     await closeVote(house.id, d);
 
     const struck = await reread("assignments", a.id);
     expect(struck.done_at).toBeNull();
-    expect(Date.parse(struck.closes_at as string)).toBeGreaterThan(Date.now() + 11.9 * HOUR);
+    expect(Date.parse(struck.closes_at as string)).toBeGreaterThan(fromNow(11.9 * HOUR).getTime());
     // Not missed, and the owner can do it again (late).
-    await tickHouse(db, house.id, new Date());
+    await tickHouse(db, house.id, rightNow());
     expect((await reread("assignments", a.id)).outcome).toBeNull();
     expectOk(await owner.db.rpc("mark_done", { p_assignment: a.id }));
   });
@@ -128,7 +129,7 @@ describe("a cover", () => {
     const d = await question(third, a.id);
     expectRule(await owner.db.rpc("cast_vote", { p_dispute: d, p_uphold: true }), "own_john");
     // The third housemate is the only voter: it waits for the close, and the coverer can answer with a photo.
-    await tickHouse(db, house.id, new Date());
+    await tickHouse(db, house.id, rightNow());
     expect((await reread("disputes", d)).resolution).toBeNull();
   });
 });
@@ -137,7 +138,7 @@ describe("flags", () => {
   async function onCall(respondHours = 4) {
     const house = await makeHouse(["Ava", "Ben", "Cal"]);
     const [bins] = await addJohns(house.id, [{ name: "Bins", points: 1, onCall: { respondHours } }, { name: "Bathroom", points: 4 }], thisWeek());
-    const { weekId } = await deal(house.id, thisWeek(), new Date());
+    const { weekId } = await deal(house.id, thisWeek(), rightNow());
     const { data: oc } = await db.from("on_call_picks").select("user_id").eq("week_id", weekId).eq("john_id", bins.id).single();
     const holder = actorFor(house, oc!.user_id);
     return { house, bins, holder, flagger: someoneElse(house, holder.userId) };
@@ -150,7 +151,7 @@ describe("flags", () => {
     expectRule(await flagger.db.rpc("raise_flag", { p_john: bins.id }), "flagged_recently");
 
     // Once the window has gone by since that flag, it can be flagged again.
-    expectOk(await db.from("assignments").update({ flagged_at: new Date(Date.now() - 5 * HOUR).toISOString() }).eq("id", first!));
+    expectOk(await db.from("assignments").update({ flagged_at: fromNow(-5 * HOUR).toISOString() }).eq("id", first!));
     const { data: next, error } = await flagger.db.rpc("raise_flag", { p_john: bins.id });
     expectOk({ error });
     expect(next).not.toBe(first);
@@ -160,7 +161,7 @@ describe("flags", () => {
     const { bins, holder, flagger } = await onCall();
     const { data: first } = await flagger.db.rpc("raise_flag", { p_john: bins.id });
     expectOk(await holder.db.rpc("mark_done", { p_assignment: first! }));
-    expectOk(await db.from("assignments").update({ done_at: new Date(Date.now() - 20 * 60_000).toISOString() }).eq("id", first!));
+    expectOk(await db.from("assignments").update({ done_at: fromNow(-20 * 60_000).toISOString() }).eq("id", first!));
     const { error } = await holder.db.rpc("raise_flag", { p_john: bins.id });
     expectOk({ error });
   });
@@ -181,7 +182,7 @@ describe("an admin's own result", () => {
   it("is another admin's to change, not theirs", async () => {
     const house = await makeHouse(["Ava", "Ben"]);
     await addJohns(house.id, [{ name: "Bins" }, { name: "Mop" }], thisWeek());
-    const { assignments } = await deal(house.id, thisWeek(), new Date());
+    const { assignments } = await deal(house.id, thisWeek(), rightNow());
     const mine = assignments.find((x) => x.user_id === house.admin.userId)!;
     const theirs = assignments.find((x) => x.user_id !== house.admin.userId)!;
 

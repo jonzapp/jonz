@@ -1,4 +1,5 @@
-import { originAllowed } from "@/lib/cors";
+import { corsFor } from "@app/core";
+
 import { env } from "@/lib/env";
 
 /**
@@ -30,17 +31,11 @@ const MOST_BYTES = 64 * 1024;
 type Params = { params: Promise<{ path: string[] }> };
 
 function cors(request: Request): Record<string, string> {
-  const origin = request.headers.get("origin");
-  const allowed = env.allowedOrigins();
-  if (!originAllowed(origin, allowed)) return allowed.length > 0 ? { Vary: "Origin" } : {};
-  return {
-    "Access-Control-Allow-Origin": origin,
-    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-    "Access-Control-Allow-Headers": "Authorization, Content-Type, apikey, x-client-info, x-supabase-api-version",
-    "Access-Control-Expose-Headers": "x-supabase-api-version, retry-after",
-    "Access-Control-Max-Age": "600",
-    Vary: "Origin",
-  };
+  return corsFor(request.headers.get("origin"), env.allowedOrigins(), {
+    methods: "GET, POST, PUT, DELETE, OPTIONS",
+    headers: "Authorization, Content-Type, apikey, x-client-info, x-supabase-api-version",
+    expose: "x-supabase-api-version, retry-after",
+  });
 }
 
 const nothing = (request: Request) =>

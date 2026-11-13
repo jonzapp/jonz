@@ -7,6 +7,7 @@ import { adminClient, type Actor } from "@/tests/support/clients";
 import { expectOk } from "@/tests/support/expect";
 import { actorFor, addJohns, deal, makeHouse, reread, thisWeek, ZONE } from "@/tests/support/factories";
 import { v1 } from "@/tests/support/v1";
+import { rightNow } from "@/tests/support/clock";
 
 /**
  * Resets (20261101100000_admin_resets.sql, lib/moves/resets.ts), called as
@@ -33,7 +34,7 @@ async function reset(actor: Actor, { houseId, ...body }: { houseId: string; [key
 async function dealtHouse() {
   const house = await makeHouse();
   await addJohns(house.id, [{ name: "Bins" }, { name: "Hoover", points: 3 }, { name: "Mop", points: 2 }], thisWeek());
-  const { weekId, assignments } = await deal(house.id, thisWeek(), new Date());
+  const { weekId, assignments } = await deal(house.id, thisWeek(), rightNow());
   const a = assignments.find((x) => x.user_id !== house.admin.userId) ?? assignments[0];
   return { house, weekId, assignments, a, owner: actorFor(house, a.user_id) };
 }
@@ -180,13 +181,7 @@ describe("Ask Jonz's resets", () => {
     expectOk(await owner.db.rpc("mark_done", { p_assignment: a.id }));
     let told: DraftContext | null = null;
     const said: boolean[] = [];
-    const result = await chatTurn(
-      { db: house.admin.db, userId: house.admin.userId },
-      house.id,
-      [{ role: "user", text: "That tick was a mistake, and reset the week" }],
-      null,
-      new Date(),
-      async (ctx, tools): Promise<DraftAnswer> => {
+    const result = await chatTurn({ db: house.admin.db, userId: house.admin.userId }, { houseId: house.id, messages: [{ role: "user", text: "That tick was a mistake, and reset the week" }], current: null, now: rightNow() }, async (ctx, tools): Promise<DraftAnswer> => {
         told = ctx;
         const ref = [...ctx.now!.matchAll(/(h\d+) [^;]*ticked/g)][0][1];
         expect(tools.may.resets).toBe(true);
@@ -195,8 +190,7 @@ describe("Ask Jonz's resets", () => {
         // Not a ref it was given: Jonz is told, and it's left off the card.
         said.push((await tools.offerReset({ what: "result", ref: "j99", person: null, outcome: "missed", week: null, month: null })).ok);
         return { raw: { reply: "Here's what I'd put right.", ask: { kind: "none" } }, inputTokens: 1, outputTokens: 1 };
-      },
-    );
+      });
     expect(said).toEqual([true, true, false]);
     expect(told!.now).toMatch(/This week, from .*: j1 /);
     if ("refusal" in result) throw new Error("refused");

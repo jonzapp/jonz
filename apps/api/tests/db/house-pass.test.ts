@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { adminClient } from "@/tests/support/clients";
 import { expectDenied, expectOk, expectRule } from "@/tests/support/expect";
 import { actorFor, addJohns, deal, makeHouse, reread, thisWeek } from "@/tests/support/factories";
+import { fromNow, rightNow } from "@/tests/support/clock";
 
 /**
  * The House Pass lives on the house. Every new house starts its free month,
@@ -13,7 +14,7 @@ import { actorFor, addJohns, deal, makeHouse, reread, thisWeek } from "@/tests/s
 
 describe("the House Pass", () => {
   it("starts a free month for every new house", async () => {
-    const before = Date.now();
+    const before = rightNow().getTime();
     const house = await makeHouse(["Ava"]);
     const { data: row } = await adminClient()
       .from("houses")
@@ -26,7 +27,7 @@ describe("the House Pass", () => {
     const days = (until - before) / 86_400_000;
     expect(days).toBeGreaterThan(PASS_TRIAL_DAYS - 0.01);
     expect(days).toBeLessThan(PASS_TRIAL_DAYS + 0.01);
-    expect(hasPass(passOf(row!), new Date())).toBe(true);
+    expect(hasPass(passOf(row!), rightNow())).toBe(true);
   });
 
   it("is read by everyone in the house", async () => {
@@ -49,7 +50,7 @@ describe("the House Pass", () => {
     const db = adminClient();
     expect((await db.from("houses").update({ pass_plan: "yearly", pass_ends_at: null }).eq("id", house.id)).error).not.toBeNull();
     expect(
-      (await db.from("houses").update({ pass_plan: "founding", pass_ends_at: new Date().toISOString() }).eq("id", house.id)).error,
+      (await db.from("houses").update({ pass_plan: "founding", pass_ends_at: rightNow().toISOString() }).eq("id", house.id)).error,
     ).not.toBeNull();
     expect((await db.from("houses").update({ pass_plan: "gold" }).eq("id", house.id)).error).not.toBeNull();
     expect((await db.from("houses").update({ pass_plan: "founding", pass_ends_at: null }).eq("id", house.id)).error).toBeNull();
@@ -66,14 +67,14 @@ describe("without the House Pass", () => {
   const DAY = 86_400_000;
 
   async function endPass(houseId: string) {
-    const ended = new Date(Date.now() - DAY).toISOString();
+    const ended = fromNow(-DAY).toISOString();
     expectOk(await adminClient().from("houses").update({ pass_plan: "trial", pass_ends_at: ended }).eq("id", houseId).select("id"));
   }
 
   async function photoJohn() {
     const house = await makeHouse(["Ava"]);
     await addJohns(house.id, [{ name: "Oven", points: 5, needsPhoto: true } as never], thisWeek());
-    const { assignments } = await deal(house.id, thisWeek(), new Date());
+    const { assignments } = await deal(house.id, thisWeek(), rightNow());
     return { house, a: assignments[0] };
   }
 
@@ -97,7 +98,7 @@ describe("without the House Pass", () => {
     const { data: moves } = await db.from("house_actions").select("id").eq("house_id", house.id);
     expect(moves!.length).toBeGreaterThan(0);
     const old = moves![0].id;
-    expectOk(await db.from("house_actions").update({ created_at: new Date(Date.now() - 40 * DAY).toISOString() }).eq("id", old).select("id"));
+    expectOk(await db.from("house_actions").update({ created_at: fromNow(-40 * DAY).toISOString() }).eq("id", old).select("id"));
     const read = async () => ((await me.db.rpc("house_history", { p_house: house.id })).data ?? []).map((r: { id: string }) => r.id);
 
     expect(await read()).toContain(old);

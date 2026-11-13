@@ -21,6 +21,7 @@ import { ToastProvider } from '@/components/toast';
 import { assignment, snapshot } from '@/testing/house';
 import { BINS } from '@/testing/pages';
 import { testQueryClient } from '@/testing/query';
+import { hoursFromNow as at, NOW } from '@/testing/clock';
 
 const words = wordsFor('en', 'housemates');
 
@@ -51,7 +52,6 @@ jest.mock('@/hooks/use-membership', () => ({
 
 const read = loadHouse as jest.Mock;
 const HOUR = 3_600_000;
-const at = (hours: number) => new Date(Date.now() + hours * HOUR).toISOString();
 
 const MEGAN: Housemate = { userId: 'megan', name: 'Megan', photo: null, role: 'member', streak: 0, immunityTokens: 0, swapTokens: 0, prefs: { days: [], bestTime: null, rather: {} } };
 
@@ -157,7 +157,7 @@ describe('Next up', () => {
     await fireEvent.press(screen.getByRole('button', { name: words('week.steady.plan') }));
     const [id, when] = (planJohn as jest.Mock).mock.calls[0];
     expect(id).toBe('a1');
-    expect((when as Date).getTime()).toBeGreaterThan(Date.now());
+    expect((when as Date).getTime()).toBeGreaterThan(NOW.getTime());
     expect((when as Date).getTime()).toBeLessThan(Date.parse(snapshot().assignments[0].due_at));
   });
 
@@ -166,7 +166,7 @@ describe('Next up', () => {
     read.mockResolvedValue(snapshot({ assignments: [assignment({ planned_at: plannedAt }), ...snapshot().assignments.slice(1)] }));
     await open();
     expect(screen.getByTestId('plan-it-when')).toHaveTextContent(
-      words('week.steady.planned', { when: planLabel(new Date(plannedAt), new Date(), 'Europe/London', words) }),
+      words('week.steady.planned', { when: planLabel(new Date(plannedAt), new Date(NOW), 'Europe/London', words) }),
     );
     expect(screen.queryByRole('button', { name: words('week.steady.plan') })).toBeNull();
   });
@@ -232,7 +232,7 @@ describe('Next up', () => {
 
   it('says no more than lateness can still cost you this month', async () => {
     // Priya has forfeited £19.50 of her £20 stake: being late costs her 50p more at most.
-    const thisMonth = () => monthOf(new Date(Date.now() + HOUR), 'Europe/London');
+    const thisMonth = () => monthOf(new Date(NOW.getTime() + HOUR), 'Europe/London');
     (loadStake as jest.Mock).mockResolvedValue(
       buildStake({
         ledger: [{ id: 1, user_id: 'priya', kind: 'forfeit', amount_minor: -1950, month: thisMonth(), counterparty_user_id: null, created_at: at(-1) }],
@@ -805,7 +805,7 @@ describe('On call', () => {
 });
 
 describe('moving out', () => {
-  const today = localDate(new Date(), 'Europe/London');
+  const today = localDate(new Date(NOW), 'Europe/London');
   const later = '2099-06-30';
 
   it('says your moving-out day, onward to change it', async () => {
@@ -838,7 +838,7 @@ describe('moving out', () => {
   });
 
   it('keeps asking for a while after someone has gone, until someone moves in', async () => {
-    const left = new Date(Date.now() - 3 * 86_400_000).toISOString();
+    const left = new Date(NOW.getTime() - 3 * 86_400_000).toISOString();
     read.mockResolvedValue(snapshot({ moves: { lastMovedOut: left, lastJoined: null } }));
     await open();
     expect(screen.getByTestId('move-in-ask')).toBeOnTheScreen();

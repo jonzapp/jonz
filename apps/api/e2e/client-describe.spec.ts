@@ -2,6 +2,7 @@ import { STARTER_LISTS, type HouseDraft, wordsFor } from "@app/core";
 import { expect, test, type Page } from "@playwright/test";
 
 import { CLIENT_URL, cleanUp, signInToClient } from "./auth";
+import { rightNow } from "../tests/support/clock";
 
 const words = wordsFor("en", "housemates");
 
@@ -30,7 +31,7 @@ async function newHouse(page: Page, name: string) {
 
 test("describe the house, keep most of the draft, and find it on the list", async ({ context, page }) => {
   made.push(await signInToClient(context, "Ava Describe"));
-  await newHouse(page, `Terrace ${Date.now() % 10_000}`);
+  await newHouse(page, `Terrace ${rightNow().getTime() % 10_000}`);
 
   await page.getByTestId("setup-describe").click();
   await chatOpened(page);
@@ -66,7 +67,7 @@ test("describe the house, keep most of the draft, and find it on the list", asyn
 
 test("start from a list without writing anything", async ({ context, page }) => {
   made.push(await signInToClient(context, "Ben Describe"));
-  await newHouse(page, `Flat ${Date.now() % 10_000}`);
+  await newHouse(page, `Flat ${rightNow().getTime() % 10_000}`);
   await page.goto("/house/johns");
   await page.getByTestId("describe-house").click();
   await page.getByTestId("starter-flat_share").click();
@@ -79,7 +80,7 @@ test("start from a list without writing anything", async ({ context, page }) => 
 
 test("ask Jonz from Today to change the list, and apply what's ticked", async ({ context, page }) => {
   made.push(await signInToClient(context, "Cal Describe"));
-  await newHouse(page, `Mews ${Date.now() % 10_000}`);
+  await newHouse(page, `Mews ${rightNow().getTime() % 10_000}`);
   await page.goto("/house/describe");
   await page.getByTestId("starter-couple").click();
   await page.getByTestId("describe-keep").click();

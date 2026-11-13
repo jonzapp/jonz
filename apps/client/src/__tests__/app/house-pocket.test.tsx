@@ -14,6 +14,7 @@ import HouseScreen from '@/app/(house)/house';
 import PocketScreen from '@/app/(house)/house/pocket';
 import { snapshot } from '@/testing/house';
 import { renderPages, untilRead } from '@/testing/pages';
+import { NOW } from '@/testing/clock';
 
 const words = wordsFor('en', 'housemates');
 
@@ -153,9 +154,9 @@ describe('adding a child', () => {
     await fireEvent.press(form.getByTestId('add-kid'));
     expect(form.getByText(words('people.kids.problems.born'))).toBeOnTheScreen();
     expect(addKid).not.toHaveBeenCalled();
-    await fireEvent.changeText(form.getByTestId('kid-born'), String(new Date().getFullYear() - 7));
+    await fireEvent.changeText(form.getByTestId('kid-born'), String(new Date(NOW).getFullYear() - 7));
     await fireEvent.press(form.getByTestId('add-kid'));
-    await waitFor(() => expect(addKid).toHaveBeenCalledWith(expect.any(String), 'Kit Park', new Date().getFullYear() - 7));
+    await waitFor(() => expect(addKid).toHaveBeenCalledWith(expect.any(String), 'Kit Park', new Date(NOW).getFullYear() - 7));
   });
 
   it("isn't offered to a kid", async () => {

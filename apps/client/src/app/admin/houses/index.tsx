@@ -10,15 +10,14 @@ import {
   type HouseRow,
   type ListAsk,
 } from '@app/core';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router } from 'expo-router';
 import { HouseIcon } from 'lucide-react-native';
-import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { houseFilter, housesCount, housesPage, type HouseCursor } from '@/api/houses';
-import { BusyListView, useBusyList, type BusyList } from '@/components/admin/busy-list';
+import { BusyListView, useBusyList, useOpenRow, type BusyList } from '@/components/admin/busy-list';
 import { HOUSES_KEY, HousePanel } from '@/components/admin/house-panel';
-import { ListTableRow, type ListColumn } from '@/components/admin/list-table';
+import { ListTableRow, type ListColumn } from '@/components/list-table';
 import { Row, RowIcon } from '@/components/row';
 import { Columns, Screen, useColumns } from '@/components/screen';
 import { Chip } from '@/components/status-mark';
@@ -74,10 +73,7 @@ function PassCell({ house, now }: { house: HouseRow; now: Date }) {
 function Houses({ busy }: { busy: BusyList<HouseRow> }) {
   const words = useWords();
   const two = useColumns();
-  // A link in (the Overview's Needs you, a pushed page opened on a laptop) names the one to open with ?open=.
-  const { open } = useLocalSearchParams<{ open?: string }>();
-  const [chosenId, setChosen] = useState<string | null>(open ?? null);
-  const shownId = chosenId ?? busy.items[0]?.id ?? null;
+  const { shownId, setChosen } = useOpenRow(busy);
   const now = new Date();
   const list = (
     <BusyListView

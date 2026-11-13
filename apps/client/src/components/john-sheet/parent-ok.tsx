@@ -43,7 +43,7 @@ export function AwaitsOk({ item, context }: { item: BoardItem; context: JohnShee
 
   return (
     <SheetLines testID="awaits-ok">
-      <Body testID="ticked-line">{tickedLine(item, context.members, context.userId, context.rules, context.now, words)}</Body>
+      <Body testID="ticked-line">{tickedLine(item, { people: context.members, viewerId: context.userId, rules: context.rules, now: context.now, words })}</Body>
       {parent ? (
         <>
           <Meta testID="ok-who">{okWho(item, context.members, parentIds, context.userId, words)}</Meta>

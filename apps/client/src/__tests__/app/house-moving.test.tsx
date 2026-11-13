@@ -7,6 +7,7 @@ import { setMovingOut } from '@/api/moving';
 import MovingScreen from '@/app/(house)/you/moving';
 import { snapshot } from '@/testing/house';
 import { renderPages, untilRead } from '@/testing/pages';
+import { NOW } from '@/testing/clock';
 
 const words = wordsFor('en', 'housemates');
 
@@ -18,7 +19,7 @@ jest.mock('@/hooks/use-membership', () => ({
   useMembership: () => ({ session: { user: { id: 'priya' } }, house: { id: 'h1', name: 'Flat 3' } }),
 }));
 
-const today = localDate(new Date(), 'Europe/London');
+const today = localDate(new Date(NOW), 'Europe/London');
 const tomorrow = addDaysTo(today, 1);
 const nextDay = addDaysTo(today, 2);
 

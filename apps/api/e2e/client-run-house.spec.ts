@@ -3,6 +3,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, signInToClient } from "./auth";
 import { backToHouse, toHousePage } from "./house-pages";
+import { rightNow } from "../tests/support/clock";
 
 const words = wordsFor("en", "housemates");
 
@@ -39,7 +40,7 @@ test("run a house from nothing on the phone", async ({ browser }) => {
   const ben = await signInToClient(benContext, "Ben Runner");
   made.push(ava, ben);
   const db = admin();
-  const name = `Flat ${Date.now() % 10_000}`;
+  const name = `Flat ${rightNow().getTime() % 10_000}`;
 
   // Ava starts the house; Today's setup checklist sends her to the John list.
   const page = await avaContext.newPage();

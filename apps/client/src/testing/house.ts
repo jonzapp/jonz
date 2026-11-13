@@ -1,13 +1,12 @@
 import type { AssignmentRow } from '@app/core';
 
 import type { HouseSnapshot } from '@/api/board';
+import { hoursFromNow as at } from '@/testing/clock';
 
 // A house as `loadHouse` reads it, for tests: Priya (an admin) and Sam, with
 // this week dealt around the real clock, so statuses come out the same
 // whenever the tests run.
 
-const HOUR = 3_600_000;
-const at = (hours: number) => new Date(Date.now() + hours * HOUR).toISOString();
 
 export function assignment(overrides: Partial<AssignmentRow> = {}): AssignmentRow {
   return {

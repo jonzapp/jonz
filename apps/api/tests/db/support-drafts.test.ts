@@ -8,6 +8,7 @@ import { adminClient, signedInUser, visitor, type Actor } from "@/tests/support/
 import { expectDenied, expectOk } from "@/tests/support/expect";
 import { makeHouse, type House } from "@/tests/support/factories";
 import { passSecondFactor } from "@/tests/support/mfa";
+import { rightNow } from "@/tests/support/clock";
 
 /**
  * The support agent (docs/specs/report-a-problem.md, "The support agent"):
@@ -49,7 +50,7 @@ describe("the support agent", () => {
     const report = await sent(ava);
     const { data: named } = await db.from("houses").select("name").eq("id", house.id).single();
     let read: string[] = [];
-    const first = await supportDraft(as(owner), report, new Date(), async (r, _today, reads: SupportReads) => {
+    const first = await supportDraft(as(owner), report, rightNow(), async (r, _today, reads: SupportReads) => {
       expect(r.house).toBe(named?.name);
       read = [await reads.theirHouse(), await reads.theirReports(), await reads.similar(tag), await reads.deletions(""), await reads.audit(""), reads.page("stake", false)];
       return { raw: { reply: "Thanks Ava, I'm looking at it.", action: "same_as", same_as: main, why: "Ben said the same." }, inputTokens: 9, outputTokens: 4 };
@@ -62,7 +63,7 @@ describe("the support agent", () => {
     expect(read[2]).toContain(main);
 
     // Opening it again gives the same one, without asking.
-    const again = await supportDraft(as(owner), report, new Date(), async () => {
+    const again = await supportDraft(as(owner), report, rightNow(), async () => {
       throw new Error("asked twice");
     });
     expect(again).toEqual(first);
@@ -77,9 +78,9 @@ describe("the support agent", () => {
   it("writes a new one when the sender writes back", async () => {
     const report = await sent(ava);
     const reply = (text: string) => async () => ({ raw: { reply: text, action: "none" as const, same_as: "", why: "" }, inputTokens: 1, outputTokens: 1 });
-    expect(await supportDraft(as(owner), report, new Date(), reply("First."))).toMatchObject({ draft: { reply: "First." } });
+    expect(await supportDraft(as(owner), report, rightNow(), reply("First."))).toMatchObject({ draft: { reply: "First." } });
     expectOk(await ava.db.rpc("write_back", { p_report: report, p_body: "Still gone." }));
-    expect(await supportDraft(as(owner), report, new Date(), reply("Second."))).toMatchObject({ draft: { reply: "Second." } });
+    expect(await supportDraft(as(owner), report, rightNow(), reply("Second."))).toMatchObject({ draft: { reply: "Second." } });
     const { data } = await owner.db.from("support_drafts").select("reply").eq("report_id", report).order("created_at");
     expect(data?.map((d) => d.reply)).toEqual(["First.", "Second."]);
   });
@@ -88,7 +89,7 @@ describe("the support agent", () => {
     const report = await sent(ava);
     for (const who of [ava, ownerNoCode]) {
       let asked = false;
-      const result = await supportDraft(as(who), report, new Date(), async () => {
+      const result = await supportDraft(as(who), report, rightNow(), async () => {
         asked = true;
         throw new Error("asked");
       });
@@ -99,7 +100,7 @@ describe("the support agent", () => {
     expect((await visitor().rpc("claim_support_draft", { p_report: report, p_message: null, p_limit: 10 })).error).not.toBeNull();
 
     // The owner's drafts are theirs alone.
-    await supportDraft(as(owner), report, new Date(), async () => ({ raw: { reply: "Hi.", action: "none", same_as: "", why: "" }, inputTokens: 1, outputTokens: 1 }));
+    await supportDraft(as(owner), report, rightNow(), async () => ({ raw: { reply: "Hi.", action: "none", same_as: "", why: "" }, inputTokens: 1, outputTokens: 1 }));
     for (const who of [ava, ownerNoCode]) {
       const { data } = await who.db.from("support_drafts").select("id");
       expect(data ?? []).toEqual([]);
@@ -130,7 +131,7 @@ describe("the support agent", () => {
 
   it("is used or set aside by the owner, once", async () => {
     const report = await sent(ava);
-    const result = await supportDraft(as(owner), report, new Date(), async () => ({ raw: { reply: "Hi.", action: "delete", same_as: "", why: "" }, inputTokens: 1, outputTokens: 1 }));
+    const result = await supportDraft(as(owner), report, rightNow(), async () => ({ raw: { reply: "Hi.", action: "delete", same_as: "", why: "" }, inputTokens: 1, outputTokens: 1 }));
     if (!("draft" in result) || !result.draft) throw new Error("no draft");
     expect(result.draft.action).toBe("delete");
     expectDenied(await ava.db.rpc("owner_set_support_draft", { p_draft: result.draft.id, p_state: "used" }));

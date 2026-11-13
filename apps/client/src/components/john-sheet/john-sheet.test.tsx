@@ -19,6 +19,7 @@ import { measureAt, measureNowhere } from '@/testing/layout';
 import { testQueryClient } from '@/testing/query';
 
 import { JohnSheetProvider, useJohnSheet, type JohnSheetFocus } from '.';
+import { hoursFromNow as at, NOW } from '@/testing/clock';
 
 const words = wordsFor('en', 'housemates');
 
@@ -44,7 +45,6 @@ jest.mock('@/api/supabase', () => ({ supabase: {} }));
 jest.mock('@/api/history', () => ({ loadHistory: jest.fn(), undoAction: jest.fn() }));
 
 const HOUR = 3_600_000;
-const at = (hours: number) => new Date(Date.now() + hours * HOUR).toISOString();
 
 const MEGAN: Housemate = { userId: 'megan', name: 'Megan', photo: null, role: 'member', streak: 0, immunityTokens: 0, swapTokens: 0, prefs: { days: [], bestTime: null, rather: {} } };
 
@@ -148,7 +148,7 @@ describe('the header', () => {
 
   it("says no more than lateness can still cost the John's owner this month, once a screen has read the Stake", async () => {
     const client = await show();
-    const month = monthOf(new Date(Date.now() + 48 * HOUR), 'Europe/London');
+    const month = monthOf(new Date(NOW.getTime() + 48 * HOUR), 'Europe/London');
     // Priya has £2 of her £20 stake left to lose.
     await act(() =>
       client.setQueryData(

@@ -12,6 +12,7 @@ import { expectDenied, expectOk, expectRule } from "@/tests/support/expect";
 import { makeHouse, type House } from "@/tests/support/factories";
 import { passSecondFactor } from "@/tests/support/mfa";
 import { v1 } from "@/tests/support/v1";
+import { rightNow } from "@/tests/support/clock";
 
 /**
  * Report a problem, steps 2 and 3 (docs/specs/report-a-problem.md): an email
@@ -313,7 +314,7 @@ describe("the inbound webhook", () => {
     vi.stubGlobal("fetch", resend);
     const body = JSON.stringify({ type: "email.received", data: { email_id: emailId } });
     const call = () => {
-      const at = Math.floor(Date.now() / 1000);
+      const at = Math.floor(rightNow().getTime() / 1000);
       return inboundRoute(
         new Request("http://localhost:3205/api/email/inbound", {
           method: "POST",

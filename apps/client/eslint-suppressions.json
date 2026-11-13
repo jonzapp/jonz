@@ -17,7 +17,7 @@
       "count": 1
     }
   },
-  "src/components/admin/list-table.tsx": {
+  "src/components/list-table.tsx": {
     "jonz/spacing-from-scale": {
       "count": 1
     }

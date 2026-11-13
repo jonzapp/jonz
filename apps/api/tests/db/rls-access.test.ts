@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { adminClient, signedInUser, visitor } from "@/tests/support/clients";
 import { expectDenied, expectOk, expectRule } from "@/tests/support/expect";
 import { addJohns, deal, makeHouse, reread, thisWeek } from "@/tests/support/factories";
+import { rightNow } from "@/tests/support/clock";
 
 /**
  * Who can see and touch a house. RLS is the only real enforcement: the app's
@@ -38,7 +39,7 @@ describe("someone outside the house", () => {
   it("sees none of it", async () => {
     const house = await makeHouse();
     await addJohns(house.id, [{ name: "Bins" }], thisWeek());
-    await deal(house.id, thisWeek(), new Date());
+    await deal(house.id, thisWeek(), rightNow());
     const outsider = await signedInUser("Nosy");
     for (const table of ["houses", "members", "johns", "weeks", "assignments", "events", "ledger_entries"] as const) {
       const { data, error } = await outsider.db.from(table).select("*");
@@ -90,11 +91,11 @@ describe("a housemate", () => {
   it("cannot write the tables directly", async () => {
     const house = await makeHouse();
     await addJohns(house.id, [{ name: "Bins" }], thisWeek());
-    const { assignments } = await deal(house.id, thisWeek(), new Date());
+    const { assignments } = await deal(house.id, thisWeek(), rightNow());
     const mine = assignments.find((a) => a.user_id === house.members[0].userId) ?? assignments[0];
     const me = house.everyone.find((a) => a.userId === mine.user_id)!;
 
-    expectDenied(await me.db.from("assignments").update({ done_at: new Date().toISOString() }).eq("id", mine.id));
+    expectDenied(await me.db.from("assignments").update({ done_at: rightNow().toISOString() }).eq("id", mine.id));
     expectDenied(await me.db.from("assignments").delete().eq("id", mine.id));
     expectDenied(
       await me.db.from("ledger_entries").insert({
@@ -145,7 +146,7 @@ describe("a housemate", () => {
   it("cannot set the clock's columns even as an admin", async () => {
     const house = await makeHouse(["Ava"]);
     expectDenied(
-      await house.admin.db.from("houses").update({ first_dealt_at: new Date().toISOString() }).eq("id", house.id),
+      await house.admin.db.from("houses").update({ first_dealt_at: rightNow().toISOString() }).eq("id", house.id),
     );
     expectDenied(await house.admin.db.from("houses").update({ join_code: "AAAAAAAA" }).eq("id", house.id));
   });

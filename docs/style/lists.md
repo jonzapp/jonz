@@ -15,6 +15,15 @@
   photo, its group, on call); the rest is in the John's own sheet. Each kind
   is a section with its count on the right, and the page's sum and Add a
   John sit over the list on a phone as on a laptop. (John list A, 10 Nov)
+- **On a laptop a John on the John list is one line of lined-up columns**
+  (`JohnLine`): its lid bar and name, when it's due, how often, what else
+  sets it apart (photo, its group, how many do it), and its points, so a
+  kind reads down like a timetable. The kinds go one under another in their
+  set order, never packed into columns. With a John open in the panel
+  beside it, how often (when it isn't every week) and the rest go on a line
+  under the name. (John list C, 13 Nov) *Not* the kinds packed into
+  whichever column is shortest: the order then jumps about and changes with
+  the window.
 - **An admin's fixes are one row, not a row of buttons:** in a John's sheet,
   "Admin" holds one row, Fix the result, which opens the results to choose
   from in its place. (Admin fixes A, 10 Nov)

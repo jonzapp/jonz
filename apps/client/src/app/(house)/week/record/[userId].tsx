@@ -1,13 +1,12 @@
-import { readSpan, RECORD_SPANS, type RecordSpan } from '@app/core';
-import { Redirect, router, useLocalSearchParams } from 'expo-router';
+import { readSpan, type RecordSpan } from '@app/core';
+import { Redirect, useLocalSearchParams } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
 import { useOpensBeside } from '@/components/page-columns';
 import { PageTitle } from '@/components/page-title';
 import { Screen } from '@/components/screen';
-import { Segmented } from '@/components/segmented';
 import { TitleBar } from '@/components/title-bar';
-import { PersonSections, usePersonRecord } from '@/components/week/person-record';
+import { PersonSections, RecordSpanPicker, usePersonRecord } from '@/components/week/person-record';
 import { useMembership } from '@/hooks/use-membership';
 import { INSET, SPACE } from '@/theme';
 import { useWords } from '@/hooks/use-words';
@@ -46,14 +45,7 @@ function PersonRecordPage({ houseId, userId, personId, span }: { houseId: string
     >
       <PageTitle page={record.name} />
       <View style={styles.top}>
-        <Segmented
-          options={RECORD_SPANS.map((value) => ({ value, label: words(`week.record.spans.${value}` as const) }))}
-          value={span}
-          onChange={(value) => router.setParams({ span: value })}
-          label={words('week.record.span')}
-          equal
-          testID="record-span"
-        />
+        <RecordSpanPicker span={span} />
       </View>
       <PersonSections record={record} />
     </Screen>

@@ -35,6 +35,7 @@ import InboxPage from '@/app/admin/inbox/index';
 import { HelpSection } from '@/components/house-page/help-section';
 import { snapshot } from '@/testing/house';
 import { renderPages } from '@/testing/pages';
+import { NOW } from '@/testing/clock';
 
 const words = wordsFor('en', 'housemates');
 
@@ -69,7 +70,7 @@ jest.mock('@/hooks/use-membership', () => ({
 const PHONE = { width: 390, height: 844, scale: 3, fontScale: 1 };
 const LAPTOP = { width: 1440, height: 900, scale: 1, fontScale: 1 };
 const MIN = 60_000;
-const ago = (ms: number) => new Date(Date.now() - ms).toISOString();
+const ago = (ms: number) => new Date(NOW.getTime() - ms).toISOString();
 
 const WORDS = 'The bins John vanished from Today right after I ticked the dishes.';
 

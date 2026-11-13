@@ -8,6 +8,7 @@ import { adminClient, type Actor } from "@/tests/support/clients";
 import { expectOk, expectRule } from "@/tests/support/expect";
 import { makeHouse, ZONE, type House } from "@/tests/support/factories";
 import { track } from "@/tests/support/scope";
+import { fromNow, rightNow } from "@/tests/support/clock";
 
 /**
  * The Pass moves with the buyer (supabase/migrations/*_pass_moves.sql):
@@ -25,7 +26,7 @@ async function bensPass(
 ): Promise<{ house: House; ben: Actor; until: Date | null; sub: string }> {
   const house = await makeHouse(["Ava", "Ben"]);
   const ben = house.members[0];
-  const until = plan === "founding" ? null : new Date(Date.now() + 200 * DAY);
+  const until = plan === "founding" ? null : fromNow(200 * DAY);
   const sub = `sub_${house.id.slice(0, 8)}`;
   await db
     .from("houses")
@@ -91,8 +92,8 @@ describe("the buyer leaving", () => {
     expect(old.pass_plan).toBe("trial");
     expect(old.pass_bought_by).toBeNull();
     const grace = Date.parse(old.pass_ends_at!);
-    expect(grace).toBeGreaterThan(Date.now() + 29 * DAY);
-    expect(grace).toBeLessThan(Date.now() + 31 * DAY);
+    expect(grace).toBeGreaterThan(fromNow(29 * DAY).getTime());
+    expect(grace).toBeLessThan(fromNow(31 * DAY).getTime());
     expect(await billingOf(house.id)).toBeNull();
 
     const move = await moveOf(ben.userId);
@@ -159,7 +160,7 @@ describe("the buyer leaving", () => {
 
   it("stays with the house when an admin removes the buyer", async () => {
     const { house, ben } = await bensPass();
-    await db.from("members").update({ moving_out_on: new Date().toISOString().slice(0, 10) }).eq("user_id", ben.userId);
+    await db.from("members").update({ moving_out_on: rightNow().toISOString().slice(0, 10) }).eq("user_id", ben.userId);
     expectOk(await house.admin.db.rpc("remove_member", { p_house: house.id, p_user: ben.userId }));
     expect((await passOf(house.id)).pass_plan).toBe("yearly");
     expect((await moveOf(ben.userId)).pass_state).toBeNull();
@@ -178,8 +179,8 @@ describe("leave_pass", () => {
     expect((await moveOf(ben.userId)).pass_state).toBe("left");
 
     const { stripe, stopped } = fakeStripe();
-    await stopCarriedPasses(db, stripe, new Date());
-    await stopCarriedPasses(db, stripe, new Date());
+    await stopCarriedPasses(db, stripe, rightNow());
+    await stopCarriedPasses(db, stripe, rightNow());
     expect(stopped.filter((s) => s === sub)).toHaveLength(1);
 
     // Nothing left to leave, and a new house doesn't get it.
@@ -193,7 +194,7 @@ describe("Stripe, while the Pass is on the move", () => {
   it("writes a renewal on the move, not on the house it was bought for", async () => {
     const { house, ben, sub } = await bensPass();
     await leave(house, ben);
-    const renewed = new Date(Date.now() + 400 * DAY);
+    const renewed = fromNow(400 * DAY);
     const { stripe } = fakeStripe({
       [sub]: {
         id: sub,
@@ -206,13 +207,13 @@ describe("Stripe, while the Pass is on the move", () => {
       },
     });
     const event = { type: "customer.subscription.updated", data: { object: { id: sub } } } as unknown as Stripe.Event;
-    expect(await applyPassEvent(db, stripe, event, new Date(), "local")).toBe("carried");
+    expect(await applyPassEvent(db, stripe, event, rightNow(), "local")).toBe("carried");
     expect((await passOf(house.id)).pass_plan).toBe("trial");
     expect(Date.parse((await moveOf(ben.userId)).pass_ends_at!)).toBe(secs(renewed) * 1000);
 
     // On the next house, its renewals land there.
     const next = await startHouse(ben);
-    expect(await applyPassEvent(db, stripe, event, new Date(), "local")).toBe("subscription");
+    expect(await applyPassEvent(db, stripe, event, rightNow(), "local")).toBe("subscription");
     expect(Date.parse((await passOf(next)).pass_ends_at!)).toBe(secs(renewed) * 1000);
     expect((await passOf(house.id)).pass_plan).toBe("trial");
   });
@@ -221,8 +222,8 @@ describe("Stripe, while the Pass is on the move", () => {
     const { house, ben, sub } = await bensPass();
     await leave(house, ben);
     const { stripe, stopped } = fakeStripe();
-    expect(await stopCarriedPasses(db, stripe, new Date())).toBe(0);
-    await stopCarriedPasses(db, stripe, new Date(Date.now() + 31 * DAY));
+    expect(await stopCarriedPasses(db, stripe, rightNow())).toBe(0);
+    await stopCarriedPasses(db, stripe, fromNow(31 * DAY));
     expect(stopped).toContain(sub);
     expect((await moveOf(ben.userId)).pass_state).toBe("lapsed");
   });

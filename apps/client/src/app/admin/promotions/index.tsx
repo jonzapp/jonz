@@ -17,7 +17,7 @@ import { promotionFilter, promotionsCount, promotionsPage, PROMOTIONS_KEY, type 
 import { AdminSwitch } from '@/components/admin/admin-shell';
 import { ownerZone } from '@/components/admin/audit-entry';
 import { BusyListView, useBusyList, type BusyList } from '@/components/admin/busy-list';
-import { ListTableRow, type ListColumn } from '@/components/admin/list-table';
+import { ListTableRow, type ListColumn } from '@/components/list-table';
 import { PromotionForm } from '@/components/admin/promotion-form';
 import { useOwnerMay } from '@/components/admin/use-owner-may';
 import { Button } from '@/components/button';

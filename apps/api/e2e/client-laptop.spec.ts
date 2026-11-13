@@ -2,6 +2,7 @@ import { wordsFor } from "@app/core";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, dealtHouseInClient, undealtHouseInClient } from "./auth";
+import { rightNow } from "../tests/support/clock";
 
 const words = wordsFor("en", "housemates");
 
@@ -171,7 +172,7 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   // Two of the housemates' Johns done, so the week has some of each.
   const { data: theirs } = await admin().from("assignments").select("id").eq("house_id", houseId).neq("user_id", userId).limit(2);
   for (const row of theirs ?? []) {
-    await admin().from("assignments").update({ done_at: new Date().toISOString() }).eq("id", row.id);
+    await admin().from("assignments").update({ done_at: rightNow().toISOString() }).eq("id", row.id);
   }
 
   const page = await contexts[0].newPage();
@@ -311,14 +312,16 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   const nav = page.getByTestId("house-nav");
   await nav.getByRole("link", { name: words('house.lower.johns') }).click();
   await expect(page.getByRole("heading", { name: words('common.title.johnList') })).toBeVisible();
-  // The page fills the room beside the list: its kinds in two columns sharing a top edge, out to the
-  // window's gutter, with Add a John at the top right over them.
-  const kinds = page.getByTestId("john-kinds-column");
-  await expect(kinds).toHaveCount(2);
-  expect(await topOf(kinds.nth(0))).toBeCloseTo(await topOf(kinds.nth(1)), 0);
-  await fillsTheRoom(page, kinds.nth(1));
+  // The page fills the room beside the list: its kinds one under another, out to the window's gutter,
+  // with Add a John at the top right over them, and each John one line whose columns line up down the page.
+  const kinds = page.getByTestId("john-kinds");
+  await fillsTheRoom(page, kinds);
   const add = await page.getByTestId("john-list-bar").getByTestId("add-john").boundingBox();
-  expect(Math.abs(rightOf(add) - rightOf(await kinds.nth(1).boundingBox()))).toBeLessThan(2);
+  expect(Math.abs(rightOf(add) - rightOf(await kinds.boundingBox()))).toBeLessThan(2);
+  const lines = kinds.getByTestId("john-def");
+  const whenLeft = async (line: Locator) => (await line.getByText(/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun) \d\d:\d\d$/).boundingBox())!.x;
+  expect(Math.abs((await whenLeft(lines.first())) - (await whenLeft(lines.last())))).toBeLessThan(1);
+  expect((await lines.first().boundingBox())!.height).toBeLessThan(56);
   await shoot(page, "johns-columns");
   await page.getByRole("button", { name: /^Edit Bathroom clean, / }).click();
   const panel = page.getByTestId("john-panel");
@@ -393,9 +396,10 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   await page.goto("/house/guide/points");
   await expect(page.getByTestId("guide").getByTestId("guide-points").getByRole("button")).toHaveAttribute("aria-current", "true");
   await expect(page.getByTestId("guide-page")).toHaveCount(0);
-  // The groups among the John list's kinds.
+  // The groups under the John list's kinds, not among them.
   await nav.getByTestId("nav-johns").click();
-  await expect(page.getByTestId("john-kinds").getByTestId("johns-groups")).toBeVisible();
+  await expect(page.getByTestId("johns-groups")).toBeVisible();
+  await expect(page.getByTestId("john-kinds").getByTestId("johns-groups")).toHaveCount(0);
 
   await page.getByTestId("house-nav").getByRole("link", { name: words('house.lower.overview') }).click();
   await expect(house.getByTestId("house-figures")).toBeVisible();

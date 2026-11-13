@@ -105,8 +105,8 @@ export interface FlowItem {
 
 /**
  * Sections in as many columns as fit (each at least COLUMN_MIN) on a page
- * that fills the room on a laptop: the John list's kinds, a housemate's
- * record. Each goes to the shortest column so far, so the columns end near
+ * that fills the room on a laptop: a housemate's record, Stake history's
+ * months. Each goes to the shortest column so far, so the columns end near
  * each other and the page reads across, then down. On a phone it's one
  * stack, in order.
  */

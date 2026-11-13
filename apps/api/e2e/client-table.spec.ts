@@ -2,6 +2,7 @@ import { monthOf, monthWord, pointsLabel, wordsFor } from "@app/core";
 import { expect, test } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, dealtHouseInClient } from "./auth";
+import { rightNow } from "../tests/support/clock";
 
 const words = wordsFor("en", "housemates");
 
@@ -51,7 +52,7 @@ test("a tick scores on the Table at once, beside fair shares and streaks", async
   await expect(standings.nth(1)).toContainText("Ben");
   await expect(standings.nth(1)).toContainText(pointsLabel(0, words));
   // The month's Table has everyone on it too, chosen from the menu in its header.
-  const month = monthWord(monthOf(new Date(), "Europe/London"), words);
+  const month = monthWord(monthOf(rightNow(), "Europe/London"), words);
   await table.getByTestId("table-span").click();
   await ava.getByRole("radio", { name: month }).click();
   await expect(table.getByTestId("table-span")).toHaveText(month);

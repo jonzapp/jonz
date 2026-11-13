@@ -5,6 +5,7 @@ import { tickHouse } from "@/lib/engine/tick";
 import { adminClient } from "@/tests/support/clients";
 import { expectOk } from "@/tests/support/expect";
 import { actorFor, addJohns, deal, makeHouse, someoneElse, thisWeek, weeksAgo, ZONE } from "@/tests/support/factories";
+import { fromNow, rightNow } from "@/tests/support/clock";
 
 /**
  * The clock, driven by hand. The engine takes `now` as an argument, so a
@@ -25,7 +26,7 @@ describe("dealing", () => {
   it("deals nothing until the first deal, then deals the current week once", async () => {
     const house = await makeHouse();
     await addJohns(house.id, [{ name: "Bins" }, { name: "Bathroom", points: 4 }], thisWeek());
-    const now = new Date();
+    const now = rightNow();
 
     expect((await tickHouse(db, house.id, now)).dealt).toBeNull();
 
@@ -43,7 +44,7 @@ describe("dealing", () => {
     const house = await makeHouse();
     const week = thisWeek();
     await addJohns(house.id, [{ name: "Monday bins", dueDow: 1, dueTime: "07:00" }], week);
-    const now = new Date();
+    const now = rightNow();
     const { assignments } = await deal(house.id, week, now);
     expect(new Date(assignments[0].due_at).getTime()).toBeGreaterThan(now.getTime());
   });
@@ -173,7 +174,7 @@ describe("disputes, decided by the tick", () => {
   it("strikes an upheld tick, so the John is open again", async () => {
     const house = await makeHouse(["Ava", "Ben", "Cal"]);
     await addJohns(house.id, [{ name: "Bathroom", points: 4 }], thisWeek());
-    const { assignments } = await deal(house.id, thisWeek(), new Date());
+    const { assignments } = await deal(house.id, thisWeek(), rightNow());
     const a = assignments[0];
     const owner = actorFor(house, a.user_id);
     await owner.db.rpc("mark_done", { p_assignment: a.id });
@@ -181,7 +182,7 @@ describe("disputes, decided by the tick", () => {
     const { data: disputeId } = await voters[0].db.rpc("raise_dispute", { p_assignment: a.id, p_reason: "Ring in the bath" });
     expectOk(await voters[1].db.rpc("cast_vote", { p_dispute: disputeId!, p_uphold: true }));
 
-    const summary = await tickHouse(db, house.id, new Date());
+    const summary = await tickHouse(db, house.id, rightNow());
     expect(summary.disputes).toBe(1);
     const { data: row } = await db.from("assignments").select("done_at, outcome").eq("id", a.id).single();
     expect(row).toEqual({ done_at: null, outcome: null });
@@ -192,7 +193,7 @@ describe("disputes, decided by the tick", () => {
   it("in a house of two, waits for the vote to close, then strikes it with time to redo it", async () => {
     const house = await makeHouse(["Ava", "Ben"]);
     await addJohns(house.id, [{ name: "Bins" }, { name: "Bathroom", points: 4 }], thisWeek());
-    const { assignments } = await deal(house.id, thisWeek(), new Date());
+    const { assignments } = await deal(house.id, thisWeek(), rightNow());
     const a = assignments[0];
     await actorFor(house, a.user_id).db.rpc("mark_done", { p_assignment: a.id });
     const { error } = await someoneElse(house, a.user_id).db.rpc("raise_dispute", {
@@ -201,19 +202,19 @@ describe("disputes, decided by the tick", () => {
     });
     expect(error).toBeNull();
     // The one who asked is the only voter: nothing is decided before the vote closes.
-    expect((await tickHouse(db, house.id, new Date())).disputes).toBe(0);
-    await db.from("disputes").update({ closes_at: new Date(Date.now() - 1000).toISOString() }).eq("assignment_id", a.id);
-    const summary = await tickHouse(db, house.id, new Date());
+    expect((await tickHouse(db, house.id, rightNow())).disputes).toBe(0);
+    await db.from("disputes").update({ closes_at: fromNow(-1000).toISOString() }).eq("assignment_id", a.id);
+    const summary = await tickHouse(db, house.id, rightNow());
     expect(summary.disputes).toBe(1);
     const { data: row } = await db.from("assignments").select("done_at, closes_at").eq("id", a.id).single();
     expect(row!.done_at).toBeNull();
-    expect(Date.parse(row!.closes_at!)).toBeGreaterThan(Date.now() + 11 * 3_600_000);
+    expect(Date.parse(row!.closes_at!)).toBeGreaterThan(fromNow(11 * 3_600_000).getTime());
   });
 
   it("lets a tick stand when the house sides with it", async () => {
     const house = await makeHouse(["Ava", "Ben", "Cal"]);
     await addJohns(house.id, [{ name: "Bins" }], thisWeek());
-    const { assignments } = await deal(house.id, thisWeek(), new Date());
+    const { assignments } = await deal(house.id, thisWeek(), rightNow());
     const a = assignments[0];
     await actorFor(house, a.user_id).db.rpc("mark_done", { p_assignment: a.id });
     const accuser = someoneElse(house, a.user_id);
@@ -221,7 +222,7 @@ describe("disputes, decided by the tick", () => {
     const third = house.everyone.find((x) => x.userId !== a.user_id && x.userId !== accuser.userId)!;
     await accuser.db.rpc("cast_vote", { p_dispute: disputeId!, p_uphold: false });
     await third.db.rpc("cast_vote", { p_dispute: disputeId!, p_uphold: false });
-    await tickHouse(db, house.id, new Date());
+    await tickHouse(db, house.id, rightNow());
     const { data: row } = await db.from("assignments").select("done_at").eq("id", a.id).single();
     expect(row!.done_at).not.toBeNull();
   });
