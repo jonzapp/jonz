@@ -23,7 +23,7 @@
       "has": [{ "type": "header", "key": "user-agent", "value": ".*(facebookexternalhit|Facebot|Twitterbot|WhatsApp|Slackbot|TelegramBot|Discordbot|LinkedInBot|SkypeUriPreview|Snapchat|Pinterestbot|redditbot|Embedly|Iframely|Viber|Bluesky|Mastodon|vkShare|Google-PageRenderer).*" }],
       "destination": "https://api.jonz.app/api/share/:path"
     },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/((?!_expo/).*)", "destination": "/index.html" }
   ],
   "headers": [
     {
