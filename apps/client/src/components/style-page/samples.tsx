@@ -1,7 +1,7 @@
 import { CalendarIcon, CameraIcon, CheckIcon, ClockIcon, ListChecksIcon, PlaneIcon, ScaleIcon, UsersIcon } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
-import { ListTable, ListTableRow, type ListColumn } from '@/components/admin/list-table';
+import { ListTable, ListTableRow, type ListColumn } from '@/components/list-table';
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { Group } from '@/components/group';

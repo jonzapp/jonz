@@ -518,6 +518,21 @@ describe('on a laptop', () => {
   beforeEach(() => (useWindowDimensions as jest.Mock).mockReturnValue({ width: 1440, height: 900, scale: 1, fontScale: 1 }));
   afterEach(() => (useWindowDimensions as jest.Mock).mockReturnValue({ width: 412, height: 915, scale: 1, fontScale: 1 }));
 
+  it('lines each John up in columns: when, how often, what else, and its points', async () => {
+    await open();
+    const [bath, bins] = screen.getAllByTestId('john-def');
+    expect(bath).toHaveTextContent(/^Bathroom\s*Sun 21:00\s*Every 2 weeks\s*Photo\s*4 pts$/);
+    // Every week is said in its column here, so the column reads down.
+    expect(bins).toHaveTextContent(/^Bins\s*Thu 07:00\s*Every week\s*1 pt$/);
+  });
+
+  it('puts the groups beside the re-deal under the kinds', async () => {
+    (loadHouse as jest.Mock).mockResolvedValue(snapshot({ assignments: [assignment()] }));
+    await open();
+    expect(within(screen.getByTestId('johns-foot-start')).getByTestId('johns-groups')).toBeOnTheScreen();
+    expect(within(screen.getByTestId('johns-foot-end')).getByTestId('deal')).toBeOnTheScreen();
+  });
+
   it('opens a John in the panel beside the list, and the next John in its place', async () => {
     await open();
     await fireEvent.press(screen.getByRole('button', { name: /^Edit Bins, / }));

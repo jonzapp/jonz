@@ -7,7 +7,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { inboxCount, inboxFilter, inboxRows, type InboxCursor, type InboxRow } from '@/api/reports';
 import { BusyListView, useBusyList, type BusyList, type ListGroup } from '@/components/admin/busy-list';
-import { ListTableRow, type ListColumn } from '@/components/admin/list-table';
+import { ListTableRow, type ListColumn } from '@/components/list-table';
 import { Avatar } from '@/components/avatar';
 import { Row } from '@/components/row';
 import { ReportChip } from '@/components/report/report-parts';

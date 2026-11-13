@@ -5,7 +5,7 @@ import { SearchXIcon, type LucideIcon } from 'lucide-react-native';
 import { useMemo, useState, type ReactNode } from 'react';
 import { Platform, StyleSheet, View, type ViewStyle } from 'react-native';
 
-import { ListTable, ListTableHead, type ListColumn } from '@/components/admin/list-table';
+import { ListTable, ListTableHead, type ListColumn } from '@/components/list-table';
 import { SmartSearch } from '@/components/admin/smart-search';
 import { EmptyState } from '@/components/empty-state';
 import { Group } from '@/components/group';
