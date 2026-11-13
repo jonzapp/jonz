@@ -72,7 +72,7 @@ function readings(id: WordId): WordValues[] {
 /** Other files' strings that may say housemate, and why. */
 const FILE_REASONS: Record<string, RegExp[]> = {
   // The Wall's line for the switch between the two kinds, by its id.
-  "house-lower.ts": [/^house\.kindSwitch\./],
+  "wall-sentence.ts": [/^house\.kindSwitch\./],
   // The switch between the two kinds names both.
   "wall.ts": [/the house housemates/i, /the house as housemates/i],
   // The style page's sample replies, about a sample house of housemates.

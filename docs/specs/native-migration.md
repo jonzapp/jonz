@@ -596,7 +596,7 @@ As built, where it differs from the above:
 Events, reactions (lucide), photos through signed URLs, live updates.
 
 As built, where it differs from the above:
-- **The Wall's sentences are core's** (`house-lower.ts`: `wallFeedRow` gives the
+- **The Wall's sentences are core's** (`house-lower.ts`: `wallFeedRow`, each kind of sentence in `wall-sentence.ts`, gives the
   words from `wall.json`, with the names in bold, a plate and an icon's name), as are the
   reactions' names and which events take them; both apps draw them with
   their own lucide. The web's loader and the app read the same rows through

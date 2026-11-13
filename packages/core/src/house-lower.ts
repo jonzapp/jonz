@@ -1,15 +1,11 @@
 import type { AwayPeriod } from "./away";
 import { weeklyEffort, type JohnDef } from "./board";
 import type { Currency, HouseKind, HouseRules } from "./domain";
-import { dateIn, dateRange, dayLabel, firstName, monthNameOf, STATUS_MARK, type StatusIcon } from "./format";
-import { monthWord } from "./house-page";
-import { undoneWhat } from "./history";
+import { dateIn, dateRange, dayLabel, type StatusIcon } from "./format";
 import { formatMoney } from "./money";
-import type { LiveStatus } from "./outcome";
-import { pocketMoney } from "./pocket";
-import { resetWhat } from "./resets";
 import type { Transfer } from "./stake";
-import { wordsFor, type Words } from "./words-for";
+import { type Words } from "./words-for";
+import { monthFrom, named, upperFirst, wallSentence, type WallPerson, type WallScene } from "./wall-sentence";
 import { REACTABLE, REACTIONS, type Part, type ReactionKind, type WallEvent, type WallIcon } from "./wall";
 import { addDaysTo, localDate } from "./week";
 import { nameList, perWeekLine, rowLabel, rulesLine } from "./word-keys";
@@ -19,30 +15,6 @@ import { nameList, perWeekLine, rowLabel, rulesLine } from "./word-keys";
 // Wall by day with repeats folded, a payment's amount only for the two
 // people in it, the setup rows' values, and what leaving costs. Pure: every
 // function that needs the time takes `now`.
-
-/** Someone in the house, as the Wall names them: first names in sentences, the full name for initials. */
-export interface WallPerson {
-  userId: string;
-  name: string;
-}
-
-/** What a Wall row needs besides the event: who's looking, who lives here, and the house's clock. */
-export interface WallScene {
-  /** The viewer, who is "You" in the sentences. */
-  me: string;
-  members: readonly WallPerson[];
-  currency: Currency;
-  zone: string;
-  now: Date;
-  /** Where this week's Johns have got to, by assignment id (the board's), for a tick's meta line. */
-  statusOf?: (assignmentId: string) => LiveStatus | undefined;
-  /** When the house last struck out a tick on each John, by assignment id (`struckAt`), for older weeks. */
-  struck?: ReadonlyMap<string, Date>;
-  /** The time as a clock ("14:10"), for the Wall's days; otherwise how long ago ("3h"), for House. */
-  clock?: boolean;
-  /** The reader's words: a family's Wall says "joined the family" where housemates "moved in". Housemates' English when left out. */
-  words?: Words;
-}
 
 /**
  * The five kinds of news on the Wall, each with one plate colour: done
@@ -104,38 +76,6 @@ export interface WallFeedRow {
   you: boolean;
 }
 
-/** How a sentence names someone: as its subject, mid-sentence, and as an owner. */
-interface Named {
-  subject: string;
-  object: string;
-  possessive: string;
-  you: boolean;
-}
-
-const upperFirst = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
-const lowerFirst = (text: string) => text.charAt(0).toLowerCase() + text.slice(1);
-
-function named(userId: string | null | undefined, me: string, members: readonly WallPerson[], words: Words): Named {
-  if (userId && userId === me) {
-    return { subject: words('wall.feed.you'), object: words('wall.feed.youObject'), possessive: words('wall.feed.your'), you: true };
-  }
-  const member = userId ? members.find((m) => m.userId === userId) : undefined;
-  if (member) {
-    const first = firstName(member.name);
-    return { subject: first, object: first, possessive: words('wall.feed.whose', { name: first }), you: false };
-  }
-  // Someone the event doesn't name, or who has since left the house.
-  const nobody = userId ? words('common.shell.formerHousemate') : words('wall.feed.someone');
-  return { subject: nobody, object: lowerFirst(nobody), possessive: words('wall.feed.whose', { name: lowerFirst(nobody) }), you: false };
-}
-
-/** "September" from "2026-09"; null for anything that isn't a month. */
-function monthName(month: string, words: Words): string | null {
-  const [y, m] = month.split("-").map(Number);
-  if (!Number.isInteger(y) || !Number.isInteger(m) || m < 1 || m > 12) return null;
-  return monthNameOf(m - 1, words);
-}
-
 /** A day as the Wall names it: "Today", "Yesterday", else "Sat 24 Oct", in the house's zone. */
 function dayName(at: Date, zone: string, now: Date, words: Words): string {
   const date = localDate(at, zone);
@@ -155,11 +95,6 @@ export function wallAge(at: Date, now: Date, zone: string, words: Words): string
   const days = Math.floor(hours / 24);
   if (days < 7) return words('wall.feed.days', { n: days });
   return dateIn(at, "dayMonth", zone, words);
-}
-
-/** A payment's amount is for the two people in it: who paid and who was paid. */
-export function paymentShown(event: Pick<WallEvent, "userId" | "data">, viewer: string): boolean {
-  return event.userId === viewer || event.data.to === viewer;
 }
 
 /** The reaction the house gave most (the first in REACTIONS on a tie), or null when nobody has reacted. */
@@ -185,24 +120,6 @@ export function struckAt(events: readonly WallEvent[]): Map<string, Date> {
     if (!seen || e.createdAt > seen) out.set(e.assignmentId, e.createdAt);
   }
   return out;
-}
-
-/**
- * A tick's meta words, and the mark before them: from where its John has got
- * to on this week's board when it's there, else from whether the house
- * struck it out since.
- */
-function tickDetail(event: WallEvent, scene: WallScene, words: Words): { detail: string; mark: StatusIcon | null } {
-  const id = event.assignmentId;
-  const status = id ? scene.statusOf?.(id) : undefined;
-  const struck = id ? scene.struck?.get(id) : undefined;
-  const struckOut = { detail: words('wall.feed.struck'), mark: STATUS_MARK.missed.icon };
-  if (status === "disputed") return { detail: words('wall.feed.disputedTick'), mark: STATUS_MARK.disputed.icon };
-  // Undoing a tick takes its event away, so a ticked John that's open again was struck out.
-  if (status === "upcoming" || status === "due-soon" || status === "overdue" || status === "missed") return struckOut;
-  if (!status && struck && event.createdAt < struck) return struckOut;
-  if (event.kind === "late") return { detail: words('wall.feed.late'), mark: STATUS_MARK.late.icon };
-  return { detail: status === "checking" ? words('wall.feed.checking') : words('wall.feed.onTime'), mark: null };
 }
 
 const ICON: Record<string, WallIcon> = {
@@ -250,18 +167,6 @@ const FAMILY: Record<string, WallFamily> = {
   swap_used: "perk",
 };
 
-const OPEN: ReadonlySet<LiveStatus> = new Set(["upcoming", "due-soon", "overdue"]);
-
-/** "11h left", "40 min late": from now to when a flag is due. */
-function countdown(due: Date, now: Date, words: Words): { left: string; late: boolean } {
-  const minutes = Math.round((due.getTime() - now.getTime()) / 60_000);
-  const late = minutes < 0;
-  const m = Math.abs(minutes);
-  const id = late ? "wall.feed.lateBy" : "wall.feed.left";
-  const [n, unit] = m >= 60 ? [Math.floor(m / 60), "h"] : [Math.max(m, 1), "min"];
-  return { left: words(id, { n, unit }), late };
-}
-
 /** The sentence in runs: each of `bold` (names, Johns) set in bold wherever it appears. */
 function boldRuns(title: string, bold: readonly string[]): Part[] {
   const words = [...new Set(bold.filter((w) => w.length > 0))].sort((a, b) => b.length - a.length);
@@ -285,237 +190,7 @@ const HOUSE_NEWS = new Set(["upheld", "rejected", "month_closed", "jonz_message"
  */
 export function wallFeedRow(event: WallEvent, scene: WallScene, words: Words): WallFeedRow {
   const { me, members } = scene;
-  const say = scene.words ?? wordsFor("en", "housemates");
-  const who = named(event.userId, me, members, words);
-  const john = typeof event.data.name === "string" ? event.data.name : null;
-  const johnName = john ?? words('wall.feed.aJohn');
-  const text = (key: string) => (typeof event.data[key] === "string" ? (event.data[key] as string) : "");
-
-  let title: string;
-  let detail: string | null = null;
-  // The names and Johns the sentence sets in bold.
-  let bold: string[] = [who.subject, johnName];
-  let open: WallFeedRow["open"] = null;
-  // Who leads the row, when it isn't whoever the event is about.
-  let lead = event.userId;
-  let mark: StatusIcon | null = null;
-  let repeat: string | null = null;
-  // Whose John it is: the ticker, or the one a dispute or a verdict is against.
-  let owner = event.userId;
-  switch (event.kind) {
-    case "done":
-    case "late":
-      title = words('wall.feed.ticked', { who: who.subject, you: who.you, john: johnName });
-      ({ detail, mark } = tickDetail(event, scene, words));
-      repeat = `tick:${event.userId}`;
-      break;
-    case "covered": {
-      // The John was someone else's: theirs is the miss, the coverer's the tick.
-      const whose = named(text("for") || null, me, members, words);
-      title = words('wall.feed.covered', { who: who.subject, you: who.you, whose: whose.possessive, john: johnName });
-      bold.push(whose.subject);
-      ({ detail, mark } = tickDetail(event, scene, words));
-      if (detail === words('wall.feed.onTime')) detail = words('wall.feed.coveredWord');
-      repeat = `covered:${event.userId}`;
-      break;
-    }
-    case "missed":
-      title = words('wall.feed.missed', { who: who.subject, you: who.you, john: johnName });
-      detail = words('wall.feed.missedWord');
-      mark = STATUS_MARK.missed.icon;
-      repeat = `missed:${event.userId}`;
-      break;
-    case "disputed": {
-      owner = text("against") || null;
-      const against = named(owner, me, members, words);
-      title = words('wall.feed.disputed', { who: who.subject, you: who.you, whose: against.possessive, john: johnName });
-      bold.push(against.subject);
-      detail = text("reason") ? `“${text("reason")}”` : null;
-      break;
-    }
-    case "upheld":
-    case "rejected": {
-      owner = text("against") || null;
-      const whose = upperFirst(named(owner, me, members, words).possessive);
-      bold = [johnName, named(owner, me, members, words).subject];
-      title = event.kind === "upheld" ? words('wall.feed.struckOut', { whose, john: johnName }) : words('wall.feed.stands', { whose, john: johnName });
-      detail = words('wall.feed.voted');
-      break;
-    }
-    case "immunity_earned":
-      title = words('wall.feed.earnedImmunity', { who: who.subject, you: who.you });
-      detail = words('wall.feed.clean', { weeks: Number(event.data.streak ?? 0) });
-      break;
-    case "swap_earned":
-      title = words('wall.feed.toppedWeek', { who: who.subject, you: who.you });
-      detail = words('wall.feed.swapEarned');
-      break;
-    case "immunity_used":
-      title = words('wall.feed.skipped', { who: who.subject, you: who.you, john: johnName });
-      detail = words('wall.feed.immunityUsed');
-      break;
-    case "swap_used":
-      title = words('wall.feed.swapped', { who: who.subject, you: who.you, gave: text("gave"), whose: named(text("with") || null, me, members, words).possessive, took: text("took") });
-      bold = [who.subject, text("gave"), text("took"), named(text("with") || null, me, members, words).subject];
-      detail = words('wall.feed.swap');
-      break;
-    case "away": {
-      const range = dateRange(text("starts_on"), text("ends_on"), words);
-      const moved = Number(event.data.moved ?? 0);
-      title = who.you ? words('wall.feed.youAway', { range }) : words('wall.feed.away', { who: who.subject, you: who.you, range });
-      detail = moved > 0 ? words('wall.feed.awayMoved', { due: words('wall.feed.dueBefore', { n: moved, you: who.you }) }) : words('wall.feed.timeAway');
-      break;
-    }
-    case "flagged": {
-      // The event is the holder's; `by` flagged it, null when the clock flagged it again after a miss.
-      const by = text("by") || null;
-      const flagger = named(by, me, members, words);
-      if (!by) title = words('wall.feed.flaggedAgain', { john: johnName });
-      else if (by === event.userId) title = words('wall.feed.flaggedOwn', { who: who.subject, you: who.you, john: johnName });
-      else title = words('wall.feed.flagged', { by: flagger.subject, john: johnName, whom: who.object });
-      bold = [johnName, who.subject, who.object, ...(by ? [flagger.subject] : [])];
-      lead = by;
-      const status = event.assignmentId ? scene.statusOf?.(event.assignmentId) : undefined;
-      const due = text("due_at") ? new Date(text("due_at")) : null;
-      if (status && OPEN.has(status)) {
-        const onCall = words('wall.feed.onCall', { who: who.subject, you: who.you });
-        if (due && !Number.isNaN(due.getTime())) {
-          const sameDay = localDate(due, scene.zone) === localDate(scene.now, scene.zone);
-          const time = dateIn(due, "time", scene.zone, words);
-          const clock = sameDay ? time : words("common.date.weekdayTime", { day: dateIn(due, "weekday", scene.zone, words), time });
-          detail = words('wall.feed.dueBy', { onCall, when: clock });
-          open = countdown(due, scene.now, words);
-        } else {
-          detail = onCall;
-          open = { left: words('wall.feed.onCallWord'), late: status === "overdue" };
-        }
-        if (status === "overdue") open = { ...open, late: true };
-      } else if (status === "done" || status === "late") {
-        detail = words('wall.feed.flagDid', { who: who.subject, you: who.you });
-      } else if (status === "checking" || status === "disputed") {
-        detail = words('wall.feed.flagTicked', { who: who.subject, you: who.you });
-      } else if (status === "missed") {
-        detail = words('wall.feed.flagMissed', { who: who.subject, you: who.you });
-        mark = STATUS_MARK.missed.icon;
-      } else if (status === "covered") {
-        detail = words('wall.feed.flagCovered');
-      } else {
-        detail = words('wall.feed.flagWas', { who: who.subject, you: who.you });
-      }
-      break;
-    }
-    case "undone": {
-      // An admin took back someone else's move: the admin leads.
-      const by = named(text("by") || null, me, members, words);
-      title = words('wall.feed.undid', { by: by.subject, whose: who.possessive, what: undoneWhat(text("what"), john, words) });
-      bold = [by.subject, who.subject, johnName];
-      lead = text("by") || null;
-      detail = say("wall.feed.adminFix");
-      break;
-    }
-    case "reset": {
-      const subject = named(text("subject") || null, me, members, words);
-      title = words("wall.history.line.reset", { who: who.subject, you: who.you, what: resetWhat(event.data, subject.subject, words) });
-      bold = [who.subject, subject.subject, johnName];
-      detail = say("wall.feed.adminFix");
-      break;
-    }
-    case "okayed":
-    case "not_yet": {
-      // A parent's answer to a kid's tick, in a family.
-      owner = text("against") || null;
-      const kid = named(owner, me, members, words);
-      title = words(event.kind === "okayed" ? "wall.feed.okayed" : "wall.feed.notYet", { who: who.subject, you: who.you, whose: kid.possessive, john: johnName });
-      bold.push(kid.subject);
-      detail = event.kind === "okayed" ? null : words("wall.feed.openAgain");
-      break;
-    }
-    case "pocket_paid": {
-      const to = named(text("to") || null, me, members, words);
-      title = words("wall.feed.pocketPaid", {
-        who: who.subject,
-        you: who.you,
-        whom: to.object,
-        amount: pocketMoney(Number(event.data.amount ?? 0), scene.currency, words),
-        month: monthWord(text("month"), words),
-      });
-      bold = [who.subject, to.subject];
-      detail = words("house.pocket.card");
-      break;
-    }
-    case "joined":
-      title = say("wall.feed.joined", { who: who.subject, you: who.you });
-      detail = say("wall.feed.newMember");
-      break;
-    case "moving_out": {
-      const on = text("on");
-      title = on ? words("house.moving.movesOut", { who: who.subject, you: who.you, day: dateRange(on, on, words) }) : words("house.moving.stayingAfterAll", { who: who.subject, you: who.you });
-      detail = words('house.moving.movingDetail');
-      break;
-    }
-    case "moved_out": {
-      // They've gone, so the house can't name them: the post kept their name.
-      const was = text("who");
-      const subject = event.userId === me || !was ? who.subject : firstName(was);
-      title = words('house.moving.movedOut', { who: subject });
-      bold = [subject];
-      detail = words('house.moving.movingDetail');
-      break;
-    }
-    case "jonz_message":
-      // A message from Jonz itself: its subject, and its words to read in full.
-      title = text("subject") || words('wall.feed.fromJonz');
-      bold = [];
-      detail = text("body") || null;
-      lead = null;
-      break;
-    case "started_over":
-      // An admin reset the house; the owner's own reset names nobody.
-      title = event.userId
-        ? words("house.reset.wall", { who: who.subject, you: who.you, everything: event.data.everything === true })
-        : words("house.reset.wallNow", { everything: event.data.everything === true });
-      bold = event.userId ? bold : [];
-      detail = words("house.reset.wallDetail");
-      break;
-    case "kind_changed": {
-      // Rules' Who lives here: a family from the 1st, kept, housemates again, or a family now.
-      const on = text("on");
-      if (on) {
-        title = words("house.kindSwitch.wall.later", { who: who.subject, you: who.you, on: dateRange(on, on, words) });
-        detail = words("house.kindSwitch.wall.laterDetail");
-      } else if (event.data.kept) {
-        title = words("house.kindSwitch.wall.kept", { who: who.subject, you: who.you });
-      } else if (event.data.kind !== "family") {
-        title = words("house.kindSwitch.wall.housemates", { who: who.subject, you: who.you });
-        detail = words("house.kindSwitch.wall.housematesDetail");
-      } else {
-        title = event.userId ? words("house.kindSwitch.wall.family", { who: who.subject, you: who.you }) : words("house.kindSwitch.wall.familyNow");
-        bold = event.userId ? bold : [];
-        detail = words("house.kindSwitch.wall.familyDetail");
-      }
-      break;
-    }
-    case "month_closed":
-      {
-        const month = monthName(text("month"), words);
-        title = month ? words("wall.feed.monthClosed", { month }) : words("wall.feed.monthClosedAny");
-      }
-      detail = words('wall.feed.sharedOut');
-      break;
-    case "paid": {
-      const to = named(text("to") || null, me, members, words);
-      const amount = formatMoney(Number(event.data.amount ?? 0), scene.currency, words);
-      title = !paymentShown(event, me)
-        ? words('wall.feed.paid', { who: who.subject, you: who.you, whom: to.object })
-        : who.you
-          ? words('wall.feed.youPaid', { whom: to.object, amount })
-          : words('wall.feed.paidYou', { who: who.subject, you: who.you, amount });
-      detail = words('wall.feed.settled');
-      break;
-    }
-    default:
-      title = event.kind;
-  }
+  const { title, detail, bold, open, lead, mark, repeat, owner, who, john } = wallSentence(event, scene, words);
 
   const member = members.find((m) => m.userId === lead);
   const status = event.assignmentId ? scene.statusOf?.(event.assignmentId) : undefined;
@@ -741,7 +416,7 @@ export function leaveCost(input: {
   const money = (minor: number) => formatMoney(minor, input.currency, words);
   const clauses: string[] = [];
   if (input.share > 0) {
-    const month = monthName(input.month, words);
+    const month = monthFrom(input.month, words);
     clauses.push(month ? words('house.lower.loseShareFrom', { amount: money(input.share), month }) : words('house.lower.loseShare', { amount: money(input.share) }));
   }
   for (const t of input.transfers) {

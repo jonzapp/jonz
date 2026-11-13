@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { buildWeekBoard, todayView, type AssignmentRow, type BoardItem, type WeekBoard } from "./board";
+import { todayView } from "./board-views";
+import { buildWeekBoard, type AssignmentRow, type BoardItem, type WeekBoard } from "./board";
 import { DEFAULT_RULES } from "./domain";
 import { familyHides } from "./family";
 import { settleOutcome } from "./outcome";
 import { rulesRows } from "./setup";
-import { okMeta, okTitle, okWho, tickedLine } from "./today";
+import { okMeta, okTitle, okWho, tickedLine } from "./john-sheet";
 import { wallFeedRow } from "./house-lower";
 import { wallEvents } from "./wall";
 import { wordsFor } from "./words-for";

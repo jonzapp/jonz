@@ -1,10 +1,14 @@
 import { describe, expect, test } from "vitest";
 import { check } from "./steady-checks";
-import { HOUSES, MECHANISMS, matrixHouse, pairwise, randomHouse } from "./steady-houses";
-import type { RunHouse } from "./steady-run";
+import { MECHANISMS, matrixHouse, pairwise, randomHouse } from "./steady-matrix";
+import { HOUSES } from "./steady-houses";
+import type { RunHouse } from "./steady-run-types";
 import { LAST_OF_MONTH, RUN_STARTS_ON, dueWeeks, prepareRun, steadyRun } from "./steady-run";
-import type { SteadyInput, SteadyJohn, SteadyMember } from "./steady";
-import { FRONT_WEEKS, placeDays, planTurns, steadyWeek } from "./steady";
+import type { SteadyInput, SteadyJohn, SteadyMember } from "./steady-types";
+import { steadyWeek } from "./steady";
+import { placeDays } from "./steady-days";
+import { planTurns } from "./steady-turns";
+import { FRONT_WEEKS } from "./steady-types";
 import { addDaysTo } from "./week";
 
 // Fixed houses and fixed seeds only: every run gives the same weeks, so a pass stays a pass. These are the

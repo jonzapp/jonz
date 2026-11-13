@@ -10,13 +10,13 @@
 import { z } from "zod";
 
 import type { GroupDef, JohnDef } from "./board";
-import { CATEGORIES, CATEGORY_LABEL, JOHN_WHEN, type Category, type IsoDow } from "./domain";
-import { dateIn, firstName, pointsLabel, weekdayName } from "./format";
-import { dueWords, LAST_OF_MONTH, MAX_EVERY_MONTHS, MAX_EVERY_WEEKS, oftenWords } from "./repeat";
+import { CATEGORIES, JOHN_WHEN, type Category } from "./domain";
+import { firstName } from "./format";
+import { LAST_OF_MONTH, MAX_EVERY_MONTHS, MAX_EVERY_WEEKS } from "./repeat";
 import { CHAT_MOVES_MAX, ChatMove } from "./chat-moves";
 import { CHAT_RESETS_MAX, ChatReset } from "./resets";
 import type { JohnDraft } from "./schemas";
-import type { Words } from "./words-for";
+import { AskUsage } from "./ask-allowance";
 
 /** The most a draft holds: a long list is a list nobody reads. */
 export const DRAFT_MAX_JOHNS = 30;
@@ -40,133 +40,6 @@ export const SUMMARY_MAX = 4000;
 export const CHAT_FULL = 200;
 /** From this many turns the chat says it's getting long. */
 export const CHAT_LONG_AT = 170;
-/**
- * A house's Ask Jonz for a week, in Claude's tokens (what it reads and
- * writes): one pool the whole house shares, bigger with the House Pass. It
- * comes back when the house's week starts. A turn is about 6,000 to 20,000
- * tokens, so the free pool is a good few dozen questions and the Pass's a
- * few hundred. Starter lists are free and unlimited.
- */
-export const ASK_POOL_TOKENS = { free: 400_000, pass: 2_000_000 } as const;
-/** What a turn holds against the pool while Claude answers, so turns sent together can't all slip in; its answer puts in what it used. */
-export const ASK_TURN_RESERVE = 10_000;
-/** The most of the pool one person can use when the house has two or more people: nobody can use it all up. */
-export const ASK_SHARE_MAX = 0.5;
-/**
- * Messages one person can send Claude in a day, whichever house they're in,
- * so nobody gets more by leaving a house and starting another.
- */
-export const CHAT_TURNS_PER_PERSON_PER_DAY = 40;
-/**
- * A person's Ask Jonz over the last this-many days, whichever house they
- * were in, can't pass their house's weekly pool: leaving a house and
- * starting another doesn't give them a fresh one. Rolling, so it comes back
- * as their oldest turns drop off.
- */
-export const ASK_ACCOUNT_DAYS = 7;
-
-/** How much of this week's Ask Jonz a person has left, shown under the chat. */
-export const AskAllowance = z.object({
-  /** What's left of what they may still use this week, 0 to 1. */
-  left: z.number().min(0).max(1),
-  /** Whether the house's pool (not their own share) is what runs out first. */
-  house: z.boolean(),
-  /** Which runs out first: the house's pool, their share of it, or their account's (any house, last ASK_ACCOUNT_DAYS days). */
-  limit: z.enum(["house", "mine", "account"]),
-  /** When it comes back: the start of the house's next week, or when the account's oldest turn drops off. */
-  resetsAt: z.string(),
-});
-export type AskAllowance = z.infer<typeof AskAllowance>;
-
-/** What a person's account has used of Ask Jonz in the last ASK_ACCOUNT_DAYS days, in any house. */
-export interface AccountUse {
-  used: number;
-  /** When its oldest turn in the window drops off; null when there's none. */
-  backAt: Date | null;
-}
-
-/**
- * A person's cap and what's left of it, from the week's pool, how much the
- * house and they have used, and their account's use in any house (its cap is
- * the pool too: a new house is no fresh start).
- */
-export function askAllowance(input: {
-  pool: number;
-  people: number;
-  houseUsed: number;
-  mineUsed: number;
-  resetsAt: Date;
-  account?: AccountUse;
-}): AskAllowance & { cap: number; room: number } {
-  const cap = input.people >= 2 ? Math.floor(input.pool * ASK_SHARE_MAX) : input.pool;
-  const mine = Math.max(0, cap - input.mineUsed);
-  const house = Math.max(0, input.pool - input.houseUsed);
-  const account = Math.max(0, input.pool - (input.account?.used ?? 0));
-  const room = Math.min(mine, house, account);
-  // On your own the house's pool is yours, so it's the house's that runs out.
-  const houseFirst = input.people < 2 || house < mine;
-  const limit = account < Math.min(mine, house) ? "account" : houseFirst ? "house" : "mine";
-  const resetsAt = limit === "account" && input.account?.backAt ? input.account.backAt : input.resetsAt;
-  return { cap, room, left: cap > 0 ? Math.min(1, room / cap) : 0, house: houseFirst, limit, resetsAt: resetsAt.toISOString() };
-}
-
-/** Under this much left, the chat warns over the message box. */
-export const ASK_LOW = 0.25;
-
-/** The week's Ask Jonz for the usage page and the chat: what's left, what each has used, and when it's back. */
-export const AskUsage = AskAllowance.extend({
-  /** Whether the house has the House Pass (the bigger pool). */
-  pass: z.boolean(),
-  /** How many live in the house. With two or more nobody uses more than half. */
-  people: z.number().int().min(1),
-  /** How much of the house's pool is used, 0 to 1. */
-  houseUsed: z.number().min(0).max(1),
-  /** How much of what they may use (their half, or the pool on their own) is used, 0 to 1. */
-  mineUsed: z.number().min(0).max(1),
-  /** Each person who has used some, most first, as a share of the house's pool. */
-  usedBy: z.array(z.object({ userId: z.uuid(), used: z.number().min(0).max(1) })),
-});
-export type AskUsage = z.infer<typeof AskUsage>;
-
-/** When the week's Ask Jonz comes back, in the house's time: "Monday at 00:00". */
-export function askBackOn(resetsAt: string, zone: string, words: Words): string {
-  const at = new Date(resetsAt);
-  return words("common.date.dayAt", { day: dateIn(at, "weekdayLong", zone, words), time: dateIn(at, "time", zone, words) });
-}
-
-/** The usage page's figures, from the pool, who lives in the house, and the tokens each has used this week. */
-export function askUsage(input: {
-  pool: number;
-  pass: boolean;
-  people: readonly string[];
-  me: string;
-  used: ReadonlyMap<string, number>;
-  resetsAt: Date;
-  account?: AccountUse;
-}): AskUsage {
-  const houseUsed = [...input.used.values()].reduce((a, b) => a + b, 0);
-  const mineUsed = input.used.get(input.me) ?? 0;
-  const { cap, left, house, limit, resetsAt } = askAllowance({
-    pool: input.pool,
-    people: input.people.length,
-    houseUsed,
-    mineUsed,
-    resetsAt: input.resetsAt,
-    account: input.account,
-  });
-  const allowance = { left, house, limit, resetsAt };
-  const share = (n: number, of: number) => (of > 0 ? Math.min(1, n / of) : 1);
-  return {
-    ...allowance,
-    pass: input.pass,
-    people: Math.max(1, input.people.length),
-    houseUsed: share(houseUsed, input.pool),
-    mineUsed: share(mineUsed, cap),
-    usedBy: input.people
-      .map((userId) => ({ userId, used: share(input.used.get(userId) ?? 0, input.pool) }))
-      .sort((a, b) => b.used - a.used),
-  };
-}
 /** The most quick answers one question offers. */
 export const CHOICES_MAX = 5;
 
@@ -360,7 +233,7 @@ function time(value: unknown): string {
   return h <= 23 && m <= 59 ? `${String(h).padStart(2, "0")}:${match[2]}` : "21:00";
 }
 
-const key = (name: string) => name.toLocaleLowerCase();
+export const key = (name: string) => name.toLocaleLowerCase();
 
 type Person = { userId: string; name: string };
 
@@ -567,20 +440,6 @@ export function draftForModel(draft: HouseDraft, people: readonly Person[], me: 
   };
 }
 
-/**
- * Jonz's answer when Claude can't give one (not set up here, down, or a
- * reply it couldn't use). Before there's a draft, a starter list fits what
- * the admin said (or the one they named); after, the draft stays as it is
- * and the admin is told to change it by hand.
- */
-export function offlineTurn(messages: readonly ChatMessage[], draft: HouseDraft | null, words: Words): ChatResponse {
-  if (draft) return { reply: words('ask.draft.offlineChange'), ask: null, draft: null, source: "starter" };
-  const said = messages.filter((m) => m.role === "user").map((m) => m.text);
-  const named = STARTER_KINDS.find((k) => said.some((t) => key(t.trim()) === key(words(`ask.draft.starter.${k}.title` as const))));
-  const kind = named ?? guessStarter(said.join(" "));
-  return { reply: named ? words('ask.draft.fromStarter') : words('ask.draft.offline'), ask: null, draft: starterDraft(kind), source: "starter" };
-}
-
 // --- Changing a list that's already there ---------------------------------------
 
 /**
@@ -601,158 +460,3 @@ export function listAsDraft(johns: readonly JohnDef[], groups: readonly GroupDef
   };
 }
 
-/** The fields a change can touch, in the order a change line names them. */
-const CHANGEABLE = ["name", "category", "points", "everyWeeks", "everyMonths", "weekOfMonth", "dueDow", "dueTime", "needsPhoto", "when", "respondHours", "perWeek", "crew", "group"] as const;
-
-/** One thing a draft does to the list: a John to add (its place in the draft), one to change, or one to take off. */
-export type DraftChange =
-  | { kind: "add"; key: string; at: number; john: DraftedJohn }
-  | { kind: "change"; key: string; at: number; john: DraftedJohn; before: DraftedJohn }
-  | { kind: "remove"; key: string; before: DraftedJohn };
-
-/**
- * What a draft does to the list it was made from: Johns without an id are
- * added, Johns whose fields differ are changed, and Johns on the list the
- * draft left out are taken off. With no list (a new house), every John is
- * an add. Each change has a `key` to tick it by.
- */
-export function draftChanges(base: HouseDraft | null, next: HouseDraft): DraftChange[] {
-  const was = new Map((base?.johns ?? []).filter((j) => j.id).map((j) => [j.id!, j]));
-  const changes: DraftChange[] = [];
-  next.johns.forEach((john, at) => {
-    const before = john.id ? was.get(john.id) : undefined;
-    if (!before) changes.push({ kind: "add", key: `add:${at}`, at, john });
-    else if (CHANGEABLE.some((f) => before[f] !== john[f])) changes.push({ kind: "change", key: `change:${john.id}`, at, john, before });
-  });
-  const kept = new Set(next.johns.map((j) => j.id).filter(Boolean));
-  for (const before of base?.johns ?? []) {
-    if (before.id && !kept.has(before.id)) changes.push({ kind: "remove", key: `remove:${before.id}`, before });
-  }
-  return changes;
-}
-
-/** A group the house already has, with different people in it: who's in it before and after. */
-export interface GroupChange {
-  kind: "group";
-  key: string;
-  group: DraftedGroup;
-  before: DraftedGroup;
-}
-
-/**
- * Groups the house has whose people a draft changes. A group the draft
- * leaves out stays as it is (taking one off is the House page's), and a
- * new group is made with the Johns that need it (draftPlan).
- */
-export function groupChanges(base: HouseDraft | null, next: HouseDraft): GroupChange[] {
-  if (!base) return [];
-  return next.groups.flatMap((group) => {
-    const before = base.groups.find((g) => key(g.name) === key(group.name));
-    if (!before || group.memberIds.length === 0) return [];
-    const same = before.memberIds.length === group.memberIds.length && before.memberIds.every((id) => group.memberIds.includes(id));
-    return same ? [] : [{ kind: "group" as const, key: `group:${before.name}`, group: { ...group, name: before.name }, before }];
-  });
-}
-
-/**
- * What changed on a John, before → after, for under its (new) name on the
- * card: "Every week → every 2 weeks, Sun 21:00 → Sat 21:00, 3 → 4 pts". A new
- * name says what it was called.
- */
-export function changedLine(before: DraftedJohn, after: DraftedJohn, words: Words): string {
-  const parts: string[] = [];
-  const lower = (s: string) => s.charAt(0).toLocaleLowerCase() + s.slice(1);
-  const arrow = (was: string, now: string) => `${was} → ${lower(now)}`;
-  if (before.name !== after.name) parts.push(`was “${before.name}”`);
-  // How often and when, each only if it moved: "Every week → every 2 weeks", "Sat 18:00 → Sun 10:00".
-  const often = (j: DraftedJohn) => (j.when === "on_call" ? "On call" : oftenWords(j, words));
-  const due = (j: DraftedJohn) => dueWords(j, j.dueTime, weekdayName(j.dueDow, words, "short"), words);
-  if (often(before) !== often(after)) parts.push(arrow(often(before), often(after)));
-  if (before.when !== "on_call" && after.when !== "on_call" && due(before) !== due(after)) parts.push(`${due(before)} → ${due(after)}`);
-  if (before.points !== after.points) parts.push(arrow(String(before.points), pointsLabel(after.points, words)));
-  if (before.crew !== after.crew) parts.push(arrow(words('john.crew.choice', { crew: before.crew }), words('john.crew.choice', { crew: after.crew })));
-  if (before.group !== after.group) parts.push(arrow(before.group ?? "Everyone’s", after.group ?? "everyone’s"));
-  if (before.category !== after.category) parts.push(arrow(CATEGORY_LABEL[before.category], CATEGORY_LABEL[after.category]));
-  return parts.join(", ");
-}
-
-// --- Starter lists ------------------------------------------------------------
-
-export const STARTER_KINDS = ["flat_share", "couple", "family"] as const;
-export type StarterKind = (typeof STARTER_KINDS)[number];
-
-type Starter = [name: string, category: Category, points: number, everyWeeks: number, dueDow: IsoDow, dueTime: string, extra?: Partial<DraftedJohn>];
-
-function starter(rows: readonly Starter[]): DraftedJohn[] {
-  return rows.map(([name, category, points, everyWeeks, dueDow, dueTime, extra]) => ({
-    name,
-    category,
-    points,
-    everyWeeks,
-    dueDow,
-    everyMonths: null,
-    weekOfMonth: null,
-    dueTime,
-    needsPhoto: false,
-    when: "day",
-    respondHours: 12,
-    perWeek: 2,
-    crew: 1,
-    group: null,
-    why: "",
-    ...extra,
-  }));
-}
-
-/** The kitchen bin as an on-call John: whoever is on call takes it out when someone flags it. */
-const BIN_ON_CALL: Partial<DraftedJohn> = { when: "on_call", respondHours: 12, perWeek: 3 };
-
-/**
- * Ready-made lists for when Claude can't be reached, or for an admin who'd
- * rather start from one. Points follow the John list's hint: 1 for taking
- * the bins out, 5 for a deep clean. Due days are spread over the week.
- */
-export const STARTER_LISTS: Record<StarterKind, DraftedJohn[]> = {
-  flat_share: starter([
-    ["Kitchen wipe-down", "kitchen", 2, 1, 3, "21:00"],
-    ["Kitchen deep clean", "kitchen", 5, 2, 7, "18:00"],
-    ["Fridge clear-out", "kitchen", 2, 2, 5, "21:00"],
-    ["Bathroom clean", "bathroom", 4, 1, 6, "18:00"],
-    ["Kitchen bin", "bins", 1, 1, 7, "21:00", BIN_ON_CALL],
-    ["Bins and recycling out", "bins", 1, 1, 2, "21:00"],
-    ["Hoover and mop", "floors", 3, 1, 7, "18:00"],
-    ["Loo roll and cleaning stuff", "errands", 1, 2, 4, "21:00"],
-  ]),
-  couple: starter([
-    ["Kitchen clean", "kitchen", 3, 1, 3, "21:00"],
-    ["Bathroom clean", "bathroom", 4, 1, 6, "18:00"],
-    ["Bins and recycling out", "bins", 1, 1, 2, "21:00"],
-    ["Hoover and mop", "floors", 3, 1, 7, "18:00"],
-    ["Laundry", "other", 3, 1, 4, "21:00"],
-    ["Change the sheets", "other", 2, 2, 7, "21:00"],
-    ["Food shop", "errands", 3, 1, 6, "13:00"],
-  ]),
-  family: starter([
-    ["Kitchen clean", "kitchen", 3, 1, 3, "20:00"],
-    ["Empty the dishwasher", "kitchen", 1, 1, 7, "20:00", { when: "on_call", respondHours: 6, perWeek: 5 }],
-    ["Bathroom clean", "bathroom", 4, 1, 6, "18:00"],
-    ["Bins and recycling out", "bins", 1, 1, 2, "20:00"],
-    ["Hoover downstairs", "floors", 2, 1, 7, "18:00"],
-    ["Tidy your bedroom", "other", 2, 1, 7, "19:00"],
-    ["Laundry", "other", 3, 1, 4, "20:00"],
-    ["Food shop", "errands", 3, 1, 6, "13:00"],
-  ]),
-};
-
-/** A starter list as a draft, the same shape Claude's comes in. */
-export function starterDraft(kind: StarterKind): HouseDraft {
-  return { johns: STARTER_LISTS[kind].map((j) => ({ ...j })), groups: [], note: null };
-}
-
-/** Which starter list fits a description best, for when Claude can't draft from it: a family, a couple, or else a flat share. */
-export function guessStarter(description: string): StarterKind {
-  const d = description.toLocaleLowerCase();
-  if (/\b(kids?|children|child|son|daughter|family|toddler|teenagers?|mum|dad)\b/.test(d)) return "family";
-  if (/\b(partner|girlfriend|boyfriend|wife|husband|fianc[eé]e?|couple|two of us|me and my|my other half)\b/.test(d)) return "couple";
-  return "flat_share";
-}

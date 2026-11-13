@@ -1,26 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  byDoneLatest,
-  groupDef,
-  johnDef,
-  NEW_JOHN,
-  weeklyEffort,
-  buildWeekBoard,
-  isOpen,
-  monthStandings,
-  rulesOf,
-  onCallItems,
-  heldDoneIt,
-  DONE_IT_HOLD_MS,
-  TODAY_ORDER,
-  todayView,
-  toCover,
-  type AssignmentRow,
-  type DisputeRow,
-  type MonthRow,
-  type WeekRow,
-} from "./board";
+import { byDoneLatest, isOpen, monthStandings, onCallItems, heldDoneIt, DONE_IT_HOLD_MS, TODAY_ORDER, todayView, toCover, type MonthRow } from "./board-views";
+import { groupDef, johnDef, NEW_JOHN, weeklyEffort, buildWeekBoard, rulesOf, type AssignmentRow, type DisputeRow, type WeekRow } from "./board";
 import { JohnDraft } from "./schemas";
 
 const HOUR = 3_600_000;
