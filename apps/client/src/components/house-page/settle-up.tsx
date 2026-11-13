@@ -4,7 +4,7 @@ import { CheckIcon, CopyIcon, ExternalLinkIcon } from 'lucide-react-native';
 import { Linking, StyleSheet, View } from 'react-native';
 
 import { confirmPayment, type StakeRead } from '@/api/stake';
-import { Alert } from '@/components/alert';
+import { MoveProblem } from '@/components/house-page/move-problem';
 import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/button';
 import { ButtonRow } from '@/components/button-row';
@@ -136,11 +136,7 @@ function SettleUp({ houseId, row }: { houseId: string; row: SettleRow }) {
           </ButtonRow>
         </View>
       ) : null}
-      {move.problem ? (
-        <View style={[styles.problem, { paddingHorizontal: inset }]}>
-          <Alert message={move.problem} />
-        </View>
-      ) : null}
+      <MoveProblem message={move.problem} inset={inset} />
     </View>
   );
 }
@@ -154,5 +150,4 @@ const styles = StyleSheet.create({
     marginTop: SPACE.xs,
   },
   description: { flex: 1 },
-  problem: { marginBottom: SPACE.lg },
 });

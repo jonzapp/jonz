@@ -1,7 +1,7 @@
+import { corsFor } from "@app/core";
 import { asProblem, newRequestId, notSetUpProblem, problemResponse } from "@app/server";
 import { v1Instance } from "v1";
 
-import { originAllowed } from "@/lib/cors";
 import { env } from "@/lib/env";
 import { listen, type LiveChange } from "@/lib/live";
 import { V1_HANDLERS } from "@/lib/v1/handlers";
@@ -30,17 +30,7 @@ const changeEvent = (id: number) => encoder.encode(`id: ${id}\nevent: change\nda
 
 /** Staging's site and its previews call their API from another origin. */
 function cors(request: Request): Record<string, string> {
-  const origin = request.headers.get("origin");
-  const allowed = env.allowedOrigins();
-  if (!originAllowed(origin, allowed)) return allowed.length > 0 ? { Vary: "Origin" } : {};
-  return {
-    "Access-Control-Allow-Origin": origin,
-    "Access-Control-Allow-Methods": "GET, OPTIONS",
-    "Access-Control-Allow-Headers": "Authorization, Last-Event-ID, Jonz-Client",
-    "Access-Control-Expose-Headers": "request-id",
-    "Access-Control-Max-Age": "600",
-    Vary: "Origin",
-  };
+  return corsFor(request.headers.get("origin"), env.allowedOrigins(), { methods: "GET, OPTIONS", headers: "Authorization, Last-Event-ID, Jonz-Client", expose: "request-id" });
 }
 
 export const OPTIONS = (request: Request) => new Response(null, { status: 204, headers: cors(request) });

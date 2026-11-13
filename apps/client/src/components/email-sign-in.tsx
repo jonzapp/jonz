@@ -211,6 +211,19 @@ export function EmailSignIn() {
     void { 'sign-in': signIn, 'sign-up': signUp, confirm, forgot, reset }[step]();
   }
 
+  const agreeBox = (
+    <Group testID="email-agree">
+      <ChoiceRow
+        role="checkbox"
+        label={words('door.email.agree')}
+        meta={words('door.email.agreeMeta')}
+        checked={agreed}
+        onPress={() => setAgreed((on) => !on)}
+        disabled={busy}
+        testID="email-agree-box"
+      />
+    </Group>
+  );
   const loose = problem && !problem.field ? <Alert message={problem.message} /> : null;
   const told = note ? <Meta>{note}</Meta> : null;
 
@@ -244,17 +257,7 @@ export function EmailSignIn() {
           {nameField}
           {emailField}
           {passwordField(true)}
-          <Group testID="email-agree">
-            <ChoiceRow
-              role="checkbox"
-              label={words('door.email.agree')}
-              meta={words('door.email.agreeMeta')}
-              checked={agreed}
-              onPress={() => setAgreed((on) => !on)}
-              disabled={busy}
-              testID="email-agree-box"
-            />
-          </Group>
+          {agreeBox}
           {loose}
           <Button
             label={words('door.email.signUp')}
@@ -314,17 +317,7 @@ export function EmailSignIn() {
           <HiddenUsername email={email.trim()} />
           {codeField(words("door.email.resetBody", { length: CODE_LENGTH, email: email.trim() }))}
           {passwordField(true)}
-          <Group testID="email-agree">
-            <ChoiceRow
-              role="checkbox"
-              label={words('door.email.agree')}
-              meta={words('door.email.agreeMeta')}
-              checked={agreed}
-              onPress={() => setAgreed((on) => !on)}
-              disabled={busy}
-              testID="email-agree-box"
-            />
-          </Group>
+          {agreeBox}
           {loose}
           {told}
           <Button

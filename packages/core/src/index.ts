@@ -10,6 +10,7 @@ export * from "./ask-coverage";
 export * from "./ask-operation-input";
 export * from "./ask-operations";
 export * from "./chat-moves";
+export * from "./cors";
 export * from "./admin-list";
 export * from "./auth-paths";
 export * from "./away";

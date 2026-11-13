@@ -1,4 +1,4 @@
-import { readSpan, RECORD_SPANS, trackRecord, type RecordMark, type RecordSpan, type TrackRecord } from '@app/core';
+import { readSpan, trackRecord, type RecordMark, type RecordSpan, type TrackRecord } from '@app/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
@@ -6,10 +6,9 @@ import { Pair, useSideBySide } from '@/components/page-columns';
 import { PageTitle } from '@/components/page-title';
 import { Screen } from '@/components/screen';
 import { Section } from '@/components/section';
-import { Segmented } from '@/components/segmented';
 import { Meta } from '@/components/text';
 import { TitleBar } from '@/components/title-bar';
-import { PersonSections, usePersonRecord } from '@/components/week/person-record';
+import { PersonSections, RecordSpanPicker, usePersonRecord } from '@/components/week/person-record';
 import { RecordGrid, RecordKey } from '@/components/week/track-record';
 import { useHouse } from '@/hooks/use-house';
 import { useMembership } from '@/hooks/use-membership';
@@ -65,14 +64,7 @@ function RecordFor({ houseId, userId, span, open }: { houseId: string; userId: s
       <PageTitle page={words('week.record.title')} />
       <View style={styles.top}>
         <Meta>{span === 'week' ? words('week.record.introWeek') : words('week.record.intro')}</Meta>
-        <Segmented
-          options={RECORD_SPANS.map((value) => ({ value, label: words(`week.record.spans.${value}` as const) }))}
-          value={span}
-          onChange={(value) => router.setParams({ span: value })}
-          label={words('week.record.span')}
-          equal
-          testID="record-span"
-        />
+        <RecordSpanPicker span={span} />
       </View>
       {record ? (
         <RecordBody houseId={houseId} userId={userId} span={span} open={open} record={record} shown={shown} nameOf={nameOf} />

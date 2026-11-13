@@ -1,8 +1,10 @@
-import { recordBreakdown, shareLine, signedPoints, type BreakdownLine, type RecordSpan } from '@app/core';
+import { RECORD_SPANS, recordBreakdown, shareLine, signedPoints, type BreakdownLine, type RecordSpan } from '@app/core';
+import { router } from 'expo-router';
 import { useState } from 'react';
 
 import { Row } from '@/components/row';
 import { Section } from '@/components/section';
+import { Segmented } from '@/components/segmented';
 import { Meta } from '@/components/text';
 import { Waiting } from '@/components/waiting';
 import { RecordOutline } from '@/components/page-outlines';
@@ -119,5 +121,20 @@ function LineRows({ line, you, weeks }: { line: BreakdownLine; you: boolean; wee
           ))
         : null}
     </>
+  );
+}
+
+/** The record's span picker (this week, this month, all of it): it sets the page's `span`. */
+export function RecordSpanPicker({ span }: { span: RecordSpan }) {
+  const words = useWords();
+  return (
+    <Segmented
+      options={RECORD_SPANS.map((value) => ({ value, label: words(`week.record.spans.${value}` as const) }))}
+      value={span}
+      onChange={(value) => router.setParams({ span: value })}
+      label={words('week.record.span')}
+      equal
+      testID="record-span"
+    />
   );
 }

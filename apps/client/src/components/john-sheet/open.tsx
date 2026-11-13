@@ -1,5 +1,5 @@
 import { cantOptions, coverOffer, firstName, dueInLine, holdable, plannable, swapChoice, type BoardItem, type CantOptions } from '@app/core';
-import { CameraIcon, CheckIcon, HandIcon, ImagesIcon, RepeatIcon, ShieldIcon, UsersIcon } from 'lucide-react-native';
+import { CameraIcon, CheckIcon, HandIcon, RepeatIcon, ShieldIcon, UsersIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -16,6 +16,7 @@ import { SheetAnchor } from '@/components/sheet';
 import { StatusMark } from '@/components/status-mark';
 import { Body } from '@/components/text';
 import { useMove } from '@/hooks/use-move';
+import { PhotoTick } from '@/components/john-sheet/photo-tick';
 import { useTick } from '@/hooks/use-tick';
 import { useUndoOffer } from '@/hooks/use-undo-offer';
 import { SPACE, useTheme } from '@/theme';
@@ -57,26 +58,7 @@ export function YoursOpen({ item, context, onRollCall }: { item: BoardItem; cont
             testID="sheet-mark-done"
           />
         ) : item.needsPhoto ? (
-          <>
-            <Button
-              icon={CameraIcon}
-label={words('today.nextUp.takePhoto')}
-              busy={tick.waiting === 'camera'}
-              busyLabel={tick.busyLabel}
-              disabled={tick.held('camera')}
-              onPress={() => void tick.tickWithPhoto('camera')}
-              testID="sheet-mark-done"
-            />
-            <Button
-              variant="outline"
-              icon={ImagesIcon}
-label={words('john.sheet.fromLibrary')}
-              busy={tick.waiting === 'library'}
-              busyLabel={tick.busyLabel}
-              disabled={tick.held('library')}
-              onPress={() => void tick.tickWithPhoto('library')}
-            />
-          </>
+          <PhotoTick tick={tick} label={words('today.nextUp.takePhoto')} testID="sheet-mark-done" />
         ) : (
           <>
             <Button
@@ -382,26 +364,7 @@ function Cover({ item, context, body }: { item: BoardItem; context: JohnSheetCon
     <>
       <Body testID="cover-body">{body}</Body>
       {item.needsPhoto ? (
-        <>
-          <Button
-            icon={CameraIcon}
-label={words('john.sheet.coverPhoto')}
-            busy={tick.waiting === 'camera'}
-            busyLabel={tick.busyLabel}
-            disabled={tick.held('camera')}
-            onPress={() => void tick.tickWithPhoto('camera')}
-            testID="sheet-cover"
-          />
-          <Button
-            variant="outline"
-            icon={ImagesIcon}
-label={words('john.sheet.fromLibrary')}
-            busy={tick.waiting === 'library'}
-            busyLabel={tick.busyLabel}
-            disabled={tick.held('library')}
-            onPress={() => void tick.tickWithPhoto('library')}
-          />
-        </>
+        <PhotoTick tick={tick} label={words('john.sheet.coverPhoto')} testID="sheet-cover" />
       ) : (
         <Button
           icon={CheckIcon}

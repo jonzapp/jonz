@@ -4,7 +4,7 @@ import { CheckIcon } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
 import { payPocketMoney } from '@/api/pocket';
-import { Alert } from '@/components/alert';
+import { MoveProblem } from '@/components/house-page/move-problem';
 import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/button';
 import { ButtonRow } from '@/components/button-row';
@@ -108,11 +108,7 @@ function PayDay({ houseId, row, fullName }: { houseId: string; row: PayRow; full
           </ButtonRow>
         </View>
       ) : null}
-      {move.problem ? (
-        <View style={[styles.problem, { paddingHorizontal: inset }]}>
-          <Alert message={move.problem} />
-        </View>
-      ) : null}
+      <MoveProblem message={move.problem} inset={inset} />
     </View>
   );
 }
@@ -120,5 +116,4 @@ function PayDay({ houseId, row, fullName }: { houseId: string; row: PayRow; full
 const styles = StyleSheet.create({
   top: { gap: SPACE.xs, paddingVertical: SPACE.md },
   action: { marginTop: SPACE.xs, marginBottom: SPACE.lg },
-  problem: { marginBottom: SPACE.lg },
 });

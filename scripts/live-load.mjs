@@ -20,17 +20,8 @@
 import { appendFileSync } from "node:fs";
 import { performance } from "node:perf_hooks";
 
-import { createClient } from "@supabase/supabase-js";
+import { API, CLIENT, quantile, samsJohnIn, signIn, sleep, v1 } from "./live/demo.mjs";
 
-const need = (name) => {
-  const value = process.env[name];
-  if (!value) throw new Error(`${name} is not set`);
-  return value;
-};
-const SUPABASE_URL = need("SUPABASE_URL");
-const KEY = need("SUPABASE_PUBLISHABLE_KEY");
-const API = need("API_URL").replace(/\/+$/, "");
-const PASSWORD = need("DEMO_PASSWORD");
 const STREAMS = Number(process.env.STREAMS ?? 200);
 /** How long the streams stay open: past one server end (280 s), so they all open again. */
 const HOLD_MS = Number(process.env.HOLD_S ?? 330) * 1_000;
@@ -41,72 +32,12 @@ const TICK_MS = 4_000;
 const WAIT_MS = 10_000;
 /** The gap the streams may be behind Realtime (ms). */
 const WITHIN = 100;
-const CLIENT = "script/1.0.0";
-
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-async function signIn(email) {
-  const client = createClient(SUPABASE_URL, KEY, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-  const { data, error } = await client.auth.signInWithPassword({
-    email,
-    password: PASSWORD,
-  });
-  if (error) throw new Error(`${email} couldn't sign in: ${error.message}`);
-  return { client, token: data.session.access_token, userId: data.user.id };
-}
-
-async function v1(token, method, path, body) {
-  const response = await fetch(`${API}${path}`, {
-    method,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Jonz-Client": CLIENT,
-      ...(body ? { "Content-Type": "application/json" } : {}),
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  const text = await response.text();
-  if (!response.ok)
-    throw new Error(
-      `${method} ${path}: ${response.status} ${text.slice(0, 300)}`,
-    );
-  return text ? JSON.parse(text) : null;
-}
-
-const quantile = (values, q) => {
-  const sorted = [...values].sort((a, b) => a - b);
-  if (sorted.length === 0) return NaN;
-  const at = (sorted.length - 1) * q;
-  const low = Math.floor(at);
-  return sorted[low] + (sorted[Math.ceil(at)] - sorted[low]) * (at - low);
-};
 
 const people = await Promise.all(
   ["alex", "sam", "priya", "jo"].map((name) => signIn(`${name}@demo.jonz.app`)),
 );
 const [alex, sam] = people;
-const house = await v1(alex.token, "GET", "/v1/me/house");
-if (!house)
-  throw new Error(
-    'Alex has no house on staging: run the Staging workflow\'s "Seed the demo house"',
-  );
-const houseId = house.houseId;
-
-const samsJohn = async () => {
-  const today = await v1(sam.token, "GET", `/v1/houses/${houseId}/today`);
-  return (
-    today.assignments.find((a) => a.userId === sam.userId && !a.skipped) ?? null
-  );
-};
-let john = await samsJohn();
-if (!john) {
-  console.log("No John for Sam this week: dealing the week as Alex.");
-  await v1(alex.token, "POST", `/v1/houses/${houseId}/deal`, {});
-  john = await samsJohn();
-}
-if (!john) throw new Error("Sam still has no John after the deal");
+const { houseId, john } = await samsJohnIn(alex, sam);
 const wasDone = Boolean(john.doneAt);
 console.log(
   `House ${houseId}, Sam's John ${john.id}. ${STREAMS} streams for ${HOLD_MS / 1000} s, a tick every ${TICK_MS / 1000} s.`,
