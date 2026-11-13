@@ -17,43 +17,10 @@ jest.mock('expo-router', () => {
   const { useEffect } = jest.requireActual<typeof import('react')>('react');
   return { useFocusEffect: (effect: () => void) => useEffect(effect, [effect]) };
 });
-jest.mock('@/api/supabase', () => {
-  const mockChannel = { on: jest.fn(), subscribe: jest.fn() };
-  mockChannel.on.mockReturnValue(mockChannel);
-  mockChannel.subscribe.mockReturnValue(mockChannel);
-  const client = {
-    auth: { getSession: jest.fn() },
-    realtime: { setAuth: jest.fn() },
-    channel: jest.fn(() => mockChannel),
-    removeChannel: jest.fn(),
-  };
-  // Sign-in on Supabase's own address: live updates ride the same client.
-  return {
-    supabase: client,
-    live: client,
-    __channel: mockChannel,
-  };
-});
-
-jest.mock('@/api/live-stream', () => {
-  const state = { on: false };
-  return {
-    __state: state,
-    get liveThroughApi() {
-      return state.on;
-    },
-    openLiveStream: jest.fn(() => jest.fn()),
-  };
-});
-const liveStream = jest.requireMock('@/api/live-stream') as { __state: { on: boolean }; openLiveStream: jest.Mock };
-
-const channel = (jest.requireMock('@/api/supabase') as { __channel: { on: jest.Mock; subscribe: jest.Mock } }).__channel;
-const sb = supabase as unknown as {
-  auth: { getSession: jest.Mock };
-  realtime: { setAuth: jest.Mock };
-  channel: jest.Mock;
-  removeChannel: jest.Mock;
-};
+jest.mock('@/api/supabase', () => ({ supabase: { auth: { getSession: jest.fn() } } }));
+jest.mock('@/api/live-stream', () => ({ openLiveStream: jest.fn(() => jest.fn()) }));
+const openLiveStream = (jest.requireMock('@/api/live-stream') as { openLiveStream: jest.Mock }).openLiveStream;
+const sb = supabase as unknown as { auth: { getSession: jest.Mock } };
 
 let client: QueryClient;
 const wrapper = ({ children }: { children: ReactNode }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>;
@@ -102,25 +69,17 @@ describe('useLiveHouse', () => {
 
   async function listen() {
     const invalidate = jest.spyOn(client, 'invalidateQueries').mockResolvedValue();
+    const stop = jest.fn();
+    openLiveStream.mockReturnValueOnce(stop);
     const hook = await renderHook(() => useLiveHouse('h1'), { wrapper });
-    await act(async () => undefined);
-    const onChange = channel.on.mock.calls[0][2] as () => void;
-    return { invalidate, onChange, ...hook };
+    const [houseId, onChange, { token }] = openLiveStream.mock.calls[0] as [string, () => void, { token: () => Promise<string | null> }];
+    return { invalidate, stop, houseId, onChange, token, ...hook };
   }
 
-  it("listens to the house's ticks, disputes and Wall with the user's token", async () => {
-    await listen();
-    expect(sb.realtime.setAuth).toHaveBeenCalledWith('token-1');
-    expect(sb.channel).toHaveBeenCalledWith('house:h1');
-    expect(channel.on.mock.calls.map(([, opts]) => opts)).toEqual(
-      ['events', 'assignments', 'disputes'].map((table) => ({
-        event: '*',
-        schema: 'public',
-        table,
-        filter: 'house_id=eq.h1',
-      })),
-    );
-    expect(channel.subscribe).toHaveBeenCalled();
+  it("hears the API's stream of the house, with the user's token", async () => {
+    const { houseId, token } = await listen();
+    expect(houseId).toBe('h1');
+    await expect(token()).resolves.toBe('token-1');
   });
 
   it('folds a burst of changes into one read of the house', async () => {
@@ -138,45 +97,12 @@ describe('useLiveHouse', () => {
   });
 
   it('stops listening when the screen goes, and drops a read still waiting', async () => {
-    const { invalidate, onChange, unmount } = await listen();
+    const { invalidate, onChange, stop, unmount } = await listen();
     await act(async () => onChange());
     await unmount();
-    expect(sb.removeChannel).toHaveBeenCalledWith(channel);
+    expect(stop).toHaveBeenCalled();
     await act(async () => jest.advanceTimersByTime(1000));
     expect(invalidate).not.toHaveBeenCalled();
-  });
-
-  it("with live updates through the API, hears the API's stream instead, with the user's token", async () => {
-    liveStream.__state.on = true;
-    try {
-      const invalidate = jest.spyOn(client, 'invalidateQueries').mockResolvedValue();
-      const stop = jest.fn();
-      liveStream.openLiveStream.mockReturnValueOnce(stop);
-      const { unmount } = await renderHook(() => useLiveHouse('h1'), { wrapper });
-      expect(sb.channel).not.toHaveBeenCalled();
-      const [houseId, onChange, { token }] = liveStream.openLiveStream.mock.calls[0] as [string, () => void, { token: () => Promise<string | null> }];
-      expect(houseId).toBe('h1');
-      await expect(token()).resolves.toBe('token-1');
-      await act(async () => {
-        onChange();
-        onChange();
-        jest.advanceTimersByTime(400);
-      });
-      expect(invalidate).toHaveBeenCalledTimes(1);
-      await unmount();
-      expect(stop).toHaveBeenCalled();
-    } finally {
-      liveStream.__state.on = false;
-    }
-  });
-
-  it("doesn't open a channel when the screen went before the session was read", async () => {
-    let answer: (value: unknown) => void = () => undefined;
-    sb.auth.getSession.mockReturnValue(new Promise((resolve) => (answer = resolve)));
-    const { unmount } = await renderHook(() => useLiveHouse('h1'), { wrapper });
-    await unmount();
-    await act(async () => answer({ data: { session: null } }));
-    expect(sb.channel).not.toHaveBeenCalled();
   });
 });
 

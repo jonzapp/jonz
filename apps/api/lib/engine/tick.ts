@@ -1,4 +1,4 @@
-import { addDaysTo, AHEAD_WEEKS, crewByJob, dealtMembers, dueInLine, firstName, earnsImmunity, forfeitFor, isCleanWeek, localDate, monthOf, monthWindow, movingOutAway, ON_CALL_WEEKS, onCallUsual, passOf, passUnlocked, prefsOf, recentBalances, reminderFor, remindMoverNow, REMIND_AFTER_DAYS, REMIND_UNTIL_DAYS, rulesOf, houseKind, settleMonth, settleOutcome, standings, steadyAhead, steadyDeal, stillHere, tableInputs, USUAL_WEEKS, verdict, votersOn, weekStateOf, weekWindow, weekWinners, oldEnough, type AwayPeriod, type Database, type IsoDow, type Json, type Outcome, type PushKind, type SteadyDealArgs, type SteadyLastTurn, type WeekWindow, type HouseKind, type Language, type Words, wordsFor } from "@app/core";
+import { addDaysTo, AHEAD_WEEKS, crewByJob, dealtMembers, dueInLine, firstName, earnsImmunity, forfeitFor, isCleanWeek, localDate, monthOf, monthWindow, movingOutAway, ON_CALL_WEEKS, onCallUsual, passOf, hasPass, prefsOf, recentBalances, reminderFor, remindMoverNow, REMIND_AFTER_DAYS, REMIND_UNTIL_DAYS, rulesOf, houseKind, settleMonth, settleOutcome, standings, steadyAhead, steadyDeal, stillHere, tableInputs, USUAL_WEEKS, verdict, votersOn, weekStateOf, weekWindow, weekWinners, oldEnough, type AwayPeriod, type Database, type IsoDow, type Json, type Outcome, type PushKind, type SteadyDealArgs, type SteadyLastTurn, type WeekWindow, type HouseKind, type Language, type Words, wordsFor } from "@app/core";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { tellHouse } from "./tell";
@@ -592,7 +592,7 @@ async function askParents(db: Db, house: HouseRow, members: readonly MemberRow[]
 async function settleDue(db: Db, house: HouseRow, now: Date, notify?: Notify) {
   const rules = rulesOf(house);
   // The Stake is a House Pass extra: without it, a late or missed John costs nothing.
-  const staked = passUnlocked(passOf(house), now);
+  const staked = hasPass(passOf(house), now);
   const open = must(
     await db
       .from("assignments")
@@ -687,7 +687,7 @@ async function closeWeeks(db: Db, house: HouseRow, members: readonly MemberRow[]
   );
   const streaks = new Map(members.map((m) => [m.user_id, m.streak]));
   // Perks are a House Pass extra: without it, streaks still count but earn nothing.
-  const perks = passUnlocked(passOf(house), now);
+  const perks = hasPass(passOf(house), now);
   let closed = 0;
 
   for (const week of due) {

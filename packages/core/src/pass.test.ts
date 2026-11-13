@@ -4,7 +4,6 @@ import { CURRENCIES } from "./domain";
 import {
   hasPass,
   rulesAsStaked,
-  PASS_ENFORCED,
   PASS_LOOKUP_KEYS,
   PASS_PURCHASES,
   passAfterSubscription,
@@ -21,7 +20,6 @@ import {
   passLine,
   passOf,
   passOffers,
-  passUnlocked,
   type HousePass,
 } from "./pass";
 import { wordsFor } from "./words-for";
@@ -66,25 +64,6 @@ describe("hasPass", () => {
     expect(hasPass(pass("trial", "2026-11-10T12:00:01Z"), now)).toBe(true);
     expect(hasPass(pass("trial", "2026-11-10T12:00:00Z"), now)).toBe(false);
     expect(hasPass(pass("yearly", "2026-11-01T00:00:00Z"), now)).toBe(false);
-  });
-});
-
-describe("passUnlocked", () => {
-  const ended = pass("monthly", "2026-11-01T00:00:00Z");
-
-  it("locks a house without the Pass: the Pass is on", () => {
-    expect(PASS_ENFORCED).toBe(true);
-    expect(passUnlocked(ended, now)).toBe(false);
-  });
-
-  it("unlocks every house when told it isn't enforced", () => {
-    expect(passUnlocked(ended, now, false)).toBe(true);
-  });
-
-  it("follows the Pass once enforced", () => {
-    expect(passUnlocked(ended, now, true)).toBe(false);
-    expect(passUnlocked(pass("monthly", "2026-12-01T00:00:00Z"), now, true)).toBe(true);
-    expect(passUnlocked(pass("founding", null), now, true)).toBe(true);
   });
 });
 

@@ -2,13 +2,6 @@ import { apiBase } from './base';
 import { clientHeader } from './v1';
 import { markTooOld } from './too-old';
 
-/**
- * Live updates through our own server (docs/specs/api.md, C3), once
- * EXPO_PUBLIC_LIVE_THROUGH_API is on: the API's stream of a house's changes,
- * `GET /v1/houses/{houseId}/live`, instead of Supabase Realtime.
- */
-export const liveThroughApi = process.env.EXPO_PUBLIC_LIVE_THROUGH_API === '1';
-
 /** The longest wait between tries when the API won't answer. */
 const MOST_MS = 30_000;
 
@@ -20,7 +13,9 @@ type Options = {
 };
 
 /**
- * Listens to the house's stream and calls `onChange` for each change. The
+ * Live updates through our own server (docs/specs/api.md, C3): the API's
+ * stream of a house's changes, `GET /v1/houses/{houseId}/live`. Listens to
+ * the house's stream and calls `onChange` for each change. The
  * server ends each stream after a few minutes; the next opens at once with
  * `Last-Event-ID`, and hears straight away if it missed anything. When the
  * API can't be reached it tries again, waiting longer each time. Read over

@@ -39,8 +39,8 @@ link); give it with a Promotions gift named for their email.
 - `houses.pass_plan` (`trial`, `monthly`, `yearly`, `founding`),
   `houses.pass_until` (null only for Founding) and `houses.pass_buyer`.
   Written only by the service role; housemates read them with the house.
-- `@app/core` `pass.ts`: `passOf`, `hasPass`, `passUnlocked`, `passLine`,
-  `passOffers`, and `PASS_ENFORCED`, on since 11 Nov 2026
+- `@app/core` `pass.ts`: `passOf`, `hasPass`, `passLine` and
+  `passOffers`. A house without the Pass has lost the extras since 11 Nov 2026
   (`20270106090000_pass_on.sql` made every house made before then a
   Founding house). The database's own `house_has_pass` answers the same
   question for its checks. Staging's Demo House starts with its free month

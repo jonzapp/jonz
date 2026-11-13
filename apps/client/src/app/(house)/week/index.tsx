@@ -1,4 +1,4 @@
-import { canSwap, memberCan, oneRowPerJob, passUnlocked, liveWeekFilter, toggleWeekFilter, weekAwayLine, weekAwayNote, weekFairness, weekList, weekLookAhead, weekPeople, weekRangeLine, weekSummary, weekTogether, weekUnticked, whoDeals, type JohnDef, type WeekPart } from '@app/core';
+import { canSwap, memberCan, oneRowPerJob, hasPass, liveWeekFilter, toggleWeekFilter, weekAwayLine, weekAwayNote, weekFairness, weekList, weekLookAhead, weekPeople, weekRangeLine, weekSummary, weekTogether, weekUnticked, whoDeals, type JohnDef, type WeekPart } from '@app/core';
 import { RepeatIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
@@ -275,7 +275,7 @@ function Board({
         }
         side={
           <>
-            {passUnlocked(house.pass, now) ? (
+            {hasPass(house.pass, now) ? (
               <SideTable userId={userId} view={view} table={sharesRead} away={awayRead} />
             ) : null}
             {/* The deal's two quiet lines sit together under the Table, as Today's page lines do. */}

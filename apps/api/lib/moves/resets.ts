@@ -3,7 +3,7 @@ import "server-only";
 import {
   forfeitFor,
   passOf,
-  passUnlocked,
+  hasPass,
   houseKind,
   resetWhat,
   type Words,
@@ -51,7 +51,7 @@ export async function resetHouse(
   const admin = createAdminClient();
   const { house, members } = await loadHouse(admin, request.houseId);
   const rules = rulesOf(house);
-  const staked = passUnlocked(passOf(house), now);
+  const staked = hasPass(passOf(house), now);
   const forfeits = {
     late: staked ? forfeitFor("late", rules) : 0,
     missed: staked ? forfeitFor("missed", rules) : 0,
