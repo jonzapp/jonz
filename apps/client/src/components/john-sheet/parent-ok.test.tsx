@@ -11,6 +11,7 @@ import { assignment, snapshot } from '@/testing/house';
 import { testQueryClient } from '@/testing/query';
 
 import { JohnSheetProvider, useJohnSheet } from '.';
+import { hoursFromNow as at } from '@/testing/clock';
 
 const words = wordsFor('en', 'housemates');
 
@@ -23,8 +24,6 @@ jest.mock('@/api/photos', () => ({ pickPhoto: jest.fn(), uploadProof: jest.fn() 
 jest.mock('@/api/wall', () => ({ signPhoto: jest.fn() }));
 jest.mock('@/api/resets', () => ({ previewReset: jest.fn(), applyReset: jest.fn() }));
 
-const HOUR = 3_600_000;
-const at = (hours: number) => new Date(Date.now() + hours * HOUR).toISOString();
 
 /** A family: Priya the parent, Sam a kid whose Clean the bath waits for an OK. */
 function family(pay = 0): HouseSnapshot {

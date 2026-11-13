@@ -17,6 +17,7 @@ import { ToastProvider } from '@/components/toast';
 import { houseKey } from '@/hooks/keys';
 import { assignment, snapshot } from '@/testing/house';
 import { testQueryClient } from '@/testing/query';
+import { hoursFromNow as at } from '@/testing/clock';
 
 const words = wordsFor('en', 'housemates');
 
@@ -46,8 +47,6 @@ jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
 }));
 
 const read = loadHouse as jest.Mock;
-const HOUR = 3_600_000;
-const at = (hours: number) => new Date(Date.now() + hours * HOUR).toISOString();
 const PHONE = { width: 412, height: 915, scale: 1, fontScale: 1 };
 const LAPTOP = { width: 1440, height: 900, scale: 1, fontScale: 1 };
 

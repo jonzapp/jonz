@@ -284,7 +284,7 @@ describe("canRedeal", () => {
   });
 
   it("won't once anything is ticked or settled, even a tick that was struck", () => {
-    expect(canRedeal({ week, items: [open, { doneAt: new Date(), outcome: null }] })).toBe(false);
+    expect(canRedeal({ week, items: [open, { doneAt: new Date("2026-11-11T12:00:00Z"), outcome: null }] })).toBe(false);
     expect(canRedeal({ week, items: [open, { doneAt: null, outcome: "missed" }] })).toBe(false);
   });
 

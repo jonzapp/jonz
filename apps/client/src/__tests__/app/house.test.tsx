@@ -15,6 +15,7 @@ import HouseScreen from '@/app/(house)/house';
 import { HouseWorkspace } from '@/components/house/workspace';
 import { assignment, snapshot } from '@/testing/house';
 import { renderPages, untilRead } from '@/testing/pages';
+import { NOW } from '@/testing/clock';
 
 const words = wordsFor('en', 'housemates');
 
@@ -121,7 +122,7 @@ beforeEach(() => {
     snapshot({
       members,
       assignments: [
-        assignment({ id: 'a1', done_at: new Date(Date.now() - 3_600_000).toISOString(), points: 3 }),
+        assignment({ id: 'a1', done_at: new Date(NOW.getTime() - 3_600_000).toISOString(), points: 3 }),
         assignment({ id: 'a2', user_id: 'sam', points: 5 }),
       ],
     }),
@@ -390,7 +391,7 @@ describe('the Table', () => {
     (loadTable as jest.Mock).mockRejectedValue(new Error('offline'));
     await open();
     // With no Table read, the menu offers this month on the house's clock, whenever the test runs.
-    await showSpan(monthWord(monthOf(new Date(), 'Europe/London'), words));
+    await showSpan(monthWord(monthOf(new Date(NOW), 'Europe/London'), words));
     expect(screen.getByRole('alert')).toHaveTextContent(words('house.page.tableUnreadable'));
   });
 

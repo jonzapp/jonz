@@ -10,6 +10,7 @@ import RecordPersonScreen from '@/app/(house)/week/record/[userId]';
 import RecordScreen from '@/app/(house)/week/record/index';
 import { snapshot } from '@/testing/house';
 import { renderPages, untilRead } from '@/testing/pages';
+import { hoursFromNow as at } from '@/testing/clock';
 
 const words = wordsFor('en', 'housemates');
 
@@ -26,8 +27,6 @@ jest.mock('@/hooks/use-membership', () => ({
   useMembership: () => ({ session: { user: { id: 'priya' } }, house: { id: 'h1', name: 'Flat 3' } }),
 }));
 
-const HOUR = 3_600_000;
-const at = (hours: number) => new Date(Date.now() + hours * HOUR).toISOString();
 const week = (id: string, startsIn: number) => ({
   id,
   starts_on: at(startsIn).slice(0, 10),
