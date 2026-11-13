@@ -5,7 +5,7 @@
  * what the deal did rather than replaying it.
  */
 import type { BoardItem } from "./board";
-import { isOpen } from "./board";
+import { isOpen } from "./board-views";
 import { andNames, shareLabel } from "./crew";
 import type { HouseRules } from "./domain";
 import { dueInLine, firstName, formatBalance } from "./format";
