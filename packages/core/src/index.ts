@@ -41,6 +41,7 @@ export * from "./front-door";
 export * from "./history";
 export * from "./house-draft";
 export * from "./house-lower";
+export * from "./wall-sentence";
 export * from "./house-page";
 export * from "./house-person";
 export * from "./how-it-works";
