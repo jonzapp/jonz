@@ -17,6 +17,7 @@ import { oftenWords } from "./repeat";
 import type { StakeView } from "./stake";
 import { NO_PREFS, type MyPrefs } from "./steady-prefs";
 import { swapAsk, swapOffersToYou, type SwapAsk, type SwapOfferRow, type SwapOfferToYou } from "./steady-swap";
+import type { Viewing } from "./viewing";
 import { addDaysTo, monthOf } from "./week";
 import type { Words } from "./words-for";
 
@@ -434,21 +435,17 @@ function lateCosts(rules: HouseRules, room: number | null, words: Words): string
  */
 export function sheetWhen(
   item: BoardItem,
-  people: readonly Person[],
-  viewerId: string,
-  rules: HouseRules,
-  now: Date,
-  words: Words,
+  { people, viewerId, rules, now, words }: Viewing,
   room: number | null = null,
 ): { sign: "overdue" | "disputed" | "late" | "missed" | "covered" | null; text: string } {
   const zone = rules.timezone;
   if (item.status === "covered" && !item.outcome) {
     return { sign: "covered", text: words('john.sheet.coveredWasDue', { when: sinceLabel(item.dueAt, now, zone, words) }) };
   }
-  if (item.status === "covered") return { sign: "covered", text: settledLine(item, people, viewerId, rules, now, words) };
+  if (item.status === "covered") return { sign: "covered", text: settledLine(item, { people, viewerId, rules, now, words }) };
   if (SETTLED.has(item.status)) {
     const sign = item.status === "late" || item.status === "missed" ? item.status : null;
-    return { sign, text: settledLine(item, people, viewerId, rules, now, words) };
+    return { sign, text: settledLine(item, { people, viewerId, rules, now, words }) };
   }
   if (item.status === "overdue") {
     const text = [words('today.nextUp.overdueSince', { when: sinceLabel(item.dueAt, now, zone, words) }), overdueCost(rules, room, words)].filter(Boolean).join(", ");
@@ -480,7 +477,7 @@ function tickedAt(at: Date, now: Date, zone: string, words: Words): string {
  * A tick being checked: "Megan ticked this at 14:10, stands in 21h" ("You
  * ticked…" for yours); a cover, "Glyn covered this at 23:04, …".
  */
-export function tickedLine(item: BoardItem, people: readonly Person[], viewerId: string, rules: HouseRules, now: Date, words: Words): string {
+export function tickedLine(item: BoardItem, { people, viewerId, rules, now, words }: Viewing): string {
   const ticker = tickerOf(item);
   const who = ticker === viewerId ? words('john.sheet.you') : firstNameIn(people, ticker, words);
   const whom = item.userId === viewerId ? words('john.sheet.byYou') : firstNameIn(people, item.userId, words);
@@ -503,7 +500,7 @@ export function tickedLine(item: BoardItem, people: readonly Person[], viewerId:
  * What happened to a settled John, in a sentence: who did it and when. What
  * lateness costs is said only while it's to do; the Stake has what it cost.
  */
-export function settledLine(item: BoardItem, people: readonly Person[], viewerId: string, rules: HouseRules, now: Date, words: Words): string {
+export function settledLine(item: BoardItem, { people, viewerId, rules, now, words }: Viewing): string {
   const who = item.userId === viewerId ? words('john.sheet.you') : firstNameIn(people, item.userId, words);
   const ticked = item.doneAt ? tickedAt(item.doneAt, now, rules.timezone, words) : null;
   switch (item.status) {
@@ -542,7 +539,7 @@ export interface CoverOffer {
  * pts and £3."); overdue inside the grace, when it opens to you; nothing
  * before it's due. The money is the missed forfeit, before any cap.
  */
-export function coverOffer(item: BoardItem, people: readonly Person[], viewerId: string, rules: HouseRules, now: Date, words: Words): CoverOffer {
+export function coverOffer(item: BoardItem, { people, viewerId, rules, now, words }: Viewing): CoverOffer {
   const owner = called(people, item.userId, words);
   const holders = item.together ?? [item.userId];
   // On a Together John you have a place in, you tick it with the roll call.

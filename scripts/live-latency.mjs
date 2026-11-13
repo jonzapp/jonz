@@ -18,41 +18,12 @@
 import { appendFileSync } from "node:fs";
 import { performance } from "node:perf_hooks";
 
-import { createClient } from "@supabase/supabase-js";
+import { API, CLIENT, quantile, samsJohnIn, signIn, sleep, v1 } from "./live/demo.mjs";
 
-const need = (name) => {
-  const value = process.env[name];
-  if (!value) throw new Error(`${name} is not set`);
-  return value;
-};
-const SUPABASE_URL = need("SUPABASE_URL");
-const KEY = need("SUPABASE_PUBLISHABLE_KEY");
-const API = need("API_URL").replace(/\/+$/, "");
-const PASSWORD = need("DEMO_PASSWORD");
 const ROUNDS = Number(process.env.ROUNDS ?? 40);
 /** The gap the app may switch within (ms). */
 const WITHIN = 100;
 const WAIT_MS = 10_000;
-
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-async function signIn(email) {
-  const client = createClient(SUPABASE_URL, KEY, { auth: { persistSession: false, autoRefreshToken: false } });
-  const { data, error } = await client.auth.signInWithPassword({ email, password: PASSWORD });
-  if (error) throw new Error(`${email} couldn't sign in: ${error.message}`);
-  return { client, token: data.session.access_token, userId: data.user.id };
-}
-
-async function v1(token, method, path, body) {
-  const response = await fetch(`${API}${path}`, {
-    method,
-    headers: { Authorization: `Bearer ${token}`, "Jonz-Client": "script/1.0.0", ...(body ? { "Content-Type": "application/json" } : {}) },
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  const text = await response.text();
-  if (!response.ok) throw new Error(`${method} ${path}: ${response.status} ${text.slice(0, 300)}`);
-  return text ? JSON.parse(text) : null;
-}
 
 /** One listener's arrivals: resolves the wait for the next change after a mark. */
 function arrivals() {
@@ -88,7 +59,7 @@ function openStream(houseId, token, onChange) {
       controller = new AbortController();
       try {
         const response = await fetch(`${API}/v1/houses/${houseId}/live`, {
-          headers: { Authorization: `Bearer ${token}`, Accept: "text/event-stream", "Jonz-Client": "script/1.0.0", ...(lastId ? { "Last-Event-ID": lastId } : {}) },
+          headers: { Authorization: `Bearer ${token}`, Accept: "text/event-stream", "Jonz-Client": CLIENT, ...(lastId ? { "Last-Event-ID": lastId } : {}) },
           signal: controller.signal,
         });
         if (!response.ok) throw new Error(`stream ${response.status}`);
@@ -117,32 +88,9 @@ function openStream(houseId, token, onChange) {
   };
 }
 
-const quantile = (values, q) => {
-  const sorted = [...values].sort((a, b) => a - b);
-  if (sorted.length === 0) return NaN;
-  const at = (sorted.length - 1) * q;
-  const low = Math.floor(at);
-  return sorted[low] + (sorted[Math.ceil(at)] - sorted[low]) * (at - low);
-};
-
 const alex = await signIn("alex@demo.jonz.app");
 const sam = await signIn("sam@demo.jonz.app");
-const house = await v1(alex.token, "GET", "/v1/me/house");
-if (!house) throw new Error("Alex has no house on staging: run the Staging workflow's \"Seed the demo house\"");
-const houseId = house.houseId;
-
-// A John of Sam's to tick: deal the week first if nobody has.
-const samsJohn = async () => {
-  const today = await v1(sam.token, "GET", `/v1/houses/${houseId}/today`);
-  return today.assignments.find((a) => a.userId === sam.userId && !a.skipped) ?? null;
-};
-let john = await samsJohn();
-if (!john) {
-  console.log("No John for Sam this week: dealing the week as Alex.");
-  await v1(alex.token, "POST", `/v1/houses/${houseId}/deal`, {});
-  john = await samsJohn();
-}
-if (!john) throw new Error("Sam still has no John after the deal");
+const { houseId, john } = await samsJohnIn(alex, sam);
 const wasDone = Boolean(john.doneAt);
 console.log(`House ${houseId}, Sam's John ${john.id} (${wasDone ? "done" : "not done"} to start). ${ROUNDS} rounds.`);
 

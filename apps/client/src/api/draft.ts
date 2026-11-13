@@ -49,15 +49,9 @@ export async function sendChat(
  * Add the kept Johns (by their place in the draft) to the house's list,
  * making the groups they need first. Returns how many were added.
  */
-export async function keepDraft(
-  houseId: string,
-  rules: HouseRules,
-  draft: HouseDraft,
-  keep: readonly number[],
-  groups: readonly GroupDef[],
-  now: Date,
-): Promise<number> {
-  return applyDraft(houseId, rules, null, draft, keep.map((i) => `add:${i}`), { johns: [], groups: [...groups] }, now);
+export async function keepDraft(house: { houseId: string; rules: HouseRules; groups: readonly GroupDef[]; now: Date }, draft: HouseDraft, keep: readonly number[]): Promise<number> {
+  const { groups, ...rest } = house;
+  return applyDraft({ ...rest, list: { johns: [], groups: [...groups] } }, { base: null, draft, keys: keep.map((i) => `add:${i}`) });
 }
 
 /**
@@ -67,13 +61,8 @@ export async function keepDraft(
  * through the list's own writes, as if by hand. Returns how many applied.
  */
 export async function applyDraft(
-  houseId: string,
-  rules: HouseRules,
-  base: HouseDraft | null,
-  draft: HouseDraft,
-  keys: readonly string[],
-  list: JohnList,
-  now: Date,
+  { houseId, rules, list, now }: { houseId: string; rules: HouseRules; list: JohnList; now: Date },
+  { base, draft, keys }: { base: HouseDraft | null; draft: HouseDraft; keys: readonly string[] },
 ): Promise<number> {
   const picked = draftChanges(base, draft).filter((c) => keys.includes(c.key));
   const at = picked.flatMap((c) => (c.kind === 'remove' ? [] : [c.at])).sort((a, b) => a - b);

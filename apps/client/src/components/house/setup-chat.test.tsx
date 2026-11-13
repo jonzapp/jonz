@@ -120,7 +120,7 @@ it('shows the draft in the chat with every John kept, opens it into its groups, 
   await fireEvent.press(screen.getByRole('checkbox', { name: /^Upstairs bathroom/ }));
   expect(screen.getByText(words('ask.draft.draftMeta', { n: 1, points: 1 }))).toBeTruthy();
   await fireEvent.press(screen.getByRole('button', { name: words('ask.draft.keep', { n: 1 }) }));
-  expect(keep).toHaveBeenCalledWith('h1', RULES, null, drafted, ['add:1'], { johns: [], groups: [] }, expect.any(Date));
+  expect(keep).toHaveBeenCalledWith({ houseId: 'h1', rules: RULES, list: { johns: [], groups: [] }, now: expect.any(Date) }, { base: null, draft: drafted, keys: ['add:1'] });
   expect(await screen.findByText(words('ask.draft.added', { n: 1 }))).toBeTruthy();
   expect(screen.queryByTestId('chat-input')).toBeNull();
   await fireEvent.press(screen.getByTestId('chat-open-list'));
@@ -275,7 +275,7 @@ describe('with a list already', () => {
     expect(screen.getByText(changesMeta(words, 4, 7))).toBeTruthy();
     await fireEvent.press(screen.getByRole('checkbox', { name: /^Bins out/ }));
     await fireEvent.press(screen.getByRole('button', { name: words('ask.draft.apply', { n: 2 }) }));
-    expect(keep).toHaveBeenCalledWith('h1', RULES, base, changed, [`change:${BATH}`, 'add:1'], { johns, groups: [] }, expect.any(Date));
+    expect(keep).toHaveBeenCalledWith({ houseId: 'h1', rules: RULES, list: { johns, groups: [] }, now: expect.any(Date) }, { base, draft: changed, keys: [`change:${BATH}`, 'add:1'] });
     expect(await screen.findByText(words('ask.draft.applied', { n: 1 }))).toBeTruthy();
     // The house was asked how it shares Johns when it was new; House rules has it now.
     expect(screen.queryByTestId('chat-mode')).toBeNull();
@@ -298,7 +298,7 @@ describe('with a list already', () => {
     await say('Add Ivy to main floor');
     expect(await screen.findByTestId('draft-group-change')).toHaveTextContent(`Main floor${words('ask.draft.groupPeople', { before: 'You', after: 'You and Ivy' })}`);
     await fireEvent.press(screen.getByRole('button', { name: words('ask.draft.apply', { n: 1 }) }));
-    expect(keep).toHaveBeenCalledWith('h1', RULES, withFloor, ivyIn, ['group:Main floor'], { johns, groups: [floor] }, expect.any(Date));
+    expect(keep).toHaveBeenCalledWith({ houseId: 'h1', rules: RULES, list: { johns, groups: [floor] }, now: expect.any(Date) }, { base: withFloor, draft: ivyIn, keys: ['group:Main floor'] });
   });
 
   it('puts time away Jonz offers on its own card, under its answer', async () => {

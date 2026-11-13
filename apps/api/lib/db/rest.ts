@@ -72,6 +72,14 @@ const ident = (name: string): string => {
 };
 const literal = (s: string) => `'${s.replace(/'/g, "''")}'`;
 
+/** The answer when one row was asked for: the row, nothing (if that's allowed), or PostgREST's own refusal. */
+function oneRow(data: unknown[], maybe: boolean, details: string | null) {
+  if (data.length === 1) return { data: data[0], error: null, count: null };
+  if (data.length === 0 && maybe) return { data: null, error: null, count: null };
+  const error = { message: "JSON object requested, multiple (or no) rows returned", code: "PGRST116", details, hint: null };
+  return { data: null, error, count: null };
+}
+
 function asError(e: unknown): PgError {
   const err = e as {
     message?: string;
@@ -553,19 +561,7 @@ class Builder {
       return { data: null, error: null, count: null };
     const data = rows.map((r) => r.j);
     if (this.shape === "many") return { data, error: null, count: null };
-    if (data.length === 1) return { data: data[0], error: null, count: null };
-    if (data.length === 0 && this.shape === "maybe")
-      return { data: null, error: null, count: null };
-    return {
-      data: null,
-      error: {
-        message: "JSON object requested, multiple (or no) rows returned",
-        code: "PGRST116",
-        details: `The result contains ${data.length} rows`,
-        hint: null,
-      },
-      count: null,
-    };
+    return oneRow(data, this.shape === "maybe", `The result contains ${data.length} rows`);
   }
 
   build(meta: Meta): { text: string; params: unknown[] } {
@@ -778,20 +774,7 @@ class RpcCall {
         true,
       );
       if (this.shape !== "as-is" && Array.isArray(data)) {
-        if (data.length === 1)
-          return { data: data[0], error: null, count: null };
-        if (data.length === 0 && this.shape === "maybe")
-          return { data: null, error: null, count: null };
-        return {
-          data: null,
-          error: {
-            message: "JSON object requested, multiple (or no) rows returned",
-            code: "PGRST116",
-            details: null,
-            hint: null,
-          },
-          count: null,
-        };
+        return oneRow(data, this.shape === "maybe", null);
       }
       return { data, error: null, count: null };
     } catch (e) {

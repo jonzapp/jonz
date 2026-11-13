@@ -1,5 +1,5 @@
 import { firstName, jobPlaces, pointsLabel, rollCallPlace, rollCallPlan, rollCallStart, shareLabel, type BoardItem } from '@app/core';
-import { CameraIcon, CheckIcon, ImagesIcon, PlusIcon } from 'lucide-react-native';
+import { CheckIcon, PlusIcon } from 'lucide-react-native';
 import { useState } from 'react';
 
 import { Alert } from '@/components/alert';
@@ -11,6 +11,7 @@ import { Section } from '@/components/section';
 import { ChoiceRow } from '@/components/setup/choice-row';
 import { StatusMark } from '@/components/status-mark';
 import { Body, Meta } from '@/components/text';
+import { PhotoTick } from '@/components/john-sheet/photo-tick';
 import { useTick } from '@/hooks/use-tick';
 
 import type { JohnSheetContext } from './body';
@@ -121,26 +122,7 @@ export function RollCall({ item, context, onCancel }: { item: BoardItem; context
       </SheetSection>
       <SheetLines testID="roll-call-actions">
         {item.needsPhoto ? (
-          <>
-            <Button
-              icon={CameraIcon}
-              label={words('john.crew.photoDone')}
-              busy={tick.waiting === 'camera'}
-              busyLabel={tick.busyLabel}
-              disabled={tick.held('camera')}
-              onPress={() => void tick.tickWithPhoto('camera')}
-              testID="roll-call-done"
-            />
-            <Button
-              variant="outline"
-              icon={ImagesIcon}
-              label={words('john.sheet.fromLibrary')}
-              busy={tick.waiting === 'library'}
-              busyLabel={tick.busyLabel}
-              disabled={tick.held('library')}
-              onPress={() => void tick.tickWithPhoto('library')}
-            />
-          </>
+          <PhotoTick tick={tick} label={words('john.crew.photoDone')} testID="roll-call-done" />
         ) : (
           <Button
             icon={CheckIcon}

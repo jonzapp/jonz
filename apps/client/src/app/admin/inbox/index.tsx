@@ -1,12 +1,11 @@
 import { REPORT_FACETS, REPORT_WHEN, reportAge, reportGist, type ListAsk, type Words } from '@app/core';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router } from 'expo-router';
 import { InboxIcon } from 'lucide-react-native';
-import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { inboxCount, inboxFilter, inboxRows, type InboxCursor, type InboxRow } from '@/api/reports';
-import { BusyListView, useBusyList, type BusyList, type ListGroup } from '@/components/admin/busy-list';
+import { BusyListView, useBusyList, useOpenRow, type BusyList, type ListGroup } from '@/components/admin/busy-list';
 import { ListTableRow, type ListColumn } from '@/components/list-table';
 import { Avatar } from '@/components/avatar';
 import { Row } from '@/components/row';
@@ -54,10 +53,7 @@ export default function InboxPage() {
 function Inbox({ busy }: { busy: BusyList<InboxRow> }) {
   const words = useWords();
   const two = useColumns();
-  // A link in (the Overview's Needs you, a pushed page opened on a laptop) names the one to open with ?open=.
-  const { open } = useLocalSearchParams<{ open?: string }>();
-  const [chosenId, setChosen] = useState<string | null>(open ?? null);
-  const shownId = chosenId ?? busy.items[0]?.id ?? null;
+  const { shownId, setChosen } = useOpenRow(busy);
   const now = new Date();
   // Split when no state is picked: how many of what matches need a reply, for the first group's name.
   const filter = inboxFilter(busy.ask);
