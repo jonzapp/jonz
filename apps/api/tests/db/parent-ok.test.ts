@@ -1,10 +1,11 @@
 import { nextWeek, wordsFor } from "@app/core";
 import { describe, expect, it } from "vitest";
 
-import { tickHouse, pushIn, type PushMessage, type SaidPush } from "@/lib/engine/tick";
+import { tickHouse } from "@/lib/engine/tick";
 import { adminClient } from "@/tests/support/clients";
 import { expectDenied, expectOk, expectRule } from "@/tests/support/expect";
 import { addJohns, deal, makeHouse, reread, thisWeek, ZONE } from "@/tests/support/factories";
+import { pushIn, type PushMessage, type SaidPush } from "@/lib/engine/shared";
 
 const words = wordsFor("en", "housemates");
 

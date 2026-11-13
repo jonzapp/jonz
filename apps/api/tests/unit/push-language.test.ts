@@ -1,8 +1,8 @@
 import { wordsFor } from "@app/core";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { pushIn, type PushMessage } from "@/lib/engine/tick";
 import { payloadFor } from "@/lib/push";
+import { pushIn, type PushMessage } from "@/lib/engine/shared";
 
 /**
  * A push is said in its reader's language when it's sent (docs/specs/translation.md,

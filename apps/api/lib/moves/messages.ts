@@ -3,11 +3,11 @@ import "server-only";
 import { languageOf, messagePush, ownerMessageEmail, testWays, type OwnerMessageRequest } from "@app/core";
 
 import { sendEmail } from "@/lib/email";
-import type { Notify } from "@/lib/engine/tick";
 import { pushNotifier } from "@/lib/push";
 import { type AdminClient, createAdminClient } from "@/lib/supabase/admin";
 
 import type { Caller, Refusal } from "./disputes";
+import { type Notify } from "@/lib/engine/shared";
 
 // Messages from the owner (docs/specs/owner-admin.md, "Messages"). Sending is
 // the owner's own call to the database (owner_send_message), which checks it

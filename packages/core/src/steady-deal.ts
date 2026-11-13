@@ -1,7 +1,7 @@
 /**
  * The Monday deal in Steady weeks: what the engine reads about a house, made
  * into one week of steadyWeek, and its answer made into assignments with due
- * times. Pure: the engine (apps/api lib/engine/tick.ts) reads the rows and
+ * times. Pure: the engine (apps/api lib/engine/deal-week.ts) reads the rows and
  * writes the result through deal_week, and this decides everything between.
  *
  * Days here are places in the house's own week (1 its first day … 7 its

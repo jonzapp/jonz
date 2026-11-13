@@ -66,7 +66,7 @@ web-push.
   RPC (tell the house, decide at once): `disputes.ts` (raise, vote) and
   `deal.ts` (the deal: deal_week is the engine's, so the move itself checks,
   through the caller's own session, that an admin of the house is asking).
-- `lib/engine/`: the tick (`tick.ts`) and the page-load catch-up
+- `lib/engine/`: the tick (`tick.ts`, with its parts in `deal-week.ts`, `settle.ts`, `close.ts` and `remind.ts`) and the page-load catch-up
   (`fresh.ts`). The only code that uses the service role, apart from the cron
   route and push.
 - `lib/push.ts`: Web Push with VAPID, the engine's `Notify`. It reads each

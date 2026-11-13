@@ -4,9 +4,10 @@ import { weekIndex, weekWindow } from "@app/core";
 import type { BrowserContext } from "@playwright/test";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-import { dealWeek, loadHouse } from "../lib/engine/tick";
 import { totp } from "../tests/support/mfa";
 import { rightNow } from "../tests/support/clock";
+import { dealWeek } from "@/lib/engine/deal-week";
+import { loadHouse } from "@/lib/engine/shared";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;

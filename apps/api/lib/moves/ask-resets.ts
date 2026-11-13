@@ -16,11 +16,11 @@ import {
   type ResultChoice,
 } from "@app/core";
 
-import { loadHouse } from "@/lib/engine/tick";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 import type { Caller } from "./disputes";
 import { resetHouse } from "./resets";
+import { loadHouse } from "@/lib/engine/shared";
 
 /**
  * Ask Jonz's resets (docs/specs/admin-resets.md, step 3). Claude is told what

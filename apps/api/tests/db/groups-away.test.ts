@@ -2,11 +2,11 @@ import { addDaysTo, localDate, nextWeek } from "@app/core";
 import { TZDate } from "@date-fns/tz";
 import { describe, expect, it } from "vitest";
 
-import { loadBalances } from "@/lib/engine/tick";
 import { adminClient, signedInUser } from "@/tests/support/clients";
 import { expectDenied, expectOk, expectRule } from "@/tests/support/expect";
 import { addJohns, deal, makeHouse, reread, thisWeek, weeksAgo, ZONE } from "@/tests/support/factories";
 import { rightNow } from "@/tests/support/clock";
+import { loadBalances } from "@/lib/engine/deal-week";
 
 /**
  * Groups and time away: who may shape them, and what the deal does with

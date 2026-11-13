@@ -2,7 +2,7 @@
  * Steady weeks: the deal with a points budget, in Smart or Classic mode.
  *
  * Pure and deterministic, one week at a time. The engine (apps/api
- * lib/engine/tick.ts) hands it every John on the list, who shares each one
+ * lib/engine/deal-week.ts) hands it every John on the list, who shares each one
  * and who can do it this week, each housemate's balance, preferences and the
  * days they're home, Classic's orders of turns from last week and which Johns
  * are waiting; it hands back who gets what, on which day, which Johns wait,
