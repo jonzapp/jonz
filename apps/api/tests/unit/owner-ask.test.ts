@@ -108,6 +108,17 @@ function callerAnswering(answers: Record<string, unknown>) {
   return { caller: { db, userId: "00000000-0000-4000-8000-000000000001" } as unknown as Caller, asked };
 }
 
+describe("the owner's inbox tool", () => {
+  it("reads either of the Inbox's two groups: waiting for a reply, or answered", async () => {
+    const inbox = vi.fn(async () => "inbox");
+    const tool = ownerToolSet({ ...ownerReadsStub, inbox }).inbox;
+    const schema = tool.inputSchema as unknown as { parse: (v: unknown) => unknown };
+    for (const state of ["waiting", "answered", "replied", "fixed", null]) expect(() => schema.parse({ q: "", state, kind: null })).not.toThrow();
+    await (tool.execute as (input: unknown, options: unknown) => Promise<unknown>)({ q: "", state: "answered", kind: null }, { toolCallId: "t", messages: [] });
+    expect(inbox).toHaveBeenCalledWith("", "answered", null);
+  });
+});
+
 describe("ownerReads", () => {
   it("marks what people wrote as theirs, so it can't pass for instructions", async () => {
     const { caller } = callerAnswering({

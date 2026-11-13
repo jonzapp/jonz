@@ -6,6 +6,7 @@ pages are private artifacts on claude.ai.
 
 | Date | Decision | Where | Rule |
 | --- | --- | --- | --- |
+| 2026-11-13 | The owner's Inbox opens on every report in two groups, each newest first with its count: Needs a reply (new, or read and not folded), then Everything else. The one search box looks through both, a group with no matches is left out, and picking a State shows that state as one plain list (Inbox two groups A) | this PR | [lists](lists.md#admin-lists) |
 | 2026-11-12 | A fourth tab, You, at the end of the bar (the rail's last place on a laptop): your settings, help, moving out, your reports and leaving move out of House, whose phone switch now reads Overview or Setup; old /house/you, /house/moving and /house/reports links land on the new pages (Fourth tab A) | this PR | [layout](layout.md#navigation) |
 | 2026-11-12 | Connect your AI assistant: one row and one sheet for every assistant, a choice at the top (Claude, ChatGPT) that switches the steps under it, each assistant one entry in ASSISTANTS with its own words; Help lists the same steps under each name | this PR | [lists](lists.md) |
 | 2026-11-12 | Help, the Privacy Policy and the Terms are written in Markdown and drawn like Ask Jonz's replies: numbered steps, bold names of buttons and places, links in the sentence, and an address to paste as a line with Copy beside it (Markdown, not MDX or HTML) | #228 | [layout](layout.md#laptop-pages) |

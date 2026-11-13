@@ -1,4 +1,4 @@
-import { inboxCount, inboxFilter, inboxPage, myReport, openReport, sameAsFind, sendReport, setSameAs, setSupportDraft, supportDraft } from './reports';
+import { inboxCount, inboxFilter, inboxPage, inboxRows, myReport, openReport, sameAsFind, sendReport, setSameAs, setSupportDraft, supportDraft } from './reports';
 import { callV1 } from './v1';
 
 jest.mock('./v1', () => ({ callV1: jest.fn() }));
@@ -32,9 +32,10 @@ it('refuses a screenshot over the limit before uploading it', async () => {
   expect(callV1).not.toHaveBeenCalled();
 });
 
-it('opens on what is waiting, and reads the search box’s picks', () => {
+it('opens on every report, and reads the search box’s picks', () => {
   const ask = { q: 'bins', picks: {}, after: null, before: null };
-  expect(inboxFilter(ask)).toEqual({ q: 'bins', state: 'waiting', source: null, kind: null, after: null, before: null });
+  expect(inboxFilter(ask)).toEqual({ q: 'bins', state: null, source: null, kind: null, after: null, before: null });
+  expect(inboxFilter({ ...ask, picks: { state: 'waiting' } })).toMatchObject({ state: 'waiting' });
   expect(inboxFilter({ ...ask, picks: { source: 'email' } })).toMatchObject({ source: 'email' });
   expect(inboxFilter({ ...ask, picks: { source: 'any' } })).toMatchObject({ source: null });
   expect(inboxFilter({ ...ask, picks: { state: 'any', kind: 'idea' } })).toMatchObject({ state: null, kind: 'idea' });
@@ -82,7 +83,7 @@ it('reads a page of the Inbox, where it came from as `from`, and passes on where
   });
   const page = await inboxPage('c-0', filter);
   expect(callV1).toHaveBeenCalledWith('owner_reports_page', { q: '', state: 'waiting', from: 'email', kind: null, after: null, before: null, limit: 50, startingAfter: 'c-0' });
-  expect(page).toMatchObject({ more: true, next: 'c-1', items: [{ id: 'r1', source: 'email', subject: 'Stake', folded: true, sentAt: '2026-10-31T20:00:00Z' }] });
+  expect(page).toMatchObject({ more: true, next: 'c-1', items: [{ id: 'r1', source: 'email', subject: 'Stake', folded: true, sentAt: '2026-10-31T20:00:00Z', waiting: true }] });
   jest.mocked(callV1).mockResolvedValue(4);
   await expect(inboxCount(filter)).resolves.toBe(4);
   expect(callV1).toHaveBeenLastCalledWith('owner_reports_count', { q: '', state: 'waiting', from: 'email', kind: null, after: null, before: null });
@@ -99,4 +100,43 @@ it('folds, finds and drafts on /v1', async () => {
   jest.mocked(callV1).mockResolvedValue({ draft: null });
   await expect(supportDraft('r1')).resolves.toBeNull();
   expect(callV1).toHaveBeenLastCalledWith('claim_support_draft', { reportId: 'r1' });
+});
+
+describe('the Inbox in two groups', () => {
+  const row = (id: string, state: string, sameAsReportId: string | null = null) => ({
+    id, userId: null, name: 'Sam', email: null, houseName: null, kind: 'problem', state, words: 'Hi', createdAt: '2026-10-31T20:00:00Z', lastActivityAt: '2026-10-31T20:00:00Z', source: 'app', subject: null, sameAsReportId, also: 0,
+  });
+  const all = { q: 'bins', state: null, source: null, kind: null, after: null, before: null };
+  const pages = (byState: Record<string, { data: unknown[]; hasMore: boolean; startingAfter: string | null }>) =>
+    jest.mocked(callV1).mockImplementation((async (_: string, input: { state: string }) => byState[input.state]) as never);
+
+  it('reads what waits for a reply first, then the rest once that runs out', async () => {
+    pages({
+      waiting: { data: [row('w1', 'new'), row('w2', 'open')], hasMore: false, startingAfter: null },
+      answered: { data: [row('a1', 'replied'), row('a2', 'open', 'w2')], hasMore: true, startingAfter: 'c-a' },
+    });
+    const first = await inboxRows(null, all);
+    expect(jest.mocked(callV1).mock.calls.map(([, input]) => (input as { state: string }).state)).toEqual(['waiting', 'answered']);
+    expect(first.items.map((r) => [r.id, r.waiting])).toEqual([['w1', true], ['w2', true], ['a1', false], ['a2', false]]);
+    expect(first).toMatchObject({ more: true, next: { group: 'answered', after: 'c-a' } });
+
+    jest.mocked(callV1).mockClear();
+    await inboxRows({ group: 'answered', after: 'c-a' }, all);
+    expect(callV1).toHaveBeenCalledTimes(1);
+    expect(callV1).toHaveBeenCalledWith('owner_reports_page', expect.objectContaining({ q: 'bins', state: 'answered', startingAfter: 'c-a' }));
+  });
+
+  it('keeps reading the waiting ones while there are more', async () => {
+    pages({ waiting: { data: [row('w1', 'new')], hasMore: true, startingAfter: 'c-w' }, answered: { data: [], hasMore: false, startingAfter: null } });
+    const first = await inboxRows(null, all);
+    expect(callV1).toHaveBeenCalledTimes(1);
+    expect(first).toMatchObject({ more: true, next: { group: 'waiting', after: 'c-w' } });
+  });
+
+  it('is one plain list when a state is picked', async () => {
+    pages({ replied: { data: [row('a1', 'replied')], hasMore: true, startingAfter: 'c-r' } });
+    const page = await inboxRows(null, { ...all, state: 'replied' });
+    expect(callV1).toHaveBeenCalledTimes(1);
+    expect(page).toMatchObject({ more: true, next: { group: null, after: 'c-r' } });
+  });
 });

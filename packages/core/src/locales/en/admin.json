@@ -135,6 +135,8 @@
   "admin.inbox.push.wroteBack": "{name} wrote back",
   "admin.inbox.push.emailed": "{name} emailed support",
   "admin.inbox.push.someone": "Someone",
+  "admin.inbox.waiting": "Needs a reply",
+  "admin.inbox.rest": "Everything else",
   "admin.moves.card": "To do",
   "admin.moves.cardMeta": "Ticked ones happen when you tap",
   "admin.moves.final": "Can’t be undone",

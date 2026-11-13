@@ -35,8 +35,13 @@ What's still to come is under "Later".
 
 - **First admin page.** `/admin` opens on it. It is a busy list
   (`docs/specs/owner-admin.md`): one search box (name, email, house, words or
-  an id's start), State (Waiting by default: new or open; New; Replied;
-  Fixed; Any) and Kind, When as "Sent", 50 at a time, newest first.
+  an id's start), State (Waiting: new or open; New; Replied; Fixed; Any)
+  and Kind, When as "Sent", 50 at a time. With no State picked it opens on
+  every report in two groups, each newest first with its count: Needs a
+  reply (waiting), then Everything else (answered: replied, fixed, or folded
+  into another), so an answered one can be followed up any time. The search
+  narrows both groups; a group with no matches is left out. Picking a State
+  shows that state as one list.
 - **One report**: beside the list on a laptop, a page of its own on a phone.
   Who sent it, their house, role and email; the conversation with
   screenshots; the details; a reply box; Mark fixed (or Open it again).
