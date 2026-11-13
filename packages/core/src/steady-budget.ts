@@ -11,7 +11,7 @@
 import type { JohnDef } from "./board";
 import { weeklyEffort } from "./board";
 import type { DealMode } from "./domain";
-import type { RunHouse, RunJohn } from "./steady-run";
+import type { RunHouse, RunJohn } from "./steady-run-types";
 import { periodOf, steadyRun } from "./steady-run";
 import type { Words } from "./words-for";
 

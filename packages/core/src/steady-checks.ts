@@ -4,7 +4,7 @@
  * house it was given, never the deal's own working, so a check can't agree
  * with a bug.
  */
-import type { RunItem, RunPrepared, RunPreparedJohn, RunWeek } from "./steady-run";
+import type { RunItem, RunPrepared, RunPreparedJohn, RunWeek } from "./steady-run-types";
 import { inGroup, livesThere } from "./steady-run";
 
 interface Check {

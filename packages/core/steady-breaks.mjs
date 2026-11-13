@@ -11,7 +11,7 @@
 // temporary folder, so the code here is never touched, even if it's stopped
 // part-way. A break whose words aren't in the code any more fails the run, so
 // the list can't quietly go stale. Slow (a few minutes): run it after changing
-// steady.ts, steady-run.ts or repeat.ts, not on every push.
+// steady.ts, steady-days.ts, steady-run.ts or repeat.ts, not on every push.
 
 import { spawnSync } from "node:child_process";
 import { cpSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
@@ -27,10 +27,10 @@ const ROOT = join(HERE, "..", "..");
 const BREAKS = [
   ["repeat-one-each", "One each ignores who did it last time", "steady.ts", [["const lastBy = (j: SteadyJohn, id: string) =>\n      j.lastBy", "const lastBy = (j: SteadyJohn, id: string) =>\n      false && j.lastBy"]]],
   ["repeat-rest", "The rest ignores who did it last time", "steady.ts", [["const freshTo = (r: Row) => !r.lastTime ||", "const freshTo = (r: Row) => true ||"]]],
-  ["days-pile", "Two Johns on one day while a day is free", "steady.ts", [["const free = (d: number) => !taken.get(d);", "const free = (d: number) => true;"]]],
-  ["days-suit", "“Days that suit me” ignored", "steady.ts", [["const suits = (d: number) => !m.suits.length || m.suits.includes(d);", "const suits = (d: number) => d > 0;"]]],
-  ["keep-day", "“Keep its day” moved to the next day", "steady.ts", [["p.day = j.day;\n        taken.set", "p.day = (j.day % 7) + 1;\n        taken.set"]]],
-  ["oncall-day", "On call given a day instead of all week", "steady.ts", [["if (j.onCall) p.day = 0;", "if (j.onCall) p.day = j.day;"]]],
+  ["days-pile", "Two Johns on one day while a day is free", "steady-days.ts", [["const free = (d: number) => !taken.get(d);", "const free = (d: number) => true;"]]],
+  ["days-suit", "“Days that suit me” ignored", "steady-days.ts", [["const suits = (d: number) => !m.suits.length || m.suits.includes(d);", "const suits = (d: number) => d > 0;"]]],
+  ["keep-day", "“Keep its day” moved to the next day", "steady-days.ts", [["p.day = j.day;\n        taken.set", "p.day = (j.day % 7) + 1;\n        taken.set"]]],
+  ["oncall-day", "On call given a day instead of all week", "steady-days.ts", [["if (j.onCall) p.day = 0;", "if (j.onCall) p.day = j.day;"]]],
   ["rel-absolute", "Behind or ahead measured from 0, not the house average", "steady.ts", [["const r = m.balance - avg;", "const r = m.balance;"]]],
   ["no-nudge", "Targets not nudged for being behind or ahead", "steady.ts", [['const nudge = mode === "smart" && B ?', "const nudge = false ?"]]],
   ["pinned-uses-one", "A John that keeps its day uses up your one John", "steady.ts", [["if (pinnedOf(j)) pinnedDays.get(pid)!.add(j.day);\n    else own.set", "if (pinnedOf(j)) pinnedDays.get(pid)!.add(j.day);\n    own.set"]]],

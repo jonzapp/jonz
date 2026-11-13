@@ -3,9 +3,6 @@
     "apps/api/lib/db/rest.ts": 973,
     "apps/api/lib/engine/tick.ts": 954,
     "apps/client/src/components/house/setup-chat.tsx": 783,
-    "packages/core/src/steady-houses.ts": 525,
-    "packages/core/src/steady-run.ts": 579,
-    "packages/core/src/steady.ts": 707,
     "scripts/provision/lib.mjs": 516
   },
   "functions": {
@@ -58,7 +55,7 @@
     "packages/core/src/stake.ts#settleMonth": 68,
     "packages/core/src/steady-checks.ts#check": 216,
     "packages/core/src/steady-deal.ts#steadyDeal": 103,
-    "packages/core/src/steady-houses.ts#matrixHouse": 81,
+    "packages/core/src/steady-matrix.ts#matrixHouse": 81,
     "packages/core/src/steady-run.ts#steadyRun": 262,
     "packages/core/src/steady.ts#steadyWeek": 366,
     "packages/core/src/why.ts#dealtPart": 70,
