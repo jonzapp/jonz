@@ -6,6 +6,7 @@ pages are private artifacts on claude.ai.
 
 | Date | Decision | Where | Rule |
 | --- | --- | --- | --- |
+| 2026-11-13 | One calendar for time away: Who's away is the page's only calendar, and Book time away under it opens a sheet with a plain month calendar of the same shape (the old booking look for picked days), saying who else is away then; the moving-out day uses the same calendar (One calendar D) | #245 | [lists](lists.md#calendars-and-grids) |
 | 2026-11-13 | The "•••" menu drops from the "•••" on a laptop, as the Table's This week \| October does, one shared drop-down (`DropMenu`); a phone keeps the sheet (••• menu A) | this PR | [controls](controls.md#inputs) |
 | 2026-11-13 | The John editor's quick choices (How often, By what time, Done within) are the same grey switch as Weeks \| Months \| Years under them (`Segmented`, two or three to a row), not amber pills; its − and + are outline `IconButton`s (repeat picker A) | this PR | [controls](controls.md#inputs) |
 | 2026-11-13 | The John list on a laptop: the kinds one under another in their set order, each John one line with when, how often, what else and its points in lined-up columns (how often and the rest under the name when a John is open beside it); the groups beside the re-deal under them (John list C) | this PR | [lists](lists.md#rows), [layout](layout.md#laptop-pages) |

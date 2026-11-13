@@ -95,6 +95,11 @@ Built for very many rows from the start. (Admin lists, 31 Oct)
   (Who's away F, #23)
 - Today is an outlined whole day, never a filled circle or ring. (Who's
   away B, #23)
+- One calendar shape: every calendar is the month (weeks from the house's
+  first day, the months either side lighter, the same day height). A page
+  shows one calendar; picking days is in a sheet from a button under it,
+  plain (no shading), its picked ends solid ink and the days between grey.
+  (One calendar D, 13 Nov)
 - A week-by-week grid for records over time (the Track record), with the
   breakdown one tap away. (Fair shares, 28 Oct, #35)
 

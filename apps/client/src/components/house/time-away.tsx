@@ -1,4 +1,4 @@
-import { addDaysTo, awayMovedLine, awayShade, backOn, dateRange, dayName, weekdayName, firstName, monthLabel, monthWeeks, shiftMonth, tripMeta, tripStarted, tripsOn, upcomingTrips, withAlpha, type AwayPeriod, type IsoDow } from '@app/core';
+import { addDaysTo, awayMovedLine, awayShade, backOn, dateRange, dayName, weekdayName, firstName, monthLabel, nameList, monthWeeks, shiftMonth, tripMeta, tripStarted, tripsOn, upcomingTrips, withAlpha, type AwayPeriod, type IsoDow } from '@app/core';
 import { ChevronLeftIcon, ChevronRightIcon, PlaneIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -12,7 +12,7 @@ import { Field } from '@/components/field';
 import { Group, GroupItem } from '@/components/group';
 import { Row, RowIcon } from '@/components/row';
 import { Section } from '@/components/section';
-import { AwayDates, type DateRange } from '@/components/setup/away-dates';
+import { AwayDates, DAY_HEIGHT, type DateRange } from '@/components/setup/away-dates';
 import { Sheet } from '@/components/sheet';
 import { Body, Meta } from '@/components/text';
 import { TextButton } from '@/components/text-button';
@@ -32,15 +32,18 @@ const BLANK = ' ';
  * how many under its date and today outlined, then a key to the shades. It
  * opens on this month; the months before it are gone from what's read, so
  * it goes no further back. Tapping a day opens its sheet: who's away and
- * who's home. Each day is a button that says the same in words.
+ * who's home. Each day is a button that says the same in words. Under it,
+ * Book time away opens the booking sheet: one calendar on the page.
  */
 export function AwayMonth({
+  houseId,
   periods,
   people,
   me,
   today,
   weekStarts,
 }: {
+  houseId: string;
   periods: AwayPeriod[];
   people: Housemate[];
   me: string;
@@ -130,6 +133,7 @@ export function AwayMonth({
           ))}
         </View>
         {nobody ? <Body>{words('house.away.nobody')}</Body> : <Meta>{words('house.away.tapADay')}</Meta>}
+        <BookAway houseId={houseId} today={today} weekStarts={weekStarts} periods={periods} people={people} me={me} />
       </GroupItem>
       <DaySheet day={day} periods={periods} people={people} me={me} onDay={open} onClose={() => setDay(null)} />
     </>
@@ -272,18 +276,97 @@ function TripRow({ houseId, period, today }: { houseId: string; period: AwayPeri
 }
 
 /**
- * Book time away for yourself, as one item in a group: how it works, the
- * days from a calendar that opens on this week, where, and Book, the page's
- * one amber button. What booking moved is said under it.
+ * Booking, under Who's away: what the last booking moved, then Book time
+ * away, the page's one amber button, which opens the booking sheet. Booking
+ * closes it.
  */
-export function AwayForm({ houseId, today, weekStarts }: { houseId: string; today: string; weekStarts: IsoDow }) {
+function BookAway({
+  houseId,
+  today,
+  weekStarts,
+  periods,
+  people,
+  me,
+}: {
+  houseId: string;
+  today: string;
+  weekStarts: IsoDow;
+  periods: AwayPeriod[];
+  people: Housemate[];
+  me: string;
+}) {
+  const words = useWords();
+  const [open, setOpen] = useState(false);
+  const [moved, setMoved] = useState<Booked | null>(null);
+  return (
+    <>
+      {moved && moved.before + moved.handed + moved.skipped > 0 ? (
+        <View accessibilityLiveRegion="polite" testID="away-moved">
+          <Meta>{awayMovedLine(moved.before, moved.handed, moved.skipped, words)}</Meta>
+        </View>
+      ) : null}
+      <ButtonRow atEdge>
+        <Button
+          icon={PlaneIcon}
+          label={words('house.away.book')}
+          onPress={() => {
+            setMoved(null);
+            setOpen(true);
+          }}
+          testID="open-book-away"
+        />
+      </ButtonRow>
+      <Sheet
+        visible={open}
+        title={words('house.away.book')}
+        description={words('house.away.howItWorks')}
+        onClose={() => setOpen(false)}
+        testID="away-form"
+      >
+        <AwayForm
+          houseId={houseId}
+          today={today}
+          weekStarts={weekStarts}
+          periods={periods}
+          people={people}
+          me={me}
+          onBooked={(count) => {
+            setMoved(count);
+            setOpen(false);
+          }}
+        />
+      </Sheet>
+    </>
+  );
+}
+
+/**
+ * The booking sheet's form: the days from a month calendar that opens on
+ * this month, who else is away on them, where, and Book.
+ */
+function AwayForm({
+  houseId,
+  today,
+  weekStarts,
+  periods,
+  people,
+  me,
+  onBooked,
+}: {
+  houseId: string;
+  today: string;
+  weekStarts: IsoDow;
+  periods: AwayPeriod[];
+  people: Housemate[];
+  me: string;
+  onBooked: (moved: Booked) => void;
+}) {
   const words = useWords();
   const move = useMove(houseId);
   const offer = useUndoOffer(houseId);
   const [range, setRange] = useState<DateRange>({ from: null, to: null });
   const [picking, setPicking] = useState(false);
   const [note, setNote] = useState('');
-  const [moved, setMoved] = useState<Booked | null>(null);
 
   async function book() {
     if (!range.from || !range.to) return;
@@ -293,28 +376,26 @@ export function AwayForm({ houseId, today, weekStarts }: { houseId: string; toda
     });
     if (!ok) return;
     offer(words('wall.history.away'), 'away');
-    setMoved(count);
-    setRange({ from: null, to: null });
-    setNote('');
+    onBooked(count);
   }
 
   const status = picking ? words('house.away.pickTo') : range.from && range.to ? words('house.away.picked', { range: dateRange(range.from, range.to, words) }) : words('house.away.pickFrom');
+  const others = !picking && range.from && range.to ? awayAlongside({ periods, people, me }, range.from, range.to) : [];
 
   return (
-    <GroupItem testID="away-form">
-      <Meta>{words('house.away.howItWorks')}</Meta>
+    <>
       <AwayDates
         today={today}
         weekStarts={weekStarts}
         value={range}
         onChange={(next, stillPicking) => {
-          setMoved(null);
           setRange(next);
           setPicking(stillPicking);
         }}
       />
       <View accessibilityLiveRegion="polite" testID="away-picked">
         <Body>{status}</Body>
+        {others.length > 0 ? <Meta>{words('house.away.alsoAway', { count: others.length, names: nameList(words, others) })}</Meta> : null}
       </View>
       <Field
         label={words('house.away.note')}
@@ -325,11 +406,6 @@ export function AwayForm({ houseId, today, weekStarts }: { houseId: string; toda
         testID="away-note"
       />
       {move.problem ? <Alert message={move.problem} /> : null}
-      {moved && moved.before + moved.handed + moved.skipped > 0 ? (
-        <View accessibilityLiveRegion="polite">
-          <Meta>{awayMovedLine(moved.before, moved.handed, moved.skipped, words)}</Meta>
-        </View>
-      ) : null}
       <ButtonRow atEdge>
         <Button
           icon={PlaneIcon}
@@ -341,8 +417,14 @@ export function AwayForm({ houseId, today, weekStarts }: { houseId: string; toda
           testID="book-away"
         />
       </ButtonRow>
-    </GroupItem>
+    </>
   );
+}
+
+/** The first names of the others away on any of the days from `from` to `to`, in the house's order. */
+function awayAlongside({ periods, people, me }: { periods: AwayPeriod[]; people: Housemate[]; me: string }, from: string, to: string): string[] {
+  const away = new Set(periods.filter((p) => p.userId !== me && p.startsOn <= to && p.endsOn >= from).map((p) => p.userId));
+  return people.filter((p) => away.has(p.userId)).map((p) => firstName(p.name));
 }
 
 const styles = StyleSheet.create({
@@ -351,7 +433,7 @@ const styles = StyleSheet.create({
   month: { flexShrink: 1, textAlign: 'center' },
   week: { flexDirection: 'row', gap: 2 },
   dow: { flex: 1, textAlign: 'center', paddingVertical: SPACE.xs },
-  day: { flex: 1, minHeight: 52, alignItems: 'center', paddingTop: SPACE.xs, borderRadius: RADIUS },
+  day: { flex: 1, minHeight: DAY_HEIGHT, alignItems: 'center', paddingTop: SPACE.xs, borderRadius: RADIUS },
   date: { width: 26, height: 26, alignItems: 'center', justifyContent: 'center' },
   number: { fontFamily: FONT.bold, lineHeight: 20 },
   faint: { fontFamily: FONT.regular },

@@ -4,7 +4,7 @@ import type { AwayView } from '@/api/away';
 import type { JohnList } from '@/api/settings';
 import { HousePage } from '@/components/house/house-page';
 import { PrefsForm } from '@/components/house/prefs-form';
-import { AwayForm, AwayMonth, MyTrips } from '@/components/house/time-away';
+import { AwayMonth, MyTrips } from '@/components/house/time-away';
 import { Pair } from '@/components/page-columns';
 import { Section } from '@/components/section';
 import { useAway } from '@/hooks/use-away';
@@ -19,9 +19,9 @@ import { useWords } from '@/hooks/use-words';
  * Days and time away, pushed from House: your days, best time and the
  * Johns you'd rather or rather not (what the deal goes by each Monday),
  * beside the house's time away: your own trips (cancel one, or say you're
- * back), who in the house is away on which days of the month, and booking a
- * trip. On a phone the time away comes first, as Today's and Week's links
- * here are about it.
+ * back), and who in the house is away on which days of the month, with
+ * booking a trip in a sheet from under it. On a phone the time away comes
+ * first, as Today's and Week's links here are about it.
  */
 export default function AwayScreen() {
   const { session, house } = useMembership();
@@ -89,10 +89,7 @@ function AwayPage({
             </Section>
           ) : null}
           <Section label={words('house.setup.whosAway')} testID="away-panel">
-            <AwayMonth periods={periods} people={snapshot.members} me={userId} today={today} weekStarts={snapshot.rules.weekStarts} />
-          </Section>
-          <Section label={words('house.away.book')}>
-            <AwayForm houseId={houseId} today={today} weekStarts={snapshot.rules.weekStarts} />
+            <AwayMonth houseId={houseId} periods={periods} people={snapshot.members} me={userId} today={today} weekStarts={snapshot.rules.weekStarts} />
           </Section>
         </>
       }
