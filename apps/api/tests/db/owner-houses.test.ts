@@ -10,6 +10,7 @@ import { adminClient, signedInUser, visitor, type Actor } from "@/tests/support/
 import { expectDenied, expectOk } from "@/tests/support/expect";
 import { addJohns, deal, makeHouse, weeksAgo, type House } from "@/tests/support/factories";
 import { passSecondFactor } from "@/tests/support/mfa";
+import { fromNow, rightNow } from "@/tests/support/clock";
 
 /**
  * The owner's Overview and Houses (docs/specs/owner-admin.md): only the
@@ -24,7 +25,7 @@ import { passSecondFactor } from "@/tests/support/mfa";
 
 const db = adminClient();
 const DAY = 86_400_000;
-const ago = (days: number) => new Date(Date.now() - days * DAY).toISOString();
+const ago = (days: number) => fromNow(-days * DAY).toISOString();
 
 let house: House;
 let owner: Actor;
@@ -51,7 +52,7 @@ async function ok<T>(call: PromiseLike<{ data: T; error: { message: string } | n
 /** Deal a past week and settle its Johns as given: each is done, late or missed, so many days ago. */
 async function settle(houseId: string, outcomes: { outcome: "done" | "late" | "missed" | "covered"; daysAgo: number }[]) {
   await addJohns(houseId, [{ name: "Bins" }], weeksAgo(2));
-  const { assignments } = await deal(houseId, weeksAgo(2), new Date(Date.now() - 14 * DAY));
+  const { assignments } = await deal(houseId, weeksAgo(2), fromNow(-14 * DAY));
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { id, ...template } = assignments[0];
   const rows = outcomes.map((o) => {
@@ -107,7 +108,7 @@ describe("Houses", () => {
     expect(data).toHaveLength(1);
     const [row] = data!;
     expect(row).toMatchObject({ id: house.id, name, people: 2, pass_plan: "trial", on_time: 2, settled: 4 });
-    expect(Math.abs(new Date(row.last_active!).getTime() - (Date.now() - 2 * DAY))).toBeLessThan(60_000);
+    expect(Math.abs(new Date(row.last_active!).getTime() - (rightNow().getTime() - 2 * DAY))).toBeLessThan(60_000);
   });
 
   it("filters by Pass, by how lately it was used, and by when it started", async () => {
@@ -158,8 +159,8 @@ describe("Houses", () => {
 
   it("shows one house, read only: its people with roles, on time and time away, and its Pass", async () => {
     await settle(house.id, [{ outcome: "done", daysAgo: 2 }]);
-    const today = new Date().toISOString().slice(0, 10);
-    const later = new Date(Date.now() + 5 * DAY).toISOString().slice(0, 10);
+    const today = rightNow().toISOString().slice(0, 10);
+    const later = fromNow(5 * DAY).toISOString().slice(0, 10);
     const [ava, ben] = house.everyone;
     expectOk(await db.from("away_periods").insert({ house_id: house.id, user_id: ben.userId, starts_on: ago(2).slice(0, 10), ends_on: later }));
     const data = await ok(owner.db.rpc("owner_house", { p_house: house.id }));
@@ -187,7 +188,7 @@ describe("Overview", () => {
   it("counts the window's houses, people, active houses, Passes, on time and Ask Jonz", async () => {
     const before = (await ok(owner.db.rpc("owner_overview", { p_span: "week", p_zone: "UTC" }))) as unknown as Overview;
     // Inside this week however far into it the test runs: a quarter, half and three quarters of the way from Monday to now.
-    const into = (Date.now() - new Date(before.from).getTime()) / DAY;
+    const into = (rightNow().getTime() - new Date(before.from).getTime()) / DAY;
     expect(into).toBeGreaterThanOrEqual(0);
     expect(into).toBeLessThan(7);
     await settle(house.id, [
@@ -231,7 +232,7 @@ describe("Overview", () => {
       await db.from("account_deletions").insert({
         user_id: ben.userId,
         requested_by: "owner",
-        deletes_at: new Date(Date.now() + 3_600_000).toISOString(),
+        deletes_at: fromNow(3_600_000).toISOString(),
       }),
     );
     const data = (await ok(owner.db.rpc("owner_overview", { p_span: "week", p_zone: "UTC" }))) as {

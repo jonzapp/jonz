@@ -30,6 +30,9 @@ async function houseOf(caller: Caller, houseId: string) {
   return data;
 }
 
+/** What's being bought: which plan for which house, where to send the buyer back, and a promotion's code if they came by its link. */
+type CheckoutOrder = { houseId: string; plan: PassPurchase; appUrl: string; stage: Stage; now: Date; offer?: string | null };
+
 /**
  * Buying the House Pass on the web: a Stripe Checkout Session for the plan,
  * in the house's currency, carrying the house and the buyer for the webhook.
@@ -49,12 +52,7 @@ export async function startCheckout(
   caller: Caller & { email: string | undefined },
   /** Null while Stripe isn't set up: a free Pass still works, nothing else does. */
   stripe: PassStripe | null,
-  houseId: string,
-  plan: PassPurchase,
-  appUrl: string,
-  stage: Stage,
-  now: Date,
-  offer: string | null = null,
+  { houseId, plan, appUrl, stage, now, offer = null }: CheckoutOrder,
 ): Promise<PassAnswer> {
   const house = await houseOf(caller, houseId);
   if (!house) return NOT_IN_HOUSE;

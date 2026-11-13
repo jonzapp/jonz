@@ -6,6 +6,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 import { dealWeek, loadHouse } from "../lib/engine/tick";
 import { totp } from "../tests/support/mfa";
+import { rightNow } from "../tests/support/clock";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -145,7 +146,7 @@ export async function dealtHouseInClient(
   }
 
   // Taken after everyone has joined: the deal leaves out anyone who joins after its "now".
-  const now = at ?? new Date();
+  const now = at ?? rightNow();
   const week = weekWindow(now, "Europe/London", 1);
   const { error: johnsError } = await db.from("johns").insert(
     johns.map((j) => ({
@@ -192,7 +193,7 @@ export async function undealtHouseInClient(
     p_week_starts: 1,
   });
   if (error) throw error;
-  const anchor = weekIndex(weekWindow(new Date(), "Europe/London", 1).startsOn);
+  const anchor = weekIndex(weekWindow(rightNow(), "Europe/London", 1).startsOn);
   const { error: johnsError } = await admin()
     .from("johns")
     .insert(

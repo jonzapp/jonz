@@ -5,6 +5,7 @@ import { bookAway } from "@/lib/moves/away";
 import { adminClient } from "@/tests/support/clients";
 import { expectOk, expectRule } from "@/tests/support/expect";
 import { actorFor, addJohns, deal, makeHouse, reread, thisWeek, ZONE } from "@/tests/support/factories";
+import { fromNow, rightNow } from "@/tests/support/clock";
 
 /**
  * Fair time away and swaps (20261129090000_fair_away.sql,
@@ -25,16 +26,16 @@ const db = adminClient();
 async function dueSoon(names: string[]) {
   const house = await makeHouse(names);
   await addJohns(house.id, [{ name: "Bins", points: 5 }], thisWeek());
-  const { assignments } = await deal(house.id, thisWeek(), new Date());
+  const { assignments } = await deal(house.id, thisWeek(), rightNow());
   const a = assignments[0];
   const owner = house.everyone[0];
   expectOk(
     await db
       .from("assignments")
-      .update({ user_id: owner.userId, due_at: new Date(Date.now() + 6 * HOUR).toISOString() })
+      .update({ user_id: owner.userId, due_at: fromNow(6 * HOUR).toISOString() })
       .eq("id", a.id),
   );
-  const today = localDate(new Date(), ZONE);
+  const today = localDate(rightNow(), ZONE);
   return { house, a, owner, today, trip: { from: today, to: addDaysTo(today, 2) } };
 }
 
@@ -52,7 +53,7 @@ describe("a trip booked from today", () => {
   it("hands its John on, and cancelling hands it back with the Wall post kept", async () => {
     const { house, a, owner, trip } = await dueSoon(["Ava", "Ben"]);
     const ben = house.everyone[1];
-    const booked = await bookAway({ db: owner.db, userId: owner.userId }, trip, new Date());
+    const booked = await bookAway({ db: owner.db, userId: owner.userId }, trip, rightNow());
     expect(booked).toEqual({ before: 0, handed: 1, skipped: 0 });
     const handed = await reread("assignments", a.id);
     expect([handed.user_id, handed.handed_from_user_id]).toEqual([ben.userId, owner.userId]);
@@ -97,10 +98,10 @@ describe("a swap token", () => {
   async function twoJohns() {
     const house = await makeHouse(["Ava", "Ben", "Cal"]);
     await addJohns(house.id, [{ name: "Bins", points: 2 }, { name: "Bathroom", points: 4 }], thisWeek());
-    const { assignments } = await deal(house.id, thisWeek(), new Date());
+    const { assignments } = await deal(house.id, thisWeek(), rightNow());
     const [mine, theirs] = assignments;
     for (const x of assignments) {
-      expectOk(await db.from("assignments").update({ due_at: new Date(Date.now() + 10 * HOUR).toISOString() }).eq("id", x.id));
+      expectOk(await db.from("assignments").update({ due_at: fromNow(10 * HOUR).toISOString() }).eq("id", x.id));
     }
     const me = actorFor(house, mine.user_id);
     expectOk(await db.from("members").update({ swap_tokens: 1 }).eq("user_id", me.userId));
@@ -109,13 +110,13 @@ describe("a swap token", () => {
 
   it("can't trade away a John already overdue", async () => {
     const { mine, theirs, me } = await twoJohns();
-    expectOk(await db.from("assignments").update({ due_at: new Date(Date.now() - 20 * HOUR).toISOString() }).eq("id", mine.id));
+    expectOk(await db.from("assignments").update({ due_at: fromNow(-20 * HOUR).toISOString() }).eq("id", mine.id));
     expectRule(await me.db.rpc("use_swap", { p_mine: mine.id, p_theirs: theirs.id }), "swap_due");
   });
 
   it("can't take a housemate's John already overdue", async () => {
     const { mine, theirs, me } = await twoJohns();
-    expectOk(await db.from("assignments").update({ due_at: new Date(Date.now() - HOUR).toISOString() }).eq("id", theirs.id));
+    expectOk(await db.from("assignments").update({ due_at: fromNow(-HOUR).toISOString() }).eq("id", theirs.id));
     expectRule(await me.db.rpc("use_swap", { p_mine: mine.id, p_theirs: theirs.id }), "swap_due");
   });
 

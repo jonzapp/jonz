@@ -23,6 +23,15 @@ function listLines(raw: RawDraft): string {
   return lines.join("\n");
 }
 
+/** One turn of the chat: the house, what's been said, the draft so far (if any), and the summary of what came before a long chat's cut. */
+type ChatTurn = {
+  houseId: string;
+  messages: readonly ChatMessage[];
+  current: HouseDraft | null;
+  now: Date;
+  earlier?: { summary?: string | null; sumUp?: SumUpChat };
+};
+
 /**
  * One turn of the chat with Jonz, for anyone in the house. The chat so far
  * (ending with what they just said) and the draft as it stands in; Jonz's
@@ -56,12 +65,8 @@ function listLines(raw: RawDraft): string {
  */
 export async function chatTurn(
   caller: Caller,
-  houseId: string,
-  messages: readonly ChatMessage[],
-  current: HouseDraft | null,
-  now: Date,
+  { houseId, messages, current, now, earlier = {} }: ChatTurn,
   ask: (ctx: DraftContext, tools: JonzTools) => Promise<DraftAnswer> = askClaude,
-  earlier: { summary?: string | null; sumUp?: SumUpChat } = {},
 ): Promise<{ refusal: Refusal } | ChatResponse> {
   const allowed = await myPermissions(caller, houseId);
   if (allowed.length === 0) return { refusal: { code: "42501", message: "not_in_house" } };

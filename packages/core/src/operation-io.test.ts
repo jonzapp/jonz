@@ -24,7 +24,7 @@ describe("every operation's contract", () => {
   });
 
   it("reads with GET and changes with POST, PATCH or DELETE", () => {
-    const wrong = each.filter(([, o, io]) => (io.http.startsWith("GET ") ? o.effect !== "read" : o.effect === "read" && !o.route)).map(([n]) => n);
+    const wrong = each.filter(([, o, io]) => (io.http.startsWith("GET ") ? o.effect !== "read" : o.effect === "read" && !o.server)).map(([n]) => n);
     expect(wrong).toEqual([]);
   });
 

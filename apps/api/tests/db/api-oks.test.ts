@@ -1,36 +1,29 @@
 import { nextWeek } from "@app/core";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { POST as answer } from "@/app/api/oks/[id]/route";
 import { adminClient, type Actor } from "@/tests/support/clients";
 import { addJohns, deal, makeHouse, reread, thisWeek, ZONE } from "@/tests/support/factories";
+import { APP_ORIGIN, problemOf, v1 } from "@/tests/support/v1";
 
 /**
- * POST /api/oks/:assignmentId, called as the app calls it: a bearer token
- * and JSON. A parent answers a kid's tick in a family (lib/moves/oks.ts).
+ * A parent answers a kid's tick in a family (answer_tick on /v1,
+ * lib/moves/oks.ts), called as the app calls it: a bearer token and JSON.
  * The John is dealt next week, so the tick is never late whenever this runs.
  */
 
-const BASE = "http://localhost:3205/api/oks";
 const db = adminClient();
 const WEEK = nextWeek(thisWeek(), ZONE, 1);
 const savedOrigins = process.env.ALLOWED_ORIGINS;
 
 beforeAll(() => {
-  process.env.ALLOWED_ORIGINS = "http://localhost:8205";
+  process.env.ALLOWED_ORIGINS = APP_ORIGIN;
 });
 
 afterAll(() => {
   process.env.ALLOWED_ORIGINS = savedOrigins;
 });
 
-async function post(actor: Actor | undefined, id: string, body: unknown) {
-  const headers: Record<string, string> = { "content-type": "application/json", origin: "http://localhost:8205" };
-  if (actor) headers.authorization = `Bearer ${(await actor.db.auth.getSession()).data.session!.access_token}`;
-  return answer(new Request(`${BASE}/${id}`, { method: "POST", headers, body: JSON.stringify(body) }), {
-    params: Promise.resolve({ id }),
-  });
-}
+const post = (actor: Actor | undefined, id: string, body: unknown) => v1(actor, `POST /v1/assignments/${id}/ok`, body);
 
 /** A family where Leo has ticked his John. */
 async function ticked() {
@@ -45,17 +38,17 @@ async function ticked() {
   return { sam, leo, a };
 }
 
-describe("POST /api/oks/:id", () => {
+describe("POST /v1/assignments/{assignmentId}/ok", () => {
   it("lets a parent OK a kid's tick", async () => {
     const { sam, a } = await ticked();
     const res = await post(sam, a.id, { ok: true });
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(201);
     expect(await reread("assignments", a.id)).toMatchObject({ awaits_ok: false, okayed_by: sam.userId });
   });
 
   it("sends it back on Not yet", async () => {
     const { sam, a } = await ticked();
-    expect((await post(sam, a.id, { ok: false })).status).toBe(200);
+    expect((await post(sam, a.id, { ok: false })).status).toBe(201);
     expect((await reread("assignments", a.id)).done_at).toBeNull();
   });
 
@@ -63,7 +56,7 @@ describe("POST /api/oks/:id", () => {
     const { leo, a } = await ticked();
     const kid = await post(leo, a.id, { ok: true });
     expect(kid.status).toBeGreaterThanOrEqual(400);
-    expect(await kid.json()).toMatchObject({ error: "Only a parent can OK a John." });
+    expect(await problemOf(kid)).toEqual({ code: "forbidden", detail: "You need ticks:write in this house." });
     expect((await post(undefined, a.id, { ok: true })).status).toBe(401);
     expect((await post(leo, a.id, {})).status).toBe(400);
     expect((await reread("assignments", a.id)).awaits_ok).toBe(true);

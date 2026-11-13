@@ -26,7 +26,7 @@ import { AGENT_MODEL, runAgent, type AgentAnswer } from "@/lib/ai/agent";
 
 // The owner's Ask Jonz, in /admin. The same loop as a housemate's
 // (agent.ts), with nothing else in common: its own address
-// (/api/admin/ask), instructions, tools and history (owner_ask_turns). Its
+// (ask_owner on /v1), instructions, tools and history (owner_ask_turns). Its
 // tools read what the admin pages read, through the owner's own session
 // with their code, so the database's owner check decides what it sees. Its
 // writes are proposals, as a housemate's are: each puts a move on a card

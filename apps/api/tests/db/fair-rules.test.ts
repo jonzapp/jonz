@@ -5,6 +5,7 @@ import { tickHouse } from "@/lib/engine/tick";
 import { adminClient } from "@/tests/support/clients";
 import { expectOk, expectRule } from "@/tests/support/expect";
 import { actorFor, addJohns, deal, makeHouse, reread, someoneElse, thisWeek, weeksAgo, ZONE } from "@/tests/support/factories";
+import { fromNow, rightNow } from "@/tests/support/clock";
 
 /**
  * The same time to be done late whatever the day (houses.late_hours, stored
@@ -23,7 +24,7 @@ async function johnDue(hoursAgo: number, names = ["Ava", "Ben", "Cal"], week = t
   await addJohns(house.id, [{ name: "Bins" }], week);
   const { assignments } = await deal(house.id, week, week.startsAt);
   const a = assignments[0];
-  await db.from("assignments").update({ due_at: new Date(Date.now() - hoursAgo * HOUR).toISOString() }).eq("id", a.id);
+  await db.from("assignments").update({ due_at: fromNow(-hoursAgo * HOUR).toISOString() }).eq("id", a.id);
   return { house, a: await reread("assignments", a.id), owner: actorFor(house, a.user_id), coverer: someoneElse(house, a.user_id) };
 }
 
@@ -38,14 +39,14 @@ describe("the late window", () => {
     // Dealt last week, due two hours ago: the week is over, its late window isn't.
     const { house, a, owner } = await johnDue(2, ["Ava", "Ben"], weeksAgo(1));
     expectOk(await owner.db.rpc("mark_done", { p_assignment: a.id as string }));
-    await tickHouse(db, house.id, new Date(Date.now() + 2 * DAY));
+    await tickHouse(db, house.id, fromNow(2 * DAY));
     expect((await reread("assignments", a.id as string)).outcome).toBe("late");
   });
 
   it("turns missed once the window is up, and can't be ticked then", async () => {
     const { house, a, owner } = await johnDue(25);
     expectRule(await owner.db.rpc("mark_done", { p_assignment: a.id as string }), "week_closed");
-    await tickHouse(db, house.id, new Date());
+    await tickHouse(db, house.id, rightNow());
     expect((await reread("assignments", a.id as string)).outcome).toBe("missed");
   });
 });
@@ -69,19 +70,19 @@ describe("going away at short notice", () => {
   async function dueSoon(names: string[]) {
     const house = await makeHouse(names);
     await addJohns(house.id, [{ name: "Bins" }], thisWeek());
-    const { assignments } = await deal(house.id, thisWeek(), new Date());
+    const { assignments } = await deal(house.id, thisWeek(), rightNow());
     const a = assignments[0];
     const owner = house.everyone[0];
     await db
       .from("assignments")
-      .update({ user_id: owner.userId, due_at: new Date(Date.now() + 6 * HOUR).toISOString() })
+      .update({ user_id: owner.userId, due_at: fromNow(6 * HOUR).toISOString() })
       .eq("id", a.id);
     return { house, a, owner };
   }
 
   it("hands a John due before you could do it to whoever is home", async () => {
     const { a, owner, house } = await dueSoon(["Ava", "Ben"]);
-    const today = localDate(new Date(), ZONE);
+    const today = localDate(rightNow(), ZONE);
     const res = await owner.db.rpc("set_away", { p_starts: today, p_ends: addDaysTo(today, 2) });
     expectOk(res);
     expect(res.data).toBe(1);
@@ -92,7 +93,7 @@ describe("going away at short notice", () => {
 
   it("excuses it when nobody else is home", async () => {
     const { a, owner } = await dueSoon(["Ava"]);
-    const today = localDate(new Date(), ZONE);
+    const today = localDate(rightNow(), ZONE);
     expectOk(await owner.db.rpc("set_away", { p_starts: today, p_ends: addDaysTo(today, 2) }));
     const row = await reread("assignments", a.id);
     expect([row.user_id, row.excused]).toEqual([owner.userId, true]);

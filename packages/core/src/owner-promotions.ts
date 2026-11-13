@@ -98,7 +98,7 @@ function dollars(text: string): number | null {
   return Math.round(Number(t) * 100);
 }
 
-/** The draft as POST /api/admin/promotions takes it. Unreadable numbers go as null, so promotionProblems names them. */
+/** The draft as owner_make_promotion on /v1 takes it. Unreadable numbers go as null, so promotionProblems names them. */
 export function draftRequest(d: PromotionDraft): PromotionRequest {
   const money = d.kind === "percent" || d.kind === "amount";
   const months = d.kind === "trial" || (money && d.duration === "months") || (d.kind === "gift" && d.gift === "months") ? whole(d.months) : null;
@@ -130,7 +130,7 @@ export function draftProblems(d: PromotionDraft): { endsAt?: string; maxUses?: s
   return out;
 }
 
-/** POST /api/admin/promotions/[id]/retry: whether it's live now. */
+/** retry_promotion on /v1: whether it's live now. */
 export const PromotionReady = z.object({ ok: z.literal(true), ready: z.boolean() });
 
 // --- How one reads in the owner's lists ------------------------------------------------------

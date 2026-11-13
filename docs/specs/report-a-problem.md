@@ -54,10 +54,10 @@ What's still to come is under "Later".
 `apps/api` sends, writes back and replies (`lib/moves/reports.ts`), each
 after the caller's own database call:
 
-- `POST /api/reports`: every owner gets a push, "Ava sent a problem".
-- `POST /api/reports/:id/messages`: the sender writes back; every owner gets
+- `send_report on /v1`: every owner gets a push, "Ava sent a problem".
+- `write_back on /v1`: the sender writes back; every owner gets
   "Ava wrote back".
-- `POST /api/reports/:id/reply`: the owner replies; the sender gets a push,
+- `owner_reply_report on /v1`: the owner replies; the sender gets a push,
   "Glyn at Jonz replied", and an email (`reportReplyEmail`) whose reply goes
   to support@jonz.app.
 
@@ -173,7 +173,7 @@ Jonz suggests what to do on each report, and asks before it acts.
   sheet. "Change it first" puts the words in the reply box. "Not this" sets
   it aside. The steps are the Inbox's own calls, so the database checks and
   the audit log are the same as by hand.
-- **As the owner.** `POST /api/reports/:id/draft` answers only the owner
+- **As the owner.** `claim_support_draft on /v1` answers only the owner
   with their code this session. Every read goes through their session, as
   the owner's Ask Jonz does: their house (`owner_house`), their other
   reports, reports like it (`owner_same_as_find`), Deletions, the Audit log

@@ -87,7 +87,7 @@ The one rule: **a John's points are shared evenly by everyone who did it.**
   - Events: a roll call's `done`/`late` row adds `data.with` (everyone else
     on it), `data.absent` (holders left off) and `data.total`; a cover of a
     job adds `data.for_all`.
-- `POST /api/roll-call` `{ assignmentId, crew, photoPath? }` →
+- `roll_call on /v1` `{ assignmentId, crew, photoPath? }` →
   `{ ok: true, people }` (`RollCallRequest`, `RollCallResponse`). The client
   goes through the API so the server can tell the people it names.
 - `@app/core` `crew.ts`: `crewByJob`, `tableInputs`, `rollCallPlan`,

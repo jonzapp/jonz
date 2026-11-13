@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, dealtHouseInClient } from "./auth";
 import { backToHouse } from "./house-pages";
+import { rightNow } from "../tests/support/clock";
 
 const words = wordsFor("en", "housemates");
 
@@ -15,7 +16,7 @@ test.afterAll(async () => cleanUp(made));
 
 /** The month before this one, as `yyyy-MM`. */
 function lastMonth(): string {
-  const [y, m] = monthOf(new Date(), "Europe/London").split("-").map(Number);
+  const [y, m] = monthOf(rightNow(), "Europe/London").split("-").map(Number);
   return m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, "0")}`;
 }
 

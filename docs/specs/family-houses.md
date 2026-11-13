@@ -72,7 +72,7 @@ one a parent makes for a kid, needs no OK and stands at once.
   answer. Each answer is on the Wall (`okayed`, `not_yet`).
 - The engine (`settleOutcome`'s `awaitsOk`) never settles a waiting tick.
   Each tick of the clock tells the parents once about a new one ("Leo did
-  Feed the fish", `ok_asked_at`). `POST /api/oks/:id` answers, tells the kid
+  Feed the fish", `ok_asked_at`). `answer_tick on /v1` answers, tells the kid
   on Not yet, and ticks the house so an OK'd John settles at once.
 - Today: a parent's **Needs your OK** lists the kids' waiting ticks, oldest
   first, and the Today tab's badge counts them. The John sheet shows a
@@ -124,7 +124,7 @@ Under-13s don't need their own account. A parent adds a child and runs
 their profile, and each John can say how old you have to be for it.
 
 - **Add a child** on House's Table, for a parent: a name and the year they
-  were born (18 or under). `POST /api/kids` (lib/moves/kids.ts) checks the
+  were born (18 or under). `add_kid on /v1` (lib/moves/kids.ts) checks the
   caller is a parent in a family, makes the child's account banned and at
   an address that can't exist (`kid-…@kids.jonz.invalid`, so no email is
   sent: lib/email.ts), then `add_kid(p_parent, p_kid, p_born)`, which only

@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { expect, test, type Page } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, signInToClient, undealtHouseInClient } from "./auth";
+import { fromNow, rightNow } from "../tests/support/clock";
 import { wordsFor } from '@app/core';
 
 const words = wordsFor('en', 'housemates');
@@ -96,7 +97,7 @@ test("shows anyone what it gives, and gives the Pass to the person it's for", as
 
   const { data: house } = await admin().from("houses").select("pass_plan, pass_ends_at").eq("id", houseId).single();
   expect(house?.pass_plan).toBe("trial");
-  expect(new Date(house!.pass_ends_at!).getTime()).toBeGreaterThan(Date.now() + 300 * 86_400_000);
+  expect(new Date(house!.pass_ends_at!).getTime()).toBeGreaterThan(fromNow(300 * 86_400_000).getTime());
 
   // Used: the link says so now, for this house.
   await page.goto(`/offer/${code}`);
@@ -106,7 +107,7 @@ test("shows anyone what it gives, and gives the Pass to the person it's for", as
 
 test("says a stopped or unknown link opens nothing", async ({ page }) => {
   const code = await freeYearFor(["someone@example.com"]);
-  const { error } = await admin().from("promotions").update({ state: "stopped", stopped_at: new Date().toISOString() }).eq("code", code);
+  const { error } = await admin().from("promotions").update({ state: "stopped", stopped_at: rightNow().toISOString() }).eq("code", code);
   expect(error).toBeNull();
   await page.goto(`/offer/${code}`);
   await expect(page.getByTestId("offer-ended")).toContainText(words('door.offer.ended'));

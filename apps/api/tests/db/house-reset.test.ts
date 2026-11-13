@@ -4,6 +4,7 @@ import { adminClient, signedInUser, visitor, type Actor } from "@/tests/support/
 import { expectDenied, expectOk } from "@/tests/support/expect";
 import { addJohns, deal, makeHouse, thisWeek, weeksAgo, type House } from "@/tests/support/factories";
 import { passSecondFactor } from "@/tests/support/mfa";
+import { rightNow } from "@/tests/support/clock";
 
 /**
  * Resetting a house (docs/specs/house-reset.md): an admin
@@ -20,7 +21,7 @@ async function lived(): Promise<{ house: House; johnId: string }> {
   const house = await makeHouse(["Glyn", "Sam"]);
   const [john] = await addJohns(house.id, [{ name: "Bins", points: 2 }, { name: "Dishes", points: 3 }], weeksAgo(1));
   await deal(house.id, weeksAgo(1), new Date(weeksAgo(1).startsAt.getTime() + 3_600_000));
-  const { assignments } = await deal(house.id, thisWeek(), new Date());
+  const { assignments } = await deal(house.id, thisWeek(), rightNow());
   const mine = assignments.find((a) => a.user_id === house.admin.userId) ?? assignments[0];
   const who = house.everyone.find((p) => p.userId === mine.user_id)!;
   expectOk(await who.db.rpc("mark_done", { p_assignment: mine.id }));
@@ -96,7 +97,7 @@ describe("reset_house_data", () => {
   it("can be dealt again from the start, like a new house", async () => {
     const { house } = await lived();
     expectOk(await house.admin.db.rpc("reset_house_data", { p_house: house.id, p_everything: false }));
-    const { assignments } = await deal(house.id, thisWeek(), new Date());
+    const { assignments } = await deal(house.id, thisWeek(), rightNow());
     expect(assignments).toHaveLength(2);
   });
 

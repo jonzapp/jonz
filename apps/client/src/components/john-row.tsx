@@ -50,7 +50,7 @@ export function useJohnRow(item: BoardItem, context: JohnRowContext) {
   const [asking, setAsking] = useState(false);
   // What lateness can still cost is capped at the stake, once a screen has read it.
   const stake = useCached<StakeView>(stakeKey(context.houseId)) ?? null;
-  const plan = johnRow(item, context.userId, context.now, context.zone, context.nameOf, words);
+  const plan = johnRow(item, { viewerId: context.userId, now: context.now, zone: context.zone, nameOf: context.nameOf, words });
   const open = () => sheet.open(item.id, plan.focus ?? undefined);
   const warning =
     plan.trailing === 'undo'

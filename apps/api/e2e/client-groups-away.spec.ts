@@ -2,6 +2,7 @@ import { addDaysTo, dateRange, dayName, localDate, wordsFor } from "@app/core";
 import { expect, test, type Page } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, dealtHouseInClient } from "./auth";
+import { rightNow } from "../tests/support/clock";
 
 const words = wordsFor("en", "housemates");
 
@@ -78,7 +79,7 @@ test("make a group, give it a John, and book time away", async ({ browser }) => 
   // Time away, booked ahead from the calendar.
   await page.goto("/house/away");
   const awayPage = page.getByTestId("away-screen");
-  const today = localDate(new Date(), "Europe/London");
+  const today = localDate(rightNow(), "Europe/London");
   const from = addDaysTo(today, 2);
   const to = addDaysTo(today, 5);
   // Booking is in a sheet from under Who's away.

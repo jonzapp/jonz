@@ -35,6 +35,7 @@ import OverviewPage from '@/app/admin/overview';
 import { authStorage } from '@/api/storage';
 import { supabase } from '@/api/supabase';
 import { renderPages, untilRead } from '@/testing/pages';
+import { NOW } from '@/testing/clock';
 
 const words = wordsFor('en', 'housemates');
 
@@ -79,7 +80,6 @@ jest.mock('@/api/houses', () => ({
   }),
 }));
 jest.mock('@/api/supabase', () => ({ supabase: {} }));
-jest.mock('@/api/http', () => ({ apiPost: jest.fn() }));
 jest.mock('expo-clipboard', () => ({ setStringAsync: jest.fn().mockResolvedValue(true) }));
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({ __esModule: true, default: jest.fn() }));
 jest.mock('@/hooks/use-membership', () => ({
@@ -181,8 +181,8 @@ const SAM = {
   name: 'Sam',
   email: 'sam@example.com',
   house: 'The Annexe',
-  requestedAt: new Date(Date.now() - 2 * DAY).toISOString(),
-  deleteAfter: new Date(Date.now() + 28 * DAY - 60_000).toISOString(),
+  requestedAt: new Date(NOW.getTime() - 2 * DAY).toISOString(),
+  deleteAfter: new Date(NOW.getTime() + 28 * DAY - 60_000).toISOString(),
   requestedBy: 'self' as const,
 };
 const KIT = { ...SAM, userId: 'kit', name: 'Kit', email: 'kit@example.com', house: null, requestedBy: 'owner' as const };
@@ -301,7 +301,7 @@ describe('the owner’s Ask Jonz', () => {
   it('keeps each chat as a housemate’s are: Your chats lists it, opens it again, and New chat starts afresh', async () => {
     jest.mocked(askOwner).mockResolvedValue({ reply: 'Two reports are waiting.' } as Awaited<ReturnType<typeof askOwner>>);
     jest.mocked(ownerChats.keep).mockResolvedValue('c1');
-    jest.mocked(ownerChats.list).mockResolvedValue([{ id: 'c1', title: 'What’s waiting?', updatedAt: new Date().toISOString() }]);
+    jest.mocked(ownerChats.list).mockResolvedValue([{ id: 'c1', title: 'What’s waiting?', updatedAt: new Date(NOW).toISOString() }]);
     jest.mocked(ownerChats.load).mockResolvedValue({
       id: 'c1',
       title: 'What’s waiting?',

@@ -52,7 +52,7 @@ function item(dealt: DealWhy | null, overrides: Partial<BoardItem> = {}): BoardI
   };
 }
 
-const why = (b: BoardItem, viewer = ME) => johnWhy(b, PEOPLE, viewer, RULES, now, words);
+const why = (b: BoardItem, viewer = ME) => johnWhy(b, { people: PEOPLE, viewerId: viewer, rules: RULES, now, words });
 
 describe("johnWhy: why it went where it did", () => {
   it("says it went to whoever was furthest behind, and how each stood", () => {
@@ -202,7 +202,7 @@ describe("johnWhy: a John done together", () => {
   const priyas = item(second, { id: "a2", jobId: "job", userId: "priya", points: 4 });
 
   it("says how many it needs and who was furthest behind of everyone home", () => {
-    const view = johnWhy(mine, PEOPLE, ME, RULES, now, words, [mine, priyas]);
+    const view = johnWhy(mine, { people: PEOPLE, viewerId: ME, rules: RULES, now, words }, [mine, priyas]);
     expect(view.answer).toBe("Needs 2. You and Priya were furthest behind of the 3 home.");
     expect(view.rows.filter((r) => r.chosen).map((r) => r.userId)).toEqual([ME, "priya"]);
   });
@@ -218,9 +218,9 @@ describe("johnWhy: a John done together", () => {
       ],
     };
     const done = { ...mine, status: "done" as const, doneAt: at(-30), outcome: "done" as const, crew };
-    expect(johnWhy(done, PEOPLE, ME, RULES, now, words, [done]).stakes).toBe("You and Megan did it, so it counts as 4 pts of work each.");
+    expect(johnWhy(done, { people: PEOPLE, viewerId: ME, rules: RULES, now, words }, [done]).stakes).toBe("You and Megan did it, so it counts as 4 pts of work each.");
     const left = { ...priyas, status: "missed" as const, absentAt: at(-30), outcome: "missed" as const, crew };
-    expect(johnWhy(left, PEOPLE, ME, RULES, now, words, [left]).stakes).toBe(
+    expect(johnWhy(left, { people: PEOPLE, viewerId: ME, rules: RULES, now, words }, [left]).stakes).toBe(
       "Priya wasn’t there, so it’s Priya’s miss: the part goes to whoever did it, and the work comes back in the next deals.",
     );
   });

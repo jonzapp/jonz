@@ -2,6 +2,7 @@ import { wordsFor } from "@app/core";
 import { expect, test, type Page } from "@playwright/test";
 
 import { CLIENT_URL, cleanUp, houseOf, signInToClient } from "./auth";
+import { rightNow } from "../tests/support/clock";
 
 const words = wordsFor("en", "housemates");
 
@@ -29,7 +30,7 @@ function caughtUp(page: Page) {
 
 test("start a house, and land on it caught up", async ({ context, page }) => {
   made.push(await signInToClient(context, "Ava Client"));
-  const name = `Flat ${Date.now() % 10_000}`;
+  const name = `Flat ${rightNow().getTime() % 10_000}`;
 
   await page.goto("/");
   await expect(page).toHaveURL(/\/welcome$/);

@@ -2,6 +2,7 @@ import { weekWindow } from "@app/core";
 import { expect, test } from "@playwright/test";
 
 import { admin, cleanUp, dealtHouseInClient } from "./auth";
+import { fromNow } from "../tests/support/clock";
 
 // The e2e helper itself: a week dealt on a Saturday evening gives every Sunday
 // John a day's grace, which lands them all on one moment. The helper has to
@@ -17,7 +18,7 @@ test("a Saturday-evening deal keeps the test's order", async ({ context }, testI
 
   // Saturday 22:00 London of next week (the week ends Monday 00:00), so
   // everyone in the house has joined before the deal's "now".
-  const nextWeek = weekWindow(new Date(Date.now() + 7 * 86_400_000), "Europe/London", 1);
+  const nextWeek = weekWindow(fromNow(7 * 86_400_000), "Europe/London", 1);
   const saturdayEvening = new Date(nextWeek.endsAt.getTime() - 26 * 3_600_000);
 
   const { userId, weekId } = await dealtHouseInClient(

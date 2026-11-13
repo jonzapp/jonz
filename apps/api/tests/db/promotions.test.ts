@@ -13,6 +13,7 @@ import { adminClient, signedInUser, type Actor } from "@/tests/support/clients";
 import { expectDenied, expectOk, expectRule } from "@/tests/support/expect";
 import { makeHouse, type House } from "@/tests/support/factories";
 import { passSecondFactor } from "@/tests/support/mfa";
+import { fromNow, rightNow } from "@/tests/support/clock";
 
 /** A Pass refusal as an English reader gets it. */
 const said = (answer: PassAnswer) => ("say" in answer ? { status: answer.status, message: answer.say(wordsFor("en", "housemates")) } : answer);
@@ -61,7 +62,7 @@ function draft(over: Partial<Draft> = {}): Draft {
     plans: ["yearly", "monthly"],
     audience: "named",
     people: [],
-    endsAt: new Date(Date.now() + MONTH).toISOString(),
+    endsAt: fromNow(MONTH).toISOString(),
     ...over,
   });
 }
@@ -182,16 +183,16 @@ describe("using one at checkout", () => {
     const s = stripes();
     const made = await make({ people: [ava.email] }, s);
 
-    const theirs = await startCheckout(buyer(ava), s.pass, house.id, "yearly", APP, "local", new Date(), made.code.toLowerCase());
+    const theirs = await startCheckout(buyer(ava), s.pass, { houseId: house.id, plan: "yearly", appUrl: APP, stage: "local", now: rightNow(), offer: made.code.toLowerCase() });
     expect(theirs).toEqual({ url: "https://checkout.stripe.com/c/pay/cs_test_1" });
     expect(s.calls.checkout[0]).toMatchObject({
       promotionCode: `promo_${made.id.slice(0, 8)}`,
       metadata: { promotion: made.id, offer_email: ava.email, house_id: house.id },
     });
 
-    const notBens = await startCheckout(buyer(ben), s.pass, house.id, "yearly", APP, "local", new Date(), made.code);
+    const notBens = await startCheckout(buyer(ben), s.pass, { houseId: house.id, plan: "yearly", appUrl: APP, stage: "local", now: rightNow(), offer: made.code });
     expect(said(notBens)).toMatchObject({ status: 409, message: expect.stringContaining("someone else") });
-    const notFounding = await startCheckout(buyer(ava), s.pass, house.id, "founding", APP, "local", new Date(), made.code);
+    const notFounding = await startCheckout(buyer(ava), s.pass, { houseId: house.id, plan: "founding", appUrl: APP, stage: "local", now: rightNow(), offer: made.code });
     expect(said(notFounding)).toMatchObject({ status: 409, message: expect.stringContaining("plan") });
     expect(s.calls.checkout).toHaveLength(1);
 
@@ -200,22 +201,22 @@ describe("using one at checkout", () => {
       type: "checkout.session.completed",
       data: { object: { id: `cs_${randomUUID()}`, mode: "payment", payment_status: "paid", customer: "cus_1", metadata: s.calls.checkout[0].metadata } },
     } as unknown as Stripe.Event;
-    await applyPassEvent(db, s.pass, paid, new Date(), "local");
-    await applyPassEvent(db, s.pass, paid, new Date(), "local");
+    await applyPassEvent(db, s.pass, paid, rightNow(), "local");
+    await applyPassEvent(db, s.pass, paid, rightNow(), "local");
     const { data: uses } = await db.from("promotion_uses").select("house_id, email").eq("promotion_id", made.id);
     expect(uses).toEqual([{ house_id: house.id, email: ava.email }]);
     const { data: person } = await db.from("promotion_people").select("used_at").eq("promotion_id", made.id).single();
     expect(person!.used_at).not.toBeNull();
 
-    const twice = await startCheckout(buyer(ava), s.pass, house.id, "yearly", APP, "local", new Date(), made.code);
+    const twice = await startCheckout(buyer(ava), s.pass, { houseId: house.id, plan: "yearly", appUrl: APP, stage: "local", now: rightNow(), offer: made.code });
     expect(said(twice)).toMatchObject({ status: 409, message: expect.stringContaining("used already") });
   });
 
   it("puts the first charge off by its months free, with no code for Stripe", async () => {
     const s = stripes();
     const made = await make({ kind: "trial", percent: null, duration: null, months: 3, audience: "anyone" }, s);
-    const now = new Date();
-    await startCheckout(buyer(ben), s.pass, house.id, "monthly", APP, "local", now, made.code);
+    const now = rightNow();
+    await startCheckout(buyer(ben), s.pass, { houseId: house.id, plan: "monthly", appUrl: APP, stage: "local", now, offer: made.code });
     const trialEnd = s.calls.checkout[0].trialEnd! * 1000;
     expect(trialEnd).toBeGreaterThan(now.getTime() + 2.5 * MONTH);
     expect(s.calls.checkout[0].promotionCode).toBeNull();
@@ -224,7 +225,7 @@ describe("using one at checkout", () => {
   it("refuses a code that opens nothing, and a stopped one, and turns its Stripe code off", async () => {
     const s = stripes();
     const made = await make({ audience: "anyone" }, s);
-    expect(await startCheckout(buyer(ava), s.pass, house.id, "yearly", APP, "local", new Date(), "NOSUCHCODE")).toMatchObject({ status: 409 });
+    expect(await startCheckout(buyer(ava), s.pass, { houseId: house.id, plan: "yearly", appUrl: APP, stage: "local", now: rightNow(), offer: "NOSUCHCODE" })).toMatchObject({ status: 409 });
 
     expect(await stopPromotion(me(ava), s.offers, made.id)).toMatchObject({ code: "42501" });
     expect(await stopPromotion(me(owner), s.offers, made.id)).toBeNull();
@@ -233,7 +234,7 @@ describe("using one at checkout", () => {
     const { data: audit } = await db.from("admin_audit").select("action").eq("target_id", made.id).eq("action", "promotion.stop");
     expect(audit).toHaveLength(1);
 
-    const ended = await startCheckout(buyer(ava), s.pass, house.id, "yearly", APP, "local", new Date(), made.code);
+    const ended = await startCheckout(buyer(ava), s.pass, { houseId: house.id, plan: "yearly", appUrl: APP, stage: "local", now: rightNow(), offer: made.code });
     expect(said(ended)).toMatchObject({ status: 409, message: expect.stringContaining("ended") });
   });
 });
@@ -242,8 +243,8 @@ describe("a free Pass", () => {
   it("is given with no Stripe, as many times as it allows and no more", async () => {
     const s = stripes();
     const made = await make({ kind: "gift", percent: null, duration: null, plans: [], months: 12, audience: "anyone", maxUses: 1 }, s);
-    const before = new Date();
-    const given = await startCheckout(buyer(ava), s.pass, house.id, "yearly", APP, "local", before, made.code);
+    const before = rightNow();
+    const given = await startCheckout(buyer(ava), s.pass, { houseId: house.id, plan: "yearly", appUrl: APP, stage: "local", now: before, offer: made.code });
     expect(given).toEqual({ url: `${APP}/house/pass?bought=1` });
     expect(s.calls.checkout).toHaveLength(0);
     const { data: h } = await db.from("houses").select("pass_plan, pass_ends_at").eq("id", house.id).single();
@@ -251,15 +252,15 @@ describe("a free Pass", () => {
     expect(new Date(h!.pass_ends_at!).getTime()).toBeGreaterThan(before.getTime() + 12 * MONTH);
 
     const other = await makeHouse(["Cal"]);
-    const usedUp = await startCheckout(buyer(other.admin), s.pass, other.id, "yearly", APP, "local", new Date(), made.code);
+    const usedUp = await startCheckout(buyer(other.admin), s.pass, { houseId: other.id, plan: "yearly", appUrl: APP, stage: "local", now: rightNow(), offer: made.code });
     expect(usedUp).toMatchObject({ status: 409 });
   });
 
   it("for good makes a Founding house, with Stripe not set up at all", async () => {
     const made = await make({ kind: "gift", percent: null, duration: null, plans: [], months: null, people: [ben.email] });
     const half = await make({ audience: "anyone" });
-    expect(await startCheckout(buyer(ben), null, house.id, "yearly", APP, "local", new Date(), half.code)).toMatchObject({ status: 503 });
-    expect(await startCheckout(buyer(ben), null, house.id, "yearly", APP, "local", new Date(), made.code)).toMatchObject({ url: expect.any(String) });
+    expect(await startCheckout(buyer(ben), null, { houseId: house.id, plan: "yearly", appUrl: APP, stage: "local", now: rightNow(), offer: half.code })).toMatchObject({ status: 503 });
+    expect(await startCheckout(buyer(ben), null, { houseId: house.id, plan: "yearly", appUrl: APP, stage: "local", now: rightNow(), offer: made.code })).toMatchObject({ url: expect.any(String) });
     const { data: h } = await db.from("houses").select("pass_plan, pass_ends_at, pass_bought_by").eq("id", house.id).single();
     expect(h).toEqual({ pass_plan: "founding", pass_ends_at: null, pass_bought_by: null });
   });
@@ -285,25 +286,25 @@ describe("Email them", () => {
 describe("the offer's link", () => {
   it("shows anyone what it gives, never who it's for, and tells a signed-in person whether it's theirs", async () => {
     const made = await make({ people: [ava.email] });
-    const open = await readOffer(db, made.code, null, new Date());
+    const open = await readOffer(db, made.code, null, rightNow());
     expect(open).toMatchObject({ legend: "Half off", state: "live", named: true, you: null, currency: "USD" });
     expect(JSON.stringify(open)).not.toContain(ava.email);
 
-    const hers = await readOffer(db, made.code, buyer(ava), new Date());
+    const hers = await readOffer(db, made.code, buyer(ava), rightNow());
     expect(hers).toMatchObject({ currency: "GBP", you: { forYou: true, houses: [{ id: house.id, refusal: null }] } });
     const { data: person } = await db.from("promotion_people").select("opened_at").eq("promotion_id", made.id).single();
     expect(person!.opened_at).not.toBeNull();
 
-    const his = await readOffer(db, made.code, buyer(ben), new Date());
+    const his = await readOffer(db, made.code, buyer(ben), rightNow());
     expect(his?.you).toMatchObject({ forYou: false, houses: [{ refusal: "offer_not_yours" }] });
 
-    expect(await readOffer(db, "NOSUCHCODE", null, new Date())).toBeNull();
+    expect(await readOffer(db, "NOSUCHCODE", null, rightNow())).toBeNull();
   });
 
   it("says it's ended once it's stopped", async () => {
     const made = await make({ audience: "anyone" });
     await stopPromotion(me(owner), null, made.id);
-    expect(await readOffer(db, made.code, null, new Date())).toMatchObject({ state: "ended", legend: "Offer ended" });
+    expect(await readOffer(db, made.code, null, rightNow())).toMatchObject({ state: "ended", legend: "Offer ended" });
   });
 });
 

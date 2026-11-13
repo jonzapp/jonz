@@ -27,6 +27,8 @@ const ownerReadsStub: OwnerReads = {
   page: () => "how",
 };
 const OWNER_TOOLS = ["audit", "deletions", "find_houses", "find_people", "house", "inbox", "messages", "notices", "promotions", "read_page"];
+/** A pretend now: nothing here depends on when it runs. */
+const NOW = new Date("2026-11-11T12:00:00Z");
 
 const houseTools = (): JonzTools => ({
   reads: new Proxy({}, { get: () => async () => "read" }) as JonzTools["reads"],
@@ -147,7 +149,7 @@ describe("ownerTurn", () => {
     for (const status of [{ owner: false, mfa: false }, { owner: true, mfa: false }, { owner: true, mfa: true, role: null }]) {
       const { caller, asked } = callerAnswering({ owner_status: status });
       const ask = vi.fn();
-      expect(await ownerTurn(caller, [{ role: "user", text: "Hi" }], new Date(), ask)).toEqual({ refusal: { code: "42501", message: "owner_only" } });
+      expect(await ownerTurn(caller, [{ role: "user", text: "Hi" }], NOW, ask)).toEqual({ refusal: { code: "42501", message: "owner_only" } });
       expect(ask).not.toHaveBeenCalled();
       expect(asked).toEqual(["owner_status"]);
     }
@@ -166,7 +168,7 @@ describe("ownerTurn", () => {
 
   it("says so when Claude doesn't answer", async () => {
     const { caller } = callerAnswering({ owner_status: { owner: true, mfa: true, role: "owner" }, claim_owner_ask: "t1" });
-    const result = await ownerTurn(caller, [{ role: "user", text: "Anything waiting?" }], new Date(), async () => {
+    const result = await ownerTurn(caller, [{ role: "user", text: "Anything waiting?" }], NOW, async () => {
       throw new Error("gateway down");
     });
     expect(result).toMatchObject({ source: "offline" });

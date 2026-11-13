@@ -76,7 +76,7 @@ describe('keepDraft', () => {
 
   it('makes the groups the kept Johns need, then adds them with their group', async () => {
     from.mockResolvedValue({ johns: [], groups: [{ id: 'g1', name: 'Upstairs', memberIds: [ME] }] });
-    await expect(keepDraft(HOUSE, RULES, draft, [0, 1], [], NOW)).resolves.toBe(2);
+    await expect(keepDraft({ houseId: HOUSE, rules: RULES, groups: [], now: NOW }, draft, [0, 1])).resolves.toBe(2);
     expect(saveGroup).toHaveBeenCalledWith(HOUSE, { name: 'Upstairs', members: [ME] });
     const [, , johns] = (addJohns as jest.Mock).mock.calls[0];
     expect(johns.map((j: { name: string; groupId: string | null }) => [j.name, j.groupId])).toEqual([
@@ -86,7 +86,7 @@ describe('keepDraft', () => {
   });
 
   it("uses the house's own group of that name, and makes none", async () => {
-    await keepDraft(HOUSE, RULES, draft, [0], [{ id: 'g9', name: 'upstairs', memberIds: [ME] }], NOW);
+    await keepDraft({ houseId: HOUSE, rules: RULES, groups: [{ id: 'g9', name: 'upstairs', memberIds: [ME] }], now: NOW }, draft, [0]);
     expect(saveGroup).not.toHaveBeenCalled();
     expect(from).not.toHaveBeenCalled();
     expect((addJohns as jest.Mock).mock.calls[0][2][0].groupId).toBe('g9');
@@ -108,14 +108,14 @@ describe('applyDraft', () => {
 
   it('adds, changes and takes off only the ticked changes, keeping what the draft doesn’t say', async () => {
     const keys = [`change:${BATH}`, 'add:1', `remove:${BINS}`];
-    await expect(applyDraft(HOUSE, RULES, base, next, keys, { johns, groups: [] }, NOW)).resolves.toBe(3);
+    await expect(applyDraft({ houseId: HOUSE, rules: RULES, list: { johns, groups: [] }, now: NOW }, { base, draft: next, keys })).resolves.toBe(3);
     expect((addJohns as jest.Mock).mock.calls[0][2].map((j: { name: string }) => j.name)).toEqual([next.johns[1].name]);
     expect(saveJohn).toHaveBeenCalledWith(HOUSE, RULES, expect.objectContaining({ id: BATH, points: 4, needsPhoto: true, groupId: null }), NOW);
     expect(archiveJohn).toHaveBeenCalledWith(HOUSE, BINS, NOW);
   });
 
   it('leaves an unticked change alone', async () => {
-    await applyDraft(HOUSE, RULES, base, next, ['add:1'], { johns, groups: [] }, NOW);
+    await applyDraft({ houseId: HOUSE, rules: RULES, list: { johns, groups: [] }, now: NOW }, { base, draft: next, keys: ['add:1'] });
     expect(saveJohn).not.toHaveBeenCalled();
     expect(archiveJohn).not.toHaveBeenCalled();
   });
@@ -125,9 +125,9 @@ describe('applyDraft', () => {
     const floor = { id: 'g1', name: 'Main floor', memberIds: [ME] };
     const was = listAsDraft(johns, [floor]);
     const ivyIn = { ...was, groups: [{ name: 'Main floor', memberIds: [ME, IVY], waitingFor: [] }] };
-    await expect(applyDraft(HOUSE, RULES, was, ivyIn, [], { johns, groups: [floor] }, NOW)).resolves.toBe(0);
+    await expect(applyDraft({ houseId: HOUSE, rules: RULES, list: { johns, groups: [floor] }, now: NOW }, { base: was, draft: ivyIn, keys: [] })).resolves.toBe(0);
     expect(saveGroup).not.toHaveBeenCalled();
-    await expect(applyDraft(HOUSE, RULES, was, ivyIn, ['group:Main floor'], { johns, groups: [floor] }, NOW)).resolves.toBe(1);
+    await expect(applyDraft({ houseId: HOUSE, rules: RULES, list: { johns, groups: [floor] }, now: NOW }, { base: was, draft: ivyIn, keys: ['group:Main floor'] })).resolves.toBe(1);
     expect(saveGroup).toHaveBeenCalledWith(HOUSE, { id: 'g1', name: 'Main floor', members: [ME, IVY] });
   });
 });

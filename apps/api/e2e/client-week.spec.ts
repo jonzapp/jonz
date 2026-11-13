@@ -2,6 +2,7 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 
 import { tickHouse } from "../lib/engine/tick";
 import { admin, CLIENT_URL, cleanUp, dealtHouseInClient } from "./auth";
+import { fromNow, rightNow } from "../tests/support/clock";
 import { wordsFor } from '@app/core';
 
 const words = wordsFor('en', 'housemates');
@@ -72,8 +73,8 @@ test("dispute a housemate's tick from the board, and the house of two decides wh
   expect(open).toEqual([{ id: expect.any(String), resolution: null }]);
 
   // The vote closes with no photo from Ben: the tick is struck.
-  await admin().from("disputes").update({ closes_at: new Date(Date.now() - 1000).toISOString() }).eq("id", open![0].id);
-  await tickHouse(admin(), houseId, new Date());
+  await admin().from("disputes").update({ closes_at: fromNow(-1000).toISOString() }).eq("id", open![0].id);
+  await tickHouse(admin(), houseId, rightNow());
   await ava.reload();
   await expect(onBoard(ava, benJohn).getByRole("img", { name: words('today.nextUp.stateLabel.open') })).toBeVisible();
 

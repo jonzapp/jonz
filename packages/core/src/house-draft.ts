@@ -1,5 +1,5 @@
 // A house's John list, drafted and changed in a chat with Jonz (Claude,
-// through POST /api/setup/draft). For a new house the admin says what the
+// through ask_house on /v1). For a new house the admin says what the
 // house is like, Jonz asks a question or two and drafts the list, and every
 // message after that changes the draft; a starter list stands in whenever
 // Claude can't. For a house with a list already, the draft starts as that
@@ -264,7 +264,7 @@ export const DRAFT_SOURCES = ["ai", "starter"] as const;
 export type DraftSource = (typeof DRAFT_SOURCES)[number];
 
 /**
- * POST /api/setup/draft: the chat so far, ending with what the admin just
+ * ask_house on /v1: the chat so far, ending with what the admin just
  * said, and the draft as it stands (null before there is one), which the
  * answer changes.
  */
@@ -473,6 +473,14 @@ export interface DraftPlan {
   everyoneForNow: string[];
 }
 
+const JOHN_BASICS = ["name", "category", "points", "everyWeeks", "everyMonths", "weekOfMonth", "dueDow", "dueTime", "needsPhoto", "when", "respondHours", "perWeek", "crew"] as const;
+type JohnBasic = (typeof JOHN_BASICS)[number];
+
+/** What a John on the list and a John in a draft both say: what it is, how often, when it's due and who it takes. */
+function johnBasics<T extends Record<JohnBasic, unknown>>(john: T): Pick<T, JohnBasic> {
+  return Object.fromEntries(JOHN_BASICS.map((key) => [key, john[key]])) as Pick<T, JohnBasic>;
+}
+
 /**
  * Turn the Johns an admin kept into writes. A group already in the house
  * with the same name is used as it is; a drafted group with nobody in the
@@ -485,19 +493,7 @@ export function draftPlan(draft: HouseDraft, keep: readonly number[], existingGr
   const everyoneForNow: string[] = [];
   const johns = kept.map((j) => {
     const john = {
-      name: j.name,
-      category: j.category,
-      points: j.points,
-      everyWeeks: j.everyWeeks,
-      everyMonths: j.everyMonths,
-      weekOfMonth: j.weekOfMonth,
-      dueDow: j.dueDow,
-      dueTime: j.dueTime,
-      needsPhoto: j.needsPhoto,
-      when: j.when,
-      respondHours: j.respondHours,
-      perWeek: j.perWeek,
-      crew: j.crew,
+      ...johnBasics(j),
       keepDay: false,
     };
     let groupName: string | null = null;
@@ -596,19 +592,7 @@ export function listAsDraft(johns: readonly JohnDef[], groups: readonly GroupDef
   return {
     johns: johns.map((j) => ({
       id: j.id,
-      name: j.name,
-      category: j.category,
-      points: j.points,
-      everyWeeks: j.everyWeeks,
-      everyMonths: j.everyMonths,
-      weekOfMonth: j.weekOfMonth,
-      dueDow: j.dueDow,
-      dueTime: j.dueTime,
-      needsPhoto: j.needsPhoto,
-      when: j.when,
-      respondHours: j.respondHours,
-      perWeek: j.perWeek,
-      crew: j.crew,
+      ...johnBasics(j),
       group: groups.find((g) => g.id === j.groupId)?.name ?? null,
       why: "",
     })),

@@ -1,13 +1,14 @@
 import { addDaysTo, localDate, nextWeek, readDealt, weekStateOf, weekWindow, type IsoDow } from "@app/core";
 import { tz } from "@date-fns/tz";
 import { getHours } from "date-fns";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import { POST as swapsRoute } from "@/app/api/swaps/route";
 import { dealWeek, loadBalances, loadHouse, tickHouse, pushIn, type PushMessage, type SaidPush } from "@/lib/engine/tick";
-import { adminClient, signedInUser } from "@/tests/support/clients";
+import { adminClient, signedInUser, type Actor } from "@/tests/support/clients";
 import { expectDenied, expectOk, expectRule } from "@/tests/support/expect";
 import { actorFor, addJohns, deal, makeHouse, reread, someoneElse, thisWeek, weeksAgo, ZONE, type House } from "@/tests/support/factories";
+import { problemOf, v1 } from "@/tests/support/v1";
+import { fromNow, rightNow } from "@/tests/support/clock";
 
 /**
  * Steady weeks (docs/specs/steady-weeks.md) through the engine and the
@@ -168,10 +169,10 @@ describe("fresh starts", () => {
 
     const dee = await signedInUser("Dee");
     expectOk(await dee.db.rpc("join_house", { p_code: house.code }));
-    // An admin re-deals the week (POST /api/deal) on a lighter budget.
+    // An admin re-deals the week (deal_week on /v1) on a lighter budget.
     await rules(house, { deal_budget: 2 });
     const { house: row, members } = await loadHouse(db, house.id);
-    const { weekId } = await dealWeek(db, row, members, week, new Date(), true);
+    const { weekId } = await dealWeek(db, row, members, week, rightNow(), true);
     const { data: dealt } = await db.from("assignments").select("user_id").eq("week_id", weekId!);
     expect(dealt!.some((a) => a.user_id === dee.userId)).toBe(false);
     expect(dealt).toHaveLength(2);
@@ -337,7 +338,7 @@ describe("plan_john", () => {
     expectDenied(await someoneElse(house, owner.userId).db.rpc("plan_john", { p_assignment: bins.id, p_at: soon.toISOString() }));
     const stranger = await signedInUser("Stranger");
     expectRule(await stranger.db.rpc("plan_john", { p_assignment: bins.id, p_at: soon.toISOString() }), "not_found");
-    expectRule(await owner.db.rpc("plan_john", { p_assignment: bins.id, p_at: new Date(Date.now() - HOUR).toISOString() }), "plan_time");
+    expectRule(await owner.db.rpc("plan_john", { p_assignment: bins.id, p_at: fromNow(-HOUR).toISOString() }), "plan_time");
     expectRule(await owner.db.rpc("plan_john", { p_assignment: bins.id, p_at: new Date(ends + HOUR).toISOString() }), "plan_time");
 
     expectOk(await owner.db.rpc("plan_john", { p_assignment: bins.id, p_at: null as unknown as string }));
@@ -346,7 +347,7 @@ describe("plan_john", () => {
 
   it("can't plan a John that's done", async () => {
     const { bins, owner, soon } = await planHouse();
-    expectOk(await db.from("assignments").update({ done_at: new Date().toISOString() }).eq("id", bins.id));
+    expectOk(await db.from("assignments").update({ done_at: rightNow().toISOString() }).eq("id", bins.id));
     expectRule(await owner.db.rpc("plan_john", { p_assignment: bins.id, p_at: soon.toISOString() }), "already_settled");
   });
 
@@ -363,7 +364,7 @@ describe("asking to swap a John you'd rather not", () => {
     const house = await makeHouse(names);
     const week = thisWeek();
     const [bins, hob] = await addJohns(house.id, [{ name: "Bins" }, { name: "Hob" }], week);
-    const { assignments } = await deal(house.id, week, new Date());
+    const { assignments } = await deal(house.id, week, rightNow());
     const [ava, ben] = [house.admin, house.members[0]];
     const mine = assignments.find((a) => a.john_id === bins.id)!;
     const theirs = assignments.find((a) => a.john_id === hob.id)!;
@@ -389,9 +390,9 @@ describe("asking to swap a John you'd rather not", () => {
     expect(seen![0]).toMatchObject({ asked_by: ava.userId, asked_user_id: ben.userId, asker_assignment_id: mine.id, asked_assignment_id: theirs.id, answer: null });
     // Tonight: midnight in the house's zone.
     const expires = new Date(seen![0].expires_at);
-    expect(expires.getTime()).toBeGreaterThan(Date.now());
-    expect(expires.getTime()).toBeLessThanOrEqual(Date.now() + DAY);
-    expect(localDate(new Date(expires.getTime() - 1), ZONE)).toBe(localDate(new Date(), ZONE));
+    expect(expires.getTime()).toBeGreaterThan(rightNow().getTime());
+    expect(expires.getTime()).toBeLessThanOrEqual(fromNow(DAY).getTime());
+    expect(localDate(new Date(expires.getTime() - 1), ZONE)).toBe(localDate(rightNow(), ZONE));
 
     expectOk(await ben.db.rpc("answer_swap", { p_offer: offer, p_accept: true }));
     expect((await reread("assignments", mine.id)).user_id).toBe(ben.userId);
@@ -412,7 +413,7 @@ describe("asking to swap a John you'd rather not", () => {
     expect((await reread("assignments", mine.id)).user_id).toBe(ava.userId);
 
     const second = await ask(ava, mine, theirs);
-    expectOk(await db.from("swap_offers").update({ expires_at: new Date(Date.now() - 60_000).toISOString() }).eq("id", second));
+    expectOk(await db.from("swap_offers").update({ expires_at: fromNow(-60_000).toISOString() }).eq("id", second));
     expectRule(await ben.db.rpc("answer_swap", { p_offer: second, p_accept: true }), "swap_gone");
     expect((await reread("assignments", mine.id)).user_id).toBe(ava.userId);
     // An ask that ran out lets the John be asked about again.
@@ -426,7 +427,7 @@ describe("asking to swap a John you'd rather not", () => {
     expectDenied(await ben.db.rpc("offer_swap", { p_mine: mine.id, p_theirs: theirs.id }));
 
     const offer = await ask(ava, mine, theirs);
-    expectOk(await db.from("assignments").update({ done_at: new Date().toISOString() }).eq("id", theirs.id));
+    expectOk(await db.from("assignments").update({ done_at: rightNow().toISOString() }).eq("id", theirs.id));
     expectRule(await ben.db.rpc("answer_swap", { p_offer: offer, p_accept: true }), "not_swappable");
     expect((await reread("assignments", mine.id)).user_id).toBe(ava.userId);
     expectRule(await ava.db.rpc("answer_swap", { p_offer: offer, p_accept: true }), "not_found");
@@ -439,7 +440,7 @@ describe("asking to swap a John you'd rather not", () => {
     expect((await cal.db.from("swap_offers").select("id").eq("id", offer)).data).toEqual([]);
     const stranger = await signedInUser("Stranger");
     expect((await stranger.db.from("swap_offers").select("id").eq("id", offer)).data).toEqual([]);
-    expectDenied(await ava.db.from("swap_offers").update({ answer: "accepted", answered_at: new Date().toISOString() }).eq("id", offer));
+    expectDenied(await ava.db.from("swap_offers").update({ answer: "accepted", answered_at: rightNow().toISOString() }).eq("id", offer));
     expectDenied(
       await ava.db.from("swap_offers").insert({
         house_id: house.id,
@@ -447,35 +448,19 @@ describe("asking to swap a John you'd rather not", () => {
         asked_assignment_id: theirs.id,
         asked_by: ava.userId,
         asked_user_id: cal.userId,
-        expires_at: new Date().toISOString(),
+        expires_at: rightNow().toISOString(),
       }),
     );
   });
 });
 
-describe("POST /api/swaps", () => {
-  const BASE = "http://localhost:3205/api/swaps";
-  const savedOrigins = process.env.ALLOWED_ORIGINS;
-  beforeAll(() => {
-    process.env.ALLOWED_ORIGINS = "http://localhost:8205";
-  });
-  afterAll(() => {
-    process.env.ALLOWED_ORIGINS = savedOrigins;
-  });
-
-  async function post(body: unknown, actor?: { db: typeof db }) {
-    const headers: Record<string, string> = { "content-type": "application/json", origin: "http://localhost:8205" };
-    if (actor) {
-      const { data } = await actor.db.auth.getSession();
-      headers.authorization = `Bearer ${data.session!.access_token}`;
-    }
-    return swapsRoute(new Request(BASE, { method: "POST", headers, body: JSON.stringify(body) }));
-  }
+describe("POST /v1/swaps", () => {
+  const post = (body: unknown, actor?: Actor) => v1(actor, "POST /v1/swaps", body);
 
   async function asking() {
     const house = await makeHouse(["Ava", "Ben"]);
     const [bins, hob] = await addJohns(house.id, [{ name: "Bins" }, { name: "Hob" }], thisWeek());
-    const { assignments } = await deal(house.id, thisWeek(), new Date());
+    const { assignments } = await deal(house.id, thisWeek(), rightNow());
     const [ava, ben] = [house.admin, house.members[0]];
     const mine = assignments.find((a) => a.john_id === bins.id)!;
     const theirs = assignments.find((a) => a.john_id === hob.id)!;
@@ -494,7 +479,7 @@ describe("POST /api/swaps", () => {
   it("asks, and answers the ask's id, which the person asked can see", async () => {
     const { ava, ben, mine, theirs } = await asking();
     const res = await post({ mine: mine.id, theirs: theirs.id }, ava);
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(201);
     const { offerId } = await res.json();
     expect((await ben.db.from("swap_offers").select("id").eq("id", offerId)).data).toEqual([{ id: offerId }]);
   });
@@ -503,7 +488,7 @@ describe("POST /api/swaps", () => {
     const { ben, mine, theirs } = await asking();
     const res = await post({ mine: theirs.id, theirs: mine.id }, ben);
     expect(res.status).toBeGreaterThanOrEqual(400);
-    expect((await res.json()).error).toBe("Only two open Johns from the same week can be swapped.");
+    expect(await problemOf(res)).toEqual({ code: "rejected", detail: "not_swappable" });
   });
 });
 

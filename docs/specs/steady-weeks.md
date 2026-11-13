@@ -112,7 +112,7 @@ every rule. In short:
   operation (`GET /v1/houses/{houseId}/group-balances`, and so an MCP tool).
   Only the server writes group shares. The guide, the rules sheet, Ask Jonz's
   fair shares read and the MCP server's instructions all explain the pools.
-- `POST /api/swaps` with `SwapAskRequest {mine, theirs}` answers
+- `offer_swap on /v1` with `SwapAskRequest {mine, theirs}` answers
   `SwapAskResponse {ok, offerId}` and pushes the housemate asked. A bad body is
   400 "Say which two Johns to swap."; refusals are 409 in words.
 - Refusals: `bad_prefs` (a day, time or John that isn't one), `plan_time`

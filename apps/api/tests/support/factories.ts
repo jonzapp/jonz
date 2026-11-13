@@ -5,6 +5,7 @@ import { dealWeek, loadHouse } from "@/lib/engine/tick";
 
 import { adminClient, signedInUser, type Actor } from "./clients";
 import { track } from "./scope";
+import { rightNow } from "./clock";
 
 export const ZONE = "Europe/London";
 
@@ -127,12 +128,12 @@ export async function deal(houseId: string, week: WeekWindow, now: Date) {
 }
 
 /** The current real week, which is the only one the housemate functions will accept ticks in. */
-export function thisWeek(now = new Date()) {
+export function thisWeek(now = rightNow()) {
   return weekWindow(now, ZONE, 1);
 }
 
 /** A week safely in the past (the functions will refuse ticks in it). */
-export function weeksAgo(n: number, now = new Date()) {
+export function weeksAgo(n: number, now = rightNow()) {
   return weekWindow(new Date(now.getTime() - n * 7 * 86_400_000), ZONE, 1);
 }
 

@@ -361,7 +361,7 @@ export function SetupChat({
   async function add() {
     if (!draft) return;
     let added = 0;
-    if (await keeping.run(async () => (added = await applyDraft(houseId, rules, base, draft, keep, { johns, groups }, new Date())))) {
+    if (await keeping.run(async () => (added = await applyDraft({ houseId, rules, list: { johns, groups }, now: new Date() }, { base, draft, keys: keep })))) {
       unkept.current = true;
       setTurns((was) => [...was, { role: 'done', added }]);
       // A list's chat carries on from the list as it now is, read again from the house. A new house's

@@ -83,6 +83,9 @@ function called(name: string | null, words: Words): string {
   return name ? firstName(name) : words('today.nextUp.someoneGone');
 }
 
+/** Who is looking at a row and when: the viewer, the time in the house's zone, anyone's full name (null for someone who has left), and the words. */
+type RowViewing = { viewerId: string; now: Date; zone: string; nameOf: (userId: string) => string | null; words: Words };
+
 /**
  * One John's row, for whoever is looking (`viewerId`). Its meta line never
  * repeats what the tick box or the trailing item already says: "Kitchen,
@@ -95,11 +98,7 @@ export function johnRow(
     "userId" | "name" | "category" | "points" | "needsPhoto" | "status" | "dueAt" | "movedFrom" | "doneAt" | "standsAt" | "dispute"
   > &
     Partial<Pick<BoardItem, "flaggedAt" | "flaggedBy" | "coveredBy" | "outcome" | "together" | "crew" | "absentAt" | "dealt" | "awaitsOk">>,
-  viewerId: string,
-  now: Date,
-  zone: string,
-  /** Anyone's full name, or null for someone who has left. */
-  nameOf: (userId: string) => string | null, words: Words,
+  { viewerId, now, zone, nameOf, words }: RowViewing,
 ): JohnRowPlan {
   const { status } = item;
   const mine = item.userId === viewerId;
@@ -118,7 +117,7 @@ export function johnRow(
           : "open";
   // A John done together is ticked with its roll call, in its sheet.
   const ticks = mine && toDo && (item.together?.length ?? 1) <= 1;
-  const { meta, lid } = metaLine(item, viewerId, now, zone, nameOf, words);
+  const { meta, lid } = metaLine(item, { viewerId, now, zone, nameOf, words });
   // Ticked by roll call, a place earns its holder's share of the job.
   const share = item.crew?.people.some((c) => c.userId === item.userId)
     ? pointsEarned(status, item.crew.total) / item.crew.people.length
@@ -165,10 +164,7 @@ function metaLine(
     Partial<Pick<BoardItem, "flaggedAt" | "flaggedBy" | "together" | "crew" | "dealt" | "awaitsOk">> & {
     coveredBy?: string | null;
   },
-  viewerId: string,
-  now: Date,
-  zone: string,
-  nameOf: (userId: string) => string | null, words: Words,
+  { viewerId, now, zone, nameOf, words }: RowViewing,
 ): { meta: string; lid: boolean } {
   const mine = item.userId === viewerId;
   // An open flag says who flagged it ("flagged by Sam"), or that it's open again after a miss.

@@ -38,7 +38,7 @@ export const SupportDraft = z.object({
 });
 export type SupportDraft = z.infer<typeof SupportDraft>;
 
-/** POST /api/reports/:id/draft: the report's suggestion, written now or kept from before; null when there's none to give. */
+/** claim_support_draft on /v1: the report's suggestion, written now or kept from before; null when there's none to give. */
 export const SupportDraftResponse = z.object({ draft: SupportDraft.nullable() });
 export type SupportDraftResponse = z.infer<typeof SupportDraftResponse>;
 

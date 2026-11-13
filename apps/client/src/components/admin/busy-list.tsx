@@ -5,7 +5,7 @@ import { SearchXIcon, type LucideIcon } from 'lucide-react-native';
 import { useMemo, useState, type ReactNode } from 'react';
 import { Platform, StyleSheet, View, type ViewStyle } from 'react-native';
 
-import { ListTable, ListTableHead, type ListColumn } from '@/components/admin/list-table';
+import { ListTable, ListTableHead, type ListColumn } from '@/components/list-table';
 import { SmartSearch } from '@/components/admin/smart-search';
 import { EmptyState } from '@/components/empty-state';
 import { Group } from '@/components/group';
@@ -106,6 +106,17 @@ export function useBusyList<T, C>(source: BusyListSource<T, C>) {
 }
 
 export type BusyList<T> = ReturnType<typeof useBusyList<T, unknown>>;
+
+/**
+ * Which row of a busy list is open beside it: the one tapped, else the one
+ * a link in names with ?open= (the Overview's Needs you, a pushed page
+ * opened on a laptop), else the first.
+ */
+export function useOpenRow(busy: BusyList<{ id: string }>) {
+  const { open } = useLocalSearchParams<{ open?: string }>();
+  const [chosenId, setChosen] = useState<string | null>(open ?? null);
+  return { shownId: chosenId ?? busy.items[0]?.id ?? null, setChosen };
+}
 
 /** A group of a busy list's rows: its name, how many the whole list has in it (null until counted), and the rows read so far. */
 export interface ListGroup<T> {

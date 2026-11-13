@@ -85,6 +85,34 @@ export function listLine(
     .join(", ");
 }
 
+/** A John's line on the John list's laptop table, a column each: when ("Sun 21:00", "On call"), how often ("Every 2 weeks", "Do it within 12 hours"), and what else sets it apart (photo, its group, how many do it). */
+export interface ListCells {
+  when: string;
+  often: string;
+  also: string[];
+}
+
+/** A John's line on the John list on a laptop, split into the columns it lines up in (`listLine` is the same on one line, on a phone). */
+export function listCells(
+  john: Pick<JohnDef, "everyWeeks" | "dueDow" | "dueTime" | "needsPhoto"> &
+    Partial<Pick<JohnDef, "when" | "respondHours" | "everyMonths" | "weekOfMonth" | "crew">>,
+  words: Words, groupName?: string | null,
+): ListCells {
+  const onCall = john.when === "on_call";
+  const photo = words('house.setup.photo');
+  return {
+    when: onCall ? words('house.johns.onCall') : dueLine(john, words),
+    often: onCall
+      ? `${words('house.johns.respond')} ${words('house.johns.respondHours', { hours: john.respondHours ?? 12 })}`
+      : cadence(john, words),
+    also: [
+      john.needsPhoto ? photo.charAt(0).toUpperCase() + photo.slice(1) : null,
+      groupName || null,
+      (john.crew ?? 1) === 1 ? null : words('john.crew.choice', { crew: john.crew! }),
+    ].filter((x): x is string => Boolean(x)),
+  };
+}
+
 /** A John as a housemate who can't edit it reads it: kind, who shares it, effort, how often, when, and the photo. */
 export function johnFacts(john: JohnDef, groupName: string | null | undefined, words: Words): LabelValue[] {
   return [

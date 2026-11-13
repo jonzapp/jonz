@@ -9,6 +9,7 @@ import { loadPocket } from '@/api/pocket';
 import BoardScreen from '@/app/(house)/house/board';
 import { assignment, snapshot } from '@/testing/house';
 import { renderPages, untilRead } from '@/testing/pages';
+import { hoursFromNow as at } from '@/testing/clock';
 
 const words = wordsFor('en', 'housemates');
 
@@ -26,8 +27,6 @@ jest.mock('@/hooks/use-membership', () => ({
   useMembership: () => ({ session: { user: { id: mockMe } }, house: { id: 'h1', name: 'The Parks' }, refresh: jest.fn() }),
 }));
 
-const HOUR = 3_600_000;
-const at = (hours: number) => new Date(Date.now() + hours * HOUR).toISOString();
 
 /** A family: Priya the parent, Sam and Maya the kids. Overdue and just-done Johns are "today" whenever the tests run. */
 function family(kind: 'family' | 'housemates' = 'family') {

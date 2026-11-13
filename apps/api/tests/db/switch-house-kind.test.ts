@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { adminClient } from "@/tests/support/clients";
 import { expectDenied, expectOk, expectRule } from "@/tests/support/expect";
 import { makeHouse } from "@/tests/support/factories";
+import { rightNow } from "@/tests/support/clock";
 
 /**
  * Switching a house between housemates and a family, from Rules
@@ -36,7 +37,7 @@ describe("set_house_kind", () => {
     const on = res.data!;
     // The 1st of a month, within the next month.
     expect(on.endsWith("-01")).toBe(true);
-    const until = Date.parse(`${on}T12:00:00Z`) - Date.now();
+    const until = Date.parse(`${on}T12:00:00Z`) - rightNow().getTime();
     expect(until).toBeGreaterThan(-DAY);
     expect(until).toBeLessThan(33 * DAY);
 
@@ -143,6 +144,6 @@ describe("set_house_kind", () => {
 
   it("isn't something anyone can call the clock's half of", async () => {
     const house = await makeHouse(["Xan"]);
-    expectDenied(await house.admin.db.rpc("apply_next_kind", { p_house: house.id, p_now: new Date().toISOString() }));
+    expectDenied(await house.admin.db.rpc("apply_next_kind", { p_house: house.id, p_now: rightNow().toISOString() }));
   });
 });
