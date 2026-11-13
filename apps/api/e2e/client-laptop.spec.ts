@@ -256,6 +256,24 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   await expect(span).not.toHaveText(words('house.page.week'));
   await shoot(page, "table-month");
 
+  // Week's "•••" drops its menu from itself too, as the Table's does, and a choice runs as it goes.
+  const more = week.getByTestId("more");
+  await more.click();
+  const actions = page.getByTestId("week-menu-menu");
+  await expect(actions).toBeVisible();
+  const dots = await more.boundingBox();
+  const hung = await actions.boundingBox();
+  expect((hung?.x ?? 0) + (hung?.width ?? 0)).toBeCloseTo((dots?.x ?? 0) + (dots?.width ?? 0), 0);
+  expect(hung?.y ?? 0).toBeGreaterThan((dots?.y ?? 0) + (dots?.height ?? 0));
+  await shoot(page, "week-more");
+  await page.keyboard.press("Escape");
+  await expect(actions).toHaveCount(0);
+  await more.click();
+  await page.getByTestId("menu-away").click();
+  await expect(actions).toHaveCount(0);
+  await expect(page).toHaveURL(/\/house\/away/);
+  await page.goBack();
+
   // Track record: the grid, and your breakdown beside it, the two sharing a top edge and filling the room.
   await page.goto("/week/record?span=month");
   const record = page.getByTestId("record-screen");
