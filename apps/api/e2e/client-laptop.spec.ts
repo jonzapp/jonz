@@ -341,17 +341,11 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   await noScrollbars(page);
   await page.getByTestId("tab-house").click();
   await nav.getByTestId("nav-wall").click();
-  // History beside the Wall, each under its name, so their first days start on the same line.
-  const history = page.getByTestId("wall-pair-end").getByTestId("history-section");
-  await expect(history).toBeVisible();
-  await expect(page.getByTestId("wall-pair-start").getByTestId("wall-section")).toBeVisible();
-  expect(await topOf(page.getByTestId("wall-pair-start"))).toBeCloseTo(await topOf(page.getByTestId("wall-pair-end")), 0);
-  expect(await topOf(page.getByTestId("wall-pair-start").getByTestId("wall-day").first())).toBeCloseTo(
-    await topOf(history.getByTestId(/^history-(day|empty)$/).first()),
-    0,
-  );
+  // The Wall alone: no History beside it, its Undo is in each post's sheet.
+  await expect(page.getByTestId("wall-screen").getByTestId("wall-day").first()).toBeVisible();
+  await expect(page.getByTestId("history-section")).toHaveCount(0);
   await expect(page.getByTestId("wall-shows")).toHaveCount(0);
-  await shoot(page, "wall-history");
+  await shoot(page, "wall");
   // The admins beside the rules they can change.
   await nav.getByTestId("nav-rules").click();
   await expect(page.getByTestId("rules-pair-start").getByTestId("rules-panel")).toBeVisible();

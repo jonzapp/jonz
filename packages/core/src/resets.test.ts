@@ -50,7 +50,7 @@ describe("the reset sheet", () => {
       { key: "track", label: "Track record", value: "This week shows open again" },
     ]);
     expect(sheet.told).toBe("Ada and Sam get a notification");
-    expect(sheet.undo).toBe("You can undo this from History until October’s forfeits are split.");
+    expect(sheet.undo).toBe("You can undo this from its post on the Wall until October’s forfeits are split.");
     expect(sheet.confirm).toBe("Reset this week");
   });
 

@@ -3,16 +3,20 @@ import { historyItems, type ActionKind, type HistoryItem } from '@app/core';
 import { snakeKeys } from './base';
 import { callV1 } from './v1';
 
-// History and Undo. house_history says, for each move, who may undo it now;
+// Undo. house_history says, for each move, who may undo it now;
 // undo_action and undo_latest check that again and put it back. The rules
 // live in the migration (20261101090000_undo_history.sql).
 
-/** How many moves a page of History reads. */
-export const HISTORY_PAGE = 60;
+/**
+ * How many of the latest moves are read to find what can still be undone:
+ * the most house_history gives at once, about six weeks of a busy house,
+ * further back than any undo reaches (an admin's, until the month is shared out).
+ */
+export const UNDO_READ = 200;
 
-/** A page of History, newest first: before `before`, when given. */
-export async function loadHistory(houseId: string, before?: Date): Promise<HistoryItem[]> {
-  const rows = await callV1('house_history', { houseId, before: before?.toISOString(), limit: HISTORY_PAGE });
+/** The latest moves, newest first, each saying who may undo it now. */
+export async function loadHistory(houseId: string, limit = UNDO_READ): Promise<HistoryItem[]> {
+  const rows = await callV1('house_history', { houseId, limit });
   return historyItems(
     rows.map((r) => ({
       id: r.id,
@@ -31,7 +35,7 @@ export async function loadHistory(houseId: string, before?: Date): Promise<Histo
   );
 }
 
-/** Undo one move from History. */
+/** Undo one move, from the sheet of its post or its John. */
 export async function undoAction(actionId: string): Promise<void> {
   await callV1('undo_action', { actionId });
 }

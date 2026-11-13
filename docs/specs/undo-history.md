@@ -1,5 +1,11 @@
 # Undo and History
 
+> 13 Nov 2026: History is gone as a list (Glyn: the Wall says it already).
+> Each move's Undo is in the sheet that opens from its post on the Wall
+> (`undoForPost`) or from its John (`undoableOn`), read from
+> `house_history`; an old link to History lands on the Wall. The rules
+> below are unchanged.
+
 Design: https://claude.ai/artifact/WMLo693iKzjmhLMyzE5snL (Glyn picked the
 whole package, 29 Oct 2026). This is step 1 of 3: undo and History. Step 2
 is admins and resets, step 3 Ask Jonz for both.
@@ -58,7 +64,7 @@ writes aren't moves and aren't recorded.
 
 - `house_history(p_house, p_before?, p_limit?)`: moves with `reach`
   (`own`, `admin` or null) for whoever asks.
-- `undo_action(p_action)`: History's Undo.
+- `undo_action(p_action)`: the Undo in a post's or a John's sheet.
 - `undo_latest(p_kind, p_about?)`: the toast's Undo, your latest move of
   that kind about a John, dispute or housemate.
 - Refusals: `cannot_undo`, `already_undone`, `last_admin`.

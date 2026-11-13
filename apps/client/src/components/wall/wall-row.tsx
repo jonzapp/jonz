@@ -1,4 +1,4 @@
-import { REACTION_LABEL, struckAt, type ReactionKind, type StatusIcon, type WallEvent, type WallFamily, type WallFeedRow, type WallIcon, type WallScene, type Words } from '@app/core';
+import { REACTION_LABEL, REACTIONS, struckAt, type ReactionKind, type WallEvent, type WallFamily, type WallFeedRow, type WallIcon, type WallScene, type Words } from '@app/core';
 import {
   BadgeCheckIcon,
   BanknoteIcon,
@@ -15,7 +15,6 @@ import {
   PlaneIcon,
   RepeatIcon,
   ShieldIcon,
-  SmilePlusIcon,
   SparklesIcon,
   ThumbsUpIcon,
   TruckIcon,
@@ -24,8 +23,7 @@ import {
   XIcon,
   type LucideIcon,
 } from 'lucide-react-native';
-import type { ReactNode } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { Alert } from '@/components/alert';
 import { Avatar } from '@/components/avatar';
@@ -35,7 +33,7 @@ import { STATUS_ICON } from '@/components/status-mark';
 import { Meta } from '@/components/text';
 import { Photo } from '@/components/photo';
 import type { HouseView } from '@/hooks/use-house';
-import { FONT, INSET, LEADING, RADIUS, ROW_GAP, SPACE, TABULAR, TAP, useTheme, type Theme } from '@/theme';
+import { FONT, INSET, LEADING, RADIUS, ROW_GAP, SPACE, TABULAR, useTheme, type Theme } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
 // Core says what happened and which icon fits; these draw it.
@@ -145,50 +143,35 @@ export function wallScene(view: HouseView, userId: string, events: readonly Wall
 }
 
 /**
- * One thing the house did, as a row: whoever did it leads (an icon for the
- * house's own news), one sentence, and the meta line's words with the time,
- * which always shows. Tapping it (`onPress`) opens this week's John in the
- * John sheet, or else the event in full; holding it down (`onReactions`)
- * shows the event with all four reactions. Where an event takes reactions,
- * its trailing item is a control of its own, so the reactions are a key
- * press away too: a housemate's tick trails the "Nice one" toggle with the
- * way to all four beside it; anything else, what the house gave it most,
- * or, on a row whose tap opens the John, a way to react at all. `problem`
- * is a reaction's refusal, said under the row it was made on. A John that
- * went wrong wears its status mark, as everywhere else.
+ * One thing the house did, as a row, lined up on its first line of words:
+ * whoever did it leads (an icon for the house's own news), one sentence,
+ * the time level with it at the trailing edge, and under it the meta line's
+ * words, then what the house gave it, counts only. The row holds nothing to
+ * press but itself: tapping it (`onPress`) opens this week's John in the
+ * John sheet, or else the event in full, where its reactions and Undo are;
+ * holding it down (`onReactions`) shows the event with all four reactions.
+ * A flag still open says its time left under the words. `problem` is a
+ * reaction's refusal, said under the row it was made on. A John that went
+ * wrong wears its status mark, as everywhere else.
  */
 export function WallEventRow({
   row,
   problem,
-  onReact,
   onPress,
   onReactions,
 }: {
   row: WallFeedRow;
   problem?: string | null;
-  onReact: (kind: ReactionKind, on: boolean) => void;
   onPress: () => void;
   onReactions: () => void;
 }) {
-  const nice = row.reactions.nice;
-  let control = null;
-  if (row.open) {
-    control = <FlagChip left={row.open.left} late={row.open.late} />;
-  } else if (row.reactable && row.nice) {
-    control = (
-      <View style={styles.pair}>
-        <ReactButton compact onPress={onReactions} />
-        <NiceToggle count={nice.count} mine={nice.mine} onPress={() => onReact('nice', !nice.mine)} onLongPress={onReactions} />
-      </View>
-    );
-  } else if (row.reactable && row.top) {
-    control = <ReactionTally kind={row.top.kind} count={row.top.count} onPress={onReactions} />;
-  } else if (row.reactable && row.board) {
-    control = <ReactButton onPress={onReactions} />;
-  }
+  const words = useWords();
+  const given = REACTIONS.filter((kind) => row.reactions[kind].count > 0);
+  const said = given.map((kind) => words('wall.feed.tally', { label: REACTION_LABEL[kind], count: row.reactions[kind].count }));
   return (
     <>
       <Row
+        top
         leading={
           row.actor ? (
             <View>
@@ -203,13 +186,16 @@ export function WallEventRow({
         sentence={<Sentence parts={row.parts} />}
         // A sentence: two lines, so it isn't cut off mid-way.
         titleLines={2}
-        meta={<WallMeta detail={row.detail} mark={row.mark} />}
-        trailing={<WallSide when={row.when}>{control}</WallSide>}
-        trailingControl
+        meta={<WallMeta row={row} given={given} />}
+        trailing={
+          <Meta numberOfLines={1} style={styles.when}>
+            {row.when}
+          </Meta>
+        }
         tint={row.open ? 'hivis' : undefined}
         onPress={onPress}
         onLongPress={onReactions}
-        accessibilityLabel={row.label}
+        accessibilityLabel={[row.label, ...said].join(', ')}
         testID="wall-event"
       />
       {problem ? (
@@ -238,21 +224,6 @@ function Sentence({ parts }: { parts: WallFeedRow['parts'] }) {
   );
 }
 
-/**
- * The row's trailing column: the time at the top, always shown, and under it
- * the row's one control (a reaction, or an open flag's time left).
- */
-function WallSide({ when, children }: { when: string; children: ReactNode }) {
-  return (
-    <View style={styles.side}>
-      <Meta numberOfLines={1} style={styles.when}>
-        {when}
-      </Meta>
-      {children}
-    </View>
-  );
-}
-
 /** An open flag's time left, on an amber plate; how late it is, on hazard. */
 function FlagChip({ left, late }: { left: string; late: boolean }) {
   const { colors } = useTheme();
@@ -270,115 +241,41 @@ function FlagChip({ left, late }: { left: string; late: boolean }) {
 }
 
 /**
- * The meta line: its words, which are a short sentence of their own. A John
- * that went wrong (`mark`) leads with its status mark, its words in hazard
- * on the card colour.
+ * The meta line: its words, a short sentence of their own, then what the
+ * house gave the event, each reaction's icon and count, yours in ink, so
+ * a row that took reactions is no taller than one that didn't. A John that
+ * went wrong (`mark`) leads with its status mark, its words in hazard on the
+ * card colour. An open flag's time left follows on a line of its own.
  */
-function WallMeta({ detail, mark }: { detail: string | null; mark: StatusIcon | null }) {
+function WallMeta({ row, given }: { row: WallFeedRow; given: readonly ReactionKind[] }) {
   const { colors } = useTheme();
-  const Mark = mark ? STATUS_ICON[mark] : null;
-  if (!detail) return null;
+  const Mark = row.mark ? STATUS_ICON[row.mark] : null;
+  if (!row.detail && given.length === 0 && !row.open) return null;
   return (
-    <View style={styles.meta}>
-      {Mark ? <Mark size={14} color={colors.hazard} aria-hidden style={styles.mark} /> : null}
-      <Meta numberOfLines={2} style={[styles.detail, Mark && { color: colors.hazard }]}>
-        {detail}
-      </Meta>
+    <View style={styles.metaBlock}>
+      {row.detail || given.length > 0 ? (
+        <View style={styles.meta}>
+          {Mark ? <Mark size={14} color={colors.hazard} aria-hidden style={styles.mark} /> : null}
+          {row.detail ? (
+            <Meta numberOfLines={2} style={[styles.detail, Mark && { color: colors.hazard }]}>
+              {row.detail}
+            </Meta>
+          ) : null}
+          {given.map((kind) => {
+            const Icon = REACTION_ICON[kind];
+            const r = row.reactions[kind];
+            const ink = r.mine ? colors.foreground : colors.mutedForeground;
+            return (
+              <View key={kind} aria-hidden style={[styles.count, !row.detail && kind === given[0] && styles.first]} testID={`count-${kind}`}>
+                <Icon size={14} color={ink} aria-hidden />
+                <Meta style={{ color: ink }}>{r.count}</Meta>
+              </View>
+            );
+          })}
+        </View>
+      ) : null}
+      {row.open ? <FlagChip left={row.open.left} late={row.open.late} /> : null}
     </View>
-  );
-}
-
-/** A toggle's state, as each platform hears it: pressed in a browser, selected on a phone, which has no pressed. */
-function toggleState(on: boolean): object {
-  return Platform.OS === 'web' ? { 'aria-pressed': on } : { 'aria-selected': on };
-}
-
-/**
- * A reaction's count beside its icon, or, before anyone gives it, the room
- * for one, so the icons down a group stay in one column.
- */
-function Count({ count, color }: { count: number; color: string }) {
-  if (count > 0) return <Meta style={{ color }}>{count}</Meta>;
-  return (
-    <View aria-hidden style={styles.room}>
-      <Meta>{0}</Meta>
-    </View>
-  );
-}
-
-/**
- * The "Nice one" toggle a housemate's tick carries: borderless, the thumb
- * and how many gave it, muted until it's yours, then ink on the tint.
- * Holding it down shows all four, as holding the row does.
- */
-export function NiceToggle({
-  count,
-  mine,
-  onPress,
-  onLongPress,
-}: {
-  count: number;
-  mine: boolean;
-  onPress: () => void;
-  onLongPress?: () => void;
-}) {
-  const words = useWords();
-  const { colors } = useTheme();
-  const ink = mine ? colors.foreground : colors.mutedForeground;
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={count > 0 ? words('wall.feed.tally', { label: REACTION_LABEL.nice, count }) : REACTION_LABEL.nice}
-      {...toggleState(mine)}
-      onPress={onPress}
-      onLongPress={onLongPress}
-      testID="nice-one"
-      style={({ pressed }) => [styles.pill, { backgroundColor: mine || pressed ? colors.secondary : 'transparent' }]}
-    >
-      <ThumbsUpIcon size={20} color={ink} aria-hidden />
-      <Count count={count} color={ink} />
-    </Pressable>
-  );
-}
-
-/** What the house gave an event most, in the toggle's place: pressing it shows all four. */
-export function ReactionTally({ kind, count, onPress }: { kind: ReactionKind; count: number; onPress: () => void }) {
-  const words = useWords();
-  const { colors } = useTheme();
-  const Icon = REACTION_ICON[kind];
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={words('wall.feed.tally', { label: REACTION_LABEL[kind], count })}
-      onPress={onPress}
-      testID="reaction-tally"
-      style={({ pressed }) => [styles.pill, pressed && { backgroundColor: colors.secondary }]}
-    >
-      <Icon size={20} color={colors.mutedForeground} aria-hidden />
-      <Count count={count} color={colors.mutedForeground} />
-    </Pressable>
-  );
-}
-
-/**
- * The way to all four reactions on a row whose tap opens its John instead:
- * on its own where nobody has reacted yet, or `compact` (no room for a
- * count, kept clear of the row's edge) beside a "Nice one" toggle.
- */
-export function ReactButton({ onPress, compact = false }: { onPress: () => void; compact?: boolean }) {
-  const words = useWords();
-  const { colors } = useTheme();
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={words('wall.feed.react')}
-      onPress={onPress}
-      testID="react"
-      style={({ pressed }) => [compact ? styles.compact : styles.pill, pressed && { backgroundColor: colors.secondary }]}
-    >
-      <SmilePlusIcon size={20} color={colors.mutedForeground} aria-hidden />
-      {compact ? null : <Count count={0} color={colors.mutedForeground} />}
-    </Pressable>
   );
 }
 
@@ -393,13 +290,16 @@ export function WallPhoto({ uri, john }: { uri: string; john: string | null }) {
 }
 
 const styles = StyleSheet.create({
+  metaBlock: { alignItems: 'flex-start', gap: SPACE.xs },
   meta: { flexDirection: 'row', alignItems: 'flex-start', minWidth: 0 },
   mark: { marginRight: SPACE.xs, marginTop: 3, flexShrink: 0 },
   detail: { flexShrink: 1 },
+  // Each count after the words, as tall as their first line.
+  count: { flexDirection: 'row', alignItems: 'center', gap: SPACE.xs, height: 20, marginLeft: SPACE.md, flexShrink: 0 },
+  first: { marginLeft: 0 },
   bold: { fontFamily: FONT.bold },
-  // The time over the control, at the row's trailing edge.
-  side: { alignItems: 'flex-end', alignSelf: 'flex-start', paddingTop: SPACE.sm + 2, gap: 2 },
-  when: { fontSize: 13, lineHeight: 18 },
+  // As tall as the sentence's first line, so the time sits level with it.
+  when: { fontSize: 13, lineHeight: 24 },
   // Sits on the avatar's corner, ringed in the card colour.
   badge: { position: 'absolute', right: -7, bottom: -6 },
   chip: {
@@ -409,25 +309,8 @@ const styles = StyleSheet.create({
     height: 26,
     paddingHorizontal: SPACE.sm,
     borderRadius: RADIUS,
-    marginTop: SPACE.xs,
   },
   chipText: { fontFamily: FONT.extrabold, fontSize: 13, lineHeight: 16, paddingTop: 2, ...TABULAR },
-  // The icon and its count end at the row's trailing edge, the room for a
-  // count kept, so the icons down a group line up.
-  pill: {
-    minHeight: TAP,
-    minWidth: TAP,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: 6,
-    paddingHorizontal: 10,
-    marginRight: -SPACE.sm,
-    borderRadius: RADIUS,
-  },
-  compact: { minHeight: TAP, minWidth: TAP, alignItems: 'center', justifyContent: 'center', borderRadius: RADIUS },
-  pair: { flexDirection: 'row', alignItems: 'center' },
-  room: { opacity: 0 },
   photoRow: { paddingLeft: INSET + LEADING + ROW_GAP, paddingRight: INSET, paddingBottom: SPACE.md },
   photo: { width: '100%', maxWidth: 320, aspectRatio: 4 / 3, borderRadius: RADIUS },
 });

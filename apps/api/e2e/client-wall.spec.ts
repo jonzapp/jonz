@@ -7,7 +7,7 @@ import { photo } from "./photo";
 const words = wordsFor("en", "housemates");
 
 // The Wall in the Expo app's web build: ticks land on it live, a photo
-// receipt shows, and a reaction sticks.
+// receipt shows, and a reaction given in the John sheet sticks.
 test.use({ baseURL: CLIENT_URL });
 
 const made: string[] = [];
@@ -59,15 +59,19 @@ test("ticks land on the Wall with their photos, and take reactions", async ({ br
   const hobTick = events.filter({ hasText: words('wall.feed.ticked', { who: them, john: hob.name }) });
   await expect(hobTick).toBeVisible();
 
-  // The watcher gives it a "Nice one"; it shows at once and stays after a reload.
-  await hobTick.getByRole("button", { name: REACTION_LABEL.nice, exact: true }).click();
-  const nice = hobTick.getByRole("button", { name: words('wall.feed.tally', { label: REACTION_LABEL.nice, count: 1 }) });
-  await expect(nice).toHaveText("1");
-  // A browser hears that it's theirs: pressed, as the web's reactions say.
-  await expect(hobTick.getByRole("button", { name: words('wall.feed.tally', { label: REACTION_LABEL.nice, count: 1 }), pressed: true })).toBeVisible();
+  // The row holds nothing to press but itself: tapping it opens this week's
+  // John, where the watcher gives it a "Nice one". It shows at once, chosen,
+  // and is counted on the row's meta line, and stays after a reload.
+  await expect(hobTick.getByRole("button")).toHaveCount(1);
+  await hobTick.getByRole("button").click();
+  const reactions = wall.getByTestId("john-reactions");
+  await reactions.getByTestId("react-nice").click();
+  await expect(reactions.getByRole("button", { name: words("wall.feed.reactionCount", { label: REACTION_LABEL.nice, count: 1 }), pressed: true })).toBeVisible();
+  await wall.keyboard.press("Escape");
+  await expect(hobTick.getByTestId("count-nice")).toHaveText("1");
   await wall.reload();
-  await expect(nice).toHaveText("1");
-  await expect(hobTick.getByRole("button", { name: words('wall.feed.tally', { label: REACTION_LABEL.nice, count: 1 }), pressed: true })).toBeVisible();
+  await expect(hobTick.getByTestId("count-nice")).toHaveText("1");
+  await expect(hobTick.getByRole("button", { name: new RegExp(words("wall.feed.tally", { label: REACTION_LABEL.nice, count: 1 })) })).toBeVisible();
 
   // The bath needs a photo: the watcher's Next up asks for it. Once ticked, the Wall shows it.
   const bathPage = await contexts[watcher].newPage();
@@ -80,4 +84,35 @@ test("ticks land on the Wall with their photos, and take reactions", async ({ br
   const bathTick = events.filter({ hasText: words('wall.feed.ticked', { who: words('wall.feed.you'), john: bath.name }) });
   await expect(bathTick).toBeVisible();
   await expect(wall.getByTestId("wall-screen").getByRole("img", { name: words('wall.page.photoOf', { john: bath.name }) })).toBeVisible();
+});
+
+test("an admin undoes a housemate's tick from the John sheet its Wall post opens", async ({ browser }) => {
+  const contexts: Record<string, BrowserContext> = { ava: await browser.newContext(), ben: await browser.newContext() };
+  const { userId, houseId, housemateIds } = await dealtHouseInClient(
+    contexts.ava,
+    "Ava Undo",
+    "Flat 31",
+    [{ name: "Clean the sink", category: "kitchen" }, { name: "Dust the shelves", category: "other" }],
+    [{ context: contexts.ben, name: "Ben Undo" }],
+  );
+  made.push(userId, ...housemateIds);
+  const { data: dealt } = await admin().from("assignments").select("id, name, user_id").eq("house_id", houseId);
+  const bens = dealt!.find((a) => a.user_id === housemateIds[0])!;
+
+  // Ben ticks his John.
+  const benPage = await contexts.ben.newPage();
+  await benPage.goto("/today");
+  await benPage.getByTestId("today-screen").getByTestId("next-up").getByRole("button", { name: words("john.row.markDone"), exact: true }).click();
+  await expect.poll(async () => (await admin().from("assignments").select("done_at").eq("id", bens.id).single()).data?.done_at).not.toBeNull();
+
+  // Ava, who made the house and so is its admin, opens his post on the Wall: the John sheet, with Undo.
+  const wall = await contexts.ava.newPage();
+  await wall.goto("/house/wall");
+  const post = wall.getByTestId("wall-screen").getByTestId("wall-event").filter({ hasText: words("wall.feed.ticked", { who: "Ben", john: bens.name }) });
+  await post.getByRole("button", { name: new RegExp(`^Ben ticked ${bens.name}`) }).click();
+  const undo = wall.getByTestId("john-undo").getByTestId("undo-move");
+  await expect(undo).toHaveText(words("wall.history.undo"));
+  await undo.click();
+  await expect.poll(async () => (await admin().from("assignments").select("done_at").eq("id", bens.id).single()).data?.done_at).toBeNull();
+  await expect(wall.getByTestId("john-undo")).toHaveCount(0);
 });

@@ -97,7 +97,7 @@ back into the shared copy.
   and set up means getting it ready, not making it.
 - The phone's own **Share** button ("Share invite") stays. It isn't a game
   word.
-- An admin can still **let off** a result or a month (History's fixes):
+- An admin can still **let off** a result or a month (a John's Fix the result):
   that is the admin waiving it, not a skip.
 
 

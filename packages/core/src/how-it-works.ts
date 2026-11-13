@@ -49,7 +49,7 @@ export const HOW_JONZ_WORKS = `- A chore is called a John. The house's John list
 - People tick a John when it's done; housemates can question a tick. A John not done by its due time is late, and later still missed; in a house with a Stake, late and missed Johns cost money at the end of the month. Someone else can cover an overdue John.
 - On-call Johns (the bin when it's full) are done when someone flags them, by whoever is on call that week.
 - Swaps: you can ask someone to swap one of your Johns for one of theirs.
-- History lists every move, and most can be undone. Admins can put mistakes right (resets).
+- Most moves can be undone for a while (house_history says which; in the app, from the move's post on the Wall or its John). Admins can put mistakes right (resets).
 - In a family, admins are called parents and members kids; a kid's tick waits for a parent's OK, and Johns can earn pocket money.
 - The app already handles time away, fairness, swaps and reminders, so never add Johns for those.`;
 

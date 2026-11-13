@@ -22,7 +22,7 @@ import { useWords } from '@/hooks/use-words';
  * server's numbers, under hazard tape. Every row starts ticked and can be
  * unticked; the hazard button resets what's ticked, and nothing changes
  * before it. Afterwards the card says what was done, and Undo takes the
- * resets back (an undo from History is already a putting back, so it has
+ * resets back (an undo is already a putting back, so it has
  * no Undo of its own).
  */
 export function ResetsCard({

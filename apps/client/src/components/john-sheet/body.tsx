@@ -25,6 +25,8 @@ import { TheirsOpen, YoursOpen } from './open';
 import { FlagPart } from './flag';
 import { CrewPart, RollCall } from './roll-call';
 import { Settled } from './settled';
+import { PostReactions } from './reactions';
+import { UndoPart } from './undo';
 import { Disputed } from './vote';
 import { JohnWhy } from './why';
 import { useWords } from '@/hooks/use-words';
@@ -61,6 +63,8 @@ export interface JohnSheetContext {
   stake: StakeView | null;
   /** What it was opened for (Today's "Needs you" opens it on the vote). */
   focus: JohnSheetFocus | null;
+  /** The Wall post it was opened from (an event's id), whose reactions it shows; null from anywhere else. */
+  post: string | null;
   /** Put the sheet away (after a vote, say). */
   close: () => void;
 }
@@ -70,12 +74,14 @@ export interface JohnSheetContext {
  * be done with it from here, by whose it is and where it has got to (core's
  * johnSheetMode). Yours and open: the tick, and "If you can't" while you
  * hold a token. Being checked: when it stands, and Undo for yours or
- * Dispute for a housemate's, under its photo if it has one. Disputed: the reason, the tally and the vote.
+ * Dispute for a housemate's, under its photo if it has one. Then Undo for
+ * any other move about it that can still be taken back (undo.tsx). Disputed: the reason, the tally and the vote.
  * Settled: the photo, if it had one (the header says what happened). An
  * open flag: Remove flag, for whoever raised it or an admin. A John
  * done together, or with help, says who's on it (crew.ts); ticking one is
  * its roll call, "Who did it?", in place of the rest. Then, whatever its
- * state, an admin's "Fix the result", and "Why?": why it's whose it is, and
+ * state, an admin's "Fix the result", the Wall post's reactions when it
+ * was opened from one (reactions.tsx), and "Why?": why it's whose it is, and
  * what's at stake.
  */
 export function JohnSheetBody({ item, context }: { item: BoardItem; context: JohnSheetContext }) {
@@ -91,9 +97,11 @@ export function JohnSheetBody({ item, context }: { item: BoardItem; context: Joh
       ) : (
         <>
           <ModeContent item={item} context={context} onRollCall={() => setRollCalling(true)} />
+          <UndoPart item={item} context={context} />
           <FlagPart item={item} context={context} />
           <CrewPart item={item} context={context} />
           <ChangeResult item={item} context={context} />
+          <PostReactions context={context} />
         </>
       )}
       <JohnWhy item={item} context={context} />

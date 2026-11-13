@@ -1,16 +1,15 @@
 import type { Currency } from "./domain";
-import { dateRange, dayLabel, dateIn } from "./format";
+import { dateRange } from "./format";
 import { formatMoney } from "./money";
 import { resetWhat } from "./resets";
-import { addDaysTo, localDate } from "./week";
 import { whomOf, whoseOf } from "./word-keys";
 import type { Words } from "./words-for";
 
-// History: everything people did in the house, newest first, in words, with
-// Undo where the database says it still reaches (house_history's `reach`).
-// The database decides who may undo what and until when; this only says it.
+// Undo: the moves people made in the house (house_history), each saying
+// who may still undo it (`reach`), found for the sheet of its Wall post or
+// its John. The database decides who may undo what and until when; this only says it.
 
-/** The moves History records, as house_actions.kind names them. */
+/** The moves that can be undone, as house_actions.kind names them. */
 export const ACTION_KINDS = [
   "tick",
   "cover",
@@ -81,13 +80,54 @@ export function historyItems(rows: readonly ActionRow[]): HistoryItem[] {
   });
 }
 
-/** Only what you did ("Mine"), or everyone's. */
-export function historyFor(items: readonly HistoryItem[], userId: string, mine: boolean): HistoryItem[] {
-  return mine ? items.filter((i) => i.actor === userId) : [...items];
+/** The moves that can still be undone by whoever reads them: not undone yet, and within reach. */
+export function undoable(items: readonly HistoryItem[]): HistoryItem[] {
+  return items.filter((i) => i.reach !== null && i.undoneAt === null);
+}
+
+/** What a Wall post needs to find its move: as the Wall reads an event. */
+export interface PostOfMove {
+  id: string;
+  kind: string;
+  userId: string | null;
+  assignmentId: string | null;
+  data: Record<string, unknown>;
+  createdAt: Date;
 }
 
 /**
- * What a move was, in words, for History's row and the Wall's "undone"
+ * The move a Wall post records, if it can still be undone: what its sheet
+ * offers Undo for, now History is gone. Most moves name their post
+ * (`data.event`); a flag is found by its John, time away by the booking,
+ * and someone removed by their "moved out" post at the same moment.
+ */
+export function undoForPost(post: PostOfMove, items: readonly HistoryItem[]): HistoryItem | null {
+  const open = undoable(items);
+  const named = open.find((i) => i.data.event === post.id);
+  if (named) return named;
+  switch (post.kind) {
+    case "flagged":
+      return open.find((i) => i.kind === "flag" && post.assignmentId !== null && i.assignmentId === post.assignmentId) ?? null;
+    case "away":
+      return open.find((i) => i.kind === "away" && post.data.away != null && i.ref === post.data.away) ?? null;
+    case "moved_out":
+      return open.find((i) => i.kind === "remove" && i.subject === post.userId && Math.abs(i.at.getTime() - post.createdAt.getTime()) <= 60_000) ?? null;
+    default:
+      return null;
+  }
+}
+
+/**
+ * The moves about one John that can still be undone, newest first: its
+ * tick or cover, a flag, a swap either way, a skip, a dispute, a vote, or
+ * an admin's fix of its result. The John sheet offers Undo for each.
+ */
+export function undoableOn(assignmentId: string, items: readonly HistoryItem[]): HistoryItem[] {
+  return undoable(items).filter((i) => i.assignmentId === assignmentId || (i.kind === "swap" && i.ref === assignmentId));
+}
+
+/**
+ * What a move was, in words, for its Undo and the Wall's "undone"
  * line. `nameOf` gives "You" for the viewer, as the Wall's does.
  */
 export function actionLine(
@@ -135,43 +175,3 @@ export function undoneWhat(kind: string, name: string | null, words: Words): str
 }
 
 const UNDONE_KINDS = ["tick", "cover", "flag", "swap", "immunity", "dispute", "vote", "payment", "away", "role", "remove", "reset"] as const;
-
-/** The line under a row: when, and whether it was undone or can't be now. */
-export function historyMeta(item: HistoryItem, time: string, nameOf: (userId: string | null) => string, words: Words): string {
-  if (item.undoneAt) {
-    const by = item.undoneBy && item.undoneBy !== item.actor ? words('wall.history.undoneBy', { name: nameOf(item.undoneBy) }) : words('wall.history.undone');
-    return `${time}, ${by}`;
-  }
-  return item.reach ? time : `${time}, ${words('wall.history.locked')}`;
-}
-
-export interface HistoryDay {
-  /** The local date, YYYY-MM-DD. */
-  date: string;
-  items: HistoryItem[];
-}
-
-/** Items into days in the house's zone, newest day first, keeping their order. */
-export function historyDays(items: readonly HistoryItem[], zone: string): HistoryDay[] {
-  const days: HistoryDay[] = [];
-  for (const item of items) {
-    const date = localDate(item.at, zone);
-    const last = days[days.length - 1];
-    if (last?.date === date) last.items.push(item);
-    else days.push({ date, items: [item] });
-  }
-  return days;
-}
-
-/** "Today", "Yesterday", or the day: "Tue 27 Oct". */
-export function historyDayLabel(day: HistoryDay, now: Date, zone: string, words: Words): string {
-  const today = localDate(now, zone);
-  if (day.date === today) return words('wall.history.today');
-  if (day.date === addDaysTo(today, -1)) return words('wall.history.yesterday');
-  return dayLabel(day.items[0].at, zone, words);
-}
-
-/** "21:04": when a move was, in the house's zone (its day is the section's label). */
-export function historyTime(at: Date, zone: string, words: Words): string {
-  return dateIn(at, "time", zone, words);
-}

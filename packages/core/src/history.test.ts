@@ -2,20 +2,16 @@ import { describe, expect, it } from "vitest";
 
 import {
   actionLine,
-  historyDayLabel,
-  historyDays,
-  historyFor,
   historyItems,
-  historyMeta,
-  historyTime,
   type ActionRow,
+  undoable,
+  undoableOn,
+  undoForPost,
   undoneWhat,
 } from "./history";
 import { wordsFor } from "./words-for";
 
 const words = wordsFor("en", "housemates");
-
-const ZONE = "Europe/London";
 
 function row(overrides: Partial<ActionRow> = {}): ActionRow {
   return {
@@ -34,8 +30,6 @@ function row(overrides: Partial<ActionRow> = {}): ActionRow {
   };
 }
 
-const NAMES: Record<string, string> = { ava: "You", ben: "Ben", cal: "Cal" };
-const nameOf = (id: string | null) => (id ? (NAMES[id] ?? "Someone") : "Someone");
 
 describe("historyItems", () => {
   it("reads rows, dates and reach", () => {
@@ -50,14 +44,6 @@ describe("historyItems", () => {
     expect(historyItems([row({ reach: "everyone" })])[0].reach).toBeNull();
     expect(historyItems([row({ data: null })])[0].data).toEqual({});
     expect(historyItems([])).toEqual([]);
-  });
-});
-
-describe("historyFor", () => {
-  const items = historyItems([row({ id: "1", done_by: "ava" }), row({ id: "2", done_by: "ben" })]);
-  it("keeps only yours for Mine, everything otherwise", () => {
-    expect(historyFor(items, "ava", true).map((i) => i.id)).toEqual(["1"]);
-    expect(historyFor(items, "ava", false).map((i) => i.id)).toEqual(["1", "2"]);
   });
 });
 
@@ -97,51 +83,49 @@ describe("undoneWhat", () => {
   });
 });
 
-describe("historyMeta", () => {
-  it("is the time, plus undone or locked", () => {
-    const [open] = historyItems([row()]);
-    expect(historyMeta(open, "21:04", nameOf, words)).toBe("21:04");
-    const [locked] = historyItems([row({ reach: null })]);
-    expect(historyMeta(locked, "21:04", nameOf, words)).toBe("21:04, Can’t be undone now");
-    const [own] = historyItems([row({ undone_at: "2026-10-29T21:00:00Z", undone_by: "ben" })]);
-    expect(historyMeta(own, "21:04", nameOf, words)).toBe("21:04, Undone");
-    const [admin] = historyItems([row({ undone_at: "2026-10-29T21:00:00Z", undone_by: "ava", reach: null })]);
-    expect(historyMeta(admin, "21:04", nameOf, words)).toBe("21:04, Undone by You");
-  });
-});
-
-describe("historyDays", () => {
-  it("groups by the house's local day, newest first", () => {
-    const items = historyItems([
-      row({ id: "1", created_at: "2026-10-29T23:30:00Z" }), // 23:30 GMT, Thu
-      row({ id: "2", created_at: "2026-10-29T08:00:00Z" }),
-      row({ id: "3", created_at: "2026-10-28T12:00:00Z" }),
-      row({ id: "4", created_at: "2026-10-20T12:00:00Z" }),
-    ]);
-    const days = historyDays(items, ZONE);
-    expect(days.map((d) => [d.date, d.items.map((i) => i.id)])).toEqual([
-      ["2026-10-29", ["1", "2"]],
-      ["2026-10-28", ["3"]],
-      ["2026-10-20", ["4"]],
-    ]);
-    const now = new Date("2026-10-29T23:45:00Z");
-    expect(days.map((d) => historyDayLabel(d, now, ZONE, words))).toEqual(["Today", "Yesterday", "Tue 20 Oct"]);
+describe("undo from a post's sheet", () => {
+  const items = historyItems([
+    row({ id: "tick", data: { name: "Bins", event: "e-tick" } }),
+    row({ id: "done-before", data: { name: "Bins", event: "e-old" }, undone_at: "2026-10-29T21:00:00Z" }),
+    row({ id: "settled", data: { name: "Hob", event: "e-settled" }, reach: null }),
+    row({ id: "flag", kind: "flag", assignment_id: "a-flag", data: { name: "Bin bags" } }),
+    row({ id: "away", kind: "away", assignment_id: null, ref: "away-1", data: { starts_on: "2026-11-02", ends_on: "2026-11-04" } }),
+    row({ id: "remove", kind: "remove", done_by: "ava", subject_user_id: "cal", assignment_id: null, created_at: "2026-10-29T20:04:30Z", data: {} }),
+    row({ id: "swap", kind: "swap", assignment_id: "a-took", ref: "a-gave", data: { name: "Hob", gave: "Bath", event: "e-swap" } }),
+    row({ id: "vote", kind: "vote", assignment_id: "a1", data: { name: "Bins", uphold: true } }),
+  ]);
+  const post = (over: Partial<Parameters<typeof undoForPost>[0]>) => ({
+    id: "e-x", kind: "done", userId: "ben", assignmentId: "a1", data: {}, createdAt: new Date("2026-10-29T20:04:00Z"), ...over,
   });
 
-  it("splits at midnight in the house's zone, not UTC", () => {
-    // 23:30 UTC on 1 Jul is 00:30 on 2 Jul in London (BST).
-    const days = historyDays(historyItems([row({ created_at: "2026-07-01T23:30:00Z" })]), ZONE);
-    expect(days[0].date).toBe("2026-07-02");
+  it("leaves out what's undone or out of reach", () => {
+    expect(undoable(items).map((i) => i.id)).not.toContain("done-before");
+    expect(undoable(items).map((i) => i.id)).not.toContain("settled");
   });
 
-  it("is empty for nothing", () => {
-    expect(historyDays([], ZONE)).toEqual([]);
+  it("finds the move a post names", () => {
+    expect(undoForPost(post({ id: "e-tick" }), items)?.id).toBe("tick");
+    expect(undoForPost(post({ id: "e-swap", kind: "swap_used", assignmentId: "a-took" }), items)?.id).toBe("swap");
   });
-});
 
-describe("historyTime", () => {
-  it("is the time in the house's zone", () => {
-    expect(historyTime(new Date("2026-07-01T20:04:00Z"), ZONE, words)).toBe("21:04");
-    expect(historyTime(new Date("2026-12-01T20:04:00Z"), ZONE, words)).toBe("20:04");
+  it("offers nothing once it's undone or settled", () => {
+    expect(undoForPost(post({ id: "e-old" }), items)).toBeNull();
+    expect(undoForPost(post({ id: "e-settled" }), items)).toBeNull();
+    expect(undoForPost(post({ id: "e-miss", kind: "missed" }), items)).toBeNull();
+  });
+
+  it("finds a flag by its John, time away by its booking, a removal by its post", () => {
+    expect(undoForPost(post({ kind: "flagged", assignmentId: "a-flag" }), items)?.id).toBe("flag");
+    expect(undoForPost(post({ kind: "away", assignmentId: null, data: { away: "away-1" } }), items)?.id).toBe("away");
+    expect(undoForPost(post({ kind: "away", assignmentId: null, data: { away: "away-2" } }), items)).toBeNull();
+    expect(undoForPost(post({ kind: "moved_out", userId: "cal", assignmentId: null }), items)?.id).toBe("remove");
+    // Someone who left of their own accord, a day later: not that removal.
+    expect(undoForPost(post({ kind: "moved_out", userId: "cal", assignmentId: null, createdAt: new Date("2026-10-30T20:04:00Z") }), items)).toBeNull();
+  });
+
+  it("lists every move about one John, a swap from either side", () => {
+    expect(undoableOn("a1", items).map((i) => i.id)).toEqual(["tick", "vote"]);
+    expect(undoableOn("a-gave", items).map((i) => i.id)).toEqual(["swap"]);
+    expect(undoableOn("a-took", items).map((i) => i.id)).toEqual(["swap"]);
   });
 });

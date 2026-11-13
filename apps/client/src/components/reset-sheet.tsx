@@ -24,7 +24,7 @@ export type ResetSheetWords = Omit<ResetWords, 'kind' | 'nameOf' | 'viewerId' | 
 
 /**
  * A reset on its way: what the server says it would change, in words, and
- * the move that makes it. After it, a toast offers Undo (History keeps it
+ * the move that makes it. After it, a toast offers Undo (its post on the Wall keeps it
  * for longer) and `onDone` runs.
  */
 function useReset(ask: ResetAsk | null, userId: string, names: ResetSheetWords, onDone: () => void) {

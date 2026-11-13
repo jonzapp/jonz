@@ -134,7 +134,7 @@ export function StakeOutline() {
   );
 }
 
-/** The Wall (and History): a long list of what happened, each with who did it. */
+/** The Wall: a long list of what happened, each with who did it. */
 export function WallOutline() {
   return (
     <OutlineStack>
