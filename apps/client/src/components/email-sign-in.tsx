@@ -8,7 +8,7 @@ import {
   passwordProblem,
   type EmailStep,
 } from '@app/core';
-import { useState } from 'react';
+import { useState, type ComponentType } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 
 import {
@@ -122,77 +122,6 @@ export function EmailSignIn() {
   };
   const fieldProblem = (field: Problem['field']) => (problem && problem.field === field ? problem.message : undefined);
 
-  const nameField = (
-    <Field
-      label={words('door.email.name')}
-      hint={words('door.email.nameHint')}
-      value={name}
-      onChangeText={setName}
-      problem={fieldProblem('name')}
-      autoCapitalize="words"
-      autoComplete="name"
-      textContentType="name"
-      nativeID="name"
-      maxLength={60}
-      returnKeyType="next"
-      editable={!busy}
-      testID="email-name"
-    />
-  );
-  const emailField = (
-    <Field
-      label={words('door.email.email')}
-      value={email}
-      onChangeText={setEmail}
-      problem={fieldProblem('email')}
-      keyboardType="email-address"
-      autoCapitalize="none"
-      autoCorrect={false}
-      spellCheck={false}
-      // "username", not "email": what password managers file a login under.
-      autoComplete="username"
-      textContentType="username"
-      nativeID="email"
-      returnKeyType={step === 'forgot' ? 'send' : 'next'}
-      editable={!busy}
-      testID="email-address"
-    />
-  );
-  const codeField = (hint: string, onFilled?: (code: string) => void) => (
-    <CodeBoxes
-      label={words('door.email.code')}
-      hint={hint}
-      value={code}
-      onChangeText={setCode}
-      onFilled={onFilled}
-      problem={fieldProblem('code')}
-      editable={!busy}
-      autoFocus
-      testID="email-code"
-    />
-  );
-  const passwordField = (fresh: boolean) => (
-    <Field
-      label={step === 'reset' ? words('door.email.newPassword') : words('door.email.password')}
-      hint={fresh ? words("door.email.passwordHint", { min: PASSWORD_MIN }) : undefined}
-      value={password}
-      onChangeText={setPassword}
-      problem={fieldProblem('password')}
-      secureTextEntry
-      autoCapitalize="none"
-      autoCorrect={false}
-      spellCheck={false}
-      autoComplete={fresh ? 'new-password' : 'current-password'}
-      textContentType={fresh ? 'newPassword' : 'password'}
-      // So iOS's suggested strong password passes our own check.
-      passwordRules={fresh ? `minlength: ${PASSWORD_MIN};` : undefined}
-      nativeID={fresh ? 'new-password' : 'password'}
-      returnKeyType="go"
-      onSubmitEditing={onPhone(submit)}
-      editable={!busy}
-      testID="email-password"
-    />
-  );
   const signIn = () => checked([emailCheck(), password ? null : passwordCheck()], (captcha) => signInWithEmail(email, password, captcha));
   const signUp = () =>
     checked([nameCheck(), emailCheck(), passwordCheck(), agreeCheck()], async (captcha) => {
@@ -211,21 +140,22 @@ export function EmailSignIn() {
     void { 'sign-in': signIn, 'sign-up': signUp, confirm, forgot, reset }[step]();
   }
 
-  const agreeBox = (
-    <Group testID="email-agree">
-      <ChoiceRow
-        role="checkbox"
-        label={words('door.email.agree')}
-        meta={words('door.email.agreeMeta')}
-        checked={agreed}
-        onPress={() => setAgreed((on) => !on)}
-        disabled={busy}
-        testID="email-agree-box"
-      />
-    </Group>
-  );
-  const loose = problem && !problem.field ? <Alert message={problem.message} /> : null;
-  const told = note ? <Meta>{note}</Meta> : null;
+  const Step = STEPS[step];
+  const flow: Flow = {
+    step,
+    busy,
+    typed: { name, email, password, code, agreed },
+    type: { name: setName, email: setEmail, password: setPassword, code: setCode, agreed: setAgreed },
+    fieldProblem,
+    loose: problem && !problem.field ? problem.message : null,
+    note,
+    setNote,
+    go,
+    run,
+    checked,
+    submit,
+    acts: { signIn, signUp, confirm, forgot, reset },
+  };
 
   return (
     <View style={styles.email} testID="email-sign-in">
@@ -234,113 +164,283 @@ export function EmailSignIn() {
         <Meta>{words('door.email.or')}</Meta>
         <View style={[styles.line, { backgroundColor: colors.border }]} />
       </View>
-
-      {step === 'sign-in' ? (
-        <SignInForm onSubmit={submit} style={styles.step}>
-          {emailField}
-          {passwordField(false)}
-          {loose}
-          <Button
-            label={words('door.email.signIn')}
-            busyLabel={words('door.email.signInBusy')}
-            busy={busy}
-            onPress={() => void signIn()}
-            testID="email-sign-in-button"
-          />
-          <TextButton label={words('door.email.toForgot')} align="start" onPress={() => go('forgot')} disabled={busy} />
-          <TextButton label={words('door.email.toSignUp')} align="start" onPress={() => go('sign-up')} disabled={busy} testID="to-sign-up" />
-        </SignInForm>
-      ) : null}
-
-      {step === 'sign-up' ? (
-        <SignInForm onSubmit={submit} style={styles.step}>
-          {nameField}
-          {emailField}
-          {passwordField(true)}
-          {agreeBox}
-          {loose}
-          <Button
-            label={words('door.email.signUp')}
-            busyLabel={words('door.email.signUpBusy')}
-            busy={busy}
-            onPress={() => void signUp()}
-            testID="email-sign-up-button"
-          />
-          <TextButton label={words('door.email.toSignIn')} align="start" onPress={() => go('sign-in')} disabled={busy} />
-        </SignInForm>
-      ) : null}
-
-      {step === 'confirm' ? (
-        <SignInForm onSubmit={submit} style={styles.step}>
-          {codeField(words("door.email.codeHint", { length: CODE_LENGTH, email: email.trim() }), (typed) => void run([], () => confirmEmail(email, typed)))}
-          <Meta>{words('door.email.existingHint')}</Meta>
-          {loose}
-          {told}
-          <Button
-            label={words('door.email.confirm')}
-            busyLabel={words('door.email.confirmBusy')}
-            busy={busy}
-            onPress={() => void confirm()}
-            testID="email-confirm-button"
-          />
-          <TextButton
-            label={words('door.email.resend')}
-            align="start"
-            disabled={busy}
-            onPress={() => void checked([], async (captcha) => {
-              await resendSignUpCode(email, captcha);
-              setNote(words('door.email.resent'));
-            })}
-          />
-          <TextButton label={words('door.email.back')} align="start" onPress={() => go('sign-in')} disabled={busy} />
-        </SignInForm>
-      ) : null}
-
-      {step === 'forgot' ? (
-        <SignInForm onSubmit={submit} style={styles.step}>
-          <Meta>{words('door.email.forgotBody')}</Meta>
-          {emailField}
-          {loose}
-          <Button
-            label={words('door.email.sendReset')}
-            busyLabel={words('door.email.sendResetBusy')}
-            busy={busy}
-            onPress={() => void forgot()}
-            testID="email-forgot-button"
-          />
-          <TextButton label={words('door.email.back')} align="start" onPress={() => go('sign-in')} disabled={busy} />
-        </SignInForm>
-      ) : null}
-
-      {step === 'reset' ? (
-        <SignInForm onSubmit={submit} style={styles.step}>
-          <HiddenUsername email={email.trim()} />
-          {codeField(words("door.email.resetBody", { length: CODE_LENGTH, email: email.trim() }))}
-          {passwordField(true)}
-          {agreeBox}
-          {loose}
-          {told}
-          <Button
-            label={words('door.email.reset')}
-            busyLabel={words('door.email.resetBusy')}
-            busy={busy}
-            onPress={() => void reset()}
-            testID="email-reset-button"
-          />
-          <TextButton
-            label={words('door.email.resend')}
-            align="start"
-            disabled={busy}
-            onPress={() => void checked([], async (captcha) => {
-              await sendPasswordReset(email, captcha);
-              setNote(words('door.email.resent'));
-            })}
-          />
-          <TextButton label={words('door.email.back')} align="start" onPress={() => go('sign-in')} disabled={busy} />
-        </SignInForm>
-      ) : null}
+      <Step flow={flow} />
       <BotCheck round={round} onToken={setToken} />
     </View>
+  );
+}
+
+/** What every step and field of the email sign-in is drawn from. */
+interface Flow {
+  step: EmailStep;
+  busy: boolean;
+  typed: { name: string; email: string; password: string; code: string; agreed: boolean };
+  type: {
+    name: (text: string) => void;
+    email: (text: string) => void;
+    password: (text: string) => void;
+    code: (text: string) => void;
+    agreed: (change: (on: boolean) => boolean) => void;
+  };
+  fieldProblem: (field: Problem['field']) => string | undefined;
+  /** A problem no field owns. */
+  loose: string | null;
+  note: string | null;
+  setNote: (note: string) => void;
+  go: (next: EmailStep) => void;
+  run: (checks: (Problem | null)[], act: () => Promise<void>) => Promise<void>;
+  checked: (checks: (Problem | null)[], act: (captcha: string) => Promise<void>) => Promise<void>;
+  /** What Enter (or a keyboard's Go) does on this step. */
+  submit: () => void;
+  acts: Record<'signIn' | 'signUp' | 'confirm' | 'forgot' | 'reset', () => Promise<void>>;
+}
+
+/** Sign in with an email and password. */
+function SignInStep({ flow }: { flow: Flow }) {
+  const words = useWords();
+  const { busy, loose, go, submit, acts } = flow;
+  return (
+    <SignInForm onSubmit={submit} style={styles.step}>
+      <EmailField flow={flow} />
+      <PasswordField flow={flow} />
+      {loose ? <Alert message={loose} /> : null}
+      <Button
+        label={words('door.email.signIn')}
+        busyLabel={words('door.email.signInBusy')}
+        busy={busy}
+        onPress={() => void acts.signIn()}
+        testID="email-sign-in-button"
+      />
+      <TextButton label={words('door.email.toForgot')} align="start" onPress={() => go('forgot')} disabled={busy} />
+      <TextButton label={words('door.email.toSignUp')} align="start" onPress={() => go('sign-up')} disabled={busy} testID="to-sign-up" />
+    </SignInForm>
+  );
+}
+
+/** Make an account: a name, an email, a password, and the agreement. */
+function SignUpStep({ flow }: { flow: Flow }) {
+  const words = useWords();
+  const { busy, loose, go, submit, acts } = flow;
+  return (
+    <SignInForm onSubmit={submit} style={styles.step}>
+      <NameField flow={flow} />
+      <EmailField flow={flow} />
+      <PasswordField flow={flow} fresh />
+      <AgreeBox flow={flow} />
+      {loose ? <Alert message={loose} /> : null}
+      <Button
+        label={words('door.email.signUp')}
+        busyLabel={words('door.email.signUpBusy')}
+        busy={busy}
+        onPress={() => void acts.signUp()}
+        testID="email-sign-up-button"
+      />
+      <TextButton label={words('door.email.toSignIn')} align="start" onPress={() => go('sign-in')} disabled={busy} />
+    </SignInForm>
+  );
+}
+
+/** Prove the address with the code sent to it; the last box filled sends it. */
+function ConfirmStep({ flow }: { flow: Flow }) {
+  const words = useWords();
+  const { busy, typed, loose, note, go, run, checked, submit, acts, setNote } = flow;
+  return (
+    <SignInForm onSubmit={submit} style={styles.step}>
+      <CodeField flow={flow} hint={words("door.email.codeHint", { length: CODE_LENGTH, email: typed.email.trim() })} onFilled={(filled) => void run([], () => confirmEmail(typed.email, filled))} />
+      <Meta>{words('door.email.existingHint')}</Meta>
+      {loose ? <Alert message={loose} /> : null}
+      {note ? <Meta>{note}</Meta> : null}
+      <Button
+        label={words('door.email.confirm')}
+        busyLabel={words('door.email.confirmBusy')}
+        busy={busy}
+        onPress={() => void acts.confirm()}
+        testID="email-confirm-button"
+      />
+      <TextButton
+        label={words('door.email.resend')}
+        align="start"
+        disabled={busy}
+        onPress={() => void checked([], async (captcha) => {
+          await resendSignUpCode(typed.email, captcha);
+          setNote(words('door.email.resent'));
+        })}
+      />
+      <TextButton label={words('door.email.back')} align="start" onPress={() => go('sign-in')} disabled={busy} />
+    </SignInForm>
+  );
+}
+
+/** Ask for a code to reset a forgotten password. */
+function ForgotStep({ flow }: { flow: Flow }) {
+  const words = useWords();
+  const { busy, loose, go, submit, acts } = flow;
+  return (
+    <SignInForm onSubmit={submit} style={styles.step}>
+      <Meta>{words('door.email.forgotBody')}</Meta>
+      <EmailField flow={flow} />
+      {loose ? <Alert message={loose} /> : null}
+      <Button
+        label={words('door.email.sendReset')}
+        busyLabel={words('door.email.sendResetBusy')}
+        busy={busy}
+        onPress={() => void acts.forgot()}
+        testID="email-forgot-button"
+      />
+      <TextButton label={words('door.email.back')} align="start" onPress={() => go('sign-in')} disabled={busy} />
+    </SignInForm>
+  );
+}
+
+/** Reset the password with the code sent by email. */
+function ResetStep({ flow }: { flow: Flow }) {
+  const words = useWords();
+  const { busy, typed, loose, note, go, checked, submit, acts, setNote } = flow;
+  return (
+    <SignInForm onSubmit={submit} style={styles.step}>
+      <HiddenUsername email={typed.email.trim()} />
+      <CodeField flow={flow} hint={words("door.email.resetBody", { length: CODE_LENGTH, email: typed.email.trim() })} />
+      <PasswordField flow={flow} fresh />
+      <AgreeBox flow={flow} />
+      {loose ? <Alert message={loose} /> : null}
+      {note ? <Meta>{note}</Meta> : null}
+      <Button
+        label={words('door.email.reset')}
+        busyLabel={words('door.email.resetBusy')}
+        busy={busy}
+        onPress={() => void acts.reset()}
+        testID="email-reset-button"
+      />
+      <TextButton
+        label={words('door.email.resend')}
+        align="start"
+        disabled={busy}
+        onPress={() => void checked([], async (captcha) => {
+          await sendPasswordReset(typed.email, captcha);
+          setNote(words('door.email.resent'));
+        })}
+      />
+      <TextButton label={words('door.email.back')} align="start" onPress={() => go('sign-in')} disabled={busy} />
+    </SignInForm>
+  );
+}
+
+const STEPS: Record<EmailStep, ComponentType<{ flow: Flow }>> = {
+  'sign-in': SignInStep,
+  'sign-up': SignUpStep,
+  confirm: ConfirmStep,
+  forgot: ForgotStep,
+  reset: ResetStep,
+};
+
+function NameField({ flow }: { flow: Flow }) {
+  const words = useWords();
+  const { busy, typed, type, fieldProblem } = flow;
+  return (
+    <Field
+      label={words('door.email.name')}
+      hint={words('door.email.nameHint')}
+      value={typed.name}
+      onChangeText={type.name}
+      problem={fieldProblem('name')}
+      autoCapitalize="words"
+      autoComplete="name"
+      textContentType="name"
+      nativeID="name"
+      maxLength={60}
+      returnKeyType="next"
+      editable={!busy}
+      testID="email-name"
+    />
+  );
+}
+
+function EmailField({ flow }: { flow: Flow }) {
+  const words = useWords();
+  const { busy, typed, type, fieldProblem } = flow;
+  return (
+    <Field
+      label={words('door.email.email')}
+      value={typed.email}
+      onChangeText={type.email}
+      problem={fieldProblem('email')}
+      keyboardType="email-address"
+      autoCapitalize="none"
+      autoCorrect={false}
+      spellCheck={false}
+      // "username", not "email": what password managers file a login under.
+      autoComplete="username"
+      textContentType="username"
+      nativeID="email"
+      returnKeyType={flow.step === 'forgot' ? 'send' : 'next'}
+      editable={!busy}
+      testID="email-address"
+    />
+  );
+}
+
+/** The code's boxes; `onFilled` when the last box filled sends it. */
+function CodeField({ flow, hint, onFilled }: { flow: Flow; hint: string; onFilled?: (code: string) => void }) {
+  const words = useWords();
+  const { busy, typed, type, fieldProblem } = flow;
+  return (
+    <CodeBoxes
+      label={words('door.email.code')}
+      hint={hint}
+      value={typed.code}
+      onChangeText={type.code}
+      onFilled={onFilled}
+      problem={fieldProblem('code')}
+      editable={!busy}
+      autoFocus
+      testID="email-code"
+    />
+  );
+}
+
+/** The password: `fresh` for one being chosen (a new account, a reset), with what it must be. */
+function PasswordField({ flow, fresh = false }: { flow: Flow; fresh?: boolean }) {
+  const words = useWords();
+  const { busy, typed, type, fieldProblem } = flow;
+  return (
+    <Field
+      label={flow.step === 'reset' ? words('door.email.newPassword') : words('door.email.password')}
+      hint={fresh ? words("door.email.passwordHint", { min: PASSWORD_MIN }) : undefined}
+      value={typed.password}
+      onChangeText={type.password}
+      problem={fieldProblem('password')}
+      secureTextEntry
+      autoCapitalize="none"
+      autoCorrect={false}
+      spellCheck={false}
+      autoComplete={fresh ? 'new-password' : 'current-password'}
+      textContentType={fresh ? 'newPassword' : 'password'}
+      // So iOS's suggested strong password passes our own check.
+      passwordRules={fresh ? `minlength: ${PASSWORD_MIN};` : undefined}
+      nativeID={fresh ? 'new-password' : 'password'}
+      returnKeyType="go"
+      onSubmitEditing={onPhone(flow.submit)}
+      editable={!busy}
+      testID="email-password"
+    />
+  );
+}
+
+function AgreeBox({ flow }: { flow: Flow }) {
+  const words = useWords();
+  const { busy, typed, type } = flow;
+  return (
+    <Group testID="email-agree">
+      <ChoiceRow
+        role="checkbox"
+        label={words('door.email.agree')}
+        meta={words('door.email.agreeMeta')}
+        checked={typed.agreed}
+        onPress={() => type.agreed((on) => !on)}
+        disabled={busy}
+        testID="email-agree-box"
+      />
+    </Group>
   );
 }
 

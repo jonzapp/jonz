@@ -65,23 +65,10 @@ export function useJohnRow(item: BoardItem, context: JohnRowContext) {
     if (await undo.run(() => (item.coveredBy ? undoCover(item.id) : undoDone(item.id)))) setAsking(false);
   };
 
-  // A photo John's tick box goes to the camera (the file chooser, on the web) first.
-  const leading = plan.ticks ? (
-    <TickBox
-      state={tick.busy ? 'busy' : 'open'}
-      label={plan.tickLabel}
-      onPress={() => void (item.needsPhoto ? tick.tickWithPhoto('camera') : tick.tick())}
-    />
-  ) : plan.tick === 'excused' ? (
-    <RowIcon icon={ShieldIcon} />
-  ) : (
-    <TickBox state={plan.tick} label={plan.tickLabel} />
-  );
-
   return {
     plan,
     open,
-    leading,
+    leading: leadingFor(plan, item, tick),
     trailing: trailingFor(plan, item, {
       undo: () => (warning ? setAsking(true) : void undoNow()),
       undoing: undo.pending,
@@ -105,6 +92,22 @@ export function useJohnRow(item: BoardItem, context: JohnRowContext) {
       />
     ) : null,
   };
+}
+
+/** The row's leading item: the tick box, or a shield when excused. */
+function leadingFor(plan: JohnRowPlan, item: BoardItem, tick: ReturnType<typeof useTick>): ReactNode {
+  // A photo John's tick box goes to the camera (the file chooser, on the web) first.
+  if (plan.ticks) {
+    return (
+      <TickBox
+        state={tick.busy ? 'busy' : 'open'}
+        label={plan.tickLabel}
+        onPress={() => void (item.needsPhoto ? tick.tickWithPhoto('camera') : tick.tick())}
+      />
+    );
+  }
+  if (plan.tick === 'excused') return <RowIcon icon={ShieldIcon} />;
+  return <TickBox state={plan.tick} label={plan.tickLabel} />;
 }
 
 /** The row's one trailing item, from its plan. */

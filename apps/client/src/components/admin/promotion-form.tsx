@@ -64,8 +64,6 @@ export function PromotionForm({ beside = false }: { beside?: boolean }) {
     if (ok) make.mutate(request);
   };
 
-  const money = form.kind === 'percent' || form.kind === 'amount';
-  const needsMonths = form.kind === 'trial' || (money && form.duration === 'months') || (form.kind === 'gift' && form.gift === 'months');
   const preview = (titled: boolean) => (
     <PromotionPreview
       titled={titled}
@@ -89,151 +87,9 @@ export function PromotionForm({ beside = false }: { beside?: boolean }) {
           maxLength={PROMOTION_LIMITS.name}
           testID="promotion-name"
         />
-        <View style={styles.group}>
-          <FieldLabel>{words('admin.promotions.gives')}</FieldLabel>
-          <Segmented
-            label={words('admin.promotions.gives')}
-            options={PROMOTION_KINDS.map((kind) => ({ value: kind, label: words(`admin.promotions.kind.${kind}` as const) }))}
-            value={form.kind}
-            onChange={(kind) => set({ kind })}
-            equal
-            testID="promotion-kind"
-          />
-        </View>
-        {form.kind === 'percent' ? (
-          <Field
-            label={words('admin.promotions.percent')}
-            value={form.percent}
-            onChangeText={(percent) => set({ percent })}
-            problem={shown('gives')}
-            keyboardType="number-pad"
-            maxLength={4}
-            testID="promotion-percent"
-          />
-        ) : null}
-        {form.kind === 'amount' ? (
-          <Field
-            label={words('admin.promotions.amount')}
-            value={form.amount}
-            onChangeText={(amount) => set({ amount })}
-            problem={shown('gives')}
-            hint={words('admin.promotions.amountHint')}
-            keyboardType="decimal-pad"
-            maxLength={8}
-            testID="promotion-amount"
-          />
-        ) : null}
-        {money ? (
-          <View style={styles.group}>
-            <FieldLabel>{words('admin.promotions.duration')}</FieldLabel>
-            <Segmented
-              label={words('admin.promotions.duration')}
-              options={PROMOTION_DURATIONS.map((d) => ({ value: d, label: words(`admin.promotions.durations.${d}` as const) }))}
-              value={form.duration}
-              onChange={(duration) => set({ duration })}
-              equal
-              testID="promotion-duration"
-            />
-          </View>
-        ) : null}
-        {form.kind === 'gift' ? (
-          <View style={styles.group}>
-            <FieldLabel>{words('admin.promotions.giftLength')}</FieldLabel>
-            <Segmented
-              label={words('admin.promotions.giftLength')}
-              options={GIFT_LENGTHS.map((g) => ({ value: g, label: words(`admin.promotions.giftLengths.${g}` as const) }))}
-              value={form.gift}
-              onChange={(gift) => set({ gift })}
-              equal
-              testID="promotion-gift"
-            />
-            <Meta>{words('admin.promotions.giftHint')}</Meta>
-          </View>
-        ) : null}
-        {needsMonths ? (
-          <Field
-            label={words('admin.promotions.months')}
-            value={form.months}
-            onChangeText={(months) => set({ months })}
-            problem={shown('months')}
-            hint={form.kind === 'trial' ? words('admin.promotions.trialHint') : undefined}
-            keyboardType="number-pad"
-            maxLength={2}
-            testID="promotion-months"
-          />
-        ) : null}
-        {form.kind === 'gift' ? null : (
-          <View style={styles.group}>
-            <FieldLabel>{words('admin.promotions.plans')}</FieldLabel>
-            <Group>
-              {PASS_ON_SALE.map((plan) => {
-                const on = form.plans.includes(plan);
-                return (
-                  <ChoiceRow
-                    key={plan}
-                    role="checkbox"
-                    label={PLAN_LABEL[plan]}
-                    meta={planPrice(plan)}
-                    checked={on}
-                    onPress={() => set({ plans: on ? form.plans.filter((p) => p !== plan) : [...form.plans, plan] })}
-                    testID={`promotion-plan-${plan}`}
-                  />
-                );
-              })}
-            </Group>
-            {shown('plans') ? <Alert message={problems.plans!} /> : null}
-          </View>
-        )}
-        <View style={styles.group}>
-          <FieldLabel>{words('admin.promotions.who')}</FieldLabel>
-          <Segmented
-            label={words('admin.promotions.who')}
-            options={PROMOTION_AUDIENCES.map((a) => ({ value: a, label: words(`admin.promotions.audiences.${a}` as const) }))}
-            value={form.audience}
-            onChange={(audience) => set({ audience })}
-            equal
-            testID="promotion-audience"
-          />
-        </View>
-        {form.audience === 'named' ? (
-          <Field
-            label={emails.length ? `${words('admin.promotions.people')}, ${words('admin.promotions.peopleCount', { n: emails.length })}` : words('admin.promotions.people')}
-            value={form.people}
-            onChangeText={(people) => set({ people })}
-            problem={shown('people')}
-            hint={words('admin.promotions.peopleHint')}
-            multiline
-            autoCapitalize="none"
-            autoCorrect={false}
-            keyboardType="email-address"
-            testID="promotion-people-box"
-          />
-        ) : (
-          <Field
-            label={words('admin.promotions.maxUses')}
-            value={form.maxUses}
-            onChangeText={(maxUses) => set({ maxUses })}
-            problem={shown('maxUses')}
-            hint={words('admin.promotions.maxUsesHint')}
-            keyboardType="number-pad"
-            maxLength={7}
-            testID="promotion-max"
-          />
-        )}
-        <View style={styles.group}>
-          <FieldLabel>{words('admin.promotions.ends')}</FieldLabel>
-          <Segmented
-            label={words('admin.promotions.ends')}
-            options={PROMOTION_ENDS.map((e) => ({ value: e, label: words(`admin.promotions.endsChoices.${e}` as const) }))}
-            value={form.ends}
-            onChange={(ends) => set({ ends, endsOn: form.endsOn || formatDay(new Date(Date.now() + 30 * 86_400_000)) })}
-            equal
-            testID="promotion-ends"
-          />
-          {form.ends === 'day' ? (
-            <Field label={words('admin.promotions.endsOn')} value={form.endsOn} onChangeText={(endsOn) => set({ endsOn })} problem={shown('endsAt')} testID="promotion-ends-on" />
-          ) : null}
-        </View>
+        <WhatItGives form={form} set={set} shown={shown} />
+        <WhoGetsIt form={form} set={set} shown={shown} />
+        <WhenItEnds form={form} set={set} shown={shown} />
         <Field
           label={words('admin.promotions.note')}
           value={form.note}
@@ -277,6 +133,189 @@ export function PromotionForm({ beside = false }: { beside?: boolean }) {
         {preview(false)}
       </Sheet>
     </>
+  );
+}
+
+type Problems = ReturnType<typeof promotionProblems> & ReturnType<typeof draftProblems>;
+
+/** What each part of the form is drawn from. `shown` gives a field's problem once Make has been tried. */
+interface Filling {
+  form: PromotionDraft;
+  set: (patch: Partial<PromotionDraft>) => void;
+  shown: (key: keyof Problems) => string | undefined;
+}
+
+/** What it gives: money off, months free or a free Pass, for how long, and on which plans. */
+function WhatItGives({ form, set, shown }: Filling) {
+  const words = useWords();
+  const money = form.kind === 'percent' || form.kind === 'amount';
+  const needsMonths = form.kind === 'trial' || (money && form.duration === 'months') || (form.kind === 'gift' && form.gift === 'months');
+  const plansProblem = shown('plans');
+  return (
+    <>
+      <View style={styles.group}>
+        <FieldLabel>{words('admin.promotions.gives')}</FieldLabel>
+        <Segmented
+          label={words('admin.promotions.gives')}
+          options={PROMOTION_KINDS.map((kind) => ({ value: kind, label: words(`admin.promotions.kind.${kind}` as const) }))}
+          value={form.kind}
+          onChange={(kind) => set({ kind })}
+          equal
+          testID="promotion-kind"
+        />
+      </View>
+      {form.kind === 'percent' ? (
+        <Field
+          label={words('admin.promotions.percent')}
+          value={form.percent}
+          onChangeText={(percent) => set({ percent })}
+          problem={shown('gives')}
+          keyboardType="number-pad"
+          maxLength={4}
+          testID="promotion-percent"
+        />
+      ) : null}
+      {form.kind === 'amount' ? (
+        <Field
+          label={words('admin.promotions.amount')}
+          value={form.amount}
+          onChangeText={(amount) => set({ amount })}
+          problem={shown('gives')}
+          hint={words('admin.promotions.amountHint')}
+          keyboardType="decimal-pad"
+          maxLength={8}
+          testID="promotion-amount"
+        />
+      ) : null}
+      {money ? (
+        <View style={styles.group}>
+          <FieldLabel>{words('admin.promotions.duration')}</FieldLabel>
+          <Segmented
+            label={words('admin.promotions.duration')}
+            options={PROMOTION_DURATIONS.map((d) => ({ value: d, label: words(`admin.promotions.durations.${d}` as const) }))}
+            value={form.duration}
+            onChange={(duration) => set({ duration })}
+            equal
+            testID="promotion-duration"
+          />
+        </View>
+      ) : null}
+      {form.kind === 'gift' ? (
+        <View style={styles.group}>
+          <FieldLabel>{words('admin.promotions.giftLength')}</FieldLabel>
+          <Segmented
+            label={words('admin.promotions.giftLength')}
+            options={GIFT_LENGTHS.map((g) => ({ value: g, label: words(`admin.promotions.giftLengths.${g}` as const) }))}
+            value={form.gift}
+            onChange={(gift) => set({ gift })}
+            equal
+            testID="promotion-gift"
+          />
+          <Meta>{words('admin.promotions.giftHint')}</Meta>
+        </View>
+      ) : null}
+      {needsMonths ? (
+        <Field
+          label={words('admin.promotions.months')}
+          value={form.months}
+          onChangeText={(months) => set({ months })}
+          problem={shown('months')}
+          hint={form.kind === 'trial' ? words('admin.promotions.trialHint') : undefined}
+          keyboardType="number-pad"
+          maxLength={2}
+          testID="promotion-months"
+        />
+      ) : null}
+      {form.kind === 'gift' ? null : (
+        <View style={styles.group}>
+          <FieldLabel>{words('admin.promotions.plans')}</FieldLabel>
+          <Group>
+            {PASS_ON_SALE.map((plan) => {
+              const on = form.plans.includes(plan);
+              return (
+                <ChoiceRow
+                  key={plan}
+                  role="checkbox"
+                  label={PLAN_LABEL[plan]}
+                  meta={planPrice(plan)}
+                  checked={on}
+                  onPress={() => set({ plans: on ? form.plans.filter((p) => p !== plan) : [...form.plans, plan] })}
+                  testID={`promotion-plan-${plan}`}
+                />
+              );
+            })}
+          </Group>
+          {plansProblem ? <Alert message={plansProblem} /> : null}
+        </View>
+      )}
+    </>
+  );
+}
+
+/** Who it's for: anyone with its link (up to a number of uses), or only the people named. */
+function WhoGetsIt({ form, set, shown }: Filling) {
+  const words = useWords();
+  const emails = parsePeople(form.people).emails;
+  return (
+    <>
+      <View style={styles.group}>
+        <FieldLabel>{words('admin.promotions.who')}</FieldLabel>
+        <Segmented
+          label={words('admin.promotions.who')}
+          options={PROMOTION_AUDIENCES.map((a) => ({ value: a, label: words(`admin.promotions.audiences.${a}` as const) }))}
+          value={form.audience}
+          onChange={(audience) => set({ audience })}
+          equal
+          testID="promotion-audience"
+        />
+      </View>
+      {form.audience === 'named' ? (
+        <Field
+          label={emails.length ? `${words('admin.promotions.people')}, ${words('admin.promotions.peopleCount', { n: emails.length })}` : words('admin.promotions.people')}
+          value={form.people}
+          onChangeText={(people) => set({ people })}
+          problem={shown('people')}
+          hint={words('admin.promotions.peopleHint')}
+          multiline
+          autoCapitalize="none"
+          autoCorrect={false}
+          keyboardType="email-address"
+          testID="promotion-people-box"
+        />
+      ) : (
+        <Field
+          label={words('admin.promotions.maxUses')}
+          value={form.maxUses}
+          onChangeText={(maxUses) => set({ maxUses })}
+          problem={shown('maxUses')}
+          hint={words('admin.promotions.maxUsesHint')}
+          keyboardType="number-pad"
+          maxLength={7}
+          testID="promotion-max"
+        />
+      )}
+    </>
+  );
+}
+
+/** When it ends: never, or on a day (a month from now until one is typed). */
+function WhenItEnds({ form, set, shown }: Filling) {
+  const words = useWords();
+  return (
+    <View style={styles.group}>
+      <FieldLabel>{words('admin.promotions.ends')}</FieldLabel>
+      <Segmented
+        label={words('admin.promotions.ends')}
+        options={PROMOTION_ENDS.map((e) => ({ value: e, label: words(`admin.promotions.endsChoices.${e}` as const) }))}
+        value={form.ends}
+        onChange={(ends) => set({ ends, endsOn: form.endsOn || formatDay(new Date(Date.now() + 30 * 86_400_000)) })}
+        equal
+        testID="promotion-ends"
+      />
+      {form.ends === 'day' ? (
+        <Field label={words('admin.promotions.endsOn')} value={form.endsOn} onChangeText={(endsOn) => set({ endsOn })} problem={shown('endsAt')} testID="promotion-ends-on" />
+      ) : null}
+    </View>
   );
 }
 

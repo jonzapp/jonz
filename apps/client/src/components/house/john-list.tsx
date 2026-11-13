@@ -1,36 +1,25 @@
-import { CATEGORIES, CATEGORY_LABEL, CREW_CHOICES, crewLine, CURRENCY_SYMBOL, johnFacts, johnsByKind, listCells, listLine, moneyInput, NEW_JOHN, parseMinAge, parseMoney, pocketMoney, pointsLabel, weeklyEffort, type Category, type GroupDef, type HouseRules, type JohnDef, type Words } from '@app/core';
-import { ListTodoIcon, PlusIcon, SparklesIcon, Trash2Icon } from 'lucide-react-native';
+import { CATEGORY_LABEL, johnFacts, johnsByKind, listCells, listLine, NEW_JOHN, pocketMoney, pointsLabel, weeklyEffort, type GroupDef, type HouseRules, type JohnDef } from '@app/core';
+import { ListTodoIcon, PlusIcon, SparklesIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { archiveJohn, saveJohn } from '@/api/settings';
-import { Alert } from '@/components/alert';
 import { Button } from '@/components/button';
 import { ButtonRow } from '@/components/button-row';
 import { EmptyState } from '@/components/empty-state';
-import { Field } from '@/components/field';
-import { Group, GroupItem } from '@/components/group';
-import { TimingPicker, TimingSentence, type TimingWord } from '@/components/house/john-timing';
+import { Group } from '@/components/group';
+import { JohnForm, type Draft } from '@/components/house/john-form';
 import { useHouseWorkspace } from '@/components/house/workspace';
 import { JohnLine } from '@/components/house/john-line';
 import { useSideBySide } from '@/components/page-columns';
 import { Row } from '@/components/row';
 import { useFilled } from '@/components/screen';
 import { Section } from '@/components/section';
-import { ChoiceRow } from '@/components/setup/choice-row';
-import { PickRow } from '@/components/setup/pick-row';
 import { Sheet } from '@/components/sheet';
 import { Meta } from '@/components/text';
 import { useAskJonz } from '@/hooks/use-ask-jonz';
-import { useMove } from '@/hooks/use-move';
-import { INSET, LABEL_GAP, SECTION_GAP, SPACE } from '@/theme';
+import { INSET, SECTION_GAP, SPACE } from '@/theme';
 import { TourSpot } from '@/components/tour/tour-spot';
 import { useWords } from '@/hooks/use-words';
-
-type Draft = Omit<JohnDef, 'id'> & { id?: string };
-
-const KINDS = CATEGORIES.map((c) => ({ value: c, label: CATEGORY_LABEL[c] }));
-const effort = (words: Words) => Array.from({ length: 20 }, (_, i) => ({ value: i + 1, label: pointsLabel(i + 1, words) }));
 
 /**
  * The house's list of Johns: what it adds up to and Add a John over it, then
@@ -99,60 +88,13 @@ export function JohnList({
     panel.open({ title: john.name, testID: 'john-facts', content: <JohnFacts john={john} group={groupName(john.groupId)} /> });
   };
   const add = () => edit({ ...NEW_JOHN });
-  // Describe your house: the chat's page on a phone, the panel beside the list from WIDE.
-  const ask = useAskJonz();
-  // On a laptop Add a John sits at the top right over the kinds, and each John is a line of lined-up columns.
-  const filled = useFilled() !== null;
-
   return (
     <>
       {johns.length === 0 ? (
-        <TourSpot id="johns.list">
-        <EmptyState
-          icon={ListTodoIcon}
-          title={words('house.setup.noJohns')}
-          body={editable ? words('house.setup.noJohnsBody') : whoAdds}
-          action={
-            editable ? (
-              <View style={styles.emptyActions}>
-                <ButtonRow stacked>
-                  <Button icon={SparklesIcon} label={words('today.nextUp.describe')} {...ask} testID="describe-house" />
-                  <Button variant="outline" icon={PlusIcon} label={words('house.johns.add')} onPress={add} testID="add-john" />
-                </ButtonRow>
-              </View>
-            ) : undefined
-          }
-        />
-        </TourSpot>
+        <NoJohns editable={editable} whoAdds={whoAdds} onAdd={add} />
       ) : (
         <>
-          {filled ? (
-            <View style={styles.toolbar} testID="john-list-bar">
-              <Meta style={styles.toolbarWords}>
-                {words('common.join.then', { first: words('house.johns.count', { n: johns.length }), second: words('house.johns.perWeek', { points: weeklyEffort(johns) }) })}
-              </Meta>
-              {editable ? (
-                // eslint-disable-next-line jonz/button-in-row -- the page's tool beside its count, at the top right (docs/style/layout.md)
-                <Button
-                  variant={quietAdd ? 'outline' : undefined}
-                  icon={PlusIcon}
-                  label={words('house.johns.add')}
-                  onPress={add}
-                  testID="add-john"
-                />
-              ) : null}
-            </View>
-          ) : (
-            // On a phone, the same over the list: what it adds up to, then Add a John.
-            <View style={styles.top} testID="john-list-bar">
-              <Meta>{words('common.join.then', { first: words('house.johns.count', { n: johns.length }), second: words('house.johns.perWeek', { points: weeklyEffort(johns) }) })}</Meta>
-              {editable ? (
-                <ButtonRow>
-                  <Button variant={quietAdd ? 'outline' : undefined} icon={PlusIcon} label={words('house.johns.add')} onPress={add} testID="add-john" />
-                </ButtonRow>
-              ) : null}
-            </View>
-          )}
+          <ListBar johns={johns} onAdd={editable ? add : undefined} quiet={quietAdd} />
           {/* The kinds, not the bar above them: a View round both would take the page's gap between them. */}
           <TourSpot id="johns.list">
           {/* The spot is one box: it keeps the page's gap between the kinds itself. */}
@@ -191,6 +133,68 @@ export function JohnList({
         {reading ? <JohnFacts john={reading} group={groupName(reading.groupId)} /> : null}
       </Sheet>
     </>
+  );
+}
+
+/** The empty list: what to do about it for whoever can add, and who will for everyone else. */
+function NoJohns({ editable, whoAdds, onAdd }: { editable: boolean; whoAdds?: string; onAdd: () => void }) {
+  const words = useWords();
+  // Describe your house: the chat's page on a phone, the panel beside the list from WIDE.
+  const ask = useAskJonz();
+  return (
+    <TourSpot id="johns.list">
+      <EmptyState
+        icon={ListTodoIcon}
+        title={words('house.setup.noJohns')}
+        body={editable ? words('house.setup.noJohnsBody') : whoAdds}
+        action={
+          editable ? (
+            <View style={styles.emptyActions}>
+              <ButtonRow stacked>
+                <Button icon={SparklesIcon} label={words('today.nextUp.describe')} {...ask} testID="describe-house" />
+                <Button variant="outline" icon={PlusIcon} label={words('house.johns.add')} onPress={onAdd} testID="add-john" />
+              </ButtonRow>
+            </View>
+          ) : undefined
+        }
+      />
+    </TourSpot>
+  );
+}
+
+/**
+ * Over the list: what it adds up to, then Add a John (with `onAdd`). On a
+ * laptop the button sits at the top right over the kinds; on a phone, under
+ * the count.
+ */
+function ListBar({ johns, onAdd, quiet }: { johns: JohnDef[]; onAdd?: () => void; quiet: boolean }) {
+  const words = useWords();
+  const filled = useFilled() !== null;
+  const sum = words('common.join.then', {
+    first: words('house.johns.count', { n: johns.length }),
+    second: words('house.johns.perWeek', { points: weeklyEffort(johns) }),
+  });
+  const variant = quiet ? 'outline' : undefined;
+  if (filled) {
+    return (
+      <View style={styles.toolbar} testID="john-list-bar">
+        <Meta style={styles.toolbarWords}>{sum}</Meta>
+        {onAdd ? (
+          // eslint-disable-next-line jonz/button-in-row -- the page's tool beside its count, at the top right (docs/style/layout.md)
+          <Button variant={variant} icon={PlusIcon} label={words('house.johns.add')} onPress={onAdd} testID="add-john" />
+        ) : null}
+      </View>
+    );
+  }
+  return (
+    <View style={styles.top} testID="john-list-bar">
+      <Meta>{sum}</Meta>
+      {onAdd ? (
+        <ButtonRow>
+          <Button variant={variant} icon={PlusIcon} label={words('house.johns.add')} onPress={onAdd} testID="add-john" />
+        </ButtonRow>
+      ) : null}
+    </View>
   );
 }
 
@@ -257,194 +261,6 @@ function JohnFacts({ john, group }: { john: JohnDef; group: string | null }) {
   );
 }
 
-/**
- * One John's details: its name; what it is and who shares it, with a line on
- * what sharing means; then when, as a sentence under a switch between on a
- * schedule and on call ("Every 3 months from November on the first Saturday
- * by 21:00"), each of whose words opens its choices in place of the form;
- * then how much effort, how many do it (a John on a set day: one, 2 to 6, or
- * everyone home, with what that adds up to under it), whether it keeps its
- * day (always dealt on it, whatever the budget), and whether the tick needs a
- * photo. Save is the sheet's one amber button.
- */
-function JohnForm({
-  houseId,
-  rules,
-  initial,
-  groups,
-  family = false,
-  onDone,
-}: {
-  houseId: string;
-  rules: HouseRules;
-  initial: Draft;
-  groups: GroupDef[];
-  family?: boolean;
-  onDone: () => void;
-}) {
-  const words = useWords();
-  const move = useMove(houseId);
-  // Which of the two buttons is waiting: they share one move.
-  const [doing, setDoing] = useState<'save' | 'remove'>('save');
-  const [v, setV] = useState(initial);
-  // In a family, what it earns a kid, as typed.
-  const [pay, setPay] = useState(() => moneyInput(initial.payMinor ?? 0));
-  const [payProblem, setPayProblem] = useState<string | null>(null);
-  // In a family, the youngest a kid can be to be dealt it, as typed (empty for anyone).
-  const [age, setAge] = useState(() => (initial.minAge == null ? '' : String(initial.minAge)));
-  const [ageProblem, setAgeProblem] = useState<string | null>(null);
-  const [picking, setPicking] = useState<TimingWord | null>(null);
-  const set = (patch: Partial<Draft>) => setV((old) => ({ ...old, ...patch }));
-  const sharers = [{ value: '', label: words('house.johns.everyone') }, ...groups.map((g) => ({ value: g.id, label: g.name }))];
-  // What "Shared by" means, under it: how to share with fewer when there's no
-  // group yet, and what a group's John does once one is picked.
-  const sharing = groups.length === 0 ? words('house.johns.noGroups') : v.groupId ? words('house.johns.groupOnly') : null;
-  // Done together: what its points add up to, and who shares them.
-  const line = v.when === 'day' ? crewLine(v.crew, v.points, words) : null;
-  const together = line ? `${line}. ${words('john.crew.hint')}` : null;
-
-  async function save() {
-    setDoing('save');
-    const payMinor = family ? parseMoney(pay) : undefined;
-    if (payMinor === null || (payMinor !== undefined && payMinor < 0)) {
-      setPayProblem(words('house.rules.badAmount'));
-      return;
-    }
-    const minAge = family ? parseMinAge(age) : undefined;
-    if (family && minAge === undefined) {
-      setAgeProblem(words('people.kids.problems.minAge'));
-      return;
-    }
-    if (await move.run(() => saveJohn(houseId, rules, family ? { ...v, payMinor, minAge } : v, new Date()))) onDone();
-  }
-
-  async function remove() {
-    setDoing('remove');
-    if (v.id && (await move.run(() => archiveJohn(houseId, v.id!, new Date())))) onDone();
-  }
-
-  // A word of the timing sentence, pressed: its choices in place of the form until Done.
-  if (picking) {
-    return (
-      <View style={styles.form} testID="john-form">
-        <TimingPicker word={picking} value={v} rules={rules} now={new Date()} onChange={set} onDone={() => setPicking(null)} />
-      </View>
-    );
-  }
-
-  return (
-    <View style={styles.form} testID="john-form">
-      <Group>
-        <GroupItem>
-          <Field
-            label={words('house.johns.name')}
-            placeholder={words('house.johns.namePlaceholder')}
-            value={v.name}
-            onChangeText={(name) => set({ name })}
-            maxLength={60}
-            testID="john-name"
-          />
-        </GroupItem>
-      </Group>
-      <View style={styles.noted}>
-        <Group>
-          <PickRow label={words('house.johns.kind')} options={KINDS} value={v.category} onChange={(category: Category) => set({ category })} />
-          <PickRow label={words('house.johns.sharedBy')} options={sharers} value={v.groupId ?? ''} onChange={(id) => set({ groupId: id || null })} />
-        </Group>
-        {sharing ? (
-          <Meta style={styles.note} testID="sharing-note">
-            {sharing}
-          </Meta>
-        ) : null}
-      </View>
-      <TimingSentence value={v} rules={rules} now={new Date()} onChange={set} onPick={setPicking} />
-      <View style={styles.noted}>
-        <Group>
-          <PickRow label={words('house.johns.effort')} options={effort(words)} value={v.points} onChange={(points) => set({ points })} />
-          {family ? (
-            <GroupItem>
-              <Field
-                label={`${words('house.pocket.johnField')} (${CURRENCY_SYMBOL[rules.currency]})`}
-                value={pay}
-                onChangeText={(text) => {
-                  setPay(text);
-                  setPayProblem(null);
-                }}
-                keyboardType="decimal-pad"
-                hint={words('house.pocket.johnFieldMeta')}
-                problem={payProblem ?? undefined}
-                testID="john-pay"
-              />
-            </GroupItem>
-          ) : null}
-          {family ? (
-            <GroupItem>
-              <Field
-                label={words('people.kids.minAgeField')}
-                value={age}
-                onChangeText={(text) => {
-                  setAge(text);
-                  setAgeProblem(null);
-                }}
-                keyboardType="number-pad"
-                maxLength={2}
-                hint={words('people.kids.minAgeMeta')}
-                problem={ageProblem ?? undefined}
-                testID="john-min-age"
-              />
-            </GroupItem>
-          ) : null}
-          {/* On call stays one person: whoever is on call. */}
-          {v.when === 'day' ? (
-            <PickRow label={words('john.crew.doneBy')} options={CREW_CHOICES.map((n) => ({ value: n, label: words('john.crew.choice', { crew: n }) }))} value={v.crew} onChange={(crew) => set({ crew })} testID="john-crew" />
-          ) : null}
-          {/* On call has no day to keep. */}
-          {v.when === 'day' ? (
-            <ChoiceRow
-              role="checkbox"
-              label={words('week.steady.keepDay')}
-              meta={words('week.steady.keepDayMeta')}
-              metaLines={2}
-              checked={v.keepDay}
-              onPress={() => set({ keepDay: !v.keepDay })}
-              testID="john-keep-day"
-            />
-          ) : null}
-          <ChoiceRow
-            role="checkbox"
-            label={words('house.johns.photo')}
-            meta={words('house.setup.photoMeta')}
-            checked={v.needsPhoto}
-            onPress={() => set({ needsPhoto: !v.needsPhoto })}
-            testID="john-photo"
-          />
-        </Group>
-        {together ? (
-          <Meta style={styles.note} testID="crew-note">
-            {together}
-          </Meta>
-        ) : null}
-      </View>
-      <View style={styles.actions}>
-        {move.problem ? <Alert message={move.problem} /> : null}
-        <ButtonRow stacked>
-          <Button
-            label={v.id ? words('house.johns.save') : words('house.johns.create')}
-            busyLabel={words('house.johns.saving')}
-            busy={move.pending && doing === 'save'}
-            disabled={!v.name.trim()}
-            onPress={() => void save()}
-            testID="save-john"
-          />
-          {v.id ? (
-            <Button variant="hazard" icon={Trash2Icon} label={words('house.johns.remove')} busy={move.pending && doing === 'remove'} busyLabel={words('common.busy.removing')} onPress={() => void remove()} />
-          ) : null}
-        </ButtonRow>
-      </View>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   emptyActions: { gap: SPACE.sm, alignSelf: 'stretch' },
   // Over the kinds on a phone: the list's sum, then Add a John across the column.
@@ -453,9 +269,4 @@ const styles = StyleSheet.create({
   // Above the kinds on a laptop: how much the list adds up to, and Add a John at the right.
   toolbar: { flexDirection: 'row', alignItems: 'center', gap: SPACE.lg, paddingLeft: INSET },
   toolbarWords: { flex: 1 },
-  // A line under a group, on the leading edge.
-  note: { paddingHorizontal: INSET },
-  noted: { gap: LABEL_GAP },
-  form: { gap: SECTION_GAP },
-  actions: { paddingHorizontal: INSET, gap: SPACE.sm },
 });

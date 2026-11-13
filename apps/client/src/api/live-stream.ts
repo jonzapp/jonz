@@ -36,23 +36,20 @@ export function openLiveStream(houseId: string, onChange: () => void, { token, r
     timer = setTimeout(() => void connect(), ms);
   };
 
-  /** One event, as the server writes it: lines of `field: value`. */
   const event = (block: string) => {
-    let id: string | null = null;
-    let name = 'message';
-    let data = false;
-    for (const line of block.split('\n')) {
-      if (line === '' || line.startsWith(':')) continue;
-      const colon = line.indexOf(':');
-      const field = colon < 0 ? line : line.slice(0, colon);
-      const value = colon < 0 ? '' : line.slice(colon + 1).replace(/^ /, '');
-      if (field === 'id') id = value;
-      else if (field === 'event') name = value;
-      else if (field === 'data') data = true;
-      else if (field === 'retry' && /^\d+$/.test(value)) retryMs = Number(value);
-    }
-    if (id !== null) lastId = id;
-    if (data && name === 'change') onChange();
+    const heard = readEvent(block);
+    if (heard.retryMs !== null) retryMs = heard.retryMs;
+    if (heard.id !== null) lastId = heard.id;
+    if (heard.change) onChange();
+  };
+
+  // A stream that ran its course opens the next straight away; one
+  // refused or unreachable waits a little longer each time.
+  // A build the API no longer takes stops listening, and the app turns to Update Jonz.
+  const ended = (status: number, heard: boolean) => {
+    if (status === 426) return markTooOld();
+    failures = status === 200 && heard ? 0 : failures + 1;
+    again(failures === 0 ? retryMs : Math.min(MOST_MS, 1_000 * 2 ** (failures - 1)));
   };
 
   async function connect() {
@@ -60,48 +57,19 @@ export function openLiveStream(houseId: string, onChange: () => void, { token, r
     if (closed) return;
     const current = request();
     xhr = current;
-    let seen = 0;
-    let pending = '';
-    let heard = false;
+    const blocks = blockReader(current);
     const read = () => {
       if (closed || xhr !== current) return;
-      const text = current.responseText ?? '';
-      if (text.length <= seen) return;
-      pending += text.slice(seen).replace(/\r\n?/g, '\n');
-      seen = text.length;
-      heard = true;
-      let end: number;
-      while ((end = pending.indexOf('\n\n')) >= 0) {
-        event(pending.slice(0, end));
-        pending = pending.slice(end + 2);
-      }
+      for (const block of blocks.take()) event(block);
     };
     current.onprogress = read;
     current.onreadystatechange = () => {
       if (current.readyState === 3) read();
       if (current.readyState !== 4 || closed || xhr !== current) return;
       read();
-      // A stream that ran its course opens the next straight away; one
-      // refused or unreachable waits a little longer each time.
-      // A build the API no longer takes stops listening, and the app turns to Update Jonz.
-      if (current.status === 426) {
-        markTooOld();
-        return;
-      }
-      if (current.status === 200 && heard) {
-        failures = 0;
-        again(retryMs);
-      } else {
-        failures += 1;
-        again(Math.min(MOST_MS, 1_000 * 2 ** (failures - 1)));
-      }
+      ended(current.status, blocks.heard);
     };
-    current.open('GET', `${apiBase()}/v1/houses/${encodeURIComponent(houseId)}/live`);
-    current.setRequestHeader('Accept', 'text/event-stream');
-    current.setRequestHeader('Jonz-Client', clientHeader());
-    if (bearer) current.setRequestHeader('Authorization', `Bearer ${bearer}`);
-    if (lastId !== null) current.setRequestHeader('Last-Event-ID', lastId);
-    current.send();
+    send(current, `${apiBase()}/v1/houses/${encodeURIComponent(houseId)}/live`, { bearer, lastId });
   }
 
   void connect();
@@ -112,4 +80,53 @@ export function openLiveStream(houseId: string, onChange: () => void, { token, r
     xhr = null;
     current?.abort();
   };
+}
+
+/** One event, as the server writes it: lines of `field: value`. */
+function readEvent(block: string): { id: string | null; change: boolean; retryMs: number | null } {
+  let id: string | null = null;
+  let name = 'message';
+  let data = false;
+  let retryMs: number | null = null;
+  for (const line of block.split('\n')) {
+    if (line === '' || line.startsWith(':')) continue;
+    const colon = line.indexOf(':');
+    const field = colon < 0 ? line : line.slice(0, colon);
+    const value = colon < 0 ? '' : line.slice(colon + 1).replace(/^ /, '');
+    if (field === 'id') id = value;
+    else if (field === 'event') name = value;
+    else if (field === 'data') data = true;
+    else if (field === 'retry' && /^\d+$/.test(value)) retryMs = Number(value);
+  }
+  return { id, change: data && name === 'change', retryMs };
+}
+
+/** Reads a stream's body as it arrives: `take` gives the whole events new since the last take. */
+function blockReader(current: XMLHttpRequest) {
+  let seen = 0;
+  let pending = '';
+  const reader = {
+    /** Whether anything has arrived at all. */
+    heard: false,
+    take(): string[] {
+      const text = current.responseText ?? '';
+      if (text.length <= seen) return [];
+      pending += text.slice(seen).replace(/\r\n?/g, '\n');
+      seen = text.length;
+      reader.heard = true;
+      const blocks = pending.split('\n\n');
+      pending = blocks.pop() ?? '';
+      return blocks;
+    },
+  };
+  return reader;
+}
+
+function send(current: XMLHttpRequest, url: string, { bearer, lastId }: { bearer: string | null; lastId: string | null }) {
+  current.open('GET', url);
+  current.setRequestHeader('Accept', 'text/event-stream');
+  current.setRequestHeader('Jonz-Client', clientHeader());
+  if (bearer) current.setRequestHeader('Authorization', `Bearer ${bearer}`);
+  if (lastId !== null) current.setRequestHeader('Last-Event-ID', lastId);
+  current.send();
 }
