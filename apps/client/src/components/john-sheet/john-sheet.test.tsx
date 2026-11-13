@@ -1,4 +1,4 @@
-import { BIN_NIGHT, buildStake, historyItems, type ActionRow, type DisputeRow, monthOf, wordsFor } from '@app/core';
+import { BIN_NIGHT, buildStake, historyItems, REACTION_LABEL, wallEvents, type ActionRow, type DisputeRow, type WallRow, monthOf, wordsFor } from '@app/core';
 import type { QueryClient } from '@tanstack/react-query';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
@@ -11,7 +11,7 @@ import { castVote } from '@/api/disputes';
 import { coverJohn, holdCover, markDone, removeFlag, rollCall, spendImmunity, spendSwap, undoCover, undoDone } from '@/api/johns';
 import { pickPhoto } from '@/api/photos';
 import { applyReset, previewReset } from '@/api/resets';
-import { signPhoto } from '@/api/wall';
+import { loadWall, setReaction, signPhoto } from '@/api/wall';
 import { ToastProvider } from '@/components/toast';
 import { houseKey, stakeKey } from '@/hooks/keys';
 import { assignment, snapshot } from '@/testing/house';
@@ -37,7 +37,7 @@ jest.mock('@/api/johns', () => ({
 }));
 jest.mock('@/api/disputes', () => ({ castVote: jest.fn(), raiseDispute: jest.fn() }));
 jest.mock('@/api/photos', () => ({ pickPhoto: jest.fn(), uploadProof: jest.fn() }));
-jest.mock('@/api/wall', () => ({ signPhoto: jest.fn() }));
+jest.mock('@/api/wall', () => ({ signPhoto: jest.fn(), loadWall: jest.fn(), setReaction: jest.fn() }));
 jest.mock('@/api/resets', () => ({ previewReset: jest.fn(), applyReset: jest.fn() }));
 jest.mock('@/api/supabase', () => ({ supabase: {} }));
 // What can still be undone: nothing, unless a test says so.
@@ -49,16 +49,16 @@ const at = (hours: number) => new Date(Date.now() + hours * HOUR).toISOString();
 const MEGAN: Housemate = { userId: 'megan', name: 'Megan', photo: null, role: 'member', streak: 0, immunityTokens: 0, swapTokens: 0, prefs: { days: [], bestTime: null, rather: {} } };
 
 /** Where the sheet is opened from, and what for. */
-const OPENERS: [string, JohnSheetFocus?][] = [['a1'], ['a3'], ['a4'], ['a5'], ['gone'], ['a1', 'swap'], ['a1', 'cant'], ['a4', 'dispute']];
+const OPENERS: [string, JohnSheetFocus?, string?][] = [['a1'], ['a3'], ['a4'], ['a5'], ['gone'], ['a1', 'swap'], ['a1', 'cant'], ['a4', 'dispute'], ['a4', undefined, 'e1']];
 
 /** Somewhere in the house: buttons that open the sheet on a John, and put it away. */
 function Opener() {
   const sheet = useJohnSheet();
   return (
     <>
-      {OPENERS.map(([id, focus]) => (
-        <Pressable key={`${id}${focus ?? ''}`} accessibilityRole="button" onPress={() => sheet.open(id, focus)}>
-          <Text>{focus ? `Open ${id} at ${focus}` : `Open ${id}`}</Text>
+      {OPENERS.map(([id, focus, post]) => (
+        <Pressable key={`${id}${focus ?? ''}${post ?? ''}`} accessibilityRole="button" onPress={() => sheet.open(id, focus, post)}>
+          <Text>{post ? `Open ${id} from ${post}` : focus ? `Open ${id} at ${focus}` : `Open ${id}`}</Text>
         </Pressable>
       ))}
       <Pressable accessibilityRole="button" onPress={sheet.close}>
@@ -548,6 +548,41 @@ describe('undo, now History is gone', () => {
     const body = await openOn('Open a4');
     expect(await within(body).findByRole('button', { name: 'Undo: You swapped Clean the bath for Sam’s Bins out' })).toBeOnTheScreen();
     expect(within(body).getByRole('button', { name: 'Undo: Sam used a skip on Clean the bath' })).toBeOnTheScreen();
+  });
+});
+
+describe('opened from its Wall post', () => {
+  const post = (reactions: WallRow['reactions']) => ({
+    events: wallEvents(
+      [{ id: 'e1', kind: 'done', user_id: 'sam', assignment_id: 'a4', data: { name: 'Clean the bath', points: 4 }, created_at: at(-1), assignments: null, reactions }],
+      'priya',
+    ),
+    photos: {},
+    older: null,
+  });
+
+  it("shows the post's four reactions, yours chosen, and gives one", async () => {
+    (loadWall as jest.Mock).mockResolvedValue(post([{ user_id: 'priya', kind: 'nice' }]));
+    // The database hasn't answered yet: the sheet already shows it.
+    (setReaction as jest.Mock).mockReturnValue(new Promise<void>(() => undefined));
+    await show();
+    const body = await openOn('Open a4 from e1');
+    const reactions = within(await within(body).findByTestId('john-reactions'));
+    expect(reactions.getByRole('header', { name: words('wall.feed.reactions') })).toBeOnTheScreen();
+    expect(reactions.getByRole('button', { name: words('wall.feed.reactionCount', { label: REACTION_LABEL.nice, count: 1 }) })).toBeSelected();
+    await fireEvent.press(reactions.getByTestId('react-fire'));
+    expect(setReaction).toHaveBeenCalledWith('e1', 'priya', 'fire', true);
+    await waitFor(() =>
+      expect(reactions.getByRole('button', { name: words('wall.feed.reactionCount', { label: REACTION_LABEL.fire, count: 1 }) })).toBeSelected(),
+    );
+  });
+
+  it('has no reactions opened from anywhere else', async () => {
+    (loadWall as jest.Mock).mockResolvedValue(post([]));
+    await show();
+    const body = await openOn('Open a4');
+    expect(within(body).queryByTestId('john-reactions')).toBeNull();
+    expect(loadWall).not.toHaveBeenCalled();
   });
 });
 

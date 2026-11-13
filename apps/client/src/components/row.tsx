@@ -73,6 +73,7 @@ export function Row({
   current = false,
   titleLines = 1,
   metaLines = 2,
+  top = false,
   cells,
   leadingControl,
   trailingControl,
@@ -113,6 +114,13 @@ export function Row({
   titleLines?: 1 | 2;
   /** How many lines a meta string may take before it's cut short: 2 unless said. */
   metaLines?: 1 | 2;
+  /**
+   * Line everything up on the first line of words rather than the row's
+   * middle: the leading slot at the top, the words' first line on its
+   * centre, and the trailing item (set to the first line's height) level
+   * with it. For a row whose words may take two lines and grow (a Wall row).
+   */
+  top?: boolean;
   /** Fixed columns between the words and the trailing item, part of the row's press target: Week's table on a laptop. */
   cells?: ReactNode;
   /** `leading` is a control of its own (kept out of the row's press target). Guessed from its props when left out. */
@@ -122,7 +130,7 @@ export function Row({
   testID?: string;
   accessibilityLabel?: string;
 }) {
-  const { colors, scheme } = useTheme();
+  const { colors, scheme, type } = useTheme();
   const inset = useRowInset();
   const [pressed, setPressed] = useState(false);
   const pressable = onPress != null || onLongPress != null || href != null;
@@ -132,7 +140,9 @@ export function Row({
   const tinted = tint === true || selected === true || current;
 
   const leadingSlot = leading != null ? <View style={styles.leading}>{leading}</View> : null;
-  const trailingItem =
+  // On a top-lined row, how far the words' first line sits below the slot's top, to share its centre.
+  const firstLine = top ? (LEADING - (sentence != null ? type.body.lineHeight! : type.rowTitle.lineHeight!)) / 2 : 0;
+  const trailingValue =
     trailing == null ? null : typeof trailing === 'string' || typeof trailing === 'number' ? (
       <Body numberOfLines={2} style={styles.value}>
         {trailing}
@@ -140,11 +150,12 @@ export function Row({
     ) : (
       trailing
     );
+  const trailingItem = top && trailingValue != null ? <View style={{ paddingTop: firstLine }}>{trailingValue}</View> : trailingValue;
 
   const inside = (
     <>
       {leadingOutside ? null : leadingSlot}
-      <View style={styles.words}>
+      <View style={[styles.words, top && { paddingTop: firstLine }]}>
         {sentence != null ? (
           <Body numberOfLines={titleLines}>{sentence}</Body>
         ) : (
@@ -174,7 +185,7 @@ export function Row({
 
   let body: ReactNode;
   if (!pressable) {
-    body = <View style={styles.target}>{inside}</View>;
+    body = <View style={[styles.target, top && styles.topped]}>{inside}</View>;
   } else {
     const target = (
       <Pressable
@@ -189,7 +200,7 @@ export function Row({
         onPressIn={() => setPressed(true)}
         onPressOut={() => setPressed(false)}
         // One flat object: Link's asChild spreads the style, dropping an array.
-        style={StyleSheet.flatten([styles.target, disabled && styles.disabled])}
+        style={StyleSheet.flatten([styles.target, top && styles.topped, disabled && styles.disabled])}
       >
         {inside}
       </Pressable>
@@ -208,6 +219,7 @@ export function Row({
       testID={testID}
       style={[
         styles.row,
+        top && styles.topped,
         { minHeight: hasMeta ? TWO_LINES : ROW_MIN, paddingHorizontal: inset },
         tinted && { backgroundColor: colors.secondary },
         tint === 'hivis' && { backgroundColor: withAlpha(colors.hivis, scheme === 'dark' ? 0.12 : 0.16) },
@@ -251,6 +263,7 @@ const styles = StyleSheet.create({
     paddingVertical: SPACE.sm,
   },
   disabled: { opacity: 0.5 },
+  topped: { alignItems: 'flex-start' },
   leading: { width: LEADING, alignItems: 'center', justifyContent: 'center' },
   words: { flex: 1, minWidth: 0, gap: 2 },
   metaLine: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },

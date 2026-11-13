@@ -12,8 +12,12 @@ import { useWords } from '@/hooks/use-words';
 export type { JohnSheetFocus } from './body';
 
 interface JohnSheetApi {
-  /** Open the sheet on one John (an assignment's id), optionally at what it was opened for. */
-  open: (assignmentId: string, focus?: JohnSheetFocus) => void;
+  /**
+   * Open the sheet on one John (an assignment's id), optionally at what it
+   * was opened for, and from which Wall post (an event's id), whose
+   * reactions it then shows.
+   */
+  open: (assignmentId: string, focus?: JohnSheetFocus, post?: string) => void;
   close: () => void;
 }
 
@@ -42,9 +46,12 @@ export function JohnSheetProvider({ houseId, userId, children }: { houseId: stri
   const { view } = useHouse(houseId, userId);
   // What lateness costs is capped at the stake: the sheet knows how near once a screen has read the Stake.
   const stake = useCached<StakeView>(stakeKey(houseId)) ?? null;
-  const [shown, setShown] = useState<{ id: string; focus: JohnSheetFocus | null } | null>(null);
+  const [shown, setShown] = useState<{ id: string; focus: JohnSheetFocus | null; post: string | null } | null>(null);
 
-  const open = useCallback((id: string, focus?: JohnSheetFocus) => setShown({ id, focus: focus ?? null }), []);
+  const open = useCallback(
+    (id: string, focus?: JohnSheetFocus, post?: string) => setShown({ id, focus: focus ?? null, post: post ?? null }),
+    [],
+  );
   const close = useCallback(() => setShown(null), []);
   const api = useMemo(() => ({ open, close }), [open, close]);
 
@@ -70,11 +77,12 @@ export function JohnSheetProvider({ houseId, userId, children }: { houseId: stri
       board: view.board,
       stake,
       focus: shown.focus,
+      post: shown.post,
       close,
     };
     // Keyed by the John and what it was opened for, so what one John's sheet
     // had under way (a swap, a dispute's words) never carries to the next.
-    body = <JohnSheetBody key={`${item.id}:${shown.focus ?? ''}`} item={item} context={context} />;
+    body = <JohnSheetBody key={`${item.id}:${shown.focus ?? ''}:${shown.post ?? ''}`} item={item} context={context} />;
   }
 
   return (

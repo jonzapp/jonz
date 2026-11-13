@@ -21,6 +21,12 @@
 - A Wall item is a `Row` with a sentence that names its John and an icon
   that says what happened (a flag for a flag), never just "flagged". (Wall
   items A, #55)
+- **A Wall row holds nothing to press but itself,** lined up on its first
+  line of words (`Row top`): the face at the top, the sentence, the time
+  level with it at the trailing edge, then the meta line with what the
+  house gave it as counts after the words, so a row that took reactions is
+  no taller than one that didn't. Reactions and Undo are given in the sheet
+  the row opens, its John's or its post's. (Wall row C, 13 Nov)
 
 ## Groups and spacing
 

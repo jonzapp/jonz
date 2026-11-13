@@ -77,9 +77,8 @@ function WallFor({ houseId, userId }: { houseId: string; userId: string }) {
       <WallEventRow
         row={row}
         problem={problemAt === row.id && open !== row.id ? problem : null}
-        onReact={(kind, on) => react(row.id, kind, on)}
         onPress={() =>
-          row.board ? johnSheet.open(row.board.assignmentId, row.board.vote ? 'vote' : undefined) : show(row.id)
+          row.board ? johnSheet.open(row.board.assignmentId, row.board.vote ? 'vote' : undefined, row.reactable ? row.id : undefined) : show(row.id)
         }
         onReactions={() => show(row.id)}
       />

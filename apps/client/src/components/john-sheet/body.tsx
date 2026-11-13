@@ -25,6 +25,7 @@ import { TheirsOpen, YoursOpen } from './open';
 import { FlagPart } from './flag';
 import { CrewPart, RollCall } from './roll-call';
 import { Settled } from './settled';
+import { PostReactions } from './reactions';
 import { UndoPart } from './undo';
 import { Disputed } from './vote';
 import { JohnWhy } from './why';
@@ -62,6 +63,8 @@ export interface JohnSheetContext {
   stake: StakeView | null;
   /** What it was opened for (Today's "Needs you" opens it on the vote). */
   focus: JohnSheetFocus | null;
+  /** The Wall post it was opened from (an event's id), whose reactions it shows; null from anywhere else. */
+  post: string | null;
   /** Put the sheet away (after a vote, say). */
   close: () => void;
 }
@@ -77,7 +80,8 @@ export interface JohnSheetContext {
  * open flag: Remove flag, for whoever raised it or an admin. A John
  * done together, or with help, says who's on it (crew.ts); ticking one is
  * its roll call, "Who did it?", in place of the rest. Then, whatever its
- * state, an admin's "Fix the result", and "Why?": why it's whose it is, and
+ * state, an admin's "Fix the result", the Wall post's reactions when it
+ * was opened from one (reactions.tsx), and "Why?": why it's whose it is, and
  * what's at stake.
  */
 export function JohnSheetBody({ item, context }: { item: BoardItem; context: JohnSheetContext }) {
@@ -97,6 +101,7 @@ export function JohnSheetBody({ item, context }: { item: BoardItem; context: Joh
           <FlagPart item={item} context={context} />
           <CrewPart item={item} context={context} />
           <ChangeResult item={item} context={context} />
+          <PostReactions context={context} />
         </>
       )}
       <JohnWhy item={item} context={context} />

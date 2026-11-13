@@ -151,12 +151,12 @@ it("folds a day's on-time ticks into one row at its foot, and opens it", async (
   expect(hob).toHaveTextContent(/You ticked Wipe the hob.*19:30/);
 });
 
-it("gives a housemate's tick its Nice one, and shows all four reactions on a long press", async () => {
+it("counts a housemate's tick's reactions on its row, and shows all four on a long press", async () => {
   // The database hasn't answered yet: the sheet already shows it.
   (setReaction as jest.Mock).mockReturnValue(new Promise<void>(() => undefined));
   await open();
   const [bath] = day(words('wall.feed.today')).getAllByTestId('wall-event');
-  expect(within(bath).getByTestId('nice-one')).toBeSelected();
+  expect(within(bath).getByTestId('count-nice', { includeHiddenElements: true })).toHaveTextContent('1');
   await fireEvent(within(bath).getByRole('button', { name: /^Sam ticked Clean the bath/ }), 'longPress');
   const sheet = within(screen.getByTestId('wall-sheet'));
   expect(sheet.getByRole('header', { name: 'Sam ticked Clean the bath' })).toBeOnTheScreen();
@@ -174,7 +174,7 @@ it("opens this week's John in the John sheet, and anything else in full", async 
   await open();
   const [bath, , theirs] = day(words('wall.feed.today')).getAllByTestId('wall-event');
   await fireEvent.press(within(bath).getByRole('button', { name: /^Sam ticked Clean the bath/ }));
-  expect(mockOpen).toHaveBeenCalledWith('a4', undefined);
+  expect(mockOpen).toHaveBeenCalledWith('a4', undefined, 'e1');
   expect(screen.queryByTestId('wall-sheet')).toBeNull();
   await fireEvent.press(within(theirs).getByRole('button'));
   const sheet = within(screen.getByTestId('wall-sheet'));
@@ -182,17 +182,21 @@ it("opens this week's John in the John sheet, and anything else in full", async 
   expect(sheet.getByText(`${words('wall.feed.settled')} Today, 10:00`)).toBeOnTheScreen();
 });
 
-it('puts a reaction back and says why under the row it was made on', async () => {
+it('puts a reaction back and says why under the row it was made on, once its sheet is put away', async () => {
   (setReaction as jest.Mock).mockRejectedValue(new Error("You can’t do that."));
   await open();
   const [bath] = day(words('wall.feed.today')).getAllByTestId('wall-event');
-  await fireEvent.press(within(bath).getByTestId('nice-one'));
+  await fireEvent(within(bath).getByRole('button', { name: /^Sam ticked Clean the bath/ }), 'longPress');
+  await fireEvent.press(within(screen.getByTestId('wall-sheet')).getByTestId('react-nice'));
   expect(setReaction).toHaveBeenCalledWith('e1', 'priya', 'nice', false);
+  await within(screen.getByTestId('wall-sheet')).findByRole('alert');
+  await fireEvent.press(screen.getByTestId('sheet-close'));
+  await waitFor(() => expect(screen.queryByTestId('wall-sheet')).toBeNull());
   const alert = await screen.findByRole('alert');
   expect(alert).toHaveTextContent("You can’t do that.");
   // In today's group, not at the top of the page.
   expect(day(words('wall.feed.today')).getByRole('alert')).toBe(alert);
-  await waitFor(() => expect(within(bath).getByTestId('nice-one')).toBeSelected());
+  await waitFor(() => expect(within(bath).getByTestId('count-nice', { includeHiddenElements: true })).toHaveTextContent('1'));
 });
 
 it('reads older days as you scroll near the end, from where the last one ended', async () => {

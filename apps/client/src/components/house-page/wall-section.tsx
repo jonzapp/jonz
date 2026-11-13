@@ -21,10 +21,10 @@ import { useWords } from '@/hooks/use-words';
 const LATEST = 4;
 
 /**
- * House's third section, the Wall: its latest four events as rows, a
- * housemate's tick with its "Nice one", and "See all" for the whole Wall.
- * Tapping a row about this week's John opens it in the John sheet (at the
- * vote, while a dispute waits on you); any other opens the event in full.
+ * House's third section, the Wall: its latest four events as rows, and
+ * "See all" for the whole Wall. Tapping a row about this week's John opens
+ * it in the John sheet (at the vote, while a dispute waits on you), its
+ * reactions there too; any other opens the event in full.
  * Holding a row down shows it with all four reactions.
  */
 export function WallSection({ houseId, userId, view }: { houseId: string; userId: string; view: HouseView }) {
@@ -81,9 +81,8 @@ export function WallSection({ houseId, userId, view }: { houseId: string; userId
                 key={row.id}
                 row={row}
                 problem={problemAt === row.id && open !== row.id ? problem : null}
-                onReact={(kind, on) => react(row.id, kind, on)}
-                onPress={() =>
-                  row.board ? johnSheet.open(row.board.assignmentId, row.board.vote ? 'vote' : undefined) : show(row.id)
+                        onPress={() =>
+                  row.board ? johnSheet.open(row.board.assignmentId, row.board.vote ? 'vote' : undefined, row.reactable ? row.id : undefined) : show(row.id)
                 }
                 onReactions={() => show(row.id)}
               />
