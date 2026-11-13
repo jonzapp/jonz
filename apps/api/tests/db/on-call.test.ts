@@ -5,6 +5,7 @@ import { adminClient, signedInUser, type Actor } from "@/tests/support/clients";
 import { expectDenied, expectOk, expectRule } from "@/tests/support/expect";
 import { actorFor, addJohns, deal, makeHouse, someoneElse, thisWeek } from "@/tests/support/factories";
 import { problemOf, v1 } from "@/tests/support/v1";
+import { fromNow, rightNow } from "@/tests/support/clock";
 
 /**
  * On-call Johns: the deal puts someone on call, any housemate flags it, and
@@ -32,7 +33,7 @@ async function onCallHouse(names = ["Ava", "Ben", "Cal"], respondHours = 12) {
     [{ name: "Bins", points: 1, onCall: { respondHours, perWeek: 3 } }, { name: "Bathroom", points: 4 }],
     thisWeek(),
   );
-  const dealt = await deal(house.id, thisWeek(), new Date());
+  const dealt = await deal(house.id, thisWeek(), rightNow());
   const { data: onCall } = await db.from("on_call_picks").select("user_id").eq("week_id", dealt.weekId).eq("john_id", bins.id);
   const holder = actorFor(house, onCall![0].user_id);
   return { house, bins, holder, ...dealt };
@@ -82,7 +83,7 @@ describe("raise_flag", () => {
 
     expectOk(await holder.db.rpc("mark_done", { p_assignment: first! }));
     // Once its window has gone by since that flag (fair checks), a new one opens.
-    await db.from("assignments").update({ flagged_at: new Date(Date.now() - 13 * HOUR).toISOString() }).eq("id", first!);
+    await db.from("assignments").update({ flagged_at: fromNow(-13 * HOUR).toISOString() }).eq("id", first!);
     const { data: next, error } = await flagger.db.rpc("raise_flag", { p_john: bins.id });
     expectOk({ error });
     expect(next).not.toBe(first);
@@ -100,7 +101,7 @@ describe("raise_flag", () => {
 
   it("goes to someone home when whoever is on call is away today", async () => {
     const { house, bins, holder } = await onCallHouse(["Ava", "Ben"]);
-    const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(new Date());
+    const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(rightNow());
     expectOk(await db.from("away_periods").insert({ house_id: house.id, user_id: holder.userId, starts_on: today, ends_on: today }));
     const { data: flagId } = await holder.db.rpc("raise_flag", { p_john: bins.id });
     const { data: flag } = await db.from("assignments").select("user_id").eq("id", flagId!).single();
@@ -125,7 +126,7 @@ describe("raise_flag", () => {
     expectDenied(
       await other.db.from("on_call_picks").insert({ week_id: weekId, house_id: house.id, john_id: bins.id, user_id: other.userId }),
     );
-    expectDenied(await other.db.rpc("open_flag", { p_john: bins.id, p_at: new Date().toISOString() }));
+    expectDenied(await other.db.rpc("open_flag", { p_john: bins.id, p_at: rightNow().toISOString() }));
   });
 });
 
@@ -158,7 +159,7 @@ describe("Done it taps", () => {
     expect(await flagsOf(bins.id)).toHaveLength(1);
     // Just done: a housemate can flag it again once its window has gone by since (fair checks).
     expectRule(await cal.db.rpc("raise_flag", { p_john: bins.id }), "flagged_recently");
-    const earlier = new Date(Date.now() - 13 * HOUR).toISOString();
+    const earlier = fromNow(-13 * HOUR).toISOString();
     await db.from("assignments").update({ flagged_at: earlier, done_at: earlier }).eq("id", first!);
     expectOk(await cal.db.rpc("raise_flag", { p_john: bins.id }));
     expect(await flagsOf(bins.id)).toHaveLength(2);
@@ -167,7 +168,7 @@ describe("Done it taps", () => {
   it("counts a Done it again once ten minutes have passed", async () => {
     const { bins, ben } = await benOnCall();
     const { data: first } = await doneIt(ben, bins.id);
-    const earlier = new Date(Date.now() - 11 * 60_000).toISOString();
+    const earlier = fromNow(-11 * 60_000).toISOString();
     await db.from("assignments").update({ flagged_at: earlier, done_at: earlier }).eq("id", first!);
     expectOk(await doneIt(ben, bins.id));
     expect(await flagsOf(bins.id)).toHaveLength(2);

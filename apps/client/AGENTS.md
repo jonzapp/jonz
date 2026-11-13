@@ -408,7 +408,9 @@ the root layout's guard is tested that way with stand-in screens.
   `testQueryClient()` gives each test its own cache with no retries and no
   garbage collection (its five-minute timer would keep Jest running after a
   test that leaves a read pending); `house.ts` builds a house as `loadHouse`
-  reads it, dated around the real clock. A screen that reads a house renders
+  reads it, dated around the tests' pretend now (`clock.ts`: `NOW`, which
+  `jest.setup.js` sets every test's clock to; count from it, never from the
+  real clock). A screen that reads a house renders
   under a stand-in `_layout` with `QueryClientProvider` and `Slot`.
 
 The web build also runs end to end, in `apps/api`'s Playwright

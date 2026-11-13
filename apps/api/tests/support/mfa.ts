@@ -1,9 +1,10 @@
 import { createHmac } from "node:crypto";
 
 import type { Actor } from "./clients";
+import { rightNow } from "./clock";
 
 /** RFC 6238 code for a base32 secret, as an authenticator app would show it. */
-export function totp(secret: string, now = Date.now()): string {
+export function totp(secret: string, now = rightNow().getTime()): string {
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
   let bits = "";
   for (const ch of secret.replace(/=+$/, "").toUpperCase()) bits += alphabet.indexOf(ch).toString(2).padStart(5, "0");

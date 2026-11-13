@@ -1,11 +1,12 @@
 import { monthOf } from "@app/core";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { tickHouse } from "@/lib/engine/tick";
 import { adminClient, type Actor } from "@/tests/support/clients";
 import { expectDenied, expectOk, expectRule } from "@/tests/support/expect";
 import { actorFor, addJohns, deal, makeHouse, reread, thisWeek, weeksAgo, ZONE } from "@/tests/support/factories";
 import { problemOf, v1 } from "@/tests/support/v1";
+import { fromNow, rightNow } from "@/tests/support/clock";
 
 /**
  * Shared Jonz (20261102090000_shared_jonz.sql): a John done together is
@@ -20,7 +21,7 @@ const DAY = 24 * HOUR;
 const db = adminClient();
 
 /** Garden tidy for two, 4 pts each, dealt this week in a house of three: the two holders and the one who wasn't dealt it. */
-async function gardenTidy(week = thisWeek(), now = new Date()) {
+async function gardenTidy(week = thisWeek(), now = rightNow()) {
   const house = await makeHouse(["Ava", "Ben", "Cal"]);
   await addJohns(house.id, [{ name: "Garden tidy", points: 4, crew: 2 }], week);
   const { assignments } = await deal(house.id, week, now);
@@ -50,7 +51,7 @@ describe("dealing a John done together", () => {
   it("gives everyone home a place when it's done by everyone", async () => {
     const house = await makeHouse(["Ava", "Ben", "Cal"]);
     await addJohns(house.id, [{ name: "Big clean", points: 3, crew: 0 }], thisWeek());
-    const { assignments } = await deal(house.id, thisWeek(), new Date());
+    const { assignments } = await deal(house.id, thisWeek(), rightNow());
     expect(new Set(assignments.map((a) => a.user_id)).size).toBe(3);
     expect(new Set(assignments.map((a) => a.job_id)).size).toBe(1);
   });
@@ -109,7 +110,7 @@ describe("the roll call", () => {
   it("splits a John done by one with whoever helped: bins with a helper is 1 each", async () => {
     const house = await makeHouse(["Ava", "Ben"]);
     await addJohns(house.id, [{ name: "Bins", points: 2 }], thisWeek());
-    const { assignments } = await deal(house.id, thisWeek(), new Date());
+    const { assignments } = await deal(house.id, thisWeek(), rightNow());
     const bins = assignments[0];
     const owner = actorFor(house, bins.user_id);
     const helper = house.everyone.find((x) => x.userId !== owner.userId)!;
@@ -200,7 +201,7 @@ describe("covering a John done together", () => {
     await db.from("houses").update({ cover_grace_hours: 0 }).eq("id", house.id);
     await db
       .from("assignments")
-      .update({ due_at: new Date(Date.now() - 4 * HOUR).toISOString() })
+      .update({ due_at: fromNow(-4 * HOUR).toISOString() })
       .in("id", assignments.map((a) => a.id));
     expectRule(await ticker.db.rpc("cover_john", { p_assignment: first.id }), "tick_it_yourself");
     expectOk(await spare.db.rpc("cover_john", { p_assignment: first.id }));
@@ -217,13 +218,13 @@ describe("what the clock does with a roll call", () => {
     const { house, first, second, ticker, other, spare } = await gardenTidy(week, week.startsAt);
     const month = monthOf(new Date(first.due_at), ZONE);
     // Only this one John in the month: later weeks the clock deals have nothing in them.
-    await db.from("johns").update({ archived_at: new Date().toISOString() }).eq("house_id", house.id);
+    await db.from("johns").update({ archived_at: rightNow().toISOString() }).eq("house_id", house.id);
 
     // Tick it now, as if still inside its late window; then put the tick (and who did it) back an hour
     // before it was due.
     await db
       .from("assignments")
-      .update({ closes_at: new Date(Date.now() + DAY).toISOString() })
+      .update({ closes_at: fromNow(DAY).toISOString() })
       .in("id", [first.id, second.id]);
     expectOk(await ticker.db.rpc("roll_call", { p_assignment: first.id, p_crew: [ticker.userId, spare.userId] }));
     const back = new Date(new Date(first.due_at).getTime() - HOUR).toISOString();

@@ -10,6 +10,7 @@ import { renderPages } from '@/testing/pages';
 
 import { WallSection } from './wall-section';
 import { wordsFor } from '@app/core';
+import { NOW } from '@/testing/clock';
 
 const words = wordsFor('en', 'housemates');
 
@@ -20,7 +21,7 @@ jest.mock('@/api/supabase', () => ({ supabase: {} }));
 const mockOpen = jest.fn();
 jest.mock('@/components/john-sheet', () => ({ useJohnSheet: () => ({ open: mockOpen, close: jest.fn() }) }));
 
-const ago = (hours: number) => new Date(Date.now() - hours * 3_600_000).toISOString();
+const ago = (hours: number) => new Date(NOW.getTime() - hours * 3_600_000).toISOString();
 
 const row = (overrides: Partial<WallRow>): WallRow => ({
   id: 'e',

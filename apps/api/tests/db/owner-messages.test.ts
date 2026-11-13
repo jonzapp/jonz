@@ -8,6 +8,7 @@ import { adminClient, signedInUser, visitor, type Actor } from "@/tests/support/
 import { expectDenied, expectOk, expectRule } from "@/tests/support/expect";
 import { makeHouse, type House } from "@/tests/support/factories";
 import { passSecondFactor } from "@/tests/support/mfa";
+import { rightNow } from "@/tests/support/clock";
 
 /**
  * Messages from the owner (docs/specs/owner-admin.md, "Messages"): only the
@@ -21,7 +22,7 @@ import { passSecondFactor } from "@/tests/support/mfa";
  */
 
 const db = adminClient();
-const FAR = () => Date.now() + 30_000;
+const FAR = () => rightNow().getTime() + 30_000;
 
 let house: House;
 let ava: Actor;

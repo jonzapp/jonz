@@ -9,6 +9,7 @@ import PassScreen from '@/app/(house)/house/pass';
 import { ToastProvider } from '@/components/toast';
 import { snapshot } from '@/testing/house';
 import { renderPages, untilRead } from '@/testing/pages';
+import { NOW } from '@/testing/clock';
 
 const words = wordsFor('en', 'housemates');
 
@@ -85,14 +86,14 @@ it('tells a house given the Pass for good, and offers it no plans', async () => 
 });
 
 it('says where the money goes, and offers a free Pass only once the free month has ended', async () => {
-  withPass({ plan: 'trial', until: new Date(Date.now() + 12 * DAY), buyerId: null });
+  withPass({ plan: 'trial', until: new Date(NOW.getTime() + 12 * DAY), buyerId: null });
   await open();
   expect(screen.getByTestId('pass-money')).toHaveTextContent(words('house.pass.money'));
   expect(screen.queryByTestId('pass-ask-free')).toBeNull();
 });
 
 it('lets a house past its free month ask for the Pass free', async () => {
-  withPass({ plan: 'trial', until: new Date(Date.now() - DAY), buyerId: null });
+  withPass({ plan: 'trial', until: new Date(NOW.getTime() - DAY), buyerId: null });
   await open();
   expect(screen.getByTestId('pass-hardship')).toHaveTextContent(words('house.pass.hardship'));
   expect(screen.getByRole('link', { name: words('house.pass.askFree') })).toBeOnTheScreen();
@@ -100,7 +101,7 @@ it('lets a house past its free month ask for the Pass free', async () => {
 });
 
 it('shows a house on its free month the plans in its own currency, Yearly first, not yet for sale', async () => {
-  withPass({ plan: 'trial', until: new Date(Date.now() + 12 * DAY - 60_000), buyerId: null });
+  withPass({ plan: 'trial', until: new Date(NOW.getTime() + 12 * DAY - 60_000), buyerId: null });
   await open();
   expect(screen.getByTestId('pass-lead')).toHaveTextContent(words('house.pass.lead'));
   expect(screen.getByTestId('pass-line')).toHaveTextContent(words('house.pass.trialLeft', { days: 12 }));
@@ -111,7 +112,7 @@ it('shows a house on its free month the plans in its own currency, Yearly first,
 });
 
 it('says who bought it', async () => {
-  withPass({ plan: 'yearly', until: new Date(Date.now() + 200 * DAY), buyerId: 'sam' });
+  withPass({ plan: 'yearly', until: new Date(NOW.getTime() + 200 * DAY), buyerId: 'sam' });
   await open();
   expect(screen.getByTestId('pass-line')).toHaveTextContent(words('house.pass.boughtBy', { name: 'Sam' }), { exact: false });
 });
@@ -122,7 +123,7 @@ describe('selling on the web', () => {
   });
 
   it('sends a house on its free month to Checkout for the plan pressed, and says when it first pays', async () => {
-    withPass({ plan: 'trial', until: new Date(Date.now() + 12 * DAY - 60_000), buyerId: null });
+    withPass({ plan: 'trial', until: new Date(NOW.getTime() + 12 * DAY - 60_000), buyerId: null });
     (passCheckoutUrl as jest.Mock).mockResolvedValue('https://checkout.stripe.com/c/pay/cs_test_1');
     await open();
     expect(screen.queryByTestId('pass-soon')).toBeNull();
@@ -133,7 +134,7 @@ describe('selling on the web', () => {
   });
 
   it('says why not when the API refuses, and stays put', async () => {
-    withPass({ plan: 'trial', until: new Date(Date.now() - DAY), buyerId: null });
+    withPass({ plan: 'trial', until: new Date(NOW.getTime() - DAY), buyerId: null });
     (passCheckoutUrl as jest.Mock).mockRejectedValue(new ApiRequestError(words('house.pass.checkoutClosed'), 503));
     await open();
     expect(screen.queryByTestId('pass-first-charge')).toBeNull();
@@ -143,7 +144,7 @@ describe('selling on the web', () => {
   });
 
   it('gives the buyer of a paid plan Manage plan, and no plans to buy', async () => {
-    withPass({ plan: 'monthly', until: new Date(Date.now() + 20 * DAY), buyerId: 'priya' });
+    withPass({ plan: 'monthly', until: new Date(NOW.getTime() + 20 * DAY), buyerId: 'priya' });
     (passBillingUrl as jest.Mock).mockResolvedValue('https://billing.stripe.com/p/session/test_1');
     await open();
     expect(screen.queryByTestId('plan-yearly')).toBeNull();
@@ -155,13 +156,13 @@ describe('selling on the web', () => {
   });
 
   it('offers Manage plan only to the housemate who bought it', async () => {
-    withPass({ plan: 'yearly', until: new Date(Date.now() + 200 * DAY), buyerId: 'sam' });
+    withPass({ plan: 'yearly', until: new Date(NOW.getTime() + 200 * DAY), buyerId: 'sam' });
     await open();
     expect(screen.queryByTestId('pass-manage')).toBeNull();
   });
 
   it('thanks the buyer back from Checkout until the Pass shows', async () => {
-    withPass({ plan: 'trial', until: new Date(Date.now() + 12 * DAY), buyerId: null });
+    withPass({ plan: 'trial', until: new Date(NOW.getTime() + 12 * DAY), buyerId: null });
     await open('/house/pass?bought=1');
     expect(screen.getByTestId('pass-bought')).toHaveTextContent(words('house.pass.bought'));
   });

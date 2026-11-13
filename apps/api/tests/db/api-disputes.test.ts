@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { adminClient, signedInUser, type Actor } from "@/tests/support/clients";
 import { actorFor, addJohns, deal, makeHouse, someoneElse, thisWeek, type House } from "@/tests/support/factories";
 import { APP_ORIGIN, preflight, problemOf, v1 } from "@/tests/support/v1";
+import { rightNow } from "@/tests/support/clock";
 
 /**
  * Disputing a tick and voting on it (raise_dispute and cast_vote on /v1),
@@ -31,7 +32,7 @@ const castVote = (actor: Actor | undefined, disputeId: string, body: unknown) =>
 async function tickedHouse(names: string[]) {
   const house = await makeHouse(names);
   await addJohns(house.id, [{ name: "Bins" }, { name: "Bathroom", points: 4 }], thisWeek());
-  const { assignments } = await deal(house.id, thisWeek(), new Date());
+  const { assignments } = await deal(house.id, thisWeek(), rightNow());
   const john = assignments[0];
   const owner = actorFor(house, john.user_id);
   const { error } = await owner.db.rpc("mark_done", { p_assignment: john.id });

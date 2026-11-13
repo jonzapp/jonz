@@ -57,8 +57,13 @@ has its own rules in `database.md`, and how the app looks has `docs/style/`.
     lint rule without the reason beside it. *Checked by lint.*
 11. **Tests are code too.** Shared set-up instead of copy-paste, one reason
     to fail per test, and never the real clock: a test passes the same on
-    any day at any hour. *Checked: `new Date()` and `Date.now()` in a test
-    file.*
+    any day at any hour. Client tests start at one pretend time
+    (`apps/client/src/testing/clock.ts`); unit tests pass a fixed time in.
+    Database and browser tests have to share Postgres's own clock, so they
+    read it in one place only, `apps/api/tests/support/clock.ts`, and deal
+    next week rather than assert near midnight or a week's end. *Checked:
+    `new Date()` and `Date.now()` in a test file; that one file is the only
+    listed exception.*
 12. **Cleanups change nothing a person can see.** They go in their own PRs,
     apart from features, with the tests green before and after.
 

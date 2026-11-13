@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { adminClient, signedInUser } from "@/tests/support/clients";
 import { expectDenied, expectOk } from "@/tests/support/expect";
 import { addJohns, makeHouse, thisWeek } from "@/tests/support/factories";
+import { rightNow } from "@/tests/support/clock";
 
 /**
  * Who can do what (supabase/migrations/20261118090000_permissions.sql): the
@@ -99,7 +100,7 @@ describe("the John list", () => {
     expectOk(await house.admin.db.from("johns").insert(row(house.id, "Kitchen")));
     const id = await aJohn(house.id);
     expectOk(await house.admin.db.from("johns").update({ points: 2 }).eq("id", id));
-    expectOk(await house.admin.db.from("johns").update({ archived_at: new Date().toISOString() }).eq("id", id));
+    expectOk(await house.admin.db.from("johns").update({ archived_at: rightNow().toISOString() }).eq("id", id));
     const { data } = await db.from("johns").select("points, archived_at").eq("id", id).single();
     expect(data!.points).toBe(2);
     expect(data!.archived_at).not.toBeNull();
@@ -111,7 +112,7 @@ describe("the John list", () => {
     await ben.db.from("johns").insert(row(house.id, "Sneaky"));
     const id = await aJohn(house.id);
     await ben.db.from("johns").update({ points: 9 }).eq("id", id);
-    await ben.db.from("johns").update({ archived_at: new Date().toISOString() }).eq("id", id);
+    await ben.db.from("johns").update({ archived_at: rightNow().toISOString() }).eq("id", id);
     const { data: list } = await db.from("johns").select("name, points, archived_at").eq("house_id", house.id);
     expect(list).toEqual([{ name: "Bins out", points: 1, archived_at: null }]);
   });

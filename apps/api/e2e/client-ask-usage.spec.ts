@@ -2,6 +2,7 @@ import { type AskUsage, wordsFor } from "@app/core";
 import { expect, test, type Page } from "@playwright/test";
 
 import { CLIENT_URL, cleanUp, signInToClient } from "./auth";
+import { rightNow } from "../tests/support/clock";
 
 const words = wordsFor("en", "housemates");
 
@@ -20,7 +21,7 @@ test.afterEach(async ({ page }) => page.unrouteAll({ behavior: "ignoreErrors" })
 
 async function newHouse(page: Page) {
   await page.goto("/house/new");
-  await page.getByLabel(words('door.welcome.name')).fill(`Usage ${Date.now() % 10_000}`);
+  await page.getByLabel(words('door.welcome.name')).fill(`Usage ${rightNow().getTime() % 10_000}`);
   await page.getByTestId("create-house").click();
   await expect(page).toHaveURL(/\/today$/);
 }

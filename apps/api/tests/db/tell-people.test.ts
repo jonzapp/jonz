@@ -4,6 +4,7 @@ import { tickHouse, pushIn, type PushMessage, type SaidPush } from "@/lib/engine
 import { adminClient } from "@/tests/support/clients";
 import { expectOk, expectRule } from "@/tests/support/expect";
 import { actorFor, addJohns, deal, makeHouse, reread, someoneElse, thisWeek } from "@/tests/support/factories";
+import { fromNow, rightNow } from "@/tests/support/clock";
 import { wordsFor } from '@app/core';
 
 const words = wordsFor('en', 'housemates');
@@ -31,9 +32,9 @@ function recorder() {
 async function overdueJohn(overdueHours: number) {
   const house = await makeHouse();
   await addJohns(house.id, [{ name: "Bins" }], thisWeek());
-  const { assignments } = await deal(house.id, thisWeek(), new Date());
+  const { assignments } = await deal(house.id, thisWeek(), rightNow());
   const a = assignments[0];
-  expectOk(await db.from("assignments").update({ due_at: new Date(Date.now() - overdueHours * HOUR).toISOString() }).eq("id", a.id));
+  expectOk(await db.from("assignments").update({ due_at: fromNow(-overdueHours * HOUR).toISOString() }).eq("id", a.id));
   return { house, a, owner: actorFor(house, a.user_id), coverer: someoneElse(house, a.user_id) };
 }
 
@@ -78,14 +79,14 @@ describe("the clock's pushes", () => {
     expectOk(await coverer.db.rpc("cover_john", { p_assignment: a.id }));
     expectOk(await house.admin.db.from("houses").update({ late_forfeit_minor: 200 }).eq("id", house.id));
     const first = recorder();
-    await tickHouse(db, house.id, new Date(), first.notify);
+    await tickHouse(db, house.id, rightNow(), first.notify);
     const covered = first.sent.find((s) => s.message.title === words('wall.tell.coveredTitle', { john: "Bins" }));
     expect(covered?.to).toEqual([owner.userId]);
     const rules = first.sent.find((s) => s.message.title === words('wall.tell.rulesTitle'));
     expect(rules?.to.sort()).toEqual(house.everyone.map((m) => m.userId).filter((id) => id !== house.admin.userId).sort());
 
     const again = recorder();
-    await tickHouse(db, house.id, new Date(), again.notify);
+    await tickHouse(db, house.id, rightNow(), again.notify);
     expect(again.sent.filter((s) => s.message.title === words('wall.tell.coveredTitle', { john: "Bins" }) || s.message.title === words('wall.tell.rulesTitle'))).toEqual(
       [],
     );
@@ -94,16 +95,16 @@ describe("the clock's pushes", () => {
   it("tells the owner once when covering opens on their John, and not before", async () => {
     const early = await overdueJohn(1);
     const before = recorder();
-    await tickHouse(db, early.house.id, new Date(), before.notify);
+    await tickHouse(db, early.house.id, rightNow(), before.notify);
     expect(before.sent.filter((s) => s.message.title === words('wall.tell.coverOpenTitle', { john: "Bins" }))).toEqual([]);
 
     const { house, a, owner } = await overdueJohn(4);
     const first = recorder();
-    await tickHouse(db, house.id, new Date(), first.notify);
+    await tickHouse(db, house.id, rightNow(), first.notify);
     expect(first.sent.filter((s) => s.message.title === words('wall.tell.coverOpenTitle', { john: "Bins" })).map((s) => s.to)).toEqual([[owner.userId]]);
     expect((await reread("assignments", a.id)).cover_told_at).not.toBeNull();
     const again = recorder();
-    await tickHouse(db, house.id, new Date(), again.notify);
+    await tickHouse(db, house.id, rightNow(), again.notify);
     expect(again.sent.filter((s) => s.message.title === words('wall.tell.coverOpenTitle', { john: "Bins" }))).toEqual([]);
   });
 });
@@ -114,12 +115,12 @@ describe("I'm on it (hold_cover)", () => {
     expectRule(await coverer.db.rpc("hold_cover", { p_assignment: a.id }), "not_yours");
     const { data: until } = await owner.db.rpc("hold_cover", { p_assignment: a.id });
     const held = Date.parse(until!);
-    expect(Math.abs(held - (Date.now() + 2 * HOUR))).toBeLessThan(5 * 60_000);
+    expect(Math.abs(held - (fromNow(2 * HOUR).getTime()))).toBeLessThan(5 * 60_000);
     expectRule(await coverer.db.rpc("cover_john", { p_assignment: a.id }), "cover_held");
     expectRule(await owner.db.rpc("hold_cover", { p_assignment: a.id }), "cover_held_once");
 
     // Once the hold is up, it can be covered.
-    expectOk(await db.from("assignments").update({ cover_hold_ends_at: new Date(Date.now() - 1000).toISOString() }).eq("id", a.id));
+    expectOk(await db.from("assignments").update({ cover_hold_ends_at: fromNow(-1000).toISOString() }).eq("id", a.id));
     expectOk(await coverer.db.rpc("cover_john", { p_assignment: a.id }));
   });
 

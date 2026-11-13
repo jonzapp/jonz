@@ -5,6 +5,7 @@ import { tickHouse } from "@/lib/engine/tick";
 import { adminClient } from "@/tests/support/clients";
 import { expectDenied, expectOk, expectRule } from "@/tests/support/expect";
 import { actorFor, addJohns, deal, makeHouse, reread, someoneElse, thisWeek, weeksAgo, ZONE } from "@/tests/support/factories";
+import { fromNow, rightNow } from "@/tests/support/clock";
 
 /**
  * Covering a housemate's John: cover_john once it's past due plus the
@@ -19,9 +20,9 @@ const db = adminClient();
 async function overdueJohn(overdueHours: number, john: { name: string; points?: number; needsPhoto?: boolean } = { name: "Bins" }) {
   const house = await makeHouse();
   await addJohns(house.id, [john], thisWeek());
-  const { assignments } = await deal(house.id, thisWeek(), new Date());
+  const { assignments } = await deal(house.id, thisWeek(), rightNow());
   const a = assignments[0];
-  await db.from("assignments").update({ due_at: new Date(Date.now() - overdueHours * HOUR).toISOString() }).eq("id", a.id);
+  await db.from("assignments").update({ due_at: fromNow(-overdueHours * HOUR).toISOString() }).eq("id", a.id);
   const owner = actorFor(house, a.user_id);
   const coverer = someoneElse(house, a.user_id);
   const third = house.everyone.find((x) => x.userId !== a.user_id && x.userId !== coverer.userId)!;
@@ -121,10 +122,10 @@ describe("what the clock does with a cover", () => {
     const third = house.everyone.find((x) => x.userId !== a.user_id && x.userId !== coverer.userId)!;
     const month = monthOf(new Date(a.due_at), ZONE);
     // Only this one John in the month: later weeks the clock deals have nothing in them.
-    await db.from("johns").update({ archived_at: new Date().toISOString() }).eq("house_id", house.id);
+    await db.from("johns").update({ archived_at: rightNow().toISOString() }).eq("house_id", house.id);
 
     // Cover it now, as if it were still inside its late window; then put the tick back in that week.
-    await db.from("assignments").update({ closes_at: new Date(Date.now() + DAY).toISOString() }).eq("id", a.id);
+    await db.from("assignments").update({ closes_at: fromNow(DAY).toISOString() }).eq("id", a.id);
     expectOk(await coverer.db.rpc("cover_john", { p_assignment: a.id }));
     await db.from("assignments").update({ done_at: new Date(new Date(a.due_at).getTime() + 5 * HOUR).toISOString() }).eq("id", a.id);
 

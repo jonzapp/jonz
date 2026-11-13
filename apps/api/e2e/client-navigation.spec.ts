@@ -3,6 +3,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 import { CLIENT_URL, cleanUp, dealtHouseInClient, signInToClient } from "./auth";
 import { backToHouse, showHouseOverview, toHousePage } from "./house-pages";
+import { rightNow } from "../tests/support/clock";
 
 const words = wordsFor("en", "housemates");
 
@@ -89,7 +90,7 @@ test.describe("a house with its week dealt", () => {
   let mateId: string;
 
   test.beforeEach(async ({ context, browser }) => {
-    houseName = `Nav ${Date.now() % 100_000}`;
+    houseName = `Nav ${rightNow().getTime() % 100_000}`;
     const mate = await browser.newContext();
     const { userId, housemateIds } = await dealtHouseInClient(
       context,
@@ -223,7 +224,7 @@ test.describe("a house with its week dealt", () => {
 test.describe("a house just started", () => {
   test("Today's setup card opens the John list, and back goes to House", async ({ context, page }) => {
     made.push(await signInToClient(context, "Cal Nav"));
-    const name = `Setup ${Date.now() % 100_000}`;
+    const name = `Setup ${rightNow().getTime() % 100_000}`;
     await newHouse(page, name);
     await page.getByTestId("setup-johns").click();
     await expect(page).toHaveURL(/\/house\/johns$/);
@@ -236,7 +237,7 @@ test.describe("a house just started", () => {
     page,
   }) => {
     made.push(await signInToClient(context, "Dee Nav"));
-    const name = `Describe ${Date.now() % 100_000}`;
+    const name = `Describe ${rightNow().getTime() % 100_000}`;
     await newHouse(page, name);
     await page.getByTestId("setup-describe").click();
     await chatOpened(page);
@@ -258,7 +259,7 @@ test.describe("a house just started", () => {
     page,
   }) => {
     made.push(await signInToClient(context, "Eli Nav"));
-    const name = `List ${Date.now() % 100_000}`;
+    const name = `List ${rightNow().getTime() % 100_000}`;
     await newHouse(page, name);
     await page.getByRole("tab", { name: words('common.section.house') }).click();
     await toHousePage(page, "to-johns").click();
@@ -283,7 +284,7 @@ test.describe("outside a house", () => {
 
   test("a page that isn't there offers a way home", async ({ context, page }) => {
     made.push(await signInToClient(context, "Fay Nav"));
-    await newHouse(page, `Lost ${Date.now() % 100_000}`);
+    await newHouse(page, `Lost ${rightNow().getTime() % 100_000}`);
     await page.goto("/house/nope");
     await expect(page.getByRole("heading", { name: words('common.title.notFound') })).toBeVisible();
     await page.getByRole("link", { name: words('door.notFound.back') }).click();
