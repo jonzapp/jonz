@@ -1,4 +1,4 @@
-import { addDaysTo, dateRange, dayName, localDate, wordsFor } from '@app/core';
+import { addDaysTo, dateRange, dayName, wordsFor } from '@app/core';
 import { fireEvent, screen, within } from 'expo-router/testing-library';
 
 import { loadHouse } from '@/api/board';
@@ -18,7 +18,8 @@ jest.mock('@/hooks/use-membership', () => ({
   useMembership: () => ({ session: { user: { id: 'priya' } }, house: { id: 'h1', name: 'Flat 3' } }),
 }));
 
-const today = localDate(new Date(), 'Europe/London');
+// A pretend clock, never the real one: Wednesday 21 October 2026, noon in London.
+const today = '2026-10-21';
 const tomorrow = addDaysTo(today, 1);
 const nextDay = addDaysTo(today, 2);
 
@@ -31,6 +32,12 @@ async function open() {
   await renderPages({ 'you/moving': MovingScreen }, '/you/moving');
   await untilRead(words);
 }
+
+beforeAll(() => {
+  jest.useFakeTimers({ now: new Date('2026-10-21T11:00:00Z'), advanceTimers: true });
+});
+
+afterAll(() => jest.useRealTimers());
 
 beforeEach(() => {
   jest.clearAllMocks();

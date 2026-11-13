@@ -15,12 +15,14 @@ const made: string[] = [];
 test.afterAll(async () => cleanUp(made));
 
 /**
- * Tap a day in the booking calendar, by the name a screen reader hears
- * ("Wednesday 28 October"). It opens on this week and runs on for five, across
- * months, so the next few days are always on it.
+ * Tap a day in the booking sheet's month calendar, by the name a screen reader
+ * hears ("Wednesday 28 October"), a month on if it isn't on the one showing.
  */
 async function tapDay(page: Page, date: string) {
-  await page.getByTestId("away-form").getByRole("button", { name: dayName(date, words), exact: true }).click();
+  const form = page.getByTestId("away-form");
+  const day = form.getByRole("button", { name: dayName(date, words), exact: true });
+  if ((await day.count()) === 0) await form.getByRole("button", { name: words('house.away.laterMonth') }).click();
+  await day.click();
 }
 
 /** Opens a day's sheet from Who's away, a month on if the day is in the next one. */
@@ -79,12 +81,15 @@ test("make a group, give it a John, and book time away", async ({ browser }) => 
   const today = localDate(new Date(), "Europe/London");
   const from = addDaysTo(today, 2);
   const to = addDaysTo(today, 5);
+  // Booking is in a sheet from under Who's away.
+  await page.getByTestId("open-book-away").click();
   await tapDay(page, from);
   await tapDay(page, to);
   const away = page.getByTestId("away-form");
   await expect(away.getByTestId("away-picked")).toContainText("Away");
   await away.getByLabel(words('house.away.note')).fill("Lisbon");
   await away.getByTestId("book-away").click();
+  await expect(away).toHaveCount(0);
   // Yours, to cancel, and on the month as yours.
   await expect(awayPage.getByTestId("my-trip")).toContainText(dateRange(from, to, words));
   await expect(awayPage.getByTestId("my-trip")).toContainText("Lisbon");

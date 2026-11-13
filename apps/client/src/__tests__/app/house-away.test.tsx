@@ -189,29 +189,38 @@ describe('your own trips', () => {
 });
 
 describe('booking', () => {
-  it('opens the calendar on this week, the first you can book', async () => {
+  async function openBooking() {
     await open();
+    await fireEvent.press(within(screen.getByTestId('away-panel')).getByRole('button', { name: words('house.away.book') }));
+    return within(await screen.findByTestId('away-form'));
+  }
+
+  it("opens a sheet under Who's away, its calendar the same month shape", async () => {
+    await open();
+    // One calendar on the page: booking is in a sheet.
+    expect(screen.queryByTestId('date-range')).toBeNull();
+    const form = await openBooking();
+    expect(form.getByText(words('house.away.howItWorks'))).toBeOnTheScreen();
     const calendar = within(screen.getByTestId('date-range'));
-    expect(calendar.getByText('October–November 2026')).toBeOnTheScreen();
-    // The week began on Monday; the days already gone can't be picked.
-    expect(calendar.getByRole('button', { name: 'Monday 19 October' })).toBeDisabled();
+    expect(calendar.getByText('October 2026')).toBeOnTheScreen();
+    // Weeks from the house's Monday, so October opens on 28 September; the days already gone can't be picked.
+    expect(calendar.getByRole('button', { name: 'Monday 28 September' })).toBeDisabled();
+    expect(calendar.getByRole('button', { name: 'Tuesday 20 October' })).toBeDisabled();
     expect(calendar.getByRole('button', { name: 'Wednesday 21 October' })).toBeEnabled();
-    expect(calendar.getByRole('button', { name: words('house.setup.earlier') })).toBeDisabled();
-    expect(calendar.queryByRole('button', { name: 'Monday 23 November' })).toBeNull();
-    await fireEvent.press(calendar.getByRole('button', { name: words('house.setup.later') }));
-    // On four weeks, keeping the last in view.
-    expect(calendar.getByRole('button', { name: 'Monday 16 November' })).toBeOnTheScreen();
-    expect(calendar.getByRole('button', { name: 'Monday 14 December' })).toBeOnTheScreen();
+    // The next month's first days fill the last week, and can be picked.
+    expect(calendar.getByRole('button', { name: 'Sunday 1 November' })).toBeEnabled();
+    expect(calendar.getByRole('button', { name: words('house.away.earlierMonth') })).toBeDisabled();
+    await fireEvent.press(calendar.getByRole('button', { name: words('house.away.laterMonth') }));
+    expect(calendar.getByText('November 2026')).toBeOnTheScreen();
+    expect(calendar.getByRole('button', { name: 'Monday 30 November' })).toBeOnTheScreen();
     expect(calendar.queryByRole('button', { name: 'Wednesday 21 October' })).toBeNull();
-    await fireEvent.press(calendar.getByRole('button', { name: words('house.setup.earlier') }));
+    await fireEvent.press(calendar.getByRole('button', { name: words('house.away.earlierMonth') }));
     expect(calendar.getByRole('button', { name: 'Wednesday 21 October' })).toBeOnTheScreen();
   });
 
-  it('books your time away from the calendar, and says what it moved', async () => {
+  it('books your time away, closes, and says what it moved', async () => {
     (setAway as jest.Mock).mockResolvedValue({ before: 2, handed: 1, skipped: 0 });
-    await open();
-    const form = within(screen.getByTestId('away-form'));
-    expect(form.getByText(words('house.away.howItWorks'))).toBeOnTheScreen();
+    const form = await openBooking();
     expect(form.getByRole('button', { name: words('house.setup.book') })).toBeDisabled();
     expect(form.getByText(words('house.away.pickFrom'))).toBeOnTheScreen();
     await fireEvent.press(form.getByRole('button', { name: 'Monday 26 October' }));
@@ -222,26 +231,34 @@ describe('booking', () => {
     await fireEvent.changeText(form.getByTestId('away-note'), 'Lisbon');
     await fireEvent.press(form.getByRole('button', { name: words('house.setup.book') }));
     expect(setAway).toHaveBeenCalledWith({ from: '2026-10-26', to: '2026-10-28', note: 'Lisbon' });
-    expect(await screen.findByText(awayMovedLine(2, 1, 0, words))).toBeOnTheScreen();
-    // Ready for the next one.
-    await waitFor(() => expect(form.getByTestId('book-away')).toBeDisabled());
-    expect(form.getByTestId('away-note')).toHaveDisplayValue('');
+    await waitFor(() => expect(screen.queryByTestId('away-form')).toBeNull());
+    expect(within(screen.getByTestId('away-panel')).getByTestId('away-moved')).toHaveTextContent(awayMovedLine(2, 1, 0, words));
+  });
+
+  it('says who else is away on the days you picked', async () => {
+    (loadAway as jest.Mock).mockResolvedValue({ today: '2026-10-21', periods: [trip({ startsOn: '2026-10-28', endsOn: '2026-10-30' })] });
+    const form = await openBooking();
+    await fireEvent.press(form.getByRole('button', { name: 'Monday 26 October' }));
+    await fireEvent.press(form.getByRole('button', { name: 'Tuesday 27 October' }));
+    expect(form.queryByText(words('house.away.alsoAway', { count: 1, names: 'Sam' }))).toBeNull();
+    await fireEvent.press(form.getByRole('button', { name: 'Monday 26 October' }));
+    await fireEvent.press(form.getByRole('button', { name: 'Wednesday 28 October' }));
+    expect(form.getByText(words('house.away.alsoAway', { count: 1, names: 'Sam' }))).toBeOnTheScreen();
   });
 
   it('books a single day with one tap', async () => {
-    await open();
-    const form = within(screen.getByTestId('away-form'));
+    const form = await openBooking();
     await fireEvent.press(form.getByRole('button', { name: 'Thursday 22 October' }));
     await fireEvent.press(form.getByTestId('book-away'));
     expect(setAway).toHaveBeenCalledWith({ from: '2026-10-22', to: '2026-10-22', note: '' });
   });
 
-  it("says why a booking didn't take", async () => {
+  it("says why a booking didn't take, and stays open", async () => {
     (setAway as jest.Mock).mockRejectedValue(new Error("You’re already away for some of those days."));
-    await open();
-    const form = within(screen.getByTestId('away-form'));
+    const form = await openBooking();
     await fireEvent.press(form.getByRole('button', { name: 'Thursday 22 October' }));
     await fireEvent.press(form.getByTestId('book-away'));
     expect(await form.findByRole('alert')).toHaveTextContent("You’re already away for some of those days.");
+    expect(screen.getByTestId('away-form')).toBeOnTheScreen();
   });
 });

@@ -8,7 +8,6 @@ import { humanError } from "./errors";
 import {
   adminsLine,
   awayMeta,
-  bookingWeeks,
   canRedeal,
   checkRules,
   dayName,
@@ -16,7 +15,6 @@ import {
   johnsByKind,
   johnsComing,
   membersLine,
-  monthsSpanned,
   monthWeeks,
   myTrips,
   rulesChanged,
@@ -360,39 +358,6 @@ describe("trips still to come", () => {
   });
 });
 
-describe("bookingWeeks", () => {
-  it("opens on the week that holds today, on the house's first day", () => {
-    // Monday 26 October 2026, in a house whose weeks start on Wednesday.
-    const weeks = bookingWeeks("2026-10-26", 3, 0, 2);
-    expect(weeks[0]).toEqual(["2026-10-21", "2026-10-22", "2026-10-23", "2026-10-24", "2026-10-25", "2026-10-26", "2026-10-27"]);
-    expect(weeks[1][0]).toBe("2026-10-28");
-  });
-
-  it("starts on today when today is the first day, and runs across months and years", () => {
-    expect(bookingWeeks("2026-10-26", 1, 0, 1)[0][0]).toBe("2026-10-26");
-    const later = bookingWeeks("2026-12-21", 1, 1, 2);
-    expect(later[0][0]).toBe("2026-12-28");
-    expect(later[1][6]).toBe("2027-01-10");
-  });
-
-  it("shows nothing for no weeks", () => {
-    expect(bookingWeeks("2026-10-26", 1, 0, 0)).toEqual([]);
-  });
-
-  it("counts calendar days, so the clocks changing moves nothing", () => {
-    // British Summer Time ends on Sunday 25 October 2026.
-    expect(bookingWeeks("2026-10-25", 1, 0, 1)[0]).toEqual([
-      "2026-10-19",
-      "2026-10-20",
-      "2026-10-21",
-      "2026-10-22",
-      "2026-10-23",
-      "2026-10-24",
-      "2026-10-25",
-    ]);
-  });
-});
-
 describe("monthWeeks", () => {
   it("runs from the week that holds the 1st to the week that holds the last day", () => {
     // November 2026 starts on a Sunday and ends on a Monday: six Monday weeks.
@@ -419,14 +384,6 @@ describe("monthWeeks", () => {
   it("crosses the new year and leap days", () => {
     expect(monthWeeks("2026-12", 1).at(-1)?.at(-1)).toBe("2027-01-03");
     expect(monthWeeks("2028-02", 1).at(-1)).toContain("2028-02-29");
-  });
-});
-
-describe("monthsSpanned", () => {
-  it("names one month, two in a year, or two across a new year", () => {
-    expect(monthsSpanned("2026-10-01", "2026-10-31", words)).toBe("October 2026");
-    expect(monthsSpanned("2026-10-21", "2026-11-24", words)).toBe("October–November 2026");
-    expect(monthsSpanned("2026-12-21", "2027-01-24", words)).toBe("December 2026–January 2027");
   });
 });
 

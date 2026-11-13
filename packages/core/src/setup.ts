@@ -5,7 +5,7 @@ import { MAKEUP_LABEL } from "./deal";
 import { CATEGORIES, CATEGORY_LABEL, type Category, type Currency, type DealMode, type HouseKind, type HouseRules, type IsoDow, type SettleIn } from "./domain";
 import { familyHides } from "./family";
 import { humanError } from "./errors";
-import { dateRange, firstName, joinRange, localDay, monthLabel, pointsLabel, weekdayName } from "./format";
+import { dateRange, firstName, localDay, pointsLabel, weekdayName } from "./format";
 import { formatMoney, formatSigned, moneyInput, parseMoney } from "./money";
 import { HouseSettings } from "./schemas";
 import type { Words } from "./words-for";
@@ -243,18 +243,6 @@ export function awayMeta(period: AwayPeriod, words: Words): string {
 }
 
 /**
- * The weeks a booking calendar shows: `count` weeks of local dates, each
- * starting on the house's first day, from the week that holds `today` moved
- * on by `from` weeks. It opens on the first week you can book.
- */
-export function bookingWeeks(today: string, weekStarts: IsoDow, from: number, count: number): string[][] {
-  const start = addDaysTo(today, -((isoDayOf(today) - weekStarts + 7) % 7) + from * 7);
-  return Array.from({ length: Math.max(0, count) }, (_, w) =>
-    Array.from({ length: 7 }, (_, d) => addDaysTo(start, w * 7 + d)),
-  );
-}
-
-/**
  * The weeks a month calendar shows for a `yyyy-MM` month: each starting on
  * the house's first day, from the week that holds the 1st to the week that
  * holds the last day, with the months either side filling the ends. Four to
@@ -268,13 +256,6 @@ export function monthWeeks(month: string, weekStarts: IsoDow): string[][] {
     weeks.push(Array.from({ length: 7 }, (_, d) => addDaysTo(start, d)));
   }
   return weeks;
-}
-
-/** What a run of dates spans, by month: "October 2026", "October–November 2026", "December 2026–January 2027". */
-export function monthsSpanned(first: string, last: string, words: Words): string {
-  const [a, b] = [monthLabel(first.slice(0, 7), words), monthLabel(last.slice(0, 7), words)];
-  if (a === b) return a;
-  return first.slice(0, 4) === last.slice(0, 4) ? joinRange(localDay(first, "month", words), b, words) : joinRange(a, b, words);
 }
 
 /** A local date said in full, for a screen reader: "Monday 26 October". */
