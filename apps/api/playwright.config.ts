@@ -73,12 +73,6 @@ export default defineConfig({
         // No API named: as in production, the web build calls /api/* on its
         // own origin, which passes it on to the Next app beside it.
         EXPO_PUBLIC_API_URL: "",
-        // Sign-in on our own address (app/auth/v1), as production will once
-        // its Supabase secret key is in: every e2e sign-in goes through it.
-        EXPO_PUBLIC_AUTH_THROUGH_API: "1",
-        // Live updates through the API's own stream (app/v1/houses/[houseId]/live),
-        // so every e2e that watches a screen follow a housemate goes through it.
-        EXPO_PUBLIC_LIVE_THROUGH_API: "1",
         // Shows the style page, /style, which client-style.spec.ts checks.
         EXPO_PUBLIC_STYLE_PAGE: "1",
         // A public key made for these tests, never production's: with one, the

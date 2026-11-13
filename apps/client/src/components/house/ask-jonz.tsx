@@ -1,4 +1,4 @@
-import { memberCan, passUnlocked, type SavedTurn } from '@app/core';
+import { memberCan, hasPass, type SavedTurn } from '@app/core';
 import { HistoryIcon, SquarePenIcon } from 'lucide-react-native';
 import { useCallback, useState, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -159,7 +159,7 @@ export function AskJonz({
           groups={list.data.groups}
           people={view.snapshot.members}
           me={userId}
-          passOpen={passUnlocked(view.snapshot.house.pass, view.now)}
+          passOpen={hasPass(view.snapshot.house.pass, view.now)}
           canChange={memberCan(view.me, 'johns:write')}
           onOpenList={onOpenList}
           pieces={replyPieces({

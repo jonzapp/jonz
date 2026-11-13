@@ -14,7 +14,7 @@
 
 import { createHash, randomUUID } from "node:crypto";
 
-import { ASK_REFS, PASS_ENFORCED, passOf, passUnlocked, type Operation } from "@app/core";
+import { ASK_REFS, hasPass, passOf, type Operation } from "@app/core";
 import type postgres from "postgres";
 import { z } from "zod";
 
@@ -84,7 +84,6 @@ export interface ExecutorOptions {
   limits?: { read: number; write: number };
   /** The clock, for Pass checks, rate-limit windows and key expiry. Tests pass a pretend one. */
   now?: () => Date;
-  passEnforced?: boolean;
   /** Where the person approves a connected app's request, by its id. */
   approvalUrl?: (id: string) => string;
 }
@@ -165,7 +164,6 @@ export function createExecutor(options: ExecutorOptions) {
   const { sql, verify } = options;
   const now = options.now ?? (() => new Date());
   const limits = options.limits ?? { read: 300, write: 60 };
-  const enforced = options.passEnforced ?? PASS_ENFORCED;
   const signatureOf = signatures(sql);
   const approvalUrl = options.approvalUrl ?? APPROVAL_URL;
   const byName = new Map(options.operations.map((o) => [o.name, o]));
@@ -256,12 +254,12 @@ export function createExecutor(options: ExecutorOptions) {
   /** The House Pass, when the operation needs it: always, or only when the input that turns its feature on is set. */
   async function entitlement(tx: Tx, op: ApiOperation, house: string | null, input: Record<string, unknown>, at: Date) {
     const feature = op.operation.entitlement;
-    if (!feature || !enforced || !house) return;
+    if (!feature || !house) return;
     const when = op.operation.entitlementWhen;
     if (when && (input[when] === undefined || input[when] === null || input[when] === "")) return;
     const [row] = await tx<{ pass_plan: string; pass_ends_at: string | null; pass_bought_by: string | null }[]>`
       select pass_plan, pass_ends_at, pass_bought_by from public.houses where id = ${house}::uuid`;
-    if (!row || !passUnlocked(passOf(row), at, enforced)) {
+    if (!row || !hasPass(passOf(row), at)) {
       throw new Problem("pass_required", "This needs a House Pass.");
     }
   }

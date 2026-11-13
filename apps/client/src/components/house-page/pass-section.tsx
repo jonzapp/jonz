@@ -77,7 +77,7 @@ export function PassSection({ view }: { view: HouseView }) {
   );
 }
 
-/** Where an extra was, for a house without the Pass once it's enforced: one row to the Pass page. */
+/** Where an extra was, for a house without the Pass: one row to the Pass page. */
 export function PassLocked({ label, feature, testID }: { label: string; feature: string; testID?: string }) {
   const words = useWords();
   return (

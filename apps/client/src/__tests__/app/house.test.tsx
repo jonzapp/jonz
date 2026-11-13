@@ -190,7 +190,7 @@ it('is two halves under a switch on a phone: the Overview, then the setup and th
 
 it('shows where the house stands on the House Pass, with the way to its page', async () => {
   await open();
-  // The Pass isn't enforced yet, so every house keeps the money and the Table.
+  // This house has the Pass, so it keeps the money and the Table.
   expect(screen.getByTestId('house-figures')).toBeOnTheScreen();
   await showSetup();
   const row = screen.getByTestId('to-pass');

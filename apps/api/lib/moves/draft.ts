@@ -1,6 +1,6 @@
 import "server-only";
 
-import { CHAT_RESETS_MAX, foldPoint, houseKind, LANGUAGE_IN_ENGLISH, languageOf, wordsFor, ASK_TURN_RESERVE, askAllowance, CHAT_TURNS_PER_PERSON_PER_DAY, draftForModel, editDraft, firstName, groupDef, johnDef, listAsDraft, localDate, offlineTurn, passOf, passUnlocked, PERMISSIONS, rulesOf, tidyAsk, tidyDraft, tidyReply, type ChatMessage, type ChatMove, type ChatReset, type ChatResponse, type ChatSummed, type EditResult, type HouseDraft, askOperationsFor, type Permission, type RawDraft } from "@app/core";
+import { CHAT_RESETS_MAX, foldPoint, houseKind, LANGUAGE_IN_ENGLISH, languageOf, wordsFor, ASK_TURN_RESERVE, askAllowance, CHAT_TURNS_PER_PERSON_PER_DAY, draftForModel, editDraft, firstName, groupDef, johnDef, listAsDraft, localDate, offlineTurn, passOf, hasPass, PERMISSIONS, rulesOf, tidyAsk, tidyDraft, tidyReply, type ChatMessage, type ChatMove, type ChatReset, type ChatResponse, type ChatSummed, type EditResult, type HouseDraft, askOperationsFor, type Permission, type RawDraft } from "@app/core";
 
 import { askClaude, canDraft, type DraftAnswer, type DraftContext, type JonzTools } from "@/lib/ai/house-draft";
 import { sumUpChat, type SumUpChat } from "@/lib/ai/sum-up";
@@ -84,7 +84,7 @@ export async function chatTurn(
   const words = wordsFor(language, houseKind(house.kind));
   // A house with a list already: the House Pass's assistant. Setting up a new house is free.
   const list = johns && johns.length > 0 ? listAsDraft(johns.map(johnDef), (groups ?? []).map(groupDef)) : null;
-  if (list && !passUnlocked(passOf(house), now)) return { refusal: { code: "P0001", message: "pass_needed" } };
+  if (list && !hasPass(passOf(house), now)) return { refusal: { code: "P0001", message: "pass_needed" } };
   const draftNow = current ?? list;
   const mayEdit = may("johns:write");
   const offline = (): ChatResponse =>

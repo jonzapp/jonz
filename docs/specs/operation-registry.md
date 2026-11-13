@@ -19,7 +19,7 @@ One list of everything a person can do on Jonz, whichever way they reach it: the
   - `screen`: a read of everything one screen shows at once (Today, the Table, Track record, the Stake), in one round trip where the app makes several today;
   - `destructive`: it can't be undone, or it reaches people (push, email, notice), so an MCP client needs the person's approval in Jonz first;
   - `additive`: a write that only adds something new, changing or removing nothing already there, so a connected app is told it isn't destructive;
-  - `entitlement`: the House Pass feature it needs once the Pass is enforced. That is a plan feature, not a permission.
+  - `entitlement`: the House Pass feature it needs. That is a plan feature, not a permission.
 - `guard` is one of:
   - `permission`: a named `resource:level`, asked with `can()` (house) or `can_app()` (admin pages);
   - `check`: a yes/no helper;

@@ -25,18 +25,8 @@ jest.mock('@/api/photos', () => ({ pickPhoto: jest.fn(), uploadProof: jest.fn() 
 jest.mock('@/api/resets', () => ({ previewReset: jest.fn(), applyReset: jest.fn() }));
 jest.mock('@/api/reports', () => ({ myReports: jest.fn(async () => []), sendReport: jest.fn(), pickScreenshot: jest.fn() }));
 jest.mock('@/api/tours', () => ({ saveToursSaved: jest.fn(async () => undefined) }));
-jest.mock('@/api/supabase', () => {
-  const mockChannel = { on: jest.fn(), subscribe: jest.fn() };
-  mockChannel.on.mockReturnValue(mockChannel);
-  mockChannel.subscribe.mockReturnValue(mockChannel);
-  const client = {
-    auth: { getSession: jest.fn(() => Promise.resolve({ data: { session: null } })) },
-    realtime: { setAuth: jest.fn() },
-    channel: jest.fn(() => mockChannel),
-    removeChannel: jest.fn(),
-  };
-  return { supabase: client, live: client };
-});
+jest.mock('@/api/supabase', () => ({ supabase: { auth: { getSession: jest.fn(() => Promise.resolve({ data: { session: null } })) } } }));
+jest.mock('@/api/live-stream', () => ({ openLiveStream: jest.fn(() => jest.fn()) }));
 jest.mock('@/hooks/use-membership', () => ({
   useMembership: () => ({ session: { user: { id: 'priya' } }, house: { id: 'h1', name: 'Flat 3' } }),
 }));

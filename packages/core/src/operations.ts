@@ -89,7 +89,7 @@ export interface Operation {
    * app, even one that can be undone, and Claude asks before each.
    */
   additive?: true;
-  /** The House Pass feature it needs once the Pass is enforced (`PASS_ENFORCED`). */
+  /** The House Pass feature it needs (`hasPass`). */
   entitlement?: PassFeature;
   /**
    * The input key that turns the feature on: the Pass is needed only when

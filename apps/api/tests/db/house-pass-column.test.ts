@@ -146,7 +146,7 @@ beforeAll(async () => {
   url.password = password;
   pool = connect(url.toString(), 2);
   const verify = tokenVerifier({ supabaseUrl: "http://127.0.0.1:54341", jwtSecret: STACK_SECRET, currentDate: NOW });
-  execute = createExecutor({ sql: pool, verify, operations: ON_V1, now: () => NOW, passEnforced: true, limits: { read: 1000, write: 1000 } });
+  execute = createExecutor({ sql: pool, verify, operations: ON_V1, now: () => NOW, limits: { read: 1000, write: 1000 } });
   app = buildApp({ execute, operations: ON_V1 });
 });
 

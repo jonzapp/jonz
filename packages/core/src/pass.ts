@@ -6,13 +6,6 @@ import { dateIn } from "./format";
 // The House Pass (docs/specs/house-pass.md): one subscription per house that
 // unlocks the extras for everyone in it. Running a fair house stays free.
 
-/**
- * Whether a house without the Pass loses the extras: on since 11 Nov 2026,
- * when every house made before then became a Founding house
- * (20270106090000_pass_on.sql). Tests pass their own to `passUnlocked`.
- */
-export const PASS_ENFORCED: boolean = true;
-
 /** How long every new house has the Pass free, from when it's made. */
 export const PASS_TRIAL_DAYS = 30;
 
@@ -46,11 +39,6 @@ export function passOf(row: { pass_plan: string; pass_ends_at: string | null; pa
 export function hasPass(pass: HousePass, now: Date): boolean {
   if (pass.plan === "founding") return true;
   return pass.until !== null && pass.until.getTime() > now.getTime();
-}
-
-/** Whether the extras are open to this house at `now`: always, until the Pass is enforced. */
-export function passUnlocked(pass: HousePass, now: Date, enforced: boolean = PASS_ENFORCED): boolean {
-  return !enforced || hasPass(pass, now);
 }
 
 /** Whole days left on a Pass that ends, counting a part day as a day; 0 once it has; null for Founding. */
