@@ -94,7 +94,7 @@ export const REPORT_PUSH = {
   fixed: (words: Words) => words("common.report.push.fixed"),
 } as const;
 
-/** The Inbox's filters: what state it's in, and what kind it is. It opens on what's waiting for you. */
+/** The Inbox's filters: what state it's in, and what kind it is. With no state picked it shows every report, what's waiting for you first. */
 export const REPORT_FACETS: readonly ListFacet[] = [
   {
     key: "state",

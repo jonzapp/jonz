@@ -38,7 +38,7 @@ import { AGENT_MODEL, runAgent, type AgentAnswer } from "@/lib/ai/agent";
 
 /** What the owner's Ask Jonz can read: each as the owner's session, each a short text for Claude. */
 export interface OwnerReads {
-  inbox(q: string, state: "waiting" | "replied" | "fixed" | null, kind: (typeof REPORT_KINDS)[number] | null): Promise<string>;
+  inbox(q: string, state: "waiting" | "answered" | "replied" | "fixed" | null, kind: (typeof REPORT_KINDS)[number] | null): Promise<string>;
   deletions(q: string): Promise<string>;
   audit(q: string, after: string | null, before: string | null): Promise<string>;
   notices(): Promise<string>;
@@ -260,7 +260,7 @@ export function ownerToolSet(t: OwnerReads, writes?: OwnerWrites): ToolSet {
       description: "Reports people sent from the app, newest first: who, their house, kind, state and what they wrote.",
       inputSchema: z.object({
         q: Search,
-        state: z.enum(["waiting", "replied", "fixed"]).nullable().describe("waiting is new or open; null for any."),
+        state: z.enum(["waiting", "answered", "replied", "fixed"]).nullable().describe("waiting is new, or read and not folded (needs a reply); answered is everything else; null for any."),
         kind: z.enum(REPORT_KINDS).nullable(),
       }),
       execute: async ({ q, state, kind }) => t.inbox(q, state, kind),

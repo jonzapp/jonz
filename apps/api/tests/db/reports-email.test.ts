@@ -357,6 +357,23 @@ describe("deleting an account", () => {
   });
 });
 
+describe("the Inbox's two groups", () => {
+  it("splits every report into waiting for a reply and answered, with nothing in both or neither", async () => {
+    const waitingNew = await sent(ava);
+    const main = await sent(ben, `${words} too`);
+    const folded = await sent(ava, `${words} again`);
+    expectOk(await owner.db.rpc("owner_same_as", { p_report: folded, p_main: main }));
+    const answered = await sent(ben, `${words} answered`);
+    expect(await replyToReport({ db: owner.db, userId: owner.userId }, answered, { body: "Done." }, quiet())).toBeNull();
+    const ids = async (state: string | null) =>
+      (await owner.db.rpc("owner_reports_page", { p_q: words, p_state: state as string })).data!.map((r) => r.id).sort();
+    expect(await ids("waiting")).toEqual([waitingNew, main].sort());
+    expect(await ids("answered")).toEqual([folded, answered].sort());
+    expect(await ids(null)).toEqual([waitingNew, main, folded, answered].sort());
+    expect((await owner.db.rpc("owner_reports_count", { p_q: words, p_state: "answered" })).data).toBe(2);
+  });
+});
+
 describe("a folded report", () => {
   it("is waiting again when its sender writes back", async () => {
     const main = await sent(ava);

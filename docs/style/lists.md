@@ -68,6 +68,11 @@ Built for very many rows from the start. (Admin lists, 31 Oct)
   [states](states.md#waiting). (Search loading A, 10 Nov)
 - Lists of things page by 50; timelines load as you scroll and have a When
   filter. (Owner admin, 30 Oct)
+- A list of things waiting on you (the Inbox) opens on everything, never
+  hiding what's done: what needs you first as its own group, then everything
+  else, each under its name and count ("Needs a reply, 3"). Search and
+  filters narrow both groups at once and an empty group is left out; picking
+  a state by hand shows one plain list. (Inbox two groups A, 13 Nov)
 
 ## Calendars and grids
 

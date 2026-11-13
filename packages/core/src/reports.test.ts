@@ -40,7 +40,7 @@ describe("a report as the app sends it", () => {
 });
 
 describe("the Inbox", () => {
-  it("opens on what's waiting, and filters by state, where it came from, and kind", () => {
+  it("filters by state (waiting first among them), where it came from, and kind", () => {
     expect(REPORT_FACETS.map((f) => f.key)).toEqual(["state", "source", "kind"]);
     expect(REPORT_FACETS[0].options[0].value).toBe("waiting");
   });

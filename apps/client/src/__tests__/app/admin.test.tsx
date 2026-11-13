@@ -64,7 +64,7 @@ jest.mock('@/api/owner', () => ({
 }));
 jest.mock('@/api/reports', () => ({
   ...jest.requireActual<typeof import('@/api/reports')>('@/api/reports'),
-  inboxPage: jest.fn().mockResolvedValue({ items: [], more: false, next: null }),
+  inboxRows: jest.fn().mockResolvedValue({ items: [], more: false, next: null }),
   inboxCount: jest.fn().mockResolvedValue(0),
 }));
 jest.mock('@/api/houses', () => ({
