@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { dealThisWeek } from '@/api/settings';
 import { ActionMenu, type MenuAction } from '@/components/action-menu';
 import { ConfirmSheet } from '@/components/confirm-sheet';
+import { type MenuPlace } from '@/components/drop-menu';
 import { ResetSheet } from '@/components/reset-sheet';
 import { useToast } from '@/components/toast';
 import { useMove } from '@/hooks/use-move';
@@ -22,6 +23,7 @@ import { useWords } from '@/hooks/use-words';
  */
 export function WeekMenu({
   visible,
+  place,
   onClose,
   houseId,
   admin,
@@ -30,6 +32,8 @@ export function WeekMenu({
   userId,
 }: {
   visible: boolean;
+  /** Where the "•••" is on a laptop, for the menu to drop from. */
+  place: MenuPlace | null;
   onClose: () => void;
   houseId: string;
   admin: boolean;
@@ -84,7 +88,7 @@ export function WeekMenu({
 
   return (
     <>
-      <ActionMenu visible={visible} onClose={onClose} actions={actions} testID="week-menu" />
+      <ActionMenu visible={visible} place={place} onClose={onClose} actions={actions} testID="week-menu" />
       <ConfirmSheet
         visible={confirming}
         title={words('week.summary.redealTitle')}

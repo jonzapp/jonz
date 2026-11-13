@@ -1,16 +1,17 @@
 import { dayChoices, LAST_OF_MONTH, landingLabel, MAX_EVERY_MONTHS, MAX_EVERY_WEEKS, monthName, nextLine, REPEAT_CLOCK, REPEAT_QUICK, nextStartsOn, periodWords, placeWord, previewLandings, RESPOND_HOURS, startMonths, weekdayName, type HouseRules, type JohnDef } from '@app/core';
 import { MinusIcon, PlusIcon } from 'lucide-react-native';
-import { useState, type ReactNode } from 'react';
+import { useState, type ComponentProps, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { ButtonRow } from '@/components/button-row';
+import { IconButton } from '@/components/icon-button';
 import { Field } from '@/components/field';
 import { Group, GroupItem } from '@/components/group';
 import { Segmented } from '@/components/segmented';
 import { ChoiceRow } from '@/components/setup/choice-row';
 import { Body, Lead, Meta } from '@/components/text';
-import { FONT, INSET, LABEL_GAP, SECTION_GAP, SPACE, TABULAR, TAP, useTheme } from '@/theme';
+import { FONT, INSET, LABEL_GAP, SECTION_GAP, SPACE, TABULAR, useTheme } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
 // When a John comes round, as one sentence in the John editor: "Every [3
@@ -174,42 +175,37 @@ function Sentence({
   );
 }
 
-/** A pill to pick one of a few with: chosen in hi-vis. */
-function Pill({ label, chosen, onPress, spoken }: { label: string; chosen: boolean; onPress: () => void; spoken?: string }) {
-  const { colors, type } = useTheme();
+/** Done within's choices: a window set outside them (by an older app) still shows. */
+function respondChoices(now: number): number[] {
+  return (RESPOND_HOURS as readonly number[]).includes(now) ? [...RESPOND_HOURS] : [...RESPOND_HOURS, now].sort((a, b) => a - b);
+}
+
+/** The quick period a John's timing is, if it's one of them. */
+function quickOf(value: Timing) {
+  return REPEAT_QUICK.find((q) => q.everyMonths === value.everyMonths && (q.everyMonths !== null || q.everyWeeks === value.everyWeeks));
+}
+
+/** A word's quick choices: the kit's Segmented, inset, two to a row unless said otherwise, so long words are never cut short. */
+function QuickChoices<T extends string | number>({ perRow = 2, ...choices }: Omit<ComponentProps<typeof Segmented<T>>, 'equal'>) {
   return (
-    <Pressable
-      accessibilityRole="radio"
-      accessibilityLabel={spoken ?? label}
-      aria-checked={chosen}
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.pill,
-        { borderColor: chosen ? colors.hivis : colors.border, backgroundColor: chosen ? colors.hivis : pressed ? colors.secondary : colors.card },
-      ]}
-    >
-      <Text style={[type.body, styles.pillText, { color: chosen ? colors.onHivis : colors.foreground }]}>{label}</Text>
-    </Pressable>
+    <View style={styles.inset}>
+      <Segmented {...choices} perRow={perRow} />
+    </View>
   );
 }
 
 /** − n + for a count, with its value spoken. */
 function Stepper({ label, value, min, max, onChange }: { label: string; value: number; min: number; max: number; onChange: (n: number) => void }) {
   const words = useWords();
-  const { colors, type } = useTheme();
+  const { type } = useTheme();
   const step = (by: number) => onChange(Math.min(max, Math.max(min, value + by)));
-  const round = [styles.round, { borderColor: colors.border }];
   return (
     <View style={styles.stepper} accessibilityRole="adjustable" accessibilityLabel={label} accessibilityValue={{ now: value, min, max }}>
-      <Pressable accessibilityRole="button" accessibilityLabel={`${words('house.repeat.fewer')}: ${label}`} disabled={value <= min} onPress={() => step(-1)} style={[round, value <= min && styles.off]}>
-        <MinusIcon size={20} color={colors.foreground} aria-hidden />
-      </Pressable>
+      <IconButton outline icon={MinusIcon} label={`${words('house.repeat.fewer')}: ${label}`} disabled={value <= min} onPress={() => step(-1)} />
       <Text style={[type.lead, styles.count]} testID="stepper-value">
         {value}
       </Text>
-      <Pressable accessibilityRole="button" accessibilityLabel={`${words('house.repeat.more')}: ${label}`} disabled={value >= max} onPress={() => step(1)} style={[round, value >= max && styles.off]}>
-        <PlusIcon size={20} color={colors.foreground} aria-hidden />
-      </Pressable>
+      <IconButton outline icon={PlusIcon} label={`${words('house.repeat.more')}: ${label}`} disabled={value >= max} onPress={() => step(1)} />
     </View>
   );
 }
@@ -251,19 +247,17 @@ export function TimingPicker({
       title = words('house.repeat.often');
       body = (
         <>
-          <View style={styles.pills} accessibilityRole="radiogroup" accessibilityLabel={words('house.repeat.often')}>
-            {REPEAT_QUICK.map((q) => (
-              <Pill
-                key={q.key}
-                label={words(`house.repeat.quick.${q.key}` as const)}
-                chosen={q.everyMonths === value.everyMonths && (q.everyMonths !== null || q.everyWeeks === value.everyWeeks)}
-                onPress={() => {
-                  setUnit(unitOf(q));
-                  onChange(period(value, q.everyWeeks, q.everyMonths));
-                }}
-              />
-            ))}
-          </View>
+          <QuickChoices
+            label={words('house.repeat.often')}
+            options={REPEAT_QUICK.map((q) => ({ value: q.key, label: words(`house.repeat.quick.${q.key}` as const) }))}
+            value={quickOf(value)?.key ?? ''}
+            onChange={(key) => {
+              const q = REPEAT_QUICK.find((one) => one.key === key)!;
+              setUnit(unitOf(q));
+              onChange(period(value, q.everyWeeks, q.everyMonths));
+            }}
+            testID="timing-quick"
+          />
           <View style={styles.noted}>
             <Body style={styles.inset}>{words('house.repeat.anyPeriod')}</Body>
             <Group>
@@ -344,11 +338,13 @@ export function TimingPicker({
       title = words('house.repeat.time');
       body = (
         <>
-          <View style={styles.pills} accessibilityRole="radiogroup" accessibilityLabel={words('house.repeat.time')}>
-            {REPEAT_CLOCK.map((c) => (
-              <Pill key={c.time} label={`${words(`house.repeat.clock.${c.key}` as const)} ${c.time}`} chosen={value.dueTime === c.time} onPress={() => onChange({ dueTime: c.time })} />
-            ))}
-          </View>
+          <QuickChoices
+            label={words('house.repeat.time')}
+            options={REPEAT_CLOCK.map((c) => ({ value: c.time, label: `${words(`house.repeat.clock.${c.key}` as const)} ${c.time}` }))}
+            value={value.dueTime}
+            onChange={(dueTime) => onChange({ dueTime })}
+            testID="timing-clock"
+          />
           <View style={styles.noted}>
             <View style={styles.inset}>
               <Field
@@ -380,16 +376,15 @@ export function TimingPicker({
     case 'within': {
       title = words('house.repeat.within');
       sub = words('house.repeat.withinSub');
-      // A window set outside the choices (by an older app) still shows.
-      const hours: number[] = (RESPOND_HOURS as readonly number[]).includes(value.respondHours)
-        ? [...RESPOND_HOURS]
-        : [...RESPOND_HOURS, value.respondHours].sort((a, b) => a - b);
       body = (
-        <View style={styles.pills} accessibilityRole="radiogroup" accessibilityLabel={words('house.repeat.within')}>
-          {hours.map((h) => (
-            <Pill key={h} label={words('house.johns.respondHours', { hours: h })} chosen={value.respondHours === h} onPress={() => onChange({ respondHours: h })} />
-          ))}
-        </View>
+        <QuickChoices
+          label={words('house.repeat.within')}
+          options={respondChoices(value.respondHours).map((h) => ({ value: h, label: words('house.johns.respondHours', { hours: h }) }))}
+          value={value.respondHours}
+          onChange={(respondHours) => onChange({ respondHours })}
+          perRow={3}
+          testID="timing-within"
+        />
       );
       break;
     }
@@ -421,12 +416,7 @@ const styles = StyleSheet.create({
   words: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 6, rowGap: 2, paddingVertical: SPACE.md, alignItems: 'baseline' },
   sentence: { fontSize: 20, lineHeight: 30 },
   word: { borderBottomWidth: 3, borderRadius: 2 },
-  pills: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACE.sm, paddingHorizontal: INSET },
-  pill: { minHeight: 44, paddingHorizontal: SPACE.md, borderRadius: 999, borderWidth: 1, justifyContent: 'center' },
-  pillText: { fontFamily: FONT.bold, fontSize: 15 },
   period: { gap: SPACE.md, paddingVertical: SPACE.md },
   stepper: { flexDirection: 'row', alignItems: 'center', gap: SPACE.lg, paddingVertical: SPACE.sm },
-  round: { width: TAP, height: TAP, borderRadius: TAP / 2, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   count: { minWidth: 32, textAlign: 'center', ...TABULAR, fontFamily: FONT.extrabold },
-  off: { opacity: 0.4 },
 });

@@ -54,7 +54,7 @@
   },
   "src/components/house/john-timing.tsx": {
     "jonz/no-raw-type-size": {
-      "count": 3
+      "count": 2
     },
     "jonz/spacing-from-scale": {
       "count": 3

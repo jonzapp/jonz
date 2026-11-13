@@ -1,12 +1,12 @@
-import { withAlpha } from '@app/core';
 import { CheckIcon, ChevronDownIcon } from 'lucide-react-native';
 import { useRef, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, useWindowDimensions, View, type HostInstance } from 'react-native';
+import { Pressable, StyleSheet, Text, useWindowDimensions, View, type HostInstance } from 'react-native';
 
+import { DropMenu, measurePlace, type MenuPlace } from '@/components/drop-menu';
 import { Group } from '@/components/group';
 import { Row } from '@/components/row';
 import { Sheet } from '@/components/sheet';
-import { FONT, GROUP_RADIUS, SPACE, TAP, useTheme, WIDE } from '@/theme';
+import { FONT, SPACE, TAP, useTheme, WIDE } from '@/theme';
 
 export interface PickOption<T extends string> {
   value: T;
@@ -14,9 +14,6 @@ export interface PickOption<T extends string> {
   /** What a screen reader says, where `label` is short for it. */
   spoken?: string;
 }
-
-/** How wide the menu is beside the page. */
-const MENU = 240;
 
 /**
  * One of a few ways for a section to show itself, chosen from a menu: the
@@ -44,13 +41,13 @@ export function PickMenu<T extends string>({
   label: string;
   testID?: string;
 }) {
-  const { colors, scheme, type } = useTheme();
+  const { colors, type } = useTheme();
   const { width } = useWindowDimensions();
   const wide = width >= WIDE;
   const [open, setOpen] = useState(false);
   const [pressed, setPressed] = useState(false);
   // Where the menu drops from: under the words, its right edge on theirs.
-  const [place, setPlace] = useState<{ top: number; right: number } | null>(null);
+  const [place, setPlace] = useState<MenuPlace | null>(null);
   const words = useRef<HostInstance>(null);
   const chosen = options.find((option) => option.value === value) ?? options[0];
 
@@ -59,8 +56,8 @@ export function PickMenu<T extends string>({
       setOpen(true);
       return;
     }
-    words.current?.measureInWindow((x, y, w, h) => {
-      setPlace({ top: y + h, right: width - x - w });
+    measurePlace(words, width, (at) => {
+      setPlace(at);
       setOpen(true);
     });
   }
@@ -114,35 +111,10 @@ export function PickMenu<T extends string>({
         <ChevronDownIcon size={16} color={colors.foreground} aria-hidden />
       </Pressable>
       {wide ? (
-        // On the web a closed react-native-web Modal holds on to focus until it has gone, as the Sheet's does, so a closed menu goes at once.
         open && place ? (
-          <Modal visible transparent animationType="none" onRequestClose={close} aria-label={label}>
-            <View style={StyleSheet.absoluteFill}>
-              {/* Anywhere else puts it away: for a pointer only, as a sheet's scrim is; Escape does it for a keyboard. */}
-              <View
-                aria-hidden
-                onStartShouldSetResponder={() => true}
-                onResponderRelease={close}
-                style={StyleSheet.absoluteFill}
-                testID={testID ? `${testID}-away` : undefined}
-              />
-              <View
-                testID={testID ? `${testID}-menu` : undefined}
-                style={[
-                  styles.menu,
-                  {
-                    top: place.top + SPACE.xs,
-                    right: Math.max(place.right, SPACE.sm),
-                    borderColor: colors.border,
-                    // The page's one thing that floats: a soft shadow lifts it off the rows under it.
-                    boxShadow: `0 8px 24px ${withAlpha(scheme === 'dark' ? '#000000' : colors.foreground, scheme === 'dark' ? 0.5 : 0.16)}`,
-                  },
-                ]}
-              >
-                {choices}
-              </View>
-            </View>
-          </Modal>
+          <DropMenu place={place} onClose={close} label={label} testID={testID}>
+            {choices}
+          </DropMenu>
         ) : null
       ) : (
         <Sheet visible={open} onClose={close} label={label} flush testID={testID ? `${testID}-sheet` : undefined}>
@@ -165,11 +137,4 @@ const styles = StyleSheet.create({
     marginRight: -SPACE.md,
   },
   bold: { fontFamily: FONT.bold },
-  menu: {
-    position: 'absolute',
-    width: MENU,
-    borderRadius: GROUP_RADIUS,
-    borderWidth: StyleSheet.hairlineWidth,
-    overflow: 'hidden',
-  },
 });

@@ -103,6 +103,15 @@
 - Forms sit in a column capped at `FORM_MAX` (520) on a laptop. (**New**)
 - A short select opens in place (`PickRow`); a radio or checkbox is a
   `ChoiceRow`. (AGENTS.md)
+- **A few quick choices side by side are a `Segmented`,** wrapped into
+  equal rows with `perRow` where the words don't fit one row; never pills
+  of our own, and the chosen one is never amber (the John editor's How
+  often, By what time and Done within, 13 Nov). A count with − and + uses
+  `IconButton`s with the outline edge.
+- **A menu opened from a control drops from it on a laptop** (from `WIDE`:
+  the "•••" and the Table's This week | October, `DropMenu`), its right edge
+  on the control's, put away by a tap anywhere else or Escape; on a phone
+  it is a sheet. (••• menu A, 13 Nov)
 - **Sign-in and password boxes work with password managers.** On the web
   each step is a real form (`SignInForm`), Enter sends it, the email box is
   `username` and a new password is `new-password` (with `passwordRules` on
