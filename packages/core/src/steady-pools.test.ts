@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { check } from "./steady-checks";
-import type { RunHouse } from "./steady-run";
+import type { RunHouse } from "./steady-run-types";
 import { steadyRun } from "./steady-run";
 
 // Group-only Johns are balanced within their group, and the whole house's Johns across everyone: points in one

@@ -2,29 +2,8 @@ import { describe, expect, it } from "vitest";
 import { wordsFor } from "./words-for";
 
 import type { AwayPeriod } from "./away";
-import {
-  awayLines,
-  joinParts,
-  monthAbbr,
-  monthCard,
-  overviewFigures,
-  moneyLines,
-  monthsInWords,
-  monthWord,
-  owedMonths,
-  owingLines,
-  perkLines,
-  recordLines,
-  settleRows,
-  shareLine,
-  shareOutDay,
-  stakeHistory,
-  stakeRules,
-  tableLines,
-  tableMetaFit,
-  type HistoryRow,
-  type PageMember,
-} from "./house-page";
+import { awayLines, moneyLines, owingLines, perkLines, recordLines, shareLine, stakeHistory, type HistoryRow } from "./house-person";
+import { joinParts, monthAbbr, monthCard, overviewFigures, monthsInWords, monthWord, owedMonths, settleRows, shareOutDay, stakeRules, tableLines, tableMetaFit, type PageMember } from "./house-page";
 import type { TableRow } from "./points";
 import { buildStake, type LedgerRow } from "./stake";
 

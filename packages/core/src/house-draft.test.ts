@@ -3,38 +3,11 @@ import { wholePercent } from "./app";
 
 import { NEW_JOHN, type JohnDef } from "./board";
 
-import {
-  askAllowance,
-  askBackOn,
-  askUsage,
-  CHAT_MAX_MESSAGES,
-  CHAT_RECENT,
-  CHAT_SUM_AT,
-  chatCarryOver,
-  foldPoint,
-  SUMMARY_MAX,
-  type ChatMessage,
-  DRAFT_MAX_GROUPS,
-  DRAFT_MAX_JOHNS,
-  CHOICES_MAX,
-  ChatRequest,
-  DraftedJohn,
-  HouseDraft,
-  STARTER_KINDS,
-  STARTER_LISTS,
-  changedLine,
-  draftChanges,
-  draftForModel,
-  groupChanges,
-  listAsDraft,
-  draftPlan,
-  guessStarter,
-  matchPerson,
-  offlineTurn,
-  starterDraft,
-  tidyAsk,
-  tidyDraft,
-} from "./house-draft";
+import { STARTER_KINDS, STARTER_LISTS, guessStarter, starterDraft } from "./starter-lists";
+import { askAllowance, askBackOn, askUsage } from "./ask-allowance";
+import { changedLine, draftChanges, groupChanges } from "./draft-changes";
+import { CHAT_MAX_MESSAGES, CHAT_RECENT, CHAT_SUM_AT, chatCarryOver, foldPoint, SUMMARY_MAX, type ChatMessage, DRAFT_MAX_GROUPS, DRAFT_MAX_JOHNS, CHOICES_MAX, ChatRequest, DraftedJohn, HouseDraft, draftForModel, listAsDraft, draftPlan, matchPerson, tidyAsk, tidyDraft } from "./house-draft";
+import { offlineTurn } from "./starter-lists";
 import { JohnDraft } from "./schemas";
 import { wordsFor } from "./words-for";
 

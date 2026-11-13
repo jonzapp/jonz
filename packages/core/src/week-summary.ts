@@ -1,5 +1,6 @@
 import { awayDays, currentOrNext, type AwayPeriod } from "./away";
-import { byDoneLatest, type BoardItem } from "./board";
+import { byDoneLatest } from "./board-views";
+import { type BoardItem } from "./board";
 import { MAKEUP_LABEL } from "./deal";
 import { dateRange, firstName, formatBalance, pointsLabel, statusLabel, STATUS_MARK, weekRange, dateIn } from "./format";
 import type { LiveStatus } from "./outcome";

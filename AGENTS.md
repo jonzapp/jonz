@@ -407,7 +407,7 @@ at `<house>/<assignment>/<file>`.
 - When a bug is fixed, add a test that would have caught it.
 - The deal's rules are checked by deliberate breaks too: `npm run breaks -w
   @app/core` breaks one rule at a time and the tests must fail on each. Run
-  it after changing `steady.ts`, `steady-run.ts` or `repeat.ts`, and add a
+  it after changing `steady.ts`, `steady-days.ts`, `steady-run.ts` or `repeat.ts`, and add a
   break for any new rule.
 
 ## Hosting and deploys
