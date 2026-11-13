@@ -110,7 +110,7 @@ password is a Resend key, pasted in the dashboard (Email, below).
   automatic branching off. It deploys on every push to `main`, applying any
   new migrations; Auth and API settings in `config.toml` are ignored, which
   is what keeps them local.
-- **Claude, for "Describe your house"**. `POST /api/setup/draft` asks
+- **Claude, for "Describe your house"**. `ask_house on /v1` asks
   Claude (`anthropic/claude-haiku-5.5`, `apps/api/lib/ai/house-draft.ts`)
   to draft a new house's John list through Vercel's AI Gateway, as Pub Golf
   does. On Vercel the gateway signs in with the `jonz-api` project's OIDC
@@ -121,7 +121,7 @@ password is a Resend key, pasted in the dashboard (Email, below).
   (`CHAT_TURNS_PER_DAY`), counted in `house_drafts`. Locally and in CI there is no gateway, so
   drafts are starter lists unless `AI_GATEWAY_API_KEY` is set.
 - **The House Pass on the web (Stripe).** Checkout and the billing page
-  come from `POST /api/pass/checkout` and `/api/pass/manage`; Stripe's
+  come from `pass_checkout on /v1` and `pass_billing on /v1`; Stripe's
   webhook (`POST /api/stripe/webhook`, `apps/api/lib/pass/events.ts`) writes
   the house's `pass_*` columns. The three prices live on the `house_pass`
   product with the lookup keys `pass_yearly`, `pass_monthly` and
@@ -216,7 +216,7 @@ The steps, each asked for and checked before the next:
    nothing, as for `johns`. Deploy `main`.
 3. **Check it on its own `.vercel.app` URL**, before it has the domain: the
    front door, privacy and a link to nowhere; `/manifest.webmanifest` and
-   `/sw.js`; `POST /api/fresh` with no token answers the API's own 401
+   `/sw.js`; `catch_up on /v1` with no token answers the API's own 401
    (the rewrite reaches `apps/api`), and so does the tick without its secret.
    Signing in there needs that URL in Supabase's redirect URLs for the
    check, and taken out after (provision writes only johns.glyn.dev's back).

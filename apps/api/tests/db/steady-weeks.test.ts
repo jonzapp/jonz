@@ -3,11 +3,11 @@ import { tz } from "@date-fns/tz";
 import { getHours } from "date-fns";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { POST as swapsRoute } from "@/app/api/swaps/route";
 import { dealWeek, loadBalances, loadHouse, tickHouse, pushIn, type PushMessage, type SaidPush } from "@/lib/engine/tick";
-import { adminClient, signedInUser } from "@/tests/support/clients";
+import { adminClient, signedInUser, type Actor } from "@/tests/support/clients";
 import { expectDenied, expectOk, expectRule } from "@/tests/support/expect";
 import { actorFor, addJohns, deal, makeHouse, reread, someoneElse, thisWeek, weeksAgo, ZONE, type House } from "@/tests/support/factories";
+import { problemOf, v1 } from "@/tests/support/v1";
 
 /**
  * Steady weeks (docs/specs/steady-weeks.md) through the engine and the
@@ -168,7 +168,7 @@ describe("fresh starts", () => {
 
     const dee = await signedInUser("Dee");
     expectOk(await dee.db.rpc("join_house", { p_code: house.code }));
-    // An admin re-deals the week (POST /api/deal) on a lighter budget.
+    // An admin re-deals the week (deal_week on /v1) on a lighter budget.
     await rules(house, { deal_budget: 2 });
     const { house: row, members } = await loadHouse(db, house.id);
     const { weekId } = await dealWeek(db, row, members, week, new Date(), true);
@@ -453,24 +453,8 @@ describe("asking to swap a John you'd rather not", () => {
   });
 });
 
-describe("POST /api/swaps", () => {
-  const BASE = "http://localhost:3205/api/swaps";
-  const savedOrigins = process.env.ALLOWED_ORIGINS;
-  beforeAll(() => {
-    process.env.ALLOWED_ORIGINS = "http://localhost:8205";
-  });
-  afterAll(() => {
-    process.env.ALLOWED_ORIGINS = savedOrigins;
-  });
-
-  async function post(body: unknown, actor?: { db: typeof db }) {
-    const headers: Record<string, string> = { "content-type": "application/json", origin: "http://localhost:8205" };
-    if (actor) {
-      const { data } = await actor.db.auth.getSession();
-      headers.authorization = `Bearer ${data.session!.access_token}`;
-    }
-    return swapsRoute(new Request(BASE, { method: "POST", headers, body: JSON.stringify(body) }));
-  }
+describe("POST /v1/swaps", () => {
+  const post = (body: unknown, actor?: Actor) => v1(actor, "POST /v1/swaps", body);
 
   async function asking() {
     const house = await makeHouse(["Ava", "Ben"]);
@@ -494,7 +478,7 @@ describe("POST /api/swaps", () => {
   it("asks, and answers the ask's id, which the person asked can see", async () => {
     const { ava, ben, mine, theirs } = await asking();
     const res = await post({ mine: mine.id, theirs: theirs.id }, ava);
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(201);
     const { offerId } = await res.json();
     expect((await ben.db.from("swap_offers").select("id").eq("id", offerId)).data).toEqual([{ id: offerId }]);
   });
@@ -503,7 +487,7 @@ describe("POST /api/swaps", () => {
     const { ben, mine, theirs } = await asking();
     const res = await post({ mine: theirs.id, theirs: mine.id }, ben);
     expect(res.status).toBeGreaterThanOrEqual(400);
-    expect((await res.json()).error).toBe("Only two open Johns from the same week can be swapped.");
+    expect(await problemOf(res)).toEqual({ code: "rejected", detail: "not_swappable" });
   });
 });
 

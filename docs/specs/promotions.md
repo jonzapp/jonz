@@ -59,20 +59,20 @@ The Stripe promotion code is named by Stripe and never typed by anyone.
 
 ## The API
 
-- `POST /api/admin/promotions`: make one (`PromotionRequest`). Money off goes
+- `owner_make_promotion on /v1`: make one (`PromotionRequest`). Money off goes
   live once Stripe has its coupon and code; if Stripe can't be reached it's
   saved as `making` and `ready: false` comes back.
-- `POST /api/admin/promotions/:id/retry`: Try again for one still `making`.
-- `POST /api/admin/promotions/:id/stop`: it stops working from now, and its
+- `retry_promotion on /v1`: Try again for one still `making`.
+- `owner_stop_promotion on /v1`: it stops working from now, and its
   Stripe code is turned off. Houses that used it keep what they got.
-- `POST /api/admin/promotions/:id/email`: Email them. Each named person who
+- `owner_promotion_emails on /v1`: Email them. Each named person who
   hasn't been sent it or used it gets the offer email, once however often
   it's pressed.
 - `GET /api/offer/:code`: what the link shows (`OfferView`). Anyone sees what
   it gives; signed in, also whether it's for them and on which of their
   houses it works. Never who else it's for. Opening a named one signed in as
   one of its emails is noted for the owner.
-- `POST /api/pass/checkout` takes `offer`, the code from the link. A free Pass
+- `pass_checkout on /v1` takes `offer`, the code from the link. A free Pass
   is given there and then and answers the Pass page; anything else goes to
   Stripe Checkout as before.
 - The owner's lists read `owner_promotions_page` / `_count` (search by name,

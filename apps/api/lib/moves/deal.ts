@@ -13,7 +13,7 @@ import { permitted } from "./permitted";
  * after that it re-deals the week, which deal_week only allows while nothing
  * in it has been ticked (someone new moved in, a John was added). deal_week
  * is the engine's, so who may ask is checked here, through the caller's own
- * session: only an admin of the house. The web's action and POST /api/deal
+ * session: only an admin of the house. The web's action and deal_week on /v1
  * both call this.
  */
 export async function dealThisWeek(caller: Caller, houseId: string, now: Date): Promise<Refusal | null> {

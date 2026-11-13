@@ -68,7 +68,7 @@
     "packages/core/src/steady-run.ts#steadyRun": 262,
     "packages/core/src/steady.ts#steadyWeek": 366,
     "packages/core/src/why.ts#dealtPart": 70,
-    "packages/server/src/executor.ts#createExecutor": 246,
+    "packages/server/src/executor.ts#createExecutor": 245,
     "packages/server/src/executor.ts#run": 85,
     "packages/server/src/openapi.ts#openApi": 86,
     "scripts/live-load.mjs#screen": 64
@@ -359,13 +359,6 @@
   },
   "unused": [],
   "repeats": {
-    "api/app/api/admin/promotions/[id]/email/route.ts = api/app/api/admin/promotions/[id]/retry/route.ts": 14,
-    "api/app/api/admin/promotions/[id]/retry/route.ts = api/app/api/admin/promotions/[id]/stop/route.ts": 15,
-    "api/app/api/disputes/[id]/votes/route.ts = api/app/api/oks/[id]/route.ts": 15,
-    "api/app/api/disputes/[id]/votes/route.ts = api/app/api/reports/[id]/draft/route.ts": 14,
-    "api/app/api/disputes/[id]/votes/route.ts = api/app/api/reports/[id]/fixed/route.ts": 14,
-    "api/app/api/reports/[id]/fixed/route.ts = api/app/api/reports/[id]/messages/route.ts": 16,
-    "api/app/api/reports/[id]/fixed/route.ts = api/app/api/reports/[id]/reply/route.ts": 16,
     "api/app/auth/v1/[...path]/route.ts = api/app/v1/houses/[houseId]/live/route.ts": 9,
     "api/lib/cors.ts = v1/src/cors.ts": 16,
     "api/lib/db/rest.ts = api/lib/db/rest.ts": 9,

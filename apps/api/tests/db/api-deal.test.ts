@@ -1,35 +1,28 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { OPTIONS, POST } from "@/app/api/deal/route";
 import { adminClient, signedInUser, type Actor } from "@/tests/support/clients";
 import { addJohns, makeHouse, thisWeek } from "@/tests/support/factories";
+import { APP_ORIGIN, preflight, problemOf, v1 } from "@/tests/support/v1";
 
 /**
- * POST /api/deal, called as the app calls it: a bearer token and JSON.
- * deal_week is the engine's, so the route's own check is all that stands
- * between a housemate and re-dealing the house: these prove it holds.
+ * Dealing the week (deal_week on /v1), called as the app calls it: a bearer
+ * token and JSON. deal_week is the engine's, so the executor's check is all
+ * that stands between a housemate and re-dealing the house: these prove it
+ * holds.
  */
 
-const BASE = "http://localhost:3205/api/deal";
 const db = adminClient();
 const savedOrigins = process.env.ALLOWED_ORIGINS;
 
 beforeAll(() => {
-  process.env.ALLOWED_ORIGINS = "http://localhost:8205";
+  process.env.ALLOWED_ORIGINS = APP_ORIGIN;
 });
 
 afterAll(() => {
   process.env.ALLOWED_ORIGINS = savedOrigins;
 });
 
-async function dealAs(actor: Actor | undefined, body: unknown) {
-  const headers: Record<string, string> = { "content-type": "application/json", origin: "http://localhost:8205" };
-  if (actor) {
-    const { data } = await actor.db.auth.getSession();
-    headers.authorization = `Bearer ${data.session!.access_token}`;
-  }
-  return POST(new Request(BASE, { method: "POST", headers, body: JSON.stringify(body) }));
-}
+const dealAs = (actor: Actor | undefined, houseId: string) => v1(actor, `POST /v1/houses/${houseId}/deal`, {});
 
 /** This week's deal in the house: its John names, by who has them. */
 async function dealtIn(houseId: string) {
@@ -39,52 +32,52 @@ async function dealtIn(houseId: string) {
   return data!;
 }
 
-describe("POST /api/deal", () => {
+describe("POST /v1/houses/{houseId}/deal", () => {
   it("refuses a caller with no token", async () => {
-    const res = await dealAs(undefined, { houseId: crypto.randomUUID() });
+    const res = await dealAs(undefined, crypto.randomUUID());
     expect(res.status).toBe(401);
-    expect(await res.json()).toEqual({ error: "Sign in first." });
+    expect(await problemOf(res)).toEqual({ code: "unauthenticated", detail: "Sign in first." });
   });
 
   it("asks which house", async () => {
     const house = await makeHouse(["Ava"]);
-    const res = await dealAs(house.admin, { houseId: "flat-3" });
+    const res = await dealAs(house.admin, "flat-3");
     expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({ error: "Say which house to deal." });
+    expect((await problemOf(res)).code).toBe("invalid_input");
   });
 
   it("refuses anyone outside the house, and deals nothing", async () => {
     const house = await makeHouse(["Ava", "Ben"]);
     await addJohns(house.id, [{ name: "Bins" }], thisWeek());
     const stranger = await signedInUser("Zed");
-    const res = await dealAs(stranger, { houseId: house.id });
+    const res = await dealAs(stranger, house.id);
     expect(res.status).toBe(403);
-    expect(await res.json()).toEqual({ error: "That isn’t in your house." });
+    expect((await problemOf(res)).code).toBe("forbidden");
     expect(await dealtIn(house.id)).toBeNull();
   });
 
   it("is for admins only", async () => {
     const house = await makeHouse(["Ava", "Ben"]);
     await addJohns(house.id, [{ name: "Bins" }], thisWeek());
-    const res = await dealAs(house.members[0], { houseId: house.id });
+    const res = await dealAs(house.members[0], house.id);
     expect(res.status).toBe(403);
-    expect(await res.json()).toEqual({ error: "Only the house admins can do that." });
+    expect(await problemOf(res)).toEqual({ code: "forbidden", detail: "You need weeks:write in this house." });
     expect(await dealtIn(house.id)).toBeNull();
   });
 
   it("needs a John to hand out", async () => {
     const house = await makeHouse(["Ava", "Ben"]);
-    const res = await dealAs(house.admin, { houseId: house.id });
-    expect(res.status).toBe(409);
-    expect(await res.json()).toEqual({ error: "Add at least one John first." });
+    const res = await dealAs(house.admin, house.id);
+    expect(res.status).toBe(400);
+    expect(await problemOf(res)).toEqual({ code: "rejected", detail: "no_johns" });
   });
 
   it("hands out the first week, and starts the house", async () => {
     const house = await makeHouse(["Ava", "Ben"]);
     await addJohns(house.id, [{ name: "Bins" }, { name: "Bathroom" }], thisWeek());
-    const res = await dealAs(house.admin, { houseId: house.id });
-    expect(res.status).toBe(200);
-    expect(res.headers.get("access-control-allow-origin")).toBe("http://localhost:8205");
+    const res = await dealAs(house.admin, house.id);
+    expect(res.status).toBe(201);
+    expect(res.headers.get("access-control-allow-origin")).toBe(APP_ORIGIN);
     expect(await res.json()).toEqual({ ok: true });
 
     const dealt = await dealtIn(house.id);
@@ -98,33 +91,33 @@ describe("POST /api/deal", () => {
   it("re-deals a week nobody has ticked in, with a John added since", async () => {
     const house = await makeHouse(["Ava", "Ben"]);
     await addJohns(house.id, [{ name: "Bins" }], thisWeek());
-    expect((await dealAs(house.admin, { houseId: house.id })).status).toBe(200);
+    expect((await dealAs(house.admin, house.id)).status).toBe(201);
     await addJohns(house.id, [{ name: "Hoover" }], thisWeek());
 
-    const res = await dealAs(house.admin, { houseId: house.id });
-    expect(res.status).toBe(200);
+    const res = await dealAs(house.admin, house.id);
+    expect(res.status).toBe(201);
     expect((await dealtIn(house.id))!.map((a) => a.name)).toEqual(["Bins", "Hoover"]);
   });
 
   it("won't re-deal once a John is ticked", async () => {
     const house = await makeHouse(["Ava", "Ben"]);
     await addJohns(house.id, [{ name: "Bins" }, { name: "Bathroom" }], thisWeek());
-    expect((await dealAs(house.admin, { houseId: house.id })).status).toBe(200);
+    expect((await dealAs(house.admin, house.id)).status).toBe(201);
     const before = await dealtIn(house.id);
     const ticked = before![0];
     const owner = house.everyone.find((a) => a.userId === ticked.user_id)!;
     const { error } = await owner.db.rpc("mark_done", { p_assignment: ticked.id });
     expect(error).toBeNull();
 
-    const res = await dealAs(house.admin, { houseId: house.id });
-    expect(res.status).toBe(409);
-    expect(await res.json()).toEqual({ error: "Someone’s already ticked or flagged a John this week, so it can’t be re-dealt." });
+    const res = await dealAs(house.admin, house.id);
+    expect(res.status).toBe(400);
+    expect(await problemOf(res)).toEqual({ code: "rejected", detail: "deal_week: week_started" });
     expect(await dealtIn(house.id)).toEqual(before);
   });
 
-  it("answers a browser's preflight", () => {
-    const res = OPTIONS(new Request(BASE, { method: "OPTIONS", headers: { origin: "http://localhost:8205" } }));
+  it("answers a browser's preflight", async () => {
+    const res = await preflight(`/v1/houses/${crypto.randomUUID()}/deal`);
     expect(res.status).toBe(204);
-    expect(res.headers.get("access-control-allow-origin")).toBe("http://localhost:8205");
+    expect(res.headers.get("access-control-allow-origin")).toBe(APP_ORIGIN);
   });
 });

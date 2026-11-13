@@ -94,7 +94,7 @@ export async function createHouse(input: CreateHouse): Promise<string> {
 }
 
 /**
- * Catch the house up before showing it (apps/api's POST /api/fresh), as a
+ * Catch the house up before showing it (apps/api's catch_up on /v1), as a
  * page load does on the web. True when the server ticked.
  */
 export async function catchUp(houseId: string): Promise<boolean> {

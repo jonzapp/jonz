@@ -41,12 +41,12 @@ export async function readCopy(): Promise<NoticeT[] | null> {
   }
 }
 
-export function canWriteCopy(): boolean {
+function canWriteCopy(): boolean {
   return Boolean(process.env.EDGE_CONFIG_ID && process.env.VERCEL_API_TOKEN);
 }
 
 /** Replaces the copy. Throws when Vercel refuses, so the owner's page can say it didn't save. */
-export async function writeCopy(notices: NoticeT[], now: Date): Promise<void> {
+async function writeCopy(notices: NoticeT[], now: Date): Promise<void> {
   const id = process.env.EDGE_CONFIG_ID;
   const token = process.env.VERCEL_API_TOKEN;
   if (!id || !token) return;

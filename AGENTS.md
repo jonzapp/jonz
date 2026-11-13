@@ -179,7 +179,7 @@ that list to get a feature through, split the function instead.
   `save_group`, `delete_group`, `set_away`, `cancel_away`, `raise_flag`,
   `hand_over`, and `undo_action` / `undo_latest` for Undo
   (`docs/specs/undo-history.md`); an admin's resets go through
-  `POST /api/resets` to the service-role-only `admin_reset`
+  `reset_house on /v1` to the service-role-only `admin_reset`
   (`docs/specs/admin-resets.md`);
   a notification's buttons reach `mark_done` and `cast_vote` through the
   service-role-only `push_action`; the owner's admin pages write through

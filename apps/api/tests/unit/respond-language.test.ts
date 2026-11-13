@@ -5,7 +5,7 @@ import { refused, wordsOf } from "@/lib/respond";
 
 // A sentence the API writes is in the caller's language: the app sends it as Accept-Language.
 describe("the caller's words", () => {
-  const asked = (language?: string) => new Request("https://api.jonz.app/api/fresh", { headers: language ? { "accept-language": language } : {} });
+  const asked = (language?: string) => new Request("https://api.jonz.app/api/notices", { headers: language ? { "accept-language": language } : {} });
 
   it("reads the language the app sends", () => {
     expect(wordsOf(asked("en-XA")).language).toBe("en-XA");

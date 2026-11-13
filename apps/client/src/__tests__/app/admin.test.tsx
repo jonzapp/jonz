@@ -79,7 +79,6 @@ jest.mock('@/api/houses', () => ({
   }),
 }));
 jest.mock('@/api/supabase', () => ({ supabase: {} }));
-jest.mock('@/api/http', () => ({ apiPost: jest.fn() }));
 jest.mock('expo-clipboard', () => ({ setStringAsync: jest.fn().mockResolvedValue(true) }));
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({ __esModule: true, default: jest.fn() }));
 jest.mock('@/hooks/use-membership', () => ({

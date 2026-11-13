@@ -105,10 +105,10 @@ where a server is genuinely needed. Going through every server action today:
 | Photo receipt | browser → `proofs` bucket | **Storage, direct** (same policies) |
 | Live updates | Realtime on `events`, `assignments`, `disputes` | **Realtime, direct** |
 | Default currency and time zone for a new house | Vercel geo headers | device locale (`expo-localization`) through `currencyForCountry` in core |
-| Hand out this week's Johns | action runs the engine with the service role | **`POST /api/deal`** |
-| Raise a dispute | action: rpc, then pushes to the ticker and voters, then a tick (a house of two decides at once) | **`POST /api/disputes`** |
-| Cast a vote | action: rpc, then a tick (a majority decides at once) | **`POST /api/disputes/:id/votes`** |
-| Catch the house up before showing it | `ensureFresh` on page load | **`POST /api/fresh`** when a screen gains focus, at most once a minute per house, as now |
+| Hand out this week's Johns | action runs the engine with the service role | **`deal_week on /v1`** |
+| Raise a dispute | action: rpc, then pushes to the ticker and voters, then a tick (a house of two decides at once) | **`raise_dispute on /v1`** |
+| Cast a vote | action: rpc, then a tick (a majority decides at once) | **`cast_vote on /v1`** |
+| Catch the house up before showing it | `ensureFresh` on page load | **`catch_up on /v1`** when a screen gains focus, at most once a minute per house, as now |
 | The clock | pg_cron → `/api/cron/tick` | unchanged |
 | Reminders and alerts | web push from the tick and the dispute action | the same messages, also sent to phones through Expo's push service (decision 3) |
 
@@ -497,7 +497,7 @@ As built, where it differs from the above:
 ### Phase 5: join and create a house, and the API foundation
 
 - `apps/api`: the template's `requireUser` / `respond` / `cors` helpers,
-  `POST /api/fresh`, and `proxy.ts` no longer matching `/api/*`. A db-tier
+  `catch_up on /v1`, and `proxy.ts` no longer matching `/api/*`. A db-tier
   test calls the route handlers directly: no token is 401, someone else's
   house is refused, and a second call within a minute doesn't tick.
 - `apps/client`: no-house screen, `join/[code]` (the same path as the web's
@@ -511,7 +511,7 @@ As built, where it differs from the above:
   already has them; the helpers are otherwise the template's. `ALLOWED_ORIGINS`
   is local only for now: the Expo web build calls from 8205, and once it
   serves johns.glyn.dev (Phase 13) it calls from the same origin.
-- **`POST /api/fresh` takes the house's id** and refuses (404) a house the
+- **`catch_up on /v1` takes the house's id** and refuses (404) a house the
   caller's own RLS can't read; `ensureFresh` now says whether it ticked.
 - **The no-house screen offers a code box** beside "Start a house": a link
   opened on a phone lands on the join screen, but a code read off another
@@ -587,7 +587,7 @@ As built, where it differs from the above:
   votes waiting for you. "Use your swap" trades through `use_swap`
   directly. Still to come on Week: the week's Table beside the board
   (Phase 9), who's away (Phase 11) and an admin's re-deal (Phase 11, with
-  `POST /api/deal`).
+  `deal_week on /v1`).
 - The words for all of it moved to core (`WEEK_COPY`, `DISPUTE_COPY`,
   `SWAP_COPY`, `SECTION_LABEL`, `SHELL_COPY`), and the web uses them.
 
@@ -637,7 +637,7 @@ As built, where it differs from the above:
 Settings and the John list (admins, via the column grants), groups, time away
 (the calendar), members and roles, the invite (the system share sheet with
 the link and the code), renaming yourself, signing out, and "Hand out this
-week's Johns" through `POST /api/deal`. After this the phone can run a house
+week's Johns" through `deal_week on /v1`. After this the phone can run a house
 from nothing.
 
 As built, where it differs from the above:
@@ -645,7 +645,7 @@ As built, where it differs from the above:
   the invite, who lives here, and you (renaming, signing out, leaving); the
   second (11b) is groups and time away.
 - **The deal is `lib/moves/deal.ts`**, shared by the web's action and
-  `POST /api/deal`. `deal_week` is the engine's (service role only), so the
+  `deal_week on /v1`. `deal_week` is the engine's (service role only), so the
   move checks, through the caller's own session, that they're an admin of
   that house; db tests prove a stranger and a housemate are refused (403)
   and a week with a tick in it can't be re-dealt (409).

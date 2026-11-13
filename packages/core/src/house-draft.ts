@@ -1,5 +1,5 @@
 // A house's John list, drafted and changed in a chat with Jonz (Claude,
-// through POST /api/setup/draft). For a new house the admin says what the
+// through ask_house on /v1). For a new house the admin says what the
 // house is like, Jonz asks a question or two and drafts the list, and every
 // message after that changes the draft; a starter list stands in whenever
 // Claude can't. For a house with a list already, the draft starts as that
@@ -264,7 +264,7 @@ export const DRAFT_SOURCES = ["ai", "starter"] as const;
 export type DraftSource = (typeof DRAFT_SOURCES)[number];
 
 /**
- * POST /api/setup/draft: the chat so far, ending with what the admin just
+ * ask_house on /v1: the chat so far, ending with what the admin just
  * said, and the draft as it stands (null before there is one), which the
  * answer changes.
  */
