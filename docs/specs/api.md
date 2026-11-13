@@ -69,6 +69,9 @@ when the executor's check is taken away.
     operation a house move can name, is always allowed (Glyn, 2026-11-11, for
     Reset a house). A caller must skip a move it doesn't know. Each one still
     gets its lines in the ignore file, with no need to ask again.
+  - A report message's `id` in `owner_open_report` is text, not a uuid: it
+    is a number in the database and never was a uuid, so the operation failed
+    on any report with a message (Glyn, 2026-11-12).
 - **The OpenAPI document.** It is OpenAPI 3.1, built from the operations
   themselves and served at `/v1/openapi.json`.
 - **Retiring an operation.** It gets `Deprecation` (RFC 9745) and `Sunset`

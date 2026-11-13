@@ -164,7 +164,8 @@ const report = z.object({
   subject: text.nullable(),
   sameAs: sameAsReport.nullable(),
   also: z.array(z.object({ id, words: text, state: text, createdAt: at, name: text.nullable() })),
-  messages: z.array(z.object({ id, fromOwner: bool, authorName: text.nullable(), body: text, at })),
+  // A message's id is a number in the database, sent as text.
+  messages: z.array(z.object({ id: text, fromOwner: bool, authorName: text.nullable(), body: text, at })),
 });
 const promotionRow = z.object({
   id,
