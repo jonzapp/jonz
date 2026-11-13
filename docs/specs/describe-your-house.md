@@ -43,7 +43,7 @@ on Today, Week and House (not while a parent is acting for a kid).
 
 ## Inputs and outputs
 
-- `POST /api/setup/draft` `{ houseId, summary, messages, draft }` (`ChatRequest`):
+- `ask_house on /v1` `{ houseId, summary, messages, draft }` (`ChatRequest`):
   the chat so far (at most 40 messages of up to 800 characters, ending with
   the admin's), Jonz's `summary` of anything before them (or none), and the
   draft as it stands, or null. It answers
@@ -71,7 +71,7 @@ on Today, Week and House (not while a parent is acting for a kid).
   at a person's 40 turns a day from any house. `allowance.limit` says which
   runs out first (`house`, `mine` or `account`); for `account`, `resetsAt`
   is when its oldest turn drops off. Each answer says what's left (`allowance`, an `AskUsage`), and
-  `POST /api/ask/usage` `{ houseId }` gives the same to anyone in the house
+  `ask_usage on /v1` `{ houseId }` gives the same to anyone in the house
   (`lib/moves/ask-usage.ts`). The chat says nothing while there's plenty;
   under a quarter left (`ASK_LOW`) a card over the box says how much and
   when more comes, and opens **Ask Jonz usage** (`/house/ask-usage`, also a

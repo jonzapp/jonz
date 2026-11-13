@@ -23,7 +23,7 @@ export interface MessageWays {
   email: boolean;
 }
 
-/** POST /api/admin/messages: a message to send, or `test` to send it to yourself. */
+/** owner_send_message on /v1: a message to send, or `test` to send it to yourself. */
 export const OwnerMessageRequest = z.object({
   audience: z.enum(["person", "house", "everyone", "test"]),
   personId: z.uuid().nullable().default(null),

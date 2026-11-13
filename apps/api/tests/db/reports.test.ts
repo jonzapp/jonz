@@ -3,14 +3,13 @@ import { randomUUID } from "node:crypto";
 import { camelKeys, OPERATION_IO } from "@app/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { POST as replyRoute } from "@/app/api/reports/[id]/reply/route";
-import { POST as sendRoute } from "@/app/api/reports/route";
 import { pushIn } from "@/lib/engine/tick";
 import { replyToReport, sendReport, writeBack, type Outbox } from "@/lib/moves/reports";
 import { adminClient, signedInUser, visitor, type Actor } from "@/tests/support/clients";
 import { expectDenied, expectOk, expectRule } from "@/tests/support/expect";
 import { makeHouse, type House } from "@/tests/support/factories";
 import { passSecondFactor } from "@/tests/support/mfa";
+import { v1 } from "@/tests/support/v1";
 
 /**
  * Report a problem (docs/specs/report-a-problem.md): anyone signed in sends
@@ -255,24 +254,16 @@ describe("telling the other side", () => {
   });
 
   it("answers the app as the app calls it", async () => {
-    const token = async (a: Actor) => (await a.db.auth.getSession()).data.session!.access_token;
-    const post = async (url: string, body: unknown, a: Actor) =>
-      new Request(url, {
-        method: "POST",
-        headers: { "content-type": "application/json", authorization: `Bearer ${await token(a)}` },
-        body: JSON.stringify(body),
-      });
-    const made = await sendRoute(await post("http://localhost:3205/api/reports", { kind: "idea", words, details: null, shots: [] }, ava));
-    expect(made.status).toBe(200);
+    const made = await v1(ava, "POST /v1/me/reports", { kind: "idea", words, details: null, shots: [] });
+    expect(made.status).toBe(201);
     const { id } = (await made.json()) as { id: string };
-    const bad = await sendRoute(await post("http://localhost:3205/api/reports", { kind: "idea", words: "", details: null, shots: [] }, ava));
+    const bad = await v1(ava, "POST /v1/me/reports", { kind: "idea", words: "", details: null, shots: [] });
     expect(bad.status).toBe(400);
 
-    const params = { params: Promise.resolve({ id }) };
-    const notOwner = await replyRoute(await post(`http://localhost:3205/api/reports/${id}/reply`, { body: "Hi" }, ben), params);
+    const notOwner = await v1(ben, `POST /v1/admin/reports/${id}/reply`, { body: "Hi" });
     expect(notOwner.status).toBe(403);
-    const replied = await replyRoute(await post(`http://localhost:3205/api/reports/${id}/reply`, { body: "Good idea." }, owner), params);
-    expect(replied.status).toBe(200);
+    const replied = await v1(owner, `POST /v1/admin/reports/${id}/reply`, { body: "Good idea." });
+    expect(replied.status).toBe(201);
   });
 });
 

@@ -13,7 +13,7 @@ import { OwnerMove, OWNER_MOVES_MAX } from "./owner-moves";
 /** Questions the owner can ask in a day: plenty for a day's work, few enough that a stuck script can't run up a bill. */
 export const OWNER_ASK_TURNS_PER_DAY = 200;
 
-/** POST /api/admin/ask: the chat so far, ending with what the owner just asked. */
+/** ask_owner on /v1: the chat so far, ending with what the owner just asked. */
 export const OwnerAskRequest = z.object({
   messages: z
     .array(ChatMessage)

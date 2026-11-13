@@ -170,7 +170,7 @@ export function createExecutor(options: ExecutorOptions) {
 
   for (const op of options.operations) {
     if (!op.handler && !op.operation.rpc?.name) throw new Error(`${op.name} has neither a database function nor a handler`);
-    if (op.handler && op.operation.rpc && !op.operation.rpc.server && !op.operation.route) throw new Error(`${op.name} has a handler but runs its database function alone`);
+    if (op.handler && op.operation.rpc && !op.operation.rpc.server && !op.operation.server) throw new Error(`${op.name} has a handler but runs its database function alone`);
     if (!op.handler && op.operation.rpc?.server) throw new Error(`${op.name} runs on the server but has no handler`);
     if (op.deprecated && op.deprecated.sunset.getTime() - op.deprecated.since.getTime() < SUNSET_NOTICE_MS) {
       throw new Error(`${op.name} sunsets less than six months after it was deprecated`);

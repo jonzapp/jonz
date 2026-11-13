@@ -23,7 +23,6 @@ jest.mock('@/api/messages', () => ({
   sentCount: jest.fn(),
 }));
 jest.mock('@/api/supabase', () => ({ supabase: {} }));
-jest.mock('@/api/http', () => ({ apiPost: jest.fn() }));
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({ __esModule: true, default: jest.fn() }));
 jest.mock('@/hooks/use-membership', () => ({
   useMembership: () => ({ session: { user: { id: 'owner' } }, house: null, refresh: jest.fn() }),

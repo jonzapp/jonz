@@ -1,10 +1,10 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { POST as resetRoute } from "@/app/api/resets/route";
 import { tickHouse } from "@/lib/engine/tick";
 import { adminClient, type Actor } from "@/tests/support/clients";
 import { expectOk, expectRule } from "@/tests/support/expect";
 import { actorFor, addJohns, deal, makeHouse, reread, someoneElse, thisWeek } from "@/tests/support/factories";
+import { problemOf, v1 } from "@/tests/support/v1";
 
 /**
  * Fair checks (20261128090000_fair_checks.sql, docs/specs/fair-checks.md):
@@ -176,21 +176,7 @@ describe("the check window", () => {
 });
 
 describe("an admin's own result", () => {
-  async function reset(actor: Actor, body: Record<string, unknown>) {
-    const { data } = await actor.db.auth.getSession();
-    const response = await resetRoute(
-      new Request("http://localhost:3212/api/resets", {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          origin: "http://localhost:8212",
-          authorization: `Bearer ${data.session!.access_token}`,
-        },
-        body: JSON.stringify(body),
-      }),
-    );
-    return { status: response.status, body: (await response.json()) as { error?: string } };
-  }
+  const reset = (actor: Actor, { houseId, ...body }: { houseId: string; [key: string]: unknown }) => v1(actor, `POST /v1/houses/${houseId}/resets`, body);
 
   it("is another admin's to change, not theirs", async () => {
     const house = await makeHouse(["Ava", "Ben"]);
@@ -199,11 +185,11 @@ describe("an admin's own result", () => {
     const mine = assignments.find((x) => x.user_id === house.admin.userId)!;
     const theirs = assignments.find((x) => x.user_id !== house.admin.userId)!;
 
-    const own = await reset(house.admin, { houseId: house.id, kind: "result", assignment: mine.id, outcome: "done", apply: true });
+    const own = await reset(house.admin, { houseId: house.id, kind: "result", assignmentId: mine.id, outcome: "done", apply: true });
     expect(own.status).toBe(403);
-    expect(own.body.error).toMatch(/can’t change your own result/);
+    expect(await problemOf(own)).toEqual({ code: "forbidden", detail: "You can't do that in this house." });
 
-    const other = await reset(house.admin, { houseId: house.id, kind: "result", assignment: theirs.id, outcome: "done" });
-    expect(other.status).toBe(200);
+    const other = await reset(house.admin, { houseId: house.id, kind: "result", assignmentId: theirs.id, outcome: "done" });
+    expect(other.status).toBe(201);
   });
 });

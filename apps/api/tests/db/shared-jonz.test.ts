@@ -1,11 +1,11 @@
 import { monthOf } from "@app/core";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { POST as rollCallRoute } from "@/app/api/roll-call/route";
 import { tickHouse } from "@/lib/engine/tick";
 import { adminClient, type Actor } from "@/tests/support/clients";
 import { expectDenied, expectOk, expectRule } from "@/tests/support/expect";
 import { actorFor, addJohns, deal, makeHouse, reread, thisWeek, weeksAgo, ZONE } from "@/tests/support/factories";
+import { problemOf, v1 } from "@/tests/support/v1";
 
 /**
  * Shared Jonz (20261102090000_shared_jonz.sql): a John done together is
@@ -251,24 +251,9 @@ describe("what the clock does with a roll call", () => {
   });
 });
 
-describe("POST /api/roll-call", () => {
-  const BASE = "http://localhost:3205/api/roll-call";
-  const savedOrigins = process.env.ALLOWED_ORIGINS;
-  beforeAll(() => {
-    process.env.ALLOWED_ORIGINS = "http://localhost:8205";
-  });
-  afterAll(() => {
-    process.env.ALLOWED_ORIGINS = savedOrigins;
-  });
-
-  async function post(body: unknown, actor?: Actor) {
-    const headers: Record<string, string> = { "content-type": "application/json", origin: "http://localhost:8205" };
-    if (actor) {
-      const { data } = await actor.db.auth.getSession();
-      headers.authorization = `Bearer ${data.session!.access_token}`;
-    }
-    return rollCallRoute(new Request(BASE, { method: "POST", headers, body: JSON.stringify(body) }));
-  }
+describe("POST /v1/assignments/{assignmentId}/roll-call", () => {
+  const post = ({ assignmentId, ...body }: { assignmentId: string; crew: string[] }, actor?: Actor) =>
+    v1(actor, `POST /v1/assignments/${assignmentId}/roll-call`, body);
 
   it("refuses a caller with no token, and asks for who did it", async () => {
     expect((await post({ assignmentId: crypto.randomUUID(), crew: [crypto.randomUUID()] })).status).toBe(401);
@@ -279,7 +264,7 @@ describe("POST /api/roll-call", () => {
   it("ticks it with who did it, and says how many", async () => {
     const { first, ticker, other } = await gardenTidy();
     const res = await post({ assignmentId: first.id, crew: [ticker.userId, other.userId] }, ticker);
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(201);
     expect(await res.json()).toEqual({ ok: true, people: 2 });
     expect((await crewOf(first.id)).map((c) => c.points)).toEqual([4, 4]);
   });
@@ -288,6 +273,6 @@ describe("POST /api/roll-call", () => {
     const { first, ticker, spare } = await gardenTidy();
     const res = await post({ assignmentId: first.id, crew: [spare.userId] }, ticker);
     expect(res.status).toBeGreaterThanOrEqual(400);
-    expect((await res.json()).error).toBeTruthy();
+    expect(await problemOf(res)).toEqual({ code: "rejected", detail: "not_in_crew" });
   });
 });

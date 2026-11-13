@@ -45,7 +45,7 @@ type Open = { serial: number; saved: SavedChat | null };
 /**
  * The owner's Ask Jonz (docs/specs/owner-admin.md, "Ask Jonz, owner"): the
  * same chat pieces as a housemate's, always in Night with Owner under the
- * title on its bar, so it's never mistaken for theirs. It asks /api/admin/ask, which
+ * title on its bar, so it's never mistaken for theirs. It asks ask_owner on /v1, which
  * reads what the admin pages show and puts anything to do on a card (the
  * house's MovesCard's twin): nothing changes until the owner taps it. Its
  * chips open a report, an audit entry, an account's log or an admin page.

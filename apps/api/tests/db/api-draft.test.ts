@@ -1,30 +1,29 @@
 import { addDaysTo, ASK_POOL_TOKENS, CHAT_RECENT, CHAT_SUM_AT, foldPoint, localDate, ASK_TURN_RESERVE, hasPass, passOf, CHAT_TURNS_PER_PERSON_PER_DAY, HouseDraft, PERMISSIONS, starterDraft, type DraftEdit } from "@app/core";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { OPTIONS, POST } from "@/app/api/setup/draft/route";
 import type { DraftAnswer, DraftContext, JonzTools } from "@/lib/ai/house-draft";
 import { houseUsage } from "@/lib/moves/ask-usage";
 import { chatTurn } from "@/lib/moves/draft";
 import { adminClient, signedInUser, type Actor } from "@/tests/support/clients";
 import { expectOk } from "@/tests/support/expect";
 import { addJohns, deal, makeHouse, thisWeek } from "@/tests/support/factories";
+import { APP_ORIGIN, preflight, problemOf, v1 } from "@/tests/support/v1";
 import { wordsFor } from '@app/core';
 
 const words = wordsFor('en', 'housemates');
 
 /**
- * POST /api/setup/draft, called as the app calls it, and the chat turn
+ * Ask Jonz for a house (ask_house on /v1), called as the app calls it, and the chat turn
  * behind it with Claude stood in for. Claude itself is never called here:
  * without the AI Gateway (no Vercel, no AI_GATEWAY_API_KEY) the route offers
  * a starter list, which is also what production does when the gateway is down.
  */
 
-const BASE = "http://localhost:3205/api/setup/draft";
 const db = adminClient();
 const saved = { origins: process.env.ALLOWED_ORIGINS, key: process.env.AI_GATEWAY_API_KEY, vercel: process.env.VERCEL };
 
 beforeAll(() => {
-  process.env.ALLOWED_ORIGINS = "http://localhost:8205";
+  process.env.ALLOWED_ORIGINS = APP_ORIGIN;
   delete process.env.AI_GATEWAY_API_KEY;
   delete process.env.VERCEL;
 });
@@ -35,14 +34,8 @@ afterAll(() => {
   if (saved.vercel) process.env.VERCEL = saved.vercel;
 });
 
-async function chatAs(actor: Actor | undefined, body: unknown) {
-  const headers: Record<string, string> = { "content-type": "application/json", origin: "http://localhost:8205" };
-  if (actor) {
-    const { data } = await actor.db.auth.getSession();
-    headers.authorization = `Bearer ${data.session!.access_token}`;
-  }
-  return POST(new Request(BASE, { method: "POST", headers, body: JSON.stringify(body) }));
-}
+const chatAs = (actor: Actor | undefined, { houseId, ...body }: { houseId: string; [key: string]: unknown }) =>
+  v1(actor, `POST /v1/houses/${houseId}/ask`, body);
 
 async function turnsIn(houseId: string) {
   const { data } = await db.from("house_drafts").select("outcome, johns, input_tokens, output_tokens, user_id").eq("house_id", houseId);
@@ -52,7 +45,7 @@ async function turnsIn(houseId: string) {
 const A_HOUSE = "Me, Ben and Cal in a terrace. Bins go out Tuesday night.";
 const said = (text: string) => [{ role: "user" as const, text }];
 
-describe("POST /api/setup/draft", () => {
+describe("POST /v1/houses/{houseId}/ask", () => {
   it("refuses a caller with no token", async () => {
     const res = await chatAs(undefined, { houseId: crypto.randomUUID(), messages: said(A_HOUSE), draft: null });
     expect(res.status).toBe(401);
@@ -62,27 +55,27 @@ describe("POST /api/setup/draft", () => {
     const house = await makeHouse(["Ava"]);
     const res = await chatAs(house.admin, { houseId: house.id, messages: said("  "), draft: null });
     expect(res.status).toBe(400);
-    expect((await res.json()).error).toMatch(/Say something about the house/);
+    expect((await problemOf(res)).detail).toMatch(/Say something about the house/);
   });
 
   it("refuses anyone outside the house", async () => {
     const house = await makeHouse(["Ava"]);
     const res = await chatAs(await signedInUser("Zed"), { houseId: house.id, messages: said(A_HOUSE), draft: null });
     expect(res.status).toBe(403);
-    expect(await res.json()).toEqual({ error: "That isn’t in your house." });
+    expect(await problemOf(res)).toEqual({ code: "forbidden", detail: "You need house:read in this house." });
   });
 
   it("answers a member too, with no list to keep when Claude isn't set up", async () => {
     const house = await makeHouse(["Ava", "Ben"]);
     const res = await chatAs(house.members[0], { houseId: house.id, messages: said("Who's on bins?"), draft: null });
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(201);
     expect(await res.json()).toEqual({ reply: words('ask.draft.offlineAsk'), ask: null, draft: null, source: "starter" });
   });
 
   it("offers a starter list that fits when Claude isn't set up, adds nothing and counts nothing", async () => {
     const house = await makeHouse(["Ava"]);
     const res = await chatAs(house.admin, { houseId: house.id, messages: said("Me, my husband and the kids"), draft: null });
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(201);
     expect(await res.json()).toEqual({ reply: words('ask.draft.offline'), ask: null, draft: starterDraft("family"), source: "starter" });
     expect(await turnsIn(house.id)).toEqual([]);
     const { count } = await db.from("johns").select("id", { count: "exact", head: true }).eq("house_id", house.id);
@@ -97,7 +90,7 @@ describe("POST /api/setup/draft", () => {
   });
 
   it("answers a browser's preflight", async () => {
-    const res = OPTIONS(new Request(BASE, { method: "OPTIONS", headers: { origin: "http://localhost:8205" } }));
+    const res = await preflight(`/v1/houses/${crypto.randomUUID()}/ask`);
     expect(res.status).toBe(204);
   });
 });
