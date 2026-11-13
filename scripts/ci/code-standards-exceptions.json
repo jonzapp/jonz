@@ -1,8 +1,6 @@
 {
   "files": {
-    "apps/api/lib/db/rest.ts": 973,
     "apps/api/lib/engine/tick.ts": 954,
-    "apps/client/src/components/house/setup-chat.tsx": 783,
     "scripts/provision/lib.mjs": 516
   },
   "functions": {
@@ -10,7 +8,6 @@
     "apps/api/lib/ai/house-draft.ts#jonzToolSet": 124,
     "apps/api/lib/ai/owner-ask.ts#ownerToolSet": 62,
     "apps/api/lib/ai/owner-ask.ts#writeTools": 89,
-    "apps/api/lib/db/rest.ts#build": 169,
     "apps/api/lib/engine/tell.ts#tellHouse": 96,
     "apps/api/lib/engine/tick.ts#closeWeeks": 63,
     "apps/api/lib/engine/tick.ts#dealWeek": 242,
@@ -80,11 +77,10 @@
     "apps/api/lib/ai/owner-ask.ts#askOwnerClaude": 5,
     "apps/api/lib/ai/sum-up.ts#sumUpChat": 4,
     "apps/api/lib/ai/support-draft.ts#askSupportClaude": 4,
+    "apps/api/lib/db/rest-select.ts#condition": 4,
     "apps/api/lib/db/rest.ts#add": 4,
     "apps/api/lib/db/rest.ts#alone": 5,
-    "apps/api/lib/db/rest.ts#condition": 4,
     "apps/api/lib/db/rest.ts#inside": 5,
-    "apps/api/lib/db/rest.ts#project": 4,
     "apps/api/lib/db/rest.ts#txClient": 4,
     "apps/api/lib/db/scope.ts#inOperation": 4,
     "apps/api/lib/email.ts#sendEmail": 4,
