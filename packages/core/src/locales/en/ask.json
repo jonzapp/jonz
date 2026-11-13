@@ -46,7 +46,7 @@
   "ask.draft.placeholderAsk": "Who’s on bins this week?",
   "ask.draft.orAsk": "Or tap a question:",
   "ask.draft.offlineAsk": "I couldn’t answer just now. Try again in a minute.",
-  "ask.draft.passNeeded": "Changing your list with Jonz comes with the House Pass. Setting up a new house stays free.",
+  "ask.draft.passNeeded": "Changing your list with Jonz comes with the House Pass",
   "ask.draft.seePass": "See the House Pass",
   "ask.usage.title": "Ask Jonz usage",
   "ask.usage.rowMeta": "{left}% of yours left this week",
@@ -110,5 +110,16 @@
   "ask.moves.awayTitle": "Away {range}",
   "ask.moves.cancelTitle": "Cancel time away {range}",
   "ask.moves.awayMeta": "{hasNote, select, true {{note}. } other {}}No Johns due while you’re gone; any you have then are due before you go.",
-  "ask.moves.cancelMeta": "The Johns it moved go back to when they were due."
+  "ask.moves.cancelMeta": "The Johns it moved go back to when they were due.",
+  "ask.draft.passNeededNote": "Setting up a new house stays free.",
+  "ask.long.summed": "Jonz summed up {n, plural, one {# earlier message} other {# earlier messages}}",
+  "ask.long.carried": "From your last chat",
+  "ask.long.nearlyFull": "This chat is getting long. At {max} messages you’ll carry on in a new one, and Jonz takes a summary with it.",
+  "ask.long.full": "This chat is full",
+  "ask.long.fullNote": "Carry on in a new chat. Jonz takes a summary of this one with it, so you won’t need to explain again.",
+  "ask.long.carryOn": "Carry on in a new chat",
+  "ask.long.you": "You",
+  "ask.long.jonz": "Jonz",
+  "ask.usage.outAccount": "You’ve used your Ask Jonz this week",
+  "ask.usage.outAccountNote": "It counts across every house you’re in. Some comes back {backOn}, as older questions drop off."
 }
