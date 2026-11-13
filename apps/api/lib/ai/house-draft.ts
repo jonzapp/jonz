@@ -176,10 +176,9 @@ function chatMessages(ctx: DraftContext): { role: "user" | "assistant"; content:
   return chat;
 }
 
-/** The tools Claude gets this turn: every read, and the writes this person may make. */
-export function jonzToolSet(t: JonzTools): ToolSet {
-  const said = (r: EditResult) => r.said;
-  const set: ToolSet = {
+/** The reads that are a plain list: the John list, a week, people, time away, history, balances and the Stake. */
+function listTools(t: JonzTools): ToolSet {
+  return {
     list_johns: tool({
       description: "The house's John list as it stands in this chat, with each John's ref and every field.",
       inputSchema: z.object({}),
@@ -215,6 +214,12 @@ export function jonzToolSet(t: JonzTools): ToolSet {
       inputSchema: z.object({}),
       execute: async () => t.reads.stake(),
     }),
+  };
+}
+
+/** The reads that explain or wait on someone: why a John went where it did, the Wall, disputes, swaps and the rules. */
+function lookTools(t: JonzTools): ToolSet {
+  return {
     why_john: tool({
       description: "Why the deal gave a John to whom it did, this week or last: the reason, each person's standing against their share that it weighed, and what slipping it would cost. The same as the John sheet's Why?.",
       inputSchema: z.object({
@@ -245,6 +250,12 @@ export function jonzToolSet(t: JonzTools): ToolSet {
       execute: async () => t.reads.rules(),
     }),
   };
+}
+
+/** The tools that put something on the card: only the ones this person may use. */
+function cardTools(t: JonzTools): ToolSet {
+  const said = (r: EditResult) => r.said;
+  const set: ToolSet = {};
   if (t.may.add) {
     set.add_john = tool({
       description: "Propose a new John for the list. Shown on the card under Adding.",
@@ -300,6 +311,11 @@ export function jonzToolSet(t: JonzTools): ToolSet {
     });
   }
   return set;
+}
+
+/** The tools Claude gets this turn: every read, and the writes this person may make. */
+export function jonzToolSet(t: JonzTools): ToolSet {
+  return { ...listTools(t), ...lookTools(t), ...cardTools(t) };
 }
 
 /** Whether Claude is set up here (agent.ts); without it the chat answers with starter lists. */

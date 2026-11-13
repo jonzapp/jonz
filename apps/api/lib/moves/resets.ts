@@ -21,6 +21,35 @@ import { permitted } from "./permitted";
 import { dealWeek } from "@/lib/engine/deal-week";
 import { loadHouse } from "@/lib/engine/shared";
 
+/** Tells whoever a reset touched, in their own words ("Glyn reset your week", "Glyn marked Sam’s Bins done"). */
+async function tellReset(
+  admin: ReturnType<typeof createAdminClient>,
+  { house, request, done, by }: { house: Awaited<ReturnType<typeof loadHouse>>["house"]; request: ResetRequest; done: { action: string; told: string[] }; by: string | undefined },
+) {
+  const notify = pushNotifier(admin);
+  if (!notify || done.told.length === 0) return;
+  const rules = rulesOf(house);
+  const { data: action } = await admin.from("house_actions").select("subject_user_id, data").eq("id", done.action).single();
+  const data = (action?.data ?? {}) as Record<string, unknown>;
+  const subjectId = action?.subject_user_id ?? null;
+  const { data: subject } = subjectId
+    ? await admin.from("profiles").select("display_name").eq("id", subjectId).maybeSingle()
+    : { data: null };
+  for (const userId of done.told) {
+    // "Glyn reset your week", "Glyn marked Sam’s Bins done".
+    const whose = (w: Words) => (userId === subjectId ? w("wall.feed.you") : (subject?.display_name ?? w("wall.feed.someone")));
+    await notify([userId], {
+      title: (w) => w("wall.history.line.reset", { who: by ?? w("wall.tell.anAdmin"), what: resetWhat(data, whose(w), w) }),
+      body: (w) => w("wall.tell.openToSee"),
+      houseKind: houseKind(house.kind),
+      url: request.kind === "letoff" ? "/house/stake" : "/week",
+      kind: "checks",
+      zone: rules.timezone,
+      tag: `reset:${done.action}`,
+    });
+  }
+}
+
 /**
  * An admin's reset (supabase/migrations/*_admin_resets.sql admin_reset):
  * without `apply`, what it would change, for the reset sheet; with it, the
@@ -53,10 +82,7 @@ export async function resetHouse(
   const { house, members } = await loadHouse(admin, request.houseId);
   const rules = rulesOf(house);
   const staked = hasPass(passOf(house), now);
-  const forfeits = {
-    late: staked ? forfeitFor("late", rules) : 0,
-    missed: staked ? forfeitFor("missed", rules) : 0,
-  };
+  const forfeits = { late: staked ? forfeitFor("late", rules) : 0, missed: staked ? forfeitFor("missed", rules) : 0 };
 
   if (request.kind === "redeal") {
     const { data: week } = await admin.from("weeks").select("starts_on").eq("id", request.week ?? "").maybeSingle();
@@ -65,13 +91,7 @@ export async function resetHouse(
     }
   }
 
-  const target = {
-    week: request.week,
-    user: request.user,
-    assignment: request.assignment,
-    outcome: request.outcome,
-    month: request.month,
-  };
+  const target = { week: request.week, user: request.user, assignment: request.assignment, outcome: request.outcome, month: request.month };
   const { data, error } = await admin.rpc("admin_reset", {
     p_actor: caller.userId,
     p_house: request.houseId,
@@ -93,29 +113,8 @@ export async function resetHouse(
     }
   }
 
-  const notify = pushNotifier(admin);
-  if (notify && done.told.length > 0) {
-    const by = (me?.profiles as { display_name: string } | null)?.display_name;
-    const { data: action } = await admin.from("house_actions").select("subject_user_id, data").eq("id", done.action).single();
-    const data = (action?.data ?? {}) as Record<string, unknown>;
-    const subjectId = action?.subject_user_id ?? null;
-    const { data: subject } = subjectId
-      ? await admin.from("profiles").select("display_name").eq("id", subjectId).maybeSingle()
-      : { data: null };
-    for (const userId of done.told) {
-      // "Glyn reset your week", "Glyn marked Sam’s Bins done".
-      const whose = (w: Words) => (userId === subjectId ? w("wall.feed.you") : (subject?.display_name ?? w("wall.feed.someone")));
-      await notify([userId], {
-        title: (w) => w("wall.history.line.reset", { who: by ?? w("wall.tell.anAdmin"), what: resetWhat(data, whose(w), w) }),
-        body: (w) => w("wall.tell.openToSee"),
-        houseKind: houseKind(house.kind),
-        url: request.kind === "letoff" ? "/house/stake" : "/week",
-        kind: "checks",
-        zone: rules.timezone,
-        tag: `reset:${done.action}`,
-      });
-    }
-  }
+  const by = (me?.profiles as { display_name: string } | null)?.display_name;
+  await tellReset(admin, { house, request, done, by });
   return { action: done.action };
 }
 

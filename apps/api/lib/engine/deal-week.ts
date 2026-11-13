@@ -56,6 +56,285 @@ async function loadGroupBalances(db: Db, houseId: string, beforeStartsOn: string
   return out;
 }
 
+/** The John list, whether this week exists yet, and what the week before left (turns and waiting). */
+async function readList(db: Db, house: HouseRow, week: WeekWindow) {
+  return Promise.all([
+    db.from("johns").select("*").eq("house_id", house.id).is("archived_at", null).order("created_at"),
+    db.from("weeks").select("created_at").eq("house_id", house.id).eq("starts_on", week.startsOn).maybeSingle(),
+    db
+      .from("weeks")
+      .select("turns, waiting")
+      .eq("house_id", house.id)
+      .lt("starts_on", week.startsOn)
+      .order("starts_on", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ]).then(([l, e, p]) => ({ list: must(l, "johns"), existing: must(e, "this week"), previous: must(p, "last week") }));
+}
+
+/** What the deal reads about those Johns: groups, time away from `from` to `to`, and their turns before `from`. */
+async function readAround(db: Db, house: HouseRow, span: { johnIds: string[]; from: string; to: string }) {
+  return Promise.all([
+    db.from("groups").select("id, name, group_members(user_id)").eq("house_id", house.id),
+    db
+      .from("away_periods")
+      .select("id, user_id, starts_on, ends_on, note")
+      .eq("house_id", house.id)
+      .lte("starts_on", span.to)
+      .gte("ends_on", span.from),
+    db
+      .from("assignments")
+      .select("john_id, user_id, due_at, outcome, job_id, flagged_at, weeks!inner(starts_on)")
+      .in("john_id", span.johnIds)
+      .is("flagged_at", null)
+      .lt("weeks.starts_on", span.from)
+      .order("due_at", { ascending: false })
+      .limit(1000),
+    db
+      .from("on_call_picks")
+      .select("john_id, user_id, week_id, weeks!inner(starts_on)")
+      .in("john_id", span.johnIds)
+      .lt("weeks.starts_on", span.from)
+      // Newest first: ordered by the week itself (PostgREST orders by a many-to-one embed's column this way).
+      .order("weeks(starts_on)", { ascending: false })
+      .limit(200),
+  ]).then(([g, a, r, o]) => ({
+    groups: must(g, "groups"),
+    awayRows: must(a, "away"),
+    recent: must(r, "recent assignments"),
+    onCallRows: must(o, "last on call"),
+  }));
+}
+
+type JohnRow = Awaited<ReturnType<typeof readList>>["list"][number];
+type Around = Awaited<ReturnType<typeof readAround>>;
+
+/**
+ * Each John's last turn before this week: who had it (everyone with a place,
+ * for a John done together), and whether its one holder missed it.
+ */
+function lastTurns({ recent, onCallRows }: Pick<Around, "recent" | "onCallRows">): Map<string, SteadyLastTurn> {
+  const last = new Map<string, SteadyLastTurn>();
+  for (const r of recent) {
+    if (!r.john_id) continue;
+    const startsOn = r.weeks!.starts_on;
+    const turn = last.get(r.john_id);
+    if (!turn) {
+      last.set(r.john_id, {
+        startsOn,
+        userIds: [r.user_id],
+        ...(r.outcome === "missed" && !r.job_id ? { missed: { userId: r.user_id, dueAt: new Date(r.due_at) } } : {}),
+      });
+    } else if (turn.startsOn === startsOn && r.job_id && !turn.userIds.includes(r.user_id)) {
+      (turn.userIds as string[]).push(r.user_id);
+    }
+  }
+  for (const r of onCallRows) if (!last.has(r.john_id)) last.set(r.john_id, { startsOn: r.weeks!.starts_on, userIds: [r.user_id] });
+  return last;
+}
+
+/** On call counts toward the budget at what it usually takes: its flags a week over its last 4 weeks on call. */
+async function onCallUsualPoints(db: Db, list: readonly JohnRow[], onCallRows: Around["onCallRows"]): Promise<Map<string, number>> {
+  const onCall = list.filter((j) => j.kind === "on_call");
+  const points = new Map<string, number>();
+  if (onCall.length === 0) return points;
+  const weeksOf = new Map<string, string[]>();
+  for (const r of onCallRows) {
+    const ws = weeksOf.get(r.john_id) ?? [];
+    if (ws.length < ON_CALL_WEEKS && !ws.includes(r.week_id)) weeksOf.set(r.john_id, [...ws, r.week_id]);
+  }
+  const flagWeeks = [...new Set([...weeksOf.values()].flat())];
+  const flags = flagWeeks.length
+    ? must(
+        await db.from("assignments").select("john_id, week_id").in("week_id", flagWeeks).not("flagged_at", "is", null),
+        "recent flags",
+      )
+    : [];
+  for (const j of onCall) {
+    const usual = onCallUsual(
+      j.points,
+      weeksOf.get(j.id) ?? [],
+      flags.filter((f) => f.john_id === j.id && f.week_id).map((f) => f.week_id!),
+    );
+    if (usual !== null) points.set(j.id, usual);
+  }
+  return points;
+}
+
+/** Who shares a John this week, and the group it is in when anyone from it lives here. */
+interface Sharing {
+  sharers: string[];
+  groupName: string | null;
+  groupId: string | null;
+}
+
+/** Who is dealt this week: their ids, each one's year of birth, and the week's first day. */
+interface Dealt {
+  memberIds: readonly string[];
+  bornYear: ReadonlyMap<string, MemberRow["born_year"]>;
+  startsOn: string;
+}
+
+/**
+ * Who shares each John: its group's members who live here (everyone, if none
+ * of them do). In a family, a kid younger than the John's youngest age isn't
+ * dealt it (kids.ts).
+ */
+function sharersBy(groups: Around["groups"], { memberIds, bornYear, startsOn }: Dealt): (j: JohnRow) => Sharing {
+  return (j) => {
+    const group = j.group_id ? groups.find((g) => g.id === j.group_id) : undefined;
+    const inGroup = (group?.group_members ?? []).map((m) => m.user_id).filter((id) => memberIds.includes(id));
+    const all = inGroup.length > 0 ? inGroup : memberIds;
+    const sharers = all.filter((id) => oldEnough(bornYear.get(id), j.min_age, startsOn));
+    return { sharers, groupName: inGroup.length > 0 ? group!.name : null, groupId: inGroup.length > 0 ? group!.id : null };
+  };
+}
+
+type Pools = (userId: string, balance: number) => Record<string, number>;
+
+/**
+ * Each balance split by pool: each group they're in now with a John on the
+ * list, and the whole house's (the rest, which takes in a group they've left
+ * or a group's John they covered from outside it).
+ */
+function poolSplit(groups: Around["groups"], poolGroups: readonly string[], groupBalances: Map<string, Map<string, number>>): Pools {
+  return (userId, balance) => {
+    const mine = poolGroups.filter((g) => groups.find((x) => x.id === g)?.group_members.some((m) => m.user_id === userId));
+    const pools: Record<string, number> = Object.fromEntries(mine.map((g) => [g, groupBalances.get(userId)?.get(g) ?? 0]));
+    pools[""] = balance - mine.reduce((s, g) => s + pools[g], 0);
+    return pools;
+  };
+}
+
+/** A John on the list as the deal reads it. */
+function steadyJohn(j: JohnRow, sharing: Sharing): SteadyDealArgs["johns"][number] {
+  return {
+    id: j.id,
+    points: j.points,
+    kind: j.kind === "on_call" ? "on_call" : "day",
+    perWeek: j.per_week,
+    crew: j.crew,
+    keepDay: j.keep_day,
+    repeat: {
+      everyWeeks: j.every_weeks,
+      everyMonths: j.every_months,
+      weekOfMonth: j.week_of_month,
+      anchorMonth: j.anchor_month,
+      anchorWeek: j.anchor_week,
+      dueDow: j.due_dow as IsoDow,
+    },
+    dueTime: j.due_time,
+    sharers: sharing.sharers,
+    groupId: sharing.groupId,
+  };
+}
+
+/** Everything the deal is handed, as read. */
+interface DealFacts extends Pick<SteadyDealArgs, "week" | "now" | "away" | "last" | "previous" | "onCallPoints"> {
+  house: HouseRow;
+  dealt: readonly MemberRow[];
+  list: readonly JohnRow[];
+  sharersOf: (j: JohnRow) => Sharing;
+  balances: ReadonlyMap<string, number>;
+  /** Each balance by pool; null when no John on the list is a group's. */
+  pools: Pools | null;
+}
+
+function dealArgs({ house, dealt, list, sharersOf, balances, pools, ...rest }: DealFacts): SteadyDealArgs {
+  const rules = rulesOf(house);
+  return {
+    mode: house.deal_mode === "classic" ? "classic" : "smart",
+    budget: house.deal_budget,
+    zone: rules.timezone,
+    weekStarts: rules.weekStarts,
+    members: dealt.map((m) => ({
+      userId: m.user_id,
+      balance: balances.get(m.user_id) ?? 0,
+      ...(pools ? { pools: pools(m.user_id, balances.get(m.user_id) ?? 0) } : {}),
+      suits: m.suits_days,
+      rather: ratherOf(m.rather),
+    })),
+    johns: list.map((j) => steadyJohn(j, sharersOf(j))),
+    makeup: house.away_makeup / 100,
+    seed: `${house.id}:${rest.week.startsOn}`,
+    ...rest,
+  };
+}
+
+type Plan = ReturnType<typeof steadyDeal>;
+
+/**
+ * The plan as rows to save, and each person's Johns for their push. Done
+ * together: one job per John, so its places stay together (crew.ts).
+ */
+function dealtRows(plan: Plan, johns: Pick<DealFacts, "list" | "sharersOf">, byUser: Map<string, PushLine[]>) {
+  const jobs = new Map<string, string>();
+  const johnOf = new Map(johns.list.map((j) => [j.id, j]));
+  const assignments = plan.places.flatMap((p) => {
+    const j = johnOf.get(p.johnId)!;
+    if (!p.dueAt) return [];
+    if (p.together && !jobs.has(j.id)) jobs.set(j.id, crypto.randomUUID());
+    byUser.set(p.userId, [...(byUser.get(p.userId) ?? []), j.name]);
+    return [
+      {
+        john_id: j.id,
+        user_id: p.userId,
+        name: j.name,
+        category: j.category,
+        points: j.points,
+        needs_photo: j.needs_photo,
+        due_at: p.dueAt.toISOString(),
+        group_name: johns.sharersOf(j).groupName,
+        dealt: p.why as unknown as Json,
+        job_id: p.together ? jobs.get(j.id)! : null,
+      },
+    ];
+  });
+  const onCallDealt = plan.places.flatMap((p) => {
+    if (p.dueAt) return [];
+    const j = johnOf.get(p.johnId)!;
+    byUser.set(p.userId, [...(byUser.get(p.userId) ?? []), (w: Words) => w('today.onCall.dealtAs', { john: j.name })]);
+    return [{ john_id: j.id, user_id: p.userId }];
+  });
+  return { assignments, onCallDealt };
+}
+
+/** A deal ready to save. */
+interface DealToSave extends ReturnType<typeof dealtRows> {
+  week: WeekWindow;
+  replace: boolean;
+  memberIds: readonly string[];
+  plan: Plan;
+  ahead: ReturnType<typeof steadyAhead>;
+}
+
+/** Saves the deal (deal_week), then the part of the shares that was each group's Johns, for the next deal's pools (house_group_balances). */
+async function saveDeal(db: Db, house: HouseRow, { week, replace, memberIds, plan, ahead, assignments, onCallDealt }: DealToSave) {
+  const weekId = must(
+    await db.rpc("deal_week", {
+      p_house: house.id,
+      p_starts_on: week.startsOn,
+      p_starts_at: week.startsAt.toISOString(),
+      p_ends_at: week.endsAt.toISOString(),
+      p_assignments: assignments,
+      p_shares: memberIds.map((id) => ({ user_id: id, share: Math.round((plan.shares.get(id) ?? 0) * 100) / 100 })),
+      p_replace: replace,
+      p_on_call: onCallDealt,
+      p_state: { ...plan.state, ahead } as unknown as Json,
+    }),
+    "deal_week",
+  );
+  if (!weekId) return null;
+  must(await db.from("week_group_shares").delete().eq("week_id", weekId), "clear group shares");
+  const rows = [...plan.groupShares].flatMap(([groupId, shares]) =>
+    [...shares]
+      .filter(([, share]) => share > 0)
+      .map(([userId, share]) => ({ week_id: weekId, house_id: house.id, group_id: groupId, user_id: userId, share: Math.round(share * 100) / 100 })),
+  );
+  if (rows.length) must(await db.from("week_group_shares").insert(rows), "group shares");
+  return weekId;
+}
+
 /**
  * Deal a week's Johns with Steady weeks (@app/core steady-deal.ts): the
  * house's mode and points budget, everyone's preferences, Classic's orders of
@@ -76,20 +355,8 @@ export async function dealWeek(
   now: Date,
   replace: boolean,
 ): Promise<{ weekId: string | null; byUser: Map<string, PushLine[]> }> {
-  const rules = rulesOf(house);
   const byUser = new Map<string, PushLine[]>();
-  const [list, existing, previous] = await Promise.all([
-    db.from("johns").select("*").eq("house_id", house.id).is("archived_at", null).order("created_at"),
-    db.from("weeks").select("created_at").eq("house_id", house.id).eq("starts_on", week.startsOn).maybeSingle(),
-    db
-      .from("weeks")
-      .select("turns, waiting")
-      .eq("house_id", house.id)
-      .lt("starts_on", week.startsOn)
-      .order("starts_on", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-  ]).then(([l, e, p]) => [must(l, "johns"), must(e, "this week"), must(p, "last week")] as const);
+  const { list, existing, previous } = await readList(db, house, week);
   const dealt = dealtMembers(
     stillHere(
       members.map((m) => ({ ...m, userId: m.user_id, joinedAt: new Date(m.joined_at), movingOutOn: m.moving_out_on })),
@@ -101,213 +368,30 @@ export async function dealWeek(
   const memberIds = dealt.map((m) => m.user_id);
   if (list.length === 0 || memberIds.length === 0) return { weekId: null, byUser };
 
-  const lastDay = localDate(new Date(week.endsAt.getTime() - 1), rules.timezone);
+  const lastDay = localDate(new Date(week.endsAt.getTime() - 1), rulesOf(house).timezone);
   // Time away read to the end of the weeks the deal looks ahead to, for Week's whose turn next.
   const lastAhead = addDaysTo(lastDay, 7 * AHEAD_WEEKS);
-  const johnIds = list.map((j) => j.id);
-  const [groups, awayRows, recent, onCallRows] = await Promise.all([
-    db.from("groups").select("id, name, group_members(user_id)").eq("house_id", house.id),
-    db
-      .from("away_periods")
-      .select("id, user_id, starts_on, ends_on, note")
-      .eq("house_id", house.id)
-      .lte("starts_on", lastAhead)
-      .gte("ends_on", week.startsOn),
-    db
-      .from("assignments")
-      .select("john_id, user_id, due_at, outcome, job_id, flagged_at, weeks!inner(starts_on)")
-      .in("john_id", johnIds)
-      .is("flagged_at", null)
-      .lt("weeks.starts_on", week.startsOn)
-      .order("due_at", { ascending: false })
-      .limit(1000),
-    db
-      .from("on_call_picks")
-      .select("john_id, user_id, week_id, weeks!inner(starts_on)")
-      .in("john_id", johnIds)
-      .lt("weeks.starts_on", week.startsOn)
-      // Newest first: ordered by the week itself (PostgREST orders by a many-to-one embed's column this way).
-      .order("weeks(starts_on)", { ascending: false })
-      .limit(200),
-  ]).then(([g, a, r, o]) => [must(g, "groups"), must(a, "away"), must(r, "recent assignments"), must(o, "last on call")] as const);
-
-  // Each John's last turn before this week: who had it (everyone with a place, for a John done together), and
-  // whether its one holder missed it.
-  const last = new Map<string, SteadyLastTurn>();
-  for (const r of recent) {
-    if (!r.john_id) continue;
-    const startsOn = r.weeks!.starts_on;
-    const turn = last.get(r.john_id);
-    if (!turn) {
-      last.set(r.john_id, {
-        startsOn,
-        userIds: [r.user_id],
-        ...(r.outcome === "missed" && !r.job_id ? { missed: { userId: r.user_id, dueAt: new Date(r.due_at) } } : {}),
-      });
-    } else if (turn.startsOn === startsOn && r.job_id && !turn.userIds.includes(r.user_id)) {
-      (turn.userIds as string[]).push(r.user_id);
-    }
-  }
-  for (const r of onCallRows) if (!last.has(r.john_id)) last.set(r.john_id, { startsOn: r.weeks!.starts_on, userIds: [r.user_id] });
-
-  // On call counts toward the budget at what it usually takes: its flags a week over its last 4 weeks on call.
-  const onCall = list.filter((j) => j.kind === "on_call");
-  const onCallPoints = new Map<string, number>();
-  if (onCall.length > 0) {
-    const weeksOf = new Map<string, string[]>();
-    for (const r of onCallRows) {
-      const ws = weeksOf.get(r.john_id) ?? [];
-      if (ws.length < ON_CALL_WEEKS && !ws.includes(r.week_id)) weeksOf.set(r.john_id, [...ws, r.week_id]);
-    }
-    const flagWeeks = [...new Set([...weeksOf.values()].flat())];
-    const flags = flagWeeks.length
-      ? must(
-          await db.from("assignments").select("john_id, week_id").in("week_id", flagWeeks).not("flagged_at", "is", null),
-          "recent flags",
-        )
-      : [];
-    for (const j of onCall) {
-      const usual = onCallUsual(
-        j.points,
-        weeksOf.get(j.id) ?? [],
-        flags.filter((f) => f.john_id === j.id && f.week_id).map((f) => f.week_id!),
-      );
-      if (usual !== null) onCallPoints.set(j.id, usual);
-    }
-  }
-
+  const around = await readAround(db, house, { johnIds: list.map((j) => j.id), from: week.startsOn, to: lastAhead });
+  const onCallPoints = await onCallUsualPoints(db, list, around.onCallRows);
   const away: AwayPeriod[] = [
-    ...awayRows.map((a) => ({
-      id: a.id,
-      userId: a.user_id,
-      startsOn: a.starts_on,
-      endsOn: a.ends_on,
-      note: a.note,
-    })),
+    ...around.awayRows.map((a) => ({ id: a.id, userId: a.user_id, startsOn: a.starts_on, endsOn: a.ends_on, note: a.note })),
     // From the day someone moves out, as if away for good.
     ...movingOutAway(dealt, week.startsOn, lastAhead),
   ];
   const bornYear = new Map(members.map((m) => [m.user_id, m.born_year]));
-  const sharersOf = (j: (typeof list)[number]) => {
-    const group = j.group_id ? groups.find((g) => g.id === j.group_id) : undefined;
-    const inGroup = (group?.group_members ?? []).map((m) => m.user_id).filter((id) => memberIds.includes(id));
-    const all = inGroup.length > 0 ? inGroup : memberIds;
-    // In a family, a kid younger than the John's youngest age isn't dealt it (kids.ts).
-    const sharers = all.filter((id) => oldEnough(bornYear.get(id), j.min_age, week.startsOn));
-    return { sharers, groupName: inGroup.length > 0 ? group!.name : null, groupId: inGroup.length > 0 ? group!.id : null };
-  };
-  const [{ balances }, groupBalances] = await Promise.all([
-    loadBalances(db, house.id, week.startsOn, memberIds),
-    loadGroupBalances(db, house.id, week.startsOn),
-  ]);
-  // Each balance split by pool: each group they're in now with a John on the list, and the whole house's (the
-  // rest, which takes in a group they've left or a group's John they covered from outside it).
+  const sharersOf = sharersBy(around.groups, { memberIds, bornYear, startsOn: week.startsOn });
+  const [{ balances }, groupBalances] = await Promise.all([loadBalances(db, house.id, week.startsOn, memberIds), loadGroupBalances(db, house.id, week.startsOn)]);
   const poolGroups = [...new Set(list.map((j) => sharersOf(j).groupId).filter((g): g is string => !!g))];
-  const poolsOf = (userId: string, balance: number) => {
-    const mine = poolGroups.filter((g) => groups.find((x) => x.id === g)?.group_members.some((m) => m.user_id === userId));
-    const pools: Record<string, number> = Object.fromEntries(mine.map((g) => [g, groupBalances.get(userId)?.get(g) ?? 0]));
-    pools[""] = balance - mine.reduce((s, g) => s + pools[g], 0);
-    return pools;
-  };
-  const args: SteadyDealArgs = {
-    mode: house.deal_mode === "classic" ? "classic" : "smart",
-    budget: house.deal_budget,
-    week,
-    zone: rules.timezone,
-    weekStarts: rules.weekStarts,
-    now,
-    members: dealt.map((m) => ({
-      userId: m.user_id,
-      balance: balances.get(m.user_id) ?? 0,
-      ...(poolGroups.length ? { pools: poolsOf(m.user_id, balances.get(m.user_id) ?? 0) } : {}),
-      suits: m.suits_days,
-      rather: ratherOf(m.rather),
-    })),
-    johns: list.map((j) => ({
-      id: j.id,
-      points: j.points,
-      kind: j.kind === "on_call" ? "on_call" : "day",
-      perWeek: j.per_week,
-      crew: j.crew,
-      keepDay: j.keep_day,
-      repeat: {
-        everyWeeks: j.every_weeks,
-        everyMonths: j.every_months,
-        weekOfMonth: j.week_of_month,
-        anchorMonth: j.anchor_month,
-        anchorWeek: j.anchor_week,
-        dueDow: j.due_dow as IsoDow,
-      },
-      dueTime: j.due_time,
-      sharers: sharersOf(j).sharers,
-      groupId: sharersOf(j).groupId,
-    })),
-    away,
-    last,
-    previous: previous ? weekStateOf(previous) : null,
-    onCallPoints,
-    makeup: house.away_makeup / 100,
-    seed: `${house.id}:${week.startsOn}`,
-  };
+  const pools = poolGroups.length ? poolSplit(around.groups, poolGroups, groupBalances) : null;
+  const read = { away, last: lastTurns(around), previous: previous ? weekStateOf(previous) : null, onCallPoints };
+  const args = dealArgs({ house, week, now, dealt, list, sharersOf, balances, pools, ...read });
   const plan = steadyDeal(args);
 
-  // Done together: one job per John, so its places stay together (crew.ts).
-  const jobs = new Map<string, string>();
-  const johnOf = new Map(list.map((j) => [j.id, j]));
-  const assignments = plan.places.flatMap((p) => {
-    const j = johnOf.get(p.johnId)!;
-    if (!p.dueAt) return [];
-    if (p.together && !jobs.has(j.id)) jobs.set(j.id, crypto.randomUUID());
-    byUser.set(p.userId, [...(byUser.get(p.userId) ?? []), j.name]);
-    return [
-      {
-        john_id: j.id,
-        user_id: p.userId,
-        name: j.name,
-        category: j.category,
-        points: j.points,
-        needs_photo: j.needs_photo,
-        due_at: p.dueAt.toISOString(),
-        group_name: sharersOf(j).groupName,
-        dealt: p.why as unknown as Json,
-        job_id: p.together ? jobs.get(j.id)! : null,
-      },
-    ];
-  });
-  const onCallDealt = plan.places.flatMap((p) => {
-    if (p.dueAt) return [];
-    const j = johnOf.get(p.johnId)!;
-    byUser.set(p.userId, [...(byUser.get(p.userId) ?? []), (w: Words) => w('today.onCall.dealtAs', { john: j.name })]);
-    return [{ john_id: j.id, user_id: p.userId }];
-  });
-  if (assignments.length === 0 && onCallDealt.length === 0 && Object.keys(plan.state.waiting).length === 0) {
+  const rows = dealtRows(plan, { list, sharersOf }, byUser);
+  if (rows.assignments.length === 0 && rows.onCallDealt.length === 0 && Object.keys(plan.state.waiting).length === 0) {
     return { weekId: null, byUser };
   }
-
-  const weekId = must(
-    await db.rpc("deal_week", {
-      p_house: house.id,
-      p_starts_on: week.startsOn,
-      p_starts_at: week.startsAt.toISOString(),
-      p_ends_at: week.endsAt.toISOString(),
-      p_assignments: assignments,
-      p_shares: memberIds.map((id) => ({ user_id: id, share: Math.round((plan.shares.get(id) ?? 0) * 100) / 100 })),
-      p_replace: replace,
-      p_on_call: onCallDealt,
-      p_state: { ...plan.state, ahead: steadyAhead(args, plan) } as unknown as Json,
-    }),
-    "deal_week",
-  );
-  if (weekId) {
-    // The part of the shares that was each group's Johns, for the next deal's pools (house_group_balances).
-    must(await db.from("week_group_shares").delete().eq("week_id", weekId), "clear group shares");
-    const rows = [...plan.groupShares].flatMap(([groupId, shares]) =>
-      [...shares]
-        .filter(([, share]) => share > 0)
-        .map(([userId, share]) => ({ week_id: weekId, house_id: house.id, group_id: groupId, user_id: userId, share: Math.round(share * 100) / 100 })),
-    );
-    if (rows.length) must(await db.from("week_group_shares").insert(rows), "group shares");
-  }
+  const weekId = await saveDeal(db, house, { week, replace, memberIds, plan, ahead: steadyAhead(args, plan), ...rows });
   return { weekId: weekId ?? null, byUser };
 }
 
