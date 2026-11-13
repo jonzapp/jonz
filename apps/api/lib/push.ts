@@ -3,9 +3,9 @@ import "server-only";
 import { languageOf, prefsOf, pushFor, wordsFor } from "@app/core";
 import webpush from "web-push";
 
-import { pushIn, type Notify, type SaidPush } from "@/lib/engine/tick";
 import { pushToken } from "@/lib/push-token";
 import type { AdminClient } from "@/lib/supabase/admin";
+import { pushIn, type Notify, type SaidPush } from "@/lib/engine/shared";
 
 /** What the service worker (apps/client/public/sw.js) is sent: the message, as one person gets it. */
 export interface PushPayload {

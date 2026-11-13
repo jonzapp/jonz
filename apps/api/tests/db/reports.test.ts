@@ -3,13 +3,13 @@ import { randomUUID } from "node:crypto";
 import { camelKeys, OPERATION_IO } from "@app/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { pushIn } from "@/lib/engine/tick";
 import { replyToReport, sendReport, writeBack, type Outbox } from "@/lib/moves/reports";
 import { adminClient, signedInUser, visitor, type Actor } from "@/tests/support/clients";
 import { expectDenied, expectOk, expectRule } from "@/tests/support/expect";
 import { makeHouse, type House } from "@/tests/support/factories";
 import { passSecondFactor } from "@/tests/support/mfa";
 import { v1 } from "@/tests/support/v1";
+import { pushIn } from "@/lib/engine/shared";
 
 /**
  * Report a problem (docs/specs/report-a-problem.md): anyone signed in sends

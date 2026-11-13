@@ -4,13 +4,14 @@ import { tz } from "@date-fns/tz";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { POST as pushActionRoute } from "@/app/api/push-actions/route";
-import { tickHouse, pushIn, type PushMessage, type SaidPush } from "@/lib/engine/tick";
+import { tickHouse } from "@/lib/engine/tick";
 import { payloadFor } from "@/lib/push";
 import { pushToken } from "@/lib/push-token";
 import { adminClient } from "@/tests/support/clients";
 import { expectDenied, expectOk } from "@/tests/support/expect";
 import { actorFor, addJohns, deal, makeHouse, someoneElse, thisWeek, ZONE, type House } from "@/tests/support/factories";
 import { fromNow, rightNow } from "@/tests/support/clock";
+import { pushIn, type PushMessage, type SaidPush } from "@/lib/engine/shared";
 
 /**
  * Notifications you can answer: reminders that say what's due and when, each

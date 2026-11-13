@@ -2,11 +2,12 @@ import "server-only";
 
 import { rulesOf, weekWindow } from "@app/core";
 
-import { dealWeek, loadHouse } from "@/lib/engine/tick";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 import type { Caller, Refusal } from "./disputes";
 import { permitted } from "./permitted";
+import { dealWeek } from "@/lib/engine/deal-week";
+import { loadHouse } from "@/lib/engine/shared";
 
 /**
  * Hand out this week's Johns. The first time, it starts the house off;

@@ -4,7 +4,6 @@ import { refTag } from "@app/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { POST as inboundRoute } from "@/app/api/email/inbound/route";
-import { pushIn } from "@/lib/engine/tick";
 import { readInbound, verifySvix } from "@/lib/inbound";
 import { fixReport, receiveEmail, replyToReport, type Inbound, type Outbox } from "@/lib/moves/reports";
 import { adminClient, signedInUser, type Actor } from "@/tests/support/clients";
@@ -13,6 +12,7 @@ import { makeHouse, type House } from "@/tests/support/factories";
 import { passSecondFactor } from "@/tests/support/mfa";
 import { v1 } from "@/tests/support/v1";
 import { rightNow } from "@/tests/support/clock";
+import { pushIn } from "@/lib/engine/shared";
 
 /**
  * Report a problem, steps 2 and 3 (docs/specs/report-a-problem.md): an email

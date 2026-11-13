@@ -1,11 +1,12 @@
 import { dateInWeek, monthIndex, weekIndex, weekWindow, type Category, type IsoDow, type WeekWindow } from "@app/core";
 import { expect } from "vitest";
 
-import { dealWeek, loadHouse } from "@/lib/engine/tick";
 
 import { adminClient, signedInUser, type Actor } from "./clients";
 import { track } from "./scope";
 import { rightNow } from "./clock";
+import { dealWeek } from "@/lib/engine/deal-week";
+import { loadHouse } from "@/lib/engine/shared";
 
 export const ZONE = "Europe/London";
 

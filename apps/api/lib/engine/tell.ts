@@ -1,7 +1,7 @@
 import { closesAt, coverOpensAt, firstName, houseKind, rulesOf, TOLD_KINDS, tellOf, wordsFor, type Currency, type Database, type Words } from "@app/core";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { type Notify } from "./shared";
 
-import type { Notify } from "./tick";
 
 // Telling people, once each, on the clock (docs/specs/tell-people.md): the
 // Wall posts nobody has been told about yet (events.told_at), pushed to
