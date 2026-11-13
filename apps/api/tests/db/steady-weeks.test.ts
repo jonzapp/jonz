@@ -3,12 +3,14 @@ import { tz } from "@date-fns/tz";
 import { getHours } from "date-fns";
 import { describe, expect, it } from "vitest";
 
-import { dealWeek, loadBalances, loadHouse, tickHouse, pushIn, type PushMessage, type SaidPush } from "@/lib/engine/tick";
+import { tickHouse } from "@/lib/engine/tick";
 import { adminClient, signedInUser, type Actor } from "@/tests/support/clients";
 import { expectDenied, expectOk, expectRule } from "@/tests/support/expect";
 import { actorFor, addJohns, deal, makeHouse, reread, someoneElse, thisWeek, weeksAgo, ZONE, type House } from "@/tests/support/factories";
 import { problemOf, v1 } from "@/tests/support/v1";
 import { fromNow, rightNow } from "@/tests/support/clock";
+import { dealWeek, loadBalances } from "@/lib/engine/deal-week";
+import { loadHouse, pushIn, type PushMessage, type SaidPush } from "@/lib/engine/shared";
 
 /**
  * Steady weeks (docs/specs/steady-weeks.md) through the engine and the

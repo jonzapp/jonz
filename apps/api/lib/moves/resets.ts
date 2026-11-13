@@ -13,12 +13,13 @@ import {
   type ResetRequest,
 } from "@app/core";
 
-import { dealWeek, loadHouse } from "@/lib/engine/tick";
 import { pushNotifier } from "@/lib/push";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 import type { Caller, Refusal } from "./disputes";
 import { permitted } from "./permitted";
+import { dealWeek } from "@/lib/engine/deal-week";
+import { loadHouse } from "@/lib/engine/shared";
 
 /**
  * An admin's reset (supabase/migrations/*_admin_resets.sql admin_reset):
@@ -28,7 +29,7 @@ import { permitted } from "./permitted";
  * admin_reset is the server's, so who is asking is checked here through the
  * caller's own session, and it checks again. What a late or missed John
  * costs comes from the house's rules and House Pass, as the clock's does.
- * A re-deal clears the week, then deals it again here (lib/engine/tick.ts),
+ * A re-deal clears the week, then deals it again here (lib/engine/deal-week.ts),
  * and only this week can be dealt. The app (reset_house on /v1) and Ask Jonz
  * (lib/moves/ask-resets.ts) share it.
  */

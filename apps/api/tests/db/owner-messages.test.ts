@@ -2,13 +2,13 @@ import { randomUUID } from "node:crypto";
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { pushIn } from "@/lib/engine/tick";
 import { sendMessage, sendOutbox, type MessageOutbox } from "@/lib/moves/messages";
 import { adminClient, signedInUser, visitor, type Actor } from "@/tests/support/clients";
 import { expectDenied, expectOk, expectRule } from "@/tests/support/expect";
 import { makeHouse, type House } from "@/tests/support/factories";
 import { passSecondFactor } from "@/tests/support/mfa";
 import { rightNow } from "@/tests/support/clock";
+import { pushIn } from "@/lib/engine/shared";
 
 /**
  * Messages from the owner (docs/specs/owner-admin.md, "Messages"): only the

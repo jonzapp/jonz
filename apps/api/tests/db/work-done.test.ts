@@ -1,10 +1,10 @@
 import { nextWeek } from "@app/core";
 import { describe, expect, it } from "vitest";
 
-import { loadBalances } from "@/lib/engine/tick";
 import { adminClient, signedInUser } from "@/tests/support/clients";
 import { addJohns, deal, makeHouse, someoneElse, thisWeek, weeksAgo, ZONE } from "@/tests/support/factories";
 import { rightNow } from "@/tests/support/clock";
+import { loadBalances } from "@/lib/engine/deal-week";
 
 /**
  * Balances count the work done, not what was handed out: a missed John

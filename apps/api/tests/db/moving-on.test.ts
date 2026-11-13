@@ -1,11 +1,12 @@
 import { addDaysTo, localDate, weekWindow } from "@app/core";
 import { describe, expect, it } from "vitest";
 
-import { remindMovers, pushIn, type PushMessage, type SaidPush } from "@/lib/engine/tick";
 import { adminClient, signedInUser } from "@/tests/support/clients";
 import { expectDenied, expectOk, expectRule } from "@/tests/support/expect";
 import { addJohns, deal, makeHouse, thisWeek, ZONE } from "@/tests/support/factories";
 import { fromNow, rightNow } from "@/tests/support/clock";
+import { remindMovers } from "@/lib/engine/remind";
+import { pushIn, type PushMessage, type SaidPush } from "@/lib/engine/shared";
 
 /**
  * Bring Jonz to your next house (docs/specs/moving-on.md): the moving-out

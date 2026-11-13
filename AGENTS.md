@@ -162,7 +162,7 @@ that list to get a feature through, split the function instead.
   `proof.ts` (a photo receipt's size and bucket path), `money.ts`,
   `format.ts`, `domain.ts` (the shared words), `schemas.ts` (what crosses the API), `errors.ts`,
   `auth-paths.ts`. Every function takes `now`.
-- **The engine** (`apps/api/lib/engine/tick.ts`): decides with those rules
+- **The engine** (`apps/api/lib/engine/`, `tick.ts` runs each part in turn): decides with those rules
   and applies each decision through one service-role SQL function that is
   atomic and refuses to apply twice (`deal_week`, `settle_assignments`,
   `resolve_dispute`, `close_week`, `close_month`). It takes the client and
