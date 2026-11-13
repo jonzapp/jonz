@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 
+import { camelKeys, OPERATION_IO } from "@app/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { POST as replyRoute } from "@/app/api/reports/[id]/reply/route";
@@ -206,6 +207,10 @@ describe("the owner's Inbox", () => {
       shots: [shot],
       messages: [{ from_owner: false, body: "It came back after a refresh." }],
     });
+    // What /v1 and the admin Inbox read: it failed its own contract once a report had a message, so the
+    // Inbox errored on every report with a reply (12 Nov 2026).
+    const fit = OPERATION_IO.owner_open_report.output.safeParse(camelKeys(opened.data));
+    expect(fit.error?.issues ?? []).toEqual([]);
     expect((await owner.db.storage.from("report-shots").download(shot)).error).toBeNull();
     expect((await ownerNoCode.db.storage.from("report-shots").download(shot)).error).not.toBeNull();
   });

@@ -115,3 +115,24 @@ you to tap the page: it shows, then gets out of the way. (Help and tours,
 An owner notice is a banner in its kind's colours across the top of the app;
 the same notice in an email is the Panel shape. (Owner admin #72; email
 Panel, 31 Oct)
+
+## Ask Jonz's warnings
+
+Every warning in an Ask Jonz chat looks the same (`components/chat/chat-notice.tsx`):
+
+- While the chat can carry on, one line over the message box (`ChatNotice`):
+  an icon, one plain sentence, and a chevron to what to do about it. Only one
+  shows, the most urgent: the week's Ask Jonz running low, then the chat
+  getting long.
+- Once nothing more can be sent, a card in the box's place (`ChatStop`):
+  what stopped it, a full hazard bar when it's a limit that comes back,
+  what comes next, and its buttons. The week used up (the house's, your
+  half, or your account's), the chat full, and changing a list without the
+  House Pass all use it.
+- A long chat sums up its start and carries on: a quiet line across the
+  chat ("Jonz summed up 38 earlier messages") opens to the summary;
+  everything above it stays to read. A new chat carried on from a full one
+  opens with the same line ("From your last chat").
+
+A new warning uses one of the two; it never gets a look of its own.
+(Long Ask Jonz chats, option A, 12 Nov)

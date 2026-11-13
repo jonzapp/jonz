@@ -7,7 +7,10 @@ import {
   thinkingSteps,
   CATEGORIES,
   changedLine,
+  CHAT_FULL,
+  CHAT_LONG_AT,
   CHAT_MAX_MESSAGES,
+  chatCarryOver,
   DEAL_MODES,
   draftChanges,
   groupChanges,
@@ -23,6 +26,7 @@ import {
   type ChatMessage,
   type ChatMove,
   type ChatReset,
+  type ChatSummed,
   type DealMode,
   type DraftChange,
   type DraftedJohn,
@@ -36,9 +40,9 @@ import {
   type Words,
 } from '@app/core';
 import { router } from 'expo-router';
-import { CheckIcon, MinusIcon, PencilIcon, PlusIcon } from 'lucide-react-native';
+import { CheckIcon, MessagesSquareIcon, MinusIcon, PencilIcon, PlusIcon, SquarePenIcon, TicketIcon } from 'lucide-react-native';
 import { useQueryClient } from '@tanstack/react-query';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { keepChat, type SavedChat } from '@/api/ask-chats';
@@ -48,7 +52,8 @@ import { Alert } from '@/components/alert';
 import { Button } from '@/components/button';
 import { ButtonRow } from '@/components/button-row';
 import { LowWarning, OutNotice, usageState } from '@/components/chat/ask-usage';
-import { ChatLog, Composer, ComposerBar, JonzSaid, Said, UserBubble } from '@/components/chat/chat';
+import { ChatLog, Composer, JonzSaid, Said, SummedUp, UserBubble } from '@/components/chat/chat';
+import { ChatNotice, ChatStop } from '@/components/chat/chat-notice';
 import { Group } from '@/components/group';
 import { Row, RowIcon } from '@/components/row';
 import { Section } from '@/components/section';
@@ -87,13 +92,15 @@ type Turn =
       thought?: { seconds: number; steps: string[] };
       /** A reply from a chat kept earlier that had a card then: the card isn't kept, so it says to ask again. */
       old?: boolean;
+      /** Before this reply Jonz summed up the chat's start (SavedTurn's `summed`). */
+      summed?: ChatSummed;
     }
   | { role: 'done'; added: number };
 
 /** A kept chat's turns as the chat shows them: no card comes back, only that there was one. */
 export function fromSaved(saved: readonly SavedTurn[]): Turn[] {
   return saved.map((t) =>
-    t.role === 'assistant' ? { role: 'assistant', text: t.text, ask: t.ask, draft: null, old: t.hadCard } : t,
+    t.role === 'assistant' ? { role: 'assistant', text: t.text, ask: t.ask, draft: null, old: t.hadCard, ...(t.summed ? { summed: t.summed } : {}) } : t,
   );
 }
 
@@ -106,9 +113,54 @@ export function toSaved(turns: readonly Turn[]): SavedTurn[] {
           text: t.text,
           ask: t.ask,
           hadCard: Boolean(t.old || t.draft || t.resets?.length || t.moves?.length),
+          ...(t.summed ? { summed: t.summed } : {}),
         }
       : t,
   );
+}
+
+/** The chat as messages: what was said and Jonz's replies with words, oldest first. */
+function messagesOf(turns: readonly Turn[]): ChatMessage[] {
+  return turns.flatMap((t) => (t.role === 'done' || !t.text ? [] : [{ role: t.role, text: t.text }]));
+}
+
+/** Jonz's latest summary of the chat's start, if it has one. */
+function summedOf(turns: readonly Turn[]): ChatSummed | null {
+  for (let at = turns.length - 1; at >= 0; at--) {
+    const t = turns[at];
+    if (t.role === 'assistant' && t.summed) return t.summed;
+  }
+  return null;
+}
+
+/** The turn the latest summary's line goes over: the first one it doesn't stand for. -1 for none. */
+function summedTurn(turns: readonly Turn[], summed: ChatSummed | null): number {
+  if (!summed) return -1;
+  if (summed.count === 0) return 0;
+  let seen = 0;
+  for (let at = 0; at < turns.length; at++) {
+    const t = turns[at];
+    if (t.role === 'done' || !t.text) continue;
+    if (seen === summed.count) return at;
+    seen++;
+  }
+  return -1;
+}
+
+/**
+ * A new chat that carries on from a full one: it opens with the line from
+ * the last chat, holding its summary and what was said since.
+ */
+export function carriedChat(turns: readonly Turn[], words: Words): SavedTurn[] {
+  const summed = summedOf(turns);
+  const since = messagesOf(turns).slice(summed?.count ?? 0);
+  const text = chatCarryOver(summed?.text ?? null, since, { you: words('ask.long.you'), jonz: words('ask.long.jonz') });
+  return text ? [{ role: 'assistant', text: '', ask: null, hadCard: false, summed: { text, count: 0 } }] : [];
+}
+
+/** The chat's turns drawn, with `line` over the one at `at` (none when it's -1). */
+function withLine(views: ReactNode[], at: number, line: ReactNode): ReactNode[] {
+  return at < 0 || !line ? views : [...views.slice(0, at), line, ...views.slice(at)];
 }
 
 /** The time, for how long Jonz thought: read in a send, never while drawing. */
@@ -158,8 +210,10 @@ export function SetupChat({
   onOpenList = () => router.dismissTo('/house/johns'),
   pieces = NO_PIECES,
   saved = null,
+  seed,
   onKept,
   onTalked,
+  onCarryOn,
 }: {
   houseId: string;
   rules: HouseRules;
@@ -179,10 +233,14 @@ export function SetupChat({
   pieces?: ReplyPieces;
   /** A chat kept earlier, to carry on with; none starts a new one. Remount (a new key) to switch. */
   saved?: SavedChat | null;
+  /** A new chat's first turns: the line from a full chat it carries on from (carriedChat). */
+  seed?: readonly SavedTurn[];
   /** The chat is kept, under this id: after each answer, so it's never lost. */
   onKept?: (id: string) => void;
   /** Whether there's anything in the chat yet (said, or being written): New chat has nothing to clear until there is. */
   onTalked?: (talked: boolean) => void;
+  /** Carry on in a new chat, opening with these turns (a long chat's summary): a full chat's way on. */
+  onCarryOn?: (seed: SavedTurn[]) => void;
 }) {
   const words = useWords();
   const keeping = useMove(houseId);
@@ -193,7 +251,7 @@ export function SetupChat({
   const [rebase, setRebase] = useState(false);
   const base = rebase ? live : held;
   const editing = base !== null;
-  const [turns, setTurns] = useState<Turn[]>(() => fromSaved(saved?.turns ?? []));
+  const [turns, setTurns] = useState<Turn[]>(() => fromSaved(saved?.turns ?? seed ?? []));
   const chatId = useRef(saved?.id ?? null);
   // Keeping goes one at a time, so the first answer's new row is the one the next answer updates.
   const queue = useRef<Promise<void>>(Promise.resolve());
@@ -209,6 +267,12 @@ export function SetupChat({
   const [problem, setProblem] = useState<string | null>(null);
   const usage = useAskUsage(houseId);
   const week = usageState(usage.data);
+  // A long chat: from CHAT_LONG_AT turns it says so; at CHAT_FULL it carries on in a new one.
+  const full = turns.length >= CHAT_FULL;
+  const long = turns.length >= CHAT_LONG_AT;
+  const summed = summedOf(turns);
+  const summedAt = summedTurn(turns, summed);
+  const carryOn = () => onCarryOn?.(carriedChat(turns, words));
 
   // A new house's chat ends once its first list is in (the deal question follows); a list's chat carries on.
   const done = !editing && turns.some((t) => t.role === 'done');
@@ -266,14 +330,17 @@ export function SetupChat({
     setSending(true);
     const asked = clock();
     try {
-      const messages: ChatMessage[] = next
-        .flatMap((t) => (t.role === 'done' || !t.text ? [] : [{ role: t.role, text: t.text }]))
-        .slice(-CHAT_MAX_MESSAGES);
-      const answer = await sendChat(houseId, messages, draft, words);
+      // Jonz reads its summary of the chat's start, then everything since (CHAT_MAX_MESSAGES at most).
+      const all = messagesOf(next);
+      const earlier = summedOf(next);
+      const from = Math.max(earlier?.count ?? 0, all.length - CHAT_MAX_MESSAGES);
+      const answer = await sendChat(houseId, all.slice(from), draft, words, earlier?.text ?? null);
       const took = clock() - asked;
       const thought = { seconds: Math.max(1, Math.round(took / 1000)), steps: stepsShown(steps, took) };
       if (answer.allowance) usage.put(answer.allowance);
-      answered({ role: 'assistant', text: answer.reply, ask: answer.ask, draft: answer.draft, resets: answer.resets, moves: answer.moves, thought }, next);
+      // Jonz summed up the start this turn: the summary now stands for the messages before `from` too.
+      const newly = answer.summed ? { summed: { text: answer.summed.text, count: from + answer.summed.count } } : {};
+      answered({ role: 'assistant', text: answer.reply, ask: answer.ask, draft: answer.draft, resets: answer.resets, moves: answer.moves, thought, ...newly }, next);
     } catch (reason) {
       // Refused (too many today, say): what was said goes back in the box to try again.
       setTurns(before);
@@ -319,16 +386,31 @@ export function SetupChat({
   return (
     <ChatLog
       foot={
+        // Every warning the chat's one way (chat-notice.tsx): a card in the box's place when nothing more can be
+        // sent, else at most one line over the box, the most urgent.
         done ? null : gated ? (
-          <ComposerBar testID="chat-pass">
-            <Meta>{words('ask.draft.passNeeded')}</Meta>
-            <Button variant="outline" label={words('ask.draft.seePass')} href="/house/pass" testID="chat-see-pass" />
-          </ComposerBar>
+          <ChatStop title={words('ask.draft.passNeeded')} note={words('ask.draft.passNeededNote')} testID="chat-pass">
+            <Button label={words('ask.draft.seePass')} icon={TicketIcon} href="/house/pass" testID="chat-see-pass" />
+          </ChatStop>
         ) : week === 'out' && usage.data ? (
           <OutNotice usage={usage.data} zone={rules.timezone} />
+        ) : full ? (
+          <ChatStop title={words('ask.long.full')} note={words('ask.long.fullNote')} testID="chat-full">
+            <Button label={words('ask.long.carryOn')} icon={SquarePenIcon} onPress={carryOn} testID="chat-carry-on" />
+          </ChatStop>
         ) : (
           <>
-            {week === 'low' && usage.data ? <LowWarning usage={usage.data} zone={rules.timezone} /> : null}
+            {week === 'low' && usage.data ? (
+              <LowWarning usage={usage.data} zone={rules.timezone} />
+            ) : long ? (
+              <ChatNotice
+                icon={MessagesSquareIcon}
+                text={words('ask.long.nearlyFull', { max: CHAT_FULL })}
+                label={words('ask.long.carryOn')}
+                onPress={carryOn}
+                testID="chat-long"
+              />
+            ) : null}
             <Composer
               value={text}
               onChangeText={setText}
@@ -382,7 +464,9 @@ export function SetupChat({
         ) : null}
       </Said>
 
-      {turns.map((turn, at) => {
+      {/* The line where Jonz summed up the chat goes over the first turn it doesn't stand for. */}
+      {withLine(
+        turns.map((turn, at) => {
         if (turn.role === 'user') {
           return <UserBubble key={at} text={turn.text} />;
         }
@@ -437,7 +521,16 @@ export function SetupChat({
             {turn.moves && turn.moves.length > 0 ? <MovesCard houseId={houseId} me={me} items={turn.moves} /> : null}
           </JonzSaid>
         );
-      })}
+      }),
+        summedAt,
+        summed ? (
+          <SummedUp
+            key="summed"
+            label={summed.count === 0 ? words('ask.long.carried') : words('ask.long.summed', { n: summed.count })}
+            summary={summed.text}
+          />
+        ) : null,
+      )}
 
       {sending ? <Thinking steps={steps} /> : null}
     </ChatLog>

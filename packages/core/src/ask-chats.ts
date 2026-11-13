@@ -2,7 +2,7 @@ import type { Words } from "./words-for";
 import { z } from "zod";
 
 import { dayLabel } from "./format";
-import { ChatAsk } from "./house-draft";
+import { CHAT_FULL, ChatAsk, ChatSummed } from "./house-draft";
 import { addDaysTo, localDate } from "./week";
 
 /**
@@ -21,13 +21,20 @@ export const SavedTurn = z.discriminatedUnion("role", [
     ask: ChatAsk.nullable(),
     /** The reply came with a card (changes, resets, moves). */
     hadCard: z.boolean(),
+    /**
+     * Before this reply Jonz summed up the chat's start: the summary, and how
+     * many of the chat's messages it stands for (counting what was said and
+     * Jonz's replies with words, from the start). A new chat carried on from
+     * a full one opens with an empty reply holding the summary, count 0.
+     */
+    summed: ChatSummed.optional(),
   }),
   z.object({ role: z.literal("done"), added: z.number().int().min(0) }),
 ]);
 export type SavedTurn = z.infer<typeof SavedTurn>;
 
-/** The most turns a chat keeps; past it, the oldest go first. */
-export const CHAT_SAVED_TURNS = 200;
+/** The most turns a chat keeps: a chat is full there (CHAT_FULL) and carries on in a new one. */
+export const CHAT_SAVED_TURNS = CHAT_FULL;
 
 /** The longest a chat's title runs: two lines of a row in the 400-wide side panel, so it's never cut short on screen. */
 export const CHAT_TITLE_MAX = 44;

@@ -9,6 +9,7 @@ import { ErrorBoundary } from '@/app/_layout';
 import Help from '@/app/help';
 import Privacy from '@/app/privacy';
 import Terms from '@/app/terms';
+import { reloadOntoNewBuild } from '@/api/new-build';
 import { sendReport } from '@/api/reports';
 import { supabase } from '@/api/supabase';
 import { useMembership } from '@/hooks/use-membership';
@@ -21,6 +22,7 @@ jest.mock('@/api/account', () => ({ keepAccount: jest.fn() }));
 jest.mock('@/api/auth', () => ({ signOut: jest.fn() }));
 jest.mock('@/api/supabase', () => ({ supabase: { auth: { getSession: jest.fn() } } }));
 jest.mock('@/api/reports', () => ({ ...jest.requireActual<typeof import('@/api/reports')>('@/api/reports'), sendReport: jest.fn() }));
+jest.mock('@/api/new-build', () => ({ ...jest.requireActual<typeof import('@/api/new-build')>('@/api/new-build'), reloadOntoNewBuild: jest.fn(() => false) }));
 jest.mock('expo-clipboard', () => ({ setStringAsync: jest.fn(async () => true) }));
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({ __esModule: true, default: jest.fn() }));
 
@@ -129,6 +131,13 @@ it('lets someone signed in tell us what happened when a screen broke, with what 
     expect(sendReport).toHaveBeenCalledWith(expect.objectContaining({ kind: 'problem', details: expect.objectContaining({ error: 'Cannot read the week' }) })),
   );
   expect(await screen.findByTestId('crash-report-sent')).toHaveTextContent(words('door.error.told'));
+});
+
+it("reloads onto the new build when a screen's bundle is gone after a deploy, before saying anything broke", async () => {
+  jest.mocked(supabase.auth.getSession).mockResolvedValue({ data: { session: null }, error: null } as never);
+  const gone = new Error('Loading module https://jonz.app/_expo/static/js/web/index-ede335d3d8516b6e53fbb866f9351ff5.js failed.');
+  await render(<ErrorBoundary error={gone} retry={jest.fn(async () => {})} />);
+  expect(reloadOntoNewBuild).toHaveBeenCalledWith(gone);
 });
 
 it('gives the support address on a broken screen when signed out', async () => {

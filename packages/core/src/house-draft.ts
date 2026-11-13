@@ -23,8 +23,23 @@ export const DRAFT_MAX_JOHNS = 30;
 export const DRAFT_MAX_GROUPS = 6;
 /** How much one message in the chat can say. */
 export const MESSAGE_MAX = 800;
-/** How many messages of the chat go to Claude each time: enough for setting up a house. */
-export const CHAT_MAX_MESSAGES = 24;
+/** The most messages of the chat that go to Claude in one turn, after the summary of anything older. */
+export const CHAT_MAX_MESSAGES = 40;
+/**
+ * A long chat: past this many messages since the last summary, Jonz sums up
+ * all but the latest CHAT_RECENT before it answers, and carries on from the
+ * summary, as Claude and the coding assistants do. Each turn then costs
+ * about the same, however long the chat runs.
+ */
+export const CHAT_SUM_AT = 30;
+/** The messages Jonz always reads word for word, after the summary. */
+export const CHAT_RECENT = 10;
+/** The longest a chat's summary runs, in characters. */
+export const SUMMARY_MAX = 4000;
+/** A chat is full at this many turns (what's kept of a chat); then it carries on in a new one, with a summary. */
+export const CHAT_FULL = 200;
+/** From this many turns the chat says it's getting long. */
+export const CHAT_LONG_AT = 170;
 /**
  * A house's Ask Jonz for a week, in Claude's tokens (what it reads and
  * writes): one pool the whole house shares, bigger with the House Pass. It
@@ -162,6 +177,44 @@ export const ChatMessage = z.object({
 });
 export type ChatMessage = z.infer<typeof ChatMessage>;
 
+/** Jonz's summary of a chat's start: what it says, and how many of the chat's messages it stands for. */
+export const ChatSummed = z.object({
+  text: z.string().trim().min(1).max(SUMMARY_MAX),
+  /** How many messages it stands for: the chat's first ones, kept as they were but no longer sent. */
+  count: z.number().int().min(0),
+});
+export type ChatSummed = z.infer<typeof ChatSummed>;
+
+/**
+ * Where a turn's chat is cut when it's long: the messages before it are
+ * summed up, the rest read word for word. 0 when it's short enough as it is.
+ * The rest always starts with something the person said.
+ */
+export function foldPoint(messages: readonly ChatMessage[]): number {
+  if (messages.length <= CHAT_SUM_AT) return 0;
+  let at = messages.length - CHAT_RECENT;
+  while (at < messages.length - 1 && messages[at].role !== "user") at++;
+  return at;
+}
+
+/**
+ * What a new chat carries on from when the last one was full: its summary,
+ * then the messages since, as many of the latest as fit in SUMMARY_MAX, a
+ * line each ("You: …", "Jonz: …").
+ */
+export function chatCarryOver(summary: string | null, since: readonly ChatMessage[], names: { you: string; jonz: string }): string {
+  const head = summary?.trim() ?? "";
+  const lines: string[] = [];
+  let room = SUMMARY_MAX - head.length - 2;
+  for (const m of [...since].reverse()) {
+    const line = `${m.role === "user" ? names.you : names.jonz}: ${m.text.replace(/\s+/g, " ").trim()}`;
+    if (line.length + 1 > room) break;
+    lines.unshift(line);
+    room -= line.length + 1;
+  }
+  return [head, lines.join("\n")].filter(Boolean).join("\n\n").slice(0, SUMMARY_MAX);
+}
+
 /** One drafted John: a John as the list holds it, the group that shares it by name, and why it's there. */
 export const DraftedJohn = z.object({
   /** The John on the house's list this is, when the draft changes an existing list; absent for a John to add. */
@@ -217,6 +270,8 @@ export type DraftSource = (typeof DRAFT_SOURCES)[number];
  */
 export const ChatRequest = z.object({
   houseId: z.uuid(),
+  /** Jonz's summary of the chat before `messages`, when it's been summed up (ChatResponse's `summed`). */
+  summary: z.string().trim().max(SUMMARY_MAX).nullable().optional(),
   messages: z
     .array(ChatMessage)
     .min(1)
@@ -248,6 +303,8 @@ export const ChatResponse = z.object({
   moves: z.array(ChatMove).max(CHAT_MOVES_MAX).optional(),
   /** What's left of this week's Ask Jonz for the person asking, after this turn. */
   allowance: AskUsage.optional(),
+  /** The chat was long, so Jonz summed up its start: the summary (with the one sent, if any) and how many of `messages` it now stands for. */
+  summed: ChatSummed.optional(),
 });
 export type ChatResponse = z.infer<typeof ChatResponse>;
 

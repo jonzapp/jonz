@@ -8,6 +8,7 @@ import { RefreshCwIcon } from 'lucide-react-native';
 import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { reloadOntoNewBuild } from '@/api/new-build';
 import { notePage } from '@/api/report-details';
 import { useTooOld } from '@/api/too-old';
 import { BeingDeleted } from '@/components/account/being-deleted';
@@ -162,6 +163,10 @@ function Routes() {
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   const words = useWords();
   const { colors } = useTheme();
+  // A screen's bundle gone after a deploy (api/new-build.ts): the new build has it, so load that.
+  useEffect(() => {
+    reloadOntoNewBuild(error);
+  }, [error]);
   return (
     <View style={[styles.unreachable, { backgroundColor: colors.background }]}>
       <Heading level={2}>{words('door.error.title')}</Heading>

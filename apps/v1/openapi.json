@@ -3464,6 +3464,25 @@
                             },
                             "hadCard": {
                               "type": "boolean"
+                            },
+                            "summed": {
+                              "type": "object",
+                              "properties": {
+                                "text": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 4000
+                                },
+                                "count": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                }
+                              },
+                              "required": [
+                                "text",
+                                "count"
+                              ]
                             }
                           },
                           "required": [
@@ -3635,6 +3654,26 @@
                                   },
                                   "hadCard": {
                                     "type": "boolean"
+                                  },
+                                  "summed": {
+                                    "type": "object",
+                                    "properties": {
+                                      "text": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 4000
+                                      },
+                                      "count": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 9007199254740991
+                                      }
+                                    },
+                                    "required": [
+                                      "text",
+                                      "count"
+                                    ],
+                                    "additionalProperties": false
                                   }
                                 },
                                 "required": [
@@ -3822,6 +3861,25 @@
                             },
                             "hadCard": {
                               "type": "boolean"
+                            },
+                            "summed": {
+                              "type": "object",
+                              "properties": {
+                                "text": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 4000
+                                },
+                                "count": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                }
+                              },
+                              "required": [
+                                "text",
+                                "count"
+                              ]
                             }
                           },
                           "required": [
@@ -9402,6 +9460,26 @@
                         "usedBy"
                       ],
                       "additionalProperties": false
+                    },
+                    "summed": {
+                      "type": "object",
+                      "properties": {
+                        "text": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 4000
+                        },
+                        "count": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "text",
+                        "count"
+                      ],
+                      "additionalProperties": false
                     }
                   },
                   "required": [
@@ -9426,9 +9504,20 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "summary": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 4000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
                   "messages": {
                     "minItems": 1,
-                    "maxItems": 24,
+                    "maxItems": 40,
                     "type": "array",
                     "items": {
                       "type": "object",
@@ -16864,7 +16953,7 @@
                 "properties": {
                   "messages": {
                     "minItems": 1,
-                    "maxItems": 24,
+                    "maxItems": 40,
                     "type": "array",
                     "items": {
                       "type": "object",
@@ -17315,9 +17404,7 @@
                         "type": "object",
                         "properties": {
                           "id": {
-                            "type": "string",
-                            "format": "uuid",
-                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            "type": "string"
                           },
                           "fromOwner": {
                             "type": "boolean"
@@ -19441,6 +19528,25 @@
                             },
                             "hadCard": {
                               "type": "boolean"
+                            },
+                            "summed": {
+                              "type": "object",
+                              "properties": {
+                                "text": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 4000
+                                },
+                                "count": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                }
+                              },
+                              "required": [
+                                "text",
+                                "count"
+                              ]
                             }
                           },
                           "required": [
@@ -19612,6 +19718,26 @@
                                   },
                                   "hadCard": {
                                     "type": "boolean"
+                                  },
+                                  "summed": {
+                                    "type": "object",
+                                    "properties": {
+                                      "text": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 4000
+                                      },
+                                      "count": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 9007199254740991
+                                      }
+                                    },
+                                    "required": [
+                                      "text",
+                                      "count"
+                                    ],
+                                    "additionalProperties": false
                                   }
                                 },
                                 "required": [
@@ -19799,6 +19925,25 @@
                             },
                             "hadCard": {
                               "type": "boolean"
+                            },
+                            "summed": {
+                              "type": "object",
+                              "properties": {
+                                "text": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 4000
+                                },
+                                "count": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                }
+                              },
+                              "required": [
+                                "text",
+                                "count"
+                              ]
                             }
                           },
                           "required": [
