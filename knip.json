@@ -1,0 +1,14 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "ignore": [
+    "apps/client/public/sw.js",
+    "apps/client/scripts/build-web.mjs"
+  ],
+  "ignoreBinaries": ["supabase", "psql"],
+  "ignoreDependencies": ["jscpd"],
+  "workspaces": {
+    ".": {
+      "entry": ["scripts/*.mjs", "scripts/**/*.test.ts", "scripts/ci/*.mjs"]
+    }
+  }
+}
