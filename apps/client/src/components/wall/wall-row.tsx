@@ -80,7 +80,7 @@ function plateColours(family: WallFamily, colors: Theme['colors']): { ground: st
  * the icon drawn heavy: on the corner of whoever leads the row (`badge`), or
  * on its own where the house's own news leads.
  */
-export function WallPlate({ family, icon, badge = false }: { family: WallFamily; icon: WallIcon; badge?: boolean }) {
+function WallPlate({ family, icon, badge = false }: { family: WallFamily; icon: WallIcon; badge?: boolean }) {
   const { colors } = useTheme();
   const { ground, ink, edge } = plateColours(family, colors);
   const Icon = WALL_ICON[icon];

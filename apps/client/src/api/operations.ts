@@ -49,7 +49,7 @@ type Input<N extends AskCardOperation> = z.infer<(typeof OPERATION_IO)[N]['input
 /** Who is doing it, for the calls that need them named. */
 export type OperationContext = { userId: string; words: Words };
 
-export const CARD_OPERATIONS: { [N in AskCardOperation]: (input: Input<N>, ctx: OperationContext) => Promise<unknown> } = {
+const CARD_OPERATIONS: { [N in AskCardOperation]: (input: Input<N>, ctx: OperationContext) => Promise<unknown> } = {
   mark_done: (i) => markDone(i.assignmentId, i.photoPath),
   undo_done: (i) => undoDone(i.assignmentId),
   plan_john: (i) => planJohn(i.assignmentId, i.at ? new Date(i.at) : null),

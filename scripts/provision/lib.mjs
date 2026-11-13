@@ -8,7 +8,7 @@ export const siteUrl = (c) => `https://${c.domain}`;
 export const apexDomain = (domain) => domain.split(".").slice(-2).join(".");
 
 /** Production's email and password rules; the app checks the same (@app/core's email-sign-in.ts). */
-export const EMAIL_AUTH = {
+const EMAIL_AUTH = {
   passwordMin: 8,
   codeLength: 6,
   codeSeconds: 3600,
@@ -22,14 +22,14 @@ export const EMAIL_AUTH = {
  * itself (dynamic client registration, as MCP's authorization spec expects),
  * and the consent page is the app's own, jonz.app/oauth/consent.
  */
-export const OAUTH_SERVER = {
+const OAUTH_SERVER = {
   oauth_server_enabled: true,
   oauth_server_authorization_path: "/oauth/consent",
   oauth_server_allow_dynamic_registration: true,
 };
 
 /** What is wrong with the OAuth server's settings as read back. */
-export function oauthServerProblems(actual) {
+function oauthServerProblems(actual) {
   const problems = [];
   if (!actual.oauth_server_enabled) problems.push("the OAuth server for connected apps is off");
   else {
@@ -42,7 +42,7 @@ export function oauthServerProblems(actual) {
 }
 
 /** The SMTP fields Supabase must have to send through Resend (the password, a Resend key, is pasted in the dashboard). */
-export const EMAIL_SMTP = { host: "smtp.resend.com", port: "465", user: "resend", sender: (c) => `hello@${c.domain}` };
+const EMAIL_SMTP = { host: "smtp.resend.com", port: "465", user: "resend", sender: (c) => `hello@${c.domain}` };
 
 /**
  * Supabase's emails as Management API fields, from @app/core's
@@ -52,7 +52,7 @@ export const EMAIL_SMTP = { host: "smtp.resend.com", port: "465", user: "resend"
  * @param {Record<string, { subject: string; html: string }>} templates
  * @returns {Record<string, string | boolean>}
  */
-export function mailerFields(templates) {
+function mailerFields(templates) {
   /** @type {Record<string, string | boolean>} */
   const body = {};
   for (const [name, t] of Object.entries(templates)) {
@@ -263,7 +263,7 @@ export function missingMigrations(localVersions, remoteVersions) {
 /** The version a migration file name starts with: 20261012000000_groups.sql → 20261012000000. */
 export const migrationVersion = (file) => file.match(/^(\d+)_/)?.[1] ?? null;
 
-export const sqlString = (value) => `'${String(value).replaceAll("'", "''")}'`;
+const sqlString = (value) => `'${String(value).replaceAll("'", "''")}'`;
 
 /** Create a Vault secret, or overwrite it if it exists. */
 export function vaultUpsertSql(name, value) {
@@ -406,7 +406,7 @@ export const stagingApiUrl = (c) => `https://${c.staging.apiDomain}`;
  * The web origins staging's sign-in may return to and its API answers:
  * staging itself, and any preview of the web build.
  */
-export const stagingOrigins = (c) => [stagingUrl(c), c.staging.previews];
+const stagingOrigins = (c) => [stagingUrl(c), c.staging.previews];
 
 /**
  * Staging's auth settings. Like production's, plus email and password for

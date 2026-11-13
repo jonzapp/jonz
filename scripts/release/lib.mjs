@@ -2,7 +2,7 @@
 // builds anything, as a pure function so a unit test can hold it (lib.test.ts,
 // beside this file). The build itself lives in scripts/release.mjs.
 
-export const STORES = { ios: "App Store", android: "Google Play" };
+const STORES = { ios: "App Store", android: "Google Play" };
 
 /**
  * Why a release must not go ahead, as `{ code, message }`, or null when it

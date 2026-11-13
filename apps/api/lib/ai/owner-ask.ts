@@ -131,7 +131,7 @@ const NoticeInput = z.object({
   startsAt: When.describe("When it starts showing (ISO with offset), or null for now."),
   endsAt: When.describe("When it stops (ISO with offset), or null to show until ended."),
 });
-export type NoticeInput = z.infer<typeof NoticeInput>;
+type NoticeInput = z.infer<typeof NoticeInput>;
 
 const MessageInput = z.object({
   audience: z.enum(["person", "house", "everyone"]),
@@ -143,7 +143,7 @@ const MessageInput = z.object({
   wall: z.boolean().describe("On their house's Wall."),
   email: z.boolean(),
 });
-export type MessageInput = z.infer<typeof MessageInput>;
+type MessageInput = z.infer<typeof MessageInput>;
 
 const PromotionInput = z.object({
   name: z.string().describe("What the owner calls it, at most 60 letters."),
@@ -160,7 +160,7 @@ const PromotionInput = z.object({
   endsAt: When.describe("When it ends (ISO with offset), or null."),
   maxUses: z.number().int().nullable().describe("With anyone: how many may use it, or null for no limit."),
 });
-export type PromotionInput = z.infer<typeof PromotionInput>;
+type PromotionInput = z.infer<typeof PromotionInput>;
 
 /** Every write tool, by name: OWNER_ASK_COVERAGE says which permission gives each. */
 function writeTools(w: OwnerWrites): Record<string, ToolSet[string]> {

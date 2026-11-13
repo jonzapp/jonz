@@ -24,7 +24,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 export type Db = SupabaseClient<Database>;
 
 /** Runs one statement. `contained`: a failure mustn't end the transaction it runs in. */
-export type Run = (
+type Run = (
   text: string,
   params: unknown[],
   contained: boolean,
@@ -58,7 +58,7 @@ export interface Meta {
   unique: Map<string, string[][]>;
 }
 
-export interface PgError {
+interface PgError {
   message: string;
   code: string;
   details: string | null;
@@ -89,7 +89,7 @@ function asError(e: unknown): PgError {
 
 // --- The catalog -----------------------------------------------------------
 
-export async function readMeta(sql: Sql | Tx): Promise<Meta> {
+async function readMeta(sql: Sql | Tx): Promise<Meta> {
   const keys = await sql<ForeignKey[]>`
     select c.conname as name, t.relname as table, f.relname as target,
            array(select a.attname::text from unnest(c.conkey) with ordinality k(n, o) join pg_attribute a on a.attrelid = c.conrelid and a.attnum = k.n order by k.o) as columns,
@@ -372,7 +372,7 @@ function resolve(meta: Meta, from: string, embed: Embed): Resolved {
   return candidates[0];
 }
 
-export class Builder {
+class Builder {
   private filters: Filter[] = [];
   private orders: Order[] = [];
   private limits = new Map<string, number>();
@@ -739,7 +739,7 @@ export class Builder {
   }
 }
 
-export class RpcCall {
+class RpcCall {
   private shape: "as-is" | "single" | "maybe" = "as-is";
   constructor(
     private readonly backend: Backend,

@@ -137,7 +137,7 @@ export const DIM = 0.5;
 /** Figures that line up in columns: Focus sets every number this way. */
 export const TABULAR: TextStyle = { fontVariant: ['tabular-nums'] };
 
-export type SchemeName = 'light' | 'dark';
+type SchemeName = 'light' | 'dark';
 
 export interface Theme {
   scheme: SchemeName;

@@ -37,7 +37,7 @@ export interface Outbox {
   email: typeof sendEmail;
 }
 
-export function outbox(): Outbox {
+function outbox(): Outbox {
   const db = createAdminClient();
   return { db, notify: pushNotifier(db), email: sendEmail };
 }

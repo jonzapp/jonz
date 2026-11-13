@@ -39,7 +39,7 @@ export interface ReplyPieces {
   owner?(kind: OwnerChipKind, ref: string, label: string): ChipTarget | null;
 }
 
-export type OwnerChipKind = Exclude<ChipKind, 'john' | 'person' | 'page'>;
+type OwnerChipKind = Exclude<ChipKind, 'john' | 'person' | 'page'>;
 
 /** Nothing found: every chip its words, every card left out. */
 export const NO_PIECES: ReplyPieces = { john: () => null, person: () => null, page: () => null, card: () => null };
@@ -291,7 +291,7 @@ function ChipRun({ chip }: { chip: Extract<Inline, { t: 'chip' }> }) {
  * the text's line; the tap target is the pill grown to 32 tall, which
  * WCAG's target-size rule allows for a target inside a sentence.
  */
-export function Chip({ label, target }: { label: string; target: ChipTarget }) {
+function Chip({ label, target }: { label: string; target: ChipTarget }) {
   const { colors, type } = useTheme();
   const [pressed, setPressed] = useState(false);
   const lead = target.lead;

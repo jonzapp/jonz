@@ -12,7 +12,7 @@ import { callV1 } from './v1';
  * the most house_history gives at once, about six weeks of a busy house,
  * further back than any undo reaches (an admin's, until the month is shared out).
  */
-export const UNDO_READ = 200;
+const UNDO_READ = 200;
 
 /** The latest moves, newest first, each saying who may undo it now. */
 export async function loadHistory(houseId: string, limit = UNDO_READ): Promise<HistoryItem[]> {

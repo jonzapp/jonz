@@ -17,7 +17,7 @@ const CARD_FRAME: RowFrame = { inset: 0 };
 const RowFrameContext = createContext<RowFrame | null>(null);
 
 /** The group or card rows the calling row sits in, or null outside either. */
-export function useRowFrame(): RowFrame | null {
+function useRowFrame(): RowFrame | null {
   return useContext(RowFrameContext);
 }
 

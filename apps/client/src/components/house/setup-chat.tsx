@@ -98,14 +98,14 @@ type Turn =
   | { role: 'done'; added: number };
 
 /** A kept chat's turns as the chat shows them: no card comes back, only that there was one. */
-export function fromSaved(saved: readonly SavedTurn[]): Turn[] {
+function fromSaved(saved: readonly SavedTurn[]): Turn[] {
   return saved.map((t) =>
     t.role === 'assistant' ? { role: 'assistant', text: t.text, ask: t.ask, draft: null, old: t.hadCard, ...(t.summed ? { summed: t.summed } : {}) } : t,
   );
 }
 
 /** The chat's turns as they're kept: what was said, and whether a reply had a card. */
-export function toSaved(turns: readonly Turn[]): SavedTurn[] {
+function toSaved(turns: readonly Turn[]): SavedTurn[] {
   return turns.map((t) =>
     t.role === 'assistant'
       ? {
@@ -151,7 +151,7 @@ function summedTurn(turns: readonly Turn[], summed: ChatSummed | null): number {
  * A new chat that carries on from a full one: it opens with the line from
  * the last chat, holding its summary and what was said since.
  */
-export function carriedChat(turns: readonly Turn[], words: Words): SavedTurn[] {
+function carriedChat(turns: readonly Turn[], words: Words): SavedTurn[] {
   const summed = summedOf(turns);
   const since = messagesOf(turns).slice(summed?.count ?? 0);
   const text = chatCarryOver(summed?.text ?? null, since, { you: words('ask.long.you'), jonz: words('ask.long.jonz') });

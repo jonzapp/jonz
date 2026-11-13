@@ -2,7 +2,7 @@
 // browser on another origin needs it, and only listed origins get it. An
 // entry is an exact origin or one with `*` for a single DNS label.
 
-export function originAllowed(origin: string | null | undefined, allowed: readonly string[]): origin is string {
+function originAllowed(origin: string | null | undefined, allowed: readonly string[]): origin is string {
   if (!origin) return false;
   return allowed.some((entry) => {
     if (!entry.includes("*")) return entry === origin;

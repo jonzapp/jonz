@@ -18,7 +18,7 @@ Write what Jonz needs to carry on the chat without the messages themselves: the 
 - When there are notes already, fold them in: one list, newest facts winning.
 - Write in the language given. Only the list: no heading, no preamble.`;
 
-export interface SumUp {
+interface SumUp {
   text: string;
   inputTokens: number;
   outputTokens: number;
@@ -28,7 +28,7 @@ export interface SumUp {
 export type SumUpChat = (summary: string | null, messages: readonly ChatMessage[], language: string) => Promise<SumUp>;
 
 /** The messages as the notes' writer reads them: the notes so far, then the chat a line each. */
-export function sumUpPrompt(summary: string | null, messages: readonly ChatMessage[], language: string): string {
+function sumUpPrompt(summary: string | null, messages: readonly ChatMessage[], language: string): string {
   const chat = messages.map((m) => `${m.role === "user" ? "Person" : "Jonz"}: ${m.text}`).join("\n");
   return [`Language: ${language}`, summary ? `<notes>\n${summary}\n</notes>` : null, `<chat>\n${chat}\n</chat>`].filter(Boolean).join("\n\n");
 }

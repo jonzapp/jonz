@@ -43,7 +43,7 @@ export function pagesLine(pages: readonly string[] = trail): string | undefined 
 }
 
 /** "Jonz on the web, Safari 18, iPhone", or "Jonz 1.2.0 for iPhone, iOS 26.1". */
-export function appLine(): string {
+function appLine(): string {
   if (Platform.OS === 'web') return webAppLine(typeof navigator === 'undefined' ? '' : navigator.userAgent);
   const version = Constants.expoConfig?.version;
   const device = Platform.OS === 'ios' ? 'iPhone' : 'Android';

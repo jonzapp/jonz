@@ -13,7 +13,7 @@ export async function loadPrefs(_userId: string): Promise<NotificationPrefs> {
 }
 
 /** This device's time zone, which quiet hours are read in. */
-export function deviceZone(): string | null {
+function deviceZone(): string | null {
   try {
     return Intl.DateTimeFormat().resolvedOptions().timeZone || null;
   } catch {

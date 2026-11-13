@@ -82,7 +82,7 @@ export async function makePromotion(
  * A promotion still being made: its coupon and code made in Stripe (once,
  * however often it's tried), then live. True once it's live.
  */
-export async function setUpPromotion(db: AdminClient, stripe: OfferStripe | null, id: string): Promise<boolean> {
+async function setUpPromotion(db: AdminClient, stripe: OfferStripe | null, id: string): Promise<boolean> {
   const { data: p } = await db.from("promotions").select(COLUMNS).eq("id", id).maybeSingle();
   if (!p) return false;
   if (p.state !== "making") return p.state === "live";

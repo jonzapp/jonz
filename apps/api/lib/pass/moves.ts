@@ -3,7 +3,7 @@ import type { AdminClient } from "@/lib/supabase/admin";
 import type { PassStripe } from "./stripe";
 
 /** How long a Pass its buyer carries waits for a house before it stops renewing. */
-export const CARRY_DAYS = 30;
+const CARRY_DAYS = 30;
 
 /**
  * The clock's part in the Pass moving with its buyer

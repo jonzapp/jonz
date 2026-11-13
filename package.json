@@ -37,6 +37,8 @@
     "package:chatgpt": "rm -f jonz-chatgpt.zip && cd integrations/chatgpt && zip -r ../../jonz-chatgpt.zip plugin.json mcp.json assets"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "@supabase/supabase-js": "^2.110.0",
     "eslint": "^9",
     "jscpd": "^5.4.3",
     "knip": "^6.45.1",

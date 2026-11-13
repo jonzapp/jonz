@@ -128,7 +128,7 @@ export type OutlineLead = 'circle' | 'square' | 'none';
  * title and a meta line, and a short value at the end when `end`. In a
  * group it draws the hairline above itself, as a row does.
  */
-export function OutlineRow({
+function OutlineRow({
   lead = 'circle',
   title = TITLES[0],
   meta = METAS[0],
@@ -166,7 +166,7 @@ export function OutlineRows({ count, lead = 'circle', end = false, meta = true }
 }
 
 /** A section's label in outline, for a page whose sections aren't known yet. */
-export function OutlineLabel({ width = 96 }: { width?: DimensionValue }) {
+function OutlineLabel({ width = 96 }: { width?: DimensionValue }) {
   return <OutlineBar width={width} height={OUTLINE.label} onCard={false} style={styles.label} />;
 }
 

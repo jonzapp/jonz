@@ -36,8 +36,7 @@ import type { HouseReads } from "@/lib/moves/ask-reads";
 // runs through the shared loop in agent.ts, through Vercel's AI Gateway: on
 // Vercel it signs in with the project's OIDC token, so there is no key to keep.
 
-export const DRAFT_MODEL = AGENT_MODEL;
-export { STEPS_MAX } from "@/lib/ai/agent";
+const DRAFT_MODEL = AGENT_MODEL;
 
 /** A John's fields as Claude writes them. Loose on purpose: ranges are core's to enforce (tidyDraft). */
 const JohnFields = {
@@ -66,7 +65,7 @@ const ResetInput = z.object({
   week: z.enum(["this", "last"]).nullable(),
   month: z.enum(["this", "last"]).nullable(),
 });
-export type ResetInput = z.infer<typeof ResetInput>;
+type ResetInput = z.infer<typeof ResetInput>;
 
 /** What Claude can do this turn, already narrowed to what the person may do. */
 export interface JonzTools {
