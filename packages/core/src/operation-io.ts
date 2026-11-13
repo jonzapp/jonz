@@ -81,8 +81,8 @@ export interface OperationIo {
   /** Input keys whose function argument isn't the rule's (`p_` + snake_case, without `Id`). */
   args?: Readonly<Record<string, string>>;
   /**
-   * For an operation behind an API route whose request names things
-   * differently: the route's request from this input.
+   * For an operation whose server code names things
+   * differently: that code's request from this input.
    */
   toRequest?: (input: never) => unknown;
   /** A list read a page at a time: which of a row's fields the cursor holds, and (for a function) which arguments take them. */
@@ -284,7 +284,7 @@ const overview = z.object({
   reports: count,
   needs: z.array(z.object({ kind: z.enum(["report", "deletion"]), id: text, name: text.nullable(), words: text.nullable(), house: text.nullable(), at })),
 });
-/** A reset, its ids named as /v1 names them; `toRequest` gives the route's ResetRequest. */
+/** A reset, its ids named as /v1 names them; `toRequest` gives the move's ResetRequest. */
 const resetInput = ResetRequest.omit({ week: true, user: true, assignment: true }).extend({
   weekId: ResetRequest.shape.week,
   userId: ResetRequest.shape.user,

@@ -222,7 +222,7 @@ export function promotionPrices(t: PromotionTerms, currency: Currency): Promotio
 
 // --- The owner's form --------------------------------------------------------------------------
 
-/** POST /api/admin/promotions: a promotion to make. An amount off is in US cents; the other currencies follow. */
+/** owner_make_promotion on /v1: a promotion to make. An amount off is in US cents; the other currencies follow. */
 export const PromotionRequest = z.object({
   name: z.string().trim().min(1).max(PROMOTION_LIMITS.name),
   note: z.string().trim().max(PROMOTION_LIMITS.note).nullable().default(null),
@@ -253,7 +253,7 @@ export const PromotionMade = z.object({
 });
 export type PromotionMade = z.infer<typeof PromotionMade>;
 
-/** POST /api/admin/promotions/[id]/email: how many it went to. */
+/** owner_promotion_emails on /v1: how many it went to. */
 export const PromotionEmailed = z.object({ ok: z.literal(true), sent: z.number() });
 
 /** The fields of the form that can be wrong. */

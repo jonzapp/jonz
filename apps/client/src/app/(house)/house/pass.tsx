@@ -4,7 +4,7 @@ import { CameraIcon, CheckIcon, CoinsIcon, CreditCardIcon, SparklesIcon, UserRou
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { ApiRequestError } from '@/api/http';
+import { ApiRequestError } from '@/api/base';
 import { leaveFor, passBillingUrl, passCheckoutOpen, passCheckoutUrl } from '@/api/pass';
 import { HousePage } from '@/components/house/house-page';
 import { Pair } from '@/components/page-columns';

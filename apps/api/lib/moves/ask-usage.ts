@@ -51,7 +51,7 @@ export async function usageNow(house: HouseRow, people: readonly string[], me: s
 }
 
 /**
- * GET /api/ask/usage: the week's Ask Jonz for anyone in the house, read as
+ * ask_usage on /v1: the week's Ask Jonz for anyone in the house, read as
  * them (row rules decide the house and who lives there).
  */
 export async function houseUsage(caller: Caller, houseId: string, now: Date): Promise<{ refusal: Refusal } | AskUsage> {

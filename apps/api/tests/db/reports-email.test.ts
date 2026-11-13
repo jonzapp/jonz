@@ -3,7 +3,6 @@ import { createHmac, randomUUID } from "node:crypto";
 import { refTag } from "@app/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { POST as fixedRoute } from "@/app/api/reports/[id]/fixed/route";
 import { POST as inboundRoute } from "@/app/api/email/inbound/route";
 import { pushIn } from "@/lib/engine/tick";
 import { readInbound, verifySvix } from "@/lib/inbound";
@@ -12,6 +11,7 @@ import { adminClient, signedInUser, type Actor } from "@/tests/support/clients";
 import { expectDenied, expectOk, expectRule } from "@/tests/support/expect";
 import { makeHouse, type House } from "@/tests/support/factories";
 import { passSecondFactor } from "@/tests/support/mfa";
+import { v1 } from "@/tests/support/v1";
 
 /**
  * Report a problem, steps 2 and 3 (docs/specs/report-a-problem.md): an email
@@ -262,18 +262,11 @@ describe("fixed, and telling everyone", () => {
 
   it("answers the app as the app calls it", async () => {
     const id = await sent(ava);
-    const token = async (a: Actor) => (await a.db.auth.getSession()).data.session!.access_token;
-    const post = async (body: unknown, a: Actor) =>
-      new Request(`http://localhost:3205/api/reports/${id}/fixed`, {
-        method: "POST",
-        headers: { "content-type": "application/json", authorization: `Bearer ${await token(a)}` },
-        body: JSON.stringify(body),
-      });
-    const params = { params: Promise.resolve({ id }) };
-    expect((await fixedRoute(await post({ note: null, tell: false }, ben), params)).status).toBe(403);
-    expect((await fixedRoute(await post({ tell: "yes" }, owner), params)).status).toBe(400);
-    const done = await fixedRoute(await post({ note: null, tell: false }, owner), params);
-    expect(done.status).toBe(200);
+    const fixed = (body: unknown, a: Actor) => v1(a, `POST /v1/admin/reports/${id}/fixed`, body);
+    expect((await fixed({ note: null, tell: false }, ben)).status).toBe(403);
+    expect((await fixed({ tell: "yes" }, owner)).status).toBe(400);
+    const done = await fixed({ note: null, tell: false }, owner);
+    expect(done.status).toBe(201);
     expect(await done.json()).toEqual({ ok: true, fixed: 1, told: 0 });
   });
 });

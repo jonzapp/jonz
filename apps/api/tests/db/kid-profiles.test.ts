@@ -1,15 +1,15 @@
 import { nextWeek } from "@app/core";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { POST as add } from "@/app/api/kids/route";
 import { tickHouse } from "@/lib/engine/tick";
 import { adminClient, type Actor } from "@/tests/support/clients";
 import { expectDenied, expectOk } from "@/tests/support/expect";
 import { addJohns, deal, makeHouse, reread, thisWeek, ZONE } from "@/tests/support/factories";
+import { APP_ORIGIN, v1 } from "@/tests/support/v1";
 
 /**
  * Kids without a sign-in, family step 4 (docs/specs/family-houses.md): a
- * parent adds a child through POST /api/kids, ticks for them, and gives a
+ * parent adds a child (add_kid on /v1), ticks for them, and gives a
  * John a youngest age the deal keeps to.
  *
  * Johns are dealt next week and settled with a pretend time past that
@@ -18,7 +18,6 @@ import { addJohns, deal, makeHouse, reread, thisWeek, ZONE } from "@/tests/suppo
  */
 
 const HOUR = 3_600_000;
-const BASE = "http://localhost:3205/api/kids";
 const db = adminClient();
 const WEEK = nextWeek(thisWeek(), ZONE, 1);
 const LATER = new Date(WEEK.endsAt.getTime() + 2 * 24 * HOUR);
@@ -27,30 +26,21 @@ const THIS_YEAR = new Date().getUTCFullYear();
 const savedOrigins = process.env.ALLOWED_ORIGINS;
 
 beforeAll(() => {
-  process.env.ALLOWED_ORIGINS = "http://localhost:8205";
+  process.env.ALLOWED_ORIGINS = APP_ORIGIN;
 });
 
 afterAll(() => {
   process.env.ALLOWED_ORIGINS = savedOrigins;
 });
 
-async function post(actor: Actor, body: unknown) {
-  const token = (await actor.db.auth.getSession()).data.session!.access_token;
-  return add(
-    new Request(BASE, {
-      method: "POST",
-      headers: { "content-type": "application/json", origin: "http://localhost:8205", authorization: `Bearer ${token}` },
-      body: JSON.stringify(body),
-    }),
-  );
-}
+const post = (actor: Actor, houseId: string, body: unknown) => v1(actor, `POST /v1/houses/${houseId}/kids`, body);
 
 /** A family, Sam the parent and Leo a kid who signs in, with Maya added by Sam. */
 async function withMaya() {
   const house = await makeHouse(["Sam", "Leo"], "family");
   const [sam, leo] = house.everyone;
-  const res = await post(sam, { name: "Maya Park", bornYear: THIS_YEAR - 8 });
-  expect(res.status).toBe(200);
+  const res = await post(sam, house.id, { name: "Maya Park", bornYear: THIS_YEAR - 8 });
+  expect(res.status).toBe(201);
   const { userId: maya } = (await res.json()) as { userId: string };
   return { house, sam, leo, maya };
 }
@@ -71,18 +61,18 @@ describe("adding a child", () => {
   });
 
   it("is a parent's to do, and only in a family", async () => {
-    const { leo } = await withMaya();
-    expect((await post(leo, { name: "Kit", bornYear: THIS_YEAR - 5 })).status).toBe(403);
+    const { house, leo } = await withMaya();
+    expect((await post(leo, house.id, { name: "Kit", bornYear: THIS_YEAR - 5 })).status).toBe(403);
     const mates = await makeHouse(["Ava", "Ben"]);
-    expect((await post(mates.everyone[0], { name: "Kit", bornYear: THIS_YEAR - 5 })).status).toBe(403);
+    expect((await post(mates.everyone[0], mates.id, { name: "Kit", bornYear: THIS_YEAR - 5 })).status).toBe(403);
   });
 
   it("wants a name and a year that makes them 18 or under", async () => {
     const house = await makeHouse(["Sam"], "family");
     const sam = house.everyone[0];
-    expect((await post(sam, { name: " ", bornYear: THIS_YEAR - 5 })).status).toBe(400);
-    expect((await post(sam, { name: "Kit", bornYear: THIS_YEAR - 30 })).status).toBe(400);
-    expect((await post(sam, { name: "Kit", bornYear: THIS_YEAR + 1 })).status).toBe(400);
+    expect((await post(sam, house.id, { name: " ", bornYear: THIS_YEAR - 5 })).status).toBe(400);
+    expect((await post(sam, house.id, { name: "Kit", bornYear: THIS_YEAR - 30 })).status).toBe(400);
+    expect((await post(sam, house.id, { name: "Kit", bornYear: THIS_YEAR + 1 })).status).toBe(400);
     // add_kid keeps to the same, whoever calls it.
     const { data: made } = await db.auth.admin.createUser({ email: `kit-${crypto.randomUUID()}@kids.jonz.invalid` });
     const { error } = await db.rpc("add_kid", { p_parent: sam.userId, p_kid: made.user!.id, p_born: THIS_YEAR - 40 });

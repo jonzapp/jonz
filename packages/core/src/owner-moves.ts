@@ -115,7 +115,7 @@ const ways = (m: { push: boolean; wall: boolean; email: boolean }) =>
   [m.push && "push", m.wall && "the Wall", m.email && "email"].filter(Boolean).join(", ");
 const clip = (s: string, n = 140) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 
-/** POST /api/admin/houses/[id]/delete: why, and whether to tell everyone in it. */
+/** owner_delete_house on /v1: why, and whether to tell everyone in it. */
 export const DeleteHouseRequest = z.object({
   reason: Reason.default(""),
   tell: z.boolean(),

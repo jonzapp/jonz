@@ -12,14 +12,14 @@ import { wordsFor, type Words } from "./words-for";
 // The server's refusals read the housemates' words for now; each person's own language comes with translation 7.
 const SERVER_WORDS = wordsFor("en", "housemates");
 
-/** What POST /api/kids takes. */
+/** What add_kid on /v1 takes. */
 export const AddKid = z.object({
   name: z.string().trim().min(1, SERVER_WORDS("people.kids.problems.name")).max(40, SERVER_WORDS("people.kids.problems.name")),
   bornYear: z.number().int(),
 });
 export type AddKid = z.infer<typeof AddKid>;
 
-/** What POST /api/kids answers: the new kid's id. */
+/** What add_kid on /v1 answers: the new kid's id. */
 export const AddKidResponse = z.object({ userId: z.uuid() });
 
 /** Kids are 18 or under: the years a parent can give, as add_kid checks them. */

@@ -19,7 +19,7 @@ export type ResetKind = (typeof RESET_KINDS)[number];
 export const RESULT_CHOICES = ["done", "late", "missed", "excused"] as const;
 export type ResultChoice = (typeof RESULT_CHOICES)[number];
 
-/** POST /api/resets: what to reset, and whether to do it or only say what it would do. */
+/** reset_house on /v1: what to reset, and whether to do it or only say what it would do. */
 export const ResetRequest = z.object({
   houseId: z.uuid(),
   kind: z.enum(RESET_KINDS),

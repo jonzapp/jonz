@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { OPERATIONS, OPERATION_NAMES, registrySql, SYSTEM_ROUTES, TABLES, type Operation } from "./operations";
+import { OPERATIONS, OPERATION_NAMES, registrySql, TABLES, type Operation } from "./operations";
 import { OWNER_PERMISSION_NAMES } from "./owner-moves";
 import { ACCOUNT_PERMISSIONS, PERMISSION_NAMES } from "./permissions";
 
@@ -26,30 +26,23 @@ describe("the operation registry", () => {
       if (o.guard.by === "check") {
         expect(o.effect, name).toBe("read");
         expect(o.rpc, name).toBeDefined();
-        expect(o.route, name).toBeUndefined();
+        expect(o.server, name).toBeUndefined();
       }
     }
   });
 
-  it("puts a route in front of every server-only function, since only the API may call it", () => {
-    for (const [name, o] of all) if (o.rpc?.server) expect(o.route, name).toBeDefined();
+  it("runs every server-only function from the API's own code, since only the API may call it", () => {
+    for (const [name, o] of all) if (o.rpc?.server) expect(o.server, name).toBe(true);
   });
 
-  it("runs every operation somewhere: a database function, a route, the API alone, or straight on its tables", () => {
-    for (const [name, o] of all) expect(o.rpc ?? o.route ?? o.tables ?? o.server, name).toBeDefined();
-    // An operation on tables has no route. It may also have a function while
-    // the app moves onto /v1 (docs/specs/api.md, C2): /v1 runs the function,
-    // and the app still reads the tables until it moves.
-    expect(all.filter(([, o]) => o.tables && o.route).map(([n]) => n)).toEqual([]);
+  it("runs every operation somewhere: a database function, the API's own code, or straight on its tables", () => {
+    for (const [name, o] of all) expect(o.rpc ?? o.tables ?? o.server, name).toBeDefined();
+    // An operation on tables needs none of the API's own code.
+    expect(all.filter(([, o]) => o.tables && o.server).map(([n]) => n)).toEqual([]);
   });
 
   it("marks only reads as a screen's", () => {
     expect(all.filter(([, o]) => o.screen && o.effect !== "read").map(([n]) => n)).toEqual([]);
-  });
-
-  it("lists each route once, as an operation's or a system one", () => {
-    const routes = [...all.flatMap(([, o]) => (o.route ? [o.route] : [])), ...Object.keys(SYSTEM_ROUTES)];
-    expect(new Set(routes).size).toBe(routes.length);
   });
 
   it("guards every writable table with who may change it", () => {

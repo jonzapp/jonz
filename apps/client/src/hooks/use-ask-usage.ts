@@ -5,7 +5,7 @@ import { askUsageOf } from '@/api/draft';
 import { askUsageKey } from '@/hooks/keys';
 
 /**
- * The week's Ask Jonz (POST /api/ask/usage): read when the chat or the
+ * The week's Ask Jonz (ask_usage on /v1): read when the chat or the
  * usage page opens, and set from each answer in the chat (`put`), which
  * says what's left after it. While it can't be read, nothing warns.
  */

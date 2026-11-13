@@ -1,10 +1,10 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { POST as flagRoute } from "@/app/api/flags/route";
 import { tickHouse } from "@/lib/engine/tick";
 import { adminClient, signedInUser, type Actor } from "@/tests/support/clients";
 import { expectDenied, expectOk, expectRule } from "@/tests/support/expect";
 import { actorFor, addJohns, deal, makeHouse, someoneElse, thisWeek } from "@/tests/support/factories";
+import { problemOf, v1 } from "@/tests/support/v1";
 
 /**
  * On-call Johns: the deal puts someone on call, any housemate flags it, and
@@ -264,15 +264,8 @@ describe("the clock and flags", () => {
   });
 });
 
-describe("POST /api/flags", () => {
-  async function post(body: unknown, actor?: Actor) {
-    const headers: Record<string, string> = { "content-type": "application/json", origin: "http://localhost:8205" };
-    if (actor) {
-      const { data } = await actor.db.auth.getSession();
-      headers.authorization = `Bearer ${data.session!.access_token}`;
-    }
-    return flagRoute(new Request("http://localhost:3205/api/flags", { method: "POST", headers, body: JSON.stringify(body) }));
-  }
+describe("POST /v1/johns/{johnId}/flags", () => {
+  const post = ({ johnId }: { johnId: string }, actor?: Actor) => v1(actor, `POST /v1/johns/${johnId}/flags`, {});
 
   it("refuses a caller with no token", async () => {
     expect((await post({ johnId: crypto.randomUUID() })).status).toBe(401);
@@ -282,13 +275,13 @@ describe("POST /api/flags", () => {
     const { holder } = await onCallHouse(["Ava", "Ben"]);
     const res = await post({ johnId: "bins" }, holder);
     expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({ error: "Say which John needs doing." });
+    expect((await problemOf(res)).code).toBe("invalid_input");
   });
 
   it("flags it and answers the flag's id", async () => {
     const { house, bins, holder } = await onCallHouse(["Ava", "Ben"]);
     const res = await post({ johnId: bins.id }, someoneElse(house, holder.userId));
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(201);
     const body = await res.json();
     const { data: flag } = await db.from("assignments").select("user_id").eq("id", body.assignmentId).single();
     expect(flag!.user_id).toBe(holder.userId);
@@ -298,7 +291,7 @@ describe("POST /api/flags", () => {
     const { house, holder } = await onCallHouse(["Ava", "Ben"]);
     const { data: bathroom } = await db.from("johns").select("id").eq("house_id", house.id).eq("name", "Bathroom").single();
     const res = await post({ johnId: bathroom!.id }, holder);
-    expect(res.status).toBe(409);
-    expect(await res.json()).toEqual({ error: "That John isn’t on call, so it can’t be flagged." });
+    expect(res.status).toBe(400);
+    expect(await problemOf(res)).toEqual({ code: "rejected", detail: "not_on_call" });
   });
 });

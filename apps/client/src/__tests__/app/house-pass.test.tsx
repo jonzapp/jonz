@@ -3,7 +3,7 @@ import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library'
 
 import { loadHouse } from '@/api/board';
 import { catchUp } from '@/api/house';
-import { ApiRequestError } from '@/api/http';
+import { ApiRequestError } from '@/api/base';
 import { leaveFor, passBillingUrl, passCheckoutOpen, passCheckoutUrl } from '@/api/pass';
 import PassScreen from '@/app/(house)/house/pass';
 import { ToastProvider } from '@/components/toast';
