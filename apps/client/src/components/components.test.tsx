@@ -54,9 +54,9 @@ describe('Bin Night components', () => {
   });
 
   it('colours a lid bar by its kind, and an unknown kind as other', async () => {
-    const { rerender } = await render(<LidBar category="bathroom" />);
+    const { rerender } = await render(<LidBar lid="bathroom" />);
     expect(screen.getByTestId('lid-bar', HIDDEN)).toHaveStyle({ backgroundColor: BIN_NIGHT.light.bin.bathroom });
-    await rerender(<LidBar category="garden" />);
+    await rerender(<LidBar lid="garden" />);
     expect(screen.getByTestId('lid-bar', HIDDEN)).toHaveStyle({ backgroundColor: BIN_NIGHT.light.bin.other });
   });
 

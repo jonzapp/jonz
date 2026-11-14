@@ -1,9 +1,10 @@
-// House setup's pages: the rules as label and value, the Johns by category, a John's schedule line and the admins' names.
+// House setup's pages: the rules as label and value, the Johns by kind, a John's schedule line and the admins' names.
 import { isoDayOf, shiftMonth, type AwayPeriod } from "./away";
 import type { BoardItem, JohnDef } from "./board";
 import { MAKEUP_LABEL } from "./deal";
-import { CATEGORIES, CATEGORY_LABEL, type Category, type Currency, type DealMode, type HouseKind, type HouseRules, type IsoDow, type SettleIn } from "./domain";
+import { CATEGORY_LABEL, type Currency, type DealMode, type HouseKind, type HouseRules, type IsoDow, type SettleIn } from "./domain";
 import { familyHides } from "./family";
+import { kindOf, kindsInOrder, type KindDef } from "./kinds";
 import { humanError } from "./errors";
 import { dateRange, firstName, localDay, pointsLabel, weekdayName } from "./format";
 import { formatMoney, formatSigned, moneyInput, parseMoney } from "./money";
@@ -22,18 +23,22 @@ export interface LabelValue {
   value: string;
 }
 
-/** One kind of John on the list, as its own section: "Kitchen, 3". */
+/** One kind of John on the list, as its own section: "Kitchen", 3. A null kind is the Johns with none. */
 export interface JohnKind {
-  category: Category;
-  label: string;
+  kind: KindDef | null;
   johns: JohnDef[];
 }
 
-/** The John list by kind, in the kinds' usual order, each kind's Johns as the list has them. Kinds with none are left out. */
-export function johnsByKind(johns: readonly JohnDef[], words: Words): JohnKind[] {
-  return CATEGORIES.flatMap((category) => {
-    const mine = johns.filter((j) => j.category === category);
-    return mine.length === 0 ? [] : [{ category, label: words('house.setup.kind', { label: CATEGORY_LABEL[category], count: mine.length }), johns: mine }];
+/**
+ * The John list by kind, in the house's order of its kinds, each kind's
+ * Johns as the list has them. Kinds with none are left out. Johns with no
+ * kind (theirs was deleted, or isn't among these) come last, together.
+ */
+export function johnsByKind(johns: readonly JohnDef[], kinds: readonly KindDef[]): JohnKind[] {
+  const home = (j: JohnDef) => kindOf(j, kinds)?.id ?? null;
+  return [...kindsInOrder(kinds), null].flatMap((kind) => {
+    const mine = johns.filter((j) => home(j) === (kind?.id ?? null));
+    return mine.length === 0 ? [] : [{ kind, johns: mine }];
   });
 }
 
@@ -115,10 +120,10 @@ export function listCells(
 }
 
 /** A John as a housemate who can't edit it reads it: kind, who shares it, effort, how often, when, and the photo. */
-export function johnFacts(john: JohnDef, groupName: string | null | undefined, words: Words): LabelValue[] {
+export function johnFacts(john: JohnDef, about: { group?: string | null; kind?: string | null }, words: Words): LabelValue[] {
   return [
-    { label: words('house.setup.kindLabel'), value: CATEGORY_LABEL[john.category] },
-    { label: words('house.johns.sharedBy'), value: groupName || words('house.johns.everyone') },
+    { label: words('house.setup.kindLabel'), value: about.kind || CATEGORY_LABEL[john.category] },
+    { label: words('house.johns.sharedBy'), value: about.group || words('house.johns.everyone') },
     { label: words('house.johns.effort'), value: pointsLabel(john.points, words) },
     ...(john.crew === 1 ? [] : [{ label: words('john.crew.doneBy'), value: words('john.crew.choice', { crew: john.crew }) }]),
     ...(john.when === "on_call"

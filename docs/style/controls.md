@@ -113,6 +113,15 @@
   of our own, and the chosen one is never amber (the John editor's How
   often, By what time and Done within, 13 Nov). A count with − and + uses
   `IconButton`s with the outline edge.
+- **A colour is picked from dots, then any colour** (`ColourPicker`): the
+  eleven ready colours as round dots, six to a row, the twelfth the rainbow
+  dot, which opens a shade square, a hue track and the colour's code under
+  them. The chosen dot wears a ring and a tick; each dot shows as its lid
+  will in this scheme. Each has a spoken name (Brown, Sky blue), and the
+  square and track can be moved with a screen reader. (Colour picker, 14
+  Nov) *Not* named bin lids, a picker of our own design, or a full picker
+  always open: the dots are what label apps (Linear, Notion, GitHub,
+  Google Calendar) lead with.
 - **A menu opened from a control drops from it on a laptop** (from `WIDE`:
   the "•••" and the Table's This week | October, `DropMenu`), its right edge
   on the control's, put away by a tap anywhere else or Escape; on a phone

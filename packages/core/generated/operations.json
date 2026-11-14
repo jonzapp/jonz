@@ -4052,6 +4052,7 @@
         "weeks",
         "assignments",
         "johns",
+        "john_kinds",
         "crew_members",
         "disputes",
         "dispute_votes",
@@ -4759,6 +4760,18 @@
                     }
                   ]
                 },
+                "kindName": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "kindColour": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
                 "crew": {
                   "type": "array",
                   "items": {
@@ -4824,6 +4837,8 @@
                 "coverHoldEndsAt",
                 "everyWeeks",
                 "everyMonths",
+                "kindName",
+                "kindColour",
                 "crew"
               ]
             }
@@ -4935,13 +4950,27 @@
                               "type": "null"
                             }
                           ]
+                        },
+                        "kindName": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "kindColour": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
                         }
                       },
                       "required": [
                         "name",
                         "category",
                         "needsPhoto",
-                        "archivedAt"
+                        "archivedAt",
+                        "kindName",
+                        "kindColour"
                       ]
                     },
                     {
@@ -5079,7 +5108,7 @@
     },
     {
       "name": "john_list",
-      "about": "The house's John list, oldest first, and its groups",
+      "about": "The house's John list, oldest first, its kinds in order, and its groups",
       "scope": "house",
       "effect": "read",
       "guard": {
@@ -5103,6 +5132,7 @@
       },
       "tables": [
         "johns",
+        "john_kinds",
         "groups",
         "group_members"
       ],
@@ -5133,6 +5163,17 @@
                 },
                 "name": {
                   "type": "string"
+                },
+                "johnKindId": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
                 },
                 "category": {
                   "type": "string"
@@ -5253,6 +5294,7 @@
               "required": [
                 "id",
                 "name",
+                "johnKindId",
                 "category",
                 "points",
                 "everyWeeks",
@@ -5271,6 +5313,42 @@
                 "keepDay",
                 "payMinor",
                 "minAge"
+              ]
+            }
+          },
+          "kinds": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "colour": {
+                  "type": "string"
+                },
+                "position": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "preset": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "colour",
+                "position",
+                "preset"
               ]
             }
           },
@@ -5304,6 +5382,7 @@
         },
         "required": [
           "johns",
+          "kinds",
           "groups"
         ]
       }
@@ -8449,6 +8528,9 @@
                         "pass_checkout",
                         "react",
                         "unreact",
+                        "save_kind",
+                        "order_kinds",
+                        "delete_kind",
                         "save_house_rules",
                         "set_deal_mode",
                         "answer_tick",
@@ -8868,6 +8950,8 @@
         "server": false,
         "args": {
           "name": "p_name",
+          "kindId": "p_kind",
+          "kindName": "p_kind_name",
           "category": "p_category",
           "points": "p_points",
           "everyWeeks": "p_every_weeks",
@@ -8900,6 +8984,22 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 60
+          },
+          "kindId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "kindName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 30
           },
           "category": {
             "type": "string",
@@ -9043,7 +9143,6 @@
         },
         "required": [
           "name",
-          "category",
           "points",
           "everyWeeks",
           "dueDow",
@@ -9105,6 +9204,22 @@
                   "type": "string",
                   "minLength": 1,
                   "maxLength": 60
+                },
+                "kindId": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "kindName": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 30
                 },
                 "category": {
                   "type": "string",
@@ -9244,7 +9359,6 @@
               },
               "required": [
                 "name",
-                "category",
                 "points",
                 "everyWeeks",
                 "dueDow",
@@ -9290,6 +9404,8 @@
         "server": false,
         "args": {
           "name": "p_name",
+          "kindId": "p_kind",
+          "kindName": "p_kind_name",
           "category": "p_category",
           "points": "p_points",
           "everyWeeks": "p_every_weeks",
@@ -9322,6 +9438,22 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 60
+          },
+          "kindId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "kindName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 30
           },
           "category": {
             "type": "string",
@@ -9465,7 +9597,6 @@
         },
         "required": [
           "name",
-          "category",
           "points",
           "everyWeeks",
           "dueDow",
@@ -9517,6 +9648,181 @@
         },
         "required": [
           "johnId"
+        ]
+      },
+      "output": {
+        "type": "null"
+      }
+    },
+    {
+      "name": "save_kind",
+      "about": "Make or change a kind of John: its name and lid colour",
+      "scope": "house",
+      "effect": "write",
+      "guard": {
+        "by": "permission",
+        "permission": "johns:write"
+      },
+      "entitlement": null,
+      "entitlementWhen": null,
+      "destructive": false,
+      "method": "POST",
+      "path": "/v1/houses/{houseId}/kinds",
+      "pathKeys": [
+        "houseId"
+      ],
+      "rpc": {
+        "name": "save_kind",
+        "server": false,
+        "args": {
+          "name": "p_name",
+          "colour": "p_colour",
+          "houseId": "p_house",
+          "kindId": "p_kind"
+        }
+      },
+      "tables": [
+        "john_kinds"
+      ],
+      "page": null,
+      "input": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 30
+          },
+          "colour": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "houseId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kindId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "colour",
+          "houseId",
+          "kindId"
+        ]
+      },
+      "output": {
+        "type": "string",
+        "format": "uuid"
+      }
+    },
+    {
+      "name": "order_kinds",
+      "about": "Put the house's kinds of John in an order",
+      "scope": "house",
+      "effect": "write",
+      "guard": {
+        "by": "permission",
+        "permission": "johns:write"
+      },
+      "entitlement": null,
+      "entitlementWhen": null,
+      "destructive": false,
+      "method": "PATCH",
+      "path": "/v1/houses/{houseId}/kinds",
+      "pathKeys": [
+        "houseId"
+      ],
+      "rpc": {
+        "name": "order_kinds",
+        "server": false,
+        "args": {
+          "houseId": "p_house",
+          "kinds": "p_kinds"
+        }
+      },
+      "tables": [
+        "john_kinds"
+      ],
+      "page": null,
+      "input": {
+        "type": "object",
+        "properties": {
+          "houseId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kinds": {
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "houseId",
+          "kinds"
+        ]
+      },
+      "output": {
+        "type": "null"
+      }
+    },
+    {
+      "name": "delete_kind",
+      "about": "Delete a kind of John; its Johns move to another kind, or have none",
+      "scope": "house",
+      "effect": "write",
+      "guard": {
+        "by": "permission",
+        "permission": "johns:write"
+      },
+      "entitlement": null,
+      "entitlementWhen": null,
+      "destructive": true,
+      "method": "DELETE",
+      "path": "/v1/kinds/{kindId}",
+      "pathKeys": [
+        "kindId"
+      ],
+      "rpc": {
+        "name": "delete_kind",
+        "server": false,
+        "args": {
+          "kindId": "p_kind",
+          "moveToId": "p_move_to"
+        }
+      },
+      "tables": [
+        "john_kinds",
+        "johns"
+      ],
+      "page": null,
+      "input": {
+        "type": "object",
+        "properties": {
+          "kindId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "moveToId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "kindId"
         ]
       },
       "output": {

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { CHAT_RESETS_MAX, foldPoint, houseKind, LANGUAGE_IN_ENGLISH, languageOf, wordsFor, ASK_TURN_RESERVE, askAllowance, CHAT_TURNS_PER_PERSON_PER_DAY, draftForModel, editDraft, firstName, groupDef, johnDef, listAsDraft, localDate, offlineTurn, passOf, hasPass, PERMISSIONS, rulesOf, tidyAsk, tidyDraft, tidyReply, type ChatMessage, type ChatMove, type ChatReset, type ChatResponse, type ChatSummed, type EditResult, type HouseDraft, askOperationsFor, type Permission, type RawDraft } from "@app/core";
+import { askRef, CHAT_RESETS_MAX, foldPoint, houseKind, LANGUAGE_IN_ENGLISH, languageOf, wordsFor, ASK_TURN_RESERVE, askAllowance, CHAT_TURNS_PER_PERSON_PER_DAY, draftForModel, editDraft, firstName, groupDef, johnDef, listAsDraft, localDate, offlineTurn, passOf, hasPass, PERMISSIONS, rulesOf, tidyAsk, tidyDraft, tidyReply, type ChatMessage, type ChatMove, type ChatReset, type ChatResponse, type ChatSummed, type EditResult, type HouseDraft, askOperationsFor, type Permission, type RawDraft } from "@app/core";
 
 import { askClaude, canDraft, type DraftAnswer, type DraftContext, type JonzTools } from "@/lib/ai/house-draft";
 import { sumUpChat, type SumUpChat } from "@/lib/ai/sum-up";
@@ -14,12 +14,15 @@ import { offerResets, resetState, type ResetState } from "./ask-resets";
 import type { Caller, Refusal } from "./disputes";
 import { myPermissions } from "./permitted";
 
-/** The John list as list_johns shows it: a line a John, refs and all, then the groups. */
-function listLines(raw: RawDraft): string {
+/** A kind of John as list_johns shows it, with its ref for save_kind, order_kinds and delete_kind. */
+type KindLine = { id: string; name: string; colour: string };
+
+/** The John list as list_johns shows it: a line a John, refs and all, then the groups, then the house's kinds in order. */
+function listLines(raw: RawDraft, kinds: readonly KindLine[]): string {
   const johns = raw.johns ?? [];
-  if (johns.length === 0) return "The list is empty.";
-  const lines = johns.map((j) => JSON.stringify({ ...j, ref: j.ref ?? "new" }));
+  const lines = johns.length === 0 ? ["The list is empty."] : johns.map((j) => JSON.stringify({ ...j, ref: j.ref ?? "new" }));
   for (const g of raw.groups ?? []) lines.push(`Group ${String(g.name)}: ${Array.isArray(g.members) ? g.members.join(", ") : ""}`);
+  for (const k of kinds) lines.push(`Kind ${k.name} (ref ${askRef(k.id)}, colour ${k.colour})`);
   return lines.join("\n");
 }
 
@@ -37,7 +40,7 @@ const NOT_THEIRS: EditResult = { ok: false, said: "That isn't something this per
 
 /** The house as the chat reads it, through the person's own session: the house, who lives there, the list and the groups. */
 async function readHouse(caller: Caller, houseId: string) {
-  const [{ data: house }, { data: members }, { data: johns }, { data: groups }] = await Promise.all([
+  const [{ data: house }, { data: members }, { data: johns }, { data: groups }, { data: kinds }] = await Promise.all([
     caller.db.from("houses").select("*").eq("id", houseId).single(),
     caller.db.from("members").select("user_id, role, joined_at, profiles(display_name, language)").eq("house_id", houseId).order("joined_at"),
     caller.db
@@ -47,8 +50,9 @@ async function readHouse(caller: Caller, houseId: string) {
       .is("archived_at", null)
       .order("created_at"),
     caller.db.from("groups").select("id, name, group_members(user_id)").eq("house_id", houseId).order("name"),
+    caller.db.from("john_kinds").select("id, name, colour").eq("house_id", houseId).order("position").order("name"),
   ]);
-  return { house, members: members ?? [], johns: johns ?? [], groups: groups ?? [] };
+  return { house, members: members ?? [], johns: johns ?? [], groups: groups ?? [], kinds: kinds ?? [] };
 }
 
 type HouseRead = Awaited<ReturnType<typeof readHouse>>;
@@ -120,6 +124,8 @@ interface Scene {
   may: (p: Permission) => boolean;
   /** The house's list as it is, or null for a new house. */
   list: HouseDraft | null;
+  /** The house's kinds of John, in order, as list_johns shows them. */
+  kinds: readonly KindLine[];
   state: ResetState | null;
 }
 
@@ -168,7 +174,7 @@ function draftTools(scene: Scene, sitting: Sitting): JonzTools {
   };
   return {
     reads: houseReads(caller, houseId, { house: { name: house.name, kind: house.kind, awayMakeup: house.away_makeup }, rules, people: everyone, now }),
-    listJohns: () => listLines(sitting.raw),
+    listJohns: () => listLines(sitting.raw, scene.kinds),
     edit(e) {
       if (!may("johns:write")) return NOT_THEIRS;
       const { raw: next, result } = editDraft(sitting.raw, e);
@@ -248,14 +254,14 @@ async function openTurn(caller: Caller, houseId: string, now: Date) {
   const allowed = await myPermissions(caller, houseId);
   if (allowed.length === 0) return NOT_IN_HOUSE;
   const may = (p: Permission) => allowed.includes(p);
-  const { house, members, johns, groups } = await readHouse(caller, houseId);
+  const { house, members, johns, groups, kinds } = await readHouse(caller, houseId);
   if (!house) return NOT_IN_HOUSE;
   // The person asking reads Jonz's words, and its answers, in their own language.
   const language = languageOf(members.find((m) => m.user_id === caller.userId)?.profiles?.language);
   // A house with a list already: the House Pass's assistant. Setting up a new house is free.
   const list = johns.length > 0 ? listAsDraft(johns.map(johnDef), groups.map(groupDef)) : null;
   if (list && !hasPass(passOf(house), now)) return { refusal: { code: "P0001", message: "pass_needed" } } as const;
-  return { allowed, may, house, members, list, language };
+  return { allowed, may, house, members, list, kinds, language };
 }
 
 /**
@@ -296,7 +302,7 @@ export async function chatTurn(
 ): Promise<{ refusal: Refusal } | ChatResponse> {
   const opened = await openTurn(caller, houseId, now);
   if (opened.refusal) return { refusal: opened.refusal };
-  const { allowed, may, house, members, list, language } = opened;
+  const { allowed, may, house, members, list, kinds, language } = opened;
   const words = wordsFor(language, houseKind(house.kind));
   const draftNow = current ?? list;
   const offline = (): ChatResponse =>
@@ -308,7 +314,7 @@ export async function chatTurn(
   const claim = await claimTurn(admin, { house, userId: caller.userId, people: everyone.length, now });
   if ("refusal" in claim) return claim;
   const state = list && may("history:write") ? await resetStateOrNull(caller, houseId, now) : null;
-  const scene: Scene = { caller, houseId, now, house, rules: rulesOf(house), everyone, may, list, state };
+  const scene: Scene = { caller, houseId, now, house, rules: rulesOf(house), everyone, may, list, kinds, state };
   const people = everyone.map(({ userId, name }) => ({ userId, name }));
   const raw: RawDraft = draftNow ? draftForModel(draftNow, people, caller.userId) : { johns: [], groups: [], note: null };
   const sitting: Sitting = { raw, changed: false, resets: [], moves: [] };

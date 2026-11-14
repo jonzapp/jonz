@@ -1078,6 +1078,47 @@ export type Database = {
           },
         ]
       }
+      john_kinds: {
+        Row: {
+          colour: string
+          created_at: string
+          house_id: string
+          id: string
+          name: string
+          position: number
+          preset: string | null
+          updated_at: string
+        }
+        Insert: {
+          colour: string
+          created_at?: string
+          house_id: string
+          id?: string
+          name: string
+          position?: number
+          preset?: string | null
+          updated_at?: string
+        }
+        Update: {
+          colour?: string
+          created_at?: string
+          house_id?: string
+          id?: string
+          name?: string
+          position?: number
+          preset?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "john_kinds_house_id_fkey"
+            columns: ["house_id"]
+            isOneToOne: false
+            referencedRelation: "houses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       johns: {
         Row: {
           anchor_month: number | null
@@ -1093,6 +1134,7 @@ export type Database = {
           group_id: string | null
           house_id: string
           id: string
+          john_kind_id: string | null
           keep_day: boolean
           kind: string
           min_age: number | null
@@ -1118,6 +1160,7 @@ export type Database = {
           group_id?: string | null
           house_id: string
           id?: string
+          john_kind_id?: string | null
           keep_day?: boolean
           kind?: string
           min_age?: number | null
@@ -1143,6 +1186,7 @@ export type Database = {
           group_id?: string | null
           house_id?: string
           id?: string
+          john_kind_id?: string | null
           keep_day?: boolean
           kind?: string
           min_age?: number | null
@@ -1168,6 +1212,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "houses"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "johns_john_kind_id_house_id_fkey"
+            columns: ["john_kind_id", "house_id"]
+            isOneToOne: false
+            referencedRelation: "john_kinds"
+            referencedColumns: ["id", "house_id"]
           },
         ]
       }

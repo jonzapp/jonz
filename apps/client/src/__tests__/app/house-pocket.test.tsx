@@ -12,7 +12,7 @@ import { loadStake } from '@/api/stake';
 import { loadTable } from '@/api/table';
 import HouseScreen from '@/app/(house)/house';
 import PocketScreen from '@/app/(house)/house/pocket';
-import { snapshot } from '@/testing/house';
+import { snapshot, KINDS } from '@/testing/house';
 import { renderPages, untilRead } from '@/testing/pages';
 import { NOW } from '@/testing/clock';
 
@@ -102,7 +102,7 @@ beforeEach(() => {
     closedMonths: [],
   });
   (loadAway as jest.Mock).mockResolvedValue({ today: '2026-10-26', periods: [] });
-  (loadJohnList as jest.Mock).mockResolvedValue({ johns: [], groups: [] });
+  (loadJohnList as jest.Mock).mockResolvedValue({ kinds: KINDS, johns: [], groups: [] });
   (loadPocket as jest.Mock).mockResolvedValue(POCKET);
   (payPocketMoney as jest.Mock).mockResolvedValue(500);
 });

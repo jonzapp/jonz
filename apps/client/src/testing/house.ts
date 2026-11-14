@@ -1,4 +1,4 @@
-import type { AssignmentRow } from '@app/core';
+import { CATEGORY_LABEL, startingKinds, type AssignmentRow } from '@app/core';
 
 import type { HouseSnapshot } from '@/api/board';
 import { hoursFromNow as at } from '@/testing/clock';
@@ -7,6 +7,9 @@ import { hoursFromNow as at } from '@/testing/clock';
 // this week dealt around the real clock, so statuses come out the same
 // whenever the tests run.
 
+
+/** The six starting kinds, as a house's John list reads them: their ids are their starting kinds. */
+export const KINDS = startingKinds(CATEGORY_LABEL);
 
 export function assignment(overrides: Partial<AssignmentRow> = {}): AssignmentRow {
   return {

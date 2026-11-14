@@ -8,7 +8,7 @@ import { deleteGroup, loadJohnList, saveGroup } from '@/api/settings';
 import GroupsScreen from '@/app/(house)/house/groups';
 import JohnListScreen from '@/app/(house)/house/johns';
 import { ToastProvider } from '@/components/toast';
-import { snapshot } from '@/testing/house';
+import { snapshot, KINDS } from '@/testing/house';
 import { BATH, renderPages, untilRead } from '@/testing/pages';
 
 const words = wordsFor('en', 'housemates');
@@ -52,12 +52,12 @@ beforeEach(() => {
   jest.clearAllMocks();
   (loadHouse as jest.Mock).mockResolvedValue(snapshot());
   (catchUp as jest.Mock).mockResolvedValue(false);
-  (loadJohnList as jest.Mock).mockResolvedValue({ johns: [], groups: [] });
+  (loadJohnList as jest.Mock).mockResolvedValue({ kinds: KINDS, johns: [], groups: [] });
   for (const move of [saveGroup, deleteGroup]) (move as jest.Mock).mockResolvedValue(undefined);
 });
 
 it('is on the John list, where an old link to Groups lands', async () => {
-  (loadJohnList as jest.Mock).mockResolvedValue({ johns: [{ ...BATH, groupId: 'g1' }], groups: [UPSTAIRS] });
+  (loadJohnList as jest.Mock).mockResolvedValue({ kinds: KINDS, johns: [{ ...BATH, groupId: 'g1' }], groups: [UPSTAIRS] });
   await open('priya', '/house/groups');
   expect(within(screen.getByTestId('title-bar')).getByRole('header', { name: words('common.title.johnList') })).toBeOnTheScreen();
   const groups = within(screen.getByTestId('johns-groups'));
@@ -69,6 +69,7 @@ it('is on the John list, where an old link to Groups lands', async () => {
 
 it('names each group and who is in it, and says when nobody is', async () => {
   (loadJohnList as jest.Mock).mockResolvedValue({
+    kinds: KINDS,
     johns: [{ ...BATH, groupId: 'g1' }],
     groups: [UPSTAIRS, { id: 'g2', name: 'Attic', memberIds: [] }],
   });
@@ -116,14 +117,14 @@ describe('an admin', () => {
   });
 
   it('adds another group from the foot of the list', async () => {
-    (loadJohnList as jest.Mock).mockResolvedValue({ johns: [], groups: [UPSTAIRS] });
+    (loadJohnList as jest.Mock).mockResolvedValue({ kinds: KINDS, johns: [], groups: [UPSTAIRS] });
     await open();
     await fireEvent.press(screen.getByRole('button', { name: words('house.setup.addGroup') }));
     expect(screen.getByTestId('group-name')).toHaveDisplayValue('');
   });
 
   it('opens a group to change it, or to delete it', async () => {
-    (loadJohnList as jest.Mock).mockResolvedValue({ johns: [], groups: [UPSTAIRS] });
+    (loadJohnList as jest.Mock).mockResolvedValue({ kinds: KINDS, johns: [], groups: [UPSTAIRS] });
     await open();
     await fireEvent.press(screen.getByRole('button', { name: `${words('house.groups.edit', { name: 'Upstairs bathroom' })}, You and Sam` }));
     const form = within(screen.getByTestId('group-form'));
@@ -134,7 +135,7 @@ describe('an admin', () => {
   });
 
   it('keeps the sheet open, saying why, when the save is refused', async () => {
-    (loadJohnList as jest.Mock).mockResolvedValue({ johns: [], groups: [UPSTAIRS] });
+    (loadJohnList as jest.Mock).mockResolvedValue({ kinds: KINDS, johns: [], groups: [UPSTAIRS] });
     (saveGroup as jest.Mock).mockRejectedValue(new Error('Only the house admins can do that.'));
     await open();
     await fireEvent.press(screen.getByRole('button', { name: `${words('house.groups.edit', { name: 'Upstairs bathroom' })}, You and Sam` }));
@@ -146,7 +147,7 @@ describe('an admin', () => {
 });
 
 it('is for admins to change', async () => {
-  (loadJohnList as jest.Mock).mockResolvedValue({ johns: [], groups: [UPSTAIRS] });
+  (loadJohnList as jest.Mock).mockResolvedValue({ kinds: KINDS, johns: [], groups: [UPSTAIRS] });
   await open('sam');
   expect(screen.getByTestId('group')).toHaveTextContent(/Upstairs bathroom.*You and Priya/);
   expect(screen.queryByRole('button', { name: words('house.setup.addGroup') })).toBeNull();

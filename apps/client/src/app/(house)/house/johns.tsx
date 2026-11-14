@@ -5,6 +5,7 @@ import { useWords } from '@/hooks/use-words';
 import { GroupsList } from '@/components/house/groups-list';
 import { HousePage } from '@/components/house/house-page';
 import { JohnList } from '@/components/house/john-list';
+import { KindsList } from '@/components/house/kinds-list';
 import { Pair } from '@/components/page-columns';
 import { useFilled } from '@/components/screen';
 import { Section } from '@/components/section';
@@ -17,10 +18,12 @@ import { ListPageOutline } from '@/components/page-outlines';
 
 /**
  * The John list, pushed from House: every John by kind, how often and how
- * much, and the groups that share some of them (Groups was a page of its
- * own), beside the deal on a laptop. Tapping one opens it, to edit for an admin and to read for everyone
- * else. An admin adds Johns (over the list), and hands out the week under
- * them (or deals it again, while nothing in it is ticked).
+ * much, then for an admin the house's kinds (to add, rename, recolour,
+ * order and delete), and the groups that share some of them (Groups was a
+ * page of its own), beside the deal on a laptop. Tapping one opens it, to
+ * edit for an admin and to read for everyone else. An admin adds Johns
+ * (over the list), and hands out the week under them (or deals it again,
+ * while nothing in it is ticked).
  */
 export default function JohnListScreen() {
   const { session, house } = useMembership();
@@ -81,6 +84,7 @@ function JohnListPage({ houseId, userId, view, list }: { houseId: string; userId
         houseId={houseId}
         rules={view.snapshot.rules}
         johns={list.johns}
+        kinds={list.kinds}
         groups={list.groups}
         editable={isAdmin}
         family={view.snapshot.house.kind === 'family'}
@@ -88,6 +92,11 @@ function JohnListPage({ houseId, userId, view, list }: { houseId: string; userId
         // Until the first deal, the deal at the foot is the page's one amber button.
         quietAdd={!view.snapshot.house.everDealt}
       />
+      {isAdmin ? (
+        <Section label={words('house.kinds.title')} bare testID="johns-kinds">
+          <KindsList houseId={houseId} kinds={list.kinds} johns={list.johns} />
+        </Section>
+      ) : null}
       {beside ? (
         <Pair start={groups} end={deal} testID="johns-foot" />
       ) : (

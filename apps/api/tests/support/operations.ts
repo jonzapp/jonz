@@ -66,7 +66,7 @@ export function valueFor(name: string, type: string, ids: Ids): unknown {
   return name === "p_month" ? "2030-01" : "x";
 }
 
-/** A house of two with a John dealt this week and a group, and the ids its functions' arguments name. */
+/** A house of two with a John dealt this week, a group and its starting kinds, and the ids its functions' arguments name. */
 export async function aHouse() {
   const house = await makeHouse(["Ava", "Ben"]);
   const week = thisWeek();
@@ -75,10 +75,13 @@ export async function aHouse() {
   const assignment = assignments[0].id;
   const group = (await house.admin.db.rpc("save_group", { p_house: house.id, p_group: null as unknown as string, p_name: "Upstairs", p_members: [house.admin.userId] })).data as string;
   const ben = house.members[0].userId;
+  const { data: kinds } = await house.admin.db.from("john_kinds").select("id, preset").eq("house_id", house.id);
+  const kind = (preset: string) => kinds!.find((k) => k.preset === preset)!.id;
   const ids: Ids = {
     h: house.id, p_house: house.id, p_from: house.id,
     p_john: john.id, p_assignment: assignment, p_mine: assignment, p_theirs: assignment,
     p_group: group, p_user: ben, p_kid: ben, p_to: ben, other: ben,
+    p_kind: kind("kitchen"), p_move_to: kind("other"),
   };
   return { house, ids };
 }

@@ -95,6 +95,9 @@ interface Rows {
   weekId: string;
   johnId: string;
   groupId: string;
+  /** Two of the house's kinds of John: one to change or delete, one for its Johns to move to. */
+  kindId: string;
+  moveToId: string;
   /** The admin's John and the member's. */
   adminsJohn: string;
   membersJohn: string;
@@ -122,6 +125,8 @@ async function house(kind: "housemates" | "family"): Promise<{ rows: Rows; admin
   const [john] = await admin<{ id: string }[]>`
     insert into public.johns (house_id, name, category, points, anchor_week, group_id)
     values (${houseId}::uuid, 'Dishes', 'kitchen', 2, 0, ${group.id}::uuid) returning id`;
+  const kinds = await admin<{ id: string; preset: string | null }[]>`select id, preset from public.john_kinds where house_id = ${houseId}::uuid`;
+  const kindOf = (preset: string) => kinds.find((k) => k.preset === preset)!.id;
   const assign = async (who: Person, done: boolean) => {
     const [row] = await admin<{ id: string }[]>`
       insert into public.assignments (week_id, house_id, john_id, user_id, name, category, points, due_at, done_at)
@@ -149,6 +154,8 @@ async function house(kind: "housemates" | "family"): Promise<{ rows: Rows; admin
       weekId: week.id,
       johnId: john.id,
       groupId: group.id,
+      kindId: kindOf("kitchen"),
+      moveToId: kindOf("other"),
       adminsJohn,
       membersJohn,
       disputeId: dispute.id,
@@ -176,6 +183,8 @@ function refValue(key: string, rows: Rows, caller: string): string | undefined {
     weekId: rows.weekId,
     johnId: rows.johnId,
     groupId: rows.groupId,
+    kindId: rows.kindId,
+    moveToId: rows.moveToId,
     assignmentId: mineJohn,
     mine: mineJohn,
     theirs: theirJohn,
@@ -239,6 +248,7 @@ function sample(schema: Json, key: string, rows: Rows, caller: string): unknown 
         if (p === "^\\d{4}-\\d{2}$") return WEEK_START.slice(0, 7);
         if (/\\d\{4\}-/.test(p)) return WEEK_START;
         if (p.startsWith("^[A-Z0-9]")) return "TEST1234";
+        if (p.startsWith("^#")) return "#4f9a2e";
         throw new Error(`No sample for pattern ${p} at ${key}`);
       }
       // A code is upper-cased before its pattern, so the pattern isn't in the input schema.
@@ -511,6 +521,6 @@ it("has a row for every key an operation can name its house by", () => {
   const named = new Set(
     NAMES.flatMap((n) => Object.keys((OPERATION_IO[n].input as z.ZodObject).shape ?? {})).filter((k) => k in ASK_REFS && !ASK_REFS[k].many),
   );
-  const fake: Rows = { houseId: "h", weekId: "w", johnId: "j", groupId: "g", adminsJohn: "a", membersJohn: "b", disputeId: "d", offerId: "o", actionId: "x", eventId: "e", adminId: "A", memberId: "M" };
+  const fake: Rows = { houseId: "h", weekId: "w", johnId: "j", groupId: "g", kindId: "k", moveToId: "m", adminsJohn: "a", membersJohn: "b", disputeId: "d", offerId: "o", actionId: "x", eventId: "e", adminId: "A", memberId: "M" };
   for (const key of named) expect(refValue(key, fake, "A"), key).toBeDefined();
 });

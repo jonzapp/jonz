@@ -46,6 +46,7 @@ export * from "./house-person";
 export * from "./how-it-works";
 export * from "./inbound-email";
 export * from "./john-row";
+export * from "./kinds";
 export * from "./john-sheet";
 export * from "./kids";
 export * from "./kind-switch";

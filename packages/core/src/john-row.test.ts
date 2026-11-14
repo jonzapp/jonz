@@ -75,6 +75,15 @@ describe("johnKind", () => {
 
   it("calls a kind it doesn't know Other", () => {
     expect(johnKind("garden")).toBe("Other");
+    // The house's own name for it, and none for a John with no kind.
+    expect(johnKind("other", "Garden")).toBe("Garden");
+    expect(johnKind("other", "")).toBe("");
+  });
+
+  it("leaves the kind out of a row's line for a John with no kind", () => {
+    const named = row({ kindName: "Garden" }).meta;
+    expect(named).toMatch(/^Garden, /);
+    expect(row({ kindName: "" }).meta).toBe(named.replace(/^Garden, /, ""));
   });
 });
 

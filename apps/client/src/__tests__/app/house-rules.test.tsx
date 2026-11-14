@@ -7,7 +7,7 @@ import { catchUp } from '@/api/house';
 import { loadJohnList, setHouseKind, updateHouse } from '@/api/settings';
 import RulesScreen from '@/app/(house)/house/rules';
 import { ToastProvider } from '@/components/toast';
-import { snapshot } from '@/testing/house';
+import { snapshot, KINDS } from '@/testing/house';
 import { renderPages, untilRead } from '@/testing/pages';
 
 const words = wordsFor('en', 'housemates');
@@ -57,6 +57,7 @@ beforeEach(() => {
   (updateHouse as jest.Mock).mockResolvedValue(undefined);
   // About 9 points a week between two: Light fits.
   (loadJohnList as jest.Mock).mockResolvedValue({
+    kinds: KINDS,
     johns: [
       { ...NEW_JOHN, id: 'mop', name: 'Mopping', points: 3 },
       { ...NEW_JOHN, id: 'bins', name: 'Garbage', points: 1, dueDow: 4 },

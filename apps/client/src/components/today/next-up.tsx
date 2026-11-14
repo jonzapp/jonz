@@ -178,10 +178,11 @@ function NextJohn({
       {/* Not a row: the meta may wrap to a second line on a narrow phone rather than lose the cost. */}
       <View style={[styles.meta, styles.underPlate]}>
         <View style={styles.mark}>
-          <LidBar category={item.category} />
+          <LidBar lid={item.kindColour ?? item.category} />
         </View>
         <Meta numberOfLines={2} style={styles.shrink} testID="next-up-meta">
-          {meta.due ? words('common.join.comma', { first: meta.kind, second: meta.due }) : meta.kind}
+          {/* A John with no kind says only when it's due. */}
+          {meta.kind && meta.due ? words('common.join.comma', { first: meta.kind, second: meta.due }) : meta.due || meta.kind}
         </Meta>
       </View>
       {meta.overdue ? (

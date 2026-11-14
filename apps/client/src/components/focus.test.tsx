@@ -583,7 +583,7 @@ describe('the small marks', () => {
   });
 
   it("dots a John's lid colour", async () => {
-    await render(<LidBar category="floors" />);
+    await render(<LidBar lid="floors" />);
     expect(screen.getByTestId('lid-bar', HIDDEN)).toHaveStyle({ backgroundColor: light.bin.floors });
   });
 });

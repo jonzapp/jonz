@@ -1,4 +1,4 @@
-import type { IsoDow } from '@app/core';
+import { KIND_COLOURS, type IsoDow } from '@app/core';
 import {
   CheckIcon,
   ClockIcon,
@@ -24,6 +24,7 @@ import { CountBadge } from '@/components/badge';
 import { Button } from '@/components/button';
 import { ButtonRow } from '@/components/button-row';
 import { CodeBoxes } from '@/components/code-boxes';
+import { ColourPicker } from '@/components/colour-picker';
 import { DangerRow, DangerZone } from '@/components/danger-zone';
 import { DayChips } from '@/components/day-chips';
 import { EmptyState } from '@/components/empty-state';
@@ -31,6 +32,7 @@ import { Field } from '@/components/field';
 import { Fold } from '@/components/fold';
 import { Group, GroupItem } from '@/components/group';
 import { HazardTape } from '@/components/hazard-tape';
+import { AddKindRow, KindRow } from '@/components/house/kinds-list';
 import { IconButton } from '@/components/icon-button';
 import { LidBar } from '@/components/lid';
 import { NoticeView } from '@/components/notice-banner';
@@ -96,7 +98,7 @@ export function Colours() {
           <View style={styles.swatches}>
             {BINS.map((name) => (
               <View key={name} style={styles.swatch}>
-                <LidBar category={name} />
+                <LidBar lid={name} />
                 <Meta>{name}</Meta>
               </View>
             ))}
@@ -293,6 +295,25 @@ export function Lists() {
         <Row title="The one open beside its list" meta="On a laptop, a guide topic" current onPress={none} />
       </Group>
       <EmptyState icon={InboxIcon} title="Nothing here yet" body="An empty list says what would be here, and how to add the first." />
+    </Section>
+  );
+}
+
+/** Kinds of John: the Kinds list's rows, and the colour picker the kind sheet opens with (Kinds list A, 14 Nov). */
+export function Kinds() {
+  const [colour, setColour] = useState<string>(KIND_COLOURS[8]);
+  return (
+    <Section label="Kinds and colours" bare testID="style-kinds">
+      <Group>
+        <KindRow name="Kitchen" colour={KIND_COLOURS[0]} johns={4} onPress={none} />
+        <KindRow name="Garden" colour={colour} johns={1} onPress={none} />
+        <AddKindRow onPress={none} />
+      </Group>
+      <Group>
+        <GroupItem>
+          <ColourPicker value={colour} onChange={setColour} />
+        </GroupItem>
+      </Group>
     </Section>
   );
 }

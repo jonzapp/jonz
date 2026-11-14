@@ -1,4 +1,4 @@
-import { CATEGORIES, CATEGORY_LABEL, CREW_CHOICES, crewLine, CURRENCY_SYMBOL, moneyInput, parseMinAge, parseMoney, pointsLabel, type Category, type GroupDef, type HouseRules, type JohnDef, type Words } from '@app/core';
+import { CREW_CHOICES, crewLine, CURRENCY_SYMBOL, kindOf, kindsInOrder, moneyInput, parseMinAge, parseMoney, pointsLabel, type GroupDef, type HouseRules, type JohnDef, type KindDef, type Words } from '@app/core';
 import { Trash2Icon } from 'lucide-react-native';
 import { useState, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -23,7 +23,6 @@ export type Draft = Omit<JohnDef, 'id'> & { id?: string };
 
 type SetDraft = (patch: Partial<Draft>) => void;
 
-const KINDS = CATEGORIES.map((c) => ({ value: c, label: CATEGORY_LABEL[c] }));
 const effort = (words: Words) => Array.from({ length: 20 }, (_, i) => ({ value: i + 1, label: pointsLabel(i + 1, words) }));
 
 /**
@@ -40,6 +39,7 @@ export function JohnForm({
   houseId,
   rules,
   initial,
+  kinds,
   groups,
   family = false,
   onDone,
@@ -47,6 +47,8 @@ export function JohnForm({
   houseId: string;
   rules: HouseRules;
   initial: Draft;
+  /** The house's own kinds of John, to pick from. */
+  kinds: KindDef[];
   groups: GroupDef[];
   family?: boolean;
   onDone: () => void;
@@ -94,7 +96,7 @@ export function JohnForm({
           />
         </GroupItem>
       </Group>
-      <WhatAndWho value={v} groups={groups} onChange={set} />
+      <WhatAndWho value={v} kinds={kinds} groups={groups} onChange={set} />
       <TimingSentence value={v} rules={rules} now={new Date()} onChange={set} onPick={setPicking} />
       <HowItsDone value={v} onChange={set}>
         {family ? <KidFields kid={kid} rules={rules} /> : null}
@@ -119,9 +121,18 @@ export function JohnForm({
   );
 }
 
-/** What kind of John it is and who shares it, with a line on what sharing means. */
-function WhatAndWho({ value: v, groups, onChange: set }: { value: Draft; groups: GroupDef[]; onChange: SetDraft }) {
+/** What kind of John it is (one of the house's own) and who shares it, with a line on what sharing means. */
+function WhatAndWho({ value: v, kinds, groups, onChange: set }: { value: Draft; kinds: KindDef[]; groups: GroupDef[]; onChange: SetDraft }) {
   const words = useWords();
+  const ordered = kindsInOrder(kinds);
+  const kind = kindOf(v, kinds);
+  // A John whose kind was deleted says so until it's given one.
+  const options = [...ordered.map((k) => ({ value: k.id, label: k.name })), ...(kind ? [] : [{ value: '', label: words('house.kinds.none') }])];
+  // A kind changes nothing in the deal; its starting kind rides along for older apps.
+  const pickKind = (id: string) => {
+    const kind = ordered.find((k) => k.id === id);
+    if (kind) set({ kindId: kind.id, category: kind.preset ?? 'other' });
+  };
   const sharers = [{ value: '', label: words('house.johns.everyone') }, ...groups.map((g) => ({ value: g.id, label: g.name }))];
   // What "Shared by" means, under it: how to share with fewer when there's no
   // group yet, and what a group's John does once one is picked.
@@ -129,7 +140,7 @@ function WhatAndWho({ value: v, groups, onChange: set }: { value: Draft; groups:
   return (
     <View style={styles.noted}>
       <Group>
-        <PickRow label={words('house.johns.kind')} options={KINDS} value={v.category} onChange={(category: Category) => set({ category })} />
+        <PickRow label={words('house.johns.kind')} options={options} value={kind?.id ?? ''} onChange={pickKind} testID="john-kind" />
         <PickRow label={words('house.johns.sharedBy')} options={sharers} value={v.groupId ?? ''} onChange={(id) => set({ groupId: id || null })} />
       </Group>
       {sharing ? (
