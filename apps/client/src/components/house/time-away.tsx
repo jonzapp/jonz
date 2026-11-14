@@ -305,7 +305,7 @@ function BookAway({
           <Meta>{awayMovedLine(moved.before, moved.handed, moved.skipped, words)}</Meta>
         </View>
       ) : null}
-      <ButtonRow atEdge>
+      <ButtonRow>
         <Button
           icon={PlaneIcon}
           label={words('house.away.book')}
@@ -406,7 +406,7 @@ function AwayForm({
         testID="away-note"
       />
       {move.problem ? <Alert message={move.problem} /> : null}
-      <ButtonRow atEdge>
+      <ButtonRow>
         <Button
           icon={PlaneIcon}
           label={words('house.setup.book')}
