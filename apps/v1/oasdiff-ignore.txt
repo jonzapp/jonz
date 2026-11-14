@@ -15,3 +15,6 @@ POST /v1/admin/reports/{reportId}/open the `messages/items/id` response's proper
 POST /v1/admin/reports/{reportId}/open the 'messages/items/id' response's property 'format' changed from 'uuid' to 'none' for status '201'
 POST /v1/admin/reports/{reportId}/open the `messages/items/id` response's property pattern `^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$` was removed for the status `201`
 POST /v1/admin/reports/{reportId}/open the 'messages/items/id' response's property pattern '^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$' was removed for the status '201'
+# 2026-11-14, Glyn: a promotion use's plan may be null. A free Pass is given with no plan bought, so owner_promotion failed on any used free Pass.
+GET /v1/admin/promotions/{promotionId} the response property `anyOf[subschema #1]/recent/items/plan` became nullable for the status `200`
+GET /v1/admin/promotions/{promotionId} the response property 'anyOf[subschema #1]/recent/items/plan' became nullable for the status '200'
