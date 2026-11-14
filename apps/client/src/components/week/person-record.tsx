@@ -124,7 +124,7 @@ function LineRows({ line, you, weeks }: { line: BreakdownLine; you: boolean; wee
   );
 }
 
-/** The record's span picker (this week, this month, all of it): it sets the page's `span`. */
+/** The record's span picker (this week, this month, the last 12 months): it sets the page's `span`. */
 export function RecordSpanPicker({ span }: { span: RecordSpan }) {
   const words = useWords();
   return (

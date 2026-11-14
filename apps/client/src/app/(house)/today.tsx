@@ -19,6 +19,7 @@ import { RestOfWeek } from '@/components/today/rest-of-week';
 import { SetupCard } from '@/components/today/setup-card';
 import { SwapOfferCard, SwapSuggestion } from '@/components/today/swap-ask';
 import { WeekGlance } from '@/components/today/week-glance';
+import { useYourWeeks, YourWeeks } from '@/components/today/your-weeks';
 import { TourOffer } from '@/components/tour/tour-offer';
 import { TourSpot } from '@/components/tour/tour-spot';
 import { Waiting } from '@/components/waiting';
@@ -36,7 +37,7 @@ import { useShownZone } from '@/hooks/use-shown-zone';
  * Today, for doing: your next John in the one card (or what takes its
  * place), the disputes that need your vote (in a family, a parent's
  * Needs your OK instead), the on-call Johns anyone can
- * flag, the rest of your week, and one
+ * flag, the rest of your week, how your last few weeks went, and one
  * line on where you stand (with your time away, when a trip is coming, and
  * your moving-out day, once you've said). When a housemate is moving out,
  * the people who stay are asked who's moving in. Fits one phone screen.
@@ -208,17 +209,23 @@ function TodayView({
       />
     ) : null;
 
+  // How your last few weeks went: on a laptop in the panel, under the house's week.
+  const weeksRead = useYourWeeks(view, userId);
+  const weeks = <YourWeeks read={weeksRead} />;
+
   // Whether the panel has anything to show. Before the first deal (and in a week not yet out) the house's week
   // isn't there for WeekGlance, and often nothing else is either: then there's no panel, and Next up runs across.
   const panel =
     today.toOk.length + today.toVote.length + onCallList.length + today.toCover.length > 0 ||
     ask != null ||
-    (board.week != null && board.items.length > 0);
+    (board.week != null && board.items.length > 0) ||
+    (!weeksRead.reading && weeksRead.weeks != null);
   return (
     <Laid
       mine={{ day, offer, next, swap, rest, lines }}
       theirs={{ needsOk, needsYou, ask, onCall, couldCover }}
       glance={<WeekGlance view={view} away={away} />}
+      weeks={weeks}
       panel={panel}
     />
   );
@@ -280,7 +287,8 @@ function QuietLines({
 
 /**
  * Today's parts, laid out for the room there is. `mine` is yours; `theirs`
- * is what the house wants of you; `glance` is how its week is going.
+ * is what the house wants of you; `glance` is how its week is going;
+ * `weeks` is how your last few weeks went.
  * `panel` is whether those two have anything to show (before the first deal,
  * often not): without it there's no panel, and Next up runs across.
  */
@@ -288,11 +296,13 @@ function Laid({
   mine,
   theirs,
   glance,
+  weeks,
   panel: hasPanel,
 }: {
   mine: Record<'day' | 'offer' | 'next' | 'swap' | 'rest' | 'lines', ReactNode>;
   theirs: Record<'needsOk' | 'needsYou' | 'ask' | 'onCall' | 'couldCover', ReactNode>;
   glance: ReactNode;
+  weeks: ReactNode;
   panel: boolean;
 }) {
   const two = useColumns();
@@ -315,11 +325,13 @@ function Laid({
       {swap}
     </>
   );
-  // What the house wants of you, over how its week is going: the panel beside your own Johns on a laptop.
+  // What the house wants of you, over how its week is going, then how yours have: the panel beside your own Johns
+  // on a laptop.
   const panel = (
     <>
       {house}
       {glance}
+      {weeks}
     </>
   );
   // On a laptop Next up runs across the main column, with the rest of your week and the quiet lines under it, and
@@ -367,11 +379,13 @@ function Laid({
       </>
     );
   }
+  // On a phone, your weeks come after the rest of your week, over the quiet lines.
   return (
     <>
       {top}
       {house}
       {rest}
+      {weeks}
       {lines}
     </>
   );

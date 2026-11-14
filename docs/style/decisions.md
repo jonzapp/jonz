@@ -6,6 +6,8 @@ pages are private artifacts on claude.ai.
 
 | Date | Decision | Where | Rule |
 | --- | --- | --- | --- |
+| 2026-11-14 | Your weeks on Today: how your last 8 weeks went as full-width bars (weeks to come in grey, this week outlined), your on-time figure, a kind line that cheers a run and meets a slip with a fresh start, and what your streak earns next; under the house's week on a laptop, after the rest of your week on a phone (Your weeks A) | this PR | [lists](lists.md#calendars-and-grids), [feel](feel.md#voice) |
+| 2026-11-14 | The Track record draws the same bars as Today, in shared columns; Week, Month and Year only (All is gone), Year the last 12 months as split month bars, on time at the bottom (Track record: Year A, split month bars) | this PR | [lists](lists.md#calendars-and-grids) |
 | 2026-11-14 | One No kind: a John in none of the house's kinds sits in No kind, last on the John list in a dashed outline with a line under it saying what it is; it's always the last choice in a John's Kind, can't be renamed or deleted, and takes a deleted kind's Johns. Everything else is gone, and grey, No kind's lid, is the last ready colour (One No kind, Dashed, the word No kind) | this PR | [lists](lists.md#rows) |
 | 2026-11-14 | A new house starts with no kinds: its setup chat names a few that fit as it adds the Johns (Glyn, kinds made at setup) | this PR | [lists](lists.md#rows) |
 | 2026-11-14 | Times are always on your own clock with nothing saying so (the Your time line and its Show house time are gone); where a time or day is set (a John's due time, booking time away, moving out) one quiet line says it's in house time, only while the clocks differ (Glyn, house time where you set it) | #264 | [words](words.md) |

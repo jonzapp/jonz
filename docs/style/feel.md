@@ -63,6 +63,9 @@ kind of John. Calm by default, loud only for the moments that count.
   exclamation marks, anywhere. (Brand kit, 29 Oct; `docs/brand/README.md`)
   *Backed by* GOV.UK's plain English guidance and Nielsen's "match between
   the system and the real world".
+- A light game, never a telling off: good weeks are cheered plainly ("5
+  weeks on time in a row. Good going."), and a slip is met with a fresh
+  start ("This week is a fresh start."), never blame. (Your weeks, 14 Nov)
 - Plain international English: "take turns", never "rota"; no
   British-only words like "fortnight" or "hoover" in new copy. (29 Oct)
 - A chore is a **John**, many are **Johns**; the app is **Jonz**; the money

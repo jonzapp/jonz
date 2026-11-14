@@ -19,14 +19,16 @@
 import { awayDays, type AwayPeriod } from "./away";
 import { andNames } from "./crew";
 import { creditedTo, excusedJohn, keptOfWeek } from "./deal";
-import { dayLabel, monthLabel, weekRange, dateIn } from "./format";
+import { dayLabel, monthLabel, weekRange } from "./format";
+import { IMMUNITY_CAP, IMMUNITY_EVERY } from "./streak";
 import { localDate, monthOf } from "./week";
 import type { Words } from "./words-for";
 
-export const RECORD_SPANS = ["week", "month", "year", "all"] as const;
+/** This week, this month, or the last 12 months (no further back: a whole history grows without end). */
+export const RECORD_SPANS = ["week", "month", "year"] as const;
 export type RecordSpan = (typeof RECORD_SPANS)[number];
 
-/** A span from a link's `?span=`, or this month. */
+/** A span from a link's `?span=`, or this month (an old link's `all` too). */
 export function readSpan(param: unknown): RecordSpan {
   return (RECORD_SPANS as readonly unknown[]).includes(param) ? (param as RecordSpan) : "month";
 }
@@ -114,9 +116,28 @@ export interface RecordCounts {
   helped: number;
 }
 
+/** What a month's split bar is made of, bottom up: on time first. */
+export const SPLIT_MARKS = ["clean", "covered", "late", "missed", "skipped", "away"] as const;
+export type SplitMark = (typeof SPLIT_MARKS)[number];
+
+/**
+ * One month on the Year view: a bar split by how its Johns went. Every week
+ * weighs the same, shared out between its Johns (and the ones covered for
+ * someone); a week away is all away. Johns not done yet, and weeks before
+ * someone joined, add nothing, so an empty month has no parts.
+ */
+export interface RecordMonth {
+  /** `yyyy-MM`. */
+  month: string;
+  parts: Partial<Record<SplitMark, number>>;
+}
+
 export interface RecordRow {
   userId: string;
+  /** One per week (on Week, per John). */
   cells: RecordCell[];
+  /** On Year: the last 12 months, earliest first. */
+  months?: RecordMonth[];
   counts: RecordCounts;
   /** Of their settled Johns (skips aside), how many were on time, 0 to 100; null with none settled. */
   onTimePct: number | null;
@@ -124,7 +145,7 @@ export interface RecordRow {
 
 export interface TrackRecord {
   span: RecordSpan;
-  /** "19–25 Oct", "October 2026", "2026, 44 weeks", "Since 6 Oct 2025, 55 weeks". */
+  /** "19–25 Oct", "October 2026", "Last 12 months, 44 weeks". */
   range: string;
   /** The weeks in the span, earliest first. */
   weeks: RecordWeek[];
@@ -132,15 +153,34 @@ export interface TrackRecord {
   rows: RecordRow[];
 }
 
-/** The weeks a span covers, earliest first: this week, this month's, this year's, or all of them. */
+/** A `yyyy-MM` month moved by whole months. */
+function addMonths(month: string, by: number): string {
+  const [y, m] = month.split("-").map(Number);
+  const i = y * 12 + (m - 1) + by;
+  return `${Math.floor(i / 12)}-${String((i % 12) + 1).padStart(2, "0")}`;
+}
+
+/** The 12 months up to this one, earliest first. */
+export function lastTwelveMonths(now: Date, zone: string): string[] {
+  const month = monthOf(now, zone);
+  return Array.from({ length: 12 }, (_, i) => addMonths(month, i - 11));
+}
+
+const weekMonth = (w: RecordWeek, zone: string) => monthOf(new Date(w.starts_at), zone);
+
+/** The weeks that have started, earliest first. */
+function startedWeeks(weeks: readonly RecordWeek[], now: Date): RecordWeek[] {
+  return [...weeks].sort((a, b) => a.starts_on.localeCompare(b.starts_on)).filter((w) => new Date(w.starts_at).getTime() <= now.getTime());
+}
+
+/** The weeks a span covers, earliest first: this week, this month's, or the last 12 months'. */
 export function spanWeeks(weeks: readonly RecordWeek[], span: RecordSpan, now: Date, zone: string): RecordWeek[] {
-  const sorted = [...weeks].sort((a, b) => a.starts_on.localeCompare(b.starts_on));
-  const started = sorted.filter((w) => new Date(w.starts_at).getTime() <= now.getTime());
-  if (span === "all") return started;
+  const started = startedWeeks(weeks, now);
   if (span === "week") return started.slice(-1);
   const month = monthOf(now, zone);
-  if (span === "month") return started.filter((w) => monthOf(new Date(w.starts_at), zone) === month);
-  return started.filter((w) => w.starts_on.slice(0, 4) === month.slice(0, 4));
+  if (span === "month") return started.filter((w) => weekMonth(w, zone) === month);
+  const first = addMonths(month, -11);
+  return started.filter((w) => weekMonth(w, zone) >= first);
 }
 
 function spanRange(span: RecordSpan, weeks: readonly RecordWeek[], now: Date, zone: string, words: Words): string {
@@ -149,8 +189,7 @@ function spanRange(span: RecordSpan, weeks: readonly RecordWeek[], now: Date, zo
   if (!first || !last) return words('week.record.nothingYet');
   if (span === "week") return weekRange(new Date(first.starts_at), new Date(first.ends_at), zone, words);
   if (span === "month") return monthLabel(monthOf(now, zone), words);
-  if (span === "year") return words('week.record.yearRange', { year: monthOf(now, zone).slice(0, 4), weeks: weeks.length });
-  return words('week.record.allRange', { since: dateIn(new Date(first.starts_at), "dayMonthYear", zone, words), weeks: weeks.length });
+  return words('week.record.yearRange', { weeks: weeks.length });
 }
 
 function worst(marks: readonly RecordMark[]): RecordMark {
@@ -167,6 +206,29 @@ function weekMark(input: RecordInput, week: RecordWeek, userId: string): RecordM
   if (marks.length > 0) return worst(marks);
   const lastDay = localDate(new Date(new Date(week.ends_at).getTime() - 1), input.zone);
   return awayDays(input.away, userId, week.starts_on, lastDay).length > 0 ? "away" : "none";
+}
+
+/** How one week went for someone, as parts of a whole: their Johns (and covers) shared equally, or all away. */
+function weekParts(input: RecordInput, week: RecordWeek, userId: string): Partial<Record<SplitMark, number>> {
+  const held = input.johns.filter((j) => j.week_id === week.id && j.user_id === userId).map(heldMark);
+  if (week.skipped_at && held.length > 0) return { skipped: 1 };
+  const covers = input.johns.filter((j) => j.week_id === week.id && j.covered_by === userId && j.user_id !== userId).length;
+  const settled: SplitMark[] = [...held.filter((m): m is Exclude<HeldMark, "open"> => m !== "open"), ...Array<SplitMark>(covers).fill("covered")];
+  if (settled.length === 0) return held.length === 0 && weekMark(input, week, userId) === "away" ? { away: 1 } : {};
+  const parts: Partial<Record<SplitMark, number>> = {};
+  for (const m of settled) parts[m] = (parts[m] ?? 0) + 1 / settled.length;
+  return parts;
+}
+
+/** Someone's last 12 months, each split by how its weeks went. */
+function monthBars(input: RecordInput, weeks: readonly RecordWeek[], userId: string): RecordMonth[] {
+  return lastTwelveMonths(input.now, input.zone).map((month) => {
+    const parts: Partial<Record<SplitMark, number>> = {};
+    for (const w of weeks.filter((x) => weekMonth(x, input.zone) === month)) {
+      for (const [m, n] of Object.entries(weekParts(input, w, userId)) as [SplitMark, number][]) parts[m] = (parts[m] ?? 0) + n;
+    }
+    return { month, parts };
+  });
 }
 
 export function trackRecord(input: RecordInput, span: RecordSpan, words: Words): TrackRecord {
@@ -201,10 +263,82 @@ export function trackRecord(input: RecordInput, span: RecordSpan, words: Words):
             changed: johns.some((j) => j.week_id === w.id && j.user_id === userId && Boolean(j.changed_by)),
           }));
 
-    return { userId, cells, counts, onTimePct: settled > 0 ? Math.round((counts.onTime / settled) * 100) : null };
+    const months = span === "year" ? monthBars(input, weeks, userId) : undefined;
+    return { userId, cells, ...(months ? { months } : {}), counts, onTimePct: settled > 0 ? Math.round((counts.onTime / settled) * 100) : null };
   });
   rows.sort((a, b) => (b.onTimePct ?? -1) - (a.onTimePct ?? -1));
   return { span, range: spanRange(span, weeks, input.now, input.zone, words), weeks, rows };
+}
+
+// --- Your weeks, on Today ------------------------------------------------------------------
+
+/** How many weeks Today's Your weeks card shows. */
+export const YOUR_WEEKS = 8;
+
+export interface YourWeeks {
+  /** Up to YOUR_WEEKS, earliest first, this week last ("open" until something in it slips). */
+  marks: RecordMark[];
+  /** On time, of the Johns settled in those weeks, 0 to 100; null with none settled. */
+  onTimePct: number | null;
+  /** A kind word on how it's going: never a telling off. */
+  cheer: string;
+  /** What the streak earns next. */
+  meta: string;
+}
+
+const SLIPPED: readonly RecordMark[] = ["late", "missed"];
+const SETTLED: readonly RecordMark[] = ["clean", "covered", "late", "missed"];
+
+/**
+ * How your recent weeks went, for Today: a bar per week from the week you
+ * started (the last YOUR_WEEKS of them), how many of their Johns were on
+ * time, and a kind line. A run of good weeks is cheered; a slip is met with
+ * a fresh start, never a scolding. `member` is whose weeks, with their
+ * streak and skips as the House page counts them (streak.ts). Null before
+ * anything is dealt to them.
+ */
+export function yourWeeks(
+  input: RecordInput,
+  member: { userId: string; streak: number; immunityTokens: number },
+  words: Words,
+): YourWeeks | null {
+  const { userId } = member;
+  const started = startedWeeks(input.weeks, input.now);
+  const marks = started.map((w) => weekMark(input, w, userId));
+  // From the first week with something in it for you: the weeks before you joined aren't yours.
+  const from = marks.findIndex((m) => m !== "none" && m !== "away");
+  if (from < 0) return null;
+  const mine = started.slice(from).slice(-YOUR_WEEKS);
+  const shown = marks.slice(from).slice(-YOUR_WEEKS);
+  const last = mine[mine.length - 1];
+  const running = new Date(last.ends_at).getTime() > input.now.getTime();
+  // This week stays an outline while it's going, unless something in it has already slipped.
+  if (running && !SLIPPED.includes(shown[shown.length - 1])) shown[shown.length - 1] = "open";
+
+  const ids = new Set(mine.map((w) => w.id));
+  const held = input.johns.filter((j) => ids.has(j.week_id) && j.user_id === userId).map(heldMark);
+  const onTime = held.filter((m) => m === "clean").length;
+  const settled = held.filter((m) => m === "clean" || m === "late" || m === "missed").length;
+
+  const finished = (running ? shown.slice(0, -1) : shown).filter((m) => SETTLED.includes(m));
+  const lastFour = finished.slice(-4);
+  const cheer =
+    finished.length === 0
+      ? words('today.weeks.first')
+      : SLIPPED.includes(finished[finished.length - 1])
+        ? lastFour.filter((m) => SLIPPED.includes(m)).length > 1
+          ? words('today.weeks.slipping')
+          : words('today.weeks.slipped')
+        : member.streak > 0 && member.streak >= finished.length && finished.length <= 3
+          ? words('today.weeks.goodStart', { weeks: member.streak })
+          : words('today.weeks.going', { weeks: Math.max(member.streak, 1) });
+  const meta =
+    member.immunityTokens >= IMMUNITY_CAP
+      ? words('people.person.fullImmunity')
+      : member.streak > 0
+        ? words('people.person.nextImmunity', { weeks: IMMUNITY_EVERY - (member.streak % IMMUNITY_EVERY) })
+        : words('today.weeks.earnSkip', { weeks: IMMUNITY_EVERY });
+  return { marks: shown, onTimePct: settled > 0 ? Math.round((onTime / settled) * 100) : null, cheer, meta };
 }
 
 // --- One person's breakdown ---------------------------------------------------------------

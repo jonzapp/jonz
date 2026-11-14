@@ -1,63 +1,24 @@
-import { recordCounts, recordPct, withAlpha, type RecordMark, type RecordRow } from '@app/core';
+import { recordCounts, recordPct, type RecordMark, type RecordRow } from '@app/core';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
 import { Group, Hairline, useRowInset } from '@/components/group';
 import { Meta, RowTitle } from '@/components/text';
+import { KeyBar, MonthBars, STRIP_ROW, WeekStrip } from '@/components/week/week-strip';
 import { useWords } from '@/hooks/use-words';
-import { HAIR, INSET, MARK_RADIUS, ROW_GAP, SPACE, type Theme, useTheme } from '@/theme';
+import { INSET, ROW_GAP, SPACE, useTheme } from '@/theme';
 
-/** A square's side. */
-const CELL = 14;
-
-/**
- * Each mark's colour, as Week's summary colours its parts: on time green,
- * late hi-vis, missed hazard, covering for someone in ink, skipped and away
- * grey (muted ink at 40%), not done yet an outline, nothing dealt the
- * hairline colour.
- */
-function markColour({ colors }: Theme, mark: RecordMark): { fill: string; edge?: string } {
-  switch (mark) {
-    case 'clean':
-      return { fill: colors.good };
-    case 'late':
-      return { fill: colors.hivis };
-    case 'missed':
-      return { fill: colors.hazard };
-    case 'covered':
-      return { fill: colors.foreground };
-    case 'skipped':
-    case 'away':
-      return { fill: withAlpha(colors.mutedForeground, 0.4) };
-    case 'open':
-      return { fill: 'transparent', edge: colors.mutedForeground };
-    case 'none':
-      return { fill: colors.secondary };
-  }
-}
-
-/** A square: its mark's colour, and a small amber dot in its corner when an admin changed something in it. */
-function Square({ mark, changed = false }: { mark: RecordMark; changed?: boolean }) {
-  const theme = useTheme();
-  const { fill, edge } = markColour(theme, mark);
-  return (
-    <View
-      aria-hidden
-      testID={`square-${mark}`}
-      style={[styles.cell, { backgroundColor: fill }, edge ? { borderWidth: 1.5, borderColor: edge } : null]}
-    >
-      {changed ? (
-        <View testID="square-changed" style={[styles.dot, { backgroundColor: theme.colors.hivis, borderColor: theme.colors.background }]} />
-      ) : null}
-    </View>
-  );
-}
+/** The fewest columns a grid has: a month of weeks. */
+const MIN_COLUMNS = 5;
 
 /**
  * The track record's grid: one row per person, their on-time share as the
- * figure, their squares under their name, and what they add up to under
- * those. A row opens that person's breakdown: on a phone as a page of its
+ * figure, their bars under their name (on Year, a split bar a month), and
+ * what they add up to under those. Every row's bars share one set of
+ * columns, as many as the longest row holds (at least a month's worth, so
+ * two weeks aren't two slabs; at most a quarter's), so they line up down
+ * the page. A row opens that person's breakdown: on a phone as a page of its
  * own, on a laptop beside the grid, where `chosenId`'s row is on the tint
  * with an ink edge.
  */
@@ -76,12 +37,15 @@ export function RecordGrid({
   /** Whose breakdown is open beside the grid, on a laptop. */
   chosenId?: string | null;
 }) {
+  const columns = Math.min(Math.max(MIN_COLUMNS, ...rows.map((r) => r.cells.length)), STRIP_ROW);
   return (
     <Group testID="record-grid">
-      {rows.map((row) => (
+      {rows.map((row, i) => (
         <RecordLine
           key={row.userId}
           row={row}
+          columns={columns}
+          first={i === 0}
           you={row.userId === viewerId}
           name={nameOf(row.userId)}
           onOpen={onOpen}
@@ -94,12 +58,18 @@ export function RecordGrid({
 
 function RecordLine({
   row,
+  columns,
+  first,
   you,
   name,
   onOpen,
   chosen,
 }: {
   row: RecordRow;
+  /** How many bars a line holds. */
+  columns: number;
+  /** The top row, which names the months on Year. */
+  first: boolean;
   you: boolean;
   name: string;
   onOpen: (userId: string) => void;
@@ -132,31 +102,30 @@ function RecordLine({
         </RowTitle>
         <Text style={[type.rowTitle, styles.pct]}>{pct}</Text>
       </View>
-      <View style={styles.cells}>
-        {row.cells.map((cell) => (
-          <Square key={cell.key} mark={cell.mark} changed={cell.changed} />
-        ))}
-      </View>
+      {row.months ? <MonthBars months={row.months} labels={first} /> : <WeekStrip cells={row.cells} columns={columns} />}
       <Meta numberOfLines={2}>{counts}</Meta>
     </Pressable>
   );
 }
 
-/** What the colours mean, the marks that show on the grid only. */
-export function RecordKey({ marks, changed = false }: { marks: readonly RecordMark[]; changed?: boolean }) {
+/**
+ * What the colours mean, the marks that show on the grid only. On Year
+ * (`parts`) they name a month's parts: "Late" rather than "Something late".
+ */
+export function RecordKey({ marks, changed = false, parts = false }: { marks: readonly RecordMark[]; changed?: boolean; parts?: boolean }) {
   const words = useWords();
-  const changedBy = useWords()('week.record.changed');
+  const changedBy = words('week.record.changed');
   return (
     <View accessibilityRole="list" accessibilityLabel={words('week.record.key')} style={styles.key} testID="record-key">
       {marks.map((mark) => (
         <View key={mark} style={styles.keyItem}>
-          <Square mark={mark} />
-          <Meta>{words(`week.record.marks.${mark}` as const)}</Meta>
+          <KeyBar mark={mark} />
+          <Meta>{parts && mark !== 'open' && mark !== 'none' ? words(`week.record.parts.${mark}` as const) : words(`week.record.marks.${mark}` as const)}</Meta>
         </View>
       ))}
       {changed ? (
         <View style={styles.keyItem}>
-          <Square mark="none" changed />
+          <KeyBar mark="none" changed />
           <Meta>{changedBy}</Meta>
         </View>
       ) : null}
@@ -171,10 +140,6 @@ const styles = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', gap: ROW_GAP },
   name: { flex: 1, minWidth: 0 },
   pct: { flexShrink: 0 },
-  cells: { flexDirection: 'row', flexWrap: 'wrap', gap: HAIR + 1 },
-  cell: { width: CELL, height: CELL, borderRadius: MARK_RADIUS },
-  // The amber dot of a changed result, edged in the page colour so it reads on any mark.
-  dot: { position: 'absolute', top: -3, right: -3, width: 7, height: 7, borderRadius: MARK_RADIUS * 2, borderWidth: 1 },
   key: { paddingHorizontal: INSET, flexDirection: 'row', flexWrap: 'wrap', columnGap: SPACE.lg, rowGap: SPACE.xs },
   keyItem: { flexDirection: 'row', alignItems: 'center', gap: SPACE.xs },
 });

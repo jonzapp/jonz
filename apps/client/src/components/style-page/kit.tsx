@@ -1,4 +1,4 @@
-import { KIND_COLOURS, type IsoDow } from '@app/core';
+import { KIND_COLOURS, type IsoDow, type RecordMonth } from '@app/core';
 import {
   CheckIcon,
   ClockIcon,
@@ -51,6 +51,7 @@ import { Body, Heading, Lead, Meta, RowTitle, Title } from '@/components/text';
 import { TextButton } from '@/components/text-button';
 import { TextLink } from '@/components/text-link';
 import { TickBox, type TickState } from '@/components/tick-box';
+import { MonthBars, WeekStrip, type StripCell } from '@/components/week/week-strip';
 import { RADIUS, SPACE, useTheme } from '@/theme';
 
 const none = () => {};
@@ -225,6 +226,13 @@ export function Choosing() {
 const AWAY_NOW = new Date('2026-11-14T01:22:00Z');
 
 /** Marks: chips, counts, lids, people, plates, tape, alerts, notices, and the note that a time is set in house time. */
+/** Weeks as bars, as Today's Your weeks draws them: five weeks so far, this one outlined. */
+const STRIP: StripCell[] = (['late', 'clean', 'covered', 'clean', 'open'] as const).map((mark) => ({ mark }));
+/** A year of split month bars, as the Track record's Year draws them. */
+const YEAR: RecordMonth[] = ['2025-11', '2025-12', '2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07', '2026-08', '2026-09', '2026-10'].map(
+  (month, i) => ({ month, parts: i < 2 ? {} : i === 6 ? { away: 4 } : { clean: 3, covered: i % 3 === 0 ? 1 : 0, late: i % 4 === 1 ? 1 : 0, missed: i === 9 ? 1 : 0 } }),
+);
+
 export function Marks() {
   return (
     <Section label="Marks" testID="style-marks">
@@ -248,6 +256,8 @@ export function Marks() {
           <HazardTape width={160} />
           <Alert message="Something went wrong. Try again." />
           <HouseTimeNote house="America/Regina" now={AWAY_NOW} />
+          <WeekStrip cells={STRIP} columns={8} toCome testID="style-week-strip" />
+          <MonthBars months={YEAR} labels />
         </GroupItem>
       </Group>
       <NoticeView tone="news" icon={MegaphoneIcon} title="New this week" body="Swaps now ask first." onClose={none} />

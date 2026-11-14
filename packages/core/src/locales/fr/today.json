@@ -128,5 +128,12 @@
   "today.board.waits": "Attend la validation d’un parent",
   "today.board.photo": "Il faut une photo : coche-le depuis son Aujourd’hui",
   "today.board.noKids": "Pas encore d’enfants. Invite-les, ou ajoute un enfant depuis Maison.",
-  "today.board.parentsOnly": "Le tableau est fait pour qu’un parent l’ouvre sur un écran partagé."
+  "today.board.parentsOnly": "Le tableau est fait pour qu’un parent l’ouvre sur un écran partagé.",
+  "today.weeks.title": "Tes semaines",
+  "today.weeks.first": "Ta première semaine. Chaque semaine terminée remplit une barre.",
+  "today.weeks.goodStart": "{weeks, plural, one {# semaine à l’heure jusqu’ici} other {# semaines à l’heure jusqu’ici}}. Bon début.",
+  "today.weeks.going": "{weeks, plural, one {À l’heure la semaine dernière. Continue comme ça.} other {# semaines à l’heure d’affilée. Bien joué.}}",
+  "today.weeks.slipped": "Une semaine a glissé. Cette semaine, on repart à zéro.",
+  "today.weeks.slipping": "Quelques-unes ont glissé ces derniers temps. Cette semaine, on repart à zéro.",
+  "today.weeks.earnSkip": "{weeks} semaines à l’heure d’affilée rapportent un joker"
 }

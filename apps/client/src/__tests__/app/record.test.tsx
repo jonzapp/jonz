@@ -82,8 +82,8 @@ beforeEach(() => {
 
 const PAGES = { 'week/record/index': RecordScreen, 'week/record/[userId]': RecordPersonScreen };
 
-it('shows everyone a square a week, best on time first, with the way back to Week', async () => {
-  await renderPages(PAGES, '/week/record?span=all');
+it('shows everyone a split bar a month over the last year, best on time first, with the way back to Week', async () => {
+  await renderPages(PAGES, '/week/record?span=year');
   await untilRead(words);
   const bar = within(screen.getByTestId('title-bar'));
   expect(bar.getByRole('header', { name: words('week.record.title') })).toBeOnTheScreen();
@@ -94,30 +94,30 @@ it('shows everyone a square a week, best on time first, with the way back to Wee
     `${words('week.record.you', { name: 'Priya' })}, 100% on time, 1 on time, covered 1`,
     'Sam, 0% on time, 0 on time, 1 late, 1 missed',
   ]);
-  expect(within(records[0]).getAllByTestId(/^square-/, { includeHiddenElements: true }).map((s) => s.props.testID)).toEqual([
-    'square-covered',
-    'square-none',
-  ]);
-  expect(within(records[1]).getAllByTestId(/^square-/, { includeHiddenElements: true }).map((s) => s.props.testID)).toEqual([
-    'square-missed',
-    'square-late',
-  ]);
+  const parts = (row: (typeof records)[number]) =>
+    [...new Set(within(row).getAllByTestId(/^part-/, { includeHiddenElements: true }).map((s) => s.props.testID))].sort();
+  expect(within(records[0]).getAllByTestId('month-bar', { includeHiddenElements: true })).toHaveLength(12);
+  expect(parts(records[0])).toEqual(['part-clean', 'part-covered']);
+  expect(parts(records[1])).toEqual(['part-late', 'part-missed']);
   const key = within(screen.getByTestId('record-key'));
-  expect(key.getByText(words('week.record.marks.missed'))).toBeOnTheScreen();
+  expect(key.getByText(words('week.record.parts.missed'))).toBeOnTheScreen();
   expect(key.queryByText(words('week.record.marks.away'))).toBeNull();
 });
 
 it('switches the span', async () => {
-  await renderPages(PAGES, '/week/record?span=all');
+  await renderPages(PAGES, '/week/record?span=year');
   await untilRead(words);
   await fireEvent.press(within(screen.getByTestId('record-span')).getByRole('radio', { name: words('week.record.spans.week') }));
   await waitFor(() => expect(screen.getByText(words('week.record.introWeek'))).toBeOnTheScreen());
   const sam = (await screen.findAllByTestId('record-row'))[0];
   expect(sam.props.accessibilityLabel).toMatch(/^Sam/);
+  // A bar per John this week, in the same columns as everyone's.
+  expect(within(sam).getAllByTestId(/^bar-/, { includeHiddenElements: true }).map((b) => b.props.testID)).toEqual(['bar-late']);
+  expect(within(screen.getByTestId('record-key')).getByText(words('week.record.marks.late'))).toBeOnTheScreen();
 });
 
 it("opens a person's breakdown, which adds up and opens onto its Johns", async () => {
-  await renderPages(PAGES, '/week/record?span=all');
+  await renderPages(PAGES, '/week/record?span=year');
   await untilRead(words);
   await fireEvent.press((await screen.findAllByTestId('record-row'))[1]);
   const breakdown = within(await screen.findByTestId('record-breakdown'));
@@ -136,7 +136,7 @@ it("opens a person's breakdown, which adds up and opens onto its Johns", async (
 
 it('on a laptop, opens your breakdown beside the grid, then whoever you click, on the same page', async () => {
   (useWindowDimensions as jest.Mock).mockReturnValue(LAPTOP);
-  await renderPages(PAGES, '/week/record?span=all');
+  await renderPages(PAGES, '/week/record?span=year');
   await untilRead(words);
   const beside = within(await screen.findByTestId('record-pair-end'));
   expect(await beside.findByTestId('record-breakdown')).toHaveTextContent(/Priya \(you\)/);
@@ -156,7 +156,7 @@ it('on a laptop, opens your breakdown beside the grid, then whoever you click, o
 
 it("on a laptop, a link to someone's page opens them beside the grid", async () => {
   (useWindowDimensions as jest.Mock).mockReturnValue(LAPTOP);
-  await renderPages(PAGES, '/week/record/sam?span=all');
+  await renderPages(PAGES, '/week/record/sam?span=year');
   await untilRead(words);
   expect(await screen.findByTestId('record-screen')).toBeOnTheScreen();
   expect(await within(screen.getByTestId('record-pair-end')).findByTestId('record-total')).toHaveTextContent(/−2$/);
