@@ -42,8 +42,7 @@ import { ReadFailed } from '@/components/read-state';
 import { Row, RowIcon } from '@/components/row';
 import { SearchBox } from '@/components/search-box';
 import { Dimmed, SearchLine } from '@/components/search-line';
-import { ZoneLine } from '@/components/zone-line';
-import type { Zones } from '@/hooks/use-zones';
+import { HouseTimeNote } from '@/components/house-time-note';
 import { Section } from '@/components/section';
 import { Segmented } from '@/components/segmented';
 import { Chip } from '@/components/status-mark';
@@ -222,11 +221,10 @@ export function Choosing() {
   );
 }
 
-/** A phone in Regina reading a London house's times on its own clock, at a fixed moment so the gap never changes. */
+/** A house in Regina, read on this page's London clock, at a fixed moment so the gap never changes. */
 const AWAY_NOW = new Date('2026-11-14T01:22:00Z');
-const AWAY: Zones = { house: 'Europe/London', phone: 'America/Regina', shown: 'America/Regina', away: true, showing: 'mine', flip: none };
 
-/** Marks: chips, counts, lids, people, plates, tape, alerts, notices, and the line that says whose clock times are on. */
+/** Marks: chips, counts, lids, people, plates, tape, alerts, notices, and the note that a time is set in house time. */
 export function Marks() {
   return (
     <Section label="Marks" testID="style-marks">
@@ -249,7 +247,7 @@ export function Marks() {
           <StreetPlate tone="hazard">Bins out tonight</StreetPlate>
           <HazardTape width={160} />
           <Alert message="Something went wrong. Try again." />
-          <ZoneLine zones={AWAY} now={AWAY_NOW} inline />
+          <HouseTimeNote house="America/Regina" now={AWAY_NOW} />
         </GroupItem>
       </Group>
       <NoticeView tone="news" icon={MegaphoneIcon} title="New this week" body="Swaps now ask first." onClose={none} />

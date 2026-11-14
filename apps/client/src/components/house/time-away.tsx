@@ -10,6 +10,7 @@ import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/button';
 import { Field } from '@/components/field';
 import { Group, GroupItem } from '@/components/group';
+import { HouseTimeNote, type HouseClock } from '@/components/house-time-note';
 import { Row, RowIcon } from '@/components/row';
 import { Section } from '@/components/section';
 import { AwayDates, DAY_HEIGHT, type DateRange } from '@/components/setup/away-dates';
@@ -42,6 +43,7 @@ export function AwayMonth({
   me,
   today,
   weekStarts,
+  clock,
 }: {
   houseId: string;
   periods: AwayPeriod[];
@@ -49,6 +51,8 @@ export function AwayMonth({
   me: string;
   today: string;
   weekStarts: IsoDow;
+  /** The house's zone and the time now: days are booked on the house's calendar. */
+  clock: HouseClock;
 }) {
   const words = useWords();
   const { colors, type } = useTheme();
@@ -133,7 +137,7 @@ export function AwayMonth({
           ))}
         </View>
         {nobody ? <Body>{words('house.away.nobody')}</Body> : <Meta>{words('house.away.tapADay')}</Meta>}
-        <BookAway houseId={houseId} today={today} weekStarts={weekStarts} periods={periods} people={people} me={me} />
+        <BookAway houseId={houseId} today={today} weekStarts={weekStarts} periods={periods} people={people} me={me} clock={clock} />
       </GroupItem>
       <DaySheet day={day} periods={periods} people={people} me={me} onDay={open} onClose={() => setDay(null)} />
     </>
@@ -287,6 +291,7 @@ function BookAway({
   periods,
   people,
   me,
+  clock,
 }: {
   houseId: string;
   today: string;
@@ -294,6 +299,7 @@ function BookAway({
   periods: AwayPeriod[];
   people: Housemate[];
   me: string;
+  clock: HouseClock;
 }) {
   const words = useWords();
   const [open, setOpen] = useState(false);
@@ -330,6 +336,7 @@ function BookAway({
           periods={periods}
           people={people}
           me={me}
+          clock={clock}
           onBooked={(count) => {
             setMoved(count);
             setOpen(false);
@@ -351,6 +358,7 @@ function AwayForm({
   periods,
   people,
   me,
+  clock,
   onBooked,
 }: {
   houseId: string;
@@ -359,6 +367,7 @@ function AwayForm({
   periods: AwayPeriod[];
   people: Housemate[];
   me: string;
+  clock: HouseClock;
   onBooked: (moved: Booked) => void;
 }) {
   const words = useWords();
@@ -396,6 +405,7 @@ function AwayForm({
       <View accessibilityLiveRegion="polite" testID="away-picked">
         <Body>{status}</Body>
         {others.length > 0 ? <Meta>{words('house.away.alsoAway', { count: others.length, names: nameList(words, others) })}</Meta> : null}
+        <HouseTimeNote house={clock.zone} now={clock.now} />
       </View>
       <Field
         label={words('house.away.note')}

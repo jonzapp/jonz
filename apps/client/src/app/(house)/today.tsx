@@ -9,7 +9,6 @@ import { PickMenu } from '@/components/pick-menu';
 import { TodayOutline } from '@/components/page-outlines';
 import { Columns, Screen, useColumns } from '@/components/screen';
 import { TitleBar, TopLine } from '@/components/title-bar';
-import { ZoneLine } from '@/components/zone-line';
 import { MoveInAsk } from '@/components/today/move-in-ask';
 import { CouldCover, NeedsYou } from '@/components/today/needs-you';
 import { NeedsYourOk } from '@/components/today/needs-your-ok';
@@ -31,7 +30,7 @@ import { usePocket } from '@/hooks/use-pocket';
 import { usePull, useReadOnFocus } from '@/hooks/use-refresh';
 import { useStake } from '@/hooks/use-stake';
 import { useWords } from '@/hooks/use-words';
-import { useZones } from '@/hooks/use-zones';
+import { useShownZone } from '@/hooks/use-shown-zone';
 
 /**
  * Today, for doing: your next John in the one card (or what takes its
@@ -134,15 +133,9 @@ function TodayView({
       : null;
   const standing = earned ?? page.standing;
   const nameOf = (id: string) => members.find((m) => m.userId === id)?.name ?? null;
-  // Times on your own clock when it's away from the house's, said once under the date (Your time, said once).
-  const zones = useZones(rules.timezone, now);
-  const zone = zones.shown;
-  const day = (
-    <>
-      <TopLine>{dayLabel(now, zone, words)}</TopLine>
-      <ZoneLine zones={zones} now={now} underTopLine />
-    </>
-  );
+  // Times and today's date on your own clock; the week is still the house's.
+  const zone = useShownZone();
+  const day = <TopLine>{dayLabel(now, zone, words)}</TopLine>;
 
   const next = <NextSpot view={view} page={page} rules={rules} johns={list?.johns ?? null} />;
   // A John you'd rather not, and asks to swap made to you.

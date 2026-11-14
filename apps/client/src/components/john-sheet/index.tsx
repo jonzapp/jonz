@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useMemo, useState, type ReactNo
 import { Sheet } from '@/components/sheet';
 import { stakeKey } from '@/hooks/keys';
 import { useHouse } from '@/hooks/use-house';
-import { useShownZone } from '@/hooks/use-zones';
+import { useShownZone } from '@/hooks/use-shown-zone';
 
 import { JohnSheetBody, type JohnSheetContext, type JohnSheetFocus } from './body';
 import { useCached } from './cached';
@@ -45,8 +45,8 @@ export function useJohnSheetIfAny(): JohnSheetApi | null {
 export function JohnSheetProvider({ houseId, userId, children }: { houseId: string; userId: string; children: ReactNode }) {
   const words = useWords();
   const { view } = useHouse(houseId, userId);
-  // Times on the reader's own clock when it's away from the house's (Your time, said once).
-  const zone = useShownZone(view?.snapshot.rules.timezone ?? UTC, view?.now ?? new Date());
+  // Times on the reader's own clock.
+  const zone = useShownZone();
   // What lateness costs is capped at the stake: the sheet knows how near once a screen has read the Stake.
   const stake = useCached<StakeView>(stakeKey(houseId)) ?? null;
   const [shown, setShown] = useState<{ id: string; focus: JohnSheetFocus | null; post: string | null } | null>(null);

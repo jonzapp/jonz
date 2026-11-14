@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Group, GroupItem } from '@/components/group';
 import { Segmented } from '@/components/segmented';
+import { HouseTimeNote } from '@/components/house-time-note';
 import { Meta } from '@/components/text';
 import { HAIR, INSET, LABEL_GAP, MARK_GAP, MARK_RADIUS, SPACE, useTheme } from '@/theme';
 import { useWords } from '@/hooks/use-words';
@@ -110,6 +111,7 @@ export function TimingSentence({
             {words('house.johns.onCallHint')}
           </Meta>
         ) : null}
+        {onCall ? null : <HouseTimeNote house={rules.timezone} now={now} style={styles.note} />}
       </View>
     </View>
   );

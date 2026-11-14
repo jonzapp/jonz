@@ -1,34 +1,38 @@
 import { expect, test } from "@playwright/test";
-import { wordsFor } from "@app/core";
+import { dateIn, wordsFor } from "@app/core";
 
-import { CLIENT_URL, cleanUp, dealtHouseInClient } from "./auth";
+import { admin, CLIENT_URL, cleanUp, dealtHouseInClient } from "./auth";
 
 const words = wordsFor("en", "housemates");
 
 // Time zones (docs/specs/time-zones.md) in the Expo app's web build: the
-// house is in London and this browser is in Regina, so times read on
-// Regina's clock with one line saying so, and house time is a tap away; an
-// admin picks the house's zone from a list searched by country.
+// house is in London and this browser is in Regina, so every time reads on
+// Regina's clock with nothing saying so; where a time is set (a John's due
+// time), one note says it's the house's. An admin picks the house's zone
+// from a list searched by country.
 test.use({ baseURL: CLIENT_URL, timezoneId: "America/Regina" });
 
 const made: string[] = [];
 test.afterAll(async () => cleanUp(made));
 
-test("read times on your own clock, and pick the house's zone by country", async ({ context, page }) => {
-  const { userId } = await dealtHouseInClient(context, "Gwen Away", "Flat 14", [{ name: "Bins out", category: "bins", dueTime: "21:00" }]);
+test("read times on your own clock, set them in house time, and pick the house's zone by country", async ({ context, page }) => {
+  const { userId, weekId } = await dealtHouseInClient(context, "Gwen Away", "Flat 14", [{ name: "Bins out", category: "bins", dueTime: "21:00" }]);
   made.push(userId);
+  const { data: bins } = await admin().from("assignments").select("due_at").eq("week_id", weekId).eq("name", "Bins out").single();
+  const due = new Date(bins!.due_at!);
 
   await page.goto("/today");
   const today = page.getByTestId("today-screen");
   await expect(today.getByTestId("next-up-name")).toHaveText("Bins out");
-  // Away from the house's clock: said once, under the date, with house time a tap away.
-  const line = today.getByTestId("zone-line");
-  await expect(line).toContainText("Your time, Regina.");
-  await expect(line).toContainText(words("common.zone.showHouse"));
-  await line.click();
-  await expect(line).toContainText("House time, London.");
-  await line.click();
-  await expect(line).toContainText("Your time, Regina.");
+  // Due 21:00 in London, said on this browser's Regina clock, and nothing says so.
+  await expect(today.getByTestId("next-up")).toContainText(dateIn(due, "time", "America/Regina", words));
+  await expect(today.getByTestId("next-up")).not.toContainText("21:00");
+  await expect(today.getByTestId("house-time-note")).toHaveCount(0);
+
+  // Setting a John's time is in house time, and the editor says so.
+  await page.goto("/house/johns");
+  await page.getByTestId("johns-screen").getByTestId("add-john").click();
+  await expect(page.getByTestId("john-form").getByTestId("house-time-note")).toHaveText(/^In house time: London, \d+ hours ahead of you\.$/);
 
   // House rules: the zone is a place, picked from a list a search narrows.
   await page.goto("/house/rules");
@@ -46,8 +50,9 @@ test("read times on your own clock, and pick the house's zone by country", async
   await page.getByTestId("save-rules").first().click();
   await expect(page.getByTestId("rules-house").first()).toBeHidden();
 
-  // Now the house keeps Regina's clock too: nothing to say on Today.
-  await page.goto("/today");
-  await expect(page.getByTestId("today-screen").getByTestId("next-up-name")).toHaveText("Bins out");
-  await expect(page.getByTestId("today-screen").getByTestId("zone-line")).toHaveCount(0);
+  // Now the house keeps Regina's clock too: setting a time needs no note.
+  await page.goto("/house/johns");
+  await page.getByTestId("johns-screen").getByTestId("add-john").click();
+  await expect(page.getByTestId("john-form").getByTestId("timing-time")).toBeVisible();
+  await expect(page.getByTestId("john-form").getByTestId("house-time-note")).toHaveCount(0);
 });
