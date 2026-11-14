@@ -193,7 +193,8 @@ const promotion = promotionRow.omit({ people: true }).extend({
   stoppedAt: at.nullable(),
   createdAt: at,
   people: z.array(z.object({ email: text, name: text.nullable(), openedAt: at.nullable(), emailedAt: at.nullable(), usedAt: at.nullable() })),
-  recent: z.array(z.object({ house: text.nullable(), houseId: id.nullable(), plan: text, at })),
+  // A free Pass is given with no plan bought, so its uses have none.
+  recent: z.array(z.object({ house: text.nullable(), houseId: id.nullable(), plan: text.nullable(), at })),
 });
 const messageRow = z.object({
   id,

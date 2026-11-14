@@ -72,6 +72,9 @@ when the executor's check is taken away.
   - A report message's `id` in `owner_open_report` is text, not a uuid: it
     is a number in the database and never was a uuid, so the operation failed
     on any report with a message (Glyn, 2026-11-12).
+  - A promotion use's `plan` in `owner_promotion` may be null: a free Pass
+    is given with no plan bought, so the operation failed on any used free
+    Pass (Glyn, 2026-11-14).
 - **The OpenAPI document.** It is OpenAPI 3.1, built from the operations
   themselves and served at `/v1/openapi.json`.
 - **Retiring an operation.** It gets `Deprecation` (RFC 9745) and `Sunset`
