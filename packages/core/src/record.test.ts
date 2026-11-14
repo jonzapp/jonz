@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   heldMark,
   readSpan,
+  lastTwelveMonths,
+  yourWeeks,
   recordBreakdown,
   signedPoints,
   spanWeeks,
@@ -73,12 +75,19 @@ const NAMES: Record<string, string> = { ana: "Ana", sam: "Sam" };
 const nameOf = (id: string) => NAMES[id] ?? "?";
 
 describe("spanWeeks", () => {
-  it("takes this week, this month's, this year's or every week that has started", () => {
+  it("takes this week, this month's, or the last 12 months' weeks that have started", () => {
     const all = [NEXT, W2, W1, W3];
     expect(spanWeeks(all, "week", now, ZONE)).toEqual([W3]);
     expect(spanWeeks(all, "month", now, ZONE)).toEqual([W2, W3]);
     expect(spanWeeks(all, "year", now, ZONE)).toEqual([W1, W2, W3]);
-    expect(spanWeeks(all, "all", now, ZONE)).toEqual([W1, W2, W3]);
+    // A year back runs to last November, across new year; October last year is too far.
+    const old = [week("2025-10-27"), week("2025-11-03"), week("2026-01-05")];
+    expect(spanWeeks([...old, ...all], "year", now, ZONE).map((w) => w.starts_on)).toEqual(["2025-11-03", "2026-01-05", "2026-09-28", "2026-10-05", "2026-10-12"]);
+  });
+
+  it("reads an old link's All as this month", () => {
+    expect(readSpan("all")).toBe("month");
+    expect(readSpan("year")).toBe("year");
   });
 });
 
@@ -106,7 +115,7 @@ describe("trackRecord", () => {
       ]),
       "year",
      words);
-    expect(record.range).toBe(words('week.record.yearRange', { year: "2026", weeks: 3 }));
+    expect(record.range).toBe("Last 12 months, 3 weeks");
     expect(record.rows.map((r) => [r.userId, r.cells.map((c) => c.mark), r.onTimePct])).toEqual([
       // Ana covered Sam's this week: her square says so over her open John.
       ["ana", ["clean", "clean", "covered"], 100],
@@ -165,7 +174,7 @@ describe("recordBreakdown", () => {
   });
 
   it("is just the share, with nothing handed", () => {
-    const b = recordBreakdown(input([]), "all", "ana", nameOf, words);
+    const b = recordBreakdown(input([]), "year", "ana", nameOf, words);
     expect(b.lines).toEqual([{ key: "share", points: -6, johns: [] }]);
     expect(b.total).toBe(-6);
   });
@@ -203,5 +212,94 @@ describe("readSpan and signedPoints", () => {
       "−1.3",
       "0",
     ]);
+  });
+});
+
+describe("the Year view's month bars", () => {
+  it("splits each of the last 12 months by how its weeks went, every week weighing the same", () => {
+    const record = trackRecord(
+      input([
+        john(W1, "sam"),
+        john(W2, "sam", { outcome: "late" }),
+        john(W2, "sam"),
+        john(W3, "sam", { outcome: null }),
+        john(W3, "ana", { outcome: "covered", covered_by: "sam" }),
+      ]),
+      "year",
+      words,
+    );
+    const sam = record.rows.find((r) => r.userId === "sam")!;
+    expect(sam.months!.map((m) => m.month)).toEqual(lastTwelveMonths(now, ZONE));
+    expect(sam.months![0].month).toBe("2025-11");
+    // September: one week, all on time.
+    expect(sam.months![10].parts).toEqual({ clean: 1 });
+    // October: a half-late week, and this week's cover (its open John adds nothing yet).
+    expect(sam.months![11].parts).toEqual({ clean: 0.5, late: 0.5, covered: 1 });
+    // Before anything was dealt: no parts.
+    expect(sam.months![0].parts).toEqual({});
+    // Only Year has months.
+    expect(trackRecord(input([]), "month", words).rows[0].months).toBeUndefined();
+  });
+
+  it("makes a week away all away, and a skipped week all skipped", () => {
+    const record = trackRecord(
+      input([john(W2, "sam"), john(W1, "ana")], {
+        weeks: [W1, { ...W2, skipped_at: "2026-10-09T00:00:00Z" }, W3, NEXT],
+        away: [{ id: "a", userId: "ana", startsOn: "2026-10-05", endsOn: "2026-10-11", note: null }],
+      }),
+      "year",
+      words,
+    );
+    expect(record.rows.find((r) => r.userId === "sam")!.months![11].parts).toEqual({ skipped: 1 });
+    expect(record.rows.find((r) => r.userId === "ana")!.months![11].parts).toEqual({ away: 1 });
+  });
+});
+
+describe("yourWeeks", () => {
+  /** Monday weeks back from this one, earliest first. */
+  const back = (n: number) => Array.from({ length: n }, (_, i) => week(new Date(Date.UTC(2026, 9, 12 - 7 * (n - 1 - i))).toISOString().slice(0, 10)));
+  const run = (outcomes: (string | null)[], member = { streak: 0, immunityTokens: 0 }) => {
+    const weeks = back(outcomes.length);
+    return yourWeeks(
+      input(
+        outcomes.flatMap((o, i) => (o === "-" ? [] : [john(weeks[i], "sam", { outcome: o })])),
+        { weeks, memberIds: ["sam"] },
+      ),
+      { userId: "sam", ...member },
+      words,
+    );
+  };
+
+  it("is nothing before anything is dealt to you", () => {
+    expect(run(["-", "-"])).toBeNull();
+  });
+
+  it("starts someone new on their first week, an outline still to fill", () => {
+    const w = run(["-", "-", null])!;
+    expect(w.marks).toEqual(["open"]);
+    expect(w.onTimePct).toBeNull();
+    expect(w.cheer).toBe("Your first week. Each week you finish fills a bar.");
+    expect(w.meta).toBe("4 weeks on time in a row earns a skip");
+  });
+
+  it("cheers a good start, and a good run", () => {
+    expect(run(["done", "done", null], { streak: 2, immunityTokens: 0 })!.cheer).toBe("2 weeks on time so far. Good start.");
+    const good = run(["late", "done", "done", "done", "done", "done", "done", "done", "done", null], { streak: 8, immunityTokens: 1 })!;
+    // Only the last 8 weeks, this week last.
+    expect(good.marks).toEqual(["clean", "clean", "clean", "clean", "clean", "clean", "clean", "open"]);
+    expect(good.onTimePct).toBe(100);
+    expect(good.cheer).toBe("8 weeks on time in a row. Good going.");
+    expect(good.meta).toBe("Next skip in 4 weeks");
+    expect(run(["late", "done", null], { streak: 1, immunityTokens: 0 })!.cheer).toBe("On time last week. Keep it going.");
+    expect(run(["done", null], { streak: 9, immunityTokens: 2 })!.meta).toBe("Holding every skip you can");
+  });
+
+  it("meets a slip with a fresh start, never a telling off", () => {
+    const one = run(["done", "done", "late", null])!;
+    expect(one.cheer).toBe("One week slipped. This week is a fresh start.");
+    expect(one.onTimePct).toBe(67);
+    expect(run(["done", "missed", "late", null])!.cheer).toBe("A few slipped lately. This week is a fresh start.");
+    // Something late this week already shows, not as an outline.
+    expect(run(["done", "late"])!.marks).toEqual(["clean", "late"]);
   });
 });

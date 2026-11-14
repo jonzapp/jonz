@@ -121,8 +121,18 @@ Built for very many rows from the start. (Admin lists, 31 Oct)
   shows one calendar; picking days is in a sheet from a button under it,
   plain (no shading), its picked ends solid ink and the days between grey.
   (One calendar D, 13 Nov)
-- A week-by-week grid for records over time (the Track record), with the
-  breakdown one tap away. (Fair shares, 28 Oct, #35)
+- Records over time are bars that share the width, one per week (on Week,
+  one per John), coloured by the worst thing in it, this week an outline:
+  `WeekStrip`. Every row's bars share one set of columns, at most 13 to a
+  line, so they line up down the page. A year is 12 taller month bars
+  (`MonthBars`), each split by how its Johns went, on time at the bottom,
+  with the months named over the first row; never a whole history, and
+  never a day-by-day grid. The breakdown is one tap away. (Fair shares, 28
+  Oct, #35; Your weeks and Year split month bars, 14 Nov)
+- Today's Your weeks card draws the same strip: always 8 bars across, the
+  weeks still to come in grey, laid out as your Track record row (a kind
+  line and your on-time figure, the bars, what your streak earns next).
+  (Your weeks A, 14 Nov)
 
 ## Empty lists
 

@@ -14,6 +14,7 @@ import { answerSwap, askSwap, markDone, planJohn, undoDone } from '@/api/johns';
 import { pickPhoto } from '@/api/photos';
 import { dealThisWeek, loadJohnList } from '@/api/settings';
 import { loadPocket } from '@/api/pocket';
+import { loadRecord } from '@/api/record';
 import { loadStake } from '@/api/stake';
 import Today from '@/app/(house)/today';
 import { JohnSheetProvider } from '@/components/john-sheet';
@@ -29,6 +30,7 @@ jest.mock('@/api/board', () => ({ loadHouse: jest.fn() }));
 jest.mock('@/api/away', () => ({ loadAway: jest.fn(), setAway: jest.fn(), cancelAway: jest.fn() }));
 jest.mock('@/api/settings', () => ({ dealThisWeek: jest.fn(), loadJohnList: jest.fn() }));
 jest.mock('@/api/house', () => ({ catchUp: jest.fn() }));
+jest.mock('@/api/record', () => ({ loadRecord: jest.fn() }));
 jest.mock('@/api/stake', () => ({ loadStake: jest.fn(), confirmPayment: jest.fn() }));
 jest.mock('@/api/pocket', () => ({ loadPocket: jest.fn(), payPocketMoney: jest.fn() }));
 jest.mock('@/api/disputes', () => ({ castVote: jest.fn(), raiseDispute: jest.fn() }));
@@ -106,6 +108,7 @@ beforeEach(() => {
   (loadAway as jest.Mock).mockResolvedValue({ today: '2026-10-21', periods: [] });
   read.mockResolvedValue(snapshot());
   (catchUp as jest.Mock).mockResolvedValue(false);
+  (loadRecord as jest.Mock).mockResolvedValue({ weeks: [], shares: [], johns: [], crew: [], away: [] });
   (markDone as jest.Mock).mockResolvedValue(undefined);
   (undoDone as jest.Mock).mockResolvedValue(undefined);
   (pickPhoto as jest.Mock).mockResolvedValue(null);
@@ -928,5 +931,47 @@ describe("a parent ticking for a kid, in a family", () => {
     read.mockResolvedValue(family(true));
     await open();
     expect(screen.queryByTestId('kid-switch')).toBeNull();
+  });
+});
+
+describe('Your weeks', () => {
+  /** Priya's weeks, a week apart up to this one, earliest first, one John in each with this outcome. */
+  function weeksOf(outcomes: (string | null)[]) {
+    const weeks = outcomes.map((_, i) => {
+      const startsIn = -48 - 168 * (outcomes.length - 1 - i);
+      return { id: `r${i}`, starts_on: at(startsIn).slice(0, 10), starts_at: at(startsIn), ends_at: at(startsIn + 168) };
+    });
+    const johns = outcomes.map((outcome, i) => ({
+      id: `j${i}`, week_id: `r${i}`, user_id: 'priya', name: 'Bins', points: 2, due_at: at(-48 - 168 * (outcomes.length - 1 - i) + 24),
+      done_at: null, outcome, excused: false, covered_by: null,
+    }));
+    return { weeks, shares: [], johns, crew: [], away: [] };
+  }
+
+  it('cheers a good run, with a bar a week', async () => {
+    (loadRecord as jest.Mock).mockResolvedValue(weeksOf(['late', 'done', 'done', 'done', null]));
+    await open();
+    const card = await screen.findByTestId('your-weeks-row');
+    expect(card).toHaveTextContent(/3 weeks on time in a row\. Good going\./);
+    expect(card).toHaveTextContent(/75%/);
+    expect(card).toHaveTextContent(/Next skip in 1 week/);
+    // Always 8 across: 5 weeks so far, this one an outline, 3 still to come.
+    expect(within(card).getAllByTestId(/^bar-/, { includeHiddenElements: true }).map((b) => b.props.testID)).toEqual([
+      'bar-late', 'bar-clean', 'bar-clean', 'bar-clean', 'bar-open', 'bar-none', 'bar-none', 'bar-none',
+    ]);
+    expect(card.props.accessibilityLabel).toBe('3 weeks on time in a row. Good going. 75% on time. Next skip in 1 week');
+  });
+
+  it('meets a slip with a fresh start', async () => {
+    read.mockResolvedValue(snapshot({ members: priyaWith({ streak: 0 }) }));
+    (loadRecord as jest.Mock).mockResolvedValue(weeksOf(['done', 'missed', 'late', null]));
+    await open();
+    expect(await screen.findByTestId('your-weeks-row')).toHaveTextContent(/A few slipped lately\. This week is a fresh start\..*4 weeks on time in a row earns a skip/);
+  });
+
+  it('shows nothing before anything is dealt to you, or when the record cannot be read', async () => {
+    await open();
+    await waitFor(() => expect(screen.queryByTestId('your-weeks-reading')).toBeNull());
+    expect(screen.queryByTestId('your-weeks')).toBeNull();
   });
 });

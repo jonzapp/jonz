@@ -1,4 +1,4 @@
-import { readSpan, trackRecord, type RecordMark, type RecordSpan, type TrackRecord } from '@app/core';
+import { readSpan, trackRecord, type RecordMark, type RecordRow, type RecordSpan, type TrackRecord } from '@app/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
@@ -23,9 +23,10 @@ import { useWords } from '@/hooks/use-words';
 const KEY: readonly RecordMark[] = ['clean', 'late', 'missed', 'covered', 'skipped', 'away', 'open'];
 
 /**
- * The track record, pushed from Week: Week, Month, Year or All, then one
- * row per person, best on time first, with a square per week (on Week, per
- * John) coloured by the worst thing in it, and the key under them. A row
+ * The track record, pushed from Week: Week, Month or Year, then one row per
+ * person, best on time first, with a bar per week (on Week, per John)
+ * coloured by the worst thing in it, or on Year a bar per month split by how
+ * its Johns went, and the key under them. A row
  * opens that person's breakdown, for the same span: on a phone as a page of
  * its own, on a laptop beside the grid (you, to start; ?open= names who).
  */
@@ -51,7 +52,7 @@ function RecordFor({ houseId, userId, span, open }: { houseId: string; userId: s
           span,
          words)
       : null;
-  const shown = record ? KEY.filter((mark) => record.rows.some((r) => r.cells.some((c) => c.mark === mark))) : [];
+  const shown = record ? KEY.filter((mark) => record.rows.some((r) => shows(r, mark))) : [];
 
   return (
     <Screen
@@ -63,7 +64,7 @@ function RecordFor({ houseId, userId, span, open }: { houseId: string; userId: s
     >
       <PageTitle page={words('week.record.title')} />
       <View style={styles.top}>
-        <Meta>{span === 'week' ? words('week.record.introWeek') : words('week.record.intro')}</Meta>
+        <Meta>{words(span === 'week' ? 'week.record.introWeek' : span === 'year' ? 'week.record.introYear' : 'week.record.intro')}</Meta>
         <RecordSpanPicker span={span} />
       </View>
       {record ? (
@@ -78,6 +79,12 @@ function RecordFor({ houseId, userId, span, open }: { houseId: string; userId: s
       )}
     </Screen>
   );
+}
+
+/** Whether a row shows a mark: on Year, as a part of a month's bar. */
+function shows(row: RecordRow, mark: RecordMark): boolean {
+  if (row.months) return row.months.some((m) => (m.parts as Partial<Record<RecordMark, number>>)[mark]);
+  return row.cells.some((c) => c.mark === mark);
 }
 
 /**
@@ -119,7 +126,11 @@ function RecordBody({
       />
     </Section>
   );
-  const key = shown.length > 0 ? <RecordKey marks={shown} changed={record.rows.some((r) => r.cells.some((c) => c.changed))} /> : null;
+  const year = span === 'year';
+  const key =
+    shown.length > 0 ? (
+      <RecordKey marks={shown} parts={year} changed={!year && record.rows.some((r) => r.cells.some((c) => c.changed))} />
+    ) : null;
   if (!beside) {
     return (
       <>

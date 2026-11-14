@@ -128,5 +128,12 @@
   "today.board.waits": "Waits for a parent’s OK",
   "today.board.photo": "Needs a photo: tick it from their Today",
   "today.board.noKids": "No kids yet. Invite them, or add a child from House.",
-  "today.board.parentsOnly": "The board is for a parent to open on a shared screen."
+  "today.board.parentsOnly": "The board is for a parent to open on a shared screen.",
+  "today.weeks.title": "Your weeks",
+  "today.weeks.first": "Your first week. Each week you finish fills a bar.",
+  "today.weeks.goodStart": "{weeks, plural, one {# week on time so far} other {# weeks on time so far}}. Good start.",
+  "today.weeks.going": "{weeks, plural, one {On time last week. Keep it going.} other {# weeks on time in a row. Good going.}}",
+  "today.weeks.slipped": "One week slipped. This week is a fresh start.",
+  "today.weeks.slipping": "A few slipped lately. This week is a fresh start.",
+  "today.weeks.earnSkip": "{weeks} weeks on time in a row earns a skip"
 }
