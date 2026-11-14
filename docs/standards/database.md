@@ -126,6 +126,8 @@ columns read as a fact (`needs_photo`, `awaits_ok`); counts end in
     out as `supabase/checks/registry.sql`), and so is every table grant to
     signed-in or signed-out people; adding one is a decision a reviewer sees.
     Everything else revokes EXECUTE from `public, anon, authenticated`.
+    Neither role holds any right on a table beyond its rows (no truncate,
+    references, trigger or maintain), and a new table starts with none.
     Supabase linter 0029 warns on every callable one; that warning is
     expected for the listed ones. *Ours; Supabase linter 0029.* Checked.
 
