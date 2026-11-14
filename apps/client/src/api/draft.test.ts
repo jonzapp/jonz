@@ -130,4 +130,16 @@ describe('applyDraft', () => {
     await expect(applyDraft({ houseId: HOUSE, rules: RULES, list: { johns, groups: [floor] }, now: NOW }, { base: was, draft: ivyIn, keys: ['group:Main floor'] })).resolves.toBe(1);
     expect(saveGroup).toHaveBeenCalledWith(HOUSE, { id: 'g1', name: 'Main floor', members: [ME, IVY] });
   });
+
+  it('moves a John to the kind the draft names, and adds one with a new kind by its name', async () => {
+    const bath = { id: 'k1', name: 'Bathroom' };
+    const read = johns.map((j) => ({ ...j, kindId: j.id === BATH ? bath.id : null }));
+    const was = listAsDraft(read, [], [bath]);
+    expect(was.johns.map((j) => j.kind)).toEqual(['Bathroom', null]);
+    const moved = { ...was, johns: [{ ...was.johns[0], kind: 'Upstairs' }, was.johns[1], { ...was.johns[1], id: undefined, name: 'Weed', kind: 'Garden' }] };
+    const keys = [`change:${BATH}`, 'add:2'];
+    await expect(applyDraft({ houseId: HOUSE, rules: RULES, list: { johns: read, groups: [] }, now: NOW }, { base: was, draft: moved, keys })).resolves.toBe(2);
+    expect(saveJohn).toHaveBeenCalledWith(HOUSE, RULES, expect.objectContaining({ id: BATH, kindName: 'Upstairs' }), NOW);
+    expect((addJohns as jest.Mock).mock.calls[0][2]).toEqual([expect.objectContaining({ name: 'Weed', kindName: 'Garden' })]);
+  });
 });

@@ -4,7 +4,6 @@ import { tool, type LanguageModel, type ToolSet } from "ai";
 import {
   APP_NAME,
   askToolInput,
-  CATEGORIES,
   DOW_LABEL,
   HOW_JONZ_WORKS,
   JOHN_LIST_ADVICE,
@@ -41,7 +40,7 @@ const DRAFT_MODEL = AGENT_MODEL;
 /** A John's fields as Claude writes them. Loose on purpose: ranges are core's to enforce (tidyDraft). */
 const JohnFields = {
   name: z.string().describe("A few plain words, sentence case: “Bathroom clean”, “Bins out”."),
-  category: z.enum(CATEGORIES),
+  kind: z.string().describe("Its kind, by name: one of the house's kinds (list_johns ends with them), or a short new one when none fits, made when they apply."),
   points: z.number().int().describe("Effort: 1 ≈ 5 min, 2 ≈ 15 min, 3 ≈ 30 min, 5 ≈ an hour, 8–10 half a day, up to 20 a whole day."),
   everyWeeks: z.number().int().describe("1 weekly, 2 every other week, up to 26. Use 1 when it repeats in months."),
   everyMonths: z.number().int().nullable().describe("Every N months (1 monthly, 3 quarterly, 12 yearly), or null for a John that repeats in weeks."),
@@ -133,7 +132,7 @@ Your tools:
 
 Changing the John list:
 - Change only what they ask for. Use change_john with only the fields that change; use the ref from list_johns. Use remove_john to take one off. To change many (or the whole list), make one call per John.
-- Kinds (Kitchen, Garden…) sort the list and give each John its lid colour; they change nothing in the deal, and they aren't groups. list_johns ends with the house's kinds, in order, with their refs. save_kind makes one (kindId null) or renames or recolours one (colour as #rrggbb); order_kinds puts them all in a new order; delete_kind deletes any kind, its Johns moving to moveToId, or else left with no kind until someone gives them one.
+- Kinds (Kitchen, Garden…) sort the list and give each John its lid colour; they change nothing in the deal, and they aren't groups. list_johns ends with the house's kinds, in order, with their refs. A John's kind is its name, in the person's language: use the house's own, and a new name only when none fits (it's made when they apply, after the others). save_kind makes one (kindId null) or renames or recolours one (colour as #rrggbb); order_kinds puts them all in a new order; delete_kind deletes any kind, its Johns moving to moveToId, or else left with no kind until someone gives them one.
 ${JOHN_LIST_ADVICE}
 
 Fixing mistakes (resets, only when house_now is given):

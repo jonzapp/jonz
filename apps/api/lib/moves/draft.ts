@@ -1,6 +1,6 @@
 import "server-only";
 
-import { askRef, CHAT_RESETS_MAX, foldPoint, houseKind, LANGUAGE_IN_ENGLISH, languageOf, wordsFor, ASK_TURN_RESERVE, askAllowance, CHAT_TURNS_PER_PERSON_PER_DAY, draftForModel, editDraft, firstName, groupDef, johnDef, listAsDraft, localDate, offlineTurn, passOf, hasPass, PERMISSIONS, rulesOf, tidyAsk, tidyDraft, tidyReply, type ChatMessage, type ChatMove, type ChatReset, type ChatResponse, type ChatSummed, type EditResult, type HouseDraft, askOperationsFor, type Permission, type RawDraft } from "@app/core";
+import { askRef, CHAT_RESETS_MAX, type Category, foldPoint, houseKind, LANGUAGE_IN_ENGLISH, languageOf, wordsFor, ASK_TURN_RESERVE, askAllowance, CHAT_TURNS_PER_PERSON_PER_DAY, draftForModel, editDraft, firstName, groupDef, johnDef, listAsDraft, localDate, offlineTurn, passOf, hasPass, PERMISSIONS, rulesOf, tidyAsk, tidyDraft, tidyReply, type ChatMessage, type ChatMove, type ChatReset, type ChatResponse, type ChatSummed, type EditResult, type HouseDraft, askOperationsFor, type Permission, type RawDraft } from "@app/core";
 
 import { askClaude, canDraft, type DraftAnswer, type DraftContext, type JonzTools } from "@/lib/ai/house-draft";
 import { sumUpChat, type SumUpChat } from "@/lib/ai/sum-up";
@@ -14,8 +14,8 @@ import { offerResets, resetState, type ResetState } from "./ask-resets";
 import type { Caller, Refusal } from "./disputes";
 import { myPermissions } from "./permitted";
 
-/** A kind of John as list_johns shows it, with its ref for save_kind, order_kinds and delete_kind. */
-type KindLine = { id: string; name: string; colour: string };
+/** A kind of John as list_johns shows it, with its ref for save_kind, order_kinds and delete_kind, and the starting kind it began as. */
+type KindLine = { id: string; name: string; colour: string; preset: Category | null };
 
 /** The John list as list_johns shows it: a line a John, refs and all, then the groups, then the house's kinds in order. */
 function listLines(raw: RawDraft, kinds: readonly KindLine[]): string {
@@ -45,14 +45,14 @@ async function readHouse(caller: Caller, houseId: string) {
     caller.db.from("members").select("user_id, role, joined_at, profiles(display_name, language)").eq("house_id", houseId).order("joined_at"),
     caller.db
       .from("johns")
-      .select("id, name, category, points, every_weeks, every_months, week_of_month, anchor_month, due_dow, due_time, needs_photo, group_id, kind, respond_hours, per_week, crew")
+      .select("id, name, john_kind_id, category, points, every_weeks, every_months, week_of_month, anchor_month, due_dow, due_time, needs_photo, group_id, kind, respond_hours, per_week, crew")
       .eq("house_id", houseId)
       .is("archived_at", null)
       .order("created_at"),
     caller.db.from("groups").select("id, name, group_members(user_id)").eq("house_id", houseId).order("name"),
-    caller.db.from("john_kinds").select("id, name, colour").eq("house_id", houseId).order("position").order("name"),
+    caller.db.from("john_kinds").select("id, name, colour, preset").eq("house_id", houseId).order("position").order("name"),
   ]);
-  return { house, members: members ?? [], johns: johns ?? [], groups: groups ?? [], kinds: kinds ?? [] };
+  return { house, members: members ?? [], johns: johns ?? [], groups: groups ?? [], kinds: (kinds ?? []).map((k) => ({ ...k, preset: k.preset as Category | null })) };
 }
 
 type HouseRead = Awaited<ReturnType<typeof readHouse>>;
@@ -241,8 +241,8 @@ function draftContext({ caller, house, rules, everyone, list, state, now }: Scen
 }
 
 /** Only a turn that changed something sends a draft back; null leaves the card as it was. */
-function draftOut({ caller, everyone, list }: Scene, sitting: Sitting): HouseDraft | null {
-  const known = { johnIds: (list?.johns ?? []).map((j) => j.id!), groups: list?.groups ?? [] };
+function draftOut({ caller, everyone, list, kinds }: Scene, sitting: Sitting): HouseDraft | null {
+  const known = { johnIds: (list?.johns ?? []).map((j) => j.id!), groups: list?.groups ?? [], kinds };
   const people = everyone.map(({ userId, name }) => ({ userId, name }));
   const tidied = sitting.changed ? tidyDraft(sitting.raw, people, caller.userId, known) : null;
   // A new house's draft with nothing in it is no draft; a list taken down to nothing is a change.
@@ -259,7 +259,7 @@ async function openTurn(caller: Caller, houseId: string, now: Date) {
   // The person asking reads Jonz's words, and its answers, in their own language.
   const language = languageOf(members.find((m) => m.user_id === caller.userId)?.profiles?.language);
   // A house with a list already: the House Pass's assistant. Setting up a new house is free.
-  const list = johns.length > 0 ? listAsDraft(johns.map(johnDef), groups.map(groupDef)) : null;
+  const list = johns.length > 0 ? listAsDraft(johns.map(johnDef), groups.map(groupDef), kinds) : null;
   if (list && !hasPass(passOf(house), now)) return { refusal: { code: "P0001", message: "pass_needed" } } as const;
   return { allowed, may, house, members, list, kinds, language };
 }

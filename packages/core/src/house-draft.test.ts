@@ -378,6 +378,95 @@ describe("changing a list that's already there", () => {
   });
 });
 
+describe("a draft's kinds of John", () => {
+  const KITCHEN = { id: "55555555-5555-4555-8555-555555555555", name: "Kitchen", preset: "kitchen" as const };
+  const GARDEN = { id: "66666666-6666-4666-8666-666666666666", name: "Garden", preset: null };
+  const ELSE = { id: "77777777-7777-4777-8777-777777777777", name: "Everything else", preset: "other" as const };
+  const kinds = [KITCHEN, GARDEN, ELSE];
+  const HOB = "11111111-1111-4111-8111-111111111111";
+  const MOW = "22222222-2222-4222-8222-222222222222";
+  const SHED = "33333333-3333-4333-8333-333333333333";
+  const OLD = "44444444-4444-4444-8444-444444444444";
+  const john = (id: string, name: string, more: Partial<JohnDef> = {}): JohnDef => ({ ...NEW_JOHN, id, name, ...more });
+  const list = [
+    john(HOB, "Hob", { kindId: KITCHEN.id, category: "kitchen" }),
+    john(MOW, "Mow", { kindId: GARDEN.id, category: "other" }),
+    // Its kind was deleted, or is one this read doesn't have.
+    john(SHED, "Shed", { kindId: null, category: "bins" }),
+    john(OLD, "Old app", { category: "bins" }),
+  ];
+  const base = listAsDraft(list, [], kinds);
+  const known = { johnIds: list.map((j) => j.id!), groups: [], kinds };
+
+  it("reads each John's kind by name: null for none, left out when it wasn't read", () => {
+    expect(base.johns.map((j) => [j.name, j.kind])).toEqual([
+      ["Hob", "Kitchen"],
+      ["Mow", "Garden"],
+      ["Shed", null],
+      ["Old app", undefined],
+    ]);
+    expect(listAsDraft([john(HOB, "Hob", { kindId: "gone" })], []).johns[0].kind).toBeNull();
+  });
+
+  it("shows Claude the kind's name, or the category only when the kind wasn't read, and reads it back unchanged", () => {
+    const raw = draftForModel(base, people, ME);
+    expect(raw.johns?.map((j) => [j.kind, j.category])).toEqual([
+      ["Kitchen", undefined],
+      ["Garden", undefined],
+      [null, undefined],
+      [undefined, "bins"],
+    ]);
+    const back = tidyDraft(raw, people, ME, known);
+    expect(draftChanges(base, back)).toEqual([]);
+  });
+
+  it("matches the house's kinds by name in any capitals, keeps a new one, and leaves it to the category without a name", () => {
+    const draft = tidyDraft(
+      {
+        johns: [
+          { name: "Wipe the hob", kind: "kitchen" },
+          { name: "Weed", kind: " garden " },
+          { name: "Car wash", kind: "Car" },
+          { name: "Oven", category: "kitchen" },
+          { name: "Bins out", category: "bins" },
+          { name: "Hoover", kind: null, category: "floors" },
+        ],
+      },
+      people,
+      ME,
+      known,
+    );
+    expect(draft.johns.map((j) => [j.name, j.kind, j.category])).toEqual([
+      ["Wipe the hob", "Kitchen", "kitchen"],
+      ["Weed", "Garden", "other"],
+      ["Car wash", "Car", "other"],
+      ["Oven", undefined, "kitchen"],
+      ["Bins out", undefined, "bins"],
+      ["Hoover", null, "other"],
+    ]);
+  });
+
+  it("writes a kind by name, so a new one is made, and none as no kind", () => {
+    const draft = tidyDraft({ johns: [{ name: "Car wash", kind: "Car" }, { name: "Hoover", kind: null }, { name: "Oven", category: "kitchen" }] }, people, ME);
+    const [car, hoover, oven] = draftPlan(draft, [0, 1, 2], []).johns.map((j) => j.john);
+    expect(car).toMatchObject({ kindName: "Car" });
+    expect(car).not.toHaveProperty("kindId");
+    expect(hoover).toMatchObject({ kindId: null });
+    expect(oven).toMatchObject({ category: "kitchen" });
+    expect(oven).not.toHaveProperty("kindName");
+    expect(oven).not.toHaveProperty("kindId");
+  });
+
+  it("counts a move to another kind as a change, and says it by name", () => {
+    const [hob, mow, shed, old] = base.johns;
+    const moved = { ...base, johns: [{ ...hob, kind: "Garden" }, { ...mow, kind: "GARDEN" }, shed, old] };
+    expect(draftChanges(base, moved).map((c) => c.key)).toEqual(["change:" + HOB]);
+    expect(changedLine(hob, { ...hob, kind: "Garden" }, words)).toBe("Kitchen → Garden");
+    expect(changedLine(shed, { ...shed, kind: "Garden" }, words)).toBe("No kind → Garden");
+    expect(changedLine(old, { ...old, category: "kitchen" }, words)).toBe("Bins & recycling → Kitchen");
+  });
+});
+
 describe("askAllowance", () => {
   const resetsAt = new Date("2026-11-09T00:00:00Z");
   it("gives someone living alone the whole pool", () => {
