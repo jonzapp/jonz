@@ -3,10 +3,6 @@
     "scripts/provision/lib.mjs": 516
   },
   "functions": {
-    "apps/api/app/v1/houses/[houseId]/live/route.ts#GET": 78,
-    "apps/api/lib/engine/close.ts#closeWeeks": 63,
-    "apps/api/lib/moves/pass.ts#startCheckout": 61,
-    "apps/v1/src/app.ts#buildApp": 85,
     "packages/core/src/board.ts#buildWeekBoard": 110,
     "packages/core/src/house-draft.ts#tidyDraft": 76,
     "packages/core/src/house-page.ts#settleRows": 72,
@@ -22,16 +18,11 @@
     "packages/core/src/steady-matrix.ts#matrixHouse": 81,
     "packages/core/src/steady-run.ts#steadyRun": 262,
     "packages/core/src/steady.ts#steadyWeek": 366,
-    "packages/core/src/why.ts#dealtPart": 70,
-    "packages/server/src/executor.ts#createExecutor": 245,
-    "packages/server/src/executor.ts#run": 85,
-    "packages/server/src/openapi.ts#openApi": 86,
-    "scripts/live-load.mjs#screen": 64
+    "packages/core/src/why.ts#dealtPart": 70
   },
   "nesting": {
     "packages/core/src/steady-checks.ts#check": 6,
-    "scripts/live-latency.mjs#(anon)": 5,
-    "scripts/live-load.mjs#(anon)": 6
+    "scripts/live-latency.mjs#(anon)": 5
   },
   "parameters": {
     "apps/api/app/files/[what]/[bucket]/[...path]/route.ts#storageUrl": 4,
@@ -210,10 +201,6 @@
     "packages/core/src/word-keys.ts#rulesLine": 4,
     "packages/server/src/db.ts#callFunction": 4,
     "packages/server/src/db.ts#functionCall": 4,
-    "packages/server/src/executor.ts#askApproval": 6,
-    "packages/server/src/executor.ts#entitlement": 5,
-    "packages/server/src/executor.ts#run": 4,
-    "packages/server/src/executor.ts#useApproval": 4,
     "packages/server/src/openapi.ts#schemaOf": 4,
     "scripts/brand.mjs#draw": 4,
     "scripts/brand.mjs#storeFrame": 4,

@@ -160,15 +160,70 @@ function stableJson(value: unknown): string {
   return JSON.stringify(value ?? null);
 }
 
-export function createExecutor(options: ExecutorOptions) {
-  const { sql, verify } = options;
-  const now = options.now ?? (() => new Date());
-  const limits = options.limits ?? { read: 300, write: 60 };
-  const signatureOf = signatures(sql);
-  const approvalUrl = options.approvalUrl ?? APPROVAL_URL;
-  const byName = new Map(options.operations.map((o) => [o.name, o]));
+/** What an executor is made of: the options, with their defaults filled in. */
+interface Engine {
+  sql: Sql;
+  verify: TokenVerifier;
+  now: () => Date;
+  limits: { read: number; write: number };
+  minimumBuilds: MinimumBuilds;
+  signatureOf: ReturnType<typeof signatures>;
+  approvalUrl: (id: string) => string;
+  byName: Map<string, ApiOperation>;
+}
 
-  for (const op of options.operations) {
+/** One request, checked as far as it can be before its transaction opens. */
+interface Call {
+  name: string;
+  op: ApiOperation;
+  context: RequestContext;
+  requestId: string;
+  client: ClientInfo | null;
+  claims: Claims;
+  at: Date;
+  input: Record<string, unknown>;
+  /** The Idempotency-Key of a write, if it sent one. */
+  key: string | null;
+  /** Whether the person must approve it in Jonz first. */
+  approval: boolean;
+  /** The request's fingerprint, when a key or an approval is tied to it. */
+  hash: string | null;
+  status: 200 | 201;
+}
+
+type Outcome = { body: unknown; replayed: boolean; status: 200 | 201 } | { ask: string | null };
+
+export function createExecutor(options: ExecutorOptions) {
+  checkOperations(options.operations);
+  const engine: Engine = {
+    sql: options.sql,
+    verify: options.verify,
+    now: options.now ?? (() => new Date()),
+    limits: options.limits ?? { read: 300, write: 60 },
+    minimumBuilds: options.minimumBuilds ?? {},
+    signatureOf: signatures(options.sql),
+    approvalUrl: options.approvalUrl ?? APPROVAL_URL,
+    byName: new Map(options.operations.map((o) => [o.name, o])),
+  };
+
+  return async function execute(name: string, context: RequestContext, rawInput: unknown): Promise<Result> {
+    const requestId = context.requestId ?? randomUUID();
+    try {
+      return await run(engine, { name, context, rawInput, requestId });
+    } catch (error) {
+      if (error instanceof Problem) throw error;
+      const problem = fromDatabase(error);
+      if (problem.code === "internal") console.error(`[${requestId}] ${name} failed`, error);
+      throw problem;
+    }
+  };
+}
+
+export type Executor = ReturnType<typeof createExecutor>;
+
+/** Refuses, at start-up, a registry whose operations can't be served as they're described. */
+function checkOperations(operations: readonly ApiOperation[]) {
+  for (const op of operations) {
     if (!op.handler && !op.operation.rpc?.name) throw new Error(`${op.name} has neither a database function nor a handler`);
     if (op.handler && op.operation.rpc && !op.operation.rpc.server && !op.operation.server) throw new Error(`${op.name} has a handler but runs its database function alone`);
     if (!op.handler && op.operation.rpc?.server) throw new Error(`${op.name} runs on the server but has no handler`);
@@ -176,234 +231,247 @@ export function createExecutor(options: ExecutorOptions) {
       throw new Error(`${op.name} sunsets less than six months after it was deprecated`);
     }
   }
-
-  /**
-   * A connected app (a token with a client_id) changes nothing unless the
-   * person let it read and change (connected_apps, set on the consent page or
-   * under Connected apps). No row is read only. Read as the API, before
-   * anything else runs, so a read-only app can't even ask for an approval.
-   */
-  async function appMayChange(claims: Claims, effect: "read" | "write") {
-    if (effect !== "write" || typeof claims.client_id !== "string") return;
-    const [row] = await sql<{ access: string }[]>`
-      select access from public.connected_apps where user_id = ${claims.sub}::uuid and client_id = ${claims.client_id}`;
-    if (row?.access !== "write") {
-      throw new Problem("forbidden", "This app can only read. To let it make changes, open You in Jonz, then Connected apps.");
-    }
-  }
-
-  /**
-   * What's only for the person in Jonz itself (`firstParty`): approving a
-   * connected app's request, and Jonz's own AI, which Jonz pays for. A
-   * connected app does its own thinking, with house_guide and the reads.
-   */
-  function onlyInJonz(claims: Claims, op: Operation) {
-    if (op.firstParty && typeof claims.client_id === "string") {
-      throw new Problem("forbidden", "Only you can do this, in Jonz itself. Connected apps can't.");
-    }
-  }
-
-  async function rateLimit(userId: string, effect: "read" | "write", at: Date) {
-    const window = new Date(Math.floor(at.getTime() / 60_000) * 60_000);
-    const [row] = await sql<{ hits: number }[]>`
-      insert into public.api_rate_limits (bucket, window_started_at, hits)
-      values (${`${userId}:${effect}`}, ${window}, 1)
-      on conflict (bucket, window_started_at) do update set hits = public.api_rate_limits.hits + 1
-      returning hits`;
-    if (row.hits > limits[effect]) {
-      const retry = Math.max(1, Math.ceil((window.getTime() + 60_000 - at.getTime()) / 1000));
-      throw new Problem("rate_limited", "That's a lot of requests. Wait a moment and try again.", { "Retry-After": String(retry) });
-    }
-  }
-
-  /**
-   * The house a house operation acts in: its houseId, or the house of the
-   * row it names (an assignment, a dispute…), read as the person so RLS
-   * decides whether they can see it. Failing those, the house they're in
-   * (a person is in one house at a time). Null for other scopes.
-   */
-  async function houseOf(tx: Tx, op: ApiOperation, input: Record<string, unknown>): Promise<string | null> {
-    if (op.operation.scope !== "house") return null;
-    if (typeof input.houseId === "string") return input.houseId;
-    for (const [key, table, column] of HOUSE_FROM) {
-      const value = input[key];
-      if (typeof value !== "string") continue;
-      const [row] = await tx.unsafe<{ house_id: string }[]>(`select house_id from public.${table} where ${column} = $1::uuid limit 1`, [value]);
-      if (!row) throw new Problem("not_found", "That isn't there, or isn't yours to see.");
-      return row.house_id;
-    }
-    const rows = await tx<{ house_id: string }[]>`select house_id from public.members where user_id = (select auth.uid()) limit 2`;
-    if (rows.length !== 1) throw new Problem("invalid_input", "Which house? Name it with houseId.");
-    return rows[0].house_id;
-  }
-
-  async function guard(tx: Tx, op: ApiOperation, house: string | null) {
-    const g = op.operation.guard;
-    if (g.by !== "permission") return;
-    const permission = g.permission;
-    if (op.operation.scope === "house") {
-      const rows = await tx<{ p: string }[]>`select p from public.my_permissions(${house}::uuid) p`;
-      if (!rows.some((r) => r.p === permission)) throw new Problem("forbidden", `You need ${permission} in this house.`);
-    } else if (op.operation.scope === "app") {
-      const [row] = await tx<{ p: string[] | null }[]>`select public.my_app_permissions() as p`;
-      if (!(row.p ?? []).includes(permission)) throw new Problem("forbidden", `You need ${permission}.`);
-    }
-    // Account operations: being signed in is the permission; the function only touches your own rows.
-  }
-
-  /** The House Pass, when the operation needs it: always, or only when the input that turns its feature on is set. */
-  async function entitlement(tx: Tx, op: ApiOperation, house: string | null, input: Record<string, unknown>, at: Date) {
-    const feature = op.operation.entitlement;
-    if (!feature || !house) return;
-    const when = op.operation.entitlementWhen;
-    if (when && (input[when] === undefined || input[when] === null || input[when] === "")) return;
-    const [row] = await tx<{ pass_plan: string; pass_ends_at: string | null; pass_bought_by: string | null }[]>`
-      select pass_plan, pass_ends_at, pass_bought_by from public.houses where id = ${house}::uuid`;
-    if (!row || !hasPass(passOf(row), at)) {
-      throw new Problem("pass_required", "This needs a House Pass.");
-    }
-  }
-
-  /**
-   * Uses the person's approval of exactly this request, once: true if there
-   * was one. Runs as the API, in the operation's own transaction, so a write
-   * that then fails leaves the approval unused.
-   */
-  async function useApproval(tx: Tx, userId: string, hash: string, at: Date): Promise<boolean> {
-    const [used] = await tx<{ id: string }[]>`
-      update public.api_approvals set used_at = ${at}
-      where id = (
-        select id from public.api_approvals
-        where user_id = ${userId}::uuid and request_hash = ${hash} and approved_at is not null
-          and used_at is null and expires_at > ${at}
-        order by approved_at
-        limit 1
-        for update skip locked)
-      returning id`;
-    return Boolean(used);
-  }
-
-  /** Asks the person: the same waiting request again, or a new one. Throws forbidden with the approvalUrl, or plain forbidden if they said no. */
-  async function askApproval(name: string, input: Record<string, unknown>, claims: Claims, hash: string, house: string | null, at: Date): Promise<never> {
-    const [latest] = await sql<{ id: string; declined_at: Date | null }[]>`
-      select id, declined_at from public.api_approvals
-      where user_id = ${claims.sub}::uuid and request_hash = ${hash} and approved_at is null and expires_at > ${at}
-      order by created_at desc
-      limit 1`;
-    if (latest?.declined_at) throw new Problem("forbidden", "You said no to this in Jonz.");
-    const id =
-      latest?.id ??
-      (
-        await sql<{ id: string }[]>`
-          insert into public.api_approvals (user_id, operation, request_hash, input, house_id, client_id, expires_at, created_at)
-          values (${claims.sub}::uuid, ${name}, ${hash}, ${sql.json(input as postgres.JSONValue)}, ${house}::uuid,
-                  ${typeof claims.client_id === "string" ? claims.client_id.slice(0, 100) : null},
-                  ${new Date(at.getTime() + APPROVAL_TTL_MS)}, ${at})
-          returning id`
-      )[0].id;
-    const url = approvalUrl(id);
-    throw new Problem("forbidden", `This can't be undone, so approve it in Jonz first: ${url}`, {}, { approvalUrl: url });
-  }
-
-  async function execute(name: string, context: RequestContext, rawInput: unknown): Promise<Result> {
-    const requestId = context.requestId ?? randomUUID();
-    try {
-      return await run(name, context, rawInput, requestId);
-    } catch (error) {
-      if (error instanceof Problem) throw error;
-      const problem = fromDatabase(error);
-      if (problem.code === "internal") console.error(`[${requestId}] ${name} failed`, error);
-      throw problem;
-    }
-  }
-
-  async function run(name: string, context: RequestContext, rawInput: unknown, requestId: string): Promise<Result> {
-    const op = byName.get(name);
-    if (!op) throw new Problem("not_found", "There's no such operation.");
-    const client: ClientInfo | null = checkClient(context.client, options.minimumBuilds ?? {});
-    const claims: Claims = await verify(context.authorization);
-    const at = now();
-    const effect = op.operation.effect;
-    onlyInJonz(claims, op.operation);
-    await appMayChange(claims, effect);
-    await rateLimit(claims.sub, effect, at);
-
-    const parsed = op.input.safeParse(rawInput ?? {});
-    if (!parsed.success) throw new Problem("invalid_input", z.prettifyError(parsed.error));
-    const input = parsed.data;
-
-    const key = effect === "write" ? context.idempotencyKey?.trim() || null : null;
-    if (key && key.length > 255) throw new Problem("invalid_input", "Idempotency-Key is longer than 255 characters.");
-    const approval = needsApproval(op.operation, claims, context.via);
-    const hash = key || approval ? requestHash(name, input) : null;
-    const status = effect === "write" ? 201 : 200;
-    const fn = op.operation.rpc?.name;
-    const signature = op.handler || !fn ? null : await signatureOf(fn);
-
-    const outcome = (await sql.begin(async (tx) => {
-        if (key) {
-          // Same person, same key: one at a time, on any instance, until this transaction ends.
-          await tx`select pg_advisory_xact_lock(hashtextextended(${`${claims.sub}:${key}`}, 0))`;
-          const [seen] = await tx<{ request_hash: string; status: number; response: unknown }[]>`
-            select request_hash, status, response from public.api_idempotency_keys
-            where user_id = ${claims.sub}::uuid and key = ${key} and created_at > ${new Date(at.getTime() - IDEMPOTENCY_TTL_MS)}`;
-          if (seen) {
-            if (seen.request_hash !== hash) throw new Problem("idempotency_mismatch", "That Idempotency-Key was already used for a different request.");
-            return { body: seen.response, replayed: true, status: seen.status as 200 | 201 };
-          }
-        }
-
-        await becomePerson(tx, claims);
-        const house = await houseOf(tx, op, input);
-        await guard(tx, op, house);
-        await entitlement(tx, op, house, input, at);
-        if (approval) {
-          await becomeApi(tx);
-          if (!(await useApproval(tx, claims.sub, hash!, at))) return { ask: house };
-          await becomePerson(tx, claims);
-        }
-        const raw = op.handler
-          ? await op.handler({ tx, pool: sql, claims, token: bearerToken(context.authorization), origin: context.origin ?? null, input, now: at })
-          : await callFunction(tx, signature!, fn!, (op.rpcArgs ?? defaultRpcArgs)(input));
-        // Checked before commit: a write whose answer breaks its contract is rolled back, not half-reported.
-        // Nothing back where the contract wants something: the row isn't there, or RLS hides it.
-        if ((raw === null || raw === undefined) && !op.output.safeParse(null).success) {
-          throw new Problem("not_found", "That isn't there, or isn't yours to see.");
-        }
-        const out = op.output.safeParse(op.fromResult ? op.fromResult(raw, input) : raw);
-        if (!out.success) {
-          console.error(`[${requestId}] ${name} returned a shape its contract doesn't allow`, z.prettifyError(out.error));
-          throw internalProblem();
-        }
-        const body = out.data;
-
-        if (effect === "write") {
-          await becomeApi(tx);
-          const auditHouse = house ?? (typeof input.houseId === "string" ? input.houseId : null);
-          await tx`
-            insert into public.api_audit_entries (user_id, operation, house_id, via, client, request_id)
-            values (${claims.sub}::uuid, ${name}, ${auditHouse}::uuid,
-                    ${context.via ?? "api"}, ${client ? `${client.platform}/${client.version} (${client.build})` : null}, ${requestId})`;
-          if (key) {
-            const response = sql.json((body ?? null) as postgres.JSONValue);
-            // An expired record for this key is replaced; a live one can't exist here (we hold the lock and looked).
-            await tx`
-              insert into public.api_idempotency_keys (user_id, key, operation, request_hash, status, response, created_at)
-              values (${claims.sub}::uuid, ${key}, ${name}, ${hash}, ${status}, ${response}, ${at})
-              on conflict (user_id, key) do update
-                set operation = excluded.operation, request_hash = excluded.request_hash, status = excluded.status,
-                    response = excluded.response, created_at = excluded.created_at`;
-          }
-        }
-        return { body, replayed: false, status };
-      })) as { body: unknown; replayed: boolean; status: 200 | 201 } | { ask: string | null };
-
-    // Nothing ran: the person hasn't approved this yet.
-    if ("ask" in outcome) return askApproval(name, input, claims, hash!, outcome.ask, at);
-    return outcome.replayed ? { ...outcome, requestId } : { status: outcome.status, body: outcome.body, requestId };
-  }
-
-  return execute;
 }
 
-export type Executor = ReturnType<typeof createExecutor>;
+/**
+ * A connected app (a token with a client_id) changes nothing unless the
+ * person let it read and change (connected_apps, set on the consent page or
+ * under Connected apps). No row is read only. Read as the API, before
+ * anything else runs, so a read-only app can't even ask for an approval.
+ */
+async function appMayChange(sql: Sql, claims: Claims, effect: "read" | "write") {
+  if (effect !== "write" || typeof claims.client_id !== "string") return;
+  const [row] = await sql<{ access: string }[]>`
+    select access from public.connected_apps where user_id = ${claims.sub}::uuid and client_id = ${claims.client_id}`;
+  if (row?.access !== "write") {
+    throw new Problem("forbidden", "This app can only read. To let it make changes, open You in Jonz, then Connected apps.");
+  }
+}
+
+/**
+ * What's only for the person in Jonz itself (`firstParty`): approving a
+ * connected app's request, and Jonz's own AI, which Jonz pays for. A
+ * connected app does its own thinking, with house_guide and the reads.
+ */
+function onlyInJonz(claims: Claims, op: Operation) {
+  if (op.firstParty && typeof claims.client_id === "string") {
+    throw new Problem("forbidden", "Only you can do this, in Jonz itself. Connected apps can't.");
+  }
+}
+
+async function rateLimit(engine: Engine, who: { userId: string; effect: "read" | "write" }, at: Date) {
+  const window = new Date(Math.floor(at.getTime() / 60_000) * 60_000);
+  const [row] = await engine.sql<{ hits: number }[]>`
+    insert into public.api_rate_limits (bucket, window_started_at, hits)
+    values (${`${who.userId}:${who.effect}`}, ${window}, 1)
+    on conflict (bucket, window_started_at) do update set hits = public.api_rate_limits.hits + 1
+    returning hits`;
+  if (row.hits > engine.limits[who.effect]) {
+    const retry = Math.max(1, Math.ceil((window.getTime() + 60_000 - at.getTime()) / 1000));
+    throw new Problem("rate_limited", "That's a lot of requests. Wait a moment and try again.", { "Retry-After": String(retry) });
+  }
+}
+
+/**
+ * The house a house operation acts in: its houseId, or the house of the
+ * row it names (an assignment, a dispute…), read as the person so RLS
+ * decides whether they can see it. Failing those, the house they're in
+ * (a person is in one house at a time). Null for other scopes.
+ */
+async function houseOf(tx: Tx, op: ApiOperation, input: Record<string, unknown>): Promise<string | null> {
+  if (op.operation.scope !== "house") return null;
+  if (typeof input.houseId === "string") return input.houseId;
+  for (const [key, table, column] of HOUSE_FROM) {
+    const value = input[key];
+    if (typeof value !== "string") continue;
+    const [row] = await tx.unsafe<{ house_id: string }[]>(`select house_id from public.${table} where ${column} = $1::uuid limit 1`, [value]);
+    if (!row) throw new Problem("not_found", "That isn't there, or isn't yours to see.");
+    return row.house_id;
+  }
+  const rows = await tx<{ house_id: string }[]>`select house_id from public.members where user_id = (select auth.uid()) limit 2`;
+  if (rows.length !== 1) throw new Problem("invalid_input", "Which house? Name it with houseId.");
+  return rows[0].house_id;
+}
+
+async function guard(tx: Tx, op: ApiOperation, house: string | null) {
+  const g = op.operation.guard;
+  if (g.by !== "permission") return;
+  const permission = g.permission;
+  if (op.operation.scope === "house") {
+    const rows = await tx<{ p: string }[]>`select p from public.my_permissions(${house}::uuid) p`;
+    if (!rows.some((r) => r.p === permission)) throw new Problem("forbidden", `You need ${permission} in this house.`);
+  } else if (op.operation.scope === "app") {
+    const [row] = await tx<{ p: string[] | null }[]>`select public.my_app_permissions() as p`;
+    if (!(row.p ?? []).includes(permission)) throw new Problem("forbidden", `You need ${permission}.`);
+  }
+  // Account operations: being signed in is the permission; the function only touches your own rows.
+}
+
+/** The House Pass, when the operation needs it: always, or only when the input that turns its feature on is set. */
+async function entitlement(tx: Tx, call: Call, house: string | null) {
+  const { op, input } = call;
+  const feature = op.operation.entitlement;
+  if (!feature || !house) return;
+  const when = op.operation.entitlementWhen;
+  if (when && (input[when] === undefined || input[when] === null || input[when] === "")) return;
+  const [row] = await tx<{ pass_plan: string; pass_ends_at: string | null; pass_bought_by: string | null }[]>`
+    select pass_plan, pass_ends_at, pass_bought_by from public.houses where id = ${house}::uuid`;
+  if (!row || !hasPass(passOf(row), call.at)) {
+    throw new Problem("pass_required", "This needs a House Pass.");
+  }
+}
+
+/**
+ * Uses the person's approval of exactly this request, once: true if there
+ * was one. Runs as the API, in the operation's own transaction, so a write
+ * that then fails leaves the approval unused.
+ */
+async function useApproval(tx: Tx, call: Call): Promise<boolean> {
+  const [used] = await tx<{ id: string }[]>`
+    update public.api_approvals set used_at = ${call.at}
+    where id = (
+      select id from public.api_approvals
+      where user_id = ${call.claims.sub}::uuid and request_hash = ${call.hash} and approved_at is not null
+        and used_at is null and expires_at > ${call.at}
+      order by approved_at
+      limit 1
+      for update skip locked)
+    returning id`;
+  return Boolean(used);
+}
+
+/** Asks the person: the same waiting request again, or a new one. Throws forbidden with the approvalUrl, or plain forbidden if they said no. */
+async function askApproval(engine: Engine, call: Call, house: string | null): Promise<never> {
+  const { sql } = engine;
+  const { name, input, claims, hash, at } = call;
+  const [latest] = await sql<{ id: string; declined_at: Date | null }[]>`
+    select id, declined_at from public.api_approvals
+    where user_id = ${claims.sub}::uuid and request_hash = ${hash} and approved_at is null and expires_at > ${at}
+    order by created_at desc
+    limit 1`;
+  if (latest?.declined_at) throw new Problem("forbidden", "You said no to this in Jonz.");
+  const id =
+    latest?.id ??
+    (
+      await sql<{ id: string }[]>`
+        insert into public.api_approvals (user_id, operation, request_hash, input, house_id, client_id, expires_at, created_at)
+        values (${claims.sub}::uuid, ${name}, ${hash}, ${sql.json(input as postgres.JSONValue)}, ${house}::uuid,
+                ${typeof claims.client_id === "string" ? claims.client_id.slice(0, 100) : null},
+                ${new Date(at.getTime() + APPROVAL_TTL_MS)}, ${at})
+        returning id`
+    )[0].id;
+  const url = engine.approvalUrl(id);
+  throw new Problem("forbidden", `This can't be undone, so approve it in Jonz first: ${url}`, {}, { approvalUrl: url });
+}
+
+/** Everything checked before the transaction: the client, the token, the limits and the input. */
+async function prepare(engine: Engine, request: { name: string; context: RequestContext; rawInput: unknown; requestId: string }): Promise<Call> {
+  const { name, context, requestId } = request;
+  const op = engine.byName.get(name);
+  if (!op) throw new Problem("not_found", "There's no such operation.");
+  const client: ClientInfo | null = checkClient(context.client, engine.minimumBuilds);
+  const claims: Claims = await engine.verify(context.authorization);
+  const at = engine.now();
+  const effect = op.operation.effect;
+  onlyInJonz(claims, op.operation);
+  await appMayChange(engine.sql, claims, effect);
+  await rateLimit(engine, { userId: claims.sub, effect }, at);
+
+  const parsed = op.input.safeParse(request.rawInput ?? {});
+  if (!parsed.success) throw new Problem("invalid_input", z.prettifyError(parsed.error));
+  const input = parsed.data;
+
+  const key = effect === "write" ? context.idempotencyKey?.trim() || null : null;
+  if (key && key.length > 255) throw new Problem("invalid_input", "Idempotency-Key is longer than 255 characters.");
+  const approval = needsApproval(op.operation, claims, context.via);
+  const hash = key || approval ? requestHash(name, input) : null;
+  return { name, op, context, requestId, client, claims, at, input, key, approval, hash, status: effect === "write" ? 201 : 200 };
+}
+
+async function run(engine: Engine, request: { name: string; context: RequestContext; rawInput: unknown; requestId: string }): Promise<Result> {
+  const call = await prepare(engine, request);
+  const { op, requestId } = call;
+  const fn = op.operation.rpc?.name;
+  const signature = op.handler || !fn ? null : await engine.signatureOf(fn);
+  const outcome = (await engine.sql.begin((tx) => inTransaction(tx, engine, { call, signature }))) as Outcome;
+  // Nothing ran: the person hasn't approved this yet.
+  if ("ask" in outcome) return askApproval(engine, call, outcome.ask);
+  return outcome.replayed ? { ...outcome, requestId } : { status: outcome.status, body: outcome.body, requestId };
+}
+
+type Signature = Awaited<ReturnType<Engine["signatureOf"]>>;
+
+/** The request's one transaction: the key's earlier answer, or the checks as the person, the work, and its records. */
+async function inTransaction(tx: Tx, engine: Engine, work: { call: Call; signature: Signature | null }): Promise<Outcome> {
+  const { call } = work;
+  const { op, claims, input } = call;
+  const seen = await earlierAnswer(tx, call);
+  if (seen) return seen;
+
+  await becomePerson(tx, claims);
+  const house = await houseOf(tx, op, input);
+  await guard(tx, op, house);
+  await entitlement(tx, call, house);
+  if (call.approval) {
+    await becomeApi(tx);
+    if (!(await useApproval(tx, call))) return { ask: house };
+    await becomePerson(tx, claims);
+  }
+  const body = await perform(tx, engine, work);
+  if (op.operation.effect === "write") await record(tx, engine, { call, house, body });
+  return { body, replayed: false, status: call.status };
+}
+
+/** What this Idempotency-Key was answered with before, if it was: the same answer again. */
+async function earlierAnswer(tx: Tx, call: Call): Promise<Outcome | null> {
+  const { key, claims, at } = call;
+  if (!key) return null;
+  // Same person, same key: one at a time, on any instance, until this transaction ends.
+  await tx`select pg_advisory_xact_lock(hashtextextended(${`${claims.sub}:${key}`}, 0))`;
+  const [seen] = await tx<{ request_hash: string; status: number; response: unknown }[]>`
+    select request_hash, status, response from public.api_idempotency_keys
+    where user_id = ${claims.sub}::uuid and key = ${key} and created_at > ${new Date(at.getTime() - IDEMPOTENCY_TTL_MS)}`;
+  if (!seen) return null;
+  if (seen.request_hash !== call.hash) throw new Problem("idempotency_mismatch", "That Idempotency-Key was already used for a different request.");
+  return { body: seen.response, replayed: true, status: seen.status as 200 | 201 };
+}
+
+/** Runs the operation (its handler, or its database function) as the person, and checks the answer against its contract. */
+async function perform(tx: Tx, engine: Engine, work: { call: Call; signature: Signature | null }): Promise<unknown> {
+  const { call, signature } = work;
+  const { op, name, claims, context, input } = call;
+  const raw = op.handler
+    ? await op.handler({ tx, pool: engine.sql, claims, token: bearerToken(context.authorization), origin: context.origin ?? null, input, now: call.at })
+    : await callFunction(tx, signature!, op.operation.rpc!.name!, (op.rpcArgs ?? defaultRpcArgs)(input));
+  // Checked before commit: a write whose answer breaks its contract is rolled back, not half-reported.
+  // Nothing back where the contract wants something: the row isn't there, or RLS hides it.
+  if ((raw === null || raw === undefined) && !op.output.safeParse(null).success) {
+    throw new Problem("not_found", "That isn't there, or isn't yours to see.");
+  }
+  const out = op.output.safeParse(op.fromResult ? op.fromResult(raw, input) : raw);
+  if (!out.success) {
+    console.error(`[${call.requestId}] ${name} returned a shape its contract doesn't allow`, z.prettifyError(out.error));
+    throw internalProblem();
+  }
+  return out.data;
+}
+
+/** A write's records, as the API: its audit row, and its answer under its Idempotency-Key. */
+async function record(tx: Tx, engine: Engine, done: { call: Call; house: string | null; body: unknown }) {
+  const { name, claims, context, client, input, key, at } = done.call;
+  await becomeApi(tx);
+  const auditHouse = done.house ?? (typeof input.houseId === "string" ? input.houseId : null);
+  await tx`
+    insert into public.api_audit_entries (user_id, operation, house_id, via, client, request_id)
+    values (${claims.sub}::uuid, ${name}, ${auditHouse}::uuid,
+            ${context.via ?? "api"}, ${client ? `${client.platform}/${client.version} (${client.build})` : null}, ${done.call.requestId})`;
+  if (!key) return;
+  const response = engine.sql.json((done.body ?? null) as postgres.JSONValue);
+  // An expired record for this key is replaced; a live one can't exist here (we hold the lock and looked).
+  await tx`
+    insert into public.api_idempotency_keys (user_id, key, operation, request_hash, status, response, created_at)
+    values (${claims.sub}::uuid, ${key}, ${name}, ${done.call.hash}, ${done.call.status}, ${response}, ${at})
+    on conflict (user_id, key) do update
+      set operation = excluded.operation, request_hash = excluded.request_hash, status = excluded.status,
+          response = excluded.response, created_at = excluded.created_at`;
+}

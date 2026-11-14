@@ -13,7 +13,7 @@
 
 import { corsHeaders } from "./cors";
 import { asProblem, newRequestId, openApi, pathKeys, Problem, PROBLEM_MEDIA_TYPE, type ApiOperation, type Executor } from "@app/server";
-import Fastify, { type FastifyInstance, type FastifyReply } from "fastify";
+import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from "fastify";
 import { z } from "zod";
 
 export interface AppOptions {
@@ -101,53 +101,61 @@ export function buildApp(options: AppOptions): FastifyInstance {
   app.get("/v1/health", async () => ({ ok: true }));
 
   for (const op of options.operations) {
-    const keys = pathKeys(op.http.path);
-    // A path key and a GET's query are text: read each by its input type (an audit entry's number, say).
-    const types = queryTypes(op.input);
-    app.route({
-      method: op.http.method,
-      url: fastifyPath(op.http.path),
-      handler: async (req, reply) => {
-        if (op.deprecated) {
-          // RFC 9745: @<unix seconds>. RFC 8594: an HTTP date.
-          reply.header("Deprecation", `@${Math.floor(op.deprecated.since.getTime() / 1000)}`);
-          reply.header("Sunset", op.deprecated.sunset.toUTCString());
-          if (op.deprecated.link) reply.header("Link", `<${op.deprecated.link}>; rel="deprecation"`);
-        }
-        const params = readQuery(req.params as Record<string, unknown>, types);
-        const from = op.http.method === "GET" ? readQuery(req.query as Record<string, unknown>, types) : (req.body ?? {});
-        if (typeof from !== "object" || Array.isArray(from)) {
-          return sendProblem(reply, new Problem("invalid_input", "Send a JSON object."), req.id);
-        }
-        const input: Record<string, unknown> = { ...from };
-        for (const k of keys) {
-          if (k in input && input[k] !== params[k]) return sendProblem(reply, new Problem("invalid_input", `${k} is in the path; don't send it again.`), req.id);
-          input[k] = params[k];
-        }
-        try {
-          const result = await options.execute(
-            op.name,
-            {
-              authorization: header(req.headers.authorization),
-              client: header(req.headers["jonz-client"]),
-              idempotencyKey: header(req.headers["idempotency-key"]),
-              origin: header(req.headers.origin),
-              requestId: req.id,
-              via: "api",
-            },
-            input,
-          );
-          if (result.replayed) reply.header("Idempotent-Replayed", "true");
-          // Serialised here: Fastify would send a bare string (a new row's id) as text.
-          return reply.code(result.status).type("application/json; charset=utf-8").send(JSON.stringify(result.body ?? null));
-        } catch (error) {
-          const problem = asProblem(error);
-          if (problem.code === "internal" && !(error instanceof Problem)) req.log.error(error);
-          return sendProblem(reply, problem, req.id);
-        }
-      },
-    });
+    app.route({ method: op.http.method, url: fastifyPath(op.http.path), handler: serve(op, options.execute) });
   }
 
   return app;
+}
+
+/**
+ * An operation's input, from its path, and its query (a GET) or its JSON
+ * body. A path key and a GET's query are text: each is read by its input
+ * type (an audit entry's number, say). A Problem when it can't be read.
+ */
+function inputOf(op: ApiOperation, req: FastifyRequest, types: QueryTypes): Record<string, unknown> | Problem {
+  const params = readQuery(req.params as Record<string, unknown>, types);
+  const from = op.http.method === "GET" ? readQuery(req.query as Record<string, unknown>, types) : (req.body ?? {});
+  if (typeof from !== "object" || Array.isArray(from)) return new Problem("invalid_input", "Send a JSON object.");
+  const input: Record<string, unknown> = { ...from };
+  for (const k of pathKeys(op.http.path)) {
+    if (k in input && input[k] !== params[k]) return new Problem("invalid_input", `${k} is in the path; don't send it again.`);
+    input[k] = params[k];
+  }
+  return input;
+}
+
+/** The route's handler for one operation: its input read, run through the executor, and answered. */
+function serve(op: ApiOperation, execute: AppOptions["execute"]) {
+  const types = queryTypes(op.input);
+  return async (req: FastifyRequest, reply: FastifyReply) => {
+    if (op.deprecated) {
+      // RFC 9745: @<unix seconds>. RFC 8594: an HTTP date.
+      reply.header("Deprecation", `@${Math.floor(op.deprecated.since.getTime() / 1000)}`);
+      reply.header("Sunset", op.deprecated.sunset.toUTCString());
+      if (op.deprecated.link) reply.header("Link", `<${op.deprecated.link}>; rel="deprecation"`);
+    }
+    const input = inputOf(op, req, types);
+    if (input instanceof Problem) return sendProblem(reply, input, req.id);
+    try {
+      const result = await execute(
+        op.name,
+        {
+          authorization: header(req.headers.authorization),
+          client: header(req.headers["jonz-client"]),
+          idempotencyKey: header(req.headers["idempotency-key"]),
+          origin: header(req.headers.origin),
+          requestId: req.id,
+          via: "api",
+        },
+        input,
+      );
+      if (result.replayed) reply.header("Idempotent-Replayed", "true");
+      // Serialised here: Fastify would send a bare string (a new row's id) as text.
+      return reply.code(result.status).type("application/json; charset=utf-8").send(JSON.stringify(result.body ?? null));
+    } catch (error) {
+      const problem = asProblem(error);
+      if (problem.code === "internal" && !(error instanceof Problem)) req.log.error(error);
+      return sendProblem(reply, problem, req.id);
+    }
+  };
 }
