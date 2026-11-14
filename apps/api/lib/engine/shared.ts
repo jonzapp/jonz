@@ -13,9 +13,11 @@ export type MemberRow = Pick<
 
 /**
  * A line of a push: what someone wrote, as they wrote it, or Jonz's words,
- * said in each reader's own language when it's sent (lib/push.ts).
+ * said in each reader's own language when it's sent (lib/push.ts), with any
+ * time in it on the reader's own clock (`zone`: their phone's, saved with
+ * their settings, or the house's until they have).
  */
-export type PushLine = string | ((words: Words) => string);
+export type PushLine = string | ((words: Words, zone: string) => string);
 
 export interface PushMessage {
   title: PushLine;
@@ -25,7 +27,7 @@ export interface PushMessage {
   url: string;
   /** Which setting it answers to (@app/core notify.ts); `support` has none. */
   kind: PushKind | "support";
-  /** The house's zone, for quiet hours saved without one. */
+  /** The house's zone: for quiet hours, and the times a line says, for someone whose settings have none. */
   zone: string;
   /** A button to answer it from the notification: tick this John, or vote on this dispute. */
   act?: { assignmentId: string } | { disputeId: string };
@@ -36,9 +38,10 @@ export interface PushMessage {
 /** A push as one reader gets it: each line said in their language. */
 export type SaidPush = Omit<PushMessage, "title" | "body"> & { title: string; body: string; language: Language };
 
-export function pushIn(message: PushMessage, language: Language): SaidPush {
+/** A push said in one reader's language, its times on their clock (the house's when left out). */
+export function pushIn(message: PushMessage, language: Language, zone = message.zone): SaidPush {
   const words = wordsFor(language, message.houseKind ?? "housemates");
-  const say = (line: PushLine) => (typeof line === "string" ? line : line(words));
+  const say = (line: PushLine) => (typeof line === "string" ? line : line(words, zone));
   return { ...message, title: say(message.title), body: say(message.body), language };
 }
 

@@ -15,6 +15,7 @@ import { SPACE } from '@/theme';
 import type { JohnSheetContext } from './body';
 import { SheetLines } from './parts';
 import { useWords } from '@/hooks/use-words';
+import { viewingOf } from './viewing';
 
 /**
  * A kid's tick in a family, waiting for a parent's OK: who ticked it and
@@ -43,7 +44,7 @@ export function AwaitsOk({ item, context }: { item: BoardItem; context: JohnShee
 
   return (
     <SheetLines testID="awaits-ok">
-      <Body testID="ticked-line">{tickedLine(item, { people: context.members, viewerId: context.userId, rules: context.rules, now: context.now, words })}</Body>
+      <Body testID="ticked-line">{tickedLine(item, viewingOf(context, words))}</Body>
       {parent ? (
         <>
           <Meta testID="ok-who">{okWho(item, context.members, parentIds, context.userId, words)}</Meta>

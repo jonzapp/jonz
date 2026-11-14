@@ -3028,6 +3028,7 @@ export type Database = {
       my_app_role: { Args: never; Returns: string }
       my_app_access: { Args: never; Returns: Json }
       my_language: { Args: never; Returns: string }
+      time_zones: { Args: never; Returns: string[] }
       my_permissions: { Args: { h: string }; Returns: string[] }
       my_open_assignment: {
         Args: { p_assignment: string; p_permission?: string }

@@ -19,6 +19,7 @@ import { NO_PREFS, type MyPrefs } from "./steady-prefs";
 import { swapAsk, swapOffersToYou, type SwapAsk, type SwapOfferRow, type SwapOfferToYou } from "./steady-swap";
 import { forfeits, overdueCost, type Person } from "./today-parts";
 import { addDaysTo, monthOf } from "./week";
+import type { Viewing } from "./viewing";
 import type { Words } from "./words-for";
 
 export { tickerOf } from "./today-parts";
@@ -28,8 +29,9 @@ export { tickerOf } from "./today-parts";
 // lateness costs, from the house's rules and what's left of your stake),
 // the standing line, time away, the setup checklist, and what the sheet
 // offers for a John and whoever is looking. Pure: every function that
-// reads the clock takes `now`, and times are in the house's zone
-// (`rules.timezone`).
+// reads the clock takes `now`. Weeks and months are the house's
+// (`rules.timezone`); a time is said in the zone the caller passes, the
+// reader's own when their clock isn't the house's.
 
 /** Settled without a forfeit still to see: what "Done (n)" folds away. A missed John stays out, in hazard. */
 const FOLDED: ReadonlySet<LiveStatus> = new Set<LiveStatus>(["done", "late", "excused"]);
@@ -182,8 +184,7 @@ export interface NextUpMeta {
  * "Overdue since Tue" with "£1 now, £3 if missed". `room` caps the costs
  * at what's left of your stake (forfeitRoom).
  */
-export function nextUpMeta(item: BoardItem, rules: HouseRules, now: Date, words: Words, room: number | null = null): NextUpMeta {
-  const zone = rules.timezone;
+export function nextUpMeta(item: BoardItem, { rules, now, zone, words }: Pick<Viewing, "rules" | "now" | "zone" | "words">, room: number | null = null): NextUpMeta {
   const kind = johnKind(item.category, item.kindName);
   if (item.status === "overdue") {
     return {

@@ -1,4 +1,4 @@
-import { AWAY_MAKEUP, checkRules, makeupHint, phoneZoneLine, type Words, familyHides, CURRENCIES, COVER_GRACE_HOURS, LATE_HOURS, CURRENCY_SYMBOL, DISPUTE_HOURS, dayChoices, MAKEUP_LABEL, rulesChanged, rulesDraft, rulesRefusalField, SETTLE_IN, DEAL_MODES, type Currency, type HouseKind, type HouseRules, type RulesDraft, type RulesField, type SettleIn } from '@app/core';
+import { AWAY_MAKEUP, checkRules, makeupHint, type Words, familyHides, CURRENCIES, COVER_GRACE_HOURS, LATE_HOURS, CURRENCY_SYMBOL, DISPUTE_HOURS, dayChoices, MAKEUP_LABEL, rulesChanged, rulesDraft, rulesRefusalField, SETTLE_IN, DEAL_MODES, type Currency, type HouseKind, type HouseRules, type RulesDraft, type RulesField, type SettleIn } from '@app/core';
 import { useState } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
@@ -9,13 +9,12 @@ import { Field } from '@/components/field';
 import { GroupItem } from '@/components/group';
 import { useContentWidth } from '@/components/screen';
 import { Section } from '@/components/section';
+import { ZoneField } from '@/components/house/zone-picker';
 import { PickRow } from '@/components/setup/pick-row';
 import { Meta } from '@/components/text';
-import { TextButton } from '@/components/text-button';
 import { ButtonRow } from '@/components/button-row';
 import { useBudgetChoices } from '@/hooks/use-budget';
 import { useMove } from '@/hooks/use-move';
-import { deviceTimeZone } from '@/locale';
 import { GUTTER, INSET, LABEL_GAP, SPACE, useTheme, WIDE } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
@@ -264,48 +263,35 @@ function FairnessRules({ form }: { form: RulesFormState }) {
   );
 }
 
-/** The house itself: its name, the day its week starts and its time zone. */
+/** The house itself: its name, the day its week starts and its time zone, which every week and due time follows. */
 function HouseFields({ form }: { form: RulesFormState }) {
   const words = useWords();
   const { draft: v, set, problems, pending } = form;
-  const phoneZone = deviceTimeZone();
   return (
-    <Section label={words('house.setup.house')} testID="rules-house">
-      <GroupItem>
-        <Field
-          label={words('house.rules.name')}
-          value={v.name}
-          onChangeText={(name) => set({ name })}
-          maxLength={60}
-          editable={!pending}
-          problem={problems.name}
-          testID="rules-name"
+    <View style={styles.noted}>
+      <Section label={words('house.setup.house')} testID="rules-house">
+        <GroupItem>
+          <Field
+            label={words('house.rules.name')}
+            value={v.name}
+            onChangeText={(name) => set({ name })}
+            maxLength={60}
+            editable={!pending}
+            problem={problems.name}
+            testID="rules-name"
+          />
+        </GroupItem>
+        <PickRow
+          label={words('house.rules.weekStarts')}
+          options={dayChoices(words).map((d) => ({ value: d.value, label: d.spoken }))}
+          value={v.weekStarts}
+          onChange={(weekStarts) => set({ weekStarts })}
+          disabled={pending}
         />
-      </GroupItem>
-      <PickRow
-        label={words('house.rules.weekStarts')}
-        options={dayChoices(words).map((d) => ({ value: d.value, label: d.spoken }))}
-        value={v.weekStarts}
-        onChange={(weekStarts) => set({ weekStarts })}
-        disabled={pending}
-      />
-      <GroupItem>
-        <Field
-          label={words('house.rules.timezone')}
-          value={v.timezone}
-          onChangeText={(timezone) => set({ timezone })}
-          autoCapitalize="none"
-          autoCorrect={false}
-          hint={words('house.rules.timezoneHint')}
-          editable={!pending}
-          problem={problems.timezone}
-          testID="rules-timezone"
-        />
-        {phoneZone !== v.timezone ? (
-          <TextButton label={phoneZoneLine(phoneZone, words)} align="start" onPress={() => set({ timezone: phoneZone })} />
-        ) : null}
-      </GroupItem>
-    </Section>
+        <ZoneField value={v.timezone} onChange={(timezone) => set({ timezone })} disabled={pending} problem={problems.timezone} />
+      </Section>
+      <Meta style={styles.note}>{words('house.rules.timezoneHint')}</Meta>
+    </View>
   );
 }
 

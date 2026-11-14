@@ -130,8 +130,7 @@
   "house.deal.openHouse": "Ouvrir Maison",
   "house.rules.name": "Nom de la maison",
   "house.rules.timezone": "Fuseau horaire",
-  "house.rules.timezoneHint": "Les semaines et les heures prévues suivent le fuseau horaire de la maison, où que chacun soit.",
-  "house.rules.phoneZone": "Utiliser celui de ce téléphone : {zone}",
+  "house.rules.timezoneHint": "Chaque semaine et chaque heure prévue suit le fuseau de la maison. Chacun voit les heures sur sa propre horloge.",
   "house.rules.weekStarts": "La semaine commence le",
   "house.rules.currency": "Devise",
   "house.rules.stake": "Mise mensuelle ({symbol})",
@@ -743,5 +742,13 @@
   "house.reset.done": "{everything, select, true {{house} repart de zéro. Ajoute tes Johns, puis distribue la première semaine.} other {{house} est revenue à avant sa première distribution. Distribue la première semaine quand tout le monde est là.}}",
   "house.reset.wall": "{everything, select, true {{you, select, true {Tu as tout réinitialisé dans la maison} other {{who} a tout réinitialisé dans la maison}}} other {{you, select, true {Tu as réinitialisé l’historique de la maison} other {{who} a réinitialisé l’historique de la maison}}}}",
   "house.reset.wallNow": "{everything, select, true {Tout a été réinitialisé dans la maison} other {L’historique de la maison a été réinitialisé}}",
-  "house.reset.wallDetail": "Retour à avant la première distribution"
+  "house.reset.wallDetail": "Retour à avant la première distribution",
+  "house.zone.description": "Les semaines et les heures prévues de la maison le suivent.",
+  "house.zone.search": "Chercher une ville ou un pays",
+  "house.zone.suggested": "Suggestions",
+  "house.zone.setNow": "Actuel, {offset}",
+  "house.zone.yourPhone": "Celui de ton téléphone, {offset}",
+  "house.zone.all": "Tous les fuseaux, de A à Z",
+  "house.zone.found": "{n, plural, one {# trouvé} other {# trouvés}}",
+  "house.zone.none": "Rien ne correspond à « {query} ». Essaie la ville la plus proche, ou le pays."
 }

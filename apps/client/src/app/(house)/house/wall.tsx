@@ -1,4 +1,4 @@
-import { dayLabel, undoForPost, wallDays, wallFeedRow, type WallFeedRow } from '@app/core';
+import { dayLabel, undoForPost, UTC, wallDays, wallFeedRow, type WallFeedRow } from '@app/core';
 import { MegaphoneIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { View } from 'react-native';
@@ -24,6 +24,8 @@ import { useReact, useWallFeed, wallPages } from '@/hooks/use-wall';
 import { Waiting } from '@/components/waiting';
 import { WallOutline } from '@/components/page-outlines';
 import { useWords } from '@/hooks/use-words';
+import { useZones } from '@/hooks/use-zones';
+import { ZoneLine } from '@/components/zone-line';
 
 /**
  * The whole Wall, pushed from House: what the house did, a day at a time,
@@ -52,7 +54,9 @@ function WallFor({ houseId, userId }: { houseId: string; userId: string }) {
   const [open, setOpen] = useState<string | null>(null);
 
   const { events, photos } = wallPages(feed.data?.pages ?? []);
-  const scene = view ? wallScene(view, userId, events, words, true) : null;
+  // Times and days on your own clock when it's away from the house's (Your time, said once).
+  const zones = useZones(view?.snapshot.rules.timezone ?? UTC, view?.now ?? new Date());
+  const scene = view ? wallScene(view, { userId, events, words, zone: zones.shown, clock: true }) : null;
   const rows = scene ? events.map((e) => wallFeedRow(e, scene, words)) : [];
   const openRow = open ? rows.find((r) => r.id === open) : undefined;
   if (open && feed.data && scene && !openRow) setOpen(null);
@@ -107,6 +111,7 @@ function WallFor({ houseId, userId }: { houseId: string; userId: string }) {
     const days = wallDays(rows, scene.zone, scene.now, words);
     body = (
       <>
+        <ZoneLine zones={zones} now={scene.now} />
         {days.map((day) => (
           <Section key={day.date} label={day.label} right={day.sub ?? undefined} testID="wall-day">
             {day.items.map((item) =>

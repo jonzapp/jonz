@@ -103,6 +103,11 @@
 - Forms sit in a column capped at `FORM_MAX` (520) on a laptop. (**New**)
 - A short select opens in place (`PickRow`); a radio or checkbox is a
   `ChoiceRow`. (AGENTS.md)
+- **A choice from a long list** (the house's time zone) is a row showing
+  what's set, opening a sheet: a `SearchBox`, the likely ones first under
+  Suggested, then the whole list A to Z, each row saying enough to check it
+  (a zone's offset and its time now). Typing narrows it by any word.
+  (Search by city, 14 Nov)
 - **A few quick choices side by side are a `Segmented`,** wrapped into
   equal rows with `perRow` where the words don't fit one row; never pills
   of our own, and the chosen one is never amber (the John editor's How

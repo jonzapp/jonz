@@ -114,3 +114,5 @@ export * from "./week-summary";
 export * from "./why";
 export * from "./word-keys";
 export * from "./words-for";
+export * from "./zone-countries";
+export * from "./zones";

@@ -32,6 +32,8 @@ import { useStake } from '@/hooks/use-stake';
 import { useTable } from '@/hooks/use-table';
 import { INSET, WIDE } from '@/theme';
 import { useWords } from '@/hooks/use-words';
+import { useZones } from '@/hooks/use-zones';
+import { ZoneLine } from '@/components/zone-line';
 
 /**
  * Week: how the whole house's week is going. The title bar's "•••" holds
@@ -143,7 +145,9 @@ function Board({
   const [filter, setFilter] = useState<WeekPart | null>(null);
   const userId = me?.userId ?? '';
   const nameOf = (id: string) => members.find((m) => m.userId === id)?.name ?? null;
-  const context: JohnRowContext = { houseId: house.id, userId, zone: rules.timezone, rules, now, nameOf };
+  // Times on your own clock when it's away from the house's (Your time, said once); the week stays the house's.
+  const zones = useZones(rules.timezone, now);
+  const context: JohnRowContext = { houseId: house.id, userId, zone: zones.shown, rules, now, nameOf };
 
   // A week of only on-call Johns has nothing on it until someone flags one, but is dealt.
   if (!board.week || (board.items.length === 0 && snapshot.onCall.length === 0)) {
@@ -169,6 +173,8 @@ function Board({
   const swapReady = canSwap(board, me);
 
   const summaryBar = (
+    <>
+    <ZoneLine zones={zones} now={now} />
     <TourSpot id="week.summary">
     <WeekSummaryBar
       range={weekRangeLine(week.startsAt, week.endsAt, now, rules.timezone, words)}
@@ -188,6 +194,7 @@ function Board({
       }
     />
     </TourSpot>
+    </>
   );
   const johnRows = <WeekJohns view={view} wide={wide} shown={shown} context={context} awayOf={awayOf} />;
   const fair = shares ? <Fairness view={view} balances={shares.balances} context={context} /> : null;

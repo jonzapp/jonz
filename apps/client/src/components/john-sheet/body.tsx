@@ -30,6 +30,7 @@ import { UndoPart } from './undo';
 import { Disputed } from './vote';
 import { JohnWhy } from './why';
 import { useWords } from '@/hooks/use-words';
+import { viewingOf } from './viewing';
 
 /**
  * What the John sheet was opened for, when it was opened for something in
@@ -46,7 +47,7 @@ export interface JohnSheetContext {
   houseId: string;
   /** Who's looking. */
   userId: string;
-  /** The house's time zone (also `rules.timezone`). */
+  /** The zone times are said in: the reader's own clock when it's away from the house's, else the house's (`rules.timezone`, which weeks and months keep to). */
   zone: string;
   /** The house's rules: the currency, the stake and what late and missed cost. */
   rules: HouseRules;
@@ -150,8 +151,8 @@ function ModeContent({ item, context, onRollCall }: { item: BoardItem; context: 
 function JohnSheetHeader({ item, context }: { item: BoardItem; context: JohnSheetContext }) {
   const words = useWords();
   const { colors, type } = useTheme();
-  const room = forfeitRoom(context.stake, item.userId, monthOf(item.dueAt, context.zone));
-  const when = sheetWhen(item, { people: context.members, viewerId: context.userId, rules: context.rules, now: context.now, words }, room);
+  const room = forfeitRoom(context.stake, item.userId, monthOf(item.dueAt, context.rules.timezone));
+  const when = sheetWhen(item, viewingOf(context, words), room);
   const icon = when.sign ? STATUS_MARK[when.sign].icon : null;
   const Sign = icon ? STATUS_ICON[icon] : null;
   return (

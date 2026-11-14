@@ -12,6 +12,7 @@ import { HouseSettings } from "./schemas";
 import type { Words } from "./words-for";
 import { dueWords, oftenWords, placeWord } from "./repeat";
 import { addDaysTo } from "./week";
+import { zoneCity } from "./zones";
 import { makeupKey } from "./word-keys";
 
 const capitalise = (word: string) => word.charAt(0).toLocaleUpperCase() + word.slice(1);
@@ -147,12 +148,6 @@ export function johnFacts(john: JohnDef, about: { group?: string | null; kind?: 
   ];
 }
 
-/** Where a house's time zone is, as people say it: "London" for Europe/London, "New York" for America/New_York. */
-export function zonePlace(timezone: string): string {
-  const last = timezone.split("/").filter(Boolean).pop() ?? timezone;
-  return last.replaceAll("_", " ");
-}
-
 /** A forfeit as the rules show it: "−£1", or nothing at all. */
 function forfeit(minor: number, currency: Currency, words: Words): string {
   return minor === 0 ? words('house.setup.nothing') : formatSigned(-minor, currency, words);
@@ -189,7 +184,7 @@ export function rulesRows(
     { label: words('house.setup.lateWindow'), value: words('house.setup.lateFor', { hours: rules.lateHours }) },
     { label: words('house.setup.cover'), value: words('house.setup.coverWindow', { hours: rules.coverGraceHours }) },
     { label: words('house.setup.away'), value: (awayMakeup === 100 || awayMakeup === 50 || awayMakeup === 0 ? words(`house.setup.makeup.${makeupKey(awayMakeup)}`) : null) ?? MAKEUP_LABEL[awayMakeup] ?? words('house.setup.makeupPercent', { percent: awayMakeup }) },
-    { label: words('house.setup.weekStarts'), value: words('house.setup.weekStartsAt', { day: weekdayName(rules.weekStarts, words), place: zonePlace(rules.timezone) }) },
+    { label: words('house.setup.weekStarts'), value: words('house.setup.weekStartsAt', { day: weekdayName(rules.weekStarts, words), place: zoneCity(rules.timezone) }) },
   ];
   // After the money it's about, when it's known.
   if (settleIn) rows.splice(5, 0, { label: words('house.setup.settleIn'), value: words(`house.setup.settleInValue.${settleIn}`) });

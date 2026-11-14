@@ -130,8 +130,7 @@
   "house.deal.openHouse": "Open House",
   "house.rules.name": "House name",
   "house.rules.timezone": "Time zone",
-  "house.rules.timezoneHint": "Weeks and due times follow the house’s time zone, wherever each of you is.",
-  "house.rules.phoneZone": "Use this phone’s: {zone}",
+  "house.rules.timezoneHint": "Every week and due time follows the house’s zone. Each of you sees times on your own clock.",
   "house.rules.weekStarts": "Week starts",
   "house.rules.currency": "Currency",
   "house.rules.stake": "Monthly stake ({symbol})",
@@ -743,5 +742,13 @@
   "house.reset.done": "{everything, select, true {{house} is a clean slate. Add your Johns, then deal the first week.} other {{house} is back to before its first deal. Deal the first week when everyone’s in.}}",
   "house.reset.wall": "{everything, select, true {{who} reset everything in the house} other {{who} reset the house’s history}}",
   "house.reset.wallNow": "{everything, select, true {Everything in the house was reset} other {The house’s history was reset}}",
-  "house.reset.wallDetail": "Back to before the first deal"
+  "house.reset.wallDetail": "Back to before the first deal",
+  "house.zone.description": "The house’s weeks and due times follow it.",
+  "house.zone.search": "Search a city or country",
+  "house.zone.suggested": "Suggested",
+  "house.zone.setNow": "Set now, {offset}",
+  "house.zone.yourPhone": "Your phone’s, {offset}",
+  "house.zone.all": "Every zone, A to Z",
+  "house.zone.found": "{n, plural, one {# found} other {# found}}",
+  "house.zone.none": "Nothing matches “{query}”. Try the nearest city, or the country."
 }

@@ -23,6 +23,7 @@ import { StreetPlate } from '@/components/street-plate';
 import { Lead, Meta, SectionLabel } from '@/components/text';
 import { TextButton } from '@/components/text-button';
 import { useWords } from '@/hooks/use-words';
+import { useShownZone } from '@/hooks/use-zones';
 import { useTick } from '@/hooks/use-tick';
 import { HAIR, INSET, MARK_GAP, NARROW, SPACE, TAP, useTheme } from '@/theme';
 
@@ -65,6 +66,7 @@ export function NextUp({
   photos?: boolean;
 }) {
   const words = useWords();
+  const zone = useShownZone(rules.timezone, now);
   switch (state.kind) {
     case 'john':
       // Keyed by the John, so a tick under way never carries over to the next one.
@@ -84,7 +86,7 @@ export function NextUp({
     case 'clear':
       return (
         <NextUpCard
-          lead={clearUntil(state.until, rules.timezone, now, words)}
+          lead={clearUntil(state.until, zone, now, words)}
           body={state.nothingYours ? words('today.nextUp.nothingYours') : words('today.nextUp.clearBody')}
         />
       );
@@ -154,7 +156,8 @@ function NextJohn({
   const sheet = useJohnSheet();
   const tick = useTick(houseId, item.id);
   const [pressed, setPressed] = useState(false);
-  const meta = nextUpMeta(item, rules, now, words, room);
+  const zone = useShownZone(rules.timezone, now);
+  const meta = nextUpMeta(item, { rules, now, zone, words }, room);
   const offersCant = cant.immunity || cant.swap;
   // On a small phone the photo button beside Mark done is just its icon, so Mark done keeps to one line.
   const narrow = useWindowDimensions().width < NARROW;
@@ -195,7 +198,7 @@ function NextJohn({
       ) : null}
       {plannable(item, item.userId) ? (
         <View style={styles.words}>
-          <PlanIt houseId={houseId} item={item} zone={rules.timezone} now={now} bestTime={bestTime} />
+          <PlanIt houseId={houseId} item={item} zone={zone} now={now} bestTime={bestTime} />
         </View>
       ) : null}
 

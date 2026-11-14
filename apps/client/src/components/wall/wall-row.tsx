@@ -123,17 +123,21 @@ export const REACTION_ICON: Record<ReactionKind, LucideIcon> = {
 
 /**
  * What the Wall's rows need from the house: who's looking, who lives here,
- * its clock, where this week's Johns have got to, and which ticks among
- * `events` the house struck out. `clock` sets the time as "14:10" (the
- * whole Wall, by day) rather than "3h" (House).
+ * the clock times are said on (`zone`: the reader's own, or the house's),
+ * where this week's Johns have got to, and which ticks among `events` the
+ * house struck out. `clock` sets the time as "14:10" (the whole Wall, by
+ * day) rather than "3h" (House).
  */
-export function wallScene(view: HouseView, userId: string, events: readonly WallEvent[], words: Words, clock = false): WallScene {
+export function wallScene(
+  view: HouseView,
+  { userId, events, words, zone, clock = false }: { userId: string; events: readonly WallEvent[]; words: Words; zone: string; clock?: boolean },
+): WallScene {
   const status = new Map(view.board.items.map((item) => [item.id, item.status]));
   return {
     me: userId,
     members: view.snapshot.members,
     currency: view.snapshot.rules.currency,
-    zone: view.snapshot.rules.timezone,
+    zone,
     now: view.now,
     statusOf: (id) => status.get(id),
     struck: struckAt(events),

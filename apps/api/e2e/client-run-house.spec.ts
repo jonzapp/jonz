@@ -60,7 +60,8 @@ test("run a house from nothing on the phone", async ({ browser }) => {
   // The John list: two Johns, then one edited.
   await addJohn(page, "Bins", 2);
   await addJohn(page, "Bathroom", 4);
-  await list.getByRole("button", { name: words('house.johns.edit', { name: "Bins" }) }).click();
+  // Its row, not the Kinds list's "Edit Bins & recycling".
+  await list.getByRole("button", { name: new RegExp(`^${words('house.johns.edit', { name: "Bins" })}, `) }).click();
   // When it comes round is a sentence; its day opens the days, and Done goes back to it.
   await page.getByTestId("john-form").getByTestId("timing-day").click();
   await page.getByTestId("timing-days").getByRole("radio", { name: "Thursday" }).click();

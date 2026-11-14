@@ -7,7 +7,7 @@ import { rightNow } from "@/tests/support/clock";
 import { track } from "@/tests/support/scope";
 
 /**
- * Each house's own kinds of John (20270113090000_john_kinds.sql): the six it
+ * Each house's own kinds of John (20270115090000_john_kinds.sql): the six it
  * starts with, in its maker's language; an admin adding, renaming,
  * recolouring, ordering and deleting them; a John written by kind id, by
  * kind name or by its older category; and the reads that carry them.

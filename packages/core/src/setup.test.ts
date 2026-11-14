@@ -28,7 +28,6 @@ import {
   tripMeta,
   tripStarted,
   upcomingTrips,
-  zonePlace,
 } from "./setup";
 
 const words = wordsFor("en", "housemates");
@@ -253,13 +252,6 @@ describe("rulesRows", () => {
   });
 });
 
-describe("zonePlace", () => {
-  it("names the place a zone is named after", () => {
-    expect(zonePlace("Europe/London")).toBe("London");
-    expect(zonePlace("America/Argentina/Buenos_Aires")).toBe("Buenos Aires");
-    expect(zonePlace("UTC")).toBe("UTC");
-  });
-});
 
 describe("adminsLine", () => {
   const sam = { userId: "sam", name: "Sam Carter", role: "admin" };

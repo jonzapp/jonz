@@ -2932,6 +2932,46 @@
         }
       }
     },
+    "/v1/time-zones": {
+      "get": {
+        "operationId": "time_zones",
+        "summary": "Every time zone a house can be set to, by its IANA name (Europe/London), and UTC",
+        "tags": [
+          "account"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/JonzClient"
+          }
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "x-jonz-effect": "read",
+        "x-jonz-permission": "account:read",
+        "responses": {
+          "200": {
+            "description": "Done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "description": "An IANA time zone, such as Europe/London"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
     "/v1/me/notifications": {
       "get": {
         "operationId": "my_notifications",
@@ -5228,6 +5268,18 @@
                               }
                             ]
                           },
+                          "kindName": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "kindColour": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
                           "crew": {
                             "type": "array",
                             "items": {
@@ -5295,6 +5347,8 @@
                           "coverHoldEndsAt",
                           "everyWeeks",
                           "everyMonths",
+                          "kindName",
+                          "kindColour",
                           "crew"
                         ],
                         "additionalProperties": false
@@ -5415,13 +5469,27 @@
                                         "type": "null"
                                       }
                                     ]
+                                  },
+                                  "kindName": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "kindColour": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
                                   }
                                 },
                                 "required": [
                                   "name",
                                   "category",
                                   "needsPhoto",
-                                  "archivedAt"
+                                  "archivedAt",
+                                  "kindName",
+                                  "kindColour"
                                 ],
                                 "additionalProperties": false
                               },
@@ -5545,7 +5613,7 @@
     "/v1/houses/{houseId}/johns": {
       "get": {
         "operationId": "john_list",
-        "summary": "The house's John list, oldest first, and its groups",
+        "summary": "The house's John list, oldest first, its kinds in order, and its groups",
         "tags": [
           "house"
         ],
@@ -5591,6 +5659,18 @@
                           },
                           "name": {
                             "type": "string"
+                          },
+                          "johnKindId": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
                           },
                           "category": {
                             "type": "string"
@@ -5712,6 +5792,7 @@
                         "required": [
                           "id",
                           "name",
+                          "johnKindId",
                           "category",
                           "points",
                           "everyWeeks",
@@ -5730,6 +5811,44 @@
                           "keepDay",
                           "payMinor",
                           "minAge"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "kinds": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "colour": {
+                            "type": "string"
+                          },
+                          "position": {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          "preset": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "colour",
+                          "position",
+                          "preset"
                         ],
                         "additionalProperties": false
                       }
@@ -5767,6 +5886,7 @@
                   },
                   "required": [
                     "johns",
+                    "kinds",
                     "groups"
                   ],
                   "additionalProperties": false
@@ -5838,6 +5958,23 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 60
+                  },
+                  "kindId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "kindName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 30
                   },
                   "category": {
                     "type": "string",
@@ -5978,7 +6115,6 @@
                 },
                 "required": [
                   "name",
-                  "category",
                   "points",
                   "everyWeeks",
                   "dueDow",
@@ -9336,6 +9472,9 @@
                                   "pass_checkout",
                                   "react",
                                   "unreact",
+                                  "save_kind",
+                                  "order_kinds",
+                                  "delete_kind",
                                   "save_house_rules",
                                   "set_deal_mode",
                                   "answer_tick",
@@ -10084,6 +10223,23 @@
                           "minLength": 1,
                           "maxLength": 60
                         },
+                        "kindId": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "kindName": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 30
+                        },
                         "category": {
                           "type": "string",
                           "enum": [
@@ -10223,7 +10379,6 @@
                       },
                       "required": [
                         "name",
-                        "category",
                         "points",
                         "everyWeeks",
                         "dueDow",
@@ -10302,6 +10457,23 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 60
+                  },
+                  "kindId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "kindName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 30
                   },
                   "category": {
                     "type": "string",
@@ -10442,7 +10614,6 @@
                 },
                 "required": [
                   "name",
-                  "category",
                   "points",
                   "everyWeeks",
                   "dueDow",
@@ -10500,6 +10671,237 @@
           },
           "default": {
             "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/v1/houses/{houseId}/kinds": {
+      "post": {
+        "operationId": "save_kind",
+        "summary": "Make or change a kind of John: its name and lid colour",
+        "tags": [
+          "house"
+        ],
+        "parameters": [
+          {
+            "name": "houseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/JonzClient"
+          }
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "x-jonz-effect": "write",
+        "x-jonz-permission": "johns:write",
+        "responses": {
+          "201": {
+            "description": "Done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 30
+                  },
+                  "colour": {
+                    "type": "string",
+                    "pattern": "^#[0-9a-fA-F]{6}$"
+                  },
+                  "kindId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "name",
+                  "colour",
+                  "kindId"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "order_kinds",
+        "summary": "Put the house's kinds of John in an order",
+        "tags": [
+          "house"
+        ],
+        "parameters": [
+          {
+            "name": "houseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/JonzClient"
+          }
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "x-jonz-effect": "write",
+        "x-jonz-permission": "johns:write",
+        "responses": {
+          "201": {
+            "description": "Done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "null"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "kinds": {
+                    "maxItems": 100,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    }
+                  }
+                },
+                "required": [
+                  "kinds"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/kinds/{kindId}": {
+      "delete": {
+        "operationId": "delete_kind",
+        "summary": "Delete a kind of John; its Johns move to another kind, or have none",
+        "tags": [
+          "house"
+        ],
+        "parameters": [
+          {
+            "name": "kindId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/JonzClient"
+          }
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "x-jonz-effect": "write",
+        "x-jonz-permission": "johns:write",
+        "x-jonz-destructive": true,
+        "responses": {
+          "201": {
+            "description": "Done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "null"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "moveToId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  }
+                },
+                "required": [],
+                "additionalProperties": false
+              }
+            }
           }
         }
       }

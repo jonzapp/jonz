@@ -12,6 +12,8 @@ import { oftenWords } from "./repeat";
 import { called, firstNameIn, forfeits, overdueCost, SETTLED, tickerOf, type Person } from "./today-parts";
 import type { Viewing } from "./viewing";
 import type { Words } from "./words-for";
+import { localDate } from "./week";
+import { clocksDiffer } from "./zones";
 
 // The John sheet and the cards beside it: a vote, a parent's OK, a
 // settled John's lines, covering, swapping and undoing. Words only; the
@@ -140,17 +142,17 @@ function lateCosts(rules: HouseRules, room: number | null, words: Words): string
  */
 export function sheetWhen(
   item: BoardItem,
-  { people, viewerId, rules, now, words }: Viewing,
+  viewing: Viewing,
   room: number | null = null,
 ): { sign: "overdue" | "disputed" | "late" | "missed" | "covered" | null; text: string } {
-  const zone = rules.timezone;
+  const { people, viewerId, rules, now, zone, words } = viewing;
   if (item.status === "covered" && !item.outcome) {
     return { sign: "covered", text: words('john.sheet.coveredWasDue', { when: sinceLabel(item.dueAt, now, zone, words) }) };
   }
-  if (item.status === "covered") return { sign: "covered", text: settledLine(item, { people, viewerId, rules, now, words }) };
+  if (item.status === "covered") return { sign: "covered", text: settledLine(item, viewing) };
   if (SETTLED.has(item.status)) {
     const sign = item.status === "late" || item.status === "missed" ? item.status : null;
-    return { sign, text: settledLine(item, { people, viewerId, rules, now, words }) };
+    return { sign, text: settledLine(item, viewing) };
   }
   if (item.status === "overdue") {
     const text = [words('today.nextUp.overdueSince', { when: sinceLabel(item.dueAt, now, zone, words) }), overdueCost(rules, room, words)].filter(Boolean).join(", ");
@@ -160,12 +162,27 @@ export function sheetWhen(
     const raiser = item.dispute.raisedBy === viewerId ? words('john.sheet.byYou') : called(people, item.dispute.raisedBy, words);
     return { sign: "disputed", text: words('john.sheet.disputedBy', { name: raiser }) };
   }
-  const due = words('john.sheet.due', { when: dueInLine(item.dueAt, now, zone, words) });
+  const due = words('john.sheet.due', { when: withHouseTime(item.dueAt, viewing) });
   if (!isOpen(item.status)) return { sign: null, text: due };
   return {
     sign: null,
     text: [item.movedFrom ? `${due}, ${words('today.nextUp.beforeYouGo')}` : due, lateCosts(rules, room, words)].filter(Boolean).join(", "),
   };
+}
+
+/**
+ * When a John is due, as its sheet says it: "today 21:00", and when the
+ * reader's clock isn't the house's, the house's time after it, "tomorrow
+ * 15:00 (21:00 house time)", with its day when that's another day there.
+ */
+function withHouseTime(dueAt: Date, { rules, now, zone, words }: Viewing): string {
+  const due = dueInLine(dueAt, now, zone, words);
+  if (!clocksDiffer(zone, rules.timezone, dueAt)) return due;
+  const house = rules.timezone;
+  const sameDay = localDate(dueAt, house) === localDate(dueAt, zone);
+  const time = dateIn(dueAt, "time", house, words);
+  const there = sameDay ? time : words("common.date.weekdayTime", { day: dateIn(dueAt, "weekday", house, words), time });
+  return `${due} (${words("common.zone.houseTime", { time: there })})`;
 }
 
 /** "at 14:10" today, "yesterday at 14:10", "on Sun at 14:10" this week, "on Sun 18 Oct at 14:10" before that. */
@@ -182,14 +199,14 @@ function tickedAt(at: Date, now: Date, zone: string, words: Words): string {
  * A tick being checked: "Megan ticked this at 14:10, stands in 21h" ("You
  * ticked…" for yours); a cover, "Glyn covered this at 23:04, …".
  */
-export function tickedLine(item: BoardItem, { people, viewerId, rules, now, words }: Viewing): string {
+export function tickedLine(item: BoardItem, { people, viewerId, now, zone, words }: Viewing): string {
   const ticker = tickerOf(item);
   const who = ticker === viewerId ? words('john.sheet.you') : firstNameIn(people, ticker, words);
   const whom = item.userId === viewerId ? words('john.sheet.byYou') : firstNameIn(people, item.userId, words);
   const ticked = item.doneAt
-    ? words(item.coveredBy ? 'john.sheet.covered' : 'john.sheet.ticked', { who, when: tickedAt(item.doneAt, now, rules.timezone, words) })
+    ? words(item.coveredBy ? 'john.sheet.covered' : 'john.sheet.ticked', { who, when: tickedAt(item.doneAt, now, zone, words) })
     : item.absentAt
-      ? words('john.crew.without', { who, when: tickedAt(item.absentAt, now, rules.timezone, words), whom })
+      ? words('john.crew.without', { who, when: tickedAt(item.absentAt, now, zone, words), whom })
       : null;
   const stands = item.awaitsOk
     ? words('today.parentOk.waiting')
@@ -205,9 +222,9 @@ export function tickedLine(item: BoardItem, { people, viewerId, rules, now, word
  * What happened to a settled John, in a sentence: who did it and when. What
  * lateness costs is said only while it's to do; the Stake has what it cost.
  */
-export function settledLine(item: BoardItem, { people, viewerId, rules, now, words }: Viewing): string {
+export function settledLine(item: BoardItem, { people, viewerId, now, zone, words }: Viewing): string {
   const who = item.userId === viewerId ? words('john.sheet.you') : firstNameIn(people, item.userId, words);
-  const ticked = item.doneAt ? tickedAt(item.doneAt, now, rules.timezone, words) : null;
+  const ticked = item.doneAt ? tickedAt(item.doneAt, now, zone, words) : null;
   switch (item.status) {
     case "done":
       return ticked ? words('john.sheet.doneOnTimeWhen', { who, when: ticked }) : words('john.sheet.doneOnTime', { who });
@@ -244,7 +261,7 @@ export interface CoverOffer {
  * pts and £3."); overdue inside the grace, when it opens to you; nothing
  * before it's due. The money is the missed forfeit, before any cap.
  */
-export function coverOffer(item: BoardItem, { people, viewerId, rules, now, words }: Viewing): CoverOffer {
+export function coverOffer(item: BoardItem, { people, viewerId, rules, now, zone, words }: Viewing): CoverOffer {
   const owner = called(people, item.userId, words);
   const holders = item.together ?? [item.userId];
   // On a Together John you have a place in, you tick it with the roll call.
@@ -263,9 +280,9 @@ export function coverOffer(item: BoardItem, { people, viewerId, rules, now, word
   if (item.userId !== viewerId && item.status === "overdue") {
     const opens = coverOpensAt(item.dueAt, rules.coverGraceHours, item.closesAt);
     if (item.heldUntil && item.heldUntil > now && item.heldUntil >= opens) {
-      return { kind: "soon", text: words('john.sheet.coverHeld', { owner: upperFirst(owner), when: dueInLine(item.heldUntil, now, rules.timezone, words) }) };
+      return { kind: "soon", text: words('john.sheet.coverHeld', { owner: upperFirst(owner), when: dueInLine(item.heldUntil, now, zone, words) }) };
     }
-    return { kind: "soon", text: words('john.sheet.coverSoon', { owner: upperFirst(owner), when: dueInLine(opens, now, rules.timezone, words) }) };
+    return { kind: "soon", text: words('john.sheet.coverSoon', { owner: upperFirst(owner), when: dueInLine(opens, now, zone, words) }) };
   }
   return { kind: null, text: null };
 }
@@ -321,11 +338,11 @@ export function canSwap(board: WeekBoard, me: { userId: string; swapTokens: numb
 }
 
 /** A housemate's open John as the swap lists it: "Tom, today 21:00, 3 pts", or "Tom, was due Sun, 1 pt" overdue. */
-export function swapMeta(item: BoardItem, people: readonly Person[], rules: HouseRules, now: Date, words: Words): string {
+export function swapMeta(item: BoardItem, { people, now, zone, words }: Viewing): string {
   const due =
     item.status === "overdue"
-      ? words('today.nextUp.wasDue', { when: sinceLabel(item.dueAt, now, rules.timezone, words) })
-      : dueInLine(item.dueAt, now, rules.timezone, words);
+      ? words('today.nextUp.wasDue', { when: sinceLabel(item.dueAt, now, zone, words) })
+      : dueInLine(item.dueAt, now, zone, words);
   return [firstNameIn(people, item.userId, words), due, pointsLabel(item.points, words)].join(", ");
 }
 
@@ -334,14 +351,9 @@ export function swapMeta(item: BoardItem, people: readonly Person[], rules: Hous
  * Its status's word (overdue, due soon) is always said, and leads the meta
  * once it's picked, when the tick takes its mark's place.
  */
-export function swapChoice(
-  item: BoardItem,
-  people: readonly Person[],
-  rules: HouseRules,
-  now: Date,
-  chosen: boolean, words: Words,
-): { meta: string; label: string } {
-  const meta = swapMeta(item, people, rules, now, words);
+export function swapChoice(item: BoardItem, viewing: Viewing, chosen: boolean): { meta: string; label: string } {
+  const { words } = viewing;
+  const meta = swapMeta(item, viewing);
   const word = STATUS_MARK[item.status].tone === "none" ? null : statusLabel(item.status, words);
   return {
     meta: chosen && word ? `${word}, ${meta}` : meta,

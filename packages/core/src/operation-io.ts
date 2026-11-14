@@ -471,6 +471,7 @@ export const OPERATION_IO = {
   // Any language tag, not a fixed list: a new language is an addition, not a change to /v1.
   my_language: io(none, z.string().describe("A language tag, such as en or fr").nullable(), "GET /v1/me/language"),
   set_my_language: io(z.object({ language: z.enum(LANGUAGES) }), nothing, "PATCH /v1/me/language"),
+  time_zones: io(none, z.array(z.string().describe("An IANA time zone, such as Europe/London")), "GET /v1/time-zones"),
   my_notifications: io(
     none,
     T.notification_prefs.pick({ reminders: true, checks: true, flags: true, deal: true, quietFrom: true, quietUntil: true, timezone: true }).nullable(),
