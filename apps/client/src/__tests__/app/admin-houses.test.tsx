@@ -134,7 +134,8 @@ describe('Overview', () => {
     await renderPages(ROUTES, '/admin/overview');
     await untilRead(words);
     expect(screen.getByTestId('health-clock')).toHaveTextContent(/Late/);
-    await fireEvent.press(within(screen.getByTestId('overview-span')).getByText(words('admin.overview.spans.month')));
+    await fireEvent.press(screen.getByTestId('overview-span'));
+    await fireEvent.press(screen.getByRole('radio', { name: words('admin.overview.spans.month') }));
     await waitFor(() => expect(ownerOverview).toHaveBeenLastCalledWith('month', expect.any(String)));
   });
 
