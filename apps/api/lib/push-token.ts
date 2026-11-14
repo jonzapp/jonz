@@ -14,7 +14,7 @@ export type PushGrant = { userId: string; assignmentId: string } | { userId: str
 
 const DAY = 86_400;
 /** Long enough for a Monday's push to work until the week is out. */
-export const TOKEN_DAYS = 8;
+const TOKEN_DAYS = 8;
 
 function signingKey(): Buffer | null {
   const vapid = process.env.VAPID_PRIVATE_KEY;

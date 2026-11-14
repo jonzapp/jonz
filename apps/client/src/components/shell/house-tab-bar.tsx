@@ -6,11 +6,10 @@ import { CountBadge } from '@/components/badge';
 import { Meta, RowTitle } from '@/components/text';
 import { TourSpot } from '@/components/tour/tour-spot';
 import { useWords } from '@/hooks/use-words';
-import { FONT, GUTTER, INSET, RAIL, SPACE, TAP, useTheme } from '@/theme';
+import { FONT, GUTTER, HAIR, INSET, MARK_RADIUS, RAIL, SPACE, TAP, useTheme } from '@/theme';
 
 /** The house's four places, in the order the tabs and the rail show them. */
-export const PLACES = ['today', 'week', 'house', 'you'] as const;
-export type Place = (typeof PLACES)[number];
+type Place = 'today' | 'week' | 'house' | 'you';
 
 const ICON: Record<Place, LucideIcon> = {
   today: ListChecksIcon,
@@ -134,8 +133,8 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     width: TAP,
     height: 3,
-    borderBottomLeftRadius: 2,
-    borderBottomRightRadius: 2,
+    borderBottomLeftRadius: MARK_RADIUS,
+    borderBottomRightRadius: MARK_RADIUS,
   },
   badge: { position: 'absolute', top: -7, left: 14 },
   rail: {
@@ -144,7 +143,7 @@ const styles = StyleSheet.create({
     paddingVertical: SPACE.xl,
     gap: SPACE.xl,
   },
-  house: { paddingHorizontal: GUTTER + INSET - SPACE.sm, gap: 2 },
+  house: { paddingHorizontal: GUTTER + INSET - SPACE.sm, gap: HAIR },
   railItems: { gap: SPACE.xs },
   railItem: {
     minHeight: TAP,
@@ -159,8 +158,8 @@ const styles = StyleSheet.create({
     top: SPACE.sm,
     bottom: SPACE.sm,
     width: 3,
-    borderTopRightRadius: 2,
-    borderBottomRightRadius: 2,
+    borderTopRightRadius: MARK_RADIUS,
+    borderBottomRightRadius: MARK_RADIUS,
   },
   railLabel: { flex: 1, fontFamily: FONT.bold },
 });

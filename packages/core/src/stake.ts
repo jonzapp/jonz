@@ -64,6 +64,63 @@ export interface MonthForfeit {
   to?: string | readonly string[] | null;
 }
 
+/** A month's money as it's shared out. */
+interface MonthSums {
+  memberIds: readonly string[];
+  forfeits: readonly MonthForfeit[];
+  /** What each person forfeited before the cap. */
+  raw: Map<string, number>;
+  forfeited: Record<string, number>;
+  received: Record<string, number>;
+  entries: LedgerEntry[];
+  /** The month's number: whose turn it is for an odd penny. */
+  turn: number;
+}
+
+/** Pays the forfeits that name who they go to, scaled to what the payer keeps paying; gives back what's left to share. */
+function payNamed(payer: string, { memberIds, forfeits, raw, forfeited, received }: MonthSums): number {
+  const kept = forfeited[payer];
+  const total = raw.get(payer)!;
+  let amount = kept;
+  for (const f of forfeits) {
+    if (f.userId !== payer || !f.to) continue;
+    const to = (typeof f.to === "string" ? [f.to] : f.to).filter((id) => id !== payer && memberIds.includes(id));
+    if (to.length === 0) continue;
+    const cut = Math.floor((f.amount * kept) / total);
+    const base = Math.floor(cut / to.length);
+    to.forEach((id, i) => {
+      received[id] += base + (i < cut - base * to.length ? 1 : 0);
+    });
+    amount -= cut;
+  }
+  return amount;
+}
+
+/** Shares out what one person forfeited: first to whoever a forfeit names, the rest between everyone else in the house. */
+function shareOut(payer: string, sums: MonthSums) {
+  const { memberIds, forfeited, received } = sums;
+  if (forfeited[payer] === 0) return;
+  const amount = payNamed(payer, sums);
+  if (amount === 0) return;
+  // Only people still in the house share it: someone who left pays what
+  // they owe, but gets none of anyone else's.
+  const inOrder = memberIds.filter((id) => id !== payer);
+  if (inOrder.length === 0) {
+    forfeited[payer] -= amount;
+    sums.entries.push({ userId: payer, kind: "cap_refund", amount });
+    return;
+  }
+  const start = sums.turn % inOrder.length;
+  const others = [...inOrder.slice(start), ...inOrder.slice(0, start)];
+  const base = Math.floor(amount / others.length);
+  let remainder = amount - base * others.length;
+  for (const id of others) {
+    const extra = remainder > 0 ? 1 : 0;
+    remainder -= extra;
+    received[id] += base + extra;
+  }
+}
+
 /**
  * Close a month. `memberIds` is everyone sharing in it, in a stable order
  * (join order), and `month` is which one ("2026-10"): together they decide
@@ -106,41 +163,8 @@ export function settleMonth(
     if (total > kept) entries.push({ userId: id, kind: "cap_refund", amount: total - kept });
   }
 
-  for (const payer of ids) {
-    const kept = forfeited[payer];
-    if (kept === 0) continue;
-    const total = raw.get(payer)!;
-    let amount = kept;
-    for (const f of forfeits) {
-      if (f.userId !== payer || !f.to) continue;
-      const to = (typeof f.to === "string" ? [f.to] : f.to).filter((id) => id !== payer && memberIds.includes(id));
-      if (to.length === 0) continue;
-      const cut = Math.floor((f.amount * kept) / total);
-      const base = Math.floor(cut / to.length);
-      to.forEach((id, i) => {
-        received[id] += base + (i < cut - base * to.length ? 1 : 0);
-      });
-      amount -= cut;
-    }
-    if (amount === 0) continue;
-    // Only people still in the house share it: someone who left pays what
-    // they owe, but gets none of anyone else's.
-    const inOrder = memberIds.filter((id) => id !== payer);
-    if (inOrder.length === 0) {
-      forfeited[payer] -= amount;
-      entries.push({ userId: payer, kind: "cap_refund", amount });
-      continue;
-    }
-    const start = turn % inOrder.length;
-    const others = [...inOrder.slice(start), ...inOrder.slice(0, start)];
-    const base = Math.floor(amount / others.length);
-    let remainder = amount - base * others.length;
-    for (const id of others) {
-      const extra = remainder > 0 ? 1 : 0;
-      remainder -= extra;
-      received[id] += base + extra;
-    }
-  }
+  const sums: MonthSums = { memberIds, forfeits, raw, forfeited, received, entries, turn };
+  for (const payer of ids) shareOut(payer, sums);
 
   for (const id of ids) {
     if (received[id] > 0) entries.push({ userId: id, kind: "share", amount: received[id] });

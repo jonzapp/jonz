@@ -2,6 +2,7 @@ import { wordsFor } from "@app/core";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, dealtHouseInClient, undealtHouseInClient } from "./auth";
+import { rightNow } from "../tests/support/clock";
 
 const words = wordsFor("en", "housemates");
 
@@ -171,7 +172,7 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   // Two of the housemates' Johns done, so the week has some of each.
   const { data: theirs } = await admin().from("assignments").select("id").eq("house_id", houseId).neq("user_id", userId).limit(2);
   for (const row of theirs ?? []) {
-    await admin().from("assignments").update({ done_at: new Date().toISOString() }).eq("id", row.id);
+    await admin().from("assignments").update({ done_at: rightNow().toISOString() }).eq("id", row.id);
   }
 
   const page = await contexts[0].newPage();
@@ -256,6 +257,24 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   await expect(span).not.toHaveText(words('house.page.week'));
   await shoot(page, "table-month");
 
+  // Week's "•••" drops its menu from itself too, as the Table's does, and a choice runs as it goes.
+  const more = week.getByTestId("more");
+  await more.click();
+  const actions = page.getByTestId("week-menu-menu");
+  await expect(actions).toBeVisible();
+  const dots = await more.boundingBox();
+  const hung = await actions.boundingBox();
+  expect((hung?.x ?? 0) + (hung?.width ?? 0)).toBeCloseTo((dots?.x ?? 0) + (dots?.width ?? 0), 0);
+  expect(hung?.y ?? 0).toBeGreaterThan((dots?.y ?? 0) + (dots?.height ?? 0));
+  await shoot(page, "week-more");
+  await page.keyboard.press("Escape");
+  await expect(actions).toHaveCount(0);
+  await more.click();
+  await page.getByTestId("menu-away").click();
+  await expect(actions).toHaveCount(0);
+  await expect(page).toHaveURL(/\/house\/away/);
+  await page.goBack();
+
   // Track record: the grid, and your breakdown beside it, the two sharing a top edge and filling the room.
   await page.goto("/week/record?span=month");
   const record = page.getByTestId("record-screen");
@@ -293,14 +312,16 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   const nav = page.getByTestId("house-nav");
   await nav.getByRole("link", { name: words('house.lower.johns') }).click();
   await expect(page.getByRole("heading", { name: words('common.title.johnList') })).toBeVisible();
-  // The page fills the room beside the list: its kinds in two columns sharing a top edge, out to the
-  // window's gutter, with Add a John at the top right over them.
-  const kinds = page.getByTestId("john-kinds-column");
-  await expect(kinds).toHaveCount(2);
-  expect(await topOf(kinds.nth(0))).toBeCloseTo(await topOf(kinds.nth(1)), 0);
-  await fillsTheRoom(page, kinds.nth(1));
+  // The page fills the room beside the list: its kinds one under another, out to the window's gutter,
+  // with Add a John at the top right over them, and each John one line whose columns line up down the page.
+  const kinds = page.getByTestId("john-kinds");
+  await fillsTheRoom(page, kinds);
   const add = await page.getByTestId("john-list-bar").getByTestId("add-john").boundingBox();
-  expect(Math.abs(rightOf(add) - rightOf(await kinds.nth(1).boundingBox()))).toBeLessThan(2);
+  expect(Math.abs(rightOf(add) - rightOf(await kinds.boundingBox()))).toBeLessThan(2);
+  const lines = kinds.getByTestId("john-def");
+  const whenLeft = async (line: Locator) => (await line.getByText(/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun) \d\d:\d\d$/).boundingBox())!.x;
+  expect(Math.abs((await whenLeft(lines.first())) - (await whenLeft(lines.last())))).toBeLessThan(1);
+  expect((await lines.first().boundingBox())!.height).toBeLessThan(56);
   await shoot(page, "johns-columns");
   await page.getByRole("button", { name: /^Edit Bathroom clean, / }).click();
   const panel = page.getByTestId("john-panel");
@@ -341,17 +362,11 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   await noScrollbars(page);
   await page.getByTestId("tab-house").click();
   await nav.getByTestId("nav-wall").click();
-  // History beside the Wall, each under its name, so their first days start on the same line.
-  const history = page.getByTestId("wall-pair-end").getByTestId("history-section");
-  await expect(history).toBeVisible();
-  await expect(page.getByTestId("wall-pair-start").getByTestId("wall-section")).toBeVisible();
-  expect(await topOf(page.getByTestId("wall-pair-start"))).toBeCloseTo(await topOf(page.getByTestId("wall-pair-end")), 0);
-  expect(await topOf(page.getByTestId("wall-pair-start").getByTestId("wall-day").first())).toBeCloseTo(
-    await topOf(history.getByTestId(/^history-(day|empty)$/).first()),
-    0,
-  );
+  // The Wall alone: no History beside it, its Undo is in each post's sheet.
+  await expect(page.getByTestId("wall-screen").getByTestId("wall-day").first()).toBeVisible();
+  await expect(page.getByTestId("history-section")).toHaveCount(0);
   await expect(page.getByTestId("wall-shows")).toHaveCount(0);
-  await shoot(page, "wall-history");
+  await shoot(page, "wall");
   // The admins beside the rules they can change.
   await nav.getByTestId("nav-rules").click();
   await expect(page.getByTestId("rules-pair-start").getByTestId("rules-panel")).toBeVisible();
@@ -381,9 +396,10 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
   await page.goto("/house/guide/points");
   await expect(page.getByTestId("guide").getByTestId("guide-points").getByRole("button")).toHaveAttribute("aria-current", "true");
   await expect(page.getByTestId("guide-page")).toHaveCount(0);
-  // The groups among the John list's kinds.
+  // The groups under the John list's kinds, not among them.
   await nav.getByTestId("nav-johns").click();
-  await expect(page.getByTestId("john-kinds").getByTestId("johns-groups")).toBeVisible();
+  await expect(page.getByTestId("johns-groups")).toBeVisible();
+  await expect(page.getByTestId("john-kinds").getByTestId("johns-groups")).toHaveCount(0);
 
   await page.getByTestId("house-nav").getByRole("link", { name: words('house.lower.overview') }).click();
   await expect(house.getByTestId("house-figures")).toBeVisible();

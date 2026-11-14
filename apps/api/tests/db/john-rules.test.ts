@@ -12,6 +12,7 @@ import {
   thisWeek,
   weeksAgo,
 } from "@/tests/support/factories";
+import { rightNow } from "@/tests/support/clock";
 
 /**
  * The housemate functions, attacked. Each one checks who is calling and what
@@ -21,7 +22,7 @@ import {
 async function dealtHouse(johns = [{ name: "Bins", points: 2 }, { name: "Bathroom", points: 4 }]) {
   const house = await makeHouse();
   await addJohns(house.id, johns, thisWeek());
-  const { weekId, assignments } = await deal(house.id, thisWeek(), new Date());
+  const { weekId, assignments } = await deal(house.id, thisWeek(), rightNow());
   return { house, weekId, assignments };
 }
 

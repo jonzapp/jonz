@@ -126,6 +126,8 @@ columns read as a fact (`needs_photo`, `awaits_ok`); counts end in
     out as `supabase/checks/registry.sql`), and so is every table grant to
     signed-in or signed-out people; adding one is a decision a reviewer sees.
     Everything else revokes EXECUTE from `public, anon, authenticated`.
+    Neither role holds any right on a table beyond its rows (no truncate,
+    references, trigger or maintain), and a new table starts with none.
     Supabase linter 0029 warns on every callable one; that warning is
     expected for the listed ones. *Ours; Supabase linter 0029.* Checked.
 
@@ -135,6 +137,10 @@ columns read as a fact (`needs_photo`, `awaits_ok`); counts end in
     merging** (Supabase's GitHub integration). PRs with migrations merge one
     at a time; the next updates from main and renames its file's date so it
     sorts last. *Ours.*
+    The 81 migrations up to 12 January 2027 were squashed into one,
+    `20270112090000_baseline.sql`, before the app's release; it builds the
+    same database they did. An older file name in `docs/specs` is one of
+    the files folded into it.
 24. **A rename recreates, in the same migration, every function that uses
     the old name** (Postgres doesn't rewrite function bodies), and changes
     the app code and `packages/core/src/db-types.ts` in the same PR. While

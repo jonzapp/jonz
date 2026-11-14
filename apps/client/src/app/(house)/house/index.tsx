@@ -1,4 +1,4 @@
-import { familyHides, memberCan, monthOf, overviewFigures, passUnlocked, type OverviewFigure } from '@app/core';
+import { familyHides, memberCan, monthOf, overviewFigures, hasPass, type OverviewFigure } from '@app/core';
 import type { Href } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -41,7 +41,7 @@ type Shown = 'overview' | 'setup';
  * Pass. Your own settings are the You tab's. A kid's House is short enough
  * for one page: pocket money, the Table, the Wall and how the family runs
  * (to read). Each section is its own component in components/house-page. Without the Pass
- * (once it's enforced) the figures and the Table give way to a row to the
+ * the figures and the Table give way to a row to the
  * Pass page. The pages it pushes keep the tabs (house/_layout is a stack).
  */
 export default function HouseScreen() {
@@ -139,7 +139,7 @@ function HouseSections({
   // The John list doesn't come over Realtime, and a housemate may have changed it.
   useReadOnFocus(list.refetch, { skipFirst: true });
   const { rules, members } = view.snapshot;
-  const unlocked = passUnlocked(view.snapshot.house.pass, view.now);
+  const unlocked = hasPass(view.snapshot.house.pass, view.now);
   const figures = overviewFigures({
     stake: stake.data,
     month: monthOf(view.now, rules.timezone),

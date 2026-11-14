@@ -15,12 +15,40 @@
   photo, its group, on call); the rest is in the John's own sheet. Each kind
   is a section with its count on the right, and the page's sum and Add a
   John sit over the list on a phone as on a laptop. (John list A, 10 Nov)
+- **A house's kinds are its own,** named in its language, and an admin
+  keeps them on the Kinds list under the John list: one row a kind (its lid
+  bar, its name, how many Johns), then Add a kind. A kind opens in the
+  panel beside the list on a laptop or a sheet on a phone: its name, its
+  colour, how a John of it looks, Move up and Move down (which happen at
+  once), then Save and Delete. A kind sorts the list and colours its Johns;
+  it changes nothing in the deal (that's a group). (Kinds list A, 14 Nov)
+- **Any kind can be deleted, and its Johns then have no kind.** They sit
+  together in a grey No kind section at the foot of the John list, and the
+  John's form says No kind, until an admin gives each one a kind; the
+  section goes once it's empty. The kind's sheet says so above Delete when
+  the kind has Johns. (No kind C, 14 Nov) *Not* a kind that can't be
+  deleted to catch them, or a pick of where they go each time.
+- **On a laptop a John on the John list is one line of lined-up columns**
+  (`JohnLine`): its lid bar and name, when it's due, how often, what else
+  sets it apart (photo, its group, how many do it), and its points, so a
+  kind reads down like a timetable. The kinds go one under another in their
+  set order, never packed into columns. With a John open in the panel
+  beside it, how often (when it isn't every week) and the rest go on a line
+  under the name. (John list C, 13 Nov) *Not* the kinds packed into
+  whichever column is shortest: the order then jumps about and changes with
+  the window.
 - **An admin's fixes are one row, not a row of buttons:** in a John's sheet,
   "Admin" holds one row, Fix the result, which opens the results to choose
   from in its place. (Admin fixes A, 10 Nov)
 - A Wall item is a `Row` with a sentence that names its John and an icon
   that says what happened (a flag for a flag), never just "flagged". (Wall
   items A, #55)
+- **A Wall row holds nothing to press but itself,** lined up on its first
+  line of words (`Row top`): the face at the top, the sentence, the time
+  level with it at the trailing edge, then the meta line with what the
+  house gave it as counts after the words, so a row that took reactions is
+  no taller than one that didn't. Reactions and Undo are given in the sheet
+  the row opens, its John's or its post's. (Wall row C, 13 Nov)
 
 ## Groups and spacing
 
@@ -45,7 +73,7 @@
 
 ## Long lists
 
-- **Load as you scroll,** the same way everywhere (the Wall, History, the
+- **Load as you scroll,** the same way everywhere (the Wall, the
   audit log, any list that grows), with one shared foot: how far back,
   Loading more, That's everything, Try again. "Show more" stays for the
   keyboard and short pages. On a laptop the foot is pinned full width along
@@ -68,6 +96,11 @@ Built for very many rows from the start. (Admin lists, 31 Oct)
   [states](states.md#waiting). (Search loading A, 10 Nov)
 - Lists of things page by 50; timelines load as you scroll and have a When
   filter. (Owner admin, 30 Oct)
+- A list of things waiting on you (the Inbox) opens on everything, never
+  hiding what's done: what needs you first as its own group, then everything
+  else, each under its name and count ("Needs a reply, 3"). Search and
+  filters narrow both groups at once and an empty group is left out; picking
+  a state by hand shows one plain list. (Inbox two groups A, 13 Nov)
 
 ## Calendars and grids
 
@@ -75,6 +108,11 @@ Built for very many rows from the start. (Admin lists, 31 Oct)
   (Who's away F, #23)
 - Today is an outlined whole day, never a filled circle or ring. (Who's
   away B, #23)
+- One calendar shape: every calendar is the month (weeks from the house's
+  first day, the months either side lighter, the same day height). A page
+  shows one calendar; picking days is in a sheet from a button under it,
+  plain (no shading), its picked ends solid ink and the days between grey.
+  (One calendar D, 13 Nov)
 - A week-by-week grid for records over time (the Track record), with the
   breakdown one tap away. (Fair shares, 28 Oct, #35)
 

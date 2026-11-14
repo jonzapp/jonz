@@ -17,7 +17,7 @@ import type { Housemate } from '@/api/board';
 import { LidBar } from '@/components/lid';
 import { STATUS_ICON } from '@/components/status-mark';
 import { Lead, Meta } from '@/components/text';
-import { INSET, SPACE, useTheme } from '@/theme';
+import { INSET, MARK_GAP, SPACE, useTheme } from '@/theme';
 
 import { ChangeResult } from './change-result';
 import { TheirsChecking, YoursChecking } from './checking';
@@ -25,9 +25,12 @@ import { TheirsOpen, YoursOpen } from './open';
 import { FlagPart } from './flag';
 import { CrewPart, RollCall } from './roll-call';
 import { Settled } from './settled';
+import { PostReactions } from './reactions';
+import { UndoPart } from './undo';
 import { Disputed } from './vote';
 import { JohnWhy } from './why';
 import { useWords } from '@/hooks/use-words';
+import { viewingOf } from './viewing';
 
 /**
  * What the John sheet was opened for, when it was opened for something in
@@ -44,7 +47,7 @@ export interface JohnSheetContext {
   houseId: string;
   /** Who's looking. */
   userId: string;
-  /** The house's time zone (also `rules.timezone`). */
+  /** The zone times are said in: the reader's own clock when it's away from the house's, else the house's (`rules.timezone`, which weeks and months keep to). */
   zone: string;
   /** The house's rules: the currency, the stake and what late and missed cost. */
   rules: HouseRules;
@@ -61,6 +64,8 @@ export interface JohnSheetContext {
   stake: StakeView | null;
   /** What it was opened for (Today's "Needs you" opens it on the vote). */
   focus: JohnSheetFocus | null;
+  /** The Wall post it was opened from (an event's id), whose reactions it shows; null from anywhere else. */
+  post: string | null;
   /** Put the sheet away (after a vote, say). */
   close: () => void;
 }
@@ -70,12 +75,14 @@ export interface JohnSheetContext {
  * be done with it from here, by whose it is and where it has got to (core's
  * johnSheetMode). Yours and open: the tick, and "If you can't" while you
  * hold a token. Being checked: when it stands, and Undo for yours or
- * Dispute for a housemate's, under its photo if it has one. Disputed: the reason, the tally and the vote.
+ * Dispute for a housemate's, under its photo if it has one. Then Undo for
+ * any other move about it that can still be taken back (undo.tsx). Disputed: the reason, the tally and the vote.
  * Settled: the photo, if it had one (the header says what happened). An
  * open flag: Remove flag, for whoever raised it or an admin. A John
  * done together, or with help, says who's on it (crew.ts); ticking one is
  * its roll call, "Who did it?", in place of the rest. Then, whatever its
- * state, an admin's "Fix the result", and "Why?": why it's whose it is, and
+ * state, an admin's "Fix the result", the Wall post's reactions when it
+ * was opened from one (reactions.tsx), and "Why?": why it's whose it is, and
  * what's at stake.
  */
 export function JohnSheetBody({ item, context }: { item: BoardItem; context: JohnSheetContext }) {
@@ -91,9 +98,11 @@ export function JohnSheetBody({ item, context }: { item: BoardItem; context: Joh
       ) : (
         <>
           <ModeContent item={item} context={context} onRollCall={() => setRollCalling(true)} />
+          <UndoPart item={item} context={context} />
           <FlagPart item={item} context={context} />
           <CrewPart item={item} context={context} />
           <ChangeResult item={item} context={context} />
+          <PostReactions context={context} />
         </>
       )}
       <JohnWhy item={item} context={context} />
@@ -142,8 +151,8 @@ function ModeContent({ item, context, onRollCall }: { item: BoardItem; context: 
 function JohnSheetHeader({ item, context }: { item: BoardItem; context: JohnSheetContext }) {
   const words = useWords();
   const { colors, type } = useTheme();
-  const room = forfeitRoom(context.stake, item.userId, monthOf(item.dueAt, context.zone));
-  const when = sheetWhen(item, context.members, context.userId, context.rules, context.now, words, room);
+  const room = forfeitRoom(context.stake, item.userId, monthOf(item.dueAt, context.rules.timezone));
+  const when = sheetWhen(item, viewingOf(context, words), room);
   const icon = when.sign ? STATUS_MARK[when.sign].icon : null;
   const Sign = icon ? STATUS_ICON[icon] : null;
   return (
@@ -151,7 +160,7 @@ function JohnSheetHeader({ item, context }: { item: BoardItem; context: JohnShee
       {/* In full, as everything in the sheet is: it may take a second line. */}
       <View style={[styles.line, styles.top]}>
         <View style={styles.mark}>
-          <LidBar category={item.category} />
+          <LidBar lid={item.kindColour ?? item.category} />
         </View>
         <Meta numberOfLines={2} style={styles.shrink}>
           {sheetKind(item, words)}
@@ -173,7 +182,7 @@ function JohnSheetHeader({ item, context }: { item: BoardItem; context: JohnShee
 const styles = StyleSheet.create({
   // The flush sheet sets content at the gutter; the John's words sit on the leading edge.
   header: { paddingHorizontal: INSET, gap: SPACE.xs },
-  line: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  line: { flexDirection: 'row', alignItems: 'center', gap: MARK_GAP },
   top: { alignItems: 'flex-start' },
   // The dot centred on the first line of words.
   mark: { height: 20, justifyContent: 'center' },

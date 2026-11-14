@@ -82,6 +82,14 @@ export const LEADING = 32;
 export const ROW_GAP = 12;
 /** An inset group's corners, and the one card's. */
 export const GROUP_RADIUS = 10;
+/** A sheet's and a dialog's corner. */
+export const SHEET_RADIUS = 16;
+/** A small mark's corner: a swatch, a grid's cell, a tab's marker, a sheet's grabber. */
+export const MARK_RADIUS = 2;
+/** A hair's room: between a row's title and its meta line, and what brings Overpass's capitals down level with what's beside them. */
+export const HAIR = 2;
+/** Between a small mark (a lid, a swatch, a status) and its words. */
+export const MARK_GAP = 6;
 /** The widest a screen's content gets, on every tab. */
 export const CONTENT_MAX = 680;
 /** The side panel of a page in two columns: its content, inside a GUTTER each side. */
@@ -137,7 +145,7 @@ export const DIM = 0.5;
 /** Figures that line up in columns: Focus sets every number this way. */
 export const TABULAR: TextStyle = { fontVariant: ['tabular-nums'] };
 
-export type SchemeName = 'light' | 'dark';
+type SchemeName = 'light' | 'dark';
 
 export interface Theme {
   scheme: SchemeName;

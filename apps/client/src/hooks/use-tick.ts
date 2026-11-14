@@ -31,33 +31,15 @@ export function useTick(
       : markDone;
   const move = useMove(houseId);
   const offer = useUndoOffer(houseId);
-  const [uploading, setUploading] = useState(false);
-  const [photoProblem, setPhotoProblem] = useState<string | null>(null);
+  const photo = usePhotoProof(houseId, assignmentId);
+  const { uploading } = photo;
   // The way the latest tick went, so only the button tapped looks busy.
   const [via, setVia] = useState<TickVia>('tick');
 
   async function tickWithPhoto(source: 'camera' | 'library') {
-    setPhotoProblem(null);
     setVia(source);
-    let uri: string | null;
-    try {
-      uri = await pickPhoto(source);
-    } catch (reason) {
-      setPhotoProblem(reason instanceof Error ? reason.message : words('john.row.photoFailed'));
-      return;
-    }
-    if (!uri) return;
-    setUploading(true);
-    let path: string;
-    try {
-      path = await uploadProof(houseId, assignmentId, uri);
-    } catch {
-      setPhotoProblem(words('john.row.photoFailed'));
-      return;
-    } finally {
-      setUploading(false);
-    }
-    if (await move.run(() => done(assignmentId, path))) offered();
+    const path = await photo.take(source);
+    if (path && (await move.run(() => done(assignmentId, path)))) offered();
   }
 
   function offered() {
@@ -65,7 +47,7 @@ export function useTick(
   }
 
   async function tick() {
-    setPhotoProblem(null);
+    photo.clear();
     setVia('tick');
     const ok = await move.run(() => done(assignmentId));
     if (ok) offered();
@@ -82,8 +64,42 @@ export function useTick(
     held: (way: TickVia) => (move.pending || uploading) && via !== way,
     /** What a busy button says: ticking, or sending the photo first. */
     busyLabel: uploading ? words('john.row.uploading') : words('john.row.ticking'),
-    problem: photoProblem ?? move.problem,
+    problem: photo.problem ?? move.problem,
     tick,
     tickWithPhoto,
   };
+}
+
+/**
+ * The photo receipt for a tick: picked from the camera or the library, then
+ * uploaded. `take` gives the uploaded photo's path, or null when none was
+ * picked or it failed (`problem` then says why).
+ */
+function usePhotoProof(houseId: string, assignmentId: string) {
+  const words = useWords();
+  const [uploading, setUploading] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
+
+  async function take(source: 'camera' | 'library'): Promise<string | null> {
+    setProblem(null);
+    let uri: string | null;
+    try {
+      uri = await pickPhoto(source);
+    } catch (reason) {
+      setProblem(reason instanceof Error ? reason.message : words('john.row.photoFailed'));
+      return null;
+    }
+    if (!uri) return null;
+    setUploading(true);
+    try {
+      return await uploadProof(houseId, assignmentId, uri);
+    } catch {
+      setProblem(words('john.row.photoFailed'));
+      return null;
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return { uploading, problem, clear: () => setProblem(null), take };
 }

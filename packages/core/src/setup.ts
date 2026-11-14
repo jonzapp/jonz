@@ -1,16 +1,18 @@
-// House setup's pages: the rules as label and value, the Johns by category, a John's schedule line and the admins' names.
+// House setup's pages: the rules as label and value, the Johns by kind, a John's schedule line and the admins' names.
 import { isoDayOf, shiftMonth, type AwayPeriod } from "./away";
 import type { BoardItem, JohnDef } from "./board";
 import { MAKEUP_LABEL } from "./deal";
-import { CATEGORIES, CATEGORY_LABEL, type Category, type Currency, type DealMode, type HouseKind, type HouseRules, type IsoDow, type SettleIn } from "./domain";
+import { CATEGORY_LABEL, type Currency, type DealMode, type HouseKind, type HouseRules, type IsoDow, type SettleIn } from "./domain";
 import { familyHides } from "./family";
+import { kindOf, kindsInOrder, type KindDef } from "./kinds";
 import { humanError } from "./errors";
-import { dateRange, firstName, joinRange, localDay, monthLabel, pointsLabel, weekdayName } from "./format";
+import { dateRange, firstName, localDay, pointsLabel, weekdayName } from "./format";
 import { formatMoney, formatSigned, moneyInput, parseMoney } from "./money";
 import { HouseSettings } from "./schemas";
 import type { Words } from "./words-for";
 import { dueWords, oftenWords, placeWord } from "./repeat";
 import { addDaysTo } from "./week";
+import { zoneCity } from "./zones";
 import { makeupKey } from "./word-keys";
 
 const capitalise = (word: string) => word.charAt(0).toLocaleUpperCase() + word.slice(1);
@@ -21,18 +23,22 @@ export interface LabelValue {
   value: string;
 }
 
-/** One kind of John on the list, as its own section: "Kitchen, 3". */
+/** One kind of John on the list, as its own section: "Kitchen", 3. A null kind is the Johns with none. */
 export interface JohnKind {
-  category: Category;
-  label: string;
+  kind: KindDef | null;
   johns: JohnDef[];
 }
 
-/** The John list by kind, in the kinds' usual order, each kind's Johns as the list has them. Kinds with none are left out. */
-export function johnsByKind(johns: readonly JohnDef[], words: Words): JohnKind[] {
-  return CATEGORIES.flatMap((category) => {
-    const mine = johns.filter((j) => j.category === category);
-    return mine.length === 0 ? [] : [{ category, label: words('house.setup.kind', { label: CATEGORY_LABEL[category], count: mine.length }), johns: mine }];
+/**
+ * The John list by kind, in the house's order of its kinds, each kind's
+ * Johns as the list has them. Kinds with none are left out. Johns with no
+ * kind (theirs was deleted, or isn't among these) come last, together.
+ */
+export function johnsByKind(johns: readonly JohnDef[], kinds: readonly KindDef[]): JohnKind[] {
+  const home = (j: JohnDef) => kindOf(j, kinds)?.id ?? null;
+  return [...kindsInOrder(kinds), null].flatMap((kind) => {
+    const mine = johns.filter((j) => home(j) === (kind?.id ?? null));
+    return mine.length === 0 ? [] : [{ kind, johns: mine }];
   });
 }
 
@@ -85,11 +91,39 @@ export function listLine(
     .join(", ");
 }
 
+/** A John's line on the John list's laptop table, a column each: when ("Sun 21:00", "On call"), how often ("Every 2 weeks", "Do it within 12 hours"), and what else sets it apart (photo, its group, how many do it). */
+export interface ListCells {
+  when: string;
+  often: string;
+  also: string[];
+}
+
+/** A John's line on the John list on a laptop, split into the columns it lines up in (`listLine` is the same on one line, on a phone). */
+export function listCells(
+  john: Pick<JohnDef, "everyWeeks" | "dueDow" | "dueTime" | "needsPhoto"> &
+    Partial<Pick<JohnDef, "when" | "respondHours" | "everyMonths" | "weekOfMonth" | "crew">>,
+  words: Words, groupName?: string | null,
+): ListCells {
+  const onCall = john.when === "on_call";
+  const photo = words('house.setup.photo');
+  return {
+    when: onCall ? words('house.johns.onCall') : dueLine(john, words),
+    often: onCall
+      ? `${words('house.johns.respond')} ${words('house.johns.respondHours', { hours: john.respondHours ?? 12 })}`
+      : cadence(john, words),
+    also: [
+      john.needsPhoto ? photo.charAt(0).toUpperCase() + photo.slice(1) : null,
+      groupName || null,
+      (john.crew ?? 1) === 1 ? null : words('john.crew.choice', { crew: john.crew! }),
+    ].filter((x): x is string => Boolean(x)),
+  };
+}
+
 /** A John as a housemate who can't edit it reads it: kind, who shares it, effort, how often, when, and the photo. */
-export function johnFacts(john: JohnDef, groupName: string | null | undefined, words: Words): LabelValue[] {
+export function johnFacts(john: JohnDef, about: { group?: string | null; kind?: string | null }, words: Words): LabelValue[] {
   return [
-    { label: words('house.setup.kindLabel'), value: CATEGORY_LABEL[john.category] },
-    { label: words('house.johns.sharedBy'), value: groupName || words('house.johns.everyone') },
+    { label: words('house.setup.kindLabel'), value: about.kind || CATEGORY_LABEL[john.category] },
+    { label: words('house.johns.sharedBy'), value: about.group || words('house.johns.everyone') },
     { label: words('house.johns.effort'), value: pointsLabel(john.points, words) },
     ...(john.crew === 1 ? [] : [{ label: words('john.crew.doneBy'), value: words('john.crew.choice', { crew: john.crew }) }]),
     ...(john.when === "on_call"
@@ -112,12 +146,6 @@ export function johnFacts(john: JohnDef, groupName: string | null | undefined, w
     ...(john.keepDay ? [{ label: words('week.steady.keepDay'), value: words('week.steady.keepDayYes') }] : []),
     { label: words('house.setup.photoLabel'), value: john.needsPhoto ? words('house.setup.photoNeeded') : words('house.setup.photoNot') },
   ];
-}
-
-/** Where a house's time zone is, as people say it: "London" for Europe/London, "New York" for America/New_York. */
-export function zonePlace(timezone: string): string {
-  const last = timezone.split("/").filter(Boolean).pop() ?? timezone;
-  return last.replaceAll("_", " ");
 }
 
 /** A forfeit as the rules show it: "−£1", or nothing at all. */
@@ -156,7 +184,7 @@ export function rulesRows(
     { label: words('house.setup.lateWindow'), value: words('house.setup.lateFor', { hours: rules.lateHours }) },
     { label: words('house.setup.cover'), value: words('house.setup.coverWindow', { hours: rules.coverGraceHours }) },
     { label: words('house.setup.away'), value: (awayMakeup === 100 || awayMakeup === 50 || awayMakeup === 0 ? words(`house.setup.makeup.${makeupKey(awayMakeup)}`) : null) ?? MAKEUP_LABEL[awayMakeup] ?? words('house.setup.makeupPercent', { percent: awayMakeup }) },
-    { label: words('house.setup.weekStarts'), value: words('house.setup.weekStartsAt', { day: weekdayName(rules.weekStarts, words), place: zonePlace(rules.timezone) }) },
+    { label: words('house.setup.weekStarts'), value: words('house.setup.weekStartsAt', { day: weekdayName(rules.weekStarts, words), place: zoneCity(rules.timezone) }) },
   ];
   // After the money it's about, when it's known.
   if (settleIn) rows.splice(5, 0, { label: words('house.setup.settleIn'), value: words(`house.setup.settleInValue.${settleIn}`) });
@@ -243,18 +271,6 @@ export function awayMeta(period: AwayPeriod, words: Words): string {
 }
 
 /**
- * The weeks a booking calendar shows: `count` weeks of local dates, each
- * starting on the house's first day, from the week that holds `today` moved
- * on by `from` weeks. It opens on the first week you can book.
- */
-export function bookingWeeks(today: string, weekStarts: IsoDow, from: number, count: number): string[][] {
-  const start = addDaysTo(today, -((isoDayOf(today) - weekStarts + 7) % 7) + from * 7);
-  return Array.from({ length: Math.max(0, count) }, (_, w) =>
-    Array.from({ length: 7 }, (_, d) => addDaysTo(start, w * 7 + d)),
-  );
-}
-
-/**
  * The weeks a month calendar shows for a `yyyy-MM` month: each starting on
  * the house's first day, from the week that holds the 1st to the week that
  * holds the last day, with the months either side filling the ends. Four to
@@ -268,13 +284,6 @@ export function monthWeeks(month: string, weekStarts: IsoDow): string[][] {
     weeks.push(Array.from({ length: 7 }, (_, d) => addDaysTo(start, d)));
   }
   return weeks;
-}
-
-/** What a run of dates spans, by month: "October 2026", "October–November 2026", "December 2026–January 2027". */
-export function monthsSpanned(first: string, last: string, words: Words): string {
-  const [a, b] = [monthLabel(first.slice(0, 7), words), monthLabel(last.slice(0, 7), words)];
-  if (a === b) return a;
-  return first.slice(0, 4) === last.slice(0, 4) ? joinRange(localDay(first, "month", words), b, words) : joinRange(a, b, words);
 }
 
 /** A local date said in full, for a screen reader: "Monday 26 October". */

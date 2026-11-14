@@ -25,6 +25,7 @@ import { useWords } from '@/hooks/use-words';
 export interface JohnRowContext {
   houseId: string;
   userId: string;
+  /** The zone times are said in: the reader's own clock when it's away from the house's, else the house's (`rules.timezone`). */
   zone: string;
   /** The house's rules: what lateness costs, for an undo that would make a John late. */
   rules: HouseRules;
@@ -50,11 +51,11 @@ export function useJohnRow(item: BoardItem, context: JohnRowContext) {
   const [asking, setAsking] = useState(false);
   // What lateness can still cost is capped at the stake, once a screen has read it.
   const stake = useCached<StakeView>(stakeKey(context.houseId)) ?? null;
-  const plan = johnRow(item, context.userId, context.now, context.zone, context.nameOf, words);
+  const plan = johnRow(item, { viewerId: context.userId, now: context.now, zone: context.zone, nameOf: context.nameOf, words });
   const open = () => sheet.open(item.id, plan.focus ?? undefined);
   const warning =
     plan.trailing === 'undo'
-      ? undoWarning(item, context.rules, context.now, words, forfeitRoom(stake, item.userId, monthOf(item.dueAt, context.zone)))
+      ? undoWarning(item, context.rules, context.now, words, forfeitRoom(stake, item.userId, monthOf(item.dueAt, context.rules.timezone)))
       : null;
   // The confirm lasts only while the row offers Undo: when the John moves on
   // under it (a dispute lands, the tick stands), the question goes, and
@@ -65,23 +66,10 @@ export function useJohnRow(item: BoardItem, context: JohnRowContext) {
     if (await undo.run(() => (item.coveredBy ? undoCover(item.id) : undoDone(item.id)))) setAsking(false);
   };
 
-  // A photo John's tick box goes to the camera (the file chooser, on the web) first.
-  const leading = plan.ticks ? (
-    <TickBox
-      state={tick.busy ? 'busy' : 'open'}
-      label={plan.tickLabel}
-      onPress={() => void (item.needsPhoto ? tick.tickWithPhoto('camera') : tick.tick())}
-    />
-  ) : plan.tick === 'excused' ? (
-    <RowIcon icon={ShieldIcon} />
-  ) : (
-    <TickBox state={plan.tick} label={plan.tickLabel} />
-  );
-
   return {
     plan,
     open,
-    leading,
+    leading: leadingFor(plan, item, tick),
     trailing: trailingFor(plan, item, {
       undo: () => (warning ? setAsking(true) : void undoNow()),
       undoing: undo.pending,
@@ -105,6 +93,22 @@ export function useJohnRow(item: BoardItem, context: JohnRowContext) {
       />
     ) : null,
   };
+}
+
+/** The row's leading item: the tick box, or a shield when excused. */
+function leadingFor(plan: JohnRowPlan, item: BoardItem, tick: ReturnType<typeof useTick>): ReactNode {
+  // A photo John's tick box goes to the camera (the file chooser, on the web) first.
+  if (plan.ticks) {
+    return (
+      <TickBox
+        state={tick.busy ? 'busy' : 'open'}
+        label={plan.tickLabel}
+        onPress={() => void (item.needsPhoto ? tick.tickWithPhoto('camera') : tick.tick())}
+      />
+    );
+  }
+  if (plan.tick === 'excused') return <RowIcon icon={ShieldIcon} />;
+  return <TickBox state={plan.tick} label={plan.tickLabel} />;
 }
 
 /** The row's one trailing item, from its plan. */
@@ -161,7 +165,7 @@ export function JohnRow({ item, context, testID }: { item: BoardItem; context: J
         titleLines={2}
         meta={john.plan.meta}
         metaLines={2}
-        lid={john.plan.lid ? item.category : undefined}
+        lid={john.plan.lid ? (item.kindColour ?? item.category) : undefined}
         leading={john.leading}
         trailing={john.trailing}
         hazardEdge={john.plan.hazardEdge}

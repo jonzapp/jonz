@@ -5,6 +5,7 @@ import { Group, GroupItem } from '@/components/group';
 import { Sheet } from '@/components/sheet';
 import { Body, RowTitle } from '@/components/text';
 import { useWords } from '@/hooks/use-words';
+import { HAIR } from '@/theme';
 
 /**
  * How points and the stake work, in plain words with the house's own
@@ -51,5 +52,5 @@ export function RulesSheet({
 }
 
 const styles = StyleSheet.create({
-  rule: { gap: 2 },
+  rule: { gap: HAIR },
 });

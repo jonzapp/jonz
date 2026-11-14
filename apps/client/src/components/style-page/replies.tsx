@@ -69,7 +69,7 @@ const WEEK = [
 // The style page's sample house is housemates, in English.
 const words = wordsFor('en', 'housemates');
 const live = replyPieces(DATA, words);
-export const SAMPLE_PIECES: ReplyPieces = {
+const SAMPLE_PIECES: ReplyPieces = {
   ...live,
   card(card) {
     if (card.card === 'shares') {

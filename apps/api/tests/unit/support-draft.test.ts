@@ -24,6 +24,8 @@ const readsStub: SupportReads = {
   page: () => "how",
 };
 const SUPPORT_TOOLS = ["audit", "deletions", "read_page", "similar_reports", "their_house", "their_reports"];
+/** A pretend now: nothing here depends on when it runs. */
+const NOW = new Date("2026-11-11T12:00:00Z");
 
 const MAIN = "5c1e9a20-0000-4000-8000-000000000001";
 const REPORT = "8b2d4f10-0000-4000-8000-000000000002";
@@ -154,7 +156,7 @@ describe("supportDraft", () => {
     for (const status of [{ owner: false, mfa: false }, { owner: true, mfa: false }]) {
       const { caller, names } = callerAnswering({ owner_status: status });
       const ask = vi.fn();
-      expect(await supportDraft(caller, REPORT, new Date(), ask)).toEqual({ refusal: { code: "42501", message: "owner_only" } });
+      expect(await supportDraft(caller, REPORT, NOW, ask)).toEqual({ refusal: { code: "42501", message: "owner_only" } });
       expect(ask).not.toHaveBeenCalled();
       expect(names()).toEqual(["owner_status"]);
     }
@@ -169,7 +171,7 @@ describe("supportDraft", () => {
     ]) {
       const { caller, names } = callerAnswering({ owner_status: OWNER, owner_open_report: opened(over) });
       const ask = vi.fn();
-      expect(await supportDraft(caller, REPORT, new Date(), ask)).toEqual({ draft: null });
+      expect(await supportDraft(caller, REPORT, NOW, ask)).toEqual({ draft: null });
       expect(ask).not.toHaveBeenCalled();
       expect(names()).not.toContain("claim_support_draft");
     }
@@ -215,7 +217,7 @@ describe("supportDraft", () => {
         claim_support_draft: { fresh: true, draft: draftRow() },
         finish_support_draft: draftRow({ state: "ready", reply: "Hi." }),
       });
-      await supportDraft(caller, REPORT, new Date(), async () => ({ raw: { reply: "Hi.", action: "same_as", same_as: bad, why: "" }, inputTokens: 1, outputTokens: 1 }));
+      await supportDraft(caller, REPORT, NOW, async () => ({ raw: { reply: "Hi.", action: "same_as", same_as: bad, why: "" }, inputTokens: 1, outputTokens: 1 }));
       expect(asked.find(([n]) => n === "finish_support_draft")?.[1]).toMatchObject({ p_action: "none", p_same_as: null });
     }
   });
@@ -227,7 +229,7 @@ describe("supportDraft", () => {
       claim_support_draft: { fresh: false, draft: draftRow({ state: "ready", reply: "Hi Ava." }) },
     });
     const ask = vi.fn();
-    expect(await supportDraft(caller, REPORT, new Date(), ask)).toMatchObject({ draft: { state: "ready", reply: "Hi Ava." } });
+    expect(await supportDraft(caller, REPORT, NOW, ask)).toMatchObject({ draft: { state: "ready", reply: "Hi Ava." } });
     expect(ask).not.toHaveBeenCalled();
     expect(names()).not.toContain("finish_support_draft");
   });
@@ -239,7 +241,7 @@ describe("supportDraft", () => {
       claim_support_draft: { fresh: true, draft: draftRow() },
       finish_support_draft: draftRow({ state: "failed" }),
     });
-    const result = await supportDraft(caller, REPORT, new Date(), async () => {
+    const result = await supportDraft(caller, REPORT, NOW, async () => {
       throw new Error("gateway down");
     });
     expect(result).toMatchObject({ draft: { state: "failed" } });
@@ -254,7 +256,7 @@ describe("supportDraft", () => {
         : { data: name === "owner_status" ? OWNER : opened(), error: null },
     );
     const ask = vi.fn();
-    expect(await supportDraft(caller, REPORT, new Date(), ask)).toEqual({ draft: null });
+    expect(await supportDraft(caller, REPORT, NOW, ask)).toEqual({ draft: null });
     expect(ask).not.toHaveBeenCalled();
   });
 });

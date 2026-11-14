@@ -56,7 +56,7 @@ const ICON: Record<OwnerMoveKind, LucideIcon> = {
 };
 
 /** Does one move through the admin page's own call, as the owner: the database checks it and the audit log keeps it. */
-export async function doOwnerMove(m: OwnerMove): Promise<void> {
+async function doOwnerMove(m: OwnerMove): Promise<void> {
   switch (m.kind) {
     case 'report_reply':
       return replyToReport(m.reportId, m.body);

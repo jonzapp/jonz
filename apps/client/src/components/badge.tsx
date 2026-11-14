@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { useTheme } from '@/theme';
+import { SPACE, useTheme } from '@/theme';
 
 /**
  * A count on an ink pill: on the Today tab (what waits for your vote) or
@@ -26,6 +26,9 @@ export function CountBadge({ count, ring = false }: { count: number; ring?: bool
   );
 }
 
+/** The badge's height: its ends are half of it, so one figure sits in a circle. */
+const SIZE = 20;
+
 const styles = StyleSheet.create({
-  badge: { minWidth: 20, height: 20, paddingHorizontal: 5, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  badge: { minWidth: SIZE, height: SIZE, paddingHorizontal: SPACE.xs + 1, borderRadius: SIZE / 2, alignItems: 'center', justifyContent: 'center' },
 });

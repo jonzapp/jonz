@@ -1,4 +1,4 @@
-import { memberCan, passUnlocked } from '@app/core';
+import { memberCan, hasPass, type SavedTurn } from '@app/core';
 import { HistoryIcon, SquarePenIcon } from 'lucide-react-native';
 import { useCallback, useState, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -20,8 +20,12 @@ import { useTable } from '@/hooks/use-table';
 import { GUTTER, useTheme } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
-/** Which chat is open: a new one, or one kept earlier; `serial` starts the chat afresh on each switch. */
-type Open = { serial: number; saved: SavedChat | null };
+/**
+ * Which chat is open: a new one, or one kept earlier; `serial` starts the
+ * chat afresh on each switch. A new chat carried on from a full one opens
+ * with `seed` (its summary).
+ */
+type Open = { serial: number; saved: SavedChat | null; seed?: SavedTurn[] };
 
 /**
  * What the chat puts in its caller's title bar, laid out as chat apps lay
@@ -78,8 +82,8 @@ export function AskJonz({
   const [talked, setTalked] = useState(false);
   const kept = useCallback((id: string) => setOpenId(id), []);
 
-  function fresh() {
-    setChat((was) => ({ serial: was.serial + 1, saved: null }));
+  function fresh(seed?: SavedTurn[]) {
+    setChat((was) => ({ serial: was.serial + 1, saved: null, seed }));
     setOpenId(null);
     setAll(false);
     setProblem(null);
@@ -100,7 +104,7 @@ export function AskJonz({
   // Describe your house is a long title, and a new house's chat is one sitting: the buttons would push the
   // title into dots there. Leaving the page and coming back starts afresh.
   const describing = title === words('common.title.describe') && !all;
-  const newChat = describing ? null : <IconButton icon={SquarePenIcon} label={words('ask.chats.newChat')} onPress={fresh} disabled={!talked && !all} testID="chat-new" />;
+  const newChat = describing ? null : <IconButton icon={SquarePenIcon} label={words('ask.chats.newChat')} onPress={() => fresh()} disabled={!talked && !all} testID="chat-new" />;
   const yours =
     describing || all ? null : (
       <IconButton
@@ -145,6 +149,8 @@ export function AskJonz({
         <SetupChat
           key={chat.serial}
           saved={chat.saved}
+          seed={chat.seed}
+          onCarryOn={fresh}
           onKept={kept}
           onTalked={setTalked}
           houseId={houseId}
@@ -153,14 +159,14 @@ export function AskJonz({
           groups={list.data.groups}
           people={view.snapshot.members}
           me={userId}
-          passOpen={passUnlocked(view.snapshot.house.pass, view.now)}
+          passOpen={hasPass(view.snapshot.house.pass, view.now)}
           canChange={memberCan(view.me, 'johns:write')}
           onOpenList={onOpenList}
           pieces={replyPieces({
             viewerId: userId,
             people: view.snapshot.members.map((m) => ({ userId: m.userId, name: m.name })),
-            johns: list.data.johns,
-            groups: list.data.groups,
+            // The list's Johns, kinds and groups.
+            ...list.data,
             items: view.board.items,
             rowContext: {
               houseId,

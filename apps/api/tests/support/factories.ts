@@ -1,15 +1,17 @@
 import { dateInWeek, monthIndex, weekIndex, weekWindow, type Category, type IsoDow, type WeekWindow } from "@app/core";
 import { expect } from "vitest";
 
-import { dealWeek, loadHouse } from "@/lib/engine/tick";
 
 import { adminClient, signedInUser, type Actor } from "./clients";
 import { track } from "./scope";
+import { rightNow } from "./clock";
+import { dealWeek } from "@/lib/engine/deal-week";
+import { loadHouse } from "@/lib/engine/shared";
 
 export const ZONE = "Europe/London";
 
 /** When everyone in a test house moved in: long before any week a test deals. */
-export const SINCE = "2020-01-01T00:00:00Z";
+const SINCE = "2020-01-01T00:00:00Z";
 
 export interface House {
   id: string;
@@ -127,12 +129,12 @@ export async function deal(houseId: string, week: WeekWindow, now: Date) {
 }
 
 /** The current real week, which is the only one the housemate functions will accept ticks in. */
-export function thisWeek(now = new Date()) {
+export function thisWeek(now = rightNow()) {
   return weekWindow(now, ZONE, 1);
 }
 
 /** A week safely in the past (the functions will refuse ticks in it). */
-export function weeksAgo(n: number, now = new Date()) {
+export function weeksAgo(n: number, now = rightNow()) {
   return weekWindow(new Date(now.getTime() - n * 7 * 86_400_000), ZONE, 1);
 }
 

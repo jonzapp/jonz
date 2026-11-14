@@ -4,7 +4,8 @@ import { AUDIT_WHAT, AUDIT_WHO } from "./admin-list";
 import { APP_ACCESS } from "./app-access";
 import { CHAT_SAVED_TURNS, SavedTurn } from "./ask-chats";
 import { BEST_TIMES, CURRENCIES, DEAL_MODES, HOUSE_KINDS } from "./domain";
-import { AskUsage, ChatRequest, ChatResponse } from "./house-draft";
+import { AskUsage } from "./ask-allowance";
+import { ChatRequest, ChatResponse } from "./house-draft";
 import { PAGE_IDS } from "./pages";
 import { AddKid, AddKidResponse } from "./kids";
 import { LANGUAGES } from "./locales";
@@ -27,6 +28,7 @@ import {
   DisplayName,
   HouseSettings,
   JohnFields,
+  KindDraft,
   johnMonthly,
   FlagResponse,
   FreshRequest,
@@ -81,8 +83,8 @@ export interface OperationIo {
   /** Input keys whose function argument isn't the rule's (`p_` + snake_case, without `Id`). */
   args?: Readonly<Record<string, string>>;
   /**
-   * For an operation behind an API route whose request names things
-   * differently: the route's request from this input.
+   * For an operation whose server code names things
+   * differently: that code's request from this input.
    */
   toRequest?: (input: never) => unknown;
   /** A list read a page at a time: which of a row's fields the cursor holds, and (for a function) which arguments take them. */
@@ -285,7 +287,7 @@ const overview = z.object({
   reports: count,
   needs: z.array(z.object({ kind: z.enum(["report", "deletion"]), id: text, name: text.nullable(), words: text.nullable(), house: text.nullable(), at })),
 });
-/** A reset, its ids named as /v1 names them; `toRequest` gives the route's ResetRequest. */
+/** A reset, its ids named as /v1 names them; `toRequest` gives the move's ResetRequest. */
 const resetInput = ResetRequest.omit({ week: true, user: true, assignment: true }).extend({
   weekId: ResetRequest.shape.week,
   userId: ResetRequest.shape.user,
@@ -327,14 +329,14 @@ const today = z.object({
   ),
   week: T.weeks.pick({ id: true, startsOn: true, startsAt: true, endsAt: true, waiting: true, ahead: true }).nullable(),
   /** This week's, and any still open from before. */
-  assignments: z.array(T.assignments.extend({ everyWeeks: int.nullable(), everyMonths: int.nullable(), crew })),
+  assignments: z.array(T.assignments.extend({ everyWeeks: int.nullable(), everyMonths: int.nullable(), kindName: text.nullable(), kindColour: text.nullable(), crew })),
   disputes: z.array(
     T.disputes
       .pick({ id: true, assignmentId: true, raisedBy: true, reason: true, closesAt: true, photoPath: true })
       .extend({ votes: z.array(T.dispute_votes.pick({ userId: true, uphold: true })) }),
   ),
   onCall: z.array(
-    T.on_call_picks.pick({ johnId: true, userId: true }).extend({ john: T.johns.pick({ name: true, category: true, needsPhoto: true, archivedAt: true }).nullable() }),
+    T.on_call_picks.pick({ johnId: true, userId: true }).extend({ john: T.johns.pick({ name: true, category: true, needsPhoto: true, archivedAt: true }).extend({ kindName: text.nullable(), kindColour: text.nullable() }).nullable() }),
   ),
   offers: z.array(z.object({ id, mine: id, theirs: id, askedBy: id, askedUserId: id, expiresAt: at })),
   moves: z.object({ lastMovedOut: at.nullable(), lastJoined: at.nullable() }),
@@ -470,6 +472,7 @@ export const OPERATION_IO = {
   // Any language tag, not a fixed list: a new language is an addition, not a change to /v1.
   my_language: io(none, z.string().describe("A language tag, such as en or fr").nullable(), "GET /v1/me/language"),
   set_my_language: io(z.object({ language: z.enum(LANGUAGES) }), nothing, "PATCH /v1/me/language"),
+  time_zones: io(none, z.array(z.string().describe("An IANA time zone, such as Europe/London")), "GET /v1/time-zones"),
   my_notifications: io(
     none,
     T.notification_prefs.pick({ reminders: true, checks: true, flags: true, deal: true, quietFrom: true, quietUntil: true, timezone: true }).nullable(),
@@ -505,6 +508,7 @@ export const OPERATION_IO = {
         T.johns.pick({
           id: true,
           name: true,
+          johnKindId: true,
           category: true,
           points: true,
           everyWeeks: true,
@@ -525,6 +529,7 @@ export const OPERATION_IO = {
           minAge: true,
         }),
       ),
+      kinds: z.array(T.john_kinds.pick({ id: true, name: true, colour: true, position: true, preset: true })),
       groups: z.array(z.object({ id, name: text, members: z.array(id) })),
     }),
     "GET /v1/houses/{houseId}/johns",
@@ -650,6 +655,9 @@ export const OPERATION_IO = {
   add_johns: io(z.object({ houseId: id, johns: z.array(JohnFields.refine(...johnMonthly)).min(1).max(100) }), z.array(id), "POST /v1/houses/{houseId}/johns/batch"),
   change_john: io(JohnFields.extend({ johnId: id }).refine(...johnMonthly), nothing, "PATCH /v1/johns/{johnId}"),
   remove_john: io(z.object({ johnId: id }), nothing, "DELETE /v1/johns/{johnId}"),
+  save_kind: io(KindDraft.extend({ houseId: id, kindId: id.nullable() }), id, "POST /v1/houses/{houseId}/kinds"),
+  order_kinds: io(z.object({ houseId: id, kinds: z.array(id).max(100) }), nothing, "PATCH /v1/houses/{houseId}/kinds"),
+  delete_kind: io(z.object({ kindId: id, moveToId: id.optional() }), nothing, "DELETE /v1/kinds/{kindId}"),
   save_house_rules: io(HouseSettings.extend({ houseId: id }), nothing, "PATCH /v1/houses/{houseId}/rules"),
   set_deal_mode: io(z.object({ houseId: id, mode: z.enum(DEAL_MODES) }), nothing, "PATCH /v1/houses/{houseId}/deal-mode"),
   answer_tick: io(AnswerTick.extend({ assignmentId: id }), MoveResponse, "POST /v1/assignments/{assignmentId}/ok"),

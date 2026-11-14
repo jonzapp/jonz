@@ -294,5 +294,14 @@
   "common.statusMark.missed": "Oublié",
   "common.statusMark.disputed": "Contesté",
   "common.statusMark.excused": "Joker",
-  "common.statusMark.covered": "Remplacé"
+  "common.statusMark.covered": "Remplacé",
+  "common.zone.place": "{city}, {country}",
+  "common.zone.clock": "{offset}, {time} là-bas",
+  "common.zone.ahead": "{hours, plural, one {# heure} other {# heures}} d’avance",
+  "common.zone.behind": "{hours, plural, one {# heure} other {# heures}} de retard",
+  "common.zone.yours": "Ton heure, {city}. La maison a {gap}.",
+  "common.zone.houses": "Heure de la maison, {city}. Tu as {gap}.",
+  "common.zone.showHouse": "Voir l’heure de la maison",
+  "common.zone.showMine": "Voir mon heure",
+  "common.zone.houseTime": "{time} heure de la maison"
 }

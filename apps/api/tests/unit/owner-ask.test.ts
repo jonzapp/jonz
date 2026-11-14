@@ -27,6 +27,8 @@ const ownerReadsStub: OwnerReads = {
   page: () => "how",
 };
 const OWNER_TOOLS = ["audit", "deletions", "find_houses", "find_people", "house", "inbox", "messages", "notices", "promotions", "read_page"];
+/** A pretend now: nothing here depends on when it runs. */
+const NOW = new Date("2026-11-11T12:00:00Z");
 
 const houseTools = (): JonzTools => ({
   reads: new Proxy({}, { get: () => async () => "read" }) as JonzTools["reads"],
@@ -108,6 +110,17 @@ function callerAnswering(answers: Record<string, unknown>) {
   return { caller: { db, userId: "00000000-0000-4000-8000-000000000001" } as unknown as Caller, asked };
 }
 
+describe("the owner's inbox tool", () => {
+  it("reads either of the Inbox's two groups: waiting for a reply, or answered", async () => {
+    const inbox = vi.fn(async () => "inbox");
+    const tool = ownerToolSet({ ...ownerReadsStub, inbox }).inbox;
+    const schema = tool.inputSchema as unknown as { parse: (v: unknown) => unknown };
+    for (const state of ["waiting", "answered", "replied", "fixed", null]) expect(() => schema.parse({ q: "", state, kind: null })).not.toThrow();
+    await (tool.execute as (input: unknown, options: unknown) => Promise<unknown>)({ q: "", state: "answered", kind: null }, { toolCallId: "t", messages: [] });
+    expect(inbox).toHaveBeenCalledWith("", "answered", null);
+  });
+});
+
 describe("ownerReads", () => {
   it("marks what people wrote as theirs, so it can't pass for instructions", async () => {
     const { caller } = callerAnswering({
@@ -136,7 +149,7 @@ describe("ownerTurn", () => {
     for (const status of [{ owner: false, mfa: false }, { owner: true, mfa: false }, { owner: true, mfa: true, role: null }]) {
       const { caller, asked } = callerAnswering({ owner_status: status });
       const ask = vi.fn();
-      expect(await ownerTurn(caller, [{ role: "user", text: "Hi" }], new Date(), ask)).toEqual({ refusal: { code: "42501", message: "owner_only" } });
+      expect(await ownerTurn(caller, [{ role: "user", text: "Hi" }], NOW, ask)).toEqual({ refusal: { code: "42501", message: "owner_only" } });
       expect(ask).not.toHaveBeenCalled();
       expect(asked).toEqual(["owner_status"]);
     }
@@ -155,7 +168,7 @@ describe("ownerTurn", () => {
 
   it("says so when Claude doesn't answer", async () => {
     const { caller } = callerAnswering({ owner_status: { owner: true, mfa: true, role: "owner" }, claim_owner_ask: "t1" });
-    const result = await ownerTurn(caller, [{ role: "user", text: "Anything waiting?" }], new Date(), async () => {
+    const result = await ownerTurn(caller, [{ role: "user", text: "Anything waiting?" }], NOW, async () => {
       throw new Error("gateway down");
     });
     expect(result).toMatchObject({ source: "offline" });

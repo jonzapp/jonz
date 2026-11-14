@@ -182,6 +182,16 @@ export const TABLE_ROWS = {
     nextKind: text.nullable(),
     nextKindOn: day.nullable(),
   }),
+  john_kinds: z.object({
+    id,
+    houseId: id,
+    name: text,
+    colour: text,
+    position: int,
+    preset: text.nullable(),
+    createdAt: at,
+    updatedAt: at,
+  }),
   johns: z.object({
     id,
     houseId: id,
@@ -206,6 +216,7 @@ export const TABLE_ROWS = {
     keepDay: bool,
     payMinor: int,
     minAge: int.nullable(),
+    johnKindId: id.nullable(),
   }),
   ledger_entries: z.object({
     id: int,

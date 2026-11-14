@@ -131,72 +131,9 @@ export function MessageForm({ beside = false, onSent }: { beside?: boolean; onSe
   return (
     <>
       <View style={styles.form} testID="message-form">
-        <View style={styles.group}>
-          <FieldLabel>{words('admin.messages.to')}</FieldLabel>
-          <Segmented
-            label={words('admin.messages.to')}
-            options={MESSAGE_AUDIENCES.map((audience) => ({ value: audience, label: words(`admin.messages.audience.${audience}` as const) }))}
-            value={form.audience}
-            onChange={(audience) => set({ audience, picked: null })}
-            equal
-            testID="message-audience"
-          />
-        </View>
-        {form.audience === 'everyone' ? null : (
-          <RecipientPicker key={form.audience} audience={form.audience} picked={form.picked} onPick={(picked) => set({ picked })} problem={shown('who')} />
-        )}
-        <Field
-          label={words('admin.messages.subject')}
-          value={form.subject}
-          onChangeText={(subject) => set({ subject })}
-          problem={shown('subject')}
-          maxLength={MESSAGE_LIMITS.subject}
-          testID="message-subject"
-        />
-        <Field
-          label={words('admin.messages.body')}
-          value={form.body}
-          onChangeText={(body) => set({ body })}
-          problem={shown('body')}
-          hint={words('admin.messages.count', { n: form.body.trim().length, max: MESSAGE_LIMITS.body })}
-          multiline
-          maxLength={MESSAGE_LIMITS.body}
-          testID="message-body"
-        />
+        <Writing form={form} set={set} shown={shown} />
 
-        <View style={styles.group}>
-          <FieldLabel>{words('admin.messages.sendAs')}</FieldLabel>
-          <Group>
-            <ChoiceRow
-              role="checkbox"
-              label={words('admin.messages.wall')}
-              meta={wayMeta('wall', form.audience, reach.data ?? null, words)}
-              metaLines={2}
-              checked={ways.wall}
-              disabled={form.audience === 'person'}
-              onPress={() => set({ ways: { ...form.ways, wall: !form.ways.wall } })}
-              testID="message-way-wall"
-            />
-            <ChoiceRow
-              role="checkbox"
-              label={words('admin.messages.push')}
-              meta={wayMeta('push', form.audience, reach.data ?? null, words)}
-              metaLines={2}
-              checked={ways.push}
-              onPress={() => set({ ways: { ...form.ways, push: !form.ways.push } })}
-              testID="message-way-push"
-            />
-            <ChoiceRow
-              role="checkbox"
-              label={words('admin.messages.email')}
-              meta={wayMeta('email', form.audience, reach.data ?? null, words)}
-              checked={ways.email}
-              onPress={() => set({ ways: { ...form.ways, email: !form.ways.email } })}
-              testID="message-way-email"
-            />
-          </Group>
-          {shown('ways') ? <Alert message={problems.ways!} /> : null}
-        </View>
+        <Ways form={form} set={set} reach={reach.data ?? null} problem={shown('ways')} />
         {send.error && !confirming ? <Alert message={send.error.message} testID="message-problem" /> : null}
         <View style={styles.group}>
           {beside ? (
@@ -238,6 +175,90 @@ export function MessageForm({ beside = false, onSent }: { beside?: boolean; onSe
         testID="message-confirm"
       />
     </>
+  );
+}
+
+type SetForm = (patch: Partial<Form>) => void;
+
+/** Who it's to and what it says. `shown` gives a field's problem once Send has been tried. */
+function Writing({ form, set, shown }: { form: Form; set: SetForm; shown: (key: 'who' | 'subject' | 'body') => string | undefined }) {
+  const words = useWords();
+  return (
+    <>
+      <View style={styles.group}>
+        <FieldLabel>{words('admin.messages.to')}</FieldLabel>
+        <Segmented
+          label={words('admin.messages.to')}
+          options={MESSAGE_AUDIENCES.map((audience) => ({ value: audience, label: words(`admin.messages.audience.${audience}` as const) }))}
+          value={form.audience}
+          onChange={(audience) => set({ audience, picked: null })}
+          equal
+          testID="message-audience"
+        />
+      </View>
+      {form.audience === 'everyone' ? null : (
+        <RecipientPicker key={form.audience} audience={form.audience} picked={form.picked} onPick={(picked) => set({ picked })} problem={shown('who')} />
+      )}
+      <Field
+        label={words('admin.messages.subject')}
+        value={form.subject}
+        onChangeText={(subject) => set({ subject })}
+        problem={shown('subject')}
+        maxLength={MESSAGE_LIMITS.subject}
+        testID="message-subject"
+      />
+      <Field
+        label={words('admin.messages.body')}
+        value={form.body}
+        onChangeText={(body) => set({ body })}
+        problem={shown('body')}
+        hint={words('admin.messages.count', { n: form.body.trim().length, max: MESSAGE_LIMITS.body })}
+        multiline
+        maxLength={MESSAGE_LIMITS.body}
+        testID="message-body"
+      />
+    </>
+  );
+}
+
+/** How it goes out: on the Wall, as a notification, by email, each with how many it reaches. */
+function Ways({ form, set, reach, problem }: { form: Form; set: SetForm; reach: Awaited<ReturnType<typeof messageReach>> | null; problem?: string }) {
+  const words = useWords();
+  const ways = messageWays(form.audience, form.ways);
+  return (
+    <View style={styles.group}>
+      <FieldLabel>{words('admin.messages.sendAs')}</FieldLabel>
+      <Group>
+        <ChoiceRow
+          role="checkbox"
+          label={words('admin.messages.wall')}
+          meta={wayMeta('wall', form.audience, reach, words)}
+          metaLines={2}
+          checked={ways.wall}
+          disabled={form.audience === 'person'}
+          onPress={() => set({ ways: { ...form.ways, wall: !form.ways.wall } })}
+          testID="message-way-wall"
+        />
+        <ChoiceRow
+          role="checkbox"
+          label={words('admin.messages.push')}
+          meta={wayMeta('push', form.audience, reach, words)}
+          metaLines={2}
+          checked={ways.push}
+          onPress={() => set({ ways: { ...form.ways, push: !form.ways.push } })}
+          testID="message-way-push"
+        />
+        <ChoiceRow
+          role="checkbox"
+          label={words('admin.messages.email')}
+          meta={wayMeta('email', form.audience, reach, words)}
+          checked={ways.email}
+          onPress={() => set({ ways: { ...form.ways, email: !form.ways.email } })}
+          testID="message-way-email"
+        />
+      </Group>
+      {problem ? <Alert message={problem} /> : null}
+    </View>
   );
 }
 

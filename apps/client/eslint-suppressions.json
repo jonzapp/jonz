@@ -1,44 +1,6 @@
 {
-  "src/components/admin/admin-shell.tsx": {
-    "jonz/spacing-from-scale": {
-      "count": 3
-    }
-  },
-  "src/components/admin/audit-entry.tsx": {
-    "jonz/spacing-from-scale": {
-      "count": 1
-    }
-  },
   "src/components/admin/code-gate.tsx": {
     "jonz/no-raw-type-size": {
-      "count": 2
-    },
-    "jonz/spacing-from-scale": {
-      "count": 1
-    }
-  },
-  "src/components/admin/list-table.tsx": {
-    "jonz/spacing-from-scale": {
-      "count": 1
-    }
-  },
-  "src/components/admin/smart-search.tsx": {
-    "jonz/spacing-from-scale": {
-      "count": 1
-    }
-  },
-  "src/components/alert.tsx": {
-    "jonz/spacing-from-scale": {
-      "count": 1
-    }
-  },
-  "src/components/avatar.tsx": {
-    "jonz/spacing-from-scale": {
-      "count": 1
-    }
-  },
-  "src/components/badge.tsx": {
-    "jonz/spacing-from-scale": {
       "count": 2
     }
   },
@@ -47,138 +9,19 @@
       "count": 1
     }
   },
-  "src/components/house-page/rules-sheet.tsx": {
-    "jonz/spacing-from-scale": {
-      "count": 1
-    }
-  },
   "src/components/house/john-timing.tsx": {
     "jonz/no-raw-type-size": {
-      "count": 3
-    },
-    "jonz/spacing-from-scale": {
-      "count": 3
+      "count": 2
     }
   },
   "src/components/house/time-away.tsx": {
     "jonz/no-raw-type-size": {
-      "count": 1
-    },
-    "jonz/spacing-from-scale": {
-      "count": 3
-    }
-  },
-  "src/components/house/workspace.tsx": {
-    "jonz/spacing-from-scale": {
-      "count": 2
-    }
-  },
-  "src/components/john-sheet/body.tsx": {
-    "jonz/spacing-from-scale": {
-      "count": 1
-    }
-  },
-  "src/components/john-sheet/open.tsx": {
-    "jonz/spacing-from-scale": {
-      "count": 1
-    }
-  },
-  "src/components/lid.tsx": {
-    "jonz/spacing-from-scale": {
-      "count": 1
-    }
-  },
-  "src/components/row.tsx": {
-    "jonz/spacing-from-scale": {
-      "count": 2
-    }
-  },
-  "src/components/section.tsx": {
-    "jonz/spacing-from-scale": {
-      "count": 2
-    }
-  },
-  "src/components/setup/away-dates.tsx": {
-    "jonz/spacing-from-scale": {
-      "count": 2
-    }
-  },
-  "src/components/setup/choice-row.tsx": {
-    "jonz/spacing-from-scale": {
-      "count": 1
-    }
-  },
-  "src/components/sheet.tsx": {
-    "jonz/spacing-from-scale": {
-      "count": 9
-    }
-  },
-  "src/components/shell/house-tab-bar.tsx": {
-    "jonz/spacing-from-scale": {
-      "count": 5
-    }
-  },
-  "src/components/status-mark.tsx": {
-    "jonz/spacing-from-scale": {
-      "count": 1
-    }
-  },
-  "src/components/street-plate.tsx": {
-    "jonz/spacing-from-scale": {
-      "count": 2
-    }
-  },
-  "src/components/title-bar.tsx": {
-    "jonz/spacing-from-scale": {
-      "count": 3
-    }
-  },
-  "src/components/today/move-in-ask.tsx": {
-    "jonz/spacing-from-scale": {
-      "count": 1
-    }
-  },
-  "src/components/today/next-up.tsx": {
-    "jonz/spacing-from-scale": {
-      "count": 2
-    }
-  },
-  "src/components/today/page-line.tsx": {
-    "jonz/spacing-from-scale": {
-      "count": 1
-    }
-  },
-  "src/components/today/setup-card.tsx": {
-    "jonz/spacing-from-scale": {
       "count": 1
     }
   },
   "src/components/wall/wall-row.tsx": {
     "jonz/no-raw-type-size": {
       "count": 4
-    },
-    "jonz/spacing-from-scale": {
-      "count": 6
-    }
-  },
-  "src/components/week/fair-shares.tsx": {
-    "jonz/spacing-from-scale": {
-      "count": 1
-    }
-  },
-  "src/components/week/summary.tsx": {
-    "jonz/spacing-from-scale": {
-      "count": 4
-    }
-  },
-  "src/components/week/track-record.tsx": {
-    "jonz/spacing-from-scale": {
-      "count": 3
-    }
-  },
-  "src/components/week/week-table.tsx": {
-    "jonz/spacing-from-scale": {
-      "count": 1
     }
   },
   "src/components/wordmark.tsx": {

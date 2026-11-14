@@ -15,9 +15,10 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HazardTape, SIGN_TAPE } from '@/components/hazard-tape';
+import { nearEnd } from '@/components/near-end';
 import { Body, Lead } from '@/components/text';
 import { IconButton } from '@/components/icon-button';
-import { GUTTER, INSET, SECTION_GAP, SPACE, TAP, useTheme, WIDE } from '@/theme';
+import { GUTTER, INSET, MARK_RADIUS, SECTION_GAP, SHEET_RADIUS, SPACE, TAP, useTheme, WIDE } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
 /**
@@ -73,6 +74,8 @@ export function SheetAnchor({ name, children }: { name: string; children: ReactN
  * sheet that is a brand moment (the invite).
  * `openAt` names a `SheetAnchor` in the content to open scrolled to, when
  * there's more than fits; the sheet scrolls there once each time it opens.
+ * `onNearEnd` runs as a scroll nears the end, for a long list that shows
+ * its next part then (the time zone picker's).
  * Tapping outside it or the close button puts it away. A sheet changes its
  * own content and never opens a second one. `onDismissed` runs once it has
  * gone: on iOS when its slide out has ended (a modal can't rise while
@@ -88,6 +91,7 @@ export function Sheet({
   flush = false,
   tape = false,
   openAt,
+  onNearEnd,
   testID,
   children,
 }: {
@@ -103,6 +107,8 @@ export function Sheet({
   tape?: boolean;
   /** The `SheetAnchor` to open scrolled to. */
   openAt?: string;
+  /** A scroll is nearing the end: a long list shows its next part. */
+  onNearEnd?: () => void;
   testID?: string;
   children: ReactNode;
 }) {
@@ -179,6 +185,8 @@ export function Sheet({
             <ScrollView
               ref={scroll}
               keyboardShouldPersistTaps="handled"
+              scrollEventThrottle={onNearEnd ? 200 : undefined}
+              onScroll={nearEnd(onNearEnd)}
               onLayout={(e) => measured({ height: e.nativeEvent.layout.height })}
               onContentSizeChange={(_width, height) => measured({ content: height })}
               testID="sheet-scroll"
@@ -262,10 +270,10 @@ const styles = StyleSheet.create({
     maxHeight: '90%',
     alignSelf: 'center',
     paddingTop: SPACE.sm,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    borderTopLeftRadius: SHEET_RADIUS,
+    borderTopRightRadius: SHEET_RADIUS,
   },
-  dialog: { borderRadius: 16 },
+  dialog: { borderRadius: SHEET_RADIUS },
   taped: { paddingTop: SIGN_TAPE + SPACE.sm },
   // Clipped to the sheet's rounded top corners.
   tape: {
@@ -273,19 +281,19 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    borderTopLeftRadius: SHEET_RADIUS,
+    borderTopRightRadius: SHEET_RADIUS,
     overflow: 'hidden',
   },
   edge: {
     borderTopWidth: StyleSheet.hairlineWidth,
     borderLeftWidth: StyleSheet.hairlineWidth,
     borderRightWidth: StyleSheet.hairlineWidth,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    borderTopLeftRadius: SHEET_RADIUS,
+    borderTopRightRadius: SHEET_RADIUS,
   },
-  dialogEdge: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 16 },
-  grabber: { alignSelf: 'center', width: 36, height: 4, borderRadius: 2 },
+  dialogEdge: { borderWidth: StyleSheet.hairlineWidth, borderRadius: SHEET_RADIUS },
+  grabber: { alignSelf: 'center', width: 36, height: 4, borderRadius: MARK_RADIUS },
   // The close button's icon lines up with the content's right edge, at the
   // top beside a title of any length.
   top: {

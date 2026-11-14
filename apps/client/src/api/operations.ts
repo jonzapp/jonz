@@ -27,13 +27,16 @@ import { payPocketMoney } from './pocket';
 import {
   dealThisWeek,
   deleteGroup,
+  deleteKind,
   handOver,
+  orderKinds,
   removeMember,
   resetJoinCode,
   saveDealMode,
   setHouseKind,
   setRole,
   resetHouseData,
+  saveKind,
   updateHouse,
 } from './settings';
 import { confirmPayment } from './stake';
@@ -49,7 +52,7 @@ type Input<N extends AskCardOperation> = z.infer<(typeof OPERATION_IO)[N]['input
 /** Who is doing it, for the calls that need them named. */
 export type OperationContext = { userId: string; words: Words };
 
-export const CARD_OPERATIONS: { [N in AskCardOperation]: (input: Input<N>, ctx: OperationContext) => Promise<unknown> } = {
+const CARD_OPERATIONS: { [N in AskCardOperation]: (input: Input<N>, ctx: OperationContext) => Promise<unknown> } = {
   mark_done: (i) => markDone(i.assignmentId, i.photoPath),
   undo_done: (i) => undoDone(i.assignmentId),
   plan_john: (i) => planJohn(i.assignmentId, i.at ? new Date(i.at) : null),
@@ -77,6 +80,9 @@ export const CARD_OPERATIONS: { [N in AskCardOperation]: (input: Input<N>, ctx: 
   board_tick: (i) => boardTick(i.assignmentId),
   remove_flag: (i) => removeFlag(i.assignmentId),
   delete_group: (i) => deleteGroup(i.groupId),
+  save_kind: (i) => saveKind(i.houseId, i.kindId, { name: i.name, colour: i.colour }),
+  order_kinds: (i) => orderKinds(i.houseId, i.kinds),
+  delete_kind: (i) => deleteKind(i.kindId, i.moveToId),
   reset_join_code: (i) => resetJoinCode(i.houseId),
   reset_house_data: (i) => resetHouseData(i.houseId, i.everything ?? false),
   set_house_kind: (i) => setHouseKind(i.houseId, i.kind),

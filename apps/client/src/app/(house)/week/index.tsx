@@ -1,4 +1,4 @@
-import { canSwap, memberCan, oneRowPerJob, passUnlocked, liveWeekFilter, toggleWeekFilter, weekAwayLine, weekAwayNote, weekFairness, weekList, weekLookAhead, weekPeople, weekRangeLine, weekSummary, weekTogether, weekUnticked, whoDeals, type JohnDef, type WeekPart } from '@app/core';
+import { canSwap, kindOf, memberCan, oneRowPerJob, hasPass, liveWeekFilter, toggleWeekFilter, weekAwayLine, weekAwayNote, weekFairness, weekList, weekLookAhead, weekPeople, weekRangeLine, weekSummary, weekTogether, weekUnticked, whoDeals, type JohnDef, type WeekPart } from '@app/core';
 import { RepeatIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
@@ -10,6 +10,7 @@ import { Columns, Screen, useColumns } from '@/components/screen';
 import { Section } from '@/components/section';
 import { Chip } from '@/components/status-mark';
 import { TextButton } from '@/components/text-button';
+import { type MenuPlace } from '@/components/drop-menu';
 import { MoreButton, TitleBar } from '@/components/title-bar';
 import { TableSection } from '@/components/house-page/table-section';
 import { ComingUpSection } from '@/components/week/coming-up';
@@ -31,6 +32,8 @@ import { useStake } from '@/hooks/use-stake';
 import { useTable } from '@/hooks/use-table';
 import { INSET, WIDE } from '@/theme';
 import { useWords } from '@/hooks/use-words';
+import { useZones } from '@/hooks/use-zones';
+import { ZoneLine } from '@/components/zone-line';
 
 /**
  * Week: how the whole house's week is going. The title bar's "•••" holds
@@ -65,7 +68,8 @@ function WeekFor({ houseId, userId }: { houseId: string; userId: string }) {
   const { refreshing, pull } = usePull(houseId, () =>
     Promise.all([query.refetch(), ...(view ? [away.refetch(), shares.refetch()] : [])]),
   );
-  const [menu, setMenu] = useState(false);
+  // The "•••" menu while it's open, and where it drops from on a laptop.
+  const [menu, setMenu] = useState<{ place: MenuPlace | null } | null>(null);
   const board = view?.board;
 
   return (
@@ -76,14 +80,15 @@ function WeekFor({ houseId, userId }: { houseId: string; userId: string }) {
             title={words('common.title.week')}
             right={
               <TourSpot id="week.more">
-                <MoreButton onPress={() => setMenu(true)} />
+                <MoreButton onPress={(place) => setMenu({ place })} />
               </TourSpot>
             }
             ask={memberCan(view?.me, 'house:read')}
           />
           <WeekMenu
-            visible={menu}
-            onClose={() => setMenu(false)}
+            visible={menu !== null}
+            place={menu?.place ?? null}
+            onClose={() => setMenu(null)}
             houseId={houseId}
             admin={memberCan(view?.me, 'weeks:write')}
             canRedeal={board?.week != null && weekUnticked(board.items)}
@@ -106,7 +111,8 @@ function WeekFor({ houseId, userId }: { houseId: string; userId: string }) {
             away={away}
             shares={shares}
             johns={forDeal ? (list.data?.johns ?? null) : null}
-            list={list.data?.johns ?? null}
+            // Each with its kind's name ('' for none), for the lines under the Johns waiting their turn.
+            list={list.data ? list.data.johns.map((j) => ({ ...j, kindName: kindOf(j, list.data!.kinds)?.name ?? '' })) : null}
           />
         )}
       </Waiting>
@@ -128,7 +134,7 @@ function Board({
   shares: ReturnType<typeof useTable>;
   johns: readonly unknown[] | null;
   /** The John list, once read: for what's coming up. */
-  list: readonly JohnDef[] | null;
+  list: readonly (JohnDef & { kindName?: string })[] | null;
 }) {
   const away = awayRead.data;
   const shares = sharesRead.data;
@@ -139,7 +145,9 @@ function Board({
   const [filter, setFilter] = useState<WeekPart | null>(null);
   const userId = me?.userId ?? '';
   const nameOf = (id: string) => members.find((m) => m.userId === id)?.name ?? null;
-  const context: JohnRowContext = { houseId: house.id, userId, zone: rules.timezone, rules, now, nameOf };
+  // Times on your own clock when it's away from the house's (Your time, said once); the week stays the house's.
+  const zones = useZones(rules.timezone, now);
+  const context: JohnRowContext = { houseId: house.id, userId, zone: zones.shown, rules, now, nameOf };
 
   // A week of only on-call Johns has nothing on it until someone flags one, but is dealt.
   if (!board.week || (board.items.length === 0 && snapshot.onCall.length === 0)) {
@@ -161,16 +169,12 @@ function Board({
   // A filter whose part has emptied lets go for good, so the part filling up again later doesn't hide the rest.
   if (filter !== null && shown === null) setFilter(null);
   const memberIds = members.map((m) => m.userId);
-  const fairness = shares ? weekFairness(shares.balances, board.items.map((i) => i.points), userId, nameOf, words) : null;
-  const pointsOf = (id: string) => board.table.find((r) => r.userId === id)?.points ?? 0;
   const awayOf = (id: string) => (away ? weekAwayNote(away.periods, id, week.startsOn, away.today, words) : null);
-  const onCallOf = (id: string) => {
-    const names = snapshot.onCall.filter((r) => r.user_id === id && r.johns).map((r) => r.johns!.name);
-    return names.length > 0 ? words('today.onCall.weekLine', { names: names.join(', ') }) : null;
-  };
   const swapReady = canSwap(board, me);
 
   const summaryBar = (
+    <>
+    <ZoneLine zones={zones} now={now} />
     <TourSpot id="week.summary">
     <WeekSummaryBar
       range={weekRangeLine(week.startsAt, week.endsAt, now, rules.timezone, words)}
@@ -190,14 +194,93 @@ function Board({
       }
     />
     </TourSpot>
+    </>
   );
-  // Johns done together: one row each, under Together on a phone, in the table's one list on a laptop.
+  const johnRows = <WeekJohns view={view} wide={wide} shown={shown} context={context} awayOf={awayOf} />;
+  const fair = shares ? <Fairness view={view} balances={shares.balances} context={context} /> : null;
+  const ahead = list ? <LookAhead view={view} week={week} list={list} context={context} /> : null;
+  const record = (
+    <View style={styles.record}>
+      <TextButton label={words('week.record.open')} href="/week/record" chevron align="start" testID="week-record" />
+    </View>
+  );
+
+  // On a laptop the summary heads the board in the main column, and the Table sits in the panel beside it, over
+  // the deal's fairness, from the top of the page to its foot.
+  if (two) {
+    return (
+      <Columns
+        main={
+          <>
+            {summaryBar}
+            {johnRows}
+            {ahead}
+          </>
+        }
+        side={
+          <>
+            {hasPass(house.pass, now) ? (
+              <SideTable userId={userId} view={view} table={sharesRead} away={awayRead} />
+            ) : null}
+            {/* The deal's two quiet lines sit together under the Table, as Today's page lines do. */}
+            <View>
+              {fair}
+              {record}
+            </View>
+          </>
+        }
+      />
+    );
+  }
+  return (
+    <>
+      {summaryBar}
+      {johnRows}
+      {ahead}
+      {fair}
+      {record}
+    </>
+  );
+}
+
+/**
+ * The week's Johns: on a laptop one table; on a phone the Johns done
+ * together, then a section a person. `shown` is the part the summary's
+ * filter leaves.
+ */
+function WeekJohns({
+  view,
+  wide,
+  shown,
+  context,
+  awayOf,
+}: {
+  view: HouseView;
+  wide: boolean;
+  shown: WeekPart | null;
+  context: JohnRowContext;
+  awayOf: (id: string) => string | null;
+}) {
+  const words = useWords(view.snapshot.house.kind);
+  const { snapshot, board, me } = view;
+  const { userId } = context;
+  if (wide) {
+    return (
+      <TourSpot id="week.everyone">
+        <WeekTable {...weekList(oneRowPerJob(board.items, userId), shown)} context={context} />
+      </TourSpot>
+    );
+  }
+  const memberIds = snapshot.members.map((m) => m.userId);
+  const pointsOf = (id: string) => board.table.find((r) => r.userId === id)?.points ?? 0;
+  const onCallOf = (id: string) => {
+    const names = snapshot.onCall.filter((r) => r.user_id === id && r.johns).map((r) => r.johns!.name);
+    return names.length > 0 ? words('today.onCall.weekLine', { names: names.join(', ') }) : null;
+  };
+  const swapReady = canSwap(board, me);
+  // Johns done together: one row each, under Together.
   const together = weekTogether(board.items, userId, shown);
-  const johnRows = wide ? (
-    <TourSpot id="week.everyone">
-      <WeekTable {...weekList(oneRowPerJob(board.items, userId), shown)} context={context} />
-    </TourSpot>
-  ) : (
+  return (
     <>
       {together.length > 0 ? (
         <Section label={words('john.crew.together')} testID="week-together">
@@ -229,73 +312,52 @@ function Board({
       })}
     </>
   );
-  const fair =
-    fairness && shares ? (
-      <TourSpot id="week.fairness">
+}
+
+/** The deal's fairness, in a sentence, once the shares are read. */
+function Fairness({ view, balances, context }: { view: HouseView; balances: NonNullable<ReturnType<typeof useTable>['data']>['balances']; context: JohnRowContext }) {
+  const words = useWords(view.snapshot.house.kind);
+  const { userId } = context;
+  const nameOf = (id: string) => context.nameOf(id);
+  const sentence = weekFairness(balances, view.board.items.map((i) => i.points), userId, nameOf, words);
+  if (!sentence) return null;
+  return (
+    <TourSpot id="week.fairness">
       <FairnessFooter
-        sentence={fairness}
-        balances={shares.balances}
-        memberIds={memberIds}
+        sentence={sentence}
+        balances={balances}
+        memberIds={view.snapshot.members.map((m) => m.userId)}
         viewerId={userId}
         nameOf={nameOf}
-        awayMakeup={house.awayMakeup}
+        awayMakeup={view.snapshot.house.awayMakeup}
       />
-      </TourSpot>
-    ) : null;
-  // What the deal looked ahead to, once the list is read to name the Johns.
-  const look = list
-    ? weekLookAhead({ list, state: snapshot.steady, mode: rules.dealMode, items: board.items, memberIds, viewerId: userId, nameOf, words }, words)
-    : null;
-  const ahead = look ? (
+    </TourSpot>
+  );
+}
+
+/** What the deal looked ahead to, and what's coming up, once the list is read to name the Johns. */
+function LookAhead({
+  view,
+  week,
+  list,
+  context,
+}: {
+  view: HouseView;
+  week: NonNullable<HouseView['board']['week']>;
+  list: readonly (JohnDef & { kindName?: string })[];
+  context: JohnRowContext;
+}) {
+  const words = useWords(view.snapshot.house.kind);
+  const { snapshot, board } = view;
+  const { userId, nameOf, rules } = context;
+  const memberIds = snapshot.members.map((m) => m.userId);
+  const look = weekLookAhead({ list, state: snapshot.steady, mode: rules.dealMode, items: board.items, memberIds, viewerId: userId, nameOf, words }, words);
+  return (
     <>
       <WaitingSection rows={look.waiting} />
       <TurnsNextSection rows={look.turns} userId={userId} nameOf={nameOf} />
       <AheadWeeks sections={look.weeks} userId={userId} nameOf={nameOf} />
-    </>
-  ) : null;
-  const coming = look ? <ComingUpSection johns={look.comingUp} startsOn={week.startsOn} weekStarts={rules.weekStarts} /> : null;
-  const record = (
-    <View style={styles.record}>
-      <TextButton label={words('week.record.open')} href="/week/record" chevron align="start" testID="week-record" />
-    </View>
-  );
-
-  // On a laptop the summary heads the board in the main column, and the Table sits in the panel beside it, over
-  // the deal's fairness, from the top of the page to its foot.
-  if (two) {
-    return (
-      <Columns
-        main={
-          <>
-            {summaryBar}
-            {johnRows}
-            {ahead}
-            {coming}
-          </>
-        }
-        side={
-          <>
-            {passUnlocked(house.pass, now) ? (
-              <SideTable userId={userId} view={view} table={sharesRead} away={awayRead} />
-            ) : null}
-            {/* The deal's two quiet lines sit together under the Table, as Today's page lines do. */}
-            <View>
-              {fair}
-              {record}
-            </View>
-          </>
-        }
-      />
-    );
-  }
-  return (
-    <>
-      {summaryBar}
-      {johnRows}
-      {ahead}
-      {coming}
-      {fair}
-      {record}
+      <ComingUpSection johns={look.comingUp} startsOn={week.startsOn} weekStarts={rules.weekStarts} />
     </>
   );
 }

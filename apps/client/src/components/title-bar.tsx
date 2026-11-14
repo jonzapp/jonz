@@ -1,9 +1,10 @@
 import { useRouter, type Href } from 'expo-router';
 import { ChevronLeftIcon, CircleQuestionMarkIcon, EllipsisIcon, SparklesIcon } from 'lucide-react-native';
-import { createContext, useContext, type ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { createContext, useContext, useRef, type ReactNode } from 'react';
+import { Pressable, StyleSheet, Text, useWindowDimensions, View, type HostInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { measurePlace, type MenuPlace } from '@/components/drop-menu';
 import { useHouseWorkspace } from '@/components/house/workspace';
 import { useContentWidth } from '@/components/screen';
 import { Meta, Title } from '@/components/text';
@@ -11,7 +12,7 @@ import { IconButton } from '@/components/icon-button';
 import { useTour } from '@/components/tour/tour-context';
 import { TourSpot } from '@/components/tour/tour-spot';
 import { useAskJonz, useAskPanelOpen } from '@/hooks/use-ask-jonz';
-import { FONT, GUTTER, INSET, SECTION_GAP, SPACE, TAP, TITLE_BAR, useTheme, WIDE } from '@/theme';
+import { FONT, GUTTER, HAIR, INSET, SECTION_GAP, SPACE, TAP, TITLE_BAR, useTheme, WIDE } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
 /**
@@ -213,10 +214,20 @@ function AskButton() {
   );
 }
 
-/** The title bar's "•••": opens the screen's ActionMenu. */
-export function MoreButton({ onPress, testID = 'more' }: { onPress: () => void; testID?: string }) {
+/**
+ * The title bar's "•••": opens the screen's ActionMenu, saying where it is
+ * from WIDE so the menu drops from it (null on a phone, for a sheet).
+ */
+export function MoreButton({ onPress, testID = 'more' }: { onPress: (place: MenuPlace | null) => void; testID?: string }) {
   const words = useWords();
-  return <IconButton icon={EllipsisIcon} label={words('common.shell.more')} onPress={onPress} testID={testID} />;
+  const width = useWindowDimensions().width;
+  const self = useRef<HostInstance>(null);
+  const open = () => (width >= WIDE ? measurePlace(self, width, onPress) : onPress(null));
+  return (
+    <View ref={self} collapsable={false}>
+      <IconButton icon={EllipsisIcon} label={words('common.shell.more')} onPress={open} testID={testID} />
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -230,12 +241,12 @@ const styles = StyleSheet.create({
     paddingVertical: SPACE.xs,
   },
   // With a sub line: the kit's 10 above (the Title's own 4 comes on top) and 8 under it.
-  withSub: { paddingTop: 10, paddingBottom: SPACE.sm },
+  withSub: { paddingTop: SPACE.sm + HAIR, paddingBottom: SPACE.sm },
   // Under a back link: no 52 of its own, and a little room under the Title.
   pushed: { minHeight: 0, paddingTop: 0, paddingBottom: SPACE.sm },
   words: { flex: 1, minWidth: 0 },
   // Overpass's caps sit high in their line, so the title comes down a little.
-  title: { paddingTop: 4 },
+  title: { paddingTop: SPACE.xs },
   // The buttons' 48 squares touch, so every glyph is the same 48 from the next;
   // the last one's glyph lines up with the content's edge, and they sit in the
   // bar's own 4 above and below.
@@ -248,7 +259,7 @@ const styles = StyleSheet.create({
     minHeight: TAP,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
+    gap: HAIR,
     // The chevron's own margin hangs it left of the leading edge.
     marginLeft: -SPACE.sm,
     paddingRight: SPACE.sm,

@@ -16,16 +16,16 @@ import {
 } from "@app/core";
 
 import { sendEmail } from "@/lib/email";
-import type { Notify } from "@/lib/engine/tick";
 import { pushNotifier } from "@/lib/push";
 import { type AdminClient, createAdminClient } from "@/lib/supabase/admin";
 
 import type { Caller, Refusal } from "./disputes";
+import { type Notify } from "@/lib/engine/shared";
 
 // Report a problem (docs/specs/report-a-problem.md) needs a server for one
 // thing: telling the other side. Sending, writing back and replying are the
 // caller's own calls to the database, which decides whether they may
-// (supabase/migrations/20261112090000_reports.sql); then the owner gets a
+// (supabase/migrations/20270112090000_baseline.sql); then the owner gets a
 // push for each new word from a sender, and a sender gets a push and an
 // email for each reply. Email to support@jonz.app comes in here too
 // (receiveEmail), and "it's fixed" goes out to everyone who reported it.
@@ -37,7 +37,7 @@ export interface Outbox {
   email: typeof sendEmail;
 }
 
-export function outbox(): Outbox {
+function outbox(): Outbox {
   const db = createAdminClient();
   return { db, notify: pushNotifier(db), email: sendEmail };
 }

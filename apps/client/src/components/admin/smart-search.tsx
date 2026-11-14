@@ -21,7 +21,7 @@ import { Group } from '@/components/group';
 import { Row } from '@/components/row';
 import { Section } from '@/components/section';
 import { useNow } from '@/hooks/use-now';
-import { FONT, RADIUS, SEARCH_LINE, SPACE, TAP, useTheme } from '@/theme';
+import { FONT, MARK_GAP, RADIUS, SEARCH_LINE, SPACE, TAP, useTheme } from '@/theme';
 
 /** How long typing rests before the list is searched for it. */
 const SETTLE = 400;
@@ -51,6 +51,11 @@ function readRecent(key: string): Recent[] {
   }
 }
 
+/** Remembers a search that has something set, under how it reads. */
+function remember(key: string, params: Record<string, string>, label: string) {
+  if (Object.keys(params).length > 0) keepRecent(key, { params, label });
+}
+
 function keepRecent(key: string, recent: Recent) {
   try {
     const rest = readRecent(key).filter((r) => JSON.stringify(r.params) !== JSON.stringify(recent.params));
@@ -58,6 +63,23 @@ function keepRecent(key: string, recent: Recent) {
   } catch {
     // Not remembered (private browsing, say): the search still runs.
   }
+}
+
+interface SmartSearchProps {
+  /** The list is reading a new search: the box spins until it's in. */
+  searching?: boolean;
+  /** Typing is waiting to settle into a search (true), or has (false). */
+  onPending?: (pending: boolean) => void;
+  query: ListQuery;
+  facets: readonly ListFacet[];
+  onChange: (next: ListQuery) => void;
+  placeholder: string;
+  /** Where this list keeps its recent searches on this device. */
+  recentKey: string;
+  defaultWhen?: WhenPreset;
+  /** What this list calls When, and whether a moment starts it. */
+  when?: ListWhen;
+  testID?: string;
 }
 
 /**
@@ -88,23 +110,8 @@ export function SmartSearch({
   testID = 'smart-search',
   searching = false,
   onPending,
-}: {
-  /** The list is reading a new search: the box spins until it's in. */
-  searching?: boolean;
-  /** Typing is waiting to settle into a search (true), or has (false). */
-  onPending?: (pending: boolean) => void;
-  query: ListQuery;
-  facets: readonly ListFacet[];
-  onChange: (next: ListQuery) => void;
-  placeholder: string;
-  /** Where this list keeps its recent searches on this device. */
-  recentKey: string;
-  defaultWhen?: WhenPreset;
-  /** What this list calls When, and whether a moment starts it. */
-  when?: ListWhen;
-  testID?: string;
-}) {
-  const { colors, scheme, type } = useTheme();
+}: SmartSearchProps) {
+  const { colors, type } = useTheme();
   const now = useNow();
   const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const [text, setText] = useState(query.q);
@@ -115,20 +122,12 @@ export function SmartSearch({
     setText(query.q);
   }
   const [open, setOpen] = useState(false);
-  // Typed, not yet searched: the pause before the list asks.
-  const [pending, setPending] = useState(false);
+  const settle = useSettling(onPending);
   const [lit, setLit] = useState(0);
   const input = useRef<ComponentRef<typeof TextInput>>(null);
   const closing = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const settling = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(
-    () => () => {
-      if (closing.current) clearTimeout(closing.current);
-      if (settling.current) clearTimeout(settling.current);
-    },
-    [],
-  );
+  useEffect(() => () => clearTimeout(closing.current ?? undefined), []);
 
   const whenLabel = when.label ?? 'When';
   const tags = listTags(query, facets, zone, defaultWhen, whenLabel);
@@ -137,24 +136,11 @@ export function SmartSearch({
   );
   const recent = text.trim() ? [] : readRecent(recentKey);
 
-  const settled = () => {
-    setPending(false);
-    onPending?.(false);
-  };
-  const stopSettling = () => {
-    if (settling.current) clearTimeout(settling.current);
-    if (settling.current) settled();
-    settling.current = null;
-  };
-
   function commit(next: ListQuery) {
-    stopSettling();
+    settle.stop();
     onChange(next);
-    const params = listQueryToParams(next, defaultWhen);
-    if (Object.keys(params).length > 0) {
-      const label = [...listTags(next, facets, zone, defaultWhen, whenLabel).map((tag) => tag.label), ...(next.q ? [`“${next.q}”`] : [])].join(', ');
-      keepRecent(recentKey, { params, label });
-    }
+    const tagsOf = listTags(next, facets, zone, defaultWhen, whenLabel);
+    remember(recentKey, listQueryToParams(next, defaultWhen), [...tagsOf.map((tag) => tag.label), ...(next.q ? [`“${next.q}”`] : [])].join(', '));
   }
 
   function choose(suggestion: ListSuggestion) {
@@ -175,29 +161,17 @@ export function SmartSearch({
     setText(next);
     setLit(0);
     setOpen(true);
-    stopSettling();
     // The list follows the words as you type, once you pause.
-    setPending(true);
-    onPending?.(true);
-    settling.current = setTimeout(() => {
-      settling.current = null;
-      settled();
-      onChange({ ...query, q: next.trim() });
-    }, SETTLE);
+    settle.start(() => onChange({ ...query, q: next.trim() }));
   }
 
   function onKey(e: TextInputKeyPressEvent) {
     const key = e.nativeEvent.key;
-    if (key === 'Backspace' && text === '' && tags.length > 0) {
-      commit(dropTag(query, tags[tags.length - 1].key, defaultWhen));
-    } else if (key === 'ArrowDown' && suggestions.length > 0) {
+    if (key === 'Backspace' && text === '' && tags.length > 0) commit(dropTag(query, tags[tags.length - 1].key, defaultWhen));
+    else if (key === 'Escape') setOpen(false);
+    else if ((key === 'ArrowDown' && suggestions.length > 0) || key === 'ArrowUp') {
       e.preventDefault();
-      setLit((n) => Math.min(n + 1, suggestions.length - 1));
-    } else if (key === 'ArrowUp') {
-      e.preventDefault();
-      setLit((n) => Math.max(n - 1, 0));
-    } else if (key === 'Escape') {
-      setOpen(false);
+      setLit((n) => (key === 'ArrowDown' ? Math.min(n + 1, suggestions.length - 1) : Math.max(n - 1, 0)));
     }
   }
 
@@ -210,26 +184,8 @@ export function SmartSearch({
     }
   }
 
-  /** A suggestion's row. Under its filter's name, with nothing typed, it's the choice alone: You, under Who. */
-  const row = (s: ListSuggestion, i: number | null, under?: string) => (
-    <Row
-      key={`${s.kind}-${s.label}`}
-      title={under && s.label.startsWith(`${under}: `) ? s.label.slice(under.length + 2) : s.label}
-      leading={<SuggestionIcon icon={ICON[s.kind]} />}
-      tint={i !== null && i === lit && Platform.OS === 'web'}
-      onPress={() => choose(s)}
-      testID={`${testID}-suggestion-${s.kind === 'pick' ? `${s.key}-${s.value}` : s.kind === 'when' ? `when-${s.when}` : s.kind}`}
-    />
-  );
-
-  // With nothing typed: recent searches, then every filter's choices under its name.
-  const groups = [
-    ...facets.map((facet) => ({ label: facet.label, items: suggestions.filter((s) => s.kind === 'pick' && s.key === facet.key) })),
-    { label: whenLabel, items: suggestions.filter((s) => s.kind === 'when') },
-  ].filter((group) => group.items.length > 0);
-  const choices = Object.fromEntries(facets.map((facet) => [facet.key, facet.options.map((option) => option.value)]));
-
   function again(recentParams: Record<string, string>) {
+    const choices = Object.fromEntries(facets.map((facet) => [facet.key, facet.options.map((option) => option.value)]));
     const next = listQueryFromParams(recentParams, choices, defaultWhen);
     setText(next.q);
     commit(next);
@@ -248,26 +204,8 @@ export function SmartSearch({
           open && styles.boxOpen,
         ]}
       >
-        {pending || searching ? (
-          <ActivityIndicator size={20} color={colors.foreground} aria-hidden testID={`${testID}-spinner`} />
-        ) : (
-          <SearchIcon size={20} color={colors.mutedForeground} aria-hidden />
-        )}
-        {tags.map((tag) => (
-          <Pressable
-            key={tag.key}
-            accessibilityRole="button"
-            accessibilityLabel={`Remove ${tag.label}`}
-            onPress={() => commit(dropTag(query, tag.key, defaultWhen))}
-            style={[styles.tag, { backgroundColor: colors.secondary }]}
-            testID={`${testID}-tag-${tag.key}`}
-          >
-            <Text numberOfLines={1} style={[type.body, styles.tagText, { color: colors.foreground }]}>
-              {tag.label}
-            </Text>
-            <XIcon size={16} strokeWidth={3} color={colors.mutedForeground} aria-hidden />
-          </Pressable>
-        ))}
+        <BoxIcon busy={settle.pending || searching} testID={testID} />
+        <Tags tags={tags} onDrop={(key) => commit(dropTag(query, key, defaultWhen))} testID={testID} />
         <TextInput
           ref={input}
           value={text}
@@ -295,48 +233,160 @@ export function SmartSearch({
         />
       </Pressable>
       {open && (!text.trim() || suggestions.some((s) => s.kind !== 'words')) ? (
-        <View
-          style={[
-            styles.panel,
-            {
-              backgroundColor: colors.background,
-              borderColor: colors.border,
-              // It floats over the list, as a PickMenu does: a soft shadow lifts it off the rows.
-              boxShadow: `0 8px 24px ${withAlpha(scheme === 'dark' ? '#000000' : colors.foreground, scheme === 'dark' ? 0.5 : 0.16)}`,
-            },
-          ]}
-          testID={`${testID}-panel`}
-        >
-          {text.trim() ? (
-            <Group>{suggestions.map((s, i) => row(s, i))}</Group>
-          ) : (
-            <>
-              {recent.length > 0 ? (
-                <Section label="Recent">
-                  <Group>
-                    {recent.map((r) => (
-                      <Row
-                        key={r.label}
-                        title={r.label}
-                        leading={<SuggestionIcon icon={ICON.recent} />}
-                        onPress={() => again(r.params)}
-                        testID={`${testID}-recent`}
-                      />
-                    ))}
-                  </Group>
-                </Section>
-              ) : null}
-              {groups.map((group) => (
-                <Section key={group.label} label={group.label}>
-                  <Group>{group.items.map((s) => row(s, null, group.label))}</Group>
-                </Section>
-              ))}
-            </>
-          )}
-        </View>
+        <Suggestions
+          typed={text.trim() !== ''}
+          suggestions={suggestions}
+          recent={recent}
+          filters={[...facets.map((facet) => ({ key: facet.key, label: facet.label })), { key: null, label: whenLabel }]}
+          lit={lit}
+          onChoose={choose}
+          onAgain={again}
+          testID={testID}
+        />
       ) : null}
     </View>
   );
+}
+
+/** The pause after typing before the list is searched: `start` waits and then runs, `stop` gives up waiting. */
+function useSettling(onPending?: (pending: boolean) => void) {
+  // Typed, not yet searched: the pause before the list asks.
+  const [pending, setPending] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+    },
+    [],
+  );
+  const settled = () => {
+    setPending(false);
+    onPending?.(false);
+  };
+  const stop = () => {
+    if (timer.current) clearTimeout(timer.current);
+    if (timer.current) settled();
+    timer.current = null;
+  };
+  const start = (then: () => void) => {
+    stop();
+    setPending(true);
+    onPending?.(true);
+    timer.current = setTimeout(() => {
+      timer.current = null;
+      settled();
+      then();
+    }, SETTLE);
+  };
+  return { pending, start, stop };
+}
+
+/** What's set, as tags inside the box, each taken away by a tap. */
+function Tags({ tags, onDrop, testID }: { tags: ReturnType<typeof listTags>; onDrop: (key: string) => void; testID: string }) {
+  const { colors, type } = useTheme();
+  return (
+    <>
+      {tags.map((tag) => (
+        <Pressable
+          key={tag.key}
+          accessibilityRole="button"
+          accessibilityLabel={`Remove ${tag.label}`}
+          onPress={() => onDrop(tag.key)}
+          style={[styles.tag, { backgroundColor: colors.secondary }]}
+          testID={`${testID}-tag-${tag.key}`}
+        >
+          <Text numberOfLines={1} style={[type.body, styles.tagText, { color: colors.foreground }]}>
+            {tag.label}
+          </Text>
+          <XIcon size={16} strokeWidth={3} color={colors.mutedForeground} aria-hidden />
+        </Pressable>
+      ))}
+    </>
+  );
+}
+
+/**
+ * The suggestions, floating over the list under the box. With something
+ * typed (`typed`), one list, the lit one tinted; with nothing typed, recent
+ * searches, then every filter's choices under its name (`filters`, When's
+ * with a null key).
+ */
+function Suggestions({
+  typed,
+  suggestions,
+  recent,
+  filters,
+  lit,
+  onChoose,
+  onAgain,
+  testID,
+}: {
+  typed: boolean;
+  suggestions: ListSuggestion[];
+  recent: Recent[];
+  filters: { key: string | null; label: string }[];
+  lit: number;
+  onChoose: (suggestion: ListSuggestion) => void;
+  onAgain: (params: Record<string, string>) => void;
+  testID: string;
+}) {
+  const { colors, scheme } = useTheme();
+  /** A suggestion's row. Under its filter's name, with nothing typed, it's the choice alone: You, under Who. */
+  const row = (s: ListSuggestion, i: number | null, under?: string) => (
+    <Row
+      key={`${s.kind}-${s.label}`}
+      title={under && s.label.startsWith(`${under}: `) ? s.label.slice(under.length + 2) : s.label}
+      leading={<SuggestionIcon icon={ICON[s.kind]} />}
+      tint={i !== null && i === lit && Platform.OS === 'web'}
+      onPress={() => onChoose(s)}
+      testID={`${testID}-suggestion-${s.kind === 'pick' ? `${s.key}-${s.value}` : s.kind === 'when' ? `when-${s.when}` : s.kind}`}
+    />
+  );
+  const groups = filters
+    .map((f) => ({ label: f.label, items: suggestions.filter((s) => (f.key === null ? s.kind === 'when' : s.kind === 'pick' && s.key === f.key)) }))
+    .filter((group) => group.items.length > 0);
+  return (
+    <View
+      style={[
+        styles.panel,
+        {
+          backgroundColor: colors.background,
+          borderColor: colors.border,
+          // It floats over the list, as a PickMenu does: a soft shadow lifts it off the rows.
+          boxShadow: `0 8px 24px ${withAlpha(scheme === 'dark' ? '#000000' : colors.foreground, scheme === 'dark' ? 0.5 : 0.16)}`,
+        },
+      ]}
+      testID={`${testID}-panel`}
+    >
+      {typed ? (
+        <Group>{suggestions.map((s, i) => row(s, i))}</Group>
+      ) : (
+        <>
+          {recent.length > 0 ? (
+            <Section label="Recent">
+              <Group>
+                {recent.map((r) => (
+                  <Row key={r.label} title={r.label} leading={<SuggestionIcon icon={ICON.recent} />} onPress={() => onAgain(r.params)} testID={`${testID}-recent`} />
+                ))}
+              </Group>
+            </Section>
+          ) : null}
+          {groups.map((group) => (
+            <Section key={group.label} label={group.label}>
+              <Group>{group.items.map((s) => row(s, null, group.label))}</Group>
+            </Section>
+          ))}
+        </>
+      )}
+    </View>
+  );
+}
+
+/** The box's magnifying glass: a spinner from the first key until the list's answer is in. */
+function BoxIcon({ busy, testID }: { busy: boolean; testID: string }) {
+  const { colors } = useTheme();
+  if (busy) return <ActivityIndicator size={20} color={colors.foreground} aria-hidden testID={`${testID}-spinner`} />;
+  return <SearchIcon size={20} color={colors.mutedForeground} aria-hidden />;
 }
 
 function SuggestionIcon({ icon: Icon }: { icon: LucideIcon }) {
@@ -366,7 +416,7 @@ const styles = StyleSheet.create({
     gap: SPACE.xs,
     minHeight: 32,
     paddingLeft: SPACE.sm,
-    paddingRight: 6,
+    paddingRight: MARK_GAP,
     borderRadius: RADIUS,
     maxWidth: '100%',
   },

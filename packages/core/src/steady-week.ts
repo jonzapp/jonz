@@ -13,7 +13,8 @@ import { johnKind } from "./john-row";
 import type { SteadyAheadWeek } from "./steady-deal";
 import type { DealMode } from "./domain";
 
-type WeekJohn = Pick<JohnDef, "id" | "name" | "category" | "points" | "when" | "crew">;
+/** A John on the list, with its kind's name when the page has the house's kinds. */
+type WeekJohn = Pick<JohnDef, "id" | "name" | "category" | "points" | "when" | "crew"> & { kindName?: string | null };
 
 export interface WaitingRow {
   johnId: string;
@@ -80,7 +81,7 @@ export function waitingRows(
         name: j.name,
         category: j.category,
         points: j.points,
-        meta: `${johnKind(j.category)}, ${turn ? whenOf(state.ahead[turn.k].startsOn, turn.k, words) : words('week.steady.waitingFor', { weeks })}`,
+        meta: [johnKind(j.category, j.kindName), turn ? whenOf(state.ahead[turn.k].startsOn, turn.k, words) : words('week.steady.waitingFor', { weeks })].filter(Boolean).join(", "),
       };
     });
 }
@@ -113,7 +114,7 @@ export function turnRows(
         category: j.category,
         points: j.points,
         userId,
-        meta: `${johnKind(j.category)}, ${turnLine(userId, viewerId, nameOf, when, words)}`,
+        meta: [johnKind(j.category, j.kindName), turnLine(userId, viewerId, nameOf, when, words)].filter(Boolean).join(", "),
       },
     });
   }

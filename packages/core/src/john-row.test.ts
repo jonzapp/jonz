@@ -61,7 +61,7 @@ function dispute(overrides: Partial<DisputeView> = {}): DisputeView {
 }
 
 /** Sam's row for a John. */
-const row = (overrides: Partial<BoardItem>, viewer = "sam") => johnRow(item("a", overrides), viewer, now, ZONE, nameOf, words);
+const row = (overrides: Partial<BoardItem>, viewer = "sam") => johnRow(item("a", overrides), { viewerId: viewer, now, zone: ZONE, nameOf, words });
 
 describe("johnKind", () => {
   it("is the category's short word, one word for every kind", () => {
@@ -75,6 +75,15 @@ describe("johnKind", () => {
 
   it("calls a kind it doesn't know Other", () => {
     expect(johnKind("garden")).toBe("Other");
+    // The house's own name for it, and none for a John with no kind.
+    expect(johnKind("other", "Garden")).toBe("Garden");
+    expect(johnKind("other", "")).toBe("");
+  });
+
+  it("leaves the kind out of a row's line for a John with no kind", () => {
+    const named = row({ kindName: "Garden" }).meta;
+    expect(named).toMatch(/^Garden, /);
+    expect(row({ kindName: "" }).meta).toBe(named.replace(/^Garden, /, ""));
   });
 });
 
@@ -120,7 +129,7 @@ describe("johnRow", () => {
 
   it("asks for your vote on a dispute until you've given it; otherwise its flag says it, and the points trail", () => {
     const waiting = item("a", { userId: "priya", status: "disputed", dispute: dispute() });
-    expect(johnRow(waiting, "sam", now, ZONE, nameOf, words)).toMatchObject({ tick: "disputed", trailing: "vote", focus: "vote" });
+    expect(johnRow(waiting, { viewerId: "sam", now, zone: ZONE, nameOf, words })).toMatchObject({ tick: "disputed", trailing: "vote", focus: "vote" });
     expect(row({ userId: "priya", status: "disputed", dispute: dispute({ myVote: false }) })).toMatchObject({
       trailing: "points",
       focus: "vote",
@@ -152,8 +161,8 @@ describe("johnRow", () => {
     const statuses: LiveStatus[] = ["upcoming", "due-soon", "overdue", "checking", "disputed", "done", "late", "missed", "excused"];
     for (const status of statuses) {
       const john = item("a", { userId: "tom", status, dispute: status === "disputed" ? dispute({ myVote: false }) : null, standsAt: at(5) });
-      const mine = johnRow(john, "tom", now, ZONE, nameOf, words);
-      const theirs = johnRow(john, "sam", now, ZONE, nameOf, words);
+      const mine = johnRow(john, { viewerId: "tom", now, zone: ZONE, nameOf, words });
+      const theirs = johnRow(john, { viewerId: "sam", now, zone: ZONE, nameOf, words });
       expect([theirs.tick, theirs.meta, theirs.lid, theirs.points, theirs.hazardEdge]).toEqual([
         mine.tick,
         mine.meta,
@@ -231,7 +240,7 @@ describe("johnRow's meta line in Smart", () => {
       { userId: last, standing: 1, last: true as const },
     ],
   });
-  const meta = (overrides: Partial<BoardItem>, viewer = "sam") => johnRow(item("a", overrides), viewer, now, ZONE, nameOf, words).meta;
+  const meta = (overrides: Partial<BoardItem>, viewer = "sam") => johnRow(item("a", overrides), { viewerId: viewer, now, zone: ZONE, nameOf, words }).meta;
   const dueAt = new Date("2026-10-23T06:30:00Z");
 
   it("says who had it before, while it's still to do", () => {

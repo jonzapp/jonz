@@ -9,7 +9,7 @@ import { whomOf, whoseOf } from "./word-keys";
 import type { Words } from "./words-for";
 
 // Resets: an admin fixing a week that went wrong. The database works out
-// what each would change (admin_reset, 20261101100000_admin_resets.sql) and
+// what each would change (admin_reset, 20270112090000_baseline.sql) and
 // this says it, the same way on the reset sheet and in Ask Jonz.
 
 export const RESET_KINDS = ["result", "person_week", "week", "redeal", "skip", "letoff"] as const;
@@ -19,7 +19,7 @@ export type ResetKind = (typeof RESET_KINDS)[number];
 export const RESULT_CHOICES = ["done", "late", "missed", "excused"] as const;
 export type ResultChoice = (typeof RESULT_CHOICES)[number];
 
-/** POST /api/resets: what to reset, and whether to do it or only say what it would do. */
+/** reset_house on /v1: what to reset, and whether to do it or only say what it would do. */
 export const ResetRequest = z.object({
   houseId: z.uuid(),
   kind: z.enum(RESET_KINDS),
@@ -141,6 +141,24 @@ const RESULT_WORDS: Record<string, string> = {
   covered: "covered",
 };
 
+/** What the reset does to the Stake: money taken off people, money added, or no change. */
+function stakeLine(preview: ResetPreview, w: ResetWords, words: Words): ResetLine {
+  const people = Object.values(preview.people);
+  const back = people.reduce((n, t) => n + Math.max(t.forfeit ?? 0, 0), 0);
+  const owed = people.reduce((n, t) => n + Math.max(-(t.forfeit ?? 0), 0), 0);
+  const money: string[] = [];
+  if (back > 0) money.push(words('house.resets.removed', { money: formatMoney(back, w.currency, words) }));
+  if (owed > 0) money.push(words('house.resets.added', { money: formatMoney(owed, w.currency, words) }));
+  return {
+    key: "stake",
+    label: words('house.resets.stake'),
+    value:
+      money.length === 0
+        ? words('house.resets.noChange')
+        : `${money.join(", ")}${preview.correction ? `, ${words('house.resets.asCorrection')}` : ""}`,
+  };
+}
+
 /** The reset sheet's words and numbers, from what the database says the reset would do. */
 export function resetSheet(preview: ResetPreview, w: ResetWords, words: Words): ResetSheet {
   const short = (id: string) => (id === w.viewerId ? words('house.resets.you') : firstName(w.nameOf(id)));
@@ -174,19 +192,7 @@ export function resetSheet(preview: ResetPreview, w: ResetWords, words: Words): 
             : `${moved.map(([id, t]) => `${short(id)} ${signedPoints(t.points ?? 0)}`).join(", ")} ${words('house.resets.pts')}`,
     });
   }
-  const back = people.reduce((n, [, t]) => n + Math.max(t.forfeit ?? 0, 0), 0);
-  const owed = people.reduce((n, [, t]) => n + Math.max(-(t.forfeit ?? 0), 0), 0);
-  const money: string[] = [];
-  if (back > 0) money.push(words('house.resets.removed', { money: formatMoney(back, w.currency, words) }));
-  if (owed > 0) money.push(words('house.resets.added', { money: formatMoney(owed, w.currency, words) }));
-  lines.push({
-    key: "stake",
-    label: words('house.resets.stake'),
-    value:
-      money.length === 0
-        ? words('house.resets.noChange')
-        : `${money.join(", ")}${preview.correction ? `, ${words('house.resets.asCorrection')}` : ""}`,
-  });
+  lines.push(stakeLine(preview, w, words));
   lines.push({ key: "track", label: words('house.resets.track'), value: trackLine(preview, w) });
   const cleared: string[] = [];
   if (preview.flags > 0) cleared.push(preview.flags === 1 ? "1 flag" : `${preview.flags} flags`);

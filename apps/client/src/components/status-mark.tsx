@@ -3,7 +3,7 @@ import { CheckIcon, ClockIcon, FlagIcon, ShieldIcon, TriangleAlertIcon, XIcon, t
 import { StyleSheet, Text, View } from 'react-native';
 
 import { useWords } from '@/hooks/use-words';
-import { RADIUS, SPACE, useTheme } from '@/theme';
+import { HAIR, RADIUS, SPACE, useTheme } from '@/theme';
 
 /** Core names the icon; this is lucide's drawing of it. */
 export const STATUS_ICON: Record<StatusIcon, LucideIcon> = {
@@ -81,5 +81,5 @@ const styles = StyleSheet.create({
   // Done has no outline: the green tick and the word are enough.
   bare: { paddingHorizontal: 0 },
   // Overpass's caps sit high in their line, so the word comes down a little.
-  word: { paddingTop: 2 },
+  word: { paddingTop: HAIR },
 });

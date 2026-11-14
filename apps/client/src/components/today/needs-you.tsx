@@ -67,7 +67,7 @@ export function CouldCover({
           leading={<Avatar name={nameOf(item.userId) ?? words('common.shell.formerHousemate')} userId={item.userId} />}
           title={coverTitle(item, members, words)}
           titleLines={2}
-          meta={johnRow(item, userId, now, zone, nameOf, words).meta}
+          meta={johnRow(item, { viewerId: userId, now, zone, nameOf, words }).meta}
           chevron
           hazardEdge
           onPress={() => sheet.open(item.id)}

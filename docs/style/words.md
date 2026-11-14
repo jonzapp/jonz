@@ -11,6 +11,12 @@
   readability research: long runs of capitals read slower.
 - **Meta lines** join their facts with commas, or make them a sentence,
   never " · ". Only the browser tab title keeps "Page · Jonz". (#60)
+- **Times are on the reader's own clock.** Weeks and due times are set in
+  the house's zone, but a time is said in the phone's: away from home, one
+  line under the date says so ("Your time, Regina. The house is 6 hours
+  ahead. Show house time", `ZoneLine`) and a tap shows house time
+  everywhere. It says it once, never beside every time; only the John
+  sheet adds the house's time in brackets. (Your time, said once, 14 Nov)
 - Numbers that line up use tabular figures (`TABULAR`). (Focus, #17)
 - Nothing smaller than 12. (Focus, #17)
 - **A button says what happens** ("Mark done", "Send report"); what follows
@@ -97,7 +103,7 @@ back into the shared copy.
   and set up means getting it ready, not making it.
 - The phone's own **Share** button ("Share invite") stays. It isn't a game
   word.
-- An admin can still **let off** a result or a month (History's fixes):
+- An admin can still **let off** a result or a month (a John's Fix the result):
   that is the admin waiving it, not a skip.
 
 

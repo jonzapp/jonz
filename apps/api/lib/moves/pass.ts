@@ -30,6 +30,20 @@ async function houseOf(caller: Caller, houseId: string) {
   return data;
 }
 
+/** What's being bought: which plan for which house, where to send the buyer back, and a promotion's code if they came by its link. */
+type CheckoutOrder = { houseId: string; plan: PassPurchase; appUrl: string; stage: Stage; now: Date; offer?: string | null };
+
+/** Whether the caller is a parent (an admin) of the family: only a parent buys its Pass. */
+async function isParent(caller: Caller, houseId: string): Promise<boolean> {
+  const { data: me } = await caller.db
+    .from("members")
+    .select("role")
+    .eq("house_id", houseId)
+    .eq("user_id", caller.userId)
+    .maybeSingle();
+  return me?.role === "admin";
+}
+
 /**
  * Buying the House Pass on the web: a Stripe Checkout Session for the plan,
  * in the house's currency, carrying the house and the buyer for the webhook.
@@ -49,25 +63,12 @@ export async function startCheckout(
   caller: Caller & { email: string | undefined },
   /** Null while Stripe isn't set up: a free Pass still works, nothing else does. */
   stripe: PassStripe | null,
-  houseId: string,
-  plan: PassPurchase,
-  appUrl: string,
-  stage: Stage,
-  now: Date,
-  offer: string | null = null,
+  { houseId, plan, appUrl, stage, now, offer = null }: CheckoutOrder,
 ): Promise<PassAnswer> {
   const house = await houseOf(caller, houseId);
   if (!house) return NOT_IN_HOUSE;
 
-  if (house.kind === "family") {
-    const { data: me } = await caller.db
-      .from("members")
-      .select("role")
-      .eq("house_id", house.id)
-      .eq("user_id", caller.userId)
-      .maybeSingle();
-    if (me?.role !== "admin") return { status: 403, say: (words) => words('house.familyPass.parentsOnly') };
-  }
+  if (house.kind === "family" && !(await isParent(caller, house.id))) return { status: 403, say: (words) => words('house.familyPass.parentsOnly') };
 
   const pass = passOf(house);
   const checked = offer ? await checkOffer(createAdminClient(), offer, caller.email, { id: house.id, pass }, plan, now) : null;

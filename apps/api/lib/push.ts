@@ -3,9 +3,9 @@ import "server-only";
 import { languageOf, prefsOf, pushFor, wordsFor } from "@app/core";
 import webpush from "web-push";
 
-import { pushIn, type Notify, type SaidPush } from "@/lib/engine/tick";
 import { pushToken } from "@/lib/push-token";
 import type { AdminClient } from "@/lib/supabase/admin";
+import { pushIn, type Notify, type SaidPush } from "@/lib/engine/shared";
 
 /** What the service worker (apps/client/public/sw.js) is sent: the message, as one person gets it. */
 export interface PushPayload {
@@ -54,7 +54,9 @@ export function payloadFor(userId: string, message: SaidPush, silent: boolean, n
  * reminders, rather than failing its tick.
  *
  * Each person's settings (notification_prefs) decide whether they get it,
- * and whether it makes a sound; it's said in the language they read Jonz in.
+ * and whether it makes a sound; it's said in the language they read Jonz in,
+ * with its times on their own clock (the zone their phone saved with their
+ * settings, docs/specs/time-zones.md).
  */
 export function pushNotifier(db: AdminClient): Notify | undefined {
   const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
@@ -74,14 +76,18 @@ export function pushNotifier(db: AdminClient): Notify | undefined {
         .in("user_id", userIds),
       db.from("profiles").select("id, language").in("id", userIds),
     ]);
+    // Said once for each language and clock among the people it goes to.
     const said = new Map<string, SaidPush>();
+    const prefsFor = (userId: string) => prefsOf(prefs?.find((p) => p.user_id === userId));
     const sayFor = (userId: string) => {
       const language = languageOf(people?.find((p) => p.id === userId)?.language);
-      if (!said.has(language)) said.set(language, pushIn(message, language));
-      return said.get(language)!;
+      const zone = prefsFor(userId).timezone ?? message.zone;
+      const key = `${language} ${zone}`;
+      if (!said.has(key)) said.set(key, pushIn(message, language, zone));
+      return said.get(key)!;
     };
     for (const sub of subs ?? []) {
-      const how = pushFor(prefsOf(prefs?.find((p) => p.user_id === sub.user_id)), message.kind, now, message.zone);
+      const how = pushFor(prefsFor(sub.user_id), message.kind, now, message.zone);
       if (how === "skip") continue;
       try {
         await webpush.sendNotification(

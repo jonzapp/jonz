@@ -17,7 +17,7 @@ export interface OperationJson {
   effect: Operation["effect"];
   /** Who may run it: a named permission, or a check of its own ("check", "member", "own"). */
   guard: Operation["guard"];
-  /** The House Pass feature it needs once the Pass is enforced. */
+  /** The House Pass feature it needs. */
   entitlement: string | null;
   /** The input key that turns the entitlement on; null: always. */
   entitlementWhen: string | null;

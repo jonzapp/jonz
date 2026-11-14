@@ -15,7 +15,7 @@
  * job, as a cover's does. Someone away keeps their place excused; if they
  * turn up anyway, that place's points join the share.
  *
- * The database does the same (supabase/migrations/20261102090000_shared_jonz.sql:
+ * The database does the same (supabase/migrations/20270112090000_baseline.sql:
  * roll_call, house_balances); this is that rule for the screens: the
  * Table's credit (tableInputs), the roll call before it's sent
  * (rollCallPlan), and the words.

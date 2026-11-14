@@ -11,7 +11,7 @@ import JohnListScreen from '@/app/(house)/house/johns';
 import { HouseWorkspace } from '@/components/house/workspace';
 import { ToastProvider } from '@/components/toast';
 import { AskPanelContext, AskPanelProvider } from '@/hooks/use-ask-jonz';
-import { assignment, snapshot } from '@/testing/house';
+import { assignment, snapshot, KINDS } from '@/testing/house';
 import { BATH, BINS, renderPages, untilRead } from '@/testing/pages';
 
 const words = wordsFor('en', 'housemates');
@@ -91,7 +91,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   (loadHouse as jest.Mock).mockResolvedValue(snapshot());
   (catchUp as jest.Mock).mockResolvedValue(false);
-  (loadJohnList as jest.Mock).mockResolvedValue({ johns: [BINS, BATH], groups: [] });
+  (loadJohnList as jest.Mock).mockResolvedValue({ kinds: KINDS, johns: [BINS, BATH], groups: [] });
   for (const move of [saveJohn, archiveJohn, dealThisWeek]) (move as jest.Mock).mockResolvedValue(undefined);
 });
 
@@ -120,13 +120,13 @@ it('groups the Johns by kind, each with when, what sets it apart and its points'
 });
 
 it('says which group shares a John', async () => {
-  (loadJohnList as jest.Mock).mockResolvedValue({ johns: [{ ...BATH, groupId: 'g1' }], groups: [UPSTAIRS] });
+  (loadJohnList as jest.Mock).mockResolvedValue({ kinds: KINDS, johns: [{ ...BATH, groupId: 'g1' }], groups: [UPSTAIRS] });
   await open();
   expect(screen.getByTestId('john-def')).toHaveTextContent(/photo, Upstairs bathroom/);
 });
 
 it('starts an empty house off with the Johns that cause arguments', async () => {
-  (loadJohnList as jest.Mock).mockResolvedValue({ johns: [], groups: [] });
+  (loadJohnList as jest.Mock).mockResolvedValue({ kinds: KINDS, johns: [], groups: [] });
   await open();
   expect(screen.getByText(words('house.setup.noJohns'))).toBeOnTheScreen();
   expect(screen.getByText(words('house.setup.noJohnsBody'))).toBeOnTheScreen();
@@ -136,7 +136,7 @@ it('starts an empty house off with the Johns that cause arguments', async () => 
 });
 
 it('tells a housemate who will add the Johns to an empty list, not how to', async () => {
-  (loadJohnList as jest.Mock).mockResolvedValue({ johns: [], groups: [] });
+  (loadJohnList as jest.Mock).mockResolvedValue({ kinds: KINDS, johns: [], groups: [] });
   await open('sam');
   expect(screen.getByText(words('house.setup.noJohns'))).toBeOnTheScreen();
   expect(screen.getByText(words('house.setup.johnsComing', { names: 'Priya' }))).toBeOnTheScreen();
@@ -152,7 +152,7 @@ it('reads the list again on the way back to it', async () => {
   );
   await screen.findAllByTestId('john-def');
   expect(loadJohnList).toHaveBeenCalledTimes(1);
-  (loadJohnList as jest.Mock).mockResolvedValue({ johns: [BINS], groups: [] });
+  (loadJohnList as jest.Mock).mockResolvedValue({ kinds: KINDS, johns: [BINS], groups: [] });
   await act(() => router.navigate('/house'));
   await act(() => router.navigate('/house/johns'));
   await waitFor(() => expect(screen.getAllByTestId('john-def')).toHaveLength(1));
@@ -194,6 +194,7 @@ describe('an admin', () => {
       {
         ...NEW_JOHN,
         name: 'Shower',
+        kindId: 'bathroom',
         category: 'bathroom',
         points: 5,
         dueDow: 1,
@@ -241,7 +242,7 @@ describe('an admin', () => {
     expect(saveJohn).toHaveBeenCalledWith(
       'h1',
       snapshot().rules,
-      { ...NEW_JOHN, name: 'Fridge deep clean', points: 8, everyWeeks: 1, everyMonths: 3, weekOfMonth: 5, dueDow: 6, anchorMonth: expect.any(Number) },
+      { ...NEW_JOHN, kindId: 'kitchen', name: 'Fridge deep clean', points: 8, everyWeeks: 1, everyMonths: 3, weekOfMonth: 5, dueDow: 6, anchorMonth: expect.any(Number) },
       expect.any(Date),
     );
   });
@@ -262,7 +263,7 @@ describe('an admin', () => {
     expect(saveJohn).toHaveBeenCalledWith(
       'h1',
       snapshot().rules,
-      { ...NEW_JOHN, name: 'Gutters', everyMonths: 24, weekOfMonth: 1 },
+      { ...NEW_JOHN, kindId: 'kitchen', name: 'Gutters', everyMonths: 24, weekOfMonth: 1 },
       expect.any(Date),
     );
   });
@@ -283,7 +284,7 @@ describe('an admin', () => {
     expect(saveJohn).toHaveBeenCalledWith(
       'h1',
       snapshot().rules,
-      { ...NEW_JOHN, name: 'Garden tidy', points: 4, crew: 0 },
+      { ...NEW_JOHN, kindId: 'kitchen', name: 'Garden tidy', points: 4, crew: 0 },
       expect.any(Date),
     );
   });
@@ -298,7 +299,7 @@ describe('an admin', () => {
     await fireEvent.press(keep);
     expect(keep).toBeChecked();
     await fireEvent.press(form.getByTestId('save-john'));
-    expect(saveJohn).toHaveBeenCalledWith('h1', snapshot().rules, { ...NEW_JOHN, name: 'Bins', keepDay: true }, expect.any(Date));
+    expect(saveJohn).toHaveBeenCalledWith('h1', snapshot().rules, { ...NEW_JOHN, kindId: 'kitchen', name: 'Bins', keepDay: true }, expect.any(Date));
     // On call has no day to keep.
     await fireEvent.press(screen.getByRole('button', { name: words('house.johns.add') }));
     await fireEvent.press(within(screen.getByTestId('john-timing')).getByRole('radio', { name: words('house.johns.onCall') }));
@@ -327,13 +328,13 @@ describe('an admin', () => {
     expect(saveJohn).toHaveBeenCalledWith(
       'h1',
       snapshot().rules,
-      { ...NEW_JOHN, name: 'Kitchen bin', when: 'on_call', perWeek: 3, respondHours: 4 },
+      { ...NEW_JOHN, kindId: 'kitchen', name: 'Kitchen bin', when: 'on_call', perWeek: 3, respondHours: 4 },
       expect.any(Date),
     );
   });
 
   it('adds the first John from the empty list', async () => {
-    (loadJohnList as jest.Mock).mockResolvedValue({ johns: [], groups: [] });
+    (loadJohnList as jest.Mock).mockResolvedValue({ kinds: KINDS, johns: [], groups: [] });
     await open();
     await fireEvent.press(screen.getByRole('button', { name: words('house.johns.add') }));
     expect(screen.getByTestId('john-form')).toBeOnTheScreen();
@@ -371,7 +372,7 @@ describe('an admin', () => {
   });
 
   it('offers a group as who shares a John, and says what that means once one is picked', async () => {
-    (loadJohnList as jest.Mock).mockResolvedValue({ johns: [], groups: [UPSTAIRS] });
+    (loadJohnList as jest.Mock).mockResolvedValue({ kinds: KINDS, johns: [], groups: [UPSTAIRS] });
     await open();
     await fireEvent.press(screen.getByRole('button', { name: words('house.johns.add') }));
     const form = within(screen.getByTestId('john-form'));
@@ -381,7 +382,7 @@ describe('an admin', () => {
     await pick(form, words('house.johns.sharedBy'), 'Upstairs bathroom');
     expect(form.getByTestId('sharing-note')).toHaveTextContent(words('house.johns.groupOnly'));
     await fireEvent.press(form.getByTestId('save-john'));
-    expect(saveJohn).toHaveBeenCalledWith('h1', snapshot().rules, { ...NEW_JOHN, name: 'Bath', groupId: 'g1' }, expect.any(Date));
+    expect(saveJohn).toHaveBeenCalledWith('h1', snapshot().rules, { ...NEW_JOHN, kindId: 'kitchen', name: 'Bath', groupId: 'g1' }, expect.any(Date));
   });
 
   it('says how to share a John with fewer when the house has no groups', async () => {
@@ -495,7 +496,7 @@ describe('a housemate who is not an admin', () => {
   });
 
   it('opens a John to read what it is, with nothing to edit', async () => {
-    (loadJohnList as jest.Mock).mockResolvedValue({ johns: [{ ...BATH, groupId: 'g1' }], groups: [UPSTAIRS] });
+    (loadJohnList as jest.Mock).mockResolvedValue({ kinds: KINDS, johns: [{ ...BATH, groupId: 'g1' }], groups: [UPSTAIRS] });
     await open('sam');
     await fireEvent.press(screen.getByRole('button', { name: /^Bathroom/ }));
     const sheet = within(screen.getByTestId('john-facts'));
@@ -518,14 +519,30 @@ describe('on a laptop', () => {
   beforeEach(() => (useWindowDimensions as jest.Mock).mockReturnValue({ width: 1440, height: 900, scale: 1, fontScale: 1 }));
   afterEach(() => (useWindowDimensions as jest.Mock).mockReturnValue({ width: 412, height: 915, scale: 1, fontScale: 1 }));
 
+  it('lines each John up in columns: when, how often, what else, and its points', async () => {
+    await open();
+    const [bath, bins] = screen.getAllByTestId('john-def');
+    expect(bath).toHaveTextContent(/^Bathroom\s*Sun 21:00\s*Every 2 weeks\s*Photo\s*4 pts$/);
+    // Every week is said in its column here, so the column reads down.
+    expect(bins).toHaveTextContent(/^Bins\s*Thu 07:00\s*Every week\s*1 pt$/);
+  });
+
+  it('puts the groups beside the re-deal under the kinds', async () => {
+    (loadHouse as jest.Mock).mockResolvedValue(snapshot({ assignments: [assignment()] }));
+    await open();
+    expect(within(screen.getByTestId('johns-foot-start')).getByTestId('johns-groups')).toBeOnTheScreen();
+    expect(within(screen.getByTestId('johns-foot-end')).getByTestId('deal')).toBeOnTheScreen();
+  });
+
   it('opens a John in the panel beside the list, and the next John in its place', async () => {
     await open();
-    await fireEvent.press(screen.getByRole('button', { name: /^Edit Bins, / }));
+    const list = within(screen.getByTestId('john-kinds'));
+    await fireEvent.press(list.getByRole('button', { name: /^Edit Bins, / }));
     const panel = within(screen.getByTestId('john-panel'));
     expect(panel.getByRole('header', { name: words('house.johns.edit', { name: 'Bins' }) })).toBeOnTheScreen();
     expect(panel.getByTestId('john-name')).toHaveDisplayValue('Bins');
     // The list stays in view, and the next John is a click away.
-    await fireEvent.press(screen.getByRole('button', { name: /^Edit Bathroom, / }));
+    await fireEvent.press(list.getByRole('button', { name: /^Edit Bathroom, / }));
     expect(within(screen.getByTestId('john-panel')).getByTestId('john-name')).toHaveDisplayValue('Bathroom');
     expect(screen.getAllByTestId('john-form')).toHaveLength(1);
   });

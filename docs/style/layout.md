@@ -36,14 +36,14 @@ still look right stretched (content capped, nothing pinned to far edges).
   that opens nothing says so without asking anyone to sign in. (Opening an
   invite A, 10 Nov)
 - **Things you set together are on one page.** House's pages are Overview,
-  The Wall (with History beside it), Johns (with their groups), Rules (with
+  The Wall, Johns (with their groups), Rules (with
   who the admins are), Days and time away (your days, best time and Johns
   you'd rather, beside the house's time away) and House Pass. You, the
   fourth tab, has your name, look and sign-in beside help and leaving, and
   pushes Moving out and Your reports. A merged
   page puts its two parts side by side on a laptop (`Pair`) and one after
-  the other on a phone, or a switch where both are long lists (the Wall
-  and History). An old link to a merged page lands on the page it joined.
+  the other on a phone. An old link to a merged page lands on the page it
+  joined (History, gone, lands on the Wall).
   (House pages, 1 Nov)
 - **House's Overview is the house at a glance:** a row of four figures
   (`Figures`: your month, the stake, the housemates, the John list), each
@@ -174,12 +174,15 @@ still look right stretched (content capped, nothing pinned to far edges).
 - **House's pages fill the room beside House's list** (`Screen` with
   `fills`), up to `FILL_MAX` (1600), with our own sections (the name above
   a grey group) side by side. `Flow` shares out a page's sections of one
-  kind (the John list's kinds, a housemate's record) into as many columns
+  kind (a housemate's record) into as many columns
   of at least `COLUMN_MIN` (352) as fit, two on a 1440 laptop and three on
   a 1920 screen, each to the shortest column so the columns end near each
   other. `Pair` puts two stacks side by side: what a page gives or explains
   beside what you choose. A page's own tools sit at the top right over the
-  columns (Add a John, with the week's Johns and points). On a phone, and
+  columns (Add a John, with the week's Johns and points). The John list is
+  the exception to `Flow`: its kinds go one under another, full width, each
+  John a line of lined-up columns, with the groups beside the re-deal under
+  them (John list C, 13 Nov; see [lists](lists.md#rows)). On a phone, and
   where two columns don't fit, the same sections stack in their phone
   order. (House pages, 1 Nov) *Not* the section names hanging in a column
   left of their groups, one wide column, or cards on a blank page: each

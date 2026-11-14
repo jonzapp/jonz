@@ -86,11 +86,11 @@ permanent once a store has seen them.
     redirect back to `/signin`), `apple.ts` (Sign in with Apple, iOS only,
     with the nonce from `nonce.ts`; keeps the name Apple sends once) and
     `profile.ts` (your display name, and renaming yourself from House).
-  - `http.ts`: `apiPost` for calls to `apps/api`, sending the user's access
+  - `v1.ts`: calls to `apps/api` on `/v1`, sending the user's access
     token and parsing the answer with its schema from `@app/core`; a refusal
-    throws `ApiRequestError` with the API's sentence. One small module per
+    throws `ApiRequestError` (`base.ts`) with a sentence. One small module per
     resource beside it: `house.ts` (your house, join codes, creating and
-    joining through RPC, and `catchUp` through `POST /api/fresh`),
+    joining through RPC, and `catchUp` through `catch_up on /v1`),
     `board.ts` (`loadHouse`: one read of a house's rules, people and this
     week's rows), `johns.ts` (ticking, undoing, spending immunity, a swap),
     `disputes.ts` (disputing and voting, through apps/api), `wall.ts` (the
@@ -100,7 +100,7 @@ permanent once a store has seen them.
     deal sums them), `stake.ts` (the ledger, built by core's `buildStake`,
     and "Mark received" through `confirm_payment`), `settings.ts` (House:
     the John list and the house rules through the admins' column grants,
-    roles and leaving through RPC, and the deal through `POST /api/deal`)
+    roles and leaving through RPC, and the deal through `deal_week on /v1`)
     `away.ts` (time away: reading it, and booking and cancelling through
     `set_away` and `cancel_away`), `push.web.ts` (reminders on this browser:
     the service worker, `PushManager` with `EXPO_PUBLIC_VAPID_PUBLIC_KEY`,
@@ -112,16 +112,16 @@ permanent once a store has seen them.
 - **Writes go through the database, as the web's do.** A move is one named
   SQL function (`supabase.rpc('mark_done', …)`) or one column-granted write;
   the database decides, and the client only translates a refusal with
-  `humanError` from `@app/core` and refreshes. `apps/api` is called only for
-  the moves that need a server: `POST /api/deal`, `POST /api/disputes`,
-  `POST /api/disputes/:id/votes`, `POST /api/fresh`, `POST /api/flags`,
-  `POST /api/away` (`away.ts`: `setAway`, which pushes whoever a trip
+  `humanError` from `@app/core` and refreshes. `apps/api` is called (on `/v1`, through
+  `src/api/v1.ts`) only for the moves that need a server: `deal_week on /v1`, `raise_dispute on /v1`,
+  `cast_vote on /v1`, `catch_up on /v1`, `raise_flag on /v1`,
+  `set_away on /v1` (`away.ts`: `setAway`, which pushes whoever a trip
   hands a John to) and
-  `POST /api/setup/draft` (`draft.ts`: `sendChat`, one turn of the
+  `ask_house on /v1` (`draft.ts`: `sendChat`, one turn of the
   setup chat, answered as the API would by `offlineTurn` if the API can't
   be reached, and `applyDraft` (`keepDraft` for a new house),
   which applies the changes an admin ticked through `settings.ts`), and
-  `POST /api/ask/usage` (`draft.ts`: `askUsageOf`, the week's Ask Jonz).
+  `ask_usage on /v1` (`draft.ts`: `askUsageOf`, the week's Ask Jonz).
 - `src/hooks/`: connect `@app/core` and `src/api/` to screens (e.g.
   `use-session.ts`). `use-membership.tsx` is the session and the house it's
   in, read behind the splash screen, with `refresh()` for after creating or
@@ -157,7 +157,9 @@ permanent once a store has seen them.
   ones with how many were late. `CodeBoxes` is every 6-digit code (the
   admin code, the codes we email). `CopyLine` is words to paste
   elsewhere (an address) with Copy beside them. `Doc` (in `reply/`) draws
-  Help, Privacy and Terms from their Markdown. Then one folder per place:
+  Help, Privacy and Terms from their Markdown. `ListTable` and
+  `ListTableRow` are a list as one-line rows in lined-up columns on a
+  laptop: the owner's busy lists, and the John list's `JohnLine`. Then one folder per place:
   - `today/`: Next up (`NextUp`, or `SetupCard`, an admin's checklist
     before the first deal), Needs you, the rest of your week and the page's
     tappable lines (`PageLine`).
@@ -406,7 +408,9 @@ the root layout's guard is tested that way with stand-in screens.
   `testQueryClient()` gives each test its own cache with no retries and no
   garbage collection (its five-minute timer would keep Jest running after a
   test that leaves a read pending); `house.ts` builds a house as `loadHouse`
-  reads it, dated around the real clock. A screen that reads a house renders
+  reads it, dated around the tests' pretend now (`clock.ts`: `NOW`, which
+  `jest.setup.js` sets every test's clock to; count from it, never from the
+  real clock). A screen that reads a house renders
   under a stand-in `_layout` with `QueryClientProvider` and `Slot`.
 
 The web build also runs end to end, in `apps/api`'s Playwright

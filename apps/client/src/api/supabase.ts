@@ -16,16 +16,12 @@ if (!url || !publishableKey) {
 }
 
 /**
- * Sign-in on our own address (docs/specs/api.md, C3): with
- * EXPO_PUBLIC_AUTH_THROUGH_API=1 the auth client talks to apps/api's
- * /auth/v1, which passes each request to Supabase Auth, so the app never
- * talks to Supabase. The API's address (EXPO_PUBLIC_API_URL), or on the web
- * the page's own origin, which passes /auth/v1 on.
+ * Sign-in on our own address (docs/specs/api.md, C3): the auth client talks
+ * to apps/api's /auth/v1, which passes each request to Supabase Auth, so the
+ * app never talks to Supabase. The API's address (EXPO_PUBLIC_API_URL), or on
+ * the web the page's own origin, which passes /auth/v1 on.
  */
-export const authThroughApi = process.env.EXPO_PUBLIC_AUTH_THROUGH_API === '1';
-
 function authBase(): string {
-  if (!authThroughApi) return url!;
   const api = process.env.EXPO_PUBLIC_API_URL?.replace(/\/+$/, '');
   if (api) return api;
   if (Platform.OS === 'web' && typeof window !== 'undefined') return window.location.origin;
@@ -51,17 +47,6 @@ export const supabase = createClient<Database>(authBase(), publishableKey, {
     flowType: Platform.OS === 'web' ? 'pkce' : 'implicit',
   },
 });
-
-/**
- * Live updates (hooks/use-house.ts) until they move to the API's own stream:
- * Supabase Realtime, carrying the signed-in person's token. When sign-in
- * goes through the API, a client of its own on Supabase's address.
- */
-export const live = authThroughApi
-  ? createClient<Database>(url, publishableKey, {
-      accessToken: async () => (await supabase.auth.getSession()).data.session?.access_token ?? null,
-    })
-  : supabase;
 
 // On iOS and Android, only refresh the session while the app is in the foreground.
 if (Platform.OS !== 'web') {

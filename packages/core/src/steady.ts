@@ -2,7 +2,7 @@
  * Steady weeks: the deal with a points budget, in Smart or Classic mode.
  *
  * Pure and deterministic, one week at a time. The engine (apps/api
- * lib/engine/tick.ts) hands it every John on the list, who shares each one
+ * lib/engine/deal-week.ts) hands it every John on the list, who shares each one
  * and who can do it this week, each housemate's balance, preferences and the
  * days they're home, Classic's orders of turns from last week and which Johns
  * are waiting; it hands back who gets what, on which day, which Johns wait,
@@ -62,228 +62,16 @@
  *     next person in line with room does it, and they stay first.
  */
 import { stableHash, weekShares } from "./deal";
-import type { DealMode } from "./domain";
-
-/** Weeks a John waits before it goes to the front of the list. */
-export const FRONT_WEEKS = 3;
-
-/** How far ahead Classic looks when it picks who starts each John's order of turns. */
-export const PLAN_WEEKS = 12;
+import { placeDays } from "./steady-days";
+import { planTurns } from "./steady-turns";
+import { FRONT_WEEKS, pinnedOf, togetherOf, type SteadyBy, type SteadyInput, type SteadyJohn, type SteadyMember, type SteadyPlace, type SteadyResult, type SteadyWeighed, type SteadyWhy } from "./steady-types";
 
 /** Today's deal, with no limit: the cost of doing the same John twice running, and the catch-up cap. */
 const REPEAT_COST = 1.5;
 const CATCH_UP = 1.5;
 const EPS = 1e-9;
 
-export interface SteadyJohn {
-  johnId: string;
-  points: number;
-  /** Weeks between its turns: its every-N-weeks, or its months in weeks. 1 for on call. */
-  period: number;
-  /** ISO weekday it's due on (1 Monday … 7 Sunday). */
-  day: number;
-  /** It keeps its own day (bins night): always dealt, always on that day. */
-  keepDay: boolean;
-  /** How many do it: 1 alone, 0 everyone home, 2 to 6 that many. More than one goes out like a John that keeps its day. */
-  crew: number;
-  /** On call for the week (johns.kind = 'on_call'). */
-  onCall: boolean;
-  /** Everyone living there who shares it: its group, or the whole house. */
-  sharers: readonly string[];
-  /** Whose fairness it counts in: its group's id, or "" (the default) for the whole house. */
-  pool?: string;
-  /** Those of them who can do it this week: home on its day if it keeps it, otherwise home on a day still open. */
-  home: readonly string[];
-  /** It lands this week. */
-  due: boolean;
-  /** Weeks it has waited so far: 0 unless it waited last week. */
-  waited: number;
-  /** Whoever missed it last time, when it comes back to them. */
-  back: string | null;
-  /** Who did it last time (everyone with a place, for a John done together). */
-  lastBy: readonly string[];
-  /** Weeks since its last turn. For a John never dealt, weeks since it first fell due, plus its period. */
-  since: number;
-  /** Which of the next PLAN_WEEKS weeks it lands in (0 is this one), for planning Classic's turns. */
-  ahead: readonly boolean[];
-}
-
-export interface SteadyMember {
-  userId: string;
-  /** Work done minus share over every week so far. */
-  balance: number;
-  /**
-   * The same balance split by pool: "" the whole house, and a key for each
-   * group they're in now (their work done minus share on that group's Johns).
-   * They add up to `balance`. Left out, everything is the whole house's.
-   */
-  pools?: Readonly<Record<string, number>>;
-  /** The days of this week they can do a John on: home, and still to come (ISO 1–7). Empty when away all week. */
-  homeDays: readonly number[];
-  /** Days that suit them (ISO 1–7). Empty is any day. */
-  suits: readonly number[];
-  /** John id → 1 "rather do", −1 "rather not". */
-  rather: Readonly<Record<string, number>>;
-}
-
-export interface SteadyInput {
-  mode: DealMode;
-  /** Points a week each; 0 is no limit. */
-  budget: number;
-  /** Every John on the list this week, due or not. */
-  johns: readonly SteadyJohn[];
-  /** Everyone living there this week, home or away, in the order they joined. */
-  members: readonly SteadyMember[];
-  /** Classic's orders of turns as last week left them, John id → user ids; null to plan them afresh. */
-  turns: Readonly<Record<string, readonly string[]>> | null;
-  /** Breaks exact ties the same way on every machine: the house and week. */
-  seed: string;
-  /** What someone away still owes of their part: 1 in full, 0.5 half, 0 none. */
-  makeup: number;
-}
-
-/** Why a John went where it did, kept with the assignment (assignments.dealt) for its "Why?". */
-export type SteadyBy =
-  /** A missed John back to whoever missed it. */
-  | "back"
-  /** The only sharer who could do it. */
-  | "only"
-  /** Smart with a budget: their one John this week, furthest behind choosing first. */
-  | "oneEach"
-  /** Smart with a budget: the most target left. */
-  | "mostRoom"
-  /** Smart with no limit: furthest behind. */
-  | "behind"
-  /** Smart with no limit: as far behind as someone else, with fewer Johns this week. */
-  | "fewer"
-  /** Smart with no limit: level, so the shuffle decided. */
-  | "draw"
-  /** Classic: their turn. */
-  | "turn"
-  /** Classic: next in line, because whoever's turn it was is away or full. */
-  | "nextInLine";
-
-export interface SteadyWeighed {
-  userId: string;
-  /** Against the house average (budget) or their share (no limit), to a tenth of a point: below zero is behind. */
-  standing: number;
-  /** Target left before this John (with a budget). */
-  room?: number;
-  last?: true;
-  /** Classic: their place in its order of turns, from 1. */
-  place?: number;
-}
-
-export interface SteadyWhy {
-  to: string;
-  by: SteadyBy;
-  mode: DealMode;
-  /** Points a week each, 0 for no limit. */
-  budget: number;
-  weighed: SteadyWeighed[];
-  /** Sharers away all week. */
-  away: string[];
-  /** Weeks it waited before this. */
-  waited?: number;
-  /** It went a little over their target, having waited a week. */
-  stretched?: true;
-  /** It went back to whoever did it last time, having waited two weeks. */
-  again?: true;
-  /** Their day: moved off the John's own day, and why ("gone": the week was dealt after its day). */
-  moved?: "taken" | "suits" | "away" | "gone";
-}
-
-export interface SteadyPlace {
-  johnId: string;
-  userId: string;
-  /** ISO weekday it's on; 0 for on call (all week). */
-  day: number;
-  /** Which place, for a John done together (1, 2, …); 1 otherwise. */
-  place: number;
-  points: number;
-  back?: true;
-  why: SteadyWhy;
-}
-
-export interface SteadyPerson {
-  userId: string;
-  /** Balance minus the house average. */
-  rel: number;
-  /** Points this week before anything over (Infinity with no limit). */
-  target: number;
-  dealt: number;
-  weekOff: boolean;
-}
-
-export interface SteadyResult {
-  places: SteadyPlace[];
-  /** Johns left waiting, John id → weeks they'll have waited by next week. */
-  waiting: Record<string, number>;
-  /** Classic's orders of turns for next week; null in Smart. */
-  turns: Record<string, string[]> | null;
-  people: SteadyPerson[];
-  /** The Johns this week considered, most pressing first. */
-  order: string[];
-}
-
-/** The days nearest a John's own day first, ties to the earlier day (index 0 for on call). */
-const BY_DIST: number[][] = Array.from({ length: 8 }, (_, h) =>
-  [1, 2, 3, 4, 5, 6, 7].sort((a, b) => Math.abs(a - h) - Math.abs(b - h) || a - b),
-);
-
-const pinnedOf = (j: SteadyJohn) => j.keepDay || j.crew !== 1;
-const togetherOf = (j: SteadyJohn) => j.crew !== 1;
 const round1 = (n: number) => Math.round(n * 10) / 10;
-
-/**
- * Plan who starts each John's order of turns, biggest first, so each of the
- * next PLAN_WEEKS weeks' points split as evenly as possible. Johns that
- * already have an order keep it, and count toward the load the new ones are
- * planned around.
- */
-export function planTurns(
-  johns: readonly SteadyJohn[],
-  memberIds: readonly string[],
-  order: Record<string, string[]>,
-): Record<string, string[]> {
-  const load = new Map<string, number>();
-  const key = (p: string, x: number) => `${p}|${x}`;
-  const L = (p: string, x: number) => load.get(key(p, x)) ?? 0;
-  const project = (j: SteadyJohn, q: readonly string[], add: (p: string, x: number, v: number) => void) => {
-    let k = 0;
-    for (let x = 0; x < PLAN_WEEKS; x++) {
-      if (!j.ahead[x]) continue;
-      add(q[k % q.length], x, j.points);
-      k++;
-    }
-  };
-  for (const j of johns) {
-    const q = order[j.johnId];
-    if (q && q.length) project(j, q, (p, x, v) => load.set(key(p, x), L(p, x) + v));
-  }
-  const lands = (j: SteadyJohn) => j.ahead.slice(0, PLAN_WEEKS).filter(Boolean).length || 1;
-  const todo = johns
-    .filter((j) => !order[j.johnId])
-    .sort((a, b) => b.points * lands(b) - a.points * lands(a) || (a.johnId < b.johnId ? -1 : a.johnId > b.johnId ? 1 : 0));
-  for (const j of todo) {
-    const sharers = memberIds.filter((id) => j.sharers.includes(id));
-    let best: { cost: number; q: string[]; extra: Map<string, number> } | null = null;
-    for (let s = 0; s < Math.max(1, sharers.length); s++) {
-      const q = [...sharers.slice(s), ...sharers.slice(0, s)];
-      const extra = new Map<string, number>();
-      if (q.length) project(j, q, (p, x, v) => extra.set(key(p, x), (extra.get(key(p, x)) ?? 0) + v));
-      let cost = 0;
-      for (let x = 0; x < PLAN_WEEKS; x++) {
-        const v = memberIds.map((p) => L(p, x) + (extra.get(key(p, x)) ?? 0));
-        cost += Math.max(...v) - Math.min(...v);
-      }
-      if (!best || cost < best.cost) best = { cost, q, extra };
-    }
-    order[j.johnId] = best!.q;
-    for (const [k, v] of best!.extra) load.set(k, (load.get(k) ?? 0) + v);
-  }
-  return order;
-}
 
 interface Row {
   pid: string;
@@ -662,46 +450,4 @@ export function steadyWeek(input: SteadyInput): SteadyResult {
     })),
     order: ordered.map((j) => j.johnId),
   };
-}
-
-/**
- * Each place's day, once everyone's Johns are known: a John that keeps its day
- * (or is done together) stays on it, on call is all week (0), and the rest go
- * to the nearest free day that suits the person, then the nearest free day,
- * and only then a day that already has one. Only days they're home and still
- * to come count; with none (a John coming back to someone away), its own day.
- * Sets each place's `day` and `why.moved`, from scratch, so it can run again
- * after a swap.
- */
-export function placeDays(places: SteadyPlace[], johns: readonly SteadyJohn[], members: readonly SteadyMember[]): void {
-  const johnOf = new Map(johns.map((j) => [j.johnId, j]));
-  for (const m of members) {
-    const mine = places.filter((p) => p.userId === m.userId);
-    const taken = new Map<number, number>();
-    for (const p of mine) {
-      const j = johnOf.get(p.johnId)!;
-      delete p.why.moved;
-      if (j.onCall) p.day = 0;
-      else if (pinnedOf(j)) {
-        p.day = j.day;
-        taken.set(p.day, (taken.get(p.day) ?? 0) + 1);
-      }
-    }
-    const open = (d: number) => m.homeDays.includes(d);
-    const suits = (d: number) => !m.suits.length || m.suits.includes(d);
-    for (const p of mine) {
-      const j = johnOf.get(p.johnId)!;
-      if (j.onCall || pinnedOf(j)) continue;
-      const days = BY_DIST[j.day].filter(open);
-      const free = (d: number) => !taken.get(d);
-      const d =
-        days.find((x) => free(x) && suits(x)) ??
-        days.find(free) ??
-        [...days].sort((a, b) => (taken.get(a) ?? 0) - (taken.get(b) ?? 0))[0] ??
-        j.day;
-      p.day = d;
-      if (d !== j.day) p.why.moved = !open(j.day) ? "away" : taken.get(j.day) ? "taken" : "suits";
-      taken.set(d, (taken.get(d) ?? 0) + 1);
-    }
-  }
 }

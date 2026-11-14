@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Meta, RowTitle } from '@/components/text';
-import { INSET, RADIUS, SPACE, TAP, useTheme, type Theme } from '@/theme';
+import { HAIR, INSET, MARK_GAP, MARK_RADIUS, RADIUS, SPACE, TAP, type Theme, useTheme } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
 /**
@@ -146,11 +146,14 @@ export function WeekSummaryBar({
 /** How far a legend part's tint reaches past its words, either side. */
 const PART_PAD = SPACE.xs;
 
+/** The bar's height: its ends are half of it. */
+const BAR = 8;
+
 const styles = StyleSheet.create({
   summary: { paddingHorizontal: INSET },
   top: { minHeight: 24, flexDirection: 'row', alignItems: 'center', gap: SPACE.sm },
   range: { flexShrink: 1 },
-  bar: { flexDirection: 'row', gap: 2, height: 8, marginTop: SPACE.sm, borderRadius: 4, overflow: 'hidden' },
+  bar: { flexDirection: 'row', gap: HAIR, height: BAR, marginTop: SPACE.sm, borderRadius: BAR / 2, overflow: 'hidden' },
   segment: { flexGrow: 1, flexBasis: 0 },
   faded: { opacity: 0.3 },
   legend: { flexDirection: 'row', marginTop: SPACE.xs, columnGap: SPACE.xs },
@@ -165,8 +168,8 @@ const styles = StyleSheet.create({
     paddingVertical: SPACE.xs,
   },
   tint: { position: 'absolute', top: 0, bottom: 0, left: -PART_PAD, right: -PART_PAD, borderRadius: RADIUS },
-  figure: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  swatch: { width: 8, height: 8, borderRadius: 2 },
+  figure: { flexDirection: 'row', alignItems: 'center', gap: MARK_GAP },
+  swatch: { width: 8, height: 8, borderRadius: MARK_RADIUS },
   parts: { marginTop: SPACE.sm },
   note: { marginTop: SPACE.xs },
 });

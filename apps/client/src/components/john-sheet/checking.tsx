@@ -16,6 +16,7 @@ import type { JohnSheetContext } from './body';
 import { AwaitsOk } from './parent-ok';
 import { SheetLines } from './parts';
 import { useWords } from '@/hooks/use-words';
+import { viewingOf } from './viewing';
 
 /**
  * Your tick, being checked: when it stands, and Undo meanwhile. Past the
@@ -28,12 +29,12 @@ export function YoursChecking({ item, context }: { item: BoardItem; context: Joh
   const words = useWords();
   const move = useMove(context.houseId);
   const [asking, setAsking] = useState(false);
-  const warning = undoWarning(item, context.rules, context.now, words, forfeitRoom(context.stake, item.userId, monthOf(item.dueAt, context.zone)));
+  const warning = undoWarning(item, context.rules, context.now, words, forfeitRoom(context.stake, item.userId, monthOf(item.dueAt, context.rules.timezone)));
   // A roll call is taken back from the place it was ticked from, and with it every place it settled.
   const undo = () => void move.run(() => (item.coveredBy ? undoCover(item.id) : undoDone(item.crew?.tickedFrom ?? item.id)));
   return (
     <SheetLines>
-      <Body testID="ticked-line">{tickedLine(item, context.members, context.userId, context.rules, context.now, words)}</Body>
+      <Body testID="ticked-line">{tickedLine(item, viewingOf(context, words))}</Body>
       {asking && warning ? (
         <View style={styles.asking} testID="undo-warning">
           <Body>{warning}</Body>
@@ -80,7 +81,7 @@ export function TheirsChecking({ item, context }: { item: BoardItem; context: Jo
   if (item.awaitsOk) return <AwaitsOk item={item} context={context} />;
   return (
     <SheetLines>
-      <Body testID="ticked-line">{tickedLine(item, context.members, context.userId, context.rules, context.now, words)}</Body>
+      <Body testID="ticked-line">{tickedLine(item, viewingOf(context, words))}</Body>
       {item.coveredBy && item.userId === context.userId ? (
         // A housemate covered your John: the rest of the house checks the cover, not you.
         <Body testID="cover-of-yours">{words('john.sheet.coverOfYours', { name: context.nameOf(item.coveredBy) })}</Body>

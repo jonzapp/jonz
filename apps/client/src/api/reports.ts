@@ -102,6 +102,8 @@ export interface InboxRow {
   folded: boolean;
   /** How many reports are folded into this one. */
   also: number;
+  /** Waiting for a reply: new, or read and not folded into another. The Inbox lists these first. */
+  waiting: boolean;
 }
 
 const kindOf = (value: string): ReportKind => (REPORT_KINDS as readonly string[]).includes(value) ? (value as ReportKind) : 'problem';
@@ -252,24 +254,28 @@ export async function writeBack(id: string, body: string): Promise<void> {
 
 // --- The owner's Inbox ----------------------------------------------------------------
 
-/** What the Inbox is narrowed to: the words, the state ('waiting' is new or open), where it came from, the kind, and when it was sent. */
+/**
+ * What the Inbox is narrowed to: the words, the state ('waiting' is new, or
+ * read and not folded; 'answered' is the rest), where it came from, the kind,
+ * and when it was sent.
+ */
 export interface InboxFilter {
   q: string;
-  state: 'waiting' | ReportState | null;
+  state: 'waiting' | 'answered' | ReportState | null;
   source: ReportSource | null;
   kind: ReportKind | null;
   after: string | null;
   before: string | null;
 }
 
-/** The Inbox's filter from what its search box asks. It opens on what's waiting. */
+/** The Inbox's filter from what its search box asks. It opens on every report, in two groups (inboxRows). */
 export function inboxFilter(ask: ListAsk): InboxFilter {
-  const state = ask.picks.state ?? 'waiting';
+  const state = ask.picks.state;
   const kind = ask.picks.kind;
   const source = ask.picks.source;
   return {
     q: ask.q,
-    state: state === 'waiting' || (REPORT_STATES as readonly string[]).includes(state) ? (state as InboxFilter['state']) : null,
+    state: state && (state === 'waiting' || (REPORT_STATES as readonly string[]).includes(state)) ? (state as InboxFilter['state']) : null,
     source: source && (REPORT_SOURCES as readonly string[]).includes(source) ? (source as ReportSource) : null,
     kind: kind && (REPORT_KINDS as readonly string[]).includes(kind) ? (kind as ReportKind) : null,
     after: ask.after,
@@ -277,8 +283,14 @@ export function inboxFilter(ask: ListAsk): InboxFilter {
   };
 }
 
-/** Where a page of the Inbox starts: what /v1 answered with the last one. */
-export type InboxCursor = string;
+/** Where a page of the Inbox's reports starts: what /v1 answered with the last one. */
+type PageCursor = string;
+
+/** Where the Inbox's next page starts: which of its two groups (null when it isn't split), and where in it. */
+export interface InboxCursor {
+  group: 'waiting' | 'answered' | null;
+  after: PageCursor | null;
+}
 
 const PAGE = 50;
 
@@ -286,7 +298,7 @@ const PAGE = 50;
 const filterArgs = ({ source, ...filter }: InboxFilter) => ({ ...filter, from: source });
 
 /** A page of reports, newest first, narrowed by the database. */
-export async function inboxPage(after: InboxCursor | null, filter: InboxFilter): Promise<{ items: InboxRow[]; more: boolean; next: InboxCursor | null }> {
+export async function inboxPage(after: PageCursor | null, filter: InboxFilter): Promise<{ items: InboxRow[]; more: boolean; next: PageCursor | null }> {
   const page = await callV1('owner_reports_page', { ...filterArgs(filter), limit: PAGE, startingAfter: after ?? undefined });
   return {
     items: page.data.map((r) => ({
@@ -303,10 +315,29 @@ export async function inboxPage(after: InboxCursor | null, filter: InboxFilter):
       subject: r.subject,
       folded: r.sameAsReportId !== null,
       also: r.also,
+      waiting: r.state === 'new' || (r.state === 'open' && r.sameAsReportId === null),
     })),
     more: page.hasMore,
     next: page.startingAfter,
   };
+}
+
+/**
+ * The Inbox a page at a time. With no state picked it's two groups, each
+ * newest first: what's waiting for a reply, then the rest (answered). The
+ * page that reaches the end of the waiting ones carries on into the rest, so
+ * a short first group never leaves the first page short.
+ */
+export async function inboxRows(cursor: InboxCursor | null, filter: InboxFilter): Promise<{ items: InboxRow[]; more: boolean; next: InboxCursor | null }> {
+  if (filter.state !== null) {
+    const page = await inboxPage(cursor?.after ?? null, filter);
+    return { items: page.items, more: page.more, next: { group: null, after: page.next } };
+  }
+  const group = cursor?.group ?? 'waiting';
+  const page = await inboxPage(cursor?.after ?? null, { ...filter, state: group });
+  if (group === 'answered' || page.more) return { items: page.items, more: page.more, next: { group, after: page.next } };
+  const rest = await inboxPage(null, { ...filter, state: 'answered' });
+  return { items: [...page.items, ...rest.items], more: rest.more, next: { group: 'answered', after: rest.next } };
 }
 
 /** How many match. */

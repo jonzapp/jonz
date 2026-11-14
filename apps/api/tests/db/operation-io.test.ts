@@ -65,7 +65,7 @@ function pgKind(type: string): Kind {
 /** Operations that run their database function straight, as the caller (not through a route or the service role). */
 const direct = OPERATION_NAMES.filter((n) => {
   const o: Operation = OPERATIONS[n];
-  return o.rpc && !o.rpc.server && !o.route;
+  return o.rpc && !o.rpc.server && !o.server;
 });
 
 const fnOf = (name: OperationName) => (OPERATIONS[name] as Operation).rpc!.name;

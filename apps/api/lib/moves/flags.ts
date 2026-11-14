@@ -40,7 +40,7 @@ export async function raiseFlag(
     await notify([flag.user_id], {
       houseKind: houseKind(flag.houses.kind),
       title: (w) => w('today.onCall.pushTitle', { john: flag.name }),
-      body: (w) => w('today.onCall.pushBody', { by: me?.display_name ?? "Someone", due: dueInLine(new Date(flag.due_at), now, zone, w) }),
+      body: (w, clock) => w('today.onCall.pushBody', { by: me?.display_name ?? "Someone", due: dueInLine(new Date(flag.due_at), now, clock, w) }),
       url: "/today",
       kind: "flags",
       zone,

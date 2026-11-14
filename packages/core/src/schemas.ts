@@ -96,7 +96,14 @@ export type HouseSettings = z.infer<typeof HouseSettings>;
 /** A John's fields, before their one check across fields (johnMonthly). */
 export const JohnFields = z.object({
   name: z.string().trim().min(1, "Name the John.").max(60),
-  category: z.enum(CATEGORIES),
+  // Its kind (john_kinds): one of the house's by id, or by name (made if the
+  // house has none by that name). Left out, a new John goes in Everything
+  // else and a changed one keeps its kind. Null is a John with no kind, as
+  // the list reads one whose kind was deleted.
+  kindId: z.uuid().nullable().optional(),
+  kindName: z.string().trim().min(1).max(30).optional(),
+  /** The older way to give a kind: the starting kind it began as. Gone with johns.category. */
+  category: z.enum(CATEGORIES).optional(),
   points: z.coerce.number().int().min(1).max(20),
   everyWeeks: z.coerce.number().int().min(1).max(26),
   // A John that repeats in months (repeat.ts): how many apart, which of its
@@ -137,6 +144,13 @@ export type JohnDraft = z.infer<typeof JohnDraft>;
 /** A JohnDraft before it is checked: the monthly fields may be left out (a weekly John). */
 export type JohnDraftInput = z.input<typeof JohnDraft>;
 
+/** A kind of John: what save_kind takes. Its colour is a lid colour, #rrggbb. */
+export const KindDraft = z.object({
+  name: z.string().trim().min(1, "Name the kind.").max(30, "Keep it to 30 letters."),
+  colour: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Pick a colour."),
+});
+export type KindDraft = z.infer<typeof KindDraft>;
+
 /** A group of housemates who share some Johns (one of two bathrooms): what save_group takes. */
 export const GroupDraft = z.object({
   id: z.uuid().optional(),
@@ -155,7 +169,7 @@ export const AwayDraft = z.object({
 });
 export type AwayDraft = z.infer<typeof AwayDraft>;
 
-/** POST /api/away's answer: how many of your Johns booking made due before you go, handed to housemates, or skipped. */
+/** set_away on /v1's answer: how many of your Johns booking made due before you go, handed to housemates, or skipped. */
 export const AwayResponse = z.object({
   ok: z.literal(true),
   before: z.number().int().min(0),
@@ -171,7 +185,7 @@ export const DisplayName = z.string().trim().min(1, "Names are 1 to 60 character
 export const ApiError = z.object({ error: z.string() });
 export type ApiError = z.infer<typeof ApiError>;
 
-/** POST /api/fresh: catch this house up before showing it. */
+/** catch_up on /v1: catch this house up before showing it. */
 export const FreshRequest = z.object({ houseId: z.uuid() });
 export type FreshRequest = z.infer<typeof FreshRequest>;
 
@@ -179,7 +193,7 @@ export type FreshRequest = z.infer<typeof FreshRequest>;
 export const FreshResponse = z.object({ ticked: z.boolean() });
 export type FreshResponse = z.infer<typeof FreshResponse>;
 
-/** POST /api/disputes: say a housemate's tick wasn't really done. */
+/** raise_dispute on /v1: say a housemate's tick wasn't really done. */
 export const RaiseDispute = z.object({
   assignmentId: z.uuid(),
   reason: z.string().trim().min(1, "Say what’s wrong with it.").max(280, "Keep it under 280 characters."),
@@ -191,19 +205,19 @@ export function disputeProblem(issues: readonly { path: readonly PropertyKey[]; 
   return issues.find((issue) => issue.path[0] === "reason")?.message ?? "Say which John to dispute.";
 }
 
-/** POST /api/disputes/:id/votes: `uphold` true says it wasn't done. */
+/** cast_vote on /v1: `uphold` true says it wasn't done. */
 export const CastVote = z.object({ uphold: z.boolean() });
 export type CastVote = z.infer<typeof CastVote>;
 
-/** POST /api/oks/:assignmentId: a parent answers a kid's tick (family step 2). `ok` false is Not yet. */
+/** answer_tick on /v1: a parent answers a kid's tick (family step 2). `ok` false is Not yet. */
 export const AnswerTick = z.object({ ok: z.boolean() });
 export type AnswerTick = z.infer<typeof AnswerTick>;
 
-/** POST /api/deal: hand out this week's Johns, or re-deal a week nobody has ticked in. */
+/** deal_week on /v1: hand out this week's Johns, or re-deal a week nobody has ticked in. */
 export const DealRequest = z.object({ houseId: z.uuid() });
 export type DealRequest = z.infer<typeof DealRequest>;
 
-/** POST /api/flags: say an on-call John needs doing. */
+/** raise_flag on /v1: say an on-call John needs doing. */
 export const RaiseFlag = z.object({ johnId: z.uuid() });
 export type RaiseFlag = z.infer<typeof RaiseFlag>;
 
@@ -212,7 +226,7 @@ export const FlagResponse = z.object({ ok: z.literal(true), assignmentId: z.uuid
 export type FlagResponse = z.infer<typeof FlagResponse>;
 
 /**
- * POST /api/roll-call: tick a John with who did it (crew.ts). `crew` is
+ * roll_call on /v1: tick a John with who did it (crew.ts). `crew` is
  * everyone on it, you among them: holders left off are absent, anyone else
  * helped.
  */
@@ -227,7 +241,7 @@ export type RollCallRequest = z.infer<typeof RollCallRequest>;
 export const RollCallResponse = z.object({ ok: z.literal(true), people: z.number().int() });
 export type RollCallResponse = z.infer<typeof RollCallResponse>;
 
-/** POST /api/swaps: ask a housemate who'd rather do your John to swap it for one of theirs. */
+/** offer_swap on /v1: ask a housemate who'd rather do your John to swap it for one of theirs. */
 export const SwapAskRequest = z.object({ mine: z.uuid(), theirs: z.uuid() });
 export type SwapAskRequest = z.infer<typeof SwapAskRequest>;
 
@@ -235,9 +249,9 @@ export type SwapAskRequest = z.infer<typeof SwapAskRequest>;
 export const SwapAskResponse = z.object({ ok: z.literal(true), offerId: z.uuid() });
 export type SwapAskResponse = z.infer<typeof SwapAskResponse>;
 
-/** POST /api/pass/checkout: buy the House Pass for a house, on the web. */
+/** pass_checkout on /v1: buy the House Pass for a house, on the web. */
 /**
- * POST /api/pass/checkout: buy a plan for a house. `offer` is a promotion's
+ * pass_checkout on /v1: buy a plan for a house. `offer` is a promotion's
  * code from its link (docs/specs/promotions.md); a free Pass takes any plan.
  */
 export const PassCheckoutRequest = z.object({
@@ -247,7 +261,7 @@ export const PassCheckoutRequest = z.object({
 });
 export type PassCheckoutRequest = z.infer<typeof PassCheckoutRequest>;
 
-/** POST /api/pass/manage: the buyer changes or cancels the house's plan. */
+/** pass_billing on /v1: the buyer changes or cancels the house's plan. */
 export const PassManageRequest = z.object({ houseId: z.uuid() });
 export type PassManageRequest = z.infer<typeof PassManageRequest>;
 

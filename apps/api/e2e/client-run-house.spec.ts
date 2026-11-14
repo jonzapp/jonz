@@ -3,6 +3,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 import { admin, CLIENT_URL, cleanUp, signInToClient } from "./auth";
 import { backToHouse, toHousePage } from "./house-pages";
+import { rightNow } from "../tests/support/clock";
 
 const words = wordsFor("en", "housemates");
 
@@ -39,7 +40,7 @@ test("run a house from nothing on the phone", async ({ browser }) => {
   const ben = await signInToClient(benContext, "Ben Runner");
   made.push(ava, ben);
   const db = admin();
-  const name = `Flat ${Date.now() % 10_000}`;
+  const name = `Flat ${rightNow().getTime() % 10_000}`;
 
   // Ava starts the house; Today's setup checklist sends her to the John list.
   const page = await avaContext.newPage();
@@ -59,7 +60,8 @@ test("run a house from nothing on the phone", async ({ browser }) => {
   // The John list: two Johns, then one edited.
   await addJohn(page, "Bins", 2);
   await addJohn(page, "Bathroom", 4);
-  await list.getByRole("button", { name: words('house.johns.edit', { name: "Bins" }) }).click();
+  // Its row, not the Kinds list's "Edit Bins & recycling".
+  await list.getByRole("button", { name: new RegExp(`^${words('house.johns.edit', { name: "Bins" })}, `) }).click();
   // When it comes round is a sentence; its day opens the days, and Done goes back to it.
   await page.getByTestId("john-form").getByTestId("timing-day").click();
   await page.getByTestId("timing-days").getByRole("radio", { name: "Thursday" }).click();

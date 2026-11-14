@@ -37,7 +37,7 @@ it('asks for one thing, the name, with the defaults in a line', async () => {
   expect(screen.getByLabelText(words('door.welcome.name'))).toBeOnTheScreen();
   // The phone's currency and time zone, and Monday: two lines where one can't hold them, so the zone is never cut off.
   const defaults = screen.getByTestId('house-defaults');
-  expect(defaults).toHaveTextContent(line('CAD 20 a month each', 'weeks start Monday', 'America/St Johns'));
+  expect(defaults).toHaveTextContent(line('CAD 20 a month each', 'weeks start Monday', 'St Johns, Canada'));
   expect(defaults).toHaveProp('numberOfLines', 2);
   expect(screen.getByTestId('change-defaults')).toHaveTextContent(words('door.welcome.change'), { exact: false });
   // Who lives here: Housemates or Family, housemates picked.
@@ -62,7 +62,7 @@ it('opens the currency and the first day under Change, and the line follows them
   await render(<NewHouse />);
   const change = screen.getByTestId('change-defaults');
   expect(change).toBeCollapsed();
-  expect(change).toHaveAccessibleName(`${words('door.welcome.change')}: CAD 20 a month each, weeks start Monday, America/St Johns`);
+  expect(change).toHaveAccessibleName(`${words('door.welcome.change')}: CAD 20 a month each, weeks start Monday, St Johns, Canada`);
   await fireEvent.press(change);
   // The same control, now open, says Done.
   expect(screen.getByTestId('change-defaults')).toBeExpanded();
@@ -72,14 +72,14 @@ it('opens the currency and the first day under Change, and the line follows them
   expect(screen.getByRole('radio', { name: 'Monday' })).toBeChecked();
   // Seven days share the sign's width, so they fit across a phone.
   for (const day of ['Monday', 'Wednesday', 'Sunday']) expect(screen.getByRole('radio', { name: day })).toHaveStyle({ flex: 1 });
-  expect(screen.getByText(words('door.welcome.zoneNote', { zone: 'America/St Johns' }))).toBeOnTheScreen();
+  expect(screen.getByText(words('door.welcome.zoneNote', { zone: 'St Johns, Canada' }))).toBeOnTheScreen();
 
   await fireEvent.press(screen.getByRole('radio', { name: 'EUR' }));
   await fireEvent.press(screen.getByRole('radio', { name: 'Sunday' }));
   expect(screen.getByRole('radio', { name: 'Sunday' })).toBeChecked();
   expect(screen.getByRole('radio', { name: 'Monday' })).not.toBeChecked();
   expect(screen.getByTestId('house-defaults')).toHaveTextContent(
-    line('EUR 20 a month each', 'weeks start Sunday', 'America/St Johns'),
+    line('EUR 20 a month each', 'weeks start Sunday', 'St Johns, Canada'),
   );
 
   // Done folds them away again, keeping what was chosen.
@@ -121,7 +121,7 @@ describe('a family', () => {
     expect(screen.getByRole('radio', { name: kindName('family') })).toBeChecked();
     // A family has no stake: the line starts with pocket money.
     expect(screen.getByTestId('house-defaults')).toHaveTextContent(
-      line('Pocket money up to CAD 10 a month each', 'weeks start Monday', 'America/St Johns'),
+      line('Pocket money up to CAD 10 a month each', 'weeks start Monday', 'St Johns, Canada'),
     );
     await fireEvent.changeText(screen.getByLabelText(words('door.welcome.name')), 'The Parks');
     await fireEvent.press(screen.getByRole('button', { name: words('house.family.submit') }));

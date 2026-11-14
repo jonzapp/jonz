@@ -5,19 +5,20 @@ import { SearchXIcon, type LucideIcon } from 'lucide-react-native';
 import { useMemo, useState, type ReactNode } from 'react';
 import { Platform, StyleSheet, View, type ViewStyle } from 'react-native';
 
-import { ListTable, ListTableHead, type ListColumn } from '@/components/admin/list-table';
+import { ListTable, ListTableHead, type ListColumn } from '@/components/list-table';
 import { SmartSearch } from '@/components/admin/smart-search';
 import { EmptyState } from '@/components/empty-state';
 import { Group } from '@/components/group';
 import { ListFoot, nearEnd, type ListMore } from '@/components/list-foot';
 import { OutlineBar, OutlineRows } from '@/components/outline';
 import { ReadFailed } from '@/components/read-state';
+import { Section } from '@/components/section';
 import { useColumns } from '@/components/screen';
 import { Dimmed, SearchLine } from '@/components/search-line';
 import { Meta } from '@/components/text';
 import { TextButton } from '@/components/text-button';
 import { Waiting } from '@/components/waiting';
-import { INSET, OUTLINE, SPACE, useTheme } from '@/theme';
+import { INSET, OUTLINE, SECTION_GAP, SPACE, useTheme } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
 /** A page of a busy list, whether there's another after it, and (from /v1) where that one starts. */
@@ -84,6 +85,9 @@ export function useBusyList<T, C>(source: BusyListSource<T, C>) {
   const setQuery = (next: ListQuery) => show(listQueryToParams(next, defaultWhen));
   return {
     query,
+    /** What's asked, as the rows and count read it, and its key: for a page that counts more about the same question. */
+    ask,
+    askKey: key,
     setQuery,
     show,
     defaultWhen,
@@ -104,6 +108,25 @@ export function useBusyList<T, C>(source: BusyListSource<T, C>) {
 export type BusyList<T> = ReturnType<typeof useBusyList<T, unknown>>;
 
 /**
+ * Which row of a busy list is open beside it: the one tapped, else the one
+ * a link in names with ?open= (the Overview's Needs you, a pushed page
+ * opened on a laptop), else the first.
+ */
+export function useOpenRow(busy: BusyList<{ id: string }>) {
+  const { open } = useLocalSearchParams<{ open?: string }>();
+  const [chosenId, setChosen] = useState<string | null>(open ?? null);
+  return { shownId: chosenId ?? busy.items[0]?.id ?? null, setChosen };
+}
+
+/** A group of a busy list's rows: its name, how many the whole list has in it (null until counted), and the rows read so far. */
+export interface ListGroup<T> {
+  key: string;
+  label: string;
+  count: number | null;
+  items: T[];
+}
+
+/**
  * Every admin list, drawn the same way: the one search box, the count of
  * what matches with Clear, then the rows (a table on a laptop, Rows on a
  * phone), and the foot every long list has. Nothing matching says so, with
@@ -119,6 +142,7 @@ export function BusyListView<T>({
   row,
   empty,
   foot,
+  groups,
 }: {
   busy: BusyList<T>;
   /** The list's name in test ids and its recent searches: "audit". */
@@ -132,6 +156,11 @@ export function BusyListView<T>({
   empty: { icon: LucideIcon; title: string; body: string };
   /** What the foot says is shown, when the count isn't in yet: how far back. */
   foot?: (last: T) => string;
+  /**
+   * The rows in groups, each under its name and count ("Needs a reply, 2"),
+   * in order; a group with no rows is left out. Null draws them as one list.
+   */
+  groups?: (items: T[]) => readonly ListGroup<T>[] | null;
 }) {
   const words = useWords();
   const wide = useColumns();
@@ -142,7 +171,9 @@ export function BusyListView<T>({
   // On a laptop the search, the count and the column names stay in view at the top as the rows scroll under them.
   // Sticky is the web's, as the foot's is.
   const pinned = wide && Platform.OS === 'web';
-  const table = wide && !busy.list.isPending && !busy.list.isError && busy.items.length > 0;
+  const grouped = groups?.(busy.items)?.filter((group) => group.items.length > 0) ?? null;
+  // In groups, each group is a table of its own, the column names over the first.
+  const table = !grouped && wide && !busy.list.isPending && !busy.list.isError && busy.items.length > 0;
   const head = (
     <>
       {/* The search box with its line under it, as one: the line takes no gap of its own. */}
@@ -200,7 +231,21 @@ export function BusyListView<T>({
     const last = busy.items[busy.items.length - 1];
     body = (
       <>
-        {wide ? (
+        {grouped ? (
+          <View style={styles.groups}>
+            {grouped.map((group, i) => (
+              <Section key={group.key} label={`${group.label}, ${listCount(group.count ?? group.items.length, false)}`} bare={wide} testID={`${name}-group-${group.key}`}>
+                {wide ? (
+                  <ListTable columns={columns} head={i === 0}>
+                    {group.items.map(tableRow)}
+                  </ListTable>
+                ) : (
+                  group.items.map(row)
+                )}
+              </Section>
+            ))}
+          </View>
+        ) : wide ? (
           <ListTable columns={columns} head={false} testID={`${name}-table`}>
             {busy.items.map(tableRow)}
           </ListTable>
@@ -233,6 +278,7 @@ export function BusyListView<T>({
 const STICKY_TOP = { position: 'sticky', top: 0, zIndex: 1 } as unknown as ViewStyle;
 
 const styles = StyleSheet.create({
+  groups: { gap: SECTION_GAP },
   list: { gap: SPACE.sm },
   // Pinned, it keeps a little room under the title bar; unpinned, the room is taken back above it.
   top: { gap: SPACE.sm, marginTop: -SPACE.sm, paddingTop: SPACE.sm },

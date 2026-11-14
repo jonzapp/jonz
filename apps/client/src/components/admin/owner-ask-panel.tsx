@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { OwnerAsk } from '@/components/admin/owner-ask';
 import { IconButton } from '@/components/icon-button';
 import { BarEdgeContext } from '@/components/title-bar';
-import { LookContext, useTheme, WIDE } from '@/theme';
+import { useTheme, WIDE } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
 /** The panel's width beside the page, as the house's chat; a little less on a narrow laptop. */
@@ -35,7 +35,7 @@ export function OwnerAskProvider({ children }: { children: ReactNode }) {
 }
 
 /** The sparkles: open and close the owner's chat. A screen reader hears whether it's open. */
-export function OwnerAskButton() {
+function OwnerAskButton() {
   const words = useWords();
   const ask = useContext(OwnerAskContext);
   if (!ask) return null;
@@ -92,16 +92,8 @@ export function OwnerAskSheet() {
   );
 }
 
-/** The cover's own ground, Night's like the chat, so nothing of the page shows round its edges. */
+/** The cover's own ground, the chat's, so nothing of the page shows round its edges. */
 function LookBackground({ style, children }: { style: StyleProp<ViewStyle>; children: ReactNode }) {
-  return (
-    <LookContext.Provider value="dark">
-      <NightGround style={style}>{children}</NightGround>
-    </LookContext.Provider>
-  );
-}
-
-function NightGround({ style, children }: { style: StyleProp<ViewStyle>; children: ReactNode }) {
   const { colors } = useTheme();
   return (
     <View style={[style, { backgroundColor: colors.background }]} testID="owner-ask-sheet">

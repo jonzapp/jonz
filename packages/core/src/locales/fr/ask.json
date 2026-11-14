@@ -46,7 +46,7 @@
   "ask.draft.placeholderAsk": "Qui s’occupe des poubelles cette semaine ?",
   "ask.draft.orAsk": "Ou choisis une question :",
   "ask.draft.offlineAsk": "Je n’ai pas pu répondre pour l’instant. Réessaie dans une minute.",
-  "ask.draft.passNeeded": "Modifier ta liste avec Jonz fait partie du House Pass. Créer une nouvelle maison reste gratuit.",
+  "ask.draft.passNeeded": "Modifier ta liste avec Jonz fait partie du House Pass",
   "ask.draft.seePass": "Voir le House Pass",
   "ask.usage.title": "Utilisation de Demande à Jonz",
   "ask.usage.rowMeta": "Il te reste {left} % cette semaine",
@@ -110,5 +110,16 @@
   "ask.moves.awayTitle": "Absence {range}",
   "ask.moves.cancelTitle": "Annuler l’absence {range}",
   "ask.moves.awayMeta": "{hasNote, select, true {{note}. } other {}}Aucun John à faire pendant ton absence ; ceux qui tomberaient à ce moment-là sont à faire avant ton départ.",
-  "ask.moves.cancelMeta": "Les Johns déplacés reviennent à leur date d’origine."
+  "ask.moves.cancelMeta": "Les Johns déplacés reviennent à leur date d’origine.",
+  "ask.draft.passNeededNote": "Créer une nouvelle maison reste gratuit.",
+  "ask.long.summed": "Jonz a résumé {n, plural, one {# message précédent} other {# messages précédents}}",
+  "ask.long.carried": "De ta dernière conversation",
+  "ask.long.nearlyFull": "Cette conversation devient longue. À {max} messages, tu continueras dans une nouvelle, et Jonz en garde un résumé.",
+  "ask.long.full": "Cette conversation est pleine",
+  "ask.long.fullNote": "Continue dans une nouvelle conversation. Jonz y apporte un résumé de celle-ci, pour que tu n’aies pas à tout réexpliquer.",
+  "ask.long.carryOn": "Continuer dans une nouvelle conversation",
+  "ask.long.you": "Toi",
+  "ask.long.jonz": "Jonz",
+  "ask.usage.outAccount": "Tu as utilisé ton Demande à Jonz cette semaine",
+  "ask.usage.outAccountNote": "Ça compte pour toutes les maisons où tu es. Une partie revient {backOn}, à mesure que les anciennes questions sortent du compte."
 }

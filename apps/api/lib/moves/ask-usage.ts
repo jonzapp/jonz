@@ -27,7 +27,7 @@ export function accountSince(now: Date): Date {
 }
 
 /** What a person has used of Ask Jonz in any house over the account's window, and when its oldest turn drops off. */
-export async function accountUse(userId: string, now: Date): Promise<AccountUse> {
+async function accountUse(userId: string, now: Date): Promise<AccountUse> {
   const { data, error } = await createAdminClient().rpc("ask_account_used", { p_user: userId, p_since: accountSince(now).toISOString() });
   if (error) throw new Error(`Couldn't read the account's Ask Jonz: ${error.message}`);
   const row = data?.[0];
@@ -51,7 +51,7 @@ export async function usageNow(house: HouseRow, people: readonly string[], me: s
 }
 
 /**
- * GET /api/ask/usage: the week's Ask Jonz for anyone in the house, read as
+ * ask_usage on /v1: the week's Ask Jonz for anyone in the house, read as
  * them (row rules decide the house and who lives there).
  */
 export async function houseUsage(caller: Caller, houseId: string, now: Date): Promise<{ refusal: Refusal } | AskUsage> {

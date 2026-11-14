@@ -7,7 +7,7 @@ import { GROUP_RADIUS, INSET, SPACE, useTheme } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
 /** How long each of Jonz's steps shows while it thinks, before the next. */
-export const STEP_MS = 1300;
+const STEP_MS = 1300;
 /** One square's fill, in and out, and the gap before the next square starts. */
 const FILL_MS = 300;
 const HOLD_MS = 450;

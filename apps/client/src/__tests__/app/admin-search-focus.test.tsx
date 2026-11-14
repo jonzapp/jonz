@@ -7,7 +7,7 @@ import { housesCount, housesPage } from '@/api/houses';
 import { sentCount, sentPage, type SentRow } from '@/api/messages';
 import { auditCount, auditPage, deletionsCount, deletionsPage, liveNotices, noticesCount, noticesPage, ownerStatus } from '@/api/owner';
 import { promotionsCount, promotionsPage } from '@/api/promotions';
-import { inboxCount, inboxPage, type InboxRow } from '@/api/reports';
+import { inboxCount, inboxRows, type InboxRow } from '@/api/reports';
 import AdminLayout from '@/app/admin/_layout';
 import AuditPage from '@/app/admin/audit/index';
 import DeletionsPage from '@/app/admin/deletions';
@@ -52,7 +52,7 @@ jest.mock('@/api/houses', () => ({
 }));
 jest.mock('@/api/reports', () => ({
   ...jest.requireActual<typeof import('@/api/reports')>('@/api/reports'),
-  inboxPage: jest.fn(),
+  inboxRows: jest.fn(),
   inboxCount: jest.fn(),
   openReport: jest.fn(() => new Promise(() => undefined)),
 }));
@@ -67,7 +67,6 @@ jest.mock('@/api/promotions', () => ({
   promotionsCount: jest.fn(),
 }));
 jest.mock('@/api/supabase', () => ({ supabase: {} }));
-jest.mock('@/api/http', () => ({ apiPost: jest.fn() }));
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({ __esModule: true, default: jest.fn() }));
 jest.mock('@/hooks/use-membership', () => ({
   useMembership: () => ({ session: { user: { id: 'owner' } }, house: null, refresh: jest.fn() }),
@@ -136,6 +135,7 @@ const REPORT: InboxRow = {
   subject: null,
   folded: false,
   also: 0,
+  waiting: true,
 };
 const SENT: SentRow = {
   id: 'm1',
@@ -243,7 +243,7 @@ const PAGES: Page[] = [
     placeholder: words('common.report.searchPlaceholder'),
     row: 'inbox-r1',
     reads: () => {
-      jest.mocked(inboxPage).mockImplementation(async (_c, f) => ({ items: await answer(f.q, [REPORT]), more: false, next: null }));
+      jest.mocked(inboxRows).mockImplementation(async (_c, f) => ({ items: await answer(f.q, [REPORT]), more: false, next: null }));
       jest.mocked(inboxCount).mockImplementation(async (f) => (await answer(f.q, [REPORT])).length);
     },
   },

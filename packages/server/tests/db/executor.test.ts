@@ -227,13 +227,12 @@ describe("the executor", () => {
     await expect(executor({ limits, now: () => minute(6) })("my_permissions", as("alice"), { houseId })).resolves.toMatchObject({ status: 200 });
   });
 
-  it("asks for the House Pass when it's enforced and the house has none", async () => {
+  it("asks for the House Pass when the house has none", async () => {
     const gated: ApiOperation = { ...myPermissions, operation: { ...myPermissions.operation, entitlement: "history" } as Operation };
     await admin`update public.houses set pass_plan = 'trial', pass_ends_at = ${minute(0)} where id = ${houseId}::uuid`;
-    const run = (enforced: boolean, at: Date) => createExecutor({ sql: api, verify, operations: [gated], now: () => at, passEnforced: enforced })("my_permissions", as("alice"), { houseId });
-    await expect(run(true, minute(7))).rejects.toMatchObject({ code: "pass_required", status: 402 });
-    await expect(run(false, minute(7))).resolves.toMatchObject({ status: 200 });
-    await expect(run(true, new Date(minute(0).getTime() - 60_000))).resolves.toMatchObject({ status: 200 });
+    const run = (at: Date) => createExecutor({ sql: api, verify, operations: [gated], now: () => at })("my_permissions", as("alice"), { houseId });
+    await expect(run(minute(7))).rejects.toMatchObject({ code: "pass_required", status: 402 });
+    await expect(run(new Date(minute(0).getTime() - 60_000))).resolves.toMatchObject({ status: 200 });
   });
 
   it("asks for the Pass only when the feature it covers is used", async () => {
@@ -244,7 +243,7 @@ describe("the executor", () => {
       rpcArgs: (i) => ({ h: i.houseId }),
       operation: { ...myPermissions.operation, entitlement: "photos", entitlementWhen: "photoPath" },
     };
-    const run = (input: Record<string, unknown>) => createExecutor({ sql: api, verify, operations: [op], now: () => minute(9), passEnforced: true })("my_permissions", as("alice"), input);
+    const run = (input: Record<string, unknown>) => createExecutor({ sql: api, verify, operations: [op], now: () => minute(9) })("my_permissions", as("alice"), input);
     await expect(run({ houseId })).resolves.toMatchObject({ status: 200 });
     await expect(run({ houseId, photoPath: "h/a.jpg" })).rejects.toMatchObject({ code: "pass_required" });
   });

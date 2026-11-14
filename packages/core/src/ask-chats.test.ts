@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { CHAT_SAVED_TURNS, CHAT_TITLE_MAX, chatGroups, chatTitle, chatWhen, savedTurns } from "./ask-chats";
+import { SUMMARY_MAX } from "./house-draft";
 import { wordsFor } from "./words-for";
 
 const words = wordsFor("en", "housemates");
@@ -26,6 +27,11 @@ describe("savedTurns", () => {
     expect(kept).toHaveLength(CHAT_SAVED_TURNS);
     expect(kept.at(-1)).toEqual({ role: "user", text: `t${CHAT_SAVED_TURNS + 4}` });
     expect(savedTurns(null)).toEqual([]);
+  });
+  it("keeps the summary a reply came with, and drops one that's too long", () => {
+    const summed = { role: "assistant", text: "Done.", ask: null, hadCard: false, summed: { text: "- Bins on Tuesday.", count: 32 } };
+    const tooLong = { ...summed, summed: { text: "x".repeat(SUMMARY_MAX + 1), count: 32 } };
+    expect(savedTurns([summed, tooLong])).toEqual([summed]);
   });
 });
 

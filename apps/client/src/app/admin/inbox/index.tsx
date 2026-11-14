@@ -1,12 +1,12 @@
 import { REPORT_FACETS, REPORT_WHEN, reportAge, reportGist, type ListAsk, type Words } from '@app/core';
-import { router, useLocalSearchParams } from 'expo-router';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { router } from 'expo-router';
 import { InboxIcon } from 'lucide-react-native';
-import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { inboxCount, inboxFilter, inboxPage, type InboxCursor, type InboxRow } from '@/api/reports';
-import { BusyListView, useBusyList, type BusyList } from '@/components/admin/busy-list';
-import { ListTableRow, type ListColumn } from '@/components/admin/list-table';
+import { inboxCount, inboxFilter, inboxRows, type InboxCursor, type InboxRow } from '@/api/reports';
+import { BusyListView, useBusyList, useOpenRow, type BusyList, type ListGroup } from '@/components/admin/busy-list';
+import { ListTableRow, type ListColumn } from '@/components/list-table';
 import { Avatar } from '@/components/avatar';
 import { Row } from '@/components/row';
 import { ReportChip } from '@/components/report/report-parts';
@@ -27,9 +27,12 @@ const inboxTable = (words: Words): readonly ListColumn[] => [
 ];
 
 /**
- * Problems, ideas and questions people sent from the app, newest first,
- * opening on what's waiting for an answer. On a laptop the chosen one opens
- * beside the list; on a phone it's a page of its own.
+ * Problems, ideas and questions people sent from the app or by email. It
+ * opens on every one in two groups, each newest first: what needs a reply,
+ * then everything else, so an answered one is still there to follow up. The
+ * search box looks through both; picking a state shows just that state, as
+ * one list. On a laptop the chosen one opens beside the list; on a phone it's
+ * a page of its own.
  */
 export default function InboxPage() {
   const words = useWords();
@@ -37,7 +40,7 @@ export default function InboxPage() {
     key: INBOX_KEY,
     facets: REPORT_FACETS,
     when: REPORT_WHEN,
-    rows: (cursor: InboxCursor | null, ask: ListAsk) => inboxPage(cursor, inboxFilter(ask)),
+    rows: (cursor: InboxCursor | null, ask: ListAsk) => inboxRows(cursor, inboxFilter(ask)),
     count: (ask) => inboxCount(inboxFilter(ask)),
   });
   return (
@@ -50,11 +53,25 @@ export default function InboxPage() {
 function Inbox({ busy }: { busy: BusyList<InboxRow> }) {
   const words = useWords();
   const two = useColumns();
-  // A link in (the Overview's Needs you, a pushed page opened on a laptop) names the one to open with ?open=.
-  const { open } = useLocalSearchParams<{ open?: string }>();
-  const [chosenId, setChosen] = useState<string | null>(open ?? null);
-  const shownId = chosenId ?? busy.items[0]?.id ?? null;
+  const { shownId, setChosen } = useOpenRow(busy);
   const now = new Date();
+  // Split when no state is picked: how many of what matches need a reply, for the first group's name.
+  const filter = inboxFilter(busy.ask);
+  const split = filter.state === null;
+  const waiting = useQuery({
+    queryKey: [...INBOX_KEY, 'waiting', busy.askKey],
+    queryFn: () => inboxCount({ ...filter, state: 'waiting' }),
+    enabled: split,
+    placeholderData: keepPreviousData,
+  });
+  const groups = (items: InboxRow[]): readonly ListGroup<InboxRow>[] | null => {
+    if (!split) return null;
+    const needs = waiting.data ?? null;
+    return [
+      { key: 'waiting', label: words('admin.inbox.waiting'), count: needs, items: items.filter((r) => r.waiting) },
+      { key: 'rest', label: words('admin.inbox.rest'), count: needs !== null && busy.count !== null ? busy.count - needs : null, items: items.filter((r) => !r.waiting) },
+    ];
+  };
   const list = (
     <BusyListView
       busy={busy}
@@ -102,6 +119,7 @@ function Inbox({ busy }: { busy: BusyList<InboxRow> }) {
           testID={`inbox-${report.id}`}
         />
       )}
+      groups={groups}
       empty={{ icon: InboxIcon, title: words('common.report.empty'), body: words('common.report.emptyBody') }}
     />
   );

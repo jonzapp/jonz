@@ -33,10 +33,15 @@
     "db:advisors": "supabase db advisors --local --type all --level warn --fail-on warn",
     "db:standards": "psql \"${DB_URL:-postgresql://postgres:postgres@127.0.0.1:54342/postgres}\" -q -f supabase/checks/standards.sql",
     "email:preview": "node scripts/email-preview.mjs",
+    "code:standards": "node scripts/ci/code-standards.mjs",
     "package:chatgpt": "rm -f jonz-chatgpt.zip && cd integrations/chatgpt && zip -r ../../jonz-chatgpt.zip plugin.json mcp.json assets"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "@supabase/supabase-js": "^2.110.0",
     "eslint": "^9",
+    "jscpd": "^5.4.3",
+    "knip": "^6.45.1",
     "typescript": "^5",
     "typescript-eslint": "^8.46.0",
     "vitest": "^4.1.9",

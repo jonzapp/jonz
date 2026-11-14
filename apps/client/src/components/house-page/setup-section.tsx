@@ -20,7 +20,7 @@ import { useWords } from '@/hooks/use-words';
  * page too), the money rules (and the admins who can change them), and who's
  * away next (with your own days), and what's left of your Ask Jonz this
  * week. Changing any of them changes the house
- * for everyone, so it says so. History is on the Wall. A kid reads it as
+ * for everyone, so it says so. Undo is in each move's sheet. A kid reads it as
  * "How the family runs", set by their parents: the Johns, the rules and
  * time away, without Ask Jonz's usage.
  */

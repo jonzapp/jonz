@@ -8,7 +8,7 @@ import { saveMyPrefs } from '@/api/my-prefs';
 import { loadJohnList } from '@/api/settings';
 import AwayScreen from '@/app/(house)/house/away';
 import PrefsScreen from '@/app/(house)/house/prefs';
-import { snapshot } from '@/testing/house';
+import { snapshot, KINDS } from '@/testing/house';
 import { renderPages, untilRead } from '@/testing/pages';
 
 const words = wordsFor('en', 'housemates');
@@ -41,6 +41,7 @@ beforeEach(() => {
   (loadAway as jest.Mock).mockResolvedValue({ today: '2026-10-21', periods: [] });
   (saveMyPrefs as jest.Mock).mockResolvedValue(undefined);
   (loadJohnList as jest.Mock).mockResolvedValue({
+    kinds: KINDS,
     johns: [
       { ...NEW_JOHN, id: 'mop', name: 'Mopping' },
       { ...NEW_JOHN, id: 'bins', name: 'Garbage' },

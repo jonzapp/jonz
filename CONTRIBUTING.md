@@ -29,6 +29,7 @@ Before you open a pull request:
 
 ```sh
 npm run lint && npm run typecheck && npm test
+npm run code:standards   # docs/standards/code.md
 npm run test:db     # if you touched supabase/ or the engine
 npm run test:e2e    # if you touched a screen
 ```

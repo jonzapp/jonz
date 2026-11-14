@@ -26,7 +26,7 @@ import { AGENT_MODEL, runAgent, type AgentAnswer } from "@/lib/ai/agent";
 
 // The owner's Ask Jonz, in /admin. The same loop as a housemate's
 // (agent.ts), with nothing else in common: its own address
-// (/api/admin/ask), instructions, tools and history (owner_ask_turns). Its
+// (ask_owner on /v1), instructions, tools and history (owner_ask_turns). Its
 // tools read what the admin pages read, through the owner's own session
 // with their code, so the database's owner check decides what it sees. Its
 // writes are proposals, as a housemate's are: each puts a move on a card
@@ -38,7 +38,7 @@ import { AGENT_MODEL, runAgent, type AgentAnswer } from "@/lib/ai/agent";
 
 /** What the owner's Ask Jonz can read: each as the owner's session, each a short text for Claude. */
 export interface OwnerReads {
-  inbox(q: string, state: "waiting" | "replied" | "fixed" | null, kind: (typeof REPORT_KINDS)[number] | null): Promise<string>;
+  inbox(q: string, state: "waiting" | "answered" | "replied" | "fixed" | null, kind: (typeof REPORT_KINDS)[number] | null): Promise<string>;
   deletions(q: string): Promise<string>;
   audit(q: string, after: string | null, before: string | null): Promise<string>;
   notices(): Promise<string>;
@@ -131,7 +131,7 @@ const NoticeInput = z.object({
   startsAt: When.describe("When it starts showing (ISO with offset), or null for now."),
   endsAt: When.describe("When it stops (ISO with offset), or null to show until ended."),
 });
-export type NoticeInput = z.infer<typeof NoticeInput>;
+type NoticeInput = z.infer<typeof NoticeInput>;
 
 const MessageInput = z.object({
   audience: z.enum(["person", "house", "everyone"]),
@@ -143,7 +143,7 @@ const MessageInput = z.object({
   wall: z.boolean().describe("On their house's Wall."),
   email: z.boolean(),
 });
-export type MessageInput = z.infer<typeof MessageInput>;
+type MessageInput = z.infer<typeof MessageInput>;
 
 const PromotionInput = z.object({
   name: z.string().describe("What the owner calls it, at most 60 letters."),
@@ -160,10 +160,10 @@ const PromotionInput = z.object({
   endsAt: When.describe("When it ends (ISO with offset), or null."),
   maxUses: z.number().int().nullable().describe("With anyone: how many may use it, or null for no limit."),
 });
-export type PromotionInput = z.infer<typeof PromotionInput>;
+type PromotionInput = z.infer<typeof PromotionInput>;
 
-/** Every write tool, by name: OWNER_ASK_COVERAGE says which permission gives each. */
-function writeTools(w: OwnerWrites): Record<string, ToolSet[string]> {
+/** Reports, notices and messages. */
+function reportTools(w: OwnerWrites): Record<string, ToolSet[string]> {
   const said = (r: EditResult) => r.said;
   // Each starts with what its operation does, in the registry's words.
   const about = (tool: string, more: string) => `${ownerToolAbout(tool)}. ${more}`;
@@ -203,6 +203,15 @@ function writeTools(w: OwnerWrites): Record<string, ToolSet[string]> {
       inputSchema: MessageInput,
       execute: async (m) => said(await w.sendMessage(m)),
     }),
+  };
+}
+
+/** Promotions. */
+function promotionTools(w: OwnerWrites): Record<string, ToolSet[string]> {
+  const said = (r: EditResult) => r.said;
+  // Each starts with what its operation does, in the registry's words.
+  const about = (tool: string, more: string) => `${ownerToolAbout(tool)}. ${more}`;
+  return {
     make_promotion: tool({
       description: about("make_promotion", "Put a new promotion on the card. Its code must be new."),
       inputSchema: PromotionInput,
@@ -223,6 +232,15 @@ function writeTools(w: OwnerWrites): Record<string, ToolSet[string]> {
       inputSchema: z.object({ id: Id }),
       execute: async ({ id }) => said(await w.promotionMove("promotion_retry", id)),
     }),
+  };
+}
+
+/** Deleting accounts and houses, and resetting a house. */
+function removalTools(w: OwnerWrites): Record<string, ToolSet[string]> {
+  const said = (r: EditResult) => r.said;
+  // Each starts with what its operation does, in the registry's words.
+  const about = (tool: string, more: string) => `${ownerToolAbout(tool)}. ${more}`;
+  return {
     delete_account_now: tool({
       description: about("delete_account_now", "Put deleting an account now on the card, without waiting out its 30 days: gone for good within ten minutes. Only for an account already waiting to be deleted (deletions)."),
       inputSchema: z.object({ userId: Id, reason: Reason }),
@@ -253,14 +271,19 @@ function writeTools(w: OwnerWrites): Record<string, ToolSet[string]> {
   };
 }
 
-/** The owner's tools: every read, and (given `writes`) each write the owner's role allows. */
-export function ownerToolSet(t: OwnerReads, writes?: OwnerWrites): ToolSet {
-  const set: ToolSet = {
+/** Every write tool, by name: OWNER_ASK_COVERAGE says which permission gives each. */
+function writeTools(w: OwnerWrites): Record<string, ToolSet[string]> {
+  return { ...reportTools(w), ...promotionTools(w), ...removalTools(w) };
+}
+
+/** The reads: every owner list, by search. */
+function readTools(t: OwnerReads): ToolSet {
+  return {
     inbox: tool({
       description: "Reports people sent from the app, newest first: who, their house, kind, state and what they wrote.",
       inputSchema: z.object({
         q: Search,
-        state: z.enum(["waiting", "replied", "fixed"]).nullable().describe("waiting is new or open; null for any."),
+        state: z.enum(["waiting", "answered", "replied", "fixed"]).nullable().describe("waiting is new, or read and not folded (needs a reply); answered is everything else; null for any."),
         kind: z.enum(REPORT_KINDS).nullable(),
       }),
       execute: async ({ q, state, kind }) => t.inbox(q, state, kind),
@@ -307,6 +330,11 @@ export function ownerToolSet(t: OwnerReads, writes?: OwnerWrites): ToolSet {
     }),
     read_page: readPageToolForAnyHouse((page, family) => t.page(page, family)),
   };
+}
+
+/** The owner's tools: every read, and (given `writes`) each write the owner's role allows. */
+export function ownerToolSet(t: OwnerReads, writes?: OwnerWrites): ToolSet {
+  const set: ToolSet = readTools(t);
   if (!writes) return set;
   const all = writeTools(writes);
   for (const permission of Object.keys(OWNER_PERMISSIONS) as OwnerPermission[]) {

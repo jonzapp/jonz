@@ -15,8 +15,9 @@ import { loadTable } from '@/api/table';
 import Week from '@/app/(house)/week';
 import { ToastProvider } from '@/components/toast';
 import { houseKey } from '@/hooks/keys';
-import { assignment, snapshot } from '@/testing/house';
+import { assignment, snapshot, KINDS } from '@/testing/house';
 import { testQueryClient } from '@/testing/query';
+import { hoursFromNow as at } from '@/testing/clock';
 
 const words = wordsFor('en', 'housemates');
 
@@ -46,8 +47,6 @@ jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
 }));
 
 const read = loadHouse as jest.Mock;
-const HOUR = 3_600_000;
-const at = (hours: number) => new Date(Date.now() + hours * HOUR).toISOString();
 const PHONE = { width: 412, height: 915, scale: 1, fontScale: 1 };
 const LAPTOP = { width: 1440, height: 900, scale: 1, fontScale: 1 };
 
@@ -126,7 +125,7 @@ beforeEach(() => {
   mockViewer.id = 'priya';
   (useWindowDimensions as jest.Mock).mockReturnValue(PHONE);
   read.mockResolvedValue(busyWeek());
-  (loadJohnList as jest.Mock).mockResolvedValue({ johns: [], groups: [] });
+  (loadJohnList as jest.Mock).mockResolvedValue({ kinds: KINDS, johns: [], groups: [] });
   (loadAway as jest.Mock).mockResolvedValue({ today: '2026-10-21', periods: [] });
   (loadTable as jest.Mock).mockResolvedValue({
     month: '2026-10',
@@ -539,7 +538,7 @@ describe('coming up', () => {
   const fridge = { ...NEW_JOHN, id: 'fridge', name: 'Fridge deep clean', points: 8, everyMonths: 3, weekOfMonth: 1, anchorMonth: 2026 * 12 + 10, dueDow: 6 as const };
 
   it('lists the long Johns that land in the next four weeks, with when and how often', async () => {
-    (loadJohnList as jest.Mock).mockResolvedValue({ johns: [{ ...NEW_JOHN, id: 'j1', name: 'Bins out' }, fridge], groups: [] });
+    (loadJohnList as jest.Mock).mockResolvedValue({ kinds: KINDS, johns: [{ ...NEW_JOHN, id: 'j1', name: 'Bins out' }, fridge], groups: [] });
     await open();
     const section = await screen.findByTestId('coming-up');
     expect(within(section).getByText(words('house.repeat.comingUp'))).toBeOnTheScreen();
@@ -550,7 +549,7 @@ describe('coming up', () => {
   });
 
   it('shows nothing when no long John lands soon', async () => {
-    (loadJohnList as jest.Mock).mockResolvedValue({ johns: [{ ...fridge, anchorMonth: 2026 * 12 + 11 }], groups: [] });
+    (loadJohnList as jest.Mock).mockResolvedValue({ kinds: KINDS, johns: [{ ...fridge, anchorMonth: 2026 * 12 + 11 }], groups: [] });
     await open();
     await waitFor(() => expect(loadJohnList).toHaveBeenCalled());
     expect(screen.queryByTestId('coming-up')).toBeNull();
@@ -577,11 +576,11 @@ describe('the look ahead', () => {
 
   it('lists the Johns waiting their turn, with when it comes, and whose turn is next', async () => {
     read.mockResolvedValue(dealt('smart'));
-    (loadJohnList as jest.Mock).mockResolvedValue({ johns: LIST, groups: [] });
+    (loadJohnList as jest.Mock).mockResolvedValue({ kinds: KINDS, johns: LIST, groups: [] });
     await open();
     const waiting = within(await screen.findByTestId('week-waiting'));
     expect(waiting.getByText(words('week.steady.waiting'))).toBeOnTheScreen();
-    expect(waiting.getByTestId('waiting-john')).toHaveTextContent(/Mopping.*Floors, next week.*3 pts/);
+    expect(waiting.getByTestId('waiting-john')).toHaveTextContent(/Mopping.*Floors & hoovering, next week.*3 pts/);
     expect(screen.getByText(words('week.steady.waitingNote'))).toBeOnTheScreen();
     const next = within(screen.getByTestId('week-turns-next'));
     expect(next.getAllByTestId('turn-next')).toHaveLength(1);
@@ -590,7 +589,7 @@ describe('the look ahead', () => {
 
   it('shows Classic as the next two weeks, person by person', async () => {
     read.mockResolvedValue(dealt('classic'));
-    (loadJohnList as jest.Mock).mockResolvedValue({ johns: LIST, groups: [] });
+    (loadJohnList as jest.Mock).mockResolvedValue({ kinds: KINDS, johns: LIST, groups: [] });
     await open();
     const weeks = await screen.findAllByTestId('week-ahead');
     expect(weeks).toHaveLength(2);
@@ -600,7 +599,7 @@ describe('the look ahead', () => {
   });
 
   it('shows nothing of it for a week dealt before Steady weeks', async () => {
-    (loadJohnList as jest.Mock).mockResolvedValue({ johns: LIST, groups: [] });
+    (loadJohnList as jest.Mock).mockResolvedValue({ kinds: KINDS, johns: LIST, groups: [] });
     await open();
     await waitFor(() => expect(loadJohnList).toHaveBeenCalled());
     expect(screen.queryByTestId('week-waiting')).toBeNull();
@@ -614,7 +613,7 @@ describe('before the deal', () => {
 
   it('gives the admin the first deal as Today does, "Deal week 1", amber once there are Johns and housemates', async () => {
     read.mockResolvedValue(notDealt());
-    (loadJohnList as jest.Mock).mockResolvedValue({ johns: [{ ...NEW_JOHN, id: 'j1', name: 'Bins out' }], groups: [] });
+    (loadJohnList as jest.Mock).mockResolvedValue({ kinds: KINDS, johns: [{ ...NEW_JOHN, id: 'j1', name: 'Bins out' }], groups: [] });
     await open();
     expect(screen.getByRole('header', { name: words('week.summary.notDealt') })).toBeOnTheScreen();
     expect(screen.queryByTestId('week-summary')).toBeNull();
@@ -626,7 +625,7 @@ describe('before the deal', () => {
 
   it("keeps it outline in a house of one, which may deal alone, as Today's checklist does", async () => {
     read.mockResolvedValue(snapshot({ ...notDealt(), members: [snapshot().members[0]] }));
-    (loadJohnList as jest.Mock).mockResolvedValue({ johns: [{ ...NEW_JOHN, id: 'j1', name: 'Bins out' }], groups: [] });
+    (loadJohnList as jest.Mock).mockResolvedValue({ kinds: KINDS, johns: [{ ...NEW_JOHN, id: 'j1', name: 'Bins out' }], groups: [] });
     await open();
     await waitFor(() => expect(loadJohnList).toHaveBeenCalled());
     expect(await screen.findByRole('button', { name: words('today.nextUp.dealWeek1') })).not.toHaveStyle({ backgroundColor: BIN_NIGHT.light.hivis });
@@ -634,7 +633,7 @@ describe('before the deal', () => {
 
   it('with no Johns yet, offers to add them rather than a deal that would be refused', async () => {
     read.mockResolvedValue(notDealt());
-    (loadJohnList as jest.Mock).mockResolvedValue({ johns: [], groups: [] });
+    (loadJohnList as jest.Mock).mockResolvedValue({ kinds: KINDS, johns: [], groups: [] });
     await open();
     const add = await screen.findByRole('link', { name: words('today.nextUp.addJohns') });
     expect(add).not.toHaveStyle({ backgroundColor: BIN_NIGHT.light.hivis });
@@ -645,7 +644,7 @@ describe('before the deal', () => {
 
   it("says why when the database won't deal, under the button", async () => {
     read.mockResolvedValue(notDealt());
-    (loadJohnList as jest.Mock).mockResolvedValue({ johns: [{ ...NEW_JOHN, id: 'j1', name: 'Bins out' }], groups: [] });
+    (loadJohnList as jest.Mock).mockResolvedValue({ kinds: KINDS, johns: [{ ...NEW_JOHN, id: 'j1', name: 'Bins out' }], groups: [] });
     (dealThisWeek as jest.Mock).mockRejectedValue(new Error('Only the house admins can do that.'));
     await open();
     await fireEvent.press(await screen.findByRole('button', { name: words('today.nextUp.dealWeek1') }));

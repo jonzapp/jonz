@@ -1,10 +1,12 @@
 import { addDaysTo, localDate, weekWindow } from "@app/core";
 import { describe, expect, it } from "vitest";
 
-import { remindMovers, pushIn, type PushMessage, type SaidPush } from "@/lib/engine/tick";
 import { adminClient, signedInUser } from "@/tests/support/clients";
 import { expectDenied, expectOk, expectRule } from "@/tests/support/expect";
 import { addJohns, deal, makeHouse, thisWeek, ZONE } from "@/tests/support/factories";
+import { fromNow, rightNow } from "@/tests/support/clock";
+import { remindMovers } from "@/lib/engine/remind";
+import { pushIn, type PushMessage, type SaidPush } from "@/lib/engine/shared";
 
 /**
  * Bring Jonz to your next house (docs/specs/moving-on.md): the moving-out
@@ -29,7 +31,7 @@ describe("set_moving_out", () => {
   it("sets your own date, tells the Wall, and clears it again", async () => {
     const house = await makeHouse(["Ava", "Ben"]);
     const ben = house.members[0];
-    const on = addDaysTo(localDate(new Date(), ZONE), 10);
+    const on = addDaysTo(localDate(rightNow(), ZONE), 10);
 
     expectOk(await ben.db.rpc("set_moving_out", { p_on: on }));
     const { data: me } = await db.from("members").select("moving_out_on").eq("user_id", ben.userId).single();
@@ -55,7 +57,7 @@ describe("set_moving_out", () => {
 
   it("refuses a day in the past, or more than a year off", async () => {
     const house = await makeHouse(["Ava"]);
-    const today = localDate(new Date(), ZONE);
+    const today = localDate(rightNow(), ZONE);
     expectRule(await house.admin.db.rpc("set_moving_out", { p_on: addDaysTo(today, -1) }), "moving_in_past");
     expectRule(await house.admin.db.rpc("set_moving_out", { p_on: addDaysTo(today, 400) }), "moving_too_far");
     expectOk(await house.admin.db.rpc("set_moving_out", { p_on: today }));
@@ -63,7 +65,7 @@ describe("set_moving_out", () => {
 
   it("refuses someone in no house", async () => {
     const loner = await signedInUser("Lou");
-    expectDenied(await loner.db.rpc("set_moving_out", { p_on: localDate(new Date(), ZONE) }));
+    expectDenied(await loner.db.rpc("set_moving_out", { p_on: localDate(rightNow(), ZONE) }));
   });
 
   it("can't be written straight to the column", async () => {
@@ -105,7 +107,7 @@ describe("leaving", () => {
   it("someone an admin removes has no move, unless they'd said they were moving out", async () => {
     const house = await makeHouse(["Ava", "Ben", "Cal"]);
     const [ben, cal] = house.members;
-    expectOk(await cal.db.rpc("set_moving_out", { p_on: localDate(new Date(), ZONE) }));
+    expectOk(await cal.db.rpc("set_moving_out", { p_on: localDate(rightNow(), ZONE) }));
     expectOk(await house.admin.db.rpc("remove_member", { p_house: house.id, p_user: ben.userId }));
     expectOk(await house.admin.db.rpc("remove_member", { p_house: house.id, p_user: cal.userId }));
     expect(await movesOf(ben.userId)).toHaveLength(0);
@@ -140,7 +142,7 @@ describe("start_house_from", () => {
     });
     await db.from("johns").update({ group_id: groupId }).eq("id", bins.id);
     await addJohns(house.id, [{ name: "Gone" }], week).then((gone) =>
-      db.from("johns").update({ archived_at: new Date().toISOString() }).eq("id", gone[0].id),
+      db.from("johns").update({ archived_at: rightNow().toISOString() }).eq("id", gone[0].id),
     );
     expectOk(await ben.db.rpc("remove_member", { p_house: house.id, p_user: ben.userId }));
 
@@ -205,7 +207,7 @@ describe("the deal and moving out", () => {
     const house = await makeHouse(["Ava", "Ben", "Cal"]);
     const [ben, cal] = house.members;
     // A week a fortnight ahead, dealt just before it starts.
-    const week = weekWindow(new Date(Date.now() + 14 * DAY), ZONE, 1);
+    const week = weekWindow(fromNow(14 * DAY), ZONE, 1);
     const wednesday = addDaysTo(week.startsOn, 2);
     await addJohns(
       house.id,
@@ -233,12 +235,12 @@ describe("the one reminder", () => {
     expectOk(await cal.db.rpc("create_house", { p_name: "Cal's", p_timezone: ZONE, p_currency: "GBP", p_week_starts: 1 }));
     await db
       .from("moves")
-      .update({ left_at: new Date(Date.now() - 15 * DAY).toISOString() })
+      .update({ left_at: fromNow(-15 * DAY).toISOString() })
       .in("user_id", [ben.userId, cal.userId]);
 
     const r = recorder();
-    await remindMovers(db, new Date(), r.notify);
-    await remindMovers(db, new Date(), r.notify);
+    await remindMovers(db, rightNow(), r.notify);
+    await remindMovers(db, rightNow(), r.notify);
     const ours = r.sent.filter((s) => s.to.includes(ben.userId) || s.to.includes(cal.userId));
     expect(ours).toHaveLength(1);
     expect(ours[0]).toMatchObject({
@@ -251,9 +253,9 @@ describe("the one reminder", () => {
     const house = await makeHouse(["Ava", "Ben", "Cal"]);
     const [ben, cal] = house.members;
     for (const who of [ben, cal]) expectOk(await who.db.rpc("remove_member", { p_house: house.id, p_user: who.userId }));
-    await db.from("moves").update({ left_at: new Date(Date.now() - 31 * DAY).toISOString() }).eq("user_id", cal.userId);
+    await db.from("moves").update({ left_at: fromNow(-31 * DAY).toISOString() }).eq("user_id", cal.userId);
     const r = recorder();
-    await remindMovers(db, new Date(), r.notify);
+    await remindMovers(db, rightNow(), r.notify);
     expect(r.sent.filter((s) => s.to.includes(ben.userId) || s.to.includes(cal.userId))).toEqual([]);
   });
 
@@ -263,9 +265,9 @@ describe("the one reminder", () => {
     for (const who of [ben, cal]) expectOk(await who.db.rpc("remove_member", { p_house: house.id, p_user: who.userId }));
     await db
       .from("moves")
-      .update({ left_at: new Date(Date.now() - 15 * DAY).toISOString() })
+      .update({ left_at: fromNow(-15 * DAY).toISOString() })
       .in("user_id", [ben.userId, cal.userId]);
-    const now = new Date();
+    const now = rightNow();
     const hour = Number(new Intl.DateTimeFormat("en-GB", { hour: "numeric", hourCycle: "h23", timeZone: ZONE }).format(now));
     expectOk(
       await db.from("notification_prefs").insert({ user_id: ben.userId, quiet_from: hour, quiet_until: (hour + 2) % 24, timezone: ZONE }),

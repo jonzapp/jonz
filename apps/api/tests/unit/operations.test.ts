@@ -1,13 +1,13 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 
-import { OPERATIONS, OPERATION_NAMES, SYSTEM_ROUTES, type Operation } from "@app/core";
+import { SYSTEM_ROUTES } from "@app/core";
 import { describe, expect, it } from "vitest";
 
 /**
- * Every API route is in the operation registry (packages/core/src/operations.ts):
- * as the route in front of an operation, or as a system route that says
- * what calls it. A new route that's neither fails here.
+ * Every API route is in the operation registry (packages/core/src/operations.ts)
+ * as a system route that says what calls it. A person's operations are all
+ * on /v1, so a new /api route that isn't a system one fails here.
  */
 const APP = join(__dirname, "../../app");
 const METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"] as const;
@@ -54,14 +54,7 @@ describe("the app's own reads and writes", () => {
 });
 
 describe("the API's routes", () => {
-  it("are each an operation's route or a system route, and nothing listed is missing", () => {
-    const listed = [
-      ...OPERATION_NAMES.flatMap((n) => {
-        const o: Operation = OPERATIONS[n];
-        return o.route ? [o.route] : [];
-      }),
-      ...Object.keys(SYSTEM_ROUTES),
-    ].sort();
-    expect(routesOnDisk().sort()).toEqual(listed);
+  it("are each a system route, and nothing listed is missing: a person's operations are all on /v1", () => {
+    expect(routesOnDisk().sort()).toEqual(Object.keys(SYSTEM_ROUTES).sort());
   });
 });

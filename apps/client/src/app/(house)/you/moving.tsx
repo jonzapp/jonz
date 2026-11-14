@@ -123,7 +123,7 @@ function MovingForm({
               />
               {move.problem ? <Alert message={move.problem} /> : null}
               <View style={styles.action}>
-                <ButtonRow atEdge>
+                <ButtonRow>
                   <Button
                     label={picked ? words('house.moving.save', { day: dateRange(picked, picked, words) }) : words('house.moving.pick')}
                     disabled={!picked || !changed}

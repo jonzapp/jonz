@@ -10,6 +10,7 @@ import { Body, Meta } from '@/components/text';
 import type { JohnSheetContext } from './body';
 import { SheetSection } from './parts';
 import { useWords } from '@/hooks/use-words';
+import { viewingOf } from './viewing';
 
 /**
  * "Why?": why the deal gave this John to whom it did, from what the deal
@@ -20,7 +21,7 @@ import { useWords } from '@/hooks/use-words';
  */
 export function JohnWhy({ item, context }: { item: BoardItem; context: JohnSheetContext }) {
   const words = useWords();
-  const why = johnWhy(item, context.members, context.userId, context.rules, context.now, words, jobPlaces(item, context.board.items));
+  const why = johnWhy(item, viewingOf(context, words), jobPlaces(item, context.board.items));
   return (
     <SheetSection>
       <Section label={words('john.why.label')} testID="john-why">

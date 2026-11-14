@@ -1,5 +1,6 @@
-import { BIN_NIGHT, buildStake, type DisputeRow, localDate, monthOf, planLabel, wordsFor } from '@app/core';
+import { BIN_NIGHT, buildStake, type DisputeRow, dueInLine, localDate, monthOf, planLabel, wordsFor, zoneGap } from '@app/core';
 import { QueryClientProvider } from '@tanstack/react-query';
+import { getCalendars } from 'expo-localization';
 import { Slot } from 'expo-router';
 import { fireEvent, renderRouter, screen, waitFor, within } from 'expo-router/testing-library';
 import { Text, useWindowDimensions } from 'react-native';
@@ -18,9 +19,10 @@ import { loadStake } from '@/api/stake';
 import Today from '@/app/(house)/today';
 import { JohnSheetProvider } from '@/components/john-sheet';
 import { ToastProvider } from '@/components/toast';
-import { assignment, snapshot } from '@/testing/house';
+import { assignment, snapshot, KINDS } from '@/testing/house';
 import { BINS } from '@/testing/pages';
 import { testQueryClient } from '@/testing/query';
+import { hoursFromNow as at, NOW } from '@/testing/clock';
 
 const words = wordsFor('en', 'housemates');
 
@@ -44,26 +46,13 @@ jest.mock('@/api/johns', () => ({
 jest.mock('@/api/photos', () => ({ pickPhoto: jest.fn(), uploadProof: jest.fn() }));
 jest.mock('@/api/wall', () => ({ loadWall: jest.fn(), setReaction: jest.fn() }));
 jest.mock('@/api/resets', () => ({ previewReset: jest.fn(), applyReset: jest.fn() }));
-jest.mock('@/api/supabase', () => {
-  const mockChannel = { on: jest.fn(), subscribe: jest.fn() };
-  mockChannel.on.mockReturnValue(mockChannel);
-  mockChannel.subscribe.mockReturnValue(mockChannel);
-  return {
-    supabase: {
-      auth: { getSession: jest.fn(() => Promise.resolve({ data: { session: null } })) },
-      realtime: { setAuth: jest.fn() },
-      channel: jest.fn(() => mockChannel),
-      removeChannel: jest.fn(),
-    },
-  };
-});
+jest.mock('@/api/supabase', () => ({ supabase: { auth: { getSession: jest.fn(() => Promise.resolve({ data: { session: null } })) } } }));
 jest.mock('@/hooks/use-membership', () => ({
   useMembership: () => ({ session: { user: { id: 'priya' } }, house: { id: 'h1', name: 'Flat 3' } }),
 }));
 
 const read = loadHouse as jest.Mock;
 const HOUR = 3_600_000;
-const at = (hours: number) => new Date(Date.now() + hours * HOUR).toISOString();
 
 const MEGAN: Housemate = { userId: 'megan', name: 'Megan', photo: null, role: 'member', streak: 0, immunityTokens: 0, swapTokens: 0, prefs: { days: [], bestTime: null, rather: {} } };
 
@@ -121,7 +110,7 @@ beforeEach(() => {
   (markDone as jest.Mock).mockResolvedValue(undefined);
   (undoDone as jest.Mock).mockResolvedValue(undefined);
   (pickPhoto as jest.Mock).mockResolvedValue(null);
-  (loadJohnList as jest.Mock).mockResolvedValue({ johns: [BINS], groups: [] });
+  (loadJohnList as jest.Mock).mockResolvedValue({ kinds: KINDS, johns: [BINS], groups: [] });
   (loadStake as jest.Mock).mockResolvedValue(
     buildStake({
       ledger: [{ id: 1, user_id: 'sam', kind: 'forfeit', amount_minor: -300, month: '2026-10', counterparty_user_id: null, created_at: '2026-10-10T12:00:00Z' }],
@@ -169,7 +158,7 @@ describe('Next up', () => {
     await fireEvent.press(screen.getByRole('button', { name: words('week.steady.plan') }));
     const [id, when] = (planJohn as jest.Mock).mock.calls[0];
     expect(id).toBe('a1');
-    expect((when as Date).getTime()).toBeGreaterThan(Date.now());
+    expect((when as Date).getTime()).toBeGreaterThan(NOW.getTime());
     expect((when as Date).getTime()).toBeLessThan(Date.parse(snapshot().assignments[0].due_at));
   });
 
@@ -178,7 +167,7 @@ describe('Next up', () => {
     read.mockResolvedValue(snapshot({ assignments: [assignment({ planned_at: plannedAt }), ...snapshot().assignments.slice(1)] }));
     await open();
     expect(screen.getByTestId('plan-it-when')).toHaveTextContent(
-      words('week.steady.planned', { when: planLabel(new Date(plannedAt), new Date(), 'Europe/London', words) }),
+      words('week.steady.planned', { when: planLabel(new Date(plannedAt), new Date(NOW), 'Europe/London', words) }),
     );
     expect(screen.queryByRole('button', { name: words('week.steady.plan') })).toBeNull();
   });
@@ -244,7 +233,7 @@ describe('Next up', () => {
 
   it('says no more than lateness can still cost you this month', async () => {
     // Priya has forfeited £19.50 of her £20 stake: being late costs her 50p more at most.
-    const thisMonth = () => monthOf(new Date(Date.now() + HOUR), 'Europe/London');
+    const thisMonth = () => monthOf(new Date(NOW.getTime() + HOUR), 'Europe/London');
     (loadStake as jest.Mock).mockResolvedValue(
       buildStake({
         ledger: [{ id: 1, user_id: 'priya', kind: 'forfeit', amount_minor: -1950, month: thisMonth(), counterparty_user_id: null, created_at: at(-1) }],
@@ -283,6 +272,35 @@ describe('Next up', () => {
     read.mockResolvedValue(snapshot({ members: priyaWith({ swapTokens: 1 }), assignments: snapshot().assignments.slice(0, 3) }));
     await open();
     expect(screen.queryByTestId('skip-or-swap')).toBeNull();
+  });
+});
+
+describe("on a phone away from the house's clock", () => {
+  // Priya's phone is in Regina, 6 hours behind the house in London this November.
+  const phoneIn = (timeZone: string) =>
+    jest.mocked(getCalendars).mockReturnValue([{ calendar: 'gregory', timeZone, uses24hourClock: true, firstWeekday: 2 }] as ReturnType<typeof getCalendars>);
+  const due = new Date(at(48));
+  beforeEach(() => phoneIn('America/Regina'));
+  afterEach(() => phoneIn('Europe/London'));
+
+  it('says times on your own clock, says so once under the date, and shows house time on a tap', async () => {
+    await open();
+    const line = screen.getByTestId('zone-line');
+    expect(line).toHaveTextContent(`${words('common.zone.yours', { city: 'Regina', gap: zoneGap({ zone: 'Europe/London', from: 'America/Regina' }, NOW, words) })} ${words('common.zone.showHouse')}`);
+    expect(screen.getByTestId('next-up-meta')).toHaveTextContent(dueInLine(due, NOW, 'America/Regina', words), { exact: false });
+    await fireEvent.press(line);
+    expect(screen.getByTestId('zone-line')).toHaveTextContent(words('common.zone.houses', { city: 'London', gap: '6 hours behind' }), { exact: false });
+    expect(screen.getByTestId('next-up-meta')).toHaveTextContent(dueInLine(due, NOW, 'Europe/London', words), { exact: false });
+    // Back to your own clock, as this phone remembers the choice.
+    await fireEvent.press(screen.getByTestId('zone-line'));
+    expect(screen.getByTestId('zone-line')).toHaveTextContent(words('common.zone.showHouse'), { exact: false });
+  });
+
+  it("says nothing about clocks when the phone's says the house's time", async () => {
+    phoneIn('Europe/Dublin');
+    await open();
+    expect(screen.queryByTestId('zone-line')).toBeNull();
+    expect(screen.getByTestId('next-up-meta')).toHaveTextContent(dueInLine(due, NOW, 'Europe/London', words), { exact: false });
   });
 });
 
@@ -374,7 +392,7 @@ describe('what takes Next up’s place', () => {
 
     it('offers the deal in outline until there are Johns and a housemate, and says what the server says', async () => {
       (dealThisWeek as jest.Mock).mockRejectedValue(new Error('Add some Johns to the list first.'));
-      (loadJohnList as jest.Mock).mockResolvedValue({ johns: [], groups: [] });
+      (loadJohnList as jest.Mock).mockResolvedValue({ kinds: KINDS, johns: [], groups: [] });
       read.mockResolvedValue({ ...first(), members: first().members.slice(0, 1) });
       const card = await open();
       expect(await within(card).findByText(words('today.nextUp.onTheList', { count: 0 }))).toBeOnTheScreen();
@@ -817,7 +835,7 @@ describe('On call', () => {
 });
 
 describe('moving out', () => {
-  const today = localDate(new Date(), 'Europe/London');
+  const today = localDate(new Date(NOW), 'Europe/London');
   const later = '2099-06-30';
 
   it('says your moving-out day, onward to change it', async () => {
@@ -850,7 +868,7 @@ describe('moving out', () => {
   });
 
   it('keeps asking for a while after someone has gone, until someone moves in', async () => {
-    const left = new Date(Date.now() - 3 * 86_400_000).toISOString();
+    const left = new Date(NOW.getTime() - 3 * 86_400_000).toISOString();
     read.mockResolvedValue(snapshot({ moves: { lastMovedOut: left, lastJoined: null } }));
     await open();
     expect(screen.getByTestId('move-in-ask')).toBeOnTheScreen();

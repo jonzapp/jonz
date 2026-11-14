@@ -11,6 +11,7 @@ import YouStack, { unstable_settings as youStackSettings } from '@/app/(house)/y
 import { TitleBar } from '@/components/title-bar';
 import { assignment, snapshot } from '@/testing/house';
 import { testQueryClient } from '@/testing/query';
+import { NOW } from '@/testing/clock';
 
 const words = wordsFor('en', 'housemates');
 
@@ -25,18 +26,8 @@ jest.mock('@/api/photos', () => ({ pickPhoto: jest.fn(), uploadProof: jest.fn() 
 jest.mock('@/api/resets', () => ({ previewReset: jest.fn(), applyReset: jest.fn() }));
 jest.mock('@/api/reports', () => ({ myReports: jest.fn(async () => []), sendReport: jest.fn(), pickScreenshot: jest.fn() }));
 jest.mock('@/api/tours', () => ({ saveToursSaved: jest.fn(async () => undefined) }));
-jest.mock('@/api/supabase', () => {
-  const mockChannel = { on: jest.fn(), subscribe: jest.fn() };
-  mockChannel.on.mockReturnValue(mockChannel);
-  mockChannel.subscribe.mockReturnValue(mockChannel);
-  const client = {
-    auth: { getSession: jest.fn(() => Promise.resolve({ data: { session: null } })) },
-    realtime: { setAuth: jest.fn() },
-    channel: jest.fn(() => mockChannel),
-    removeChannel: jest.fn(),
-  };
-  return { supabase: client, live: client };
-});
+jest.mock('@/api/supabase', () => ({ supabase: { auth: { getSession: jest.fn(() => Promise.resolve({ data: { session: null } })) } } }));
+jest.mock('@/api/live-stream', () => ({ openLiveStream: jest.fn(() => jest.fn()) }));
 jest.mock('@/hooks/use-membership', () => ({
   useMembership: () => ({ session: { user: { id: 'priya' } }, house: { id: 'h1', name: 'Flat 3' } }),
 }));
@@ -120,7 +111,7 @@ function waitingForPriya() {
   return snapshot({
     assignments: [
       ...snapshot().assignments.slice(0, 3),
-      assignment({ id: 'a4', user_id: 'sam', name: 'Clean the bath', done_at: new Date(Date.now() - 3_600_000).toISOString() }),
+      assignment({ id: 'a4', user_id: 'sam', name: 'Clean the bath', done_at: new Date(NOW.getTime() - 3_600_000).toISOString() }),
     ],
     disputes: [
       {
@@ -128,7 +119,7 @@ function waitingForPriya() {
         assignment_id: 'a4',
         raised_by: 'cal',
         reason: 'Ring round the bath',
-        closes_at: new Date(Date.now() + 3_600_000).toISOString(),
+        closes_at: new Date(NOW.getTime() + 3_600_000).toISOString(),
         dispute_votes: [{ user_id: 'cal', uphold: true }],
       },
     ],

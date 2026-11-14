@@ -8,7 +8,7 @@ import { LEGAL, type LegalPage } from "./legal";
 // Report a problem (docs/specs/report-a-problem.md): what someone tells Jonz
 // from inside the app, what they see again under Your reports, and how the
 // owner's Inbox lists it. The database keeps the same limits
-// (supabase/migrations/20261112090000_reports.sql).
+// (supabase/migrations/20270112090000_baseline.sql).
 
 export const REPORT_KINDS = ["problem", "idea", "question"] as const;
 export type ReportKind = (typeof REPORT_KINDS)[number];
@@ -43,7 +43,7 @@ export const ReportDetails = z.object({
 });
 export type ReportDetails = z.infer<typeof ReportDetails>;
 
-/** POST /api/reports: send one. Screenshots are uploaded first, to the sender's own folder. */
+/** send_report on /v1: send one. Screenshots are uploaded first, to the sender's own folder. */
 export const ReportRequest = z.object({
   kind: z.enum(REPORT_KINDS),
   words: z.string().trim().min(1).max(REPORT_LIMITS.words),
@@ -54,13 +54,13 @@ export type ReportRequest = z.infer<typeof ReportRequest>;
 
 export const ReportResponse = z.object({ ok: z.literal(true), id: z.string() });
 
-/** POST /api/reports/:id/messages (its sender writes back) and /api/reports/:id/reply (the owner replies). */
+/** write_back on /v1 (its sender writes back) and owner_reply_report on /v1 (the owner replies). */
 export const ReportMessageRequest = z.object({ body: z.string().trim().min(1).max(REPORT_LIMITS.words) });
 export type ReportMessageRequest = z.infer<typeof ReportMessageRequest>;
 
 export const ReportMessageResponse = z.object({ ok: z.literal(true) });
 
-/** POST /api/reports/:id/fixed: mark it (and every report folded into it) fixed, and maybe tell them. */
+/** owner_fix_report on /v1: mark it (and every report folded into it) fixed, and maybe tell them. */
 export const ReportFixRequest = z.object({
   note: z.string().trim().max(REPORT_LIMITS.words).nullable(),
   tell: z.boolean(),
@@ -94,7 +94,7 @@ export const REPORT_PUSH = {
   fixed: (words: Words) => words("common.report.push.fixed"),
 } as const;
 
-/** The Inbox's filters: what state it's in, and what kind it is. It opens on what's waiting for you. */
+/** The Inbox's filters: what state it's in, and what kind it is. With no state picked it shows every report, what's waiting for you first. */
 export const REPORT_FACETS: readonly ListFacet[] = [
   {
     key: "state",

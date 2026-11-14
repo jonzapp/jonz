@@ -7,7 +7,7 @@ import { catchUp } from '@/api/house';
 import { loadJohnList, setHouseKind, updateHouse } from '@/api/settings';
 import RulesScreen from '@/app/(house)/house/rules';
 import { ToastProvider } from '@/components/toast';
-import { snapshot } from '@/testing/house';
+import { snapshot, KINDS } from '@/testing/house';
 import { renderPages, untilRead } from '@/testing/pages';
 
 const words = wordsFor('en', 'housemates');
@@ -17,6 +17,7 @@ jest.mock('@/api/house', () => ({ catchUp: jest.fn() }));
 jest.mock('@/api/settings', () => ({ updateHouse: jest.fn(), loadJohnList: jest.fn(), setHouseKind: jest.fn() }));
 jest.mock('@/api/supabase', () => ({ supabase: {} }));
 jest.mock('@/locale', () => ({ deviceTimeZone: () => 'Europe/London' }));
+jest.mock('@/api/time-zones', () => ({ timeZones: jest.fn(async () => ['America/Regina', 'America/Toronto', 'Asia/Calcutta', 'Europe/London', 'US/Central', 'UTC']) }));
 
 const mockMembership = { userId: 'priya' };
 jest.mock('@/hooks/use-membership', () => ({
@@ -56,6 +57,7 @@ beforeEach(() => {
   (updateHouse as jest.Mock).mockResolvedValue(undefined);
   // About 9 points a week between two: Light fits.
   (loadJohnList as jest.Mock).mockResolvedValue({
+    kinds: KINDS,
     johns: [
       { ...NEW_JOHN, id: 'mop', name: 'Mopping', points: 3 },
       { ...NEW_JOHN, id: 'bins', name: 'Garbage', points: 1, dueDow: 4 },
@@ -287,15 +289,42 @@ describe('an admin', () => {
     expect(screen.getByTestId('house-stake')).toHaveDisplayValue('30');
   });
 
+  it('picks the time zone from a list to search by city or country, and saves it', async () => {
+    await edit();
+    expect(screen.getByTestId('rules-timezone')).toHaveTextContent('London, United Kingdom', { exact: false });
+    await fireEvent.press(screen.getByTestId('rules-timezone'));
+    // The zone set now heads the list; then every place the database knows, A to Z, and no old spellings.
+    expect(await screen.findByTestId('zone-suggested')).toHaveTextContent('London, United Kingdom', { exact: false });
+    expect(within(screen.getByTestId('zone-list')).getAllByRole('radio')).toHaveLength(4);
+    expect(screen.getByTestId('zone-list')).toHaveTextContent(/London, United Kingdom.*Regina, Canada.*Toronto, Canada.*UTC/);
+    expect(screen.queryByTestId('zone-US/Central')).toBeNull();
+    await fireEvent.changeText(screen.getByTestId('zone-search-input'), 'canada');
+    expect(within(screen.getByTestId('zone-list')).getAllByRole('radio')).toHaveLength(2);
+    expect(screen.queryByTestId('zone-suggested')).toBeNull();
+    await fireEvent.press(screen.getByTestId('zone-America/Regina'));
+    expect(screen.getByTestId('rules-timezone')).toHaveTextContent('Regina, Canada', { exact: false });
+    await fireEvent.press(screen.getByTestId('save-rules'));
+    await waitFor(() => expect(updateHouse).toHaveBeenCalledWith('h1', expect.objectContaining({ timezone: 'America/Regina' }), expect.any(Function)));
+  });
+
+  it('says when a search finds no zone', async () => {
+    await edit();
+    await fireEvent.press(screen.getByTestId('rules-timezone'));
+    await fireEvent.changeText(await screen.findByTestId('zone-search-input'), 'leader');
+    expect(await screen.findByTestId('zone-none')).toHaveTextContent(words('house.zone.none', { query: 'leader' }));
+  });
+
   it('shows a time zone the database refuses under Time zone', async () => {
     (updateHouse as jest.Mock).mockRejectedValue(new Error('That time zone isn’t one we recognise.'));
     await edit();
-    await fireEvent.changeText(screen.getByTestId('rules-timezone'), 'Europe/Londn');
+    await fireEvent.press(screen.getByTestId('rules-timezone'));
+    await fireEvent.press(await screen.findByTestId('zone-America/Regina'));
     await fireEvent.press(screen.getByTestId('save-rules'));
     expect(await within(screen.getByTestId('rules-house')).findByRole('alert')).toHaveTextContent('That time zone isn’t one we recognise.');
     expect(within(screen.getByTestId('rules-foot')).queryByRole('alert')).toBeNull();
-    // Fixing it takes the problem away.
-    await fireEvent.changeText(screen.getByTestId('rules-timezone'), 'Europe/London');
+    // Picking another takes the problem away.
+    await fireEvent.press(screen.getByTestId('rules-timezone'));
+    await fireEvent.press(await screen.findByTestId('zone-America/Toronto'));
     expect(screen.queryByRole('alert')).toBeNull();
   });
 

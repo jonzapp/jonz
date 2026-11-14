@@ -1,5 +1,5 @@
 import { withAlpha } from "@app/core";
-import { ArrowUpIcon } from "lucide-react-native";
+import { ArrowUpIcon, ChevronDownIcon, ChevronRightIcon } from "lucide-react-native";
 import { useRef, useState, type ReactNode } from "react";
 import {
   KeyboardAvoidingView,
@@ -16,10 +16,12 @@ import {
 import { Alert } from "@/components/alert";
 import { ThoughtFold } from "@/components/house/thinking";
 import { NO_PIECES, Reply, type ReplyPieces } from "@/components/reply/reply";
-import { Body } from "@/components/text";
+import { Body, Meta } from "@/components/text";
 import {
   CONTENT_MAX,
+  GROUP_RADIUS,
   GUTTER,
+  INSET,
   RADIUS,
   SECTION_GAP,
   SPACE,
@@ -53,7 +55,7 @@ const SEND_INSET = (LINE - SEND) / 2;
  * screen with no mouse) Return stays a new line and the arrow sends, since
  * there's no Shift+Return to fall back on. Phone apps keep Return too.
  */
-export function enterSends(): boolean {
+function enterSends(): boolean {
   if (Platform.OS !== "web" || typeof window === "undefined") return false;
   const touchOnly = window.matchMedia?.("(hover: none) and (pointer: coarse)").matches ?? false;
   return !touchOnly;
@@ -75,7 +77,7 @@ type WebKey = {
  * method is still putting a word together (Japanese, Chinese, Korean), and
  * not with Shift (a new line) or another modifier.
  */
-export function isSendKey(e: WebKey): boolean {
+function isSendKey(e: WebKey): boolean {
   if (e.key !== "Enter" || e.isComposing || e.keyCode === 229) return false;
   return !e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey;
 }
@@ -177,6 +179,41 @@ export function JonzSaid({
       ) : null}
       {children}
     </Said>
+  );
+}
+
+/**
+ * Where Jonz summed up a long chat: a quiet line across the chat ("Jonz
+ * summed up 38 earlier messages") that opens to the summary Jonz carries on
+ * from. Everything above it is still there to read.
+ */
+export function SummedUp({ label, summary }: { label: string; summary: string }) {
+  const { colors } = useTheme();
+  const [open, setOpen] = useState(false);
+  const Chevron = open ? ChevronDownIcon : ChevronRightIcon;
+  return (
+    <View style={styles.summed} testID="chat-summed">
+      <View style={styles.rule}>
+        <View style={[styles.hair, { backgroundColor: colors.border }]} />
+        <Pressable
+          accessibilityRole="button"
+          aria-expanded={open}
+          onPress={() => setOpen((was) => !was)}
+          hitSlop={SPACE.md}
+          style={({ pressed }) => [styles.ruleHead, pressed && { opacity: 0.6 }]}
+          testID="chat-summed-toggle"
+        >
+          <Meta>{label}</Meta>
+          <Chevron size={16} color={colors.mutedForeground} aria-hidden />
+        </Pressable>
+        <View style={[styles.hair, { backgroundColor: colors.border }]} />
+      </View>
+      {open ? (
+        <View style={[styles.summary, { backgroundColor: colors.card }]}>
+          <Reply source={summary} testID="chat-summary" />
+        </View>
+      ) : null}
+    </View>
   );
 }
 
@@ -380,6 +417,11 @@ const styles = StyleSheet.create({
     gap: SPACE.xl,
   },
   said: { gap: SPACE.md },
+  summed: { gap: SPACE.sm },
+  rule: { flexDirection: "row", alignItems: "center", gap: SPACE.sm },
+  hair: { flex: 1, height: StyleSheet.hairlineWidth },
+  ruleHead: { flexDirection: "row", alignItems: "center", gap: SPACE.xs },
+  summary: { borderRadius: GROUP_RADIUS, paddingHorizontal: INSET, paddingVertical: SPACE.md },
   bubble: {
     alignSelf: "flex-end",
     maxWidth: "85%",

@@ -5,6 +5,8 @@ import { useWords } from '@/hooks/use-words';
 import { GroupsList } from '@/components/house/groups-list';
 import { HousePage } from '@/components/house/house-page';
 import { JohnList } from '@/components/house/john-list';
+import { KindsList } from '@/components/house/kinds-list';
+import { Pair } from '@/components/page-columns';
 import { useFilled } from '@/components/screen';
 import { Section } from '@/components/section';
 import { DealFoot } from '@/components/setup/deal-foot';
@@ -16,10 +18,12 @@ import { ListPageOutline } from '@/components/page-outlines';
 
 /**
  * The John list, pushed from House: every John by kind, how often and how
- * much, and the groups that share some of them (Groups was a page of its
- * own). Tapping one opens it, to edit for an admin and to read for everyone
- * else. An admin adds Johns (over the list), and hands out the week under
- * them (or deals it again, while nothing in it is ticked).
+ * much, then for an admin the house's kinds (to add, rename, recolour,
+ * order and delete), and the groups that share some of them (Groups was a
+ * page of its own), beside the deal on a laptop. Tapping one opens it, to
+ * edit for an admin and to read for everyone else. An admin adds Johns
+ * (over the list), and hands out the week under them (or deals it again,
+ * while nothing in it is ticked).
  */
 export default function JohnListScreen() {
   const { session, house } = useMembership();
@@ -66,27 +70,41 @@ function JohnListPage({ houseId, userId, view, list }: { houseId: string; userId
         <GroupsList houseId={houseId} groups={list.groups} people={view.snapshot.members} me={userId} editable={isAdmin} />
       </Section>
     ) : null;
-  // On a laptop they sit among the kinds; on a phone (or before there are Johns), at the foot.
-  const amongKinds = useFilled() !== null && list.johns.length > 0;
+  // DealFoot shows nothing once something this week is ticked: then there's nothing to sit beside.
+  const started = view.snapshot.house.everDealt;
+  const deal =
+    isAdmin && list.johns.length > 0 && (!started || canRedeal(view.board)) ? (
+      <DealFoot houseId={houseId} started={started} canRedeal={canRedeal(view.board)} />
+    ) : null;
+  // On a laptop, under the kinds, the groups beside the deal; on a phone (or before there are Johns), one under the other.
+  const beside = useFilled() !== null && list.johns.length > 0 && groups !== null && deal !== null;
   return (
     <>
       <JohnList
         houseId={houseId}
         rules={view.snapshot.rules}
         johns={list.johns}
+        kinds={list.kinds}
         groups={list.groups}
         editable={isAdmin}
         family={view.snapshot.house.kind === 'family'}
         whoAdds={johnsComing(view.snapshot.members, userId, words, words)}
         // Until the first deal, the deal at the foot is the page's one amber button.
         quietAdd={!view.snapshot.house.everDealt}
-        // A group's row is about two lines, with Add a group and the note under them.
-        more={amongKinds && groups ? [{ key: 'groups', weight: list.groups.length + 3, node: groups }] : undefined}
       />
-      {isAdmin && list.johns.length > 0 ? (
-        <DealFoot houseId={houseId} started={view.snapshot.house.everDealt} canRedeal={canRedeal(view.board)} />
+      {isAdmin ? (
+        <Section label={words('house.kinds.title')} bare testID="johns-kinds">
+          <KindsList houseId={houseId} kinds={list.kinds} johns={list.johns} />
+        </Section>
       ) : null}
-      {amongKinds ? null : groups}
+      {beside ? (
+        <Pair start={groups} end={deal} testID="johns-foot" />
+      ) : (
+        <>
+          {deal}
+          {groups}
+        </>
+      )}
     </>
   );
 }

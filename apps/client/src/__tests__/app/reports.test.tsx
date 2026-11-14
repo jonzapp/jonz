@@ -9,7 +9,7 @@ import { forgetDetails, noteError, notePage } from '@/api/report-details';
 import {
   fixReport,
   inboxCount,
-  inboxPage,
+  inboxRows,
   myReport,
   myReports,
   openReport,
@@ -35,6 +35,7 @@ import InboxPage from '@/app/admin/inbox/index';
 import { HelpSection } from '@/components/house-page/help-section';
 import { snapshot } from '@/testing/house';
 import { renderPages } from '@/testing/pages';
+import { NOW } from '@/testing/clock';
 
 const words = wordsFor('en', 'housemates');
 
@@ -49,7 +50,7 @@ jest.mock('@/api/reports', () => ({
   myReport: jest.fn(),
   seeReport: jest.fn(),
   writeBack: jest.fn(),
-  inboxPage: jest.fn(),
+  inboxRows: jest.fn(),
   inboxCount: jest.fn(),
   openReport: jest.fn(),
   replyToReport: jest.fn(),
@@ -61,7 +62,6 @@ jest.mock('@/api/reports', () => ({
   setSupportDraft: jest.fn(),
 }));
 jest.mock('@/api/supabase', () => ({ supabase: {} }));
-jest.mock('@/api/http', () => ({ apiPost: jest.fn() }));
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({ __esModule: true, default: jest.fn() }));
 jest.mock('@/hooks/use-membership', () => ({
   useMembership: () => ({ session: { user: { id: 'ava' } }, house: { id: 'h1', name: 'The Annexe' }, refresh: jest.fn() }),
@@ -70,7 +70,7 @@ jest.mock('@/hooks/use-membership', () => ({
 const PHONE = { width: 390, height: 844, scale: 3, fontScale: 1 };
 const LAPTOP = { width: 1440, height: 900, scale: 1, fontScale: 1 };
 const MIN = 60_000;
-const ago = (ms: number) => new Date(Date.now() - ms).toISOString();
+const ago = (ms: number) => new Date(NOW.getTime() - ms).toISOString();
 
 const WORDS = 'The bins John vanished from Today right after I ticked the dishes.';
 
@@ -110,7 +110,10 @@ const ROW: InboxRow = {
   subject: null,
   folded: false,
   also: 0,
+  waiting: true,
 };
+/** Answered: Ben's, replied to yesterday. */
+const ANSWERED: InboxRow = { ...ROW, id: 'r3', userId: 'ben', name: 'Ben Cole', state: 'replied', words: 'Could the week start on Monday?', kind: 'idea', waiting: false };
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -128,8 +131,9 @@ beforeEach(() => {
   jest.mocked(writeBack).mockResolvedValue(undefined);
   jest.mocked(sendReport).mockResolvedValue('r9');
   jest.mocked(pickScreenshot).mockResolvedValue('file:///shot-1.jpg');
-  jest.mocked(inboxPage).mockResolvedValue({ items: [ROW, { ...ROW, id: 'r2', name: 'Sam Okafor', kind: 'question', state: 'open', words: 'I think I paid twice?' }], more: false, next: null });
-  jest.mocked(inboxCount).mockResolvedValue(2);
+  jest.mocked(inboxRows).mockResolvedValue({ items: [ROW, { ...ROW, id: 'r2', name: 'Sam Okafor', kind: 'question', state: 'open', words: 'I think I paid twice?' }, ANSWERED], more: false, next: null });
+  // Three match; two of them wait for a reply.
+  jest.mocked(inboxCount).mockImplementation(async (filter) => (filter.state === 'waiting' ? 2 : 3));
   jest.mocked(openReport).mockResolvedValue({ ...BINS, state: 'open' });
   jest.mocked(replyToReport).mockResolvedValue(undefined);
   jest.mocked(setReportState).mockResolvedValue(undefined);
@@ -235,11 +239,11 @@ describe('Your reports', () => {
 describe('the owner’s Inbox', () => {
   const ROUTES = { 'admin/_layout': AdminLayout, 'admin/inbox/index': InboxPage, 'admin/inbox/[id]': InboxReportPage };
 
-  it('is a busy list that opens on what is waiting, newest first, a page of its own per report on a phone', async () => {
+  it('is a busy list that opens on every report, a page of its own per report on a phone', async () => {
     await renderPages(ROUTES, '/admin/inbox');
     const row = await screen.findByTestId('inbox-r1');
     expect(row).toHaveTextContent(/Ava Brown.*The bins John vanished.*Problem, The Annexe, 4 min/);
-    expect(inboxPage).toHaveBeenLastCalledWith(null, { q: '', state: 'waiting', source: null, kind: null, after: null, before: null });
+    expect(inboxRows).toHaveBeenLastCalledWith(null, { q: '', state: null, source: null, kind: null, after: null, before: null });
     await fireEvent.press(row);
     expect(await screen.findByTestId('admin-inbox-report')).toBeVisible();
     await waitFor(() => expect(openReport).toHaveBeenCalledWith('r1'));
@@ -319,7 +323,7 @@ describe('the owner’s Inbox', () => {
   });
 
   it('says which reports came by email in the list', async () => {
-    jest.mocked(inboxPage).mockResolvedValue({
+    jest.mocked(inboxRows).mockResolvedValue({
       items: [{ ...ROW, name: 'Sam Lee', userId: null, house: null, kind: 'question', source: 'email', subject: 'Paying the Stake', also: 2 }],
       more: false,
       next: null,
@@ -337,6 +341,39 @@ describe('the owner’s Inbox', () => {
     await waitFor(() => expect(setReportState).toHaveBeenCalledWith('r1', 'open'));
   });
 
+  it('puts what needs a reply first, then everything else, each group with its count', async () => {
+    await renderPages(ROUTES, '/admin/inbox');
+    const waiting = await screen.findByTestId('inbox-group-waiting');
+    expect(await within(waiting).findByText(`${words('admin.inbox.waiting')}, 2`)).toBeVisible();
+    expect(within(waiting).getByTestId('inbox-r1')).toBeVisible();
+    expect(within(waiting).getByTestId('inbox-r2')).toBeVisible();
+    expect(within(waiting).queryByTestId('inbox-r3')).toBeNull();
+    const rest = screen.getByTestId('inbox-group-rest');
+    expect(within(rest).getByText(`${words('admin.inbox.rest')}, 1`)).toBeVisible();
+    expect(within(rest).getByTestId('inbox-r3')).toBeVisible();
+    expect(inboxCount).toHaveBeenCalledWith(expect.objectContaining({ state: 'waiting' }));
+  });
+
+  it('searches both groups at once, and leaves out a group with nothing in it', async () => {
+    jest.mocked(inboxRows).mockResolvedValue({ items: [ANSWERED], more: false, next: null });
+    jest.mocked(inboxCount).mockImplementation(async (filter) => (filter.state === 'waiting' ? 0 : 1));
+    await renderPages(ROUTES, '/admin/inbox?q=monday');
+    expect(await screen.findByTestId('inbox-r3')).toBeVisible();
+    expect(inboxRows).toHaveBeenLastCalledWith(null, expect.objectContaining({ q: 'monday', state: null }));
+    expect(inboxCount).toHaveBeenCalledWith(expect.objectContaining({ q: 'monday', state: 'waiting' }));
+    expect(screen.queryByTestId('inbox-group-waiting')).toBeNull();
+    expect(await screen.findByText(`${words('admin.inbox.rest')}, 1`)).toBeVisible();
+  });
+
+  it('is one plain list when a state is picked', async () => {
+    jest.mocked(inboxRows).mockResolvedValue({ items: [ANSWERED], more: false, next: null });
+    await renderPages(ROUTES, '/admin/inbox?state=replied');
+    expect(await screen.findByTestId('inbox-r3')).toBeVisible();
+    expect(inboxRows).toHaveBeenLastCalledWith(null, expect.objectContaining({ state: 'replied' }));
+    expect(screen.queryByTestId('inbox-group-waiting')).toBeNull();
+    expect(screen.queryByTestId('inbox-group-rest')).toBeNull();
+  });
+
   it('is a table on a laptop, with the chosen report beside it', async () => {
     (useWindowDimensions as jest.Mock).mockReturnValue(LAPTOP);
     await renderPages(ROUTES, '/admin/inbox');
@@ -344,6 +381,9 @@ describe('the owner’s Inbox', () => {
     await waitFor(() => expect(openReport).toHaveBeenCalledWith('r1'));
     await fireEvent.press(screen.getByTestId('inbox-r2'));
     await waitFor(() => expect(openReport).toHaveBeenCalledWith('r2'));
+    // The two groups are a table each, the column names over the first.
+    expect(within(screen.getByTestId('inbox-group-waiting')).getByTestId('inbox-r1')).toBeVisible();
+    expect(within(screen.getByTestId('inbox-group-rest')).getByTestId('inbox-r3')).toBeVisible();
   });
 });
 

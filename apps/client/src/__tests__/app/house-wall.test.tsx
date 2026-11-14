@@ -16,8 +16,8 @@ const words = wordsFor('en', 'housemates');
 jest.mock('@/api/board', () => ({ loadHouse: jest.fn() }));
 jest.mock('@/api/house', () => ({ catchUp: jest.fn() }));
 jest.mock('@/api/wall', () => ({ loadWall: jest.fn(), setReaction: jest.fn() }));
-// History, beside the Wall on a laptop and behind a switch on a phone (house-history.test.tsx).
-jest.mock('@/api/history', () => ({ HISTORY_PAGE: 60, loadHistory: jest.fn(), undoAction: jest.fn() }));
+// What can still be undone, for a post's sheet (house-undo.test.tsx).
+jest.mock('@/api/history', () => ({ loadHistory: jest.fn(), undoAction: jest.fn() }));
 // A phone unless a test says otherwise.
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
   __esModule: true,
@@ -151,12 +151,12 @@ it("folds a day's on-time ticks into one row at its foot, and opens it", async (
   expect(hob).toHaveTextContent(/You ticked Wipe the hob.*19:30/);
 });
 
-it("gives a housemate's tick its Nice one, and shows all four reactions on a long press", async () => {
+it("counts a housemate's tick's reactions on its row, and shows all four on a long press", async () => {
   // The database hasn't answered yet: the sheet already shows it.
   (setReaction as jest.Mock).mockReturnValue(new Promise<void>(() => undefined));
   await open();
   const [bath] = day(words('wall.feed.today')).getAllByTestId('wall-event');
-  expect(within(bath).getByTestId('nice-one')).toBeSelected();
+  expect(within(bath).getByTestId('count-nice', { includeHiddenElements: true })).toHaveTextContent('1');
   await fireEvent(within(bath).getByRole('button', { name: /^Sam ticked Clean the bath/ }), 'longPress');
   const sheet = within(screen.getByTestId('wall-sheet'));
   expect(sheet.getByRole('header', { name: 'Sam ticked Clean the bath' })).toBeOnTheScreen();
@@ -174,7 +174,7 @@ it("opens this week's John in the John sheet, and anything else in full", async 
   await open();
   const [bath, , theirs] = day(words('wall.feed.today')).getAllByTestId('wall-event');
   await fireEvent.press(within(bath).getByRole('button', { name: /^Sam ticked Clean the bath/ }));
-  expect(mockOpen).toHaveBeenCalledWith('a4', undefined);
+  expect(mockOpen).toHaveBeenCalledWith('a4', undefined, 'e1');
   expect(screen.queryByTestId('wall-sheet')).toBeNull();
   await fireEvent.press(within(theirs).getByRole('button'));
   const sheet = within(screen.getByTestId('wall-sheet'));
@@ -182,17 +182,21 @@ it("opens this week's John in the John sheet, and anything else in full", async 
   expect(sheet.getByText(`${words('wall.feed.settled')} Today, 10:00`)).toBeOnTheScreen();
 });
 
-it('puts a reaction back and says why under the row it was made on', async () => {
+it('puts a reaction back and says why under the row it was made on, once its sheet is put away', async () => {
   (setReaction as jest.Mock).mockRejectedValue(new Error("You can’t do that."));
   await open();
   const [bath] = day(words('wall.feed.today')).getAllByTestId('wall-event');
-  await fireEvent.press(within(bath).getByTestId('nice-one'));
+  await fireEvent(within(bath).getByRole('button', { name: /^Sam ticked Clean the bath/ }), 'longPress');
+  await fireEvent.press(within(screen.getByTestId('wall-sheet')).getByTestId('react-nice'));
   expect(setReaction).toHaveBeenCalledWith('e1', 'priya', 'nice', false);
+  await within(screen.getByTestId('wall-sheet')).findByRole('alert');
+  await fireEvent.press(screen.getByTestId('sheet-close'));
+  await waitFor(() => expect(screen.queryByTestId('wall-sheet')).toBeNull());
   const alert = await screen.findByRole('alert');
   expect(alert).toHaveTextContent("You can’t do that.");
   // In today's group, not at the top of the page.
   expect(day(words('wall.feed.today')).getByRole('alert')).toBe(alert);
-  await waitFor(() => expect(within(bath).getByTestId('nice-one')).toBeSelected());
+  await waitFor(() => expect(within(bath).getByTestId('count-nice', { includeHiddenElements: true })).toHaveTextContent('1'));
 });
 
 it('reads older days as you scroll near the end, from where the last one ended', async () => {
@@ -249,22 +253,15 @@ it('sits under a title bar with the way back to House', async () => {
   expect(bar.getByRole('button', { name: words('common.shell.backTo', { place: words('common.section.house') }) })).toBeOnTheScreen();
 });
 
-it('shows the Wall and History side by side on a laptop, each under its name, and a switch between them on a phone', async () => {
+it('is the Wall alone, on a phone and a laptop: no History beside it or behind a switch', async () => {
   await open();
-  expect(within(screen.getByTestId('wall-shows')).getByRole('radio', { name: words('wall.page.title') })).toBeChecked();
+  expect(screen.queryByTestId('wall-shows')).toBeNull();
   expect(screen.queryByTestId('history-section')).toBeNull();
 
   (useWindowDimensions as jest.Mock).mockReturnValue({ width: 1440, height: 900, scale: 1, fontScale: 1 });
   await open();
-  expect(screen.queryByTestId('wall-shows')).toBeNull();
-  // Each under its name, so their first days start on the same line.
-  const wall = within(screen.getByTestId('wall-pair-start'));
-  expect(within(wall.getByTestId('wall-section')).getAllByRole('header', { name: words('wall.page.title') })[0]).toBeOnTheScreen();
-  expect(wall.getAllByTestId('wall-day').length).toBeGreaterThan(0);
-  const history = within(screen.getByTestId('wall-pair-end'));
-  expect(history.getAllByRole('header', { name: words('wall.history.title') })[0]).toBeOnTheScreen();
-  // Everyone's moves or only yours, in History's header.
-  expect(history.getByTestId('history-whose')).toHaveTextContent(words('wall.history.everyone'));
-  expect(await history.findByTestId('history-empty')).toBeOnTheScreen();
+  expect(screen.queryByTestId('wall-pair')).toBeNull();
+  expect(screen.queryByTestId('history-section')).toBeNull();
+  expect(screen.getAllByTestId('wall-day').length).toBeGreaterThan(0);
   (useWindowDimensions as jest.Mock).mockReturnValue({ width: 390, height: 844, scale: 1, fontScale: 1 });
 });

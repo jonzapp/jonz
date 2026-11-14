@@ -241,6 +241,76 @@ export interface Breakdown {
 
 const BREAKDOWN_ORDER: readonly BreakdownKey[] = ["share", "onTime", "late", "skipped", "open", "missed", "covered", "helped"];
 
+/** The share of the span's Johns that was one person's to do, and the weeks skipped in it. */
+function spanShare(input: RecordInput, weeks: ReturnType<typeof spanWeeks>, userId: string): { share: number; skipped: Set<string> } {
+  const ids = new Set(weeks.map((w) => w.id));
+  // A skipped week counts for nothing, as the deal counts it: no share, no credit.
+  const skipped = new Set(weeks.filter((w) => w.skipped_at).map((w) => w.id));
+  // A skipped or excused John comes out of its week: each share of it shrinks by its part.
+  const keptIn = (weekId: string) =>
+    keptOfWeek(
+      input.shares.filter((s) => s.week_id === weekId).reduce((sum, s) => sum + Number(s.share), 0),
+      input.johns
+        .filter((j) => j.week_id === weekId && excusedJohn({ outcome: j.outcome, coveredBy: j.covered_by, excused: j.excused }))
+        .reduce((sum, j) => sum + j.points, 0),
+    );
+  const share = input.shares
+    .filter((s) => ids.has(s.week_id) && !skipped.has(s.week_id) && s.user_id === userId)
+    .reduce((sum, s) => sum + Number(s.share) * keptIn(s.week_id), 0);
+  return { share, skipped };
+}
+
+/** One person's breakdown as it's added up. */
+interface Tally {
+  input: RecordInput;
+  userId: string;
+  skipped: Set<string>;
+  lines: Map<BreakdownKey, BreakdownLine>;
+  nameOf: (userId: string) => string;
+  words: Words;
+}
+
+/** Who did a John ticked by roll call. */
+const crewOf = (tally: Tally, j: RecordJohn) => (tally.input.crew ?? []).filter((c) => c.job_id === (j.job_id ?? j.id));
+
+/** Who else did it: "with Sam and Mo", or null. */
+function doneWith(tally: Tally, j: RecordJohn): string | null {
+  const others = crewOf(tally, j).filter((c) => c.user_id !== tally.userId).map((c) => tally.nameOf(c.user_id));
+  return others.length ? tally.words('week.record.doneWith', { names: andNames(others, tally.words) }) : null;
+}
+
+/** Adds a John to one of the breakdown's lines, with what it says beside it (and the credit, when it isn't the John's own). */
+function addJohn(tally: Tally, j: RecordJohn, to: { key: BreakdownKey; note: string | null; credit?: number }) {
+  const { userId, input } = tally;
+  const line = tally.lines.get(to.key)!;
+  // What it adds is what the deal credits them with: nothing for a miss
+  // or in a skipped week, their share of a John ticked by roll call they
+  // were on.
+  const mine = crewOf(tally, j).find((c) => c.user_id === userId);
+  const earned =
+    to.credit ??
+    (mine
+      ? Number(mine.points)
+      : !j.absent_at && creditedTo({ userId: j.user_id, points: j.points, outcome: j.outcome, coveredBy: j.covered_by, excused: j.excused }) === userId
+        ? j.points
+        : 0);
+  if (!tally.skipped.has(j.week_id)) line.points += earned;
+  line.johns.push({ id: j.id, name: j.name, day: dayLabel(new Date(j.due_at), input.zone, tally.words), points: mine ? round(earned) : j.points, note: to.note });
+}
+
+/** A John they held: onto the line for how it went. */
+function addHeld(tally: Tally, j: RecordJohn) {
+  const { nameOf, words } = tally;
+  const m = heldMark(j);
+  if (m === "missed") {
+    const note = j.covered_by ? words('week.record.coveredIt', { name: nameOf(j.covered_by) }) : j.absent_at ? words('week.record.leftOff') : null;
+    addJohn(tally, j, { key: "missed", note });
+  } else if (m === "clean") addJohn(tally, j, { key: "onTime", note: doneWith(tally, j) });
+  else if (m === "late") addJohn(tally, j, { key: "late", note: doneWith(tally, j) });
+  else if (m === "skipped") addJohn(tally, j, { key: "skipped", note: null });
+  else addJohn(tally, j, { key: "open", note: doneWith(tally, j) });
+}
+
 /** A line's points with its sign: "+10", "−15", "0"; to a tenth, since shares come in thirds. */
 export function signedPoints(points: number): string {
   const rounded = Math.round(points * 10) / 10;
@@ -261,63 +331,21 @@ export function recordBreakdown(
   const weeks = spanWeeks(input.weeks, span, input.now, input.zone);
   const ids = new Set(weeks.map((w) => w.id));
   const johns = input.johns.filter((j) => ids.has(j.week_id)).sort((a, b) => a.due_at.localeCompare(b.due_at));
-  // A skipped week counts for nothing, as the deal counts it: no share, no credit.
-  const skipped = new Set(weeks.filter((w) => w.skipped_at).map((w) => w.id));
-  // A skipped or excused John comes out of its week: each share of it shrinks by its part.
-  const keptIn = (weekId: string) =>
-    keptOfWeek(
-      input.shares.filter((s) => s.week_id === weekId).reduce((sum, s) => sum + Number(s.share), 0),
-      input.johns
-        .filter((j) => j.week_id === weekId && excusedJohn({ outcome: j.outcome, coveredBy: j.covered_by, excused: j.excused }))
-        .reduce((sum, j) => sum + j.points, 0),
-    );
-  const share = input.shares
-    .filter((s) => ids.has(s.week_id) && !skipped.has(s.week_id) && s.user_id === userId)
-    .reduce((sum, s) => sum + Number(s.share) * keptIn(s.week_id), 0);
+  const { share, skipped } = spanShare(input, weeks, userId);
 
   const lines = new Map<BreakdownKey, BreakdownLine>(BREAKDOWN_ORDER.map((key) => [key, { key, points: 0, johns: [] }]));
   lines.get("share")!.points = -round(share);
-  const crew = input.crew ?? [];
-  const crewOf = (j: RecordJohn) => crew.filter((c) => c.job_id === (j.job_id ?? j.id));
-  const add = (key: BreakdownKey, j: RecordJohn, note: string | null, credit?: number) => {
-    const line = lines.get(key)!;
-    // What it adds is what the deal credits them with: nothing for a miss
-    // or in a skipped week, their share of a John ticked by roll call they
-    // were on.
-    const mine = crewOf(j).find((c) => c.user_id === userId);
-    const earned =
-      credit ??
-      (mine
-        ? Number(mine.points)
-        : !j.absent_at && creditedTo({ userId: j.user_id, points: j.points, outcome: j.outcome, coveredBy: j.covered_by, excused: j.excused }) === userId
-          ? j.points
-          : 0);
-    if (!skipped.has(j.week_id)) line.points += earned;
-    line.johns.push({ id: j.id, name: j.name, day: dayLabel(new Date(j.due_at), input.zone, words), points: mine ? round(earned) : j.points, note });
-  };
-  /** Who else did it: "with Sam and Mo", or null. */
-  const doneWith = (j: RecordJohn) => {
-    const others = crewOf(j).filter((c) => c.user_id !== userId).map((c) => nameOf(c.user_id));
-    return others.length ? words('week.record.doneWith', { names: andNames(others, words) }) : null;
-  };
+  const tally: Tally = { input, userId, skipped, lines, nameOf, words };
 
   for (const j of johns) {
-    if (j.user_id === userId) {
-      const m = heldMark(j);
-      if (m === "missed") add("missed", j, j.covered_by ? words('week.record.coveredIt', { name: nameOf(j.covered_by) }) : j.absent_at ? words('week.record.leftOff') : null);
-      else if (m === "clean") add("onTime", j, doneWith(j));
-      else if (m === "late") add("late", j, doneWith(j));
-      else if (m === "skipped") add("skipped", j, null);
-      else add("open", j, doneWith(j));
-    } else if (j.covered_by === userId) {
-      add("covered", j, words('week.record.coveredFor', { name: nameOf(j.user_id) }));
-    }
+    if (j.user_id === userId) addHeld(tally, j);
+    else if (j.covered_by === userId) addJohn(tally, j, { key: "covered", note: words('week.record.coveredFor', { name: nameOf(j.user_id) }) });
   }
   // Helping: a John ticked from a place they didn't hold.
-  for (const c of crew) {
+  for (const c of input.crew ?? []) {
     if (!c.helper || c.user_id !== userId) continue;
     const j = johns.find((x) => x.id === c.assignment_id);
-    if (j) add("helped", j, doneWith(j), Number(c.points));
+    if (j) addJohn(tally, j, { key: "helped", note: doneWith(tally, j), credit: Number(c.points) });
   }
 
   const kept = BREAKDOWN_ORDER.map((key) => lines.get(key)!).filter((l) => l.key === "share" || l.johns.length > 0);

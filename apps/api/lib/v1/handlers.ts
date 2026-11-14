@@ -34,7 +34,7 @@ import { userClient } from "@/lib/supabase/user";
 const words = wordsFor("en", "housemates");
 
 // The /v1 operations whose logic is TypeScript (docs/specs/api.md, C2): each
-// runs the same move its /api route runs, after the executor's checks (token,
+// runs its move (lib/moves) after the executor's checks (token,
 // rate limit, input, house, permission, House Pass), and its answer is checked
 // against the operation's contract. A move's refusal becomes the Problem a
 // database function's would (fromDatabase); a Pass answer's HTTP status, its
@@ -141,8 +141,8 @@ const HANDLERS: Handlers = {
   },
 
   async ask_house(ctx: HandlerContext) {
-    const { messages, draft } = ctx.input as Pick<ChatRequest, "messages" | "draft">;
-    const result = await chatTurn(callerOf(ctx), houseId(ctx), messages, draft ?? null, ctx.now);
+    const { summary, messages, draft } = ctx.input as Pick<ChatRequest, "summary" | "messages" | "draft">;
+    const result = await chatTurn(callerOf(ctx), { houseId: houseId(ctx), messages, current: draft ?? null, now: ctx.now, earlier: { summary } });
     if ("refusal" in result) throw refusal(result.refusal);
     return result;
   },
@@ -150,7 +150,7 @@ const HANDLERS: Handlers = {
   async pass_checkout(ctx: HandlerContext) {
     const { plan, offer } = ctx.input as PassCheckoutRequest;
     const email = typeof ctx.claims.email === "string" ? ctx.claims.email : undefined;
-    const answer = await startCheckout({ ...callerOf(ctx), email }, passStripe(), houseId(ctx), plan, appUrl(ctx), env.stage(), ctx.now, offer ?? null);
+    const answer = await startCheckout({ ...callerOf(ctx), email }, passStripe(), { houseId: houseId(ctx), plan, appUrl: appUrl(ctx), stage: env.stage(), now: ctx.now, offer: offer ?? null });
     return passAnswer(answer);
   },
 
@@ -181,8 +181,8 @@ const HANDLERS: Handlers = {
   },
 
   // The operations that run a database function and then tell people (a
-  // push, an email, Stripe): the same move their /api route runs, so /v1 and
-  // MCP send what the app's button sends. `refusal` throws a move's no.
+  // push, an email, Stripe), so /v1 and MCP send what the app's button
+  // sends. `refusal` throws a move's no.
 
   async set_away(ctx: HandlerContext) {
     return { ok: true, ...(await done(bookAway(callerOf(ctx), body<AwayDraft>(ctx), ctx.now))) };
@@ -279,7 +279,7 @@ export const V1_HANDLERS: Handlers = Object.fromEntries(
 /** A path key from the input. */
 const id = (ctx: HandlerContext, key: string) => ctx.input[key] as string;
 
-/** The input without its path keys: the body the move's /api route took. */
+/** The input without its path keys: the body the move takes. */
 function body<T>(ctx: HandlerContext): T {
   const out = { ...ctx.input };
   for (const key of ["reportId", "promotionId", "houseId", "disputeId"]) delete out[key];

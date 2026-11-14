@@ -50,42 +50,16 @@ const trimmed = (path: string) => path.replace(/\/+$/, '') || '/';
  */
 export function TourProvider({ facts, canAsk = false, children }: { facts: TourFacts; canAsk?: boolean; children: ReactNode }) {
   const words = useWords();
-  const { session } = useMembership();
   const pathname = usePathname();
   const window = useWindowDimensions();
-  const spots = useRef(new Map<TourSpotId, SpotHandle[]>());
-  // Spots a page can bring out on asking (House's Table and Wall, behind a phone's switch).
-  const offers = useRef(new Map<TourSpotId, () => void>());
+  const { spots, offers, registry } = useSpotRegistry();
   const [running, setRunning] = useState<Running | null>(null);
   const [rect, setRect] = useState<TourRect | null>(null);
   // Still looking for this step's spot, before its card shows without it.
   const [looking, setLooking] = useState(true);
   const [help, setHelp] = useState(false);
   const pending = useRef<TourId | null>(null);
-  // What the account says, until this device changes it: then what it changed it to, saved behind.
-  const [changed, setChanged] = useState<ToursSaved | null>(null);
-  const saved = changed ?? readToursSaved(session?.user.user_metadata);
-
-  const registry = useMemo<SpotRegistry>(
-    () => ({
-      add(id, handle) {
-        const list = spots.current.get(id) ?? [];
-        spots.current.set(id, [...list, handle]);
-        return () => spots.current.set(id, (spots.current.get(id) ?? []).filter((h) => h !== handle));
-      },
-      offer(ids, show) {
-        for (const id of ids) offers.current.set(id, show);
-        return () => ids.forEach((id) => offers.current.get(id) === show && offers.current.delete(id));
-      },
-    }),
-    [],
-  );
-
-  const keep = useCallback((next: ToursSaved) => {
-    setChanged(next);
-    // A failed save costs nothing but seeing the offer again: no message for it.
-    saveToursSaved(next).catch(() => undefined);
-  }, []);
+  const { saved, keep } = useToursKept();
 
   const finish = useCallback(
     (id: TourId) => {
@@ -110,7 +84,7 @@ export function TourProvider({ facts, canAsk = false, children }: { facts: TourF
       setLooking(true);
       setRunning({ id, steps, index: 0 });
     },
-    [facts, pathname, words],
+    [facts, pathname, words, spots, offers],
   );
 
   const move = useCallback(
@@ -131,55 +105,8 @@ export function TourProvider({ facts, canAsk = false, children }: { facts: TourF
   const stepKey = running ? `${running.id}:${running.index}` : null;
   useEffect(() => {
     if (!step) return;
-    let live = true;
     if (trimmed(pathname) !== step.page) router.navigate(step.page);
-    const began = Date.now();
-    const timers: ReturnType<typeof setTimeout>[] = [setTimeout(() => live && setLooking(false), CARD_AFTER)];
-    const later = (fn: () => void, ms: number) => timers.push(setTimeout(fn, ms));
-    let last: TourRect | null = null;
-    const light = (where: TourRect) => {
-      if (last && sameRect(last, where)) return;
-      last = where;
-      setRect(where);
-    };
-    // Lit: measure it again now and then, and bring it back into view if the page has moved it off.
-    const watch = async (handle: SpotHandle): Promise<void> => {
-      if (!live) return;
-      const where = await handle.measure();
-      if (!live) return;
-      if (where) {
-        if (!tourSpotInWindow(where, { width: windowNow().width, height: windowNow().height })) handle.reveal();
-        else light(where);
-      }
-      later(() => void watch(handle), WATCH_EVERY);
-    };
-    const look = async (): Promise<void> => {
-      if (!live) return;
-      const found = await showing(spots.current.get(step.spot) ?? []);
-      if (!live) return;
-      // Not drawn, but its page can bring it out: ask, and look again.
-      if (!found) offers.current.get(step.spot)?.();
-      if (found) {
-        found.handle.reveal();
-        // Once the scroll has moved it, measure again where it ended up.
-        await frames(2);
-        if (!live) return;
-        light((await found.handle.measure()) ?? found.rect);
-        later(() => void watch(found.handle), WATCH_EVERY);
-        return;
-      }
-      if (Date.now() - began >= FIND_FOR) {
-        // Not on screen: pass it over rather than dim a page with nothing lit.
-        move(1);
-        return;
-      }
-      later(() => void look(), FIND_EVERY);
-    };
-    void look();
-    return () => {
-      live = false;
-      timers.forEach(clearTimeout);
-    };
+    return followSpot(step.spot, { spots: spots.current, offers: offers.current }, { lit: setRect, late: () => setLooking(false), missing: () => move(1) });
     // The step and the window's size: a turned phone or a resized window measures again.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stepKey, window.width, window.height]);
@@ -231,6 +158,98 @@ export function TourProvider({ facts, canAsk = false, children }: { facts: TourF
       </SpotRegistryContext.Provider>
     </TourContext.Provider>
   );
+}
+
+/** The spots that have signed in, and the ones a page can bring out on asking (House's Table and Wall, behind a phone's switch). */
+function useSpotRegistry() {
+  const spots = useRef(new Map<TourSpotId, SpotHandle[]>());
+  const offers = useRef(new Map<TourSpotId, () => void>());
+  const registry = useMemo<SpotRegistry>(
+    () => ({
+      add(id, handle) {
+        const list = spots.current.get(id) ?? [];
+        spots.current.set(id, [...list, handle]);
+        return () => spots.current.set(id, (spots.current.get(id) ?? []).filter((h) => h !== handle));
+      },
+      offer(ids, show) {
+        for (const id of ids) offers.current.set(id, show);
+        return () => ids.forEach((id) => offers.current.get(id) === show && offers.current.delete(id));
+      },
+    }),
+    [],
+  );
+  return { spots, offers, registry };
+}
+
+/** Which tours this account has seen: what the account says, until this device changes it, then what it changed it to, saved behind. */
+function useToursKept() {
+  const { session } = useMembership();
+  const [changed, setChanged] = useState<ToursSaved | null>(null);
+  const saved = changed ?? readToursSaved(session?.user.user_metadata);
+  const keep = useCallback((next: ToursSaved) => {
+    setChanged(next);
+    // A failed save costs nothing but seeing the offer again: no message for it.
+    saveToursSaved(next).catch(() => undefined);
+  }, []);
+  return { saved, keep };
+}
+
+type Places = { spots: Map<TourSpotId, SpotHandle[]>; offers: Map<TourSpotId, () => void> };
+
+/**
+ * One step's spot: find it, bring it into view, light it (`lit`), and keep
+ * measuring it. `late` when its card should show without waiting any longer;
+ * `missing` when it never showed. Returns the way to stop.
+ */
+function followSpot(spot: TourSpotId, places: Places, on: { lit: (where: TourRect) => void; late: () => void; missing: () => void }): () => void {
+  let live = true;
+  const began = Date.now();
+  const timers: ReturnType<typeof setTimeout>[] = [setTimeout(() => live && on.late(), CARD_AFTER)];
+  const later = (fn: () => void, ms: number) => timers.push(setTimeout(fn, ms));
+  let last: TourRect | null = null;
+  const light = (where: TourRect) => {
+    if (last && sameRect(last, where)) return;
+    last = where;
+    on.lit(where);
+  };
+  // Lit: measure it again now and then, and bring it back into view if the page has moved it off.
+  const watch = async (handle: SpotHandle): Promise<void> => {
+    if (!live) return;
+    const where = await handle.measure();
+    if (!live) return;
+    if (where) {
+      if (!tourSpotInWindow(where, { width: windowNow().width, height: windowNow().height })) handle.reveal();
+      else light(where);
+    }
+    later(() => void watch(handle), WATCH_EVERY);
+  };
+  const look = async (): Promise<void> => {
+    if (!live) return;
+    const found = await showing(places.spots.get(spot) ?? []);
+    if (!live) return;
+    // Not drawn, but its page can bring it out: ask, and look again.
+    if (!found) places.offers.get(spot)?.();
+    if (found) {
+      found.handle.reveal();
+      // Once the scroll has moved it, measure again where it ended up.
+      await frames(2);
+      if (!live) return;
+      light((await found.handle.measure()) ?? found.rect);
+      later(() => void watch(found.handle), WATCH_EVERY);
+      return;
+    }
+    if (Date.now() - began >= FIND_FOR) {
+      // Not on screen: pass it over rather than dim a page with nothing lit.
+      on.missing();
+      return;
+    }
+    later(() => void look(), FIND_EVERY);
+  };
+  void look();
+  return () => {
+    live = false;
+    timers.forEach(clearTimeout);
+  };
 }
 
 /** The newest of a spot's handles that's showing, with where it is. */

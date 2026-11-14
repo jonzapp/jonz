@@ -1,5 +1,5 @@
 import { cantOptions, coverOffer, firstName, dueInLine, holdable, plannable, swapChoice, type BoardItem, type CantOptions } from '@app/core';
-import { CameraIcon, CheckIcon, HandIcon, ImagesIcon, RepeatIcon, ShieldIcon, UsersIcon } from 'lucide-react-native';
+import { CameraIcon, CheckIcon, HandIcon, RepeatIcon, ShieldIcon, UsersIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -16,6 +16,7 @@ import { SheetAnchor } from '@/components/sheet';
 import { StatusMark } from '@/components/status-mark';
 import { Body } from '@/components/text';
 import { useMove } from '@/hooks/use-move';
+import { PhotoTick } from '@/components/john-sheet/photo-tick';
 import { useTick } from '@/hooks/use-tick';
 import { useUndoOffer } from '@/hooks/use-undo-offer';
 import { SPACE, useTheme } from '@/theme';
@@ -23,6 +24,7 @@ import { SPACE, useTheme } from '@/theme';
 import type { JohnSheetContext, JohnSheetFocus } from './body';
 import { SheetLines, SheetSection } from './parts';
 import { useWords } from '@/hooks/use-words';
+import { viewingOf } from './viewing';
 
 /**
  * Your open John: amber "Mark done" and a photo with it (a photo John
@@ -57,26 +59,7 @@ export function YoursOpen({ item, context, onRollCall }: { item: BoardItem; cont
             testID="sheet-mark-done"
           />
         ) : item.needsPhoto ? (
-          <>
-            <Button
-              icon={CameraIcon}
-label={words('today.nextUp.takePhoto')}
-              busy={tick.waiting === 'camera'}
-              busyLabel={tick.busyLabel}
-              disabled={tick.held('camera')}
-              onPress={() => void tick.tickWithPhoto('camera')}
-              testID="sheet-mark-done"
-            />
-            <Button
-              variant="outline"
-              icon={ImagesIcon}
-label={words('john.sheet.fromLibrary')}
-              busy={tick.waiting === 'library'}
-              busyLabel={tick.busyLabel}
-              disabled={tick.held('library')}
-              onPress={() => void tick.tickWithPhoto('library')}
-            />
-          </>
+          <PhotoTick tick={tick} label={words('today.nextUp.takePhoto')} testID="sheet-mark-done" />
         ) : (
           <>
             <Button
@@ -141,7 +124,7 @@ function OnIt({ item, context }: { item: BoardItem; context: JohnSheetContext })
   const move = useMove(context.houseId);
   const { now, rules, userId } = context;
   if (item.heldUntil && item.heldUntil > now && !item.doneAt) {
-    return <Body testID="cover-held">{words('john.sheet.held', { when: dueInLine(item.heldUntil, now, rules.timezone, words) })}</Body>;
+    return <Body testID="cover-held">{words('john.sheet.held', { when: dueInLine(item.heldUntil, now, context.zone, words) })}</Body>;
   }
   if (!holdable({ ...item, excused: item.status === 'excused' }, userId, now, rules.coverGraceHours)) return null;
   return (
@@ -326,7 +309,7 @@ function SwapChoice({
 }) {
   const words = useWords();
   const { colors } = useTheme();
-  const { meta, label } = swapChoice(item, context.members, context.rules, context.now, chosen, words);
+  const { meta, label } = swapChoice(item, viewingOf(context, words), chosen);
   return (
     <Row
       leading={<Avatar name={context.nameOf(item.userId)} userId={item.userId} />}
@@ -358,7 +341,7 @@ function SwapChoice({
 export function TheirsOpen({ item, context }: { item: BoardItem; context: JohnSheetContext }) {
   const words = useWords();
   const owner = context.members.find((m) => m.userId === item.userId);
-  const offer = coverOffer(item, context.members, context.userId, context.rules, context.now, words);
+  const offer = coverOffer(item, viewingOf(context, words));
   return (
     <SheetLines>
       <View style={styles.owner}>
@@ -382,26 +365,7 @@ function Cover({ item, context, body }: { item: BoardItem; context: JohnSheetCon
     <>
       <Body testID="cover-body">{body}</Body>
       {item.needsPhoto ? (
-        <>
-          <Button
-            icon={CameraIcon}
-label={words('john.sheet.coverPhoto')}
-            busy={tick.waiting === 'camera'}
-            busyLabel={tick.busyLabel}
-            disabled={tick.held('camera')}
-            onPress={() => void tick.tickWithPhoto('camera')}
-            testID="sheet-cover"
-          />
-          <Button
-            variant="outline"
-            icon={ImagesIcon}
-label={words('john.sheet.fromLibrary')}
-            busy={tick.waiting === 'library'}
-            busyLabel={tick.busyLabel}
-            disabled={tick.held('library')}
-            onPress={() => void tick.tickWithPhoto('library')}
-          />
-        </>
+        <PhotoTick tick={tick} label={words('john.sheet.coverPhoto')} testID="sheet-cover" />
       ) : (
         <Button
           icon={CheckIcon}
@@ -418,9 +382,12 @@ label={words('john.sheet.coverIt')}
   );
 }
 
+/** The chosen mark: a circle. */
+const CHOSEN = 24;
+
 const styles = StyleSheet.create({
   // The pick: an ink disc with a tick, where the row's mark was.
-  chosen: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  chosen: { width: CHOSEN, height: CHOSEN, borderRadius: CHOSEN / 2, alignItems: 'center', justifyContent: 'center' },
   owner: { flexDirection: 'row', alignItems: 'center', gap: SPACE.md },
   shrink: { flexShrink: 1 },
 });

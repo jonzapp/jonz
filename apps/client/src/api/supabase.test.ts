@@ -22,21 +22,15 @@ const authUrl = (client: unknown) => (client as { auth: { url: string } }).auth.
 const storageKey = (client: unknown) => (client as { auth: { storageKey: string } }).auth.storageKey;
 
 describe('the Supabase client', () => {
-  it("talks to Supabase itself until sign-in moves to the API, and live updates ride the same client", () => {
-    const { supabase, live, authThroughApi } = load({ EXPO_PUBLIC_AUTH_THROUGH_API: '', EXPO_PUBLIC_API_URL: 'https://api.jonz.app' });
-    expect(authThroughApi).toBe(false);
-    expect(authUrl(supabase)).toBe(`${SUPABASE}/auth/v1`);
-    expect(live).toBe(supabase);
-  });
-
-  it('signs in through the API once switched on, keeping the session where it was', () => {
-    const before = load({ EXPO_PUBLIC_AUTH_THROUGH_API: '' });
-    const { supabase, live, AUTH_STORAGE_KEY } = load({ EXPO_PUBLIC_AUTH_THROUGH_API: '1', EXPO_PUBLIC_API_URL: 'https://api.jonz.app/' });
+  it('signs in through the API, keeping the session under the name Supabase gave it', () => {
+    const { supabase, AUTH_STORAGE_KEY } = load({ EXPO_PUBLIC_API_URL: 'https://api.jonz.app/' });
     expect(authUrl(supabase)).toBe('https://api.jonz.app/auth/v1');
     expect(AUTH_STORAGE_KEY).toBe('sb-abcdefgh-auth-token');
-    expect(storageKey(supabase)).toBe(storageKey(before.supabase));
-    // Live updates stay on Supabase's Realtime, with the signed-in person's token.
-    expect(live).not.toBe(supabase);
-    expect((live as unknown as { realtimeUrl: URL | string }).realtimeUrl.toString()).toContain('abcdefgh.supabase.co');
+    expect(storageKey(supabase)).toBe('sb-abcdefgh-auth-token');
+  });
+
+  it('falls back to Supabase itself on a phone with no API named', () => {
+    const { supabase } = load({ EXPO_PUBLIC_API_URL: '' });
+    expect(authUrl(supabase)).toBe(`${SUPABASE}/auth/v1`);
   });
 });

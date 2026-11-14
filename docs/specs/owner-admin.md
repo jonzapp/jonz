@@ -58,7 +58,7 @@ the owner admin viewer (https://claude.ai/artifact/97GEyJDGnrWxB8HTbbrXmo).
 - **Reading.** Everyone, signed in or not, reads the notices that are on now.
   `GET /api/notices` reads them as anon with a 3 s timeout. When the database
   doesn't answer, it falls back to the copy in Vercel Global Config.
-  `POST /api/notices/copy` (owner only) rewrites that copy after each save.
+  `write_notice_copy on /v1` (owner only) rewrites that copy after each save.
   Without `GLOBAL_CONFIG`, `EDGE_CONFIG_ID` and `VERCEL_API_TOKEN` there is no
   copy, and the owner is told the copy didn't update.
 - **In the app.**
@@ -117,7 +117,7 @@ last:
   sees the house read only). At the foot of the house, a sheet says what
   goes, asks why (for the audit log) and whether to tell everyone in it
   (on by default), and deletes only once the house's name is typed.
-  `POST /api/admin/houses/[id]/delete` calls the owner's own
+  `owner_delete_house on /v1` calls the owner's own
   `owner_delete_house` (migration `20261218090000`), which leaves the
   message to everyone in it in the outbox, writes `house.delete` in the
   audit log with what the house was, and deletes it: its Johns, weeks, Wall,
@@ -160,7 +160,7 @@ One message, to the right people, safely
 - **Sending.** `owner_send_message` checks it's the owner with their code,
   posts on the Walls, writes the audit entry (`message.send` or
   `message.test`, people and houses by id only) and leaves one outbox row a
-  person. `POST /api/admin/messages` then pushes and emails from the outbox
+  person. `owner_send_message on /v1` then pushes and emails from the outbox
   for up to 40 seconds; the clock sends whatever is left, 20 seconds a tick.
   Taking a row deletes it under `SKIP LOCKED`, so two senders never send
   one person the same message twice.
@@ -276,7 +276,7 @@ signed out says what goes and stays and signs in on the way back to itself.
 The owner's own Ask Jonz, apart from every house's. Same model and loop
 (`apps/api/lib/ai/agent.ts`), nothing else shared:
 
-- **Its own address.** `POST /api/admin/ask` (`OwnerAskRequest`,
+- **Its own address.** `ask_owner on /v1` (`OwnerAskRequest`,
   `OwnerAskResponse` in core). It answers only the owner with their code
   this session (`owner_status`), and refuses anyone else with `owner_only`
   before Claude is asked.

@@ -8,7 +8,7 @@ import type { Caller, Refusal } from "./disputes";
 import { permitted } from "./permitted";
 
 /** Where a kid's account says it lives: a domain that can't exist, so no email is ever sent there (lib/email.ts). */
-export const KID_DOMAIN = "kids.jonz.invalid";
+const KID_DOMAIN = "kids.jonz.invalid";
 
 /**
  * A parent adds a child who won't sign in (family step 4). Asked first

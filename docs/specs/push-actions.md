@@ -70,6 +70,6 @@ home-screen widget is the third, once there's a native build.
 `packages/core/src/notify.ts` (kinds, quiet hours, schemas),
 `NOTIFY_COPY` (now the words files), `supabase/migrations/*_notification_prefs.sql`,
 `apps/api/lib/push.ts`, `lib/push-token.ts`, `lib/moves/push-actions.ts`,
-`app/api/push-actions/route.ts`, the reminders in `lib/engine/tick.ts`,
+`app/api/push-actions/route.ts`, the reminders in `lib/engine/remind.ts`,
 `apps/client/public/sw.js`, `apps/client/src/api/notification-prefs.ts`,
 `src/components/house/notification-settings.tsx`.

@@ -49,7 +49,7 @@ separate feature.
 
 ## Inputs and outputs
 
-- `POST /api/flags` with `RaiseFlag {johnId}` answers `FlagResponse {ok,
+- `raise_flag on /v1` with `RaiseFlag {johnId}` answers `FlagResponse {ok,
   assignmentId}`. A bad body is 400 "Say which John needs doing."; refusals
   are 409 in words.
 - SQL: `raise_flag(p_john)` for housemates; `remove_flag(p_assignment)`; `open_flag`, `closes_at` and

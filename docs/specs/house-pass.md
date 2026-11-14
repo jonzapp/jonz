@@ -39,8 +39,8 @@ link); give it with a Promotions gift named for their email.
 - `houses.pass_plan` (`trial`, `monthly`, `yearly`, `founding`),
   `houses.pass_until` (null only for Founding) and `houses.pass_buyer`.
   Written only by the service role; housemates read them with the house.
-- `@app/core` `pass.ts`: `passOf`, `hasPass`, `passUnlocked`, `passLine`,
-  `passOffers`, and `PASS_ENFORCED`, on since 11 Nov 2026
+- `@app/core` `pass.ts`: `passOf`, `hasPass`, `passLine` and
+  `passOffers`. A house without the Pass has lost the extras since 11 Nov 2026
   (`20270106090000_pass_on.sql` made every house made before then a
   Founding house). The database's own `house_has_pass` answers the same
   question for its checks. Staging's Demo House starts with its free month
@@ -66,7 +66,7 @@ Android apps never link out to the web price.
 
 - On the web, with `EXPO_PUBLIC_PASS_CHECKOUT=on`, the plans on the Pass
   page are buttons. One sends the browser to Stripe Checkout
-  (`POST /api/pass/checkout`), in the house's currency, carrying the house
+  (`pass_checkout on /v1`), in the house's currency, carrying the house
   and the buyer. Any housemate can buy.
 - Bought during the free month, Yearly and Monthly first charge when the
   free month ends (`passFirstCharge`; Stripe needs at least two days), so
@@ -81,7 +81,7 @@ Android apps never link out to the web price.
   customer and its current subscription. Events for any other subscription
   leave the Pass alone, so an old plan ending can't undo a new one.
 - The buyer, and only the buyer, gets Manage plan: Stripe's billing page,
-  to switch plan, change card or cancel (`POST /api/pass/manage`).
+  to switch plan, change card or cancel (`pass_billing on /v1`).
 - Only Yearly and Monthly are sold; checkout refuses `founding`, which /v1
   still accepts so the contract only grows. A house on a paid plan is
   offered nothing (the buyer has Manage plan); a house free for good nothing.

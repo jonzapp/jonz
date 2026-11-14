@@ -1,30 +1,30 @@
-import { addDaysTo, ASK_POOL_TOKENS, localDate, ASK_TURN_RESERVE, hasPass, passOf, CHAT_TURNS_PER_PERSON_PER_DAY, HouseDraft, PERMISSIONS, starterDraft, type DraftEdit } from "@app/core";
+import { addDaysTo, ASK_POOL_TOKENS, CHAT_RECENT, CHAT_SUM_AT, foldPoint, localDate, ASK_TURN_RESERVE, hasPass, passOf, CHAT_TURNS_PER_PERSON_PER_DAY, HouseDraft, PERMISSIONS, starterDraft, type DraftEdit } from "@app/core";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { OPTIONS, POST } from "@/app/api/setup/draft/route";
 import type { DraftAnswer, DraftContext, JonzTools } from "@/lib/ai/house-draft";
 import { houseUsage } from "@/lib/moves/ask-usage";
 import { chatTurn } from "@/lib/moves/draft";
 import { adminClient, signedInUser, type Actor } from "@/tests/support/clients";
 import { expectOk } from "@/tests/support/expect";
 import { addJohns, deal, makeHouse, thisWeek } from "@/tests/support/factories";
+import { APP_ORIGIN, preflight, problemOf, v1 } from "@/tests/support/v1";
+import { rightNow } from "@/tests/support/clock";
 import { wordsFor } from '@app/core';
 
 const words = wordsFor('en', 'housemates');
 
 /**
- * POST /api/setup/draft, called as the app calls it, and the chat turn
+ * Ask Jonz for a house (ask_house on /v1), called as the app calls it, and the chat turn
  * behind it with Claude stood in for. Claude itself is never called here:
  * without the AI Gateway (no Vercel, no AI_GATEWAY_API_KEY) the route offers
  * a starter list, which is also what production does when the gateway is down.
  */
 
-const BASE = "http://localhost:3205/api/setup/draft";
 const db = adminClient();
 const saved = { origins: process.env.ALLOWED_ORIGINS, key: process.env.AI_GATEWAY_API_KEY, vercel: process.env.VERCEL };
 
 beforeAll(() => {
-  process.env.ALLOWED_ORIGINS = "http://localhost:8205";
+  process.env.ALLOWED_ORIGINS = APP_ORIGIN;
   delete process.env.AI_GATEWAY_API_KEY;
   delete process.env.VERCEL;
 });
@@ -35,14 +35,8 @@ afterAll(() => {
   if (saved.vercel) process.env.VERCEL = saved.vercel;
 });
 
-async function chatAs(actor: Actor | undefined, body: unknown) {
-  const headers: Record<string, string> = { "content-type": "application/json", origin: "http://localhost:8205" };
-  if (actor) {
-    const { data } = await actor.db.auth.getSession();
-    headers.authorization = `Bearer ${data.session!.access_token}`;
-  }
-  return POST(new Request(BASE, { method: "POST", headers, body: JSON.stringify(body) }));
-}
+const chatAs = (actor: Actor | undefined, { houseId, ...body }: { houseId: string; [key: string]: unknown }) =>
+  v1(actor, `POST /v1/houses/${houseId}/ask`, body);
 
 async function turnsIn(houseId: string) {
   const { data } = await db.from("house_drafts").select("outcome, johns, input_tokens, output_tokens, user_id").eq("house_id", houseId);
@@ -52,7 +46,7 @@ async function turnsIn(houseId: string) {
 const A_HOUSE = "Me, Ben and Cal in a terrace. Bins go out Tuesday night.";
 const said = (text: string) => [{ role: "user" as const, text }];
 
-describe("POST /api/setup/draft", () => {
+describe("POST /v1/houses/{houseId}/ask", () => {
   it("refuses a caller with no token", async () => {
     const res = await chatAs(undefined, { houseId: crypto.randomUUID(), messages: said(A_HOUSE), draft: null });
     expect(res.status).toBe(401);
@@ -62,27 +56,27 @@ describe("POST /api/setup/draft", () => {
     const house = await makeHouse(["Ava"]);
     const res = await chatAs(house.admin, { houseId: house.id, messages: said("  "), draft: null });
     expect(res.status).toBe(400);
-    expect((await res.json()).error).toMatch(/Say something about the house/);
+    expect((await problemOf(res)).detail).toMatch(/Say something about the house/);
   });
 
   it("refuses anyone outside the house", async () => {
     const house = await makeHouse(["Ava"]);
     const res = await chatAs(await signedInUser("Zed"), { houseId: house.id, messages: said(A_HOUSE), draft: null });
     expect(res.status).toBe(403);
-    expect(await res.json()).toEqual({ error: "That isn’t in your house." });
+    expect(await problemOf(res)).toEqual({ code: "forbidden", detail: "You need house:read in this house." });
   });
 
   it("answers a member too, with no list to keep when Claude isn't set up", async () => {
     const house = await makeHouse(["Ava", "Ben"]);
     const res = await chatAs(house.members[0], { houseId: house.id, messages: said("Who's on bins?"), draft: null });
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(201);
     expect(await res.json()).toEqual({ reply: words('ask.draft.offlineAsk'), ask: null, draft: null, source: "starter" });
   });
 
   it("offers a starter list that fits when Claude isn't set up, adds nothing and counts nothing", async () => {
     const house = await makeHouse(["Ava"]);
     const res = await chatAs(house.admin, { houseId: house.id, messages: said("Me, my husband and the kids"), draft: null });
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(201);
     expect(await res.json()).toEqual({ reply: words('ask.draft.offline'), ask: null, draft: starterDraft("family"), source: "starter" });
     expect(await turnsIn(house.id)).toEqual([]);
     const { count } = await db.from("johns").select("id", { count: "exact", head: true }).eq("house_id", house.id);
@@ -97,7 +91,7 @@ describe("POST /api/setup/draft", () => {
   });
 
   it("answers a browser's preflight", async () => {
-    const res = OPTIONS(new Request(BASE, { method: "OPTIONS", headers: { origin: "http://localhost:8205" } }));
+    const res = await preflight(`/v1/houses/${crypto.randomUUID()}/ask`);
     expect(res.status).toBe(204);
   });
 });
@@ -124,9 +118,19 @@ describe("chatTurn, with Claude stood in for", () => {
     const house = await makeHouse(["Ava", "Ben"]);
     const messages = said(A_HOUSE);
     let told: DraftContext | null = null;
-    const result = await chatTurn({ db: house.admin.db, userId: house.admin.userId }, house.id, messages, null, new Date(), async (ctx, tools) => {
+    const result = await chatTurn({ db: house.admin.db, userId: house.admin.userId }, { houseId: house.id, messages, current: null, now: rightNow() }, async (ctx, tools) => {
       told = ctx;
-      expect(tools.listJohns()).toBe("The list is empty.");
+      // Then the house's kinds, each with a ref for save_kind, order_kinds and delete_kind.
+      const listed = tools.listJohns().split("\n");
+      expect(listed[0]).toBe("The list is empty.");
+      expect(listed.slice(1)).toEqual([
+        expect.stringMatching(/^Kind Kitchen \(ref [0-9a-f]{8}, colour #7a4e2d\)$/),
+        expect.stringMatching(/^Kind Bathroom /),
+        expect.stringMatching(/^Kind Bins & recycling /),
+        expect.stringMatching(/^Kind Floors & hoovering /),
+        expect.stringMatching(/^Kind Errands & shopping /),
+        expect.stringMatching(/^Kind Everything else /),
+      ]);
       expect(tools.may).toEqual({ add: true, change: true, remove: true, groups: true, resets: false, away: true });
       return firstGo(ctx, tools);
     });
@@ -151,7 +155,7 @@ describe("chatTurn, with Claude stood in for", () => {
       thisWeek(),
     );
     let told: DraftContext | null = null;
-    const result = await chatTurn({ db: house.admin.db, userId: house.admin.userId }, house.id, said("Bathroom's 4, oven every month, no bins"), null, new Date(), async (ctx, tools) => {
+    const result = await chatTurn({ db: house.admin.db, userId: house.admin.userId }, { houseId: house.id, messages: said("Bathroom's 4, oven every month, no bins"), current: null, now: rightNow() }, async (ctx, tools) => {
       told = ctx;
       const listed = tools.listJohns();
       for (const j of [bath, bins, hoover]) expect(listed).toContain(j.id.slice(0, 8));
@@ -181,7 +185,7 @@ describe("chatTurn, with Claude stood in for", () => {
     const { data: floor } = await db.from("groups").insert({ house_id: house.id, name: "Main floor" }).select("id").single();
     expectOk(await db.from("group_members").insert({ group_id: floor!.id, house_id: house.id, user_id: house.admin.userId }));
     const ben = house.members[0];
-    const result = await chatTurn({ db: house.admin.db, userId: house.admin.userId }, house.id, said("Add Ben to main floor"), null, new Date(), async (_ctx, tools) => {
+    const result = await chatTurn({ db: house.admin.db, userId: house.admin.userId }, { houseId: house.id, messages: said("Add Ben to main floor"), current: null, now: rightNow() }, async (_ctx, tools) => {
       const done = tools.setGroup("main floor", ["me", ben.name.split(" ")[0]]);
       expect(done).toMatchObject({ ok: true });
       expect(done.said).toContain("Main floor");
@@ -196,7 +200,7 @@ describe("chatTurn, with Claude stood in for", () => {
   it("puts the person's own time away on a card, booking and cancelling, checked and writing nothing", async () => {
     const house = await makeHouse(["Ava", "Ben"]);
     await addJohns(house.id, [{ name: "Bathroom" }], thisWeek());
-    const now = new Date();
+    const now = rightNow();
     // Days well clear of today, so the house's zone doesn't matter.
     const day = (n: number) => addDaysTo(localDate(now, "UTC"), n);
     const { data: trip } = await db
@@ -206,7 +210,7 @@ describe("chatTurn, with Claude stood in for", () => {
       .single();
     await db.from("away_periods").insert({ house_id: house.id, user_id: house.members[0].userId, starts_on: day(30), ends_on: day(31) });
     let listed = "";
-    const result = await chatTurn({ db: house.admin.db, userId: house.admin.userId }, house.id, said("Away 10th to 12th, and cancel my later trip"), null, now, async (_ctx, tools) => {
+    const result = await chatTurn({ db: house.admin.db, userId: house.admin.userId }, { houseId: house.id, messages: said("Away 10th to 12th, and cancel my later trip"), current: null, now }, async (_ctx, tools) => {
       expect(tools.may.away).toBe(true);
       listed = await tools.reads.timeAway();
       expect((await tools.offerAway({ from: day(-5), to: day(-3), note: null })).ok).toBe(false);
@@ -238,8 +242,7 @@ describe("chatTurn, with Claude stood in for", () => {
   it("can take the whole list off", async () => {
     const house = await makeHouse(["Ava"]);
     const done = await addJohns(house.id, [{ name: "Bathroom" }, { name: "Bins out" }], thisWeek());
-    const result = await chatTurn({ db: house.admin.db, userId: house.admin.userId }, house.id, said("Take everything off"), null, new Date(),
-      claude(done.map((j) => ({ kind: "remove" as const, ref: j.id.slice(0, 8) })), [], "All off."));
+    const result = await chatTurn({ db: house.admin.db, userId: house.admin.userId }, { houseId: house.id, messages: said("Take everything off"), current: null, now: rightNow() }, claude(done.map((j) => ({ kind: "remove" as const, ref: j.id.slice(0, 8) })), [], "All off."));
     if ("refusal" in result) throw new Error("refused");
     expect(result.draft).toEqual({ johns: [], groups: [], note: null });
   });
@@ -249,9 +252,9 @@ describe("chatTurn, with Claude stood in for", () => {
     const [ben] = house.members;
     await addJohns(house.id, [{ name: "Bathroom" }], thisWeek());
     // Dealt, so why_john has a week to explain.
-    await deal(house.id, thisWeek(), new Date());
+    await deal(house.id, thisWeek(), rightNow());
     let reads: string[] = [];
-    const result = await chatTurn({ db: ben.db, userId: ben.userId }, house.id, said("Who's in the house?"), null, new Date(), async (ctx, tools) => {
+    const result = await chatTurn({ db: ben.db, userId: ben.userId }, { houseId: house.id, messages: said("Who's in the house?"), current: null, now: rightNow() }, async (ctx, tools) => {
       expect(ctx.me.role).toBe("member");
       expect(ctx.allowed).not.toContain(PERMISSIONS["johns:write"]);
       expect(tools.may).toEqual({ add: false, change: false, remove: false, groups: false, resets: false, away: true });
@@ -274,17 +277,74 @@ describe("chatTurn, with Claude stood in for", () => {
     expect(reads[9]).toContain("Nobody loses more than");
   });
 
+  /** A long chat: `n` messages, the person's and Jonz's in turn, ending with the person's. */
+  const longChat = (n: number) =>
+    Array.from({ length: n }, (_, i) => ({ role: (n - 1 - i) % 2 === 0 ? ("user" as const) : ("assistant" as const), text: `message ${i}` }));
+
+  it(`sums up a long chat's start before Jonz answers, and counts it to the turn`, async () => {
+    const house = await makeHouse(["Ava"]);
+    const messages = longChat(CHAT_SUM_AT + 5);
+    const fold = foldPoint(messages);
+    let told: DraftContext | null = null;
+    let notes: { summary: string | null; messages: number; language: string } | null = null;
+    const result = await chatTurn({ db: house.admin.db, userId: house.admin.userId }, { houseId: house.id, messages, current: null, now: rightNow(), earlier: {
+        summary: "- Bins go out on Tuesday.",
+        sumUp: async (summary, folded, language) => {
+          notes = { summary, messages: folded.length, language };
+          return { text: "- Bins go out on Tuesday.\n- Ben is away in May.", inputTokens: 300, outputTokens: 40 };
+        },
+      } }, async (ctx) => {
+        told = ctx;
+        return { raw: { reply: "Noted.", ask: { kind: "none" } }, inputTokens: 1200, outputTokens: 600 };
+      });
+    if ("refusal" in result) throw new Error("refused");
+    // All but the latest CHAT_RECENT at most, the rest starting with something the person said.
+    expect(messages[fold].role).toBe("user");
+    expect(messages.length - fold).toBeLessThanOrEqual(CHAT_RECENT);
+    expect(notes).toEqual({ summary: "- Bins go out on Tuesday.", messages: fold, language: "English" });
+    expect(told!.messages).toEqual(messages.slice(fold));
+    expect(told!.earlier).toBe("- Bins go out on Tuesday.\n- Ben is away in May.");
+    expect(result.summed).toEqual({ text: "- Bins go out on Tuesday.\n- Ben is away in May.", count: fold });
+    expect(await turnsIn(house.id)).toEqual([{ outcome: "ai", johns: 0, input_tokens: 1500, output_tokens: 640, user_id: house.admin.userId }]);
+  });
+
+  it("carries on a short chat with the summary it was sent, summing up nothing", async () => {
+    const house = await makeHouse(["Ava"]);
+    let told: DraftContext | null = null;
+    const result = await chatTurn({ db: house.admin.db, userId: house.admin.userId }, { houseId: house.id, messages: said("And the recycling?"), current: null, now: rightNow(), earlier: { summary: "- Bins go out on Tuesday.", sumUp: () => Promise.reject(new Error("not called")) } }, async (ctx) => {
+        told = ctx;
+        return { raw: { reply: "Thursdays.", ask: { kind: "none" } }, inputTokens: 1200, outputTokens: 600 };
+      });
+    if ("refusal" in result) throw new Error("refused");
+    expect(told!.earlier).toBe("- Bins go out on Tuesday.");
+    expect(result.summed).toBeUndefined();
+  });
+
+  it("reads only the latest messages when summing up fails, and says nothing was summed", async () => {
+    const house = await makeHouse(["Ava"]);
+    const messages = longChat(CHAT_SUM_AT + 3);
+    let told: DraftContext | null = null;
+    const result = await chatTurn({ db: house.admin.db, userId: house.admin.userId }, { houseId: house.id, messages, current: null, now: rightNow(), earlier: { sumUp: () => Promise.reject(new Error("gateway down")) } }, async (ctx) => {
+        told = ctx;
+        return { raw: { reply: "Noted.", ask: { kind: "none" } }, inputTokens: 1200, outputTokens: 600 };
+      });
+    if ("refusal" in result) throw new Error("refused");
+    expect(told!.messages).toEqual(messages.slice(foldPoint(messages)));
+    expect(told!.earlier).toBeNull();
+    expect(result.summed).toBeUndefined();
+  });
+
   it("refuses someone outside the house", async () => {
     const house = await makeHouse(["Ava"]);
     const zed = await signedInUser("Zed");
-    expect(await chatTurn({ db: zed.db, userId: zed.userId }, house.id, said("Hi"), null, new Date(), answer)).toEqual({
+    expect(await chatTurn({ db: zed.db, userId: zed.userId }, { houseId: house.id, messages: said("Hi"), current: null, now: rightNow() }, answer)).toEqual({
       refusal: { code: "42501", message: "not_in_house" },
     });
   });
 
   it("counts a turn that only talks, and leaves the draft as it is", async () => {
     const house = await makeHouse(["Ava"]);
-    const result = await chatTurn({ db: house.admin.db, userId: house.admin.userId }, house.id, said("Is that all?"), starterDraft("couple"), new Date(), async () => ({
+    const result = await chatTurn({ db: house.admin.db, userId: house.admin.userId }, { houseId: house.id, messages: said("Is that all?"), current: starterDraft("couple"), now: rightNow() }, async () => ({
       raw: { reply: "That’s the lot for a couple.", ask: { kind: "none" } },
       inputTokens: 10,
       outputTokens: 5,
@@ -295,7 +355,7 @@ describe("chatTurn, with Claude stood in for", () => {
 
   it("offers a starter list when Claude doesn't answer, and counts the try", async () => {
     const house = await makeHouse(["Ava"]);
-    const result = await chatTurn({ db: house.admin.db, userId: house.admin.userId }, house.id, said(A_HOUSE), null, new Date(), async () => {
+    const result = await chatTurn({ db: house.admin.db, userId: house.admin.userId }, { houseId: house.id, messages: said(A_HOUSE), current: null, now: rightNow() }, async () => {
       throw new Error("overloaded");
     });
     expect(result).toEqual({ reply: words('ask.draft.offline'), ask: null, draft: starterDraft("flat_share"), source: "starter" });
@@ -309,7 +369,7 @@ describe("chatTurn, with Claude stood in for", () => {
   /** The house's pool this week: the Pass's when it has one (a new house's free month counts). */
   async function poolOf(houseId: string) {
     const { data } = await db.from("houses").select("*").eq("id", houseId).single();
-    return hasPass(passOf(data!), new Date()) ? ASK_POOL_TOKENS.pass : ASK_POOL_TOKENS.free;
+    return hasPass(passOf(data!), rightNow()) ? ASK_POOL_TOKENS.pass : ASK_POOL_TOKENS.free;
   }
 
   it("stops a house at its week's pool, counting only this week, and says what's left", async () => {
@@ -321,10 +381,10 @@ describe("chatTurn, with Claude stood in for", () => {
     ]);
     expect(error).toBeNull();
     const caller = { db: house.admin.db, userId: house.admin.userId };
-    const first = await chatTurn(caller, house.id, said(A_HOUSE), null, new Date(), answer);
+    const first = await chatTurn(caller, { houseId: house.id, messages: said(A_HOUSE), current: null, now: rightNow() }, answer);
     if ("refusal" in first) throw new Error("refused");
     expect(first.allowance).toMatchObject({ left: 0, house: true, houseUsed: 1, resetsAt: week().endsAt.toISOString() });
-    expect(await chatTurn(caller, house.id, said(A_HOUSE), null, new Date(), answer)).toEqual({ refusal: { code: "P0001", message: "ask_pool_used" } });
+    expect(await chatTurn(caller, { houseId: house.id, messages: said(A_HOUSE), current: null, now: rightNow() }, answer)).toEqual({ refusal: { code: "P0001", message: "ask_pool_used" } });
   });
 
   it("lets nobody use more than half the pool when two or more live there", async () => {
@@ -335,10 +395,10 @@ describe("chatTurn, with Claude stood in for", () => {
       .from("house_drafts")
       .insert({ house_id: house.id, user_id: house.admin.userId, outcome: "ai", input_tokens: POOL / 2, created_at: inWeek() });
     expect(error).toBeNull();
-    expect(await chatTurn({ db: house.admin.db, userId: house.admin.userId }, house.id, said(A_HOUSE), null, new Date(), answer)).toEqual({
+    expect(await chatTurn({ db: house.admin.db, userId: house.admin.userId }, { houseId: house.id, messages: said(A_HOUSE), current: null, now: rightNow() }, answer)).toEqual({
       refusal: { code: "P0001", message: "ask_share_used" },
     });
-    const hers = await chatTurn({ db: ben.db, userId: ben.userId }, house.id, said("What's on this week?"), null, new Date(), async () => ({
+    const hers = await chatTurn({ db: ben.db, userId: ben.userId }, { houseId: house.id, messages: said("What's on this week?"), current: null, now: rightNow() }, async () => ({
       raw: { reply: "Nothing yet.", ask: { kind: "none" } },
       inputTokens: 1200,
       outputTokens: 600,
@@ -358,14 +418,14 @@ describe("chatTurn, with Claude stood in for", () => {
       { house_id: house.id, user_id: house.admin.userId, outcome: "ai", input_tokens: POOL, output_tokens: 0, created_at: lastWeek() },
     ]);
     expect(error).toBeNull();
-    const usage = await houseUsage({ db: cal.db, userId: cal.userId }, house.id, new Date());
+    const usage = await houseUsage({ db: cal.db, userId: cal.userId }, house.id, rightNow());
     if ("refusal" in usage) throw new Error("refused");
     expect(usage).toMatchObject({ people: 3, mineUsed: 0, left: 1, house: false, resetsAt: week().endsAt.toISOString() });
     expect(usage.houseUsed).toBeCloseTo(0.15);
     expect(usage.usedBy.map((p) => p.userId)).toEqual([house.admin.userId, ben.userId, cal.userId]);
     expect(usage.usedBy.map((p) => p.used)).toEqual([expect.closeTo(0.1), expect.closeTo(0.05), 0]);
     const stranger = await makeHouse(["Dee"]);
-    expect(await houseUsage({ db: stranger.admin.db, userId: stranger.admin.userId }, house.id, new Date())).toEqual({
+    expect(await houseUsage({ db: stranger.admin.db, userId: stranger.admin.userId }, house.id, rightNow())).toEqual({
       refusal: { code: "42501", message: "not_in_house" },
     });
   });
@@ -373,7 +433,7 @@ describe("chatTurn, with Claude stood in for", () => {
   it("counts a person's Ask Jonz in any house over the last 7 days, so a new house is no fresh start", async () => {
     const house = await makeHouse(["Ava"]);
     const POOL = await poolOf(house.id);
-    const now = new Date();
+    const now = rightNow();
     const daysAgo = (n: number) => new Date(now.getTime() - n * 24 * 60 * 60 * 1000).toISOString();
     // Used in a house since deleted (its turns stay, with no house), and once before the 7 days.
     const { error } = await db.from("house_drafts").insert([
@@ -383,7 +443,7 @@ describe("chatTurn, with Claude stood in for", () => {
     expect(error).toBeNull();
     const caller = { db: house.admin.db, userId: house.admin.userId };
     let budget: number | undefined;
-    const first = await chatTurn(caller, house.id, said(A_HOUSE), null, now, async (ctx, tools) => {
+    const first = await chatTurn(caller, { houseId: house.id, messages: said(A_HOUSE), current: null, now }, async (ctx, tools) => {
       budget = ctx.budget;
       return { ...(await answer(ctx, tools)), inputTokens: 4000, outputTokens: 1000 };
     });
@@ -391,7 +451,7 @@ describe("chatTurn, with Claude stood in for", () => {
     // Claude was told what's left of the account's, the least of the three.
     expect(budget).toBe(5000);
     expect(first.allowance).toMatchObject({ left: 0, limit: "account", resetsAt: new Date(new Date(daysAgo(3)).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString() });
-    expect(await chatTurn(caller, house.id, said(A_HOUSE), null, now, answer)).toEqual({ refusal: { code: "P0001", message: "ask_account_used" } });
+    expect(await chatTurn(caller, { houseId: house.id, messages: said(A_HOUSE), current: null, now }, answer)).toEqual({ refusal: { code: "P0001", message: "ask_account_used" } });
   });
 
   it("keeps a deleted house's Ask Jonz turns, with no house, for the person's own count", async () => {
@@ -411,7 +471,7 @@ describe("chatTurn, with Claude stood in for", () => {
     const caller = { db: house.admin.db, userId: house.admin.userId };
     // Claude takes a moment, as it does: every turn is in flight before any answers.
     const slow = (ctx: DraftContext, tools: JonzTools) => new Promise<void>((resolve) => setTimeout(resolve, 300)).then(() => answer(ctx, tools));
-    const results = await Promise.all(Array.from({ length: 6 }, () => chatTurn(caller, house.id, said(A_HOUSE), null, new Date(), slow)));
+    const results = await Promise.all(Array.from({ length: 6 }, () => chatTurn(caller, { houseId: house.id, messages: said(A_HOUSE), current: null, now: rightNow() }, slow)));
     expect(results.filter((r) => "reply" in r)).toHaveLength(2);
     expect(results.filter((r) => "refusal" in r)).toHaveLength(4);
     expect(await turnsIn(house.id)).toHaveLength(3);
@@ -432,7 +492,7 @@ describe("chatTurn, with Claude stood in for", () => {
       p_week_starts: 1,
     });
     const caller = { db: before.admin.db, userId: before.admin.userId };
-    expect(await chatTurn(caller, fresh!, said(A_HOUSE), null, new Date(), answer)).toEqual({
+    expect(await chatTurn(caller, { houseId: fresh!, messages: said(A_HOUSE), current: null, now: rightNow() }, answer)).toEqual({
       refusal: { code: "P0001", message: "draft_limit" },
     });
     expect(await turnsIn(fresh!)).toEqual([]);

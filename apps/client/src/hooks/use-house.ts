@@ -1,12 +1,12 @@
-import { buildWeekBoard, passUnlocked, todayView, type WeekBoard } from '@app/core';
+import { buildWeekBoard, hasPass, todayView, type WeekBoard } from '@app/core';
 import { useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect } from 'react';
 
 import { loadHouse, type Housemate, type HouseSnapshot } from '@/api/board';
 import { catchUp } from '@/api/house';
-import { liveThroughApi, openLiveStream } from '@/api/live-stream';
-import { live, supabase } from '@/api/supabase';
+import { openLiveStream } from '@/api/live-stream';
+import { supabase } from '@/api/supabase';
 import { houseKey } from '@/hooks/keys';
 import { useNow } from '@/hooks/use-now';
 
@@ -43,7 +43,7 @@ export function useHouse(houseId: string, userId: string): { query: UseQueryResu
     disputeHours: snapshot.rules.disputeHours,
     now,
     // Photo receipts are a House Pass extra: without it, no John asks for one.
-    photos: passUnlocked(snapshot.house.pass, now),
+    photos: hasPass(snapshot.house.pass, now),
     // In a family each kid's John earns what it says.
     ...(family ? { earners: snapshot.members.filter((m) => m.role !== 'admin').map((m) => m.userId) } : {}),
   });
@@ -56,10 +56,9 @@ export function useHouse(houseId: string, userId: string): { query: UseQueryResu
 
 /**
  * When a housemate ticks, votes or disputes, every screen on the house
- * follows. Realtime applies the same RLS as a query, so the socket carries
- * the user's token; bursts fold into one refetch. With
- * EXPO_PUBLIC_LIVE_THROUGH_API on, the API's own stream says so instead. The socket is a hint, not
- * a contract: coming back to the app refetches anyway (QueryProvider).
+ * follows: the API's own stream says the house changed, and bursts fold into
+ * one refetch. The stream is a hint, not a contract: coming back to the app
+ * refetches anyway (QueryProvider).
  */
 export function useLiveHouse(houseId: string) {
   const client = useQueryClient();
@@ -70,36 +69,12 @@ export function useLiveHouse(houseId: string) {
       clearTimeout(timer);
       timer = setTimeout(() => void client.invalidateQueries({ queryKey: houseKey(houseId) }), 400);
     };
-    if (liveThroughApi) {
-      const stop = openLiveStream(houseId, soon, {
-        token: async () => (await supabase.auth.getSession()).data.session?.access_token ?? null,
-      });
-      return () => {
-        clearTimeout(timer);
-        stop();
-      };
-    }
-    let channel: ReturnType<typeof live.channel> | undefined;
-    let cancelled = false;
-
-    void supabase.auth.getSession().then(({ data }) => {
-      if (cancelled) return;
-      if (data.session) void live.realtime.setAuth(data.session.access_token);
-      const filter = `house_id=eq.${houseId}`;
-      channel = live
-        .channel(`house:${houseId}`)
-        // What supabase_realtime publishes, as the web listens: a tick, a
-        // dispute, and the Wall's events (a week closing, a token earned).
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'events', filter }, soon)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'assignments', filter }, soon)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'disputes', filter }, soon)
-        .subscribe();
+    const stop = openLiveStream(houseId, soon, {
+      token: async () => (await supabase.auth.getSession()).data.session?.access_token ?? null,
     });
-
     return () => {
-      cancelled = true;
       clearTimeout(timer);
-      if (channel) void live.removeChannel(channel);
+      stop();
     };
   }, [client, houseId]);
 }

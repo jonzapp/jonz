@@ -1,5 +1,7 @@
 import { NotificationPrefsDraft, prefsOf, type NotificationPrefs } from '@app/core';
 
+import { deviceTimeZone } from '@/locale';
+
 import { callV1 } from './v1';
 
 // What to push you and when to keep quiet: your own row in
@@ -12,18 +14,9 @@ export async function loadPrefs(_userId: string): Promise<NotificationPrefs> {
   return prefsOf(row && { ...row, quiet_from: row.quietFrom, quiet_until: row.quietUntil });
 }
 
-/** This device's time zone, which quiet hours are read in. */
-export function deviceZone(): string | null {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || null;
-  } catch {
-    return null;
-  }
-}
-
-/** Save them all at once. Quiet hours are kept in this device's zone. */
+/** Save them all at once. Quiet hours, and the times pushes say, are kept in this device's zone. */
 export async function savePrefs(_userId: string, prefs: NotificationPrefs): Promise<void> {
-  const parsed = NotificationPrefsDraft.safeParse({ ...prefs, timezone: deviceZone() ?? prefs.timezone });
+  const parsed = NotificationPrefsDraft.safeParse({ ...prefs, timezone: deviceTimeZone() });
   if (!parsed.success) throw new Error(parsed.error.issues[0].message);
   const p = parsed.data;
   await callV1('save_notifications', {

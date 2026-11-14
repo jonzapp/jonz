@@ -29,3 +29,26 @@ jest.mock('./src/components/bot-check', () => {
     },
   };
 });
+
+// Every test file starts at the same pretend time (src/testing/clock.ts), so
+// none depends on when it runs. Only "now" is pretend: timers and promises
+// run as usual, and a test that wants pretend timers too still asks Jest
+// for them. The real Date with only "now" changed, rather than Jest's own
+// pretend date: @date-fns/tz builds its dates on whichever Date it finds
+// when it loads, and needs the real one's methods.
+const RealDate = Date;
+const PRETEND_NOW = RealDate.parse('2026-11-11T12:00:00Z');
+const pretendNow = () => PRETEND_NOW;
+global.Date = new Proxy(RealDate, {
+  construct: (target, args, newTarget) => Reflect.construct(target, args.length === 0 ? [PRETEND_NOW] : args, newTarget),
+  apply: () => new RealDate(PRETEND_NOW).toString(),
+  get: (target, key) => (key === 'now' ? pretendNow : Reflect.get(target, key)),
+});
+
+// The phone a test runs on is in London, as the houses tests make are, so
+// times read the same whichever machine runs them. A test of someone away
+// from home sets another (jest.mocked(getCalendars).mockReturnValue(...)).
+jest.mock('expo-localization', () => {
+  const real = jest.requireActual('expo-localization');
+  return { ...real, getCalendars: jest.fn(() => [{ calendar: 'gregory', timeZone: 'Europe/London', uses24hourClock: true, firstWeekday: 2 }]) };
+});

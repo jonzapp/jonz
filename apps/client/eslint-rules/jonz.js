@@ -221,9 +221,7 @@ module.exports = {
           ImportSpecifier(node) {
             const source = node.parent.source.value;
             const name = node.imported.name;
-            const spinner = source === 'react-native' && name === 'ActivityIndicator';
-            const reading = name === 'Reading' && /(^|\/)read-state$/.test(source);
-            if (spinner || reading) context.report({ node, messageId: 'spinner' });
+            if (source === 'react-native' && name === 'ActivityIndicator') context.report({ node, messageId: 'spinner' });
           },
         };
       },

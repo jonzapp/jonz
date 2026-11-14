@@ -12,7 +12,7 @@ import { supabase } from './supabase';
 // The web build uses microsoft.web.ts instead.
 
 /** Where Supabase sends the browser back to: the app's scheme, jonz://signin. */
-export function microsoftReturn(): string {
+function microsoftReturn(): string {
   return Linking.createURL('signin');
 }
 

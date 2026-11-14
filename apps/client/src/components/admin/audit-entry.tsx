@@ -1,12 +1,12 @@
 import { type Words, auditChanges, auditLikeThis, auditLine, auditParts, formatWhen, listTime, type AuditEntry } from '@app/core';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { ListTableRow, type ListColumn } from '@/components/admin/list-table';
+import { ListTableRow, type ListColumn } from '@/components/list-table';
 import { Group, GroupItem } from '@/components/group';
 import { Row } from '@/components/row';
 import { Section } from '@/components/section';
 import { Lead, Meta } from '@/components/text';
-import { FONT, INSET, SPACE, TABULAR, useTheme } from '@/theme';
+import { FONT, HAIR, INSET, SPACE, TABULAR, useTheme } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
 /** A value that's gone; a mark, not words. */
@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
   // Words on the page start where a card's do, as the section labels under them.
   head: { gap: SPACE.xs, paddingHorizontal: INSET },
   words: { paddingHorizontal: INSET },
-  change: { gap: 2, paddingVertical: SPACE.md },
+  change: { gap: HAIR, paddingVertical: SPACE.md },
   was: { textDecorationLine: 'line-through' },
   now: { fontFamily: FONT.bold },
 });

@@ -10,6 +10,7 @@ import { renderPages } from '@/testing/pages';
 
 import { WallSection } from './wall-section';
 import { wordsFor } from '@app/core';
+import { NOW } from '@/testing/clock';
 
 const words = wordsFor('en', 'housemates');
 
@@ -20,7 +21,7 @@ jest.mock('@/api/supabase', () => ({ supabase: {} }));
 const mockOpen = jest.fn();
 jest.mock('@/components/john-sheet', () => ({ useJohnSheet: () => ({ open: mockOpen, close: jest.fn() }) }));
 
-const ago = (hours: number) => new Date(Date.now() - hours * 3_600_000).toISOString();
+const ago = (hours: number) => new Date(NOW.getTime() - hours * 3_600_000).toISOString();
 
 const row = (overrides: Partial<WallRow>): WallRow => ({
   id: 'e',
@@ -113,35 +114,29 @@ it('tells each in one sentence with first names, and a meta line with when', asy
   expect(dispute).toHaveTextContent(/Sam disputed your tick on Wipe the hob.*“Still greasy round the back of the rings”.*4h/);
   expect(hob).toHaveTextContent(/You ticked Wipe the hob/);
   expect(joined).toHaveTextContent(/Sam moved in.*New housemate/);
-  expect(target(bath)).toHaveAccessibleName('Sam ticked Clean the bath, Checking, 3h');
+  expect(target(bath)).toHaveAccessibleName(`Sam ticked Clean the bath, Checking, 3h, ${words('wall.feed.tally', { label: REACTION_LABEL.nice, count: 1 })}`);
   // A sentence gets two lines before it's cut short.
   expect(within(dispute).getByText('Sam disputed your tick on Wipe the hob')).toHaveProp('numberOfLines', 2);
 });
 
-it("gives a housemate's tick its Nice one, selected once it's yours, and takes it back", async () => {
-  let answer: () => void = () => undefined;
-  (setReaction as jest.Mock).mockReturnValue(new Promise<void>((resolve) => (answer = resolve)));
+it('counts what the house gave each event on its meta line, with nothing on the row to press but the row', async () => {
   await open();
-  const [bath] = await rows();
-  const nice = within(bath).getByTestId('nice-one');
-  expect(nice).toHaveAccessibleName(words('wall.feed.tally', { label: REACTION_LABEL.nice, count: 1 }));
-  expect(nice).toBeSelected();
-  await fireEvent.press(nice);
-  expect(setReaction).toHaveBeenCalledWith('e1', 'priya', 'nice', false);
-  // The database hasn't answered; the row already shows it.
-  await waitFor(() => expect(within(bath).getByTestId('nice-one')).not.toBeSelected());
-  expect(within(bath).getByTestId('nice-one')).toHaveAccessibleName(REACTION_LABEL.nice);
-  answer();
+  const [bath, dispute, hob] = await rows();
+  expect(within(bath).getByTestId('count-nice', { includeHiddenElements: true })).toHaveTextContent('1');
+  expect(within(hob).getByTestId('count-fire', { includeHiddenElements: true })).toHaveTextContent('1');
+  expect(within(dispute).queryByTestId('count-nice', { includeHiddenElements: true })).toBeNull();
+  for (const r of [bath, dispute, hob]) expect(within(r).getAllByRole('button')).toHaveLength(1);
 });
 
 it("opens this week's John in the John sheet", async () => {
   await open();
   const [bath, dispute] = await rows();
   await fireEvent.press(target(bath));
-  expect(mockOpen).toHaveBeenLastCalledWith('a4', undefined);
-  // A dispute of your own John: nothing for you to vote on.
+  // With the post it came from, whose reactions the sheet shows.
+  expect(mockOpen).toHaveBeenLastCalledWith('a4', undefined, 'e1');
+  // A dispute of your own John: nothing for you to vote on, and it takes no reactions.
   await fireEvent.press(within(dispute).getByRole('button'));
-  expect(mockOpen).toHaveBeenLastCalledWith('a3', undefined);
+  expect(mockOpen).toHaveBeenLastCalledWith('a3', undefined, undefined);
   expect(screen.queryByTestId('wall-sheet')).toBeNull();
 });
 
@@ -159,7 +154,7 @@ it('opens a dispute that waits on your vote at the vote', async () => {
   const [bath] = await rows();
   await waitFor(() => expect(bath).toHaveTextContent(/Disputed/));
   await fireEvent.press(target(bath));
-  expect(mockOpen).toHaveBeenLastCalledWith('a4', 'vote');
+  expect(mockOpen).toHaveBeenLastCalledWith('a4', 'vote', 'e1');
 });
 
 it('opens anything else in full, none of it cut short, with all four reactions where it takes them', async () => {
@@ -181,28 +176,6 @@ it('opens anything else in full, none of it cut short, with all four reactions w
   expect(mockOpen).not.toHaveBeenCalled();
 });
 
-it('shows what the house gave your own tick, a way to all four', async () => {
-  await open();
-  const [, dispute, hob] = await rows();
-  expect(within(hob).queryByTestId('nice-one')).toBeNull();
-  await fireEvent.press(within(hob).getByRole('button', { name: words('wall.feed.tally', { label: REACTION_LABEL.fire, count: 1 }) }));
-  expect(screen.getByTestId('wall-sheet')).toBeOnTheScreen();
-  // A dispute takes no reactions: just its own press.
-  expect(within(dispute).getAllByRole('button')).toHaveLength(1);
-});
-
-it("offers a way to react on this week's tick of yours with none yet, since a tap opens its John", async () => {
-  (loadWallEvents as jest.Mock).mockResolvedValue({
-    events: wallEvents([row({ id: 'e5', user_id: 'priya', assignment_id: 'a1', data: { name: 'Bins out' } })], 'priya'),
-    photos: {},
-    older: null,
-  });
-  await open();
-  const tick = await screen.findByTestId('wall-event');
-  await fireEvent.press(within(tick).getByRole('button', { name: words('wall.feed.react') }));
-  expect(within(screen.getByTestId('wall-sheet')).getByRole('header', { name: 'You ticked Bins out' })).toBeOnTheScreen();
-});
-
 it('shows the event with all four reactions, by name, when a row is held down', async () => {
   await open();
   const [bath] = await rows();
@@ -218,11 +191,15 @@ it('shows the event with all four reactions, by name, when a row is held down', 
   expect(setReaction).toHaveBeenCalledWith('e1', 'priya', 'fire', true);
 });
 
-it('puts a reaction back and says why under the row it was made on, until another sheet opens', async () => {
+it('puts a reaction back and, once its sheet is put away, says why under the row it was made on, until another sheet opens', async () => {
   (setReaction as jest.Mock).mockRejectedValue(new Error("You can't react to that."));
   await open();
   const [bath, , , joined] = await rows();
-  await fireEvent.press(within(bath).getByTestId('nice-one'));
+  await fireEvent(target(bath), 'longPress');
+  await fireEvent.press(within(screen.getByTestId('wall-sheet')).getByTestId('react-nice'));
+  await within(screen.getByTestId('wall-sheet')).findByRole('alert');
+  await fireEvent.press(screen.getByTestId('sheet-close'));
+  await waitFor(() => expect(screen.queryByTestId('wall-sheet')).toBeNull());
   const alert = await screen.findByRole('alert');
   expect(alert).toHaveTextContent("You can't react to that.");
   // Straight after the bath's row, before the dispute's.
@@ -231,7 +208,6 @@ it('puts a reaction back and says why under the row it was made on, until anothe
   type Node = { children: (string | Node)[] };
   const words = (node: Node): string => node.children.map((c) => (typeof c === 'string' ? c : words(c))).join('');
   expect(order.map((t) => words(t as unknown as Node))).toEqual(['Sam ticked Clean the bath', "You can't react to that.", 'Sam disputed your tick on Wipe the hob']);
-  await waitFor(() => expect(within(bath).getByTestId('nice-one')).toBeSelected());
   await fireEvent.press(within(joined).getByRole('button'));
   expect(screen.queryByRole('alert')).toBeNull();
 });

@@ -5,7 +5,7 @@ import { expectOk } from "@/tests/support/expect";
 import { makeHouse } from "@/tests/support/factories";
 
 /**
- * Ask Jonz chats (20261127090000_ask_chats.sql): kept until the person
+ * Ask Jonz chats (20270112090000_baseline.sql): kept until the person
  * deletes them, seen only by them, kept only in a house they're in, and
  * gone when they leave it.
  */

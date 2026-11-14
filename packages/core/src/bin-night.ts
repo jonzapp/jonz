@@ -1,4 +1,5 @@
 import { CATEGORIES, type Category } from "./domain";
+import { kindLid } from "./kinds";
 
 /**
  * Bin Night, the house style, as data: pavement and tarmac grounds, ink,
@@ -111,11 +112,14 @@ export const BIN_NIGHT: { light: BinNightScheme; dark: BinNightScheme; radius: n
   radius: 6,
 };
 
-/** The lid colour for a kind of John; anything unknown wears `other`'s. */
-export function lidColour(scheme: BinNightScheme, category: string): string {
-  return (CATEGORIES as readonly string[]).includes(category)
-    ? scheme.bin[category as Category]
-    : scheme.bin.other;
+/**
+ * The lid colour for a kind of John: its own colour (`#rrggbb`, a house's
+ * kind) made to read on the scheme's cards, or one of the six starting
+ * kinds' by its category. Anything unknown wears `other`'s.
+ */
+export function lidColour(scheme: BinNightScheme, lid: string): string {
+  if (lid.startsWith("#")) return kindLid(lid, scheme.card);
+  return (CATEGORIES as readonly string[]).includes(lid) ? scheme.bin[lid as Category] : scheme.bin.other;
 }
 
 /** A scheme as the web's CSS variables: `{ "--card-foreground": "#16181a", … }`. */

@@ -2,10 +2,11 @@ import { addDaysTo, localDate, nextWeek } from "@app/core";
 import { TZDate } from "@date-fns/tz";
 import { describe, expect, it } from "vitest";
 
-import { loadBalances } from "@/lib/engine/tick";
 import { adminClient, signedInUser } from "@/tests/support/clients";
 import { expectDenied, expectOk, expectRule } from "@/tests/support/expect";
 import { addJohns, deal, makeHouse, reread, thisWeek, weeksAgo, ZONE } from "@/tests/support/factories";
+import { rightNow } from "@/tests/support/clock";
+import { loadBalances } from "@/lib/engine/deal-week";
 
 /**
  * Groups and time away: who may shape them, and what the deal does with
@@ -216,7 +217,7 @@ describe("time away", () => {
   it("is booked ahead, once at a time, and not for months", async () => {
     const house = await makeHouse(["Ava"]);
     const me = house.admin;
-    const today = localDate(new Date(), ZONE);
+    const today = localDate(rightNow(), ZONE);
     const away = (from: string, to: string) => me.db.rpc("set_away", { p_starts: from, p_ends: to });
     expectRule(await away(addDaysTo(today, -1), addDaysTo(today, 2)), "away_in_past");
     expectRule(await away(addDaysTo(today, 5), addDaysTo(today, 4)), "away_backwards");
@@ -230,7 +231,7 @@ describe("time away", () => {
     const [ava, ben] = house.everyone;
     const week = nextWeek(thisWeek(), ZONE, 1);
     await addJohns(house.id, [{ name: "Bathroom", dueDow: 3, dueTime: "20:00" }, { name: "Bins", dueDow: 5 }], week);
-    const { assignments } = await deal(house.id, week, new Date(Date.now()));
+    const { assignments } = await deal(house.id, week, rightNow());
     const bathroom = assignments.find((x) => x.name === "Bathroom")!;
     const bins = assignments.find((x) => x.name === "Bins")!;
     await db.from("assignments").update({ user_id: ava.userId }).eq("id", bathroom.id);
@@ -265,7 +266,7 @@ describe("time away", () => {
   it("is written only through set_away, and seen only by the house", async () => {
     const house = await makeHouse(["Ava"]);
     const me = house.admin;
-    const today = localDate(new Date(), ZONE);
+    const today = localDate(rightNow(), ZONE);
     expectDenied(
       await me.db.from("away_periods").insert({ house_id: house.id, user_id: me.userId, starts_on: today, ends_on: today }),
     );

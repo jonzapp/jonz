@@ -75,6 +75,299 @@ function status(a: { done_at: string | null; outcome: string | null; flagged_at:
   return a.done_at ? "ticked, being checked" : "open";
 }
 
+/** What every read is handed: who is asking, the house, and how it names people and times. */
+interface Reading {
+  caller: Caller;
+  houseId: string;
+  ctx: ReadsContext;
+  zone: string;
+  /** "me" for the person asking, else a first name. */
+  nameOf: (id: string | null) => string;
+  /** A time in the house's zone ("Mon 2 Nov, 18:00"). */
+  when: (iso: string) => string;
+  /** Today in the house's zone. */
+  today: string;
+}
+
+const readWeek = (at: Reading): HouseReads["week"] => async (which) => {
+  const { caller, houseId, ctx, zone, nameOf, when } = at;
+  const thisWeek = weekWindow(ctx.now, zone, ctx.rules.weekStarts);
+  const shift = which === "this" ? 0 : which === "last" ? -7 : 7;
+  const startsOn = addDaysTo(thisWeek.startsOn, shift);
+  const { data: week } = await caller.db
+    .from("weeks")
+    .select("id, starts_on, closed_at, skipped_at")
+    .eq("house_id", houseId)
+    .eq("starts_on", startsOn)
+    .maybeSingle();
+  if (!week) return `The week from ${startsOn} hasn't been dealt${which === "next" ? " yet: it's dealt when it starts" : ""}.`;
+  const { data: rows } = await caller.db
+    .from("assignments")
+    .select("id, name, user_id, due_at, done_at, outcome, flagged_at, excused, awaits_ok, covered_by, points, group_name")
+    .eq("week_id", week.id)
+    .order("due_at");
+  const { data: onCall } = await caller.db.from("on_call_picks").select("user_id, john_id, johns(name)").eq("week_id", week.id);
+  const state = week.skipped_at ? " (skipped: it counts for nothing)" : week.closed_at ? " (closed)" : "";
+  const lines = (rows ?? []).map(
+    (a) =>
+      `${a.name}: ${nameOf(a.user_id)}${a.covered_by ? `, covered by ${nameOf(a.covered_by)}` : ""}, due ${when(a.due_at)}, ${a.points} pts, ${status(a)}, ref ${askRef(a.id)}`,
+  );
+  for (const o of onCall ?? []) lines.push(`${(o.johns as { name: string } | null)?.name ?? "An on-call John"}: ${nameOf(o.user_id)} is on call (John ref ${askRef(o.john_id)}, to flag it)`);
+  return [`Week from ${startsOn}${state}:`, ...(lines.length ? lines : ["Nothing dealt to anyone."])].join("\n");
+};
+
+const readPeople = (at: Reading): HouseReads["people"] => async () => {
+  const { caller, houseId, ctx, nameOf } = at;
+  const { data: members } = await caller.db
+    .from("members")
+    .select("user_id, role, joined_at, moving_out_on, signs_in, born_year, streak")
+    .eq("house_id", houseId)
+    .order("joined_at");
+  const family = ctx.house.kind === "family";
+  const lines = (members ?? []).map((m) => {
+    const role = family ? (m.role === "admin" ? "parent" : "kid") : m.role;
+    const extra = [
+      m.moving_out_on ? `moving out ${m.moving_out_on}` : null,
+      m.signs_in === false ? "no sign-in of their own (a parent runs it)" : null,
+      m.born_year ? `born ${m.born_year}` : null,
+      m.streak ? `streak ${m.streak}` : null,
+    ].filter(Boolean);
+    return `${nameOf(m.user_id)}${m.user_id === caller.userId ? "" : ` (${ctx.people.find((p) => p.userId === m.user_id)?.name ?? ""})`}: ${role}, joined ${m.joined_at.slice(0, 10)}${extra.length ? `, ${extra.join(", ")}` : ""}, ref ${askRef(m.user_id)}`;
+  });
+  const { data: groups } = await caller.db.from("groups").select("id, name, group_members(user_id)").eq("house_id", houseId).order("name");
+  for (const g of groups ?? []) lines.push(`Group ${g.name} (ref ${askRef(g.id)}): ${(g.group_members ?? []).map((m) => nameOf(m.user_id)).join(", ")}`);
+  return lines.join("\n") || "Nobody.";
+};
+
+const readTimeAway = (at: Reading): HouseReads["timeAway"] => async () => {
+  const { caller, houseId, nameOf, today } = at;
+  const { data } = await caller.db
+    .from("away_periods")
+    .select("id, user_id, starts_on, ends_on, note")
+    .eq("house_id", houseId)
+    .gte("ends_on", addDaysTo(today, -30))
+    .order("starts_on");
+  // The person's own, from today on, carry a ref for cancel_away.
+  const ref = (a: { id: string; user_id: string; ends_on: string }) => (a.user_id === caller.userId && a.ends_on >= today ? `, ref ${a.id.slice(0, 8)}` : "");
+  const lines = (data ?? []).map((a) => `${nameOf(a.user_id)}: ${a.starts_on} to ${a.ends_on}${a.note ? ` (${a.note})` : ""}${a.starts_on <= today && a.ends_on >= today ? ", away now" : ""}${ref(a)}`);
+  return [`Today is ${today}.`, ...(lines.length ? lines : ["Nobody has time away booked."])].join("\n");
+};
+
+const readHistory = (at: Reading): HouseReads["history"] => async () => {
+  const { caller, houseId, ctx, nameOf, when } = at;
+  const { data: rows } = await caller.db.rpc("house_history", { p_house: houseId, p_limit: 40 });
+  const lines = historyItems(rows ?? []).map((item) => {
+    const who = item.actor === caller.userId ? "You" : nameOf(item.actor);
+    return `${when(item.at.toISOString())}: ${actionLine(item.kind, item.data, who, nameOf(item.subject), ctx.rules.currency, wordsFor("en", houseKind(ctx.house.kind)))}${item.undoneAt ? " (undone)" : ""}, ref ${askRef(item.id)}`;
+  });
+  return lines.join("\n") || "Nothing in History yet.";
+};
+
+const readWall = (at: Reading): HouseReads["wall"] => async () => {
+  const { caller, houseId, nameOf, when } = at;
+  const { data } = await caller.db
+    .from("events")
+    .select("id, kind, user_id, created_at, assignments(name), reactions(user_id, kind)")
+    .eq("house_id", houseId)
+    .order("created_at", { ascending: false })
+    .limit(20);
+  const lines = (data ?? []).map((e) => {
+    const john = (e.assignments as { name: string } | null)?.name;
+    const reacted = (e.reactions ?? []).map((r) => `${nameOf(r.user_id)} ${r.kind}`);
+    return `${when(e.created_at)}: ${e.user_id ? `${nameOf(e.user_id)}, ` : ""}${e.kind.replaceAll("_", " ")}${john ? ` (${john})` : ""}${reacted.length ? `; reactions: ${reacted.join(", ")}` : ""}, ref ${askRef(e.id)}`;
+  });
+  return lines.join("\n") || "Nothing on the Wall yet.";
+};
+
+const readDisputes = (at: Reading): HouseReads["disputes"] => async () => {
+  const { caller, houseId, nameOf, when } = at;
+  const { data } = await caller.db
+    .from("disputes")
+    .select("id, reason, raised_by, closes_at, assignments(name, user_id), dispute_votes(user_id, uphold)")
+    .eq("house_id", houseId)
+    .is("resolved_at", null)
+    .order("closes_at");
+  const lines = (data ?? []).map((d) => {
+    const a = d.assignments as { name: string; user_id: string } | null;
+    const votes = (d.dispute_votes ?? []).map((v) => `${nameOf(v.user_id)} ${v.uphold ? "upholds the question" : "backs the tick"}`);
+    return `${a?.name ?? "A John"} ticked by ${nameOf(a?.user_id ?? null)}, questioned by ${nameOf(d.raised_by)}: ${d.reason}. Votes close ${when(d.closes_at)}${votes.length ? `; ${votes.join(", ")}` : "; no votes yet"}, ref ${askRef(d.id)}`;
+  });
+  return lines.join("\n") || "No questioned ticks open.";
+};
+
+const readSwaps = (at: Reading): HouseReads["swaps"] => async () => {
+  const { caller, houseId, nameOf, when } = at;
+  const { data } = await caller.db
+    .from("swap_offers")
+    .select("id, asked_by, asked_user_id, expires_at, asker:assignments!swap_offers_asker_assignment_id_house_id_fkey(name), asked:assignments!swap_offers_asked_assignment_id_house_id_fkey(name)")
+    .eq("house_id", houseId)
+    .is("answer", null)
+    .order("expires_at");
+  const lines = (data ?? []).map((o) => {
+    const mine = (o.asker as { name: string } | null)?.name ?? "a John";
+    const theirs = (o.asked as { name: string } | null)?.name ?? "a John";
+    return `${nameOf(o.asked_by)} asks ${nameOf(o.asked_user_id)} to swap ${mine} for ${theirs}, until ${when(o.expires_at)}, ref ${askRef(o.id)}`;
+  });
+  return lines.join("\n") || "No swap asks waiting.";
+};
+
+const readBalances = (at: Reading): HouseReads["balances"] => async () => {
+  const { caller, houseId, nameOf, today } = at;
+  const before = addDaysTo(today, 1);
+  const [{ data }, { data: pooled }, { data: groups }] = await Promise.all([
+    caller.db.rpc("house_balances", { p_house: houseId, p_before: before }),
+    caller.db.rpc("house_group_balances", { p_house: houseId, p_before: before }),
+    caller.db.from("groups").select("id, name, group_members(user_id)").eq("house_id", houseId).order("name"),
+  ]);
+  const standing = (owed: number, credited: number) => {
+    const behind = owed - credited;
+    return `given ${Math.round(owed)} pts, done ${Math.round(credited)} pts, ${behind > 0.5 ? `${Math.round(behind)} behind` : behind < -0.5 ? `${Math.round(-behind)} ahead` : "even"}`;
+  };
+  const lines = (data ?? []).map((b) => `${nameOf(b.user_id)}: ${standing(Number(b.owed), Number(b.credited))}`);
+  if (!groups?.length) return ["Fair shares since each person joined (points they were given vs points of work they did):", ...lines].join("\n");
+  // The deal keeps each group's Johns apart: a standing per group someone
+  // is in now, and the rest of the house's (their whole balance less those).
+  const inGroup = new Map(groups.map((g) => [g.id, new Set((g.group_members ?? []).map((m) => m.user_id))]));
+  const rows = (pooled ?? []).filter((r) => inGroup.get(r.group_id)?.has(r.user_id));
+  const rest = (data ?? []).map((b) => {
+    const mine = rows.filter((r) => r.user_id === b.user_id);
+    const owed = Number(b.owed) - mine.reduce((t, r) => t + Number(r.owed), 0);
+    const credited = Number(b.credited) - mine.reduce((t, r) => t + Number(r.credited), 0);
+    return `${nameOf(b.user_id)}: ${standing(owed, credited)}`;
+  });
+  const perGroup = groups.flatMap((g) => {
+    const of = rows.filter((r) => r.group_id === g.id);
+    return of.length ? [`Group ${g.name}'s Johns, kept apart from the rest:`, ...of.map((r) => `${nameOf(r.user_id)}: ${standing(Number(r.owed), Number(r.credited))}`)] : [];
+  });
+  return [
+    "Fair shares since each person joined (points they were given vs points of work they did), all Johns:",
+    ...lines,
+    "The deal evens out each group's Johns within the group, apart from the rest of the house's. The rest of the house's Johns:",
+    ...rest,
+    ...perGroup,
+  ].join("\n");
+};
+
+const readRules = (at: Reading): HouseReads["rules"] => async () => {
+  const { ctx } = at;
+  const r = ctx.rules;
+  const money = (minor: number) => formatMoney(minor, r.currency, wordsFor("en", houseKind(ctx.house.kind)));
+  return [
+    `House: ${ctx.house.name} (${ctx.house.kind === "family" ? "a family" : "housemates"}), time zone ${r.timezone}.`,
+    `The week starts on ${DOW_LABEL[r.weekStarts]}.`,
+    `Stake each month: ${money(r.stakeMinor)}; a late John costs ${money(r.lateForfeitMinor)}, a missed one ${money(r.missedForfeitMinor)}.`,
+    `A tick can be questioned for ${r.disputeHours} hours. A John is late after its due time and missed ${r.lateHours} hours after; others may cover it ${r.coverGraceHours} hours after it's due.`,
+    `The deal is ${r.dealMode}${r.dealBudget ? `, about ${r.dealBudget} pts a person a week` : ", with no weekly limit"}.`,
+  ].join("\n");
+};
+
+const readStake = (at: Reading): HouseReads["stake"] => async () => {
+  const { caller, houseId, ctx, zone, nameOf, when } = at;
+  const r = ctx.rules;
+  if (r.stakeMinor <= 0) return "This house has no Stake: nothing costs money.";
+  const money = (minor: number) => formatMoney(minor, r.currency, wordsFor("en", houseKind(ctx.house.kind)));
+  const month = monthOf(ctx.now, zone);
+  // The whole ledger, a page at a time below the last id read, as the Stake page reads it: every balance is a sum of all of it.
+  type Entry = LedgerRow & { assignments: { name: string; outcome: string | null; due_at: string } | null };
+  const rows: Entry[] = [];
+  for (let below: number | null = null; ; ) {
+    const query = caller.db
+      .from("ledger_entries")
+      .select("id, user_id, kind, amount_minor, month, counterparty_user_id, doers, created_at, assignments(name, outcome, due_at)")
+      .eq("house_id", houseId);
+    const { data } = await (below === null ? query : query.lt("id", below)).order("id", { ascending: false }).limit(LEDGER_PAGE);
+    const got = (data ?? []) as Entry[];
+    rows.push(...got);
+    if (got.length < LEDGER_PAGE) break;
+    below = got[got.length - 1].id;
+  }
+  const closes = await caller.db.from("month_closes").select("month").eq("house_id", houseId);
+  const view = buildStake({
+    ledger: rows,
+    closedMonths: (closes.data ?? []).map((c) => c.month),
+    memberIds: ctx.people.map((p) => p.userId),
+    stakeMinor: r.stakeMinor,
+    month,
+  });
+  const forfeits = rows
+    .filter((row) => row.month === month && row.kind === "forfeit")
+    .map((row) => {
+      const john = row.assignments;
+      const to = row.counterparty_user_id ? `, goes to ${nameOf(row.counterparty_user_id)} who covered it` : "";
+      return `- ${nameOf(row.user_id)}: ${money(-row.amount_minor)} for ${john?.name ?? "a John"} (${john?.outcome ?? "forfeit"}, due ${john ? when(john.due_at) : "?"})${to}`;
+    });
+  const projection = view.projection
+    .filter((p) => p.forfeitedRaw || p.received || p.net)
+    .map(
+      (p) =>
+        `- ${nameOf(p.userId)}: forfeited ${money(p.forfeitedRaw)}${p.forfeited < p.forfeitedRaw ? ` (capped at ${money(p.forfeited)})` : ""}, gets ${money(p.received)} of others', net ${p.net >= 0 ? "+" : "−"}${money(Math.abs(p.net))}`,
+    );
+  const owed = [...view.outstanding].filter(([, v]) => v !== 0).map(([id, v]) => `- ${nameOf(id)}: ${v < 0 ? "owes" : "is owed"} ${money(Math.abs(v))}`);
+  const pay = view.transfers.map((t) => `- ${nameOf(t.from)} pays ${nameOf(t.to)} ${money(t.amount)}`);
+  return [
+    `Stake ${money(r.stakeMinor)} a month each; late ${money(r.lateForfeitMinor)}, missed ${money(r.missedForfeitMinor)}.`,
+    `This month (${month}) so far, shared out when it ends:`,
+    ...(forfeits.length ? forfeits : ["- No forfeits yet."]),
+    ...(projection.length ? ["If the month ended now:", ...projection] : []),
+    "Owed from closed months, after payments:",
+    ...(owed.length ? owed : ["- Nothing: everyone is settled."]),
+    ...(pay.length ? ["Fewest payments to settle:", ...pay] : []),
+  ].join("\n");
+};
+
+const readWhyJohn = (at: Reading): HouseReads["whyJohn"] => async (name, who) => {
+  const { caller, houseId, ctx, zone, nameOf } = at;
+  const thisWeek = weekWindow(ctx.now, zone, ctx.rules.weekStarts);
+  const wanted = name.trim().toLowerCase();
+  const whoId =
+    who === null ? null : who === "me" ? caller.userId : (ctx.people.find((p) => firstName(p.name).toLowerCase() === who.toLowerCase())?.userId ?? null);
+  for (const startsOn of [thisWeek.startsOn, addDaysTo(thisWeek.startsOn, -7)]) {
+    const { data: week } = await caller.db.from("weeks").select("id, starts_on, starts_at, ends_at").eq("house_id", houseId).eq("starts_on", startsOn).maybeSingle();
+    if (!week) continue;
+    const { data: rows } = await caller.db
+      .from("assignments")
+      .select("*, johns(every_weeks, every_months), crew:crew_members(user_id, helper, points)")
+      .eq("week_id", week.id)
+      .order("due_at");
+    const board = buildWeekBoard({
+      week,
+      assignments: rows ?? [],
+      disputes: [],
+      memberIds: ctx.people.map((p) => p.userId),
+      userId: caller.userId,
+      everDealt: true,
+      disputeHours: ctx.rules.disputeHours,
+      now: ctx.now,
+    });
+    const named = board.items.filter((i) => i.name.toLowerCase().includes(wanted));
+    const item =
+      named.find((i) => whoId !== null && i.userId === whoId) ?? (whoId === null ? (named.find((i) => i.userId === caller.userId) ?? named[0]) : undefined);
+    if (!item) continue;
+    const why = johnWhy(item, { people: ctx.people, viewerId: caller.userId, rules: ctx.rules, now: ctx.now, zone: ctx.rules.timezone, words: wordsFor("en", houseKind(ctx.house.kind)) }, jobPlaces(item, board.items));
+    return [
+      `${item.name}, week from ${startsOn}, dealt to ${nameOf(item.userId)}:`,
+      why.answer,
+      ...(why.rows.length
+        ? [
+            "How it added up (standing against their share, furthest behind first):",
+            ...why.rows.map((w) => `- ${w.name}: ${w.value}${w.meta ? ` (${w.meta})` : ""}${w.chosen ? ", dealt it" : ""}`),
+            why.key,
+          ]
+        : []),
+      why.stakes ?? "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
+  return `No John called “${name}”${who ? ` for ${who}` : ""} this week or last. The week read lists what was dealt.`;
+};
+
+const readPage = (at: Reading): HouseReads["page"] => (page) => {
+  const { ctx } = at;
+  const house = { rules: ctx.rules, family: ctx.house.kind === "family", awayMakeup: ctx.house.awayMakeup };
+  return pageMarkdown(page, { words: wordsFor("en", houseKind(ctx.house.kind)), house });
+};
+
 export function houseReads(caller: Caller, houseId: string, ctx: ReadsContext): HouseReads {
   const zone = ctx.rules.timezone;
   const nameOf = (id: string | null) =>
@@ -83,272 +376,19 @@ export function houseReads(caller: Caller, houseId: string, ctx: ReadsContext): 
     new Intl.DateTimeFormat("en-GB", { timeZone: zone, weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }).format(new Date(iso));
   const today = localDate(ctx.now, zone);
 
+  const at: Reading = { caller, houseId, ctx, zone, nameOf, when, today };
   return {
-    async week(which) {
-      const thisWeek = weekWindow(ctx.now, zone, ctx.rules.weekStarts);
-      const shift = which === "this" ? 0 : which === "last" ? -7 : 7;
-      const startsOn = addDaysTo(thisWeek.startsOn, shift);
-      const { data: week } = await caller.db
-        .from("weeks")
-        .select("id, starts_on, closed_at, skipped_at")
-        .eq("house_id", houseId)
-        .eq("starts_on", startsOn)
-        .maybeSingle();
-      if (!week) return `The week from ${startsOn} hasn't been dealt${which === "next" ? " yet: it's dealt when it starts" : ""}.`;
-      const { data: rows } = await caller.db
-        .from("assignments")
-        .select("id, name, user_id, due_at, done_at, outcome, flagged_at, excused, awaits_ok, covered_by, points, group_name")
-        .eq("week_id", week.id)
-        .order("due_at");
-      const { data: onCall } = await caller.db.from("on_call_picks").select("user_id, john_id, johns(name)").eq("week_id", week.id);
-      const state = week.skipped_at ? " (skipped: it counts for nothing)" : week.closed_at ? " (closed)" : "";
-      const lines = (rows ?? []).map(
-        (a) =>
-          `${a.name}: ${nameOf(a.user_id)}${a.covered_by ? `, covered by ${nameOf(a.covered_by)}` : ""}, due ${when(a.due_at)}, ${a.points} pts, ${status(a)}, ref ${askRef(a.id)}`,
-      );
-      for (const o of onCall ?? []) lines.push(`${(o.johns as { name: string } | null)?.name ?? "An on-call John"}: ${nameOf(o.user_id)} is on call (John ref ${askRef(o.john_id)}, to flag it)`);
-      return [`Week from ${startsOn}${state}:`, ...(lines.length ? lines : ["Nothing dealt to anyone."])].join("\n");
-    },
-
-    async people() {
-      const { data: members } = await caller.db
-        .from("members")
-        .select("user_id, role, joined_at, moving_out_on, signs_in, born_year, streak")
-        .eq("house_id", houseId)
-        .order("joined_at");
-      const family = ctx.house.kind === "family";
-      const lines = (members ?? []).map((m) => {
-        const role = family ? (m.role === "admin" ? "parent" : "kid") : m.role;
-        const extra = [
-          m.moving_out_on ? `moving out ${m.moving_out_on}` : null,
-          m.signs_in === false ? "no sign-in of their own (a parent runs it)" : null,
-          m.born_year ? `born ${m.born_year}` : null,
-          m.streak ? `streak ${m.streak}` : null,
-        ].filter(Boolean);
-        return `${nameOf(m.user_id)}${m.user_id === caller.userId ? "" : ` (${ctx.people.find((p) => p.userId === m.user_id)?.name ?? ""})`}: ${role}, joined ${m.joined_at.slice(0, 10)}${extra.length ? `, ${extra.join(", ")}` : ""}, ref ${askRef(m.user_id)}`;
-      });
-      const { data: groups } = await caller.db.from("groups").select("id, name, group_members(user_id)").eq("house_id", houseId).order("name");
-      for (const g of groups ?? []) lines.push(`Group ${g.name} (ref ${askRef(g.id)}): ${(g.group_members ?? []).map((m) => nameOf(m.user_id)).join(", ")}`);
-      return lines.join("\n") || "Nobody.";
-    },
-
-    async timeAway() {
-      const { data } = await caller.db
-        .from("away_periods")
-        .select("id, user_id, starts_on, ends_on, note")
-        .eq("house_id", houseId)
-        .gte("ends_on", addDaysTo(today, -30))
-        .order("starts_on");
-      // The person's own, from today on, carry a ref for cancel_away.
-      const ref = (a: { id: string; user_id: string; ends_on: string }) => (a.user_id === caller.userId && a.ends_on >= today ? `, ref ${a.id.slice(0, 8)}` : "");
-      const lines = (data ?? []).map((a) => `${nameOf(a.user_id)}: ${a.starts_on} to ${a.ends_on}${a.note ? ` (${a.note})` : ""}${a.starts_on <= today && a.ends_on >= today ? ", away now" : ""}${ref(a)}`);
-      return [`Today is ${today}.`, ...(lines.length ? lines : ["Nobody has time away booked."])].join("\n");
-    },
-
-    async history() {
-      const { data: rows } = await caller.db.rpc("house_history", { p_house: houseId, p_limit: 40 });
-      const lines = historyItems(rows ?? []).map((item) => {
-        const who = item.actor === caller.userId ? "You" : nameOf(item.actor);
-        return `${when(item.at.toISOString())}: ${actionLine(item.kind, item.data, who, nameOf(item.subject), ctx.rules.currency, wordsFor("en", houseKind(ctx.house.kind)))}${item.undoneAt ? " (undone)" : ""}, ref ${askRef(item.id)}`;
-      });
-      return lines.join("\n") || "Nothing in History yet.";
-    },
-
-    async wall() {
-      const { data } = await caller.db
-        .from("events")
-        .select("id, kind, user_id, created_at, assignments(name), reactions(user_id, kind)")
-        .eq("house_id", houseId)
-        .order("created_at", { ascending: false })
-        .limit(20);
-      const lines = (data ?? []).map((e) => {
-        const john = (e.assignments as { name: string } | null)?.name;
-        const reacted = (e.reactions ?? []).map((r) => `${nameOf(r.user_id)} ${r.kind}`);
-        return `${when(e.created_at)}: ${e.user_id ? `${nameOf(e.user_id)}, ` : ""}${e.kind.replaceAll("_", " ")}${john ? ` (${john})` : ""}${reacted.length ? `; reactions: ${reacted.join(", ")}` : ""}, ref ${askRef(e.id)}`;
-      });
-      return lines.join("\n") || "Nothing on the Wall yet.";
-    },
-
-    async disputes() {
-      const { data } = await caller.db
-        .from("disputes")
-        .select("id, reason, raised_by, closes_at, assignments(name, user_id), dispute_votes(user_id, uphold)")
-        .eq("house_id", houseId)
-        .is("resolved_at", null)
-        .order("closes_at");
-      const lines = (data ?? []).map((d) => {
-        const a = d.assignments as { name: string; user_id: string } | null;
-        const votes = (d.dispute_votes ?? []).map((v) => `${nameOf(v.user_id)} ${v.uphold ? "upholds the question" : "backs the tick"}`);
-        return `${a?.name ?? "A John"} ticked by ${nameOf(a?.user_id ?? null)}, questioned by ${nameOf(d.raised_by)}: ${d.reason}. Votes close ${when(d.closes_at)}${votes.length ? `; ${votes.join(", ")}` : "; no votes yet"}, ref ${askRef(d.id)}`;
-      });
-      return lines.join("\n") || "No questioned ticks open.";
-    },
-
-    async swaps() {
-      const { data } = await caller.db
-        .from("swap_offers")
-        .select("id, asked_by, asked_user_id, expires_at, asker:assignments!swap_offers_asker_assignment_id_house_id_fkey(name), asked:assignments!swap_offers_asked_assignment_id_house_id_fkey(name)")
-        .eq("house_id", houseId)
-        .is("answer", null)
-        .order("expires_at");
-      const lines = (data ?? []).map((o) => {
-        const mine = (o.asker as { name: string } | null)?.name ?? "a John";
-        const theirs = (o.asked as { name: string } | null)?.name ?? "a John";
-        return `${nameOf(o.asked_by)} asks ${nameOf(o.asked_user_id)} to swap ${mine} for ${theirs}, until ${when(o.expires_at)}, ref ${askRef(o.id)}`;
-      });
-      return lines.join("\n") || "No swap asks waiting.";
-    },
-
-    async balances() {
-      const before = addDaysTo(today, 1);
-      const [{ data }, { data: pooled }, { data: groups }] = await Promise.all([
-        caller.db.rpc("house_balances", { p_house: houseId, p_before: before }),
-        caller.db.rpc("house_group_balances", { p_house: houseId, p_before: before }),
-        caller.db.from("groups").select("id, name, group_members(user_id)").eq("house_id", houseId).order("name"),
-      ]);
-      const standing = (owed: number, credited: number) => {
-        const behind = owed - credited;
-        return `given ${Math.round(owed)} pts, done ${Math.round(credited)} pts, ${behind > 0.5 ? `${Math.round(behind)} behind` : behind < -0.5 ? `${Math.round(-behind)} ahead` : "even"}`;
-      };
-      const lines = (data ?? []).map((b) => `${nameOf(b.user_id)}: ${standing(Number(b.owed), Number(b.credited))}`);
-      if (!groups?.length) return ["Fair shares since each person joined (points they were given vs points of work they did):", ...lines].join("\n");
-      // The deal keeps each group's Johns apart: a standing per group someone
-      // is in now, and the rest of the house's (their whole balance less those).
-      const inGroup = new Map(groups.map((g) => [g.id, new Set((g.group_members ?? []).map((m) => m.user_id))]));
-      const rows = (pooled ?? []).filter((r) => inGroup.get(r.group_id)?.has(r.user_id));
-      const rest = (data ?? []).map((b) => {
-        const mine = rows.filter((r) => r.user_id === b.user_id);
-        const owed = Number(b.owed) - mine.reduce((t, r) => t + Number(r.owed), 0);
-        const credited = Number(b.credited) - mine.reduce((t, r) => t + Number(r.credited), 0);
-        return `${nameOf(b.user_id)}: ${standing(owed, credited)}`;
-      });
-      const perGroup = groups.flatMap((g) => {
-        const of = rows.filter((r) => r.group_id === g.id);
-        return of.length ? [`Group ${g.name}'s Johns, kept apart from the rest:`, ...of.map((r) => `${nameOf(r.user_id)}: ${standing(Number(r.owed), Number(r.credited))}`)] : [];
-      });
-      return [
-        "Fair shares since each person joined (points they were given vs points of work they did), all Johns:",
-        ...lines,
-        "The deal evens out each group's Johns within the group, apart from the rest of the house's. The rest of the house's Johns:",
-        ...rest,
-        ...perGroup,
-      ].join("\n");
-    },
-
-    async rules() {
-      const r = ctx.rules;
-      const money = (minor: number) => formatMoney(minor, r.currency, wordsFor("en", houseKind(ctx.house.kind)));
-      return [
-        `House: ${ctx.house.name} (${ctx.house.kind === "family" ? "a family" : "housemates"}), time zone ${r.timezone}.`,
-        `The week starts on ${DOW_LABEL[r.weekStarts]}.`,
-        `Stake each month: ${money(r.stakeMinor)}; a late John costs ${money(r.lateForfeitMinor)}, a missed one ${money(r.missedForfeitMinor)}.`,
-        `A tick can be questioned for ${r.disputeHours} hours. A John is late after its due time and missed ${r.lateHours} hours after; others may cover it ${r.coverGraceHours} hours after it's due.`,
-        `The deal is ${r.dealMode}${r.dealBudget ? `, about ${r.dealBudget} pts a person a week` : ", with no weekly limit"}.`,
-      ].join("\n");
-    },
-
-    async stake() {
-      const r = ctx.rules;
-      if (r.stakeMinor <= 0) return "This house has no Stake: nothing costs money.";
-      const money = (minor: number) => formatMoney(minor, r.currency, wordsFor("en", houseKind(ctx.house.kind)));
-      const month = monthOf(ctx.now, zone);
-      // The whole ledger, a page at a time below the last id read, as the Stake page reads it: every balance is a sum of all of it.
-      type Entry = LedgerRow & { assignments: { name: string; outcome: string | null; due_at: string } | null };
-      const rows: Entry[] = [];
-      for (let below: number | null = null; ; ) {
-        const query = caller.db
-          .from("ledger_entries")
-          .select("id, user_id, kind, amount_minor, month, counterparty_user_id, doers, created_at, assignments(name, outcome, due_at)")
-          .eq("house_id", houseId);
-        const { data } = await (below === null ? query : query.lt("id", below)).order("id", { ascending: false }).limit(LEDGER_PAGE);
-        const got = (data ?? []) as Entry[];
-        rows.push(...got);
-        if (got.length < LEDGER_PAGE) break;
-        below = got[got.length - 1].id;
-      }
-      const closes = await caller.db.from("month_closes").select("month").eq("house_id", houseId);
-      const view = buildStake({
-        ledger: rows,
-        closedMonths: (closes.data ?? []).map((c) => c.month),
-        memberIds: ctx.people.map((p) => p.userId),
-        stakeMinor: r.stakeMinor,
-        month,
-      });
-      const forfeits = rows
-        .filter((row) => row.month === month && row.kind === "forfeit")
-        .map((row) => {
-          const john = row.assignments;
-          const to = row.counterparty_user_id ? `, goes to ${nameOf(row.counterparty_user_id)} who covered it` : "";
-          return `- ${nameOf(row.user_id)}: ${money(-row.amount_minor)} for ${john?.name ?? "a John"} (${john?.outcome ?? "forfeit"}, due ${john ? when(john.due_at) : "?"})${to}`;
-        });
-      const projection = view.projection
-        .filter((p) => p.forfeitedRaw || p.received || p.net)
-        .map(
-          (p) =>
-            `- ${nameOf(p.userId)}: forfeited ${money(p.forfeitedRaw)}${p.forfeited < p.forfeitedRaw ? ` (capped at ${money(p.forfeited)})` : ""}, gets ${money(p.received)} of others', net ${p.net >= 0 ? "+" : "−"}${money(Math.abs(p.net))}`,
-        );
-      const owed = [...view.outstanding].filter(([, v]) => v !== 0).map(([id, v]) => `- ${nameOf(id)}: ${v < 0 ? "owes" : "is owed"} ${money(Math.abs(v))}`);
-      const pay = view.transfers.map((t) => `- ${nameOf(t.from)} pays ${nameOf(t.to)} ${money(t.amount)}`);
-      return [
-        `Stake ${money(r.stakeMinor)} a month each; late ${money(r.lateForfeitMinor)}, missed ${money(r.missedForfeitMinor)}.`,
-        `This month (${month}) so far, shared out when it ends:`,
-        ...(forfeits.length ? forfeits : ["- No forfeits yet."]),
-        ...(projection.length ? ["If the month ended now:", ...projection] : []),
-        "Owed from closed months, after payments:",
-        ...(owed.length ? owed : ["- Nothing: everyone is settled."]),
-        ...(pay.length ? ["Fewest payments to settle:", ...pay] : []),
-      ].join("\n");
-    },
-
-    async whyJohn(name, who) {
-      const thisWeek = weekWindow(ctx.now, zone, ctx.rules.weekStarts);
-      const wanted = name.trim().toLowerCase();
-      const whoId =
-        who === null ? null : who === "me" ? caller.userId : (ctx.people.find((p) => firstName(p.name).toLowerCase() === who.toLowerCase())?.userId ?? null);
-      for (const startsOn of [thisWeek.startsOn, addDaysTo(thisWeek.startsOn, -7)]) {
-        const { data: week } = await caller.db.from("weeks").select("id, starts_on, starts_at, ends_at").eq("house_id", houseId).eq("starts_on", startsOn).maybeSingle();
-        if (!week) continue;
-        const { data: rows } = await caller.db
-          .from("assignments")
-          .select("*, johns(every_weeks, every_months), crew:crew_members(user_id, helper, points)")
-          .eq("week_id", week.id)
-          .order("due_at");
-        const board = buildWeekBoard({
-          week,
-          assignments: rows ?? [],
-          disputes: [],
-          memberIds: ctx.people.map((p) => p.userId),
-          userId: caller.userId,
-          everDealt: true,
-          disputeHours: ctx.rules.disputeHours,
-          now: ctx.now,
-        });
-        const named = board.items.filter((i) => i.name.toLowerCase().includes(wanted));
-        const item =
-          named.find((i) => whoId !== null && i.userId === whoId) ?? (whoId === null ? (named.find((i) => i.userId === caller.userId) ?? named[0]) : undefined);
-        if (!item) continue;
-        const why = johnWhy(item, ctx.people, caller.userId, ctx.rules, ctx.now, wordsFor("en", houseKind(ctx.house.kind)), jobPlaces(item, board.items));
-        return [
-          `${item.name}, week from ${startsOn}, dealt to ${nameOf(item.userId)}:`,
-          why.answer,
-          ...(why.rows.length
-            ? [
-                "How it added up (standing against their share, furthest behind first):",
-                ...why.rows.map((w) => `- ${w.name}: ${w.value}${w.meta ? ` (${w.meta})` : ""}${w.chosen ? ", dealt it" : ""}`),
-                why.key,
-              ]
-            : []),
-          why.stakes ?? "",
-        ]
-          .filter(Boolean)
-          .join("\n");
-      }
-      return `No John called “${name}”${who ? ` for ${who}` : ""} this week or last. The week read lists what was dealt.`;
-    },
-
-    page(page) {
-      const house = { rules: ctx.rules, family: ctx.house.kind === "family", awayMakeup: ctx.house.awayMakeup };
-      return pageMarkdown(page, { words: wordsFor("en", houseKind(ctx.house.kind)), house });
-    },
+    week: readWeek(at),
+    people: readPeople(at),
+    timeAway: readTimeAway(at),
+    history: readHistory(at),
+    wall: readWall(at),
+    disputes: readDisputes(at),
+    swaps: readSwaps(at),
+    balances: readBalances(at),
+    rules: readRules(at),
+    stake: readStake(at),
+    whyJohn: readWhyJohn(at),
+    page: readPage(at),
   };
 }

@@ -2,13 +2,13 @@ import { withAlpha } from '@app/core';
 import { Link, type Href } from 'expo-router';
 import { ChevronRightIcon, type LucideIcon } from 'lucide-react-native';
 import { createContext, isValidElement, useContext, useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { Hairline, useRowInset } from '@/components/group';
 import { HazardTape } from '@/components/hazard-tape';
 import { LidBar } from '@/components/lid';
 import { Body, Meta, RowTitle } from '@/components/text';
-import { LEADING, ROW_GAP, ROW_MIN, SPACE, TABULAR, TAP, useTheme } from '@/theme';
+import { HAIR, LEADING, MARK_GAP, ROW_GAP, ROW_MIN, SPACE, TABULAR, TAP, useTheme } from '@/theme';
 
 /** A row with a meta line comes out this tall; one without, ROW_MIN. */
 const TWO_LINES = 64;
@@ -31,6 +31,58 @@ function looksLikeControl(node: ReactNode): boolean {
   if (!isValidElement<Record<string, unknown>>(node)) return false;
   const { onPress, href, onValueChange, onChange } = node.props;
   return onPress != null || href != null || onValueChange != null || onChange != null;
+}
+
+interface RowProps {
+  title: string;
+  /**
+   * The title as a sentence in Body with runs of its own (a Wall row's, its
+   * names and Johns in bold), in place of the bold title. `title` is still
+   * what it says.
+   */
+  sentence?: ReactNode;
+  /** One line under the title, truncated: a string, or Meta text with spans of its own. */
+  meta?: ReactNode;
+  /** A John's kind's colour (or, for a read that doesn't say, its category): its lid bar leads the meta line. */
+  lid?: string;
+  leading?: ReactNode;
+  /** One thing: a value (a string is set as Body), a StatusMark, or a TextButton. */
+  trailing?: ReactNode;
+  onPress?: () => void;
+  onLongPress?: () => void;
+  href?: Href;
+  /** Pushes a page: a muted chevron at the end. */
+  chevron?: boolean;
+  /** The neutral tint behind your own row (the Table's "You"); `hivis`, a faint amber, behind a Wall flag still open. */
+  tint?: boolean | 'hivis';
+  /** The 4pt hazard-tape edge of an overdue or missed John: the only coloured edge in the app. */
+  hazardEdge?: boolean;
+  /** `hazard` sets the title in hazard: a destructive row (Leave, Remove), on the card colour only. */
+  tone?: 'ink' | 'hazard';
+  disabled?: boolean;
+  /** One of several to choose from: a radio, checked and tinted when chosen. Needs `onPress`. */
+  selected?: boolean;
+  /** The one of a list that's open beside it on a laptop: on the tint with an ink edge, `aria-current`. */
+  current?: boolean;
+  /** How many lines the title may take before it's cut short: 2 for a John's name or a sentence (a Wall row). */
+  titleLines?: 1 | 2;
+  /** How many lines a meta string may take before it's cut short: 2 unless said. */
+  metaLines?: 1 | 2;
+  /**
+   * Line everything up on the first line of words rather than the row's
+   * middle: the leading slot at the top, the words' first line on its
+   * centre, and the trailing item (set to the first line's height) level
+   * with it. For a row whose words may take two lines and grow (a Wall row).
+   */
+  top?: boolean;
+  /** Fixed columns between the words and the trailing item, part of the row's press target: Week's table on a laptop. */
+  cells?: ReactNode;
+  /** `leading` is a control of its own (kept out of the row's press target). Guessed from its props when left out. */
+  leadingControl?: boolean;
+  /** `trailing` is a control of its own (a toggle, a reaction). Guessed from its props when left out. */
+  trailingControl?: boolean;
+  testID?: string;
+  accessibilityLabel?: string;
 }
 
 /**
@@ -73,56 +125,14 @@ export function Row({
   current = false,
   titleLines = 1,
   metaLines = 2,
+  top = false,
   cells,
   leadingControl,
   trailingControl,
   testID,
   accessibilityLabel,
-}: {
-  title: string;
-  /**
-   * The title as a sentence in Body with runs of its own (a Wall row's, its
-   * names and Johns in bold), in place of the bold title. `title` is still
-   * what it says.
-   */
-  sentence?: ReactNode;
-  /** One line under the title, truncated: a string, or Meta text with spans of its own. */
-  meta?: ReactNode;
-  /** A John's category: its lid bar leads the meta line. */
-  lid?: string;
-  leading?: ReactNode;
-  /** One thing: a value (a string is set as Body), a StatusMark, or a TextButton. */
-  trailing?: ReactNode;
-  onPress?: () => void;
-  onLongPress?: () => void;
-  href?: Href;
-  /** Pushes a page: a muted chevron at the end. */
-  chevron?: boolean;
-  /** The neutral tint behind your own row (the Table's "You"); `hivis`, a faint amber, behind a Wall flag still open. */
-  tint?: boolean | 'hivis';
-  /** The 4pt hazard-tape edge of an overdue or missed John: the only coloured edge in the app. */
-  hazardEdge?: boolean;
-  /** `hazard` sets the title in hazard: a destructive row (Leave, Remove), on the card colour only. */
-  tone?: 'ink' | 'hazard';
-  disabled?: boolean;
-  /** One of several to choose from: a radio, checked and tinted when chosen. Needs `onPress`. */
-  selected?: boolean;
-  /** The one of a list that's open beside it on a laptop: on the tint with an ink edge, `aria-current`. */
-  current?: boolean;
-  /** How many lines the title may take before it's cut short: 2 for a John's name or a sentence (a Wall row). */
-  titleLines?: 1 | 2;
-  /** How many lines a meta string may take before it's cut short: 2 unless said. */
-  metaLines?: 1 | 2;
-  /** Fixed columns between the words and the trailing item, part of the row's press target: Week's table on a laptop. */
-  cells?: ReactNode;
-  /** `leading` is a control of its own (kept out of the row's press target). Guessed from its props when left out. */
-  leadingControl?: boolean;
-  /** `trailing` is a control of its own (a toggle, a reaction). Guessed from its props when left out. */
-  trailingControl?: boolean;
-  testID?: string;
-  accessibilityLabel?: string;
-}) {
-  const { colors, scheme } = useTheme();
+}: RowProps) {
+  const { colors, scheme, type } = useTheme();
   const inset = useRowInset();
   const [pressed, setPressed] = useState(false);
   const pressable = onPress != null || onLongPress != null || href != null;
@@ -132,7 +142,9 @@ export function Row({
   const tinted = tint === true || selected === true || current;
 
   const leadingSlot = leading != null ? <View style={styles.leading}>{leading}</View> : null;
-  const trailingItem =
+  // On a top-lined row, how far the words' first line sits below the slot's top, to share its centre.
+  const firstLine = top ? (LEADING - (sentence != null ? type.body.lineHeight! : type.rowTitle.lineHeight!)) / 2 : 0;
+  const trailingValue =
     trailing == null ? null : typeof trailing === 'string' || typeof trailing === 'number' ? (
       <Body numberOfLines={2} style={styles.value}>
         {trailing}
@@ -140,74 +152,38 @@ export function Row({
     ) : (
       trailing
     );
+  const trailingItem = top && trailingValue != null ? <View style={{ paddingTop: firstLine }}>{trailingValue}</View> : trailingValue;
 
   const inside = (
     <>
       {leadingOutside ? null : leadingSlot}
-      <View style={styles.words}>
-        {sentence != null ? (
-          <Body numberOfLines={titleLines}>{sentence}</Body>
-        ) : (
-          <RowTitle numberOfLines={titleLines} style={tone === 'hazard' ? { color: colors.hazard } : undefined}>
-            {title}
-          </RowTitle>
-        )}
-        {hasMeta ? (
-          <View style={styles.metaLine}>
-            {/* The dot stays on the meta's first line. */}
-            {lid != null ? (
-              <View style={styles.lid}>
-                <LidBar category={lid} />
-              </View>
-            ) : null}
-            <View style={styles.metaText}>
-              {typeof meta === 'string' || typeof meta === 'number' ? <Meta numberOfLines={metaLines}>{meta}</Meta> : meta}
-            </View>
-          </View>
-        ) : null}
-      </View>
+      <RowWords title={title} sentence={sentence} meta={meta} lid={lid} tone={tone} lines={{ title: titleLines, meta: metaLines }} dropBy={firstLine} />
       {cells}
       {trailingOutside ? null : trailingItem}
       {chevron ? <ChevronRightIcon size={20} color={colors.mutedForeground} aria-hidden /> : null}
     </>
   );
 
-  let body: ReactNode;
-  if (!pressable) {
-    body = <View style={styles.target}>{inside}</View>;
-  } else {
-    const target = (
-      <Pressable
-        accessibilityRole={selected != null ? 'radio' : href != null ? 'link' : 'button'}
-        accessibilityLabel={accessibilityLabel}
-        aria-checked={selected}
-        aria-current={current || undefined}
-        aria-disabled={disabled}
-        disabled={disabled}
-        onPress={onPress}
-        onLongPress={onLongPress}
-        onPressIn={() => setPressed(true)}
-        onPressOut={() => setPressed(false)}
-        // One flat object: Link's asChild spreads the style, dropping an array.
-        style={StyleSheet.flatten([styles.target, disabled && styles.disabled])}
-      >
-        {inside}
-      </Pressable>
-    );
-    body = href != null ? (
-      <Link href={href} asChild>
-        {target}
-      </Link>
-    ) : (
-      target
-    );
-  }
+  const target = [styles.target, top && styles.topped];
+  const body = pressable ? (
+    <RowTarget
+      press={{ onPress, onLongPress, href, disabled, selected, current, accessibilityLabel }}
+      onPressed={setPressed}
+      // One flat object: Link's asChild spreads the style, dropping an array.
+      style={StyleSheet.flatten([target, disabled && styles.disabled])}
+    >
+      {inside}
+    </RowTarget>
+  ) : (
+    <View style={target}>{inside}</View>
+  );
 
   return (
     <View
       testID={testID}
       style={[
         styles.row,
+        top && styles.topped,
         { minHeight: hasMeta ? TWO_LINES : ROW_MIN, paddingHorizontal: inset },
         tinted && { backgroundColor: colors.secondary },
         tint === 'hivis' && { backgroundColor: withAlpha(colors.hivis, scheme === 'dark' ? 0.12 : 0.16) },
@@ -232,6 +208,82 @@ export function Row({
   );
 }
 
+/** A row's words: its title (or sentence) over its meta line, the lid's bar leading the meta. */
+function RowWords({
+  title,
+  sentence,
+  meta,
+  lid,
+  tone,
+  lines,
+  dropBy,
+}: Pick<RowProps, 'title' | 'sentence' | 'meta' | 'lid' | 'tone'> & { lines: { title: 1 | 2; meta: 1 | 2 }; dropBy: number }) {
+  const { colors } = useTheme();
+  const hasMeta = (meta != null && meta !== '') || lid != null;
+  return (
+    <View style={[styles.words, dropBy > 0 && { paddingTop: dropBy }]}>
+      {sentence != null ? (
+        <Body numberOfLines={lines.title}>{sentence}</Body>
+      ) : (
+        <RowTitle numberOfLines={lines.title} style={tone === 'hazard' ? { color: colors.hazard } : undefined}>
+          {title}
+        </RowTitle>
+      )}
+      {hasMeta ? (
+        <View style={styles.metaLine}>
+          {/* The dot stays on the meta's first line. */}
+          {lid != null ? (
+            <View style={styles.lid}>
+              <LidBar lid={lid} />
+            </View>
+          ) : null}
+          <View style={styles.metaText}>
+            {typeof meta === 'string' || typeof meta === 'number' ? <Meta numberOfLines={lines.meta}>{meta}</Meta> : meta}
+          </View>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+/** A row's press target: a button, a radio when it's one of several, or a link with `href`. */
+function RowTarget({
+  press,
+  onPressed,
+  style,
+  children,
+}: {
+  press: Pick<RowProps, 'onPress' | 'onLongPress' | 'href' | 'disabled' | 'selected' | 'current' | 'accessibilityLabel'>;
+  onPressed: (pressed: boolean) => void;
+  style: StyleProp<ViewStyle>;
+  children: ReactNode;
+}) {
+  const { href, selected } = press;
+  const target = (
+    <Pressable
+      accessibilityRole={selected != null ? 'radio' : href != null ? 'link' : 'button'}
+      accessibilityLabel={press.accessibilityLabel}
+      aria-checked={selected}
+      aria-current={press.current || undefined}
+      aria-disabled={press.disabled}
+      disabled={press.disabled}
+      onPress={press.onPress}
+      onLongPress={press.onLongPress}
+      onPressIn={() => onPressed(true)}
+      onPressOut={() => onPressed(false)}
+      style={style}
+    >
+      {children}
+    </Pressable>
+  );
+  if (href == null) return target;
+  return (
+    <Link href={href} asChild>
+      {target}
+    </Link>
+  );
+}
+
 /** A row's leading icon: 24pt ink, centred in the 32pt slot, silent to a screen reader. */
 export function RowIcon({ icon: Icon }: { icon: LucideIcon }) {
   const { colors } = useTheme();
@@ -251,9 +303,10 @@ const styles = StyleSheet.create({
     paddingVertical: SPACE.sm,
   },
   disabled: { opacity: 0.5 },
+  topped: { alignItems: 'flex-start' },
   leading: { width: LEADING, alignItems: 'center', justifyContent: 'center' },
-  words: { flex: 1, minWidth: 0, gap: 2 },
-  metaLine: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
+  words: { flex: 1, minWidth: 0, gap: HAIR },
+  metaLine: { flexDirection: 'row', alignItems: 'flex-start', gap: MARK_GAP },
   // As tall as Meta's line, so the dot sits in the middle of the first one.
   lid: { height: 20, justifyContent: 'center' },
   metaText: { flexShrink: 1, minWidth: 0 },

@@ -1,14 +1,15 @@
 import { monthOf } from "@app/core";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import { POST as rollCallRoute } from "@/app/api/roll-call/route";
 import { tickHouse } from "@/lib/engine/tick";
 import { adminClient, type Actor } from "@/tests/support/clients";
 import { expectDenied, expectOk, expectRule } from "@/tests/support/expect";
 import { actorFor, addJohns, deal, makeHouse, reread, thisWeek, weeksAgo, ZONE } from "@/tests/support/factories";
+import { problemOf, v1 } from "@/tests/support/v1";
+import { fromNow, rightNow } from "@/tests/support/clock";
 
 /**
- * Shared Jonz (20261102090000_shared_jonz.sql): a John done together is
+ * Shared Jonz (20270112090000_baseline.sql): a John done together is
  * dealt as one place per person on one job, ticked by a roll call that
  * says who did it, and its points are shared by everyone on it, helpers
  * included. Whoever it leaves off has a miss, and their forfeit goes to
@@ -20,7 +21,7 @@ const DAY = 24 * HOUR;
 const db = adminClient();
 
 /** Garden tidy for two, 4 pts each, dealt this week in a house of three: the two holders and the one who wasn't dealt it. */
-async function gardenTidy(week = thisWeek(), now = new Date()) {
+async function gardenTidy(week = thisWeek(), now = rightNow()) {
   const house = await makeHouse(["Ava", "Ben", "Cal"]);
   await addJohns(house.id, [{ name: "Garden tidy", points: 4, crew: 2 }], week);
   const { assignments } = await deal(house.id, week, now);
@@ -50,7 +51,7 @@ describe("dealing a John done together", () => {
   it("gives everyone home a place when it's done by everyone", async () => {
     const house = await makeHouse(["Ava", "Ben", "Cal"]);
     await addJohns(house.id, [{ name: "Big clean", points: 3, crew: 0 }], thisWeek());
-    const { assignments } = await deal(house.id, thisWeek(), new Date());
+    const { assignments } = await deal(house.id, thisWeek(), rightNow());
     expect(new Set(assignments.map((a) => a.user_id)).size).toBe(3);
     expect(new Set(assignments.map((a) => a.job_id)).size).toBe(1);
   });
@@ -109,7 +110,7 @@ describe("the roll call", () => {
   it("splits a John done by one with whoever helped: bins with a helper is 1 each", async () => {
     const house = await makeHouse(["Ava", "Ben"]);
     await addJohns(house.id, [{ name: "Bins", points: 2 }], thisWeek());
-    const { assignments } = await deal(house.id, thisWeek(), new Date());
+    const { assignments } = await deal(house.id, thisWeek(), rightNow());
     const bins = assignments[0];
     const owner = actorFor(house, bins.user_id);
     const helper = house.everyone.find((x) => x.userId !== owner.userId)!;
@@ -200,7 +201,7 @@ describe("covering a John done together", () => {
     await db.from("houses").update({ cover_grace_hours: 0 }).eq("id", house.id);
     await db
       .from("assignments")
-      .update({ due_at: new Date(Date.now() - 4 * HOUR).toISOString() })
+      .update({ due_at: fromNow(-4 * HOUR).toISOString() })
       .in("id", assignments.map((a) => a.id));
     expectRule(await ticker.db.rpc("cover_john", { p_assignment: first.id }), "tick_it_yourself");
     expectOk(await spare.db.rpc("cover_john", { p_assignment: first.id }));
@@ -217,13 +218,13 @@ describe("what the clock does with a roll call", () => {
     const { house, first, second, ticker, other, spare } = await gardenTidy(week, week.startsAt);
     const month = monthOf(new Date(first.due_at), ZONE);
     // Only this one John in the month: later weeks the clock deals have nothing in them.
-    await db.from("johns").update({ archived_at: new Date().toISOString() }).eq("house_id", house.id);
+    await db.from("johns").update({ archived_at: rightNow().toISOString() }).eq("house_id", house.id);
 
     // Tick it now, as if still inside its late window; then put the tick (and who did it) back an hour
     // before it was due.
     await db
       .from("assignments")
-      .update({ closes_at: new Date(Date.now() + DAY).toISOString() })
+      .update({ closes_at: fromNow(DAY).toISOString() })
       .in("id", [first.id, second.id]);
     expectOk(await ticker.db.rpc("roll_call", { p_assignment: first.id, p_crew: [ticker.userId, spare.userId] }));
     const back = new Date(new Date(first.due_at).getTime() - HOUR).toISOString();
@@ -251,24 +252,9 @@ describe("what the clock does with a roll call", () => {
   });
 });
 
-describe("POST /api/roll-call", () => {
-  const BASE = "http://localhost:3205/api/roll-call";
-  const savedOrigins = process.env.ALLOWED_ORIGINS;
-  beforeAll(() => {
-    process.env.ALLOWED_ORIGINS = "http://localhost:8205";
-  });
-  afterAll(() => {
-    process.env.ALLOWED_ORIGINS = savedOrigins;
-  });
-
-  async function post(body: unknown, actor?: Actor) {
-    const headers: Record<string, string> = { "content-type": "application/json", origin: "http://localhost:8205" };
-    if (actor) {
-      const { data } = await actor.db.auth.getSession();
-      headers.authorization = `Bearer ${data.session!.access_token}`;
-    }
-    return rollCallRoute(new Request(BASE, { method: "POST", headers, body: JSON.stringify(body) }));
-  }
+describe("POST /v1/assignments/{assignmentId}/roll-call", () => {
+  const post = ({ assignmentId, ...body }: { assignmentId: string; crew: string[] }, actor?: Actor) =>
+    v1(actor, `POST /v1/assignments/${assignmentId}/roll-call`, body);
 
   it("refuses a caller with no token, and asks for who did it", async () => {
     expect((await post({ assignmentId: crypto.randomUUID(), crew: [crypto.randomUUID()] })).status).toBe(401);
@@ -279,7 +265,7 @@ describe("POST /api/roll-call", () => {
   it("ticks it with who did it, and says how many", async () => {
     const { first, ticker, other } = await gardenTidy();
     const res = await post({ assignmentId: first.id, crew: [ticker.userId, other.userId] }, ticker);
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(201);
     expect(await res.json()).toEqual({ ok: true, people: 2 });
     expect((await crewOf(first.id)).map((c) => c.points)).toEqual([4, 4]);
   });
@@ -288,6 +274,6 @@ describe("POST /api/roll-call", () => {
     const { first, ticker, spare } = await gardenTidy();
     const res = await post({ assignmentId: first.id, crew: [spare.userId] }, ticker);
     expect(res.status).toBeGreaterThanOrEqual(400);
-    expect((await res.json()).error).toBeTruthy();
+    expect(await problemOf(res)).toEqual({ code: "rejected", detail: "not_in_crew" });
   });
 });

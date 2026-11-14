@@ -6,14 +6,9 @@
 import type { Sql, Tx } from "@app/server";
 import { describe, expect, it } from "vitest";
 
-import {
-  parseSelect,
-  restClient,
-  txClient,
-  type Backend,
-  type LooseDb,
-  type Meta,
-} from "@/lib/db/rest";
+import { restClient, txClient, type LooseDb } from "@/lib/db/rest";
+import type { Backend, Meta } from "@/lib/db/rest-base";
+import { parseSelect } from "@/lib/db/rest-select";
 
 const meta: Meta = {
   keys: [

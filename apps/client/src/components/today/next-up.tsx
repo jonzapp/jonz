@@ -23,8 +23,9 @@ import { StreetPlate } from '@/components/street-plate';
 import { Lead, Meta, SectionLabel } from '@/components/text';
 import { TextButton } from '@/components/text-button';
 import { useWords } from '@/hooks/use-words';
+import { useShownZone } from '@/hooks/use-zones';
 import { useTick } from '@/hooks/use-tick';
-import { INSET, NARROW, SPACE, TAP, useTheme } from '@/theme';
+import { HAIR, INSET, MARK_GAP, NARROW, SPACE, TAP, useTheme } from '@/theme';
 
 /** What the card shows beside a John: the tokens you hold that can skip or swap it. */
 export interface CantHeld {
@@ -65,6 +66,7 @@ export function NextUp({
   photos?: boolean;
 }) {
   const words = useWords();
+  const zone = useShownZone(rules.timezone, now);
   switch (state.kind) {
     case 'john':
       // Keyed by the John, so a tick under way never carries over to the next one.
@@ -84,7 +86,7 @@ export function NextUp({
     case 'clear':
       return (
         <NextUpCard
-          lead={clearUntil(state.until, rules.timezone, now, words)}
+          lead={clearUntil(state.until, zone, now, words)}
           body={state.nothingYours ? words('today.nextUp.nothingYours') : words('today.nextUp.clearBody')}
         />
       );
@@ -108,7 +110,7 @@ export function NextUp({
  * The card's shell, for the states that aren't a John: "Next up", the Lead,
  * a line under it, and a quiet way onward. No amber.
  */
-export function NextUpCard({ lead, body, children }: { lead: string; body?: string; children?: ReactNode }) {
+function NextUpCard({ lead, body, children }: { lead: string; body?: string; children?: ReactNode }) {
   const words = useWords();
   return (
     <Card testID="next-up" style={children ? styles.quietEnd : undefined}>
@@ -154,7 +156,8 @@ function NextJohn({
   const sheet = useJohnSheet();
   const tick = useTick(houseId, item.id);
   const [pressed, setPressed] = useState(false);
-  const meta = nextUpMeta(item, rules, now, words, room);
+  const zone = useShownZone(rules.timezone, now);
+  const meta = nextUpMeta(item, { rules, now, zone, words }, room);
   const offersCant = cant.immunity || cant.swap;
   // On a small phone the photo button beside Mark done is just its icon, so Mark done keeps to one line.
   const narrow = useWindowDimensions().width < NARROW;
@@ -175,10 +178,11 @@ function NextJohn({
       {/* Not a row: the meta may wrap to a second line on a narrow phone rather than lose the cost. */}
       <View style={[styles.meta, styles.underPlate]}>
         <View style={styles.mark}>
-          <LidBar category={item.category} />
+          <LidBar lid={item.kindColour ?? item.category} />
         </View>
         <Meta numberOfLines={2} style={styles.shrink} testID="next-up-meta">
-          {meta.due ? words('common.join.comma', { first: meta.kind, second: meta.due }) : meta.kind}
+          {/* A John with no kind says only when it's due. */}
+          {meta.kind && meta.due ? words('common.join.comma', { first: meta.kind, second: meta.due }) : meta.due || meta.kind}
         </Meta>
       </View>
       {meta.overdue ? (
@@ -194,7 +198,7 @@ function NextJohn({
       ) : null}
       {plannable(item, item.userId) ? (
         <View style={styles.words}>
-          <PlanIt houseId={houseId} item={item} zone={rules.timezone} now={now} bestTime={bestTime} />
+          <PlanIt houseId={houseId} item={item} zone={zone} now={now} bestTime={bestTime} />
         </View>
       ) : null}
 
@@ -282,10 +286,10 @@ const styles = StyleSheet.create({
   // A quiet text button ends the card: its own 48 target is the room below.
   quietEnd: { paddingBottom: SPACE.sm },
   // Overpass's caps sit high in their line.
-  label: { paddingTop: 2 },
+  label: { paddingTop: HAIR },
   pressed: { opacity: 0.6 },
   lead: { marginTop: SPACE.sm },
-  meta: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
+  meta: { flexDirection: 'row', alignItems: 'flex-start', gap: MARK_GAP },
   // The dot or the sign, centred on the first line of words.
   mark: { height: 20, justifyContent: 'center' },
   shrink: { flexShrink: 1 },

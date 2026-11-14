@@ -35,8 +35,13 @@ What's still to come is under "Later".
 
 - **First admin page.** `/admin` opens on it. It is a busy list
   (`docs/specs/owner-admin.md`): one search box (name, email, house, words or
-  an id's start), State (Waiting by default: new or open; New; Replied;
-  Fixed; Any) and Kind, When as "Sent", 50 at a time, newest first.
+  an id's start), State (Waiting: new or open; New; Replied; Fixed; Any)
+  and Kind, When as "Sent", 50 at a time. With no State picked it opens on
+  every report in two groups, each newest first with its count: Needs a
+  reply (waiting), then Everything else (answered: replied, fixed, or folded
+  into another), so an answered one can be followed up any time. The search
+  narrows both groups; a group with no matches is left out. Picking a State
+  shows that state as one list.
 - **One report**: beside the list on a laptop, a page of its own on a phone.
   Who sent it, their house, role and email; the conversation with
   screenshots; the details; a reply box; Mark fixed (or Open it again).
@@ -49,10 +54,10 @@ What's still to come is under "Later".
 `apps/api` sends, writes back and replies (`lib/moves/reports.ts`), each
 after the caller's own database call:
 
-- `POST /api/reports`: every owner gets a push, "Ava sent a problem".
-- `POST /api/reports/:id/messages`: the sender writes back; every owner gets
+- `send_report on /v1`: every owner gets a push, "Ava sent a problem".
+- `write_back on /v1`: the sender writes back; every owner gets
   "Ava wrote back".
-- `POST /api/reports/:id/reply`: the owner replies; the sender gets a push,
+- `owner_reply_report on /v1`: the owner replies; the sender gets a push,
   "Glyn at Jonz replied", and an email (`reportReplyEmail`) whose reply goes
   to support@jonz.app.
 
@@ -168,7 +173,7 @@ Jonz suggests what to do on each report, and asks before it acts.
   sheet. "Change it first" puts the words in the reply box. "Not this" sets
   it aside. The steps are the Inbox's own calls, so the database checks and
   the audit log are the same as by hand.
-- **As the owner.** `POST /api/reports/:id/draft` answers only the owner
+- **As the owner.** `claim_support_draft on /v1` answers only the owner
   with their code this session. Every read goes through their session, as
   the owner's Ask Jonz does: their house (`owner_house`), their other
   reports, reports like it (`owner_same_as_find`), Deletions, the Audit log

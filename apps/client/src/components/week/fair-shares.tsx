@@ -8,7 +8,7 @@ import { Group } from '@/components/group';
 import { Row } from '@/components/row';
 import { Sheet } from '@/components/sheet';
 import { Meta } from '@/components/text';
-import { INSET, SPACE, TAP, useTheme } from '@/theme';
+import { INSET, MARK_GAP, SPACE, TAP, useTheme } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
 /**
@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
     minHeight: TAP,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: MARK_GAP,
     paddingHorizontal: INSET,
   },
   pressed: { opacity: 0.6 },

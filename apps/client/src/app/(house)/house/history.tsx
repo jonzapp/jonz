@@ -1,6 +1,6 @@
 import { Redirect } from 'expo-router';
 
-/** History is on the Wall now, beside what the house did: an old link lands there, on History. */
+/** History is gone: each move's Undo is in the sheet its Wall post opens. An old link lands on the Wall. */
 export default function HistoryScreen() {
-  return <Redirect href={{ pathname: '/house/wall', params: { view: 'history' } }} />;
+  return <Redirect href="/house/wall" />;
 }

@@ -30,7 +30,7 @@ To take the whole house back to before its first deal, see
 rules' Danger zone).
 
 Every reset opens the same **reset sheet** (`components/reset-sheet.tsx`). It
-asks the server what the reset would change (`POST /api/resets` without
+asks the server what the reset would change (`reset_house on /v1` without
 `apply`) and says it in numbers before anything changes: ticks cleared per
 person, balances, the Stake, the Track record, who gets a notification, and
 how long it can be undone. The hazard button names the reset. Afterwards the
@@ -98,7 +98,7 @@ a time.
   `add_correction`, `recount_streaks`, `hand_over`, and the skipped week in
   `house_balances`.
 - `apps/api/lib/moves/resets.ts`: who may ask, what forfeits cost (rules and
-  House Pass), the re-deal, the pushes. `POST /api/resets` and Ask Jonz
+  House Pass), the re-deal, the pushes. `reset_house on /v1` and Ask Jonz
   share it.
 - `apps/api/lib/moves/ask-resets.ts`: what Jonz is told, and its fixes as
   the Resets card offers them (`components/house/resets-card.tsx`).

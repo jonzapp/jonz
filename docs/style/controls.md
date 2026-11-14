@@ -103,6 +103,29 @@
 - Forms sit in a column capped at `FORM_MAX` (520) on a laptop. (**New**)
 - A short select opens in place (`PickRow`); a radio or checkbox is a
   `ChoiceRow`. (AGENTS.md)
+- **A choice from a long list** (the house's time zone) is a row showing
+  what's set, opening a sheet: a `SearchBox`, the likely ones first under
+  Suggested, then the whole list A to Z, each row saying enough to check it
+  (a zone's offset and its time now). Typing narrows it by any word.
+  (Search by city, 14 Nov)
+- **A few quick choices side by side are a `Segmented`,** wrapped into
+  equal rows with `perRow` where the words don't fit one row; never pills
+  of our own, and the chosen one is never amber (the John editor's How
+  often, By what time and Done within, 13 Nov). A count with − and + uses
+  `IconButton`s with the outline edge.
+- **A colour is picked from dots, then any colour** (`ColourPicker`): the
+  eleven ready colours as round dots, six to a row, the twelfth the rainbow
+  dot, which opens a shade square, a hue track and the colour's code under
+  them. The chosen dot wears a ring and a tick; each dot shows as its lid
+  will in this scheme. Each has a spoken name (Brown, Sky blue), and the
+  square and track can be moved with a screen reader. (Colour picker, 14
+  Nov) *Not* named bin lids, a picker of our own design, or a full picker
+  always open: the dots are what label apps (Linear, Notion, GitHub,
+  Google Calendar) lead with.
+- **A menu opened from a control drops from it on a laptop** (from `WIDE`:
+  the "•••" and the Table's This week | October, `DropMenu`), its right edge
+  on the control's, put away by a tap anywhere else or Escape; on a phone
+  it is a sheet. (••• menu A, 13 Nov)
 - **Sign-in and password boxes work with password managers.** On the web
   each step is a real form (`SignInForm`), Enter sends it, the email box is
   `username` and a new password is `new-password` (with `passwordRules` on

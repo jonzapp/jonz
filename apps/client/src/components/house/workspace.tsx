@@ -29,6 +29,7 @@ import { AskPanelContext } from '@/hooks/use-ask-jonz';
 import {
   FONT,
   GUTTER,
+  HAIR,
   HOUSE_NAV,
   INSET,
   PANEL,
@@ -278,7 +279,7 @@ const styles = StyleSheet.create({
   page: { flex: 1, minWidth: 0 },
   nav: { width: HOUSE_NAV, borderRightWidth: StyleSheet.hairlineWidth },
   navList: { paddingVertical: GUTTER, paddingHorizontal: SPACE.sm, gap: SPACE.lg },
-  navGroup: { gap: 2 },
+  navGroup: { gap: HAIR },
   navLabel: { paddingHorizontal: SPACE.lg, paddingTop: SPACE.sm, paddingBottom: SPACE.xs },
   navItem: {
     minHeight: TAP - SPACE.xs,
@@ -302,7 +303,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   panelTitle: { flex: 1, minWidth: 0 },
-  close: { width: TAP, height: TAP, alignItems: 'center', justifyContent: 'center', borderRadius: 6 },
+  close: { width: TAP, height: TAP, alignItems: 'center', justifyContent: 'center', borderRadius: RADIUS },
   panelBody: { paddingHorizontal: GUTTER, paddingTop: GUTTER, paddingBottom: SECTION_GAP, gap: SECTION_GAP },
   panelLine: { paddingHorizontal: INSET },
 });

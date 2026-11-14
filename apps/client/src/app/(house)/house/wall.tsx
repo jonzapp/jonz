@@ -1,35 +1,31 @@
-import { dayLabel, passUnlocked, wallDays, wallFeedRow, type WallFeedRow } from '@app/core';
-import { useLocalSearchParams } from 'expo-router';
+import { dayLabel, undoForPost, UTC, wallDays, wallFeedRow, type WallFeedRow } from '@app/core';
 import { MegaphoneIcon } from 'lucide-react-native';
-import { useEffect, useState, type ReactNode } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { View } from 'react-native';
 
 import { EmptyState } from '@/components/empty-state';
 import { Fold } from '@/components/fold';
-import { HistoryList, HistoryWhose, type HistoryScene } from '@/components/house/history-list';
 import { useJohnSheet } from '@/components/john-sheet';
 import { ListFoot, nearEnd, type ListMore } from '@/components/list-foot';
-import { Pair, useSideBySide } from '@/components/page-columns';
 import { PageTitle } from '@/components/page-title';
 import { ReadFailed } from '@/components/read-state';
 import { Screen } from '@/components/screen';
 import { Section } from '@/components/section';
-import { Segmented } from '@/components/segmented';
 import { Meta } from '@/components/text';
 import { TitleBar } from '@/components/title-bar';
 import { WallEventSheet } from '@/components/wall/event-sheet';
 import { WallEventRow, WallPhoto, wallScene } from '@/components/wall/wall-row';
-import { useHistory } from '@/hooks/use-history';
+import { useUndoable } from '@/hooks/use-undoable';
+import { UndoMove } from '@/components/undo-move';
 import { useHouse } from '@/hooks/use-house';
 import { useMembership } from '@/hooks/use-membership';
 import { usePull } from '@/hooks/use-refresh';
 import { useReact, useWallFeed, wallPages } from '@/hooks/use-wall';
-import { INSET } from '@/theme';
 import { Waiting } from '@/components/waiting';
 import { WallOutline } from '@/components/page-outlines';
 import { useWords } from '@/hooks/use-words';
-
-type Shown = 'wall' | 'history';
+import { useZones } from '@/hooks/use-zones';
+import { ZoneLine } from '@/components/zone-line';
 
 /**
  * The whole Wall, pushed from House: what the house did, a day at a time,
@@ -37,12 +33,9 @@ type Shown = 'wall' | 'history';
  * foot, several misses or late ticks by one person in a row folded into one,
  * photo receipts under their ticks, and older days on request. A row about
  * this week's John opens it in the John sheet; any other opens the event in
- * full. Holding a row down shows it with all four reactions. Older days
- * load as you scroll, under the foot every long list has.
- *
- * History (once a page of its own) sits beside it on a laptop: every move,
- * with Undo while it still reaches. On a phone a switch at the top shows
- * one or the other; `?view=history` opens on History.
+ * full, with Undo while the move it records can still be undone (History's
+ * job, once a list of its own). Holding a row down shows it with all four
+ * reactions. Older days load as you scroll, under the foot every long list has.
  */
 export default function WallScreen() {
   const { session, house } = useMembership();
@@ -56,18 +49,14 @@ function WallFor({ houseId, userId }: { houseId: string; userId: string }) {
   const feed = useWallFeed(houseId, userId);
   const johnSheet = useJohnSheet();
   const { react, problem, problemAt, clear } = useReact(houseId, userId);
-  const history = useHistory(houseId);
-  const { refreshing, pull } = usePull(houseId, () => Promise.all([feed.refetch(), history.refetch()]));
+  const undoable = useUndoable(houseId);
+  const { refreshing, pull } = usePull(houseId, () => Promise.all([feed.refetch(), undoable.refetch()]));
   const [open, setOpen] = useState<string | null>(null);
-  const asked = useLocalSearchParams<{ view?: string }>().view;
-  const [shown, setShown] = useState<Shown>(asked === 'history' ? 'history' : 'wall');
-  // Whether the two sit side by side, as the page lays them out, so scrolling to the end reads more of each.
-  const [beside, setBeside] = useState(false);
-  // History: everyone's moves, or only yours.
-  const [mine, setMine] = useState(false);
 
   const { events, photos } = wallPages(feed.data?.pages ?? []);
-  const scene = view ? wallScene(view, userId, events, words, true) : null;
+  // Times and days on your own clock when it's away from the house's (Your time, said once).
+  const zones = useZones(view?.snapshot.rules.timezone ?? UTC, view?.now ?? new Date());
+  const scene = view ? wallScene(view, { userId, events, words, zone: zones.shown, clock: true }) : null;
   const rows = scene ? events.map((e) => wallFeedRow(e, scene, words)) : [];
   const openRow = open ? rows.find((r) => r.id === open) : undefined;
   if (open && feed.data && scene && !openRow) setOpen(null);
@@ -78,12 +67,8 @@ function WallFor({ houseId, userId }: { houseId: string; userId: string }) {
     load: () => void feed.fetchNextPage(),
   };
   const oldest = events[events.length - 1];
-  const historyMore: ListMore = {
-    has: history.hasNextPage,
-    busy: history.isFetchingNextPage,
-    failed: history.isFetchNextPageError,
-    load: () => void history.fetchNextPage(),
-  };
+  const openPost = openRow ? events.find((e) => e.id === openRow.id) : undefined;
+  const openUndo = openPost && undoable.data ? undoForPost(openPost, undoable.data) : null;
 
   function show(eventId: string) {
     // Another event's refusal stays with that event's row, not in this sheet.
@@ -96,9 +81,8 @@ function WallFor({ houseId, userId }: { houseId: string; userId: string }) {
       <WallEventRow
         row={row}
         problem={problemAt === row.id && open !== row.id ? problem : null}
-        onReact={(kind, on) => react(row.id, kind, on)}
         onPress={() =>
-          row.board ? johnSheet.open(row.board.assignmentId, row.board.vote ? 'vote' : undefined) : show(row.id)
+          row.board ? johnSheet.open(row.board.assignmentId, row.board.vote ? 'vote' : undefined, row.reactable ? row.id : undefined) : show(row.id)
         }
         onReactions={() => show(row.id)}
       />
@@ -127,6 +111,7 @@ function WallFor({ houseId, userId }: { houseId: string; userId: string }) {
     const days = wallDays(rows, scene.zone, scene.now, words);
     body = (
       <>
+        <ZoneLine zones={zones} now={scene.now} />
         {days.map((day) => (
           <Section key={day.date} label={day.label} right={day.sub ?? undefined} testID="wall-day">
             {day.items.map((item) =>
@@ -152,126 +137,32 @@ function WallFor({ houseId, userId }: { houseId: string; userId: string }) {
     );
   }
 
-  let historyBody;
-  if (!history.data || !view) {
-    historyBody =
-      history.isError || query.isError ? (
-        <ReadFailed
-          message={words('wall.history.unreadable')}
-          onRetry={() => {
-            if (history.isError) void history.refetch();
-            if (query.isError) void query.refetch();
-          }}
-        />
-      ) : (
-        <Waiting ready={false} label={words('wall.history.reading')} outline={<WallOutline />} />
-      );
-  } else {
-    const names = new Map(view.snapshot.members.map((m) => [m.userId, m.name]));
-    const historyScene: HistoryScene = {
-      houseId,
-      me: userId,
-      zone: view.snapshot.rules.timezone,
-      currency: view.snapshot.rules.currency,
-      kind: view.snapshot.house.kind,
-      now: view.now,
-      nameOf: (id) => (id === userId ? 'You' : ((id && names.get(id)) ?? words('wall.history.someone'))),
-      fullName: (id) => (id && names.get(id)) ?? words('wall.history.someone'),
-      locked: !passUnlocked(view.snapshot.house.pass, view.now),
-    };
-    historyBody = <HistoryList items={history.data.pages.flat()} scene={historyScene} more={historyMore} mine={mine} />;
-  }
-
-  const wallNear = nearEnd(more);
-  const historyNear = nearEnd(historyMore);
   return (
     <Screen
       bar={<TitleBar title={words('wall.page.title')} back="/house" backLabel={words('common.section.house')} />}
       refreshing={refreshing}
       onRefresh={pull}
-      onNearEnd={() => {
-        if (beside || shown === 'wall') wallNear();
-        if (beside || shown === 'history') historyNear();
-      }}
+      onNearEnd={nearEnd(more)}
       fills
       testID="wall-screen"
     >
       <PageTitle page={words('wall.page.title')} />
-      <WallAndHistory wall={body} history={historyBody} whose={<HistoryWhose mine={mine} onChange={setMine} />} shown={shown} onShow={setShown} onBeside={setBeside} />
+      {body}
       <WallEventSheet
         row={openRow ?? null}
         problem={openRow && problemAt === openRow.id ? problem : null}
         onReact={(kind, on) => openRow && react(openRow.id, kind, on)}
         onClose={() => setOpen(null)}
+        undo={
+          openUndo && view ? (
+            <UndoMove
+              key={openUndo.id}
+              item={openUndo}
+              scene={{ houseId, me: userId, currency: view.snapshot.rules.currency, nameOf: (id) => view.snapshot.members.find((m) => m.userId === id)?.name ?? words('wall.history.someone') }}
+            />
+          ) : undefined
+        }
       />
     </Screen>
   );
 }
-
-/**
- * The Wall and History: side by side on a laptop, each under its name so
- * their first days start on the same line; on a phone, a switch at the top and whichever is
- * picked. Tells the page which way it went (`onBeside`).
- */
-function WallAndHistory({
-  wall,
-  history,
-  whose,
-  shown,
-  onShow,
-  onBeside,
-}: {
-  wall: ReactNode;
-  history: ReactNode;
-  /** Everyone's moves or only yours: in History's header beside the Wall, and beside the switch on a phone. */
-  whose: ReactNode;
-  shown: Shown;
-  onShow: (shown: Shown) => void;
-  onBeside: (beside: boolean) => void;
-}) {
-  const words = useWords();
-  const beside = useSideBySide();
-  useEffect(() => onBeside(beside), [beside, onBeside]);
-  if (beside) {
-    return (
-      <Pair
-        testID="wall-pair"
-        ratio={1.25}
-        start={
-          <Section label={words('wall.page.title')} bare testID="wall-section">
-            {wall}
-          </Section>
-        }
-        end={
-          <Section label={words('wall.history.title')} right={whose} bare testID="history-section">
-            {history}
-          </Section>
-        }
-      />
-    );
-  }
-  return (
-    <>
-      <View style={styles.pick}>
-        <Segmented
-          options={[
-            { value: 'wall', label: words('wall.page.title') },
-            { value: 'history', label: words('wall.history.title') },
-          ]}
-          value={shown}
-          onChange={onShow}
-          label={words('wall.history.show')}
-          testID="wall-shows"
-        />
-        {shown === 'history' ? whose : null}
-      </View>
-      {shown === 'wall' ? wall : history}
-    </>
-  );
-}
-
-const styles = StyleSheet.create({
-  // On the leading edge, where the sections' labels start.
-  // The switch on the leading edge; History's Whose menu on the trailing one, as a section header's.
-  pick: { paddingHorizontal: INSET, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-});

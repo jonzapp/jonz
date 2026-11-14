@@ -13,13 +13,13 @@ One list of everything a person can do on Jonz, whichever way they reach it: the
   - `scope`: `house`, `app` (the admin pages) or `account`;
   - `effect`: `read` or `write`;
   - `guard`: how the database decides who may do it;
-  - `rpc`: the database function it runs (`server` when only the API's service role may call it, after the route checks);
-  - `route`: the API route in front of it;
+  - `rpc`: the database function it runs (`server` when only the API's service role may call it, after the server checks);
+  - `server`: true when it needs the server's own code after the database has decided (a push, an email, Stripe, Claude), which /v1 runs;
   - `tables`: for an operation the app does today straight on the tables (the John list, the Wall, saved chats…), which ones, read or changed as the caller under each table's rules. It has no function or route of its own; under API-only, the /v1 server runs it;
   - `screen`: a read of everything one screen shows at once (Today, the Table, Track record, the Stake), in one round trip where the app makes several today;
   - `destructive`: it can't be undone, or it reaches people (push, email, notice), so an MCP client needs the person's approval in Jonz first;
   - `additive`: a write that only adds something new, changing or removing nothing already there, so a connected app is told it isn't destructive;
-  - `entitlement`: the House Pass feature it needs once the Pass is enforced. That is a plan feature, not a permission.
+  - `entitlement`: the House Pass feature it needs. That is a plan feature, not a permission.
 - `guard` is one of:
   - `permission`: a named `resource:level`, asked with `can()` (house) or `can_app()` (admin pages);
   - `check`: a yes/no helper;
@@ -35,7 +35,7 @@ One list of everything a person can do on Jonz, whichever way they reach it: the
 - `output`: what it answers when it works, camelCase all the way down (`camelKeys` turns the database's rows into it). A refusal is an error, not an output.
 - `http`: `METHOD /v1/path`. Reads are GET, writes POST, PATCH or DELETE. A house's things live under `/v1/houses/{houseId}/…`, anything with its own id at the top (`/v1/assignments/{assignmentId}`), your own under `/v1/me/…`, the admin pages under `/v1/admin/…`.
 - `page`: a list read a page at a time takes `limit` and `startingAfter` and answers `{ data, hasMore, startingAfter }`; pass the last as `startingAfter` for the next page (`fromPage`, `pageCursor`).
-- `toRequest`: for an operation behind an API route whose request names things differently (a reset's `week`, `user`, `assignment`), the route's request from the input.
+- `toRequest`: for an operation whose server code names things differently (a reset's `week`, `user`, `assignment`), that code's request from the input.
 
 Outputs are made from `TABLE_ROWS` (`packages/core/src/table-rows.ts`): a row of each registry table, camelCase, written from the database's own description of its columns. `apps/api/tests/db/table-rows.test.ts` keeps it equal to the database; after a migration that changes a table, refresh it with `npx vitest run --project db tests/db/table-rows.test.ts -u` in `apps/api`.
 
@@ -86,7 +86,7 @@ An operation marked `destructive` (it can't be undone, or it reaches people outs
   - a function signed-in people may call isn't listed;
   - a listed function is gone;
   - a table grant (whole table or some columns, signed in or out) isn't listed.
-- `apps/api/tests/unit/operations.test.ts` fails on an API route that is in neither list, and on a table the app reads or changes (`.from('…')`) that no operation names.
+- `apps/api/tests/unit/operations.test.ts` fails on an API route that isn't in `SYSTEM_ROUTES` (people's operations are all on /v1), and on a table the app reads or changes (`.from('…')`) that no operation names.
 - `packages/core/src/ask-coverage.test.ts`: every house write is in exactly one of the card's three lists, every id a card operation takes has a ref or is filled in, no card operation needs a photo, and kept settings are columns their row has. `apps/api/tests/db/ask-card-operations.test.ts` puts moves on the card against a real house: refs become this house's ids, unchanged settings come from the row, a ref from another house or a move the person may not make is refused, and nothing is written.
 - `apps/api/tests/unit/mcp.test.ts`: one MCP tool per served operation but approving, destructive ones marked, a call reaching the executor as the caller by MCP, input checked first, a refusal as a tool error, an approval asked for in each MCP revision's way, and the sign-in challenge. `apps/api/tests/db/mcp.test.ts` runs MCP calls on two instances with their own pools against the real database: a destructive one held, approved as the person, then run from the other instance; and PostgREST refusing a connected app's token.
 - `apps/api/tests/db/house-pass-column.test.ts` is the House Pass column of the matrix, through /v1 and /mcp, with the Pass enforced: every operation the registry gates behind a Pass feature is refused with `pass_required` in a house without one (before anything is held for approval), gets through to the operation itself in a house with one, and is free without the input that turns its feature on (a tick with no photo). It also fails if a gated operation isn't served or has no case.

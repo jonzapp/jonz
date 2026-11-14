@@ -142,7 +142,7 @@ function BoardRow({
   const sheet = useJohnSheet();
   const move = useMove(houseId);
   // Planned as the kid sees it: whether it's still to do, and its line.
-  const plan = johnRow(item, item.userId, now, zone, () => kid, words);
+  const plan = johnRow(item, { viewerId: item.userId, now, zone, nameOf: () => kid, words });
   const waits = item.awaitsOk === true && item.doneAt !== null;
   const meta = waits ? words('today.board.waits') : item.needsPhoto && plan.ticks ? words('today.board.photo') : plan.meta;
   const leading =

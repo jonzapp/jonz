@@ -10,7 +10,7 @@ import { createClient, type RealtimeChannel, type SupabaseClient } from "@supaba
 // streams this instance has open for that house.
 
 /** How many channels houses are spread across (public.live_topic). */
-export const LIVE_SHARDS = 16;
+const LIVE_SHARDS = 16;
 
 export interface LiveChange {
   house: string;

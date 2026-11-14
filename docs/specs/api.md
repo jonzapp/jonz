@@ -195,8 +195,8 @@ Migration `20261219090000_api_layer.sql` sets up the following:
     Supabase's answer back, redirects and all. With `SUPABASE_SECRET_KEY`
     and IP Address Forwarding on, Supabase limits each person by their own
     address (`Sb-Forwarded-For`); without, everyone shares the API's. The
-    app switches with `EXPO_PUBLIC_AUTH_THROUGH_API=1` (the e2e run with it
-    on) and keeps the session under Supabase's own name, so nobody is signed
+    app has signed in this way since 9 Nov 2026 (the switch that turned it
+    on is gone) and keeps the session under Supabase's own name, so nobody is signed
     out. Google and Microsoft still send the browser back to Supabase's own
     callback, which is Supabase talking to them, not the app. MCP's sign-in
     metadata still names Supabase's address for third-party clients.
@@ -223,11 +223,10 @@ Migration `20261219090000_api_layer.sql` sets up the following:
     280 s. Each `change` only says the house changed; the app reads it
     again through /v1. `lib/live` keeps one Realtime connection per
     instance.
-  - App side built, off until the check below: with
-    `EXPO_PUBLIC_LIVE_THROUGH_API=1` the app reads that stream
+  - App side, on since 9 Nov 2026 once the check below passed (the
+    switch that turned it on is gone): the app reads that stream
     (`apps/client/src/api/live-stream.ts`, over XMLHttpRequest so it can
-    send the token on the web and on a phone) instead of Supabase
-    Realtime. The e2e runs with it on.
+    send the token on the web and on a phone), not Supabase Realtime.
   - **Before the app switches,** a test times a tick reaching another
     phone, today's Supabase Realtime against the new path (median and
     95th percentile). It switches only if the new path is within about

@@ -13,8 +13,9 @@ import * as Clipboard from 'expo-clipboard';
 import { loadTable } from '@/api/table';
 import HouseScreen from '@/app/(house)/house';
 import { HouseWorkspace } from '@/components/house/workspace';
-import { assignment, snapshot } from '@/testing/house';
+import { assignment, snapshot, KINDS } from '@/testing/house';
 import { renderPages, untilRead } from '@/testing/pages';
+import { NOW } from '@/testing/clock';
 
 const words = wordsFor('en', 'housemates');
 
@@ -121,7 +122,7 @@ beforeEach(() => {
     snapshot({
       members,
       assignments: [
-        assignment({ id: 'a1', done_at: new Date(Date.now() - 3_600_000).toISOString(), points: 3 }),
+        assignment({ id: 'a1', done_at: new Date(NOW.getTime() - 3_600_000).toISOString(), points: 3 }),
         assignment({ id: 'a2', user_id: 'sam', points: 5 }),
       ],
     }),
@@ -141,6 +142,7 @@ beforeEach(() => {
   (loadStake as jest.Mock).mockResolvedValue(OWED_TO_YOU);
   (loadAway as jest.Mock).mockResolvedValue({ today: '2026-10-26', periods: [] });
   (loadJohnList as jest.Mock).mockResolvedValue({
+    kinds: KINDS,
     johns: [
       { points: 3, everyWeeks: 1 },
       { points: 2, everyWeeks: 2 },
@@ -190,7 +192,7 @@ it('is two halves under a switch on a phone: the Overview, then the setup and th
 
 it('shows where the house stands on the House Pass, with the way to its page', async () => {
   await open();
-  // The Pass isn't enforced yet, so every house keeps the money and the Table.
+  // This house has the Pass, so it keeps the money and the Table.
   expect(screen.getByTestId('house-figures')).toBeOnTheScreen();
   await showSetup();
   const row = screen.getByTestId('to-pass');
@@ -390,7 +392,7 @@ describe('the Table', () => {
     (loadTable as jest.Mock).mockRejectedValue(new Error('offline'));
     await open();
     // With no Table read, the menu offers this month on the house's clock, whenever the test runs.
-    await showSpan(monthWord(monthOf(new Date(), 'Europe/London'), words));
+    await showSpan(monthWord(monthOf(new Date(NOW), 'Europe/London'), words));
     expect(screen.getByRole('alert')).toHaveTextContent(words('house.page.tableUnreadable'));
   });
 

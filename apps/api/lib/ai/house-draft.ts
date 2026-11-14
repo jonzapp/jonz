@@ -36,8 +36,7 @@ import type { HouseReads } from "@/lib/moves/ask-reads";
 // runs through the shared loop in agent.ts, through Vercel's AI Gateway: on
 // Vercel it signs in with the project's OIDC token, so there is no key to keep.
 
-export const DRAFT_MODEL = AGENT_MODEL;
-export { STEPS_MAX } from "@/lib/ai/agent";
+const DRAFT_MODEL = AGENT_MODEL;
 
 /** A John's fields as Claude writes them. Loose on purpose: ranges are core's to enforce (tidyDraft). */
 const JohnFields = {
@@ -66,7 +65,7 @@ const ResetInput = z.object({
   week: z.enum(["this", "last"]).nullable(),
   month: z.enum(["this", "last"]).nullable(),
 });
-export type ResetInput = z.infer<typeof ResetInput>;
+type ResetInput = z.infer<typeof ResetInput>;
 
 /** What Claude can do this turn, already narrowed to what the person may do. */
 export interface JonzTools {
@@ -105,8 +104,10 @@ export interface DraftContext {
   today: string;
   /** What the person may do, in plain words (PERMISSIONS). */
   allowed: string[];
-  /** The chat so far, oldest first, ending with what the person just said. */
+  /** The chat so far, oldest first, ending with what the person just said: its latest messages when it's long. */
   messages: readonly ChatMessage[];
+  /** Jonz's summary of the chat before `messages`, when it's long; null otherwise. */
+  earlier?: string | null;
   /** Whether the house has a John list already. */
   editing: boolean;
   /** The last two weeks and what can be undone, in words with refs, when the person can reset; null otherwise. */
@@ -132,6 +133,7 @@ Your tools:
 
 Changing the John list:
 - Change only what they ask for. Use change_john with only the fields that change; use the ref from list_johns. Use remove_john to take one off. To change many (or the whole list), make one call per John.
+- Kinds (Kitchen, Garden…) sort the list and give each John its lid colour; they change nothing in the deal, and they aren't groups. list_johns ends with the house's kinds, in order, with their refs. save_kind makes one (kindId null) or renames or recolours one (colour as #rrggbb); order_kinds puts them all in a new order; delete_kind deletes any kind, its Johns moving to moveToId, or else left with no kind until someone gives them one.
 ${JOHN_LIST_ADVICE}
 
 Fixing mistakes (resets, only when house_now is given):
@@ -160,7 +162,10 @@ function chatMessages(ctx: DraftContext): { role: "user" | "assistant"; content:
     `The house's week starts on ${DOW_LABEL[ctx.weekStarts]}.`,
     ctx.editing ? "The house has a John list: list_johns shows it." : "The house is new: its John list is empty, so you're helping set it up.",
     `${ctx.me.name} may: ${ctx.allowed.join("; ")}.`,
-  ].join("\n");
+    ctx.earlier ? `This chat started earlier; your notes on it so far:\n${ctx.earlier}` : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
   // The chat starts with what the person said; Jonz's greeting is the app's, not part of it.
   const first = ctx.messages.findIndex((m) => m.role === "user");
   const chat = ctx.messages.slice(first).map((m) => ({ role: m.role, content: m.text }));
@@ -172,10 +177,9 @@ function chatMessages(ctx: DraftContext): { role: "user" | "assistant"; content:
   return chat;
 }
 
-/** The tools Claude gets this turn: every read, and the writes this person may make. */
-export function jonzToolSet(t: JonzTools): ToolSet {
-  const said = (r: EditResult) => r.said;
-  const set: ToolSet = {
+/** The reads that are a plain list: the John list, a week, people, time away, history, balances and the Stake. */
+function listTools(t: JonzTools): ToolSet {
+  return {
     list_johns: tool({
       description: "The house's John list as it stands in this chat, with each John's ref and every field.",
       inputSchema: z.object({}),
@@ -211,6 +215,12 @@ export function jonzToolSet(t: JonzTools): ToolSet {
       inputSchema: z.object({}),
       execute: async () => t.reads.stake(),
     }),
+  };
+}
+
+/** The reads that explain or wait on someone: why a John went where it did, the Wall, disputes, swaps and the rules. */
+function lookTools(t: JonzTools): ToolSet {
+  return {
     why_john: tool({
       description: "Why the deal gave a John to whom it did, this week or last: the reason, each person's standing against their share that it weighed, and what slipping it would cost. The same as the John sheet's Why?.",
       inputSchema: z.object({
@@ -241,6 +251,12 @@ export function jonzToolSet(t: JonzTools): ToolSet {
       execute: async () => t.reads.rules(),
     }),
   };
+}
+
+/** The tools that put something on the card: only the ones this person may use. */
+function cardTools(t: JonzTools): ToolSet {
+  const said = (r: EditResult) => r.said;
+  const set: ToolSet = {};
   if (t.may.add) {
     set.add_john = tool({
       description: "Propose a new John for the list. Shown on the card under Adding.",
@@ -296,6 +312,11 @@ export function jonzToolSet(t: JonzTools): ToolSet {
     });
   }
   return set;
+}
+
+/** The tools Claude gets this turn: every read, and the writes this person may make. */
+export function jonzToolSet(t: JonzTools): ToolSet {
+  return { ...listTools(t), ...lookTools(t), ...cardTools(t) };
 }
 
 /** Whether Claude is set up here (agent.ts); without it the chat answers with starter lists. */

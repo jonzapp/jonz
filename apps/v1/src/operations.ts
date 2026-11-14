@@ -4,9 +4,9 @@
 // written by hand, so /v1, MCP and Ask Jonz can't disagree on an operation.
 //
 // Served: every operation that runs a database function alone, and every
-// operation that needs the server (`rpc.server`, no database function, or an
-// /api route that tells people afterwards), once its host hands in a handler
-// for it (`withHandlers`). apps/api does, with the moves its routes run.
+// operation that needs the server (`rpc.server`, no database function, or
+// `server`: it tells people afterwards, say), once its host hands in a
+// handler for it (`withHandlers`). apps/api does (lib/v1/handlers.ts).
 //
 // An operation, once served, only gains optional inputs and new output
 // fields; anything else is /v2 (CI's oasdiff step refuses it).
@@ -35,12 +35,12 @@ export function apiOperation(name: OperationName): ApiOperation {
 const NAMES = Object.keys(OPERATIONS) as OperationName[];
 /**
  * Whether an operation needs its host's handler: its logic is TypeScript, or
- * it has an /api route that tells people after its database function (a
- * push, an email, Stripe), which /v1 and MCP must send too.
+ * it tells people after its database function (a push, an email, Stripe),
+ * which /v1 and MCP must send too.
  */
 const runsOnServer = (name: OperationName) => {
   const op = OPERATIONS[name] as Operation;
-  return !op.rpc || !!op.rpc.server || !!op.route;
+  return !op.rpc || !!op.rpc.server || !!op.server;
 };
 
 /** Operations served by their database function alone. */

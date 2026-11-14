@@ -1,4 +1,4 @@
-import { AWAY_MAKEUP, checkRules, makeupHint, phoneZoneLine, type Words, familyHides, CURRENCIES, COVER_GRACE_HOURS, LATE_HOURS, CURRENCY_SYMBOL, DISPUTE_HOURS, dayChoices, MAKEUP_LABEL, rulesChanged, rulesDraft, rulesRefusalField, SETTLE_IN, DEAL_MODES, type Currency, type HouseKind, type HouseRules, type IsoDow, type RulesDraft, type RulesField, type SettleIn } from '@app/core';
+import { AWAY_MAKEUP, checkRules, makeupHint, type Words, familyHides, CURRENCIES, COVER_GRACE_HOURS, LATE_HOURS, CURRENCY_SYMBOL, DISPUTE_HOURS, dayChoices, MAKEUP_LABEL, rulesChanged, rulesDraft, rulesRefusalField, SETTLE_IN, DEAL_MODES, type Currency, type HouseKind, type HouseRules, type RulesDraft, type RulesField, type SettleIn } from '@app/core';
 import { useState } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
@@ -9,13 +9,12 @@ import { Field } from '@/components/field';
 import { GroupItem } from '@/components/group';
 import { useContentWidth } from '@/components/screen';
 import { Section } from '@/components/section';
+import { ZoneField } from '@/components/house/zone-picker';
 import { PickRow } from '@/components/setup/pick-row';
 import { Meta } from '@/components/text';
-import { TextButton } from '@/components/text-button';
 import { ButtonRow } from '@/components/button-row';
 import { useBudgetChoices } from '@/hooks/use-budget';
 import { useMove } from '@/hooks/use-move';
-import { deviceTimeZone } from '@/locale';
 import { GUTTER, INSET, LABEL_GAP, SPACE, useTheme, WIDE } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
@@ -113,130 +112,163 @@ export type RulesFormState = ReturnType<typeof useRulesForm>;
  * pinned under that.
  */
 export function RulesForm({ form }: { form: RulesFormState }) {
+  return (
+    <>
+      <WorkloadRules form={form} />
+      <MoneyRules form={form} />
+      <FairnessRules form={form} />
+      <HouseFields form={form} />
+    </>
+  );
+}
+
+/** How the week is dealt: the mode and the weekly budget, with what each means under them. */
+function WorkloadRules({ form }: { form: RulesFormState }) {
   const words = useWords();
-  const { draft: v, set, problems, pending } = form;
-  const phoneZone = deviceTimeZone();
-  const symbol = CURRENCY_SYMBOL[v.currency];
+  const { draft: v, set, pending } = form;
   const budget = useBudgetChoices(form.houseId, form.memberIds, v.dealMode);
   const budgetOptions = budget
     ? budget.choices.map((c) => ({ value: c.budget, label: c.label, meta: c.suggested ? `${words('week.steady.suggested')} ${c.effect}` : c.effect }))
     : budgetPlain(words);
+  return (
+    <View style={styles.noted}>
+      <Section label={words('week.steady.workload')} testID="rules-workload">
+        <PickRow
+          label={words('week.steady.mode')}
+          options={modeOptions(words)}
+          value={v.dealMode}
+          onChange={(dealMode) => set({ dealMode })}
+          disabled={pending}
+          testID="rules-mode"
+        />
+        <PickRow
+          label={words('week.steady.budget')}
+          options={budgetOptions}
+          value={v.dealBudget}
+          onChange={(dealBudget) => set({ dealBudget })}
+          disabled={pending}
+          testID="rules-budget"
+        />
+      </Section>
+      <Meta style={styles.note} testID="rules-workload-note">
+        {[words('week.steady.modeFoot'), words('week.steady.budgetFoot'), budget?.tooLong ? words('week.steady.tooLong', { need: budget.need }) : null].filter(Boolean).join(' ')}
+      </Meta>
+    </View>
+  );
+}
 
+/** The money: the currency, then a house's stake and what lateness costs, or a family's pocket money cap. */
+function MoneyRules({ form }: { form: RulesFormState }) {
+  const words = useWords();
+  const { draft: v, set, problems, pending } = form;
+  const symbol = CURRENCY_SYMBOL[v.currency];
   const noStake = familyHides(form.kind).stake;
-  // A family has no vote, so no window to dispute in: a kid's tick waits for a parent's OK.
-  const noVote = familyHides(form.kind).vote;
   const money = [
     { key: 'stake', label: words('house.rules.stake', { symbol }), testID: 'house-stake' },
     { key: 'late', label: words('house.rules.late', { symbol }), testID: 'house-late' },
     { key: 'missed', label: words('house.rules.missed', { symbol }), testID: 'house-missed' },
   ] as const;
   const moneyFields = noStake ? [] : money;
-
   return (
-    <>
-      <View style={styles.noted}>
-        <Section label={words('week.steady.workload')} testID="rules-workload">
-          <PickRow
-            label={words('week.steady.mode')}
-            options={modeOptions(words)}
-            value={v.dealMode}
-            onChange={(dealMode) => set({ dealMode })}
-            disabled={pending}
-            testID="rules-mode"
+    <Section label={words('house.setup.money')} testID="rules-money">
+      <PickRow
+        label={words('house.rules.currency')}
+        options={CURRENCY_OPTIONS}
+        value={v.currency}
+        onChange={(currency: Currency) => set({ currency })}
+        disabled={pending}
+      />
+      {moneyFields.map((m) => (
+        <GroupItem key={m.key}>
+          <Field
+            label={m.label}
+            value={v[m.key]}
+            onChangeText={(text) => set({ [m.key]: text })}
+            keyboardType="decimal-pad"
+            editable={!pending}
+            problem={problems[m.key]}
+            testID={m.testID}
           />
-          <PickRow
-            label={words('week.steady.budget')}
-            options={budgetOptions}
-            value={v.dealBudget}
-            onChange={(dealBudget) => set({ dealBudget })}
-            disabled={pending}
-            testID="rules-budget"
+        </GroupItem>
+      ))}
+      {noStake && v.pocket !== undefined ? (
+        <GroupItem>
+          <Field
+            label={`${words('house.pocket.capField')} (${symbol})`}
+            value={v.pocket}
+            onChangeText={(pocket) => set({ pocket })}
+            keyboardType="decimal-pad"
+            hint={words('house.pocket.capFieldMeta')}
+            editable={!pending}
+            problem={problems.pocket}
+            testID="house-pocket"
           />
-        </Section>
-        <Meta style={styles.note} testID="rules-workload-note">
-          {[words('week.steady.modeFoot'), words('week.steady.budgetFoot'), budget?.tooLong ? words('week.steady.tooLong', { need: budget.need }) : null].filter(Boolean).join(' ')}
-        </Meta>
-      </View>
-      <Section label={words('house.setup.money')} testID="rules-money">
+        </GroupItem>
+      ) : null}
+      {noStake ? null : (
         <PickRow
-          label={words('house.rules.currency')}
-          options={CURRENCY_OPTIONS}
-          value={v.currency}
-          onChange={(currency: Currency) => set({ currency })}
+          label={words('house.rules.settleIn')}
+          options={settleOptions(words)}
+          value={v.settleIn}
+          onChange={(settleIn: SettleIn) => set({ settleIn })}
           disabled={pending}
         />
-        {moneyFields.map((m) => (
-          <GroupItem key={m.key}>
-            <Field
-              label={m.label}
-              value={v[m.key]}
-              onChangeText={(text) => set({ [m.key]: text })}
-              keyboardType="decimal-pad"
-              editable={!pending}
-              problem={problems[m.key]}
-              testID={m.testID}
-            />
-          </GroupItem>
-        ))}
-        {noStake && v.pocket !== undefined ? (
-          <GroupItem>
-            <Field
-              label={`${words('house.pocket.capField')} (${symbol})`}
-              value={v.pocket}
-              onChangeText={(pocket) => set({ pocket })}
-              keyboardType="decimal-pad"
-              hint={words('house.pocket.capFieldMeta')}
-              editable={!pending}
-              problem={problems.pocket}
-              testID="house-pocket"
-            />
-          </GroupItem>
-        ) : null}
-        {noStake ? null : (
+      )}
+    </Section>
+  );
+}
+
+/** The windows: to question a tick, to be late, to cover, and how time away is made up. */
+function FairnessRules({ form }: { form: RulesFormState }) {
+  const words = useWords();
+  const { draft: v, set, pending } = form;
+  // A family has no vote, so no window to dispute in: a kid's tick waits for a parent's OK.
+  const noVote = familyHides(form.kind).vote;
+  return (
+    <View style={styles.noted}>
+      <Section label={words('house.setup.fairness')} testID="rules-fairness">
+        {noVote ? null : (
           <PickRow
-            label={words('house.rules.settleIn')}
-            options={settleOptions(words)}
-            value={v.settleIn}
-            onChange={(settleIn: SettleIn) => set({ settleIn })}
+            label={words('house.setup.disputes')}
+            options={disputeOptions(words)}
+            value={v.disputeHours}
+            onChange={(disputeHours) => set({ disputeHours })}
             disabled={pending}
           />
         )}
+        <PickRow
+          label={words('house.setup.lateWindow')}
+          options={lateOptions(words)}
+          value={v.lateHours}
+          onChange={(lateHours) => set({ lateHours })}
+          disabled={pending}
+        />
+        <PickRow
+          label={words('house.setup.cover')}
+          options={coverOptions(words)}
+          value={v.coverGraceHours}
+          onChange={(coverGraceHours) => set({ coverGraceHours })}
+          disabled={pending}
+        />
+        <PickRow
+          label={words('house.setup.away')}
+          options={MAKEUP_OPTIONS}
+          value={v.awayMakeup}
+          onChange={(awayMakeup) => set({ awayMakeup })}
+          disabled={pending}
+        />
       </Section>
-      <View style={styles.noted}>
-        <Section label={words('house.setup.fairness')} testID="rules-fairness">
-          {noVote ? null : (
-            <PickRow
-              label={words('house.setup.disputes')}
-              options={disputeOptions(words)}
-              value={v.disputeHours}
-              onChange={(disputeHours) => set({ disputeHours })}
-              disabled={pending}
-            />
-          )}
-          <PickRow
-            label={words('house.setup.lateWindow')}
-            options={lateOptions(words)}
-            value={v.lateHours}
-            onChange={(lateHours) => set({ lateHours })}
-            disabled={pending}
-          />
-          <PickRow
-            label={words('house.setup.cover')}
-            options={coverOptions(words)}
-            value={v.coverGraceHours}
-            onChange={(coverGraceHours) => set({ coverGraceHours })}
-            disabled={pending}
-          />
-          <PickRow
-            label={words('house.setup.away')}
-            options={MAKEUP_OPTIONS}
-            value={v.awayMakeup}
-            onChange={(awayMakeup) => set({ awayMakeup })}
-            disabled={pending}
-          />
-        </Section>
-        <Meta style={styles.note}>{words('common.join.then', { first: words('house.rules.awayNote'), second: makeupHint(v.awayMakeup, words) })}</Meta>
-      </View>
+      <Meta style={styles.note}>{words('common.join.then', { first: words('house.rules.awayNote'), second: makeupHint(v.awayMakeup, words) })}</Meta>
+    </View>
+  );
+}
+
+/** The house itself: its name, the day its week starts and its time zone, which every week and due time follows. */
+function HouseFields({ form }: { form: RulesFormState }) {
+  const words = useWords();
+  const { draft: v, set, problems, pending } = form;
+  return (
+    <View style={styles.noted}>
       <Section label={words('house.setup.house')} testID="rules-house">
         <GroupItem>
           <Field
@@ -256,24 +288,10 @@ export function RulesForm({ form }: { form: RulesFormState }) {
           onChange={(weekStarts) => set({ weekStarts })}
           disabled={pending}
         />
-        <GroupItem>
-          <Field
-            label={words('house.rules.timezone')}
-            value={v.timezone}
-            onChangeText={(timezone) => set({ timezone })}
-            autoCapitalize="none"
-            autoCorrect={false}
-            hint={words('house.rules.timezoneHint')}
-            editable={!pending}
-            problem={problems.timezone}
-            testID="rules-timezone"
-          />
-          {phoneZone !== v.timezone ? (
-            <TextButton label={phoneZoneLine(phoneZone, words)} align="start" onPress={() => set({ timezone: phoneZone })} />
-          ) : null}
-        </GroupItem>
+        <ZoneField value={v.timezone} onChange={(timezone) => set({ timezone })} disabled={pending} problem={problems.timezone} />
       </Section>
-    </>
+      <Meta style={styles.note}>{words('house.rules.timezoneHint')}</Meta>
+    </View>
   );
 }
 

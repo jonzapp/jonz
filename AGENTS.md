@@ -52,6 +52,7 @@ npm ci                           # install everything, exactly as the lockfile s
 npm run dev                      # the web app on http://localhost:3205
 npm run dev:client               # the Expo app: Metro on 8205
 npm run typecheck && npm run lint && npm test
+npm run code:standards           # the clean code rules (docs/standards/code.md)
 npm run db:start                 # local Supabase on 54340–54344 (needs Docker)
 npm run test:db                  # RLS, the housemate functions and the engine
 npm run build && npm run test:e2e
@@ -104,7 +105,7 @@ the glossary in `docs/style/words.md`, guarded by
 
 **New words go in the words files** (`packages/core/src/locales/en/*.json`,
 ICU messages read with `useWords()` in the app, `wordsFor(language, kind)`
-elsewhere), not in `copy.ts` or typed into a screen. A line that names
+elsewhere), not typed into a screen. A line that names
 housemates or admins gets a whole family sentence:
 `{kind, select, family {…} other {…}}`. See `docs/specs/translation.md`.
 
@@ -136,6 +137,16 @@ a design option, the PR that builds it updates the rule and adds a line to
 `docs/style/decisions.md`. For design options for Glyn,
 see "Design options for Glyn" in the `house-style` skill.
 
+## Code standards
+
+**Before a refactor, a new file or a long function, read
+`docs/standards/code.md`**: the 12 clean code rules (one home for each rule,
+no dead code, files under 500 lines, functions under 60, at most 3
+arguments, no import circles, no real clock in tests). `npm run
+code:standards` checks them and CI fails a PR that breaks one. Old breaks
+are listed in `scripts/ci/code-standards-exceptions.json`; never add to
+that list to get a feature through, split the function instead.
+
 ## Rules live in the lowest layer that can hold them
 
 - **Pure, unit-tested, no clock** (`packages/core/src`, imported as
@@ -149,10 +160,9 @@ see "Design options for Glyn" in the `house-style` skill.
   app reads),
   `wall.ts` (the Wall's events in words, and their reactions),
   `proof.ts` (a photo receipt's size and bucket path), `money.ts`,
-  `format.ts`, `domain.ts` (the shared words), `copy.ts` (both apps'
-  sentences), `schemas.ts` (what crosses the API), `errors.ts`,
+  `format.ts`, `domain.ts` (the shared words), `schemas.ts` (what crosses the API), `errors.ts`,
   `auth-paths.ts`. Every function takes `now`.
-- **The engine** (`apps/api/lib/engine/tick.ts`): decides with those rules
+- **The engine** (`apps/api/lib/engine/`, `tick.ts` runs each part in turn): decides with those rules
   and applies each decision through one service-role SQL function that is
   atomic and refuses to apply twice (`deal_week`, `settle_assignments`,
   `resolve_dispute`, `close_week`, `close_month`). It takes the client and
@@ -169,7 +179,7 @@ see "Design options for Glyn" in the `house-style` skill.
   `save_group`, `delete_group`, `set_away`, `cancel_away`, `raise_flag`,
   `hand_over`, and `undo_action` / `undo_latest` for Undo
   (`docs/specs/undo-history.md`); an admin's resets go through
-  `POST /api/resets` to the service-role-only `admin_reset`
+  `reset_house on /v1` to the service-role-only `admin_reset`
   (`docs/specs/admin-resets.md`);
   a notification's buttons reach `mark_done` and `cast_vote` through the
   service-role-only `push_action`; the owner's admin pages write through
@@ -186,8 +196,7 @@ see "Design options for Glyn" in the `house-style` skill.
 - **Who can do what** is one list: `PERMISSIONS` and `ROLE_PERMISSIONS` in
   `packages/core/src/permissions.ts`, and the same rows in the
   `permissions` / `role_permissions` tables
-  (`supabase/migrations/20261118090000_permissions.sql`, renamed in
-  `20261216090000_permission_names.sql`). Permissions are named
+  (`supabase/migrations/20270112090000_baseline.sql`). Permissions are named
   `resource:level` like Stripe's: `johns:write`, `ticks:write_own`,
   `house:read` (docs/standards/database.md rule 26). Every table rule
   and move asks `public.can(house, 'johns:write')` (the server asks about
@@ -357,6 +366,9 @@ at `<house>/<assignment>/<file>`.
 - Migrations must stay additive once anything is deployed, because Vercel
   and Supabase deploy independently (a rename follows the steps in
   `docs/standards/database.md`). Applied migrations are never edited.
+  Everything up to 12 January 2027 is one file,
+  `supabase/migrations/20270112090000_baseline.sql`; new migrations come
+  after it.
 - Every table gets Row Level Security policies in the same migration that
   creates it, and its grants stated for every role, `service_role` included.
   A new function must revoke EXECUTE from `public, anon, authenticated` and
@@ -397,7 +409,7 @@ at `<house>/<assignment>/<file>`.
 - When a bug is fixed, add a test that would have caught it.
 - The deal's rules are checked by deliberate breaks too: `npm run breaks -w
   @app/core` breaks one rule at a time and the tests must fail on each. Run
-  it after changing `steady.ts`, `steady-run.ts` or `repeat.ts`, and add a
+  it after changing `steady.ts`, `steady-days.ts`, `steady-run.ts` or `repeat.ts`, and add a
   break for any new rule.
 
 ## Hosting and deploys

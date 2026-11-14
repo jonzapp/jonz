@@ -9,7 +9,7 @@ export type SendEmail = typeof sendEmail;
 
 /** The bucket profile photos are kept in, each account's under its own id. */
 const PHOTOS = "avatars";
-/** Screenshots sent with reports (20261112090000_reports.sql): the database clears their paths, this the files. */
+/** Screenshots sent with reports (20270112090000_baseline.sql): the database clears their paths, this the files. */
 const SHOTS = "report-shots";
 
 /** What one turn of the clock did with accounts being deleted. */

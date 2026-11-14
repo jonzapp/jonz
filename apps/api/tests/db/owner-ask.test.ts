@@ -7,6 +7,7 @@ import { adminClient, signedInUser, visitor, type Actor } from "@/tests/support/
 import { expectDenied, expectOk } from "@/tests/support/expect";
 import { makeHouse, type House } from "@/tests/support/factories";
 import { passSecondFactor } from "@/tests/support/mfa";
+import { fromNow, rightNow } from "@/tests/support/clock";
 
 /**
  * The owner's Ask Jonz (docs/specs/owner-admin.md, "Ask Jonz, owner"): only
@@ -36,7 +37,7 @@ beforeEach(async () => {
 describe("the owner's Ask Jonz", () => {
   it("answers the owner, reading the admin pages as them, and writes the turn down", async () => {
     let read: string[] = [];
-    const result = await ownerTurn({ db: owner.db, userId: owner.userId }, said("Who's in Ava's house?"), new Date(), async (_m, today, reads: OwnerReads) => {
+    const result = await ownerTurn({ db: owner.db, userId: owner.userId }, said("Who's in Ava's house?"), rightNow(), async (_m, today, reads: OwnerReads) => {
       expect(today).toMatch(/\d{4}/);
       read = [
         await reads.inbox("", "waiting", null),
@@ -62,7 +63,7 @@ describe("the owner's Ask Jonz", () => {
   it("refuses a housemate, a visitor and the owner without their code, before Claude", async () => {
     for (const who of [ava, ownerNoCode]) {
       let asked = false;
-      const result = await ownerTurn({ db: who.db, userId: who.userId }, said("Show me the inbox"), new Date(), async () => {
+      const result = await ownerTurn({ db: who.db, userId: who.userId }, said("Show me the inbox"), rightNow(), async () => {
         asked = true;
         return answer;
       });
@@ -113,7 +114,7 @@ describe("the owner's Ask Jonz", () => {
     const reportId = sent.data as string;
     expectOk(await owner.db.rpc("owner_request_deletion", { p_email: (await db.auth.admin.getUserById(ava.userId)).data.user!.email!, p_reason: "Asked by email" }));
 
-    const result = await ownerTurn({ db: owner.db, userId: owner.userId }, said("Reply to Ava, then keep her account"), new Date(), async (_m, _today, _reads, w) => {
+    const result = await ownerTurn({ db: owner.db, userId: owner.userId }, said("Reply to Ava, then keep her account"), rightNow(), async (_m, _today, _reads, w) => {
       expect((await w.replyToReport(reportId, "Thanks, Ava: we're on it.")).ok).toBe(true);
       expect((await w.markFixed(reportId, "", true)).ok).toBe(true);
       expect((await w.deletionMove("deletion_stop", ava.userId, "Changed her mind")).ok).toBe(true);
@@ -138,7 +139,7 @@ describe("the owner's Ask Jonz", () => {
     expectOk(await ava.db.rpc("send_report", { p_kind: "problem", p_words: "Mine" }));
     for (const who of [ava, ownerNoCode]) {
       const moves: OwnerMove[] = [];
-      const w = ownerWrites({ db: who.db, userId: who.userId }, "owner", new Date(), moves);
+      const w = ownerWrites({ db: who.db, userId: who.userId }, "owner", rightNow(), moves);
       // The reads behind each move are the owner's, so nothing is found to act on.
       const { data } = await db.from("reports").select("id").limit(1);
       expect((await w.replyToReport(data![0].id, "Hi")).ok).toBe(false);
@@ -150,13 +151,13 @@ describe("the owner's Ask Jonz", () => {
   it("stops at the day's limit", async () => {
     const today = Array.from({ length: OWNER_ASK_TURNS_PER_DAY }, (_, i) => ({ owner_id: owner.userId, question: `Question ${i}` }));
     expectOk(await db.from("owner_ask_turns").insert(today));
-    const result = await ownerTurn({ db: owner.db, userId: owner.userId }, said("One more?"), new Date(), async () => answer);
+    const result = await ownerTurn({ db: owner.db, userId: owner.userId }, said("One more?"), rightNow(), async () => answer);
     expect(result).toEqual({ refusal: { code: "P0001", message: "ask_limit" } });
   });
 
   it("forgets turns after 90 days", async () => {
-    const old = new Date(Date.now() - 91 * 86_400_000).toISOString();
-    const recent = new Date(Date.now() - 89 * 86_400_000).toISOString();
+    const old = fromNow(-91 * 86_400_000).toISOString();
+    const recent = fromNow(-89 * 86_400_000).toISOString();
     expectOk(await db.from("owner_ask_turns").insert([
       { owner_id: owner.userId, question: "Long ago", asked_at: old },
       { owner_id: owner.userId, question: "A while ago", asked_at: recent },

@@ -10,6 +10,7 @@ import HousesPage from '@/app/admin/houses/index';
 import DeletionsPage from '@/app/admin/deletions';
 import OverviewPage from '@/app/admin/overview';
 import { renderPages, untilRead } from '@/testing/pages';
+import { NOW } from '@/testing/clock';
 
 const words = wordsFor('en', 'housemates');
 
@@ -29,7 +30,6 @@ jest.mock('@/api/houses', () => ({
   deleteHouse: jest.fn(),
 }));
 jest.mock('@/api/supabase', () => ({ supabase: {} }));
-jest.mock('@/api/http', () => ({ apiPost: jest.fn() }));
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({ __esModule: true, default: jest.fn() }));
 jest.mock('@/hooks/use-membership', () => ({
   useMembership: () => ({ session: { user: { id: 'owner' } }, house: null, refresh: jest.fn() }),
@@ -46,8 +46,8 @@ const ROUTES = {
   'admin/deletions': DeletionsPage,
 };
 
-const minutesAgo = (n: number) => new Date(Date.now() - n * 60_000).toISOString();
-const daysOn = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString();
+const minutesAgo = (n: number) => new Date(NOW.getTime() - n * 60_000).toISOString();
+const daysOn = (n: number) => new Date(NOW.getTime() + n * 86_400_000).toISOString();
 
 const ELM: HouseRow = {
   id: 'h1',

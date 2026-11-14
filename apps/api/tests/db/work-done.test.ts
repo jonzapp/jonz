@@ -1,9 +1,10 @@
 import { nextWeek } from "@app/core";
 import { describe, expect, it } from "vitest";
 
-import { loadBalances } from "@/lib/engine/tick";
 import { adminClient, signedInUser } from "@/tests/support/clients";
 import { addJohns, deal, makeHouse, someoneElse, thisWeek, weeksAgo, ZONE } from "@/tests/support/factories";
+import { rightNow } from "@/tests/support/clock";
+import { loadBalances } from "@/lib/engine/deal-week";
 
 /**
  * Balances count the work done, not what was handed out: a missed John
@@ -28,7 +29,7 @@ async function oneJohnLastWeek() {
 describe("balances count work done", () => {
   it("leaves a missed John with whoever missed it", async () => {
     const { a, other, balances } = await oneJohnLastWeek();
-    await db.from("assignments").update({ outcome: "missed", settled_at: new Date().toISOString() }).eq("id", a.id);
+    await db.from("assignments").update({ outcome: "missed", settled_at: rightNow().toISOString() }).eq("id", a.id);
     const b = await balances();
     expect([b.get(a.user_id), b.get(other.userId)]).toEqual([-2, -2]);
   });
@@ -37,7 +38,7 @@ describe("balances count work done", () => {
     const { a, other, balances } = await oneJohnLastWeek();
     await db
       .from("assignments")
-      .update({ outcome: "covered", settled_at: new Date().toISOString(), covered_by: other.userId, done_at: new Date().toISOString() })
+      .update({ outcome: "covered", settled_at: rightNow().toISOString(), covered_by: other.userId, done_at: rightNow().toISOString() })
       .eq("id", a.id);
     const b = await balances();
     expect([b.get(a.user_id), b.get(other.userId)]).toEqual([-2, 2]);
@@ -47,7 +48,7 @@ describe("balances count work done", () => {
 describe("a skipped John", () => {
   it("counts as neither owed nor done: it comes out of the week", async () => {
     const { a, other, balances } = await oneJohnLastWeek();
-    await db.from("assignments").update({ outcome: "excused", excused: true, settled_at: new Date().toISOString() }).eq("id", a.id);
+    await db.from("assignments").update({ outcome: "excused", excused: true, settled_at: rightNow().toISOString() }).eq("id", a.id);
     const b = await balances();
     expect([b.get(a.user_id), b.get(other.userId)]).toEqual([0, 0]);
   });
@@ -61,7 +62,7 @@ describe("balances remember every week", () => {
     const { assignments } = await deal(house.id, week, week.startsAt);
     const a = assignments[0];
     const other = someoneElse(house, a.user_id);
-    await db.from("assignments").update({ outcome: "missed", settled_at: new Date().toISOString() }).eq("id", a.id);
+    await db.from("assignments").update({ outcome: "missed", settled_at: rightNow().toISOString() }).eq("id", a.id);
     const { balances } = await loadBalances(db, house.id, thisWeek().startsOn, house.everyone.map((x) => x.userId));
     expect([balances.get(a.user_id), balances.get(other.userId)]).toEqual([-2, -2]);
   });

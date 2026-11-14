@@ -1,9 +1,10 @@
-import { passUnlocked, rulesAsStaked, type StakeView } from '@app/core';
+import { hasPass, rulesAsStaked, UTC, type StakeView } from '@app/core';
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 
 import { Sheet } from '@/components/sheet';
 import { stakeKey } from '@/hooks/keys';
 import { useHouse } from '@/hooks/use-house';
+import { useShownZone } from '@/hooks/use-zones';
 
 import { JohnSheetBody, type JohnSheetContext, type JohnSheetFocus } from './body';
 import { useCached } from './cached';
@@ -12,8 +13,12 @@ import { useWords } from '@/hooks/use-words';
 export type { JohnSheetFocus } from './body';
 
 interface JohnSheetApi {
-  /** Open the sheet on one John (an assignment's id), optionally at what it was opened for. */
-  open: (assignmentId: string, focus?: JohnSheetFocus) => void;
+  /**
+   * Open the sheet on one John (an assignment's id), optionally at what it
+   * was opened for, and from which Wall post (an event's id), whose
+   * reactions it then shows.
+   */
+  open: (assignmentId: string, focus?: JohnSheetFocus, post?: string) => void;
   close: () => void;
 }
 
@@ -40,11 +45,16 @@ export function useJohnSheetIfAny(): JohnSheetApi | null {
 export function JohnSheetProvider({ houseId, userId, children }: { houseId: string; userId: string; children: ReactNode }) {
   const words = useWords();
   const { view } = useHouse(houseId, userId);
+  // Times on the reader's own clock when it's away from the house's (Your time, said once).
+  const zone = useShownZone(view?.snapshot.rules.timezone ?? UTC, view?.now ?? new Date());
   // What lateness costs is capped at the stake: the sheet knows how near once a screen has read the Stake.
   const stake = useCached<StakeView>(stakeKey(houseId)) ?? null;
-  const [shown, setShown] = useState<{ id: string; focus: JohnSheetFocus | null } | null>(null);
+  const [shown, setShown] = useState<{ id: string; focus: JohnSheetFocus | null; post: string | null } | null>(null);
 
-  const open = useCallback((id: string, focus?: JohnSheetFocus) => setShown({ id, focus: focus ?? null }), []);
+  const open = useCallback(
+    (id: string, focus?: JohnSheetFocus, post?: string) => setShown({ id, focus: focus ?? null, post: post ?? null }),
+    [],
+  );
   const close = useCallback(() => setShown(null), []);
   const api = useMemo(() => ({ open, close }), [open, close]);
 
@@ -60,9 +70,9 @@ export function JohnSheetProvider({ houseId, userId, children }: { houseId: stri
     const context: JohnSheetContext = {
       houseId,
       userId,
-      zone: view.snapshot.rules.timezone,
+      zone,
       // Without the Stake (a House Pass extra), nothing late costs anything.
-      rules: rulesAsStaked(view.snapshot.rules, passUnlocked(view.snapshot.house.pass, view.now)),
+      rules: rulesAsStaked(view.snapshot.rules, hasPass(view.snapshot.house.pass, view.now)),
       now: view.now,
       nameOf: (id) => members.find((m) => m.userId === id)?.name ?? words('common.shell.formerHousemate'),
       members,
@@ -70,11 +80,12 @@ export function JohnSheetProvider({ houseId, userId, children }: { houseId: stri
       board: view.board,
       stake,
       focus: shown.focus,
+      post: shown.post,
       close,
     };
     // Keyed by the John and what it was opened for, so what one John's sheet
     // had under way (a swap, a dispute's words) never carries to the next.
-    body = <JohnSheetBody key={`${item.id}:${shown.focus ?? ''}`} item={item} context={context} />;
+    body = <JohnSheetBody key={`${item.id}:${shown.focus ?? ''}:${shown.post ?? ''}`} item={item} context={context} />;
   }
 
   return (

@@ -1,4 +1,4 @@
-import type { IsoDow } from '@app/core';
+import { KIND_COLOURS, type IsoDow } from '@app/core';
 import {
   CheckIcon,
   ClockIcon,
@@ -24,6 +24,7 @@ import { CountBadge } from '@/components/badge';
 import { Button } from '@/components/button';
 import { ButtonRow } from '@/components/button-row';
 import { CodeBoxes } from '@/components/code-boxes';
+import { ColourPicker } from '@/components/colour-picker';
 import { DangerRow, DangerZone } from '@/components/danger-zone';
 import { DayChips } from '@/components/day-chips';
 import { EmptyState } from '@/components/empty-state';
@@ -31,6 +32,7 @@ import { Field } from '@/components/field';
 import { Fold } from '@/components/fold';
 import { Group, GroupItem } from '@/components/group';
 import { HazardTape } from '@/components/hazard-tape';
+import { AddKindRow, KindRow } from '@/components/house/kinds-list';
 import { IconButton } from '@/components/icon-button';
 import { LidBar } from '@/components/lid';
 import { NoticeView } from '@/components/notice-banner';
@@ -38,7 +40,10 @@ import { OutlineRows, OutlineText } from '@/components/outline';
 import { Photo } from '@/components/photo';
 import { ReadFailed } from '@/components/read-state';
 import { Row, RowIcon } from '@/components/row';
+import { SearchBox } from '@/components/search-box';
 import { Dimmed, SearchLine } from '@/components/search-line';
+import { ZoneLine } from '@/components/zone-line';
+import type { Zones } from '@/hooks/use-zones';
 import { Section } from '@/components/section';
 import { Segmented } from '@/components/segmented';
 import { Chip } from '@/components/status-mark';
@@ -93,7 +98,7 @@ export function Colours() {
           <View style={styles.swatches}>
             {BINS.map((name) => (
               <View key={name} style={styles.swatch}>
-                <LidBar category={name} />
+                <LidBar lid={name} />
                 <Meta>{name}</Meta>
               </View>
             ))}
@@ -179,6 +184,7 @@ export function Choosing() {
   const [scope, setScope] = useState<'me' | 'house'>('me');
   const [days, setDays] = useState<IsoDow[]>([1, 3, 5]);
   const [code, setCode] = useState('4829');
+  const [search, setSearch] = useState('');
   return (
     <Section label="Choosing and typing" testID="style-choosing">
       <Group>
@@ -206,6 +212,7 @@ export function Choosing() {
           <Field label="House name" defaultValue="Bin Street" hint="Housemates see this on the invite." />
           <Field label="Join code" defaultValue="AB12" problem="That code has been used up. Ask for a new one." />
           <CodeBoxes label="Code" hint="It's in the email we sent." value={code} onChangeText={setCode} testID="style-code" />
+          <SearchBox value={search} onChange={setSearch} placeholder="Search a city or country" testID="style-search" />
         </GroupItem>
         <Fold label="Done today" meta={<Meta>1</Meta>} initiallyOpen>
           <Row title="Hoover the stairs" meta="Done 10am" lid="floors" leading={<TickBox state="done" label="Hoover the stairs" />} leadingControl />
@@ -215,7 +222,11 @@ export function Choosing() {
   );
 }
 
-/** Marks: chips, counts, lids, people, plates, tape, alerts and notices. */
+/** A phone in Regina reading a London house's times on its own clock, at a fixed moment so the gap never changes. */
+const AWAY_NOW = new Date('2026-11-14T01:22:00Z');
+const AWAY: Zones = { house: 'Europe/London', phone: 'America/Regina', shown: 'America/Regina', away: true, showing: 'mine', flip: none };
+
+/** Marks: chips, counts, lids, people, plates, tape, alerts, notices, and the line that says whose clock times are on. */
 export function Marks() {
   return (
     <Section label="Marks" testID="style-marks">
@@ -238,6 +249,7 @@ export function Marks() {
           <StreetPlate tone="hazard">Bins out tonight</StreetPlate>
           <HazardTape width={160} />
           <Alert message="Something went wrong. Try again." />
+          <ZoneLine zones={AWAY} now={AWAY_NOW} inline />
         </GroupItem>
       </Group>
       <NoticeView tone="news" icon={MegaphoneIcon} title="New this week" body="Swaps now ask first." onClose={none} />
@@ -287,13 +299,32 @@ export function Lists() {
   );
 }
 
+/** Kinds of John: the Kinds list's rows, and the colour picker the kind sheet opens with (Kinds list A, 14 Nov). */
+export function Kinds() {
+  const [colour, setColour] = useState<string>(KIND_COLOURS[8]);
+  return (
+    <Section label="Kinds and colours" bare testID="style-kinds">
+      <Group>
+        <KindRow name="Kitchen" colour={KIND_COLOURS[0]} johns={4} onPress={none} />
+        <KindRow name="Garden" colour={colour} johns={1} onPress={none} />
+        <AddKindRow onPress={none} />
+      </Group>
+      <Group>
+        <GroupItem>
+          <ColourPicker value={colour} onChange={setColour} />
+        </GroupItem>
+      </Group>
+    </Section>
+  );
+}
+
 /** The moves that can't be taken back, together in one hazard-edged group (docs/style/controls.md, "Danger zone"). */
 export function Danger() {
   return (
     <DangerZone testID="style-danger">
       <DangerRow
         title="Reset history"
-        meta="Back to before the first deal. Weeks dealt, ticks, money and History go."
+        meta="Back to before the first deal. Weeks dealt, ticks, money and Wall posts go."
         action="Reset"
         icon={RotateCcwIcon}
         onPress={none}
