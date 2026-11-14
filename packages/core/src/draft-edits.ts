@@ -12,6 +12,7 @@ type RawJohn = NonNullable<RawDraft["johns"]>[number];
 /** The fields of a John Claude may set, in draftForModel's words. */
 export const JOHN_FIELDS = [
   "name",
+  "kind",
   "category",
   "points",
   "everyWeeks",

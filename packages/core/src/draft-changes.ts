@@ -7,8 +7,17 @@ import { DraftedGroup, DraftedJohn, HouseDraft, key } from "./house-draft";
 // What a draft would change on the house's list: each John added, changed
 // or taken off, each group's people, and one line saying what changed.
 
-/** The fields a change can touch, in the order a change line names them. */
-const CHANGEABLE = ["name", "category", "points", "everyWeeks", "everyMonths", "weekOfMonth", "dueDow", "dueTime", "needsPhoto", "when", "respondHours", "perWeek", "crew", "group"] as const;
+/** The fields a change can touch, in the order a change line names them, but for its kind (sameKind). */
+const CHANGEABLE = ["name", "points", "everyWeeks", "everyMonths", "weekOfMonth", "dueDow", "dueTime", "needsPhoto", "when", "respondHours", "perWeek", "crew", "group"] as const;
+
+/** Whether two Johns have the same kind: by name in any capitals when both say it, else by their categories. */
+function sameKind(a: DraftedJohn, b: DraftedJohn): boolean {
+  if (a.kind === undefined || b.kind === undefined) return a.category === b.category;
+  return a.kind === null || b.kind === null ? a.kind === b.kind : key(a.kind) === key(b.kind);
+}
+
+/** A John's kind in words: its name, No kind, or (not read) the starting kind its category is. */
+const kindWords = (j: DraftedJohn, words: Words) => (j.kind === undefined ? CATEGORY_LABEL[j.category] : (j.kind ?? words('house.kinds.none')));
 
 /** One thing a draft does to the list: a John to add (its place in the draft), one to change, or one to take off. */
 export type DraftChange =
@@ -28,7 +37,7 @@ export function draftChanges(base: HouseDraft | null, next: HouseDraft): DraftCh
   next.johns.forEach((john, at) => {
     const before = john.id ? was.get(john.id) : undefined;
     if (!before) changes.push({ kind: "add", key: `add:${at}`, at, john });
-    else if (CHANGEABLE.some((f) => before[f] !== john[f])) changes.push({ kind: "change", key: `change:${john.id}`, at, john, before });
+    else if (CHANGEABLE.some((f) => before[f] !== john[f]) || !sameKind(before, john)) changes.push({ kind: "change", key: `change:${john.id}`, at, john, before });
   });
   const kept = new Set(next.johns.map((j) => j.id).filter(Boolean));
   for (const before of base?.johns ?? []) {
@@ -78,7 +87,8 @@ export function changedLine(before: DraftedJohn, after: DraftedJohn, words: Word
   if (before.points !== after.points) parts.push(arrow(String(before.points), pointsLabel(after.points, words)));
   if (before.crew !== after.crew) parts.push(arrow(words('john.crew.choice', { crew: before.crew }), words('john.crew.choice', { crew: after.crew })));
   if (before.group !== after.group) parts.push(arrow(before.group ?? "Everyone’s", after.group ?? "everyone’s"));
-  if (before.category !== after.category) parts.push(arrow(CATEGORY_LABEL[before.category], CATEGORY_LABEL[after.category]));
+  // A kind is a name the house gave it, so it keeps its capitals.
+  if (!sameKind(before, after)) parts.push(`${kindWords(before, words)} → ${kindWords(after, words)}`);
   return parts.join(", ");
 }
 

@@ -34,6 +34,14 @@ shares a John).
 - **Everywhere a John is drawn** (Today, Week, the John sheet, Ask Jonz's
   cards): its kind's name and lid colour. A John with no kind leaves the
   kind out of its line and has a grey lid.
+- **Ask Jonz**: list_johns ends with the house's kinds, and Claude names a
+  John's kind (`add_john`, `change_john`'s `kind`) in the person's
+  language: one of the house's, matched whatever its capitals, or a new
+  name when none fits. Nothing is made until they apply; then a new name
+  becomes a kind, last (before Everything else when that's last), in the
+  next free ready colour. The
+  card counts a move to another kind as a change and says it by name
+  ("Kitchen → Garden", "No kind → Garden").
 
 ### Database and API
 
@@ -54,6 +62,10 @@ shares a John).
   (the preset, or `other`), so older apps still work; a later migration
   drops it. The app never sends `category` for a John it read with a kind,
   or a John with no kind would land in Everything else.
+- A drafted John (`HouseDraft`) has `kind`: its name, null for none, left
+  out when the draft doesn't say (it then goes by its `category`, which
+  every draft still carries for apps that don't read kinds). Applying
+  writes `kindName`, or `kindId` null for none.
 - Starting a house from another copies its kinds and keeps each John in
   the kind of the same name (a John with no kind keeps none). Reset
   everything puts the six starting kinds back.
@@ -80,3 +92,5 @@ with Views and dragged with a PanResponder, so they work everywhere.
 - [x] A deleted kind's Johns show under No kind until they are given one.
 - [x] Lids read on the card by day and after dark, whatever the colour.
 - [x] A French house starts with its kinds in French.
+- [x] Ask Jonz drafts a John in one of the house's kinds by name, or in a
+      new one that's made when the admin applies it.

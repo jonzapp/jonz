@@ -179,6 +179,14 @@ describe('saveJohn', () => {
     expect(lastInput('change_john')).not.toHaveProperty('kindId');
   });
 
+  it("moves a John to Ask Jonz's kind by name, over the kind it had", async () => {
+    const id = crypto.randomUUID();
+    await saveJohn(H1, RULES, { ...NEW_JOHN, id, name: 'Lawn', kindId: crypto.randomUUID(), kindName: 'Garden', category: 'other' }, NOW);
+    expect(lastInput('change_john')).toMatchObject({ johnId: id, kindName: 'Garden' });
+    expect(lastInput('change_john')).not.toHaveProperty('kindId');
+    expect(lastInput('change_john')).not.toHaveProperty('category');
+  });
+
   it("says what's wrong before asking the API", async () => {
     await expect(saveJohn(H1, RULES, { ...NEW_JOHN, name: ' ' }, NOW)).rejects.toThrow('Name the John.');
     await expect(saveJohn(H1, RULES, { ...NEW_JOHN, name: 'Hob', dueTime: '9pm' }, NOW)).rejects.toThrow('Give a time like 21:00.');

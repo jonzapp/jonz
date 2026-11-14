@@ -107,8 +107,8 @@ describe("chatTurn, with Claude stood in for", () => {
     };
   const firstGo = claude(
     [
-      { kind: "add", john: { name: "Upstairs bathroom", category: "bathroom", points: 4, group: "Upstairs" } },
-      { kind: "add", john: { name: "Bins out", category: "bins", points: 1, dueDow: 2, dueTime: "21:00" } },
+      { kind: "add", john: { name: "Upstairs bathroom", kind: "Bathroom", points: 4, group: "Upstairs" } },
+      { kind: "add", john: { name: "Bins out", kind: "Bins & recycling", points: 1, dueDow: 2, dueTime: "21:00" } },
     ],
     [["Upstairs", ["me", "Ben", "Priya"]]],
   );
@@ -163,7 +163,7 @@ describe("chatTurn, with Claude stood in for", () => {
       expect(tools.edit({ kind: "remove", ref: "nobody" }).ok).toBe(false);
       expect(tools.edit({ kind: "change", ref: bath.id.slice(0, 8), set: { points: 4 } }).ok).toBe(true);
       expect(tools.edit({ kind: "remove", ref: "bins out" }).ok).toBe(true);
-      expect(tools.edit({ kind: "add", john: { name: "Oven clean", category: "kitchen", points: 5, everyMonths: 1, weekOfMonth: 1, dueDow: 6 } }).ok).toBe(true);
+      expect(tools.edit({ kind: "add", john: { name: "Oven clean", kind: "Kitchen", points: 5, everyMonths: 1, weekOfMonth: 1, dueDow: 6 } }).ok).toBe(true);
       return { raw: { reply: "Bathroom's 4 now.\n\nOven clean added, bins off.", ask: { kind: "none" } }, inputTokens: 10, outputTokens: 5 };
     });
     expect(told!.editing).toBe(true);
@@ -177,6 +177,28 @@ describe("chatTurn, with Claude stood in for", () => {
     ]);
     const { data: johns } = await db.from("johns").select("name, points").eq("house_id", house.id).is("archived_at", null).order("name");
     expect(johns).toEqual([{ name: "Bathroom", points: 3 }, { name: "Bins out", points: 1 }, { name: "Hoover", points: 2 }]);
+  });
+
+  it("names each John's kind, matching the house's by name and keeping a new one to make on Apply", async () => {
+    const house = await makeHouse(["Ava"]);
+    const [bath, mow] = await addJohns(house.id, [{ name: "Bathroom", category: "bathroom" }, { name: "Mow" }], thisWeek());
+    const result = await chatTurn({ db: house.admin.db, userId: house.admin.userId }, { houseId: house.id, messages: said("Mowing is garden, and add the hob"), current: null, now: rightNow() }, async (_ctx, tools) => {
+      const listed = tools.listJohns().split("\n");
+      expect(JSON.parse(listed.find((l) => l.includes(bath.id.slice(0, 8)))!)).toMatchObject({ name: "Bathroom", kind: "Bathroom" });
+      expect(JSON.parse(listed.find((l) => l.includes(mow.id.slice(0, 8)))!)).toMatchObject({ name: "Mow", kind: "Everything else" });
+      expect(tools.edit({ kind: "change", ref: mow.id.slice(0, 8), set: { kind: "Garden" } }).ok).toBe(true);
+      expect(tools.edit({ kind: "add", john: { name: "Hob", kind: "kitchen", points: 1 } }).ok).toBe(true);
+      return { raw: { reply: "Mow's in Garden once you apply.", ask: { kind: "none" } }, inputTokens: 10, outputTokens: 5 };
+    });
+    if ("refusal" in result) throw new Error("refused");
+    expect(result.draft!.johns.map((j) => [j.name, j.kind, j.category])).toEqual([
+      ["Bathroom", "Bathroom", "bathroom"],
+      ["Mow", "Garden", "other"],
+      ["Hob", "Kitchen", "kitchen"],
+    ]);
+    // Nothing is made or moved until they apply.
+    const { data: kinds } = await db.from("john_kinds").select("name").eq("house_id", house.id);
+    expect(kinds!.map((k) => k.name)).not.toContain("Garden");
   });
 
   it("changes who's in a group the house has, even one with no Johns, writing nothing", async () => {

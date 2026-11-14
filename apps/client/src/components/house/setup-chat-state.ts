@@ -1,4 +1,4 @@
-import { CHAT_MAX_MESSAGES, draftChanges, groupChanges, listAsDraft, type GroupDef, type HouseDraft, type JohnDef, type Words } from '@app/core';
+import { CHAT_MAX_MESSAGES, draftChanges, groupChanges, listAsDraft, type GroupDef, type HouseDraft, type JohnDef, type KindDef, type Words } from '@app/core';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
@@ -10,14 +10,16 @@ import { clock, messagesOf, summedOf, toSaved, type Turn } from './setup-chat-tu
 
 // The setup chat's state: the draft it is working on, keeping the chat, and one question to Jonz.
 
+const NO_KINDS: readonly KindDef[] = [];
+
 /**
  * The draft the chat is working on. `base` is the list as the chat found
  * it: what a draft's changes are counted from. It is held while a draft is
  * open, so applying doesn't move it under the card; once a draft is applied,
  * it's the list as it now is. `keep` are the changes ticked.
  */
-export function useDrafting(johns: JohnDef[], groups: GroupDef[]) {
-  const live = useMemo(() => (johns.length > 0 ? listAsDraft(johns, groups) : null), [johns, groups]);
+export function useDrafting(johns: JohnDef[], groups: GroupDef[], kinds: readonly KindDef[] = NO_KINDS) {
+  const live = useMemo(() => (johns.length > 0 ? listAsDraft(johns, groups, kinds) : null), [johns, groups, kinds]);
   const [held, setHeld] = useState(live);
   const [rebase, setRebase] = useState(false);
   const base = rebase ? live : held;
