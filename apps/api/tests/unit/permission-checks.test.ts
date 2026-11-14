@@ -31,8 +31,9 @@ function live(): { functions: Map<string, string>; policies: Map<string, string>
   for (const file of files) {
     const sql = readFileSync(DIR + file, "utf8");
     // In the order they're written: a function from its header to the end of its $$ (or $function$) body, a rule to its semicolon, and drops.
+    // Names with or without quotes: the baseline is a dump, which quotes them all.
     const statement =
-      /create (?:or replace )?function public\.([a-z_]+)\s*\([\s\S]*?as (\$[a-z]*\$)([\s\S]*?)\2|drop function (?:if exists )?public\.([a-z_]+)|create policy "([^"]+)" on public\.([a-z_]+)([\s\S]*?);|drop policy (?:if exists )?"([^"]+)" on public\.([a-z_]+)/gi;
+      /create (?:or replace )?function "?public"?\."?([a-z_]+)"?\s*\([\s\S]*?as (\$[a-z]*\$)([\s\S]*?)\2|drop function (?:if exists )?"?public"?\."?([a-z_]+)"?|create policy "([^"]+)" on "?public"?\."?([a-z_]+)"?([\s\S]*?);|drop policy (?:if exists )?"([^"]+)" on "?public"?\."?([a-z_]+)"?/gi;
     for (const m of sql.matchAll(statement)) {
       if (m[1]) functions.set(m[1].toLowerCase(), m[3]);
       else if (m[4]) functions.delete(m[4].toLowerCase());
