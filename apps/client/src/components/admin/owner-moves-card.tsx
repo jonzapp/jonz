@@ -12,6 +12,7 @@ import {
   RefreshCwIcon,
   ReplyIcon,
   RotateCcwIcon,
+  SparklesIcon,
   SendIcon,
   TicketIcon,
   Trash2Icon,
@@ -22,7 +23,7 @@ import {
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { deleteHouse, ownerResetHouse } from '@/api/houses';
+import { deleteHouse, ownerResetAsk, ownerResetHouse } from '@/api/houses';
 import { deleteByEmail, deleteNow, endNotice, saveNotice, stopDeletion } from '@/api/owner';
 import { emailPromotion, makePromotion, retryPromotion, stopPromotion } from '@/api/promotions';
 import { fixReport, replyToReport, setReportState, setSameAs } from '@/api/reports';
@@ -53,6 +54,7 @@ const ICON: Record<OwnerMoveKind, LucideIcon> = {
   deletion_start: UserXIcon,
   house_delete: HouseIcon,
   house_reset: RotateCcwIcon,
+  ask_reset: SparklesIcon,
 };
 
 /** Does one move through the admin page's own call, as the owner: the database checks it and the audit log keeps it. */
@@ -107,6 +109,9 @@ async function doOwnerMove(m: OwnerMove): Promise<void> {
       return;
     case 'house_reset':
       return ownerResetHouse(m.houseId, m.everything, m.reason);
+    case 'ask_reset':
+      await ownerResetAsk({ audience: m.audience, houseId: m.houseId ?? undefined, people: m.people, reason: m.reason });
+      return;
   }
 }
 

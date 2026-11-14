@@ -14,7 +14,7 @@ import { NotificationPrefsDraft } from "./notify";
 import type { OperationName } from "./operations";
 import { OwnerAskRequest, OwnerAskResponse } from "./owner-ask";
 import { MESSAGE_AUDIENCES, OwnerMessageRequest, OwnerMessageResponse } from "./owner-messages";
-import { DeleteHouseRequest, DeleteHouseResponse } from "./owner-moves";
+import { AskResetRequest, AskResetResponse, DeleteHouseRequest, DeleteHouseResponse } from "./owner-moves";
 import { PASS_PLANS } from "./pass";
 import { PROMOTION_AUDIENCES, PROMOTION_DURATIONS, PROMOTION_KINDS, PromotionEmailed, PromotionMade, PromotionRequest } from "./promotions";
 import { REPORT_KINDS, REPORT_STATES, ReportFixRequest, ReportFixResponse, ReportMessageRequest, ReportMessageResponse, ReportRequest, ReportResponse } from "./reports";
@@ -783,6 +783,7 @@ export const OPERATION_IO = {
   owner_request_deletion: io(z.object({ email: z.email(), reason: text.optional() }), id, "POST /v1/admin/deletions"),
   owner_stop_deletion: io(z.object({ userId: id, reason: text.optional() }), nothing, "DELETE /v1/admin/deletions/{userId}"),
   owner_delete_house: io(DeleteHouseRequest.extend({ houseId: id }), DeleteHouseResponse, "DELETE /v1/admin/houses/{houseId}"),
+  owner_reset_ask_usage: io(AskResetRequest, AskResetResponse, "POST /v1/admin/ask/usage/reset"),
   owner_reset_house_data: io(z.object({ houseId: id, everything: bool.optional(), reason: text.optional() }), houseReset, "POST /v1/admin/houses/{houseId}/reset"),
   owner_notices_page: io(z.object({ ...noticeFilter, ...pageInput }), pageOutput(Notice), "GET /v1/admin/notices", { page: pageOf("startsAt") }),
   owner_notices_count: io(z.object(noticeFilter), count, "GET /v1/admin/notices/count"),

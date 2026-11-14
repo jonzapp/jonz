@@ -369,6 +369,26 @@ const putResetHouse = (at: OwnerWriting): OwnerWrites["resetHouse"] => async (id
   return add({ kind: "house_reset", houseId: found[0].id, name: found[0].name, people: Number(found[0].people), everything, reason });
 };
 
+const putResetAsk = (at: OwnerWriting): OwnerWrites["resetAsk"] => async (audience, ids, reason) => {
+  const { db, add, person } = at;
+  if (audience === "everyone") return add({ kind: "ask_reset", audience, houseId: null, people: [], to: "everyone", reason });
+  if (audience === "house") {
+    const { data } = ids.length === 1 ? await db.rpc("owner_houses_find", { p_q: ids[0].trim() }) : { data: [] };
+    const found = (data ?? []).filter((h) => isId(ids[0], h.id));
+    if (found.length !== 1) return ONE_OF("house", "find_houses");
+    return add({ kind: "ask_reset", audience, houseId: found[0].id, people: [], to: found[0].name, reason });
+  }
+  const people = [];
+  for (const id of ids) {
+    const found = (await person(id)).filter((p) => isId(id, p.id));
+    if (found.length !== 1) return ONE_OF("person", "find_people");
+    people.push(found[0]);
+  }
+  if (people.length === 0) return { ok: false, said: "Name at least one person: find_people gives their ids." };
+  const to = people.length === 1 ? (people[0].name ?? people[0].email ?? "1 person") : `${people.length} people`;
+  return add({ kind: "ask_reset", audience, houseId: null, people: people.map((p) => p.id), to, reason });
+};
+
 const putStartDeletion = (at: OwnerWriting): OwnerWrites["startDeletion"] => async (email, reason) => {
   const { add, person } = at;
   const e = email.trim().toLowerCase();
@@ -399,6 +419,7 @@ export function ownerWrites(caller: Caller, role: OwnerRole, now: Date, moves: O
     deletionMove: putDeletionMove(at),
     deleteHouse: putDeleteHouse(at),
     resetHouse: putResetHouse(at),
+    resetAsk: putResetAsk(at),
     startDeletion: putStartDeletion(at),
   };
 }
