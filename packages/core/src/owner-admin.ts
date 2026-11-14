@@ -20,17 +20,17 @@ export const ADMIN_PAGES = [
 export type AdminPage = (typeof ADMIN_PAGES)[number]["key"];
 
 /**
- * The owner's pages grouped by job: one tab each on a phone, a small heading
- * each on the laptop's side list. A tab with more than one page opens its
- * first, with a switch at the top for the rest. A new page joins a group, so
- * the bar stays at five.
+ * The owner's pages grouped by job: four tabs on a phone, four on the
+ * laptop's side list. A tab with more than one page opens its first, with a
+ * switch at the top on a phone; on a laptop the open tab unfolds its pages
+ * beneath it. A new page joins a group, so there are never more than four
+ * (Glyn, 2026-11-14).
  */
 export const ADMIN_GROUPS = [
-  { key: "overview", label: "Overview", pages: ["overview"] },
-  { key: "inbox", label: "Inbox", pages: ["inbox"] },
+  { key: "overview", label: "Overview", pages: ["overview", "audit"] },
+  { key: "inbox", label: "Inbox", pages: ["inbox", "deletions"] },
   { key: "houses", label: "Houses", pages: ["houses"] },
   { key: "send", label: "Send", pages: ["messages", "notices", "promotions"] },
-  { key: "records", label: "Records", pages: ["deletions", "audit"] },
 ] as const satisfies readonly { key: string; label: string; pages: readonly AdminPage[] }[];
 export type AdminGroup = (typeof ADMIN_GROUPS)[number]["key"];
 

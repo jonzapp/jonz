@@ -113,6 +113,11 @@
   of our own, and the chosen one is never amber (the John editor's How
   often, By what time and Done within, 13 Nov). A count with − and + uses
   `IconButton`s with the outline edge.
+- **What period a section shows (this week or this month) is a `PickMenu`
+  beside its heading,** showing the chosen one, as the House Table's This
+  week | October and the owner's Overview figures do. A switch across the
+  top of a page (the track record's span, a tab's pages) stays a
+  `Segmented`. (Glyn, one selector for one job, 14 Nov)
 - **A colour is picked from dots, then any colour** (`ColourPicker`): the
   eleven ready colours as round dots, six to a row, the twelfth the rainbow
   dot, which opens a shade square, a hue track and the colour's code under

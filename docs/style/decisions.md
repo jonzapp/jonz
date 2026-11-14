@@ -6,6 +6,8 @@ pages are private artifacts on claude.ai.
 
 | Date | Decision | Where | Rule |
 | --- | --- | --- | --- |
+| 2026-11-14 | The same job gets the same control everywhere: the owner's Overview picks Week or Month from a `PickMenu` beside its heading, as the House Table does, not a `Segmented` (Glyn, consistent components) | this PR | [controls](controls.md#inputs) |
+| 2026-11-14 | The owner's pages have four tabs, each with its pages inside: Overview (with the Audit log), Inbox (with Deletions), Houses, Send (Messages, Notices, Promotions); a switch at the top on a phone, the open tab unfolding its pages on a laptop (Admin tabs A) | this PR | [layout](layout.md#navigation) |
 | 2026-11-14 | One No kind: a John in none of the house's kinds sits in No kind, last on the John list in a dashed outline with a line under it saying what it is; it's always the last choice in a John's Kind, can't be renamed or deleted, and takes a deleted kind's Johns. Everything else is gone, and grey, No kind's lid, is the last ready colour (One No kind, Dashed, the word No kind) | this PR | [lists](lists.md#rows) |
 | 2026-11-14 | A new house starts with no kinds: its setup chat names a few that fit as it adds the Johns (Glyn, kinds made at setup) | this PR | [lists](lists.md#rows) |
 | 2026-11-14 | Times are always on your own clock with nothing saying so (the Your time line and its Show house time are gone); where a time or day is set (a John's due time, booking time away, moving out) one quiet line says it's in house time, only while the clocks differ (Glyn, house time where you set it) | #264 | [words](words.md) |

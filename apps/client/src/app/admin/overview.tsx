@@ -7,6 +7,7 @@ import { StyleSheet, View } from 'react-native';
 import { ownerOverview } from '@/api/houses';
 import { liveNotices } from '@/api/owner';
 import { ownerZone } from '@/components/admin/audit-entry';
+import { AdminSwitch } from '@/components/admin/admin-shell';
 import { WeekChart } from '@/components/admin/week-chart';
 import { Figures, type Figure } from '@/components/figures';
 import { Group } from '@/components/group';
@@ -15,7 +16,6 @@ import { ReadFailed } from '@/components/read-state';
 import { Row } from '@/components/row';
 import { Columns, Screen, useColumns } from '@/components/screen';
 import { Section } from '@/components/section';
-import { Segmented } from '@/components/segmented';
 import { Chip } from '@/components/status-mark';
 import { OutlinePlate } from '@/components/outline';
 import { TextButton } from '@/components/text-button';
@@ -23,6 +23,7 @@ import { TitleBar } from '@/components/title-bar';
 import { INSET, ROW_MIN, SPACE } from '@/theme';
 import { Waiting } from '@/components/waiting';
 import { OverviewOutline } from '@/components/page-outlines';
+import { PickMenu } from '@/components/pick-menu';
 import { useWords } from '@/hooks/use-words';
 
 const MONTH = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -46,6 +47,7 @@ export default function OverviewPage() {
   const words = useWords();
   return (
     <Screen spreads bar={<TitleBar title={words('admin.overview.page')} />} testID="admin-overview">
+      <AdminSwitch page="overview" />
       <OverviewBody />
     </Screen>
   );
@@ -146,11 +148,11 @@ function Numbers({ overview, zone, onSpan }: { overview: Overview; zone: string;
       <Section
         label={range}
         right={
-          <Segmented
-            label={words('admin.overview.spanLabel')}
+          <PickMenu
             options={(['week', 'month'] as const).map((value) => ({ value, label: words(`admin.overview.spans.${value}` as const) }))}
             value={overview.span}
             onChange={onSpan}
+            label={words('admin.overview.spanLabel')}
             testID="overview-span"
           />
         }
