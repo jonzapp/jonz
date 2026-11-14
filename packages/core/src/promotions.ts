@@ -11,7 +11,7 @@ import { wordsFor } from "./words-for";
 // free, or a free Pass, given out by the owner with one link. A promotion is
 // for anyone with the link, or only for the people named on it, who must be
 // signed in to Jonz with that email to use it. The database keeps them and
-// refuses what doesn't add up (supabase/migrations/20261130090000_promotions.sql);
+// refuses what doesn't add up (supabase/migrations/20270112090000_baseline.sql);
 // these are the words, the sums, the checks, and what crosses the API.
 
 /** Money off (a percent, or an amount), some months free before the first charge, or a free Pass with no card. */

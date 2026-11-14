@@ -11,7 +11,7 @@ import type { Caller, Refusal } from "./disputes";
 // Asking to swap a John you'd rather not needs a server for one thing:
 // telling the person asked. The ask itself is the caller's own call to
 // offer_swap, which decides whether it may be asked
-// (supabase/migrations/20261103090000_steady_weeks.sql).
+// (supabase/migrations/20270112090000_baseline.sql).
 
 /** Ask to swap; the person asked hears "Glyn asks to swap: their Garbage for your Kitchen". */
 export async function askSwap(caller: Caller, { mine, theirs }: SwapAskRequest): Promise<{ refusal: Refusal } | { offerId: string }> {

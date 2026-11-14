@@ -5,7 +5,7 @@ import { adminClient, signedInUser } from "@/tests/support/clients";
 import { expectDenied, expectOk, expectRule } from "@/tests/support/expect";
 
 /**
- * Profile photos (20261101110000_profile_photos.sql). Google's photo follows
+ * Profile photos (20270112090000_baseline.sql). Google's photo follows
  * its identity in the database; a Microsoft photo is copied by the app into
  * the `avatars` bucket (private since avatars_private; shown on our address) and pointed at with set_my_photo. The attack
  * surface is the bucket's folders and what set_my_photo will accept.

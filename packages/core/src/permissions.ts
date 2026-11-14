@@ -1,6 +1,6 @@
 // Who can do what in a house: one list for the database, the API, the app
 // and Ask Jonz. The database holds the same list in `role_permissions`
-// (supabase/migrations/20261118090000_permissions.sql) and enforces it with
+// (supabase/migrations/20270112090000_baseline.sql) and enforces it with
 // `public.can(house, permission)`; a database test checks the two lists
 // match, so change both together. Roles are per house: an admin (a Parent
 // in a family) and a member (a Kid in a family). The admin pages have their

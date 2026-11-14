@@ -7,7 +7,7 @@ import { actorFor, addJohns, deal, makeHouse, reread, someoneElse, thisWeek, ZON
 import { rightNow } from "@/tests/support/clock";
 
 /**
- * Undo and History (20261101090000_undo_history.sql): each move is recorded
+ * Undo and History (20270112090000_baseline.sql): each move is recorded
  * by a trigger, house_history says who may undo it now, and undo_action /
  * undo_latest put it back. Yours while it's open; anyone's, to an admin,
  * until its month is shared out.

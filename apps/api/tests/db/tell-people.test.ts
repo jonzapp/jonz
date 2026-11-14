@@ -11,7 +11,7 @@ import { pushIn, type PushMessage, type SaidPush } from "@/lib/engine/shared";
 const words = wordsFor('en', 'housemates');
 
 /**
- * Telling people (20261210090000_tell_people.sql, docs/specs/tell-people.md):
+ * Telling people (20270112090000_baseline.sql, docs/specs/tell-people.md):
  * the join screen's stake, a rule change posted on the Wall, each post
  * pushed once to whoever it's about, the owner told once when covering
  * opens, and "I'm on it" holding covers off.
