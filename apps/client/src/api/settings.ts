@@ -79,9 +79,10 @@ function johnInput(draft: JohnDraftInput, rules: HouseRules, now: Date): { id?: 
   // The week a John counts from is set when it's added, and kept.
   const { id, anchorWeek: _kept, kindId, kindName, ...j } = parsed.data;
   const repeat = repeatColumns(j, now, rules.timezone, rules.weekStarts);
-  // A kind by name (Ask Jonz's) wins over the one it had. None (null) sends
-  // nothing: a new John has no kind, and a changed one keeps the one it had.
-  const kind = kindName ? { kindName } : kindId ? { kindId } : {};
+  // A kind by name (Ask Jonz's) wins over the one it had. Null is No kind
+  // (a changed John moves there); left out, a changed John keeps the one
+  // it had.
+  const kind = kindName ? { kindName } : kindId !== undefined ? { kindId } : {};
   return {
     id,
     fields: {

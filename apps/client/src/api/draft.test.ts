@@ -38,7 +38,7 @@ describe('sendChat', () => {
   const said = (text: string) => [{ role: 'user' as const, text }];
 
   it('sends the chat and the draft as it stands', async () => {
-    const answer = { reply: 'Here you go.', ask: null, draft: starterDraft('couple', KINDS), source: 'ai' };
+    const answer = { reply: 'Here you go.', ask: null, draft: starterDraft('couple', KINDS, words), source: 'ai' };
     post.mockResolvedValue(answer);
     await expect(sendChat(HOUSE, said('Me and my partner in a flat'), { draft: null, words, kinds: KINDS })).resolves.toBe(answer);
     expect(post).toHaveBeenCalledWith('ask_house', { houseId: HOUSE, messages: said('Me and my partner in a flat'), draft: null });
@@ -51,9 +51,9 @@ describe('sendChat', () => {
 
   it('answers as the API would when it can’t be reached', async () => {
     post.mockRejectedValue(new TypeError('Network request failed'));
-    await expect(sendChat(HOUSE, said('Me, my wife and the kids'), { draft: null, words, kinds: KINDS })).resolves.toMatchObject({ draft: starterDraft('family', KINDS), source: 'starter' });
+    await expect(sendChat(HOUSE, said('Me, my wife and the kids'), { draft: null, words, kinds: KINDS })).resolves.toMatchObject({ draft: starterDraft('family', KINDS, words), source: 'starter' });
     post.mockRejectedValue(new ApiRequestError('Something went wrong. Try again.', 500));
-    await expect(sendChat(HOUSE, said('Oven every month'), { draft: starterDraft('couple', KINDS), words, kinds: KINDS })).resolves.toEqual({
+    await expect(sendChat(HOUSE, said('Oven every month'), { draft: starterDraft('couple', KINDS, words), words, kinds: KINDS })).resolves.toEqual({
       reply: words('ask.draft.offlineChange'),
       ask: null,
       draft: null,
@@ -105,7 +105,7 @@ describe('applyDraft', () => {
   const base = listAsDraft(johns, []);
   const next = {
     ...base,
-    johns: [{ ...base.johns[0], points: 4 }, { ...starterDraft('couple', KINDS).johns[0] }],
+    johns: [{ ...base.johns[0], points: 4 }, { ...starterDraft('couple', KINDS, words).johns[0] }],
   };
 
   it('adds, changes and takes off only the ticked changes, keeping what the draft doesn’t say', async () => {

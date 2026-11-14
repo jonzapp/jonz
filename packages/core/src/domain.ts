@@ -4,25 +4,31 @@
  * migrations' CHECK constraints (keep the two lists in step).
  */
 
-/** The six kinds of John a house starts with (john_kinds.preset), each with its bin-lid colour (bin-night.ts). */
+/**
+ * The old starting kinds (john_kinds.preset), each with its bin-lid colour
+ * (bin-night.ts). A house made before 14 November 2026 started with them;
+ * a new one starts with none, and a ready-made list's Johns name them.
+ */
 export const CATEGORIES = [
   "kitchen",
   "bathroom",
   "bins",
   "floors",
   "errands",
-  "other",
 ] as const;
 export type Category = (typeof CATEGORIES)[number];
 
-/** The starting kinds' names in English, as public.default_john_kinds gives them. */
+/** The bin lids: the starting kinds', and `other`, the grey of a John in No kind (none of its house's kinds). */
+export const LIDS = [...CATEGORIES, "other"] as const;
+export type Lid = (typeof LIDS)[number];
+
+/** The starting kinds' names in English (ask.draft.kind.<name> in every language): what a test or a sample house calls them. */
 export const CATEGORY_LABEL: Record<Category, string> = {
   kitchen: "Kitchen",
   bathroom: "Bathroom",
   bins: "Bins & recycling",
   floors: "Floors & hoovering",
   errands: "Errands & shopping",
-  other: "Everything else",
 };
 
 /**

@@ -76,6 +76,9 @@ test("start from a list without writing anything", async ({ context, page }) => 
   await page.getByTestId("chat-open-list").click();
   await expect(page).toHaveURL(/\/house\/johns$/);
   await expect(page.getByTestId("john-def")).toHaveCount(STARTER_LISTS.flat_share.length);
+  // A new house has no kinds: the list's are made with its Johns.
+  const kinds = page.getByTestId("johns-kinds").getByTestId("kind-row");
+  await expect(kinds).toHaveText([/^Kitchen/, /^Bathroom/, /^Bins & recycling/, /^Floors & hoovering/, /^Errands & shopping/]);
 });
 
 test("ask Jonz from Today to change the list, and apply what's ticked", async ({ context, page }) => {
@@ -110,7 +113,7 @@ test("ask Jonz from Today to change the list, and apply what's ticked", async ({
   await page.getByTestId("chat-send").click();
 
   await expect(page.getByTestId("draft-change").filter({ hasText: couple[0].name })).toContainText(`${couple[0].points} → `);
-  await expect(page.getByTestId("draft-change").filter({ hasText: sheets })).toContainText("Everything else → Bedrooms");
+  await expect(page.getByTestId("draft-change").filter({ hasText: sheets })).toContainText(`${words("house.kinds.none")} → Bedrooms`);
   await expect(page.getByTestId("draft-remove")).toContainText(couple[1].name);
   await expect(page.getByTestId("draft-john")).toContainText("Windows");
   await page.getByTestId("describe-keep").click();

@@ -238,7 +238,7 @@ export const OPERATIONS = {
   remove_john: op({ about: "Take a John off the list; weeks already dealt keep it", scope: "house", effect: "write", guard: perm("johns:write"), rpc: { name: "remove_john" }, tables: ["johns"] }),
   save_kind: op({ about: "Make or change a kind of John: its name and lid colour", scope: "house", effect: "write", guard: perm("johns:write"), rpc: { name: "save_kind" }, tables: ["john_kinds"] }),
   order_kinds: op({ about: "Put the house's kinds of John in an order", scope: "house", effect: "write", guard: perm("johns:write"), rpc: { name: "order_kinds" }, tables: ["john_kinds"] }),
-  delete_kind: op({ about: "Delete a kind of John; its Johns move to another kind, or have none", scope: "house", effect: "write", guard: perm("johns:write"), rpc: { name: "delete_kind" }, tables: ["john_kinds", "johns"], destructive: true }),
+  delete_kind: op({ about: "Delete a kind of John; its Johns move to another kind, or to No kind", scope: "house", effect: "write", guard: perm("johns:write"), rpc: { name: "delete_kind" }, tables: ["john_kinds", "johns"], destructive: true }),
   save_house_rules: op({ about: "Change the house's name and rules", scope: "house", effect: "write", guard: perm("house:write"), rpc: { name: "save_house_rules" }, tables: ["houses"] }),
   set_deal_mode: op({ about: "Choose how the house shares its Johns: Smart or Classic", scope: "house", effect: "write", guard: perm("house:write"), rpc: { name: "set_deal_mode" }, tables: ["houses"] }),
   answer_tick: op({ about: "OK a kid's tick, or send it back", scope: "house", effect: "write", guard: perm("ticks:write"), rpc: { name: "answer_tick" }, server: true }),

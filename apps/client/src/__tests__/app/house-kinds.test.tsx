@@ -4,7 +4,7 @@ import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library'
 
 import { loadHouse } from '@/api/board';
 import { catchUp } from '@/api/house';
-import { deleteKind, loadJohnList, orderKinds, saveKind } from '@/api/settings';
+import { deleteKind, loadJohnList, orderKinds, saveJohn, saveKind } from '@/api/settings';
 import JohnListScreen from '@/app/(house)/house/johns';
 import { HouseWorkspace } from '@/components/house/workspace';
 import { ToastProvider } from '@/components/toast';
@@ -14,8 +14,9 @@ import { BATH, BINS, renderPages, untilRead } from '@/testing/pages';
 
 // The house's own kinds of John, under the John list (Kinds list A, 14 Nov):
 // each with its lid bar and how many Johns it has, opened to rename it, give
-// it a colour (a ready one or any colour), move it or delete it. A deleted
-// kind's Johns have no kind until they're given one (no kind C, 14 Nov).
+// it a colour (a ready one or any colour), move it or delete it. A John in
+// none of them sits in No kind, in a dashed outline at the foot of the list,
+// and an admin can put one there on purpose (one No kind, 14 Nov).
 
 const words = wordsFor('en', 'housemates');
 
@@ -45,7 +46,7 @@ jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
 /** A kind the house made, and a John in it. */
 const GARDEN = { id: 'garden', name: 'Garden', colour: '#4f9a2e', position: 6, preset: null };
 const LAWN = { ...BINS, id: 'j-lawn', name: 'Mow the lawn', kindId: 'garden' };
-/** A John whose kind was deleted. */
+/** A John in No kind. */
 const SHED = { ...BINS, id: 'j-shed', name: 'Sweep the shed', kindId: null };
 
 function HouseLayout() {
@@ -85,19 +86,19 @@ it("shows an admin the house's kinds in order, each with how many Johns it has, 
   await open();
   const kinds = within(screen.getByTestId('johns-kinds'));
   expect(kinds.getByRole('header', { name: words('house.kinds.title') })).toBeOnTheScreen();
-  expect(kinds.getAllByTestId('kind-row')).toHaveLength(7);
+  expect(kinds.getAllByTestId('kind-row')).toHaveLength(6);
   const named = [
     `${words('house.kinds.edit', { name: 'Kitchen' })}, No Johns`,
     `${words('house.kinds.edit', { name: 'Bathroom' })}, 1 John`,
     `${words('house.kinds.edit', { name: 'Bins & recycling' })}, 1 John`,
     `${words('house.kinds.edit', { name: 'Floors & hoovering' })}, No Johns`,
     `${words('house.kinds.edit', { name: 'Errands & shopping' })}, No Johns`,
-    `${words('house.kinds.edit', { name: 'Everything else' })}, No Johns`,
     `${words('house.kinds.edit', { name: 'Garden' })}, 1 John`,
   ];
-  // In the house's order, each a button named for what it does and how many Johns it has.
+  // In the house's order, each a button named for what it does and how many Johns it has. No kind isn't one.
   const buttons = kinds.getAllByRole('button');
-  expect(named.map((name) => buttons.indexOf(kinds.getByRole('button', { name })))).toEqual([0, 1, 2, 3, 4, 5, 6]);
+  expect(named.map((name) => buttons.indexOf(kinds.getByRole('button', { name })))).toEqual([0, 1, 2, 3, 4, 5]);
+  expect(kinds.queryByRole('button', { name: new RegExp(words('house.kinds.none')) })).toBeNull();
   expect(kinds.getByRole('button', { name: words('house.kinds.add') })).toBeOnTheScreen();
   expect(kinds.getByText(words('house.kinds.note'))).toBeOnTheScreen();
 });
@@ -109,17 +110,37 @@ it("puts a John in a kind the house made under that kind's own name", async () =
   expect(garden.getByTestId('john-def')).toHaveTextContent(/Mow the lawn/);
 });
 
-it('puts Johns with no kind last, in a grey No kind section, and says so in the John form', async () => {
+it('puts Johns in No kind last, saying what they are, and says so in the John form', async () => {
   (loadJohnList as jest.Mock).mockResolvedValue({ kinds: [...KINDS, GARDEN], johns: [SHED, BINS, LAWN], groups: [] });
   await open();
   const sections = within(screen.getByTestId('john-kinds')).getAllByRole('header');
   expect(sections.map((h) => h.props.children)).toEqual(['Bins & recycling', 'Garden', words('house.kinds.none')]);
   const none = within(screen.getByTestId('kind-none'));
   expect(none.getByTestId('john-def')).toHaveTextContent(/Sweep the shed/);
+  expect(none.getByText(words('house.kinds.noneNoteEdit'))).toBeOnTheScreen();
   // Not counted under any kind.
-  expect(within(screen.getByTestId('johns-kinds')).getByRole('button', { name: `${words('house.kinds.edit', { name: 'Everything else' })}, No Johns` })).toBeOnTheScreen();
+  expect(within(screen.getByTestId('johns-kinds')).getByRole('button', { name: `${words('house.kinds.edit', { name: 'Kitchen' })}, No Johns` })).toBeOnTheScreen();
   await fireEvent.press(none.getByTestId('john-def'));
   expect(within(screen.getByTestId('john-form')).getByTestId('john-kind')).toHaveTextContent(new RegExp(words('house.kinds.none')));
+});
+
+it('tells a housemate what No kind is, without asking them to open one', async () => {
+  (loadJohnList as jest.Mock).mockResolvedValue({ kinds: [...KINDS, GARDEN], johns: [SHED, BINS, LAWN], groups: [] });
+  await open('sam');
+  const none = within(screen.getByTestId('kind-none'));
+  expect(none.getByText(words('house.kinds.noneNote'))).toBeOnTheScreen();
+  expect(none.queryByText(words('house.kinds.noneNoteEdit'))).toBeNull();
+});
+
+it('lets an admin put a John in No kind on purpose, saving it with none', async () => {
+  await open();
+  await fireEvent.press(screen.getByRole('button', { name: new RegExp(`^${words('house.johns.edit', { name: 'Mow the lawn' })}, `) }));
+  const form = within(screen.getByTestId('john-form'));
+  await fireEvent.press(form.getByRole('button', { name: new RegExp(`^${words('house.johns.kind')}, `) }));
+  await fireEvent.press(form.getByRole('radio', { name: words('house.kinds.none') }));
+  expect(form.getByTestId('john-kind')).toHaveTextContent(new RegExp(words('house.kinds.none')));
+  await fireEvent.press(form.getByTestId('save-john'));
+  await waitFor(() => expect(saveJohn).toHaveBeenCalledWith('h1', expect.anything(), expect.objectContaining({ id: 'j-lawn', kindId: null }), expect.any(Date)));
 });
 
 it("doesn't show a housemate the kinds to change", async () => {
@@ -178,7 +199,7 @@ it('moves a kind up or down the list at once', async () => {
   expect(form.getByTestId('kind-up')).toHaveTextContent(/Above Kitchen/);
   expect(form.getByTestId('kind-down')).toHaveTextContent(/Below Bins & recycling/);
   await fireEvent.press(form.getByTestId('kind-down'));
-  expect(orderKinds).toHaveBeenCalledWith('h1', ['kitchen', 'bins', 'bathroom', 'floors', 'errands', 'other', 'garden']);
+  expect(orderKinds).toHaveBeenCalledWith('h1', ['kitchen', 'bins', 'bathroom', 'floors', 'errands', 'garden']);
   // The first kind has nowhere further up to go.
   await fireEvent.press(screen.getByTestId('sheet-close'));
 });
@@ -194,7 +215,7 @@ it('keeps the first kind from going up and the last from going down', async () =
   expect(form.queryByTestId('kind-down')).toBeNull();
 });
 
-it('deletes a kind, saying its Johns will have no kind until they are given one', async () => {
+it('deletes a kind, saying its Johns will move to No kind', async () => {
   await open();
   const form = await openKind('Garden');
   expect(form.getByTestId('kind-note')).toHaveTextContent(words('house.kinds.deleteNote', { n: 1 }));
@@ -203,10 +224,10 @@ it('deletes a kind, saying its Johns will have no kind until they are given one'
   await waitFor(() => expect(screen.queryByTestId('kind-form')).toBeNull());
 });
 
-it('deletes any kind, Everything else too, with nothing to say when it has no Johns', async () => {
+it('deletes any kind, with nothing to say when it has no Johns', async () => {
   await open();
-  const form = await openKind('Everything else');
+  const form = await openKind('Errands & shopping');
   expect(form.queryByTestId('kind-note')).toBeNull();
   await fireEvent.press(form.getByTestId('delete-kind'));
-  expect(deleteKind).toHaveBeenCalledWith('other');
+  expect(deleteKind).toHaveBeenCalledWith('errands');
 });

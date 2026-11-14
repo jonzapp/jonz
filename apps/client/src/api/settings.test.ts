@@ -164,14 +164,14 @@ describe('saveJohn', () => {
     expect(call.mock.calls.map(([n]) => n)).toEqual(['change_john', 'change_john']);
   });
 
-  it('writes a John with its kind by id, and one with no kind without one', async () => {
+  it('writes a John with its kind by id, and one moved to No kind with none', async () => {
     const id = crypto.randomUUID();
     const garden = crypto.randomUUID();
     await saveJohn(H1, RULES, { ...NEW_JOHN, id, name: 'Lawn', kindId: garden }, NOW);
     expect(lastInput('change_john')).toMatchObject({ johnId: id, kindId: garden });
-    // Its kind was deleted: it keeps none.
+    // No kind: null says so, so the API takes its kind away.
     await saveJohn(H1, RULES, { ...NEW_JOHN, id, name: 'Lawn', kindId: null }, NOW);
-    expect(lastInput('change_john')).not.toHaveProperty('kindId');
+    expect(lastInput('change_john')).toMatchObject({ johnId: id, kindId: null });
     expect(lastInput('change_john')).not.toHaveProperty('kindName');
     // A new John not given a kind is added with none.
     await saveJohn(H1, RULES, { ...NEW_JOHN, name: 'Lawn' }, NOW);

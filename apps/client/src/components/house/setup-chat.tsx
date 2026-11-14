@@ -146,7 +146,7 @@ export function SetupChat({
 
   function pick(kind: StarterKind) {
     const said: Turn[] = [...turns, { role: 'user', text: words(`ask.draft.starter.${kind}.title` as const) }];
-    answered({ role: 'assistant', text: words('ask.draft.fromStarter'), ask: null, draft: starterDraft(kind, kinds) }, said);
+    answered({ role: 'assistant', text: words('ask.draft.fromStarter'), ask: null, draft: starterDraft(kind, kinds, words) }, said);
   }
 
   async function add() {

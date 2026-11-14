@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { weekIndex, weekWindow, type Category } from "@app/core";
+import { CATEGORIES, CATEGORY_LABEL, KIND_COLOURS, weekIndex, weekWindow, type Category } from "@app/core";
 import type { BrowserContext } from "@playwright/test";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
@@ -149,13 +149,13 @@ export async function dealtHouseInClient(
   // Taken after everyone has joined: the deal leaves out anyone who joins after its "now".
   const now = at ?? rightNow();
   const week = weekWindow(now, "Europe/London", 1);
-  // Each in the house's starting kind given, or Everything else.
-  const { data: kinds } = await db.from("john_kinds").select("id, preset").eq("house_id", houseId);
+  // Each in the old starting kind given (made, as a setup chat would), or No kind.
+  const kinds = await startingKinds(houseId, johns.flatMap((j) => (j.preset ? [j.preset] : [])));
   const { error: johnsError } = await db.from("johns").insert(
     johns.map((j) => ({
       house_id: houseId,
       name: j.name,
-      john_kind_id: kinds?.find((k) => k.preset === (j.preset ?? "other"))?.id ?? null,
+      john_kind_id: j.preset ? (kinds[j.preset] ?? null) : null,
       points: 2,
       // Sunday night: anything already due when the week is dealt gets a day's grace. Each keeps its day, so
       // the deal's one a day doesn't move any of them off Sunday, and the order a test names them in holds.
@@ -197,12 +197,11 @@ export async function undealtHouseInClient(
   });
   if (error) throw error;
   const anchor = weekIndex(weekWindow(rightNow(), "Europe/London", 1).startsOn);
-  const { data: kinds } = await admin().from("john_kinds").select("id, preset").eq("house_id", houseId);
-  const other = kinds?.find((k) => k.preset === "other")?.id ?? null;
+  // In No kind: a new house has no kinds.
   const { error: johnsError } = await admin()
     .from("johns")
     .insert(
-      johns.map((john) => ({ house_id: houseId, name: john, john_kind_id: other, points: 2, due_dow: 7, due_time: "21:00", every_weeks: 1, anchor_week: anchor })),
+      johns.map((john) => ({ house_id: houseId, name: john, john_kind_id: null, points: 2, due_dow: 7, due_time: "21:00", every_weeks: 1, anchor_week: anchor })),
     );
   if (johnsError) throw johnsError;
   return { userId: id, houseId };
@@ -264,6 +263,26 @@ export async function houseOf(owner: string, houseName: string): Promise<{ owner
   if (error) throw error;
   const { data } = await admin().from("houses").select("join_code").eq("id", houseId).single();
   return { ownerId: id, code: data!.join_code };
+}
+
+/**
+ * The ids of a house's kinds that began as these old starting kinds, each
+ * made (named in English, in its own colour and place) when the house
+ * hasn't it: a new house starts with no kinds, and its setup chat makes the
+ * ones its Johns need.
+ */
+async function startingKinds(houseId: string, presets: readonly Category[]): Promise<Partial<Record<Category, string>>> {
+  const wanted = [...new Set(presets)];
+  if (wanted.length > 0) {
+    const rows = wanted.map((preset) => {
+      const at = CATEGORIES.indexOf(preset);
+      return { house_id: houseId, preset, name: CATEGORY_LABEL[preset], colour: KIND_COLOURS[at], position: at };
+    });
+    const { error } = await admin().from("john_kinds").upsert(rows, { onConflict: "house_id,preset", ignoreDuplicates: true });
+    if (error) throw error;
+  }
+  const { data: kinds } = await admin().from("john_kinds").select("id, preset").eq("house_id", houseId);
+  return Object.fromEntries((kinds ?? []).filter((k) => k.preset).map((k) => [k.preset, k.id]));
 }
 
 /** A confirmed user with a password, named as housemates will see them. */

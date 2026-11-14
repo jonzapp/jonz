@@ -1,6 +1,6 @@
 import { johnFacts, johnsByKind, kindOf, kindsInOrder, listCells, listLine, NEW_JOHN, pocketMoney, pointsLabel, weeklyEffort, type GroupDef, type HouseRules, type JohnDef, type KindDef } from '@app/core';
 import { ListTodoIcon, PlusIcon, SparklesIcon } from 'lucide-react-native';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
@@ -106,18 +106,12 @@ export function JohnList({
           <TourSpot id="johns.list">
           {/* The spot is one box: it keeps the page's gap between the kinds itself. */}
           <View style={styles.kinds} testID="john-kinds">
-            {/* Johns with no kind (theirs was deleted) come last, grey, until they're given one. */}
             {johnsByKind(johns, kinds).map(({ kind, johns: mine }) => (
-              <Section
-                key={kind?.id ?? 'none'}
-                label={kind?.name ?? words('house.kinds.none')}
-                right={String(mine.length)}
-                testID={`kind-${kind ? (kind.preset ?? kind.id) : 'none'}`}
-              >
+              <KindSection key={kind?.id ?? 'none'} kind={kind} count={mine.length} editable={editable}>
                 {mine.map((j) => (
                   <ListedJohn key={j.id} john={j} lid={kind?.colour ?? 'other'} group={groupName(j.groupId)} rules={rules} family={family} editable={editable} onOpen={() => (editable ? edit(j) : read(j))} />
                 ))}
-              </Section>
+              </KindSection>
             ))}
           </View>
           </TourSpot>
@@ -266,6 +260,29 @@ function ListedJohn({
   return <Row title={j.name} lid={lid} meta={line} trailing={points} onPress={onOpen} accessibilityLabel={editable ? spoken : undefined} testID="john-def" />;
 }
 
+/**
+ * One kind's Johns, with how many. The Johns in none of the house's kinds
+ * come last as No kind, in a dashed outline with a line under it saying
+ * what they are: No kind isn't a kind, so it can't be renamed or deleted
+ * (Dashed, 14 Nov).
+ */
+function KindSection({ kind, count, editable, children }: { kind: KindDef | null; count: number; editable: boolean; children: ReactNode }) {
+  const words = useWords();
+  if (kind) {
+    return (
+      <Section label={kind.name} right={String(count)} testID={`kind-${kind.preset ?? kind.id}`}>
+        {children}
+      </Section>
+    );
+  }
+  return (
+    <Section label={words('house.kinds.none')} right={String(count)} bare testID="kind-none">
+      <Group dashed>{children}</Group>
+      <Meta style={styles.noKindNote}>{words(editable ? 'house.kinds.noneNoteEdit' : 'house.kinds.noneNote')}</Meta>
+    </Section>
+  );
+}
+
 /** A John's details, to read: what an admin would edit, one row each. */
 function JohnFacts({ john, group, kind }: { john: JohnDef; group: string | null; kind: string }) {
   const words = useWords();
@@ -283,6 +300,8 @@ const styles = StyleSheet.create({
   // Over the kinds on a phone: the list's sum, then Add a John across the column.
   top: { gap: SPACE.sm, paddingHorizontal: INSET },
   kinds: { gap: SECTION_GAP },
+  // Under No kind's outline, in from its edge like a row's words.
+  noKindNote: { paddingHorizontal: INSET },
   // Above the kinds on a laptop: how much the list adds up to, and Add a John at the right.
   toolbar: { flexDirection: 'row', alignItems: 'center', gap: SPACE.lg, paddingLeft: INSET },
   toolbarWords: { flex: 1 },

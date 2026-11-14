@@ -1,4 +1,4 @@
-import { dateInWeek, monthIndex, weekIndex, weekWindow, type Category, type IsoDow, type WeekWindow } from "@app/core";
+import { CATEGORIES, CATEGORY_LABEL, dateInWeek, KIND_COLOURS, monthIndex, weekIndex, weekWindow, type Category, type IsoDow, type WeekWindow } from "@app/core";
 import { expect } from "vitest";
 
 
@@ -59,7 +59,7 @@ export async function makeHouse(names: string[] = ["Ava", "Ben", "Cal"], kind: "
 export interface JohnSpec {
   name: string;
   points?: number;
-  /** The house's starting kind it goes in (Everything else unless given), as the app writes it by its kind's id. */
+  /** The old starting kind it goes in (made if the house hasn't it), as the app writes it by its kind's id; No kind unless given. */
   preset?: Category;
   dueDow?: IsoDow;
   dueTime?: string;
@@ -81,9 +81,29 @@ export interface JohnSpec {
   minAge?: number;
 }
 
-export async function addJohns(houseId: string, specs: JohnSpec[], anchor: WeekWindow) {
+/**
+ * The ids of a house's kinds that began as these old starting kinds, each
+ * made (named in English, in its own colour and place) when the house
+ * hasn't it: a new house starts with no kinds, and its setup chat makes the
+ * ones its Johns need.
+ */
+export async function startingKindIds(houseId: string, presets: readonly Category[]): Promise<Partial<Record<Category, string>>> {
+  const wanted = [...new Set(presets)];
+  if (wanted.length > 0) {
+    const rows = wanted.map((preset) => {
+      const at = CATEGORIES.indexOf(preset);
+      return { house_id: houseId, preset, name: CATEGORY_LABEL[preset], colour: KIND_COLOURS[at], position: at };
+    });
+    const { error } = await adminClient().from("john_kinds").upsert(rows, { onConflict: "house_id,preset", ignoreDuplicates: true });
+    if (error) throw error;
+  }
   const { data: kinds } = await adminClient().from("john_kinds").select("id, preset").eq("house_id", houseId);
-  const kindOf = (preset: Category) => kinds?.find((k) => k.preset === preset)?.id ?? null;
+  return Object.fromEntries((kinds ?? []).filter((k) => k.preset).map((k) => [k.preset, k.id]));
+}
+
+export async function addJohns(houseId: string, specs: JohnSpec[], anchor: WeekWindow) {
+  const ids = await startingKindIds(houseId, specs.flatMap((s) => (s.preset ? [s.preset] : [])));
+  const kindOf = (preset?: Category) => (preset ? (ids[preset] ?? null) : null);
   const { data, error } = await adminClient()
     .from("johns")
     .insert(
@@ -91,7 +111,7 @@ export async function addJohns(houseId: string, specs: JohnSpec[], anchor: WeekW
         house_id: houseId,
         name: s.name,
         points: s.points ?? 2,
-        john_kind_id: kindOf(s.preset ?? "other"),
+        john_kind_id: kindOf(s.preset),
         due_dow: s.dueDow ?? 7,
         due_time: s.dueTime ?? "21:00",
         every_weeks: s.everyWeeks ?? 1,

@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import { BIN_NIGHT, cssVariables, lidColour, withAlpha } from "./bin-night";
-import { CATEGORIES } from "./domain";
+import { LIDS } from "./domain";
 
 describe("Bin Night", () => {
   it("names the same tokens in daylight and after dark", () => {
     expect(Object.keys(BIN_NIGHT.dark).sort()).toEqual(Object.keys(BIN_NIGHT.light).sort());
-    expect(Object.keys(BIN_NIGHT.dark.bin).sort()).toEqual([...CATEGORIES].sort());
-    expect(Object.keys(BIN_NIGHT.light.bin).sort()).toEqual([...CATEGORIES].sort());
+    expect(Object.keys(BIN_NIGHT.dark.bin).sort()).toEqual([...LIDS].sort());
+    expect(Object.keys(BIN_NIGHT.light.bin).sort()).toEqual([...LIDS].sort());
   });
 
   it("writes every colour as lower-case #rrggbb", () => {
@@ -22,7 +22,7 @@ describe("Bin Night", () => {
     expect(vars["--card-foreground"]).toBe("#16181a");
     expect(vars["--on-hivis"]).toBe("#16181a");
     expect(vars["--bin-errands"]).toBe("#6a3d9a");
-    expect(Object.keys(vars)).toHaveLength(23 + CATEGORIES.length);
+    expect(Object.keys(vars)).toHaveLength(23 + LIDS.length);
   });
 
   it("dresses an unknown kind of John in the other lid", () => {

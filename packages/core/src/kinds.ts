@@ -3,8 +3,10 @@ import { CATEGORIES, type Category } from "./domain";
 
 // Each house's own kinds of John (john_kinds): the John list's sections and
 // the lid colour of the Johns in each. A kind changes nothing in the deal:
-// that's a group (who shares a John). A house starts with six, named in its
+// that's a group (who shares a John). A house starts with five, named in its
 // maker's language; its admins add, rename, recolour, order and delete them.
+// A John in none of them sits in No kind: the list's last section, grey,
+// which isn't a kind and so can't be renamed or deleted.
 
 /** One of a house's kinds of John. */
 export interface KindDef {
@@ -19,10 +21,12 @@ export interface KindDef {
 }
 
 /**
- * The ready colours a kind can take, in the kind sheet's order: the six
- * starting kinds' lids first. The same list is public.kind_colours().
+ * The ready colours a kind can take, in the kind sheet's order: the old
+ * starting kinds' lids first, and grey, No kind's lid, last, so a new kind
+ * takes it only when every other is taken. The same list is
+ * public.kind_colours().
  */
-export const KIND_COLOURS = ["#7a4e2d", "#1f5fae", "#2a2d30", "#0f7c7a", "#6a3d9a", "#8a9096", "#c2417a", "#2b8fc7", "#4f9a2e", "#b08840", "#4a4fc4"] as const;
+export const KIND_COLOURS = ["#7a4e2d", "#1f5fae", "#2a2d30", "#0f7c7a", "#6a3d9a", "#c2417a", "#2b8fc7", "#4f9a2e", "#b08840", "#4a4fc4", "#8a9096"] as const;
 
 /** Each ready colour's name, as a screen reader says it (house.kinds.colourName.<name>). */
 export const KIND_COLOUR_NAMES = {
@@ -134,12 +138,18 @@ export function kindLid(colour: string, card: string): string {
 /** Whether a mark on this colour (a tick) should be dark, not white. */
 export const lightColour = (colour: string) => luminance(colour) > 0.4;
 
+/** No kind's own names (English, French), which no kind can take: the same as public.no_kind_name. */
+const NO_KIND_NAMES = ["no kind", "sans type"];
+
+/** Whether a kind's name is No kind's: a John drafted with it goes in No kind. */
+export const isNoKindName = (name: string) => NO_KIND_NAMES.includes(name.trim().toLowerCase());
+
 /** The house's kinds in their order on the list. */
 export function kindsInOrder(kinds: readonly KindDef[]): KindDef[] {
   return [...kinds].sort((a, b) => a.position - b.position || a.name.localeCompare(b.name));
 }
 
-/** A John's kind, by its kind id: null when it has none. */
+/** A John's kind, by its kind id: null when it's in No kind. */
 export function kindOf(john: Pick<JohnDef, "kindId">, kinds: readonly KindDef[]): KindDef | null {
   return kinds.find((k) => k.id === john.kindId) ?? null;
 }
@@ -160,7 +170,7 @@ export function freeColour(kinds: readonly KindDef[]): string {
   return KIND_COLOURS.find((c) => !taken.has(c)) ?? KIND_COLOURS[kinds.length % KIND_COLOURS.length];
 }
 
-/** The six starting kinds, as a house without its own list read (a test, a sample) has them. */
+/** The old starting kinds, as a test or a sample house has them (a new house starts with none). */
 export function startingKinds(names: Readonly<Record<Category, string>>): KindDef[] {
   return CATEGORIES.map((preset, position) => ({ id: preset, name: names[preset], colour: KIND_COLOURS[position], position, preset }));
 }

@@ -160,7 +160,7 @@ test("each place spreads out on a laptop, and a narrow window keeps the phone's 
       { name: "Mop the floors", preset: "floors" },
       { name: "Big shop", preset: "errands" },
       { name: "Wipe the hob", preset: "kitchen" },
-      { name: "Clean the windows", preset: "other" },
+      { name: "Clean the windows" },
     ],
     [
       { context: contexts[1], name: "Sam Laptop" },
