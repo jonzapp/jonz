@@ -68,11 +68,17 @@ export function clocksDiffer(one: string, other: string, at: Date): boolean {
   return utcOffset(one, at) !== utcOffset(other, at);
 }
 
-/** "6 hours ahead", "5.5 hours behind": how far `zone`'s clock is from `from`'s at `at`. */
-export function zoneGap({ zone, from }: { zone: string; from: string }, at: Date, words: Words): string {
-  const minutes = utcOffset(zone, at) - utcOffset(from, at);
+/**
+ * "In house time: London, 8 hours ahead of you.": said where a time or a day
+ * is set in the house's zone (a John's due time, booking time away, moving
+ * out), and only when the reader's clock says another time at `at`; null when
+ * the two clocks agree.
+ */
+export function houseTimeNote({ house, phone }: { house: string; phone: string }, at: Date, words: Words): string | null {
+  const minutes = utcOffset(house, at) - utcOffset(phone, at);
+  if (minutes === 0) return null;
   const hours = Math.abs(minutes) / 60;
-  return words(minutes > 0 ? "common.zone.ahead" : "common.zone.behind", { hours });
+  return words(minutes > 0 ? "common.zone.houseAhead" : "common.zone.houseBehind", { city: zoneCity(house), hours });
 }
 
 /** One zone in the house's list: its IANA name, what people read, and its offset now. */

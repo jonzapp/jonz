@@ -12,6 +12,7 @@ import { HouseWorkspace } from '@/components/house/workspace';
 import { ToastProvider } from '@/components/toast';
 import { AskPanelContext, AskPanelProvider } from '@/hooks/use-ask-jonz';
 import { assignment, snapshot, KINDS } from '@/testing/house';
+import { phoneIn } from '@/testing/clock';
 import { BATH, BINS, renderPages, untilRead } from '@/testing/pages';
 
 const words = wordsFor('en', 'housemates');
@@ -169,6 +170,8 @@ describe('an admin', () => {
     await pick(form, words('house.johns.effort'), '5 pts');
     // When it comes round reads as a sentence, each word opening its own choices.
     expect(sentence()).toBe('Every week on Sunday by 21:00');
+    // This phone keeps the house's clock: nothing to say about house time.
+    expect(form.queryByTestId('house-time-note')).toBeNull();
     await word(form, words('house.repeat.often'), 'week');
     expect(screen.getByTestId('picker-often')).toBeOnTheScreen();
     expect(screen.queryByTestId('john-name')).toBeNull();
@@ -207,6 +210,20 @@ describe('an admin', () => {
     await waitFor(() => expect(screen.queryByRole('header', { name: words('house.johns.add') })).toBeNull());
     // The list is read again with the change.
     expect(loadJohnList).toHaveBeenCalledTimes(2);
+  });
+
+  it("says a John's day and time are the house's when this phone keeps another clock", async () => {
+    phoneIn('America/Regina');
+    try {
+      await open();
+      await fireEvent.press(screen.getByRole('button', { name: words('house.johns.add') }));
+      const form = within(screen.getByTestId('john-form'));
+      expect(form.getByTestId('house-time-note')).toHaveTextContent(/^In house time: London, \d+(\.5)? hours ahead of you\.$/);
+      await word(form, words('house.repeat.time'), '21:00');
+      expect(form.getByTestId('house-time-note')).toHaveTextContent(/^In house time: London, \d+(\.5)? hours ahead of you\.$/);
+    } finally {
+      phoneIn('Europe/London');
+    }
   });
 
   it('sets a John to come round every few months, on a weekday of the month', async () => {

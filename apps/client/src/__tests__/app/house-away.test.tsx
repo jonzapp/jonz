@@ -6,6 +6,7 @@ import { loadHouse } from '@/api/board';
 import { catchUp } from '@/api/house';
 import { loadJohnList } from '@/api/settings';
 import AwayScreen from '@/app/(house)/house/away';
+import { phoneIn } from '@/testing/clock';
 import { snapshot, KINDS } from '@/testing/house';
 import { renderPages, untilRead } from '@/testing/pages';
 
@@ -195,12 +196,24 @@ describe('booking', () => {
     return within(await screen.findByTestId('away-form'));
   }
 
+  it("says the days are the house's when this phone keeps another clock", async () => {
+    phoneIn('America/Regina');
+    try {
+      const form = await openBooking();
+      expect(form.getByTestId('house-time-note')).toHaveTextContent(/^In house time: London, \d+(\.5)? hours ahead of you\.$/);
+    } finally {
+      phoneIn('Europe/London');
+    }
+  });
+
   it("opens a sheet under Who's away, its calendar the same month shape", async () => {
     await open();
     // One calendar on the page: booking is in a sheet.
     expect(screen.queryByTestId('date-range')).toBeNull();
     const form = await openBooking();
     expect(form.getByText(words('house.away.howItWorks'))).toBeOnTheScreen();
+    // This phone keeps the house's clock: nothing to say about house time.
+    expect(form.queryByTestId('house-time-note')).toBeNull();
     const calendar = within(screen.getByTestId('date-range'));
     expect(calendar.getByText('October 2026')).toBeOnTheScreen();
     // Weeks from the house's Monday, so October opens on 28 September; the days already gone can't be picked.

@@ -13,7 +13,7 @@ import { TextButton } from '@/components/text-button';
 import { useMove } from '@/hooks/use-move';
 import { useUndoOffer } from '@/hooks/use-undo-offer';
 import { useWords } from '@/hooks/use-words';
-import { useShownZone } from '@/hooks/use-zones';
+import { useShownZone } from '@/hooks/use-shown-zone';
 
 /**
  * On call: the house's on-call Johns this week (the bins, whenever they're
@@ -43,7 +43,7 @@ export function OnCall({
   const words = useWords();
   const move = useMove(houseId);
   const offer = useUndoOffer(houseId);
-  const zone = useShownZone(rules.timezone, now);
+  const zone = useShownZone();
   if (items.length === 0) return null;
   const nameOf = (id: string) => firstName(members.find((m) => m.userId === id)?.name ?? 'Someone');
   const scene: Scene = { userId, zone, now, nameOf, move, offer };

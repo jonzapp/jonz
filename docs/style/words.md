@@ -12,11 +12,12 @@
 - **Meta lines** join their facts with commas, or make them a sentence,
   never " · ". Only the browser tab title keeps "Page · Jonz". (#60)
 - **Times are on the reader's own clock.** Weeks and due times are set in
-  the house's zone, but a time is said in the phone's: away from home, one
-  line under the date says so ("Your time, Regina. The house is 6 hours
-  ahead. Show house time", `ZoneLine`) and a tap shows house time
-  everywhere. It says it once, never beside every time; only the John
-  sheet adds the house's time in brackets. (Your time, said once, 14 Nov)
+  the house's zone, but a time is said in the phone's, always, with
+  nothing saying so; only the John sheet adds the house's time in
+  brackets. Where a time or a day is set (a John's due time, booking time
+  away, moving out) it is the house's, and one quiet line says so while
+  the clocks differ: "In house time: London, 6 hours ahead of you."
+  (`HouseTimeNote`). (House time where you set it, 14 Nov)
 - Numbers that line up use tabular figures (`TABULAR`). (Focus, #17)
 - Nothing smaller than 12. (Focus, #17)
 - **A button says what happens** ("Mark done", "Send report"); what follows
