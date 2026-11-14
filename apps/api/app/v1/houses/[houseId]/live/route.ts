@@ -41,37 +41,83 @@ function refused(request: Request, response: Response): Response {
   return response;
 }
 
+/** What a stream was asked for: the house, and the last change the app heard, if it says. */
+interface Asked {
+  houseId: string;
+  after: number | undefined;
+  requestId: string;
+}
+
+/** A house being listened to: what was heard before the stream opened, and the latest change it missed. */
+interface Tuned {
+  heard: LiveChange[];
+  latest: number | null;
+  stop: () => void;
+  /** Where changes go from now on: the open stream. */
+  to: (send: (change: LiveChange) => void) => void;
+}
+
+type Execute = Awaited<NonNullable<ReturnType<typeof v1Instance>>>["execute"];
+
 export async function GET(request: Request, { params }: Params): Promise<Response> {
   const requestId = newRequestId();
   const { houseId } = await params;
   const raw = request.headers.get("last-event-id") ?? new URL(request.url).searchParams.get("after");
-  const after = raw && /^\d{1,15}$/.test(raw) ? Number(raw) : undefined;
+  const asked: Asked = { houseId, after: raw && /^\d{1,15}$/.test(raw) ? Number(raw) : undefined, requestId };
 
   const ready = v1Instance(process.env, V1_HANDLERS);
   if (!ready) return refused(request, problemResponse(notSetUpProblem(), { status: 503, requestId }));
 
-  // Listen before asking what was missed, so nothing falls between the two.
+  let tuned: Tuned;
+  try {
+    tuned = await tuneIn(request, asked, (await ready).execute);
+  } catch (error) {
+    return refused(request, problemResponse(asProblem(error), { requestId }));
+  }
+
+  return new Response(streamOf(request, asked, tuned), {
+    headers: {
+      ...cors(request),
+      "Content-Type": "text/event-stream; charset=utf-8",
+      "Cache-Control": "no-store, no-transform",
+      Connection: "keep-alive",
+      "X-Accel-Buffering": "no",
+      "request-id": requestId,
+    },
+  });
+}
+
+/**
+ * Listens to the house, then asks what was missed (house_live, which also
+ * says whether this person may listen): in that order, so nothing falls
+ * between the two.
+ */
+async function tuneIn(request: Request, asked: Asked, execute: Execute): Promise<Tuned> {
+  const { houseId, after, requestId } = asked;
   const heard: LiveChange[] = [];
   let send: ((change: LiveChange) => void) | null = null;
-  let stop: () => void = () => {};
-  let latest: number | null;
+  const stop = await listen(houseId, (change) => (send ? send(change) : heard.push(change)));
   try {
-    const { execute } = await ready;
-    stop = await listen(houseId, (change) => (send ? send(change) : heard.push(change)));
     const result = await execute(
       "house_live",
       { authorization: request.headers.get("authorization"), client: request.headers.get("jonz-client"), requestId, via: "api" },
       { houseId, ...(after === undefined ? {} : { after }) },
     );
-    latest = (result.body as { latest: number | null }).latest;
+    const latest = (result.body as { latest: number | null }).latest;
+    return { heard, latest, stop, to: (next) => (send = next) };
   } catch (error) {
     stop();
-    return refused(request, problemResponse(asProblem(error), { requestId }));
+    throw error;
   }
+}
 
+/** The stream itself: what was missed, then each change as it's heard, a ping now and then, until its time is up. */
+function streamOf(request: Request, asked: Asked, tuned: Tuned): ReadableStream<Uint8Array> {
+  const { houseId, after } = asked;
+  const { latest, stop } = tuned;
   let ping: ReturnType<typeof setInterval> | undefined;
   let end: ReturnType<typeof setTimeout> | undefined;
-  const body = new ReadableStream<Uint8Array>({
+  return new ReadableStream<Uint8Array>({
     start(controller) {
       let last = after ?? 0;
       let open = true;
@@ -87,16 +133,17 @@ export async function GET(request: Request, { params }: Params): Promise<Respons
           // Already closed by the other side.
         }
       };
-      send = (change) => {
+      const send = (change: LiveChange) => {
         if (!open || change.id <= last) return;
         last = change.id;
         controller.enqueue(changeEvent(change.id));
       };
+      tuned.to(send);
       controller.enqueue(encoder.encode("retry: 1000\n\n"));
       // Missed while away: one change says so. A first stream hears nothing it already read.
       if (after !== undefined && latest !== null) send({ house: houseId, id: latest });
       else if (latest !== null) last = Math.max(last, latest);
-      for (const change of heard.splice(0)) send(change);
+      for (const change of tuned.heard.splice(0)) send(change);
       ping = setInterval(() => open && controller.enqueue(encoder.encode(": ping\n\n")), PING_MS);
       end = setTimeout(finish, STREAM_MS);
       request.signal.addEventListener("abort", finish);
@@ -105,17 +152,6 @@ export async function GET(request: Request, { params }: Params): Promise<Respons
       clearInterval(ping);
       clearTimeout(end);
       stop();
-    },
-  });
-
-  return new Response(body, {
-    headers: {
-      ...cors(request),
-      "Content-Type": "text/event-stream; charset=utf-8",
-      "Cache-Control": "no-store, no-transform",
-      Connection: "keep-alive",
-      "X-Accel-Buffering": "no",
-      "request-id": requestId,
     },
   });
 }

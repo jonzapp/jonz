@@ -81,6 +81,25 @@ const tally = {
 const refuse = (why) =>
   tally.refused.set(why, (tally.refused.get(why) ?? 0) + 1);
 
+/** Reads an open stream to its end: `first` at its first byte, `block` for each whole event. */
+async function readEvents(body, on) {
+  let first = true;
+  const decoder = new TextDecoder();
+  let pending = "";
+  for await (const chunk of body) {
+    if (first) {
+      first = false;
+      on.first();
+    }
+    pending += decoder.decode(chunk, { stream: true }).replace(/\r\n?/g, "\n");
+    let end;
+    while ((end = pending.indexOf("\n\n")) >= 0) {
+      on.block(pending.slice(0, end));
+      pending = pending.slice(end + 2);
+    }
+  }
+}
+
 /** One screen: the stream read as the app reads it, opened again with Last-Event-ID when it ends. */
 function screen(index, token) {
   let lastId = null;
@@ -105,29 +124,19 @@ function screen(index, token) {
         if (!response.ok) {
           refuse(`${response.status} ${(await response.text()).slice(0, 80)}`);
         } else {
-          let first = true;
-          const decoder = new TextDecoder();
-          let pending = "";
-          for await (const chunk of response.body) {
-            if (first) {
-              first = false;
+          await readEvents(response.body, {
+            first: () => {
               tally.firstByte.push(performance.now() - started);
               if (opens === 0) tally.opened += 1;
               else tally.reopened += 1;
               opens += 1;
-            }
-            pending += decoder
-              .decode(chunk, { stream: true })
-              .replace(/\r\n?/g, "\n");
-            let end;
-            while ((end = pending.indexOf("\n\n")) >= 0) {
-              const block = pending.slice(0, end);
-              pending = pending.slice(end + 2);
+            },
+            block: (block) => {
               const id = /^id: ?(.*)$/m.exec(block)?.[1];
               if (id) lastId = id;
               if (/^event: ?change$/m.test(block)) heardBy(latestTick(), index);
-            }
-          }
+            },
+          });
           ended = true;
         }
       } catch (error) {

@@ -6,6 +6,58 @@ import { must, type Db, type HouseRow, type MemberRow } from "./shared";
 
 // --- Closing weeks: streaks and perks -----------------------------------------------
 
+/** A row of a week being closed, as the closing reads it. */
+interface ClosingRow {
+  id: string;
+  user_id: string;
+  points: number;
+  outcome: string | null;
+  covered_by: string | null;
+  job_id: string | null;
+  absent_at: string | null;
+  crew: { user_id: string; helper: boolean; points: number }[];
+}
+
+/**
+ * What closing a week does to each member: their streak after it, and what
+ * they earn (`perks`: a House Pass extra; without it, streaks still count
+ * but earn nothing).
+ */
+function closing(
+  week: { skipped_at: string | null },
+  rows: readonly ClosingRow[],
+  { members, streaks, perks }: { members: readonly MemberRow[]; streaks: ReadonlyMap<string, number>; perks: boolean },
+) {
+  // A John ticked by roll call shares its points among everyone on it (crew.ts).
+  const crews = crewByJob(rows);
+  const { rows: places, jobs } = tableInputs(
+    rows.map((r) => ({
+      id: r.id,
+      jobId: r.job_id,
+      userId: r.user_id,
+      points: r.points,
+      status: r.outcome as Outcome,
+      coveredBy: r.covered_by,
+      absentAt: r.absent_at ? new Date(r.absent_at) : null,
+      crew: crews.get(r.job_id ?? r.id) ?? null,
+    })),
+  );
+  const table = standings(places, members.map((m) => m.user_id), jobs);
+  // A skipped week tops nobody and leaves streaks as they were.
+  const winners = new Set(week.skipped_at ? [] : weekWinners(table));
+
+  return members.map((m) => {
+    const outcomes = rows.filter((r) => r.user_id === m.user_id).map((r) => r.outcome as Outcome);
+    const before = streaks.get(m.user_id) ?? 0;
+    const clean = week.skipped_at ? null : isCleanWeek(outcomes);
+    const after = clean === null ? before : clean ? before + 1 : 0;
+    const earn: string[] = [];
+    if (perks && earnsImmunity(before, after)) earn.push("immunity");
+    if (perks && winners.has(m.user_id)) earn.push("swap");
+    return { user_id: m.user_id, streak: after, earn };
+  });
+}
+
 export async function closeWeeks(db: Db, house: HouseRow, members: readonly MemberRow[], now: Date) {
   const due = must(
     await db
@@ -33,34 +85,7 @@ export async function closeWeeks(db: Db, house: HouseRow, members: readonly Memb
     // Weeks close in order, so a streak always counts the week before it.
     if (rows.some((r) => r.outcome === null)) break;
 
-    // A John ticked by roll call shares its points among everyone on it (crew.ts).
-    const crews = crewByJob(rows);
-    const { rows: places, jobs } = tableInputs(
-      rows.map((r) => ({
-        id: r.id,
-        jobId: r.job_id,
-        userId: r.user_id,
-        points: r.points,
-        status: r.outcome as Outcome,
-        coveredBy: r.covered_by,
-        absentAt: r.absent_at ? new Date(r.absent_at) : null,
-        crew: crews.get(r.job_id ?? r.id) ?? null,
-      })),
-    );
-    const table = standings(places, members.map((m) => m.user_id), jobs);
-    // A skipped week tops nobody and leaves streaks as they were.
-    const winners = new Set(week.skipped_at ? [] : weekWinners(table));
-
-    const payload = members.map((m) => {
-      const outcomes = rows.filter((r) => r.user_id === m.user_id).map((r) => r.outcome as Outcome);
-      const before = streaks.get(m.user_id) ?? 0;
-      const clean = week.skipped_at ? null : isCleanWeek(outcomes);
-      const after = clean === null ? before : clean ? before + 1 : 0;
-      const earn: string[] = [];
-      if (perks && earnsImmunity(before, after)) earn.push("immunity");
-      if (perks && winners.has(m.user_id)) earn.push("swap");
-      return { user_id: m.user_id, streak: after, earn };
-    });
+    const payload = closing(week, rows, { members, streaks, perks });
 
     const applied = must(await db.rpc("close_week", { p_week: week.id, p_members: payload }), "close_week");
     if (!applied) break;

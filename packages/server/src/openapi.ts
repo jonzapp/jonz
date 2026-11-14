@@ -44,84 +44,92 @@ const problem = { $ref: "#/components/responses/Problem" };
 export function openApi(operations: readonly ApiOperation[], server = "https://api.jonz.app"): Json {
   const paths: Record<string, Record<string, Json>> = {};
   const shared: Record<string, Json> = {};
-  for (const op of operations) {
-    const input = schemaOf(op.input, "input", op.name, shared) as { properties?: Record<string, Json>; required?: string[] };
-    const inPath = new Set(pathKeys(op.http.path));
-    const required = new Set(input.required ?? []);
-    const props = Object.entries(input.properties ?? {});
-    const parameters: Json[] = props
-      .filter(([k]) => inPath.has(k) || op.http.method === "GET")
-      .map(([k, schema]) => ({ name: k, in: inPath.has(k) ? "path" : "query", required: inPath.has(k) || required.has(k), schema }));
-    const bodyProps = op.http.method === "GET" ? [] : props.filter(([k]) => !inPath.has(k));
-    const write = op.operation.effect === "write";
-    if (write) parameters.push({ $ref: "#/components/parameters/IdempotencyKey" });
-    parameters.push({ $ref: "#/components/parameters/JonzClient" });
-
-    const entry: Json = {
-      operationId: op.name,
-      summary: op.operation.about,
-      tags: [op.operation.scope],
-      parameters,
-      security: [{ bearer: [] }],
-      "x-jonz-effect": op.operation.effect,
-      ...(op.operation.guard.by === "permission" ? { "x-jonz-permission": op.operation.guard.permission } : {}),
-      ...(op.operation.destructive ? { "x-jonz-destructive": true } : {}),
-      ...(op.deprecated ? { deprecated: true, "x-sunset": op.deprecated.sunset.toISOString() } : {}),
-      ...(op.operation.entitlement ? { "x-jonz-entitlement": op.operation.entitlement } : {}),
-      responses: {
-        [write ? "201" : "200"]: { description: "Done.", content: { "application/json": { schema: schemaOf(op.output, "output", op.name, shared) } } },
-        default: problem,
-      },
-    };
-    if (bodyProps.length) {
-      entry.requestBody = {
-        required: bodyProps.some(([k]) => required.has(k)),
-        content: {
-          "application/json": {
-            schema: {
-              type: "object",
-              properties: Object.fromEntries(bodyProps),
-              required: bodyProps.map(([k]) => k).filter((k) => required.has(k)),
-              additionalProperties: false,
-            },
-          },
-        },
-      };
-    }
-    (paths[op.http.path] ??= {})[op.http.method.toLowerCase()] = entry;
-  }
+  for (const op of operations) (paths[op.http.path] ??= {})[op.http.method.toLowerCase()] = entryOf(op, shared);
 
   return {
     openapi: "3.1.0",
     info: { title: "Jonz API", version: API_VERSION, description: "Every Jonz operation, for the app, MCP and scripts. Changes within /v1 only add." },
     servers: [{ url: server }],
     paths,
-    components: {
-      securitySchemes: { bearer: { type: "http", scheme: "bearer", bearerFormat: "JWT", description: "A Supabase Auth access token." } },
-      parameters: {
-        IdempotencyKey: { name: "Idempotency-Key", in: "header", required: false, schema: { type: "string", maxLength: 255 }, description: "Send the same key to retry a write safely for 24 hours." },
-        JonzClient: { name: "Jonz-Client", in: "header", required: false, schema: { type: "string", examples: ["ios/1.4.2 (57)"] } },
-      },
-      responses: {
-        Problem: {
-          description: "Refused or failed (RFC 9457).",
-          headers: { "Request-Id": { schema: { type: "string" } } },
-          content: { [PROBLEM_MEDIA_TYPE]: { schema: { $ref: "#/components/schemas/Problem" } } },
+    components: componentsWith(shared),
+  };
+}
+
+/** One operation's entry under its path and method. The parts its schemas name go into `shared`. */
+function entryOf(op: ApiOperation, shared: Record<string, Json>): Json {
+  const input = schemaOf(op.input, "input", op.name, shared) as { properties?: Record<string, Json>; required?: string[] };
+  const inPath = new Set(pathKeys(op.http.path));
+  const required = new Set(input.required ?? []);
+  const props = Object.entries(input.properties ?? {});
+  const parameters: Json[] = props
+    .filter(([k]) => inPath.has(k) || op.http.method === "GET")
+    .map(([k, schema]) => ({ name: k, in: inPath.has(k) ? "path" : "query", required: inPath.has(k) || required.has(k), schema }));
+  const bodyProps = op.http.method === "GET" ? [] : props.filter(([k]) => !inPath.has(k));
+  const write = op.operation.effect === "write";
+  if (write) parameters.push({ $ref: "#/components/parameters/IdempotencyKey" });
+  parameters.push({ $ref: "#/components/parameters/JonzClient" });
+
+  const entry: Json = {
+    operationId: op.name,
+    summary: op.operation.about,
+    tags: [op.operation.scope],
+    parameters,
+    security: [{ bearer: [] }],
+    "x-jonz-effect": op.operation.effect,
+    ...(op.operation.guard.by === "permission" ? { "x-jonz-permission": op.operation.guard.permission } : {}),
+    ...(op.operation.destructive ? { "x-jonz-destructive": true } : {}),
+    ...(op.deprecated ? { deprecated: true, "x-sunset": op.deprecated.sunset.toISOString() } : {}),
+    ...(op.operation.entitlement ? { "x-jonz-entitlement": op.operation.entitlement } : {}),
+    responses: {
+      [write ? "201" : "200"]: { description: "Done.", content: { "application/json": { schema: schemaOf(op.output, "output", op.name, shared) } } },
+      default: problem,
+    },
+  };
+  if (bodyProps.length) {
+    entry.requestBody = {
+      required: bodyProps.some(([k]) => required.has(k)),
+      content: {
+        "application/json": {
+          schema: {
+            type: "object",
+            properties: Object.fromEntries(bodyProps),
+            required: bodyProps.map(([k]) => k).filter((k) => required.has(k)),
+            additionalProperties: false,
+          },
         },
       },
-      schemas: {
-        ...shared,
-        Problem: {
-          type: "object",
-          required: ["type", "title", "status", "detail"],
-          properties: {
-            type: { type: "string", format: "uri" },
-            title: { type: "string", enum: Object.keys(PROBLEM_CODES) },
-            status: { type: "integer" },
-            detail: { type: "string" },
-            requestId: { type: "string" },
-            approvalUrl: { type: "string", format: "uri", description: "A connected app's request that can't be undone: where the person approves it in Jonz, before the app tries again." },
-          },
+    };
+  }
+  return entry;
+}
+
+/** What every entry points at: the token, the two headers, the Problem answer, and the schemas the operations share. */
+function componentsWith(shared: Record<string, Json>): Json {
+  return {
+    securitySchemes: { bearer: { type: "http", scheme: "bearer", bearerFormat: "JWT", description: "A Supabase Auth access token." } },
+    parameters: {
+      IdempotencyKey: { name: "Idempotency-Key", in: "header", required: false, schema: { type: "string", maxLength: 255 }, description: "Send the same key to retry a write safely for 24 hours." },
+      JonzClient: { name: "Jonz-Client", in: "header", required: false, schema: { type: "string", examples: ["ios/1.4.2 (57)"] } },
+    },
+    responses: {
+      Problem: {
+        description: "Refused or failed (RFC 9457).",
+        headers: { "Request-Id": { schema: { type: "string" } } },
+        content: { [PROBLEM_MEDIA_TYPE]: { schema: { $ref: "#/components/schemas/Problem" } } },
+      },
+    },
+    schemas: {
+      ...shared,
+      Problem: {
+        type: "object",
+        required: ["type", "title", "status", "detail"],
+        properties: {
+          type: { type: "string", format: "uri" },
+          title: { type: "string", enum: Object.keys(PROBLEM_CODES) },
+          status: { type: "integer" },
+          detail: { type: "string" },
+          requestId: { type: "string" },
+          approvalUrl: { type: "string", format: "uri", description: "A connected app's request that can't be undone: where the person approves it in Jonz, before the app tries again." },
         },
       },
     },
