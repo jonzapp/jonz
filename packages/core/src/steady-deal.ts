@@ -160,98 +160,101 @@ export function dealtMembers<T extends { joinedAt: Date }>(members: readonly T[]
   return members.filter((m) => m.joinedAt.getTime() <= from);
 }
 
-/** The week's deal. */
-export function steadyDeal(args: SteadyDealArgs): SteadyDealResult {
-  const { week, zone, weekStarts, now } = args;
+/** The week being dealt, as every John on the list is read against it. */
+interface Dealing {
+  args: SteadyDealArgs;
+  ids: string[];
+  /** Dealt after the week began: only the days still to come are open. */
+  midWeek: boolean;
+  dateOf: (place: number) => string;
+  open: (place: number) => boolean;
+  /** The open days each person is home. */
+  homeDays: Map<string, number[]>;
+}
+
+function dealing(args: SteadyDealArgs): Dealing {
+  const { week, now } = args;
   const ids = args.members.map((m) => m.userId);
-  const today = localDate(now, zone);
+  const today = localDate(now, args.zone);
   const midWeek = now.getTime() > week.startsAt.getTime();
   const dateOf = (place: number) => addDaysTo(week.startsOn, place - 1);
-  const lastDay = dateOf(7);
   const open = (place: number) => !midWeek || dateOf(place) >= today;
   const homeDays = new Map(
     ids.map((id) => [id, [1, 2, 3, 4, 5, 6, 7].filter((p) => open(p) && !awayOn(args.away, id, dateOf(p)))]),
   );
-  const thisWeek = weekIndex(week.startsOn);
-  const previousWaiting = args.previous?.waiting ?? {};
+  return { args, ids, midWeek, dateOf, open, homeDays };
+}
 
-  const johns: SteadyJohn[] = [];
-  const sitsOut: Record<string, number> = {};
-  for (const j of args.johns) {
-    const sharers = j.sharers.filter((id) => ids.includes(id));
-    if (!sharers.length) continue;
-    const onCall = j.kind === "on_call";
-    const day = onCall ? placeOfDow(weekStarts, weekStarts) : placeOfDow(j.repeat.dueDow, weekStarts);
-    const pinned = !onCall && (j.keepDay || j.crew !== 1);
-    // A John that keeps its day, whose day has gone, sits this week out and keeps its place in the queue.
-    if (pinned && !open(day)) {
-      if (previousWaiting[j.id]) sitsOut[j.id] = previousWaiting[j.id];
-      continue;
-    }
-    const home = onCall
-      ? homeForWeek(args.away, sharers, week.startsOn, lastDay).filter((id) => homeDays.get(id)!.length > 0)
-      : pinned
-        ? sharers.filter((id) => homeDays.get(id)!.includes(day))
-        : sharers.filter((id) => homeDays.get(id)!.length > 0);
-    const last = args.last.get(j.id);
-    const period = periodWeeks(j);
-    const waited = previousWaiting[j.id] ?? 0;
-    const missed = last?.missed;
-    const back =
-      !onCall && j.crew === 1 && missed && ids.includes(missed.userId) && sharers.includes(missed.userId)
-        ? week.startsAt.getTime() - missed.dueAt.getTime() <= COMES_BACK_DAYS * 86_400_000
-          ? missed.userId
-          : null
-        : null;
-    johns.push({
-      johnId: j.id,
-      points: onCall ? (args.onCallPoints.get(j.id) ?? j.points * j.perWeek) : j.points,
-      period,
-      day,
-      keepDay: !onCall && j.keepDay,
-      crew: onCall ? 1 : j.crew,
-      onCall,
-      sharers,
-      pool: j.groupId ?? "",
-      home,
-      due: onCall || landsInWeek(j.repeat, week.startsOn, weekStarts),
-      waited,
-      back,
-      lastBy: last ? last.userIds.filter((id) => ids.includes(id)) : [],
-      since: last ? thisWeek - weekIndex(last.startsOn) : period + waited,
-      ahead: Array.from({ length: PLAN_WEEKS }, (_, k) => onCall || landsInWeek(j.repeat, addDaysTo(week.startsOn, 7 * k), weekStarts)),
-    });
-  }
+/** Who a John comes back to: whoever missed it lately, if they still share it. */
+function comesBackTo(j: SteadyDealArgs["johns"][number], sharers: readonly string[], { args, ids }: Dealing): string | null {
+  const missed = args.last.get(j.id)?.missed;
+  if (j.kind === "on_call" || j.crew !== 1 || !missed || !ids.includes(missed.userId) || !sharers.includes(missed.userId)) return null;
+  return args.week.startsAt.getTime() - missed.dueAt.getTime() <= COMES_BACK_DAYS * 86_400_000 ? missed.userId : null;
+}
 
-  const result = steadyWeek({
-    mode: args.mode,
-    budget: args.budget,
-    johns,
-    members: args.members.map((m) => ({
-      userId: m.userId,
-      balance: m.balance,
-      ...(m.pools ? { pools: m.pools } : {}),
-      homeDays: homeDays.get(m.userId)!,
-      suits: m.suits.map((d) => placeOfDow(d, weekStarts)),
-      rather: m.rather,
-    })),
-    turns: args.mode === "classic" ? (args.previous?.turns ?? null) : null,
-    seed: args.seed,
-    makeup: args.makeup,
-  });
+/**
+ * One John on the list as the week's deal reads it; null for one nobody
+ * here shares, and "sits out" for one that keeps its day when that day has
+ * gone (it keeps its place in the queue).
+ */
+function steadyJohn(j: SteadyDealArgs["johns"][number], at: Dealing): SteadyJohn | "sits out" | null {
+  const { args, ids, homeDays } = at;
+  const { week, weekStarts } = args;
+  const sharers = j.sharers.filter((id) => ids.includes(id));
+  if (!sharers.length) return null;
+  const onCall = j.kind === "on_call";
+  const day = onCall ? placeOfDow(weekStarts, weekStarts) : placeOfDow(j.repeat.dueDow, weekStarts);
+  const pinned = !onCall && (j.keepDay || j.crew !== 1);
+  if (pinned && !at.open(day)) return "sits out";
+  const home = onCall
+    ? homeForWeek(args.away, sharers, week.startsOn, at.dateOf(7)).filter((id) => homeDays.get(id)!.length > 0)
+    : pinned
+      ? sharers.filter((id) => homeDays.get(id)!.includes(day))
+      : sharers.filter((id) => homeDays.get(id)!.length > 0);
+  const last = args.last.get(j.id);
+  const period = periodWeeks(j);
+  const waited = args.previous?.waiting?.[j.id] ?? 0;
+  return {
+    johnId: j.id,
+    points: onCall ? (args.onCallPoints.get(j.id) ?? j.points * j.perWeek) : j.points,
+    period,
+    day,
+    keepDay: !onCall && j.keepDay,
+    crew: onCall ? 1 : j.crew,
+    onCall,
+    sharers,
+    pool: j.groupId ?? "",
+    home,
+    due: onCall || landsInWeek(j.repeat, week.startsOn, weekStarts),
+    waited,
+    back: comesBackTo(j, sharers, at),
+    lastBy: last ? last.userIds.filter((id) => ids.includes(id)) : [],
+    since: last ? weekIndex(week.startsOn) - weekIndex(last.startsOn) : period + waited,
+    ahead: Array.from({ length: PLAN_WEEKS }, (_, k) => onCall || landsInWeek(j.repeat, addDaysTo(week.startsOn, 7 * k), weekStarts)),
+  };
+}
 
+/** Each place the deal made, with when it's due (none for an on-call John). */
+function dealtPlaces(result: ReturnType<typeof steadyWeek>, johns: readonly SteadyJohn[], at: Dealing): SteadyDealPlace[] {
+  const { args } = at;
+  const { week, zone, weekStarts, now } = args;
   const johnOf = new Map(johns.map((j) => [j.johnId, j]));
   const listOf = new Map(args.johns.map((j) => [j.id, j]));
-  const places: SteadyDealPlace[] = result.places.map((p) => {
+  return result.places.map((p) => {
     const j = johnOf.get(p.johnId)!;
     if (j.onCall) return { ...p, dueAt: null, dow: 0, together: false };
     const dow = dowOfPlace(p.day, weekStarts);
     let due = dueAt(week, zone, weekStarts, dow, listOf.get(p.johnId)!.dueTime.slice(0, 5));
-    if (midWeek) due = graceDue(due, now, week.endsAt);
+    if (at.midWeek) due = graceDue(due, now, week.endsAt);
     // Off its own day because that day had gone when the week was dealt, not because anyone's away.
-    if (p.why.moved === "away" && !open(j.day) && !awayOn(args.away, p.userId, dateOf(j.day))) p.why.moved = "gone";
+    if (p.why.moved === "away" && !at.open(j.day) && !awayOn(args.away, p.userId, at.dateOf(j.day))) p.why.moved = "gone";
     return { ...p, dueAt: due, dow, together: j.crew !== 1 };
   });
+}
+
+/** Everyone's share of the week's Johns due on a day: the whole house's, and each group's. */
+function dealtShares(places: readonly SteadyDealPlace[], johns: readonly SteadyJohn[], { args, ids }: Dealing) {
+  const johnOf = new Map(johns.map((j) => [j.johnId, j]));
   const items = places
     .filter((p) => p.dueAt)
     .map((p) => {
@@ -262,7 +265,42 @@ export function steadyDeal(args: SteadyDealArgs): SteadyDealResult {
   const groupShares = new Map<string, Map<string, number>>();
   for (const g of new Set(items.map((x) => x.pool).filter(Boolean)))
     groupShares.set(g, weekShares(items.filter((x) => x.pool === g), ids, args.makeup));
-  return { places, shares, groupShares, state: { turns: result.turns, waiting: { ...sitsOut, ...result.waiting } }, result };
+  return { shares, groupShares };
+}
+
+/** The week's deal. */
+export function steadyDeal(args: SteadyDealArgs): SteadyDealResult {
+  const at = dealing(args);
+  const previousWaiting = args.previous?.waiting ?? {};
+
+  const johns: SteadyJohn[] = [];
+  const sitsOut: Record<string, number> = {};
+  for (const j of args.johns) {
+    const read = steadyJohn(j, at);
+    if (read === "sits out") {
+      if (previousWaiting[j.id]) sitsOut[j.id] = previousWaiting[j.id];
+    } else if (read) johns.push(read);
+  }
+
+  const result = steadyWeek({
+    mode: args.mode,
+    budget: args.budget,
+    johns,
+    members: args.members.map((m) => ({
+      userId: m.userId,
+      balance: m.balance,
+      ...(m.pools ? { pools: m.pools } : {}),
+      homeDays: at.homeDays.get(m.userId)!,
+      suits: m.suits.map((d) => placeOfDow(d, args.weekStarts)),
+      rather: m.rather,
+    })),
+    turns: args.mode === "classic" ? (args.previous?.turns ?? null) : null,
+    seed: args.seed,
+    makeup: args.makeup,
+  });
+
+  const places = dealtPlaces(result, johns, at);
+  return { places, ...dealtShares(places, johns, at), state: { turns: result.turns, waiting: { ...sitsOut, ...result.waiting } }, result };
 }
 
 /**

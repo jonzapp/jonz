@@ -5,6 +5,7 @@
  * what the deal did rather than replaying it.
  */
 import type { BoardItem } from "./board";
+import type { DealWhy } from "./deal";
 import { isOpen } from "./board-views";
 import { andNames, shareLabel } from "./crew";
 import type { HouseRules } from "./domain";
@@ -57,7 +58,7 @@ export function johnWhy(
   const dealt = item.dealt;
   const key = dealt?.mode === "classic" ? words('john.why.keyTurns') : dealt?.budget ? words('john.why.keyBudget') : words('john.why.key');
   return {
-    ...(together ?? dealtPart(item, viewerId, { Who, who, whose }, words)),
+    ...(together ?? dealtPart(item, { viewerId, say: { Who, who, whose }, words })),
     key,
     stakes: stakesLine(item, viewerId, rules, now, { Who, who, whose }, words),
   };
@@ -102,35 +103,73 @@ function togetherPart(
   return { answer: lines.join(" "), rows };
 }
 
-function dealtPart(
-  item: BoardItem,
-  viewerId: string,
-  say: { Who: (id: string) => string; who: (id: string) => string; whose: (id: string) => string }, words: Words,
-): Pick<WhyView, "answer" | "rows"> {
-  if (item.flaggedAt) return { answer: words('john.why.flag'), rows: [] };
-  const why = item.dealt;
-  if (!why) return { answer: words('john.why.unknown'), rows: [] };
+/** How a sheet names people: starting a sentence, mid-sentence, and as an owner ("Ben's"). */
+type Saying = { Who: (id: string) => string; who: (id: string) => string; whose: (id: string) => string };
 
-  const to = why.to;
-  const you = to === viewerId;
-  const chosen = why.weighed.find((w) => w.userId === to);
-  const others = chosen ? why.weighed.filter((w) => w.userId !== to) : [];
+/** Who is asking why, and how people are named to them. */
+interface WhyAsking {
+  viewerId: string;
+  say: Saying;
+  words: Words;
+}
+
+type Weighed = DealWhy["weighed"][number];
+
+/** The people the deal passed over for whoever it chose, and why it could. */
+function passedOver(why: DealWhy) {
+  const chosen = why.weighed.find((w) => w.userId === why.to);
+  const others = chosen ? why.weighed.filter((w) => w.userId !== why.to) : [];
   // Passed over though further behind: handed the most extra a week gives (checked first, in the deal).
   const full = others.filter((w) => w.full && w.standing < chosen!.standing);
   // Passed over though as far behind or further: did it last time.
   const nudged = others.filter((w) => !w.full && w.last && w.standing <= chosen!.standing);
+  return { chosen, others, full, nudged };
+}
 
-  const lines: string[] = [];
-  if (why.by === "only") lines.push(words('john.why.only', { who: say.Who(to), you }));
-  else if (why.by === "back") lines.push(words('john.why.back', { who: say.Who(to), you }));
-  else if (why.by === "oneEach") lines.push(words('john.why.oneEach', { whose: you ? words('john.why.yours') : say.whose(to) }));
-  else if (why.by === "mostRoom") lines.push(words('john.why.mostRoom', { who: say.who(to) }));
-  else if (why.by === "turn") lines.push(words('john.why.turn', { whose: say.whose(to) }));
-  else if (why.by === "nextInLine") lines.push(words('john.why.nextInLine', { who: say.who(to) }));
-  else if (why.by === "behind") lines.push(nudged.length ? words('john.why.nudged', { who: say.who(to) }) : words('john.why.behind', { who: say.who(to) }));
-  else if (why.by === "fewer") lines.push(words('john.why.fewer', { who: say.who(to) }));
-  else lines.push(words('john.why.draw', { who: say.who(to) }));
+/** The first sentence: the rule that gave it to them. */
+function ruleLine(why: DealWhy, nudged: readonly Weighed[], { viewerId, say, words }: WhyAsking): string {
+  const to = why.to;
+  const you = to === viewerId;
+  switch (why.by) {
+    case "only":
+      return words('john.why.only', { who: say.Who(to), you });
+    case "back":
+      return words('john.why.back', { who: say.Who(to), you });
+    case "oneEach":
+      return words('john.why.oneEach', { whose: you ? words('john.why.yours') : say.whose(to) });
+    case "mostRoom":
+      return words('john.why.mostRoom', { who: say.who(to) });
+    case "turn":
+      return words('john.why.turn', { whose: say.whose(to) });
+    case "nextInLine":
+      return words('john.why.nextInLine', { who: say.who(to) });
+    case "behind":
+      return nudged.length ? words('john.why.nudged', { who: say.who(to) }) : words('john.why.behind', { who: say.who(to) });
+    case "fewer":
+      return words('john.why.fewer', { who: say.who(to) });
+    default:
+      return words('john.why.draw', { who: say.who(to) });
+  }
+}
 
+/** Where a John moved after the deal chose, in a sentence; null when it stayed put. */
+function movedLine(why: DealWhy, { viewerId, say, words }: WhyAsking): string | null {
+  const to = why.to;
+  const you = to === viewerId;
+  if (why.moved === "taken") return words('john.why.movedTaken', { who: say.who(to), you });
+  if (why.moved === "suits") return words('john.why.movedSuits', { who: say.who(to) });
+  if (why.moved === "away") return words('john.why.movedAway', { who: say.who(to), you });
+  if (why.moved === "gone") return words('john.why.movedGone');
+  return null;
+}
+
+/** The answer's sentences, in order: the rule, then everything that bent it. */
+function whyLines(item: BoardItem, why: DealWhy, asking: WhyAsking): string[] {
+  const { viewerId, say, words } = asking;
+  const to = why.to;
+  const you = to === viewerId;
+  const { chosen, others, full, nudged } = passedOver(why);
+  const lines = [ruleLine(why, nudged, asking)];
   /** Starting a sentence: "You and Ben", "Ben and you". */
   const names = (ids: readonly string[]) => andNames(ids.map((id, i) => (i === 0 ? say.Who(id) : say.who(id))), words);
   /** One of them, and not you: "was", "is". */
@@ -145,32 +184,39 @@ function dealtPart(
   }
   if (chosen?.last && why.by === "behind" && others.length > 0) lines.push(words('john.why.again', { who: say.Who(to), you }));
   if (why.away.length) lines.push(words('john.why.away', { names: names(why.away), one: one(why.away) }));
-  if (why.moved === "taken") lines.push(words('john.why.movedTaken', { who: say.who(to), you }));
-  else if (why.moved === "suits") lines.push(words('john.why.movedSuits', { who: say.who(to) }));
-  else if (why.moved === "away") lines.push(words('john.why.movedAway', { who: say.who(to), you }));
-  else if (why.moved === "gone") lines.push(words('john.why.movedGone'));
+  const moved = movedLine(why, asking);
+  if (moved) lines.push(moved);
   if (item.userId !== to) lines.push(words('john.why.moved', { dealtTo: say.who(to), holder: say.who(item.userId) }));
+  return lines;
+}
 
+/** Everyone the deal weighed, each with where they stood; none when there was only one. */
+function whyRows(why: DealWhy, { say, words }: WhyAsking): WhyRow[] {
+  if (why.weighed.length <= 1) return [];
   const classic = why.mode === "classic";
-  const rows: WhyRow[] =
-    why.weighed.length > 1
-      ? why.weighed.map((w) => {
-          const meta = [
-            w.userId === to ? words('john.why.dealtIt') : null,
-            w.last ? words('john.why.hadItLast') : null,
-            w.full ? words('john.why.handedMost') : null,
-            !classic && w.room !== undefined ? words('john.why.left', { room: Math.max(0, Math.round(w.room * 10) / 10) }) : null,
-          ].filter((m) => m !== null);
-          return {
-            userId: w.userId,
-            name: say.Who(w.userId),
-            value: classic && w.place !== undefined ? words('john.why.inLine', { place: w.place }) : formatBalance(w.standing, words),
-            meta: meta.length ? meta.join(", ") : null,
-            chosen: w.userId === to,
-          };
-        })
-      : [];
-  return { answer: lines.join(" "), rows };
+  return why.weighed.map((w) => {
+    const meta = [
+      w.userId === why.to ? words('john.why.dealtIt') : null,
+      w.last ? words('john.why.hadItLast') : null,
+      w.full ? words('john.why.handedMost') : null,
+      !classic && w.room !== undefined ? words('john.why.left', { room: Math.max(0, Math.round(w.room * 10) / 10) }) : null,
+    ].filter((m) => m !== null);
+    return {
+      userId: w.userId,
+      name: say.Who(w.userId),
+      value: classic && w.place !== undefined ? words('john.why.inLine', { place: w.place }) : formatBalance(w.standing, words),
+      meta: meta.length ? meta.join(", ") : null,
+      chosen: w.userId === why.to,
+    };
+  });
+}
+
+function dealtPart(item: BoardItem, asking: WhyAsking): Pick<WhyView, "answer" | "rows"> {
+  const { words } = asking;
+  if (item.flaggedAt) return { answer: words('john.why.flag'), rows: [] };
+  const why = item.dealt;
+  if (!why) return { answer: words('john.why.unknown'), rows: [] };
+  return { answer: whyLines(item, why, asking).join(" "), rows: whyRows(why, asking) };
 }
 
 function stakesLine(
