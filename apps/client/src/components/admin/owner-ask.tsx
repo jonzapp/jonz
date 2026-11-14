@@ -17,7 +17,7 @@ import { IconButton } from '@/components/icon-button';
 import { Chip } from '@/components/status-mark';
 import { Body } from '@/components/text';
 import { BarEdgeContext, TitleBar } from '@/components/title-bar';
-import { GUTTER, LookContext, SPACE, useTheme, WIDE } from '@/theme';
+import { GUTTER, SPACE, useTheme, WIDE } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
 /** One turn of the owner's chat: what they asked, or Jonz's answer, how long it thought, and what it put on the card. */
@@ -44,9 +44,9 @@ type Open = { serial: number; saved: SavedChat | null };
 
 /**
  * The owner's Ask Jonz (docs/specs/owner-admin.md, "Ask Jonz, owner"): the
- * same chat pieces as a housemate's, always in Night with Owner under the
- * title on its bar, so it's never mistaken for theirs. It asks ask_owner on /v1, which
- * reads what the admin pages show and puts anything to do on a card (the
+ * same chat pieces as a housemate's, in the app's own look (Day or Night,
+ * as the device chose), with Owner under the title on its bar, so it's
+ * never mistaken for theirs. It asks ask_owner on /v1, which reads what the admin pages show and puts anything to do on a card (the
  * house's MovesCard's twin): nothing changes until the owner taps it. Its
  * chips open a report, an audit entry, an account's log or an admin page.
  *
@@ -59,11 +59,9 @@ type Open = { serial: number; saved: SavedChat | null };
  */
 export function OwnerAsk({ turns: initial = [], onClose, store = ownerChats }: { turns?: OwnerTurn[]; onClose?: () => void; store?: ChatStore }) {
   return (
-    <LookContext.Provider value="dark">
-      <BarEdgeContext.Provider value={null}>
-        <OwnerChats initial={initial} onClose={onClose} store={store} />
-      </BarEdgeContext.Provider>
-    </LookContext.Provider>
+    <BarEdgeContext.Provider value={null}>
+      <OwnerChats initial={initial} onClose={onClose} store={store} />
+    </BarEdgeContext.Provider>
   );
 }
 

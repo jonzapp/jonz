@@ -1,7 +1,7 @@
 import { BIN_NIGHT, OWNER_PERMISSION_NAMES, type AuditEntry, type Notice, wordsFor } from '@app/core';
 import * as Clipboard from 'expo-clipboard';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
-import { Platform, useWindowDimensions, type ViewStyle } from 'react-native';
+import { Platform, useColorScheme, useWindowDimensions, type ViewStyle } from 'react-native';
 
 import {
   askOwner,
@@ -82,6 +82,7 @@ jest.mock('@/api/houses', () => ({
 jest.mock('@/api/supabase', () => ({ supabase: {} }));
 jest.mock('expo-clipboard', () => ({ setStringAsync: jest.fn().mockResolvedValue(true) }));
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({ __esModule: true, default: jest.fn() }));
+jest.mock('react-native/Libraries/Utilities/useColorScheme', () => ({ __esModule: true, default: jest.fn(() => 'light') }));
 jest.mock('@/hooks/use-membership', () => ({
   useMembership: () => ({ session: { user: { id: 'owner' } }, house: null, refresh: jest.fn() }),
 }));
@@ -161,6 +162,7 @@ const ROUTES = {
 
 beforeEach(() => {
   (useWindowDimensions as jest.Mock).mockReturnValue(PHONE);
+  jest.mocked(useColorScheme).mockReturnValue('light');
   jest.mocked(ownerStatus).mockResolvedValue({ owner: true, mfa: true, permissions: [...OWNER_PERMISSION_NAMES] });
   jest.mocked(liveNotices).mockResolvedValue([SLOW]);
   jest.mocked(noticesPage).mockResolvedValue({ notices: [LATER, SLOW, OLD], more: false, next: null });
@@ -363,11 +365,11 @@ describe('the owner’s Ask Jonz', () => {
     expect(zone.getByTestId('owner-move-deletion_now')).toBeVisible();
     expect(zone.queryByTestId('owner-move-deletion_stop')).toBeNull();
     expect(within(card.getByTestId('owner-moves-list')).getByTestId('owner-move-deletion_stop')).toBeVisible();
-    expect(card.getByTestId('owner-moves-apply')).toHaveStyle({ borderColor: BIN_NIGHT.dark.hazard });
+    expect(card.getByTestId('owner-moves-apply')).toHaveStyle({ borderColor: BIN_NIGHT.light.hazard });
     // Nothing happens before the tap.
     expect(stopDeletion).not.toHaveBeenCalled();
     await fireEvent.press(card.getByTestId('owner-move-deletion_now'));
-    expect(card.getByTestId('owner-moves-apply')).not.toHaveStyle({ borderColor: BIN_NIGHT.dark.hazard });
+    expect(card.getByTestId('owner-moves-apply')).not.toHaveStyle({ borderColor: BIN_NIGHT.light.hazard });
     expect(card.getByTestId('owner-moves-apply')).toHaveTextContent(words('admin.moves.apply', { n: 2 }));
     await fireEvent.press(card.getByTestId('owner-moves-apply'));
     expect(await chat().findByText(words('admin.moves.done', { n: 2 }))).toBeVisible();
@@ -375,6 +377,24 @@ describe('the owner’s Ask Jonz', () => {
     expect(endNotice).toHaveBeenCalledWith(NOTICE_ID);
     expect(deleteNow).not.toHaveBeenCalled();
     await waitFor(() => expect(ownerChats.keep).toHaveBeenCalledWith(null, expect.arrayContaining([expect.objectContaining({ hadCard: true })])));
+  });
+
+  // It used to be always Night: dark chat and box on a light page in Day.
+  it.each([
+    ['a phone', 'light'],
+    ['a phone', 'dark'],
+    ['a laptop', 'light'],
+    ['a laptop', 'dark'],
+  ] as const)('follows the app’s look on %s in %s, like a housemate’s Ask Jonz', async (device, scheme) => {
+    (useWindowDimensions as jest.Mock).mockReturnValue(device === 'a phone' ? PHONE : LAPTOP);
+    jest.mocked(useColorScheme).mockReturnValue(scheme);
+    await renderPages(ROUTES, '/admin/overview');
+    await untilRead(words);
+    await fireEvent.press(screen.getByTestId('owner-ask-open'));
+    const colors = BIN_NIGHT[scheme];
+    const where = screen.getByTestId(device === 'a phone' ? 'owner-ask-sheet' : 'owner-ask-panel');
+    if (device === 'a phone') expect(where).toHaveStyle({ backgroundColor: colors.background });
+    expect(within(where).getByTestId('owner-ask')).toHaveStyle({ backgroundColor: colors.background });
   });
 
   it('docks down the right on a laptop, beside the page and the rail, and the sparkles close it again', async () => {
