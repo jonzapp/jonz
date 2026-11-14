@@ -1,4 +1,4 @@
-import type { AskResetAudience, HouseDetail } from '@app/core';
+import { ASK_RESET_AUDIENCES, type AskResetAudience, type HouseDetail } from '@app/core';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { RotateCcwIcon, SparklesIcon } from 'lucide-react-native';
 import { useState } from 'react';
@@ -10,10 +10,13 @@ import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/button';
 import { ButtonRow } from '@/components/button-row';
 import { Field } from '@/components/field';
+import { Group } from '@/components/group';
 import { Row, RowIcon } from '@/components/row';
 import { Section } from '@/components/section';
+import { Segmented } from '@/components/segmented';
 import { ChoiceRow } from '@/components/setup/choice-row';
 import { Sheet } from '@/components/sheet';
+import { Meta } from '@/components/text';
 import { useToast } from '@/components/toast';
 import { useWords } from '@/hooks/use-words';
 
@@ -65,15 +68,20 @@ function AskResetSheet({ house, onClose }: { house: HouseDetail; onClose: () => 
     },
   });
   const toggle = (id: string) => setPicked(picked.includes(id) ? picked.filter((p) => p !== id) : [...picked, id]);
-  const choice = (value: AskResetAudience, label: string) => (
-    <ChoiceRow role="radio" label={label} checked={audience === value} onPress={() => setAudience(value)} testID={`ask-reset-${value}`} />
-  );
   return (
     <Sheet visible title={words('admin.askReset.title')} description={words('admin.askReset.body')} onClose={onClose} testID="ask-reset-sheet">
-      {choice('house', words('admin.askReset.house', { name: house.name }))}
-      {choice('people', words('admin.askReset.people'))}
-      {audience === 'people'
-        ? house.people.map((person) => (
+      <Segmented
+        label={words('admin.askReset.who')}
+        options={ASK_RESET_AUDIENCES.map((value) => ({ value, label: words(`admin.askReset.audience.${value}` as const) }))}
+        value={audience}
+        onChange={setAudience}
+        equal
+        testID="ask-reset-audience"
+      />
+      <Meta>{words('admin.askReset.reaches', { audience, name: house.name })}</Meta>
+      {audience === 'people' ? (
+        <Group testID="ask-reset-people-list">
+          {house.people.map((person) => (
             <ChoiceRow
               key={person.id}
               role="checkbox"
@@ -83,9 +91,9 @@ function AskResetSheet({ house, onClose }: { house: HouseDetail; onClose: () => 
               onPress={() => toggle(person.id)}
               testID={`ask-reset-person-${person.id}`}
             />
-          ))
-        : null}
-      {choice('everyone', words('admin.askReset.everyone'))}
+          ))}
+        </Group>
+      ) : null}
       <Field label={words('admin.askReset.reason')} value={reason} onChangeText={setReason} maxLength={500} testID="ask-reset-reason" />
       {reset.error ? <Alert message={reset.error.message} /> : null}
       <ButtonRow stacked>

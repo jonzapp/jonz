@@ -428,11 +428,13 @@
   "admin.askReset.rowMeta": "Start the limits again for everyone here, the people you pick, or everyone in Jonz.",
   "admin.askReset.title": "Reset Ask Jonz use?",
   "admin.askReset.body": "Their Ask Jonz turns so far stop counting toward the house’s week, each person’s share, the day’s turns and their 7 days, so each limit starts again. Nothing is deleted and nobody is told.",
-  "admin.askReset.house": "Everyone in {name}",
-  "admin.askReset.people": "People I pick",
-  "admin.askReset.everyone": "Everyone in Jonz, in every house",
   "admin.askReset.reason": "Why (for the audit log)",
   "admin.askReset.go": "{audience, select, everyone {Reset for everyone} other {Reset Ask Jonz}}",
   "admin.askReset.going": "Resetting",
-  "admin.askReset.done": "Ask Jonz starts again: {turns, plural, =0 {nothing was counted yet} =1 {1 turn} other {# turns}} reset for {people, plural, =1 {1 person} other {# people}}."
+  "admin.askReset.done": "Ask Jonz starts again: {turns, plural, =0 {nothing was counted yet} =1 {1 turn} other {# turns}} reset for {people, plural, =1 {1 person} other {# people}}.",
+  "admin.askReset.who": "Whose",
+  "admin.askReset.audience.house": "This house",
+  "admin.askReset.audience.people": "People",
+  "admin.askReset.audience.everyone": "Everyone",
+  "admin.askReset.reaches": "{audience, select, house {Everyone in {name}.} people {Tick who to reset.} other {Everyone in Jonz, in every house.}}"
 }
