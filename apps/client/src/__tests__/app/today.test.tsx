@@ -18,7 +18,7 @@ import { loadStake } from '@/api/stake';
 import Today from '@/app/(house)/today';
 import { JohnSheetProvider } from '@/components/john-sheet';
 import { ToastProvider } from '@/components/toast';
-import { assignment, snapshot } from '@/testing/house';
+import { assignment, snapshot, KINDS } from '@/testing/house';
 import { BINS } from '@/testing/pages';
 import { testQueryClient } from '@/testing/query';
 import { hoursFromNow as at, NOW } from '@/testing/clock';
@@ -109,7 +109,7 @@ beforeEach(() => {
   (markDone as jest.Mock).mockResolvedValue(undefined);
   (undoDone as jest.Mock).mockResolvedValue(undefined);
   (pickPhoto as jest.Mock).mockResolvedValue(null);
-  (loadJohnList as jest.Mock).mockResolvedValue({ johns: [BINS], groups: [] });
+  (loadJohnList as jest.Mock).mockResolvedValue({ kinds: KINDS, johns: [BINS], groups: [] });
   (loadStake as jest.Mock).mockResolvedValue(
     buildStake({
       ledger: [{ id: 1, user_id: 'sam', kind: 'forfeit', amount_minor: -300, month: '2026-10', counterparty_user_id: null, created_at: '2026-10-10T12:00:00Z' }],
@@ -362,7 +362,7 @@ describe('what takes Next up’s place', () => {
 
     it('offers the deal in outline until there are Johns and a housemate, and says what the server says', async () => {
       (dealThisWeek as jest.Mock).mockRejectedValue(new Error('Add some Johns to the list first.'));
-      (loadJohnList as jest.Mock).mockResolvedValue({ johns: [], groups: [] });
+      (loadJohnList as jest.Mock).mockResolvedValue({ kinds: KINDS, johns: [], groups: [] });
       read.mockResolvedValue({ ...first(), members: first().members.slice(0, 1) });
       const card = await open();
       expect(await within(card).findByText(words('today.nextUp.onTheList', { count: 0 }))).toBeOnTheScreen();

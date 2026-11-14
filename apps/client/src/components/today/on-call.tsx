@@ -77,7 +77,7 @@ function OnCallRow({ item, scene }: { item: OnCallItem; scene: Scene }) {
     return (
       <Row
         title={item.name}
-        lid={item.category}
+        lid={item.kindColour ?? item.category}
         meta={`${withMe ? words('today.onCall.flaggedYou') : words('today.onCall.flagged', { name: nameOf(flag.userId) })}, due ${dueInLine(flag.dueAt, now, rules.timezone, words)}`}
         chevron
         onPress={() => sheet.open(flag.id)}
@@ -91,7 +91,7 @@ function OnCallRow({ item, scene }: { item: OnCallItem; scene: Scene }) {
     return (
       <Row
         title={item.name}
-        lid={item.category}
+        lid={item.kindColour ?? item.category}
         meta={words('today.onCall.didIt', { time: sinceLabel(held.doneAt, now, rules.timezone, words) })}
         trailing={<Chip label={words('today.onCall.done')} icon={CheckIcon} tone="good" />}
         onPress={() => sheet.open(held.id)}
@@ -129,7 +129,7 @@ function WaitingRow({ item, scene }: { item: OnCallItem; scene: Scene }) {
   return (
     <Row
       title={item.name}
-      lid={item.category}
+      lid={item.kindColour ?? item.category}
       meta={meta}
       trailing={
         <TextButton

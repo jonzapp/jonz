@@ -96,7 +96,14 @@ export type HouseSettings = z.infer<typeof HouseSettings>;
 /** A John's fields, before their one check across fields (johnMonthly). */
 export const JohnFields = z.object({
   name: z.string().trim().min(1, "Name the John.").max(60),
-  category: z.enum(CATEGORIES),
+  // Its kind (john_kinds): one of the house's by id, or by name (made if the
+  // house has none by that name). Left out, a new John goes in Everything
+  // else and a changed one keeps its kind. Null is a John with no kind, as
+  // the list reads one whose kind was deleted.
+  kindId: z.uuid().nullable().optional(),
+  kindName: z.string().trim().min(1).max(30).optional(),
+  /** The older way to give a kind: the starting kind it began as. Gone with johns.category. */
+  category: z.enum(CATEGORIES).optional(),
   points: z.coerce.number().int().min(1).max(20),
   everyWeeks: z.coerce.number().int().min(1).max(26),
   // A John that repeats in months (repeat.ts): how many apart, which of its
@@ -136,6 +143,13 @@ export const JohnDraft = JohnFields.extend({ id: z.uuid().optional() }).refine(.
 export type JohnDraft = z.infer<typeof JohnDraft>;
 /** A JohnDraft before it is checked: the monthly fields may be left out (a weekly John). */
 export type JohnDraftInput = z.input<typeof JohnDraft>;
+
+/** A kind of John: what save_kind takes. Its colour is a lid colour, #rrggbb. */
+export const KindDraft = z.object({
+  name: z.string().trim().min(1, "Name the kind.").max(30, "Keep it to 30 letters."),
+  colour: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Pick a colour."),
+});
+export type KindDraft = z.infer<typeof KindDraft>;
 
 /** A group of housemates who share some Johns (one of two bathrooms): what save_group takes. */
 export const GroupDraft = z.object({

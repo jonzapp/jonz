@@ -17,8 +17,14 @@ kind of John. Calm by default, loud only for the moments that count.
   colour is never the only way meaning is shown.
 - **Green** only for the done tick and a good headline figure. (Focus, #17)
 - **Colour stays neutral.** No colour per person, anywhere (the away
-  calendar shades days, it doesn't colour people). A John's category colour
+  calendar shades days, it doesn't colour people). A John's kind colour
   shows only as its `LidBar`. (Who's away, #23)
+- **Each house picks its kinds' colours:** one of eleven ready colours (the
+  six old lids first) or any colour. After dark a ready colour wears its
+  own night shade, picked by eye; any other is made lighter (after dark) or
+  darker (by day) until it reaches 3 to 1 against the card, keeping its hue
+  (`kindLid`). So a lid always reads, whatever colour a house picks.
+  (Kinds list A and Colour picker, 14 Nov) *Backed by* WCAG 1.4.11.
 - **Contrast:** words meet 4.5 to 1 against what's behind them and icons,
   edges and focus rings 3 to 1, in Day and Night. A theme test checks the
   token pairs (`packages/core/src/bin-night.test.ts`). (**New**) *Backed by*

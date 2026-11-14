@@ -28,6 +28,7 @@ import {
   DisplayName,
   HouseSettings,
   JohnFields,
+  KindDraft,
   johnMonthly,
   FlagResponse,
   FreshRequest,
@@ -327,14 +328,14 @@ const today = z.object({
   ),
   week: T.weeks.pick({ id: true, startsOn: true, startsAt: true, endsAt: true, waiting: true, ahead: true }).nullable(),
   /** This week's, and any still open from before. */
-  assignments: z.array(T.assignments.extend({ everyWeeks: int.nullable(), everyMonths: int.nullable(), crew })),
+  assignments: z.array(T.assignments.extend({ everyWeeks: int.nullable(), everyMonths: int.nullable(), kindName: text.nullable(), kindColour: text.nullable(), crew })),
   disputes: z.array(
     T.disputes
       .pick({ id: true, assignmentId: true, raisedBy: true, reason: true, closesAt: true, photoPath: true })
       .extend({ votes: z.array(T.dispute_votes.pick({ userId: true, uphold: true })) }),
   ),
   onCall: z.array(
-    T.on_call_picks.pick({ johnId: true, userId: true }).extend({ john: T.johns.pick({ name: true, category: true, needsPhoto: true, archivedAt: true }).nullable() }),
+    T.on_call_picks.pick({ johnId: true, userId: true }).extend({ john: T.johns.pick({ name: true, category: true, needsPhoto: true, archivedAt: true }).extend({ kindName: text.nullable(), kindColour: text.nullable() }).nullable() }),
   ),
   offers: z.array(z.object({ id, mine: id, theirs: id, askedBy: id, askedUserId: id, expiresAt: at })),
   moves: z.object({ lastMovedOut: at.nullable(), lastJoined: at.nullable() }),
@@ -505,6 +506,7 @@ export const OPERATION_IO = {
         T.johns.pick({
           id: true,
           name: true,
+          johnKindId: true,
           category: true,
           points: true,
           everyWeeks: true,
@@ -525,6 +527,7 @@ export const OPERATION_IO = {
           minAge: true,
         }),
       ),
+      kinds: z.array(T.john_kinds.pick({ id: true, name: true, colour: true, position: true, preset: true })),
       groups: z.array(z.object({ id, name: text, members: z.array(id) })),
     }),
     "GET /v1/houses/{houseId}/johns",
@@ -650,6 +653,9 @@ export const OPERATION_IO = {
   add_johns: io(z.object({ houseId: id, johns: z.array(JohnFields.refine(...johnMonthly)).min(1).max(100) }), z.array(id), "POST /v1/houses/{houseId}/johns/batch"),
   change_john: io(JohnFields.extend({ johnId: id }).refine(...johnMonthly), nothing, "PATCH /v1/johns/{johnId}"),
   remove_john: io(z.object({ johnId: id }), nothing, "DELETE /v1/johns/{johnId}"),
+  save_kind: io(KindDraft.extend({ houseId: id, kindId: id.nullable() }), id, "POST /v1/houses/{houseId}/kinds"),
+  order_kinds: io(z.object({ houseId: id, kinds: z.array(id).max(100) }), nothing, "PATCH /v1/houses/{houseId}/kinds"),
+  delete_kind: io(z.object({ kindId: id, moveToId: id.optional() }), nothing, "DELETE /v1/kinds/{kindId}"),
   save_house_rules: io(HouseSettings.extend({ houseId: id }), nothing, "PATCH /v1/houses/{houseId}/rules"),
   set_deal_mode: io(z.object({ houseId: id, mode: z.enum(DEAL_MODES) }), nothing, "PATCH /v1/houses/{houseId}/deal-mode"),
   answer_tick: io(AnswerTick.extend({ assignmentId: id }), MoveResponse, "POST /v1/assignments/{assignmentId}/ok"),

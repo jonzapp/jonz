@@ -1,4 +1,4 @@
-import { firstName, PAGES, weekShareRows, type BoardItem, type GroupDef, type JohnDef, type PageName, type ReplyCard, type Words } from '@app/core';
+import { firstName, kindOf, PAGES, weekShareRows, type BoardItem, type GroupDef, type JohnDef, type KindDef, type PageName, type ReplyCard, type Words } from '@app/core';
 import type { Href } from 'expo-router';
 
 import type { JohnRowContext } from '@/components/john-row';
@@ -12,6 +12,8 @@ export interface ReplyData {
   /** Everyone in the house, in the order they joined. */
   people: { userId: string; name: string }[];
   johns: readonly JohnDef[];
+  /** The house's kinds, for each John's lid colour; without them a John wears its starting kind's. */
+  kinds?: readonly KindDef[];
   groups: readonly GroupDef[];
   /** This week's board, or null before it's read (no ::week then). */
   items: readonly BoardItem[] | null;
@@ -52,6 +54,7 @@ export function findJohn(data: ReplyData, ref: string): JohnDef | null {
 export function replyPieces(data: ReplyData, words: Words): ReplyPieces {
   const nameOf = (id: string) => data.people.find((p) => p.userId === id)?.name ?? null;
   const groupOf = (id: string | null) => (id ? (data.groups.find((g) => g.id === id)?.name ?? null) : null);
+  const lidOf = (john: JohnDef) => kindOf(john, data.kinds ?? [])?.colour ?? john.category;
   const johnList: Href = '/house/johns';
 
   return {
@@ -61,7 +64,7 @@ export function replyPieces(data: ReplyData, words: Words): ReplyPieces {
       // This week's: its sheet, yours first.
       const item =
         data.items?.find((i) => i.johnId === john.id && i.userId === data.viewerId) ?? data.items?.find((i) => i.johnId === john.id);
-      const lead = { kind: 'lid' as const, category: john.category };
+      const lead = { kind: 'lid' as const, lid: lidOf(john) };
       const spoken = words('ask.reply.spokenJohn', { name: john.name });
       return item && data.openJohn ? { lead, spoken, onPress: () => data.openJohn!(item.id) } : { lead, spoken, href: johnList };
     },
@@ -98,7 +101,7 @@ export function replyPieces(data: ReplyData, words: Words): ReplyPieces {
         }
         case 'johns': {
           const johns = card.refs.length === 0 ? [...data.johns] : card.refs.map((r) => findJohn(data, r)).filter((j): j is JohnDef => j !== null);
-          return <JohnsCard johns={[...new Set(johns)]} groupOf={groupOf} href={johnList} />;
+          return <JohnsCard johns={[...new Set(johns)]} groupOf={groupOf} lidOf={lidOf} href={johnList} />;
         }
       }
     },

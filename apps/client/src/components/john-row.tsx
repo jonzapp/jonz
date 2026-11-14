@@ -164,7 +164,7 @@ export function JohnRow({ item, context, testID }: { item: BoardItem; context: J
         titleLines={2}
         meta={john.plan.meta}
         metaLines={2}
-        lid={john.plan.lid ? item.category : undefined}
+        lid={john.plan.lid ? (item.kindColour ?? item.category) : undefined}
         leading={john.leading}
         trailing={john.trailing}
         hazardEdge={john.plan.hazardEdge}

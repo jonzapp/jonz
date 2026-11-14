@@ -1,4 +1,4 @@
-import { canSwap, memberCan, oneRowPerJob, hasPass, liveWeekFilter, toggleWeekFilter, weekAwayLine, weekAwayNote, weekFairness, weekList, weekLookAhead, weekPeople, weekRangeLine, weekSummary, weekTogether, weekUnticked, whoDeals, type JohnDef, type WeekPart } from '@app/core';
+import { canSwap, kindOf, memberCan, oneRowPerJob, hasPass, liveWeekFilter, toggleWeekFilter, weekAwayLine, weekAwayNote, weekFairness, weekList, weekLookAhead, weekPeople, weekRangeLine, weekSummary, weekTogether, weekUnticked, whoDeals, type JohnDef, type WeekPart } from '@app/core';
 import { RepeatIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
@@ -109,7 +109,8 @@ function WeekFor({ houseId, userId }: { houseId: string; userId: string }) {
             away={away}
             shares={shares}
             johns={forDeal ? (list.data?.johns ?? null) : null}
-            list={list.data?.johns ?? null}
+            // Each with its kind's name ('' for none), for the lines under the Johns waiting their turn.
+            list={list.data ? list.data.johns.map((j) => ({ ...j, kindName: kindOf(j, list.data!.kinds)?.name ?? '' })) : null}
           />
         )}
       </Waiting>
@@ -131,7 +132,7 @@ function Board({
   shares: ReturnType<typeof useTable>;
   johns: readonly unknown[] | null;
   /** The John list, once read: for what's coming up. */
-  list: readonly JohnDef[] | null;
+  list: readonly (JohnDef & { kindName?: string })[] | null;
 }) {
   const away = awayRead.data;
   const shares = sharesRead.data;
@@ -336,7 +337,7 @@ function LookAhead({
 }: {
   view: HouseView;
   week: NonNullable<HouseView['board']['week']>;
-  list: readonly JohnDef[];
+  list: readonly (JohnDef & { kindName?: string })[];
   context: JohnRowContext;
 }) {
   const words = useWords(view.snapshot.house.kind);

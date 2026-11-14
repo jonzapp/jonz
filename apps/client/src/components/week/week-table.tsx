@@ -90,7 +90,7 @@ function TableRow({ item, context }: { item: BoardItem; context: JohnRowContext 
         titleLines={2}
         meta={john.plan.meta}
         metaLines={2}
-        lid={john.plan.lid ? item.category : undefined}
+        lid={john.plan.lid ? (item.kindColour ?? item.category) : undefined}
         leading={john.leading}
         cells={
           <>

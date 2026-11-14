@@ -6,7 +6,7 @@ import { loadAway } from '@/api/away';
 import { loadHouse } from '@/api/board';
 import { loadJohnList } from '@/api/settings';
 import { useHouse } from '@/hooks/use-house';
-import { snapshot } from '@/testing/house';
+import { snapshot, KINDS } from '@/testing/house';
 import { BATH, BINS, renderPages } from '@/testing/pages';
 
 import { SetupSection } from './setup-section';
@@ -48,7 +48,7 @@ async function rowSays(testID: string, text: RegExp) {
 beforeEach(() => {
   jest.clearAllMocks();
   (loadHouse as jest.Mock).mockResolvedValue(snapshot());
-  (loadJohnList as jest.Mock).mockResolvedValue({ johns: [BINS, BATH], groups: [] });
+  (loadJohnList as jest.Mock).mockResolvedValue({ kinds: KINDS, johns: [BINS, BATH], groups: [] });
   (loadAway as jest.Mock).mockResolvedValue({
     today: '2026-10-26',
     periods: [{ id: 'w1', userId: 'sam', startsOn: '2026-10-29', endsOn: '2026-11-01', note: null }],
@@ -97,7 +97,7 @@ it('keeps each row as tall while it reads as once it has, so nothing below moves
 });
 
 it("says nobody's away when nobody is, and none yet before there are Johns", async () => {
-  (loadJohnList as jest.Mock).mockResolvedValue({ johns: [], groups: [] });
+  (loadJohnList as jest.Mock).mockResolvedValue({ kinds: KINDS, johns: [], groups: [] });
   (loadAway as jest.Mock).mockResolvedValue({ today: '2026-10-26', periods: [] });
   await open();
   await rowSays('to-johns', new RegExp(words('house.lower.noJohns')));

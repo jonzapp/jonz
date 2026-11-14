@@ -48,12 +48,13 @@ beforeEach(() => {
 });
 
 describe('loadJohnList', () => {
-  it("reads the house's live Johns, as House shows them, and its groups", async () => {
+  it("reads the house's live Johns, as House shows them, its kinds and its groups", async () => {
     call.mockResolvedValue({
       johns: [
         {
           id: 'j1',
           name: 'Bins',
+          johnKindId: 'k-bins',
           category: 'bins',
           points: 2,
           everyWeeks: 1,
@@ -74,6 +75,10 @@ describe('loadJohnList', () => {
           minAge: null,
         },
       ],
+      kinds: [
+        { id: 'k-garden', name: 'Garden', colour: '#4f9a2e', position: 1, preset: null },
+        { id: 'k-bins', name: 'Bins', colour: '#2a2d30', position: 0, preset: 'bins' },
+      ],
       groups: [{ id: 'g1', name: 'Upstairs', members: ['ava'] }],
     });
     await expect(loadJohnList(H1)).resolves.toEqual({
@@ -81,6 +86,7 @@ describe('loadJohnList', () => {
         {
           id: 'j1',
           name: 'Bins',
+          kindId: 'k-bins',
           category: 'bins',
           points: 2,
           everyWeeks: 1,
@@ -100,6 +106,11 @@ describe('loadJohnList', () => {
           payMinor: 0,
           minAge: null,
         },
+      ],
+      // In the house's order.
+      kinds: [
+        { id: 'k-bins', name: 'Bins', colour: '#2a2d30', position: 0, preset: 'bins' },
+        { id: 'k-garden', name: 'Garden', colour: '#4f9a2e', position: 1, preset: null },
       ],
       groups: [{ id: 'g1', name: 'Upstairs', memberIds: ['ava'] }],
     });
@@ -154,6 +165,18 @@ describe('saveJohn', () => {
     await saveJohn(H1, RULES, { ...fridge, everyWeeks: 2, everyMonths: null, weekOfMonth: null }, NOW);
     expect(lastInput('change_john')).toMatchObject({ everyWeeks: 2, everyMonths: null, weekOfMonth: null, anchorMonth: null });
     expect(call.mock.calls.map(([n]) => n)).toEqual(['change_john', 'change_john']);
+  });
+
+  it('writes a John read with its kind by that kind alone, and leaves one with no kind without one', async () => {
+    const id = crypto.randomUUID();
+    const garden = crypto.randomUUID();
+    await saveJohn(H1, RULES, { ...NEW_JOHN, id, name: 'Lawn', kindId: garden, category: 'other' }, NOW);
+    expect(lastInput('change_john')).toMatchObject({ johnId: id, kindId: garden });
+    expect(lastInput('change_john')).not.toHaveProperty('category');
+    // Its kind was deleted: sending its older category would put it in Everything else.
+    await saveJohn(H1, RULES, { ...NEW_JOHN, id, name: 'Lawn', kindId: null, category: 'other' }, NOW);
+    expect(lastInput('change_john')).not.toHaveProperty('category');
+    expect(lastInput('change_john')).not.toHaveProperty('kindId');
   });
 
   it("says what's wrong before asking the API", async () => {

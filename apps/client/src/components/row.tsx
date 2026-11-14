@@ -43,7 +43,7 @@ interface RowProps {
   sentence?: ReactNode;
   /** One line under the title, truncated: a string, or Meta text with spans of its own. */
   meta?: ReactNode;
-  /** A John's category: its lid bar leads the meta line. */
+  /** A John's kind's colour (or, for a read that doesn't say, its category): its lid bar leads the meta line. */
   lid?: string;
   leading?: ReactNode;
   /** One thing: a value (a string is set as Body), a StatusMark, or a TextButton. */
@@ -234,7 +234,7 @@ function RowWords({
           {/* The dot stays on the meta's first line. */}
           {lid != null ? (
             <View style={styles.lid}>
-              <LidBar category={lid} />
+              <LidBar lid={lid} />
             </View>
           ) : null}
           <View style={styles.metaText}>

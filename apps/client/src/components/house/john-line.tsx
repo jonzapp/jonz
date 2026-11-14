@@ -28,7 +28,7 @@ function lineColumns(roomy: boolean): ListColumn[] {
  */
 export function JohnLine({
   name,
-  category,
+  lid,
   when,
   often,
   also,
@@ -39,7 +39,8 @@ export function JohnLine({
   accessibilityLabel,
 }: {
   name: string;
-  category: string;
+  /** Its kind's colour, or the starting kind it began as. */
+  lid: string;
   when: string;
   often: string;
   also: string[];
@@ -62,7 +63,7 @@ export function JohnLine({
           <View style={styles.name}>
             <View style={styles.titled}>
               <View style={styles.lid}>
-                <LidBar category={category} />
+                <LidBar lid={lid} />
               </View>
               <Text style={[type.body, styles.grow, { color: colors.foreground, fontFamily: type.rowTitle.fontFamily }]}>{name}</Text>
             </View>

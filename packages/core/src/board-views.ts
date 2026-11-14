@@ -11,7 +11,7 @@ import { BoardItem, Row, WeekBoard } from "./board";
 export interface OnCallRow {
   john_id: string;
   user_id: string;
-  johns: { name: string; category: string; needs_photo?: boolean; archived_at?: string | null } | null;
+  johns: { name: string; category: string; kind_name?: string | null; kind_colour?: string | null; needs_photo?: boolean; archived_at?: string | null } | null;
 }
 
 /** An on-call John this week: who has it, its open flag if it has one, and how often it was flagged. */
@@ -19,6 +19,9 @@ export interface OnCallItem {
   johnId: string;
   name: string;
   category: string;
+  /** Its kind on the house's list now, and that kind's lid colour, when the read says. */
+  kindName?: string | null;
+  kindColour?: string | null;
   /** Its tick needs a photo. */
   needsPhoto: boolean;
   /** Who the deal put on call. An open flag can be with someone else (they were away when it was raised). */
@@ -57,6 +60,8 @@ export function onCallItems(rows: readonly OnCallRow[], board: WeekBoard): OnCal
         johnId: r.john_id,
         name: r.johns!.name,
         category: r.johns!.category,
+        kindName: r.johns!.kind_name ?? null,
+        kindColour: r.johns!.kind_colour ?? null,
         needsPhoto: (r.johns!.needs_photo ?? false) && board.photos !== false,
         holderId: r.user_id,
         openFlag: open[0] ?? null,

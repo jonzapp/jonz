@@ -120,7 +120,17 @@ describe("chatTurn, with Claude stood in for", () => {
     let told: DraftContext | null = null;
     const result = await chatTurn({ db: house.admin.db, userId: house.admin.userId }, { houseId: house.id, messages, current: null, now: rightNow() }, async (ctx, tools) => {
       told = ctx;
-      expect(tools.listJohns()).toBe("The list is empty.");
+      // Then the house's kinds, each with a ref for save_kind, order_kinds and delete_kind.
+      const listed = tools.listJohns().split("\n");
+      expect(listed[0]).toBe("The list is empty.");
+      expect(listed.slice(1)).toEqual([
+        expect.stringMatching(/^Kind Kitchen \(ref [0-9a-f]{8}, colour #7a4e2d\)$/),
+        expect.stringMatching(/^Kind Bathroom /),
+        expect.stringMatching(/^Kind Bins & recycling /),
+        expect.stringMatching(/^Kind Floors & hoovering /),
+        expect.stringMatching(/^Kind Errands & shopping /),
+        expect.stringMatching(/^Kind Everything else /),
+      ]);
       expect(tools.may).toEqual({ add: true, change: true, remove: true, groups: true, resets: false, away: true });
       return firstGo(ctx, tools);
     });

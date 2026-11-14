@@ -6,7 +6,7 @@ import { loadHouse } from '@/api/board';
 import { catchUp } from '@/api/house';
 import { loadJohnList } from '@/api/settings';
 import AwayScreen from '@/app/(house)/house/away';
-import { snapshot } from '@/testing/house';
+import { snapshot, KINDS } from '@/testing/house';
 import { renderPages, untilRead } from '@/testing/pages';
 
 const words = wordsFor('en', 'housemates');
@@ -42,7 +42,7 @@ beforeEach(() => {
   (loadAway as jest.Mock).mockResolvedValue({ today: '2026-10-21', periods: [] });
   (loadHouse as jest.Mock).mockResolvedValue(snapshot());
   (catchUp as jest.Mock).mockResolvedValue(false);
-  (loadJohnList as jest.Mock).mockResolvedValue({ johns: [], groups: [] });
+  (loadJohnList as jest.Mock).mockResolvedValue({ kinds: KINDS, johns: [], groups: [] });
   (cancelAway as jest.Mock).mockResolvedValue(undefined);
   (setAway as jest.Mock).mockResolvedValue({ before: 0, handed: 0, skipped: 0 });
 });

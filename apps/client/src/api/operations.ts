@@ -27,13 +27,16 @@ import { payPocketMoney } from './pocket';
 import {
   dealThisWeek,
   deleteGroup,
+  deleteKind,
   handOver,
+  orderKinds,
   removeMember,
   resetJoinCode,
   saveDealMode,
   setHouseKind,
   setRole,
   resetHouseData,
+  saveKind,
   updateHouse,
 } from './settings';
 import { confirmPayment } from './stake';
@@ -77,6 +80,9 @@ const CARD_OPERATIONS: { [N in AskCardOperation]: (input: Input<N>, ctx: Operati
   board_tick: (i) => boardTick(i.assignmentId),
   remove_flag: (i) => removeFlag(i.assignmentId),
   delete_group: (i) => deleteGroup(i.groupId),
+  save_kind: (i) => saveKind(i.houseId, i.kindId, { name: i.name, colour: i.colour }),
+  order_kinds: (i) => orderKinds(i.houseId, i.kinds),
+  delete_kind: (i) => deleteKind(i.kindId, i.moveToId),
   reset_join_code: (i) => resetJoinCode(i.houseId),
   reset_house_data: (i) => resetHouseData(i.houseId, i.everything ?? false),
   set_house_kind: (i) => setHouseKind(i.houseId, i.kind),

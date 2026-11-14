@@ -16,7 +16,7 @@ const NEW_LINE = '\n';
 /** What a chip in a reply stands for, once the app has found it. */
 export interface ChipTarget {
   /** What's drawn before the words: a John's lid, a person's plate, or a page's arrow. */
-  lead: { kind: 'lid'; category: string } | { kind: 'person'; name: string; userId: string | null; me: boolean } | { kind: 'page' };
+  lead: { kind: 'lid'; lid: string } | { kind: 'person'; name: string; userId: string | null; me: boolean } | { kind: 'page' };
   /** Where a tap goes, or what it does (a John's sheet). */
   href?: Href;
   onPress?: () => void;
@@ -312,7 +312,7 @@ function Chip({ label, target }: { label: string; target: ChipTarget }) {
           lead.kind === 'person' && styles.chipPerson,
         ]}
       >
-        {lead.kind === 'lid' ? <LidBar category={lead.category} /> : null}
+        {lead.kind === 'lid' ? <LidBar lid={lead.lid} /> : null}
         {lead.kind === 'person' ? <Avatar name={lead.name} userId={lead.userId} me={lead.me} size={24} /> : null}
         <Text style={[type.body, styles.chipWords, { color: colors.foreground }]} numberOfLines={1}>
           {label}

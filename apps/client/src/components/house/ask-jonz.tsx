@@ -165,8 +165,8 @@ export function AskJonz({
           pieces={replyPieces({
             viewerId: userId,
             people: view.snapshot.members.map((m) => ({ userId: m.userId, name: m.name })),
-            johns: list.data.johns,
-            groups: list.data.groups,
+            // The list's Johns, kinds and groups.
+            ...list.data,
             items: view.board.items,
             rowContext: {
               houseId,

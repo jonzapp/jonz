@@ -184,7 +184,7 @@ export interface NextUpMeta {
  */
 export function nextUpMeta(item: BoardItem, rules: HouseRules, now: Date, words: Words, room: number | null = null): NextUpMeta {
   const zone = rules.timezone;
-  const kind = johnKind(item.category);
+  const kind = johnKind(item.category, item.kindName);
   if (item.status === "overdue") {
     return {
       kind,

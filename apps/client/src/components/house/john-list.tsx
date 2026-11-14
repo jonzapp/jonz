@@ -1,4 +1,4 @@
-import { CATEGORY_LABEL, johnFacts, johnsByKind, listCells, listLine, NEW_JOHN, pocketMoney, pointsLabel, weeklyEffort, type GroupDef, type HouseRules, type JohnDef } from '@app/core';
+import { johnFacts, johnsByKind, kindOf, kindsInOrder, listCells, listLine, NEW_JOHN, pocketMoney, pointsLabel, weeklyEffort, type GroupDef, type HouseRules, type JohnDef, type KindDef } from '@app/core';
 import { ListTodoIcon, PlusIcon, SparklesIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -34,6 +34,7 @@ export function JohnList({
   houseId,
   rules,
   johns,
+  kinds,
   groups,
   editable,
   whoAdds,
@@ -43,6 +44,8 @@ export function JohnList({
   houseId: string;
   rules: HouseRules;
   johns: JohnDef[];
+  /** The house's own kinds of John: the list's sections, in their order, and each John's lid colour. */
+  kinds: KindDef[];
   groups: GroupDef[];
   editable: boolean;
   /** An empty list, to someone who can't add to it: who will ("Sam will add the Johns."). */
@@ -73,6 +76,7 @@ export function JohnList({
           houseId={houseId}
           rules={rules}
           initial={draft}
+          kinds={kinds}
           groups={groups}
           family={family}
           onDone={panel.close}
@@ -80,14 +84,17 @@ export function JohnList({
       ),
     });
   };
+  const kindName = (john: JohnDef) => kindOf(john, kinds)?.name ?? words('house.kinds.none');
   const read = (john: JohnDef) => {
     if (!panel) {
       setReading(john);
       return;
     }
-    panel.open({ title: john.name, testID: 'john-facts', content: <JohnFacts john={john} group={groupName(john.groupId)} /> });
+    panel.open({ title: john.name, testID: 'john-facts', content: <JohnFacts john={john} group={groupName(john.groupId)} kind={kindName(john)} /> });
   };
-  const add = () => edit({ ...NEW_JOHN });
+  // A new John starts in the first kind on the list.
+  const first = kindsInOrder(kinds)[0];
+  const add = () => edit({ ...NEW_JOHN, kindId: first?.id, category: first?.preset ?? 'other' });
   return (
     <>
       {johns.length === 0 ? (
@@ -99,10 +106,16 @@ export function JohnList({
           <TourSpot id="johns.list">
           {/* The spot is one box: it keeps the page's gap between the kinds itself. */}
           <View style={styles.kinds} testID="john-kinds">
-            {johnsByKind(johns, words).map((kind) => (
-              <Section key={kind.category} label={CATEGORY_LABEL[kind.category]} right={String(kind.johns.length)} testID={`kind-${kind.category}`}>
-                {kind.johns.map((j) => (
-                  <ListedJohn key={j.id} john={j} group={groupName(j.groupId)} rules={rules} family={family} editable={editable} onOpen={() => (editable ? edit(j) : read(j))} />
+            {/* Johns with no kind (theirs was deleted) come last, grey, until they're given one. */}
+            {johnsByKind(johns, kinds).map(({ kind, johns: mine }) => (
+              <Section
+                key={kind?.id ?? 'none'}
+                label={kind?.name ?? words('house.kinds.none')}
+                right={String(mine.length)}
+                testID={`kind-${kind ? (kind.preset ?? kind.id) : 'none'}`}
+              >
+                {mine.map((j) => (
+                  <ListedJohn key={j.id} john={j} lid={kind?.colour ?? 'other'} group={groupName(j.groupId)} rules={rules} family={family} editable={editable} onOpen={() => (editable ? edit(j) : read(j))} />
                 ))}
               </Section>
             ))}
@@ -123,6 +136,7 @@ export function JohnList({
             houseId={houseId}
             rules={rules}
             initial={editing}
+            kinds={kinds}
             groups={groups}
             family={family}
             onDone={() => setEditing(null)}
@@ -130,7 +144,7 @@ export function JohnList({
         ) : null}
       </Sheet>
       <Sheet visible={reading !== null} title={reading?.name} flush onClose={() => setReading(null)} testID="john-facts">
-        {reading ? <JohnFacts john={reading} group={groupName(reading.groupId)} /> : null}
+        {reading ? <JohnFacts john={reading} group={groupName(reading.groupId)} kind={kindName(reading)} /> : null}
       </Sheet>
     </>
   );
@@ -205,6 +219,7 @@ function ListBar({ johns, onAdd, quiet }: { johns: JohnDef[]; onAdd?: () => void
  */
 function ListedJohn({
   john: j,
+  lid,
   group,
   rules,
   family,
@@ -212,6 +227,8 @@ function ListedJohn({
   onOpen,
 }: {
   john: JohnDef;
+  /** Its kind's colour. */
+  lid: string;
   group: string | null;
   rules: HouseRules;
   family: boolean;
@@ -234,7 +251,7 @@ function ListedJohn({
     return (
       <JohnLine
         name={j.name}
-        category={j.category}
+        lid={lid}
         when={cells.when}
         often={cells.often}
         also={[...cells.also, ...[earns, aged].filter((x): x is string => x !== null)]}
@@ -246,15 +263,15 @@ function ListedJohn({
       />
     );
   }
-  return <Row title={j.name} lid={j.category} meta={line} trailing={points} onPress={onOpen} accessibilityLabel={editable ? spoken : undefined} testID="john-def" />;
+  return <Row title={j.name} lid={lid} meta={line} trailing={points} onPress={onOpen} accessibilityLabel={editable ? spoken : undefined} testID="john-def" />;
 }
 
 /** A John's details, to read: what an admin would edit, one row each. */
-function JohnFacts({ john, group }: { john: JohnDef; group: string | null }) {
+function JohnFacts({ john, group, kind }: { john: JohnDef; group: string | null; kind: string }) {
   const words = useWords();
   return (
     <Group>
-      {johnFacts(john, group, words).map((fact) => (
+      {johnFacts(john, { group, kind }, words).map((fact) => (
         <Row key={fact.label} title={fact.label} trailing={fact.value} testID="john-fact" />
       ))}
     </Group>

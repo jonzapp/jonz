@@ -61,7 +61,7 @@ export async function keepDraft(house: { houseId: string; rules: HouseRules; gro
  * through the list's own writes, as if by hand. Returns how many applied.
  */
 export async function applyDraft(
-  { houseId, rules, list, now }: { houseId: string; rules: HouseRules; list: JohnList; now: Date },
+  { houseId, rules, list, now }: { houseId: string; rules: HouseRules; list: Pick<JohnList, 'johns' | 'groups'>; now: Date },
   { base, draft, keys }: { base: HouseDraft | null; draft: HouseDraft; keys: readonly string[] },
 ): Promise<number> {
   const picked = draftChanges(base, draft).filter((c) => keys.includes(c.key));

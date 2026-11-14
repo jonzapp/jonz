@@ -19,6 +19,9 @@ export type Row<T extends keyof Database["public"]["Tables"]> = Database["public
 export interface JohnDef {
   id: string;
   name: string;
+  /** Its kind on the house's list (kinds.ts), null for none; absent when not read, so it goes by its category. */
+  kindId?: string | null;
+  /** The starting kind its kind began as, or other: what older reads and drafts give. */
   category: Category;
   points: number;
   /** Every N weeks, for a John that repeats in weeks (repeat.ts). */
@@ -79,12 +82,13 @@ export const NEW_JOHN: Omit<JohnDef, "id"> = {
 export function johnDef(
   row: Pick<Row<"johns">, "id" | "name" | "category" | "points" | "every_weeks" | "due_dow" | "due_time" | "needs_photo" | "group_id"> &
     Partial<
-      Pick<Row<"johns">, "kind" | "respond_hours" | "per_week" | "every_months" | "week_of_month" | "anchor_month" | "anchor_week" | "crew" | "keep_day" | "pay_minor" | "min_age">
+      Pick<Row<"johns">, "john_kind_id" | "kind" | "respond_hours" | "per_week" | "every_months" | "week_of_month" | "anchor_month" | "anchor_week" | "crew" | "keep_day" | "pay_minor" | "min_age">
     >,
 ): JohnDef {
   return {
     id: row.id,
     name: row.name,
+    ...(row.john_kind_id !== undefined ? { kindId: row.john_kind_id } : {}),
     category: row.category as Category,
     points: row.points,
     everyWeeks: row.every_weeks,
@@ -193,6 +197,9 @@ export type AssignmentRow = Pick<
 > & {
   /** The John on the list it was dealt from: null once that John is deleted, absent when not read. */
   john_id?: string | null;
+  /** That John's kind as the list has it now, when the read says (house_today): its name and lid colour. */
+  kind_name?: string | null;
+  kind_colour?: string | null;
   /** That John as the list has it now (`johns(every_weeks, every_months)`), when the read embeds it. */
   johns?: { every_weeks: number; every_months?: number | null } | null;
   /** The week it was dealt or flagged in, when read: a flag can outlast its week. */
@@ -257,6 +264,9 @@ export interface BoardItem {
   userId: string;
   name: string;
   category: string;
+  /** Its John's kind on the list now and its lid colour; null when not read or the John is gone, '' for no kind. */
+  kindName?: string | null;
+  kindColour?: string | null;
   points: number;
   needsPhoto: boolean;
   dueAt: Date;
@@ -437,7 +447,8 @@ export function buildWeekBoard(input: BoardInput): WeekBoard {
 
   const sorted = [...input.assignments].sort((a, b) => Date.parse(a.due_at) - Date.parse(b.due_at));
   const setting: BoardSetting = { input, week, photos, disputeBy: disputesByJob(input), crews: crewByJob(input.assignments), sorted };
-  const items = sorted.map((a) => boardItem(a, setting));
+  // Each with its John's kind as the list has it now.
+  const items = sorted.map((a) => ({ ...boardItem(a, setting), kindName: a.kind_name ?? null, kindColour: a.kind_colour ?? null }));
 
   const { rows, jobs } = tableInputs(items.filter((i) => !i.carried));
   return {

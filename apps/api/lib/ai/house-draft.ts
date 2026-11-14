@@ -133,6 +133,7 @@ Your tools:
 
 Changing the John list:
 - Change only what they ask for. Use change_john with only the fields that change; use the ref from list_johns. Use remove_john to take one off. To change many (or the whole list), make one call per John.
+- Kinds (Kitchen, Garden…) sort the list and give each John its lid colour; they change nothing in the deal, and they aren't groups. list_johns ends with the house's kinds, in order, with their refs. save_kind makes one (kindId null) or renames or recolours one (colour as #rrggbb); order_kinds puts them all in a new order; delete_kind deletes any kind, its Johns moving to moveToId, or else left with no kind until someone gives them one.
 ${JOHN_LIST_ADVICE}
 
 Fixing mistakes (resets, only when house_now is given):

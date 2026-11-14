@@ -13,7 +13,7 @@ import * as Clipboard from 'expo-clipboard';
 import { loadTable } from '@/api/table';
 import HouseScreen from '@/app/(house)/house';
 import { HouseWorkspace } from '@/components/house/workspace';
-import { assignment, snapshot } from '@/testing/house';
+import { assignment, snapshot, KINDS } from '@/testing/house';
 import { renderPages, untilRead } from '@/testing/pages';
 import { NOW } from '@/testing/clock';
 
@@ -142,6 +142,7 @@ beforeEach(() => {
   (loadStake as jest.Mock).mockResolvedValue(OWED_TO_YOU);
   (loadAway as jest.Mock).mockResolvedValue({ today: '2026-10-26', periods: [] });
   (loadJohnList as jest.Mock).mockResolvedValue({
+    kinds: KINDS,
     johns: [
       { points: 3, everyWeeks: 1 },
       { points: 2, everyWeeks: 2 },

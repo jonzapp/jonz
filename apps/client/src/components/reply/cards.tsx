@@ -68,7 +68,18 @@ export function SharesCard({
 }
 
 /** ::johns: Johns from the list, as the John list page writes them. */
-export function JohnsCard({ johns, groupOf, href }: { johns: JohnDef[]; groupOf: (groupId: string | null) => string | null; href?: Href }) {
+export function JohnsCard({
+  johns,
+  groupOf,
+  lidOf,
+  href,
+}: {
+  johns: JohnDef[];
+  groupOf: (groupId: string | null) => string | null;
+  /** Its kind's lid colour. */
+  lidOf: (john: JohnDef) => string;
+  href?: Href;
+}) {
   const words = useWords();
   return (
     <Section label={words('ask.reply.johns')} count={johns.length || undefined}>
@@ -79,7 +90,7 @@ export function JohnsCard({ johns, groupOf, href }: { johns: JohnDef[]; groupOf:
               key={j.id}
               title={j.name}
               titleLines={2}
-              lid={j.category}
+              lid={lidOf(j)}
               meta={[scheduleLine(j, words, groupOf(j.groupId)), pointsLabel(j.points, words)].join(', ')}
               metaLines={2}
               href={href}

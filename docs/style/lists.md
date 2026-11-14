@@ -15,6 +15,19 @@
   photo, its group, on call); the rest is in the John's own sheet. Each kind
   is a section with its count on the right, and the page's sum and Add a
   John sit over the list on a phone as on a laptop. (John list A, 10 Nov)
+- **A house's kinds are its own,** named in its language, and an admin
+  keeps them on the Kinds list under the John list: one row a kind (its lid
+  bar, its name, how many Johns), then Add a kind. A kind opens in the
+  panel beside the list on a laptop or a sheet on a phone: its name, its
+  colour, how a John of it looks, Move up and Move down (which happen at
+  once), then Save and Delete. A kind sorts the list and colours its Johns;
+  it changes nothing in the deal (that's a group). (Kinds list A, 14 Nov)
+- **Any kind can be deleted, and its Johns then have no kind.** They sit
+  together in a grey No kind section at the foot of the John list, and the
+  John's form says No kind, until an admin gives each one a kind; the
+  section goes once it's empty. The kind's sheet says so above Delete when
+  the kind has Johns. (No kind C, 14 Nov) *Not* a kind that can't be
+  deleted to catch them, or a pick of where they go each time.
 - **On a laptop a John on the John list is one line of lined-up columns**
   (`JohnLine`): its lid bar and name, when it's due, how often, what else
   sets it apart (photo, its group, how many do it), and its points, so a

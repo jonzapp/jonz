@@ -12,7 +12,7 @@ import { Section } from '@/components/section';
 import { Body, Lead, Title } from '@/components/text';
 import { GUTTER, PANEL, SECTION_GAP, SPACE, useTheme, WIDE } from '@/theme';
 
-import { Buttons, Choosing, Colours, Danger, Lists, Loading, Marks, Words } from './kit';
+import { Buttons, Choosing, Colours, Danger, Kinds, Lists, Loading, Marks, Words } from './kit';
 import { AdminListSample, HouseSample, TodayReadingSample, TodaySample, WeekSample } from './samples';
 
 const none = () => {};
@@ -59,6 +59,7 @@ function Pages() {
       <Choosing />
       <Marks />
       <Lists />
+      <Kinds />
       <Danger />
       <Loading />
     </>

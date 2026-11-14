@@ -15,10 +15,12 @@ import type { Words } from "./words-for";
 
 /**
  * A John's kind, as every line about it says it (its rows, Next up, the
- * John sheet): the short word, so the line keeps room for when. Anything
- * unknown is "Other".
+ * John sheet): the name the house gave it, or for a read that doesn't say,
+ * its starting kind's short word. Anything unknown is "Other". A John with
+ * no kind ('' from the read) says none: the lines leave it out.
  */
-export function johnKind(category: string): string {
+export function johnKind(category: string, kindName?: string | null): string {
+  if (kindName != null) return kindName;
   return (CATEGORY_SHORT as Partial<Record<string, string>>)[category] ?? CATEGORY_SHORT.other;
 }
 
@@ -103,7 +105,7 @@ type RowItem = Pick<
   BoardItem,
   "userId" | "name" | "category" | "points" | "needsPhoto" | "status" | "dueAt" | "movedFrom" | "doneAt" | "standsAt" | "dispute"
 > &
-  Partial<Pick<BoardItem, "flaggedAt" | "flaggedBy" | "coveredBy" | "outcome" | "together" | "crew" | "absentAt" | "dealt" | "awaitsOk">>;
+  Partial<Pick<BoardItem, "kindName" | "flaggedAt" | "flaggedBy" | "coveredBy" | "outcome" | "together" | "crew" | "absentAt" | "dealt" | "awaitsOk">>;
 
 /** What sits at the row's trailing edge, and what its sheet opens on. */
 function rowEnds(item: RowItem, viewerId: string): Pick<JohnRowPlan, "trailing" | "focus"> {
@@ -153,7 +155,7 @@ export function johnRow(item: RowItem, viewing: RowViewing): JohnRowPlan {
 }
 
 type MetaItem = Pick<BoardItem, "userId" | "category" | "status" | "dueAt" | "movedFrom" | "doneAt" | "standsAt" | "dispute"> &
-  Partial<Pick<BoardItem, "flaggedAt" | "flaggedBy" | "together" | "crew" | "dealt" | "awaitsOk">> & {
+  Partial<Pick<BoardItem, "kindName" | "flaggedAt" | "flaggedBy" | "together" | "crew" | "dealt" | "awaitsOk">> & {
     coveredBy?: string | null;
   };
 
@@ -229,8 +231,9 @@ function metaLine(item: MetaItem, viewing: RowViewing): { meta: string; lid: boo
   if (item.status === "disputed") return { meta: disputedMeta(item, viewing), lid: false };
   const flagged = flaggedPart(item, viewing);
   const together = togetherPart(item, viewing);
-  const parts = [johnKind(item.category), ...(flagged ? [flagged] : []), ...statusParts(item, viewing), ...(together ? [together] : [])];
-  return { meta: parts.join(", "), lid: true };
+  const parts = [johnKind(item.category, item.kindName), ...(flagged ? [flagged] : []), ...statusParts(item, viewing), ...(together ? [together] : [])];
+  // A John with no kind leaves it out.
+  return { meta: parts.filter(Boolean).join(", "), lid: true };
 }
 
 /**

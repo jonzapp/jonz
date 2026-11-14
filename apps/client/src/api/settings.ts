@@ -1,5 +1,8 @@
 import {
+  CATEGORIES,
   GroupDraft,
+  KindDraft,
+  kindsInOrder,
   HouseSettings,
   JohnDraft,
   JohnFields,
@@ -7,8 +10,10 @@ import {
   repeatColumns,
   weekIndex,
   weekWindow,
+  type Category,
   type DealMode,
   type GroupDef,
+  type KindDef,
   type HouseRules,
   type JohnDef,
   type JohnDraftInput,
@@ -26,18 +31,21 @@ import { callV1 } from './v1';
 
 export interface JohnList {
   johns: JohnDef[];
+  /** The house's kinds of John, in their order: the list's sections and each John's lid colour. */
+  kinds: KindDef[];
   /** The house's groups, by name, with who is in each: for "Shared by" and for Groups. */
   groups: GroupDef[];
 }
 
-/** The house's list of Johns, oldest first, and its groups. */
+/** The house's list of Johns, oldest first, its kinds and its groups. */
 export async function loadJohnList(houseId: string): Promise<JohnList> {
-  const { johns, groups } = await callV1('john_list', { houseId });
+  const { johns, kinds, groups } = await callV1('john_list', { houseId });
   return {
     johns: johns.map((j) =>
       johnDef({
         id: j.id,
         name: j.name,
+        john_kind_id: j.johnKindId,
         category: j.category,
         points: j.points,
         every_weeks: j.everyWeeks,
@@ -58,6 +66,7 @@ export async function loadJohnList(houseId: string): Promise<JohnList> {
         min_age: j.minAge,
       }),
     ),
+    kinds: kindsInOrder(kinds.map((k): KindDef => ({ ...k, preset: (CATEGORIES as readonly string[]).includes(k.preset ?? '') ? (k.preset as Category) : null }))),
     groups: groups.map((g): GroupDef => ({ id: g.id, name: g.name, memberIds: g.members })),
   };
 }
@@ -69,12 +78,16 @@ function johnInput(draft: JohnDraftInput, rules: HouseRules, now: Date): { id?: 
   const parsed = JohnDraft.safeParse(draft);
   if (!parsed.success) throw new Error(parsed.error.issues[0].message);
   // The week a John counts from is set when it's added, and kept.
-  const { id, anchorWeek: _kept, ...j } = parsed.data;
+  const { id, anchorWeek: _kept, kindId, category, ...j } = parsed.data;
   const repeat = repeatColumns(j, now, rules.timezone, rules.weekStarts);
+  // A John read with its kind goes by that alone: sent with it, its older
+  // category would put one with no kind (null) in Everything else.
+  const kind = kindId === undefined ? { category } : kindId === null ? {} : { kindId };
   return {
     id,
     fields: {
       ...j,
+      ...kind,
       everyWeeks: repeat.every_weeks,
       everyMonths: repeat.every_months,
       weekOfMonth: repeat.week_of_month,
@@ -171,6 +184,23 @@ export async function saveGroup(houseId: string, draft: Omit<GroupDraft, 'id'> &
 /** Delete a group. Its Johns go back to the whole house. */
 export async function deleteGroup(groupId: string) {
   await callV1('delete_group', { groupId });
+}
+
+/** Make a kind of John (no id) or rename and recolour one; gives its id. */
+export async function saveKind(houseId: string, kindId: string | null, draft: KindDraft): Promise<string> {
+  const parsed = KindDraft.safeParse(draft);
+  if (!parsed.success) throw new Error(parsed.error.issues[0].message);
+  return callV1('save_kind', { houseId, kindId, ...parsed.data });
+}
+
+/** Put the house's kinds in this order. */
+export async function orderKinds(houseId: string, kinds: readonly string[]) {
+  await callV1('order_kinds', { houseId, kinds: [...kinds] });
+}
+
+/** Delete a kind; its Johns move to `moveToId`, or to Everything else. */
+export async function deleteKind(kindId: string, moveToId?: string) {
+  await callV1('delete_kind', { kindId, ...(moveToId ? { moveToId } : {}) });
 }
 
 /** Hand out this week's Johns, or re-deal a week nobody has ticked in: admins only (the server checks). */

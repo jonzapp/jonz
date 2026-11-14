@@ -3,8 +3,9 @@ import { wordsFor } from "./words-for";
 
 import type { AwayPeriod } from "./away";
 import { NEW_JOHN, type JohnDef } from "./board";
-import type { HouseRules } from "./domain";
+import { CATEGORY_LABEL, type HouseRules } from "./domain";
 import { humanError } from "./errors";
+import { startingKinds } from "./kinds";
 import {
   adminsLine,
   awayMeta,
@@ -49,21 +50,37 @@ const RULES: HouseRules = {
 };
 
 describe("johnsByKind", () => {
-  it("puts the list under its kinds, in the kinds' order, counting each", () => {
+  const starting = startingKinds(CATEGORY_LABEL);
+
+  it("puts the list under the house's kinds, in their order, leaving out kinds with none", () => {
     const list = [
       john({ id: "a", category: "bins" }),
       john({ id: "b", category: "kitchen" }),
       john({ id: "c", category: "bins" }),
       john({ id: "d", category: "other" }),
     ];
-    const kinds = johnsByKind(list, words);
-    expect(kinds.map((k) => k.label)).toEqual(["Kitchen (1)", "Bins & recycling (2)", "Everything else (1)"]);
+    const kinds = johnsByKind(list, starting);
+    expect(kinds.map((k) => [k.kind?.name, k.johns.length])).toEqual([["Kitchen", 1], ["Bins & recycling", 2], ["Everything else", 1]]);
     // Within a kind, the list's own order.
     expect(kinds[1].johns.map((j) => j.id)).toEqual(["a", "c"]);
   });
 
+  it("goes by each John's own kind, in the order the house put its kinds", () => {
+    const garden = { id: "g", name: "Garden", colour: "#4f9a2e", position: 0, preset: null };
+    const kitchen = { ...starting[0], position: 1 };
+    const list = [john({ id: "a", kindId: "g", category: "other" }), john({ id: "b", kindId: kitchen.id }), john({ id: "c", kindId: "g", category: "other" })];
+    const kinds = johnsByKind(list, [kitchen, garden]);
+    expect(kinds.map((k) => [k.kind?.name, k.johns.map((j) => j.id)])).toEqual([["Garden", ["a", "c"]], ["Kitchen", ["b"]]]);
+  });
+
+  it("puts the Johns with no kind last, together, with a kind it doesn't know among them", () => {
+    const list = [john({ id: "a", kindId: null, category: "other" }), john({ id: "b", category: "bins" }), john({ id: "c", kindId: "gone", category: "other" })];
+    const kinds = johnsByKind(list, starting);
+    expect(kinds.map((k) => [k.kind?.name ?? null, k.johns.map((j) => j.id)])).toEqual([["Bins & recycling", ["b"]], [null, ["a", "c"]]]);
+  });
+
   it("has nothing to show for an empty list", () => {
-    expect(johnsByKind([], words)).toEqual([]);
+    expect(johnsByKind([], starting)).toEqual([]);
   });
 });
 
@@ -134,7 +151,7 @@ describe("scheduleLine", () => {
 
 describe("johnFacts", () => {
   it("reads a John out in full", () => {
-    expect(johnFacts(john({ category: "bathroom", points: 1, everyWeeks: 2, dueDow: 5, dueTime: "18:00", needsPhoto: true }), "Upstairs", words)).toEqual([
+    expect(johnFacts(john({ category: "bathroom", points: 1, everyWeeks: 2, dueDow: 5, dueTime: "18:00", needsPhoto: true }), { group: "Upstairs" }, words)).toEqual([
       { label: "Kind", value: "Bathroom" },
       { label: "Who it’s for", value: "Upstairs" },
       { label: "Effort", value: "1 pt" },
@@ -145,7 +162,7 @@ describe("johnFacts", () => {
   });
 
   it("reads a monthly John's day as which of its weekday", () => {
-    const facts = johnFacts(john({ everyMonths: 3, weekOfMonth: 1, dueDow: 6, dueTime: "21:00" }), null, words);
+    const facts = johnFacts(john({ everyMonths: 3, weekOfMonth: 1, dueDow: 6, dueTime: "21:00" }), {}, words);
     expect(facts.slice(3, 5)).toEqual([
       { label: "How often", value: "Every 3 months" },
       { label: "Due", value: "First Saturday 21:00" },
@@ -153,7 +170,7 @@ describe("johnFacts", () => {
   });
 
   it("reads an on-call John's window in place of its day", () => {
-    const facts = johnFacts(john({ when: "on_call", respondHours: 8, perWeek: 4 }), null, words);
+    const facts = johnFacts(john({ when: "on_call", respondHours: 8, perWeek: 4 }), {}, words);
     expect(facts.slice(3, 6)).toEqual([
       { label: "When", value: "On call" },
       { label: "Do it within", value: "8 hours" },
@@ -162,7 +179,7 @@ describe("johnFacts", () => {
   });
 
   it("shares a John with no group among everyone", () => {
-    const facts = johnFacts(john({}), null, words);
+    const facts = johnFacts(john({}), {}, words);
     expect(facts[1]).toEqual({ label: "Who it’s for", value: "Everyone" });
     expect(facts[5]).toEqual({ label: "Photo", value: "Not needed" });
   });
