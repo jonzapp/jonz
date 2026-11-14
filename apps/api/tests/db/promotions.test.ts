@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { PromotionRequest, type PromotionRequest as Draft, wordsFor } from "@app/core";
+import { camelKeys, OPERATION_IO, PromotionRequest, type PromotionRequest as Draft, wordsFor } from "@app/core";
 import type Stripe from "stripe";
 import { beforeEach, describe, expect, it } from "vitest";
 
@@ -253,6 +253,14 @@ describe("a free Pass", () => {
     const other = await makeHouse(["Cal"]);
     const usedUp = await startCheckout(buyer(other.admin), s.pass, other.id, "yearly", APP, "local", new Date(), made.code);
     expect(usedUp).toMatchObject({ status: 409 });
+
+    // Its page in the owner admin still opens once it's been used: a free
+    // Pass's use has no plan bought, and /v1 must take that.
+    const one = await owner.db.rpc("owner_promotion", { p_id: made.id });
+    expectOk(one);
+    const page = OPERATION_IO.owner_promotion.output.safeParse(camelKeys(one.data));
+    expect(page.error?.issues ?? []).toEqual([]);
+    expect(page.data).toMatchObject({ uses: 1, recent: [{ houseId: house.id, plan: null }] });
   });
 
   it("for good makes a Founding house, with Stripe not set up at all", async () => {

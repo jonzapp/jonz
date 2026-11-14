@@ -14588,7 +14588,10 @@
                                 ]
                               },
                               "plan": {
-                                "type": "string"
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
                               },
                               "at": {
                                 "type": "string",
