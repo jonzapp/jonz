@@ -23,7 +23,7 @@ import { Wordmark } from '@/components/wordmark';
 import { Chip } from '@/components/status-mark';
 import { Meta } from '@/components/text';
 import { TextButton } from '@/components/text-button';
-import { FONT, RAIL, SPACE, TAP, useTheme, WIDE } from '@/theme';
+import { FONT, MARK_RADIUS, RADIUS, RAIL, SPACE, TAP, useTheme, WIDE } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
 /** Each page's icon, on the rail and the tabs. */
@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: SPACE.md,
     paddingHorizontal: SPACE.md,
-    borderRadius: 6,
+    borderRadius: RADIUS,
     overflow: 'hidden',
   },
   marker: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 3 },
@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     width: TAP,
     height: 3,
-    borderBottomLeftRadius: 2,
-    borderBottomRightRadius: 2,
+    borderBottomLeftRadius: MARK_RADIUS,
+    borderBottomRightRadius: MARK_RADIUS,
   },
 });

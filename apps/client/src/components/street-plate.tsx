@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { GROUP_RADIUS, INSET, useTheme } from '@/theme';
+import { GROUP_RADIUS, HAIR, INSET, SPACE, useTheme } from '@/theme';
 
 /** From the plate's edge to its border, and the border's weight: the link cards' PLATE, at a phone's size. */
 const PLATE_INSET = 5;
@@ -48,8 +48,8 @@ const styles = StyleSheet.create({
     borderWidth: PLATE_STROKE,
     borderRadius: GROUP_RADIUS - PLATE_INSET,
     paddingHorizontal: INSET - PLATE_INSET - PLATE_STROKE,
-    paddingVertical: 10,
+    paddingVertical: SPACE.sm + HAIR,
   },
   // Overpass's caps sit high in their line.
-  words: { paddingTop: 3 },
+  words: { paddingTop: HAIR + 1 },
 });

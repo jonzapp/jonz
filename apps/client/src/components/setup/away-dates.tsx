@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { IconButton } from '@/components/icon-button';
-import { FONT, RADIUS, SPACE, useTheme } from '@/theme';
+import { FONT, HAIR, RADIUS, SPACE, useTheme } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
 /** A calendar day's height, the same in Who's away and here, so the two calendars are one shape. */
@@ -112,10 +112,10 @@ export function AwayDates({
 }
 
 const styles = StyleSheet.create({
-  calendar: { gap: 2 },
+  calendar: { gap: HAIR },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   span: { flexShrink: 1, textAlign: 'center' },
-  week: { flexDirection: 'row', gap: 2 },
+  week: { flexDirection: 'row', gap: HAIR },
   dow: { flex: 1, textAlign: 'center', paddingVertical: SPACE.xs },
   day: { flex: 1, minHeight: DAY_HEIGHT, alignItems: 'center', justifyContent: 'center', borderRadius: RADIUS },
   date: { fontFamily: FONT.bold },

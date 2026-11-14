@@ -12,7 +12,7 @@ import { IconButton } from '@/components/icon-button';
 import { useTour } from '@/components/tour/tour-context';
 import { TourSpot } from '@/components/tour/tour-spot';
 import { useAskJonz, useAskPanelOpen } from '@/hooks/use-ask-jonz';
-import { FONT, GUTTER, INSET, SECTION_GAP, SPACE, TAP, TITLE_BAR, useTheme, WIDE } from '@/theme';
+import { FONT, GUTTER, HAIR, INSET, SECTION_GAP, SPACE, TAP, TITLE_BAR, useTheme, WIDE } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
 /**
@@ -241,12 +241,12 @@ const styles = StyleSheet.create({
     paddingVertical: SPACE.xs,
   },
   // With a sub line: the kit's 10 above (the Title's own 4 comes on top) and 8 under it.
-  withSub: { paddingTop: 10, paddingBottom: SPACE.sm },
+  withSub: { paddingTop: SPACE.sm + HAIR, paddingBottom: SPACE.sm },
   // Under a back link: no 52 of its own, and a little room under the Title.
   pushed: { minHeight: 0, paddingTop: 0, paddingBottom: SPACE.sm },
   words: { flex: 1, minWidth: 0 },
   // Overpass's caps sit high in their line, so the title comes down a little.
-  title: { paddingTop: 4 },
+  title: { paddingTop: SPACE.xs },
   // The buttons' 48 squares touch, so every glyph is the same 48 from the next;
   // the last one's glyph lines up with the content's edge, and they sit in the
   // bar's own 4 above and below.
@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
     minHeight: TAP,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
+    gap: HAIR,
     // The chevron's own margin hangs it left of the leading edge.
     marginLeft: -SPACE.sm,
     paddingRight: SPACE.sm,

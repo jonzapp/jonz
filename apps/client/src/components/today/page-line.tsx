@@ -6,7 +6,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { OutlineBar } from '@/components/outline';
 import { Body } from '@/components/text';
 import { Waiting } from '@/components/waiting';
-import { INSET, OUTLINE, TAP, useTheme } from '@/theme';
+import { HAIR, INSET, OUTLINE, TAP, useTheme } from '@/theme';
 
 /**
  * One tappable line on the page, onward to where it's about: where you
@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
     minHeight: TAP,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
+    gap: HAIR,
     paddingHorizontal: INSET,
   },
   words: { flexShrink: 1 },

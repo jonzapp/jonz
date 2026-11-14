@@ -7,7 +7,7 @@ import { ButtonRow } from '@/components/button-row';
 import { Card } from '@/components/card';
 import { InviteSheet } from '@/components/house-page/invite-sheet';
 import { Body, SectionLabel } from '@/components/text';
-import { SPACE } from '@/theme';
+import { HAIR, SPACE } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
 /**
@@ -43,7 +43,7 @@ export function MoveInAsk({ houseName, joinCode }: { houseName: string; joinCode
 
 const styles = StyleSheet.create({
   // Overpass's caps sit high in their line.
-  label: { paddingTop: 2 },
+  label: { paddingTop: HAIR },
   body: { marginTop: SPACE.sm },
   action: { marginTop: SPACE.lg },
 });

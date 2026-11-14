@@ -381,9 +381,12 @@ label={words('john.sheet.coverIt')}
   );
 }
 
+/** The chosen mark: a circle. */
+const CHOSEN = 24;
+
 const styles = StyleSheet.create({
   // The pick: an ink disc with a tick, where the row's mark was.
-  chosen: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  chosen: { width: CHOSEN, height: CHOSEN, borderRadius: CHOSEN / 2, alignItems: 'center', justifyContent: 'center' },
   owner: { flexDirection: 'row', alignItems: 'center', gap: SPACE.md },
   shrink: { flexShrink: 1 },
 });

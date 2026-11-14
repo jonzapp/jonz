@@ -1,7 +1,7 @@
 import { TriangleAlertIcon } from 'lucide-react-native';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { SPACE, useTheme } from '@/theme';
+import { HAIR, SPACE, useTheme } from '@/theme';
 
 /**
  * Something went wrong (a refusal, a read that failed, a field to fix): a
@@ -21,6 +21,6 @@ export function Alert({ message, testID }: { message: string; testID?: string })
 const styles = StyleSheet.create({
   alert: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACE.sm },
   // The triangle sits on the first line's middle.
-  icon: { marginTop: 2 },
+  icon: { marginTop: HAIR },
   words: { flexShrink: 1 },
 });

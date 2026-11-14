@@ -17,7 +17,7 @@ import type { Housemate } from '@/api/board';
 import { LidBar } from '@/components/lid';
 import { STATUS_ICON } from '@/components/status-mark';
 import { Lead, Meta } from '@/components/text';
-import { INSET, SPACE, useTheme } from '@/theme';
+import { INSET, MARK_GAP, SPACE, useTheme } from '@/theme';
 
 import { ChangeResult } from './change-result';
 import { TheirsChecking, YoursChecking } from './checking';
@@ -181,7 +181,7 @@ function JohnSheetHeader({ item, context }: { item: BoardItem; context: JohnShee
 const styles = StyleSheet.create({
   // The flush sheet sets content at the gutter; the John's words sit on the leading edge.
   header: { paddingHorizontal: INSET, gap: SPACE.xs },
-  line: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  line: { flexDirection: 'row', alignItems: 'center', gap: MARK_GAP },
   top: { alignItems: 'flex-start' },
   // The dot centred on the first line of words.
   mark: { height: 20, justifyContent: 'center' },

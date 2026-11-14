@@ -11,7 +11,7 @@ import { Lead, SectionLabel } from '@/components/text';
 import { TickBox } from '@/components/tick-box';
 import { useAskJonz } from '@/hooks/use-ask-jonz';
 import { useWords } from '@/hooks/use-words';
-import { SPACE } from '@/theme';
+import { HAIR, SPACE } from '@/theme';
 
 /** A checklist step's tick box: ticked once it's done. A picture, not a control: the row is the way in. */
 function Step({ done }: { done: boolean }) {
@@ -91,7 +91,7 @@ export function SetupCard({
 
 const styles = StyleSheet.create({
   // Overpass's caps sit high in their line.
-  label: { paddingTop: 2 },
+  label: { paddingTop: HAIR },
   lead: { marginTop: SPACE.sm },
   deal: { marginTop: SPACE.lg },
 });

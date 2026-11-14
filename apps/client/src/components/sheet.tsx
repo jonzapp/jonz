@@ -17,7 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { HazardTape, SIGN_TAPE } from '@/components/hazard-tape';
 import { Body, Lead } from '@/components/text';
 import { IconButton } from '@/components/icon-button';
-import { GUTTER, INSET, SECTION_GAP, SPACE, TAP, useTheme, WIDE } from '@/theme';
+import { GUTTER, INSET, MARK_RADIUS, SECTION_GAP, SHEET_RADIUS, SPACE, TAP, useTheme, WIDE } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
 /**
@@ -262,10 +262,10 @@ const styles = StyleSheet.create({
     maxHeight: '90%',
     alignSelf: 'center',
     paddingTop: SPACE.sm,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    borderTopLeftRadius: SHEET_RADIUS,
+    borderTopRightRadius: SHEET_RADIUS,
   },
-  dialog: { borderRadius: 16 },
+  dialog: { borderRadius: SHEET_RADIUS },
   taped: { paddingTop: SIGN_TAPE + SPACE.sm },
   // Clipped to the sheet's rounded top corners.
   tape: {
@@ -273,19 +273,19 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    borderTopLeftRadius: SHEET_RADIUS,
+    borderTopRightRadius: SHEET_RADIUS,
     overflow: 'hidden',
   },
   edge: {
     borderTopWidth: StyleSheet.hairlineWidth,
     borderLeftWidth: StyleSheet.hairlineWidth,
     borderRightWidth: StyleSheet.hairlineWidth,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    borderTopLeftRadius: SHEET_RADIUS,
+    borderTopRightRadius: SHEET_RADIUS,
   },
-  dialogEdge: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 16 },
-  grabber: { alignSelf: 'center', width: 36, height: 4, borderRadius: 2 },
+  dialogEdge: { borderWidth: StyleSheet.hairlineWidth, borderRadius: SHEET_RADIUS },
+  grabber: { alignSelf: 'center', width: 36, height: 4, borderRadius: MARK_RADIUS },
   // The close button's icon lines up with the content's right edge, at the
   // top beside a title of any length.
   top: {
