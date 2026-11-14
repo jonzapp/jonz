@@ -127,12 +127,13 @@ last:
   any left) and stops the House Pass it paid with renewing in Stripe. A
   refund is the owner's to give in Stripe. If Stripe can't be reached the
   house is still gone, and the owner is told to stop the Pass there.
-- **Tabs by job.** The pages sit in five groups (`ADMIN_GROUPS`): Overview,
-  Inbox, Houses, Send (Messages, Notices) and Records (Deletions, Audit
-  log). On a phone each group is a tab; a tab with more than one page opens
-  its first, with a switch at the top for the rest. On a laptop the side
-  list shows every page, Send's and Records' under small headings. A new
-  page joins a group, so the bar stays at five.
+- **Four tabs by job.** The pages sit in four groups (`ADMIN_GROUPS`):
+  Overview (with the Audit log), Inbox (with Deletions), Houses, and Send
+  (Messages, Notices, Promotions). On a phone each group is a tab; a tab
+  with more than one page opens its first, with a switch at the top for the
+  rest. On a laptop the side list shows the four tabs, and the open one
+  unfolds its pages beneath it. A new page joins a group, so there are
+  never more than four. (Admin tabs A, 14 Nov)
 
 ## Messages
 

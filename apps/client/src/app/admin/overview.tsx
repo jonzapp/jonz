@@ -7,6 +7,7 @@ import { StyleSheet, View } from 'react-native';
 import { ownerOverview } from '@/api/houses';
 import { liveNotices } from '@/api/owner';
 import { ownerZone } from '@/components/admin/audit-entry';
+import { AdminSwitch } from '@/components/admin/admin-shell';
 import { WeekChart } from '@/components/admin/week-chart';
 import { Figures, type Figure } from '@/components/figures';
 import { Group } from '@/components/group';
@@ -46,6 +47,7 @@ export default function OverviewPage() {
   const words = useWords();
   return (
     <Screen spreads bar={<TitleBar title={words('admin.overview.page')} />} testID="admin-overview">
+      <AdminSwitch page="overview" />
       <OverviewBody />
     </Screen>
   );
