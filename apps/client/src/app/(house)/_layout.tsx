@@ -13,6 +13,7 @@ import { TourProvider } from "@/components/tour/tour-provider";
 import { AskPanelProvider } from "@/hooks/use-ask-jonz";
 import { PhotosContext } from "@/hooks/photos";
 import { useHouse, useLiveHouse } from "@/hooks/use-house";
+import { useKeepMyZone } from "@/hooks/use-keep-my-zone";
 import { useMembership } from "@/hooks/use-membership";
 import { RAIL, SPACE, useTheme, WIDE } from "@/theme";
 import { useWords } from '@/hooks/use-words';
@@ -42,6 +43,7 @@ export default function HouseLayout() {
   const wide = useWindowDimensions().width >= WIDE;
   const { view } = useHouse(house!.id, session!.user.id);
   useLiveHouse(house!.id);
+  useKeepMyZone(session!.user.id);
 
   const shell: ShellHouse = {
     name: view?.snapshot.house.name ?? house!.name,

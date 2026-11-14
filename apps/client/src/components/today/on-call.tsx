@@ -13,6 +13,7 @@ import { TextButton } from '@/components/text-button';
 import { useMove } from '@/hooks/use-move';
 import { useUndoOffer } from '@/hooks/use-undo-offer';
 import { useWords } from '@/hooks/use-words';
+import { useShownZone } from '@/hooks/use-zones';
 
 /**
  * On call: the house's on-call Johns this week (the bins, whenever they're
@@ -42,9 +43,10 @@ export function OnCall({
   const words = useWords();
   const move = useMove(houseId);
   const offer = useUndoOffer(houseId);
+  const zone = useShownZone(rules.timezone, now);
   if (items.length === 0) return null;
   const nameOf = (id: string) => firstName(members.find((m) => m.userId === id)?.name ?? 'Someone');
-  const scene: Scene = { userId, rules, now, nameOf, move, offer };
+  const scene: Scene = { userId, zone, now, nameOf, move, offer };
 
   return (
     <Section label={words('today.onCall.section')} testID="on-call">
@@ -59,7 +61,8 @@ export function OnCall({
 /** What every on-call row is drawn from: who is looking, when, and the section's one move. */
 interface Scene {
   userId: string;
-  rules: HouseRules;
+  /** The zone times are said in: the reader's own clock, or the house's. */
+  zone: string;
   now: Date;
   nameOf: (id: string) => string;
   move: ReturnType<typeof useMove>;
@@ -70,7 +73,7 @@ interface Scene {
 function OnCallRow({ item, scene }: { item: OnCallItem; scene: Scene }) {
   const words = useWords();
   const sheet = useJohnSheet();
-  const { userId, rules, now, nameOf } = scene;
+  const { userId, zone, now, nameOf } = scene;
   const flag = item.openFlag;
   if (flag) {
     const withMe = flag.userId === userId;
@@ -78,7 +81,7 @@ function OnCallRow({ item, scene }: { item: OnCallItem; scene: Scene }) {
       <Row
         title={item.name}
         lid={item.category}
-        meta={`${withMe ? words('today.onCall.flaggedYou') : words('today.onCall.flagged', { name: nameOf(flag.userId) })}, due ${dueInLine(flag.dueAt, now, rules.timezone, words)}`}
+        meta={`${withMe ? words('today.onCall.flaggedYou') : words('today.onCall.flagged', { name: nameOf(flag.userId) })}, due ${dueInLine(flag.dueAt, now, zone, words)}`}
         chevron
         onPress={() => sheet.open(flag.id)}
         testID="on-call-flagged"
@@ -92,7 +95,7 @@ function OnCallRow({ item, scene }: { item: OnCallItem; scene: Scene }) {
       <Row
         title={item.name}
         lid={item.category}
-        meta={words('today.onCall.didIt', { time: sinceLabel(held.doneAt, now, rules.timezone, words) })}
+        meta={words('today.onCall.didIt', { time: sinceLabel(held.doneAt, now, zone, words) })}
         trailing={<Chip label={words('today.onCall.done')} icon={CheckIcon} tone="good" />}
         onPress={() => sheet.open(held.id)}
         testID="on-call-done-it"

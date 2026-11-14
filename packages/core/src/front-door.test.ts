@@ -12,7 +12,6 @@ import {
   houseDefaults,
   inviteCode,
   signInLine,
-  timeZoneName,
 } from "./front-door";
 import { DOOR_POINTS } from "./family";
 import { wordsFor } from "./words-for";
@@ -135,21 +134,12 @@ describe("inviteCode", () => {
   });
 });
 
-describe("timeZoneName", () => {
-  it("swaps underscores for spaces", () => {
-    expect(timeZoneName("America/New_York")).toBe("America/New York");
-    expect(timeZoneName("America/Argentina/Buenos_Aires")).toBe("America/Argentina/Buenos Aires");
-    expect(timeZoneName("Europe/London")).toBe("Europe/London");
-    expect(timeZoneName("")).toBe("");
-  });
-});
-
 describe("houseDefaults", () => {
   it("says the stake, the week and the zone, in that order", () => {
     expect(houseDefaults({ currency: "GBP", weekStarts: 1, timezone: "Europe/London", words })).toEqual([
       "GBP 20 a month each",
       "weeks start Monday",
-      "Europe/London",
+      "London, United Kingdom",
     ]);
   });
 
@@ -157,7 +147,7 @@ describe("houseDefaults", () => {
     expect(houseDefaults({ currency: "CAD", weekStarts: 7, timezone: "America/St_Johns", words })).toEqual([
       "CAD 20 a month each",
       "weeks start Sunday",
-      "America/St Johns",
+      "St Johns, Canada",
     ]);
   });
 

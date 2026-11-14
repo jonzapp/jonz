@@ -51,7 +51,8 @@ type Due = Awaited<ReturnType<typeof dueForReminder>>[number];
 /** A reminder's push: planned, due soon (stage 2) or due tomorrow. */
 function reminderPush(a: Due, stage: number, { house, now }: { house: HouseRow; now: Date }): PushMessage {
   const zone = rulesOf(house).timezone;
-  const due = (w: Words) => dueInLine(new Date(a.due_at), now, zone, w);
+  // Said on each reader's own clock (lib/push.ts).
+  const due = (w: Words, clock: string) => dueInLine(new Date(a.due_at), now, clock, w);
   return {
     title: (w) =>
       stage === PLANNED
@@ -59,14 +60,14 @@ function reminderPush(a: Due, stage: number, { house, now }: { house: HouseRow; 
         : stage === 2
           ? w('house.notify.dueSoonTitle', { john: a.name })
           : w('house.notify.dueTomorrowTitle', { john: a.name }),
-    body: (w) =>
+    body: (w, clock) =>
       a.needs_photo
-        ? w('house.notify.needsPhotoBody', { due: due(w) })
+        ? w('house.notify.needsPhotoBody', { due: due(w, clock) })
         : stage === PLANNED
-          ? w('house.notify.plannedBody', { due: due(w) })
+          ? w('house.notify.plannedBody', { due: due(w, clock) })
           : stage === 2
-            ? w('house.notify.dueSoonBody', { due: due(w) })
-            : w('house.notify.dueTomorrowBody', { due: due(w) }),
+            ? w('house.notify.dueSoonBody', { due: due(w, clock) })
+            : w('house.notify.dueTomorrowBody', { due: due(w, clock) }),
     houseKind: houseKind(house.kind),
     url: "/today",
     kind: "reminders",

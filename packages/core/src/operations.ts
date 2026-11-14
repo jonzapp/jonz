@@ -164,6 +164,7 @@ export const OPERATIONS = {
   set_my_name: op({ about: "Change the name you go by", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "set_my_name" }, tables: ["profiles"] }),
   my_language: op({ about: "The language you read Jonz in", scope: "account", effect: "read", guard: ACCOUNT_READ, rpc: { name: "my_language" }, tables: ["profiles"] }),
   set_my_language: op({ about: "Change the language you read Jonz in", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "set_my_language" }, tables: ["profiles"] }),
+  time_zones: op({ about: "Every time zone a house can be set to, by its IANA name (Europe/London), and UTC", scope: "account", effect: "read", guard: ACCOUNT_READ, rpc: { name: "time_zones" } }),
   my_notifications: op({ about: "Which notifications you get, and your quiet hours", scope: "account", effect: "read", guard: ACCOUNT_READ, rpc: { name: "my_notifications" }, tables: ["notification_prefs"] }),
   save_notifications: op({ about: "Change which notifications you get, and your quiet hours", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "save_notifications" }, tables: ["notification_prefs"] }),
   add_push_device: op({ about: "Get pushes on this device", scope: "account", effect: "write", guard: ACCOUNT_WRITE, rpc: { name: "add_push_device" }, tables: ["push_subscriptions"], additive: true }),

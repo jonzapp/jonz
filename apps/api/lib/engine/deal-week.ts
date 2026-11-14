@@ -419,7 +419,7 @@ export async function ensureCurrentWeek(
     for (const [userId, names] of byUser) {
       await notify([userId], {
         title: (w) => w('house.notify.dealTitle'),
-        body: (w) => names.map((n) => (typeof n === "string" ? n : n(w))).reduce((first, second) => w('common.join.comma', { first, second })),
+        body: (w, clock) => names.map((n) => (typeof n === "string" ? n : n(w, clock))).reduce((first, second) => w('common.join.comma', { first, second })),
         houseKind: houseKind(house.kind),
         url: "/today",
         kind: "deal",

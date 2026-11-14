@@ -84,9 +84,9 @@ describe("what a John earns", () => {
 
   it("is said in Next up's meta where a housemate's cost would be", () => {
     const [item] = board([row("Feed the cat")], KIDS).items;
-    expect(nextUpMeta(item, RULES, now, words).due).toBe("due today 21:00, earns 50p");
+    expect(nextUpMeta(item, { rules: RULES, now, zone: RULES.timezone, words }).due).toBe("due today 21:00, earns 50p");
     const [mate] = board([row("Bins")]).items;
-    expect(nextUpMeta(mate, RULES, now, words).due).toBe("due today 21:00");
+    expect(nextUpMeta(mate, { rules: RULES, now, zone: RULES.timezone, words }).due).toBe("due today 21:00");
   });
 });
 

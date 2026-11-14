@@ -6,12 +6,11 @@ import {
   useWindowDimensions,
   View,
   type LayoutChangeEvent,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
   type ScrollViewInstance,
 } from 'react-native';
 
 import { useHouseWorkspace } from '@/components/house/workspace';
+import { nearEnd } from '@/components/near-end';
 import { TourScrollContext } from '@/components/tour/tour-spot';
 import { ASIDE, COLUMNS_MIN, CONTENT_MAX, FILL_MAX, GUTTER, HOUSE_NAV, RAIL, SECTION_GAP, useTheme, WIDE } from '@/theme';
 
@@ -39,15 +38,6 @@ const SIDE = ASIDE + 2 * GUTTER;
  */
 export function roomFor(windowWidth: number, listed: boolean): number {
   return windowWidth >= WIDE ? windowWidth - RAIL - (listed ? HOUSE_NAV : 0) : windowWidth;
-}
-
-/** Calls `onNearEnd` once a scroll comes within a screen of the end, where a timeline reads its next page. */
-function nearEnd(onNearEnd?: () => void) {
-  return onNearEnd
-    ? ({ nativeEvent: { contentOffset, contentSize, layoutMeasurement } }: NativeSyntheticEvent<NativeScrollEvent>) => {
-        if (contentOffset.y + 2 * layoutMeasurement.height >= contentSize.height) onNearEnd();
-      }
-    : undefined;
 }
 
 /** How wide the screen's content may get: a phone's title bar lines up with it, and the Table fits its rows' words to it. */

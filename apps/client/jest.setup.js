@@ -44,3 +44,11 @@ global.Date = new Proxy(RealDate, {
   apply: () => new RealDate(PRETEND_NOW).toString(),
   get: (target, key) => (key === 'now' ? pretendNow : Reflect.get(target, key)),
 });
+
+// The phone a test runs on is in London, as the houses tests make are, so
+// times read the same whichever machine runs them. A test of someone away
+// from home sets another (jest.mocked(getCalendars).mockReturnValue(...)).
+jest.mock('expo-localization', () => {
+  const real = jest.requireActual('expo-localization');
+  return { ...real, getCalendars: jest.fn(() => [{ calendar: 'gregory', timeZone: 'Europe/London', uses24hourClock: true, firstWeekday: 2 }]) };
+});

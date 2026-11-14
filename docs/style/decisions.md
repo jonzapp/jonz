@@ -6,6 +6,8 @@ pages are private artifacts on claude.ai.
 
 | Date | Decision | Where | Rule |
 | --- | --- | --- | --- |
+| 2026-11-14 | Times on your own clock: away from the house's zone, every time is said on your phone's clock with one line under the date saying so and a tap to show house time; the John sheet adds house time in brackets (Your time, said once A) | this PR | [words](words.md) |
+| 2026-11-14 | The house's time zone is picked from a sheet: search a city or country, the zone set now and your phone's first, then every zone A to Z with its offset and time now (Search by city A) | this PR | [controls](controls.md#inputs) |
 | 2026-11-13 | One calendar for time away: Who's away is the page's only calendar, and Book time away under it opens a sheet with a plain month calendar of the same shape (the old booking look for picked days), saying who else is away then; the moving-out day uses the same calendar (One calendar D) | #245 | [lists](lists.md#calendars-and-grids) |
 | 2026-11-13 | The "•••" menu drops from the "•••" on a laptop, as the Table's This week \| October does, one shared drop-down (`DropMenu`); a phone keeps the sheet (••• menu A) | this PR | [controls](controls.md#inputs) |
 | 2026-11-13 | The John editor's quick choices (How often, By what time, Done within) are the same grey switch as Weeks \| Months \| Years under them (`Segmented`, two or three to a row), not amber pills; its − and + are outline `IconButton`s (repeat picker A) | this PR | [controls](controls.md#inputs) |

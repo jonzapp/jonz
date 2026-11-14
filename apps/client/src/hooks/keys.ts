@@ -36,3 +36,6 @@ export const pocketKey = (houseId: string) => [...houseKey(houseId), 'pocket'] a
 /** The week's Ask Jonz: what's left, who used it, when it's back. */
 export const askUsageKey = (houseId: string) => [...houseKey(houseId), 'ask-usage'] as const;
 export const askChatsKey = (houseId: string) => [...houseKey(houseId), 'ask-chats'] as const;
+
+/** The time zones a house can be set to: the same for everyone. */
+export const timeZonesKey = ['time-zones'] as const;

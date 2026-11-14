@@ -38,7 +38,10 @@ import { OutlineRows, OutlineText } from '@/components/outline';
 import { Photo } from '@/components/photo';
 import { ReadFailed } from '@/components/read-state';
 import { Row, RowIcon } from '@/components/row';
+import { SearchBox } from '@/components/search-box';
 import { Dimmed, SearchLine } from '@/components/search-line';
+import { ZoneLine } from '@/components/zone-line';
+import type { Zones } from '@/hooks/use-zones';
 import { Section } from '@/components/section';
 import { Segmented } from '@/components/segmented';
 import { Chip } from '@/components/status-mark';
@@ -179,6 +182,7 @@ export function Choosing() {
   const [scope, setScope] = useState<'me' | 'house'>('me');
   const [days, setDays] = useState<IsoDow[]>([1, 3, 5]);
   const [code, setCode] = useState('4829');
+  const [search, setSearch] = useState('');
   return (
     <Section label="Choosing and typing" testID="style-choosing">
       <Group>
@@ -206,6 +210,7 @@ export function Choosing() {
           <Field label="House name" defaultValue="Bin Street" hint="Housemates see this on the invite." />
           <Field label="Join code" defaultValue="AB12" problem="That code has been used up. Ask for a new one." />
           <CodeBoxes label="Code" hint="It's in the email we sent." value={code} onChangeText={setCode} testID="style-code" />
+          <SearchBox value={search} onChange={setSearch} placeholder="Search a city or country" testID="style-search" />
         </GroupItem>
         <Fold label="Done today" meta={<Meta>1</Meta>} initiallyOpen>
           <Row title="Hoover the stairs" meta="Done 10am" lid="floors" leading={<TickBox state="done" label="Hoover the stairs" />} leadingControl />
@@ -215,7 +220,11 @@ export function Choosing() {
   );
 }
 
-/** Marks: chips, counts, lids, people, plates, tape, alerts and notices. */
+/** A phone in Regina reading a London house's times on its own clock, at a fixed moment so the gap never changes. */
+const AWAY_NOW = new Date('2026-11-14T01:22:00Z');
+const AWAY: Zones = { house: 'Europe/London', phone: 'America/Regina', shown: 'America/Regina', away: true, showing: 'mine', flip: none };
+
+/** Marks: chips, counts, lids, people, plates, tape, alerts, notices, and the line that says whose clock times are on. */
 export function Marks() {
   return (
     <Section label="Marks" testID="style-marks">
@@ -238,6 +247,7 @@ export function Marks() {
           <StreetPlate tone="hazard">Bins out tonight</StreetPlate>
           <HazardTape width={160} />
           <Alert message="Something went wrong. Try again." />
+          <ZoneLine zones={AWAY} now={AWAY_NOW} inline />
         </GroupItem>
       </Group>
       <NoticeView tone="news" icon={MegaphoneIcon} title="New this week" body="Swaps now ask first." onClose={none} />

@@ -144,6 +144,7 @@ insert into callable values
   ('set_my_photo'),
   ('shares_house'),
   ('start_house_from'),
+  ('time_zones'),
   ('undo_action'),
   ('undo_cover'),
   ('undo_done'),

@@ -251,60 +251,60 @@ describe("clearUntil", () => {
 
 describe("nextUpMeta", () => {
   it("says the kind, when it's due and what being late costs", () => {
-    expect(nextUpMeta(item("a", { category: "bathroom" }), RULES, now, words)).toEqual({
+    expect(nextUpMeta(item("a", { category: "bathroom" }), { rules: RULES, now, zone: RULES.timezone, words })).toEqual({
       kind: "Bathroom",
       due: "due today 21:00, £1 if late",
       overdue: null,
     });
-    expect(nextUpMeta(item("a", { dueAt: at(30), status: "upcoming" }), RULES, now, words).due).toBe("due tomorrow 18:00, £1 if late");
+    expect(nextUpMeta(item("a", { dueAt: at(30), status: "upcoming" }), { rules: RULES, now, zone: RULES.timezone, words }).due).toBe("due tomorrow 18:00, £1 if late");
   });
 
   it("says what's at stake when being late is free but missing isn't, and nothing when both are", () => {
-    expect(nextUpMeta(item("a"), { ...RULES, lateForfeitMinor: 0 }, now, words).due).toBe("due today 21:00, £3 if missed");
-    expect(nextUpMeta(item("a"), { ...RULES, lateForfeitMinor: 0, missedForfeitMinor: 0 }, now, words).due).toBe("due today 21:00");
+    expect(nextUpMeta(item("a"), { rules: { ...RULES, lateForfeitMinor: 0 }, now, zone: RULES.timezone, words }).due).toBe("due today 21:00, £3 if missed");
+    expect(nextUpMeta(item("a"), { rules: { ...RULES, lateForfeitMinor: 0, missedForfeitMinor: 0 }, now, zone: RULES.timezone, words }).due).toBe("due today 21:00");
   });
 
   it("prints pence and other currencies", () => {
-    expect(nextUpMeta(item("a"), { ...RULES, lateForfeitMinor: 150 }, now, words).due).toBe("due today 21:00, £1.50 if late");
-    expect(nextUpMeta(item("a"), { ...RULES, currency: "CAD" }, now, words).due).toBe("due today 21:00, $1 if late");
+    expect(nextUpMeta(item("a"), { rules: { ...RULES, lateForfeitMinor: 150 }, now, zone: RULES.timezone, words }).due).toBe("due today 21:00, £1.50 if late");
+    expect(nextUpMeta(item("a"), { rules: { ...RULES, currency: "CAD" }, now, zone: RULES.timezone, words }).due).toBe("due today 21:00, $1 if late");
   });
 
   it("says when time away pulled it forward", () => {
-    expect(nextUpMeta(item("a", { movedFrom: at(48) }), RULES, now, words).due).toBe("due today 21:00, before you go, £1 if late");
+    expect(nextUpMeta(item("a", { movedFrom: at(48) }), { rules: RULES, now, zone: RULES.timezone, words }).due).toBe("due today 21:00, before you go, £1 if late");
   });
 
   it("says the kind as every row does, short, and calls an unknown kind everything else", () => {
-    expect(nextUpMeta(item("a", { category: "floors" }), RULES, now, words).kind).toBe("Floors");
-    expect(nextUpMeta(item("a", { category: "garden" }), RULES, now, words).kind).toBe("Other");
+    expect(nextUpMeta(item("a", { category: "floors" }), { rules: RULES, now, zone: RULES.timezone, words }).kind).toBe("Floors");
+    expect(nextUpMeta(item("a", { category: "garden" }), { rules: RULES, now, zone: RULES.timezone, words }).kind).toBe("Other");
   });
 
   it("keeps the kind on an overdue John, and says since when it's due and what it costs now and if it's missed", () => {
     // Due at 09:00 this morning, yesterday (Tuesday), and the week before.
-    expect(nextUpMeta(item("a", { status: "overdue", dueAt: at(-3) }), RULES, now, words)).toEqual({
+    expect(nextUpMeta(item("a", { status: "overdue", dueAt: at(-3) }), { rules: RULES, now, zone: RULES.timezone, words })).toEqual({
       kind: "Kitchen",
       due: null,
       overdue: { since: "Overdue since 09:00", cost: "£1 now, £3 if missed" },
     });
-    expect(nextUpMeta(item("a", { status: "overdue", dueAt: at(-20) }), RULES, now, words).overdue?.since).toBe("Overdue since Tue");
-    expect(nextUpMeta(item("a", { status: "overdue", dueAt: at(-8 * 24) }), RULES, now, words).overdue?.since).toBe(
+    expect(nextUpMeta(item("a", { status: "overdue", dueAt: at(-20) }), { rules: RULES, now, zone: RULES.timezone, words }).overdue?.since).toBe("Overdue since Tue");
+    expect(nextUpMeta(item("a", { status: "overdue", dueAt: at(-8 * 24) }), { rules: RULES, now, zone: RULES.timezone, words }).overdue?.since).toBe(
       "Overdue since Tue 6 Oct",
     );
   });
 
   it("says only the costs that aren't free on an overdue John", () => {
     const overdue = item("a", { status: "overdue", dueAt: at(-20) });
-    expect(nextUpMeta(overdue, { ...RULES, missedForfeitMinor: 0 }, now, words).overdue?.cost).toBe("£1 now");
-    expect(nextUpMeta(overdue, { ...RULES, lateForfeitMinor: 0 }, now, words).overdue?.cost).toBe("£3 if missed");
-    expect(nextUpMeta(overdue, { ...RULES, lateForfeitMinor: 0, missedForfeitMinor: 0 }, now, words).overdue?.cost).toBeNull();
+    expect(nextUpMeta(overdue, { rules: { ...RULES, missedForfeitMinor: 0 }, now, zone: RULES.timezone, words }).overdue?.cost).toBe("£1 now");
+    expect(nextUpMeta(overdue, { rules: { ...RULES, lateForfeitMinor: 0 }, now, zone: RULES.timezone, words }).overdue?.cost).toBe("£3 if missed");
+    expect(nextUpMeta(overdue, { rules: { ...RULES, lateForfeitMinor: 0, missedForfeitMinor: 0 }, now, zone: RULES.timezone, words }).overdue?.cost).toBeNull();
   });
 
   it("caps each cost at what's left of your stake, and says none once nothing is", () => {
     const overdue = item("a", { status: "overdue", dueAt: at(-20) });
-    expect(nextUpMeta(item("a"), RULES, now, words, 500).due).toBe("due today 21:00, £1 if late");
-    expect(nextUpMeta(overdue, RULES, now, words, 250).overdue?.cost).toBe("£1 now, £2.50 if missed");
-    expect(nextUpMeta(item("a"), RULES, now, words, 40).due).toBe("due today 21:00, £0.40 if late");
-    expect(nextUpMeta(item("a"), RULES, now, words, 0).due).toBe("due today 21:00");
-    expect(nextUpMeta(overdue, RULES, now, words, 0).overdue?.cost).toBeNull();
+    expect(nextUpMeta(item("a"), { rules: RULES, now, zone: RULES.timezone, words }, 500).due).toBe("due today 21:00, £1 if late");
+    expect(nextUpMeta(overdue, { rules: RULES, now, zone: RULES.timezone, words }, 250).overdue?.cost).toBe("£1 now, £2.50 if missed");
+    expect(nextUpMeta(item("a"), { rules: RULES, now, zone: RULES.timezone, words }, 40).due).toBe("due today 21:00, £0.40 if late");
+    expect(nextUpMeta(item("a"), { rules: RULES, now, zone: RULES.timezone, words }, 0).due).toBe("due today 21:00");
+    expect(nextUpMeta(overdue, { rules: RULES, now, zone: RULES.timezone, words }, 0).overdue?.cost).toBeNull();
   });
 });
 
@@ -464,43 +464,51 @@ describe("the sheet's header", () => {
     expect(sheetKind(item("a", { johnId: null, everyWeeks: null }), words)).toBe("Kitchen, 2 pts");
   });
 
+  it("says the house's time after yours when your clock isn't the house's", () => {
+    // In October London is on summer time, 7 hours ahead of Regina: 21:00 there is 14:00 here,
+    // and 03:00 on Thursday there is still Wednesday evening here.
+    const away = { people: PEOPLE, viewerId: ME, rules: RULES, now, zone: "America/Regina", words };
+    expect(sheetWhen(item("a"), away).text).toBe("Due today 14:00 (21:00 house time), late costs £1, missed £3");
+    expect(sheetWhen(item("a", { dueAt: at(15) }), away).text).toBe("Due today 20:00 (Thu 03:00 house time), late costs £1, missed £3");
+  });
+
   it("says when it's due and what lateness costs while it's to do", () => {
-    expect(sheetWhen(item("a"), { people: PEOPLE, viewerId: ME, rules: RULES, now, words })).toEqual({ sign: null, text: "Due today 21:00, late costs £1, missed £3" });
-    expect(sheetWhen(item("a"), { people: PEOPLE, viewerId: ME, rules: { ...RULES, missedForfeitMinor: 0 }, now, words }).text).toBe("Due today 21:00, late costs £1");
-    expect(sheetWhen(item("a"), { people: PEOPLE, viewerId: ME, rules: { ...RULES, lateForfeitMinor: 0 }, now, words }).text).toBe("Due today 21:00, missed costs £3");
-    expect(sheetWhen(item("a"), { people: PEOPLE, viewerId: ME, rules: { ...RULES, lateForfeitMinor: 0, missedForfeitMinor: 0 }, now, words }).text).toBe("Due today 21:00");
-    expect(sheetWhen(item("a", { movedFrom: at(48) }), { people: PEOPLE, viewerId: ME, rules: RULES, now, words }).text).toBe(
+    expect(sheetWhen(item("a"), { people: PEOPLE, viewerId: ME, rules: RULES, now, zone: RULES.timezone, words })).toEqual({ sign: null, text: "Due today 21:00, late costs £1, missed £3" });
+    expect(sheetWhen(item("a"), { people: PEOPLE, viewerId: ME, rules: { ...RULES, missedForfeitMinor: 0 }, now, zone: RULES.timezone, words }).text).toBe("Due today 21:00, late costs £1");
+    expect(sheetWhen(item("a"), { people: PEOPLE, viewerId: ME, rules: { ...RULES, lateForfeitMinor: 0 }, now, zone: RULES.timezone, words }).text).toBe("Due today 21:00, missed costs £3");
+    expect(sheetWhen(item("a"), { people: PEOPLE, viewerId: ME, rules: { ...RULES, lateForfeitMinor: 0, missedForfeitMinor: 0 }, now, zone: RULES.timezone, words }).text).toBe("Due today 21:00");
+    expect(sheetWhen(item("a", { movedFrom: at(48) }), { people: PEOPLE, viewerId: ME, rules: RULES, now, zone: RULES.timezone, words }).text).toBe(
       "Due today 21:00, before you go, late costs £1, missed £3",
     );
   });
 
   it("signs overdue and disputed Johns, and says only when the rest were due", () => {
-    expect(sheetWhen(item("a", { status: "overdue", dueAt: at(-20) }), { people: PEOPLE, viewerId: ME, rules: RULES, now, words })).toEqual({
+    expect(sheetWhen(item("a", { status: "overdue", dueAt: at(-20) }), { people: PEOPLE, viewerId: ME, rules: RULES, now, zone: RULES.timezone, words })).toEqual({
       sign: "overdue",
       text: "Overdue since Tue, £1 now, £3 if missed",
     });
-    expect(sheetWhen(item("a", { status: "overdue", dueAt: at(-20) }), { people: PEOPLE, viewerId: ME, rules: { ...RULES, lateForfeitMinor: 0, missedForfeitMinor: 0 }, now, words }).text).toBe(
+    expect(sheetWhen(item("a", { status: "overdue", dueAt: at(-20) }), { people: PEOPLE, viewerId: ME, rules: { ...RULES, lateForfeitMinor: 0, missedForfeitMinor: 0 }, now, zone: RULES.timezone, words }).text).toBe(
       "Overdue since Tue",
     );
-    expect(sheetWhen(item("a", { status: "disputed", dispute: dispute() }), { people: PEOPLE, viewerId: ME, rules: RULES, now, words })).toEqual({
+    expect(sheetWhen(item("a", { status: "disputed", dispute: dispute() }), { people: PEOPLE, viewerId: ME, rules: RULES, now, zone: RULES.timezone, words })).toEqual({
       sign: "disputed",
       text: "Disputed by Megan",
     });
-    expect(sheetWhen(item("a", { status: "checking", movedFrom: at(48) }), { people: PEOPLE, viewerId: ME, rules: RULES, now, words })).toEqual({ sign: null, text: "Due today 21:00" });
-    expect(sheetWhen(item("a", { status: "disputed", dispute: dispute({ raisedBy: null }) }), { people: PEOPLE, viewerId: ME, rules: RULES, now, words }).text).toBe(
+    expect(sheetWhen(item("a", { status: "checking", movedFrom: at(48) }), { people: PEOPLE, viewerId: ME, rules: RULES, now, zone: RULES.timezone, words })).toEqual({ sign: null, text: "Due today 21:00" });
+    expect(sheetWhen(item("a", { status: "disputed", dispute: dispute({ raisedBy: null }) }), { people: PEOPLE, viewerId: ME, rules: RULES, now, zone: RULES.timezone, words }).text).toBe(
       "Disputed by someone who left",
     );
   });
 
   it("tells whoever raised the dispute that they did", () => {
     const priyas = item("a", { userId: "priya", status: "disputed", dispute: dispute({ raisedBy: ME }) });
-    expect(sheetWhen(priyas, { people: PEOPLE, viewerId: ME, rules: RULES, now, words }).text).toBe("Disputed by you");
-    expect(sheetWhen(priyas, { people: PEOPLE, viewerId: "megan", rules: RULES, now, words }).text).toBe("Disputed by Sam");
+    expect(sheetWhen(priyas, { people: PEOPLE, viewerId: ME, rules: RULES, now, zone: RULES.timezone, words }).text).toBe("Disputed by you");
+    expect(sheetWhen(priyas, { people: PEOPLE, viewerId: "megan", rules: RULES, now, zone: RULES.timezone, words }).text).toBe("Disputed by Sam");
   });
 
   it("says what happened once it's settled, in place of what lateness costs, signing late and missed", () => {
     const settled = (status: BoardItem["status"]) =>
-      sheetWhen(item("a", { userId: "priya", status, doneAt: at(-48) }), { people: PEOPLE, viewerId: ME, rules: RULES, now, words });
+      sheetWhen(item("a", { userId: "priya", status, doneAt: at(-48) }), { people: PEOPLE, viewerId: ME, rules: RULES, now, zone: RULES.timezone, words });
     expect(settled("done")).toEqual({ sign: null, text: "Priya did it on time, on Mon at 12:00." });
     expect(settled("late")).toEqual({ sign: "late", text: "Priya did it late, on Mon at 12:00." });
     expect(settled("missed")).toEqual({ sign: "missed", text: "It was missed." });
@@ -508,9 +516,9 @@ describe("the sheet's header", () => {
   });
 
   it("caps what lateness costs at what's left of the stake", () => {
-    expect(sheetWhen(item("a"), { people: PEOPLE, viewerId: ME, rules: RULES, now, words }, 200).text).toBe("Due today 21:00, late costs £1, missed £2");
-    expect(sheetWhen(item("a"), { people: PEOPLE, viewerId: ME, rules: RULES, now, words }, 0).text).toBe("Due today 21:00");
-    expect(sheetWhen(item("a", { status: "overdue", dueAt: at(-20) }), { people: PEOPLE, viewerId: ME, rules: RULES, now, words }, 100).text).toBe(
+    expect(sheetWhen(item("a"), { people: PEOPLE, viewerId: ME, rules: RULES, now, zone: RULES.timezone, words }, 200).text).toBe("Due today 21:00, late costs £1, missed £2");
+    expect(sheetWhen(item("a"), { people: PEOPLE, viewerId: ME, rules: RULES, now, zone: RULES.timezone, words }, 0).text).toBe("Due today 21:00");
+    expect(sheetWhen(item("a", { status: "overdue", dueAt: at(-20) }), { people: PEOPLE, viewerId: ME, rules: RULES, now, zone: RULES.timezone, words }, 100).text).toBe(
       "Overdue since Tue, £1 now, £1 if missed",
     );
   });
@@ -518,7 +526,7 @@ describe("the sheet's header", () => {
 
 describe("tickedLine", () => {
   const ticked = (doneAt: Date, userId = "megan", standsAt: Date | null = at(21)) =>
-    tickedLine(item("a", { userId, status: "checking", doneAt, standsAt }), { people: PEOPLE, viewerId: ME, rules: RULES, now, words });
+    tickedLine(item("a", { userId, status: "checking", doneAt, standsAt }), { people: PEOPLE, viewerId: ME, rules: RULES, now, zone: RULES.timezone, words });
 
   it("says who ticked it and when, and when it stands", () => {
     expect(ticked(at(-2))).toBe("Megan ticked this at 10:00, stands in 21h");
@@ -541,7 +549,7 @@ describe("tickedLine", () => {
 
 describe("settledLine", () => {
   const settled = (status: BoardItem["status"], rules = RULES, userId = "priya") =>
-    settledLine(item("a", { userId, status, doneAt: at(-48) }), { people: PEOPLE, viewerId: ME, rules, now, words });
+    settledLine(item("a", { userId, status, doneAt: at(-48) }), { people: PEOPLE, viewerId: ME, rules, now, zone: rules.timezone, words });
 
   it("says what happened, and never what lateness costs", () => {
     expect(settled("done")).toBe("Priya did it on time, on Mon at 12:00.");
@@ -552,7 +560,7 @@ describe("settledLine", () => {
   });
 
   it("leaves out when it was ticked when it never was, and says nothing for a John still going", () => {
-    expect(settledLine(item("a", { status: "done" }), { people: PEOPLE, viewerId: ME, rules: RULES, now, words })).toBe("You did it on time.");
+    expect(settledLine(item("a", { status: "done" }), { people: PEOPLE, viewerId: ME, rules: RULES, now, zone: RULES.timezone, words })).toBe("You did it on time.");
     expect(settled("checking")).toBe("");
   });
 });
@@ -604,19 +612,19 @@ describe("cantOptions", () => {
 
   it("lists a choice's status word in what a screen reader hears, and in the meta once it's picked", () => {
     const overdue = item("Descale the kettle", { userId: "priya", points: 1, status: "overdue", dueAt: at(-20) });
-    expect(swapChoice(overdue, PEOPLE, RULES, now, false, words)).toEqual({
+    expect(swapChoice(overdue, { people: PEOPLE, viewerId: "", rules: RULES, now, zone: RULES.timezone, words }, false)).toEqual({
       meta: "Priya, was due Tue, 1 pt",
       label: "Descale the kettle, Overdue, Priya, was due Tue, 1 pt",
     });
-    expect(swapChoice(overdue, PEOPLE, RULES, now, true, words).meta).toBe("Overdue, Priya, was due Tue, 1 pt");
+    expect(swapChoice(overdue, { people: PEOPLE, viewerId: "", rules: RULES, now, zone: RULES.timezone, words }, true).meta).toBe("Overdue, Priya, was due Tue, 1 pt");
     // An upcoming John has no word to say.
     const later = item("Bins", { userId: "megan", status: "upcoming", dueAt: at(50) });
-    expect(swapChoice(later, PEOPLE, RULES, now, true, words)).toEqual({ meta: "Megan, Fri 14:00, 2 pts", label: "Bins, Megan, Fri 14:00, 2 pts" });
+    expect(swapChoice(later, { people: PEOPLE, viewerId: "", rules: RULES, now, zone: RULES.timezone, words }, true)).toEqual({ meta: "Megan, Fri 14:00, 2 pts", label: "Bins, Megan, Fri 14:00, 2 pts" });
   });
 
   it("lists a housemate's John as the swap does, saying when an overdue one was due", () => {
-    expect(swapMeta(item("a", { userId: "priya", points: 3 }), PEOPLE, RULES, now, words)).toBe("Priya, today 21:00, 3 pts");
-    expect(swapMeta(item("a", { userId: "megan", points: 1, status: "overdue", dueAt: at(-20) }), PEOPLE, RULES, now, words)).toBe(
+    expect(swapMeta(item("a", { userId: "priya", points: 3 }), { people: PEOPLE, viewerId: "", rules: RULES, now, zone: RULES.timezone, words })).toBe("Priya, today 21:00, 3 pts");
+    expect(swapMeta(item("a", { userId: "megan", points: 1, status: "overdue", dueAt: at(-20) }), { people: PEOPLE, viewerId: "", rules: RULES, now, zone: RULES.timezone, words })).toBe(
       "Megan, was due Tue, 1 pt",
     );
   });
@@ -808,23 +816,23 @@ describe("covering a housemate's John", () => {
     item("Bins", { userId: "priya", status: "overdue", dueAt: at(-7), points: 3, ...overrides });
 
   it("offers the cover once the grace is over, and says when it opens before that", () => {
-    expect(coverOffer(priyas(), { people: PEOPLE, viewerId: ME, rules: RULES, now, words })).toEqual({
+    expect(coverOffer(priyas(), { people: PEOPLE, viewerId: ME, rules: RULES, now, zone: RULES.timezone, words })).toEqual({
       kind: "cover",
       text: "Priya hasn’t done it. If you do, it counts as Priya’s miss, and you get 3 pts and £3.",
     });
-    expect(coverOffer(priyas(), { people: PEOPLE, viewerId: ME, rules: { ...RULES, missedForfeitMinor: 0 }, now, words }).text).toBe(
+    expect(coverOffer(priyas(), { people: PEOPLE, viewerId: ME, rules: { ...RULES, missedForfeitMinor: 0 }, now, zone: RULES.timezone, words }).text).toBe(
       "Priya hasn’t done it. If you do, it counts as Priya’s miss, and you get 3 pts.",
     );
-    expect(coverOffer(priyas({ dueAt: at(-1) }), { people: PEOPLE, viewerId: ME, rules: RULES, now, words })).toEqual({
+    expect(coverOffer(priyas({ dueAt: at(-1) }), { people: PEOPLE, viewerId: ME, rules: RULES, now, zone: RULES.timezone, words })).toEqual({
       kind: "soon",
       text: "It’s still Priya’s to do. Anyone else can cover it from today 14:00.",
     });
   });
 
   it("offers nothing on your own John, or one that isn't overdue", () => {
-    expect(coverOffer(priyas({ userId: ME }), { people: PEOPLE, viewerId: ME, rules: RULES, now, words }).kind).toBeNull();
-    expect(coverOffer(priyas({ status: "due-soon", dueAt: at(2) }), { people: PEOPLE, viewerId: ME, rules: RULES, now, words }).kind).toBeNull();
-    expect(coverOffer(priyas({ status: "checking", doneAt: at(-1) }), { people: PEOPLE, viewerId: ME, rules: RULES, now, words }).kind).toBeNull();
+    expect(coverOffer(priyas({ userId: ME }), { people: PEOPLE, viewerId: ME, rules: RULES, now, zone: RULES.timezone, words }).kind).toBeNull();
+    expect(coverOffer(priyas({ status: "due-soon", dueAt: at(2) }), { people: PEOPLE, viewerId: ME, rules: RULES, now, zone: RULES.timezone, words }).kind).toBeNull();
+    expect(coverOffer(priyas({ status: "checking", doneAt: at(-1) }), { people: PEOPLE, viewerId: ME, rules: RULES, now, zone: RULES.timezone, words }).kind).toBeNull();
   });
 
   it("names whose John it is on Needs you", () => {
@@ -845,17 +853,17 @@ describe("covering a housemate's John", () => {
 
   it("says who covered it and when", () => {
     const covered = priyas({ status: "covered", coveredBy: "megan", doneAt: at(-2), standsAt: at(21) });
-    expect(tickedLine(covered, { people: PEOPLE, viewerId: ME, rules: RULES, now, words })).toBe("Megan covered this at 10:00, stands in 21h");
-    expect(tickedLine({ ...covered, coveredBy: ME }, { people: PEOPLE, viewerId: ME, rules: RULES, now, words })).toBe("You covered this at 10:00, stands in 21h");
-    expect(sheetWhen(covered, { people: PEOPLE, viewerId: ME, rules: RULES, now, words })).toEqual({ sign: "covered", text: "Covered, was due 05:00" });
+    expect(tickedLine(covered, { people: PEOPLE, viewerId: ME, rules: RULES, now, zone: RULES.timezone, words })).toBe("Megan covered this at 10:00, stands in 21h");
+    expect(tickedLine({ ...covered, coveredBy: ME }, { people: PEOPLE, viewerId: ME, rules: RULES, now, zone: RULES.timezone, words })).toBe("You covered this at 10:00, stands in 21h");
+    expect(sheetWhen(covered, { people: PEOPLE, viewerId: ME, rules: RULES, now, zone: RULES.timezone, words })).toEqual({ sign: "covered", text: "Covered, was due 05:00" });
   });
 
   it("says, settled, that it counts as the assignee's miss", () => {
     const settled = priyas({ status: "covered", outcome: "covered", coveredBy: "megan", doneAt: at(-48) });
-    expect(settledLine(settled, { people: PEOPLE, viewerId: ME, rules: RULES, now, words })).toBe("Megan did it for Priya on Mon at 12:00, so it counts as Priya’s miss.");
-    expect(settledLine(settled, { people: PEOPLE, viewerId: "priya", rules: RULES, now, words })).toBe("Megan did it for you on Mon at 12:00, so it counts as your miss.");
-    expect(settledLine(settled, { people: PEOPLE, viewerId: "megan", rules: RULES, now, words })).toBe("You did it for Priya on Mon at 12:00, so it counts as Priya’s miss.");
-    expect(sheetWhen(settled, { people: PEOPLE, viewerId: ME, rules: RULES, now, words }).sign).toBe("covered");
+    expect(settledLine(settled, { people: PEOPLE, viewerId: ME, rules: RULES, now, zone: RULES.timezone, words })).toBe("Megan did it for Priya on Mon at 12:00, so it counts as Priya’s miss.");
+    expect(settledLine(settled, { people: PEOPLE, viewerId: "priya", rules: RULES, now, zone: RULES.timezone, words })).toBe("Megan did it for you on Mon at 12:00, so it counts as your miss.");
+    expect(settledLine(settled, { people: PEOPLE, viewerId: "megan", rules: RULES, now, zone: RULES.timezone, words })).toBe("You did it for Priya on Mon at 12:00, so it counts as Priya’s miss.");
+    expect(sheetWhen(settled, { people: PEOPLE, viewerId: ME, rules: RULES, now, zone: RULES.timezone, words }).sign).toBe("covered");
   });
 
   it("leaves the undo warning off a cover", () => {
