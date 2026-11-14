@@ -1,17 +1,11 @@
 import { ADMIN_GROUPS, adminGroupOf, adminPage, type AdminGroup, type AdminPage } from '@app/core';
 import { Link, useRouter } from 'expo-router';
 import {
-  ArchiveIcon,
   ArrowLeftIcon,
   HouseIcon,
   InboxIcon,
   LayoutGridIcon,
-  MegaphoneIcon,
-  MessageSquareIcon,
-  ScrollTextIcon,
   SendIcon,
-  TicketIcon,
-  UserXIcon,
   type LucideIcon,
 } from 'lucide-react-native';
 import type { ReactNode } from 'react';
@@ -26,25 +20,12 @@ import { TextButton } from '@/components/text-button';
 import { FONT, MARK_RADIUS, RADIUS, RAIL, SPACE, TAP, useTheme, WIDE } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
-/** Each page's icon, on the rail and the tabs. */
-const ADMIN_ICON: Record<AdminPage, LucideIcon> = {
-  overview: LayoutGridIcon,
-  inbox: InboxIcon,
-  houses: HouseIcon,
-  messages: MessageSquareIcon,
-  notices: MegaphoneIcon,
-  promotions: TicketIcon,
-  deletions: UserXIcon,
-  audit: ScrollTextIcon,
-};
-
-/** Each group's icon on a phone's tabs: a one-page group has its page's. */
+/** Each tab's icon, on a phone's tabs and the laptop's side list. */
 const GROUP_ICON: Record<AdminGroup, LucideIcon> = {
   overview: LayoutGridIcon,
   inbox: InboxIcon,
   houses: HouseIcon,
   send: SendIcon,
-  records: ArchiveIcon,
 };
 
 /** The tab bar's height above the home bar, so a toast clears it. */
@@ -91,30 +72,47 @@ function AdminRail({ page }: { page: AdminPage }) {
         <Chip label={words('admin.shell.owner')} />
       </View>
       <View role="tablist" style={styles.items}>
-        {ADMIN_GROUPS.map((group) => (
-          <View key={group.key} style={group.pages.length > 1 ? styles.group : undefined}>
-            {group.pages.length > 1 ? <Meta style={styles.heading}>{group.label}</Meta> : null}
-            {group.pages.map((key) => {
-              const { label, path } = adminPage(key);
-              const Icon = ADMIN_ICON[key];
-              const on = key === page;
-              return (
-                <Link key={key} href={path as never} asChild>
-                  <Pressable
-                    role="tab"
-                    aria-selected={on}
-                    style={StyleSheet.flatten([styles.item, on && { backgroundColor: colors.card }])}
-                    testID={`admin-nav-${key}`}
-                  >
-                    {on ? <View aria-hidden style={[styles.marker, { backgroundColor: colors.hivis }]} /> : null}
-                    <Icon size={22} color={colors.foreground} strokeWidth={2.5} />
-                    <Text style={[type.body, styles.label, { color: colors.foreground }]}>{label}</Text>
-                  </Pressable>
-                </Link>
-              );
-            })}
-          </View>
-        ))}
+        {ADMIN_GROUPS.map((group) => {
+          const Icon = GROUP_ICON[group.key];
+          const open = adminGroupOf(page).key === group.key;
+          // The open tab unfolds its pages beneath it; a one-page tab is its page.
+          const pages: readonly AdminPage[] = open && group.pages.length > 1 ? group.pages : [];
+          const marked = open && pages.length === 0;
+          return (
+            <View key={group.key}>
+              <Link href={adminPage(group.pages[0]).path as never} asChild>
+                <Pressable
+                  role="tab"
+                  aria-selected={open}
+                  style={StyleSheet.flatten([styles.item, marked && { backgroundColor: colors.card }])}
+                  testID={`admin-group-${group.key}`}
+                >
+                  {marked ? <View aria-hidden style={[styles.marker, { backgroundColor: colors.hivis }]} /> : null}
+                  <Icon size={22} color={colors.foreground} strokeWidth={2.5} />
+                  <Text style={[type.body, styles.label, { color: colors.foreground }]}>{group.label}</Text>
+                </Pressable>
+              </Link>
+              {pages.map((key) => {
+                const here = key === page;
+                return (
+                  <Link key={key} href={adminPage(key).path as never} asChild>
+                    <Pressable
+                      role="tab"
+                      aria-selected={here}
+                      style={StyleSheet.flatten([styles.item, styles.sub, here && { backgroundColor: colors.card }])}
+                      testID={`admin-nav-${key}`}
+                    >
+                      {here ? <View aria-hidden style={[styles.marker, { backgroundColor: colors.hivis }]} /> : null}
+                      <Text style={[type.body, here && styles.label, { color: here ? colors.foreground : colors.mutedForeground }]}>
+                        {adminPage(key).label}
+                      </Text>
+                    </Pressable>
+                  </Link>
+                );
+              })}
+            </View>
+          );
+        })}
       </View>
       <View style={styles.foot}>
         {/* The way back to the owner's own house: "/" opens it. */}
@@ -151,9 +149,9 @@ function AdminTabs({ page }: { page: AdminPage }) {
 }
 
 /**
- * On a phone, at the top of a page whose tab holds more than one (Send,
- * Records): a switch between them. Nothing on a laptop, where the side list
- * names every page.
+ * On a phone, at the top of a page whose tab holds more than one (Overview,
+ * Inbox, Send): a switch between them. Nothing on a laptop, where the open
+ * tab's pages are listed beneath it.
  */
 export function AdminSwitch({ page }: { page: AdminPage }) {
   const router = useRouter();
@@ -163,12 +161,12 @@ export function AdminSwitch({ page }: { page: AdminPage }) {
   return (
     <View style={styles.switch}>
       <Segmented
-      label={group.label}
-      options={group.pages.map((key) => ({ value: key, label: adminPage(key).label }))}
-      value={page}
-      onChange={(key) => router.navigate(adminPage(key).path as never)}
-      equal
-      testID="admin-switch"
+        label={group.label}
+        options={group.pages.map((key) => ({ value: key, label: adminPage(key).label }))}
+        value={page}
+        onChange={(key) => router.navigate(adminPage(key).path as never)}
+        equal
+        testID="admin-switch"
       />
     </View>
   );
@@ -195,8 +193,8 @@ const styles = StyleSheet.create({
   brand: { flexDirection: 'row', alignItems: 'center', gap: SPACE.sm, paddingHorizontal: SPACE.md, marginBottom: SPACE.xl },
   items: { gap: SPACE.xs },
   switch: { marginBottom: SPACE.xl },
-  group: { gap: SPACE.xs, marginTop: SPACE.md },
-  heading: { paddingHorizontal: SPACE.md, paddingBottom: SPACE.xs },
+  // A page under its open tab, its words lined up with the tab's.
+  sub: { paddingLeft: SPACE.md + 22 + SPACE.md },
   item: {
     minHeight: TAP,
     flexDirection: 'row',

@@ -24,6 +24,11 @@ still look right stretched (content capped, nothing pinned to far edges).
   rail from `WIDE`. House is the house's (its life, its setup, its Pass);
   You is yours (your settings, help, moving out and leaving). Pages pushed
   from House or You keep the tabs. (Focus, #17; Fourth tab A, 12 Nov)
+- **The owner's pages have four tabs too:** Overview (with the Audit log),
+  Inbox (with Deletions), Houses and Send (Messages, Notices, Promotions).
+  A tab with more than one page has a switch at the top on a phone; on a
+  laptop the open tab unfolds its pages beneath it in the side list. A new
+  page joins a tab, never adds one. (Admin tabs A, 14 Nov)
 - **At most two levels deep:** a tab, then a pushed page or a sheet. Back
   always returns to the tab's home (`dismissTo`), never through tab history.
   (Focus, #17; #34) *Backed by* the HIG's tab bar guidance and Nielsen's

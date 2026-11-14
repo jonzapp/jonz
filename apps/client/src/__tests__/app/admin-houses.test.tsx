@@ -134,7 +134,8 @@ describe('Overview', () => {
     await renderPages(ROUTES, '/admin/overview');
     await untilRead(words);
     expect(screen.getByTestId('health-clock')).toHaveTextContent(/Late/);
-    await fireEvent.press(within(screen.getByTestId('overview-span')).getByText(words('admin.overview.spans.month')));
+    await fireEvent.press(screen.getByTestId('overview-span'));
+    await fireEvent.press(screen.getByRole('radio', { name: words('admin.overview.spans.month') }));
     await waitFor(() => expect(ownerOverview).toHaveBeenLastCalledWith('month', expect.any(String)));
   });
 
@@ -233,7 +234,7 @@ describe('Houses', () => {
     expect(screen.getByTestId('house-fact-zone')).toHaveTextContent(/^Time zone/);
     expect(screen.getByTestId('house-fact-code')).toHaveTextContent('Join codeK7P2QX');
     expect(screen.getByTestId('house-fact-johns')).toHaveTextContent('Johns9');
-    expect(screen.getByTestId('admin-nav-houses')).toBeSelected();
+    expect(screen.getByTestId('admin-group-houses')).toBeSelected();
     // The way back to the owner's own house, at the rail's foot.
     expect(within(screen.getByTestId('admin-rail')).getByRole('link', { name: words('admin.shell.backToHouse') })).toBeOnTheScreen();
   });
@@ -252,21 +253,33 @@ describe('On a laptop, the room is used', () => {
 });
 
 describe('Tabs by job, on a phone', () => {
-  it('has five tabs, and Records opens Deletions with a switch to the Audit log', async () => {
+  it('has four tabs, and Deletions sits in the Inbox with a switch back to it', async () => {
     await renderPages(ROUTES, '/admin/deletions');
     await untilRead(words);
-    for (const key of ['overview', 'inbox', 'houses', 'send', 'records']) expect(screen.getByTestId(`admin-tab-${key}`)).toBeVisible();
-    expect(screen.getByTestId('admin-tab-records')).toBeSelected();
+    for (const key of ['overview', 'inbox', 'houses', 'send']) expect(screen.getByTestId(`admin-tab-${key}`)).toBeVisible();
+    expect(screen.queryByTestId('admin-tab-records')).toBeNull();
+    expect(screen.getByTestId('admin-tab-inbox')).toBeSelected();
+    expect(within(screen.getByTestId('admin-switch')).getByText('Inbox')).toBeVisible();
     expect(within(screen.getByTestId('admin-switch')).getByText('Deletions')).toBeVisible();
+  });
+
+  it('opens Overview with a switch to the Audit log', async () => {
+    await renderPages(ROUTES, '/admin/overview');
+    await untilRead(words);
+    expect(screen.getByTestId('admin-tab-overview')).toBeSelected();
     expect(within(screen.getByTestId('admin-switch')).getByText('Audit log')).toBeVisible();
   });
 
-  it('shows no switch on a laptop, where the side list names every page', async () => {
+  it('shows no switch on a laptop, where the open tab unfolds its pages and the others stay folded', async () => {
     (useWindowDimensions as jest.Mock).mockReturnValue(LAPTOP);
     await renderPages(ROUTES, '/admin/deletions');
     await untilRead(words);
     expect(screen.queryByTestId('admin-switch')).toBeNull();
-    expect(screen.getByTestId('admin-nav-audit')).toBeVisible();
-    expect(screen.getByText('Records')).toBeVisible();
+    expect(screen.getByTestId('admin-group-inbox')).toBeSelected();
+    expect(screen.getByTestId('admin-nav-deletions')).toBeSelected();
+    expect(screen.getByTestId('admin-nav-inbox')).toBeVisible();
+    for (const key of ['overview', 'houses', 'send']) expect(screen.getByTestId(`admin-group-${key}`)).toBeVisible();
+    expect(screen.queryByTestId('admin-nav-audit')).toBeNull();
+    expect(screen.queryByTestId('admin-nav-messages')).toBeNull();
   });
 });

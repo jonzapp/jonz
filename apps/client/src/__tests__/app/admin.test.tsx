@@ -502,15 +502,15 @@ describe('notices on a laptop', () => {
 });
 
 describe('deletions', () => {
-  it('lists who is waiting, their email (a line of its own) and house, and how long is left, under Records', async () => {
+  it('lists who is waiting, their email (a line of its own) and house, and how long is left, in the Inbox', async () => {
     await renderPages(ROUTES, '/admin/deletions');
     await untilRead(words);
     expect(screen.getByTestId('deletions-count')).toHaveTextContent(/2 people waiting/);
     expect(screen.getByTestId('deletion-sam')).toHaveTextContent(/Sam.*sam@example\.com\sThe Annexe, asked in the app.*Goes in 28 days/);
     expect(screen.getByTestId('deletion-kit')).toHaveTextContent(/kit@example\.com\sin no house, you started it/);
-    expect(screen.getByTestId('admin-tab-records')).toBeSelected();
+    expect(screen.getByTestId('admin-tab-inbox')).toBeSelected();
     expect(screen.queryByTestId('admin-tab-deletions')).toBeNull();
-    expect(within(screen.getByTestId('admin-switch')).getByText('Audit log')).toBeVisible();
+    expect(within(screen.getByTestId('admin-switch')).getByText('Inbox')).toBeVisible();
   });
 
   it('is a busy list: the database finds people by their words, who started it, and how soon it goes', async () => {

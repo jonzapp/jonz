@@ -11,6 +11,7 @@ import { Avatar } from '@/components/avatar';
 import { Row } from '@/components/row';
 import { ReportChip } from '@/components/report/report-parts';
 import { INBOX_KEY, ReportPanel } from '@/components/admin/report-panel';
+import { AdminSwitch } from '@/components/admin/admin-shell';
 import { Columns, Screen, useColumns } from '@/components/screen';
 import { TitleBar } from '@/components/title-bar';
 import { SPACE } from '@/theme';
@@ -45,6 +46,7 @@ export default function InboxPage() {
   });
   return (
     <Screen spreads bar={<TitleBar title={words('common.report.inbox')} />} onNearEnd={busy.onNearEnd} testID="admin-inbox">
+      <AdminSwitch page="inbox" />
       <Inbox busy={busy} />
     </Screen>
   );
