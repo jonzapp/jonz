@@ -899,6 +899,7 @@ export type Database = {
           johns: number
           outcome: string
           output_tokens: number
+          reset_at: string | null
           user_id: string | null
         }
         Insert: {
@@ -909,6 +910,7 @@ export type Database = {
           johns?: number
           outcome: string
           output_tokens?: number
+          reset_at?: string | null
           user_id?: string | null
         }
         Update: {
@@ -919,6 +921,7 @@ export type Database = {
           johns?: number
           outcome?: string
           output_tokens?: number
+          reset_at?: string | null
           user_id?: string | null
         }
         Relationships: [
@@ -3091,6 +3094,15 @@ export type Database = {
       }
       finish_support_draft: {
         Args: { p_action: string; p_draft: string; p_input: number; p_output: number; p_reply: string; p_same_as: string | null; p_why: string }
+        Returns: Json
+      }
+      owner_reset_ask_usage: {
+        Args: {
+          p_audience: string
+          p_house?: string
+          p_people?: string[]
+          p_reason?: string
+        }
         Returns: Json
       }
       owner_reset_house_data: {

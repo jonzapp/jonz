@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { deleteHouse, ownerHouse, ownerResetHouse } from '@/api/houses';
+import { AskResetSection } from '@/components/admin/ask-reset';
 import { useOwnerMay } from '@/components/admin/use-owner-may';
 import { Alert } from '@/components/alert';
 import { Avatar } from '@/components/avatar';
@@ -73,6 +74,7 @@ function HouseBody({ house }: { house: HouseDetail }) {
           <Row key={fact.key} title={fact.label} trailing={fact.value} testID={`house-fact-${fact.key}`} />
         ))}
       </Section>
+      <AskResetSection house={house} />
       <HouseDanger house={house} />
     </View>
   );

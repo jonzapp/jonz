@@ -14970,6 +14970,59 @@
                     "everything",
                     "reason"
                   ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "ask_reset"
+                    },
+                    "audience": {
+                      "type": "string",
+                      "enum": [
+                        "house",
+                        "people",
+                        "everyone"
+                      ]
+                    },
+                    "houseId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "people": {
+                      "maxItems": 500,
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "format": "uuid"
+                      }
+                    },
+                    "to": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    },
+                    "reason": {
+                      "type": "string",
+                      "maxLength": 500
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "audience",
+                    "houseId",
+                    "people",
+                    "to",
+                    "reason"
+                  ]
                 }
               ]
             }
@@ -16845,6 +16898,86 @@
         },
         "required": [
           "weeks",
+          "people"
+        ]
+      }
+    },
+    {
+      "name": "owner_reset_ask_usage",
+      "about": "Reset Ask Jonz use for one house, some people (in any house) or everyone: their turns so far stop counting toward the house's week, each person's share, the daily turns and the account's 7 days. Nothing is deleted, and nobody is told",
+      "scope": "app",
+      "effect": "write",
+      "guard": {
+        "by": "permission",
+        "permission": "ask_usage:write"
+      },
+      "entitlement": null,
+      "entitlementWhen": null,
+      "destructive": false,
+      "method": "POST",
+      "path": "/v1/admin/ask/usage/reset",
+      "pathKeys": [],
+      "rpc": {
+        "name": "owner_reset_ask_usage",
+        "server": false,
+        "args": {
+          "audience": "p_audience",
+          "houseId": "p_house",
+          "people": "p_people",
+          "reason": "p_reason"
+        }
+      },
+      "tables": [],
+      "page": null,
+      "input": {
+        "type": "object",
+        "properties": {
+          "audience": {
+            "type": "string",
+            "enum": [
+              "house",
+              "people",
+              "everyone"
+            ]
+          },
+          "houseId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "people": {
+            "minItems": 1,
+            "maxItems": 500,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "audience"
+        ]
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "turns": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "people": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "turns",
           "people"
         ]
       }

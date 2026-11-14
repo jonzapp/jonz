@@ -22,6 +22,12 @@ import type { Words } from "./words-for";
 export const OWNER_ROLES = ["owner", "support"] as const;
 export type OwnerRole = (typeof OWNER_ROLES)[number];
 
+/** Whose Ask Jonz use an owner resets: one house's, some people's (in any house) or everyone's. */
+export const ASK_RESET_AUDIENCES = ["house", "people", "everyone"] as const;
+export type AskResetAudience = (typeof ASK_RESET_AUDIENCES)[number];
+/** The most people one reset names; more than that is everyone. */
+export const ASK_RESET_MAX = 500;
+
 /** Every app-scope permission on the admin pages, in plain words (Jonz reads these). */
 export const OWNER_PERMISSIONS = {
   "admin:read": "See every admin page: Overview, Inbox, Houses, Messages, Notices, Promotions, Deletions and the audit log",
@@ -31,6 +37,7 @@ export const OWNER_PERMISSIONS = {
   "promotions:write": "Make a promotion, stop one, email the people it names, or try its Stripe set-up again",
   "deletions:write": "Delete an account now, stop a deletion, or start one for someone who asked by email",
   "houses:write": "Reset or delete a whole house: everyone in it is told, and it can't be undone",
+  "ask_usage:write": "Reset Ask Jonz use for a house, some people or everyone, so their limits start again",
 } as const;
 export type OwnerPermission = keyof typeof OWNER_PERMISSIONS;
 export const OWNER_PERMISSION_NAMES = Object.keys(OWNER_PERMISSIONS) as OwnerPermission[];
@@ -101,6 +108,14 @@ export const OwnerMove = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("deletion_start"), email: z.email(), reason: Reason }),
   z.object({ kind: z.literal("house_delete"), houseId: z.uuid(), name: Label, people: z.number().int().min(0), reason: Reason, tell: z.boolean() }),
   z.object({ kind: z.literal("house_reset"), houseId: z.uuid(), name: Label, people: z.number().int().min(0), everything: z.boolean(), reason: Reason }),
+  z.object({
+    kind: z.literal("ask_reset"),
+    audience: z.enum(ASK_RESET_AUDIENCES),
+    houseId: z.uuid().nullable(),
+    people: z.array(z.uuid()).max(ASK_RESET_MAX),
+    to: Label,
+    reason: Reason,
+  }),
 ]);
 export type OwnerMove = z.infer<typeof OwnerMove>;
 export type OwnerMoveKind = OwnerMove["kind"];
@@ -132,6 +147,26 @@ export const DeleteHouseResponse = z.object({
 });
 export type DeleteHouseResponse = z.infer<typeof DeleteHouseResponse>;
 
+/**
+ * owner_reset_ask_usage on /v1: whose Ask Jonz use starts again. A house
+ * needs its houseId, people their ids; everyone needs neither.
+ */
+export const AskResetRequest = z
+  .object({
+    audience: z.enum(ASK_RESET_AUDIENCES),
+    houseId: z.uuid().optional(),
+    people: z.array(z.uuid()).min(1).max(ASK_RESET_MAX).optional(),
+    reason: Reason.optional(),
+  })
+  .refine((r) => (r.audience === "house" ? Boolean(r.houseId) : r.audience === "people" ? Boolean(r.people?.length) : true), {
+    message: "A house reset needs houseId; a people reset needs people.",
+  });
+export type AskResetRequest = z.infer<typeof AskResetRequest>;
+
+/** What a reset did: how many Ask Jonz turns stopped counting, and whose. */
+export const AskResetResponse = z.object({ turns: z.number().int().min(0), people: z.number().int().min(0) });
+export type AskResetResponse = z.infer<typeof AskResetResponse>;
+
 /** A move's title on the To do card. */
 export function ownerMoveTitle(m: OwnerMove, words: Words): string {
   switch (m.kind) {
@@ -162,6 +197,8 @@ export function ownerMoveTitle(m: OwnerMove, words: Words): string {
       return words("admin.moves.title.house_delete", { name: m.name });
     case "house_reset":
       return words("admin.moves.title.house_reset", { name: m.name, everything: m.everything });
+    case "ask_reset":
+      return words("admin.moves.title.ask_reset", { audience: m.audience, to: m.to });
   }
 }
 
@@ -195,5 +232,7 @@ export function ownerMoveMeta(m: OwnerMove, words: Words): string {
       return `${words("admin.deleteHouse.gone", { people: m.people, tell: m.tell })}${why(m.reason)}`;
     case "house_reset":
       return `${words("admin.reset.gone", { people: m.people, everything: m.everything })}${why(m.reason)}`;
+    case "ask_reset":
+      return `${words("admin.askReset.meta")}${why(m.reason)}`;
   }
 }

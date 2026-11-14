@@ -1,4 +1,4 @@
-import { type DeleteHouseResponse, type HouseDetail, type HouseRow, type ListAsk, type Overview, type OverviewSpan, type PassPlan } from '@app/core';
+import { type AskResetAudience, type AskResetResponse, type DeleteHouseResponse, type HouseDetail, type HouseRow, type ListAsk, type Overview, type OverviewSpan, type PassPlan } from '@app/core';
 
 import { callV1 } from './v1';
 
@@ -77,6 +77,20 @@ export async function ownerHouse(id: string): Promise<HouseDetail | null> {
 /** Deletes the whole house, for good (houses:write): answers how many lived there, how many were told, and whether its Pass was stopped. */
 export function deleteHouse(id: string, reason: string, tell: boolean): Promise<DeleteHouseResponse> {
   return callV1('owner_delete_house', { houseId: id, reason: reason.trim(), tell });
+}
+
+/**
+ * Resets Ask Jonz use (ask_usage:write): one house's, some people's or
+ * everyone's turns so far stop counting toward any limit. Answers how many
+ * turns and people it reached.
+ */
+export function ownerResetAsk(ask: { audience: AskResetAudience; houseId?: string; people?: readonly string[]; reason: string }): Promise<AskResetResponse> {
+  return callV1('owner_reset_ask_usage', {
+    audience: ask.audience,
+    ...(ask.audience === 'house' ? { houseId: ask.houseId } : {}),
+    ...(ask.audience === 'people' ? { people: [...(ask.people ?? [])] } : {}),
+    reason: ask.reason.trim(),
+  });
 }
 
 /** Resets any house's history, or everything in it, for good (houses:write), with why for the audit log. */

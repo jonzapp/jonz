@@ -38,6 +38,7 @@ const writes = (may: Partial<Record<OwnerPermission, boolean>>): OwnerWrites => 
   makePromotion: ok,
   promotionMove: ok,
   deletionMove: ok,
+  resetAsk: ok,
   startDeletion: ok,
   deleteHouse: ok,
   resetHouse: ok,

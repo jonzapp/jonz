@@ -105,6 +105,7 @@ insert into callable values
   ('owner_reports_count'),
   ('owner_reports_page'),
   ('owner_request_deletion'),
+  ('owner_reset_ask_usage'),
   ('owner_reset_house_data'),
   ('owner_same_as'),
   ('owner_same_as_find'),
