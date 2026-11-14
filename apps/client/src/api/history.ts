@@ -5,7 +5,7 @@ import { callV1 } from './v1';
 
 // Undo. house_history says, for each move, who may undo it now;
 // undo_action and undo_latest check that again and put it back. The rules
-// live in the migration (20261101090000_undo_history.sql).
+// live in the migration (20270112090000_baseline.sql).
 
 /**
  * How many of the latest moves are read to find what can still be undone:

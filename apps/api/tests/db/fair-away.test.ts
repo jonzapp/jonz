@@ -8,7 +8,7 @@ import { actorFor, addJohns, deal, makeHouse, reread, thisWeek, ZONE } from "@/t
 import { fromNow, rightNow } from "@/tests/support/clock";
 
 /**
- * Fair time away and swaps (20261129090000_fair_away.sql,
+ * Fair time away and swaps (20270112090000_baseline.sql,
  * docs/specs/fair-away.md): a trip booked from today hands on what you can't
  * do before you go, and cancelling or undoing it hands back whatever is
  * still open; the Wall post stays and says it was cancelled; a swap token

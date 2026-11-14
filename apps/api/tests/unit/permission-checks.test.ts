@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 /**
  * Who may do what is asked one way: public.can(house, permission), which
- * reads role_permissions (supabase/migrations/20261118090000_permissions.sql).
+ * reads role_permissions (supabase/migrations/20270112090000_baseline.sql).
  * This reads every migration in order, keeps each function's and table
  * rule's last definition (the one that's live), and fails if any of them
  * checks the role by hand instead.

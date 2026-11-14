@@ -58,7 +58,7 @@ describe("the House Pass", () => {
 });
 
 /**
- * Without the Pass (20270106090000_pass_on.sql): a photo John ticks without
+ * Without the Pass (20270112090000_baseline.sql): a photo John ticks without
  * a photo, and History reads the last four weeks only. Each test ends the
  * house's free month a day before the database's own now, so it holds
  * whatever the date.

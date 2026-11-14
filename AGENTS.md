@@ -196,8 +196,7 @@ that list to get a feature through, split the function instead.
 - **Who can do what** is one list: `PERMISSIONS` and `ROLE_PERMISSIONS` in
   `packages/core/src/permissions.ts`, and the same rows in the
   `permissions` / `role_permissions` tables
-  (`supabase/migrations/20261118090000_permissions.sql`, renamed in
-  `20261216090000_permission_names.sql`). Permissions are named
+  (`supabase/migrations/20270112090000_baseline.sql`). Permissions are named
   `resource:level` like Stripe's: `johns:write`, `ticks:write_own`,
   `house:read` (docs/standards/database.md rule 26). Every table rule
   and move asks `public.can(house, 'johns:write')` (the server asks about
@@ -367,6 +366,9 @@ at `<house>/<assignment>/<file>`.
 - Migrations must stay additive once anything is deployed, because Vercel
   and Supabase deploy independently (a rename follows the steps in
   `docs/standards/database.md`). Applied migrations are never edited.
+  Everything up to 12 January 2027 is one file,
+  `supabase/migrations/20270112090000_baseline.sql`; new migrations come
+  after it.
 - Every table gets Row Level Security policies in the same migration that
   creates it, and its grants stated for every role, `service_role` included.
   A new function must revoke EXECUTE from `public, anon, authenticated` and

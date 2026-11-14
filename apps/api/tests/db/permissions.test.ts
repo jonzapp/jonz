@@ -7,7 +7,7 @@ import { addJohns, makeHouse, thisWeek } from "@/tests/support/factories";
 import { rightNow } from "@/tests/support/clock";
 
 /**
- * Who can do what (supabase/migrations/20261118090000_permissions.sql): the
+ * Who can do what (supabase/migrations/20270112090000_baseline.sql): the
  * database's list matches packages/core's, can() and my_permissions answer
  * for the person asking, and the moves that were admin-only still are,
  * now through the list. A blocked write is proven by reading back.

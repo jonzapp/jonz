@@ -8,7 +8,7 @@ import { LEGAL, type LegalPage } from "./legal";
 // Report a problem (docs/specs/report-a-problem.md): what someone tells Jonz
 // from inside the app, what they see again under Your reports, and how the
 // owner's Inbox lists it. The database keeps the same limits
-// (supabase/migrations/20261112090000_reports.sql).
+// (supabase/migrations/20270112090000_baseline.sql).
 
 export const REPORT_KINDS = ["problem", "idea", "question"] as const;
 export type ReportKind = (typeof REPORT_KINDS)[number];

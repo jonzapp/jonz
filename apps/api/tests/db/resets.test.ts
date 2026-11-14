@@ -10,7 +10,7 @@ import { v1 } from "@/tests/support/v1";
 import { rightNow } from "@/tests/support/clock";
 
 /**
- * Resets (20261101100000_admin_resets.sql, lib/moves/resets.ts), called as
+ * Resets (20270112090000_baseline.sql, lib/moves/resets.ts), called as
  * the app calls reset_house on /v1: what each would change, then the change,
  * then Undo from History putting it all back.
  */

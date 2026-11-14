@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { adminClient, signedInUser } from "@/tests/support/clients";
 
 /**
- * Each person's language (20270102090000_profile_language.sql): null until
+ * Each person's language (20270112090000_baseline.sql): null until
  * the app saves their phone's, then whichever they pick on You. Only theirs
  * to change, and only to a language Jonz has.
  */

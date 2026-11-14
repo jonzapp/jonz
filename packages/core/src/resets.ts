@@ -9,7 +9,7 @@ import { whomOf, whoseOf } from "./word-keys";
 import type { Words } from "./words-for";
 
 // Resets: an admin fixing a week that went wrong. The database works out
-// what each would change (admin_reset, 20261101100000_admin_resets.sql) and
+// what each would change (admin_reset, 20270112090000_baseline.sql) and
 // this says it, the same way on the reset sheet and in Ask Jonz.
 
 export const RESET_KINDS = ["result", "person_week", "week", "redeal", "skip", "letoff"] as const;

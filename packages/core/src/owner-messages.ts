@@ -6,7 +6,7 @@ import type { ListFacet, ListWhen } from "./admin-list";
 // Messages from the owner (docs/specs/owner-admin.md, "Messages"): one
 // message to a person, a house or everyone, as a push, a post on the Wall
 // and an email. The database decides who it reaches and refuses what isn't
-// allowed (supabase/migrations/20261113090000_owner_messages.sql); these are
+// allowed (supabase/migrations/20270112090000_baseline.sql); these are
 // the words, the checks in sentences, and what crosses the API.
 
 export const MESSAGE_AUDIENCES = ["person", "house", "everyone"] as const;

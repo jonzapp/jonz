@@ -10,7 +10,7 @@ import type { Caller, Refusal } from "./disputes";
 // Ticking a John with who did it needs a server for one thing: telling the
 // people it names. The roll call itself is the caller's own call to
 // roll_call, which decides who's on it, who it leaves off and what each
-// earns (supabase/migrations/20261102090000_shared_jonz.sql).
+// earns (supabase/migrations/20270112090000_baseline.sql).
 
 /**
  * Tick a John with who did it. Everyone on it but the caller hears what

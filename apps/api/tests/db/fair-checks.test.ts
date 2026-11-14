@@ -8,7 +8,7 @@ import { problemOf, v1 } from "@/tests/support/v1";
 import { fromNow, rightNow } from "@/tests/support/clock";
 
 /**
- * Fair checks (20261128090000_fair_checks.sql, docs/specs/fair-checks.md):
+ * Fair checks (20270112090000_baseline.sql, docs/specs/fair-checks.md):
  * one voter can't strike alone, a photo answers a question, a strike leaves
  * time to redo the John, the owner of a cover stays out of its check, an
  * on-call John is flagged once per window, the check window is 12 hours or

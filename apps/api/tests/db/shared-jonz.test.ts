@@ -9,7 +9,7 @@ import { problemOf, v1 } from "@/tests/support/v1";
 import { fromNow, rightNow } from "@/tests/support/clock";
 
 /**
- * Shared Jonz (20261102090000_shared_jonz.sql): a John done together is
+ * Shared Jonz (20270112090000_baseline.sql): a John done together is
  * dealt as one place per person on one job, ticked by a roll call that
  * says who did it, and its points are shared by everyone on it, helpers
  * included. Whoever it leaves off has a miss, and their forfeit goes to
