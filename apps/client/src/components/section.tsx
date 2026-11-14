@@ -4,7 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import { CountBadge } from '@/components/badge';
 import { Group } from '@/components/group';
 import { Meta, SectionLabel } from '@/components/text';
-import { INSET, LABEL_GAP, ROW_GAP, SPACE, TAP } from '@/theme';
+import { HAIR, INSET, LABEL_GAP, ROW_GAP, SPACE, TAP } from '@/theme';
 
 /** The label's line. */
 const LINE = 24;
@@ -117,9 +117,9 @@ const styles = StyleSheet.create({
   // Shrinks only when it can't fit a line on its own.
   label: { minHeight: LINE, flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: SPACE.sm },
   // Overpass's caps sit high in their line, so the label comes down a little.
-  words: { flexShrink: 1, paddingTop: 2 },
+  words: { flexShrink: 1, paddingTop: HAIR },
   // Pushed to the right, on the label's line or the one under it: a 20pt line centred on the 24pt one.
-  meta: { flexShrink: 1, marginLeft: 'auto', alignItems: 'flex-end', paddingTop: 2 },
+  meta: { flexShrink: 1, marginLeft: 'auto', alignItems: 'flex-end', paddingTop: HAIR },
   end: { textAlign: 'right' },
   // A day's name sits on the label's 24pt line, a little smaller than a row's title.
   control: { flexShrink: 0, marginLeft: 'auto', marginVertical: -OVERHANG },

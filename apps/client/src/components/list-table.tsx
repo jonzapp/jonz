@@ -3,7 +3,7 @@ import { useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
 
 import { Group, Hairline } from '@/components/group';
-import { GROUP_RADIUS, INSET, ROW_GAP, SPACE, TABULAR, useTheme } from '@/theme';
+import { GROUP_RADIUS, HAIR, INSET, ROW_GAP, SPACE, TABULAR, useTheme } from '@/theme';
 
 /** One of a table's columns: its name, and a fixed width or a share of what's left. */
 export interface ListColumn {
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
   top: { borderTopLeftRadius: GROUP_RADIUS, borderTopRightRadius: GROUP_RADIUS },
   joined: { borderTopLeftRadius: 0, borderTopRightRadius: 0 },
   // Overpass's caps sit high in their line, so the names come down a little, as a section's label does.
-  caps: { paddingTop: 2 },
+  caps: { paddingTop: HAIR },
   row: { minHeight: DENSE, flexDirection: 'row', alignItems: 'center', gap: ROW_GAP, paddingHorizontal: INSET, paddingVertical: SPACE.xs },
   cell: { justifyContent: 'center' },
   cellEnd: { alignItems: 'flex-end' },

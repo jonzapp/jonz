@@ -5,7 +5,7 @@ import { Animated, Image, StyleSheet, Text, View } from 'react-native';
 import { useFadeIn } from '@/components/photo';
 import { useOnTint } from '@/components/row';
 import { usePhoto } from '@/hooks/photos';
-import { useTheme } from '@/theme';
+import { HAIR, useTheme } from '@/theme';
 
 /** Initials are never smaller than 12, so neither is a plate smaller than this. */
 const SMALLEST = 24;
@@ -79,5 +79,5 @@ function FadingPhoto({ uri, size, onError }: { uri: string; size: number; onErro
 const styles = StyleSheet.create({
   plate: { alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   // Overpass's caps sit high in their line, so the letters come down a little.
-  letters: { paddingTop: 2 },
+  letters: { paddingTop: HAIR },
 });

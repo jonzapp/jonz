@@ -7,7 +7,7 @@ import { Group, GroupItem } from '@/components/group';
 import { DoneFold, useJohnRow, type JohnRowContext } from '@/components/john-row';
 import { Row } from '@/components/row';
 import { Body } from '@/components/text';
-import { INSET, LABEL_GAP, LEADING, ROW_GAP, SPACE, TABULAR, useTheme } from '@/theme';
+import { HAIR, INSET, LABEL_GAP, LEADING, ROW_GAP, SPACE, TABULAR, useTheme } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
 /** A section label's line, which the columns' names stand in. */
@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: INSET,
   },
   // Overpass's caps sit high in their line, so the names come down a little, as a section's label does.
-  caps: { paddingTop: 2 },
+  caps: { paddingTop: HAIR },
   leading: { width: LEADING },
   // The John's column flexes, as a Row's words do.
   john: { flex: 1, minWidth: 0 },

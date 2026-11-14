@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Hairline, useRowInset } from '@/components/group';
 import { Body, Meta, RowTitle } from '@/components/text';
-import { LEADING, RADIUS, ROW_GAP, ROW_MIN, SPACE, useTheme } from '@/theme';
+import { HAIR, LEADING, RADIUS, ROW_GAP, ROW_MIN, SPACE, useTheme } from '@/theme';
 
 /** A row with a meta line comes out this tall, as Row's does. */
 const TWO_LINES = 64;
@@ -100,7 +100,7 @@ export function ChoiceRow({
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: ROW_GAP, paddingVertical: SPACE.sm },
   leading: { width: LEADING, alignItems: 'center', justifyContent: 'center' },
-  words: { flex: 1, minWidth: 0, gap: 2 },
+  words: { flex: 1, minWidth: 0, gap: HAIR },
   box: { width: 22, height: 22, borderRadius: RADIUS - 2, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   off: { opacity: 0.5 },
 });

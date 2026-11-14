@@ -15,7 +15,7 @@ import { Chip } from '@/components/status-mark';
 import { Body, Meta, Title } from '@/components/text';
 import { TextButton } from '@/components/text-button';
 import { Wordmark } from '@/components/wordmark';
-import { CONTENT_MAX, FONT, GUTTER, INSET, SPACE, TABULAR, useTheme } from '@/theme';
+import { CONTENT_MAX, FONT, GROUP_RADIUS, GUTTER, INSET, SPACE, TABULAR, useTheme } from '@/theme';
 import { Waiting } from '@/components/waiting';
 import { OutlinePlate } from '@/components/outline';
 import { DoorOutline } from '@/components/page-outlines';
@@ -185,6 +185,6 @@ const styles = StyleSheet.create({
   page: { flexGrow: 1, alignItems: 'center', paddingHorizontal: GUTTER + INSET, paddingTop: SPACE.xxl * 2 },
   column: { width: '100%', maxWidth: CONTENT_MAX / 1.4, gap: SPACE.lg },
   brand: { flexDirection: 'row', alignItems: 'center', gap: SPACE.sm },
-  qr: { alignSelf: 'center', borderRadius: 10, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
+  qr: { alignSelf: 'center', borderRadius: GROUP_RADIUS, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
   key: { fontFamily: FONT.bold, fontSize: 17, letterSpacing: 2, ...TABULAR },
 });

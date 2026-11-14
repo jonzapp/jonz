@@ -20,7 +20,7 @@ import { ButtonRow } from '@/components/button-row';
 import { IconButton } from '@/components/icon-button';
 import { useMove } from '@/hooks/use-move';
 import { useUndoOffer } from '@/hooks/use-undo-offer';
-import { FONT, RADIUS, SPACE, useTheme, type Theme } from '@/theme';
+import { FONT, HAIR, MARK_RADIUS, RADIUS, SPACE, type Theme, useTheme } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
 /** Holds a line's height where there's nothing to say; not words. */
@@ -428,10 +428,10 @@ function awayAlongside({ periods, people, me }: { periods: AwayPeriod[]; people:
 }
 
 const styles = StyleSheet.create({
-  calendar: { gap: 2 },
+  calendar: { gap: HAIR },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   month: { flexShrink: 1, textAlign: 'center' },
-  week: { flexDirection: 'row', gap: 2 },
+  week: { flexDirection: 'row', gap: HAIR },
   dow: { flex: 1, textAlign: 'center', paddingVertical: SPACE.xs },
   day: { flex: 1, minHeight: DAY_HEIGHT, alignItems: 'center', paddingTop: SPACE.xs, borderRadius: RADIUS },
   date: { width: 26, height: 26, alignItems: 'center', justifyContent: 'center' },
@@ -444,7 +444,7 @@ const styles = StyleSheet.create({
   todayNumber: { fontFamily: FONT.extrabold },
   key: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: SPACE.lg },
   keyItem: { flexDirection: 'row', alignItems: 'center', gap: SPACE.xs + 2 },
-  swatch: { width: 14, height: 14, borderRadius: 4 },
+  swatch: { width: 14, height: 14, borderRadius: MARK_RADIUS * 2 },
   home: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACE.md },
   homeItem: { flexDirection: 'row', alignItems: 'center', gap: SPACE.sm },
 });

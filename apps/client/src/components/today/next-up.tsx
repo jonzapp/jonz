@@ -24,7 +24,7 @@ import { Lead, Meta, SectionLabel } from '@/components/text';
 import { TextButton } from '@/components/text-button';
 import { useWords } from '@/hooks/use-words';
 import { useTick } from '@/hooks/use-tick';
-import { INSET, NARROW, SPACE, TAP, useTheme } from '@/theme';
+import { HAIR, INSET, MARK_GAP, NARROW, SPACE, TAP, useTheme } from '@/theme';
 
 /** What the card shows beside a John: the tokens you hold that can skip or swap it. */
 export interface CantHeld {
@@ -282,10 +282,10 @@ const styles = StyleSheet.create({
   // A quiet text button ends the card: its own 48 target is the room below.
   quietEnd: { paddingBottom: SPACE.sm },
   // Overpass's caps sit high in their line.
-  label: { paddingTop: 2 },
+  label: { paddingTop: HAIR },
   pressed: { opacity: 0.6 },
   lead: { marginTop: SPACE.sm },
-  meta: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
+  meta: { flexDirection: 'row', alignItems: 'flex-start', gap: MARK_GAP },
   // The dot or the sign, centred on the first line of words.
   mark: { height: 20, justifyContent: 'center' },
   shrink: { flexShrink: 1 },

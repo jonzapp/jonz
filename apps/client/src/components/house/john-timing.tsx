@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Group, GroupItem } from '@/components/group';
 import { Segmented } from '@/components/segmented';
 import { Meta } from '@/components/text';
-import { INSET, LABEL_GAP, SPACE, useTheme } from '@/theme';
+import { HAIR, INSET, LABEL_GAP, MARK_GAP, MARK_RADIUS, SPACE, useTheme } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
 // When a John comes round, as one sentence in the John editor: "Every [3
@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
   inset: { paddingHorizontal: INSET },
   noted: { gap: LABEL_GAP },
   note: { paddingHorizontal: INSET },
-  words: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 6, rowGap: 2, paddingVertical: SPACE.md, alignItems: 'baseline' },
+  words: { flexDirection: 'row', flexWrap: 'wrap', columnGap: MARK_GAP, rowGap: HAIR, paddingVertical: SPACE.md, alignItems: 'baseline' },
   sentence: { fontSize: 20, lineHeight: 30 },
-  word: { borderBottomWidth: 3, borderRadius: 2 },
+  word: { borderBottomWidth: 3, borderRadius: MARK_RADIUS },
 });

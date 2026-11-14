@@ -16,6 +16,9 @@ export function LidBar({ category }: { category: string }) {
 /** How wide a lid bar is: words that line up past it start this far in, plus their gap. */
 export const LID_BAR = 14;
 
+/** The lid's corner: just off square. */
+const BAR_CORNER = 1.5;
+
 const styles = StyleSheet.create({
-  bar: { width: LID_BAR, height: 5, borderRadius: 1.5 },
+  bar: { width: LID_BAR, height: 5, borderRadius: BAR_CORNER },
 });

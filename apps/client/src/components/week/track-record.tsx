@@ -6,7 +6,7 @@ import { Avatar } from '@/components/avatar';
 import { Group, Hairline, useRowInset } from '@/components/group';
 import { Meta, RowTitle } from '@/components/text';
 import { useWords } from '@/hooks/use-words';
-import { INSET, ROW_GAP, SPACE, useTheme, type Theme } from '@/theme';
+import { HAIR, INSET, MARK_RADIUS, ROW_GAP, SPACE, type Theme, useTheme } from '@/theme';
 
 /** A square's side. */
 const CELL = 14;
@@ -171,10 +171,10 @@ const styles = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', gap: ROW_GAP },
   name: { flex: 1, minWidth: 0 },
   pct: { flexShrink: 0 },
-  cells: { flexDirection: 'row', flexWrap: 'wrap', gap: 3 },
-  cell: { width: CELL, height: CELL, borderRadius: 2 },
+  cells: { flexDirection: 'row', flexWrap: 'wrap', gap: HAIR + 1 },
+  cell: { width: CELL, height: CELL, borderRadius: MARK_RADIUS },
   // The amber dot of a changed result, edged in the page colour so it reads on any mark.
-  dot: { position: 'absolute', top: -3, right: -3, width: 7, height: 7, borderRadius: 4, borderWidth: 1 },
+  dot: { position: 'absolute', top: -3, right: -3, width: 7, height: 7, borderRadius: MARK_RADIUS * 2, borderWidth: 1 },
   key: { paddingHorizontal: INSET, flexDirection: 'row', flexWrap: 'wrap', columnGap: SPACE.lg, rowGap: SPACE.xs },
   keyItem: { flexDirection: 'row', alignItems: 'center', gap: SPACE.xs },
 });

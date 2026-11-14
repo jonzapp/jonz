@@ -8,7 +8,7 @@ import { Hairline, useRowInset } from '@/components/group';
 import { HazardTape } from '@/components/hazard-tape';
 import { LidBar } from '@/components/lid';
 import { Body, Meta, RowTitle } from '@/components/text';
-import { LEADING, ROW_GAP, ROW_MIN, SPACE, TABULAR, TAP, useTheme } from '@/theme';
+import { HAIR, LEADING, MARK_GAP, ROW_GAP, ROW_MIN, SPACE, TABULAR, TAP, useTheme } from '@/theme';
 
 /** A row with a meta line comes out this tall; one without, ROW_MIN. */
 const TWO_LINES = 64;
@@ -305,8 +305,8 @@ const styles = StyleSheet.create({
   disabled: { opacity: 0.5 },
   topped: { alignItems: 'flex-start' },
   leading: { width: LEADING, alignItems: 'center', justifyContent: 'center' },
-  words: { flex: 1, minWidth: 0, gap: 2 },
-  metaLine: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
+  words: { flex: 1, minWidth: 0, gap: HAIR },
+  metaLine: { flexDirection: 'row', alignItems: 'flex-start', gap: MARK_GAP },
   // As tall as Meta's line, so the dot sits in the middle of the first one.
   lid: { height: 20, justifyContent: 'center' },
   metaText: { flexShrink: 1, minWidth: 0 },

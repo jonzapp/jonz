@@ -21,7 +21,7 @@ import { Group } from '@/components/group';
 import { Row } from '@/components/row';
 import { Section } from '@/components/section';
 import { useNow } from '@/hooks/use-now';
-import { FONT, RADIUS, SEARCH_LINE, SPACE, TAP, useTheme } from '@/theme';
+import { FONT, MARK_GAP, RADIUS, SEARCH_LINE, SPACE, TAP, useTheme } from '@/theme';
 
 /** How long typing rests before the list is searched for it. */
 const SETTLE = 400;
@@ -416,7 +416,7 @@ const styles = StyleSheet.create({
     gap: SPACE.xs,
     minHeight: 32,
     paddingLeft: SPACE.sm,
-    paddingRight: 6,
+    paddingRight: MARK_GAP,
     borderRadius: RADIUS,
     maxWidth: '100%',
   },

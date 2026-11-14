@@ -33,7 +33,7 @@ import { STATUS_ICON } from '@/components/status-mark';
 import { Meta } from '@/components/text';
 import { Photo } from '@/components/photo';
 import type { HouseView } from '@/hooks/use-house';
-import { FONT, INSET, LEADING, RADIUS, ROW_GAP, SPACE, TABULAR, useTheme, type Theme } from '@/theme';
+import { FONT, HAIR, INSET, LEADING, RADIUS, ROW_GAP, SPACE, TABULAR, type Theme, useTheme } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
 // Core says what happened and which icon fits; these draw it.
@@ -292,7 +292,7 @@ export function WallPhoto({ uri, john }: { uri: string; john: string | null }) {
 const styles = StyleSheet.create({
   metaBlock: { alignItems: 'flex-start', gap: SPACE.xs },
   meta: { flexDirection: 'row', alignItems: 'flex-start', minWidth: 0 },
-  mark: { marginRight: SPACE.xs, marginTop: 3, flexShrink: 0 },
+  mark: { marginRight: SPACE.xs, marginTop: HAIR + 1, flexShrink: 0 },
   detail: { flexShrink: 1 },
   // Each count after the words, as tall as their first line.
   count: { flexDirection: 'row', alignItems: 'center', gap: SPACE.xs, height: 20, marginLeft: SPACE.md, flexShrink: 0 },
@@ -305,12 +305,12 @@ const styles = StyleSheet.create({
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: SPACE.xs,
     height: 26,
     paddingHorizontal: SPACE.sm,
     borderRadius: RADIUS,
   },
-  chipText: { fontFamily: FONT.extrabold, fontSize: 13, lineHeight: 16, paddingTop: 2, ...TABULAR },
+  chipText: { fontFamily: FONT.extrabold, fontSize: 13, lineHeight: 16, paddingTop: HAIR, ...TABULAR },
   photoRow: { paddingLeft: INSET + LEADING + ROW_GAP, paddingRight: INSET, paddingBottom: SPACE.md },
   photo: { width: '100%', maxWidth: 320, aspectRatio: 4 / 3, borderRadius: RADIUS },
 });
