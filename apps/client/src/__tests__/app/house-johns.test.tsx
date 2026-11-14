@@ -407,13 +407,14 @@ describe('an admin', () => {
     expect(within(screen.getByTestId('john-form')).getByTestId('sharing-note')).toHaveTextContent(words('house.johns.noGroups'));
   });
 
-  it('shows the kinds by name alone, with no lid colours to pick from', async () => {
+  it('shows the kinds by name alone, then No kind, with no lid colours to pick from', async () => {
     await open();
     await fireEvent.press(screen.getByRole('button', { name: words('house.johns.add') }));
     const form = within(screen.getByTestId('john-form'));
     await fireEvent.press(form.getByRole('button', { name: new RegExp(`^${words('house.johns.kind')}, `) }));
-    const kinds = form.getAllByRole('radio').filter((r) => Object.values(CATEGORY_LABEL).includes(r.props.accessibilityLabel));
-    expect(kinds).toHaveLength(6);
+    const choices = [...Object.values(CATEGORY_LABEL), words('house.kinds.none')];
+    const kinds = form.getAllByRole('radio').filter((r) => choices.includes(r.props.accessibilityLabel));
+    expect(kinds.map((r) => r.props.accessibilityLabel)).toEqual(choices);
     expect(form.queryAllByTestId('lid-bar', { includeHiddenElements: true })).toHaveLength(0);
   });
 });

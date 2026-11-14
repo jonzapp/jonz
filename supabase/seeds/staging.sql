@@ -81,7 +81,16 @@ begin
   insert into public.group_members (group_id, house_id, user_id)
   values (upstairs, house, ids[2]), (upstairs, house, ids[3]);
 
-  -- Each in the house's starting kind of that name.
+  -- Its kinds, as its setup chat would have made them with its Johns (a new
+  -- house starts with none).
+  insert into public.john_kinds (house_id, name, colour, position, preset)
+  values (house, 'Kitchen', '#7a4e2d', 0, 'kitchen'),
+         (house, 'Bathroom', '#1f5fae', 1, 'bathroom'),
+         (house, 'Bins & recycling', '#2a2d30', 2, 'bins'),
+         (house, 'Floors & hoovering', '#0f7c7a', 3, 'floors'),
+         (house, 'Errands & shopping', '#6a3d9a', 4, 'errands');
+
+  -- Each in its kind.
   insert into public.johns (house_id, name, john_kind_id, points, every_weeks, anchor_week, due_dow, due_time, needs_photo, group_id)
   select house, v.name, k.id, v.points, v.every_weeks, this_week, v.due_dow, v.due_time::time, v.needs_photo, v.group_id
   from (values

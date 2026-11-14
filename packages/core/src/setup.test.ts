@@ -56,10 +56,10 @@ describe("johnsByKind", () => {
       john({ id: "a", kindId: "bins" }),
       john({ id: "b", kindId: "kitchen" }),
       john({ id: "c", kindId: "bins" }),
-      john({ id: "d", kindId: "other" }),
+      john({ id: "d", kindId: "errands" }),
     ];
     const kinds = johnsByKind(list, starting);
-    expect(kinds.map((k) => [k.kind?.name, k.johns.length])).toEqual([["Kitchen", 1], ["Bins & recycling", 2], ["Everything else", 1]]);
+    expect(kinds.map((k) => [k.kind?.name, k.johns.length])).toEqual([["Kitchen", 1], ["Bins & recycling", 2], ["Errands & shopping", 1]]);
     // Within a kind, the list's own order.
     expect(kinds[1].johns.map((j) => j.id)).toEqual(["a", "c"]);
   });
@@ -72,7 +72,7 @@ describe("johnsByKind", () => {
     expect(kinds.map((k) => [k.kind?.name, k.johns.map((j) => j.id)])).toEqual([["Garden", ["a", "c"]], ["Kitchen", ["b"]]]);
   });
 
-  it("puts the Johns with no kind last, together, with a kind it doesn't know among them", () => {
+  it("puts the Johns in No kind last, together, with a kind it doesn't know among them", () => {
     const list = [john({ id: "a", kindId: null }), john({ id: "b", kindId: "bins" }), john({ id: "c", kindId: "gone" })];
     const kinds = johnsByKind(list, starting);
     expect(kinds.map((k) => [k.kind?.name ?? null, k.johns.map((j) => j.id)])).toEqual([["Bins & recycling", ["b"]], [null, ["a", "c"]]]);

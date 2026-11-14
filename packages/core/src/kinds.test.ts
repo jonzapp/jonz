@@ -6,6 +6,7 @@ import {
   colourCode,
   contrast,
   freeColour,
+  isNoKindName,
   hexToHsv,
   hsvToHex,
   KIND_COLOUR_NAMES,
@@ -80,7 +81,7 @@ describe("a house's kinds", () => {
   const kinds = [GARDEN, ...KINDS];
 
   it("are in their order on the list", () => {
-    expect(kindsInOrder(kinds).map((k) => k.id)).toEqual(["kitchen", "bathroom", "bins", "floors", "errands", "other", "garden"]);
+    expect(kindsInOrder(kinds).map((k) => k.id)).toEqual(["kitchen", "bathroom", "bins", "floors", "errands", "garden"]);
   });
 
   it("give a John its kind by id", () => {
@@ -88,20 +89,25 @@ describe("a house's kinds", () => {
     expect(kindOf({ kindId: "bins" }, kinds)?.id).toBe("bins");
   });
 
-  it("give a John with no kind, one not given one yet, or one whose kind is gone, none at all", () => {
+  it("know No kind's own name, in English or French, which no kind can take", () => {
+    expect(["No kind", " no KIND ", "Sans type"].every(isNoKindName)).toBe(true);
+    expect(["Kitchen", "No kinder", "Other"].some(isNoKindName)).toBe(false);
+  });
+
+  it("give a John in No kind, one not given one yet, or one whose kind is gone, none at all", () => {
     expect(kindOf({ kindId: null }, kinds)).toBeNull();
     expect(kindOf({}, kinds)).toBeNull();
     expect(kindOf({ kindId: "gone" }, kinds)).toBeNull();
   });
 
   it("move a kind a place up or down, and no further than the ends", () => {
-    expect(moveKind(kinds, "garden", -1)).toEqual(["kitchen", "bathroom", "bins", "floors", "errands", "garden", "other"]);
-    expect(moveKind(kinds, "kitchen", 1)).toEqual(["bathroom", "kitchen", "bins", "floors", "errands", "other", "garden"]);
-    expect(moveKind(kinds, "kitchen", -1)).toEqual(["kitchen", "bathroom", "bins", "floors", "errands", "other", "garden"]);
-    expect(moveKind(kinds, "garden", 1)).toEqual(["kitchen", "bathroom", "bins", "floors", "errands", "other", "garden"]);
+    expect(moveKind(kinds, "garden", -1)).toEqual(["kitchen", "bathroom", "bins", "floors", "garden", "errands"]);
+    expect(moveKind(kinds, "kitchen", 1)).toEqual(["bathroom", "kitchen", "bins", "floors", "errands", "garden"]);
+    expect(moveKind(kinds, "kitchen", -1)).toEqual(["kitchen", "bathroom", "bins", "floors", "errands", "garden"]);
+    expect(moveKind(kinds, "garden", 1)).toEqual(["kitchen", "bathroom", "bins", "floors", "errands", "garden"]);
   });
 
-  it("offer a new kind a ready colour none has yet", () => {
+  it("offer a new kind a ready colour none has yet, grey (No kind's) last", () => {
     expect(freeColour(KINDS)).toBe("#c2417a");
     expect(freeColour([...KINDS, { ...GARDEN, colour: "#C2417A" }])).toBe("#2b8fc7");
     const all = KIND_COLOURS.map((colour, position): KindDef => ({ id: colour, name: colour, colour, position, preset: null }));

@@ -31,7 +31,7 @@ describe("ChatRequest", () => {
 
   it("takes the chat so far, ending with what the admin said, and the draft as it stands", () => {
     expect(ChatRequest.safeParse({ houseId, messages: [said("Three of us in a flat")], draft: null }).success).toBe(true);
-    expect(ChatRequest.safeParse({ houseId, messages: [said("Fewer bathrooms")], draft: starterDraft("couple", STARTING) }).success).toBe(true);
+    expect(ChatRequest.safeParse({ houseId, messages: [said("Fewer bathrooms")], draft: starterDraft("couple", STARTING, words) }).success).toBe(true);
   });
 
   it("refuses an empty message, an essay, an empty chat, or one ending with Jonz", () => {
@@ -87,19 +87,19 @@ describe("offlineTurn", () => {
     expect(offlineTurn([said("Me, my wife and the kids")], null, { words, kinds: STARTING })).toEqual({
       reply: words('ask.draft.offline'),
       ask: null,
-      draft: starterDraft("family", STARTING),
+      draft: starterDraft("family", STARTING, words),
       source: "starter",
     });
   });
 
   it("offers the starter list the admin named", () => {
     const turn = offlineTurn([said(words('ask.draft.starter.couple.title'))], null, { words, kinds: STARTING });
-    expect(turn.draft).toEqual(starterDraft("couple", STARTING));
+    expect(turn.draft).toEqual(starterDraft("couple", STARTING, words));
     expect(turn.reply).toBe(words('ask.draft.fromStarter'));
   });
 
   it("leaves a draft that's already there as it is", () => {
-    expect(offlineTurn([said("Oven every month")], starterDraft("couple", STARTING), { words, kinds: STARTING })).toEqual({
+    expect(offlineTurn([said("Oven every month")], starterDraft("couple", STARTING, words), { words, kinds: STARTING })).toEqual({
       reply: words('ask.draft.offlineChange'),
       ask: null,
       draft: null,
@@ -272,23 +272,29 @@ describe("draftPlan", () => {
 
 describe("starter lists", () => {
   it.each(STARTER_KINDS)("%s is a valid draft of Johns the list takes", (kind) => {
-    const draft = starterDraft(kind, STARTING);
+    const draft = starterDraft(kind, STARTING, words);
     expect(HouseDraft.safeParse(draft).success).toBe(true);
     expect(draft.johns.length).toBeGreaterThan(4);
     for (const j of draft.johns) expect(JohnDraft.safeParse({ ...j, groupId: null }).success).toBe(true);
   });
 
-  it("puts each John in the house's kind that began as its starting kind, or none", () => {
-    const draft = starterDraft("couple", [{ name: "Cuisine", preset: "kitchen" }, { name: "Garden", preset: null }]);
-    expect(draft.johns.slice(0, 2).map((j) => [j.name, j.kind])).toEqual([
+  it("puts each John in the house's kind that began as its starting kind, or one of its name to be made, or No kind", () => {
+    const draft = starterDraft("couple", [{ name: "Cuisine", preset: "kitchen" }, { name: "Garden", preset: null }], words);
+    expect(draft.johns.map((j) => [j.name, j.kind])).toEqual([
       ["Kitchen clean", "Cuisine"],
-      ["Bathroom clean", null],
+      ["Bathroom clean", "Bathroom"],
+      ["Bins and recycling out", "Bins & recycling"],
+      ["Hoover and mop", "Floors & hoovering"],
+      ["Laundry", null],
+      ["Change the sheets", null],
+      ["Food shop", "Errands & shopping"],
     ]);
-    expect(starterDraft("couple", STARTING).johns[0].kind).toBe("Kitchen");
+    // A new house has no kinds: each is named in the admin's language.
+    expect(starterDraft("couple", [], wordsFor("fr", "housemates")).johns[0].kind).toBe("Cuisine");
   });
 
   it("hands out copies, so ticking a draft never changes the list", () => {
-    starterDraft("couple", STARTING).johns[0].name = "changed";
+    starterDraft("couple", STARTING, words).johns[0].name = "changed";
     expect(STARTER_LISTS.couple[0].name).not.toBe("changed");
   });
 });
@@ -366,7 +372,7 @@ describe("changing a list that's already there", () => {
   });
 
   it("treats every John in a new house's draft as one to add", () => {
-    expect(draftChanges(null, starterDraft("couple", STARTING)).every((c) => c.kind === "add")).toBe(true);
+    expect(draftChanges(null, starterDraft("couple", STARTING, words)).every((c) => c.kind === "add")).toBe(true);
   });
 
   it("lists groups with no Johns too, so Jonz can change who's in them", () => {
@@ -394,8 +400,7 @@ describe("changing a list that's already there", () => {
 describe("a draft's kinds of John", () => {
   const KITCHEN = { id: "55555555-5555-4555-8555-555555555555", name: "Kitchen", preset: "kitchen" as const };
   const GARDEN = { id: "66666666-6666-4666-8666-666666666666", name: "Garden", preset: null };
-  const ELSE = { id: "77777777-7777-4777-8777-777777777777", name: "Everything else", preset: "other" as const };
-  const kinds = [KITCHEN, GARDEN, ELSE];
+  const kinds = [KITCHEN, GARDEN];
   const HOB = "11111111-1111-4111-8111-111111111111";
   const MOW = "22222222-2222-4222-8222-222222222222";
   const SHED = "33333333-3333-4333-8333-333333333333";
@@ -428,7 +433,7 @@ describe("a draft's kinds of John", () => {
     expect(draftChanges(base, back)).toEqual([]);
   });
 
-  it("matches the house's kinds by name in any capitals, keeps a new one, and gives none without a name", () => {
+  it("matches the house's kinds by name in any capitals, keeps a new one, and gives No kind without a name or by its own", () => {
     const draft = tidyDraft(
       {
         johns: [
@@ -437,6 +442,8 @@ describe("a draft's kinds of John", () => {
           { name: "Car wash", kind: "Car" },
           { name: "Oven" },
           { name: "Hoover", kind: null },
+          { name: "Fix the shelf", kind: "No kind" },
+          { name: "Détartrer", kind: "sans type" },
         ],
       },
       people,
@@ -449,10 +456,12 @@ describe("a draft's kinds of John", () => {
       ["Car wash", "Car"],
       ["Oven", null],
       ["Hoover", null],
+      ["Fix the shelf", null],
+      ["Détartrer", null],
     ]);
   });
 
-  it("writes a kind by name, so a new one is made, and none as no kind", () => {
+  it("writes a kind by name, so a new one is made, and No kind as kindId null", () => {
     const draft = tidyDraft({ johns: [{ name: "Car wash", kind: "Car" }, { name: "Hoover", kind: null }] }, people, ME);
     const [car, hoover] = draftPlan(draft, [0, 1], []).johns.map((j) => j.john);
     expect(car).toMatchObject({ kindName: "Car" });

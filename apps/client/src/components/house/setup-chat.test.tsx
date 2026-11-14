@@ -219,7 +219,7 @@ it('starts from a list without asking anyone, and opens it to see every John', a
   await fireEvent.press(screen.getByTestId('starter-couple'));
   expect(chat).not.toHaveBeenCalled();
   expect(screen.getByText(words('ask.draft.fromStarter'))).toBeTruthy();
-  const all = starterDraft('couple', KINDS).johns.length;
+  const all = starterDraft('couple', KINDS, words).johns.length;
   expect(screen.getAllByRole('checkbox')).toHaveLength(Math.min(3, all));
   await fireEvent.press(screen.getByRole('button', { name: words('ask.draft.seeAll', { n: all }) }));
   expect(screen.getAllByRole('checkbox')).toHaveLength(all);
@@ -251,7 +251,7 @@ describe('with a list already', () => {
     { ...NEW_JOHN, id: BINS, name: 'Bins out', kindId: 'bins', points: 1 },
   ];
   const base = listAsDraft(johns, [], KINDS);
-  const changed = { ...base, johns: [{ ...base.johns[0], points: 4 }, starterDraft('couple', KINDS).johns[0]] };
+  const changed = { ...base, johns: [{ ...base.johns[0], points: 4 }, starterDraft('couple', KINDS, words).johns[0]] };
 
   async function openList(passOpen = true) {
     await render(<SetupChat houseId="h1" kinds={KINDS} rules={RULES} johns={johns} groups={[]} people={people} me={ME} passOpen={passOpen} />, {

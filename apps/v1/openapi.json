@@ -10797,7 +10797,7 @@
     "/v1/kinds/{kindId}": {
       "delete": {
         "operationId": "delete_kind",
-        "summary": "Delete a kind of John; its Johns move to another kind, or have none",
+        "summary": "Delete a kind of John; its Johns move to another kind, or to No kind",
         "tags": [
           "house"
         ],

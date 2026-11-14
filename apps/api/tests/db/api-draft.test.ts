@@ -79,7 +79,7 @@ describe("POST /v1/houses/{houseId}/ask", () => {
     const house = await makeHouse(["Ava"]);
     const res = await chatAs(house.admin, { houseId: house.id, messages: said("Me, my husband and the kids"), draft: null });
     expect(res.status).toBe(201);
-    expect(await res.json()).toEqual({ reply: words('ask.draft.offline'), ask: null, draft: starterDraft("family", STARTING), source: "starter" });
+    expect(await res.json()).toEqual({ reply: words('ask.draft.offline'), ask: null, draft: starterDraft("family", STARTING, words), source: "starter" });
     expect(await turnsIn(house.id)).toEqual([]);
     const { count } = await db.from("johns").select("id", { count: "exact", head: true }).eq("house_id", house.id);
     expect(count).toBe(0);
@@ -88,7 +88,7 @@ describe("POST /v1/houses/{houseId}/ask", () => {
   it("leaves a draft as it is when Claude isn't set up to change it", async () => {
     const house = await makeHouse(["Ava"]);
     const messages = [...said("Flat share"), { role: "assistant", text: words('ask.draft.fromStarter') }, ...said("Oven every month")];
-    const res = await chatAs(house.admin, { houseId: house.id, messages, draft: starterDraft("flat_share", STARTING) });
+    const res = await chatAs(house.admin, { houseId: house.id, messages, draft: starterDraft("flat_share", STARTING, words) });
     expect(await res.json()).toEqual({ reply: words('ask.draft.offlineChange'), ask: null, draft: null, source: "starter" });
   });
 
@@ -122,17 +122,9 @@ describe("chatTurn, with Claude stood in for", () => {
     let told: DraftContext | null = null;
     const result = await chatTurn({ db: house.admin.db, userId: house.admin.userId }, { houseId: house.id, messages, current: null, now: rightNow() }, async (ctx, tools) => {
       told = ctx;
-      // Then the house's kinds, each with a ref for save_kind, order_kinds and delete_kind.
+      // A new house has no kinds yet: Claude names them as it adds the Johns.
       const listed = tools.listJohns().split("\n");
-      expect(listed[0]).toBe("The list is empty.");
-      expect(listed.slice(1)).toEqual([
-        expect.stringMatching(/^Kind Kitchen \(ref [0-9a-f]{8}, colour #7a4e2d\)$/),
-        expect.stringMatching(/^Kind Bathroom /),
-        expect.stringMatching(/^Kind Bins & recycling /),
-        expect.stringMatching(/^Kind Floors & hoovering /),
-        expect.stringMatching(/^Kind Errands & shopping /),
-        expect.stringMatching(/^Kind Everything else /),
-      ]);
+      expect(listed).toEqual(["The list is empty."]);
       expect(tools.may).toEqual({ add: true, change: true, remove: true, groups: true, resets: false, away: true });
       return firstGo(ctx, tools);
     });
@@ -184,17 +176,18 @@ describe("chatTurn, with Claude stood in for", () => {
   it("names each John's kind, matching the house's by name and keeping a new one to make on Apply", async () => {
     const house = await makeHouse(["Ava"]);
     const [bath, mow] = await addJohns(house.id, [{ name: "Bathroom", preset: "bathroom" }, { name: "Mow" }], thisWeek());
-    const result = await chatTurn({ db: house.admin.db, userId: house.admin.userId }, { houseId: house.id, messages: said("Mowing is garden, and add the hob"), current: null, now: rightNow() }, async (_ctx, tools) => {
+    const result = await chatTurn({ db: house.admin.db, userId: house.admin.userId }, { houseId: house.id, messages: said("Mowing is garden, add the hob, and the bathroom has no kind"), current: null, now: rightNow() }, async (_ctx, tools) => {
       const listed = tools.listJohns().split("\n");
       expect(JSON.parse(listed.find((l) => l.includes(bath.id.slice(0, 8)))!)).toMatchObject({ name: "Bathroom", kind: "Bathroom" });
-      expect(JSON.parse(listed.find((l) => l.includes(mow.id.slice(0, 8)))!)).toMatchObject({ name: "Mow", kind: "Everything else" });
+      expect(JSON.parse(listed.find((l) => l.includes(mow.id.slice(0, 8)))!)).toMatchObject({ name: "Mow", kind: null });
       expect(tools.edit({ kind: "change", ref: mow.id.slice(0, 8), set: { kind: "Garden" } }).ok).toBe(true);
-      expect(tools.edit({ kind: "add", john: { name: "Hob", kind: "kitchen", points: 1 } }).ok).toBe(true);
+      expect(tools.edit({ kind: "add", john: { name: "Hob", kind: "Kitchen", points: 1 } }).ok).toBe(true);
+      expect(tools.edit({ kind: "change", ref: bath.id.slice(0, 8), set: { kind: "No kind" } }).ok).toBe(true);
       return { raw: { reply: "Mow's in Garden once you apply.", ask: { kind: "none" } }, inputTokens: 10, outputTokens: 5 };
     });
     if ("refusal" in result) throw new Error("refused");
     expect(result.draft!.johns.map((j) => [j.name, j.kind])).toEqual([
-      ["Bathroom", "Bathroom"],
+      ["Bathroom", null],
       ["Mow", "Garden"],
       ["Hob", "Kitchen"],
     ]);
@@ -369,7 +362,7 @@ describe("chatTurn, with Claude stood in for", () => {
 
   it("counts a turn that only talks, and leaves the draft as it is", async () => {
     const house = await makeHouse(["Ava"]);
-    const result = await chatTurn({ db: house.admin.db, userId: house.admin.userId }, { houseId: house.id, messages: said("Is that all?"), current: starterDraft("couple", STARTING), now: rightNow() }, async () => ({
+    const result = await chatTurn({ db: house.admin.db, userId: house.admin.userId }, { houseId: house.id, messages: said("Is that all?"), current: starterDraft("couple", STARTING, words), now: rightNow() }, async () => ({
       raw: { reply: "That’s the lot for a couple.", ask: { kind: "none" } },
       inputTokens: 10,
       outputTokens: 5,
@@ -383,7 +376,7 @@ describe("chatTurn, with Claude stood in for", () => {
     const result = await chatTurn({ db: house.admin.db, userId: house.admin.userId }, { houseId: house.id, messages: said(A_HOUSE), current: null, now: rightNow() }, async () => {
       throw new Error("overloaded");
     });
-    expect(result).toEqual({ reply: words('ask.draft.offline'), ask: null, draft: starterDraft("flat_share", STARTING), source: "starter" });
+    expect(result).toEqual({ reply: words('ask.draft.offline'), ask: null, draft: starterDraft("flat_share", STARTING, words), source: "starter" });
     expect((await turnsIn(house.id)).map((d) => d.outcome)).toEqual(["failed"]);
   });
 

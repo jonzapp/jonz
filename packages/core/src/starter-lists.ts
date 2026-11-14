@@ -7,10 +7,10 @@ import type { Words } from "./words-for";
 export const STARTER_KINDS = ["flat_share", "couple", "family"] as const;
 export type StarterKind = (typeof STARTER_KINDS)[number];
 
-type Starter = [name: string, preset: Category, points: number, everyWeeks: number, dueDow: IsoDow, dueTime: string, extra?: Partial<DraftedJohn>];
+type Starter = [name: string, preset: Category | null, points: number, everyWeeks: number, dueDow: IsoDow, dueTime: string, extra?: Partial<DraftedJohn>];
 
-/** A starter John: a drafted John with the starting kind it goes in (the house's kind that began as it). */
-type StarterJohn = Omit<DraftedJohn, "kind"> & { preset: Category };
+/** A starter John: a drafted John with the starting kind it goes in (the house's kind that began as it), or null for No kind. */
+type StarterJohn = Omit<DraftedJohn, "kind"> & { preset: Category | null };
 
 function starter(rows: readonly Starter[]): StarterJohn[] {
   return rows.map(([name, preset, points, everyWeeks, dueDow, dueTime, extra]) => ({
@@ -57,8 +57,8 @@ export const STARTER_LISTS: Record<StarterKind, StarterJohn[]> = {
     ["Bathroom clean", "bathroom", 4, 1, 6, "18:00"],
     ["Bins and recycling out", "bins", 1, 1, 2, "21:00"],
     ["Hoover and mop", "floors", 3, 1, 7, "18:00"],
-    ["Laundry", "other", 3, 1, 4, "21:00"],
-    ["Change the sheets", "other", 2, 2, 7, "21:00"],
+    ["Laundry", null, 3, 1, 4, "21:00"],
+    ["Change the sheets", null, 2, 2, 7, "21:00"],
     ["Food shop", "errands", 3, 1, 6, "13:00"],
   ]),
   family: starter([
@@ -67,19 +67,22 @@ export const STARTER_LISTS: Record<StarterKind, StarterJohn[]> = {
     ["Bathroom clean", "bathroom", 4, 1, 6, "18:00"],
     ["Bins and recycling out", "bins", 1, 1, 2, "20:00"],
     ["Hoover downstairs", "floors", 2, 1, 7, "18:00"],
-    ["Tidy your bedroom", "other", 2, 1, 7, "19:00"],
-    ["Laundry", "other", 3, 1, 4, "20:00"],
+    ["Tidy your bedroom", null, 2, 1, 7, "19:00"],
+    ["Laundry", null, 3, 1, 4, "20:00"],
     ["Food shop", "errands", 3, 1, 6, "13:00"],
   ]),
 };
 
 /**
- * A starter list as a draft, the same shape Claude's comes in: each John in
- * the house's kind that began as its starting kind, or none when the house
- * has no such kind.
+ * A starter list as a draft, the same shape Claude's comes in, its Johns
+ * sorted into kinds as a setup chat sorts them: each in the house's kind
+ * that began as its starting kind, or else in one of that kind's name in
+ * the admin's language, made when they keep it (a new house has no kinds).
+ * A John with no starting kind goes in No kind (null).
  */
-export function starterDraft(kind: StarterKind, kinds: readonly DraftKind[]): HouseDraft {
-  const johns = STARTER_LISTS[kind].map(({ preset, ...j }) => ({ ...j, kind: kinds.find((k) => k.preset === preset)?.name ?? null }));
+export function starterDraft(kind: StarterKind, kinds: readonly DraftKind[], words: Words): HouseDraft {
+  const kindOf = (preset: Category | null) => (preset ? (kinds.find((k) => k.preset === preset)?.name ?? words(`ask.draft.kind.${preset}` as const)) : null);
+  const johns = STARTER_LISTS[kind].map(({ preset, ...j }) => ({ ...j, kind: kindOf(preset) }));
   return { johns, groups: [], note: null };
 }
 
@@ -103,5 +106,5 @@ export function offlineTurn(messages: readonly ChatMessage[], draft: HouseDraft 
   const said = messages.filter((m) => m.role === "user").map((m) => m.text);
   const named = STARTER_KINDS.find((k) => said.some((t) => key(t.trim()) === key(words(`ask.draft.starter.${k}.title` as const))));
   const kind = named ?? guessStarter(said.join(" "));
-  return { reply: named ? words('ask.draft.fromStarter') : words('ask.draft.offline'), ask: null, draft: starterDraft(kind, at.kinds), source: "starter" };
+  return { reply: named ? words('ask.draft.fromStarter') : words('ask.draft.offline'), ask: null, draft: starterDraft(kind, at.kinds, words), source: "starter" };
 }

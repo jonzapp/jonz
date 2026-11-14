@@ -97,9 +97,9 @@ export type HouseSettings = z.infer<typeof HouseSettings>;
 export const JohnFields = z.object({
   name: z.string().trim().min(1, "Name the John.").max(60),
   // Its kind (john_kinds): one of the house's by id, or by name (made if the
-  // house has none by that name). Left out, a new John has no kind and a
-  // changed one keeps its kind. Null is a John with no kind, as the list
-  // reads one whose kind was deleted.
+  // house has none by that name). Null is No kind: in none of the house's
+  // kinds. Left out, a new John has no kind and a changed one keeps its
+  // kind.
   kindId: z.uuid().nullable().optional(),
   kindName: z.string().trim().min(1).max(30).optional(),
   points: z.coerce.number().int().min(1).max(20),

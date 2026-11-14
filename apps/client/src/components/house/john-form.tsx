@@ -121,17 +121,15 @@ export function JohnForm({
   );
 }
 
-/** What kind of John it is (one of the house's own) and who shares it, with a line on what sharing means. */
+/** What kind of John it is (one of the house's own, or No kind) and who shares it, with a line on what sharing means. */
 function WhatAndWho({ value: v, kinds, groups, onChange: set }: { value: Draft; kinds: KindDef[]; groups: GroupDef[]; onChange: SetDraft }) {
   const words = useWords();
   const ordered = kindsInOrder(kinds);
   const kind = kindOf(v, kinds);
-  // A John whose kind was deleted says so until it's given one.
-  const options = [...ordered.map((k) => ({ value: k.id, label: k.name })), ...(kind ? [] : [{ value: '', label: words('house.kinds.none') }])];
-  // A kind changes nothing in the deal.
-  const pickKind = (id: string) => {
-    if (ordered.some((k) => k.id === id)) set({ kindId: id });
-  };
+  // No kind is always the last choice: a John can sit in none of them on
+  // purpose. A kind changes nothing in the deal.
+  const options = [...ordered.map((k) => ({ value: k.id, label: k.name })), { value: '', label: words('house.kinds.none') }];
+  const pickKind = (id: string) => set({ kindId: ordered.some((k) => k.id === id) ? id : null });
   const sharers = [{ value: '', label: words('house.johns.everyone') }, ...groups.map((g) => ({ value: g.id, label: g.name }))];
   // What "Shared by" means, under it: how to share with fewer when there's no
   // group yet, and what a group's John does once one is picked.

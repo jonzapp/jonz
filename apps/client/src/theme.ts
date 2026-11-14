@@ -88,6 +88,8 @@ export const SHEET_RADIUS = 16;
 export const MARK_RADIUS = 2;
 /** A hair's room: between a row's title and its meta line, and what brings Overpass's capitals down level with what's beside them. */
 export const HAIR = 2;
+/** A dashed outline's line: a group of things in no section yet (the John list's Johns in no kind). */
+export const DASH = 1.5;
 /** Between a small mark (a lid, a swatch, a status) and its words. */
 export const MARK_GAP = 6;
 /** The widest a screen's content gets, on every tab. */

@@ -83,6 +83,12 @@ export interface OperationIo {
   /** Input keys whose function argument isn't the rule's (`p_` + snake_case, without `Id`). */
   args?: Readonly<Record<string, string>>;
   /**
+   * Input keys whose null the function can't tell from left out (change_john's
+   * kindId: null moves the John to No kind; left out, it keeps its kind):
+   * null sets the flag argument named here instead.
+   */
+  nulls?: Readonly<Record<string, string>>;
+  /**
    * For an operation whose server code names things
    * differently: that code's request from this input.
    */
@@ -652,7 +658,7 @@ export const OPERATION_IO = {
   // A house: admins (Parents)
   add_john: io(JohnFields.extend({ houseId: id }).refine(...johnMonthly), id, "POST /v1/houses/{houseId}/johns"),
   add_johns: io(z.object({ houseId: id, johns: z.array(JohnFields.refine(...johnMonthly)).min(1).max(100) }), z.array(id), "POST /v1/houses/{houseId}/johns/batch"),
-  change_john: io(JohnFields.extend({ johnId: id }).refine(...johnMonthly), nothing, "PATCH /v1/johns/{johnId}"),
+  change_john: io(JohnFields.extend({ johnId: id }).refine(...johnMonthly), nothing, "PATCH /v1/johns/{johnId}", { nulls: { kindId: "p_no_kind" } }),
   remove_john: io(z.object({ johnId: id }), nothing, "DELETE /v1/johns/{johnId}"),
   save_kind: io(KindDraft.extend({ houseId: id, kindId: id.nullable() }), id, "POST /v1/houses/{houseId}/kinds"),
   order_kinds: io(z.object({ houseId: id, kinds: z.array(id).max(100) }), nothing, "PATCH /v1/houses/{houseId}/kinds"),
@@ -811,7 +817,9 @@ export function rpcArgs(name: OperationName, input: Record<string, unknown>): Re
   for (const [key, value] of Object.entries(input)) {
     if (value === undefined) continue;
     if (io.page && (key === "limit" || key === "startingAfter")) continue;
-    args[argName(name, key)] = value;
+    const flag = value === null ? io.nulls?.[key] : undefined;
+    if (flag) args[flag] = true;
+    else args[argName(name, key)] = value;
   }
   if (io.page) {
     const limit = typeof input.limit === "number" ? input.limit : PAGE_LIMIT;

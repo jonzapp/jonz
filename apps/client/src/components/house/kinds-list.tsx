@@ -104,7 +104,7 @@ export function AddKindRow({ onPress }: { onPress: () => void }) {
  * One kind: its name, its colour (the ready colours, then any colour), how
  * a John of it looks, then for a kind already on the list its place (Move
  * up, Move down, which happen at once) and Delete, saying its Johns will
- * have no kind until they're given one (no kind C, 14 Nov). Save is the
+ * move to No kind (one No kind, 14 Nov). Save is the
  * sheet's one amber button. The house's kinds and Johns are read here, so a
  * move shows its new place straight away.
  */

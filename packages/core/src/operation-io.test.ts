@@ -100,6 +100,11 @@ describe("turning an input into a database call", () => {
     expect(argName("mark_done", "assignmentId")).toBe("p_assignment");
     expect(argName("can", "houseId")).toBe("h");
     expect(rpcArgs("confirm_payment", { houseId: "h1", fromId: "u1", amount: 500, via: undefined })).toEqual({ p_house: "h1", p_from: "u1", p_amount: 500 });
+    // change_john's kindId: null is No kind, which the function can't tell from left out: it's a flag.
+    expect(rpcArgs("change_john", { johnId: "j1", kindId: null })).toEqual({ p_john: "j1", p_no_kind: true });
+    expect(rpcArgs("change_john", { johnId: "j1", kindId: "k1" })).toEqual({ p_john: "j1", p_kind: "k1" });
+    expect(rpcArgs("change_john", { johnId: "j1" })).toEqual({ p_john: "j1" });
+    expect(rpcArgs("add_john", { houseId: "h1", kindId: null })).toEqual({ p_house: "h1", p_kind: null });
   });
 
   it("reads a page from its cursor, one row more than asked to see if there are more", () => {

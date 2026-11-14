@@ -137,7 +137,8 @@ permanent once a store has seen them.
   laptop, open beside it),
   `TitleBar` (with `MoreButton` for
   "•••"), `PageTitle` (the browser tab's title on the web from core's
-  `pageTitle`, nothing on a phone), `Section`, `Group`, `Row` (the one row,
+  `pageTitle`, nothing on a phone), `Section`, `Group` (`dashed` for things in no
+  section yet: the John list's No kind), `Row` (the one row,
   everywhere), `Fold`, `Card` (at most one stand-alone card a screen),
   `TickBox`, `StatusMark` and `Chip` (core's `STATUS_MARK`, drawn),
   `LidBar`, `Avatar`, `CountBadge`, `Button`, `ButtonRow` (buttons side by

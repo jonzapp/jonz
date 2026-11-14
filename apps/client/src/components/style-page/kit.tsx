@@ -297,15 +297,21 @@ export function Lists() {
   );
 }
 
-/** Kinds of John: the Kinds list's rows, and the colour picker the kind sheet opens with (Kinds list A, 14 Nov). */
+/**
+ * Kinds of John: the Kinds list's rows, No kind's dashed group, and the
+ * colour picker the kind sheet opens with (Kinds list A, One No kind, 14 Nov).
+ */
 export function Kinds() {
-  const [colour, setColour] = useState<string>(KIND_COLOURS[8]);
+  const [colour, setColour] = useState<string>(KIND_COLOURS[7]);
   return (
     <Section label="Kinds and colours" bare testID="style-kinds">
       <Group>
         <KindRow name="Kitchen" colour={KIND_COLOURS[0]} johns={4} onPress={none} />
         <KindRow name="Garden" colour={colour} johns={1} onPress={none} />
         <AddKindRow onPress={none} />
+      </Group>
+      <Group dashed>
+        <Row title="Fix the shelf" lid="other" meta="Sun 21:00" trailing="2 pts" />
       </Group>
       <Group>
         <GroupItem>

@@ -122,11 +122,14 @@ async function house(kind: "housemates" | "family"): Promise<{ rows: Rows; admin
     insert into public.weeks (house_id, starts_on, starts_at, ends_at)
     values (${houseId}::uuid, ${WEEK_START}, ${new Date(Date.UTC(2027, 0, 4))}, ${new Date(Date.UTC(2027, 0, 11))}) returning id`;
   const [group] = await admin<{ id: string }[]>`insert into public.groups (house_id, name) values (${houseId}::uuid, 'Upstairs') returning id`;
-  const kinds = await admin<{ id: string; preset: string | null }[]>`select id, preset from public.john_kinds where house_id = ${houseId}::uuid`;
-  const kindOf = (preset: string) => kinds.find((k) => k.preset === preset)!.id;
+  // A new house has no kinds: two, as its setup chat would make them.
+  const kinds = await admin<{ id: string; name: string }[]>`
+    insert into public.john_kinds (house_id, name, colour, position)
+    values (${houseId}::uuid, 'Kitchen', '#7a4e2d', 0), (${houseId}::uuid, 'Bathroom', '#1f5fae', 1) returning id, name`;
+  const kindOf = (name: string) => kinds.find((k) => k.name === name)!.id;
   const [john] = await admin<{ id: string }[]>`
     insert into public.johns (house_id, name, john_kind_id, points, anchor_week, group_id)
-    values (${houseId}::uuid, 'Dishes', ${kindOf("kitchen")}::uuid, 2, 0, ${group.id}::uuid) returning id`;
+    values (${houseId}::uuid, 'Dishes', ${kindOf("Kitchen")}::uuid, 2, 0, ${group.id}::uuid) returning id`;
   const assign = async (who: Person, done: boolean) => {
     const [row] = await admin<{ id: string }[]>`
       insert into public.assignments (week_id, house_id, john_id, user_id, name, points, due_at, done_at)
@@ -154,8 +157,8 @@ async function house(kind: "housemates" | "family"): Promise<{ rows: Rows; admin
       weekId: week.id,
       johnId: john.id,
       groupId: group.id,
-      kindId: kindOf("kitchen"),
-      moveToId: kindOf("other"),
+      kindId: kindOf("Kitchen"),
+      moveToId: kindOf("Bathroom"),
       adminsJohn,
       membersJohn,
       disputeId: dispute.id,

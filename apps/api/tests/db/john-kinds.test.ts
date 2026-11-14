@@ -1,17 +1,19 @@
+import { CATEGORIES } from "@app/core";
 import { describe, expect, it } from "vitest";
 
 import { adminClient, signedInUser, type Actor } from "@/tests/support/clients";
 import { expectDenied, expectOk, expectRule } from "@/tests/support/expect";
-import { addJohns, deal, makeHouse, thisWeek, ZONE } from "@/tests/support/factories";
+import { addJohns, deal, makeHouse, startingKindIds, thisWeek, ZONE } from "@/tests/support/factories";
 import { rightNow } from "@/tests/support/clock";
 import { track } from "@/tests/support/scope";
 
 /**
- * Each house's own kinds of John (20270115090000_john_kinds.sql): the six it
- * starts with, in its maker's language; an admin adding, renaming,
- * recolouring, ordering and deleting them; a John written by kind id or by
- * kind name; and the reads that carry them. Each John's older category went
- * in 20270117090000_drop_john_category.sql.
+ * Each house's own kinds of John (20270115090000_john_kinds.sql): an admin
+ * adding, renaming, recolouring, ordering and deleting them; a John written
+ * by kind id or by kind name; and the reads that carry them. Each John's
+ * older category went in 20270117090000_drop_john_category.sql. A new house
+ * starts with no kinds, and a John in none sits in No kind, which is no
+ * kind's name (20270118090000_no_kind_section.sql).
  */
 
 const db = adminClient();
@@ -32,52 +34,45 @@ async function kindsOf(houseId: string): Promise<Kind[]> {
 
 const named = (kinds: Kind[], preset: string) => kinds.find((k) => k.preset === preset)!;
 
+/** A house of Ava's with the five old starting kinds, as a setup chat might have made them. */
+async function withKinds(names = ["Ava"]) {
+  const house = await makeHouse(names);
+  await startingKindIds(house.id, CATEGORIES);
+  return house;
+}
+
 /** A John's kind, by its id: null for none. */
 async function johnKind(johnId: string) {
   const { data } = await db.from("johns").select("john_kind_id").eq("id", johnId).single();
   return data!.john_kind_id;
 }
 
-describe("a new house's kinds", () => {
-  it("are the six starting kinds, in order, with the first six ready colours", async () => {
+describe("a house's kinds", () => {
+  it("are none in a new house: its setup chat makes them with its Johns (14 Nov)", async () => {
     const house = await makeHouse(["Ava"]);
-    expect(await kindsOf(house.id)).toEqual([
-      { id: expect.any(String), name: "Kitchen", colour: "#7a4e2d", position: 0, preset: "kitchen" },
-      { id: expect.any(String), name: "Bathroom", colour: "#1f5fae", position: 1, preset: "bathroom" },
-      { id: expect.any(String), name: "Bins & recycling", colour: "#2a2d30", position: 2, preset: "bins" },
-      { id: expect.any(String), name: "Floors & hoovering", colour: "#0f7c7a", position: 3, preset: "floors" },
-      { id: expect.any(String), name: "Errands & shopping", colour: "#6a3d9a", position: 4, preset: "errands" },
-      { id: expect.any(String), name: "Everything else", colour: "#8a9096", position: 5, preset: "other" },
-    ]);
+    expect(await kindsOf(house.id)).toEqual([]);
+    const made = await rpc(house.admin, "add_john", { p_house: house.id, p_name: "Dishes", p_points: 2, p_every_weeks: 1, p_due_dow: 7, p_due_time: "21:00", p_needs_photo: false, p_group: null, p_kind_name: "Kitchen" });
+    expectOk(made);
+    expect(await kindsOf(house.id)).toEqual([{ id: expect.any(String), name: "Kitchen", colour: "#7a4e2d", position: 0, preset: null }]);
   });
 
-  it("are named in French for a house made by someone who reads Jonz in French", async () => {
-    const amelie = await signedInUser("Amélie");
-    expectOk(await amelie.db.rpc("set_my_language", { p_language: "fr" }));
-    const made = await amelie.db.rpc("create_house", { p_name: "Chez Amélie", p_timezone: ZONE, p_currency: "EUR", p_week_starts: 1 });
-    expectOk(made);
-    track.house(made.data!);
-    expect((await kindsOf(made.data!)).map((k) => k.name)).toEqual([
-      "Cuisine",
-      "Salle de bain",
-      "Poubelles et tri",
-      "Sols et aspirateur",
-      "Courses et démarches",
-      "Tout le reste",
-    ]);
+  it("never began as Everything else: No kind is the one catch-all", async () => {
+    const house = await makeHouse(["Ava"]);
+    const { error } = await db.from("john_kinds").insert({ house_id: house.id, name: "Everything else", colour: "#8a9096", position: 0, preset: "other" });
+    expect(error?.code).toBe("23514");
   });
 
   it("are seen by everyone in the house and changed only by an admin", async () => {
-    const house = await makeHouse(["Ava", "Ben"]);
+    const house = await withKinds(["Ava", "Ben"]);
     const ben = house.members[0];
     const { data: seen } = await ben.db.from("john_kinds").select("id").eq("house_id", house.id);
-    expect(seen).toHaveLength(6);
+    expect(seen).toHaveLength(5);
     const kitchen = named(await kindsOf(house.id), "kitchen");
     expectDenied(await rpc(ben, "save_kind", { p_house: house.id, p_kind: kitchen.id, p_name: "Cooking", p_colour: "#4f9a2e" }));
     expectDenied(await rpc(ben, "save_kind", { p_house: house.id, p_kind: null, p_name: "Garden", p_colour: "#4f9a2e" }));
     expectDenied(await rpc(ben, "order_kinds", { p_house: house.id, p_kinds: [kitchen.id] }));
     expectDenied(await rpc(ben, "delete_kind", { p_kind: kitchen.id }));
-    expect(await kindsOf(house.id)).toHaveLength(6);
+    expect(await kindsOf(house.id)).toHaveLength(5);
     expect(named(await kindsOf(house.id), "kitchen").name).toBe("Kitchen");
 
     const stranger = await signedInUser("Zed");
@@ -87,17 +82,17 @@ describe("a new house's kinds", () => {
 });
 
 describe("save_kind", () => {
-  it("adds a kind before Everything else, in the colour given", async () => {
-    const house = await makeHouse(["Ava"]);
+  it("adds a kind last, in the colour given", async () => {
+    const house = await withKinds();
     const res = await rpc(house.admin, "save_kind", { p_house: house.id, p_kind: null, p_name: " Garden ", p_colour: "#4F9A2E" });
     expectOk(res);
     const kinds = await kindsOf(house.id);
-    expect(kinds.map((k) => k.name)).toEqual(["Kitchen", "Bathroom", "Bins & recycling", "Floors & hoovering", "Errands & shopping", "Garden", "Everything else"]);
+    expect(kinds.map((k) => k.name)).toEqual(["Kitchen", "Bathroom", "Bins & recycling", "Floors & hoovering", "Errands & shopping", "Garden"]);
     expect(kinds.find((k) => k.id === res.data)).toMatchObject({ name: "Garden", colour: "#4f9a2e", preset: null });
   });
 
   it("renames and recolours a kind, and keeps its Johns in it", async () => {
-    const house = await makeHouse(["Ava"]);
+    const house = await withKinds();
     const [dishes] = await addJohns(house.id, [{ name: "Dishes", preset: "kitchen" }], thisWeek());
     const kitchen = named(await kindsOf(house.id), "kitchen");
     expectOk(await rpc(house.admin, "save_kind", { p_house: house.id, p_kind: kitchen.id, p_name: "Cooking", p_colour: "#c2417a" }));
@@ -105,53 +100,54 @@ describe("save_kind", () => {
     expect(await johnKind(dishes.id)).toBe(kitchen.id);
   });
 
-  it("refuses a name another kind has, whatever its capitals, a blank or long name, and a colour that isn't one", async () => {
-    const house = await makeHouse(["Ava"]);
+  it("refuses a name another kind has, whatever its capitals, No kind's, a blank or long name, and a colour that isn't one", async () => {
+    const house = await withKinds();
     const kitchen = named(await kindsOf(house.id), "kitchen");
     const save = (name: string, colour = "#4f9a2e", kind: string | null = null) =>
       rpc(house.admin, "save_kind", { p_house: house.id, p_kind: kind, p_name: name, p_colour: colour });
     expectRule(await save("bathroom"), "kind_name_taken");
     expectRule(await save("Bathroom", "#4f9a2e", kitchen.id), "kind_name_taken");
+    expectRule(await save(" no KIND "), "kind_name_taken");
+    expectRule(await save("Sans type", "#4f9a2e", kitchen.id), "kind_name_taken");
     expectRule(await save("   "), "bad_kind_name");
     expectRule(await save("x".repeat(31)), "bad_kind_name");
     expectRule(await save("Garden", "green"), "bad_colour");
     expectRule(await save("Garden", "#4f9a2e", crypto.randomUUID()), "unknown_kind");
-    expect(await kindsOf(house.id)).toHaveLength(6);
+    expect(await kindsOf(house.id)).toHaveLength(5);
   });
 });
 
 describe("order_kinds", () => {
   it("puts the kinds in the order given, and any left out after them in their old order", async () => {
-    const house = await makeHouse(["Ava"]);
+    const house = await withKinds();
     const kinds = await kindsOf(house.id);
-    const other = named(kinds, "other");
+    const errands = named(kinds, "errands");
     const bins = named(kinds, "bins");
-    expectOk(await rpc(house.admin, "order_kinds", { p_house: house.id, p_kinds: [other.id, bins.id] }));
+    expectOk(await rpc(house.admin, "order_kinds", { p_house: house.id, p_kinds: [errands.id, bins.id] }));
     expect((await kindsOf(house.id)).map((k) => [k.preset, k.position])).toEqual([
-      ["other", 0],
+      ["errands", 0],
       ["bins", 1],
       ["kitchen", 2],
       ["bathroom", 3],
       ["floors", 4],
-      ["errands", 5],
     ]);
   });
 });
 
 describe("delete_kind", () => {
   it("moves its Johns, archived ones too, to the kind picked", async () => {
-    const house = await makeHouse(["Ava"]);
+    const house = await withKinds();
     const [dishes, oven] = await addJohns(house.id, [{ name: "Dishes", preset: "kitchen" }, { name: "Oven", preset: "kitchen" }], thisWeek());
     await db.from("johns").update({ archived_at: rightNow().toISOString() }).eq("id", oven.id);
     const kinds = await kindsOf(house.id);
     const bathroom = named(kinds, "bathroom");
     expectOk(await rpc(house.admin, "delete_kind", { p_kind: named(kinds, "kitchen").id, p_move_to: bathroom.id }));
-    expect((await kindsOf(house.id)).map((k) => k.preset)).toEqual(["bathroom", "bins", "floors", "errands", "other"]);
+    expect((await kindsOf(house.id)).map((k) => k.preset)).toEqual(["bathroom", "bins", "floors", "errands"]);
     expect(await johnKind(dishes.id)).toBe(bathroom.id);
     expect(await johnKind(oven.id)).toBe(bathroom.id);
   });
 
-  it("leaves them with no kind when no kind is picked (no kind C, 14 Nov)", async () => {
+  it("moves them to No kind when no kind is picked", async () => {
     const house = await makeHouse(["Ava"]);
     const [dishes] = await addJohns(house.id, [{ name: "Dishes", preset: "kitchen" }], thisWeek());
     const kinds = await kindsOf(house.id);
@@ -160,22 +156,20 @@ describe("delete_kind", () => {
   });
 
   it("refuses to move them to the kind going or to another house's", async () => {
-    const house = await makeHouse(["Ava"]);
-    const elsewhere = await makeHouse(["Zed"]);
+    const house = await withKinds();
+    const elsewhere = await withKinds(["Zed"]);
     const kitchen = named(await kindsOf(house.id), "kitchen");
     expectRule(await rpc(house.admin, "delete_kind", { p_kind: kitchen.id, p_move_to: kitchen.id }), "unknown_kind");
-    expectRule(await rpc(house.admin, "delete_kind", { p_kind: kitchen.id, p_move_to: named(await kindsOf(elsewhere.id), "other").id }), "unknown_kind");
-    expect(await kindsOf(house.id)).toHaveLength(6);
+    expectRule(await rpc(house.admin, "delete_kind", { p_kind: kitchen.id, p_move_to: named(await kindsOf(elsewhere.id), "bins").id }), "unknown_kind");
+    expect(await kindsOf(house.id)).toHaveLength(5);
   });
 
-  it("lets any kind go, Everything else and the last one too, and a John added after has none", async () => {
-    const house = await makeHouse(["Ava"]);
-    const [dishes] = await addJohns(house.id, [{ name: "Dishes", preset: "other" }], thisWeek());
+  it("lets any kind go, the last one too, its Johns moving to No kind", async () => {
+    const house = await withKinds();
+    const [dishes] = await addJohns(house.id, [{ name: "Dishes", preset: "kitchen" }], thisWeek());
     for (const k of await kindsOf(house.id)) expectOk(await rpc(house.admin, "delete_kind", { p_kind: k.id }));
     expect(await kindsOf(house.id)).toEqual([]);
     expect(await johnKind(dishes.id)).toBeNull();
-    const [hob] = await addJohns(house.id, [{ name: "Hob", preset: "kitchen" }], thisWeek());
-    expect(await johnKind(hob.id)).toBeNull();
   });
 });
 
@@ -204,7 +198,7 @@ describe("a John's kind", () => {
   });
 
   it("is the kind named by id, or by name (made if the house has none by it)", async () => {
-    const house = await makeHouse(["Ava"]);
+    const house = await withKinds();
     const kinds = await kindsOf(house.id);
     const floors = named(kinds, "floors");
     const byId = await rpc(house.admin, "add_john", john(house.id, { p_kind: floors.id, p_kind_name: "Kitchen" }));
@@ -217,15 +211,26 @@ describe("a John's kind", () => {
     const made = await rpc(house.admin, "add_john", john(house.id, { p_kind_name: "Garden" }));
     expectOk(made);
     const garden = (await kindsOf(house.id)).find((k) => k.name === "Garden")!;
-    // The first ready colour no kind has yet, before Everything else.
+    // The first ready colour no kind has yet (grey, No kind's, comes last), and last on the list.
     expect(garden).toMatchObject({ colour: "#c2417a", preset: null, position: 5 });
     expect(await johnKind(made.data!)).toBe(garden.id);
 
     expectRule(await rpc(house.admin, "add_john", john(house.id, { p_kind: crypto.randomUUID() })), "unknown_kind");
   });
 
+  it("is No kind when named by No kind's name, and no kind of that name is made", async () => {
+    const house = await withKinds();
+    const added = await rpc(house.admin, "add_john", john(house.id, { p_kind_name: "No kind" }));
+    expectOk(added);
+    expect(await johnKind(added.data!)).toBeNull();
+    const [dishes] = await addJohns(house.id, [{ name: "Dishes", preset: "kitchen" }], thisWeek());
+    expectOk(await rpc(house.admin, "change_john", { ...fields({ p_name: "Dishes", p_kind_name: "Sans type" }), p_john: dishes.id }));
+    expect(await johnKind(dishes.id)).toBeNull();
+    expect(await kindsOf(house.id)).toHaveLength(5);
+  });
+
   it("changes when a change names one, and stays when it doesn't", async () => {
-    const house = await makeHouse(["Ava"]);
+    const house = await withKinds();
     const kinds = await kindsOf(house.id);
     const [dishes] = await addJohns(house.id, [{ name: "Dishes", preset: "kitchen" }], thisWeek());
     const change = (more: Record<string, unknown>) => rpc(house.admin, "change_john", { ...fields({ p_name: "Dishes", ...more }), p_john: dishes.id });
@@ -237,8 +242,20 @@ describe("a John's kind", () => {
     expect(await johnKind(dishes.id)).toBe(named(kinds, "bathroom").id);
   });
 
-  it("stays none after its kind is deleted until a change gives it one", async () => {
-    const house = await makeHouse(["Ava"]);
+  it("moves to No kind when a change says so, and only then (one No kind, 14 Nov)", async () => {
+    const house = await withKinds();
+    const kinds = await kindsOf(house.id);
+    const [dishes] = await addJohns(house.id, [{ name: "Dishes", preset: "kitchen" }], thisWeek());
+    const change = (more: Record<string, unknown>) => rpc(house.admin, "change_john", { ...fields({ p_name: "Dishes", ...more }), p_john: dishes.id });
+    expectOk(await change({ p_no_kind: true }));
+    expect(await johnKind(dishes.id)).toBeNull();
+    // A kind given as well wins.
+    expectOk(await change({ p_no_kind: true, p_kind: named(kinds, "bins").id }));
+    expect(await johnKind(dishes.id)).toBe(named(kinds, "bins").id);
+  });
+
+  it("stays in No kind after its kind is deleted until a change gives it one", async () => {
+    const house = await withKinds();
     const kinds = await kindsOf(house.id);
     const [dishes] = await addJohns(house.id, [{ name: "Dishes", preset: "kitchen" }], thisWeek());
     expectOk(await rpc(house.admin, "delete_kind", { p_kind: named(kinds, "kitchen").id }));
@@ -252,7 +269,7 @@ describe("a John's kind", () => {
 
 describe("the reads", () => {
   it("john_list gives the kinds in order and each John's kind", async () => {
-    const house = await makeHouse(["Ava", "Ben"]);
+    const house = await withKinds(["Ava", "Ben"]);
     const [dishes] = await addJohns(house.id, [{ name: "Dishes", preset: "kitchen" }], thisWeek());
     const kinds = await kindsOf(house.id);
     const { data } = await rpc(house.members[0], "john_list", { p_house: house.id });
@@ -262,7 +279,7 @@ describe("the reads", () => {
   });
 
   it("house_today gives each John dealt its kind's name and colour", async () => {
-    const house = await makeHouse(["Ava", "Ben"]);
+    const house = await withKinds(["Ava", "Ben"]);
     await addJohns(house.id, [{ name: "Dishes", preset: "kitchen" }], thisWeek());
     await deal(house.id, thisWeek(), rightNow());
     const kitchen = named(await kindsOf(house.id), "kitchen");
@@ -273,7 +290,7 @@ describe("the reads", () => {
   });
 
   it("house_today says a John dealt with no kind has none: an empty name and no colour", async () => {
-    const house = await makeHouse(["Ava", "Ben"]);
+    const house = await withKinds(["Ava", "Ben"]);
     await addJohns(house.id, [{ name: "Dishes", preset: "kitchen" }], thisWeek());
     await deal(house.id, thisWeek(), rightNow());
     expectOk(await rpc(house.admin, "delete_kind", { p_kind: named(await kindsOf(house.id), "kitchen").id }));
@@ -300,7 +317,7 @@ describe("starting again", () => {
     expect(kinds.find((k) => k.id === lawn!.john_kind_id)).toMatchObject({ name: "Garden", colour: "#4f9a2e" });
   });
 
-  it("a John with no kind comes across with none", async () => {
+  it("a John in No kind comes across in No kind", async () => {
     const house = await makeHouse(["Ava", "Ben"]);
     const ben = house.members[0];
     await addJohns(house.id, [{ name: "Dishes", preset: "kitchen" }], thisWeek());
@@ -311,15 +328,13 @@ describe("starting again", () => {
     track.house(res.data!);
     const { data: dishes } = await db.from("johns").select("name, john_kind_id").eq("house_id", res.data!).single();
     expect(dishes).toEqual({ name: "Dishes", john_kind_id: null });
-    expect(await kindsOf(res.data!)).toHaveLength(5);
+    expect(await kindsOf(res.data!)).toEqual([]);
   });
 
-  it("resetting everything puts the six starting kinds back", async () => {
-    const house = await makeHouse(["Ava"]);
-    const kinds = await kindsOf(house.id);
+  it("resetting everything leaves no kinds, as a new house has", async () => {
+    const house = await withKinds();
     expectOk(await rpc(house.admin, "save_kind", { p_house: house.id, p_kind: null, p_name: "Garden", p_colour: "#4f9a2e" }));
-    expectOk(await rpc(house.admin, "save_kind", { p_house: house.id, p_kind: named(kinds, "kitchen").id, p_name: "Cooking", p_colour: "#c2417a" }));
     expectOk(await house.admin.db.rpc("reset_house_data", { p_house: house.id, p_everything: true }));
-    expect((await kindsOf(house.id)).map((k) => [k.name, k.colour])).toEqual(kinds.map((k) => [k.name, k.colour]));
+    expect(await kindsOf(house.id)).toEqual([]);
   });
 });

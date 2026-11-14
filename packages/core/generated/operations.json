@@ -9736,7 +9736,7 @@
     },
     {
       "name": "delete_kind",
-      "about": "Delete a kind of John; its Johns move to another kind, or have none",
+      "about": "Delete a kind of John; its Johns move to another kind, or to No kind",
       "scope": "house",
       "effect": "write",
       "guard": {

@@ -1,7 +1,7 @@
 import { createContext, useContext, type ReactNode } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { GROUP_RADIUS, INSET, useTheme } from '@/theme';
+import { DASH, GROUP_RADIUS, INSET, useTheme } from '@/theme';
 
 /**
  * What a row sits in: how far its content starts from the container's edge
@@ -34,14 +34,20 @@ export function useRowInset(): number {
  * depth of components (a list, a fragment, a component that returns several
  * rows) and the first one shown never has a line over it. Give it no
  * padding: the rows inset themselves.
+ *
+ * `dashed` is a group of things in no section yet (the John list's Johns in
+ * No kind): no card colour, a dashed outline instead, so it reads as apart
+ * from the sections around it. The outline is drawn over the group, so its
+ * rows sit exactly where a card's would and line up with them.
  */
-export function Group({ children, style, testID }: { children: ReactNode; style?: StyleProp<ViewStyle>; testID?: string }) {
+export function Group({ children, dashed = false, style, testID }: { children: ReactNode; dashed?: boolean; style?: StyleProp<ViewStyle>; testID?: string }) {
   const { colors } = useTheme();
   return (
-    <View testID={testID} style={[styles.group, { backgroundColor: colors.card }, style]}>
+    <View testID={testID} style={[styles.group, dashed ? null : { backgroundColor: colors.card }, style]}>
       <View style={styles.clip}>
         <RowFrameContext.Provider value={GROUP_FRAME}>{children}</RowFrameContext.Provider>
       </View>
+      {dashed ? <View aria-hidden pointerEvents="none" style={[styles.dashed, { borderColor: colors.mutedForeground }]} /> : null}
     </View>
   );
 }
@@ -97,6 +103,7 @@ export function GroupItem({ children, testID }: { children: ReactNode; testID?: 
 
 const styles = StyleSheet.create({
   group: { borderRadius: GROUP_RADIUS, overflow: 'hidden' },
+  dashed: { ...StyleSheet.absoluteFill, borderRadius: GROUP_RADIUS, borderWidth: DASH, borderStyle: 'dashed' },
   // The first row's hairline rises out of the group, which clips it.
   clip: { marginTop: -StyleSheet.hairlineWidth },
   cardRows: { marginTop: INSET },

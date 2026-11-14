@@ -11,7 +11,7 @@ import { z } from "zod";
 
 import type { GroupDef, JohnDef } from "./board";
 import { JOHN_WHEN } from "./domain";
-import type { KindDef } from "./kinds";
+import { isNoKindName, type KindDef } from "./kinds";
 import { firstName } from "./format";
 import { LAST_OF_MONTH, MAX_EVERY_MONTHS, MAX_EVERY_WEEKS } from "./repeat";
 import { CHAT_MOVES_MAX, ChatMove } from "./chat-moves";
@@ -94,7 +94,7 @@ export const DraftedJohn = z.object({
   /** The John on the house's list this is, when the draft changes an existing list; absent for a John to add. */
   id: z.uuid().optional(),
   name: z.string().min(1).max(60),
-  /** Its kind on the house's list, by name (made when applied if the house has none by it); null for no kind. */
+  /** Its kind on the house's list, by name (made when applied if the house has none by it); null for No kind. */
   kind: z.string().min(1).max(30).nullable(),
   points: z.number().int().min(1).max(20),
   everyWeeks: z.number().int().min(1).max(26),
@@ -292,10 +292,11 @@ function groupFor(groupName: string, groups: DraftedGroup[], houseGroups: readon
 /** A house's kind as a draft names it: by name, and the starting kind it began as. */
 export type DraftKind = Pick<KindDef, "name" | "preset">;
 
-/** A drafted John's kind: the house's by that name in any capitals, a new name, or null for none. */
+/** A drafted John's kind: the house's by that name in any capitals, a new name, or null for No kind. */
 function kindFor(raw: unknown, kinds: readonly DraftKind[]): string | null {
   const name = text(raw, 30);
-  return name ? (kinds.find((k) => key(k.name) === key(name))?.name ?? name) : null;
+  if (!name || isNoKindName(name)) return null;
+  return kinds.find((k) => key(k.name) === key(name))?.name ?? name;
 }
 
 /** A drafted John's answers, each within what the list allows, but for its name and which John it is. */
@@ -394,7 +395,7 @@ export function draftPlan(draft: HouseDraft, keep: readonly number[], existingGr
   const johns = kept.map((j) => {
     const john = {
       ...johnBasics(j),
-      // Its kind by name, made on the way if new; null for none.
+      // Its kind by name, made on the way if new; null for No kind.
       ...(j.kind === null ? { kindId: null } : { kindName: j.kind }),
       keepDay: false,
     };
@@ -473,7 +474,7 @@ export function draftForModel(draft: HouseDraft, people: readonly Person[], me: 
 
 /**
  * The house's list as a draft, for the chat to change: every John with its
- * id and its kind by name (null for none), and the groups they use with
+ * id and its kind by name (null for No kind), and the groups they use with
  * who's in them.
  */
 export function listAsDraft(johns: readonly JohnDef[], groups: readonly GroupDef[], kinds: readonly Pick<KindDef, "id" | "name">[] = []): HouseDraft {

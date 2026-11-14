@@ -22,12 +22,20 @@
   colour, how a John of it looks, Move up and Move down (which happen at
   once), then Save and Delete. A kind sorts the list and colours its Johns;
   it changes nothing in the deal (that's a group). (Kinds list A, 14 Nov)
-- **Any kind can be deleted, and its Johns then have no kind.** They sit
-  together in a grey No kind section at the foot of the John list, and the
-  John's form says No kind, until an admin gives each one a kind; the
-  section goes once it's empty. The kind's sheet says so above Delete when
-  the kind has Johns. (No kind C, 14 Nov) *Not* a kind that can't be
-  deleted to catch them, or a pick of where they go each time.
+- **A John in none of the house's kinds sits in No kind,** the one
+  catch-all: last on the John list, its group a dashed outline with no
+  card colour, and a line under it saying what it is ("Johns in none of
+  the kinds above.", and for an admin "Open one to give it a kind."). Its
+  rows line up with every other section's, and their lids are grey. No
+  kind is always the last choice in a John's Kind, so an admin can put a
+  John there on purpose; it isn't a kind, so it has no row on the Kinds
+  list and can't be renamed or deleted. Any kind can be deleted, its
+  Johns moving to No kind, and the kind's sheet says so above Delete when
+  it has Johns. The section goes once it's empty. (One No kind, Dashed,
+  14 Nov) *Not* a second catch-all kind such as Everything else, or a
+  pick of where Johns go each time a kind is deleted.
+- **A new house starts with no kinds.** Its setup chat names a few that fit
+  as it adds the Johns and sorts each one into a kind. (14 Nov)
 - **On a laptop a John on the John list is one line of lined-up columns**
   (`JohnLine`): its lid bar and name, when it's due, how often, what else
   sets it apart (photo, its group, how many do it), and its points, so a

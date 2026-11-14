@@ -92,7 +92,7 @@ test("an admin undoes a housemate's tick from the John sheet its Wall post opens
     contexts.ava,
     "Ava Undo",
     "Flat 31",
-    [{ name: "Clean the sink", preset: "kitchen" }, { name: "Dust the shelves", preset: "other" }],
+    [{ name: "Clean the sink", preset: "kitchen" }, { name: "Dust the shelves" }],
     [{ context: contexts.ben, name: "Ben Undo" }],
   );
   made.push(userId, ...housemateIds);

@@ -84,6 +84,8 @@ describe("every operation's contract, against the database", () => {
         const s = schema as z.ZodType;
         expected[argName(name, key)] = { type: zodKind(s), required: !s.safeParse(undefined).success, from: key };
       }
+      // A key whose null the function can't tell from left out sets a flag instead (change_john's kindId: null).
+      for (const [key, flag] of Object.entries(io.nulls ?? {})) expected[flag] = { type: "boolean", required: false, from: `${key}: null` };
       if (io.page) {
         expected.p_limit = { type: "integer", required: false, from: "limit" };
         expected[io.page.atArg ?? "(no cursor argument)"] = { type: "datetime", required: false, from: "startingAfter" };

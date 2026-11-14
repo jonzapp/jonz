@@ -1,4 +1,4 @@
-import { CATEGORIES, type Category } from "./domain";
+import { LIDS, type Lid } from "./domain";
 import { kindLid } from "./kinds";
 
 /**
@@ -34,8 +34,8 @@ export interface BinNightScheme {
   hazard: string;
   onHazard: string;
   good: string;
-  /** `--bin-<kind>`: the lid colour for each of the six starting kinds of John. */
-  bin: Record<Category, string>;
+  /** `--bin-<kind>`: the lid colour for each of the five starting kinds of John, and `other`, No kind's grey. */
+  bin: Record<Lid, string>;
 }
 
 export const BIN_NIGHT: { light: BinNightScheme; dark: BinNightScheme; radius: number } = {
@@ -114,13 +114,13 @@ export const BIN_NIGHT: { light: BinNightScheme; dark: BinNightScheme; radius: n
 
 /**
  * The lid colour for a kind of John: its own colour (`#rrggbb`, a house's
- * kind) made to read on the scheme's cards, or one of the six starting
+ * kind) made to read on the scheme's cards, or one of the five starting
  * kinds' bin lids by its name in the code (`kitchen`). Anything else, and a
- * John with no kind (`other`), wears `other`'s grey.
+ * John in No kind (`other`), wears `other`'s grey.
  */
 export function lidColour(scheme: BinNightScheme, lid: string): string {
   if (lid.startsWith("#")) return kindLid(lid, scheme.card);
-  return (CATEGORIES as readonly string[]).includes(lid) ? scheme.bin[lid as Category] : scheme.bin.other;
+  return (LIDS as readonly string[]).includes(lid) ? scheme.bin[lid as Lid] : scheme.bin.other;
 }
 
 /** A scheme as the web's CSS variables: `{ "--card-foreground": "#16181a", … }`. */
@@ -130,7 +130,7 @@ export function cssVariables(scheme: BinNightScheme): Record<string, string> {
     if (key === "bin") continue;
     vars[`--${key.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}`] = value as string;
   }
-  for (const category of CATEGORIES) vars[`--bin-${category}`] = scheme.bin[category];
+  for (const lid of LIDS) vars[`--bin-${lid}`] = scheme.bin[lid];
   return vars;
 }
 
