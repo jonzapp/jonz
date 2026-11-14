@@ -218,6 +218,22 @@ where not exists (
     and (has_table_privilege(t.grantee, c.oid, upper(t.privilege))
          or (t.privilege <> 'delete' and has_any_column_privilege(t.grantee, c.oid, upper(t.privilege)))));
 
+-- 20c. Signed-in and signed-out people hold no right on a table beyond its
+-- rows (rule 22): nobody but the owner empties, maintains, references or
+-- puts a trigger on one, and a new table doesn't start with those rights.
+insert into breaks
+select 'table rights are rows only', c.relname || ': ' || r.grantee || ' ' || lower(p.privilege)
+from pg_class c,
+     (values ('authenticated'), ('anon')) r(grantee),
+     (values ('TRUNCATE'), ('REFERENCES'), ('TRIGGER'), ('MAINTAIN')) p(privilege)
+where c.relnamespace = 'public'::regnamespace and c.relkind in ('r', 'p', 'v')
+  and has_table_privilege(r.grantee, c.oid, p.privilege);
+insert into breaks
+select 'table rights are rows only', 'new tables: ' || g.grantee::regrole || ' ' || lower(g.privilege_type)
+from pg_default_acl d, aclexplode(d.defaclacl) g
+where d.defaclnamespace = 'public'::regnamespace and d.defaclrole = 'postgres'::regrole and d.defaclobjtype = 'r'
+  and g.grantee in ('anon'::regrole, 'authenticated'::regrole);
+
 -- 21. A permission a function or rule asks about (can / user_can / can_app) is on
 -- the permissions list, and named resource:level (docs/standards/database.md).
 insert into breaks
