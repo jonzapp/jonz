@@ -11671,6 +11671,19 @@ GRANT USAGE ON SCHEMA "public" TO "jonz_api";
 
 
 
+-- Stated, not inherited: nothing below depends on what the platform hands a
+-- new table, function or sequence, which differs from one Supabase version to
+-- the next. Everything starts with no rights for the three API roles, and
+-- each gets back below only what it was given on purpose. The same goes for
+-- what a later migration makes: the defaults are cleared here and set again
+-- at the end of this file.
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" REVOKE ALL ON TABLES FROM "anon", "authenticated", "service_role";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" REVOKE ALL ON FUNCTIONS FROM "anon", "authenticated", "service_role";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" REVOKE ALL ON SEQUENCES FROM "anon", "authenticated", "service_role";
+REVOKE ALL ON ALL TABLES IN SCHEMA "public" FROM "anon", "authenticated", "service_role";
+REVOKE ALL ON ALL FUNCTIONS IN SCHEMA "public" FROM "anon", "authenticated", "service_role";
+REVOKE ALL ON ALL SEQUENCES IN SCHEMA "public" FROM "anon", "authenticated", "service_role";
+
 REVOKE ALL ON FUNCTION "public"."account_deletion_preview"() FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."account_deletion_preview"() TO "authenticated";
 
@@ -11781,10 +11794,6 @@ GRANT ALL ON FUNCTION "public"."ask_usage_people"("p_house" "uuid", "p_since" ti
 REVOKE ALL ON FUNCTION "public"."assignment_pay"() FROM PUBLIC;
 
 
-
--- Every table starts with no rights for the three API roles: each gets back
--- below only what it was given on purpose.
-REVOKE ALL ON ALL TABLES IN SCHEMA "public" FROM "anon", "authenticated", "service_role";
 
 GRANT SELECT ON TABLE "public"."admin_audit" TO "authenticated";
 GRANT SELECT,INSERT ON TABLE "public"."admin_audit" TO "service_role";
@@ -13012,9 +13021,6 @@ GRANT ALL ON TABLE "public"."account_deletions" TO "service_role";
 
 
 
-GRANT UPDATE ON SEQUENCE "public"."admin_audit_id_seq" TO "anon";
-GRANT UPDATE ON SEQUENCE "public"."admin_audit_id_seq" TO "authenticated";
-GRANT UPDATE ON SEQUENCE "public"."admin_audit_id_seq" TO "service_role";
 
 
 
@@ -13026,9 +13032,6 @@ GRANT INSERT ON TABLE "public"."api_audit_entries" TO "jonz_api";
 
 
 
-GRANT UPDATE ON SEQUENCE "public"."api_audit_entries_id_seq" TO "anon";
-GRANT UPDATE ON SEQUENCE "public"."api_audit_entries_id_seq" TO "authenticated";
-GRANT UPDATE ON SEQUENCE "public"."api_audit_entries_id_seq" TO "service_role";
 
 
 
@@ -13285,9 +13288,7 @@ GRANT SELECT ON TABLE "public"."ledger_entries" TO "authenticated";
 
 
 
-GRANT UPDATE ON SEQUENCE "public"."ledger_id_seq" TO "anon";
-GRANT UPDATE ON SEQUENCE "public"."ledger_id_seq" TO "authenticated";
-GRANT ALL ON SEQUENCE "public"."ledger_id_seq" TO "service_role";
+GRANT SELECT,USAGE ON SEQUENCE "public"."ledger_id_seq" TO "service_role";
 
 
 
@@ -13295,9 +13296,6 @@ GRANT ALL ON TABLE "public"."live_changes" TO "service_role";
 
 
 
-GRANT UPDATE ON SEQUENCE "public"."live_changes_id_seq" TO "anon";
-GRANT UPDATE ON SEQUENCE "public"."live_changes_id_seq" TO "authenticated";
-GRANT UPDATE ON SEQUENCE "public"."live_changes_id_seq" TO "service_role";
 
 
 
@@ -13477,9 +13475,6 @@ GRANT SELECT ON TABLE "public"."report_messages" TO "authenticated";
 
 
 
-GRANT UPDATE ON SEQUENCE "public"."report_messages_id_seq" TO "anon";
-GRANT UPDATE ON SEQUENCE "public"."report_messages_id_seq" TO "authenticated";
-GRANT UPDATE ON SEQUENCE "public"."report_messages_id_seq" TO "service_role";
 
 
 
@@ -13515,9 +13510,6 @@ GRANT SELECT ON TABLE "public"."weeks" TO "authenticated";
 
 
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "postgres";
-ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT UPDATE ON SEQUENCES TO "anon";
-ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT UPDATE ON SEQUENCES TO "authenticated";
-ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT UPDATE ON SEQUENCES TO "service_role";
 
 
 
