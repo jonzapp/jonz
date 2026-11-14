@@ -38,7 +38,8 @@ shares a John).
   John's kind (`add_john`, `change_john`'s `kind`) in the person's
   language: one of the house's, matched whatever its capitals, or a new
   name when none fits. Nothing is made until they apply; then a new name
-  becomes a kind, after the others, in the next free ready colour. The
+  becomes a kind, last (before Everything else when that's last), in the
+  next free ready colour. The
   card counts a move to another kind as a change and says it by name
   ("Kitchen → Garden", "No kind → Garden").
 
