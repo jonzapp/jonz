@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { wordsFor } from "./words-for";
 import { ZONE_COUNTRY } from "./zone-countries";
-import { clocksDiffer, findZones, offsetLabel, utcOffset, zoneChoices, zoneCity, zoneClock, zoneCountry, zoneGap, zonePlace } from "./zones";
+import { clocksDiffer, findZones, offsetLabel, utcOffset, zoneChoices, zoneCity, zoneClock, zoneCountry, houseTimeNote, zonePlace } from "./zones";
 
 const words = wordsFor("en", "housemates");
 const french = wordsFor("fr", "housemates");
@@ -68,17 +68,23 @@ describe("clocksDiffer", () => {
   });
 });
 
-describe("zoneGap", () => {
-  it("says how far ahead or behind one clock is", () => {
-    expect(zoneGap({ zone: "Europe/London", from: "America/Regina" }, WINTER, words)).toBe("6 hours ahead");
-    expect(zoneGap({ zone: "America/Regina", from: "Europe/London" }, WINTER, words)).toBe("6 hours behind");
-    expect(zoneGap({ zone: "Europe/Paris", from: "Europe/London" }, WINTER, words)).toBe("1 hour ahead");
-    expect(zoneGap({ zone: "Asia/Kolkata", from: "Europe/London" }, WINTER, words)).toBe("5.5 hours ahead");
+describe("houseTimeNote", () => {
+  it("says the house's zone and how far its clock is from yours", () => {
+    expect(houseTimeNote({ house: "Europe/London", phone: "America/Regina" }, WINTER, words)).toBe("In house time: London, 6 hours ahead of you.");
+    expect(houseTimeNote({ house: "America/Regina", phone: "Europe/London" }, WINTER, words)).toBe("In house time: Regina, 6 hours behind you.");
+    expect(houseTimeNote({ house: "Europe/Paris", phone: "Europe/London" }, WINTER, words)).toBe("In house time: Paris, 1 hour ahead of you.");
+    expect(houseTimeNote({ house: "Asia/Kolkata", phone: "Europe/London" }, WINTER, words)).toBe("In house time: Kolkata, 5.5 hours ahead of you.");
+  });
+
+  it("says nothing while the two clocks agree, which can change with the season", () => {
+    expect(houseTimeNote({ house: "Europe/London", phone: "Europe/London" }, WINTER, words)).toBeNull();
+    expect(houseTimeNote({ house: "Europe/London", phone: "Africa/Abidjan" }, WINTER, words)).toBeNull();
+    expect(houseTimeNote({ house: "Europe/London", phone: "Africa/Abidjan" }, SUMMER, words)).toBe("In house time: London, 1 hour ahead of you.");
   });
 
   it("is said in the reader's language", () => {
-    expect(zoneGap({ zone: "Europe/London", from: "America/Regina" }, WINTER, french)).toBe("6 heures d’avance");
-    expect(zoneGap({ zone: "America/Regina", from: "Europe/London" }, WINTER, french)).toBe("6 heures de retard");
+    expect(houseTimeNote({ house: "Europe/London", phone: "America/Regina" }, WINTER, french)).toBe("À l’heure de la maison : London, 6 heures d’avance sur toi.");
+    expect(houseTimeNote({ house: "America/Regina", phone: "Europe/London" }, WINTER, french)).toBe("À l’heure de la maison : Regina, 6 heures de retard sur toi.");
   });
 });
 

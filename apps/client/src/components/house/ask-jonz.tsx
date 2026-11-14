@@ -118,7 +118,6 @@ export function AskJonz({
       />
     );
   const chatTitle = title ?? words('common.title.ask');
-  const zone = view?.snapshot.rules.timezone ?? 'UTC';
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
       {bar({
@@ -135,7 +134,7 @@ export function AskJonz({
       {ready && all ? (
         <AllChats
           store={houseChats(houseId)}
-          zone={zone}
+          zone={view.snapshot.rules.timezone}
           now={view.now}
           onOpen={(id) => void pickUp(id)}
           onDeleted={(id) => {
@@ -157,6 +156,7 @@ export function AskJonz({
           rules={view.snapshot.rules}
           johns={list.data.johns}
           groups={list.data.groups}
+          kinds={list.data.kinds}
           people={view.snapshot.members}
           me={userId}
           passOpen={hasPass(view.snapshot.house.pass, view.now)}

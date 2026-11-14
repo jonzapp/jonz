@@ -89,7 +89,7 @@ function AwayPage({
             </Section>
           ) : null}
           <Section label={words('house.setup.whosAway')} testID="away-panel">
-            <AwayMonth houseId={houseId} periods={periods} people={snapshot.members} me={userId} today={today} weekStarts={snapshot.rules.weekStarts} />
+            <AwayMonth houseId={houseId} periods={periods} people={snapshot.members} me={userId} today={today} weekStarts={snapshot.rules.weekStarts} clock={{ zone: snapshot.rules.timezone, now: view.now }} />
           </Section>
         </>
       }

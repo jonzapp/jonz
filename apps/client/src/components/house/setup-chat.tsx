@@ -4,6 +4,7 @@ import {
   CHAT_LONG_AT,
   starterDraft,
   type GroupDef,
+  type KindDef,
   type HouseRules,
   type JohnDef,
   type SavedTurn,
@@ -33,6 +34,8 @@ interface SetupChatProps {
   johns: JohnDef[];
   /** The house's groups already, so a drafted group with the same name is used as it is. */
   groups: GroupDef[];
+  /** The house's kinds, so a John's kind is read by name. */
+  kinds?: readonly KindDef[];
   people: Person[];
   me: string;
   /** Whether the House Pass's extras are open to this house: changing a list with Jonz is one. */
@@ -69,6 +72,7 @@ export function SetupChat({
   rules,
   johns,
   groups,
+  kinds,
   people,
   me,
   passOpen,
@@ -83,7 +87,7 @@ export function SetupChat({
 }: SetupChatProps) {
   const words = useWords();
   const keeping = useMove(houseId);
-  const { base, editing, draft, keep, card, drafted, applied, changes } = useDrafting(johns, groups);
+  const { base, editing, draft, keep, card, drafted, applied, changes } = useDrafting(johns, groups, kinds);
   const [turns, setTurns] = useState<Turn[]>(() => fromSaved(saved?.turns ?? seed ?? []));
   const kept = useKeptChat(houseId, turns, { saved, onKept });
   const [text, setText] = useState('');

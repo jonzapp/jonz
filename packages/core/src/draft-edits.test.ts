@@ -42,6 +42,11 @@ describe("editDraft", () => {
     expect(editDraft(list, { kind: "change", ref: "aaaa", set: {} }).result.ok).toBe(false);
   });
 
+  it("moves a John to another kind by its name", () => {
+    expect(editDraft(list, { kind: "change", ref: "aaaa", set: { kind: "Garden" } }).raw.johns![0]).toMatchObject({ name: "Bathroom", kind: "Garden" });
+    expect(editDraft(list, { kind: "add", john: { name: "Weed", kind: "Garden" } }).raw.johns![3]).toMatchObject({ kind: "Garden", ref: null });
+  });
+
   it("moves a John from months to weeks, onto everyone, or on call, clearing what no longer fits", () => {
     expect(editDraft(list, { kind: "change", ref: "bbbb", set: { everyWeeks: 2 } }).raw.johns![1]).toMatchObject({ everyWeeks: 2, everyMonths: null, weekOfMonth: null });
     expect(editDraft(list, { kind: "change", ref: "cccc", set: { group: null } }).raw.johns![2].group).toBeNull();

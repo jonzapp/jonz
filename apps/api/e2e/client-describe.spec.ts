@@ -88,12 +88,14 @@ test("ask Jonz from Today to change the list, and apply what's ticked", async ({
   const couple = STARTER_LISTS.couple;
 
   // There's no gateway here, so Jonz's answer is written in: the first John
-  // worth more, the second taken off, and one new.
+  // worth more, the second taken off, one moved to a kind the house hasn't
+  // got yet, and one new.
+  const sheets = couple[5].name;
   await page.route("**/v1/houses/*/ask", async (route) => {
     const { draft } = route.request().postDataJSON() as { draft: HouseDraft };
     const johns = draft.johns
       .filter((j) => j.name !== couple[1].name)
-      .map((j) => (j.name === couple[0].name ? { ...j, points: j.points + 2 } : j));
+      .map((j) => (j.name === couple[0].name ? { ...j, points: j.points + 2 } : j.name === sheets ? { ...j, kind: "Bedrooms" } : j));
     const windows = { ...couple[0], name: "Windows", why: "" };
     const changed = { ...draft, johns: [...johns, windows] };
     await route.fulfill({ json: { reply: "Done.", ask: null, draft: changed, source: "ai" } });
@@ -106,15 +108,20 @@ test("ask Jonz from Today to change the list, and apply what's ticked", async ({
   await page.getByTestId("chat-input").fill(`${couple[0].name} is more work, no ${couple[1].name}, and add windows`);
   await page.getByTestId("chat-send").click();
 
-  await expect(page.getByTestId("draft-change")).toContainText(`${couple[0].points} → `);
+  await expect(page.getByTestId("draft-change").filter({ hasText: couple[0].name })).toContainText(`${couple[0].points} → `);
+  await expect(page.getByTestId("draft-change").filter({ hasText: sheets })).toContainText("Everything else → Bedrooms");
   await expect(page.getByTestId("draft-remove")).toContainText(couple[1].name);
   await expect(page.getByTestId("draft-john")).toContainText("Windows");
   await page.getByTestId("describe-keep").click();
-  await expect(page.getByText(words('ask.draft.applied', { n: 3 }))).toBeVisible();
+  await expect(page.getByText(words('ask.draft.applied', { n: 4 }))).toBeVisible();
   await page.getByTestId("chat-open-list").click();
 
   await expect(page).toHaveURL(/\/house\/johns$/);
   await expect(page.getByTestId("john-def")).toHaveCount(couple.length);
   await expect(page.getByTestId("john-def").filter({ hasText: "Windows" })).toBeVisible();
   await expect(page.getByText(couple[1].name, { exact: true })).toHaveCount(0);
+  // Bedrooms was made on Apply, and the sheets are in it.
+  const bedrooms = page.getByTestId("john-kinds").locator('[data-testid^="kind-"]').filter({ hasText: "Bedrooms" });
+  await expect(bedrooms.getByTestId("john-def")).toHaveCount(1);
+  await expect(bedrooms.getByTestId("john-def")).toContainText(sheets);
 });

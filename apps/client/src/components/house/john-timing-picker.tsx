@@ -7,6 +7,7 @@ import { Button } from '@/components/button';
 import { ButtonRow } from '@/components/button-row';
 import { IconButton } from '@/components/icon-button';
 import { Field } from '@/components/field';
+import { HouseTimeNote } from '@/components/house-time-note';
 import { Group, GroupItem } from '@/components/group';
 import type { Timing, TimingWord } from '@/components/house/john-timing';
 import { Segmented } from '@/components/segmented';
@@ -216,7 +217,7 @@ function DayChoices({ value, rules, now, onChange }: Picking) {
 }
 
 /** The time it's due by: the quick times, or any typed. */
-function TimeChoices({ value, rules, onChange }: Picking) {
+function TimeChoices({ value, rules, now, onChange }: Picking) {
   const words = useWords();
   return (
     <>
@@ -241,6 +242,7 @@ function TimeChoices({ value, rules, onChange }: Picking) {
           />
         </View>
         <Meta style={styles.note}>{words('house.repeat.lateAfter', { hours: rules.lateHours })}</Meta>
+        <HouseTimeNote house={rules.timezone} now={now} style={styles.note} />
       </View>
     </>
   );

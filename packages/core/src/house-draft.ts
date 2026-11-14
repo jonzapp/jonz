@@ -11,6 +11,7 @@ import { z } from "zod";
 
 import type { GroupDef, JohnDef } from "./board";
 import { CATEGORIES, JOHN_WHEN, type Category } from "./domain";
+import type { KindDef } from "./kinds";
 import { firstName } from "./format";
 import { LAST_OF_MONTH, MAX_EVERY_MONTHS, MAX_EVERY_WEEKS } from "./repeat";
 import { CHAT_MOVES_MAX, ChatMove } from "./chat-moves";
@@ -93,6 +94,9 @@ export const DraftedJohn = z.object({
   /** The John on the house's list this is, when the draft changes an existing list; absent for a John to add. */
   id: z.uuid().optional(),
   name: z.string().min(1).max(60),
+  /** Its kind on the house's list, by name (made when applied if the house has none by it); null for no kind; absent when the draft doesn't say, so it goes by `category`. */
+  kind: z.string().min(1).max(30).nullable().optional(),
+  /** The starting kind its kind began as, or other: for apps that don't read kinds yet. */
   category: z.enum(CATEGORIES),
   points: z.number().int().min(1).max(20),
   everyWeeks: z.number().int().min(1).max(26),
@@ -191,6 +195,8 @@ export interface RawDraft {
     /** Which John on the list this is (draftForModel's short ref), when it's one already there. */
     ref?: unknown;
     name?: unknown;
+    /** Its kind, by name: one of the house's, or a new one. */
+    kind?: unknown;
     category?: unknown;
     points?: unknown;
     everyWeeks?: unknown;
@@ -286,13 +292,25 @@ function groupFor(groupName: string, groups: DraftedGroup[], houseGroups: readon
   return there.name;
 }
 
+/** A house's kind as a draft names it: by name, and the starting kind it began as. */
+export type DraftKind = Pick<KindDef, "name" | "preset">;
+
+/** A drafted John's kind: the house's by that name in any capitals, a new name, or null for none; with no name, it goes by its category. */
+function kindFor(raw: { kind?: unknown; category?: unknown }, kinds: readonly DraftKind[]): Pick<DraftedJohn, "kind" | "category"> {
+  if (raw.kind === null) return { kind: null, category: "other" };
+  const name = text(raw.kind, 30);
+  if (!name) return { category: (CATEGORIES as readonly string[]).includes(raw.category as string) ? (raw.category as Category) : "other" };
+  const there = kinds.find((k) => key(k.name) === key(name));
+  return there ? { kind: there.name, category: there.preset ?? "other" } : { kind: name, category: "other" };
+}
+
 /** A drafted John's answers, each within what the list allows, but for its name and which John it is. */
-function tidyJohn(j: NonNullable<RawDraft["johns"]>[number], group: string | null): Omit<DraftedJohn, "id" | "name"> {
+function tidyJohn(j: NonNullable<RawDraft["johns"]>[number], group: string | null, kinds: readonly DraftKind[]): Omit<DraftedJohn, "id" | "name"> {
   // Monthly and longer: every N months on a weekday of the month. An on-call John has no period.
   const onCall = j.onCall === true;
   const everyMonths = onCall ? null : wholeOrNull(j.everyMonths, 1, MAX_EVERY_MONTHS);
   return {
-    category: (CATEGORIES as readonly string[]).includes(j.category as string) ? (j.category as Category) : "other",
+    ...kindFor(j, kinds),
     points: whole(j.points, 1, 20, 2),
     everyWeeks: everyMonths ? 1 : whole(j.everyWeeks, 1, MAX_EVERY_WEEKS, 1),
     everyMonths,
@@ -311,17 +329,18 @@ function tidyJohn(j: NonNullable<RawDraft["johns"]>[number], group: string | nul
 
 /**
  * Claude's draft made safe to show: names trimmed and cut to fit, numbers put
- * in range, unknown kinds made "Other", the same John twice kept once, groups
- * matched to the people in the house (`me` stands in for "me" and "I"), and a
- * John's group dropped when no such group was drafted. At most
- * DRAFT_MAX_JOHNS Johns and DRAFT_MAX_GROUPS groups.
+ * in range, kinds matched to the house's by name (a new one kept, to be made
+ * on Apply), the same John twice kept once, groups matched to the people in
+ * the house (`me` stands in for "me" and "I"), and a John's group dropped
+ * when no such group was drafted. At most DRAFT_MAX_JOHNS Johns and
+ * DRAFT_MAX_GROUPS groups.
  */
 export function tidyDraft(
   raw: RawDraft,
   people: readonly Person[],
   me: string,
-  /** The house's list as it stands, when the draft changes it: its Johns (by id) and groups, which a ref or a group name may point at. */
-  list: { johnIds: readonly string[]; groups: readonly DraftedGroup[] } = { johnIds: [], groups: [] },
+  /** The house's list as it stands, when the draft changes it: its Johns (by id) and groups, which a ref or a group name may point at, and its kinds. */
+  list: { johnIds: readonly string[]; groups: readonly DraftedGroup[]; kinds?: readonly DraftKind[] } = { johnIds: [], groups: [] },
 ): HouseDraft {
   const groups = tidyGroups(raw, people, me);
   const johns: DraftedJohn[] = [];
@@ -333,7 +352,7 @@ export function tidyDraft(
     const id = matches.length === 1 && !johns.some((k) => k.id === matches[0]) ? matches[0] : undefined;
     // The same new John twice is kept once; a list may already have two of a name (one per group), and keeps both.
     if (!name || (!id && johns.some((k) => key(k.name) === key(name)))) continue;
-    johns.push({ ...(id ? { id } : {}), name, ...tidyJohn(j, groupFor(text(j.group, 40), groups, list.groups)) });
+    johns.push({ ...(id ? { id } : {}), name, ...tidyJohn(j, groupFor(text(j.group, 40), groups, list.groups), list.kinds ?? []) });
     // A long list already there keeps every John, with room for a few more.
     if (johns.length === Math.max(DRAFT_MAX_JOHNS, list.johnIds.length + 10)) break;
   }
@@ -381,6 +400,8 @@ export function draftPlan(draft: HouseDraft, keep: readonly number[], existingGr
   const johns = kept.map((j) => {
     const john = {
       ...johnBasics(j),
+      // Its kind by name, made on the way if new; null for none; left out, it goes by its category.
+      ...(j.kind === undefined ? {} : j.kind === null ? { kindId: null } : { kindName: j.kind }),
       keepDay: false,
     };
     let groupName: string | null = null;
@@ -448,7 +469,8 @@ const refOf = (id: string) => id.slice(0, 8);
 export function draftForModel(draft: HouseDraft, people: readonly Person[], me: string): RawDraft {
   const named = (id: string) => (id === me ? "me" : firstName(people.find((p) => p.userId === id)?.name ?? "")) || null;
   return {
-    johns: draft.johns.map(({ when, id, ...j }) => ({ ...(id ? { ref: refOf(id) } : {}), ...j, onCall: when === "on_call" })),
+    // Claude names a John's kind; its category only when the kind isn't known.
+    johns: draft.johns.map(({ when, id, kind, category, ...j }) => ({ ...(id ? { ref: refOf(id) } : {}), ...j, ...(kind === undefined ? { category } : { kind }), onCall: when === "on_call" })),
     groups: draft.groups.map((g) => ({ name: g.name, members: [...g.memberIds.map(named).filter(Boolean), ...g.waitingFor] })),
     note: draft.note,
   };
@@ -458,13 +480,15 @@ export function draftForModel(draft: HouseDraft, people: readonly Person[], me: 
 
 /**
  * The house's list as a draft, for the chat to change: every John with its
- * id, and the groups they use with who's in them.
+ * id and its kind by name (null for none, left out when it wasn't read), and
+ * the groups they use with who's in them.
  */
-export function listAsDraft(johns: readonly JohnDef[], groups: readonly GroupDef[]): HouseDraft {
+export function listAsDraft(johns: readonly JohnDef[], groups: readonly GroupDef[], kinds: readonly Pick<KindDef, "id" | "name">[] = []): HouseDraft {
   // Every group the house has, Johns or not, so a chat can change who's in any of them.
   return {
     johns: johns.map((j) => ({
       id: j.id,
+      ...(j.kindId === undefined ? {} : { kind: kinds.find((k) => k.id === j.kindId)?.name ?? null }),
       ...johnBasics(j),
       group: groups.find((g) => g.id === j.groupId)?.name ?? null,
       why: "",
