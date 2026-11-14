@@ -98,7 +98,7 @@ function ZonePicker({ visible, value, onClose, onPick }: { visible: boolean; val
   const zones = useTimeZones(visible);
   const [query, setQuery] = useState('');
   const [count, setCount] = useState(PAGE);
-  const choices = useMemo(() => zoneChoices(zones.data ?? [], now, words, value), [zones.data, now, words, value]);
+  const choices = useMemo(() => zoneChoices(zones.data ?? [], { at: now, keep: value }, words), [zones.data, now, words, value]);
   const found = useMemo(() => findZones(choices, query), [choices, query]);
   const search = (next: string) => {
     setQuery(next);

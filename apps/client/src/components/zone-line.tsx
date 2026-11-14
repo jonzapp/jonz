@@ -22,8 +22,8 @@ export function ZoneLine({ zones, now, underTopLine = false, inline = false }: {
   if (!zones.away) return null;
   const mine = zones.showing === 'mine';
   const said = mine
-    ? words('common.zone.yours', { city: zoneCity(zones.phone), gap: zoneGap(zones.house, zones.phone, now, words) })
-    : words('common.zone.houses', { city: zoneCity(zones.house), gap: zoneGap(zones.phone, zones.house, now, words) });
+    ? words('common.zone.yours', { city: zoneCity(zones.phone), gap: zoneGap({ zone: zones.house, from: zones.phone }, now, words) })
+    : words('common.zone.houses', { city: zoneCity(zones.house), gap: zoneGap({ zone: zones.phone, from: zones.house }, now, words) });
   const action = words(mine ? 'common.zone.showHouse' : 'common.zone.showMine');
   // The sentence, then the bold way to flip it, on one run of words that wraps as one.
   const lead = `${said} `;

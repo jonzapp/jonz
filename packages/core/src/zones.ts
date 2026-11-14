@@ -68,8 +68,8 @@ export function clocksDiffer(one: string, other: string, at: Date): boolean {
   return utcOffset(one, at) !== utcOffset(other, at);
 }
 
-/** "6 hours ahead", "5.5 hours behind": how far `zone`'s clock is from `from`'s. */
-export function zoneGap(zone: string, from: string, at: Date, words: Words): string {
+/** "6 hours ahead", "5.5 hours behind": how far `zone`'s clock is from `from`'s at `at`. */
+export function zoneGap({ zone, from }: { zone: string; from: string }, at: Date, words: Words): string {
   const minutes = utcOffset(zone, at) - utcOffset(from, at);
   const hours = Math.abs(minutes) / 60;
   return words(minutes > 0 ? "common.zone.ahead" : "common.zone.behind", { hours });
@@ -88,8 +88,9 @@ export interface ZoneChoice {
  * (`known`, from public.time_zones()) that are a place people live (tzdata's
  * zone.tab) or UTC. Old spellings the database also knows (US/Central,
  * Asia/Calcutta) are left out, except `keep`, the zone the house has now.
+ * Each offset is the one at `at`.
  */
-export function zoneChoices(known: readonly string[], at: Date, words: Words, keep?: string): ZoneChoice[] {
+export function zoneChoices(known: readonly string[], { at, keep }: { at: Date; keep?: string }, words: Words): ZoneChoice[] {
   return known
     .filter((zone) => zone in ZONE_COUNTRY || zone === UTC || zone === keep)
     .map((zone) => ({ zone, city: zoneCity(zone), country: zoneCountry(zone, words), offset: utcOffset(zone, at) }))

@@ -286,7 +286,7 @@ describe("on a phone away from the house's clock", () => {
   it('says times on your own clock, says so once under the date, and shows house time on a tap', async () => {
     await open();
     const line = screen.getByTestId('zone-line');
-    expect(line).toHaveTextContent(`${words('common.zone.yours', { city: 'Regina', gap: zoneGap('Europe/London', 'America/Regina', NOW, words) })} ${words('common.zone.showHouse')}`);
+    expect(line).toHaveTextContent(`${words('common.zone.yours', { city: 'Regina', gap: zoneGap({ zone: 'Europe/London', from: 'America/Regina' }, NOW, words) })} ${words('common.zone.showHouse')}`);
     expect(screen.getByTestId('next-up-meta')).toHaveTextContent(dueInLine(due, NOW, 'America/Regina', words), { exact: false });
     await fireEvent.press(line);
     expect(screen.getByTestId('zone-line')).toHaveTextContent(words('common.zone.houses', { city: 'London', gap: '6 hours behind' }), { exact: false });

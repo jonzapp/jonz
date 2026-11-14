@@ -70,15 +70,15 @@ describe("clocksDiffer", () => {
 
 describe("zoneGap", () => {
   it("says how far ahead or behind one clock is", () => {
-    expect(zoneGap("Europe/London", "America/Regina", WINTER, words)).toBe("6 hours ahead");
-    expect(zoneGap("America/Regina", "Europe/London", WINTER, words)).toBe("6 hours behind");
-    expect(zoneGap("Europe/Paris", "Europe/London", WINTER, words)).toBe("1 hour ahead");
-    expect(zoneGap("Asia/Kolkata", "Europe/London", WINTER, words)).toBe("5.5 hours ahead");
+    expect(zoneGap({ zone: "Europe/London", from: "America/Regina" }, WINTER, words)).toBe("6 hours ahead");
+    expect(zoneGap({ zone: "America/Regina", from: "Europe/London" }, WINTER, words)).toBe("6 hours behind");
+    expect(zoneGap({ zone: "Europe/Paris", from: "Europe/London" }, WINTER, words)).toBe("1 hour ahead");
+    expect(zoneGap({ zone: "Asia/Kolkata", from: "Europe/London" }, WINTER, words)).toBe("5.5 hours ahead");
   });
 
   it("is said in the reader's language", () => {
-    expect(zoneGap("Europe/London", "America/Regina", WINTER, french)).toBe("6 heures d’avance");
-    expect(zoneGap("America/Regina", "Europe/London", WINTER, french)).toBe("6 heures de retard");
+    expect(zoneGap({ zone: "Europe/London", from: "America/Regina" }, WINTER, french)).toBe("6 heures d’avance");
+    expect(zoneGap({ zone: "America/Regina", from: "Europe/London" }, WINTER, french)).toBe("6 heures de retard");
   });
 });
 
@@ -86,24 +86,24 @@ describe("zoneChoices", () => {
   const known = ["US/Central", "Asia/Calcutta", "Europe/London", "America/Regina", "UTC", "Etc/GMT+5", "Asia/Kolkata"];
 
   it("keeps the database's zones that are a place, and UTC, A to Z by city", () => {
-    expect(zoneChoices(known, WINTER, words).map((c) => c.zone)).toEqual(["Asia/Kolkata", "Europe/London", "America/Regina", "UTC"]);
+    expect(zoneChoices(known, { at: WINTER }, words).map((c) => c.zone)).toEqual(["Asia/Kolkata", "Europe/London", "America/Regina", "UTC"]);
   });
 
   it("keeps the house's own zone even when it's an old spelling", () => {
-    expect(zoneChoices(known, WINTER, words, "Asia/Calcutta").map((c) => c.zone)).toContain("Asia/Calcutta");
+    expect(zoneChoices(known, { at: WINTER, keep: "Asia/Calcutta" }, words).map((c) => c.zone)).toContain("Asia/Calcutta");
   });
 
   it("gives each its city, country and offset at the moment given", () => {
-    expect(zoneChoices(["America/Regina"], WINTER, words)).toEqual([{ zone: "America/Regina", city: "Regina", country: "Canada", offset: -360 }]);
+    expect(zoneChoices(["America/Regina"], { at: WINTER }, words)).toEqual([{ zone: "America/Regina", city: "Regina", country: "Canada", offset: -360 }]);
   });
 
   it("is empty when the database knows none", () => {
-    expect(zoneChoices([], WINTER, words)).toEqual([]);
+    expect(zoneChoices([], { at: WINTER }, words)).toEqual([]);
   });
 });
 
 describe("findZones", () => {
-  const choices = zoneChoices(Object.keys(ZONE_COUNTRY), WINTER, words);
+  const choices = zoneChoices(Object.keys(ZONE_COUNTRY), { at: WINTER }, words);
   const found = (query: string) => findZones(choices, query).map((c) => c.zone);
 
   it("finds a city from the start of its name", () => {
