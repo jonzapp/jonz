@@ -247,20 +247,8 @@ export function matchPerson(name: string, people: readonly Person[]): string | n
   return byFirst.length === 1 ? byFirst[0].userId : null;
 }
 
-/**
- * Claude's draft made safe to show: names trimmed and cut to fit, numbers put
- * in range, unknown kinds made "Other", the same John twice kept once, groups
- * matched to the people in the house (`me` stands in for "me" and "I"), and a
- * John's group dropped when no such group was drafted. At most
- * DRAFT_MAX_JOHNS Johns and DRAFT_MAX_GROUPS groups.
- */
-export function tidyDraft(
-  raw: RawDraft,
-  people: readonly Person[],
-  me: string,
-  /** The house's list as it stands, when the draft changes it: its Johns (by id) and groups, which a ref or a group name may point at. */
-  list: { johnIds: readonly string[]; groups: readonly DraftedGroup[] } = { johnIds: [], groups: [] },
-): HouseDraft {
+/** The draft's groups, tidied: each name once, its members matched to housemates or waited for. */
+function tidyGroups(raw: RawDraft, people: readonly Person[], me: string): DraftedGroup[] {
   const groups: DraftedGroup[] = [];
   for (const g of raw.groups ?? []) {
     const name = text(g.name, 40);
@@ -281,7 +269,61 @@ export function tidyDraft(
     groups.push({ name, memberIds, waitingFor });
     if (groups.length === DRAFT_MAX_GROUPS) break;
   }
+  return groups;
+}
 
+/**
+ * The group a drafted John names, as the draft has it, or null for the whole
+ * house. A group the house already has keeps its Johns, whether or not
+ * Claude listed it again: it joins the draft's `groups` while there's room.
+ */
+function groupFor(groupName: string, groups: DraftedGroup[], houseGroups: readonly DraftedGroup[]): string | null {
+  const drafted = groups.find((g) => key(g.name) === key(groupName))?.name ?? null;
+  if (drafted) return drafted;
+  const there = houseGroups.find((g) => key(g.name) === key(groupName));
+  if (!there || groups.length >= DRAFT_MAX_GROUPS) return null;
+  groups.push({ name: there.name, memberIds: [...there.memberIds], waitingFor: [...there.waitingFor] });
+  return there.name;
+}
+
+/** A drafted John's answers, each within what the list allows, but for its name and which John it is. */
+function tidyJohn(j: NonNullable<RawDraft["johns"]>[number], group: string | null): Omit<DraftedJohn, "id" | "name"> {
+  // Monthly and longer: every N months on a weekday of the month. An on-call John has no period.
+  const onCall = j.onCall === true;
+  const everyMonths = onCall ? null : wholeOrNull(j.everyMonths, 1, MAX_EVERY_MONTHS);
+  return {
+    category: (CATEGORIES as readonly string[]).includes(j.category as string) ? (j.category as Category) : "other",
+    points: whole(j.points, 1, 20, 2),
+    everyWeeks: everyMonths ? 1 : whole(j.everyWeeks, 1, MAX_EVERY_WEEKS, 1),
+    everyMonths,
+    weekOfMonth: everyMonths ? whole(j.weekOfMonth, 1, LAST_OF_MONTH, 1) : null,
+    dueDow: whole(j.dueDow, 1, 7, 7),
+    dueTime: time(j.dueTime),
+    needsPhoto: j.needsPhoto === true,
+    when: onCall ? "on_call" : "day",
+    respondHours: whole(j.respondHours, 1, 72, 12),
+    perWeek: whole(j.perWeek, 1, 14, 2),
+    crew: onCall ? 1 : whole(j.crew, 0, 6, 1),
+    group,
+    why: text(j.why, 120),
+  };
+}
+
+/**
+ * Claude's draft made safe to show: names trimmed and cut to fit, numbers put
+ * in range, unknown kinds made "Other", the same John twice kept once, groups
+ * matched to the people in the house (`me` stands in for "me" and "I"), and a
+ * John's group dropped when no such group was drafted. At most
+ * DRAFT_MAX_JOHNS Johns and DRAFT_MAX_GROUPS groups.
+ */
+export function tidyDraft(
+  raw: RawDraft,
+  people: readonly Person[],
+  me: string,
+  /** The house's list as it stands, when the draft changes it: its Johns (by id) and groups, which a ref or a group name may point at. */
+  list: { johnIds: readonly string[]; groups: readonly DraftedGroup[] } = { johnIds: [], groups: [] },
+): HouseDraft {
+  const groups = tidyGroups(raw, people, me);
   const johns: DraftedJohn[] = [];
   for (const j of raw.johns ?? []) {
     const name = text(j.name, 60);
@@ -291,35 +333,7 @@ export function tidyDraft(
     const id = matches.length === 1 && !johns.some((k) => k.id === matches[0]) ? matches[0] : undefined;
     // The same new John twice is kept once; a list may already have two of a name (one per group), and keeps both.
     if (!name || (!id && johns.some((k) => key(k.name) === key(name)))) continue;
-    const groupName = text(j.group, 40);
-    let group = groups.find((g) => key(g.name) === key(groupName))?.name ?? null;
-    // A group the house already has keeps its Johns, whether or not Claude listed it again.
-    const there = group ? null : list.groups.find((g) => key(g.name) === key(groupName));
-    if (there && groups.length < DRAFT_MAX_GROUPS) {
-      groups.push({ name: there.name, memberIds: [...there.memberIds], waitingFor: [...there.waitingFor] });
-      group = there.name;
-    }
-    // Monthly and longer: every N months on a weekday of the month. An on-call John has no period.
-    const onCall = j.onCall === true;
-    const everyMonths = onCall ? null : wholeOrNull(j.everyMonths, 1, MAX_EVERY_MONTHS);
-    johns.push({
-      ...(id ? { id } : {}),
-      name,
-      category: (CATEGORIES as readonly string[]).includes(j.category as string) ? (j.category as Category) : "other",
-      points: whole(j.points, 1, 20, 2),
-      everyWeeks: everyMonths ? 1 : whole(j.everyWeeks, 1, MAX_EVERY_WEEKS, 1),
-      everyMonths,
-      weekOfMonth: everyMonths ? whole(j.weekOfMonth, 1, LAST_OF_MONTH, 1) : null,
-      dueDow: whole(j.dueDow, 1, 7, 7),
-      dueTime: time(j.dueTime),
-      needsPhoto: j.needsPhoto === true,
-      when: onCall ? "on_call" : "day",
-      respondHours: whole(j.respondHours, 1, 72, 12),
-      perWeek: whole(j.perWeek, 1, 14, 2),
-      crew: onCall ? 1 : whole(j.crew, 0, 6, 1),
-      group,
-      why: text(j.why, 120),
-    });
+    johns.push({ ...(id ? { id } : {}), name, ...tidyJohn(j, groupFor(text(j.group, 40), groups, list.groups)) });
     // A long list already there keeps every John, with room for a few more.
     if (johns.length === Math.max(DRAFT_MAX_JOHNS, list.johnIds.length + 10)) break;
   }

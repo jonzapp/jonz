@@ -3,25 +3,10 @@
     "scripts/provision/lib.mjs": 516
   },
   "functions": {
-    "packages/core/src/board.ts#buildWeekBoard": 110,
-    "packages/core/src/house-draft.ts#tidyDraft": 76,
-    "packages/core/src/house-page.ts#settleRows": 72,
-    "packages/core/src/how-it-works.ts#howItWorks": 112,
-    "packages/core/src/john-row.ts#johnRow": 65,
-    "packages/core/src/john-row.ts#metaLine": 72,
-    "packages/core/src/record.ts#recordBreakdown": 77,
-    "packages/core/src/reply-format.ts#blocks": 73,
-    "packages/core/src/resets.ts#resetSheet": 61,
-    "packages/core/src/stake.ts#settleMonth": 68,
-    "packages/core/src/steady-checks.ts#check": 216,
-    "packages/core/src/steady-deal.ts#steadyDeal": 103,
-    "packages/core/src/steady-matrix.ts#matrixHouse": 81,
     "packages/core/src/steady-run.ts#steadyRun": 262,
-    "packages/core/src/steady.ts#steadyWeek": 366,
-    "packages/core/src/why.ts#dealtPart": 70
+    "packages/core/src/steady.ts#steadyWeek": 366
   },
   "nesting": {
-    "packages/core/src/steady-checks.ts#check": 6,
     "scripts/live-latency.mjs#(anon)": 5
   },
   "parameters": {
@@ -150,7 +135,6 @@
     "packages/core/src/pass.ts#passLine": 4,
     "packages/core/src/pass.ts#passPurchaseRefusal": 4,
     "packages/core/src/promotions.ts#offerSmallPrint": 4,
-    "packages/core/src/record.ts#add": 4,
     "packages/core/src/record.ts#recordBreakdown": 5,
     "packages/core/src/record.ts#spanRange": 5,
     "packages/core/src/record.ts#spanWeeks": 4,
@@ -192,7 +176,6 @@
     "packages/core/src/week-summary.ts#weekSpokenRow": 5,
     "packages/core/src/week-summary.ts#weekWho": 4,
     "packages/core/src/week.ts#dueAt": 5,
-    "packages/core/src/why.ts#dealtPart": 4,
     "packages/core/src/why.ts#stakesLine": 6,
     "packages/core/src/why.ts#togetherPart": 4,
     "packages/core/src/word-keys.ts#awayMovedLine": 4,

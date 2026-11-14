@@ -87,150 +87,150 @@ function called(name: string | null, words: Words): string {
 /** Who is looking at a row and when: the viewer, the time in the house's zone, anyone's full name (null for someone who has left), and the words. */
 type RowViewing = { viewerId: string; now: Date; zone: string; nameOf: (userId: string) => string | null; words: Words };
 
+/** Someone mid-sentence: "you" for the viewer, their first name, or "a former housemate". */
+function byName(userId: string | null, { viewerId, nameOf, words }: RowViewing): string {
+  if (userId === viewerId) return words('week.summary.byYou');
+  return called(userId === null ? null : nameOf(userId), words);
+}
+
+/** What the tick box shows for a status. */
+function tickOf(status: LiveStatus): JohnRowPlan["tick"] {
+  if (status === "checking" || status === "disputed" || status === "excused") return status;
+  return status === "done" || status === "late" ? "done" : "open";
+}
+
+type RowItem = Pick<
+  BoardItem,
+  "userId" | "name" | "category" | "points" | "needsPhoto" | "status" | "dueAt" | "movedFrom" | "doneAt" | "standsAt" | "dispute"
+> &
+  Partial<Pick<BoardItem, "flaggedAt" | "flaggedBy" | "coveredBy" | "outcome" | "together" | "crew" | "absentAt" | "dealt" | "awaitsOk">>;
+
+/** What sits at the row's trailing edge, and what its sheet opens on. */
+function rowEnds(item: RowItem, viewerId: string): Pick<JohnRowPlan, "trailing" | "focus"> {
+  const { status } = item;
+  const mine = item.userId === viewerId;
+  // A cover still being checked: the coverer can take it back, anyone else can dispute it.
+  const coverChecking = status === "covered" && !item.outcome;
+  const myTick = tickerOf(item) === viewerId;
+  const checking = status === "checking" || coverChecking;
+  // Everyone but the ticker votes, so your own dispute opens on nothing in particular.
+  const focus = myTick ? null : status === "disputed" ? "vote" : checking ? "dispute" : null;
+  if (checking) return { trailing: (coverChecking || item.crew ? myTick : mine) ? "undo" : "status", focus };
+  if (status === "disputed") return { trailing: waitsForYourVote(item, viewerId) ? "vote" : "points", focus };
+  if (status === "excused") return { trailing: null, focus };
+  return { trailing: status === "upcoming" || status === "done" ? "points" : "status", focus };
+}
+
 /**
  * One John's row, for whoever is looking (`viewerId`). Its meta line never
  * repeats what the tick box or the trailing item already says: "Kitchen,
  * today 21:00", "Kitchen, was due Tue", "Bins, stands in 21h", "Floors,
  * done Wed 21:00", "Disputed by Megan, 17h left".
  */
-export function johnRow(
-  item: Pick<
-    BoardItem,
-    "userId" | "name" | "category" | "points" | "needsPhoto" | "status" | "dueAt" | "movedFrom" | "doneAt" | "standsAt" | "dispute"
-  > &
-    Partial<Pick<BoardItem, "flaggedAt" | "flaggedBy" | "coveredBy" | "outcome" | "together" | "crew" | "absentAt" | "dealt" | "awaitsOk">>,
-  { viewerId, now, zone, nameOf, words }: RowViewing,
-): JohnRowPlan {
+export function johnRow(item: RowItem, viewing: RowViewing): JohnRowPlan {
+  const { viewerId, words } = viewing;
   const { status } = item;
-  const mine = item.userId === viewerId;
   const toDo = status === "upcoming" || status === "due-soon" || status === "overdue";
-  const waitingForMe = waitsForYourVote(item, viewerId);
-  // A cover still being checked: the coverer can take it back, anyone else can dispute it.
-  const coverChecking = status === "covered" && !item.outcome;
-  const myTick = tickerOf(item) === viewerId;
-  const tick: JohnRowPlan["tick"] =
-    status === "checking" || status === "disputed"
-      ? status
-      : status === "done" || status === "late"
-        ? "done"
-        : status === "excused"
-          ? "excused"
-          : "open";
   // A John done together is ticked with its roll call, in its sheet.
-  const ticks = mine && toDo && (item.together?.length ?? 1) <= 1;
-  const { meta, lid } = metaLine(item, { viewerId, now, zone, nameOf, words });
+  const ticks = item.userId === viewerId && toDo && (item.together?.length ?? 1) <= 1;
   // Ticked by roll call, a place earns its holder's share of the job.
   const share = item.crew?.people.some((c) => c.userId === item.userId)
     ? pointsEarned(status, item.crew.total) / item.crew.people.length
     : null;
   return {
-    tick,
+    tick: tickOf(status),
     tickLabel: ticks
       ? item.needsPhoto
         ? words('today.nextUp.tickWithPhoto', { john: item.name })
         : words('today.nextUp.tick', { john: item.name })
       : tickSays(status, words),
     ticks,
-    meta,
-    lid,
-    trailing:
-      status === "checking" || coverChecking
-        ? (coverChecking || item.crew ? myTick : mine)
-          ? "undo"
-          : "status"
-        : status === "disputed"
-          ? waitingForMe
-            ? "vote"
-            : "points"
-          : status === "excused"
-            ? null
-            : status === "upcoming" || status === "done"
-              ? "points"
-              : "status",
+    ...metaLine(item, viewing),
+    ...rowEnds(item, viewerId),
     points: isOpen(status) ? item.points : (share ?? pointsEarned(status, item.points)),
-    // Everyone but the ticker votes, so your own dispute opens on nothing in particular.
-    focus:
-      status === "disputed" && !myTick
-        ? "vote"
-        : (status === "checking" && !myTick) || (coverChecking && !myTick)
-          ? "dispute"
-          : null,
     hazardEdge: status === "overdue" || status === "missed",
   };
 }
 
-/** The row's meta line, and whether its lid dot leads it. */
-function metaLine(
-  item: Pick<BoardItem, "userId" | "category" | "status" | "dueAt" | "movedFrom" | "doneAt" | "standsAt" | "dispute"> &
-    Partial<Pick<BoardItem, "flaggedAt" | "flaggedBy" | "together" | "crew" | "dealt" | "awaitsOk">> & {
+type MetaItem = Pick<BoardItem, "userId" | "category" | "status" | "dueAt" | "movedFrom" | "doneAt" | "standsAt" | "dispute"> &
+  Partial<Pick<BoardItem, "flaggedAt" | "flaggedBy" | "together" | "crew" | "dealt" | "awaitsOk">> & {
     coveredBy?: string | null;
-  },
-  { viewerId, now, zone, nameOf, words }: RowViewing,
-): { meta: string; lid: boolean } {
-  const mine = item.userId === viewerId;
-  // An open flag says who flagged it ("flagged by Sam"), or that it's open again after a miss.
-  const flagged =
-    item.flaggedAt && isOpen(item.status)
-      ? item.flaggedBy
-        ? words('today.onCall.flaggedByInline', { name: item.flaggedBy === viewerId ? words('week.summary.byYou') : called(nameOf(item.flaggedBy), words) })
-        : words('today.onCall.flaggedAgainInline')
-      : null;
-  // Done together: who with ("with Sam and Ada"), or once ticked, who did it.
-  const others = (item.crew ? item.crew.people.map((c) => c.userId) : (item.together ?? [])).filter((id) => id !== item.userId);
-  const together = others.length
-    ? words('john.crew.with', { names: andNames(others.map((id) => (id === viewerId ? words('week.summary.byYou') : called(nameOf(id), words))), words) })
-    : null;
-  const line = (...parts: string[]) => ({
-    meta: [johnKind(item.category), ...(flagged ? [flagged] : []), ...parts, ...(together ? [together] : [])].join(", "),
-    lid: true,
-  });
-  const due = dueInLine(item.dueAt, now, zone, words);
+  };
 
+/** An open flag says who flagged it ("flagged by Sam"), or that it's open again after a miss; null on anything else. */
+function flaggedPart(item: MetaItem, viewing: RowViewing): string | null {
+  if (!item.flaggedAt || !isOpen(item.status)) return null;
+  const { words } = viewing;
+  return item.flaggedBy ? words('today.onCall.flaggedByInline', { name: byName(item.flaggedBy, viewing) }) : words('today.onCall.flaggedAgainInline');
+}
+
+/** Done together: who with ("with Sam and Ada"), or once ticked, who did it; null on a John done by one. */
+function togetherPart(item: MetaItem, viewing: RowViewing): string | null {
+  const { words } = viewing;
+  const others = (item.crew ? item.crew.people.map((c) => c.userId) : (item.together ?? [])).filter((id) => id !== item.userId);
+  if (!others.length) return null;
+  return words('john.crew.with', { names: andNames(others.map((id) => byName(id, viewing)), words) });
+}
+
+/** A disputed John's line: who questioned it and how long is left. */
+function disputedMeta(item: MetaItem, viewing: RowViewing): string {
+  const { now, words } = viewing;
+  const dispute = item.dispute;
+  if (!dispute) return statusLabel("disputed", words);
+  const by = dispute.raisedBy === null ? words('today.nextUp.someoneGone') : byName(dispute.raisedBy, viewing);
+  const left =
+    dispute.closesAt > now ? words('today.nextUp.left', { time: relative(dispute.closesAt, now, words).replace(/^in /, "") }) : words('today.nextUp.closingNow');
+  return `${words('john.sheet.disputedBy', { name: by })}, ${left}`;
+}
+
+/** What a John still to do says after its kind: when it's due, and why then or why them. */
+function openParts(item: MetaItem, viewing: RowViewing): string[] {
+  const { viewerId, now, zone, words } = viewing;
+  const due = dueInLine(item.dueAt, now, zone, words);
+  // Pulled forward by someone's time away: say so.
+  if (item.movedFrom) {
+    const before = item.userId === viewerId ? words('today.nextUp.beforeYouGo') : words('week.summary.beforeTheyGo', { name: called(viewing.nameOf(item.userId), words) });
+    return [`${due}, ${before}`];
+  }
+  // Smart: who had it last time, when that was someone else ("after Ada").
+  if (item.dealt?.mode === "smart" && !item.together?.length) {
+    const before = item.dealt.weighed.find((w) => w.last && w.userId !== item.userId);
+    if (before) return [due, words('week.steady.after', { who: byName(before.userId, viewing) })];
+  }
+  return [due];
+}
+
+/** What the row says after its kind, by where the John has got to. */
+function statusParts(item: MetaItem, viewing: RowViewing): string[] {
+  const { now, zone, words } = viewing;
   switch (item.status) {
-    case "disputed": {
-      const dispute = item.dispute;
-      if (!dispute) return { meta: statusLabel("disputed", words), lid: false };
-      const by =
-        dispute.raisedBy === null
-          ? words('today.nextUp.someoneGone')
-          : dispute.raisedBy === viewerId
-            ? words('week.summary.byYou')
-            : called(nameOf(dispute.raisedBy), words);
-      const left =
-        dispute.closesAt > now ? words('today.nextUp.left', { time: relative(dispute.closesAt, now, words).replace(/^in /, "") }) : words('today.nextUp.closingNow');
-      return { meta: `${words('john.sheet.disputedBy', { name: by })}, ${left}`, lid: false };
-    }
     case "checking":
       // In a family a kid's tick has no closing time: it waits for a parent.
-      if (item.awaitsOk) return line(words('today.parentOk.waiting'));
-      if (!item.standsAt) return line();
-      return line(item.standsAt > now ? words('john.sheet.standsIn', { when: relative(item.standsAt, now, words) }) : words('john.sheet.standsSoon'));
+      if (item.awaitsOk) return [words('today.parentOk.waiting')];
+      if (!item.standsAt) return [];
+      return [item.standsAt > now ? words('john.sheet.standsIn', { when: relative(item.standsAt, now, words) }) : words('john.sheet.standsSoon')];
     case "overdue":
     case "missed":
-      return line(words('today.nextUp.wasDue', { when: sinceLabel(item.dueAt, now, zone, words) }));
+      return [words('today.nextUp.wasDue', { when: sinceLabel(item.dueAt, now, zone, words) })];
     case "done":
     case "late":
-      return line(item.doneAt ? words('today.nextUp.done', { when: dueInLine(item.doneAt, now, zone, words) }) : due);
+      return [item.doneAt ? words('today.nextUp.done', { when: dueInLine(item.doneAt, now, zone, words) }) : dueInLine(item.dueAt, now, zone, words)];
     case "excused":
-      return line(words('today.nextUp.excused'));
-    case "covered": {
-      const coverer = item.coveredBy ?? null;
-      const by = coverer === viewerId ? words('week.summary.byYou') : called(coverer === null ? null : nameOf(coverer), words);
-      return line(words('today.nextUp.coveredBy', { name: by }));
-    }
+      return [words('today.nextUp.excused')];
+    case "covered":
+      return [words('today.nextUp.coveredBy', { name: byName(item.coveredBy ?? null, viewing) })];
     default:
-      // Pulled forward by someone's time away: say so.
-      if (item.movedFrom) {
-        const before = mine ? words('today.nextUp.beforeYouGo') : words('week.summary.beforeTheyGo', { name: called(nameOf(item.userId), words) });
-        return line(`${due}, ${before}`);
-      }
-      // Smart: who had it last time, when that was someone else ("after Ada").
-      if (item.dealt?.mode === "smart" && !item.together?.length) {
-        const before = item.dealt.weighed.find((w) => w.last && w.userId !== item.userId);
-        if (before) return line(due, words('week.steady.after', { who: before.userId === viewerId ? words('week.summary.byYou') : called(nameOf(before.userId), words) }));
-      }
-      return line(due);
+      return openParts(item, viewing);
   }
+}
+
+/** The row's meta line, and whether its lid dot leads it. */
+function metaLine(item: MetaItem, viewing: RowViewing): { meta: string; lid: boolean } {
+  if (item.status === "disputed") return { meta: disputedMeta(item, viewing), lid: false };
+  const flagged = flaggedPart(item, viewing);
+  const together = togetherPart(item, viewing);
+  const parts = [johnKind(item.category), ...(flagged ? [flagged] : []), ...statusParts(item, viewing), ...(together ? [together] : [])];
+  return { meta: parts.join(", "), lid: true };
 }
 
 /**

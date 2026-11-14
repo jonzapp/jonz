@@ -283,13 +283,8 @@ export function settleMeta(t: Transfer, me: string, members: readonly Named[], w
   return t.to === me ? words('house.page.paidHowYouLike') : words('house.page.waitingFor', { name: firstNameMid(members, t.to, words) });
 }
 
-/**
- * Each settle-up between you and a housemate, from your side: what's owed to
- * you first (each with its button, the first one amber), then what you owe.
- * Nothing when you're square. Someone who has left gets no button: the
- * database only takes a payment from a housemate.
- */
-export function settleRows(input: {
+/** What the settle-up rows are built from. */
+interface SettleInput {
   transfers: readonly Transfer[];
   me: string;
   members: readonly Named[];
@@ -298,67 +293,77 @@ export function settleRows(input: {
   closedMonths: readonly string[];
   /** Absent: settled here. */
   settleIn?: SettleIn;
-}, words: Words): SettleRow[] {
-  const { transfers, me, members, currency, ledger, closedMonths } = input;
-  const splitwise = input.settleIn === "splitwise";
-  const monthsOf = (userId: string) => monthsInWords(owedMonths(ledger, closedMonths, userId), words);
-  const here = (userId: string) => members.some((m) => m.userId === userId);
-  const owed = transfers
-    .filter((t) => t.to === me && t.from !== me)
-    .map((t): SettleRow => {
-      const amount = formatMoney(t.amount, currency, words);
-      const who = firstNameIn(members, t.from, words);
-      const months = monthsOf(t.from);
-      const inSplitwise = splitwise && here(t.from);
-      const plain = moneyInput(t.amount);
-      return {
-        key: `${t.from}-${t.to}`,
-        userId: t.from,
-        name: nameIn(members, t.from, words),
-        owedToYou: true,
-        amount: t.amount,
-        title: months ? words('house.page.owesYouFor', { name: who, amount, months }) : words('house.page.owesYou', { name: who, amount }),
-        meta: inSplitwise ? words('house.page.splitwiseHow', { name: who }) : settleMeta(t, me, members, words),
-        action: here(t.from) ? (inSplitwise ? words('house.page.addedToSplitwise') : words('house.page.markReceived', { amount })) : null,
-        spoken: here(t.from)
-          ? inSplitwise
-            ? words('house.page.addedToSplitwiseFrom', { name: who, amount })
-            : words('house.page.markReceivedFrom', { name: who, amount })
-          : null,
-        primary: false,
-        splitwise: inSplitwise
-          ? {
-              description: months ? words('house.page.splitwiseDescriptionFor', { months }) : words('house.page.splitwiseDescription'),
-              amount: plain,
-              copy: words('house.page.copyAmount', { plain }),
-              spoken: words('house.page.copyAmountFrom', { name: who, amount }),
-            }
-          : null,
-      };
-    });
+}
+
+/** The months someone's money is owed for, in words ("" when none). */
+const owedFor = (input: SettleInput, userId: string, words: Words) => monthsInWords(owedMonths(input.ledger, input.closedMonths, userId), words);
+
+/** Money someone owes me: what to press once it's come, or how to add it to Splitwise. */
+function owedRow(t: Transfer, input: SettleInput, words: Words): SettleRow {
+  const { me, members } = input;
+  const amount = formatMoney(t.amount, input.currency, words);
+  const who = firstNameIn(members, t.from, words);
+  const months = owedFor(input, t.from, words);
+  const here = members.some((m) => m.userId === t.from);
+  const inSplitwise = input.settleIn === "splitwise" && here;
+  const plain = moneyInput(t.amount);
+  const said = { name: who, amount };
+  return {
+    key: `${t.from}-${t.to}`,
+    userId: t.from,
+    name: nameIn(members, t.from, words),
+    owedToYou: true,
+    amount: t.amount,
+    title: months ? words('house.page.owesYouFor', { ...said, months }) : words('house.page.owesYou', said),
+    meta: inSplitwise ? words('house.page.splitwiseHow', { name: who }) : settleMeta(t, me, members, words),
+    action: here ? (inSplitwise ? words('house.page.addedToSplitwise') : words('house.page.markReceived', { amount })) : null,
+    spoken: here ? words(inSplitwise ? 'house.page.addedToSplitwiseFrom' : 'house.page.markReceivedFrom', said) : null,
+    primary: false,
+    splitwise: inSplitwise
+      ? {
+          description: months ? words('house.page.splitwiseDescriptionFor', { months }) : words('house.page.splitwiseDescription'),
+          amount: plain,
+          copy: words('house.page.copyAmount', { plain }),
+          spoken: words('house.page.copyAmountFrom', said),
+        }
+      : null,
+  };
+}
+
+/** Money I owe someone: nothing to press, they mark it once it's come. */
+function owingRow(t: Transfer, input: SettleInput, words: Words): SettleRow {
+  const { me, members } = input;
+  const name = firstNameMid(members, t.to, words);
+  const months = owedFor(input, me, words);
+  const amount = formatMoney(t.amount, input.currency, words);
+  const inSplitwise = input.settleIn === "splitwise" && members.some((m) => m.userId === t.to);
+  return {
+    key: `${t.from}-${t.to}`,
+    userId: t.to,
+    name: nameIn(members, t.to, words),
+    owedToYou: false,
+    amount: t.amount,
+    title: months ? words('house.page.youOweFor', { name, amount, months }) : words('house.page.youOwe', { name, amount }),
+    meta: inSplitwise ? words('house.page.splitwiseWaiting', { name }) : settleMeta(t, me, members, words),
+    action: null,
+    spoken: null,
+    primary: false,
+    splitwise: null,
+  };
+}
+
+/**
+ * Each settle-up between you and a housemate, from your side: what's owed to
+ * you first (each with its button, the first one amber), then what you owe.
+ * Nothing when you're square. Someone who has left gets no button: the
+ * database only takes a payment from a housemate.
+ */
+export function settleRows(input: SettleInput, words: Words): SettleRow[] {
+  const { transfers, me } = input;
+  const owed = transfers.filter((t) => t.to === me && t.from !== me).map((t) => owedRow(t, input, words));
   const first = owed.find((row) => row.action);
   if (first) first.primary = true;
-  const months = monthsOf(me);
-  const owing = transfers
-    .filter((t) => t.from === me && t.to !== me)
-    .map((t): SettleRow => {
-      const name = firstNameMid(members, t.to, words);
-      return {
-        key: `${t.from}-${t.to}`,
-        userId: t.to,
-        name: nameIn(members, t.to, words),
-        owedToYou: false,
-        amount: t.amount,
-        title: months
-          ? words('house.page.youOweFor', { name, amount: formatMoney(t.amount, currency, words), months })
-          : words('house.page.youOwe', { name, amount: formatMoney(t.amount, currency, words) }),
-        meta: splitwise && here(t.to) ? words('house.page.splitwiseWaiting', { name }) : settleMeta(t, me, members, words),
-        action: null,
-        spoken: null,
-        primary: false,
-        splitwise: null,
-      };
-    });
+  const owing = transfers.filter((t) => t.from === me && t.to !== me).map((t) => owingRow(t, input, words));
   return [...owed, ...owing];
 }
 

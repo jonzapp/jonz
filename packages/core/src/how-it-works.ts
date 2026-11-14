@@ -73,118 +73,126 @@ export interface HowFacts {
 const tourLines = (id: TourId, words: Words) =>
   TOURS[id].steps.map((step) => words("door.guide.page.tourStep", tourStepWords(id, step, words)));
 
+/** What a topic's words are written from: the house's facts, and a few things said more than once. */
+interface Telling extends HowFacts {
+  words: Words;
+  money: (minor: number) => string;
+  /** How much of time away is made up, in words. */
+  makeup: string;
+  prices: (typeof PASS_PRICES)[keyof typeof PASS_PRICES];
+  /** The house plays for a Stake. */
+  staked: boolean;
+}
+
+const lines = (...said: string[]) => said.filter(Boolean).join("\n");
+
+/** Each topic, told with the house's own numbers. */
+const TOPICS: Record<HowTopic, (at: Telling) => string> = {
+  today: ({ words }) => lines(words("door.guide.page.today.lead"), ...tourLines("today", words)),
+  week: ({ words }) => lines(words("door.guide.page.week.lead"), ...tourLines("week", words)),
+  house: ({ words }) =>
+    lines(words("door.guide.page.house.lead"), ...tourLines("house", words), words("door.guide.page.house.setUp"), ...tourLines("setUp", words)),
+  fair_shares: ({ awayMakeup, words, makeup }) =>
+    lines(
+      words("house.page.rulesSharesBody", { makeup }),
+      words("door.guide.page.fair.maths"),
+      words("door.guide.page.fair.share"),
+      words("door.guide.page.fair.done"),
+      words("door.guide.page.fair.missed"),
+      words("door.guide.page.fair.standing"),
+      words("door.guide.page.fair.deal"),
+      words("door.guide.page.fair.groups"),
+      words(`door.guide.page.fair.away.${awayMakeup >= 100 ? "full" : awayMakeup > 0 ? "half" : "none"}`, { makeup }),
+    ),
+  deal: ({ rules, words }) =>
+    lines(
+      words("door.guide.page.deal.lead", { app: APP_NAME, mode: words(`week.steady.modeName.${rules.dealMode}`) }),
+      words("door.guide.page.deal.smart", { meta: words("week.steady.modeMeta.smart") }),
+      words("door.guide.page.deal.classic", { meta: words("week.steady.modeMeta.classic") }),
+      words("door.guide.page.deal.line", { line: words("week.steady.modeFoot") }),
+      words("door.guide.page.deal.effort", { budget: words("week.steady.budgetEach", { budget: rules.dealBudget }), foot: words("week.steady.budgetFoot") }),
+      words("door.guide.page.deal.who"),
+      words("door.guide.page.deal.groups"),
+      words("door.guide.page.deal.classicOver"),
+      words("door.guide.page.deal.away"),
+      words("door.guide.page.deal.why"),
+    ),
+  points: ({ words }) => lines(words("door.guide.page.points.scale"), words("door.guide.page.points.count")),
+  late_and_missed: ({ rules, words, money, staked }) =>
+    lines(
+      words("door.guide.page.late.late", { hours: rules.lateHours }),
+      staked
+        ? words("door.guide.page.late.countsStake", { late: money(rules.lateForfeitMinor), missed: money(rules.missedForfeitMinor) })
+        : words("door.guide.page.late.counts"),
+      words("door.guide.page.late.cover", { hours: rules.coverGraceHours }),
+    ),
+  covering: ({ rules, words, staked }) =>
+    lines(
+      words("door.guide.page.covering.lead", { hours: rules.coverGraceHours }),
+      words("door.guide.page.covering.counts"),
+      staked ? words("door.guide.page.covering.forfeit") : "",
+    ),
+  stake: ({ rules, words, money, staked }) => {
+    if (!staked) return words("door.guide.page.stake.none");
+    const stake = money(rules.stakeMinor);
+    const late = money(rules.lateForfeitMinor);
+    const missed = money(rules.missedForfeitMinor);
+    const both = rules.lateForfeitMinor + rules.missedForfeitMinor;
+    return lines(
+      words("door.guide.page.stake.lead", { stake }),
+      words("door.guide.page.stake.keep", { late, missed }),
+      words("door.guide.page.stake.cap", { stake }),
+      words("door.guide.page.stake.shared"),
+      words("door.guide.page.stake.differences"),
+      words("door.guide.page.stake.example", { stake, late, missed, both: money(both), third: money(Math.floor(both / 3)) }),
+      words("door.guide.page.stake.real"),
+    );
+  },
+  settle_up: ({ words }) =>
+    lines(words("door.guide.page.settle.balances"), words("door.guide.page.settle.payments"), words("door.guide.page.settle.splitwise")),
+  house_pass: ({ family, words, money, prices }) =>
+    lines(
+      words("house.pass.lead"),
+      words("house.pass.promise"),
+      words("door.guide.page.pass.adds", {
+        extras: passWords(family ? "family" : "housemates", words)
+          .extras.map((e) => words("door.guide.page.pass.extra", { title: e.title, meta: e.meta }))
+          .join(" "),
+      }),
+      words("house.pass.free"),
+      words("door.guide.page.pass.prices", {
+        yearly: money(prices.yearly),
+        perMonth: money(Math.round(prices.yearly / 12)),
+        monthly: money(prices.monthly),
+        days: PASS_TRIAL_DAYS,
+      }),
+      words("house.pass.money"),
+      words("house.pass.hardship"),
+    ),
+  time_away: ({ words, makeup }) => lines(words("door.guide.page.away.book"), words("door.guide.page.away.makeup", { makeup })),
+  on_call: ({ words }) =>
+    lines(words("door.guide.page.onCall.what"), words("door.guide.page.onCall.flag"), words("door.guide.page.onCall.deal", { weeks: ON_CALL_WEEKS })),
+  swaps: ({ words }) => lines(words("door.guide.page.swaps.ask"), words("house.page.rulesSwapBody")),
+  ticks_and_questions: ({ rules, words }) =>
+    lines(words("door.guide.page.ticks.question", { hours: rules.disputeHours }), words("door.guide.page.ticks.photo")),
+  history_and_resets: ({ words }) => lines(words("door.guide.page.history.list"), words("door.guide.page.history.resets")),
+  family: ({ family, words }) =>
+    family
+      ? lines(words("door.guide.page.family.parents"), words("door.guide.page.family.ok"), words("door.guide.page.family.money"))
+      : words("door.guide.page.family.not"),
+};
+
 /** One topic, in plain lines, with the house's numbers. */
-export function howItWorks(topic: HowTopic, { rules, family, awayMakeup }: HowFacts, words: Words): string {
-  const money = (minor: number) => formatMoney(minor, rules.currency, words);
-  const makeup = words(`house.page.makeup.${makeupKey(awayMakeup)}`);
-  const prices = PASS_PRICES[rules.currency];
-  const staked = rules.stakeMinor > 0;
-  const lines = (...said: string[]) => said.filter(Boolean).join("\n");
-  switch (topic) {
-    case "today":
-      return lines(words("door.guide.page.today.lead"), ...tourLines("today", words));
-    case "week":
-      return lines(words("door.guide.page.week.lead"), ...tourLines("week", words));
-    case "house":
-      return lines(
-        words("door.guide.page.house.lead"),
-        ...tourLines("house", words),
-        words("door.guide.page.house.setUp"),
-        ...tourLines("setUp", words),
-      );
-    case "fair_shares":
-      return lines(
-        words("house.page.rulesSharesBody", { makeup }),
-        words("door.guide.page.fair.maths"),
-        words("door.guide.page.fair.share"),
-        words("door.guide.page.fair.done"),
-        words("door.guide.page.fair.missed"),
-        words("door.guide.page.fair.standing"),
-        words("door.guide.page.fair.deal"),
-        words("door.guide.page.fair.groups"),
-        words(`door.guide.page.fair.away.${awayMakeup >= 100 ? "full" : awayMakeup > 0 ? "half" : "none"}`, { makeup }),
-      );
-    case "deal":
-      return lines(
-        words("door.guide.page.deal.lead", { app: APP_NAME, mode: words(`week.steady.modeName.${rules.dealMode}`) }),
-        words("door.guide.page.deal.smart", { meta: words("week.steady.modeMeta.smart") }),
-        words("door.guide.page.deal.classic", { meta: words("week.steady.modeMeta.classic") }),
-        words("door.guide.page.deal.line", { line: words("week.steady.modeFoot") }),
-        words("door.guide.page.deal.effort", { budget: words("week.steady.budgetEach", { budget: rules.dealBudget }), foot: words("week.steady.budgetFoot") }),
-        words("door.guide.page.deal.who"),
-        words("door.guide.page.deal.groups"),
-        words("door.guide.page.deal.classicOver"),
-        words("door.guide.page.deal.away"),
-        words("door.guide.page.deal.why"),
-      );
-    case "points":
-      return lines(words("door.guide.page.points.scale"), words("door.guide.page.points.count"));
-    case "late_and_missed":
-      return lines(
-        words("door.guide.page.late.late", { hours: rules.lateHours }),
-        staked
-          ? words("door.guide.page.late.countsStake", { late: money(rules.lateForfeitMinor), missed: money(rules.missedForfeitMinor) })
-          : words("door.guide.page.late.counts"),
-        words("door.guide.page.late.cover", { hours: rules.coverGraceHours }),
-      );
-    case "covering":
-      return lines(
-        words("door.guide.page.covering.lead", { hours: rules.coverGraceHours }),
-        words("door.guide.page.covering.counts"),
-        staked ? words("door.guide.page.covering.forfeit") : "",
-      );
-    case "stake": {
-      if (!staked) return words("door.guide.page.stake.none");
-      const stake = money(rules.stakeMinor);
-      const late = money(rules.lateForfeitMinor);
-      const missed = money(rules.missedForfeitMinor);
-      const both = rules.lateForfeitMinor + rules.missedForfeitMinor;
-      return lines(
-        words("door.guide.page.stake.lead", { stake }),
-        words("door.guide.page.stake.keep", { late, missed }),
-        words("door.guide.page.stake.cap", { stake }),
-        words("door.guide.page.stake.shared"),
-        words("door.guide.page.stake.differences"),
-        words("door.guide.page.stake.example", { stake, late, missed, both: money(both), third: money(Math.floor(both / 3)) }),
-        words("door.guide.page.stake.real"),
-      );
-    }
-    case "settle_up":
-      return lines(words("door.guide.page.settle.balances"), words("door.guide.page.settle.payments"), words("door.guide.page.settle.splitwise"));
-    case "house_pass":
-      return lines(
-        words("house.pass.lead"),
-        words("house.pass.promise"),
-        words("door.guide.page.pass.adds", {
-          extras: passWords(family ? "family" : "housemates", words)
-            .extras.map((e) => words("door.guide.page.pass.extra", { title: e.title, meta: e.meta }))
-            .join(" "),
-        }),
-        words("house.pass.free"),
-        words("door.guide.page.pass.prices", {
-          yearly: money(prices.yearly),
-          perMonth: money(Math.round(prices.yearly / 12)),
-          monthly: money(prices.monthly),
-          days: PASS_TRIAL_DAYS,
-        }),
-        words("house.pass.money"),
-        words("house.pass.hardship"),
-      );
-    case "time_away":
-      return lines(words("door.guide.page.away.book"), words("door.guide.page.away.makeup", { makeup }));
-    case "on_call":
-      return lines(words("door.guide.page.onCall.what"), words("door.guide.page.onCall.flag"), words("door.guide.page.onCall.deal", { weeks: ON_CALL_WEEKS }));
-    case "swaps":
-      return lines(words("door.guide.page.swaps.ask"), words("house.page.rulesSwapBody"));
-    case "ticks_and_questions":
-      return lines(words("door.guide.page.ticks.question", { hours: rules.disputeHours }), words("door.guide.page.ticks.photo"));
-    case "history_and_resets":
-      return lines(words("door.guide.page.history.list"), words("door.guide.page.history.resets"));
-    case "family":
-      return family
-        ? lines(words("door.guide.page.family.parents"), words("door.guide.page.family.ok"), words("door.guide.page.family.money"))
-        : words("door.guide.page.family.not");
-  }
+export function howItWorks(topic: HowTopic, facts: HowFacts, words: Words): string {
+  const { rules } = facts;
+  return TOPICS[topic]({
+    ...facts,
+    words,
+    money: (minor) => formatMoney(minor, rules.currency, words),
+    makeup: words(`house.page.makeup.${makeupKey(facts.awayMakeup)}`),
+    prices: PASS_PRICES[rules.currency],
+    staked: rules.stakeMinor > 0,
+  });
 }
 
 /**

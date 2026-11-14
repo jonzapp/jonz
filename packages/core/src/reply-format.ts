@@ -250,78 +250,80 @@ function inlines(tokens: readonly Token[] | undefined, mode: Mode = REPLY): Inli
   return out;
 }
 
-function blocks(tokens: readonly Token[], depth: number, cards: { n: number }, mode: Mode = REPLY): Block[] {
-  const out: Block[] = [];
-  for (const tok of tokens) {
-    switch (tok.type) {
-      case "space":
-        break;
-      case "paragraph":
-      case "text": {
-        const kids = merge(inlines((tok as Tokens.Paragraph).tokens ?? [text(tok.text)] as never, mode));
-        if (kids.length) out.push({ t: "p", kids });
-        break;
-      }
-      case "heading":
-        out.push({ t: "heading", kids: merge(inlines(tok.tokens, mode)) });
-        break;
-      case "list": {
-        const list = tok as Tokens.List;
-        if (depth >= NEST_MAX) {
-          for (const item of list.items) out.push({ t: "p", kids: [text(plain(item.tokens).trim())] });
-          break;
-        }
-        out.push({
-          t: "list",
-          ordered: list.ordered,
-          start: typeof list.start === "number" ? list.start : 1,
-          items: list.items.map((item) => ({
-            checked: item.task ? Boolean(item.checked) : null,
-            blocks: blocks(item.tokens.filter((t) => t.type !== "checkbox"), depth + 1, cards, mode),
-          })),
-        });
-        break;
-      }
-      case "blockquote":
-        if (depth >= NEST_MAX) out.push({ t: "p", kids: [text(plain(tok.tokens).trim())] });
-        else out.push({ t: "quote", blocks: blocks(tok.tokens ?? [], depth + 1, cards, mode) });
-        break;
-      case "table": {
-        const table = tok as Tokens.Table;
-        out.push({
-          t: "table",
-          head: table.header.map((c) => merge(inlines(c.tokens, mode))),
-          rows: table.rows.map((r) => r.map((c) => merge(inlines(c.tokens, mode)))),
-          align: table.align,
-        });
-        break;
-      }
-      case "hr":
-        out.push({ t: "rule" });
-        break;
-      case "code":
-        if (mode.doc) {
-          if (tok.text.trim()) out.push({ t: "copy", text: tok.text.trim() });
-          break;
-        }
-        // No code in a chat about chores: its lines as words.
-        for (const line of tok.text.split("\n").filter((l: string) => l.trim())) out.push({ t: "p", kids: [text(line)] });
-        break;
-      case "jonzCard": {
-        const card = cardOf(tok.name as string, tok.attrs as Record<string, string>);
-        if (card && !mode.doc && cards.n < CARDS_MAX) {
-          cards.n += 1;
-          out.push({ t: "card", card });
-        }
-        break;
-      }
-      default: {
-        const words = plain("tokens" in tok ? (tok.tokens as Token[]) : undefined) || ("text" in tok ? String(tok.text) : "");
-        if (words.trim()) out.push({ t: "p", kids: [text(unescape(words.trim()))] });
-      }
+/** Where a block is being read: how deep in lists and quotes, the cards so far, and what it's for. */
+interface Reading {
+  depth: number;
+  cards: { n: number };
+  mode: Mode;
+}
+
+/** A list: its items' blocks, or past the deepest nesting, each item as a plain line. */
+function listBlocks(list: Tokens.List, { depth, cards, mode }: Reading): Block[] {
+  if (depth >= NEST_MAX) return list.items.map((item) => ({ t: "p", kids: [text(plain(item.tokens).trim())] }));
+  return [
+    {
+      t: "list",
+      ordered: list.ordered,
+      start: typeof list.start === "number" ? list.start : 1,
+      items: list.items.map((item) => ({
+        checked: item.task ? Boolean(item.checked) : null,
+        blocks: blocks(item.tokens.filter((t) => t.type !== "checkbox"), depth + 1, cards, mode),
+      })),
+    },
+  ];
+}
+
+/** Code: something to copy in a document; in a chat about chores, its lines as words. */
+function codeBlocks(code: string, mode: Mode): Block[] {
+  if (mode.doc) return code.trim() ? [{ t: "copy", text: code.trim() }] : [];
+  return code
+    .split("\n")
+    .filter((l) => l.trim())
+    .map((line) => ({ t: "p", kids: [text(line)] }));
+}
+
+/** The blocks one token of the reply makes: usually one, none for what isn't shown. */
+function blockOf(tok: Token, at: Reading): Block[] {
+  const { depth, cards, mode } = at;
+  switch (tok.type) {
+    case "space":
+      return [];
+    case "paragraph":
+    case "text": {
+      const kids = merge(inlines((tok as Tokens.Paragraph).tokens ?? [text(tok.text)] as never, mode));
+      return kids.length ? [{ t: "p", kids }] : [];
+    }
+    case "heading":
+      return [{ t: "heading", kids: merge(inlines(tok.tokens, mode)) }];
+    case "list":
+      return listBlocks(tok as Tokens.List, at);
+    case "blockquote":
+      if (depth >= NEST_MAX) return [{ t: "p", kids: [text(plain(tok.tokens).trim())] }];
+      return [{ t: "quote", blocks: blocks(tok.tokens ?? [], depth + 1, cards, mode) }];
+    case "table": {
+      const table = tok as Tokens.Table;
+      const head = table.header.map((c) => merge(inlines(c.tokens, mode)));
+      return [{ t: "table", head, rows: table.rows.map((r) => r.map((c) => merge(inlines(c.tokens, mode)))), align: table.align }];
+    }
+    case "hr":
+      return [{ t: "rule" }];
+    case "code":
+      return codeBlocks(tok.text, mode);
+    case "jonzCard": {
+      const card = cardOf(tok.name as string, tok.attrs as Record<string, string>);
+      if (!card || mode.doc || cards.n >= CARDS_MAX) return [];
+      cards.n += 1;
+      return [{ t: "card", card }];
+    }
+    default: {
+      const words = plain("tokens" in tok ? (tok.tokens as Token[]) : undefined) || ("text" in tok ? String(tok.text) : "");
+      return words.trim() ? [{ t: "p", kids: [text(unescape(words.trim()))] }] : [];
     }
   }
-  return out;
+}
+
+function blocks(tokens: readonly Token[], depth: number, cards: { n: number }, mode: Mode = REPLY): Block[] {
+  return tokens.flatMap((tok) => blockOf(tok, { depth, cards, mode }));
 }
 
 /** A reply as the app draws it. Never throws: text it can't read comes back as one paragraph of its words. */

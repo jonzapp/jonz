@@ -314,12 +314,8 @@ export interface WeekBoard {
   photos?: boolean;
 }
 
-/**
- * This week's board: every John with its live status and any open dispute
- * on it, and the week's table. `week` is null when this week hasn't been
- * dealt; `everDealt` says whether any week ever has.
- */
-export function buildWeekBoard(input: {
+/** What the board is built from. */
+interface BoardInput {
   week: WeekRow | null;
   assignments: readonly AssignmentRow[];
   disputes: readonly DisputeRow[];
@@ -333,12 +329,10 @@ export function buildWeekBoard(input: {
   earners?: readonly string[];
   /** Whether photo receipts are open (the House Pass): without them, no John needs a photo. Absent, they are. */
   photos?: boolean;
-}): WeekBoard {
-  const { week, now, disputeHours, memberIds } = input;
-  const photos = input.photos ?? true;
-  if (!week) return { week: null, items: [], table: standings([], memberIds), notStarted: !input.everDealt, photos };
+}
 
-  // A job has one check, raised on one of its places: every place shows it.
+/** The open disputes by job. A job has one check, raised on one of its places: every place shows it. */
+function disputesByJob(input: BoardInput): Map<string, DisputeView> {
   const jobOf = new Map(input.assignments.map((a) => [a.id, jobKey({ id: a.id, jobId: a.job_id })]));
   const disputeBy = new Map<string, DisputeView>();
   for (const d of input.disputes) {
@@ -355,74 +349,99 @@ export function buildWeekBoard(input: {
       answered: Boolean(d.photo_path),
     });
   }
+  return disputeBy;
+}
 
-  const endsAt = new Date(week.ends_at);
-  const crews = crewByJob(input.assignments);
+/** What every John on the board is read against. */
+interface BoardSetting {
+  input: BoardInput;
+  week: WeekRow;
+  photos: boolean;
+  disputeBy: Map<string, DisputeView>;
+  crews: ReturnType<typeof crewByJob>;
+  /** The week's Johns in the board's order. */
+  sorted: readonly AssignmentRow[];
+}
+
+/** One John on the board, from its row: its live status, its dispute and who it's done with. */
+function boardItem(a: AssignmentRow, at: BoardSetting): BoardItem {
+  const { input, week } = at;
+  const job = jobKey({ id: a.id, jobId: a.job_id });
+  const dispute = at.disputeBy.get(job) ?? null;
+  const doneAt = a.done_at ? new Date(a.done_at) : null;
+  const absentAt = a.absent_at ? new Date(a.absent_at) : null;
+  const outcome = a.outcome as Outcome | null;
+  const dueAt = new Date(a.due_at);
+  const flaggedAt = a.flagged_at ? new Date(a.flagged_at) : null;
+  // Weeks follow on from each other, so last week ended when this one started.
+  const carried = a.week_id !== undefined && a.week_id !== week.id;
+  const facts = {
+    dueAt,
+    doneAt,
+    excused: a.excused,
+    disputeOpen: dispute !== null,
+    awaitsOk: a.awaits_ok ?? false,
+    weekEndsAt: new Date(carried ? week.starts_at : week.ends_at),
+    flaggedAt,
+    closesAt: a.closes_at ? new Date(a.closes_at) : null,
+    absentAt,
+  };
+  const status = liveStatus({ ...facts, outcome, coveredBy: a.covered_by }, input.now, input.disputeHours);
+  const checkedFrom = doneAt ?? absentAt;
+  return {
+    id: a.id,
+    johnId: a.john_id ?? null,
+    everyWeeks: a.johns?.every_weeks ?? null,
+    everyMonths: a.johns?.every_months ?? null,
+    userId: a.user_id,
+    name: a.name,
+    category: a.category,
+    points: a.points,
+    needsPhoto: a.needs_photo && at.photos,
+    dueAt,
+    movedFrom: a.original_due_at ? new Date(a.original_due_at) : null,
+    groupName: a.group_name,
+    doneAt,
+    photoPath: a.photo_path,
+    coveredBy: a.covered_by,
+    outcome,
+    status,
+    standsAt: checkedFrom && !outcome && !facts.awaitsOk ? standsAt(checkedFrom, input.disputeHours) : null,
+    awaitsOk: facts.awaitsOk && !outcome,
+    // Only a kid's earns: a parent's own Johns earn nothing.
+    ...(a.pay_minor && input.earners?.includes(a.covered_by ?? a.user_id) ? { payMinor: a.pay_minor } : {}),
+    dispute,
+    flaggedAt,
+    flaggedBy: a.flagged_by ?? null,
+    closesAt: closesAt(facts),
+    carried,
+    dealt: readDealt(a.dealt),
+    jobId: a.job_id ?? null,
+    together: a.job_id ? at.sorted.filter((x) => x.job_id === a.job_id).map((x) => x.user_id) : null,
+    absentAt,
+    crew: at.crews.get(job) ?? null,
+    plannedAt: a.planned_at ? new Date(a.planned_at) : null,
+    heldUntil: a.cover_hold_ends_at ? new Date(a.cover_hold_ends_at) : null,
+  };
+}
+
+/**
+ * This week's board: every John with its live status and any open dispute
+ * on it, and the week's table. `week` is null when this week hasn't been
+ * dealt; `everDealt` says whether any week ever has.
+ */
+export function buildWeekBoard(input: BoardInput): WeekBoard {
+  const { week, memberIds } = input;
+  const photos = input.photos ?? true;
+  if (!week) return { week: null, items: [], table: standings([], memberIds), notStarted: !input.everDealt, photos };
+
   const sorted = [...input.assignments].sort((a, b) => Date.parse(a.due_at) - Date.parse(b.due_at));
-  const items: BoardItem[] = sorted
-    .map((a) => {
-      const job = jobKey({ id: a.id, jobId: a.job_id });
-      const dispute = disputeBy.get(job) ?? null;
-      const doneAt = a.done_at ? new Date(a.done_at) : null;
-      const absentAt = a.absent_at ? new Date(a.absent_at) : null;
-      const outcome = a.outcome as Outcome | null;
-      const dueAt = new Date(a.due_at);
-      const flaggedAt = a.flagged_at ? new Date(a.flagged_at) : null;
-      // Weeks follow on from each other, so last week ended when this one started.
-      const carried = a.week_id !== undefined && a.week_id !== week.id;
-      const facts = {
-        dueAt,
-        doneAt,
-        excused: a.excused,
-        disputeOpen: dispute !== null,
-        awaitsOk: a.awaits_ok ?? false,
-        weekEndsAt: carried ? new Date(week.starts_at) : endsAt,
-        flaggedAt,
-        closesAt: a.closes_at ? new Date(a.closes_at) : null,
-        absentAt,
-      };
-      const status = liveStatus({ ...facts, outcome, coveredBy: a.covered_by }, now, disputeHours);
-      const checkedFrom = doneAt ?? absentAt;
-      return {
-        id: a.id,
-        johnId: a.john_id ?? null,
-        everyWeeks: a.johns?.every_weeks ?? null,
-        everyMonths: a.johns?.every_months ?? null,
-        userId: a.user_id,
-        name: a.name,
-        category: a.category,
-        points: a.points,
-        needsPhoto: a.needs_photo && photos,
-        dueAt,
-        movedFrom: a.original_due_at ? new Date(a.original_due_at) : null,
-        groupName: a.group_name,
-        doneAt,
-        photoPath: a.photo_path,
-        coveredBy: a.covered_by,
-        outcome,
-        status,
-        standsAt: checkedFrom && !outcome && !facts.awaitsOk ? standsAt(checkedFrom, disputeHours) : null,
-        awaitsOk: facts.awaitsOk && !outcome,
-        // Only a kid's earns: a parent's own Johns earn nothing.
-        ...(a.pay_minor && input.earners?.includes(a.covered_by ?? a.user_id) ? { payMinor: a.pay_minor } : {}),
-        dispute,
-        flaggedAt,
-        flaggedBy: a.flagged_by ?? null,
-        closesAt: closesAt(facts),
-        carried,
-        dealt: readDealt(a.dealt),
-        jobId: a.job_id ?? null,
-        together: a.job_id ? sorted.filter((x) => x.job_id === a.job_id).map((x) => x.user_id) : null,
-        absentAt,
-        crew: crews.get(job) ?? null,
-        plannedAt: a.planned_at ? new Date(a.planned_at) : null,
-        heldUntil: a.cover_hold_ends_at ? new Date(a.cover_hold_ends_at) : null,
-      };
-    });
+  const setting: BoardSetting = { input, week, photos, disputeBy: disputesByJob(input), crews: crewByJob(input.assignments), sorted };
+  const items = sorted.map((a) => boardItem(a, setting));
 
   const { rows, jobs } = tableInputs(items.filter((i) => !i.carried));
   return {
-    week: { id: week.id, startsOn: week.starts_on, startsAt: new Date(week.starts_at), endsAt },
+    week: { id: week.id, startsOn: week.starts_on, startsAt: new Date(week.starts_at), endsAt: new Date(week.ends_at) },
     items,
     table: standings(rows, memberIds, jobs),
     notStarted: false,
