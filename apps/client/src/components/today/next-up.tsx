@@ -23,7 +23,7 @@ import { StreetPlate } from '@/components/street-plate';
 import { Lead, Meta, SectionLabel } from '@/components/text';
 import { TextButton } from '@/components/text-button';
 import { useWords } from '@/hooks/use-words';
-import { useShownZone } from '@/hooks/use-zones';
+import { useShownZone } from '@/hooks/use-shown-zone';
 import { useTick } from '@/hooks/use-tick';
 import { HAIR, INSET, MARK_GAP, NARROW, SPACE, TAP, useTheme } from '@/theme';
 
@@ -66,7 +66,7 @@ export function NextUp({
   photos?: boolean;
 }) {
   const words = useWords();
-  const zone = useShownZone(rules.timezone, now);
+  const zone = useShownZone();
   switch (state.kind) {
     case 'john':
       // Keyed by the John, so a tick under way never carries over to the next one.
@@ -156,7 +156,7 @@ function NextJohn({
   const sheet = useJohnSheet();
   const tick = useTick(houseId, item.id);
   const [pressed, setPressed] = useState(false);
-  const zone = useShownZone(rules.timezone, now);
+  const zone = useShownZone();
   const meta = nextUpMeta(item, { rules, now, zone, words }, room);
   const offersCant = cant.immunity || cant.swap;
   // On a small phone the photo button beside Mark done is just its icon, so Mark done keeps to one line.

@@ -7,7 +7,7 @@ import { setMovingOut } from '@/api/moving';
 import MovingScreen from '@/app/(house)/you/moving';
 import { snapshot } from '@/testing/house';
 import { renderPages, untilRead } from '@/testing/pages';
-import { NOW } from '@/testing/clock';
+import { NOW, phoneIn } from '@/testing/clock';
 
 const words = wordsFor('en', 'housemates');
 
@@ -47,6 +47,21 @@ it('sits under a title bar with the way back to You', async () => {
   expect(bar.getByRole('button', { name: words('common.shell.backTo', { place: words('common.section.you') }) })).toBeOnTheScreen();
   expect(screen.getByText(words('house.moving.intro'))).toBeOnTheScreen();
   expect(screen.getByText(words('house.moving.afterward'))).toBeOnTheScreen();
+});
+
+it("says nothing about house time while this phone keeps the house's clock", async () => {
+  await open();
+  expect(screen.queryByTestId('house-time-note')).toBeNull();
+});
+
+it("says the day is the house's when this phone keeps another clock", async () => {
+  phoneIn('America/Regina');
+  try {
+    await open();
+    expect(screen.getByTestId('house-time-note')).toHaveTextContent(/^In house time: London, \d+(\.5)? hours ahead of you\.$/);
+  } finally {
+    phoneIn('Europe/London');
+  }
 });
 
 it('saves the one day you tap, whichever you tapped last', async () => {

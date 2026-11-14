@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { setMovingOut } from '@/api/moving';
+import { HouseTimeNote, type HouseClock } from '@/components/house-time-note';
 import { Alert } from '@/components/alert';
 import { Button } from '@/components/button';
 import { ButtonRow } from '@/components/button-row';
@@ -43,6 +44,7 @@ function MovingFor({ houseId, userId }: { houseId: string; userId: string }) {
   // Read here, not in the callback below: the React Compiler can hoist a field read out of it, before it's ready.
   const saved = me?.movingOutOn ?? null;
   const weekStarts = view?.snapshot.rules.weekStarts;
+  const clock = view ? { zone: view.snapshot.rules.timezone, now: view.now } : null;
   return (
     <HousePage
       title={words('common.title.moving')}
@@ -57,7 +59,7 @@ function MovingFor({ houseId, userId }: { houseId: string; userId: string }) {
       onRefresh={pull}
     >
       {/* Whole values only: the React Compiler can hoist a field read out of this callback, before it's ready. */}
-      {() => <MovingForm houseId={houseId} saved={saved} today={today!} weekStarts={weekStarts!} />}
+      {() => <MovingForm houseId={houseId} saved={saved} today={today!} weekStarts={weekStarts!} clock={clock!} />}
     </HousePage>
   );
 }
@@ -67,11 +69,14 @@ function MovingForm({
   saved,
   today,
   weekStarts,
+  clock,
 }: {
   houseId: string;
   saved: string | null;
   today: string;
   weekStarts: IsoDow;
+  /** The house's zone and the time now: the day is on the house's calendar. */
+  clock: HouseClock;
 }) {
   const words = useWords();
   const move = useMove(houseId);
@@ -121,6 +126,7 @@ function MovingForm({
                 value={range}
                 onChange={(next) => setPicked(next.to ?? next.from)}
               />
+              <HouseTimeNote house={clock.zone} now={clock.now} />
               {move.problem ? <Alert message={move.problem} /> : null}
               <View style={styles.action}>
                 <ButtonRow>

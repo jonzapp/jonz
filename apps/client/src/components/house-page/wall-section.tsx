@@ -16,7 +16,7 @@ import { TourSpot } from '@/components/tour/tour-spot';
 import { Waiting } from '@/components/waiting';
 import { OutlineRows } from '@/components/outline';
 import { useWords } from '@/hooks/use-words';
-import { useShownZone } from '@/hooks/use-zones';
+import { useShownZone } from '@/hooks/use-shown-zone';
 
 /** How many of the Wall's events House shows. */
 const LATEST = 4;
@@ -36,7 +36,7 @@ export function WallSection({ houseId, userId, view }: { houseId: string; userId
   const [open, setOpen] = useState<string | null>(null);
 
   const events = latest.data?.events ?? [];
-  const zone = useShownZone(view.snapshot.rules.timezone, view.now);
+  const zone = useShownZone();
   const scene = wallScene(view, { userId, events, words, zone });
   const rows = events.map((event) => wallFeedRow(event, scene, words));
   const shown = open ? rows.find((r) => r.id === open) : undefined;
