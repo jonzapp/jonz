@@ -16,7 +16,7 @@ const made: string[] = [];
 test.afterAll(async () => cleanUp(made));
 
 test("read times on your own clock, set them in house time, and pick the house's zone by country", async ({ context, page }) => {
-  const { userId, weekId } = await dealtHouseInClient(context, "Gwen Away", "Flat 14", [{ name: "Bins out", category: "bins", dueTime: "21:00" }]);
+  const { userId, weekId } = await dealtHouseInClient(context, "Gwen Away", "Flat 14", [{ name: "Bins out", preset: "bins", dueTime: "21:00" }]);
   made.push(userId);
   const { data: bins } = await admin().from("assignments").select("due_at").eq("week_id", weekId).eq("name", "Bins out").single();
   const due = new Date(bins!.due_at!);

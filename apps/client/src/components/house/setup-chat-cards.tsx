@@ -3,11 +3,12 @@ import {
   dayChoices,
   weekdayName,
   changesMeta,
-  CATEGORIES,
   changedLine,
   DEAL_MODES,
   draftChanges,
   groupChanges,
+  key,
+  kindsInOrder,
   membersLine,
   pointsLabel,
   scheduleLine,
@@ -17,6 +18,7 @@ import {
   type DraftedJohn,
   type HouseDraft,
   type IsoDow,
+  type KindDef,
   type Words,
 } from '@app/core';
 import { MinusIcon, PencilIcon, PlusIcon } from 'lucide-react-native';
@@ -117,6 +119,18 @@ export function AskCard({ ask, weekStarts, onAnswer }: { ask: ChatAsk; weekStart
   );
 }
 
+/** A new house's Johns by kind: the list's kinds in its order, then kinds it doesn't have yet, then no kind. */
+function inListOrder(changes: readonly DraftChange[], kinds: readonly KindDef[]): DraftChange[] {
+  const kindOf = (c: DraftChange) => (c.kind === 'remove' ? null : c.john.kind);
+  const named = changes.map(kindOf).filter((k): k is string => k !== null);
+  const order = [...new Set([...kindsInOrder(kinds).map((k) => k.name), ...named].map(key))];
+  const at = (c: DraftChange) => {
+    const kind = kindOf(c);
+    return kind === null ? order.length : order.indexOf(key(kind));
+  };
+  return changes.filter((c) => c.kind !== 'remove').sort((a, b) => at(a) - at(b));
+}
+
 /**
  * The draft, in the chat. For a new house, its first few Johns as the setup
  * checklist shows them, every one ticked, opening into the whole list with
@@ -137,6 +151,7 @@ export function DraftCard({
   problem,
   people,
   me,
+  kinds,
 }: {
   base: HouseDraft | null;
   draft: HouseDraft;
@@ -149,15 +164,15 @@ export function DraftCard({
   problem: string | null;
   people: Person[];
   me: string;
+  /** The house's kinds, in whose order a new house's Johns are listed. */
+  kinds: readonly KindDef[];
 }) {
   const words = useWords();
   const editing = base !== null;
   const changes = draftChanges(base, draft);
   const regrouped = groupChanges(base, draft);
   // A list's changes sorted by kind (taking off, changing, adding); a new house's Johns, opened, in the list's own order.
-  const ordered = editing
-    ? KINDS.flatMap((kind) => changes.filter((c) => c.kind === kind))
-    : CATEGORIES.flatMap((cat) => changes.filter((c) => c.kind !== 'remove' && c.john.category === cat));
+  const ordered = editing ? KINDS.flatMap((kind) => changes.filter((c) => c.kind === kind)) : inListOrder(changes, kinds);
   const folded = editing ? CHANGES_FOLDED : FOLDED;
   const shown = open ? ordered : (editing ? ordered : changes).slice(0, folded);
   const groups = draft.groups.filter((g) => changes.some((c) => c.kind !== 'remove' && c.john.group === g.name));

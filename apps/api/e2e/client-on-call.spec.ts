@@ -24,8 +24,8 @@ function onCall(page: Page) {
 
 test("Done it counts once, and Undo takes the flag with it", async ({ context, page }) => {
   const { userId, houseId } = await dealtHouseInClient(context, "Gus OnCall", "Flat 14", [
-    { name: "Clean the bath", category: "bathroom" },
-    { name: "Dishwasher empty", category: "kitchen", onCall: true },
+    { name: "Clean the bath", preset: "bathroom" },
+    { name: "Dishwasher empty", preset: "kitchen", onCall: true },
   ]);
   made.push(userId);
 
@@ -62,8 +62,8 @@ test("whoever raised a flag can take it down; whoever has it can't", async ({ br
     "Hal OnCall",
     "Flat 15",
     [
-      { name: "Clean the bath", category: "bathroom" },
-      { name: "Dishwasher empty", category: "kitchen", onCall: true },
+      { name: "Clean the bath", preset: "bathroom" },
+      { name: "Dishwasher empty", preset: "kitchen", onCall: true },
     ],
     [{ context: samContext, name: "Sam OnCall" }],
   );

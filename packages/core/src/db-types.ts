@@ -283,7 +283,6 @@ export type Database = {
         Row: {
           absent_at: string | null
           awaits_ok: boolean
-          category: string
           changed_at: string | null
           changed_by: string | null
           closes_at: string | null
@@ -323,7 +322,6 @@ export type Database = {
         Insert: {
           absent_at?: string | null
           awaits_ok?: boolean
-          category: string
           changed_at?: string | null
           changed_by?: string | null
           closes_at?: string | null
@@ -363,7 +361,6 @@ export type Database = {
         Update: {
           absent_at?: string | null
           awaits_ok?: boolean
-          category?: string
           changed_at?: string | null
           changed_by?: string | null
           closes_at?: string | null
@@ -1124,7 +1121,6 @@ export type Database = {
           anchor_month: number | null
           anchor_week: number
           archived_at: string | null
-          category: string
           created_at: string
           crew: number
           due_dow: number
@@ -1150,7 +1146,6 @@ export type Database = {
           anchor_month?: number | null
           anchor_week: number
           archived_at?: string | null
-          category?: string
           created_at?: string
           crew?: number
           due_dow?: number
@@ -1176,7 +1171,6 @@ export type Database = {
           anchor_month?: number | null
           anchor_week?: number
           archived_at?: string | null
-          category?: string
           created_at?: string
           crew?: number
           due_dow?: number
@@ -3034,7 +3028,6 @@ export type Database = {
         Args: { p_assignment: string; p_permission?: string }
         Returns: {
           absent_at: string | null
-          category: string
           changed_at: string | null
           changed_by: string | null
           closes_at: string | null

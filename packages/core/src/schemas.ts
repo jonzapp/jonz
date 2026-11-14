@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { BUDGETS, CATEGORIES, CURRENCIES, DEAL_MODES, HOUSE_KINDS, JOHN_WHEN, SETTLE_IN } from "./domain";
+import { BUDGETS, CURRENCIES, DEAL_MODES, HOUSE_KINDS, JOHN_WHEN, SETTLE_IN } from "./domain";
 import { PASS_PURCHASES } from "./pass";
 
 // Shapes the apps and the API agree on. The API validates requests with
@@ -97,13 +97,11 @@ export type HouseSettings = z.infer<typeof HouseSettings>;
 export const JohnFields = z.object({
   name: z.string().trim().min(1, "Name the John.").max(60),
   // Its kind (john_kinds): one of the house's by id, or by name (made if the
-  // house has none by that name). Left out, a new John goes in Everything
-  // else and a changed one keeps its kind. Null is a John with no kind, as
-  // the list reads one whose kind was deleted.
+  // house has none by that name). Left out, a new John has no kind and a
+  // changed one keeps its kind. Null is a John with no kind, as the list
+  // reads one whose kind was deleted.
   kindId: z.uuid().nullable().optional(),
   kindName: z.string().trim().min(1).max(30).optional(),
-  /** The older way to give a kind: the starting kind it began as. Gone with johns.category. */
-  category: z.enum(CATEGORIES).optional(),
   points: z.coerce.number().int().min(1).max(20),
   everyWeeks: z.coerce.number().int().min(1).max(26),
   // A John that repeats in months (repeat.ts): how many apart, which of its

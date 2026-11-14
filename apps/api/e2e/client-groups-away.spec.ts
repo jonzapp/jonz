@@ -40,7 +40,7 @@ test("make a group, give it a John, and book time away", async ({ browser }) => 
     avaContext,
     "Ava Away",
     "Flat 70",
-    [{ name: "Bins out", category: "bins" }],
+    [{ name: "Bins out", preset: "bins" }],
     [{ context: benContext, name: "Ben Away" }],
   );
   made.push(ava, ...housemateIds);

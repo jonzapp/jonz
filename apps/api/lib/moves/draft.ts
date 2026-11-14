@@ -45,7 +45,7 @@ async function readHouse(caller: Caller, houseId: string) {
     caller.db.from("members").select("user_id, role, joined_at, profiles(display_name, language)").eq("house_id", houseId).order("joined_at"),
     caller.db
       .from("johns")
-      .select("id, name, john_kind_id, category, points, every_weeks, every_months, week_of_month, anchor_month, due_dow, due_time, needs_photo, group_id, kind, respond_hours, per_week, crew")
+      .select("id, name, john_kind_id, points, every_weeks, every_months, week_of_month, anchor_month, due_dow, due_time, needs_photo, group_id, kind, respond_hours, per_week, crew")
       .eq("house_id", houseId)
       .is("archived_at", null)
       .order("created_at"),
@@ -306,7 +306,7 @@ export async function chatTurn(
   const words = wordsFor(language, houseKind(house.kind));
   const draftNow = current ?? list;
   const offline = (): ChatResponse =>
-    may("johns:write") ? offlineTurn(messages, draftNow, words) : { reply: words('ask.draft.offlineAsk'), ask: null, draft: null, source: "starter" };
+    may("johns:write") ? offlineTurn(messages, draftNow, { words, kinds }) : { reply: words('ask.draft.offlineAsk'), ask: null, draft: null, source: "starter" };
   if (!canDraft() && ask === askClaude) return offline();
 
   const everyone = everyoneIn(members, caller.userId);

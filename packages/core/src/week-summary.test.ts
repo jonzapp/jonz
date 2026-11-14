@@ -46,7 +46,6 @@ function item(id: string, overrides: Partial<BoardItem> = {}): BoardItem {
     everyWeeks: 1,
     userId: "sam",
     name: id,
-    category: "kitchen",
     points: 2,
     needsPhoto: false,
     dueAt: at(30),
@@ -81,14 +80,14 @@ function dispute(overrides: Partial<DisputeView> = {}): DisputeView {
 
 /** The mockup's week: 11 Johns across four people. */
 const MOCKUP: BoardItem[] = [
-  item("towels", { status: "due-soon", category: "bathroom", dueAt: at(6) }),
+  item("towels", { status: "due-soon", dueAt: at(6) }),
   item("fridge", { status: "checking", doneAt: at(-6), standsAt: at(18) }),
   item("bins", { status: "done", doneAt: at(-40), dueAt: at(-30) }),
-  item("bathroom", { userId: "priya", status: "disputed", category: "bathroom", dispute: dispute() }),
+  item("bathroom", { userId: "priya", status: "disputed", dispute: dispute() }),
   item("hob", { userId: "priya", status: "done", dueAt: at(-50) }),
   item("loo", { userId: "priya", status: "done", dueAt: at(-20) }),
-  item("plants", { userId: "tom", status: "overdue", category: "other", dueAt: at(-50) }),
-  item("stairs", { userId: "tom", status: "due-soon", category: "floors", dueAt: at(6) }),
+  item("plants", { userId: "tom", status: "overdue", dueAt: at(-50) }),
+  item("stairs", { userId: "tom", status: "due-soon", dueAt: at(6) }),
   item("mop", { userId: "tom", status: "late", dueAt: at(-30), doneAt: at(-20) }),
   item("wipe", { userId: "megan", status: "checking", doneAt: at(-3), standsAt: at(21) }),
   item("caddy", { userId: "megan", status: "done", dueAt: at(-10) }),

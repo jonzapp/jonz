@@ -46,7 +46,6 @@ export async function loadJohnList(houseId: string): Promise<JohnList> {
         id: j.id,
         name: j.name,
         john_kind_id: j.johnKindId,
-        category: j.category,
         points: j.points,
         every_weeks: j.everyWeeks,
         every_months: j.everyMonths,
@@ -78,12 +77,11 @@ function johnInput(draft: JohnDraftInput, rules: HouseRules, now: Date): { id?: 
   const parsed = JohnDraft.safeParse(draft);
   if (!parsed.success) throw new Error(parsed.error.issues[0].message);
   // The week a John counts from is set when it's added, and kept.
-  const { id, anchorWeek: _kept, kindId, kindName, category, ...j } = parsed.data;
+  const { id, anchorWeek: _kept, kindId, kindName, ...j } = parsed.data;
   const repeat = repeatColumns(j, now, rules.timezone, rules.weekStarts);
-  // A kind by name (Ask Jonz's) wins over the one it had. A John read with
-  // its kind goes by that alone: sent with it, its older category would put
-  // one with no kind (null) in Everything else.
-  const kind = kindName ? { kindName } : kindId === undefined ? { category } : kindId === null ? {} : { kindId };
+  // A kind by name (Ask Jonz's) wins over the one it had. None (null) sends
+  // nothing: a new John has no kind, and a changed one keeps the one it had.
+  const kind = kindName ? { kindName } : kindId ? { kindId } : {};
   return {
     id,
     fields: {

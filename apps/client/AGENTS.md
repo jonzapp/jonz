@@ -358,7 +358,7 @@ The rules themselves (what to use where, on a phone and a laptop) are in
   `type.plate`; the border turns hazard once it's overdue), each John's
   `TickBox` (a small square plate with the sign's border) and the tab icons,
   stroked as the J is. Tape is otherwise only a row's 4pt edge on an overdue
-  or missed John, a lid colour only a `LidBar` before a John's category, and
+  or missed John, a lid colour only a `LidBar` before a John's kind, and
   where a John has got to a `StatusMark`. Decoration is `aria-hidden`.
 - **Controls** are at least `TAP` (48) tall; links get the same target
   (`TextLink`, or `Button` with `href`, which is an anchor on the web).

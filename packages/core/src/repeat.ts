@@ -1,5 +1,5 @@
 import type { JohnDef } from "./board";
-import type { Category, IsoDow } from "./domain";
+import type { IsoDow } from "./domain";
 import { addDaysTo, isDueInWeek, nextWeek, weekIndex, weekWindow } from "./week";
 import type { Words } from "./words-for";
 import { localDay, monthNameOf } from "./format";
@@ -242,7 +242,6 @@ export function nextLine(dates: readonly string[], words: Words): string | null 
 export interface ComingUp {
   johnId: string;
   name: string;
-  category: Category;
   points: number;
   /** The local date it lands on. */
   date: string;
@@ -257,7 +256,7 @@ export interface ComingUp {
  * up: they come round when they're flagged.
  */
 export function comingUp(
-  johns: readonly (Pick<JohnDef, "id" | "name" | "category" | "points" | "everyWeeks" | "everyMonths" | "weekOfMonth" | "anchorMonth" | "anchorWeek" | "dueDow" | "when">)[],
+  johns: readonly (Pick<JohnDef, "id" | "name" | "points" | "everyWeeks" | "everyMonths" | "weekOfMonth" | "anchorMonth" | "anchorWeek" | "dueDow" | "when">)[],
   startsOn: string,
   weekStarts: IsoDow, words: Words,
 ): ComingUp[] {
@@ -272,7 +271,6 @@ export function comingUp(
       out.push({
         johnId: j.id,
         name: j.name,
-        category: j.category,
         points: j.points,
         date,
         meta: words('house.repeat.comingUpWhen', { date: landingLabel(date, words, { day: true }), often: oftenWords(j, words).toLocaleLowerCase() }),

@@ -160,7 +160,7 @@ function JohnSheetHeader({ item, context }: { item: BoardItem; context: JohnShee
       {/* In full, as everything in the sheet is: it may take a second line. */}
       <View style={[styles.line, styles.top]}>
         <View style={styles.mark}>
-          <LidBar lid={item.kindColour ?? item.category} />
+          <LidBar lid={item.kindColour ?? 'other'} />
         </View>
         <Meta numberOfLines={2} style={styles.shrink}>
           {sheetKind(item, words)}

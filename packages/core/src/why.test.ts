@@ -32,7 +32,6 @@ function item(dealt: DealWhy | null, overrides: Partial<BoardItem> = {}): BoardI
     everyWeeks: 1,
     userId: ME,
     name: "Bins",
-    category: "kitchen",
     points: 2,
     needsPhoto: false,
     // Today 21:00 in London.

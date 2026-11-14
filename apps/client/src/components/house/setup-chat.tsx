@@ -34,8 +34,8 @@ interface SetupChatProps {
   johns: JohnDef[];
   /** The house's groups already, so a drafted group with the same name is used as it is. */
   groups: GroupDef[];
-  /** The house's kinds, so a John's kind is read by name. */
-  kinds?: readonly KindDef[];
+  /** The house's kinds, so a John's kind is read by name and a starter list's Johns go in them. */
+  kinds: readonly KindDef[];
   people: Person[];
   me: string;
   /** Whether the House Pass's extras are open to this house: changing a list with Jonz is one. */
@@ -129,7 +129,7 @@ export function SetupChat({
     setProblem(null);
     setSending(true);
     try {
-      const { reply, allowance } = await askJonz(houseId, next, { draft, steps, words });
+      const { reply, allowance } = await askJonz(houseId, next, { draft, steps, words, kinds });
       if (allowance) usage.put(allowance);
       answered(reply, next);
     } catch (reason) {
@@ -146,7 +146,7 @@ export function SetupChat({
 
   function pick(kind: StarterKind) {
     const said: Turn[] = [...turns, { role: 'user', text: words(`ask.draft.starter.${kind}.title` as const) }];
-    answered({ role: 'assistant', text: words('ask.draft.fromStarter'), ask: null, draft: starterDraft(kind) }, said);
+    answered({ role: 'assistant', text: words('ask.draft.fromStarter'), ask: null, draft: starterDraft(kind, kinds) }, said);
   }
 
   async function add() {
@@ -197,7 +197,7 @@ export function SetupChat({
               {turn === last && ask ? <AskCard ask={ask} weekStarts={rules.weekStarts} onAnswer={(a) => void send(a)} /> : null}
               {/* A turn that changes nothing on a house's list (a question, say) has no card. */}
               {at === draftAt && draft && (!editing || changes > 0) ? (
-                <DraftCard {...card} draft={draft} onKeep={() => void add()} pending={keeping.pending} problem={keeping.problem} people={people} me={me} />
+                <DraftCard {...card} draft={draft} onKeep={() => void add()} pending={keeping.pending} problem={keeping.problem} people={people} me={me} kinds={kinds} />
               ) : null}
             </JonzTurn>
           );

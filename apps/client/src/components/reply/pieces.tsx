@@ -54,7 +54,7 @@ export function findJohn(data: ReplyData, ref: string): JohnDef | null {
 export function replyPieces(data: ReplyData, words: Words): ReplyPieces {
   const nameOf = (id: string) => data.people.find((p) => p.userId === id)?.name ?? null;
   const groupOf = (id: string | null) => (id ? (data.groups.find((g) => g.id === id)?.name ?? null) : null);
-  const lidOf = (john: JohnDef) => kindOf(john, data.kinds ?? [])?.colour ?? john.category;
+  const lidOf = (john: JohnDef) => kindOf(john, data.kinds ?? [])?.colour ?? 'other';
   const johnList: Href = '/house/johns';
 
   return {

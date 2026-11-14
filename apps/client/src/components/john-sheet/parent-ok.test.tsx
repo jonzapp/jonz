@@ -33,7 +33,7 @@ function family(pay = 0): HouseSnapshot {
     house: { ...base.house, kind: 'family' },
     rules: { ...base.rules, stakeMinor: 0, lateForfeitMinor: 0, missedForfeitMinor: 0, disputeHours: 0 },
     assignments: [
-      assignment({ id: 'a4', user_id: 'sam', name: 'Clean the bath', category: 'bathroom', done_at: at(-1), awaits_ok: true, pay_minor: pay }),
+      assignment({ id: 'a4', user_id: 'sam', name: 'Clean the bath', kind_name: 'Bathroom', done_at: at(-1), awaits_ok: true, pay_minor: pay }),
     ],
   };
 }

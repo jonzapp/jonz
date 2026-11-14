@@ -17,7 +17,7 @@ test.afterAll(async () => cleanUp(made));
 test("without the House Pass, a photo John ticks plainly", async ({ browser }) => {
   const context = await browser.newContext();
   const { userId, houseId } = await dealtHouseInClient(context, "Ava Locked", "Flat 41", [
-    { name: "Clean the oven", category: "kitchen", needsPhoto: true },
+    { name: "Clean the oven", preset: "kitchen", needsPhoto: true },
   ]);
   made.push(userId);
   // Ended a day before the database's own now, so this holds whatever the date.

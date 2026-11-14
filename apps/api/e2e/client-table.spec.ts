@@ -22,8 +22,8 @@ test("a tick scores on the Table at once, beside fair shares and streaks", async
     "Ava Table",
     "Flat 40",
     [
-      { name: "Bins out", category: "bins" },
-      { name: "Wipe the hob", category: "kitchen" },
+      { name: "Bins out", preset: "bins" },
+      { name: "Wipe the hob", preset: "kitchen" },
     ],
     [{ context: benContext, name: "Ben Table" }],
   );

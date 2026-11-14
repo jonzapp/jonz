@@ -198,7 +198,6 @@ describe('an admin', () => {
         ...NEW_JOHN,
         name: 'Shower',
         kindId: 'bathroom',
-        category: 'bathroom',
         points: 5,
         dueDow: 1,
         everyWeeks: 2,

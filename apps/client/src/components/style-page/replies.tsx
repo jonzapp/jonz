@@ -1,4 +1,4 @@
-import { weekLabel, NEW_JOHN, REPLY_SAMPLES, wordsFor, type JohnDef } from '@app/core';
+import { CATEGORY_LABEL, weekLabel, NEW_JOHN, REPLY_SAMPLES, startingKinds, wordsFor, type JohnDef } from '@app/core';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Group } from '@/components/group';
@@ -14,7 +14,7 @@ import { CONTENT_MAX, GUTTER, RADIUS, SECTION_GAP, SPACE, useTheme } from '@/the
 
 const none = () => {};
 
-const john = (n: string, j: Partial<JohnDef> & Pick<JohnDef, 'name' | 'category'>): JohnDef => ({
+const john = (n: string, j: Partial<JohnDef> & Pick<JohnDef, 'name' | 'kindId'>): JohnDef => ({
   ...NEW_JOHN,
   id: `0000000${n}-0000-4000-8000-000000000000`,
   anchorMonth: null,
@@ -32,12 +32,14 @@ const DATA: ReplyData = {
     { userId: 'maya', name: 'Maya Finck' },
   ],
   johns: [
-    john('a', { name: 'Bins out', category: 'bins', points: 1, dueDow: 4, dueTime: '20:00' }),
-    john('b', { name: 'Bathroom clean', category: 'bathroom', points: 3, dueDow: 6, dueTime: '18:00' }),
-    john('c', { name: 'Kitchen clean', category: 'kitchen', points: 3, dueDow: 3, dueTime: '21:00' }),
-    john('d', { name: 'Vacuum the living room', category: 'floors', points: 2, dueDow: 5, dueTime: '18:00' }),
-    john('e', { name: 'Fridge clear-out', category: 'kitchen', points: 2, dueDow: 1, everyWeeks: 2 }),
+    john('a', { name: 'Bins out', kindId: 'bins', points: 1, dueDow: 4, dueTime: '20:00' }),
+    john('b', { name: 'Bathroom clean', kindId: 'bathroom', points: 3, dueDow: 6, dueTime: '18:00' }),
+    john('c', { name: 'Kitchen clean', kindId: 'kitchen', points: 3, dueDow: 3, dueTime: '21:00' }),
+    john('d', { name: 'Vacuum the living room', kindId: 'floors', points: 2, dueDow: 5, dueTime: '18:00' }),
+    john('e', { name: 'Fridge clear-out', kindId: 'kitchen', points: 2, dueDow: 1, everyWeeks: 2 }),
   ],
+  // The six starting kinds, their ids their names in the code.
+  kinds: startingKinds(CATEGORY_LABEL),
   groups: [],
   items: [],
   rowContext: null,

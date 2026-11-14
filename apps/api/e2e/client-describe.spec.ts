@@ -96,7 +96,8 @@ test("ask Jonz from Today to change the list, and apply what's ticked", async ({
     const johns = draft.johns
       .filter((j) => j.name !== couple[1].name)
       .map((j) => (j.name === couple[0].name ? { ...j, points: j.points + 2 } : j.name === sheets ? { ...j, kind: "Bedrooms" } : j));
-    const windows = { ...couple[0], name: "Windows", why: "" };
+    // A new John like the first, in its kind: no id, so it is added.
+    const windows = { ...draft.johns.find((j) => j.name === couple[0].name)!, id: undefined, name: "Windows", why: "" };
     const changed = { ...draft, johns: [...johns, windows] };
     await route.fulfill({ json: { reply: "Done.", ask: null, draft: changed, source: "ai" } });
   });

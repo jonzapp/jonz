@@ -28,7 +28,7 @@ async function hold(page: Page, url: string) {
 }
 
 test("Today shows its outline while the house reads, then the page", async ({ context, page }) => {
-  const { userId } = await dealtHouseInClient(context, "Lou Loading", "Flat 30", [{ name: "Bins out", category: "bins" }]);
+  const { userId } = await dealtHouseInClient(context, "Lou Loading", "Flat 30", [{ name: "Bins out", preset: "bins" }]);
   made.push(userId);
   const release = await hold(page, "**/v1/houses/*/today");
 
@@ -48,7 +48,7 @@ test("Today shows its outline while the house reads, then the page", async ({ co
 });
 
 test("a read that fails says so, and Try again reads again", async ({ context, page }) => {
-  const { userId } = await dealtHouseInClient(context, "Kit Loading", "Flat 31", [{ name: "Bins out", category: "bins" }]);
+  const { userId } = await dealtHouseInClient(context, "Kit Loading", "Flat 31", [{ name: "Bins out", preset: "bins" }]);
   made.push(userId);
   let failing = true;
   // A server error, as /v1 answers one.

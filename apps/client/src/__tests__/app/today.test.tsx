@@ -638,8 +638,8 @@ describe('the rest of your week', () => {
       snapshot({
         assignments: [
           assignment(),
-          assignment({ id: 'a2', name: 'Hoover the stairs', category: 'floors', due_at: at(-5), done_at: at(-6) }),
-          assignment({ id: 'a3', name: 'Wipe the hob', category: 'kitchen', due_at: at(-30), excused: true }),
+          assignment({ id: 'a2', name: 'Hoover the stairs', kind_name: 'Floors', due_at: at(-5), done_at: at(-6) }),
+          assignment({ id: 'a3', name: 'Wipe the hob', kind_name: 'Kitchen', due_at: at(-30), excused: true }),
         ],
         disputes: [dispute],
       }),
@@ -661,8 +661,8 @@ describe('the rest of your week', () => {
       snapshot({
         assignments: [
           assignment(),
-          assignment({ id: 'a2', name: 'Hoover the stairs', category: 'floors', due_at: at(-30), done_at: at(-20), outcome: 'late' }),
-          assignment({ id: 'a3', name: 'Wipe the hob', category: 'kitchen', due_at: at(-30), done_at: at(-40), outcome: 'done' }),
+          assignment({ id: 'a2', name: 'Hoover the stairs', kind_name: 'Floors', due_at: at(-30), done_at: at(-20), outcome: 'late' }),
+          assignment({ id: 'a3', name: 'Wipe the hob', kind_name: 'Kitchen', due_at: at(-30), done_at: at(-40), outcome: 'done' }),
         ],
       }),
     );
@@ -674,7 +674,7 @@ describe('the rest of your week', () => {
 
   it('offers Undo while the house checks your tick', async () => {
     read.mockResolvedValue(
-      snapshot({ assignments: [assignment(), assignment({ id: 'a2', name: 'Hoover the stairs', category: 'floors', due_at: at(72), done_at: at(-1) })] }),
+      snapshot({ assignments: [assignment(), assignment({ id: 'a2', name: 'Hoover the stairs', kind_name: 'Floors', due_at: at(72), done_at: at(-1) })] }),
     );
     await open();
     const row = within(screen.getByTestId('rest-of-week')).getByTestId('my-john');
@@ -686,7 +686,7 @@ describe('the rest of your week', () => {
 
   it('marks an overdue John with the hazard edge, and opens the sheet from the row', async () => {
     read.mockResolvedValue(
-      snapshot({ assignments: [assignment(), assignment({ id: 'a2', name: 'Hoover the stairs', category: 'floors', due_at: at(-5) })] }),
+      snapshot({ assignments: [assignment(), assignment({ id: 'a2', name: 'Hoover the stairs', kind_name: 'Floors', due_at: at(-5) })] }),
     );
     await open();
     // The overdue one is next up; Bins out waits in the rest of the week.
@@ -745,7 +745,7 @@ it("says when it can't read the house, and tries again", async () => {
 });
 
 describe('On call', () => {
-  const BINS_ON_CALL = { john_id: 'j-bins', user_id: 'sam', johns: { name: 'Empty the bins', category: 'bins' } };
+  const BINS_ON_CALL = { john_id: 'j-bins', user_id: 'sam', johns: { name: 'Empty the bins', kind_name: 'Bins' } };
 
   it('lists each on-call John with who has it, and flags it for them', async () => {
     (raiseFlag as jest.Mock).mockResolvedValue('f1');

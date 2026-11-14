@@ -33,7 +33,6 @@ function row(id: string, overrides: Partial<AssignmentRow> = {}): AssignmentRow 
     id,
     user_id: "leo",
     name: id,
-    category: "other",
     points: 2,
     needs_photo: false,
     due_at: at(9).toISOString(),

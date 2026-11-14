@@ -59,8 +59,8 @@ beforeAll(async () => {
   weekId = week.id;
   const [john] = await admin`insert into public.johns (house_id, name, anchor_week) values (${houseId}::uuid, 'Bins', 0) returning id`;
   const [a] = await admin`
-    insert into public.assignments (week_id, house_id, user_id, john_id, name, category, points, due_at)
-    values (${weekId}::uuid, ${houseId}::uuid, ${mate}::uuid, ${john.id}::uuid, 'Bins', 'other', 2, ${week.starts_at}::timestamptz + interval '2 days')
+    insert into public.assignments (week_id, house_id, user_id, john_id, name, points, due_at)
+    values (${weekId}::uuid, ${houseId}::uuid, ${mate}::uuid, ${john.id}::uuid, 'Bins', 2, ${week.starts_at}::timestamptz + interval '2 days')
     returning id`;
   assignmentId = a.id;
   await admin`insert into public.crew_members (house_id, job_id, assignment_id, user_id, helper, points)

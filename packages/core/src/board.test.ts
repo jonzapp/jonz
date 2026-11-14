@@ -23,7 +23,6 @@ function john(id: string, overrides: Partial<AssignmentRow> = {}): AssignmentRow
     id,
     user_id: ME,
     name: id,
-    category: "kitchen",
     points: 2,
     needs_photo: false,
     due_at: at(48),
@@ -48,7 +47,6 @@ describe("johnDef", () => {
       johnDef({
         id: "j1",
         name: "Bins",
-        category: "bins",
         points: 2,
         every_weeks: 2,
         due_dow: 7,
@@ -59,7 +57,6 @@ describe("johnDef", () => {
     ).toEqual({
       id: "j1",
       name: "Bins",
-      category: "bins",
       points: 2,
       everyWeeks: 2,
       everyMonths: null,
@@ -80,7 +77,7 @@ describe("johnDef", () => {
   });
 
   it("reads a John that keeps its day, and never an on-call John", () => {
-    const row = { id: "j", name: "Bins", category: "bins", points: 1, every_weeks: 1, due_dow: 4, due_time: "20:00", needs_photo: false, group_id: null };
+    const row = { id: "j", name: "Bins", points: 1, every_weeks: 1, due_dow: 4, due_time: "20:00", needs_photo: false, group_id: null };
     expect(johnDef({ ...row, keep_day: true }).keepDay).toBe(true);
     expect(johnDef({ ...row, keep_day: true, kind: "on_call" }).keepDay).toBe(false);
   });
@@ -90,7 +87,6 @@ describe("johnDef", () => {
       johnDef({
         id: "j3",
         name: "Fridge deep clean",
-        category: "kitchen",
         points: 8,
         every_weeks: 1,
         every_months: 3,
@@ -109,7 +105,6 @@ describe("johnDef", () => {
     const row = {
       id: "j2",
       name: "Bins",
-      category: "bins",
       points: 1,
       every_weeks: 1,
       due_dow: 7,
@@ -192,9 +187,9 @@ describe("flags on the board", () => {
 
 describe("onCallItems", () => {
   const rows = [
-    { john_id: "bins", user_id: ME, johns: { name: "Bins", category: "bins" } },
-    { john_id: "recycling", user_id: YOU, johns: { name: "Recycling", category: "bins" } },
-    { john_id: "gone", user_id: YOU, johns: { name: "Gone", category: "other", archived_at: at(-1) } },
+    { john_id: "bins", user_id: ME, johns: { name: "Bins" } },
+    { john_id: "recycling", user_id: YOU, johns: { name: "Recycling" } },
+    { john_id: "gone", user_id: YOU, johns: { name: "Gone", archived_at: at(-1) } },
   ];
   const flag = (id: string, overrides: Partial<AssignmentRow> = {}) =>
     john(id, { john_id: "bins", week_id: "w1", flagged_at: at(-5), flagged_by: YOU, due_at: at(7), ...overrides });

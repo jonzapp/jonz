@@ -47,7 +47,7 @@ const TODAY = {
     { id: 'a0', userId: 'u2', name: 'Hob', dueAt: '2026-10-17T20:00:00Z', outcome: null, dealt: null, everyWeeks: null, everyMonths: null, crew: [] },
   ],
   disputes: [{ id: 'd1', assignmentId: 'a1', raisedBy: 'u2', reason: 'Not done', closesAt: '2026-10-22T12:00:00Z', photoPath: null, votes: [{ userId: 'u2', uphold: true }] }],
-  onCall: [{ johnId: 'j9', userId: 'u2', john: { name: 'Bins', category: 'bins', needsPhoto: false, archivedAt: null } }],
+  onCall: [{ johnId: 'j9', userId: 'u2', john: { name: 'Bins', needsPhoto: false, archivedAt: null } }],
   offers: [{ id: 'o1', mine: 'a1', theirs: 'a0', askedBy: 'u1', askedUserId: 'u2', expiresAt: '2026-10-22T12:00:00Z' }],
   moves: { lastMovedOut: null, lastJoined: '2026-10-01T09:00:00Z' },
 };
@@ -93,7 +93,7 @@ it('reads the house, its people and this week in one go on /v1', async () => {
   expect(snapshot.disputes).toEqual([
     { id: 'd1', assignment_id: 'a1', raised_by: 'u2', reason: 'Not done', closes_at: '2026-10-22T12:00:00Z', photo_path: null, dispute_votes: [{ user_id: 'u2', uphold: true }] },
   ]);
-  expect(snapshot.onCall).toEqual([{ john_id: 'j9', user_id: 'u2', johns: { name: 'Bins', category: 'bins', needs_photo: false, archived_at: null } }]);
+  expect(snapshot.onCall).toEqual([{ john_id: 'j9', user_id: 'u2', johns: { name: 'Bins', needs_photo: false, archived_at: null } }]);
   expect(snapshot.offers).toEqual([{ id: 'o1', mine: 'a1', theirs: 'a0', asked_by: 'u1', asked_user_id: 'u2', expires_at: '2026-10-22T12:00:00Z' }]);
   expect(snapshot.moves).toEqual({ lastMovedOut: null, lastJoined: '2026-10-01T09:00:00Z' });
 });

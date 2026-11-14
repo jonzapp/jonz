@@ -83,7 +83,6 @@ describe("the John list", () => {
   const row = (houseId: string, name: string) => ({
     house_id: houseId,
     name,
-    category: "other" as const,
     points: 1,
     every_weeks: 1,
     due_dow: 4,

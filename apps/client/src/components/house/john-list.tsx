@@ -94,7 +94,7 @@ export function JohnList({
   };
   // A new John starts in the first kind on the list.
   const first = kindsInOrder(kinds)[0];
-  const add = () => edit({ ...NEW_JOHN, kindId: first?.id, category: first?.preset ?? 'other' });
+  const add = () => edit({ ...NEW_JOHN, kindId: first?.id ?? null });
   return (
     <>
       {johns.length === 0 ? (

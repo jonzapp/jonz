@@ -139,7 +139,7 @@ test("tab titles, the look, and reminders on this device", async ({ browser }) =
     });
     Object.assign(window, { PushManager: function PushManager() {}, Notification: { requestPermission: async () => "granted" } });
   });
-  const { userId } = await dealtHouseInClient(context, "Ava Web", "Flat 80", [{ name: "Bins out", category: "bins" }]);
+  const { userId } = await dealtHouseInClient(context, "Ava Web", "Flat 80", [{ name: "Bins out", preset: "bins" }]);
   made.push(userId);
 
   const page = await context.newPage();

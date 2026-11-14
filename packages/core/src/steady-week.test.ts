@@ -7,13 +7,13 @@ import { wordsFor } from "./words-for";
 
 const words = wordsFor("en", "housemates");
 
-const LIST: Pick<JohnDef, "id" | "name" | "category" | "points" | "when" | "crew">[] = [
-  { id: "mop", name: "Mopping", category: "floors", points: 3, when: "day", crew: 1 },
-  { id: "kitchen", name: "Kitchen", category: "kitchen", points: 2, when: "day", crew: 1 },
-  { id: "garbage", name: "Garbage", category: "bins", points: 1, when: "day", crew: 1 },
-  { id: "recycling", name: "Recycling", category: "bins", points: 1, when: "day", crew: 1 },
-  { id: "dishes", name: "Dishes", category: "kitchen", points: 1, when: "on_call", crew: 1 },
-  { id: "garden", name: "Garden", category: "other", points: 2, when: "day", crew: 0 },
+const LIST: (Pick<JohnDef, "id" | "name" | "points" | "when" | "crew"> & { kindName: string })[] = [
+  { id: "mop", name: "Mopping", kindName: "Floors", points: 3, when: "day", crew: 1 },
+  { id: "kitchen", name: "Kitchen", kindName: "Kitchen", points: 2, when: "day", crew: 1 },
+  { id: "garbage", name: "Garbage", kindName: "Bins", points: 1, when: "day", crew: 1 },
+  { id: "recycling", name: "Recycling", kindName: "Bins", points: 1, when: "day", crew: 1 },
+  { id: "dishes", name: "Dishes", kindName: "Kitchen", points: 1, when: "on_call", crew: 1 },
+  { id: "garden", name: "Garden", kindName: "Other", points: 2, when: "day", crew: 0 },
 ];
 const AHEAD: SteadyAheadWeek[] = [
   { startsOn: "2026-11-09", johns: { garbage: ["ada"], kitchen: ["me"], dishes: ["ada"], garden: ["me", "ada"] } },

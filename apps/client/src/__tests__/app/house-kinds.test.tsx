@@ -44,9 +44,9 @@ jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
 
 /** A kind the house made, and a John in it. */
 const GARDEN = { id: 'garden', name: 'Garden', colour: '#4f9a2e', position: 6, preset: null };
-const LAWN = { ...BINS, id: 'j-lawn', name: 'Mow the lawn', category: 'other' as const, kindId: 'garden' };
+const LAWN = { ...BINS, id: 'j-lawn', name: 'Mow the lawn', kindId: 'garden' };
 /** A John whose kind was deleted. */
-const SHED = { ...BINS, id: 'j-shed', name: 'Sweep the shed', category: 'other' as const, kindId: null };
+const SHED = { ...BINS, id: 'j-shed', name: 'Sweep the shed', kindId: null };
 
 function HouseLayout() {
   return (

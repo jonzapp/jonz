@@ -83,15 +83,15 @@ describe("a house's kinds", () => {
     expect(kindsInOrder(kinds).map((k) => k.id)).toEqual(["kitchen", "bathroom", "bins", "floors", "errands", "other", "garden"]);
   });
 
-  it("give a John its kind by id, or by the starting kind its category began as", () => {
-    expect(kindOf({ category: "kitchen", kindId: "garden" }, kinds)).toBe(GARDEN);
-    expect(kindOf({ category: "bins" }, kinds)?.id).toBe("bins");
-    expect(kindOf({ category: "bins" }, [GARDEN])).toBeNull();
+  it("give a John its kind by id", () => {
+    expect(kindOf({ kindId: "garden" }, kinds)).toBe(GARDEN);
+    expect(kindOf({ kindId: "bins" }, kinds)?.id).toBe("bins");
   });
 
-  it("give a John read with no kind, or one that's gone, none at all", () => {
-    expect(kindOf({ category: "other", kindId: null }, kinds)).toBeNull();
-    expect(kindOf({ category: "other", kindId: "gone" }, kinds)).toBeNull();
+  it("give a John with no kind, one not given one yet, or one whose kind is gone, none at all", () => {
+    expect(kindOf({ kindId: null }, kinds)).toBeNull();
+    expect(kindOf({}, kinds)).toBeNull();
+    expect(kindOf({ kindId: "gone" }, kinds)).toBeNull();
   });
 
   it("move a kind a place up or down, and no further than the ends", () => {

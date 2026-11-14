@@ -13,7 +13,6 @@ type RawJohn = NonNullable<RawDraft["johns"]>[number];
 export const JOHN_FIELDS = [
   "name",
   "kind",
-  "category",
   "points",
   "everyWeeks",
   "everyMonths",

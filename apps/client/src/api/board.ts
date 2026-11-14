@@ -133,7 +133,7 @@ export async function loadHouse(houseId: string, _now: Date): Promise<HouseSnaps
     onCall: today.onCall.map((o) => ({
       john_id: o.johnId,
       user_id: o.userId,
-      johns: o.john && { name: o.john.name, category: o.john.category, kind_name: o.john.kindName, kind_colour: o.john.kindColour, needs_photo: o.john.needsPhoto, archived_at: o.john.archivedAt },
+      johns: o.john && { name: o.john.name, kind_name: o.john.kindName, kind_colour: o.john.kindColour, needs_photo: o.john.needsPhoto, archived_at: o.john.archivedAt },
     })),
     steady: (({ waiting, ahead }) => ({ waiting, ahead }))(weekStateOf(week ?? {})),
     offers: today.offers.map((o) => ({ id: o.id, mine: o.mine, theirs: o.theirs, asked_by: o.askedBy, asked_user_id: o.askedUserId, expires_at: o.expiresAt })),

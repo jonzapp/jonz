@@ -1,5 +1,5 @@
 import { type Category, type IsoDow } from "./domain";
-import { key, type ChatMessage, type ChatResponse, type DraftedJohn, type HouseDraft } from "./house-draft";
+import { key, type ChatMessage, type ChatResponse, type DraftedJohn, type DraftKind, type HouseDraft } from "./house-draft";
 import type { Words } from "./words-for";
 
 // The starter John lists a new house can begin from, by the kind of house.
@@ -7,12 +7,15 @@ import type { Words } from "./words-for";
 export const STARTER_KINDS = ["flat_share", "couple", "family"] as const;
 export type StarterKind = (typeof STARTER_KINDS)[number];
 
-type Starter = [name: string, category: Category, points: number, everyWeeks: number, dueDow: IsoDow, dueTime: string, extra?: Partial<DraftedJohn>];
+type Starter = [name: string, preset: Category, points: number, everyWeeks: number, dueDow: IsoDow, dueTime: string, extra?: Partial<DraftedJohn>];
 
-function starter(rows: readonly Starter[]): DraftedJohn[] {
-  return rows.map(([name, category, points, everyWeeks, dueDow, dueTime, extra]) => ({
+/** A starter John: a drafted John with the starting kind it goes in (the house's kind that began as it). */
+type StarterJohn = Omit<DraftedJohn, "kind"> & { preset: Category };
+
+function starter(rows: readonly Starter[]): StarterJohn[] {
+  return rows.map(([name, preset, points, everyWeeks, dueDow, dueTime, extra]) => ({
     name,
-    category,
+    preset,
     points,
     everyWeeks,
     dueDow,
@@ -38,7 +41,7 @@ const BIN_ON_CALL: Partial<DraftedJohn> = { when: "on_call", respondHours: 12, p
  * rather start from one. Points follow the John list's hint: 1 for taking
  * the bins out, 5 for a deep clean. Due days are spread over the week.
  */
-export const STARTER_LISTS: Record<StarterKind, DraftedJohn[]> = {
+export const STARTER_LISTS: Record<StarterKind, StarterJohn[]> = {
   flat_share: starter([
     ["Kitchen wipe-down", "kitchen", 2, 1, 3, "21:00"],
     ["Kitchen deep clean", "kitchen", 5, 2, 7, "18:00"],
@@ -70,9 +73,14 @@ export const STARTER_LISTS: Record<StarterKind, DraftedJohn[]> = {
   ]),
 };
 
-/** A starter list as a draft, the same shape Claude's comes in. */
-export function starterDraft(kind: StarterKind): HouseDraft {
-  return { johns: STARTER_LISTS[kind].map((j) => ({ ...j })), groups: [], note: null };
+/**
+ * A starter list as a draft, the same shape Claude's comes in: each John in
+ * the house's kind that began as its starting kind, or none when the house
+ * has no such kind.
+ */
+export function starterDraft(kind: StarterKind, kinds: readonly DraftKind[]): HouseDraft {
+  const johns = STARTER_LISTS[kind].map(({ preset, ...j }) => ({ ...j, kind: kinds.find((k) => k.preset === preset)?.name ?? null }));
+  return { johns, groups: [], note: null };
 }
 
 /** Which starter list fits a description best, for when Claude can't draft from it: a family, a couple, or else a flat share. */
@@ -89,10 +97,11 @@ export function guessStarter(description: string): StarterKind {
  * the admin said (or the one they named); after, the draft stays as it is
  * and the admin is told to change it by hand.
  */
-export function offlineTurn(messages: readonly ChatMessage[], draft: HouseDraft | null, words: Words): ChatResponse {
+export function offlineTurn(messages: readonly ChatMessage[], draft: HouseDraft | null, at: { words: Words; kinds: readonly DraftKind[] }): ChatResponse {
+  const { words } = at;
   if (draft) return { reply: words('ask.draft.offlineChange'), ask: null, draft: null, source: "starter" };
   const said = messages.filter((m) => m.role === "user").map((m) => m.text);
   const named = STARTER_KINDS.find((k) => said.some((t) => key(t.trim()) === key(words(`ask.draft.starter.${k}.title` as const))));
   const kind = named ?? guessStarter(said.join(" "));
-  return { reply: named ? words('ask.draft.fromStarter') : words('ask.draft.offline'), ask: null, draft: starterDraft(kind), source: "starter" };
+  return { reply: named ? words('ask.draft.fromStarter') : words('ask.draft.offline'), ask: null, draft: starterDraft(kind, at.kinds), source: "starter" };
 }

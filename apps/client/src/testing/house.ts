@@ -11,12 +11,15 @@ import { hoursFromNow as at } from '@/testing/clock';
 /** The six starting kinds, as a house's John list reads them: their ids are their starting kinds. */
 export const KINDS = startingKinds(CATEGORY_LABEL);
 
+/** A dealt John's kind as house_today says it: its name and lid colour. */
+const kind = (id: string, name: string) => ({ kind_name: name, kind_colour: KINDS.find((k) => k.id === id)!.colour });
+
 export function assignment(overrides: Partial<AssignmentRow> = {}): AssignmentRow {
   return {
     id: 'a1',
     user_id: 'priya',
     name: 'Bins out',
-    category: 'bins',
+    ...kind('bins', 'Bins'),
     points: 2,
     needs_photo: false,
     due_at: at(48),
@@ -54,9 +57,9 @@ export function snapshot(overrides: Partial<HouseSnapshot> = {}): HouseSnapshot 
     week: { id: 'w1', starts_on: '2026-10-19', starts_at: at(-48), ends_at: at(120) },
     assignments: [
       assignment(),
-      assignment({ id: 'a2', name: 'Hoover the stairs', category: 'floors', due_at: at(72) }),
-      assignment({ id: 'a3', name: 'Wipe the hob', category: 'kitchen', due_at: at(-30), done_at: at(-40), outcome: 'done' }),
-      assignment({ id: 'a4', user_id: 'sam', name: 'Clean the bath', category: 'bathroom' }),
+      assignment({ id: 'a2', name: 'Hoover the stairs', ...kind('floors', 'Floors'), due_at: at(72) }),
+      assignment({ id: 'a3', name: 'Wipe the hob', ...kind('kitchen', 'Kitchen'), due_at: at(-30), done_at: at(-40), outcome: 'done' }),
+      assignment({ id: 'a4', user_id: 'sam', name: 'Clean the bath', ...kind('bathroom', 'Bathroom') }),
     ],
     disputes: [],
     onCall: [],

@@ -26,6 +26,7 @@ import { applyDraft, askUsageOf, sendChat } from '@/api/draft';
 import { undoAction } from '@/api/history';
 import { applyReset } from '@/api/resets';
 import { saveDealMode } from '@/api/settings';
+import { KINDS } from '@/testing/house';
 import { testQueryClient } from '@/testing/query';
 
 import { SetupChat } from './setup-chat';
@@ -67,8 +68,8 @@ const drafted = tidyDraft(
   {
     groups: [{ name: 'Upstairs', members: ['me', 'Priya'] }],
     johns: [
-      { name: 'Upstairs bathroom', category: 'bathroom', points: 4, everyWeeks: 1, dueDow: 6, dueTime: '18:00', group: 'Upstairs' },
-      { name: 'Bins out', category: 'bins', points: 1, everyWeeks: 1, dueDow: 1, dueTime: '21:00', why: 'collection is Tuesday' },
+      { name: 'Upstairs bathroom', kind: 'Bathroom', points: 4, everyWeeks: 1, dueDow: 6, dueTime: '18:00', group: 'Upstairs' },
+      { name: 'Bins out', kind: 'Bins & recycling', points: 1, everyWeeks: 1, dueDow: 1, dueTime: '21:00', why: 'collection is Tuesday' },
     ],
     note: 'I guessed the bins go out Monday night.',
   },
@@ -82,7 +83,7 @@ function House({ children }: { children: ReactNode }) {
 }
 
 async function open() {
-  await render(<SetupChat houseId="h1" rules={RULES} johns={[]} groups={[]} people={people} me={ME} passOpen />, { wrapper: House });
+  await render(<SetupChat houseId="h1" kinds={KINDS} rules={RULES} johns={[]} groups={[]} people={people} me={ME} passOpen />, { wrapper: House });
 }
 
 async function say(text: string) {
@@ -109,7 +110,7 @@ it('greets with the starter lists, says where messages go, and waits for words b
 it('shows the draft in the chat with every John kept, opens it into its groups, and adds only the ones still ticked', async () => {
   await open();
   await say(HOUSE);
-  expect(chat).toHaveBeenCalledWith('h1', [{ role: 'user', text: HOUSE }], null, expect.any(Function), null);
+  expect(chat).toHaveBeenCalledWith('h1', [{ role: 'user', text: HOUSE }], expect.objectContaining({ draft: null }), null);
   expect(await screen.findByText('Here’s a first go.')).toBeTruthy();
   expect(screen.getByTestId('chat-user')).toHaveTextContent(HOUSE);
   expect(screen.getByTestId('draft-note')).toHaveTextContent('I guessed the bins go out Monday night.');
@@ -170,7 +171,7 @@ it('sends the chat so far and the draft with each change, and keeps the draft wh
       { role: 'assistant', text: 'Here’s a first go.' },
       { role: 'user', text: 'Is that all?' },
     ],
-    drafted, expect.any(Function), null,
+    expect.objectContaining({ draft: drafted }), null,
   );
   expect(await screen.findByText('That’s all of it.')).toBeTruthy();
   expect(screen.getAllByTestId('draft-card')).toHaveLength(1);
@@ -205,12 +206,12 @@ it('answers a question with a tap: a quick answer, or a day', async () => {
   await open();
   await say(HOUSE);
   await fireEvent.press(await screen.findByRole('button', { name: 'Windows' }));
-  expect(chat).toHaveBeenLastCalledWith('h1', expect.arrayContaining([{ role: 'user', text: 'Windows' }]), null, expect.any(Function), null);
+  expect(chat).toHaveBeenLastCalledWith('h1', expect.arrayContaining([{ role: 'user', text: 'Windows' }]), expect.objectContaining({ draft: null }), null);
 
   chat.mockResolvedValueOnce({ reply: 'Which night are the bins?', ask: { kind: 'day' }, draft: null, source: 'ai' });
   await say('Bins too');
   await fireEvent.press(await screen.findByRole('radio', { name: 'Tuesday' }));
-  expect(chat).toHaveBeenLastCalledWith('h1', expect.arrayContaining([{ role: 'user', text: 'Tuesday' }]), drafted, expect.any(Function), null);
+  expect(chat).toHaveBeenLastCalledWith('h1', expect.arrayContaining([{ role: 'user', text: 'Tuesday' }]), expect.objectContaining({ draft: drafted }), null);
 });
 
 it('starts from a list without asking anyone, and opens it to see every John', async () => {
@@ -218,7 +219,7 @@ it('starts from a list without asking anyone, and opens it to see every John', a
   await fireEvent.press(screen.getByTestId('starter-couple'));
   expect(chat).not.toHaveBeenCalled();
   expect(screen.getByText(words('ask.draft.fromStarter'))).toBeTruthy();
-  const all = starterDraft('couple').johns.length;
+  const all = starterDraft('couple', KINDS).johns.length;
   expect(screen.getAllByRole('checkbox')).toHaveLength(Math.min(3, all));
   await fireEvent.press(screen.getByRole('button', { name: words('ask.draft.seeAll', { n: all }) }));
   expect(screen.getAllByRole('checkbox')).toHaveLength(all);
@@ -246,14 +247,14 @@ describe('with a list already', () => {
   const BATH = '11111111-1111-4111-8111-111111111111';
   const BINS = '22222222-2222-4222-8222-222222222222';
   const johns: JohnDef[] = [
-    { ...NEW_JOHN, id: BATH, name: 'Bathroom', category: 'bathroom', points: 3 },
-    { ...NEW_JOHN, id: BINS, name: 'Bins out', category: 'bins', points: 1 },
+    { ...NEW_JOHN, id: BATH, name: 'Bathroom', kindId: 'bathroom', points: 3 },
+    { ...NEW_JOHN, id: BINS, name: 'Bins out', kindId: 'bins', points: 1 },
   ];
-  const base = listAsDraft(johns, []);
-  const changed = { ...base, johns: [{ ...base.johns[0], points: 4 }, starterDraft('couple').johns[0]] };
+  const base = listAsDraft(johns, [], KINDS);
+  const changed = { ...base, johns: [{ ...base.johns[0], points: 4 }, starterDraft('couple', KINDS).johns[0]] };
 
   async function openList(passOpen = true) {
-    await render(<SetupChat houseId="h1" rules={RULES} johns={johns} groups={[]} people={people} me={ME} passOpen={passOpen} />, {
+    await render(<SetupChat houseId="h1" kinds={KINDS} rules={RULES} johns={johns} groups={[]} people={people} me={ME} passOpen={passOpen} />, {
       wrapper: House,
     });
   }
@@ -264,7 +265,7 @@ describe('with a list already', () => {
     expect(screen.getByText(words('ask.draft.greetingList'))).toBeTruthy();
     expect(screen.queryByTestId('starter-family')).toBeNull();
     await say('Bathroom is more work, and no bins');
-    expect(chat).toHaveBeenCalledWith('h1', [{ role: 'user', text: 'Bathroom is more work, and no bins' }], base, expect.any(Function), null);
+    expect(chat).toHaveBeenCalledWith('h1', [{ role: 'user', text: 'Bathroom is more work, and no bins' }], expect.objectContaining({ draft: base }), null);
     expect(await screen.findByTestId('draft-change')).toHaveTextContent(/3 → 4 pts/);
     // Sorted by what each does, taking off first so it's never missed.
     const headings = [words('ask.draft.removingHeading'), words('ask.draft.changingHeading'), words('ask.draft.addingHeading')];
@@ -282,17 +283,17 @@ describe('with a list already', () => {
     // The chat carries on, from the list as it now is.
     chat.mockResolvedValue({ reply: 'Anything else?', ask: null, draft: null, source: 'ai' });
     await say('And the oven?');
-    expect(chat).toHaveBeenLastCalledWith('h1', expect.any(Array), null, expect.any(Function), null);
+    expect(chat).toHaveBeenLastCalledWith('h1', expect.any(Array), expect.objectContaining({ draft: null }), null);
   });
 
   it('changes who’s in a group the house has, as a change to tick', async () => {
     const IVY = '00000000-0000-4000-8000-000000000009';
     const floor = { id: '44444444-4444-4444-8444-444444444444', name: 'Main floor', memberIds: [ME] };
-    const withFloor = listAsDraft(johns, [floor]);
+    const withFloor = listAsDraft(johns, [floor], KINDS);
     const ivyIn = { ...withFloor, groups: [{ name: 'Main floor', memberIds: [ME, IVY], waitingFor: [] }] };
     chat.mockResolvedValue({ reply: 'Ivy’s in once you apply.', ask: null, draft: ivyIn, source: 'ai' });
     await render(
-      <SetupChat houseId="h1" rules={RULES} johns={johns} groups={[floor]} people={[...people, { userId: IVY, name: 'Ivy Moss' }]} me={ME} passOpen />,
+      <SetupChat houseId="h1" kinds={KINDS} rules={RULES} johns={johns} groups={[floor]} people={[...people, { userId: IVY, name: 'Ivy Moss' }]} me={ME} passOpen />,
       { wrapper: House },
     );
     await say('Add Ivy to main floor');
@@ -313,7 +314,7 @@ describe('with a list already', () => {
 
   it('answers someone who can’t change the list, with no starters and no card', async () => {
     chat.mockResolvedValue({ reply: 'Ben has bins this week.', ask: null, draft: null, source: 'ai' });
-    await render(<SetupChat houseId="h1" rules={RULES} johns={johns} groups={[]} people={people} me={ME} passOpen canChange={false} />, {
+    await render(<SetupChat houseId="h1" kinds={KINDS} rules={RULES} johns={johns} groups={[]} people={people} me={ME} passOpen canChange={false} />, {
       wrapper: House,
     });
     expect(screen.getByText(words('ask.draft.greetingAsk'))).toBeTruthy();
@@ -328,7 +329,7 @@ describe('with a list already', () => {
     chat.mockResolvedValue({ reply: 'Ben has bins this week.', ask: null, draft: null, source: 'ai' });
     await openList();
     await fireEvent.press(screen.getByRole('button', { name: askExamples(words)[0] }));
-    expect(chat).toHaveBeenCalledWith('h1', [{ role: 'user', text: askExamples(words)[0] }], base, expect.any(Function), null);
+    expect(chat).toHaveBeenCalledWith('h1', [{ role: 'user', text: askExamples(words)[0] }], expect.objectContaining({ draft: base }), null);
     expect(await screen.findByText('Ben has bins this week.')).toBeTruthy();
     expect(screen.queryByTestId('chat-examples')).toBeNull();
   });
@@ -373,9 +374,9 @@ describe('fixing mistakes', () => {
   });
 
   async function offered() {
-    const list = [{ ...NEW_JOHN, id: 'j1', name: 'Bins', category: 'bins' as const }] as JohnDef[];
+    const list = [{ ...NEW_JOHN, id: 'j1', name: 'Bins', kindId: 'bins' }] as JohnDef[];
     await render(
-      <SetupChat houseId="h1" rules={RULES} johns={list} groups={[]} people={[...people, { userId: SAM, name: 'Sam Lee' }]} me={ME} passOpen />,
+      <SetupChat houseId="h1" kinds={KINDS} rules={RULES} johns={list} groups={[]} people={[...people, { userId: SAM, name: 'Sam Lee' }]} me={ME} passOpen />,
       { wrapper: House },
     );
     await say('Sam’s tick was a mistake, and reset the week');
@@ -487,10 +488,11 @@ describe('kept chats', () => {
   });
 
   it('carries on with a kept chat: its words come back, a card says to ask again, and Jonz is sent what was said', async () => {
-    const johns: JohnDef[] = [{ ...NEW_JOHN, id: 'j1', name: 'Bins out', category: 'bins' } as JohnDef];
+    const johns: JohnDef[] = [{ ...NEW_JOHN, id: 'j1', name: 'Bins out', kindId: 'bins' }];
     await render(
       <SetupChat
         houseId="h1"
+        kinds={KINDS}
         rules={RULES}
         johns={johns}
         groups={[]}
@@ -532,7 +534,7 @@ describe('kept chats', () => {
 
   it('says when there is something in the chat, so New chat has something to clear', async () => {
     const talked = jest.fn();
-    await render(<SetupChat houseId="h1" rules={RULES} johns={[]} groups={[]} people={people} me={ME} passOpen onTalked={talked} />, {
+    await render(<SetupChat houseId="h1" kinds={KINDS} rules={RULES} johns={[]} groups={[]} people={people} me={ME} passOpen onTalked={talked} />, {
       wrapper: House,
     });
     expect(talked).toHaveBeenLastCalledWith(false);
@@ -545,7 +547,7 @@ describe('kept chats', () => {
 
 describe('long chats', () => {
   const kept = keepChat as jest.Mock;
-  const johns: JohnDef[] = [{ ...NEW_JOHN, id: 'j1', name: 'Bins out', category: 'bins' } as JohnDef];
+  const johns: JohnDef[] = [{ ...NEW_JOHN, id: 'j1', name: 'Bins out', kindId: 'bins' }];
   /** A kept chat of `n` turns, the person's and Jonz's in turn, the last Jonz's; `summed` on the reply at `at`. */
   function turnsOf(n: number, summed?: { at: number; text: string; count: number }): SavedTurn[] {
     return Array.from({ length: n }, (_, i): SavedTurn =>
@@ -558,6 +560,7 @@ describe('long chats', () => {
     await render(
       <SetupChat
         houseId="h1"
+        kinds={KINDS}
         rules={RULES}
         johns={johns}
         groups={[]}
@@ -576,7 +579,7 @@ describe('long chats', () => {
     await openWith(turnsOf(36, { at: 21, text: '- Bins on Tuesday.', count: 20 }));
     chat.mockResolvedValueOnce({ reply: 'Done.', ask: null, draft: null, source: 'ai', summed: { text: '- Bins on Tuesday.\n- Ben away.', count: 8 } });
     await say('And the recycling?');
-    const [, sent, , , summary] = chat.mock.calls[0];
+    const [, sent, , summary] = chat.mock.calls[0];
     expect(summary).toBe('- Bins on Tuesday.');
     expect(sent[0]).toEqual({ role: 'user', text: 'Asked 20' });
     expect(sent).toHaveLength(17);
@@ -620,6 +623,6 @@ describe('long chats', () => {
     expect(screen.getByTestId('chat-summed')).toHaveTextContent(words('ask.long.carried'));
     await say('And the recycling?');
     expect(chat.mock.calls[0][1]).toEqual([{ role: 'user', text: 'And the recycling?' }]);
-    expect(chat.mock.calls[0][4]).toBe('- Bins on Tuesday.');
+    expect(chat.mock.calls[0][3]).toBe('- Bins on Tuesday.');
   });
 });

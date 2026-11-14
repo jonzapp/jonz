@@ -70,7 +70,7 @@
     "apps/api/lib/pass/events.ts#syncSubscription": 5,
     "apps/api/lib/pass/events.ts#writeBilling": 4,
     "apps/api/lib/push.ts#payloadFor": 4,
-    "apps/client/src/api/draft.ts#sendChat": 5,
+    "apps/client/src/api/draft.ts#sendChat": 4,
     "apps/client/src/api/email-auth.ts#signUpWithEmail": 4,
     "apps/client/src/api/pocket.ts#loadPocket": 4,
     "apps/client/src/api/settings.ts#addJohns": 4,

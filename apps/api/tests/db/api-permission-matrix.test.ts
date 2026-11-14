@@ -122,15 +122,15 @@ async function house(kind: "housemates" | "family"): Promise<{ rows: Rows; admin
     insert into public.weeks (house_id, starts_on, starts_at, ends_at)
     values (${houseId}::uuid, ${WEEK_START}, ${new Date(Date.UTC(2027, 0, 4))}, ${new Date(Date.UTC(2027, 0, 11))}) returning id`;
   const [group] = await admin<{ id: string }[]>`insert into public.groups (house_id, name) values (${houseId}::uuid, 'Upstairs') returning id`;
-  const [john] = await admin<{ id: string }[]>`
-    insert into public.johns (house_id, name, category, points, anchor_week, group_id)
-    values (${houseId}::uuid, 'Dishes', 'kitchen', 2, 0, ${group.id}::uuid) returning id`;
   const kinds = await admin<{ id: string; preset: string | null }[]>`select id, preset from public.john_kinds where house_id = ${houseId}::uuid`;
   const kindOf = (preset: string) => kinds.find((k) => k.preset === preset)!.id;
+  const [john] = await admin<{ id: string }[]>`
+    insert into public.johns (house_id, name, john_kind_id, points, anchor_week, group_id)
+    values (${houseId}::uuid, 'Dishes', ${kindOf("kitchen")}::uuid, 2, 0, ${group.id}::uuid) returning id`;
   const assign = async (who: Person, done: boolean) => {
     const [row] = await admin<{ id: string }[]>`
-      insert into public.assignments (week_id, house_id, john_id, user_id, name, category, points, due_at, done_at)
-      values (${week.id}::uuid, ${houseId}::uuid, ${john.id}::uuid, ${who.id}::uuid, 'Dishes', 'kitchen', 2,
+      insert into public.assignments (week_id, house_id, john_id, user_id, name, points, due_at, done_at)
+      values (${week.id}::uuid, ${houseId}::uuid, ${john.id}::uuid, ${who.id}::uuid, 'Dishes', 2,
               ${new Date(Date.UTC(2027, 0, 6, 18))}, ${done ? new Date(Date.UTC(2027, 0, 4, 8)) : null}) returning id`;
     return row.id;
   };

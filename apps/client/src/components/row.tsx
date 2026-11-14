@@ -43,7 +43,7 @@ interface RowProps {
   sentence?: ReactNode;
   /** One line under the title, truncated: a string, or Meta text with spans of its own. */
   meta?: ReactNode;
-  /** A John's kind's colour (or, for a read that doesn't say, its category): its lid bar leads the meta line. */
+  /** A John's kind's colour (`other` for no kind): its lid bar leads the meta line. */
   lid?: string;
   leading?: ReactNode;
   /** One thing: a value (a string is set as Body), a StatusMark, or a TextButton. */

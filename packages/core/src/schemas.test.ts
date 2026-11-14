@@ -178,7 +178,6 @@ describe("HouseSettings", () => {
 describe("JohnDraft", () => {
   const john = {
     name: " Bins ",
-    category: "bins",
     points: 2,
     everyWeeks: 1,
     dueDow: 7,
@@ -261,7 +260,7 @@ describe("JohnDraft", () => {
       { weekOfMonth: 1 },
       { dueDow: 0 },
       { dueDow: 8 },
-      { category: "garden" },
+      { kindName: "x".repeat(31) },
       { name: "x".repeat(61) },
       { groupId: "upstairs" },
       { id: "j1" },

@@ -26,9 +26,9 @@ test("a Saturday-evening deal keeps the test's order", async ({ context }, testI
     "Hal Helper",
     "Flat 99",
     [
-      { name: "Bins out", category: "bins", dueTime: "20:00" },
-      { name: "Clean the bath", category: "bathroom", needsPhoto: true },
-      { name: "Hoover the stairs", category: "other" },
+      { name: "Bins out", preset: "bins", dueTime: "20:00" },
+      { name: "Clean the bath", preset: "bathroom", needsPhoto: true },
+      { name: "Hoover the stairs", preset: "other" },
     ],
     [],
     saturdayEvening,

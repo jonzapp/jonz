@@ -30,7 +30,6 @@ function row(id: string, overrides: Partial<AssignmentRow> = {}): AssignmentRow 
     id,
     user_id: "leo",
     name: id,
-    category: "other",
     points: 2,
     needs_photo: false,
     due_at: new Date(now.getTime() + 9 * HOUR).toISOString(),

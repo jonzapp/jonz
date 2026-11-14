@@ -6,6 +6,7 @@ import {
   draftPlan,
   offlineTurn,
   type ChatMessage,
+  type DraftKind,
   type GroupDef,
   type HouseDraft,
   type HouseRules,
@@ -24,7 +25,8 @@ import { callV1 } from './v1';
 
 /**
  * Jonz's answer to the chat so far (`summary` of its start, when Jonz has
- * summed it up, then the messages since), with the draft as it stands. A refusal
+ * summed it up, then the messages since), with the draft as it stands, and
+ * the house's kinds for a starter list's Johns to go in. A refusal
  * (not in the house, too many turns today) throws its sentence; if the API
  * can't be reached at all, offlineTurn answers here as the API would
  * (a starter list that fits, or the draft left as it is), so setting up a
@@ -33,15 +35,14 @@ import { callV1 } from './v1';
 export async function sendChat(
   houseId: string,
   messages: readonly ChatMessage[],
-  draft: HouseDraft | null,
-  words: Words,
+  { draft, words, kinds }: { draft: HouseDraft | null; words: Words; kinds: readonly DraftKind[] },
   summary: string | null = null,
 ): Promise<ChatResponse> {
   try {
     return await callV1('ask_house', { houseId, messages: [...messages], draft, ...(summary ? { summary } : {}) });
   } catch (e) {
     if (e instanceof ApiRequestError && e.status >= 400 && e.status < 500 && e.status !== 404) throw e;
-    return offlineTurn(messages, draft, words);
+    return offlineTurn(messages, draft, { words, kinds });
   }
 }
 

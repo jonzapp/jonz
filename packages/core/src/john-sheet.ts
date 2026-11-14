@@ -105,7 +105,7 @@ export function johnSheetMode(
  * the list).
  */
 export function sheetKind(
-  item: Pick<BoardItem, "category" | "groupName" | "points" | "everyWeeks"> & Partial<Pick<BoardItem, "kindName" | "flaggedAt" | "everyMonths" | "together">>, words: Words,
+  item: Pick<BoardItem, "groupName" | "points" | "everyWeeks"> & Partial<Pick<BoardItem, "kindName" | "flaggedAt" | "everyMonths" | "together">>, words: Words,
 ): string {
   // A flag comes round when it's flagged, not every N weeks.
   const often = item.flaggedAt
@@ -116,7 +116,7 @@ export function sheetKind(
         ? words('john.sheet.every', { weeks: item.everyWeeks })
         : null;
   const points = (item.together?.length ?? 1) > 1 ? words('john.crew.each', { points: pointsLabel(item.points, words) }) : pointsLabel(item.points, words);
-  return [johnKind(item.category, item.kindName), item.groupName, points, often]
+  return [johnKind(item.kindName), item.groupName, points, often]
     .filter(Boolean)
     .join(", ");
 }

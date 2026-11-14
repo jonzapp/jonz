@@ -1,7 +1,7 @@
 import { crewByJob, jobKey, tableInputs, type Crew, type CrewRow } from "./crew";
 import type { Database, Json } from "./db-types";
 import type { DealWhy } from "./deal";
-import type { Category, Currency, HouseRules, IsoDow, JohnWhen, Outcome } from "./domain";
+import type { Currency, HouseRules, IsoDow, JohnWhen, Outcome } from "./domain";
 import { closesAt, liveStatus, standsAt, type LiveStatus } from "./outcome";
 import { standings, type TableRow } from "./points";
 import { timesAYear } from "./repeat";
@@ -19,10 +19,8 @@ export type Row<T extends keyof Database["public"]["Tables"]> = Database["public
 export interface JohnDef {
   id: string;
   name: string;
-  /** Its kind on the house's list (kinds.ts), null for none; absent when not read, so it goes by its category. */
+  /** Its kind on the house's list (kinds.ts), null for none; absent on a new John not given one yet. */
   kindId?: string | null;
-  /** The starting kind its kind began as, or other: what older reads and drafts give. */
-  category: Category;
   points: number;
   /** Every N weeks, for a John that repeats in weeks (repeat.ts). */
   everyWeeks: number;
@@ -56,10 +54,9 @@ export interface JohnDef {
   minAge?: number | null;
 }
 
-/** Where a new John starts in the editor: a weekly kitchen John, due Sunday night, for the whole house. */
+/** Where a new John starts in the editor: a weekly John, due Sunday night, for the whole house. */
 export const NEW_JOHN: Omit<JohnDef, "id"> = {
   name: "",
-  category: "kitchen",
   points: 2,
   everyWeeks: 1,
   everyMonths: null,
@@ -80,7 +77,7 @@ export const NEW_JOHN: Omit<JohnDef, "id"> = {
 
 /** A John on the list, from its row (a read without the on-call or monthly columns gets a weekly John due on a day). */
 export function johnDef(
-  row: Pick<Row<"johns">, "id" | "name" | "category" | "points" | "every_weeks" | "due_dow" | "due_time" | "needs_photo" | "group_id"> &
+  row: Pick<Row<"johns">, "id" | "name" | "points" | "every_weeks" | "due_dow" | "due_time" | "needs_photo" | "group_id"> &
     Partial<
       Pick<Row<"johns">, "john_kind_id" | "kind" | "respond_hours" | "per_week" | "every_months" | "week_of_month" | "anchor_month" | "anchor_week" | "crew" | "keep_day" | "pay_minor" | "min_age">
     >,
@@ -89,7 +86,6 @@ export function johnDef(
     id: row.id,
     name: row.name,
     ...(row.john_kind_id !== undefined ? { kindId: row.john_kind_id } : {}),
-    category: row.category as Category,
     points: row.points,
     everyWeeks: row.every_weeks,
     everyMonths: row.every_months ?? null,
@@ -183,7 +179,6 @@ export type AssignmentRow = Pick<
   | "id"
   | "user_id"
   | "name"
-  | "category"
   | "points"
   | "needs_photo"
   | "due_at"
@@ -263,7 +258,6 @@ export interface BoardItem {
   everyMonths?: number | null;
   userId: string;
   name: string;
-  category: string;
   /** Its John's kind on the list now and its lid colour; null when not read or the John is gone, '' for no kind. */
   kindName?: string | null;
   kindColour?: string | null;
@@ -405,7 +399,6 @@ function boardItem(a: AssignmentRow, at: BoardSetting): BoardItem {
     everyMonths: a.johns?.every_months ?? null,
     userId: a.user_id,
     name: a.name,
-    category: a.category,
     points: a.points,
     needsPhoto: a.needs_photo && at.photos,
     dueAt,

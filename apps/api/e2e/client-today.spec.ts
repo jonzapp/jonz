@@ -17,8 +17,8 @@ test.afterAll(async () => cleanUp(made));
 test("tick a John, take it back, and tick one with a photo", async ({ context, page }) => {
   const { userId, houseId } = await dealtHouseInClient(context, "Fay Client", "Flat 12", [
     // Due an hour before the bath, so the bins are Next up.
-    { name: "Bins out", category: "bins", dueTime: "20:00" },
-    { name: "Clean the bath", category: "bathroom", needsPhoto: true },
+    { name: "Bins out", preset: "bins", dueTime: "20:00" },
+    { name: "Clean the bath", preset: "bathroom", needsPhoto: true },
   ]);
   made.push(userId);
 

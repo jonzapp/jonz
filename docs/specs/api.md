@@ -75,6 +75,10 @@ when the executor's check is taken away.
   - A promotion use's `plan` in `owner_promotion` may be null: a free Pass
     is given with no plan bought, so the operation failed on any used free
     Pass (Glyn, 2026-11-14).
+  - A John's older `category` is gone from every read and write: the John
+    list, Today, adding and changing a John, and Ask Jonz's draft, where a
+    John now always names its `kind` (Glyn, 2026-11-14, after each house got
+    its own kinds of John).
 - **The OpenAPI document.** It is OpenAPI 3.1, built from the operations
   themselves and served at `/v1/openapi.json`.
 - **Retiring an operation.** It gets `Deprecation` (RFC 9745) and `Sunset`
