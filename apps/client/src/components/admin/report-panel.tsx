@@ -67,21 +67,39 @@ function ReportBody({
   onReply,
 }: {
   report: Report;
-  reopen: { mutate: () => void; isPending: boolean; error: Error | null };
+  reopen: Reopen;
   refresh: () => Promise<void>;
   onOpen?: (id: string) => void;
   onReply: (text: string) => Promise<void>;
 }) {
+  // Someone to answer: their account, or the address the email came from.
+  const answerable = report.userId !== null || (emailOnly(report) && report.email !== null);
+  return (
+    <View style={styles.panel} testID="report-panel">
+      <ReportHead report={report} />
+      {report.sameAs ? <FoldedInto report={report} same={report.sameAs} refresh={refresh} onOpen={onOpen} /> : null}
+      <ReportThread report={report} viewer="owner" />
+      {report.details ? (
+        <Group>
+          <DetailsList details={report.details} />
+        </Group>
+      ) : null}
+      {report.also.length > 0 ? <AlsoReported also={report.also} onOpen={onOpen} /> : null}
+      {answerable ? <Answering report={report} refresh={refresh} onReply={onReply} /> : null}
+      <Closing report={report} reopen={reopen} refresh={refresh} />
+    </View>
+  );
+}
+
+type Reopen = { mutate: () => void; isPending: boolean; error: Error | null };
+
+/** A report that came by email from someone with no account. */
+const emailOnly = (report: Report) => report.source === 'email' && !report.userId;
+
+/** Who sent it, where they are, and its state. */
+function ReportHead({ report }: { report: Report }) {
   const words = useWords();
-  const [sheet, setSheet] = useState<'fix' | 'same' | null>(null);
-  const [done, setDone] = useState<string | null>(null);
-  const [unfolding, setUnfolding] = useState<string | null>(null);
-  // The reply box's words, which the support agent's "Change it first" fills; and which suggestion they came from.
-  const [replyText, setReplyText] = useState('');
-  const [fromDraft, setFromDraft] = useState<string | null>(null);
-  const first = report.name?.split(' ')[0] ?? words('common.report.gone');
-  const emailOnly = report.source === 'email' && !report.userId;
-  const where = emailOnly
+  const where = emailOnly(report)
     ? words('common.report.emailOnly', { address: report.email ?? words('common.report.gone') })
     : [
         report.house ?? words('common.report.noHouse'),
@@ -91,9 +109,34 @@ function ReportBody({
       ]
         .filter(Boolean)
         .join(', ');
-  const fixed = report.state === 'fixed';
-  // Someone to answer: their account, or the address the email came from.
-  const answerable = report.userId !== null || (emailOnly && report.email !== null);
+  return (
+    <View style={styles.head}>
+      <View style={styles.titleLine}>
+        <Lead header style={styles.name}>
+          {report.name ?? words('common.report.gone')}
+        </Lead>
+        <ReportChip state={report.state} owner testID="report-panel-state" />
+      </View>
+      <Meta>{where}</Meta>
+      {report.subject ? <Meta testID="report-panel-subject">{words('common.report.subject', { subject: report.subject })}</Meta> : null}
+    </View>
+  );
+}
+
+/** The report this one was folded into, and the way to say it isn't the same after all. */
+function FoldedInto({
+  report,
+  same,
+  refresh,
+  onOpen,
+}: {
+  report: Report;
+  same: NonNullable<Report['sameAs']>;
+  refresh: () => Promise<void>;
+  onOpen?: (id: string) => void;
+}) {
+  const words = useWords();
+  const [unfolding, setUnfolding] = useState<string | null>(null);
   const unfold = async () => {
     setUnfolding(null);
     try {
@@ -104,68 +147,70 @@ function ReportBody({
     }
   };
   return (
-    <View style={styles.panel} testID="report-panel">
-      <View style={styles.head}>
-        <View style={styles.titleLine}>
-          <Lead header style={styles.name}>
-            {report.name ?? words('common.report.gone')}
-          </Lead>
-          <ReportChip state={report.state} owner testID="report-panel-state" />
-        </View>
-        <Meta>{where}</Meta>
-        {report.subject ? <Meta testID="report-panel-subject">{words('common.report.subject', { subject: report.subject })}</Meta> : null}
-      </View>
-      {report.sameAs ? (
-        <Group testID="report-same-as">
-          <Row
-            leading={<RowIcon icon={CopyIcon} />}
-            title={words('common.report.foldedInto', { name: report.sameAs.name?.split(' ')[0] ?? words('common.report.gone') })}
-            meta={reportGist(report.sameAs.words)}
-            onPress={onOpen ? () => onOpen(report.sameAs!.id) : undefined}
-            href={onOpen ? undefined : `/admin/inbox/${report.sameAs.id}`}
-            chevron
-            testID="report-same-as-link"
-          />
-          <Row leading={<RowIcon icon={UnlinkIcon} />} title={words('common.report.notSame')} onPress={() => void unfold()} testID="report-not-same" />
-        </Group>
-      ) : null}
+    <>
+      <Group testID="report-same-as">
+        <Row
+          leading={<RowIcon icon={CopyIcon} />}
+          title={words('common.report.foldedInto', { name: same.name?.split(' ')[0] ?? words('common.report.gone') })}
+          meta={reportGist(same.words)}
+          onPress={onOpen ? () => onOpen(same.id) : undefined}
+          href={onOpen ? undefined : `/admin/inbox/${same.id}`}
+          chevron
+          testID="report-same-as-link"
+        />
+        <Row leading={<RowIcon icon={UnlinkIcon} />} title={words('common.report.notSame')} onPress={() => void unfold()} testID="report-not-same" />
+      </Group>
       {unfolding ? <Alert message={unfolding} /> : null}
-      <ReportThread report={report} viewer="owner" />
-      {report.details ? (
-        <Group>
-          <DetailsList details={report.details} />
-        </Group>
-      ) : null}
-      {report.also.length > 0 ? <AlsoReported also={report.also} onOpen={onOpen} /> : null}
-      {answerable ? (
-        <SupportDraftCard
-          report={report}
-          queryKey={[...INBOX_KEY, 'report', report.id]}
-          onReply={onReply}
-          onEdit={(text, draftId) => {
-            setReplyText(text);
-            setFromDraft(draftId);
-          }}
-          onDone={refresh}
-        />
-      ) : null}
-      {answerable ? (
-        <ReplyBox
-          placeholder={emailOnly ? words('common.report.replyByEmail', { name: first }) : words('common.report.replyTo', { name: first })}
-          text={replyText}
-          onChangeText={setReplyText}
-          onSend={async (text) => {
-            await onReply(text);
-            if (fromDraft) {
-              setFromDraft(null);
-              // The reply went; whether the suggestion is marked used doesn't matter to the person.
-              await setSupportDraft(fromDraft, 'used').catch(() => undefined);
-            }
-          }}
-          bare
-          testID="report-reply"
-        />
-      ) : null}
+    </>
+  );
+}
+
+/** Answering whoever sent it: the support agent's suggestion, then the reply box it can fill. */
+function Answering({ report, refresh, onReply }: { report: Report; refresh: () => Promise<void>; onReply: (text: string) => Promise<void> }) {
+  const words = useWords();
+  // The reply box's words, which the support agent's "Change it first" fills; and which suggestion they came from.
+  const [replyText, setReplyText] = useState('');
+  const [fromDraft, setFromDraft] = useState<string | null>(null);
+  const first = report.name?.split(' ')[0] ?? words('common.report.gone');
+  return (
+    <>
+      <SupportDraftCard
+        report={report}
+        queryKey={[...INBOX_KEY, 'report', report.id]}
+        onReply={onReply}
+        onEdit={(text, draftId) => {
+          setReplyText(text);
+          setFromDraft(draftId);
+        }}
+        onDone={refresh}
+      />
+      <ReplyBox
+        placeholder={emailOnly(report) ? words('common.report.replyByEmail', { name: first }) : words('common.report.replyTo', { name: first })}
+        text={replyText}
+        onChangeText={setReplyText}
+        onSend={async (text) => {
+          await onReply(text);
+          if (fromDraft) {
+            setFromDraft(null);
+            // The reply went; whether the suggestion is marked used doesn't matter to the person.
+            await setSupportDraft(fromDraft, 'used').catch(() => undefined);
+          }
+        }}
+        bare
+        testID="report-reply"
+      />
+    </>
+  );
+}
+
+/** Mark fixed (or reopen) and Same as, each with its sheet, and the note under them. */
+function Closing({ report, reopen, refresh }: { report: Report; reopen: Reopen; refresh: () => Promise<void> }) {
+  const words = useWords();
+  const [sheet, setSheet] = useState<'fix' | 'same' | null>(null);
+  const [done, setDone] = useState<string | null>(null);
+  const fixed = report.state === 'fixed';
+  return (
+    <>
       <ButtonRow atEdge>
         <Button
           label={fixed ? words('common.report.reopen') : words('common.report.markFixed')}
@@ -216,7 +261,7 @@ function ReportBody({
           />
         ) : null}
       </Sheet>
-    </View>
+    </>
   );
 }
 

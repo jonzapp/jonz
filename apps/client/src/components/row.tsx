@@ -2,7 +2,7 @@ import { withAlpha } from '@app/core';
 import { Link, type Href } from 'expo-router';
 import { ChevronRightIcon, type LucideIcon } from 'lucide-react-native';
 import { createContext, isValidElement, useContext, useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { Hairline, useRowInset } from '@/components/group';
 import { HazardTape } from '@/components/hazard-tape';
@@ -33,53 +33,7 @@ function looksLikeControl(node: ReactNode): boolean {
   return onPress != null || href != null || onValueChange != null || onChange != null;
 }
 
-/**
- * The one row, everywhere: a 32pt leading slot (a tick box, an avatar or
- * an icon), a one-line title (two where a name or a sentence must show whole,
- * as a John's or on the Wall: `titleLines`), a meta line that wraps onto a
- * second rather than being cut short (`metaLines={1}` only where a table's
- * rows must keep one height), and one trailing item (a value, a chip or a
- * text button), 56 tall, 64 with a meta line, taller when it wraps. A value in words takes what it needs, up
- * to about 60% of the row, and wraps onto a second line past that, so it
- * never squeezes the title out. With `onPress` or `href` it is a button or a link a whole
- * thumb tall, `chevron` when it pushes a page. `selected` (true or false)
- * makes it one of several to choose from, a radio (`aria-checked`), the
- * chosen one on the tint; put the rows in a radiogroup. `current` marks the
- * one open beside its list on a laptop (a guide topic), on the tint with an
- * ink edge, as a chosen row of an owner's table is. A `leading` or
- * `trailing` element that has its own `onPress`, `href`, `onChange` or
- * `onValueChange` is its own control and sits beside the row's press target,
- * never inside it; `leadingControl` / `trailingControl` say so outright for
- * a component that takes none of those. `cells` are columns of their own
- * before the trailing item, for a row in a table. In a Group (or a card's
- * CardRows) it draws the hairline above itself from the leading edge.
- */
-export function Row({
-  title,
-  sentence,
-  meta,
-  lid,
-  leading,
-  trailing,
-  onPress,
-  onLongPress,
-  href,
-  chevron = false,
-  tint = false,
-  hazardEdge = false,
-  tone = 'ink',
-  disabled = false,
-  selected,
-  current = false,
-  titleLines = 1,
-  metaLines = 2,
-  top = false,
-  cells,
-  leadingControl,
-  trailingControl,
-  testID,
-  accessibilityLabel,
-}: {
+interface RowProps {
   title: string;
   /**
    * The title as a sentence in Body with runs of its own (a Wall row's, its
@@ -129,7 +83,55 @@ export function Row({
   trailingControl?: boolean;
   testID?: string;
   accessibilityLabel?: string;
-}) {
+}
+
+/**
+ * The one row, everywhere: a 32pt leading slot (a tick box, an avatar or
+ * an icon), a one-line title (two where a name or a sentence must show whole,
+ * as a John's or on the Wall: `titleLines`), a meta line that wraps onto a
+ * second rather than being cut short (`metaLines={1}` only where a table's
+ * rows must keep one height), and one trailing item (a value, a chip or a
+ * text button), 56 tall, 64 with a meta line, taller when it wraps. A value in words takes what it needs, up
+ * to about 60% of the row, and wraps onto a second line past that, so it
+ * never squeezes the title out. With `onPress` or `href` it is a button or a link a whole
+ * thumb tall, `chevron` when it pushes a page. `selected` (true or false)
+ * makes it one of several to choose from, a radio (`aria-checked`), the
+ * chosen one on the tint; put the rows in a radiogroup. `current` marks the
+ * one open beside its list on a laptop (a guide topic), on the tint with an
+ * ink edge, as a chosen row of an owner's table is. A `leading` or
+ * `trailing` element that has its own `onPress`, `href`, `onChange` or
+ * `onValueChange` is its own control and sits beside the row's press target,
+ * never inside it; `leadingControl` / `trailingControl` say so outright for
+ * a component that takes none of those. `cells` are columns of their own
+ * before the trailing item, for a row in a table. In a Group (or a card's
+ * CardRows) it draws the hairline above itself from the leading edge.
+ */
+export function Row({
+  title,
+  sentence,
+  meta,
+  lid,
+  leading,
+  trailing,
+  onPress,
+  onLongPress,
+  href,
+  chevron = false,
+  tint = false,
+  hazardEdge = false,
+  tone = 'ink',
+  disabled = false,
+  selected,
+  current = false,
+  titleLines = 1,
+  metaLines = 2,
+  top = false,
+  cells,
+  leadingControl,
+  trailingControl,
+  testID,
+  accessibilityLabel,
+}: RowProps) {
   const { colors, scheme, type } = useTheme();
   const inset = useRowInset();
   const [pressed, setPressed] = useState(false);
@@ -155,64 +157,26 @@ export function Row({
   const inside = (
     <>
       {leadingOutside ? null : leadingSlot}
-      <View style={[styles.words, top && { paddingTop: firstLine }]}>
-        {sentence != null ? (
-          <Body numberOfLines={titleLines}>{sentence}</Body>
-        ) : (
-          <RowTitle numberOfLines={titleLines} style={tone === 'hazard' ? { color: colors.hazard } : undefined}>
-            {title}
-          </RowTitle>
-        )}
-        {hasMeta ? (
-          <View style={styles.metaLine}>
-            {/* The dot stays on the meta's first line. */}
-            {lid != null ? (
-              <View style={styles.lid}>
-                <LidBar category={lid} />
-              </View>
-            ) : null}
-            <View style={styles.metaText}>
-              {typeof meta === 'string' || typeof meta === 'number' ? <Meta numberOfLines={metaLines}>{meta}</Meta> : meta}
-            </View>
-          </View>
-        ) : null}
-      </View>
+      <RowWords title={title} sentence={sentence} meta={meta} lid={lid} tone={tone} lines={{ title: titleLines, meta: metaLines }} dropBy={firstLine} />
       {cells}
       {trailingOutside ? null : trailingItem}
       {chevron ? <ChevronRightIcon size={20} color={colors.mutedForeground} aria-hidden /> : null}
     </>
   );
 
-  let body: ReactNode;
-  if (!pressable) {
-    body = <View style={[styles.target, top && styles.topped]}>{inside}</View>;
-  } else {
-    const target = (
-      <Pressable
-        accessibilityRole={selected != null ? 'radio' : href != null ? 'link' : 'button'}
-        accessibilityLabel={accessibilityLabel}
-        aria-checked={selected}
-        aria-current={current || undefined}
-        aria-disabled={disabled}
-        disabled={disabled}
-        onPress={onPress}
-        onLongPress={onLongPress}
-        onPressIn={() => setPressed(true)}
-        onPressOut={() => setPressed(false)}
-        // One flat object: Link's asChild spreads the style, dropping an array.
-        style={StyleSheet.flatten([styles.target, top && styles.topped, disabled && styles.disabled])}
-      >
-        {inside}
-      </Pressable>
-    );
-    body = href != null ? (
-      <Link href={href} asChild>
-        {target}
-      </Link>
-    ) : (
-      target
-    );
-  }
+  const target = [styles.target, top && styles.topped];
+  const body = pressable ? (
+    <RowTarget
+      press={{ onPress, onLongPress, href, disabled, selected, current, accessibilityLabel }}
+      onPressed={setPressed}
+      // One flat object: Link's asChild spreads the style, dropping an array.
+      style={StyleSheet.flatten([target, disabled && styles.disabled])}
+    >
+      {inside}
+    </RowTarget>
+  ) : (
+    <View style={target}>{inside}</View>
+  );
 
   return (
     <View
@@ -241,6 +205,82 @@ export function Row({
         {trailingOutside ? trailingItem : null}
       </TintContext.Provider>
     </View>
+  );
+}
+
+/** A row's words: its title (or sentence) over its meta line, the lid's bar leading the meta. */
+function RowWords({
+  title,
+  sentence,
+  meta,
+  lid,
+  tone,
+  lines,
+  dropBy,
+}: Pick<RowProps, 'title' | 'sentence' | 'meta' | 'lid' | 'tone'> & { lines: { title: 1 | 2; meta: 1 | 2 }; dropBy: number }) {
+  const { colors } = useTheme();
+  const hasMeta = (meta != null && meta !== '') || lid != null;
+  return (
+    <View style={[styles.words, dropBy > 0 && { paddingTop: dropBy }]}>
+      {sentence != null ? (
+        <Body numberOfLines={lines.title}>{sentence}</Body>
+      ) : (
+        <RowTitle numberOfLines={lines.title} style={tone === 'hazard' ? { color: colors.hazard } : undefined}>
+          {title}
+        </RowTitle>
+      )}
+      {hasMeta ? (
+        <View style={styles.metaLine}>
+          {/* The dot stays on the meta's first line. */}
+          {lid != null ? (
+            <View style={styles.lid}>
+              <LidBar category={lid} />
+            </View>
+          ) : null}
+          <View style={styles.metaText}>
+            {typeof meta === 'string' || typeof meta === 'number' ? <Meta numberOfLines={lines.meta}>{meta}</Meta> : meta}
+          </View>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+/** A row's press target: a button, a radio when it's one of several, or a link with `href`. */
+function RowTarget({
+  press,
+  onPressed,
+  style,
+  children,
+}: {
+  press: Pick<RowProps, 'onPress' | 'onLongPress' | 'href' | 'disabled' | 'selected' | 'current' | 'accessibilityLabel'>;
+  onPressed: (pressed: boolean) => void;
+  style: StyleProp<ViewStyle>;
+  children: ReactNode;
+}) {
+  const { href, selected } = press;
+  const target = (
+    <Pressable
+      accessibilityRole={selected != null ? 'radio' : href != null ? 'link' : 'button'}
+      accessibilityLabel={press.accessibilityLabel}
+      aria-checked={selected}
+      aria-current={press.current || undefined}
+      aria-disabled={press.disabled}
+      disabled={press.disabled}
+      onPress={press.onPress}
+      onLongPress={press.onLongPress}
+      onPressIn={() => onPressed(true)}
+      onPressOut={() => onPressed(false)}
+      style={style}
+    >
+      {children}
+    </Pressable>
+  );
+  if (href == null) return target;
+  return (
+    <Link href={href} asChild>
+      {target}
+    </Link>
   );
 }
 

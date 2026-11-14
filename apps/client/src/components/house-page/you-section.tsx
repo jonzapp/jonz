@@ -56,9 +56,6 @@ export function YouSection({
   part?: 'all' | 'account' | 'rest';
 }) {
   const words = useWords();
-  const [look, setLook] = useLook();
-  const language = useLanguage();
-  const toasts = useToastIfAny();
   const [sheet, setSheet] = useState<'name' | 'reminders' | 'password' | null>(null);
   const account = useEmailSignIn(sheet);
   const email = account?.email ?? null;
@@ -66,23 +63,10 @@ export function YouSection({
   // Each opening of the name sheet starts from the name as it is.
   const [opened, setOpened] = useState(0);
   const reminders = useReminderState();
-  const [signingOut, setSigningOut] = useState(false);
   const { listed } = useHouseWorkspace();
 
   if (!view.me) return null;
   const name = view.me.name;
-  const movingOutOn = view.snapshot.members.find((m) => m.userId === userId)?.movingOutOn ?? null;
-
-  async function out() {
-    setSigningOut(true);
-    try {
-      await signOut();
-    } catch (reason) {
-      // The guard moves on once the session is gone; anything else, try again.
-      console.warn('Sign out failed', reason);
-      setSigningOut(false);
-    }
-  }
 
   return (
     <View testID={part === 'rest' ? 'you-rest' : 'you-section'} style={styles.sections}>
@@ -119,33 +103,8 @@ export function YouSection({
               testID="to-prefs"
             />
           )}
-          <Row
-            leading={<RowIcon icon={SunMoonIcon} />}
-            title={words('house.lower.look')}
-            trailing={<Segmented options={LOOKS.map((value) => ({ value, label: words(`common.look.${value}` as const) }))} value={look} onChange={setLook} label={words('people.me.look')} testID="look" />}
-          />
-          {LANGUAGES_OFFERED.length > 1 ? (
-            <Row
-              leading={<RowIcon icon={LanguagesIcon} />}
-              title={words('house.lower.language')}
-              trailing={
-                <PickMenu
-                  options={LANGUAGES_OFFERED.map((value) => ({ value, label: LANGUAGE_NAMES[value] }))}
-                  value={language.language}
-                  // It changes at once; one that can't be saved goes back, and says so.
-                  onChange={(value) =>
-                    void language.change(value).catch((reason: unknown) => {
-                      console.warn('Saving your language failed', reason);
-                      toasts?.show(words('house.lower.languageFailed'));
-                    })
-                  }
-                  label={words('house.lower.language')}
-                  testID="language"
-                />
-              }
-              testID="language-row"
-            />
-          ) : null}
+          <LookRow />
+          {LANGUAGES_OFFERED.length > 1 ? <LanguageRow /> : null}
           {email ? (
             <Row
               leading={<RowIcon icon={KeyRoundIcon} />}
@@ -159,31 +118,14 @@ export function YouSection({
               testID="to-password"
             />
           ) : null}
-          <Row
-            leading={<RowIcon icon={LogOutIcon} />}
-            title={words('house.lower.signOut')}
-            onPress={() => void out()}
-            disabled={signingOut}
-            testID="sign-out"
-          />
+          <SignOutRow />
         </Section>
       )}
 
       {part === 'account' ? null : <HelpSection house={view.snapshot.house.name} />}
 
       {part === 'account' ? null : (
-        <View style={styles.leave}>
-          <Section label={words('people.delete.leave')}>
-            <Row
-              leading={<RowIcon icon={TruckIcon} />}
-              title={words('house.moving.row')}
-              meta={movingOutOn ? dateRange(movingOutOn, movingOutOn, words) : words('house.moving.notPlanned')}
-              href="/you/moving"
-              chevron
-              testID="to-moving"
-            />
-          </Section>
-        </View>
+        <MovingSection on={view.snapshot.members.find((m) => m.userId === userId)?.movingOutOn ?? null} />
       )}
 
       <NameSheet
@@ -213,6 +155,93 @@ export function YouSection({
           onClose={() => setSheet(null)}
         />
       ) : null}
+    </View>
+  );
+}
+
+/** Light, dark, or as the phone has it. */
+function LookRow() {
+  const words = useWords();
+  const [look, setLook] = useLook();
+  return (
+    <Row
+      leading={<RowIcon icon={SunMoonIcon} />}
+      title={words('house.lower.look')}
+      trailing={<Segmented options={LOOKS.map((value) => ({ value, label: words(`common.look.${value}` as const) }))} value={look} onChange={setLook} label={words('people.me.look')} testID="look" />}
+    />
+  );
+}
+
+/** The language the app speaks to you in. */
+function LanguageRow() {
+  const words = useWords();
+  const language = useLanguage();
+  const toasts = useToastIfAny();
+  return (
+    <Row
+      leading={<RowIcon icon={LanguagesIcon} />}
+      title={words('house.lower.language')}
+      trailing={
+        <PickMenu
+          options={LANGUAGES_OFFERED.map((value) => ({ value, label: LANGUAGE_NAMES[value] }))}
+          value={language.language}
+          // It changes at once; one that can't be saved goes back, and says so.
+          onChange={(value) =>
+            void language.change(value).catch((reason: unknown) => {
+              console.warn('Saving your language failed', reason);
+              toasts?.show(words('house.lower.languageFailed'));
+            })
+          }
+          label={words('house.lower.language')}
+          testID="language"
+        />
+      }
+      testID="language-row"
+    />
+  );
+}
+
+function SignOutRow() {
+  const words = useWords();
+  const [signingOut, setSigningOut] = useState(false);
+
+  async function out() {
+    setSigningOut(true);
+    try {
+      await signOut();
+    } catch (reason) {
+      // The guard moves on once the session is gone; anything else, try again.
+      console.warn('Sign out failed', reason);
+      setSigningOut(false);
+    }
+  }
+
+  return (
+    <Row
+      leading={<RowIcon icon={LogOutIcon} />}
+      title={words('house.lower.signOut')}
+      onPress={() => void out()}
+      disabled={signingOut}
+      testID="sign-out"
+    />
+  );
+}
+
+/** Moving out: the day it's planned for, on the way to planning it. */
+function MovingSection({ on }: { on: string | null }) {
+  const words = useWords();
+  return (
+    <View style={styles.leave}>
+      <Section label={words('people.delete.leave')}>
+        <Row
+          leading={<RowIcon icon={TruckIcon} />}
+          title={words('house.moving.row')}
+          meta={on ? dateRange(on, on, words) : words('house.moving.notPlanned')}
+          href="/you/moving"
+          chevron
+          testID="to-moving"
+        />
+      </Section>
     </View>
   );
 }
