@@ -1,7 +1,6 @@
 import { isOpen } from "./board-views";
 import { type BoardItem } from "./board";
 import { andNames } from "./crew";
-import { CATEGORY_SHORT } from "./domain";
 import { dueInLine, firstName, relative, sinceLabel, statusLabel } from "./format";
 import type { LiveStatus } from "./outcome";
 import { pointsEarned } from "./points";
@@ -15,13 +14,11 @@ import type { Words } from "./words-for";
 
 /**
  * A John's kind, as every line about it says it (its rows, Next up, the
- * John sheet): the name the house gave it, or for a read that doesn't say,
- * its starting kind's short word. Anything unknown is "Other". A John with
- * no kind ('' from the read) says none: the lines leave it out.
+ * John sheet): the name the house gave it. A John with no kind ('' from the
+ * read), or one gone from the list (null), says none: the lines leave it out.
  */
-export function johnKind(category: string, kindName?: string | null): string {
-  if (kindName != null) return kindName;
-  return (CATEGORY_SHORT as Partial<Record<string, string>>)[category] ?? CATEGORY_SHORT.other;
+export function johnKind(kindName?: string | null): string {
+  return kindName ?? "";
 }
 
 /** What a John's row shows and does. */
@@ -103,7 +100,7 @@ function tickOf(status: LiveStatus): JohnRowPlan["tick"] {
 
 type RowItem = Pick<
   BoardItem,
-  "userId" | "name" | "category" | "points" | "needsPhoto" | "status" | "dueAt" | "movedFrom" | "doneAt" | "standsAt" | "dispute"
+  "userId" | "name" | "points" | "needsPhoto" | "status" | "dueAt" | "movedFrom" | "doneAt" | "standsAt" | "dispute"
 > &
   Partial<Pick<BoardItem, "kindName" | "flaggedAt" | "flaggedBy" | "coveredBy" | "outcome" | "together" | "crew" | "absentAt" | "dealt" | "awaitsOk">>;
 
@@ -154,7 +151,7 @@ export function johnRow(item: RowItem, viewing: RowViewing): JohnRowPlan {
   };
 }
 
-type MetaItem = Pick<BoardItem, "userId" | "category" | "status" | "dueAt" | "movedFrom" | "doneAt" | "standsAt" | "dispute"> &
+type MetaItem = Pick<BoardItem, "userId" | "status" | "dueAt" | "movedFrom" | "doneAt" | "standsAt" | "dispute"> &
   Partial<Pick<BoardItem, "kindName" | "flaggedAt" | "flaggedBy" | "together" | "crew" | "dealt" | "awaitsOk">> & {
     coveredBy?: string | null;
   };
@@ -231,7 +228,7 @@ function metaLine(item: MetaItem, viewing: RowViewing): { meta: string; lid: boo
   if (item.status === "disputed") return { meta: disputedMeta(item, viewing), lid: false };
   const flagged = flaggedPart(item, viewing);
   const together = togetherPart(item, viewing);
-  const parts = [johnKind(item.category, item.kindName), ...(flagged ? [flagged] : []), ...statusParts(item, viewing), ...(together ? [together] : [])];
+  const parts = [johnKind(item.kindName), ...(flagged ? [flagged] : []), ...statusParts(item, viewing), ...(together ? [together] : [])];
   // A John with no kind leaves it out.
   return { meta: parts.filter(Boolean).join(", "), lid: true };
 }

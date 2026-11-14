@@ -14,7 +14,7 @@ export interface KindDef {
   colour: string;
   /** Its place on the list, from 0. */
   position: number;
-  /** The starting kind it began as, for older apps; null for one the house made. */
+  /** The starting kind it began as (a starter list's Johns go in it); null for one the house made. */
   preset: Category | null;
 }
 
@@ -139,13 +139,9 @@ export function kindsInOrder(kinds: readonly KindDef[]): KindDef[] {
   return [...kinds].sort((a, b) => a.position - b.position || a.name.localeCompare(b.name));
 }
 
-/**
- * A John's kind: by its kind id (null when it has none), or for a John not
- * read with one, the starting kind its category began as.
- */
-export function kindOf(john: Pick<JohnDef, "category" | "kindId">, kinds: readonly KindDef[]): KindDef | null {
-  if (john.kindId !== undefined) return kinds.find((k) => k.id === john.kindId) ?? null;
-  return kinds.find((k) => k.preset === john.category) ?? null;
+/** A John's kind, by its kind id: null when it has none. */
+export function kindOf(john: Pick<JohnDef, "kindId">, kinds: readonly KindDef[]): KindDef | null {
+  return kinds.find((k) => k.id === john.kindId) ?? null;
 }
 
 /** The kinds' ids in order with one moved a place up (-1) or down (1): what order_kinds takes. */

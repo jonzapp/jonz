@@ -11,12 +11,12 @@ import { testQueryClient } from '@/testing/query';
 // fresh cache and the look, and the John list the House pages' tests share.
 
 /** Two Johns on the house's list: the bins every week, the bathroom every other, with a photo. */
-export const BINS: JohnDef = { ...NEW_JOHN, id: 'j1', name: 'Bins', category: 'bins', points: 1, dueDow: 4, dueTime: '07:00' };
+export const BINS: JohnDef = { ...NEW_JOHN, id: 'j1', name: 'Bins', kindId: 'bins', points: 1, dueDow: 4, dueTime: '07:00' };
 export const BATH: JohnDef = {
   ...NEW_JOHN,
   id: 'j2',
   name: 'Bathroom',
-  category: 'bathroom',
+  kindId: 'bathroom',
   points: 4,
   everyWeeks: 2,
   needsPhoto: true,

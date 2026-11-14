@@ -21,8 +21,8 @@ test("ticks land on the Wall with their photos, and take reactions", async ({ br
     names.ava,
     "Flat 30",
     [
-      { name: "Clean the bath", category: "bathroom", needsPhoto: true },
-      { name: "Wipe the hob", category: "kitchen" },
+      { name: "Clean the bath", preset: "bathroom", needsPhoto: true },
+      { name: "Wipe the hob", preset: "kitchen" },
     ],
     [{ context: contexts.ben, name: names.ben }],
   );
@@ -92,7 +92,7 @@ test("an admin undoes a housemate's tick from the John sheet its Wall post opens
     contexts.ava,
     "Ava Undo",
     "Flat 31",
-    [{ name: "Clean the sink", category: "kitchen" }, { name: "Dust the shelves", category: "other" }],
+    [{ name: "Clean the sink", preset: "kitchen" }, { name: "Dust the shelves", preset: "other" }],
     [{ context: contexts.ben, name: "Ben Undo" }],
   );
   made.push(userId, ...housemateIds);

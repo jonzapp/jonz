@@ -162,7 +162,7 @@ function BoardRow({
         titleLines={2}
         meta={meta}
         metaLines={2}
-        lid={plan.lid ? item.category : undefined}
+        lid={plan.lid ? (item.kindColour ?? 'other') : undefined}
         leading={leading}
         trailing={item.payMinor ? pocketMoney(item.payMinor, currency, words) : undefined}
         hazardEdge={plan.hazardEdge}

@@ -1,4 +1,3 @@
-import { CATEGORY_LABEL } from "./domain";
 import { pointsLabel, weekdayName } from "./format";
 import { dueWords, oftenWords } from "./repeat";
 import type { Words } from "./words-for";
@@ -10,14 +9,13 @@ import { DraftedGroup, DraftedJohn, HouseDraft, key } from "./house-draft";
 /** The fields a change can touch, in the order a change line names them, but for its kind (sameKind). */
 const CHANGEABLE = ["name", "points", "everyWeeks", "everyMonths", "weekOfMonth", "dueDow", "dueTime", "needsPhoto", "when", "respondHours", "perWeek", "crew", "group"] as const;
 
-/** Whether two Johns have the same kind: by name in any capitals when both say it, else by their categories. */
+/** Whether two Johns have the same kind: by name in any capitals, or both none. */
 function sameKind(a: DraftedJohn, b: DraftedJohn): boolean {
-  if (a.kind === undefined || b.kind === undefined) return a.category === b.category;
   return a.kind === null || b.kind === null ? a.kind === b.kind : key(a.kind) === key(b.kind);
 }
 
-/** A John's kind in words: its name, No kind, or (not read) the starting kind its category is. */
-const kindWords = (j: DraftedJohn, words: Words) => (j.kind === undefined ? CATEGORY_LABEL[j.category] : (j.kind ?? words('house.kinds.none')));
+/** A John's kind in words: its name, or No kind. */
+const kindWords = (j: DraftedJohn, words: Words) => j.kind ?? words('house.kinds.none');
 
 /** One thing a draft does to the list: a John to add (its place in the draft), one to change, or one to take off. */
 export type DraftChange =

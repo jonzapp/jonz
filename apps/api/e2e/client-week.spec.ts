@@ -30,8 +30,8 @@ test("dispute a housemate's tick from the board, and the house of two decides wh
     "Ava Board",
     "Flat 21",
     [
-      { name: "Bins out", category: "bins" },
-      { name: "Wipe the hob", category: "kitchen" },
+      { name: "Bins out", preset: "bins" },
+      { name: "Wipe the hob", preset: "kitchen" },
     ],
     [{ context: benContext, name: "Ben Board" }],
   );

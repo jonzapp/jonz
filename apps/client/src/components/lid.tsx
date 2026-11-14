@@ -7,7 +7,8 @@ import { useTheme } from '@/theme';
  * A John's kind: a short bar of its lid colour, a bin lid seen side on,
  * placed only before the kind's name in a meta line (Row's `lid` puts it
  * there). `lid` is the kind's own colour (`#rrggbb`), made to read in this
- * scheme, or for a read that doesn't say, its starting kind's category.
+ * scheme, or `other`'s grey for a John with no kind (a starting kind's name,
+ * such as `kitchen`, wears its bin lid: the style page's samples).
  */
 export function LidBar({ lid }: { lid: string }) {
   const { colors } = useTheme();

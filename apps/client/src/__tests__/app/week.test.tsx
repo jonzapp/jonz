@@ -60,8 +60,8 @@ function busyWeek(overrides: Parameters<typeof snapshot>[0] = {}) {
   return snapshot({
     assignments: [
       ...snapshot().assignments.slice(0, 3),
-      assignment({ id: 'a4', user_id: 'sam', name: 'Clean the bath', category: 'bathroom', done_at: at(-1) }),
-      assignment({ id: 'a5', user_id: 'sam', name: 'Mop the floor', category: 'floors', done_at: at(-2) }),
+      assignment({ id: 'a4', user_id: 'sam', name: 'Clean the bath', kind_name: 'Bathroom', done_at: at(-1) }),
+      assignment({ id: 'a5', user_id: 'sam', name: 'Mop the floor', kind_name: 'Floors', done_at: at(-2) }),
     ],
     disputes: [
       {
@@ -78,7 +78,7 @@ function busyWeek(overrides: Parameters<typeof snapshot>[0] = {}) {
 }
 
 /** One of Sam's still to do, for a swap to trade for. */
-const samsOpenJohn = assignment({ id: 'a6', user_id: 'sam', name: 'Descale the kettle', category: 'kitchen', due_at: at(30) });
+const samsOpenJohn = assignment({ id: 'a6', user_id: 'sam', name: 'Descale the kettle', kind_name: 'Kitchen', due_at: at(30) });
 
 /** Week under a stand-in layout, with the pages its menu goes to standing in as their names. */
 async function open(): Promise<QueryClient> {
@@ -232,7 +232,7 @@ describe('on a phone', () => {
 
   it('shows a John done together once, under Together, and counts it in each person\'s group', async () => {
     const garden = (id: string, user: string) =>
-      assignment({ id, user_id: user, name: 'Garden tidy', category: 'outside', points: 4, job_id: 'job1', due_at: at(20) });
+      assignment({ id, user_id: user, name: 'Garden tidy', kind_name: 'Outside', points: 4, job_id: 'job1', due_at: at(20) });
     read.mockResolvedValue(snapshot({ assignments: [garden('g1', 'priya'), garden('g2', 'sam')] }));
     await open();
     const together = within(screen.getByTestId('week-together'));
@@ -271,7 +271,7 @@ describe('on a phone', () => {
       busyWeek({
         assignments: [
           ...busyWeek().assignments.slice(0, 1),
-          assignment({ id: 'a2', name: 'Hoover the stairs', category: 'floors', due_at: at(72), needs_photo: true }),
+          assignment({ id: 'a2', name: 'Hoover the stairs', kind_name: 'Floors', due_at: at(72), needs_photo: true }),
         ],
       }),
     );
@@ -304,7 +304,7 @@ describe('on a phone', () => {
       busyWeek({
         assignments: [
           ...busyWeek().assignments.slice(0, 1),
-          assignment({ id: 'a2', name: 'Hoover the stairs', category: 'floors', done_at: at(-1) }),
+          assignment({ id: 'a2', name: 'Hoover the stairs', kind_name: 'Floors', done_at: at(-1) }),
         ],
       }),
     );
@@ -319,7 +319,7 @@ describe('on a phone', () => {
       busyWeek({
         assignments: [
           ...busyWeek().assignments.slice(0, 1),
-          assignment({ id: 'a2', name: 'Hoover the stairs', category: 'floors', due_at: at(-2), done_at: at(-3) }),
+          assignment({ id: 'a2', name: 'Hoover the stairs', kind_name: 'Floors', due_at: at(-2), done_at: at(-3) }),
         ],
         disputes: [],
       });
@@ -475,7 +475,7 @@ describe('on a phone', () => {
   it("opens your own disputed John on nothing in particular, as you can't vote on it", async () => {
     read.mockResolvedValue(
       busyWeek({
-        assignments: [...busyWeek().assignments.slice(0, 4), assignment({ id: 'a5', name: 'Mop the floor', category: 'floors', done_at: at(-2) })],
+        assignments: [...busyWeek().assignments.slice(0, 4), assignment({ id: 'a5', name: 'Mop the floor', kind_name: 'Floors', done_at: at(-2) })],
       }),
     );
     await open();
@@ -558,9 +558,9 @@ describe('coming up', () => {
 
 describe('the look ahead', () => {
   const LIST = [
-    { ...NEW_JOHN, id: 'j1', name: 'Bins out', category: 'bins' as const },
-    { ...NEW_JOHN, id: 'mop', name: 'Mopping', category: 'floors' as const, points: 3 },
-    { ...NEW_JOHN, id: 'kitchen', name: 'Kitchen', points: 2 },
+    { ...NEW_JOHN, id: 'j1', name: 'Bins out', kindId: 'bins' },
+    { ...NEW_JOHN, id: 'mop', name: 'Mopping', kindId: 'floors', points: 3 },
+    { ...NEW_JOHN, id: 'kitchen', name: 'Kitchen', kindId: 'kitchen', points: 2 },
   ];
   const WEEKS: SteadyAheadWeek[] = [
     { startsOn: '2026-10-26', johns: { mop: ['sam'], j1: ['priya'] } },

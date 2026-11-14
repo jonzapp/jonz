@@ -209,7 +209,7 @@ describe("previewLandings and nextLine", () => {
 });
 
 describe("comingUp", () => {
-  const base = { name: "", category: "kitchen" as const, points: 8, when: "day" as const };
+  const base = { name: "", points: 8, when: "day" as const };
   it("lists long Johns landing in the next four weeks, soonest first, and nothing else", () => {
     const johns = [
       { ...base, ...fridge, id: "fridge", name: "Fridge deep clean" },
@@ -220,8 +220,8 @@ describe("comingUp", () => {
     ];
     // This week starts Mon 26 Oct; the four after it run to Sun 29 Nov.
     expect(comingUp(johns, "2026-10-26", 1, words)).toEqual([
-      { johnId: "fridge", name: "Fridge deep clean", category: "kitchen", points: 8, date: "2026-11-07", meta: "Sat 7 Nov, every 3 months" },
-      { johnId: "gutters", name: "Clear the gutters", category: "kitchen", points: 15, date: "2026-11-21", meta: "Sat 21 Nov, every year" },
+      { johnId: "fridge", name: "Fridge deep clean", points: 8, date: "2026-11-07", meta: "Sat 7 Nov, every 3 months" },
+      { johnId: "gutters", name: "Clear the gutters", points: 15, date: "2026-11-21", meta: "Sat 21 Nov, every year" },
     ]);
   });
 

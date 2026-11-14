@@ -35,7 +35,6 @@ const call = (who: "boss" | "mate", method: "GET" | "POST" | "PATCH" | "DELETE",
 
 const JOHN = {
   name: "Bins",
-  category: "kitchen",
   points: 2,
   everyWeeks: 2,
   dueDow: 7,

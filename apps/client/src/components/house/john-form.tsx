@@ -128,10 +128,9 @@ function WhatAndWho({ value: v, kinds, groups, onChange: set }: { value: Draft; 
   const kind = kindOf(v, kinds);
   // A John whose kind was deleted says so until it's given one.
   const options = [...ordered.map((k) => ({ value: k.id, label: k.name })), ...(kind ? [] : [{ value: '', label: words('house.kinds.none') }])];
-  // A kind changes nothing in the deal; its starting kind rides along for older apps.
+  // A kind changes nothing in the deal.
   const pickKind = (id: string) => {
-    const kind = ordered.find((k) => k.id === id);
-    if (kind) set({ kindId: kind.id, category: kind.preset ?? 'other' });
+    if (ordered.some((k) => k.id === id)) set({ kindId: id });
   };
   const sharers = [{ value: '', label: words('house.johns.everyone') }, ...groups.map((g) => ({ value: g.id, label: g.name }))];
   // What "Shared by" means, under it: how to share with fewer when there's no

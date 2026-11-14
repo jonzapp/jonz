@@ -59,7 +59,8 @@ export async function makeHouse(names: string[] = ["Ava", "Ben", "Cal"], kind: "
 export interface JohnSpec {
   name: string;
   points?: number;
-  category?: Category;
+  /** The house's starting kind it goes in (Everything else unless given), as the app writes it by its kind's id. */
+  preset?: Category;
   dueDow?: IsoDow;
   dueTime?: string;
   everyWeeks?: number;
@@ -81,6 +82,8 @@ export interface JohnSpec {
 }
 
 export async function addJohns(houseId: string, specs: JohnSpec[], anchor: WeekWindow) {
+  const { data: kinds } = await adminClient().from("john_kinds").select("id, preset").eq("house_id", houseId);
+  const kindOf = (preset: Category) => kinds?.find((k) => k.preset === preset)?.id ?? null;
   const { data, error } = await adminClient()
     .from("johns")
     .insert(
@@ -88,7 +91,7 @@ export async function addJohns(houseId: string, specs: JohnSpec[], anchor: WeekW
         house_id: houseId,
         name: s.name,
         points: s.points ?? 2,
-        category: s.category ?? "other",
+        john_kind_id: kindOf(s.preset ?? "other"),
         due_dow: s.dueDow ?? 7,
         due_time: s.dueTime ?? "21:00",
         every_weeks: s.everyWeeks ?? 1,

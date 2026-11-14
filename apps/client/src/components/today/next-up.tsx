@@ -178,7 +178,7 @@ function NextJohn({
       {/* Not a row: the meta may wrap to a second line on a narrow phone rather than lose the cost. */}
       <View style={[styles.meta, styles.underPlate]}>
         <View style={styles.mark}>
-          <LidBar lid={item.kindColour ?? item.category} />
+          <LidBar lid={item.kindColour ?? 'other'} />
         </View>
         <Meta numberOfLines={2} style={styles.shrink} testID="next-up-meta">
           {/* A John with no kind says only when it's due. */}

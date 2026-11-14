@@ -35,7 +35,7 @@ function item(id: string, overrides: Partial<BoardItem> = {}): BoardItem {
     everyWeeks: 1,
     userId: ME,
     name: id,
-    category: "kitchen",
+    kindName: "Kitchen",
     points: 2,
     needsPhoto: false,
     // Today 21:00 in London.
@@ -251,7 +251,7 @@ describe("clearUntil", () => {
 
 describe("nextUpMeta", () => {
   it("says the kind, when it's due and what being late costs", () => {
-    expect(nextUpMeta(item("a", { category: "bathroom" }), { rules: RULES, now, zone: RULES.timezone, words })).toEqual({
+    expect(nextUpMeta(item("a", { kindName: "Bathroom" }), { rules: RULES, now, zone: RULES.timezone, words })).toEqual({
       kind: "Bathroom",
       due: "due today 21:00, £1 if late",
       overdue: null,
@@ -273,9 +273,9 @@ describe("nextUpMeta", () => {
     expect(nextUpMeta(item("a", { movedFrom: at(48) }), { rules: RULES, now, zone: RULES.timezone, words }).due).toBe("due today 21:00, before you go, £1 if late");
   });
 
-  it("says the kind as every row does, short, and calls an unknown kind everything else", () => {
-    expect(nextUpMeta(item("a", { category: "floors" }), { rules: RULES, now, zone: RULES.timezone, words }).kind).toBe("Floors");
-    expect(nextUpMeta(item("a", { category: "garden" }), { rules: RULES, now, zone: RULES.timezone, words }).kind).toBe("Other");
+  it("says the kind as every row does, and none for a John with no kind", () => {
+    expect(nextUpMeta(item("a", { kindName: "Floors" }), { rules: RULES, now, zone: RULES.timezone, words }).kind).toBe("Floors");
+    expect(nextUpMeta(item("a", { kindName: "" }), { rules: RULES, now, zone: RULES.timezone, words }).kind).toBe("");
   });
 
   it("keeps the kind on an overdue John, and says since when it's due and what it costs now and if it's missed", () => {
@@ -454,11 +454,11 @@ describe("johnSheetMode", () => {
 
 describe("the sheet's header", () => {
   it("says the kind, the group, the points and how often", () => {
-    expect(sheetKind(item("a", { category: "bathroom", points: 1 }), words)).toBe("Bathroom, 1 pt, every week");
+    expect(sheetKind(item("a", { kindName: "Bathroom", points: 1 }), words)).toBe("Bathroom, 1 pt, every week");
     expect(sheetKind(item("a", { groupName: "Upstairs bathroom", points: 4, everyWeeks: 2 }), words)).toBe(
       "Kitchen, Upstairs bathroom, 4 pts, every 2 weeks",
     );
-    expect(sheetKind(item("a", { category: "bins" }), words)).toBe("Bins, 2 pts, every week");
+    expect(sheetKind(item("a", { kindName: "Bins" }), words)).toBe("Bins, 2 pts, every week");
     expect(sheetKind(item("a", { points: 8, everyMonths: 3 }), words)).toBe("Kitchen, 8 pts, every 3 months");
     // Its John taken off the list since the deal (or a read that didn't say): no "every".
     expect(sheetKind(item("a", { johnId: null, everyWeeks: null }), words)).toBe("Kitchen, 2 pts");
@@ -780,7 +780,6 @@ describe("from a real board", () => {
       id,
       user_id: ME,
       name: id,
-      category: "bins",
       points: 1,
       needs_photo: false,
       due_at: at(dueIn).toISOString(),

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { weekIndex, weekWindow } from "@app/core";
+import { weekIndex, weekWindow, type Category } from "@app/core";
 import type { BrowserContext } from "@playwright/test";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
@@ -122,7 +122,7 @@ export async function dealtHouseInClient(
   context: BrowserContext,
   name: string,
   houseName: string,
-  johns: { name: string; category?: string; needsPhoto?: boolean; dueTime?: string; onCall?: boolean }[],
+  johns: { name: string; preset?: Category; needsPhoto?: boolean; dueTime?: string; onCall?: boolean }[],
   housemates: { context: BrowserContext; name: string }[] = [],
   given?: Date | { at?: Date; newToTours?: boolean },
 ): Promise<{ userId: string; houseId: string; housemateIds: string[]; weekId: string }> {
@@ -149,11 +149,13 @@ export async function dealtHouseInClient(
   // Taken after everyone has joined: the deal leaves out anyone who joins after its "now".
   const now = at ?? rightNow();
   const week = weekWindow(now, "Europe/London", 1);
+  // Each in the house's starting kind given, or Everything else.
+  const { data: kinds } = await db.from("john_kinds").select("id, preset").eq("house_id", houseId);
   const { error: johnsError } = await db.from("johns").insert(
     johns.map((j) => ({
       house_id: houseId,
       name: j.name,
-      category: j.category ?? "other",
+      john_kind_id: kinds?.find((k) => k.preset === (j.preset ?? "other"))?.id ?? null,
       points: 2,
       // Sunday night: anything already due when the week is dealt gets a day's grace. Each keeps its day, so
       // the deal's one a day doesn't move any of them off Sunday, and the order a test names them in holds.
@@ -195,10 +197,12 @@ export async function undealtHouseInClient(
   });
   if (error) throw error;
   const anchor = weekIndex(weekWindow(rightNow(), "Europe/London", 1).startsOn);
+  const { data: kinds } = await admin().from("john_kinds").select("id, preset").eq("house_id", houseId);
+  const other = kinds?.find((k) => k.preset === "other")?.id ?? null;
   const { error: johnsError } = await admin()
     .from("johns")
     .insert(
-      johns.map((john) => ({ house_id: houseId, name: john, category: "other", points: 2, due_dow: 7, due_time: "21:00", every_weeks: 1, anchor_week: anchor })),
+      johns.map((john) => ({ house_id: houseId, name: john, john_kind_id: other, points: 2, due_dow: 7, due_time: "21:00", every_weeks: 1, anchor_week: anchor })),
     );
   if (johnsError) throw johnsError;
   return { userId: id, houseId };

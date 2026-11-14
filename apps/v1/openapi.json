@@ -4951,9 +4951,6 @@
                           "name": {
                             "type": "string"
                           },
-                          "category": {
-                            "type": "string"
-                          },
                           "points": {
                             "type": "integer",
                             "minimum": -9007199254740991,
@@ -5313,7 +5310,6 @@
                           "johnId",
                           "userId",
                           "name",
-                          "category",
                           "points",
                           "needsPhoto",
                           "dueAt",
@@ -5452,9 +5448,6 @@
                                   "name": {
                                     "type": "string"
                                   },
-                                  "category": {
-                                    "type": "string"
-                                  },
                                   "needsPhoto": {
                                     "type": "boolean"
                                   },
@@ -5485,7 +5478,6 @@
                                 },
                                 "required": [
                                   "name",
-                                  "category",
                                   "needsPhoto",
                                   "archivedAt",
                                   "kindName",
@@ -5672,9 +5664,6 @@
                               }
                             ]
                           },
-                          "category": {
-                            "type": "string"
-                          },
                           "points": {
                             "type": "integer",
                             "minimum": -9007199254740991,
@@ -5793,7 +5782,6 @@
                           "id",
                           "name",
                           "johnKindId",
-                          "category",
                           "points",
                           "everyWeeks",
                           "everyMonths",
@@ -5975,17 +5963,6 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 30
-                  },
-                  "category": {
-                    "type": "string",
-                    "enum": [
-                      "kitchen",
-                      "bathroom",
-                      "bins",
-                      "floors",
-                      "errands",
-                      "other"
-                    ]
                   },
                   "points": {
                     "type": "integer",
@@ -8979,17 +8956,6 @@
                                       }
                                     ]
                                   },
-                                  "category": {
-                                    "type": "string",
-                                    "enum": [
-                                      "kitchen",
-                                      "bathroom",
-                                      "bins",
-                                      "floors",
-                                      "errands",
-                                      "other"
-                                    ]
-                                  },
                                   "points": {
                                     "type": "integer",
                                     "minimum": 1,
@@ -9074,7 +9040,7 @@
                                 },
                                 "required": [
                                   "name",
-                                  "category",
+                                  "kind",
                                   "points",
                                   "everyWeeks",
                                   "everyMonths",
@@ -9724,17 +9690,6 @@
                                     }
                                   ]
                                 },
-                                "category": {
-                                  "type": "string",
-                                  "enum": [
-                                    "kitchen",
-                                    "bathroom",
-                                    "bins",
-                                    "floors",
-                                    "errands",
-                                    "other"
-                                  ]
-                                },
                                 "points": {
                                   "type": "integer",
                                   "minimum": 1,
@@ -9819,7 +9774,7 @@
                               },
                               "required": [
                                 "name",
-                                "category",
+                                "kind",
                                 "points",
                                 "everyWeeks",
                                 "dueDow",
@@ -10264,17 +10219,6 @@
                           "minLength": 1,
                           "maxLength": 30
                         },
-                        "category": {
-                          "type": "string",
-                          "enum": [
-                            "kitchen",
-                            "bathroom",
-                            "bins",
-                            "floors",
-                            "errands",
-                            "other"
-                          ]
-                        },
                         "points": {
                           "type": "integer",
                           "minimum": 1,
@@ -10498,17 +10442,6 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 30
-                  },
-                  "category": {
-                    "type": "string",
-                    "enum": [
-                      "kitchen",
-                      "bathroom",
-                      "bins",
-                      "floors",
-                      "errands",
-                      "other"
-                    ]
                   },
                   "points": {
                     "type": "integer",

@@ -1,4 +1,4 @@
-import { addDaysTo, ASK_POOL_TOKENS, CHAT_RECENT, CHAT_SUM_AT, foldPoint, localDate, ASK_TURN_RESERVE, hasPass, passOf, CHAT_TURNS_PER_PERSON_PER_DAY, HouseDraft, PERMISSIONS, starterDraft, type DraftEdit } from "@app/core";
+import { addDaysTo, ASK_POOL_TOKENS, CATEGORY_LABEL, startingKinds, CHAT_RECENT, CHAT_SUM_AT, foldPoint, localDate, ASK_TURN_RESERVE, hasPass, passOf, CHAT_TURNS_PER_PERSON_PER_DAY, HouseDraft, PERMISSIONS, starterDraft, type DraftEdit } from "@app/core";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import type { DraftAnswer, DraftContext, JonzTools } from "@/lib/ai/house-draft";
@@ -11,6 +11,8 @@ import { APP_ORIGIN, preflight, problemOf, v1 } from "@/tests/support/v1";
 import { rightNow } from "@/tests/support/clock";
 import { wordsFor } from '@app/core';
 
+/** A new house's six starting kinds, as an English speaker's house has them, for a starter list's Johns. */
+const STARTING = startingKinds(CATEGORY_LABEL);
 const words = wordsFor('en', 'housemates');
 
 /**
@@ -77,7 +79,7 @@ describe("POST /v1/houses/{houseId}/ask", () => {
     const house = await makeHouse(["Ava"]);
     const res = await chatAs(house.admin, { houseId: house.id, messages: said("Me, my husband and the kids"), draft: null });
     expect(res.status).toBe(201);
-    expect(await res.json()).toEqual({ reply: words('ask.draft.offline'), ask: null, draft: starterDraft("family"), source: "starter" });
+    expect(await res.json()).toEqual({ reply: words('ask.draft.offline'), ask: null, draft: starterDraft("family", STARTING), source: "starter" });
     expect(await turnsIn(house.id)).toEqual([]);
     const { count } = await db.from("johns").select("id", { count: "exact", head: true }).eq("house_id", house.id);
     expect(count).toBe(0);
@@ -86,7 +88,7 @@ describe("POST /v1/houses/{houseId}/ask", () => {
   it("leaves a draft as it is when Claude isn't set up to change it", async () => {
     const house = await makeHouse(["Ava"]);
     const messages = [...said("Flat share"), { role: "assistant", text: words('ask.draft.fromStarter') }, ...said("Oven every month")];
-    const res = await chatAs(house.admin, { houseId: house.id, messages, draft: starterDraft("flat_share") });
+    const res = await chatAs(house.admin, { houseId: house.id, messages, draft: starterDraft("flat_share", STARTING) });
     expect(await res.json()).toEqual({ reply: words('ask.draft.offlineChange'), ask: null, draft: null, source: "starter" });
   });
 
@@ -181,7 +183,7 @@ describe("chatTurn, with Claude stood in for", () => {
 
   it("names each John's kind, matching the house's by name and keeping a new one to make on Apply", async () => {
     const house = await makeHouse(["Ava"]);
-    const [bath, mow] = await addJohns(house.id, [{ name: "Bathroom", category: "bathroom" }, { name: "Mow" }], thisWeek());
+    const [bath, mow] = await addJohns(house.id, [{ name: "Bathroom", preset: "bathroom" }, { name: "Mow" }], thisWeek());
     const result = await chatTurn({ db: house.admin.db, userId: house.admin.userId }, { houseId: house.id, messages: said("Mowing is garden, and add the hob"), current: null, now: rightNow() }, async (_ctx, tools) => {
       const listed = tools.listJohns().split("\n");
       expect(JSON.parse(listed.find((l) => l.includes(bath.id.slice(0, 8)))!)).toMatchObject({ name: "Bathroom", kind: "Bathroom" });
@@ -191,11 +193,12 @@ describe("chatTurn, with Claude stood in for", () => {
       return { raw: { reply: "Mow's in Garden once you apply.", ask: { kind: "none" } }, inputTokens: 10, outputTokens: 5 };
     });
     if ("refusal" in result) throw new Error("refused");
-    expect(result.draft!.johns.map((j) => [j.name, j.kind, j.category])).toEqual([
-      ["Bathroom", "Bathroom", "bathroom"],
-      ["Mow", "Garden", "other"],
-      ["Hob", "Kitchen", "kitchen"],
+    expect(result.draft!.johns.map((j) => [j.name, j.kind])).toEqual([
+      ["Bathroom", "Bathroom"],
+      ["Mow", "Garden"],
+      ["Hob", "Kitchen"],
     ]);
+    expect(JSON.stringify(result.draft)).not.toContain("category");
     // Nothing is made or moved until they apply.
     const { data: kinds } = await db.from("john_kinds").select("name").eq("house_id", house.id);
     expect(kinds!.map((k) => k.name)).not.toContain("Garden");
@@ -366,7 +369,7 @@ describe("chatTurn, with Claude stood in for", () => {
 
   it("counts a turn that only talks, and leaves the draft as it is", async () => {
     const house = await makeHouse(["Ava"]);
-    const result = await chatTurn({ db: house.admin.db, userId: house.admin.userId }, { houseId: house.id, messages: said("Is that all?"), current: starterDraft("couple"), now: rightNow() }, async () => ({
+    const result = await chatTurn({ db: house.admin.db, userId: house.admin.userId }, { houseId: house.id, messages: said("Is that all?"), current: starterDraft("couple", STARTING), now: rightNow() }, async () => ({
       raw: { reply: "That’s the lot for a couple.", ask: { kind: "none" } },
       inputTokens: 10,
       outputTokens: 5,
@@ -380,7 +383,7 @@ describe("chatTurn, with Claude stood in for", () => {
     const result = await chatTurn({ db: house.admin.db, userId: house.admin.userId }, { houseId: house.id, messages: said(A_HOUSE), current: null, now: rightNow() }, async () => {
       throw new Error("overloaded");
     });
-    expect(result).toEqual({ reply: words('ask.draft.offline'), ask: null, draft: starterDraft("flat_share"), source: "starter" });
+    expect(result).toEqual({ reply: words('ask.draft.offline'), ask: null, draft: starterDraft("flat_share", STARTING), source: "starter" });
     expect((await turnsIn(house.id)).map((d) => d.outcome)).toEqual(["failed"]);
   });
 

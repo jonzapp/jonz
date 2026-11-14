@@ -81,19 +81,26 @@ begin
   insert into public.group_members (group_id, house_id, user_id)
   values (upstairs, house, ids[2]), (upstairs, house, ids[3]);
 
-  insert into public.johns (house_id, name, category, points, every_weeks, anchor_week, due_dow, due_time, needs_photo, group_id)
-  values
-    (house, 'Kitchen surfaces', 'kitchen', 2, 1, this_week, 3, '21:00', false, null),
-    (house, 'Kitchen deep clean', 'kitchen', 4, 1, this_week, 7, '18:00', true, null),
-    (house, 'Downstairs bathroom', 'bathroom', 3, 1, this_week, 6, '20:00', false, null),
-    (house, 'Upstairs bathroom', 'bathroom', 3, 1, this_week, 6, '20:00', false, upstairs),
-    (house, 'Hoover the stairs', 'floors', 2, 2, this_week, 5, '21:00', false, null),
-    (house, 'Mop the kitchen floor', 'floors', 2, 1, this_week, 4, '21:00', false, null),
-    (house, 'Loo roll and washing-up liquid', 'errands', 1, 2, this_week, 6, '17:00', false, null);
+  -- Each in the house's starting kind of that name.
+  insert into public.johns (house_id, name, john_kind_id, points, every_weeks, anchor_week, due_dow, due_time, needs_photo, group_id)
+  select house, v.name, k.id, v.points, v.every_weeks, this_week, v.due_dow, v.due_time::time, v.needs_photo, v.group_id
+  from (values
+    (1, 'Kitchen surfaces', 'kitchen', 2, 1, 3, '21:00', false, null::uuid),
+    (2, 'Kitchen deep clean', 'kitchen', 4, 1, 7, '18:00', true, null),
+    (3, 'Downstairs bathroom', 'bathroom', 3, 1, 6, '20:00', false, null),
+    (4, 'Upstairs bathroom', 'bathroom', 3, 1, 6, '20:00', false, upstairs),
+    (5, 'Hoover the stairs', 'floors', 2, 2, 5, '21:00', false, null),
+    (6, 'Mop the kitchen floor', 'floors', 2, 1, 4, '21:00', false, null),
+    (7, 'Loo roll and washing-up liquid', 'errands', 1, 2, 6, '17:00', false, null)
+  ) as v (n, name, preset, points, every_weeks, due_dow, due_time, needs_photo, group_id)
+  left join public.john_kinds k on k.house_id = house and k.preset = v.preset
+  order by v.n;
 
   -- The bins: on call, flagged when they're full.
-  insert into public.johns (house_id, name, category, points, every_weeks, anchor_week, kind, respond_hours, per_week)
-  values (house, 'Take the bins out', 'bins', 1, 1, this_week, 'on_call', 12, 2);
+  insert into public.johns (house_id, name, john_kind_id, points, every_weeks, anchor_week, kind, respond_hours, per_week)
+  select house, 'Take the bins out', k.id, 1, 1, this_week, 'on_call', 12, 2
+  from public.john_kinds k
+  where k.house_id = house and k.preset = 'bins';
 
   -- Jo is away Wednesday to Friday next week.
   insert into public.away_periods (house_id, user_id, starts_on, ends_on, note)

@@ -185,7 +185,7 @@ export interface NextUpMeta {
  * at what's left of your stake (forfeitRoom).
  */
 export function nextUpMeta(item: BoardItem, { rules, now, zone, words }: Pick<Viewing, "rules" | "now" | "zone" | "words">, room: number | null = null): NextUpMeta {
-  const kind = johnKind(item.category, item.kindName);
+  const kind = johnKind(item.kindName);
   if (item.status === "overdue") {
     return {
       kind,

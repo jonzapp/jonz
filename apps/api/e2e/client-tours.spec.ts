@@ -100,10 +100,10 @@ test("every tour plays through, each step lit on screen", async ({ context, page
     "Tour Admin",
     "Tour House",
     [
-      { name: "Bins out", category: "bins", dueTime: "20:00" },
-      { name: "Clean the bath", category: "bathroom" },
-      { name: "Kitchen floor", category: "floors" },
-      { name: "Wipe the hob", category: "kitchen" },
+      { name: "Bins out", preset: "bins", dueTime: "20:00" },
+      { name: "Clean the bath", preset: "bathroom" },
+      { name: "Kitchen floor", preset: "floors" },
+      { name: "Wipe the hob", preset: "kitchen" },
     ],
     [{ context: mate, name: "Tour Mate" }],
   );
@@ -160,7 +160,7 @@ test("every tour plays through, each step lit on screen", async ({ context, page
 
 test("Today offers its tour once to someone new; Skip and Escape end it", async ({ context, page }) => {
   // New, and not yet offered (everyone else in these tests says they've had it).
-  const { userId } = await dealtHouseInClient(context, "New Person", "New House", [{ name: "Bins out", category: "bins" }], [], {
+  const { userId } = await dealtHouseInClient(context, "New Person", "New House", [{ name: "Bins out", preset: "bins" }], [], {
     newToTours: true,
   });
   made.push(userId);
@@ -192,7 +192,7 @@ test("Today offers its tour once to someone new; Skip and Escape end it", async 
 });
 
 test("Not now puts the offer away for good", async ({ context, page }) => {
-  const { userId } = await dealtHouseInClient(context, "Not Now", "Later House", [{ name: "Bins out", category: "bins" }], [], {
+  const { userId } = await dealtHouseInClient(context, "Not Now", "Later House", [{ name: "Bins out", preset: "bins" }], [], {
     newToTours: true,
   });
   made.push(userId);
@@ -217,7 +217,7 @@ test("on a phone, House's tour turns Setup back to Overview, and every card stay
     context,
     "Halves Admin",
     "Halves House",
-    Array.from({ length: 10 }, (_, k) => ({ name: `John ${k + 1}`, category: ["bins", "bathroom", "floors", "kitchen"][k % 4] })),
+    Array.from({ length: 10 }, (_, k) => ({ name: `John ${k + 1}`, preset: (["bins", "bathroom", "floors", "kitchen"] as const)[k % 4] })),
     [{ context: mate, name: "Halves Mate" }],
   );
   made.push(userId, ...housemateIds);

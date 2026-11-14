@@ -10,15 +10,13 @@ import { clock, messagesOf, summedOf, toSaved, type Turn } from './setup-chat-tu
 
 // The setup chat's state: the draft it is working on, keeping the chat, and one question to Jonz.
 
-const NO_KINDS: readonly KindDef[] = [];
-
 /**
  * The draft the chat is working on. `base` is the list as the chat found
  * it: what a draft's changes are counted from. It is held while a draft is
  * open, so applying doesn't move it under the card; once a draft is applied,
  * it's the list as it now is. `keep` are the changes ticked.
  */
-export function useDrafting(johns: JohnDef[], groups: GroupDef[], kinds: readonly KindDef[] = NO_KINDS) {
+export function useDrafting(johns: JohnDef[], groups: GroupDef[], kinds: readonly KindDef[]) {
   const live = useMemo(() => (johns.length > 0 ? listAsDraft(johns, groups, kinds) : null), [johns, groups, kinds]);
   const [held, setHeld] = useState(live);
   const [rebase, setRebase] = useState(false);
@@ -103,13 +101,13 @@ export function useKeptChat(houseId: string, turns: Turn[], { saved, onKept }: {
  * said) and the draft as it stands. Gives Jonz's turn back, with how long it
  * thought, and what's left of the week's allowance.
  */
-export async function askJonz(houseId: string, turns: Turn[], at: { draft: HouseDraft | null; steps: readonly string[]; words: Words }) {
+export async function askJonz(houseId: string, turns: Turn[], at: { draft: HouseDraft | null; steps: readonly string[]; words: Words; kinds: readonly KindDef[] }) {
   const asked = clock();
   // Jonz reads its summary of the chat's start, then everything since (CHAT_MAX_MESSAGES at most).
   const all = messagesOf(turns);
   const earlier = summedOf(turns);
   const from = Math.max(earlier?.count ?? 0, all.length - CHAT_MAX_MESSAGES);
-  const answer = await sendChat(houseId, all.slice(from), at.draft, at.words, earlier?.text ?? null);
+  const answer = await sendChat(houseId, all.slice(from), at, earlier?.text ?? null);
   const took = clock() - asked;
   const thought = { seconds: Math.max(1, Math.round(took / 1000)), steps: stepsShown(at.steps, took) };
   // Jonz summed up the start this turn: the summary now stands for the messages before `from` too.

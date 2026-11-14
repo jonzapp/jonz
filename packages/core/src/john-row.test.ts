@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import type { BoardItem, DisputeView } from "./board";
-import { CATEGORIES } from "./domain";
 import { doneFold, johnKind, johnRow } from "./john-row";
 import type { LiveStatus } from "./outcome";
 import { wordsFor } from "./words-for";
@@ -27,7 +26,7 @@ function item(id: string, overrides: Partial<BoardItem> = {}): BoardItem {
     everyWeeks: 1,
     userId: "sam",
     name: id,
-    category: "kitchen",
+    kindName: "Kitchen",
     points: 2,
     needsPhoto: false,
     dueAt: at(30),
@@ -64,20 +63,15 @@ function dispute(overrides: Partial<DisputeView> = {}): DisputeView {
 const row = (overrides: Partial<BoardItem>, viewer = "sam") => johnRow(item("a", overrides), { viewerId: viewer, now, zone: ZONE, nameOf, words });
 
 describe("johnKind", () => {
-  it("is the category's short word, one word for every kind", () => {
-    expect(johnKind("bins")).toBe("Bins");
-    expect(johnKind("floors")).toBe("Floors");
-    expect(johnKind("errands")).toBe("Errands");
-    expect(johnKind("kitchen")).toBe("Kitchen");
-    expect(johnKind("other")).toBe("Other");
-    for (const category of CATEGORIES) expect(johnKind(category)).toMatch(/^[A-Z][a-z]+$/);
+  it("is the house's own name for its kind", () => {
+    expect(johnKind("Garden")).toBe("Garden");
+    expect(johnKind("Bins & recycling")).toBe("Bins & recycling");
   });
 
-  it("calls a kind it doesn't know Other", () => {
-    expect(johnKind("garden")).toBe("Other");
-    // The house's own name for it, and none for a John with no kind.
-    expect(johnKind("other", "Garden")).toBe("Garden");
-    expect(johnKind("other", "")).toBe("");
+  it("says none for a John with no kind, or one gone from the list", () => {
+    expect(johnKind("")).toBe("");
+    expect(johnKind(null)).toBe("");
+    expect(johnKind(undefined)).toBe("");
   });
 
   it("leaves the kind out of a row's line for a John with no kind", () => {
@@ -178,12 +172,12 @@ describe("johnRow's meta line", () => {
   const meta = (overrides: Partial<BoardItem>, viewer = "sam") => row(overrides, viewer).meta;
 
   it("leads with the kind, then when it's due, mid-sentence", () => {
-    expect(meta({ category: "bathroom", status: "due-soon", dueAt: new Date("2026-10-22T20:00:00Z") })).toBe("Bathroom, today 21:00");
-    expect(meta({ category: "floors", dueAt: new Date("2026-10-23T06:30:00Z") })).toBe("Floors, tomorrow 07:30");
+    expect(meta({ kindName: "Bathroom", status: "due-soon", dueAt: new Date("2026-10-22T20:00:00Z") })).toBe("Bathroom, today 21:00");
+    expect(meta({ kindName: "Floors", dueAt: new Date("2026-10-23T06:30:00Z") })).toBe("Floors, tomorrow 07:30");
   });
 
   it("says when an overdue or missed John was due, short enough to sit beside its mark", () => {
-    expect(meta({ category: "other", status: "overdue", dueAt: new Date("2026-10-20T20:00:00Z") })).toBe("Other, was due Tue");
+    expect(meta({ kindName: "Other", status: "overdue", dueAt: new Date("2026-10-20T20:00:00Z") })).toBe("Other, was due Tue");
     expect(meta({ status: "missed", dueAt: new Date("2026-10-21T22:30:00Z") })).toBe("Kitchen, was due Wed");
     expect(meta({ status: "overdue", dueAt: new Date("2026-10-22T08:00:00Z") })).toBe("Kitchen, was due 09:00");
     // A week or more back, the date too.
@@ -191,7 +185,7 @@ describe("johnRow's meta line", () => {
   });
 
   it("says when a tick stands, yours or a housemate's", () => {
-    expect(meta({ userId: "megan", category: "bins", status: "checking", standsAt: at(21) })).toBe("Bins, stands in 21h");
+    expect(meta({ userId: "megan", kindName: "Bins", status: "checking", standsAt: at(21) })).toBe("Bins, stands in 21h");
     expect(meta({ status: "checking", standsAt: at(0.5) })).toBe("Kitchen, stands in 30 min");
     expect(meta({ status: "checking", standsAt: at(-1) })).toBe("Kitchen, stands any minute");
     expect(meta({ status: "checking", standsAt: null })).toBe("Kitchen");

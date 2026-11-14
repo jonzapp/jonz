@@ -55,7 +55,6 @@ describe('loadJohnList', () => {
           id: 'j1',
           name: 'Bins',
           johnKindId: 'k-bins',
-          category: 'bins',
           points: 2,
           everyWeeks: 1,
           everyMonths: null,
@@ -87,7 +86,6 @@ describe('loadJohnList', () => {
           id: 'j1',
           name: 'Bins',
           kindId: 'k-bins',
-          category: 'bins',
           points: 2,
           everyWeeks: 1,
           everyMonths: null,
@@ -125,7 +123,6 @@ describe('saveJohn', () => {
       houseId: H1,
       anchorWeek: THIS_WEEK,
       name: 'Hob',
-      category: 'kitchen',
       points: 2,
       everyWeeks: 1,
       everyMonths: null,
@@ -167,24 +164,25 @@ describe('saveJohn', () => {
     expect(call.mock.calls.map(([n]) => n)).toEqual(['change_john', 'change_john']);
   });
 
-  it('writes a John read with its kind by that kind alone, and leaves one with no kind without one', async () => {
+  it('writes a John with its kind by id, and one with no kind without one', async () => {
     const id = crypto.randomUUID();
     const garden = crypto.randomUUID();
-    await saveJohn(H1, RULES, { ...NEW_JOHN, id, name: 'Lawn', kindId: garden, category: 'other' }, NOW);
+    await saveJohn(H1, RULES, { ...NEW_JOHN, id, name: 'Lawn', kindId: garden }, NOW);
     expect(lastInput('change_john')).toMatchObject({ johnId: id, kindId: garden });
-    expect(lastInput('change_john')).not.toHaveProperty('category');
-    // Its kind was deleted: sending its older category would put it in Everything else.
-    await saveJohn(H1, RULES, { ...NEW_JOHN, id, name: 'Lawn', kindId: null, category: 'other' }, NOW);
-    expect(lastInput('change_john')).not.toHaveProperty('category');
+    // Its kind was deleted: it keeps none.
+    await saveJohn(H1, RULES, { ...NEW_JOHN, id, name: 'Lawn', kindId: null }, NOW);
     expect(lastInput('change_john')).not.toHaveProperty('kindId');
+    expect(lastInput('change_john')).not.toHaveProperty('kindName');
+    // A new John not given a kind is added with none.
+    await saveJohn(H1, RULES, { ...NEW_JOHN, name: 'Lawn' }, NOW);
+    expect(lastInput('add_john')).not.toHaveProperty('kindId');
   });
 
   it("moves a John to Ask Jonz's kind by name, over the kind it had", async () => {
     const id = crypto.randomUUID();
-    await saveJohn(H1, RULES, { ...NEW_JOHN, id, name: 'Lawn', kindId: crypto.randomUUID(), kindName: 'Garden', category: 'other' }, NOW);
+    await saveJohn(H1, RULES, { ...NEW_JOHN, id, name: 'Lawn', kindId: crypto.randomUUID(), kindName: 'Garden' }, NOW);
     expect(lastInput('change_john')).toMatchObject({ johnId: id, kindName: 'Garden' });
     expect(lastInput('change_john')).not.toHaveProperty('kindId');
-    expect(lastInput('change_john')).not.toHaveProperty('category');
   });
 
   it("says what's wrong before asking the API", async () => {

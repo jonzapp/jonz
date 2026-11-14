@@ -97,8 +97,8 @@ test.describe("a house with its week dealt", () => {
       "Ava Nav",
       houseName,
       [
-        { name: "Bins out", category: "bins" },
-        { name: "Hoover the stairs", category: "floors" },
+        { name: "Bins out", preset: "bins" },
+        { name: "Hoover the stairs", preset: "floors" },
       ],
       [{ context: mate, name: "Ben Nav" }],
     );

@@ -280,7 +280,6 @@ function dealtRows(plan: Plan, johns: Pick<DealFacts, "list" | "sharersOf">, byU
         john_id: j.id,
         user_id: p.userId,
         name: j.name,
-        category: j.category,
         points: j.points,
         needs_photo: j.needs_photo,
         due_at: p.dueAt.toISOString(),

@@ -66,10 +66,10 @@ describe("a John's youngest age", () => {
   });
 
   it("is kept with the John", () => {
-    const row = { id: "j", name: "Use the oven", category: "kitchen", points: 3, every_weeks: 1, due_dow: 7, due_time: "18:00:00", needs_photo: false, group_id: null };
+    const row = { id: "j", name: "Use the oven", points: 3, every_weeks: 1, due_dow: 7, due_time: "18:00:00", needs_photo: false, group_id: null };
     expect(johnDef({ ...row, min_age: 10 }).minAge).toBe(10);
     expect(johnDef(row).minAge).toBeNull();
-    const draft = { name: "Use the oven", category: "kitchen", points: 3, everyWeeks: 1, dueDow: 7, dueTime: "18:00", needsPhoto: false, groupId: null };
+    const draft = { name: "Use the oven", points: 3, everyWeeks: 1, dueDow: 7, dueTime: "18:00", needsPhoto: false, groupId: null };
     expect(JohnDraft.parse({ ...draft, minAge: 10 }).minAge).toBe(10);
     expect(JohnDraft.safeParse({ ...draft, minAge: 30 }).success).toBe(false);
   });

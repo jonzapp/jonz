@@ -103,7 +103,7 @@ function priyaWith(tokens: Partial<Housemate>): Housemate[] {
 
 const binsOut = (overrides: Parameters<typeof assignment>[0] = {}) => assignment(overrides);
 const samsBath = (overrides: Parameters<typeof assignment>[0] = {}) =>
-  assignment({ id: 'a4', user_id: 'sam', name: 'Clean the bath', category: 'bathroom', points: 4, ...overrides });
+  assignment({ id: 'a4', user_id: 'sam', name: 'Clean the bath', kind_name: 'Bathroom', points: 4, ...overrides });
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -398,8 +398,8 @@ describe('a John done together, and help', () => {
   const people = [...snapshot().members, MEGAN_HOME];
   /** Garden tidy for two: Priya's place (a1) and Sam's (a5), 4 pts each. */
   const garden = (mine: Parameters<typeof assignment>[0] = {}, sams: Parameters<typeof assignment>[0] = {}) => [
-    assignment({ id: 'a1', name: 'Garden tidy', category: 'outside', points: 4, job_id: 'job1', ...mine }),
-    assignment({ id: 'a5', user_id: 'sam', name: 'Garden tidy', category: 'outside', points: 4, job_id: 'job1', ...sams }),
+    assignment({ id: 'a1', name: 'Garden tidy', kind_name: 'Outside', points: 4, job_id: 'job1', ...mine }),
+    assignment({ id: 'a5', user_id: 'sam', name: 'Garden tidy', kind_name: 'Outside', points: 4, job_id: 'job1', ...sams }),
   ];
 
   it('says who is on it, and ticks it with its roll call', async () => {
@@ -792,7 +792,7 @@ describe('a settled John', () => {
     await show(
       house([
         binsOut(),
-        assignment({ id: 'a3', name: 'Wipe the hob', category: 'kitchen', due_at: at(-30), done_at: at(-40), outcome: 'done', photo_path: 'h1/a3.jpg' }),
+        assignment({ id: 'a3', name: 'Wipe the hob', kind_name: 'Kitchen', due_at: at(-30), done_at: at(-40), outcome: 'done', photo_path: 'h1/a3.jpg' }),
       ]),
     );
     const body = await openOn('Open a3');

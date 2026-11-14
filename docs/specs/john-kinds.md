@@ -56,16 +56,16 @@ shares a John).
   no kind, null when the read doesn't say) and `kindColour`.
 - `add_john`, `add_johns` and `change_john` take `kindId`, or `kindName`
   (made, in the next free ready colour, if the house has none by that
-  name), or the older `category`. Left out, a new John goes in the kind its
-  category began as (Everything else) and a changed one keeps its kind.
-- `johns.category` stays for now, kept in step from the kind by a trigger
-  (the preset, or `other`), so older apps still work; a later migration
-  drops it. The app never sends `category` for a John it read with a kind,
-  or a John with no kind would land in Everything else.
-- A drafted John (`HouseDraft`) has `kind`: its name, null for none, left
-  out when the draft doesn't say (it then goes by its `category`, which
-  every draft still carries for apps that don't read kinds). Applying
-  writes `kindName`, or `kindId` null for none.
+  name). Left out, a new John has no kind and a changed one keeps its kind.
+- A John's kind is its `john_kind_id` alone. The older `johns.category`
+  (and the copy each dealt John kept in `assignments.category`) went in
+  `20270117090000_drop_john_category.sql` (Glyn, 14 November 2026): no
+  read or write has it, in the app, Ask Jonz, `/v1` or the assistants. A
+  John dealt or on call wears its kind's colour, or grey with no kind.
+- A drafted John (`HouseDraft`) has `kind`: its name, or null for none.
+  Applying writes `kindName`, or `kindId` null for none. A starter list's
+  Johns go in the house's kind that began as each one's starting kind
+  (`preset`), or none when the house has no such kind.
 - Starting a house from another copies its kinds and keeps each John in
   the kind of the same name (a John with no kind keeps none). Reset
   everything puts the six starting kinds back.

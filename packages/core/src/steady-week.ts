@@ -14,12 +14,11 @@ import type { SteadyAheadWeek } from "./steady-deal";
 import type { DealMode } from "./domain";
 
 /** A John on the list, with its kind's name when the page has the house's kinds. */
-type WeekJohn = Pick<JohnDef, "id" | "name" | "category" | "points" | "when" | "crew"> & { kindName?: string | null };
+type WeekJohn = Pick<JohnDef, "id" | "name" | "points" | "when" | "crew"> & { kindName?: string | null };
 
 export interface WaitingRow {
   johnId: string;
   name: string;
-  category: string;
   points: number;
   /** "Bins, next week"; "Floors, week of 16 Nov"; "Bins, waiting 2 weeks" past what the deal looked ahead to. */
   meta: string;
@@ -28,7 +27,6 @@ export interface WaitingRow {
 export interface TurnRow {
   johnId: string;
   name: string;
-  category: string;
   points: number;
   /** Whose turn it is. */
   userId: string;
@@ -79,9 +77,8 @@ export function waitingRows(
       return {
         johnId: j.id,
         name: j.name,
-        category: j.category,
         points: j.points,
-        meta: [johnKind(j.category, j.kindName), turn ? whenOf(state.ahead[turn.k].startsOn, turn.k, words) : words('week.steady.waitingFor', { weeks })].filter(Boolean).join(", "),
+        meta: [johnKind(j.kindName), turn ? whenOf(state.ahead[turn.k].startsOn, turn.k, words) : words('week.steady.waitingFor', { weeks })].filter(Boolean).join(", "),
       };
     });
 }
@@ -111,10 +108,9 @@ export function turnRows(
       row: {
         johnId: j.id,
         name: j.name,
-        category: j.category,
         points: j.points,
         userId,
-        meta: [johnKind(j.category, j.kindName), turnLine(userId, viewerId, nameOf, when, words)].filter(Boolean).join(", "),
+        meta: [johnKind(j.kindName), turnLine(userId, viewerId, nameOf, when, words)].filter(Boolean).join(", "),
       },
     });
   }

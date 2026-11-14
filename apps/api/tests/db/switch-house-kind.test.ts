@@ -112,7 +112,6 @@ describe("set_house_kind", () => {
         house_id: house.id,
         user_id: house.members[0].userId,
         name: "Feed the fish",
-        category: "errands",
         points: 1,
         due_at: "2020-01-12T18:00:00Z",
         awaits_ok: true,

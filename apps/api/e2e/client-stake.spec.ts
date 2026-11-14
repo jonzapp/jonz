@@ -27,7 +27,7 @@ test("a closed month's debt is settled once the person paid marks it received", 
     avaContext,
     "Ava Stake",
     "Flat 50",
-    [{ name: "Bins out", category: "bins" }],
+    [{ name: "Bins out", preset: "bins" }],
     [{ context: benContext, name: "Ben Stake" }],
   );
   const ben = housemateIds[0];

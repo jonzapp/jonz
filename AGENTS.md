@@ -333,7 +333,7 @@ its Stripe ids in `house_pass_billing`, which housemates can't read:
 `docs/specs/house-pass.md`) → `members`
 (role admin/member, streak, tokens; one house per person via
 `members_one_house`, dropped when "more than one house" ships) → `groups` +
-`group_members` → `johns` (the list: category, points 1–20, every N weeks
+`group_members` → `john_kinds` (each house's own, `docs/specs/john-kinds.md`) → `johns` (the list: its kind, points 1–20, every N weeks
 from `anchor_week` or every N months from `anchor_month` on a weekday of the
 month, due day and time, needs photo, optional `group_id`:
 `docs/specs/any-length-repeats.md`) →

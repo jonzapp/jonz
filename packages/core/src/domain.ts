@@ -4,7 +4,7 @@
  * migrations' CHECK constraints (keep the two lists in step).
  */
 
-/** What kind of John it is. Each one wears its bin-lid colour (bin-night.ts). */
+/** The six kinds of John a house starts with (john_kinds.preset), each with its bin-lid colour (bin-night.ts). */
 export const CATEGORIES = [
   "kitchen",
   "bathroom",
@@ -15,6 +15,7 @@ export const CATEGORIES = [
 ] as const;
 export type Category = (typeof CATEGORIES)[number];
 
+/** The starting kinds' names in English, as public.default_john_kinds gives them. */
 export const CATEGORY_LABEL: Record<Category, string> = {
   kitchen: "Kitchen",
   bathroom: "Bathroom",
@@ -22,19 +23,6 @@ export const CATEGORY_LABEL: Record<Category, string> = {
   floors: "Floors & hoovering",
   errands: "Errands & shopping",
   other: "Everything else",
-};
-
-/**
- * A kind as a line about one John says it, short enough to leave room for
- * when: "Bins, today 21:00", "Other, was due Tue".
- */
-export const CATEGORY_SHORT: Record<Category, string> = {
-  kitchen: "Kitchen",
-  bathroom: "Bathroom",
-  bins: "Bins",
-  floors: "Floors",
-  errands: "Errands",
-  other: "Other",
 };
 
 /**

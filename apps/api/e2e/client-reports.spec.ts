@@ -27,7 +27,7 @@ test.afterAll(async () => {
 
 test("sends a problem with a screenshot from You, then reads the reply and writes back", async ({ browser }) => {
   const context = await browser.newContext();
-  const { userId } = await dealtHouseInClient(context, "Ava Reports", "Flat 40", [{ name: "Wipe the hob", category: "kitchen" }]);
+  const { userId } = await dealtHouseInClient(context, "Ava Reports", "Flat 40", [{ name: "Wipe the hob", preset: "kitchen" }]);
   made.push(userId);
   const page = await context.newPage();
   await page.goto("/you");

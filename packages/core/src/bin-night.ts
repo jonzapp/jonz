@@ -34,7 +34,7 @@ export interface BinNightScheme {
   hazard: string;
   onHazard: string;
   good: string;
-  /** `--bin-<category>`: the lid colour for each kind of John. */
+  /** `--bin-<kind>`: the lid colour for each of the six starting kinds of John. */
   bin: Record<Category, string>;
 }
 
@@ -115,7 +115,8 @@ export const BIN_NIGHT: { light: BinNightScheme; dark: BinNightScheme; radius: n
 /**
  * The lid colour for a kind of John: its own colour (`#rrggbb`, a house's
  * kind) made to read on the scheme's cards, or one of the six starting
- * kinds' by its category. Anything unknown wears `other`'s.
+ * kinds' bin lids by its name in the code (`kitchen`). Anything else, and a
+ * John with no kind (`other`), wears `other`'s grey.
  */
 export function lidColour(scheme: BinNightScheme, lid: string): string {
   if (lid.startsWith("#")) return kindLid(lid, scheme.card);

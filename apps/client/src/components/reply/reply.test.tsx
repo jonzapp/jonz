@@ -15,7 +15,7 @@ jest.mock('@/api/auth', () => ({ signOut: jest.fn() }));
 
 const sample = (id: string) => REPLY_SAMPLES.find((s) => s.id === id)!.reply;
 
-const john = (id: string, name: string, category: JohnDef['category']): JohnDef => ({ ...NEW_JOHN, id, name, category, anchorMonth: null });
+const john = (id: string, name: string, kindId: string): JohnDef => ({ ...NEW_JOHN, id, name, kindId, anchorMonth: null });
 const DATA: ReplyData = {
   viewerId: 'u-glyn',
   people: [

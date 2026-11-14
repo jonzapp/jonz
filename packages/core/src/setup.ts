@@ -2,7 +2,7 @@
 import { isoDayOf, shiftMonth, type AwayPeriod } from "./away";
 import type { BoardItem, JohnDef } from "./board";
 import { MAKEUP_LABEL } from "./deal";
-import { CATEGORY_LABEL, type Currency, type DealMode, type HouseKind, type HouseRules, type IsoDow, type SettleIn } from "./domain";
+import { type Currency, type DealMode, type HouseKind, type HouseRules, type IsoDow, type SettleIn } from "./domain";
 import { familyHides } from "./family";
 import { kindOf, kindsInOrder, type KindDef } from "./kinds";
 import { humanError } from "./errors";
@@ -122,7 +122,7 @@ export function listCells(
 /** A John as a housemate who can't edit it reads it: kind, who shares it, effort, how often, when, and the photo. */
 export function johnFacts(john: JohnDef, about: { group?: string | null; kind?: string | null }, words: Words): LabelValue[] {
   return [
-    { label: words('house.setup.kindLabel'), value: about.kind || CATEGORY_LABEL[john.category] },
+    { label: words('house.setup.kindLabel'), value: about.kind || words('house.kinds.none') },
     { label: words('house.johns.sharedBy'), value: about.group || words('house.johns.everyone') },
     { label: words('house.johns.effort'), value: pointsLabel(john.points, words) },
     ...(john.crew === 1 ? [] : [{ label: words('john.crew.doneBy'), value: words('john.crew.choice', { crew: john.crew }) }]),

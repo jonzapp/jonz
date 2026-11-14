@@ -336,7 +336,7 @@ const today = z.object({
       .extend({ votes: z.array(T.dispute_votes.pick({ userId: true, uphold: true })) }),
   ),
   onCall: z.array(
-    T.on_call_picks.pick({ johnId: true, userId: true }).extend({ john: T.johns.pick({ name: true, category: true, needsPhoto: true, archivedAt: true }).extend({ kindName: text.nullable(), kindColour: text.nullable() }).nullable() }),
+    T.on_call_picks.pick({ johnId: true, userId: true }).extend({ john: T.johns.pick({ name: true, needsPhoto: true, archivedAt: true }).extend({ kindName: text.nullable(), kindColour: text.nullable() }).nullable() }),
   ),
   offers: z.array(z.object({ id, mine: id, theirs: id, askedBy: id, askedUserId: id, expiresAt: at })),
   moves: z.object({ lastMovedOut: at.nullable(), lastJoined: at.nullable() }),
@@ -509,7 +509,6 @@ export const OPERATION_IO = {
           id: true,
           name: true,
           johnKindId: true,
-          category: true,
           points: true,
           everyWeeks: true,
           everyMonths: true,
