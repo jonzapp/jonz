@@ -62,7 +62,7 @@ export async function bookAway(caller: Caller, draft: AwayDraft, now: Date): Pro
       await notify([a.user_id], {
         houseKind: houseKind(house?.kind ?? null),
         title: (w) => w('house.away.handedTitle', { john: a.name }),
-        body: (w) => w('house.away.handedBody', { name: me?.display_name ?? "Someone", due: dueInLine(new Date(a.due_at), now, zone, w) }),
+        body: (w, clock) => w('house.away.handedBody', { name: me?.display_name ?? "Someone", due: dueInLine(new Date(a.due_at), now, clock, w) }),
         url: "/today",
         kind: "deal",
         zone,

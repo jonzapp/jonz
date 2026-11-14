@@ -24,6 +24,7 @@ import { SPACE, useTheme } from '@/theme';
 import type { JohnSheetContext, JohnSheetFocus } from './body';
 import { SheetLines, SheetSection } from './parts';
 import { useWords } from '@/hooks/use-words';
+import { viewingOf } from './viewing';
 
 /**
  * Your open John: amber "Mark done" and a photo with it (a photo John
@@ -123,7 +124,7 @@ function OnIt({ item, context }: { item: BoardItem; context: JohnSheetContext })
   const move = useMove(context.houseId);
   const { now, rules, userId } = context;
   if (item.heldUntil && item.heldUntil > now && !item.doneAt) {
-    return <Body testID="cover-held">{words('john.sheet.held', { when: dueInLine(item.heldUntil, now, rules.timezone, words) })}</Body>;
+    return <Body testID="cover-held">{words('john.sheet.held', { when: dueInLine(item.heldUntil, now, context.zone, words) })}</Body>;
   }
   if (!holdable({ ...item, excused: item.status === 'excused' }, userId, now, rules.coverGraceHours)) return null;
   return (
@@ -308,7 +309,7 @@ function SwapChoice({
 }) {
   const words = useWords();
   const { colors } = useTheme();
-  const { meta, label } = swapChoice(item, context.members, context.rules, context.now, chosen, words);
+  const { meta, label } = swapChoice(item, viewingOf(context, words), chosen);
   return (
     <Row
       leading={<Avatar name={context.nameOf(item.userId)} userId={item.userId} />}
@@ -340,7 +341,7 @@ function SwapChoice({
 export function TheirsOpen({ item, context }: { item: BoardItem; context: JohnSheetContext }) {
   const words = useWords();
   const owner = context.members.find((m) => m.userId === item.userId);
-  const offer = coverOffer(item, { people: context.members, viewerId: context.userId, rules: context.rules, now: context.now, words });
+  const offer = coverOffer(item, viewingOf(context, words));
   return (
     <SheetLines>
       <View style={styles.owner}>

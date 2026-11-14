@@ -1,4 +1,4 @@
-import { type Currency, CURRENCY_CHOICES, dayChoices, DOOR, FAMILY_OPEN, houseDefaults, type HouseKind, type IsoDow, kindParam, newHouseWords, timeZoneName } from '@app/core';
+import { type Currency, CURRENCY_CHOICES, dayChoices, DOOR, FAMILY_OPEN, houseDefaults, type HouseKind, type IsoDow, kindParam, newHouseWords, zonePlace } from '@app/core';
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -128,7 +128,7 @@ export default function NewHouse() {
                 testID="house-week-starts"
               />
             </View>
-            <Meta>{words('door.welcome.zoneNote', { zone: timeZoneName(timezone) })}</Meta>
+            <Meta>{words('door.welcome.zoneNote', { zone: zonePlace(timezone, words) })}</Meta>
           </View>
         ) : null}
         {problem ? <Alert message={problem} /> : null}

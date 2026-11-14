@@ -38,6 +38,10 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${PORT}`,
     trace: "retain-on-failure",
+    // The browser is in London, as the houses the tests make are, so times read
+    // the same whatever the machine's own zone (docs/specs/time-zones.md). A
+    // test of someone away from home sets its own.
+    timezoneId: "Europe/London",
   },
   projects: [
     { name: "android-chrome", use: { ...devices["Pixel 7"], ...chromium } },

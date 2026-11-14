@@ -171,7 +171,7 @@ async function reopenFlag(db: Db, house: HouseRow, johnId: string, now: Date, no
   if (!notify || flag.flagged_by !== null || !flag.flagged_at || Date.parse(flag.flagged_at) !== now.getTime()) return;
   await notify([flag.user_id], {
     title: (w) => w('today.onCall.pushTitle', { john: flag.name }),
-    body: (w) => w('today.onCall.pushAgainBody', { due: dueInLine(new Date(flag.due_at), now, rulesOf(house).timezone, w) }),
+    body: (w, clock) => w('today.onCall.pushAgainBody', { due: dueInLine(new Date(flag.due_at), now, clock, w) }),
     houseKind: houseKind(house.kind),
     url: "/today",
     kind: "flags",

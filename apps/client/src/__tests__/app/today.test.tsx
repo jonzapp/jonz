@@ -1,5 +1,6 @@
-import { BIN_NIGHT, buildStake, type DisputeRow, localDate, monthOf, planLabel, wordsFor } from '@app/core';
+import { BIN_NIGHT, buildStake, type DisputeRow, dueInLine, localDate, monthOf, planLabel, wordsFor, zoneGap } from '@app/core';
 import { QueryClientProvider } from '@tanstack/react-query';
+import { getCalendars } from 'expo-localization';
 import { Slot } from 'expo-router';
 import { fireEvent, renderRouter, screen, waitFor, within } from 'expo-router/testing-library';
 import { Text, useWindowDimensions } from 'react-native';
@@ -271,6 +272,35 @@ describe('Next up', () => {
     read.mockResolvedValue(snapshot({ members: priyaWith({ swapTokens: 1 }), assignments: snapshot().assignments.slice(0, 3) }));
     await open();
     expect(screen.queryByTestId('skip-or-swap')).toBeNull();
+  });
+});
+
+describe("on a phone away from the house's clock", () => {
+  // Priya's phone is in Regina, 6 hours behind the house in London this November.
+  const phoneIn = (timeZone: string) =>
+    jest.mocked(getCalendars).mockReturnValue([{ calendar: 'gregory', timeZone, uses24hourClock: true, firstWeekday: 2 }] as ReturnType<typeof getCalendars>);
+  const due = new Date(at(48));
+  beforeEach(() => phoneIn('America/Regina'));
+  afterEach(() => phoneIn('Europe/London'));
+
+  it('says times on your own clock, says so once under the date, and shows house time on a tap', async () => {
+    await open();
+    const line = screen.getByTestId('zone-line');
+    expect(line).toHaveTextContent(`${words('common.zone.yours', { city: 'Regina', gap: zoneGap('Europe/London', 'America/Regina', NOW, words) })} ${words('common.zone.showHouse')}`);
+    expect(screen.getByTestId('next-up-meta')).toHaveTextContent(dueInLine(due, NOW, 'America/Regina', words), { exact: false });
+    await fireEvent.press(line);
+    expect(screen.getByTestId('zone-line')).toHaveTextContent(words('common.zone.houses', { city: 'London', gap: '6 hours behind' }), { exact: false });
+    expect(screen.getByTestId('next-up-meta')).toHaveTextContent(dueInLine(due, NOW, 'Europe/London', words), { exact: false });
+    // Back to your own clock, as this phone remembers the choice.
+    await fireEvent.press(screen.getByTestId('zone-line'));
+    expect(screen.getByTestId('zone-line')).toHaveTextContent(words('common.zone.showHouse'), { exact: false });
+  });
+
+  it("says nothing about clocks when the phone's says the house's time", async () => {
+    phoneIn('Europe/Dublin');
+    await open();
+    expect(screen.queryByTestId('zone-line')).toBeNull();
+    expect(screen.getByTestId('next-up-meta')).toHaveTextContent(dueInLine(due, NOW, 'Europe/London', words), { exact: false });
   });
 });
 

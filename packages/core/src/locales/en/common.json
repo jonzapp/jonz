@@ -294,5 +294,14 @@
   "common.statusMark.missed": "Missed",
   "common.statusMark.disputed": "Disputed",
   "common.statusMark.excused": "Skipped",
-  "common.statusMark.covered": "Covered"
+  "common.statusMark.covered": "Covered",
+  "common.zone.place": "{city}, {country}",
+  "common.zone.clock": "{offset}, {time} there now",
+  "common.zone.ahead": "{hours, plural, one {# hour} other {# hours}} ahead",
+  "common.zone.behind": "{hours, plural, one {# hour} other {# hours}} behind",
+  "common.zone.yours": "Your time, {city}. The house is {gap}.",
+  "common.zone.houses": "House time, {city}. You are {gap}.",
+  "common.zone.showHouse": "Show house time",
+  "common.zone.showMine": "Show my time",
+  "common.zone.houseTime": "{time} house time"
 }

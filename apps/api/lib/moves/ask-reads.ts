@@ -343,7 +343,7 @@ const readWhyJohn = (at: Reading): HouseReads["whyJohn"] => async (name, who) =>
     const item =
       named.find((i) => whoId !== null && i.userId === whoId) ?? (whoId === null ? (named.find((i) => i.userId === caller.userId) ?? named[0]) : undefined);
     if (!item) continue;
-    const why = johnWhy(item, { people: ctx.people, viewerId: caller.userId, rules: ctx.rules, now: ctx.now, words: wordsFor("en", houseKind(ctx.house.kind)) }, jobPlaces(item, board.items));
+    const why = johnWhy(item, { people: ctx.people, viewerId: caller.userId, rules: ctx.rules, now: ctx.now, zone: ctx.rules.timezone, words: wordsFor("en", houseKind(ctx.house.kind)) }, jobPlaces(item, board.items));
     return [
       `${item.name}, week from ${startsOn}, dealt to ${nameOf(item.userId)}:`,
       why.answer,

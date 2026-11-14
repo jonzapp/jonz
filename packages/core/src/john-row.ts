@@ -11,7 +11,7 @@ import type { Words } from "./words-for";
 // Week's groups and its laptop table. The tick box and what it says, the meta
 // line, and the one trailing item, from the kit's row map, for anyone's
 // John and whoever is looking; and the fold the finished ones go into.
-// Pure: `now` comes in, and times are in the house's zone.
+// Pure: `now` comes in, and times are said in the reader's zone (RowViewing.zone).
 
 /**
  * A John's kind, as every line about it says it (its rows, Next up, the
@@ -84,7 +84,7 @@ function called(name: string | null, words: Words): string {
   return name ? firstName(name) : words('today.nextUp.someoneGone');
 }
 
-/** Who is looking at a row and when: the viewer, the time in the house's zone, anyone's full name (null for someone who has left), and the words. */
+/** Who is looking at a row and when: the viewer, the time, the zone they read times in, anyone's full name (null for someone who has left), and the words. */
 type RowViewing = { viewerId: string; now: Date; zone: string; nameOf: (userId: string) => string | null; words: Words };
 
 /** Someone mid-sentence: "you" for the viewer, their first name, or "a former housemate". */

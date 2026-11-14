@@ -2932,6 +2932,46 @@
         }
       }
     },
+    "/v1/time-zones": {
+      "get": {
+        "operationId": "time_zones",
+        "summary": "Every time zone a house can be set to, by its IANA name (Europe/London), and UTC",
+        "tags": [
+          "account"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/JonzClient"
+          }
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "x-jonz-effect": "read",
+        "x-jonz-permission": "account:read",
+        "responses": {
+          "200": {
+            "description": "Done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "description": "An IANA time zone, such as Europe/London"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
     "/v1/me/notifications": {
       "get": {
         "operationId": "my_notifications",

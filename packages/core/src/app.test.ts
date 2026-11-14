@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { APP_NAME, LOOKS, lookOf, pageTitle, SECTIONS, TAGLINE } from "./app";
 import { EN, type WordId } from "./locales";
-import { awayBannerBody, awayMovedLine, awayShade, johnWhen, makeupHint, phoneZoneLine, recordLine, shareStanding, tableRules } from "./word-keys";
+import { awayBannerBody, awayMovedLine, awayShade, johnWhen, makeupHint, recordLine, shareStanding, tableRules } from "./word-keys";
 import { wordsFor } from "./words-for";
 
 const words = wordsFor("en", "housemates");
@@ -165,7 +165,6 @@ describe("the Rules’ words", () => {
     expect(words('house.rules.disputeHours', { hours: 0 })).toBe("No disputes (honour system)");
     expect(words('house.rules.disputeHours', { hours: 48 })).toBe("48 hours after a tick");
     for (const n of [100, 50, 0]) expect(makeupHint(n, words)).toBeTruthy();
-    expect(phoneZoneLine("America/New_York", words)).toBe("Use this phone’s: America/New York");
   });
 });
 

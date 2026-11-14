@@ -72,7 +72,7 @@ describe("a tick waiting for an OK", () => {
   it("is being checked, with no time it stands", () => {
     const item = boardOf([row("Feed the fish", { done_at: at(-2).toISOString(), awaits_ok: true })]).items[0];
     expect(item).toMatchObject({ status: "checking", awaitsOk: true, standsAt: null });
-    expect(tickedLine(item, { people: PEOPLE, viewerId: "sam", rules: RULES, now, words })).toBe(`Leo ticked this at 10:00, ${words('today.parentOk.waiting')}`);
+    expect(tickedLine(item, { people: PEOPLE, viewerId: "sam", rules: RULES, now, zone: RULES.timezone, words })).toBe(`Leo ticked this at 10:00, ${words('today.parentOk.waiting')}`);
   });
 });
 

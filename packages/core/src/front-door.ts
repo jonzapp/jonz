@@ -5,6 +5,7 @@ import { CURRENCIES, type Currency, DEFAULT_RULES, FAMILY_POCKET_CAP, type House
 import { moneyInput } from "./money";
 import { normaliseJoinCode } from "./schemas";
 import type { Words } from "./words-for";
+import { zonePlace } from "./zones";
 import { weekdayName } from "./format";
 
 // Before you have a house: where the front door's choice leads after
@@ -78,11 +79,6 @@ export function inviteCode(input: string): string | null {
   return normaliseJoinCode(link ? link[1] : text.replace(/^[^a-z0-9]+|[^a-z0-9]+$/gi, ""));
 }
 
-/** A time zone as people read it: "America/New York", not "America/New_York". */
-export function timeZoneName(timezone: string): string {
-  return timezone.replaceAll("_", " ");
-}
-
 /**
  * A new house's defaults, before anything is changed, as the parts of one
  * Meta line: "GBP 20 a month each", "weeks start Monday", "Europe/London".
@@ -111,7 +107,7 @@ export function houseDefaults({
       ? words('house.pocket.defaults', { cap: `${currency} ${moneyInput(FAMILY_POCKET_CAP)}` })
       : words('door.welcome.stakeEach', { amount: `${currency} ${moneyInput(stakeMinor)}` }),
     words('door.welcome.weekStarts', { day: weekdayName(weekStarts, words) }),
-    timeZoneName(timezone),
+    zonePlace(timezone, words),
   ];
 }
 

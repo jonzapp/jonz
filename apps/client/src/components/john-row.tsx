@@ -25,6 +25,7 @@ import { useWords } from '@/hooks/use-words';
 export interface JohnRowContext {
   houseId: string;
   userId: string;
+  /** The zone times are said in: the reader's own clock when it's away from the house's, else the house's (`rules.timezone`). */
   zone: string;
   /** The house's rules: what lateness costs, for an undo that would make a John late. */
   rules: HouseRules;
@@ -54,7 +55,7 @@ export function useJohnRow(item: BoardItem, context: JohnRowContext) {
   const open = () => sheet.open(item.id, plan.focus ?? undefined);
   const warning =
     plan.trailing === 'undo'
-      ? undoWarning(item, context.rules, context.now, words, forfeitRoom(stake, item.userId, monthOf(item.dueAt, context.zone)))
+      ? undoWarning(item, context.rules, context.now, words, forfeitRoom(stake, item.userId, monthOf(item.dueAt, context.rules.timezone)))
       : null;
   // The confirm lasts only while the row offers Undo: when the John moves on
   // under it (a dispute lands, the tick stands), the question goes, and

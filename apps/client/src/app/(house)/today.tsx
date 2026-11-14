@@ -9,6 +9,7 @@ import { PickMenu } from '@/components/pick-menu';
 import { TodayOutline } from '@/components/page-outlines';
 import { Columns, Screen, useColumns } from '@/components/screen';
 import { TitleBar, TopLine } from '@/components/title-bar';
+import { ZoneLine } from '@/components/zone-line';
 import { MoveInAsk } from '@/components/today/move-in-ask';
 import { CouldCover, NeedsYou } from '@/components/today/needs-you';
 import { NeedsYourOk } from '@/components/today/needs-your-ok';
@@ -30,6 +31,7 @@ import { usePocket } from '@/hooks/use-pocket';
 import { usePull, useReadOnFocus } from '@/hooks/use-refresh';
 import { useStake } from '@/hooks/use-stake';
 import { useWords } from '@/hooks/use-words';
+import { useZones } from '@/hooks/use-zones';
 
 /**
  * Today, for doing: your next John in the one card (or what takes its
@@ -132,7 +134,15 @@ function TodayView({
       : null;
   const standing = earned ?? page.standing;
   const nameOf = (id: string) => members.find((m) => m.userId === id)?.name ?? null;
-  const day = <TopLine>{dayLabel(now, rules.timezone, words)}</TopLine>;
+  // Times on your own clock when it's away from the house's, said once under the date (Your time, said once).
+  const zones = useZones(rules.timezone, now);
+  const zone = zones.shown;
+  const day = (
+    <>
+      <TopLine>{dayLabel(now, zone, words)}</TopLine>
+      <ZoneLine zones={zones} now={now} underTopLine />
+    </>
+  );
 
   const next = <NextSpot view={view} page={page} rules={rules} johns={list?.johns ?? null} />;
   // A John you'd rather not, and asks to swap made to you.
@@ -152,7 +162,7 @@ function TodayView({
   );
   // Housemates' overdue Johns sit low, so covering is never the top task.
   const couldCover = (
-    <CouldCover items={today.toCover} members={members} userId={userId} zone={rules.timezone} now={now} />
+    <CouldCover items={today.toCover} members={members} userId={userId} zone={zone} now={now} />
   );
   // In a family, a parent's Needs your OK takes the vote's place (there is no vote).
   const needsOk = today.toOk.length === 0 ? null : (
@@ -176,7 +186,7 @@ function TodayView({
       <RestOfWeek
         going={page.going}
         finished={page.finished}
-        context={{ houseId: house.id, userId, zone: rules.timezone, rules, now, nameOf }}
+        context={{ houseId: house.id, userId, zone, rules, now, nameOf }}
       />
     </TourSpot>
   );

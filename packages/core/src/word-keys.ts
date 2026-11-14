@@ -67,11 +67,6 @@ export function makeupHint(makeup: number, words: Words): string {
   return words(`house.rules.makeupHint.${makeupKey(makeup)}`);
 }
 
-/** "Use this phone’s: America/New York". */
-export function phoneZoneLine(zone: string, words: Words): string {
-  return words("house.rules.phoneZone", { zone: zone.replaceAll("_", " ") });
-}
-
 /** The Table's rules, each a term and what it means. */
 export function tableRules(words: Words): { term: string; body: string }[] {
   return [

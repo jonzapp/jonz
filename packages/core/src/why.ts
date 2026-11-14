@@ -8,7 +8,6 @@ import type { BoardItem } from "./board";
 import type { DealWhy } from "./deal";
 import { isOpen } from "./board-views";
 import { andNames, shareLabel } from "./crew";
-import type { HouseRules } from "./domain";
 import { dueInLine, firstName, formatBalance } from "./format";
 import { coverOpensAt } from "./outcome";
 import type { Viewing } from "./viewing";
@@ -40,10 +39,11 @@ export interface WhyView {
 
 export function johnWhy(
   item: BoardItem,
-  { people, viewerId, rules, now, words }: Viewing,
+  viewing: Viewing,
   /** A John done together's places on the board (its job's), to say why the people on it are. */
   places: readonly BoardItem[] = [item],
 ): WhyView {
+  const { people, viewerId, words } = viewing;
   const name = (id: string) => {
     const person = people.find((p) => p.userId === id);
     return person ? firstName(person.name) : words('john.why.someoneGone');
@@ -60,7 +60,7 @@ export function johnWhy(
   return {
     ...(together ?? dealtPart(item, { viewerId, say: { Who, who, whose }, words })),
     key,
-    stakes: stakesLine(item, viewerId, rules, now, { Who, who, whose }, words),
+    stakes: stakesLine(item, viewing, { Who, who, whose }),
   };
 }
 
@@ -221,16 +221,14 @@ function dealtPart(item: BoardItem, asking: WhyAsking): Pick<WhyView, "answer" |
 
 function stakesLine(
   item: BoardItem,
-  viewerId: string,
-  rules: HouseRules,
-  now: Date,
-  say: { Who: (id: string) => string; who: (id: string) => string; whose: (id: string) => string }, words: Words,
+  { viewerId, rules, now, zone, words }: Viewing,
+  say: { Who: (id: string) => string; who: (id: string) => string; whose: (id: string) => string },
 ): string | null {
   const holder = item.userId;
   if (isOpen(item.status)) {
-    const missed = words('john.why.missedBy', { when: dueInLine(item.closesAt, now, rules.timezone, words), holder: say.who(holder) });
+    const missed = words('john.why.missedBy', { when: dueInLine(item.closesAt, now, zone, words), holder: say.who(holder) });
     const opens = coverOpensAt(item.dueAt, rules.coverGraceHours, item.closesAt);
-    const cover = opens.getTime() <= now.getTime() ? words('john.why.coverNow') : words('john.why.coverFrom', { when: dueInLine(opens, now, rules.timezone, words) });
+    const cover = opens.getTime() <= now.getTime() ? words('john.why.coverNow') : words('john.why.coverFrom', { when: dueInLine(opens, now, zone, words) });
     return `${missed} ${cover}`;
   }
   // Disputed: whose work it is waits on the vote.
