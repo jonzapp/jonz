@@ -23,7 +23,7 @@ describe('the focus ring', () => {
 
   it('turns a button\'s edge for the keyboard, and draws a row\'s inside its edges', () => {
     const rules = focusRingRules(ring);
-    expect(rules).toContain(`[data-ring="edge"]:focus-visible { border-color: ${light.ring} !important; box-shadow: ${ring.boxShadow} !important; }`);
+    expect(rules).toContain(`[data-ring="edge"]:focus-visible, [data-ring="part"]:focus-visible [data-ring-part] { border-color: ${light.ring} !important; box-shadow: ${ring.boxShadow} !important; }`);
     expect(rules).toContain(`[data-ring-row]:has([data-ring="row"]:focus-visible) { box-shadow: inset 0 0 0 1px ${light.ring}, inset 0 0 0 4px ${light.ring}4d; }`);
     // Only where it's drawn is the browser's own outline taken away.
     expect(rules).toContain('[data-ring]:focus-visible { outline: none; }');

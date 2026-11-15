@@ -181,8 +181,6 @@
   "house.notify.settings": "Quoi envoyer",
   "house.notify.quiet": "Heures calmes",
   "house.notify.quietHint": "Les rappels attendent le matin. Le reste arrive sans son.",
-  "house.notify.on": "Activé",
-  "house.notify.off": "Désactivé",
   "house.notify.saved": "Enregistré",
   "house.notify.failed": "Impossible d’enregistrer. Réessaie.",
   "house.groups.title": "Groupes",

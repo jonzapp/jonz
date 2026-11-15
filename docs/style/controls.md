@@ -103,6 +103,14 @@
 - Forms sit in a column capped at `FORM_MAX` (520) on a laptop. (**New**)
 - A short select opens in place (`PickRow`); a radio or checkbox is a
   `ChoiceRow`. (AGENTS.md)
+- **Turning one thing on or off, straight away, is a `Switch`:** a track
+  with a knob, dark and to the right when on (ink, never amber), pale and to
+  the left when off. The whole 48 square round it takes the tap, and a
+  screen reader hears a switch, its name and whether it's on (Reminders'
+  kinds of push). Choosing several things in a list stays a tick box
+  (`ChoiceRow`), and so does a setting saved with the rest of a form. (Kit
+  to shadcn's breadth, 15 Nov; was an On | Off `Segmented`) *Backed by*
+  Apple's and Material's switch guidance and WAI-ARIA's switch role.
 - **A choice from a long list** (the house's time zone) is a row showing
   what's set, opening a sheet: a `SearchBox`, the likely ones first under
   Suggested, then the whole list A to Z, each row saying enough to check it

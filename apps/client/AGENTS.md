@@ -139,12 +139,12 @@ permanent once a store has seen them.
   "•••"), `PageTitle` (the browser tab's title on the web from core's
   `pageTitle`, nothing on a phone), `Section`, `Group` (`dashed` for things in no
   section yet: the John list's No kind), `Row` (the one row,
-  everywhere), `Fold`, `Card` (at most one stand-alone card a screen),
+  everywhere), `Fold` (and `QuietFold`, a chat's aside), `Card` (at most one stand-alone card a screen),
   `TickBox`, `StatusMark` and `Chip` (core's `STATUS_MARK`, drawn),
   `LidBar`, `Avatar`, `CountBadge`, `Button`, `ButtonRow` (buttons side by
   side: equal, stacking when narrow), `IconButton` (every icon-only control),
   `TextButton`, `TextLink`,
-  `Field`, `SignInForm` and `HiddenUsername` (sign-in and password boxes
+  `Switch` (one thing on or off, straight away), `Separator` (the line between things), `Field`, `SignInForm` and `HiddenUsername` (sign-in and password boxes
   as a real form on the web, for password managers), `Alert`, `Segmented`,
   `EmptyState`, `Waiting` (a first read on its way: its outline, built
   from `outline.tsx`, after 300ms and for at least 300ms) and `ReadFailed`

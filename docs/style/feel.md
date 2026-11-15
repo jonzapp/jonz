@@ -59,6 +59,11 @@ kind of John. Calm by default, loud only for the moments that count.
 - **Shadows only on what floats** over the page: a dropped menu, a search's
   suggestions, a tour's card, one soft shadow (`floatShadow`). Cards, groups
   and boxes stay flat. (Look A, 15 Nov)
+- **A line between things is a `Separator`:** a hair thick in the border
+  colour, across or down, or filling what's left of a row either side of a
+  word ("or" on sign-in, a chat's summed-up line). A group's rows draw theirs
+  from the words (`Hairline`, built on it). A panel's or a bar's edge stays
+  its border. (Kit to shadcn's breadth, 15 Nov)
 - At most one stand-alone card per screen (Today's Next up, House's month
   card). A card never holds a card or a tinted panel. (Focus, #17)
 

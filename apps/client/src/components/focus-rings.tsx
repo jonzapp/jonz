@@ -7,9 +7,13 @@ import { focusRing, useTheme } from '@/theme';
  * How a pressable wears the keyboard's focus ring on the web, as its
  * `dataSet`: `edge` turns its own edge to the ring (a button); a row's press
  * target is `row`, and the row round it (`ringRow`) draws the ring inside its
- * own edges, where its group can't clip it.
+ * own edges, where its group can't clip it; a control bigger than what it
+ * draws is `part`, and the part that wears the ring is `ringPart` (a
+ * switch's track, in its thumb-sized target).
  */
 export const RING_EDGE = { ring: 'edge' } as const;
+export const RING_PART = { ring: 'part' } as const;
+export const RING_PART_SHOWN = { ringPart: '' } as const;
 export const RING_ROW = { ring: 'row' } as const;
 export const RING_ROW_HOLDER = { ringRow: '' } as const;
 
@@ -18,7 +22,7 @@ export function focusRingRules(ring: { borderColor: string; boxShadow: string })
   const inside = ring.boxShadow.replace(/^0 0 0 (\d+)px/, (_, halo: string) => `inset 0 0 0 ${Number(halo) + 1}px`);
   return [
     '[data-ring]:focus-visible { outline: none; }',
-    `[data-ring="edge"]:focus-visible { border-color: ${ring.borderColor} !important; box-shadow: ${ring.boxShadow} !important; }`,
+    `[data-ring="edge"]:focus-visible, [data-ring="part"]:focus-visible [data-ring-part] { border-color: ${ring.borderColor} !important; box-shadow: ${ring.boxShadow} !important; }`,
     `[data-ring-row]:has([data-ring="row"]:focus-visible) { box-shadow: inset 0 0 0 1px ${ring.borderColor}, ${inside}; }`,
   ].join('\n');
 }

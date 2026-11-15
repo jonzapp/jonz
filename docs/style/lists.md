@@ -71,6 +71,10 @@
   progressive disclosure, and Nielsen's "aesthetic and minimalist design".
 - Finished things fold away (`DoneFold`: "Done (3)", with how many were
   late). (Focus, #17)
+- **A chat's asides fold quietly** in one `QuietFold`: Meta words with a
+  chevron that turns down when open ("Thought for 4 seconds" over Jonz's
+  steps; "Jonz summed up 38 earlier messages", with a line either side).
+  (Kit to shadcn's breadth, 15 Nov)
 - **Quiet news folds, news that matters leads.** On the Wall a day's ticks
   made on time (two or more) fold into one row at the day's foot, "3 ticked
   on time" with who under it, so misses, late ticks, disputes, perks and
