@@ -4,11 +4,13 @@ import { StyleSheet, View } from 'react-native';
 
 import { loadPrefs, savePrefs } from '@/api/notification-prefs';
 import { Alert } from '@/components/alert';
+import { CardRows } from '@/components/group';
 import { Row } from '@/components/row';
 import { Segmented } from '@/components/segmented';
+import { Switch } from '@/components/switch';
 import { Meta, SectionLabel } from '@/components/text';
 import { useWords } from '@/hooks/use-words';
-import { SPACE } from '@/theme';
+import { INSET, SPACE } from '@/theme';
 
 /** The quiet hours on offer, from and until, on the hour; the first is none. */
 const QUIET_HOURS: readonly { from: number | null; until: number | null }[] = [
@@ -28,8 +30,8 @@ function quietIndex(prefs: NotificationPrefs): number {
 
 /**
  * What to push you, kind by kind, and quiet hours: yours on every device
- * (notification_prefs). Each change saves at once; a save that fails puts
- * the switch back and says so.
+ * (notification_prefs). Each kind is a Switch and saves at once; a save
+ * that fails puts the switch back and says so.
  */
 export function NotificationSettings({ userId }: { userId: string }) {
   const words = useWords();
@@ -72,27 +74,18 @@ export function NotificationSettings({ userId }: { userId: string }) {
   return (
     <View style={styles.stack} testID="notification-settings">
       <SectionLabel>{words('house.notify.settings')}</SectionLabel>
-      <View>
-        {PUSH_KINDS.map((kind) => (
-          <Row
-            key={kind}
-            title={words(`house.notify.kind.${kind}`)}
-            meta={words(`house.notify.hint.${kind}`)}
-            metaLines={2}
-            trailing={
-              <Segmented
-                options={[
-                  { value: 'on', label: words('house.notify.on') },
-                  { value: 'off', label: words('house.notify.off') },
-                ] as const}
-                value={prefs[kind] ? 'on' : 'off'}
-                onChange={(v) => setKind(kind, v === 'on')}
-                label={words(`house.notify.kind.${kind}`)}
-                testID={`push-${kind}`}
-              />
-            }
-          />
-        ))}
+      <View style={styles.rows}>
+        <CardRows>
+          {PUSH_KINDS.map((kind) => (
+            <Row
+              key={kind}
+              title={words(`house.notify.kind.${kind}`)}
+              meta={words(`house.notify.hint.${kind}`)}
+              metaLines={2}
+              trailing={<Switch value={prefs[kind]} onChange={(on) => setKind(kind, on)} label={words(`house.notify.kind.${kind}`)} testID={`push-${kind}`} />}
+            />
+          ))}
+        </CardRows>
       </View>
       <SectionLabel>{words('house.notify.quiet')}</SectionLabel>
       <Segmented options={QUIET_HOURS.map((o, i) => ({
@@ -108,4 +101,6 @@ export function NotificationSettings({ userId }: { userId: string }) {
 
 const styles = StyleSheet.create({
   stack: { gap: SPACE.sm },
+  /** The rows line up with the sheet's edges, as a card's do; the section label above already spaces them. */
+  rows: { marginTop: -INSET },
 });

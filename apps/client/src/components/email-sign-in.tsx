@@ -25,11 +25,12 @@ import { Button } from '@/components/button';
 import { CodeBoxes } from '@/components/code-boxes';
 import { Field } from '@/components/field';
 import { Group } from '@/components/group';
+import { Separator } from '@/components/separator';
 import { ChoiceRow } from '@/components/setup/choice-row';
 import { HiddenUsername, SignInForm } from '@/components/sign-in-form';
 import { Meta } from '@/components/text';
 import { TextButton } from '@/components/text-button';
-import { SPACE, useTheme } from '@/theme';
+import { SPACE } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
 /** Enter on a phone's keyboard; the web form handles its own, so it isn't sent twice. */
@@ -45,7 +46,6 @@ type Problem = { field?: 'name' | 'email' | 'password' | 'code'; message: string
  */
 export function EmailSignIn() {
   const words = useWords();
-  const { colors } = useTheme();
   const [step, setStep] = useState<EmailStep>('sign-in');
   const [name, setName] = useState('');
   const [agreed, setAgreed] = useState(false);
@@ -160,9 +160,9 @@ export function EmailSignIn() {
   return (
     <View style={styles.email} testID="email-sign-in">
       <View style={styles.or}>
-        <View style={[styles.line, { backgroundColor: colors.border }]} />
+        <Separator grow />
         <Meta>{words('door.email.or')}</Meta>
-        <View style={[styles.line, { backgroundColor: colors.border }]} />
+        <Separator grow />
       </View>
       <Step flow={flow} />
       <BotCheck round={round} onToken={setToken} />
@@ -448,5 +448,4 @@ const styles = StyleSheet.create({
   email: { gap: SPACE.sm, marginTop: SPACE.sm },
   step: { gap: SPACE.sm },
   or: { flexDirection: 'row', alignItems: 'center', gap: SPACE.sm },
-  line: { flex: 1, height: StyleSheet.hairlineWidth },
 });

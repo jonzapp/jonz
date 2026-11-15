@@ -1,7 +1,8 @@
-import { CheckIcon, ChevronDownIcon, ChevronRightIcon } from 'lucide-react-native';
+import { CheckIcon } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { AccessibilityInfo, Animated, Easing, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, Animated, Easing, Platform, StyleSheet, View } from 'react-native';
 
+import { QuietFold } from '@/components/fold';
 import { Meta } from '@/components/text';
 import { GROUP_RADIUS, INSET, SPACE, useTheme } from '@/theme';
 import { useWords } from '@/hooks/use-words';
@@ -126,34 +127,19 @@ export function Thinking({ steps }: { steps: readonly string[] }) {
 export function ThoughtFold({ seconds, steps }: { seconds: number; steps: readonly string[] }) {
   const words = useWords();
   const { colors } = useTheme();
-  const [open, setOpen] = useState(false);
-  const Chevron = open ? ChevronDownIcon : ChevronRightIcon;
   return (
-    <View style={styles.fold}>
-      <Pressable
-        accessibilityRole="button"
-        aria-expanded={open}
-        onPress={() => setOpen((was) => !was)}
-        hitSlop={SPACE.md}
-        style={({ pressed }) => [styles.foldHead, pressed && { opacity: 0.6 }]}
-        testID="chat-thought"
-      >
-        <Meta>{words('ask.draft.thought', { seconds })}</Meta>
-        <Chevron size={16} color={colors.mutedForeground} aria-hidden />
-      </Pressable>
-      {open ? (
-        <View style={[styles.steps, { backgroundColor: colors.card }]} testID="chat-thought-steps">
-          {steps.map((step) => (
-            <View key={step} style={styles.stepRow}>
-              <View style={[styles.square, styles.done, { borderColor: colors.good, backgroundColor: colors.good }]}>
-                <CheckIcon size={8} strokeWidth={4} color={colors.card} aria-hidden />
-              </View>
-              <Meta>{step}</Meta>
+    <QuietFold label={words('ask.draft.thought', { seconds })} testID="chat-thought">
+      <View style={[styles.steps, { backgroundColor: colors.card }]} testID="chat-thought-steps">
+        {steps.map((step) => (
+          <View key={step} style={styles.stepRow}>
+            <View style={[styles.square, styles.done, { borderColor: colors.good, backgroundColor: colors.good }]}>
+              <CheckIcon size={8} strokeWidth={4} color={colors.card} aria-hidden />
             </View>
-          ))}
-        </View>
-      ) : null}
-    </View>
+            <Meta>{step}</Meta>
+          </View>
+        ))}
+      </View>
+    </QuietFold>
   );
 }
 
@@ -164,8 +150,6 @@ const styles = StyleSheet.create({
   // The ink covers the edge too, so a filled square is one solid plate.
   fill: { position: 'absolute', top: -EDGE, left: -EDGE, right: -EDGE, bottom: -EDGE, borderRadius: CORNER },
   step: { flexShrink: 1 },
-  fold: { gap: SPACE.sm },
-  foldHead: { flexDirection: 'row', alignItems: 'center', gap: SPACE.xs, alignSelf: 'flex-start' },
   steps: { borderRadius: GROUP_RADIUS, paddingHorizontal: INSET - 2, paddingVertical: SPACE.sm + 2, gap: SPACE.sm },
   stepRow: { flexDirection: 'row', alignItems: 'center', gap: SPACE.sm + 2 },
   done: { width: SQUARE + 2, height: SQUARE + 2, alignItems: 'center', justifyContent: 'center' },

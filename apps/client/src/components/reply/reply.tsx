@@ -7,6 +7,7 @@ import { Platform, Pressable, StyleSheet, Text, View, type TextStyle } from 'rea
 import { Avatar } from '@/components/avatar';
 import { CopyLine } from '@/components/copy-line';
 import { LidBar } from '@/components/lid';
+import { Separator } from '@/components/separator';
 import { Body, SectionLabel } from '@/components/text';
 import { FONT, RADIUS, SPACE, TABULAR, useTheme } from '@/theme';
 import { useWords } from '@/hooks/use-words';
@@ -161,7 +162,7 @@ function BlockView({ block }: { block: Block }) {
     case 'copy':
       return <CopyLine value={block.text} testID="reply-copy" />;
     case 'rule':
-      return <View style={[styles.rule, { backgroundColor: colors.border }]} aria-hidden testID="reply-rule" />;
+      return <Separator style={styles.rule} testID="reply-rule" />;
     case 'card': {
       const card = pieces.card(block.card);
       return card ? <View testID={`reply-card-${block.card.card}`}>{card}</View> : null;
@@ -350,7 +351,7 @@ const styles = StyleSheet.create({
   box: { width: BOX, height: BOX, borderRadius: BOX / 4, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   itemBody: { flex: 1, minWidth: 0 },
   quote: { borderLeftWidth: 3, paddingLeft: SPACE.md },
-  rule: { height: StyleSheet.hairlineWidth, marginVertical: SPACE.xs },
+  rule: { marginVertical: SPACE.xs },
   table: { borderRadius: RADIUS, overflow: 'hidden' },
   tr: { flexDirection: 'row', paddingHorizontal: SPACE.md, paddingVertical: SPACE.sm, gap: SPACE.md },
   cell: { flex: 1, minWidth: 0, ...TABULAR },

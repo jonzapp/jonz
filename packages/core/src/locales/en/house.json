@@ -181,8 +181,6 @@
   "house.notify.settings": "What to send",
   "house.notify.quiet": "Quiet hours",
   "house.notify.quietHint": "Reminders wait until morning. Anything else arrives without a sound.",
-  "house.notify.on": "On",
-  "house.notify.off": "Off",
   "house.notify.saved": "Saved",
   "house.notify.failed": "Couldn’t save that. Try again.",
   "house.groups.title": "Groups",

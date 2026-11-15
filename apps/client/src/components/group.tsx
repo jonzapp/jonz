@@ -1,6 +1,7 @@
 import { createContext, useContext, type ReactNode } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
+import { Separator } from '@/components/separator';
 import { DASH, GROUP_RADIUS, INSET, useTheme } from '@/theme';
 
 /**
@@ -74,17 +75,9 @@ export function CardRows({ children, testID }: { children: ReactNode; testID?: s
  * View is).
  */
 export function Hairline() {
-  const { colors } = useTheme();
   const frame = useRowFrame();
   if (frame == null) return null;
-  return (
-    <View
-      aria-hidden
-      pointerEvents="none"
-      testID="hairline"
-      style={[styles.hairline, { left: frame.inset, backgroundColor: colors.border }]}
-    />
-  );
+  return <Separator testID="hairline" style={[styles.hairline, { left: frame.inset }]} />;
 }
 
 /**

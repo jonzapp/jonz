@@ -1,8 +1,9 @@
-import { ChevronDownIcon, ChevronUpIcon } from 'lucide-react-native';
+import { ChevronDownIcon, ChevronRightIcon, ChevronUpIcon } from 'lucide-react-native';
 import { useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Hairline, useRowInset } from '@/components/group';
+import { Separator } from '@/components/separator';
 import { Meta } from '@/components/text';
 import { FONT, LEADING, ROW_GAP, ROW_MIN, SPACE, useTheme } from '@/theme';
 import { useWords } from '@/hooks/use-words';
@@ -67,6 +68,56 @@ export function Fold({
   );
 }
 
+/**
+ * A quiet fold in a chat: its words in Meta with a chevron that turns down
+ * when it opens, and what it holds under it ("Thought for 4 seconds" over
+ * Jonz's steps). With `rule`, a line runs either side of the words, across
+ * the chat ("Jonz summed up 38 earlier messages"). `aria-expanded` says
+ * whether it's open.
+ */
+export function QuietFold({
+  label,
+  rule = false,
+  children,
+  testID,
+}: {
+  label: string;
+  rule?: boolean;
+  children: ReactNode;
+  testID?: string;
+}) {
+  const { colors } = useTheme();
+  const [open, setOpen] = useState(false);
+  const Chevron = open ? ChevronDownIcon : ChevronRightIcon;
+  const head = (
+    <Pressable
+      accessibilityRole="button"
+      aria-expanded={open}
+      onPress={() => setOpen((was) => !was)}
+      hitSlop={SPACE.md}
+      style={({ pressed }) => [styles.quietHead, pressed && styles.quietPressed]}
+      testID={testID}
+    >
+      <Meta>{label}</Meta>
+      <Chevron size={16} color={colors.mutedForeground} aria-hidden />
+    </Pressable>
+  );
+  return (
+    <View style={styles.quiet}>
+      {rule ? (
+        <View style={styles.rule}>
+          <Separator grow />
+          {head}
+          <Separator grow />
+        </View>
+      ) : (
+        head
+      )}
+      {open ? children : null}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   fold: {
     minHeight: ROW_MIN,
@@ -81,4 +132,8 @@ const styles = StyleSheet.create({
   line: { flexDirection: 'row', alignItems: 'center', gap: SPACE.xs },
   label: { flexShrink: 1, fontFamily: FONT.bold },
   meta: { flexShrink: 0 },
+  quiet: { gap: SPACE.sm },
+  quietHead: { flexDirection: 'row', alignItems: 'center', gap: SPACE.xs, alignSelf: 'flex-start' },
+  quietPressed: { opacity: 0.6 },
+  rule: { flexDirection: 'row', alignItems: 'center', gap: SPACE.sm },
 });

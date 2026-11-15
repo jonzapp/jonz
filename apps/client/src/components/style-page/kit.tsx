@@ -29,7 +29,7 @@ import { DangerRow, DangerZone } from '@/components/danger-zone';
 import { DayChips } from '@/components/day-chips';
 import { EmptyState } from '@/components/empty-state';
 import { Field } from '@/components/field';
-import { Fold } from '@/components/fold';
+import { Fold, QuietFold } from '@/components/fold';
 import { Group, GroupItem } from '@/components/group';
 import { HazardTape } from '@/components/hazard-tape';
 import { AddKindRow, KindRow } from '@/components/house/kinds-list';
@@ -45,8 +45,10 @@ import { Dimmed, SearchLine } from '@/components/search-line';
 import { HouseTimeNote } from '@/components/house-time-note';
 import { Section } from '@/components/section';
 import { Segmented } from '@/components/segmented';
+import { Separator } from '@/components/separator';
 import { Chip } from '@/components/status-mark';
 import { StreetPlate } from '@/components/street-plate';
+import { Switch } from '@/components/switch';
 import { Body, Heading, Lead, Meta, RowTitle, Title } from '@/components/text';
 import { TextButton } from '@/components/text-button';
 import { TextLink } from '@/components/text-link';
@@ -179,9 +181,10 @@ export function Buttons() {
 
 const TICKS: readonly TickState[] = ['open', 'checking', 'done', 'disputed', 'busy'];
 
-/** Picking and typing: segments, day chips, tick boxes, fields, code boxes and a fold. */
+/** Picking and typing: segments, switches, day chips, tick boxes, fields, code boxes, a fold and the lines between things. */
 export function Choosing() {
   const [scope, setScope] = useState<'me' | 'house'>('me');
+  const [soon, setSoon] = useState(true);
   const [days, setDays] = useState<IsoDow[]>([1, 3, 5]);
   const [code, setCode] = useState('4829');
   const [search, setSearch] = useState('');
@@ -208,6 +211,8 @@ export function Choosing() {
             ))}
           </View>
         </GroupItem>
+        <Row title="Johns due soon" meta="On: it saves straight away" trailing={<Switch value={soon} onChange={setSoon} label="Johns due soon" testID="style-switch" />} />
+        <Row title="The week's deal" meta="Off, and can't be changed here" trailing={<Switch value={false} onChange={none} label="The week's deal" disabled />} />
         <GroupItem>
           <Field label="House name" defaultValue="Bin Street" hint="Housemates see this on the invite." />
           <Field label="Join code" defaultValue="AB12" problem="That code has been used up. Ask for a new one." />
@@ -217,8 +222,28 @@ export function Choosing() {
         <Fold label="Done today" meta={<Meta>1</Meta>} initiallyOpen>
           <Row title="Hoover the stairs" meta="Done 10am" lid="floors" leading={<TickBox state="done" label="Hoover the stairs" />} leadingControl />
         </Fold>
+        <Lines />
       </Group>
     </Section>
+  );
+}
+
+/** A separator either side of "or", and the quiet folds a chat uses, one with its rule across. */
+function Lines() {
+  return (
+    <GroupItem>
+      <View style={styles.or}>
+        <Separator grow />
+        <Meta>or</Meta>
+        <Separator grow />
+      </View>
+      <QuietFold label="Thought for 4 seconds">
+        <Body>Read the John list, then the week.</Body>
+      </QuietFold>
+      <QuietFold label="Jonz summed up 38 earlier messages" rule>
+        <Body>You asked about the bins and the deal.</Body>
+      </QuietFold>
+    </GroupItem>
   );
 }
 
@@ -383,6 +408,7 @@ export function Loading() {
 const styles = StyleSheet.create({
   stack: { gap: SPACE.sm },
   across: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACE.sm, alignItems: 'center' },
+  or: { flexDirection: 'row', gap: SPACE.sm, alignItems: 'center' },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACE.sm, alignItems: 'center' },
   swatches: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACE.md },
   swatch: { width: 104, gap: SPACE.xs },

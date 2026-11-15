@@ -176,6 +176,12 @@ test("tab titles, the look, and reminders on this device", async ({ browser }) =
   const reminders = page.getByTestId("reminders-sheet");
   await reminders.getByTestId("enable-push").click();
   await expect(reminders.getByText(words('house.reminders.turnedOn'))).toBeVisible();
+  // What to send: each kind is a switch, on to start with, saved as soon as it's flipped.
+  const deal = reminders.getByRole("switch", { name: words('house.notify.kind.deal') });
+  await expect(deal).toBeChecked();
+  await deal.click();
+  await expect(deal).not.toBeChecked();
+  await expect(reminders.getByText(words('house.notify.saved'))).toBeVisible();
   expect(await rows()).toEqual([
     { user_id: userId, endpoint: "https://fcm.googleapis.com/fcm/send/e2e-device", p256dh: "e2e-p256dh", auth: "e2e-auth" },
   ]);
