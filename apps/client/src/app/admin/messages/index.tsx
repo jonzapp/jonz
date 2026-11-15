@@ -8,7 +8,7 @@ import { sentCount, sentFilter, sentPage, type SentCursor, type SentRow } from '
 import { AdminSwitch } from '@/components/admin/admin-shell';
 import { ownerZone } from '@/components/admin/audit-entry';
 import { BusyListView, useBusyList, type BusyList } from '@/components/admin/busy-list';
-import { ListTableRow, type ListColumn } from '@/components/list-table';
+import { TableRow, type TableColumn } from '@/components/table';
 import { MessageForm, SENT_KEY } from '@/components/admin/message-form';
 import { MessagePreview } from '@/components/admin/message-parts';
 import { useOwnerMay } from '@/components/admin/use-owner-may';
@@ -23,7 +23,7 @@ import { SPACE } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
 /** Every sent message's columns on a laptop. */
-const SENT_TABLE = (words: Words): readonly ListColumn[] => [
+const SENT_TABLE = (words: Words): readonly TableColumn[] => [
   { key: 'subject', label: words('admin.messages.columns.subject'), flex: 1 },
   { key: 'to', label: words('admin.messages.columns.to'), width: 160 },
   { key: 'ways', label: words('admin.messages.columns.ways'), width: 168 },
@@ -88,7 +88,7 @@ function Messages({ busy }: { busy: BusyList<SentRow> }) {
         noun={(count: string) => words('admin.messages.sentCount', { count })}
         columns={SENT_TABLE(words)}
         tableRow={(m) => (
-          <ListTableRow
+          <TableRow
             key={m.id}
             columns={SENT_TABLE(words)}
             cells={{ subject: m.subject, to: sentTo(m, words), ways: sentWays(m), when: reportAge(m.sentAt, now) }}

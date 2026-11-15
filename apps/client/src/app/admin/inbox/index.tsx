@@ -6,7 +6,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { inboxCount, inboxFilter, inboxRows, type InboxCursor, type InboxRow } from '@/api/reports';
 import { BusyListView, useBusyList, useOpenRow, type BusyList, type ListGroup } from '@/components/admin/busy-list';
-import { ListTableRow, type ListColumn } from '@/components/list-table';
+import { TableRow, type TableColumn } from '@/components/table';
 import { Avatar } from '@/components/avatar';
 import { Row } from '@/components/row';
 import { ReportChip } from '@/components/report/report-parts';
@@ -18,7 +18,7 @@ import { SPACE } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
 /** The Inbox's columns on a laptop. */
-const inboxTable = (words: Words): readonly ListColumn[] => [
+const inboxTable = (words: Words): readonly TableColumn[] => [
   { key: 'from', label: words('common.report.from'), width: 132 },
   { key: 'what', label: words('common.report.what'), flex: 1 },
   { key: 'kind', label: words('common.report.kindColumn'), width: 84 },
@@ -82,7 +82,7 @@ function Inbox({ busy }: { busy: BusyList<InboxRow> }) {
       noun={(count: string) => words('common.report.count', { count })}
       columns={inboxTable(words)}
       tableRow={(report) => (
-        <ListTableRow
+        <TableRow
           key={report.id}
           columns={inboxTable(words)}
           cells={{

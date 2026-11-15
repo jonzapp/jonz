@@ -5,7 +5,7 @@ import { SearchXIcon, type LucideIcon } from 'lucide-react-native';
 import { useMemo, useState, type ReactNode } from 'react';
 import { Platform, StyleSheet, View, type ViewStyle } from 'react-native';
 
-import { ListTable, ListTableHead, type ListColumn } from '@/components/list-table';
+import { Table, TableHead, type TableColumn } from '@/components/table';
 import { SmartSearch } from '@/components/admin/smart-search';
 import { EmptyState } from '@/components/empty-state';
 import { Group } from '@/components/group';
@@ -150,7 +150,7 @@ export function BusyListView<T>({
   placeholder: string;
   /** "2,481 entries". */
   noun: (count: string) => string;
-  columns: readonly ListColumn[];
+  columns: readonly TableColumn[];
   tableRow: (item: T) => ReactNode;
   row: (item: T) => ReactNode;
   empty: { icon: LucideIcon; title: string; body: string };
@@ -236,9 +236,9 @@ export function BusyListView<T>({
             {grouped.map((group, i) => (
               <Section key={group.key} label={`${group.label}, ${listCount(group.count ?? group.items.length, false)}`} bare={wide} testID={`${name}-group-${group.key}`}>
                 {wide ? (
-                  <ListTable columns={columns} head={i === 0}>
+                  <Table columns={columns} head={i === 0}>
                     {group.items.map(tableRow)}
-                  </ListTable>
+                  </Table>
                 ) : (
                   group.items.map(row)
                 )}
@@ -246,9 +246,9 @@ export function BusyListView<T>({
             ))}
           </View>
         ) : wide ? (
-          <ListTable columns={columns} head={false} testID={`${name}-table`}>
+          <Table columns={columns} head={false} testID={`${name}-table`}>
             {busy.items.map(tableRow)}
-          </ListTable>
+          </Table>
         ) : (
           <Group testID={`${name}-rows`}>{busy.items.map(row)}</Group>
         )}
@@ -264,7 +264,7 @@ export function BusyListView<T>({
     <View style={styles.list}>
       <View style={[styles.top, styles.over, pinned && [STICKY_TOP, { backgroundColor: colors.background }]]} testID={`${name}-top`}>
         {head}
-        {table ? <ListTableHead columns={columns} testID={`${name}-table-head`} /> : null}
+        {table ? <TableHead columns={columns} testID={`${name}-table-head`} /> : null}
       </View>
       {/* A new search's rows on their way: the last ones dimmed, so they don't pass for the answer. */}
       <Dimmed searching={searching} style={styles.list}>

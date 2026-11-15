@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { ListTableRow, type ListColumn } from '@/components/list-table';
+import { TableRow, type TableColumn } from '@/components/table';
 import { LID_BAR, LidBar } from '@/components/lid';
 import { Meta } from '@/components/text';
 import { SPACE, TABULAR, useTheme } from '@/theme';
@@ -11,7 +11,7 @@ import { SPACE, TABULAR, useTheme } from '@/theme';
  * five (a John open in the panel beside it), how often and the rest go on
  * a line under the name.
  */
-function lineColumns(roomy: boolean): ListColumn[] {
+function lineColumns(roomy: boolean): TableColumn[] {
   return [
     { key: 'name', label: '', flex: 2 },
     { key: 'when', label: '', width: 104 },
@@ -56,7 +56,7 @@ export function JohnLine({
   const quiet = [type.body, { color: colors.mutedForeground }];
   const under = roomy ? null : [weekly ? null : often, ...also].filter(Boolean).join(', ');
   return (
-    <ListTableRow
+    <TableRow
       columns={lineColumns(roomy)}
       cells={{
         name: (

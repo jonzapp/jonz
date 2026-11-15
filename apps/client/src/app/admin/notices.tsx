@@ -19,7 +19,7 @@ import { StyleSheet, View } from 'react-native';
 import { endNotice, liveNotices, noticeFilter, noticesCount, noticesPage, saveNotice, type NoticeCursor, type SavedNotice } from '@/api/owner';
 import { ownerZone } from '@/components/admin/audit-entry';
 import { BusyListView, useBusyList, type BusyList } from '@/components/admin/busy-list';
-import { ListTableRow, type ListColumn } from '@/components/list-table';
+import { TableRow, type TableColumn } from '@/components/table';
 import { NoticeEditor } from '@/components/admin/notice-editor';
 import { StartTiles } from '@/components/admin/start-tiles';
 import { NoticePreview } from '@/components/notice-banner';
@@ -44,7 +44,7 @@ const KIND_LABEL: Record<NoticeKind, string> = { status: 'Status', offer: 'Offer
 const STATE_LABEL: Record<NoticeState, string> = { live: 'Showing', scheduled: 'Starting later', ended: 'Ended' };
 
 /** Every notice's columns on a laptop: its title, kind, whether it's on, and when it starts. */
-const NOTICE_TABLE = (words: Words): readonly ListColumn[] => [
+const NOTICE_TABLE = (words: Words): readonly TableColumn[] => [
   { key: 'title', label: words('admin.notices.title'), flex: 1 },
   { key: 'kind', label: words('admin.notices.kind'), width: 96 },
   { key: 'state', label: words('admin.notices.state'), width: 128 },
@@ -179,7 +179,7 @@ function NoticeList({ busy, chosen, choose }: { busy: BusyList<Notice>; chosen: 
             const state = noticeState(notice, now);
             const starts = listTime(notice.startsAt, now, ownerZone(), false);
             return (
-              <ListTableRow
+              <TableRow
                 key={notice.id}
                 columns={NOTICE_TABLE(words)}
                 cells={{

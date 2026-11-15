@@ -1,7 +1,7 @@
 import { CalendarIcon, CameraIcon, CheckIcon, ClockIcon, ListChecksIcon, PlaneIcon, ScaleIcon, UsersIcon } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
-import { ListTable, ListTableRow, type ListColumn } from '@/components/list-table';
+import { Table, TableRow, type TableColumn } from '@/components/table';
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { Group } from '@/components/group';
@@ -108,7 +108,7 @@ export function HouseSample() {
   );
 }
 
-const COLUMNS: readonly ListColumn[] = [
+const COLUMNS: readonly TableColumn[] = [
   { key: 'when', label: 'When', width: 120 },
   { key: 'who', label: 'Who', flex: 1 },
   { key: 'what', label: 'What', flex: 2 },
@@ -127,9 +127,9 @@ export function AdminListSample() {
   return (
     <Section label="Sample: Admin list" testID="sample-admin">
       {wide ? (
-        <ListTable columns={COLUMNS}>
+        <Table columns={COLUMNS}>
           {ENTRIES.map((entry, index) => (
-            <ListTableRow
+            <TableRow
               key={entry.id}
               columns={COLUMNS}
               cells={entry}
@@ -140,7 +140,7 @@ export function AdminListSample() {
               accessibilityLabel={`${entry.who}, ${entry.what}`}
             />
           ))}
-        </ListTable>
+        </Table>
       ) : (
         <Group>
           {ENTRIES.map((entry) => (

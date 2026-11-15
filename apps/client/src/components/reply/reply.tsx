@@ -8,8 +8,9 @@ import { Avatar } from '@/components/avatar';
 import { CopyLine } from '@/components/copy-line';
 import { LidBar } from '@/components/lid';
 import { Separator } from '@/components/separator';
+import { Table, TableRow, type TableColumn } from '@/components/table';
 import { Body, SectionLabel } from '@/components/text';
-import { FONT, RADIUS, SPACE, TABULAR, useTheme } from '@/theme';
+import { FONT, SPACE, TABULAR, useTheme } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
 const NEW_LINE = '\n';
@@ -158,7 +159,7 @@ function BlockView({ block }: { block: Block }) {
         </View>
       );
     case 'table':
-      return <Table head={block.head} rows={block.rows} align={block.align} />;
+      return <ReplyTable head={block.head} rows={block.rows} align={block.align} />;
     case 'copy':
       return <CopyLine value={block.text} testID="reply-copy" />;
     case 'rule':
@@ -170,31 +171,27 @@ function BlockView({ block }: { block: Block }) {
   }
 }
 
-/** A table on the card colour: the head in bold on the sunk tint, a hairline between rows, numbers at the end. */
-function Table({ head, rows, align }: { head: Inline[][]; rows: Inline[][][]; align: ('left' | 'right' | 'center' | null)[] }) {
-  const { colors, type } = useTheme();
-  const cell = (kids: Inline[], j: number, isHead: boolean) => (
-    <Text
-      key={j}
-      style={[
-        isHead ? [type.meta, { fontFamily: FONT.bold, color: colors.foreground }] : type.body,
-        styles.cell,
-        j === 0 && styles.firstCell,
-        { textAlign: align[j] ?? 'left' } as TextStyle,
-      ]}
-    >
-      <Runs kids={kids} />
-    </Text>
-  );
+/** A reply's table, the one Table: the column names over the rows, the first column wider, numbers at the end where the reply says so. */
+function ReplyTable({ head, rows, align }: { head: Inline[][]; rows: Inline[][][]; align: ('left' | 'right' | 'center' | null)[] }) {
+  const { type } = useTheme();
+  const columns: TableColumn[] = head.map((c, j) => ({ key: String(j), label: plainOf(c), flex: j === 0 ? 1.6 : 1, end: align[j] === 'right' }));
   return (
-    <View style={[styles.table, { backgroundColor: colors.card }]} testID="reply-table">
-      <View style={[styles.tr, { backgroundColor: colors.secondary }]}>{head.map((c, j) => cell(c, j, true))}</View>
+    <Table columns={columns} spoken testID="reply-table">
       {rows.map((r, i) => (
-        <View key={i} style={[styles.tr, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border }]}>
-          {head.map((_, j) => cell(r[j] ?? [], j, false))}
-        </View>
+        <TableRow
+          key={i}
+          columns={columns}
+          cells={Object.fromEntries(
+            columns.map((column, j) => [
+              column.key,
+              <Text key={j} style={[type.body, styles.cell, { textAlign: align[j] ?? 'left' } as TextStyle]}>
+                <Runs kids={r[j] ?? []} />
+              </Text>,
+            ]),
+          )}
+        />
       ))}
-    </View>
+    </Table>
   );
 }
 
@@ -352,10 +349,7 @@ const styles = StyleSheet.create({
   itemBody: { flex: 1, minWidth: 0 },
   quote: { borderLeftWidth: 3, paddingLeft: SPACE.md },
   rule: { marginVertical: SPACE.xs },
-  table: { borderRadius: RADIUS, overflow: 'hidden' },
-  tr: { flexDirection: 'row', paddingHorizontal: SPACE.md, paddingVertical: SPACE.sm, gap: SPACE.md },
-  cell: { flex: 1, minWidth: 0, ...TABULAR },
-  firstCell: { flex: 1.6 },
+  cell: { ...TABULAR },
   // The pill keeps to the line: its slot is a line tall (Body's 24) and the pill hangs over it a little.
   chipLines: { lineHeight: CHIP_LINE },
   markTall: { height: CHIP_LINE },
