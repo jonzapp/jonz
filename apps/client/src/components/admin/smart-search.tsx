@@ -1,6 +1,5 @@
 import {
   applySuggestion,
-  withAlpha,
   dropTag,
   listQueryFromParams,
   listQueryToParams,
@@ -21,7 +20,7 @@ import { Group } from '@/components/group';
 import { Row } from '@/components/row';
 import { Section } from '@/components/section';
 import { useNow } from '@/hooks/use-now';
-import { FONT, MARK_GAP, RADIUS, SEARCH_LINE, SPACE, TAP, useTheme } from '@/theme';
+import { floatShadow, focusRing, FONT, MARK_GAP, RADIUS, SEARCH_LINE, SPACE, TAP, useTheme } from '@/theme';
 
 /** How long typing rests before the list is searched for it. */
 const SETTLE = 400;
@@ -200,8 +199,8 @@ export function SmartSearch({
         onPress={() => input.current?.focus()}
         style={[
           styles.box,
-          { backgroundColor: colors.card, borderColor: open ? colors.foreground : colors.mutedForeground },
-          open && styles.boxOpen,
+          { backgroundColor: colors.card, borderColor: colors.mutedForeground },
+          open && focusRing(colors),
         ]}
       >
         <BoxIcon busy={settle.pending || searching} testID={testID} />
@@ -353,7 +352,7 @@ function Suggestions({
           backgroundColor: colors.background,
           borderColor: colors.border,
           // It floats over the list, as a PickMenu does: a soft shadow lifts it off the rows.
-          boxShadow: `0 8px 24px ${withAlpha(scheme === 'dark' ? '#000000' : colors.foreground, scheme === 'dark' ? 0.5 : 0.16)}`,
+          boxShadow: floatShadow(colors, scheme),
         },
       ]}
       testID={`${testID}-panel`}
@@ -408,8 +407,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACE.md,
     paddingVertical: SPACE.xs,
   },
-  // Two points of ink while you type in it, so the box you're in is plain; the padding gives the point back.
-  boxOpen: { borderWidth: 2, paddingHorizontal: SPACE.md - 1, paddingVertical: SPACE.xs - 1 },
   tag: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -421,7 +418,7 @@ const styles = StyleSheet.create({
     maxWidth: '100%',
   },
   tagText: { fontFamily: FONT.bold, flexShrink: 1 },
-  // The box draws the focus (two points of ink), so the field inside it draws none of its own on the web
+  // The box draws the focus (the focus ring), so the field inside it draws none of its own on the web
   // (a browser's `auto` ring ignores its width, hence solid). It fits beside two tags on a phone, and grows.
   input: { flexGrow: 1, flexBasis: 48, minWidth: 48, minHeight: 36, paddingVertical: 0, outlineStyle: 'solid', outlineWidth: 0 },
   // Under the box and the search line beneath it, the box's width, over the rows.

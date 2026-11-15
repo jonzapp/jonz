@@ -53,6 +53,12 @@ kind of John. Calm by default, loud only for the moments that count.
 
 - The pavement page, and one inset group per section (card colour,
   radius 10, no border, hairlines that start at the text). (Focus, #17)
+- **Corners step up by size:** a small mark 2, a button or a box 8
+  (`RADIUS`), a group or the one card 10, a sheet 16. (Look A, 15 Nov; was 6
+  for buttons and boxes)
+- **Shadows only on what floats** over the page: a dropped menu, a search's
+  suggestions, a tour's card, one soft shadow (`floatShadow`). Cards, groups
+  and boxes stay flat. (Look A, 15 Nov)
 - At most one stand-alone card per screen (Today's Next up, House's month
   card). A card never holds a card or a tinted panel. (Focus, #17)
 

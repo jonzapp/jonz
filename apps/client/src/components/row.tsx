@@ -2,13 +2,14 @@ import { withAlpha } from '@app/core';
 import { Link, type Href } from 'expo-router';
 import { ChevronRightIcon, type LucideIcon } from 'lucide-react-native';
 import { createContext, isValidElement, useContext, useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Platform, Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
+import { RING_ROW, RING_ROW_HOLDER } from '@/components/focus-rings';
 import { Hairline, useRowInset } from '@/components/group';
 import { HazardTape } from '@/components/hazard-tape';
 import { LidBar } from '@/components/lid';
 import { Body, Meta, RowTitle } from '@/components/text';
-import { HAIR, LEADING, MARK_GAP, ROW_GAP, ROW_MIN, SPACE, TABULAR, TAP, useTheme } from '@/theme';
+import { HAIR, LEADING, MARK_GAP, pressTint, ROW_GAP, ROW_MIN, SPACE, TABULAR, TAP, useTheme } from '@/theme';
 
 /** A row with a meta line comes out this tall; one without, ROW_MIN. */
 const TWO_LINES = 64;
@@ -135,6 +136,8 @@ export function Row({
   const { colors, scheme, type } = useTheme();
   const inset = useRowInset();
   const [pressed, setPressed] = useState(false);
+  // The mouse over a row you can open, on a laptop: the same wash as a press.
+  const [hovered, setHovered] = useState(false);
   const pressable = onPress != null || onLongPress != null || href != null;
   const leadingOutside = pressable && (leadingControl ?? looksLikeControl(leading));
   const trailingOutside = pressable && (trailingControl ?? looksLikeControl(trailing));
@@ -169,6 +172,7 @@ export function Row({
     <RowTarget
       press={{ onPress, onLongPress, href, disabled, selected, current, accessibilityLabel }}
       onPressed={setPressed}
+      onHovered={setHovered}
       // One flat object: Link's asChild spreads the style, dropping an array.
       style={StyleSheet.flatten([target, disabled && styles.disabled])}
     >
@@ -181,6 +185,8 @@ export function Row({
   return (
     <View
       testID={testID}
+      // The keyboard's focus ring, drawn inside the row's edges (components/focus-rings.tsx).
+      {...(pressable && Platform.OS === 'web' ? ({ dataSet: RING_ROW_HOLDER } as object) : {})}
       style={[
         styles.row,
         top && styles.topped,
@@ -189,8 +195,8 @@ export function Row({
         tint === 'hivis' && { backgroundColor: withAlpha(colors.hivis, scheme === 'dark' ? 0.12 : 0.16) },
       ]}
     >
-      {pressed ? (
-        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: withAlpha(colors.foreground, 0.06) }]} />
+      {pressed || (hovered && !disabled) ? (
+        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: pressTint(colors) }]} testID={testID ? `${testID}-tint` : undefined} />
       ) : null}
       <Hairline />
       {current ? <View aria-hidden pointerEvents="none" style={[styles.current, { backgroundColor: colors.foreground }]} /> : null}
@@ -250,11 +256,13 @@ function RowWords({
 function RowTarget({
   press,
   onPressed,
+  onHovered,
   style,
   children,
 }: {
   press: Pick<RowProps, 'onPress' | 'onLongPress' | 'href' | 'disabled' | 'selected' | 'current' | 'accessibilityLabel'>;
   onPressed: (pressed: boolean) => void;
+  onHovered: (hovered: boolean) => void;
   style: StyleProp<ViewStyle>;
   children: ReactNode;
 }) {
@@ -271,6 +279,9 @@ function RowTarget({
       onLongPress={press.onLongPress}
       onPressIn={() => onPressed(true)}
       onPressOut={() => onPressed(false)}
+      onHoverIn={() => onHovered(true)}
+      onHoverOut={() => onHovered(false)}
+      {...(Platform.OS === 'web' ? ({ dataSet: RING_ROW } as object) : {})}
       style={style}
     >
       {children}

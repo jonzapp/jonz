@@ -6,6 +6,7 @@ pages are private artifacts on claude.ai.
 
 | Date | Decision | Where | Rule |
 | --- | --- | --- | --- |
+| 2026-11-15 | Look A, shadcn's habits kept to Bin Night: one focus ring everywhere (the edge in ink by day or amber after dark with a soft 3pt halo; on a box while you type, on a button or row only from the keyboard), a grey hover tint on a laptop, buttons and boxes rounded 8 (were 6), and a soft shadow only on what floats (Look A) | this PR | [controls](controls.md#state-and-focus), [feel](feel.md#surfaces) |
 | 2026-11-14 | Your weeks on Today: how your last 8 weeks went as full-width bars (weeks to come in grey, this week outlined), your on-time figure, a kind line that cheers a run and meets a slip with a fresh start, and what your streak earns next; under the house's week on a laptop, after the rest of your week on a phone (Your weeks A) | this PR | [lists](lists.md#calendars-and-grids), [feel](feel.md#voice) |
 | 2026-11-14 | The Track record draws the same bars as Today, in shared columns; Week, Month and Year only (All is gone), Year the last 12 months as split month bars, on time at the bottom (Track record: Year A, split month bars) | this PR | [lists](lists.md#calendars-and-grids) |
 | 2026-11-14 | The same job gets the same control everywhere: the owner's Overview picks Week or Month from a `PickMenu` beside its heading, as the House Table does, not a `Segmented` (Glyn, consistent components) | this PR | [controls](controls.md#inputs) |

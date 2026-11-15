@@ -1,4 +1,4 @@
-import { BIN_NIGHT, type BinNightScheme, type Look } from '@app/core';
+import { BIN_NIGHT, withAlpha, type BinNightScheme, type Look } from '@app/core';
 import { createContext, useContext } from 'react';
 import { useColorScheme, type TextStyle } from 'react-native';
 
@@ -121,6 +121,35 @@ export const FIGURE_MIN = 180;
 export const SECTION_GAP = 32;
 /** From a section's label to its group. */
 export const LABEL_GAP = 8;
+
+/**
+ * Under a finger, or the mouse on a laptop: a light wash of ink over a row,
+ * a menu's line or a button with no fill of its own.
+ */
+export function pressTint(colors: BinNightScheme): string {
+  return withAlpha(colors.foreground, 0.06);
+}
+
+/** The focus ring's soft halo round a control, in points. */
+const RING_HALO = 3;
+
+/**
+ * The one focus ring (docs/style/controls.md, "State and focus"): the
+ * control's edge turns `ring` (ink by day, amber after dark), with a soft
+ * halo of it round the outside. A text box wears it while you type in it; a
+ * button or a row only when the keyboard brought you there (`FocusRings`).
+ */
+export function focusRing(colors: BinNightScheme): { borderColor: string; boxShadow: string } {
+  return { borderColor: colors.ring, boxShadow: `0 0 0 ${RING_HALO}px ${withAlpha(colors.ring, 0.3)}` };
+}
+
+/**
+ * The soft shadow under whatever floats over the page: a dropped menu, a
+ * search's suggestions, a tour's card. Cards and groups stay flat.
+ */
+export function floatShadow(colors: BinNightScheme, scheme: SchemeName): string {
+  return `0 8px 24px ${withAlpha(scheme === 'dark' ? '#000000' : colors.foreground, scheme === 'dark' ? 0.5 : 0.16)}`;
+}
 
 /**
  * Waiting (docs/style/states.md): nothing shows for the first WAIT_DELAY ms of

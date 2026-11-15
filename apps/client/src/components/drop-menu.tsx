@@ -1,8 +1,7 @@
-import { withAlpha } from '@app/core';
 import type { ReactNode, RefObject } from 'react';
 import { Modal, StyleSheet, View, type HostInstance } from 'react-native';
 
-import { GROUP_RADIUS, SPACE, useTheme } from '@/theme';
+import { floatShadow, GROUP_RADIUS, SPACE, useTheme } from '@/theme';
 
 /** How wide a dropped menu is beside the page. */
 const MENU = 240;
@@ -58,7 +57,7 @@ export function DropMenu({
               top: place.top + SPACE.xs,
               right: Math.max(place.right, SPACE.sm),
               borderColor: colors.border,
-              boxShadow: `0 8px 24px ${withAlpha(scheme === 'dark' ? '#000000' : colors.foreground, scheme === 'dark' ? 0.5 : 0.16)}`,
+              boxShadow: floatShadow(colors, scheme),
             },
           ]}
         >

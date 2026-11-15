@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react-native';
 import { useState } from 'react';
 
-import { SPACE, TAP } from '@/theme';
+import { focusRing, SPACE, TAP, themeFor } from '@/theme';
 
 import { boxHeight, CodeBoxes } from './code-boxes';
 
@@ -78,15 +78,16 @@ it('takes a pasted code with a space or a dash in it', async () => {
   expect(onFilled).toHaveBeenLastCalledWith('654321');
 });
 
-it('marks the box the next digit goes in while the field has focus', async () => {
+it('puts the focus ring on the box the next digit goes in while the field has focus', async () => {
+  const ring = focusRing(themeFor('light').colors);
   await render(<Holder />);
   await fireEvent.changeText(field(), '48');
-  expect(box('code-box-2')).toHaveStyle({ borderWidth: 1 });
+  expect(box('code-box-2')).not.toHaveStyle({ boxShadow: ring.boxShadow });
   await fireEvent(field(), 'focus');
-  expect(box('code-box-2')).toHaveStyle({ borderWidth: 2 });
-  expect(box('code-box-1')).toHaveStyle({ borderWidth: 1 });
+  expect(box('code-box-2')).toHaveStyle(ring);
+  expect(box('code-box-1')).not.toHaveStyle({ boxShadow: ring.boxShadow });
   await fireEvent(field(), 'blur');
-  expect(box('code-box-2')).toHaveStyle({ borderWidth: 1 });
+  expect(box('code-box-2')).not.toHaveStyle({ boxShadow: ring.boxShadow });
 });
 
 it('shows a wrong code on every box with the reason, and the next digit starts it over', async () => {
