@@ -12,7 +12,7 @@ import { AddKidSheet } from '@/components/house-page/add-kid-sheet';
 import { GroupItem } from '@/components/group';
 import { InviteSheet } from '@/components/house-page/invite-sheet';
 import { MetaLine, Money } from '@/components/house-page/money';
-import { RulesSheet } from '@/components/house-page/rules-sheet';
+import { RulesPopover } from '@/components/house-page/rules-popover';
 import { Select } from '@/components/select';
 import { ReadFailed } from '@/components/read-state';
 import { Row, RowIcon } from '@/components/row';
@@ -30,10 +30,11 @@ type Span = 'week' | 'month';
  * The Table: one row per housemate, most points first, with this week's or
  * the month's points (chosen from the menu in its header), what matters
  * about them in the meta line and the month's money trailing; your own row
- * tinted. Each row opens that housemate's page. Then inviting housemates and
- * how it all works, each a sheet. A family's Table lists only the kids,
- * with what each has earned this month trailing, a parent's Add a child
- * for a kid who won't sign in, and its sheet is how pocket money works.
+ * tinted. Each row opens that housemate's page. Then inviting housemates (a
+ * sheet) and how it all works (a Popover). A family's Table lists only the
+ * kids, with what each has earned this month trailing, a parent's Add a
+ * child for a kid who won't sign in, and its popover is how pocket money
+ * works.
  */
 export function TableSection({
   userId,
@@ -53,7 +54,7 @@ export function TableSection({
 }) {
   const words = useWords(view.snapshot.house.kind);
   const [span, setSpan] = useState<Span>('week');
-  const [sheet, setSheet] = useState<'invite' | 'rules' | 'kid' | null>(null);
+  const [sheet, setSheet] = useState<'invite' | 'kid' | null>(null);
   const column = Math.min(useWindowDimensions().width, useContentWidth());
   const { snapshot, board, now } = view;
   const zone = snapshot.rules.timezone;
@@ -134,14 +135,21 @@ export function TableSection({
               testID="invite"
             />
           )}
-          <Row
-            leading={<RowIcon icon={InfoIcon} />}
-            title={family ? words('house.pocket.howItWorks') : words('house.page.rules')}
-            // Whole on the narrowest phone, rather than cut at "How points and the…".
-            titleLines={2}
-            onPress={() => setSheet('rules')}
-            chevron
-            testID="how-it-works"
+          <RulesPopover
+            rules={snapshot.rules}
+            awayMakeup={snapshot.house.awayMakeup}
+            pocketCapMinor={family ? (snapshot.house.pocketCapMinor ?? 0) : undefined}
+            opener={(open) => (
+              <Row
+                leading={<RowIcon icon={InfoIcon} />}
+                title={family ? words('house.pocket.howItWorks') : words('house.page.rules')}
+                // Whole on the narrowest phone, rather than cut at "How points and the…".
+                titleLines={2}
+                onPress={open}
+                chevron
+                testID="how-it-works"
+              />
+            )}
           />
         </Section>
       </TourSpot>
@@ -153,13 +161,6 @@ export function TableSection({
         resetFor={parent ? snapshot.house.id : undefined}
       />
       {family && parent ? <AddKidSheet houseId={snapshot.house.id} visible={sheet === 'kid'} onClose={() => setSheet(null)} /> : null}
-      <RulesSheet
-        visible={sheet === 'rules'}
-        onClose={() => setSheet(null)}
-        rules={snapshot.rules}
-        awayMakeup={snapshot.house.awayMakeup}
-        pocketCapMinor={family ? (snapshot.house.pocketCapMinor ?? 0) : undefined}
-      />
     </View>
   );
 }

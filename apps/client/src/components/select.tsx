@@ -2,10 +2,9 @@ import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-react-native';
 import { useRef, useState, type RefObject } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View, type HostInstance } from 'react-native';
 
-import { DropMenu, type MenuPlace } from '@/components/drop-menu';
+import { DropMenu, placeFloat, type MenuPlace } from '@/components/drop-menu';
 import { RING_EDGE } from '@/components/focus-rings';
 import { FieldLabel } from '@/components/field';
-import { measureBox } from '@/components/measure-box';
 import { Meta } from '@/components/text';
 import { focusRing, FONT, GROUP_RADIUS, pressTint, RADIUS, SPACE, TABULAR, TAP, useTheme } from '@/theme';
 
@@ -18,35 +17,9 @@ export interface SelectOption<T> {
   spoken?: string;
 }
 
-/** The most a list takes of the window before it scrolls, and the least a small Select's list is wide. */
+/** The most a list takes of the window before it scrolls, and the least a small Select's list is wide (its right edge on the box's). */
 const LIST_TALL = 360;
 const SMALL_LIST = 200;
-
-/** How a list fits its box: the window, whether the box is small, the least the list is wide, and the most of the window it takes before it scrolls. */
-export interface ListFit {
-  win: { width: number; height: number };
-  small?: boolean;
-  least?: number;
-  most?: number;
-}
-
-/**
- * Where a box's list floats: under it, or over it when there's more room
- * there; as wide as the box or `least`, whichever is more, kept inside the
- * window (a small box's list at least SMALL_LIST, its right edge on the
- * box's). A Combobox's card drops the same way.
- */
-export function placeList(box: RefObject<HostInstance | null>, fit: ListFit, then: (place: MenuPlace) => void) {
-  const { win, small = false, least = 0, most = LIST_TALL } = fit;
-  measureBox(box, ({ x, y, width: w, height: h }) => {
-    const width = Math.max(w, small ? SMALL_LIST : least);
-    const side = small ? { right: win.width - x - w } : { left: width > w ? Math.min(x, win.width - width - SPACE.lg) : x };
-    const below = win.height - (y + h) - SPACE.lg;
-    const above = y - SPACE.lg;
-    const tall = Math.min(most, Math.max(below, above));
-    then(below >= Math.min(most, above) ? { top: y + h, ...side, width, tall } : { bottom: win.height - y, ...side, width, tall });
-  });
-}
 
 /**
  * Pick one from a list (shadcn's Select): a box like a text box showing
@@ -92,7 +65,7 @@ export function Select<T extends string | number>({
       label={label}
       shown={chosen?.short ?? chosen?.label ?? String(value)}
       open={place !== null}
-      onPress={() => placeList(box, { win, small }, setPlace)}
+      onPress={() => placeFloat(box, small ? { win, most: LIST_TALL, least: SMALL_LIST, end: true } : { win, most: LIST_TALL }, setPlace)}
       small={small}
       disabled={disabled}
       testID={testID}

@@ -1,10 +1,12 @@
+import type { BinNightScheme } from '@app/core';
 import { Link, type Href } from 'expo-router';
-import { useEffect, useState, type ComponentType } from 'react';
-import { ActivityIndicator, Platform, Pressable, StyleSheet, Text } from 'react-native';
+import { useEffect, useRef, useState, type ComponentType } from 'react';
+import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, type HostInstance } from 'react-native';
 
 import { useRowFit } from '@/components/button-row';
 import { useWaitShown } from '@/hooks/use-wait-shown';
 import { RING_EDGE } from '@/components/focus-rings';
+import { useTooltip } from '@/components/tooltip';
 import { ICON, ICON_ONLY, pressTint, RADIUS, SPACE, TAP, useTheme } from '@/theme';
 
 type Variant = 'primary' | 'outline' | 'ghost' | 'hazard';
@@ -23,7 +25,7 @@ export type ButtonIcon = ComponentType<{ size?: number; color?: string; 'aria-hi
  * never amber, and says so (`aria-pressed` on the web, `aria-selected`
  * elsewhere). With `href` it is a link dressed as a button (an anchor on
  * the web). `iconOnly` shows just the icon, square, and `label` still names
- * it for screen readers. `iconAfter` puts the icon after the words, for a
+ * it for screen readers, and on the web as a Tooltip under it. `iconAfter` puts the icon after the words, for a
  * way on (a chevron pointing forward). `spoken` is what a screen reader hears instead of
  * the label, when the label leans on the row beside it. `expanded` says a
  * panel or menu it opens is open (`aria-expanded`). `ink` recolours a ghost
@@ -106,15 +108,7 @@ export function Button({
   const pale = disabled || (!mine && row?.busyShown === true);
   const off = pale || mine || row?.busy === true;
   const words = showing && busyLabel ? busyLabel : label;
-  const base = chosen
-    ? { background: colors.secondary, ink: colors.foreground, edge: colors.foreground, icon: colors.foreground }
-    : {
-        primary: { background: colors.hivis, ink: colors.onHivis, edge: colors.hivis, icon: colors.onHivis },
-        outline: { background: 'transparent', ink: colors.foreground, edge: colors.mutedForeground, icon: colors.foreground },
-        ghost: { background: 'transparent', ink: colors.foreground, edge: 'transparent', icon: colors.foreground },
-        hazard: { background: 'transparent', ink: colors.foreground, edge: colors.hazard, icon: colors.hazard },
-      }[variant];
-  const look = ink ? { ...base, ink, icon: ink } : base;
+  const look = lookOf(colors, { variant, chosen, ink });
   // A toggle's state: the web hears aria-pressed, which React Native lacks.
   const chosenState =
     chosen === undefined ? {} : Platform.OS === 'web' ? ({ 'aria-pressed': chosen } as object) : { 'aria-selected': chosen };
@@ -126,6 +120,9 @@ export function Button({
       ? ({ dataSet: { button: iconOnly ? 'icon' : (fit ?? 'loose'), variant: chosen === undefined ? variant : 'chosen', ...RING_EDGE } } as object)
       : {};
   const lit = (pressed || hovered) && !off;
+  // An icon-only button's name under it, for a mouse resting on it or the keyboard landing on it.
+  const box = useRef<HostInstance>(null);
+  const tooltip = useTooltip(words, { on: iconOnly, box, hovered: setHovered, pressed: setPressed });
 
   const button = (
     <Pressable
@@ -138,10 +135,8 @@ export function Button({
       accessibilityLabel={iconOnly ? words : showing ? undefined : spoken}
       disabled={off}
       onPress={onPress}
-      onPressIn={() => setPressed(true)}
-      onPressOut={() => setPressed(false)}
-      onHoverIn={() => setHovered(true)}
-      onHoverOut={() => setHovered(false)}
+      {...tooltip.handlers}
+      ref={box}
       testID={testID}
       // One flat object, not a function or an array: Link's asChild merges
       // styles by spreading them, which would drop either.
@@ -179,6 +174,7 @@ export function Button({
         </Text>
       )}
       {Icon && iconAfter && !showing ? <Icon size={ICON} color={look.icon} aria-hidden /> : null}
+      {tooltip.tip}
     </Pressable>
   );
   return href ? (
@@ -188,6 +184,19 @@ export function Button({
   ) : (
     button
   );
+}
+
+/** A button's fill, words, edge and icon colours, from its variant; a chosen one's tint and ink edge; `ink` for a ghost on a coloured band. */
+function lookOf(colors: BinNightScheme, { variant, chosen, ink }: { variant: Variant; chosen?: boolean; ink?: string }) {
+  const base = chosen
+    ? { background: colors.secondary, ink: colors.foreground, edge: colors.foreground, icon: colors.foreground }
+    : {
+        primary: { background: colors.hivis, ink: colors.onHivis, edge: colors.hivis, icon: colors.onHivis },
+        outline: { background: 'transparent', ink: colors.foreground, edge: colors.mutedForeground, icon: colors.foreground },
+        ghost: { background: 'transparent', ink: colors.foreground, edge: 'transparent', icon: colors.foreground },
+        hazard: { background: 'transparent', ink: colors.foreground, edge: colors.hazard, icon: colors.hazard },
+      }[variant];
+  return ink ? { ...base, ink, icon: ink } : base;
 }
 
 const styles = StyleSheet.create({
