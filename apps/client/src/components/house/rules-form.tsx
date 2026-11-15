@@ -9,8 +9,8 @@ import { Field } from '@/components/field';
 import { GroupItem } from '@/components/group';
 import { useContentWidth } from '@/components/screen';
 import { Section } from '@/components/section';
+import { Select } from '@/components/select';
 import { ZoneField } from '@/components/house/zone-picker';
-import { PickRow } from '@/components/setup/pick-row';
 import { Meta } from '@/components/text';
 import { ButtonRow } from '@/components/button-row';
 import { useBudgetChoices } from '@/hooks/use-budget';
@@ -133,22 +133,26 @@ function WorkloadRules({ form }: { form: RulesFormState }) {
   return (
     <View style={styles.noted}>
       <Section label={words('week.steady.workload')} testID="rules-workload">
-        <PickRow
-          label={words('week.steady.mode')}
-          options={modeOptions(words)}
-          value={v.dealMode}
-          onChange={(dealMode) => set({ dealMode })}
-          disabled={pending}
-          testID="rules-mode"
-        />
-        <PickRow
-          label={words('week.steady.budget')}
-          options={budgetOptions}
-          value={v.dealBudget}
-          onChange={(dealBudget) => set({ dealBudget })}
-          disabled={pending}
-          testID="rules-budget"
-        />
+        <GroupItem>
+          <Select
+            label={words('week.steady.mode')}
+            options={modeOptions(words)}
+            value={v.dealMode}
+            onChange={(dealMode) => set({ dealMode })}
+            disabled={pending}
+            testID="rules-mode"
+          />
+        </GroupItem>
+        <GroupItem>
+          <Select
+            label={words('week.steady.budget')}
+            options={budgetOptions}
+            value={v.dealBudget}
+            onChange={(dealBudget) => set({ dealBudget })}
+            disabled={pending}
+            testID="rules-budget"
+          />
+        </GroupItem>
       </Section>
       <Meta style={styles.note} testID="rules-workload-note">
         {[words('week.steady.modeFoot'), words('week.steady.budgetFoot'), budget?.tooLong ? words('week.steady.tooLong', { need: budget.need }) : null].filter(Boolean).join(' ')}
@@ -171,13 +175,15 @@ function MoneyRules({ form }: { form: RulesFormState }) {
   const moneyFields = noStake ? [] : money;
   return (
     <Section label={words('house.setup.money')} testID="rules-money">
-      <PickRow
-        label={words('house.rules.currency')}
-        options={CURRENCY_OPTIONS}
-        value={v.currency}
-        onChange={(currency: Currency) => set({ currency })}
-        disabled={pending}
-      />
+      <GroupItem>
+        <Select
+          label={words('house.rules.currency')}
+          options={CURRENCY_OPTIONS}
+          value={v.currency}
+          onChange={(currency: Currency) => set({ currency })}
+          disabled={pending}
+        />
+      </GroupItem>
       {moneyFields.map((m) => (
         <GroupItem key={m.key}>
           <Field
@@ -206,13 +212,15 @@ function MoneyRules({ form }: { form: RulesFormState }) {
         </GroupItem>
       ) : null}
       {noStake ? null : (
-        <PickRow
-          label={words('house.rules.settleIn')}
-          options={settleOptions(words)}
-          value={v.settleIn}
-          onChange={(settleIn: SettleIn) => set({ settleIn })}
-          disabled={pending}
-        />
+        <GroupItem>
+          <Select
+            label={words('house.rules.settleIn')}
+            options={settleOptions(words)}
+            value={v.settleIn}
+            onChange={(settleIn: SettleIn) => set({ settleIn })}
+            disabled={pending}
+          />
+        </GroupItem>
       )}
     </Section>
   );
@@ -228,35 +236,43 @@ function FairnessRules({ form }: { form: RulesFormState }) {
     <View style={styles.noted}>
       <Section label={words('house.setup.fairness')} testID="rules-fairness">
         {noVote ? null : (
-          <PickRow
-            label={words('house.setup.disputes')}
-            options={disputeOptions(words)}
-            value={v.disputeHours}
-            onChange={(disputeHours) => set({ disputeHours })}
+          <GroupItem>
+            <Select
+              label={words('house.setup.disputes')}
+              options={disputeOptions(words)}
+              value={v.disputeHours}
+              onChange={(disputeHours) => set({ disputeHours })}
+              disabled={pending}
+            />
+          </GroupItem>
+        )}
+        <GroupItem>
+          <Select
+            label={words('house.setup.lateWindow')}
+            options={lateOptions(words)}
+            value={v.lateHours}
+            onChange={(lateHours) => set({ lateHours })}
             disabled={pending}
           />
-        )}
-        <PickRow
-          label={words('house.setup.lateWindow')}
-          options={lateOptions(words)}
-          value={v.lateHours}
-          onChange={(lateHours) => set({ lateHours })}
-          disabled={pending}
-        />
-        <PickRow
-          label={words('house.setup.cover')}
-          options={coverOptions(words)}
-          value={v.coverGraceHours}
-          onChange={(coverGraceHours) => set({ coverGraceHours })}
-          disabled={pending}
-        />
-        <PickRow
-          label={words('house.setup.away')}
-          options={MAKEUP_OPTIONS}
-          value={v.awayMakeup}
-          onChange={(awayMakeup) => set({ awayMakeup })}
-          disabled={pending}
-        />
+        </GroupItem>
+        <GroupItem>
+          <Select
+            label={words('house.setup.cover')}
+            options={coverOptions(words)}
+            value={v.coverGraceHours}
+            onChange={(coverGraceHours) => set({ coverGraceHours })}
+            disabled={pending}
+          />
+        </GroupItem>
+        <GroupItem>
+          <Select
+            label={words('house.setup.away')}
+            options={MAKEUP_OPTIONS}
+            value={v.awayMakeup}
+            onChange={(awayMakeup) => set({ awayMakeup })}
+            disabled={pending}
+          />
+        </GroupItem>
       </Section>
       <Meta style={styles.note}>{words('common.join.then', { first: words('house.rules.awayNote'), second: makeupHint(v.awayMakeup, words) })}</Meta>
     </View>
@@ -281,13 +297,15 @@ function HouseFields({ form }: { form: RulesFormState }) {
             testID="rules-name"
           />
         </GroupItem>
-        <PickRow
-          label={words('house.rules.weekStarts')}
-          options={dayChoices(words).map((d) => ({ value: d.value, label: d.spoken }))}
-          value={v.weekStarts}
-          onChange={(weekStarts) => set({ weekStarts })}
-          disabled={pending}
-        />
+        <GroupItem>
+          <Select
+            label={words('house.rules.weekStarts')}
+            options={dayChoices(words).map((d) => ({ value: d.value, label: d.spoken }))}
+            value={v.weekStarts}
+            onChange={(weekStarts) => set({ weekStarts })}
+            disabled={pending}
+          />
+        </GroupItem>
         <ZoneField value={v.timezone} onChange={(timezone) => set({ timezone })} disabled={pending} problem={problems.timezone} />
       </Section>
       <Meta style={styles.note}>{words('house.rules.timezoneHint')}</Meta>

@@ -7,7 +7,7 @@ import type { JohnList } from '@/api/settings';
 import { Alert } from '@/components/alert';
 import { DayChips } from '@/components/day-chips';
 import { GroupItem } from '@/components/group';
-import { PickMenu } from '@/components/pick-menu';
+import { Select } from '@/components/select';
 import { Row } from '@/components/row';
 import { Section } from '@/components/section';
 import { Segmented } from '@/components/segmented';
@@ -71,7 +71,7 @@ export function PrefsForm({ houseId, saved, list }: { houseId: string; saved: My
                 key={john.id}
                 title={john.name}
                 trailing={
-                  <PickMenu
+                  <Select small
                     options={ratherOptions(words)}
                     value={String(prefs.rather[john.id] ?? 0) as '1' | '0' | '-1'}
                     onChange={(v) => change(withRather(prefs, john.id, Number(v) as 1 | 0 | -1))}

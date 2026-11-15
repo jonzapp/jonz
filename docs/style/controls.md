@@ -101,8 +101,24 @@
   tablet without a mouse) and in the phone apps, Return is a new line and
   the arrow sends. (Ask Jonz Enter, 10 Nov)
 - Forms sit in a column capped at `FORM_MAX` (520) on a laptop. (**New**)
-- A short select opens in place (`PickRow`); a radio or checkbox is a
-  `ChoiceRow`. (AGENTS.md)
+- **Picking one from a list is a `Select`** (shadcn's Select): a box like a
+  text box showing what's chosen, with a chevron and its name over it;
+  pressed, its list floats under it (over it near the window's foot), the
+  chosen one ticked, each with its line on what it does, and picking one
+  puts it away. The same on a phone and a laptop: the house rules, a John,
+  Start your house's currency and first day. (Kit to shadcn's breadth,
+  Select A, 15 Nov; was a row that opened in place, `PickRow`, and grey
+  switches on Start your house) A radio or checkbox in a list is a
+  `ChoiceRow`.
+- **The small Select** is the same box sized to its words, with no name
+  over it: beside a section's heading or at a row's end (Language, each
+  John on Your preferences, the Table's This week | October, the owner's
+  Overview, a parent's switch to a kid's Today). (Glyn, 15 Nov; was words
+  with a ⌄, `PickMenu`)
+- **A text box with something inside it is an input group** (`InputGroup`,
+  `InputBox`): a search's magnifier at its start, a password's Show at its
+  end (every password box), an address's Copy at its end (`CopyLine`), all
+  in the one edged box. (Kit to shadcn's breadth, 15 Nov)
 - **Turning one thing on or off, straight away, is a `Switch`:** a track
   with a knob, dark and to the right when on (ink, never amber), pale and to
   the left when off. The whole 48 square round it takes the tap, and a
@@ -111,18 +127,20 @@
   (`ChoiceRow`), and so does a setting saved with the rest of a form. (Kit
   to shadcn's breadth, 15 Nov; was an On | Off `Segmented`) *Backed by*
   Apple's and Material's switch guidance and WAI-ARIA's switch role.
-- **A choice from a long list** (the house's time zone) is a row showing
-  what's set, opening a sheet: a `SearchBox`, the likely ones first under
+- **A choice from a long list** (the house's time zone) is a `Combobox`:
+  the Select's box, opening a search box over the likely ones first under
   Suggested, then the whole list A to Z, each row saying enough to check it
-  (a zone's offset and its time now). Typing narrows it by any word.
-  (Search by city, 14 Nov)
+  (a zone's offset and its time now). Typing narrows it by any word. On a
+  laptop it drops from the box as a card (rising over it near the window's
+  foot, as a Select's list does); on a phone it opens as a sheet.
+  (Search by city, 14 Nov; Combobox, 15 Nov)
 - **A few quick choices side by side are a `Segmented`,** wrapped into
   equal rows with `perRow` where the words don't fit one row; never pills
   of our own, and the chosen one is never amber (the John editor's How
   often, By what time and Done within, 13 Nov). A count with − and + uses
   `IconButton`s with the outline edge.
-- **What period a section shows (this week or this month) is a `PickMenu`
-  beside its heading,** showing the chosen one, as the House Table's This
+- **What period a section shows (this week or this month) is the small
+  `Select` beside its heading,** showing the chosen one, as the House Table's This
   week | October and the owner's Overview figures do. A switch across the
   top of a page (the track record's span, a tab's pages) stays a
   `Segmented`. (Glyn, one selector for one job, 14 Nov)
@@ -136,9 +154,9 @@
   always open: the dots are what label apps (Linear, Notion, GitHub,
   Google Calendar) lead with.
 - **A menu opened from a control drops from it on a laptop** (from `WIDE`:
-  the "•••" and the Table's This week | October, `DropMenu`), its right edge
-  on the control's, put away by a tap anywhere else or Escape; on a phone
-  it is a sheet. (••• menu A, 13 Nov)
+  the "•••", `DropMenu`), its right edge on the control's, put away by a tap
+  anywhere else or Escape; on a phone it is a sheet. A Select's list drops
+  the same way on any screen. (••• menu A, 13 Nov; Select A, 15 Nov)
 - **Sign-in and password boxes work with password managers.** On the web
   each step is a real form (`SignInForm`), Enter sends it, the email box is
   `username` and a new password is `new-password` (with `passwordRules` on

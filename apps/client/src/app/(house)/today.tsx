@@ -5,7 +5,7 @@ import type { AwayView } from '@/api/away';
 import type { JohnList } from '@/api/settings';
 import { Pair, useSideBySide } from '@/components/page-columns';
 import { PageTitle } from '@/components/page-title';
-import { PickMenu } from '@/components/pick-menu';
+import { Select } from '@/components/select';
 import { TodayOutline } from '@/components/page-outlines';
 import { Columns, Screen, useColumns } from '@/components/screen';
 import { TitleBar, TopLine } from '@/components/title-bar';
@@ -76,7 +76,7 @@ function TodayFor({ houseId, userId: me }: { houseId: string; userId: string }) 
           ask={userId === me && memberCan(view?.me, 'house:read')}
           right={
             choices.length > 0 ? (
-              <PickMenu options={choices} value={userId} onChange={setViewing} label={words('people.kids.switchLabel')} testID="kid-switch" />
+              <Select small options={choices} value={userId} onChange={setViewing} label={words('people.kids.switchLabel')} testID="kid-switch" />
             ) : undefined
           }
         />

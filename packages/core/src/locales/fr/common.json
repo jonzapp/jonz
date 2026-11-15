@@ -227,6 +227,8 @@
   "common.copy.label": "Copier",
   "common.copy.done": "Copié",
   "common.copy.spoken": "Copier {plain}",
+  "common.password.show": "Afficher le mot de passe",
+  "common.password.hide": "Masquer le mot de passe",
   "common.join.comma": "{first}, {second}",
   "common.join.after": ", {text}",
   "common.join.then": "{first} {second}",

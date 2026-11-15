@@ -173,14 +173,14 @@ it('picks your language from a menu in its row, the test language among them whi
   await renderPages({ 'house/index': Host }, '/house');
   const row = await screen.findByTestId('language-row');
   expect(row).toHaveTextContent(new RegExp(`${words('house.lower.language')}.*English`));
-  await fireEvent.press(within(row).getByRole('button', { name: 'English' }));
+  await fireEvent.press(within(row).getByRole('button', { name: `${words('house.lower.language')}, English` }));
   await fireEvent.press(screen.getByRole('radio', { name: LANGUAGE_NAMES['en-XA'] }));
   expect(change).toHaveBeenCalledWith('en-XA');
 
   // One that can't be saved goes back, and says so.
   jest.spyOn(console, 'warn').mockImplementation(() => undefined);
   change.mockRejectedValueOnce(new Error('offline'));
-  await fireEvent.press(within(row).getByRole('button', { name: 'English' }));
+  await fireEvent.press(within(row).getByRole('button', { name: `${words('house.lower.language')}, English` }));
   await fireEvent.press(screen.getByRole('radio', { name: LANGUAGE_NAMES['en-XA'] }));
   expect(await screen.findByText(words('house.lower.languageFailed'))).toBeOnTheScreen();
 });

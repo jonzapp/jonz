@@ -217,8 +217,9 @@ still look right stretched (content capped, nothing pinned to far edges).
   from `WIDE`. **One sheet at a time:** it changes its own content rather
   than opening a second. (Focus, #17) *Backed by* the HIG's sheet guidance
   (avoid stacking modals) and Material's bottom sheets.
-- **A choice from a short list** is a `PickMenu`: a sheet on a phone, a
-  drop-down from `WIDE`. Not a segmented switch squeezed into a label line.
+- **A choice from a short list** is a `Select`, its list floating under
+  its box (the small one beside a heading). Not a segmented switch squeezed
+  into a label line.
 - A `Segmented` switch never cuts its words or runs off its panel: where
   four choices won't fit one row of a side panel or a phone, it wraps in
   equal parts (`perRow`, two to a row for a notice's Ends). (UI review small

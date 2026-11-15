@@ -52,3 +52,10 @@ jest.mock('expo-localization', () => {
   const real = jest.requireActual('expo-localization');
   return { ...real, getCalendars: jest.fn(() => [{ calendar: 'gregory', timeZone: 'Europe/London', uses24hourClock: true, firstWeekday: 2 }]) };
 });
+
+// A Select's or a Combobox's list floats from where its box is in the
+// window, and Jest's host views never answer measureInWindow: tests get a
+// box near the top of a phone, so its list drops under it.
+jest.mock('./src/components/measure-box', () => ({
+  measureBox: jest.fn((_box, then) => then({ x: 16, y: 200, width: 358, height: 48 })),
+}));

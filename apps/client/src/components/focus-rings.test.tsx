@@ -32,13 +32,14 @@ describe('the focus ring', () => {
   it("is on a text box while you type in it, and still tells the screen it's focused", async () => {
     const onFocus = jest.fn();
     const onBlur = jest.fn();
-    await render(<Field label="Name" value="" onFocus={onFocus} onBlur={onBlur} />);
-    const box = screen.getByLabelText('Name');
+    await render(<Field label="Name" value="" onFocus={onFocus} onBlur={onBlur} testID="name" />);
+    const input = screen.getByLabelText('Name');
+    const box = screen.getByTestId('name-box');
     expect(box).not.toHaveStyle({ boxShadow: ring.boxShadow });
-    await fireEvent(box, 'focus');
+    await fireEvent(input, 'focus');
     expect(box).toHaveStyle(ring);
     expect(onFocus).toHaveBeenCalledTimes(1);
-    await fireEvent(box, 'blur');
+    await fireEvent(input, 'blur');
     expect(box).not.toHaveStyle({ boxShadow: ring.boxShadow });
     expect(onBlur).toHaveBeenCalledTimes(1);
   });

@@ -12,7 +12,7 @@ import { DefaultsLine } from '@/components/front-door/defaults-line';
 import { Door, DoorFoot, Sign, SignHeading } from '@/components/front-door/door';
 import { KindChoice } from '@/components/front-door/kind-choice';
 import { PageTitle } from '@/components/page-title';
-import { Segmented } from '@/components/segmented';
+import { Select } from '@/components/select';
 import { Meta } from '@/components/text';
 import { TextButton } from '@/components/text-button';
 import { useMembership } from '@/hooks/use-membership';
@@ -106,28 +106,14 @@ export default function NewHouse() {
         </View>
         {changing ? (
           <View style={styles.rest} testID="house-defaults-fields">
-            <View style={styles.pick}>
-              <FieldLabel>{words('door.newHouse.currency')}</FieldLabel>
-              <Segmented
-                equal
-                label={words('door.newHouse.currency')}
-                options={CURRENCY_CHOICES}
-                value={currency}
-                onChange={setCurrency}
-                testID="house-currency"
-              />
-            </View>
-            <View style={styles.pick}>
-              <FieldLabel>{words('door.newHouse.weekStarts')}</FieldLabel>
-              <Segmented
-                equal
-                label={words('door.newHouse.weekStarts')}
-                options={dayChoices(words)}
-                value={weekStarts}
-                onChange={setWeekStarts}
-                testID="house-week-starts"
-              />
-            </View>
+            <Select label={words('door.newHouse.currency')} options={CURRENCY_CHOICES} value={currency} onChange={setCurrency} testID="house-currency" />
+            <Select
+              label={words('door.newHouse.weekStarts')}
+              options={dayChoices(words).map((day) => ({ value: day.value, label: day.spoken }))}
+              value={weekStarts}
+              onChange={setWeekStarts}
+              testID="house-week-starts"
+            />
             <Meta>{words('door.welcome.zoneNote', { zone: zonePlace(timezone, words) })}</Meta>
           </View>
         ) : null}

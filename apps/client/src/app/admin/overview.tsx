@@ -23,7 +23,7 @@ import { TitleBar } from '@/components/title-bar';
 import { INSET, ROW_MIN, SPACE } from '@/theme';
 import { Waiting } from '@/components/waiting';
 import { OverviewOutline } from '@/components/page-outlines';
-import { PickMenu } from '@/components/pick-menu';
+import { Select } from '@/components/select';
 import { useWords } from '@/hooks/use-words';
 
 const MONTH = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -148,7 +148,7 @@ function Numbers({ overview, zone, onSpan }: { overview: Overview; zone: string;
       <Section
         label={range}
         right={
-          <PickMenu
+          <Select small
             options={(['week', 'month'] as const).map((value) => ({ value, label: words(`admin.overview.spans.${value}` as const) }))}
             value={overview.span}
             onChange={onSpan}
