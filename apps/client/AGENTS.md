@@ -144,7 +144,8 @@ permanent once a store has seen them.
   `LidBar`, `Avatar`, `CountBadge`, `Button`, `ButtonRow` (buttons side by
   side: equal, stacking when narrow), `IconButton` (every icon-only control, its name
   in a `Tooltip` on the web), `TextButton`, `TextLink`, `Popover` (a number or
-  a rule explained: a card beside its opener on a laptop, a sheet on a phone),
+  a rule explained: a card beside its opener on a laptop, a sheet on a phone), `Progress` (how far
+  through something is: ink, hazard nearly used, green done),
   `Switch` (one thing on or off, straight away), `Separator` (the line between things), `Select` (pick one from a list, its list floating under its box; `small` beside a heading), `Combobox` (type to search a long list, then pick), `InputGroup` and `InputBox` (a text box with an icon or a button inside: `SearchBox`, a password's Show, `CopyLine`), `Field`, `SignInForm` and `HiddenUsername` (sign-in and password boxes
   as a real form on the web, for password managers), `Alert`, `Segmented`,
   `EmptyState`, `Waiting` (a first read on its way: its outline, built

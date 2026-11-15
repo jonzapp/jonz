@@ -137,6 +137,15 @@ Built for very many rows from the start. (Admin lists, 31 Oct)
   weeks still to come in grey, laid out as your Track record row (a kind
   line and your on-time figure, the bars, what your streak earns next).
   (Your weeks A, 14 Nov)
+- **How far through something is, is one `Progress` bar:** a thin bar on
+  the grey track, its name and how much on one line over it. Ink while
+  it's going, hazard once a limit is nearly used (Ask Jonz's week from 90%,
+  its percentage beside it), green once it's complete; never amber. A new
+  house's setup steps, the Pass's free month and Ask Jonz's week use it.
+  The Week's coloured bar (done, checking, disputed, overdue, to go) is a
+  different job and stays its own, as do the `WeekStrip` bars. (Kit plan,
+  Progress, 15 Nov) *Backed by* WAI-ARIA's progressbar role and shadcn's
+  Progress.
 
 ## Empty lists
 

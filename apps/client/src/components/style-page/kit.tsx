@@ -38,6 +38,7 @@ import { LidBar } from '@/components/lid';
 import { NoticeView } from '@/components/notice-banner';
 import { OutlineRows, OutlineText } from '@/components/outline';
 import { Photo } from '@/components/photo';
+import { Progress } from '@/components/progress';
 import { ReadFailed } from '@/components/read-state';
 import { Row, RowIcon } from '@/components/row';
 import { SearchBox } from '@/components/search-box';
@@ -288,6 +289,11 @@ export function Marks() {
           <HouseTimeNote house="America/Regina" now={AWAY_NOW} />
           <WeekStrip cells={STRIP} columns={8} toCome testID="style-week-strip" />
           <MonthBars months={YEAR} labels />
+        </GroupItem>
+        <GroupItem>
+          <Progress value={1} max={3} amount="1 of 3 steps done" spoken="Set up Bin Street" testID="style-progress" />
+          <Progress value={0.92} max={1} label="You" amount="92% used" warn />
+          <Progress value={3} max={3} label="Set up" amount="Done" />
         </GroupItem>
       </Group>
       <NoticeView tone="news" icon={MegaphoneIcon} title="New this week" body="Swaps now ask first." onClose={none} />

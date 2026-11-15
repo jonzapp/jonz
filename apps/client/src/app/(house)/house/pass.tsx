@@ -1,4 +1,4 @@
-import { hasPass, LEGAL, passWords, type Words, type PassExtra, passFirstChargeNote, passLine, passOffers, passPurchaseRefusal, type PassPurchase } from '@app/core';
+import { hasPass, LEGAL, PASS_TRIAL_DAYS, passDaysLeft, passWords, type Words, type PassExtra, passFirstChargeNote, passLine, passOffers, passPurchaseRefusal, type PassPurchase } from '@app/core';
 import { useLocalSearchParams } from 'expo-router';
 import { CameraIcon, CheckIcon, CoinsIcon, CreditCardIcon, SparklesIcon, UserRoundIcon, type LucideIcon } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
@@ -8,6 +8,7 @@ import { ApiRequestError } from '@/api/base';
 import { leaveFor, passBillingUrl, passCheckoutOpen, passCheckoutUrl } from '@/api/pass';
 import { HousePage } from '@/components/house/house-page';
 import { Pair } from '@/components/page-columns';
+import { nearlyUsed, Progress } from '@/components/progress';
 import { Row, RowIcon } from '@/components/row';
 import { Section } from '@/components/section';
 import { Body, Meta } from '@/components/text';
@@ -134,6 +135,9 @@ function PassReadOut({
   const firstCharge = selling ? passFirstChargeNote(pass, now, rules.timezone, words) : null;
   // Only once the free month or a plan has ended, so a new house isn't steered away from paying.
   const askFree = !hasPass(pass, now);
+  // The free month's days gone, as a bar under where the house stands, while it's running.
+  const left = pass.plan === 'trial' ? passDaysLeft(pass, now) : null;
+  const trialLeft = left !== null && left > 0 && left <= PASS_TRIAL_DAYS ? left : null;
   return (
     <>
       <View style={styles.words}>
@@ -142,6 +146,15 @@ function PassReadOut({
         <Meta testID="pass-line">
           {buyer ? words('common.join.comma', { first: passLine(pass, now, rules.timezone, words), second: words('house.pass.boughtBy', { name: buyer }) }) : passLine(pass, now, rules.timezone, words)}
         </Meta>
+        {trialLeft !== null ? (
+          <Progress
+            value={PASS_TRIAL_DAYS - trialLeft}
+            max={PASS_TRIAL_DAYS}
+            spoken={passLine(pass, now, rules.timezone, words)}
+            warn={nearlyUsed((PASS_TRIAL_DAYS - trialLeft) / PASS_TRIAL_DAYS)}
+            testID="pass-trial"
+          />
+        ) : null}
         {waiting ? <Meta testID="pass-bought">{sign.bought}</Meta> : null}
       </View>
 

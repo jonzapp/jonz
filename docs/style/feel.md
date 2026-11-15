@@ -11,11 +11,13 @@ kind of John. Calm by default, loud only for the moments that count.
   chip or an avatar. (Focus, #17) *Backed by* Material's "one high-emphasis
   action per screen" and the HIG's single prominent button; amber text on
   pavement would also fail contrast.
-- **Hazard** is only for late, overdue, missed, disputed, and money lost or
-  owed, and it always comes with an icon and a word. Destructive rows
+- **Hazard** is only for late, overdue, missed, disputed, money lost or
+  owed, and a limit nearly used (a `Progress` bar from 90%, its percentage
+  beside it), and it always comes with an icon or a figure and a word. Destructive rows
   (Remove) use it as text; moves in a Danger zone wear it on their button. (Focus, #17) *Backed by* WCAG 1.4.1:
   colour is never the only way meaning is shown.
-- **Green** only for the done tick and a good headline figure. (Focus, #17)
+- **Green** only for the done tick, a good headline figure and a complete
+  `Progress` bar. (Focus, #17; Progress, 15 Nov)
 - **Colour stays neutral.** No colour per person, anywhere (the away
   calendar shades days, it doesn't colour people). A John's kind colour
   shows only as its `LidBar`. (Who's away, #23)
