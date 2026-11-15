@@ -1,17 +1,15 @@
 import { weekSpokenRow, weekWho, type BoardItem } from '@app/core';
-import { StyleSheet, Text, View, type StyleProp, type TextStyle } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { Alert } from '@/components/alert';
 import { Avatar } from '@/components/avatar';
 import { Group, GroupItem } from '@/components/group';
 import { DoneFold, useJohnRow, type JohnRowContext } from '@/components/john-row';
 import { Row } from '@/components/row';
+import { TableHead, type TableColumn } from '@/components/table';
 import { Body } from '@/components/text';
-import { HAIR, INSET, LABEL_GAP, LEADING, ROW_GAP, SPACE, TABULAR, useTheme } from '@/theme';
+import { LEADING, SPACE, TABULAR } from '@/theme';
 import { useWords } from '@/hooks/use-words';
-
-/** A section label's line, which the columns' names stand in. */
-const LABEL_LINE = 24;
 
 /** The fixed columns; the John's takes what's left. */
 const WHO = 112;
@@ -25,20 +23,21 @@ const STATUS = 120;
  * that flexes), whose it is, its points (earned, once it's finished), and
  * one cell for where it has got to or what to do about it (Undo, Vote).
  * Tapping a row opens the John sheet. Finished Johns fold away at the end.
- * The column names are only for the eye: each row says all of its columns
- * to a screen reader.
+ * The column names head the group as every Table's do, only for the eye:
+ * each row says all of its columns to a screen reader.
  */
 export function WeekTable({ rows, folded, context }: { rows: BoardItem[]; folded: BoardItem[]; context: JohnRowContext }) {
+  const columns = useWeekColumns();
   return (
     <View testID="week-table">
-      <HeadRow />
       <Group>
+        <TableHead columns={columns} inside testID="week-table-head" />
         {rows.map((item) => (
-          <TableRow key={item.id} item={item} context={context} />
+          <WeekRow key={item.id} item={item} context={context} />
         ))}
         <DoneFold items={folded}>
           {folded.map((item) => (
-            <TableRow key={item.id} item={item} context={context} />
+            <WeekRow key={item.id} item={item} context={context} />
           ))}
         </DoneFold>
       </Group>
@@ -46,30 +45,16 @@ export function WeekTable({ rows, folded, context }: { rows: BoardItem[]; folded
   );
 }
 
-/**
- * The columns' names, in section-label caps, hidden from a screen reader
- * (the rows say them). They stand over the group where a section's label
- * would, a label's line and LABEL_GAP, inset as the rows are: so the table
- * starts level with a section beside it (the Table, on a laptop), and its
- * rows with that section's rows.
- */
-function HeadRow() {
+/** The columns' names over the rows, the tick box's column blank. */
+function useWeekColumns(): TableColumn[] {
   const words = useWords();
-  const { type } = useTheme();
-  const head = (label: string, style: StyleProp<TextStyle>) => (
-    <Text numberOfLines={1} style={[type.caps, styles.caps, style]}>
-      {label}
-    </Text>
-  );
-  return (
-    <View aria-hidden testID="week-table-head" style={styles.head}>
-      <View style={styles.leading} />
-      {head(words('week.table.columns.john'), styles.john)}
-      {head(words('week.table.columns.who'), styles.who)}
-      {head(words('week.table.columns.points'), [styles.points, styles.end])}
-      {head(words('week.table.columns.status'), [styles.status, styles.end])}
-    </View>
-  );
+  return [
+    { key: 'tick', label: '', width: LEADING },
+    { key: 'john', label: words('week.table.columns.john'), flex: 1 },
+    { key: 'who', label: words('week.table.columns.who'), width: WHO },
+    { key: 'points', label: words('week.table.columns.points'), width: POINTS, end: true },
+    { key: 'status', label: words('week.table.columns.status'), width: STATUS, end: true },
+  ];
 }
 
 /**
@@ -77,7 +62,7 @@ function HeadRow() {
  * its points as cells of their own, and the status cell as its trailing
  * item, kept beside its press target (it may hold Undo or Vote).
  */
-function TableRow({ item, context }: { item: BoardItem; context: JohnRowContext }) {
+function WeekRow({ item, context }: { item: BoardItem; context: JohnRowContext }) {
   const words = useWords();
   const john = useJohnRow(item, context);
   const mine = item.userId === context.userId;
@@ -124,19 +109,6 @@ function TableRow({ item, context }: { item: BoardItem; context: JohnRowContext 
 }
 
 const styles = StyleSheet.create({
-  head: {
-    minHeight: LABEL_LINE,
-    marginBottom: LABEL_GAP,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: ROW_GAP,
-    paddingHorizontal: INSET,
-  },
-  // Overpass's caps sit high in their line, so the names come down a little, as a section's label does.
-  caps: { paddingTop: HAIR },
-  leading: { width: LEADING },
-  // The John's column flexes, as a Row's words do.
-  john: { flex: 1, minWidth: 0 },
   shrink: { flexShrink: 1, minWidth: 0 },
   who: { width: WHO },
   person: { flexDirection: 'row', alignItems: 'center', gap: SPACE.sm },

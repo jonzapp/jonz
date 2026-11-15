@@ -17,7 +17,7 @@ import { StyleSheet, View } from 'react-native';
 import { houseFilter, housesCount, housesPage, type HouseCursor } from '@/api/houses';
 import { BusyListView, useBusyList, useOpenRow, type BusyList } from '@/components/admin/busy-list';
 import { HOUSES_KEY, HousePanel } from '@/components/admin/house-panel';
-import { ListTableRow, type ListColumn } from '@/components/list-table';
+import { TableRow, type TableColumn } from '@/components/table';
 import { Row, RowIcon } from '@/components/row';
 import { Columns, Screen, useColumns } from '@/components/screen';
 import { Chip } from '@/components/status-mark';
@@ -27,7 +27,7 @@ import { SPACE } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
 /** Every house's columns on a laptop. */
-const HOUSE_TABLE = (words: Words): readonly ListColumn[] => [
+const HOUSE_TABLE = (words: Words): readonly TableColumn[] => [
   { key: 'house', label: words('admin.houses.columns.house'), flex: 1 },
   { key: 'people', label: words('admin.houses.columns.people'), width: 64, end: true },
   { key: 'pass', label: words('admin.houses.columns.pass'), width: 112 },
@@ -83,7 +83,7 @@ function Houses({ busy }: { busy: BusyList<HouseRow> }) {
       noun={(count: string) => words('admin.houses.count', { count })}
       columns={HOUSE_TABLE(words)}
       tableRow={(house) => (
-        <ListTableRow
+        <TableRow
           key={house.id}
           columns={HOUSE_TABLE(words)}
           cells={{

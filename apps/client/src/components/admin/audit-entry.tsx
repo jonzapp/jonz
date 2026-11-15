@@ -1,7 +1,7 @@
 import { type Words, auditChanges, auditLikeThis, auditLine, auditParts, formatWhen, listTime, type AuditEntry } from '@app/core';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { ListTableRow, type ListColumn } from '@/components/list-table';
+import { TableRow, type TableColumn } from '@/components/table';
 import { Group, GroupItem } from '@/components/group';
 import { Row } from '@/components/row';
 import { Section } from '@/components/section';
@@ -13,7 +13,7 @@ import { useWords } from '@/hooks/use-words';
 const NONE = '–';
 
 /** The audit log's columns on a laptop: when, who, what happened (with its detail), and where. */
-export const AUDIT_TABLE = (words: Words): readonly ListColumn[] => [
+export const AUDIT_TABLE = (words: Words): readonly TableColumn[] => [
   // As narrow as "Fri 30 Oct, 21:42", "Someone else" and "Account 5b1e9c40" allow, so what happened has the room.
   { key: 'when', label: words('admin.audit.when'), width: 144 },
   { key: 'who', label: words('admin.audit.who'), width: 112 },
@@ -60,7 +60,7 @@ export function AuditTableRow({
   const parts = auditParts(entry, ownerId, words);
   const when = listTime(entry.at, now, ownerZone());
   return (
-    <ListTableRow
+    <TableRow
       columns={AUDIT_TABLE(words)}
       cells={{
         when,

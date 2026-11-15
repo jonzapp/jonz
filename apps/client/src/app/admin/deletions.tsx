@@ -7,7 +7,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { deleteByEmail, deleteNow, deletionFilter, deletionsCount, deletionsPage, stopDeletion, type DeletionCursor } from '@/api/owner';
 import { ownerZone } from '@/components/admin/audit-entry';
 import { BusyListView, useBusyList, type BusyList } from '@/components/admin/busy-list';
-import { ListTableRow, type ListColumn } from '@/components/list-table';
+import { TableRow, type TableColumn } from '@/components/table';
 import { Alert } from '@/components/alert';
 import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/button';
@@ -30,7 +30,7 @@ import { useWords } from '@/hooks/use-words';
 const KEY = ['owner-deletions'];
 
 /** Deletions' columns on a laptop. */
-const DELETION_TABLE = (words: Words): readonly ListColumn[] => [
+const DELETION_TABLE = (words: Words): readonly TableColumn[] => [
   { key: 'name', label: words('admin.deletions.name'), width: 132 },
   { key: 'email', label: words('admin.deletions.email'), flex: 1 },
   { key: 'house', label: words('admin.deletions.house'), width: 112 },
@@ -97,7 +97,7 @@ function Deletions({ busy }: { busy: BusyList<PendingDeletion> }) {
             goes: words('admin.deletions.goesShort', { days: Math.max(0, daysUntil(person.deleteAfter, now)) }),
           };
           return (
-            <ListTableRow
+            <TableRow
               key={person.userId}
               columns={DELETION_TABLE(words)}
               cells={cells}

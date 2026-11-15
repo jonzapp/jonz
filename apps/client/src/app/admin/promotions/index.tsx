@@ -17,7 +17,7 @@ import { promotionFilter, promotionsCount, promotionsPage, PROMOTIONS_KEY, type 
 import { AdminSwitch } from '@/components/admin/admin-shell';
 import { ownerZone } from '@/components/admin/audit-entry';
 import { BusyListView, useBusyList, type BusyList } from '@/components/admin/busy-list';
-import { ListTableRow, type ListColumn } from '@/components/list-table';
+import { TableRow, type TableColumn } from '@/components/table';
 import { PromotionForm } from '@/components/admin/promotion-form';
 import { useOwnerMay } from '@/components/admin/use-owner-may';
 import { Button } from '@/components/button';
@@ -31,7 +31,7 @@ import { SPACE } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
 /** Every promotion's columns on a laptop. */
-const TABLE = (words: Words): readonly ListColumn[] => [
+const TABLE = (words: Words): readonly TableColumn[] => [
   { key: 'name', label: words('admin.promotions.columns.name'), flex: 1 },
   { key: 'gives', label: words('admin.promotions.columns.gives'), width: 200 },
   { key: 'who', label: words('admin.promotions.columns.who'), width: 96 },
@@ -88,7 +88,7 @@ function Promotions({ busy }: { busy: BusyList<PromotionRow> }) {
         noun={(count: string) => words('admin.promotions.count', { count })}
         columns={TABLE(words)}
         tableRow={(p) => (
-          <ListTableRow
+          <TableRow
             key={p.id}
             columns={TABLE(words)}
             cells={{ name: p.name, gives: promotionGives(p.terms), who: promotionWho(p), used: promotionUsed(p), ends: promotionEnds(p, zone) }}

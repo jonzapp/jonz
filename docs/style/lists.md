@@ -45,6 +45,15 @@
   under the name. (John list C, 13 Nov) *Not* the kinds packed into
   whichever column is shortest: the order then jumps about and changes with
   the window.
+- **Every table is one `Table`** (shadcn's Table): its column names in
+  section-label caps on the table's own card colour at its top, a line
+  under them, then a row to a line where it fits, a line between rows
+  starting at the words, numbers at their right, and a row that opens
+  tinted under the mouse. The owner's busy lists, Week on a laptop, the
+  John list and a table in an Ask Jonz reply all use it; a reply's names
+  are heard by a screen reader, as its cells are one by one. (One Table A,
+  15 Nov; was a grey band on the owner's lists, names floating over Week's
+  rows, and bold names on a band in replies)
 - **An admin's fixes are one row, not a row of buttons:** in a John's sheet,
   "Admin" holds one row, Fix the result, which opens the results to choose
   from in its place. (Admin fixes A, 10 Nov)

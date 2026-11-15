@@ -160,9 +160,10 @@ permanent once a store has seen them.
   ones with how many were late. `CodeBoxes` is every 6-digit code (the
   admin code, the codes we email). `CopyLine` is words to paste
   elsewhere (an address) with Copy beside them. `Doc` (in `reply/`) draws
-  Help, Privacy and Terms from their Markdown. `ListTable` and
-  `ListTableRow` are a list as one-line rows in lined-up columns on a
-  laptop: the owner's busy lists, and the John list's `JohnLine`. Then one folder per place:
+  Help, Privacy and Terms from their Markdown. `Table`,
+  `TableHead` and `TableRow` are every table: rows in lined-up columns
+  under their names (the owner's busy lists, Week's `WeekTable`, the John
+  list's `JohnLine`, a reply's table). Then one folder per place:
   - `today/`: Next up (`NextUp`, or `SetupCard`, an admin's checklist
     before the first deal), Needs you, the rest of your week and the page's
     tappable lines (`PageLine`).
