@@ -54,7 +54,8 @@ test("dispute a housemate's tick from the board, and the house of two decides wh
   await ava.goto("/today");
   await ava.getByRole("tab", { name: words('common.section.week') }).click();
   await expect(ava).toHaveURL(/\/week$/);
-  await expect(ava.getByRole("heading", { name: words('common.title.week') })).toBeVisible();
+  // Week's own title: Today's This week card has the same heading while the tab changes over.
+  await expect(ava.getByTestId("week-screen").getByRole("heading", { name: words('common.title.week') })).toBeVisible();
   const theirs = onBoard(ava, benJohn);
   await expect(theirs.getByRole("img", { name: words('today.nextUp.stateLabel.checking') })).toBeVisible();
   await expect(theirs.getByTestId("status-checking")).toBeVisible();
