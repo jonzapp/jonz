@@ -6,6 +6,7 @@ pages are private artifacts on claude.ai.
 
 | Date | Decision | Where | Rule |
 | --- | --- | --- | --- |
+| 2026-11-15 | Where everyone stands on fair shares is one `BarChart`: a bar each either side of a middle line, behind to the left and ahead to the right, its number in ink at the end, in Week's fair shares and an Ask Jonz reply's card alike (were a row each) (Kit plan, laptop extras, go given) | this PR | [lists](lists.md#calendars-and-grids) |
 | 2026-11-15 | Every table is one `Table`: column names in caps on the table's own card colour with a line under them (shadcn's look, Glyn's One Table A), for the owner's lists, Week on a laptop, the John list and Ask Jonz reply tables, which each drew their own head before | this PR | [lists](lists.md#rows) |
 | 2026-11-15 | Picking days is the kit's `Calendar` (time away's run of days, moving out's day; was `AwayDates` in setup), and a day in a form is a `DateField`, the Select's box opening that calendar under it on a laptop and in a sheet on a phone, never a typed 2026-12-31 (a promotion's last day) (Kit plan, go given) | this PR | [controls](controls.md#inputs), [lists](lists.md#calendars-and-grids) |
 | 2026-11-15 | How far through something is, is one `Progress` bar: ink while going, hazard once a limit is nearly used, green when complete, never amber; Ask Jonz's week (its own amber bars before), a new house's setup steps (none before) and the Pass's free month use it (Kit plan, go given) | this PR | [lists](lists.md#calendars-and-grids), [feel](feel.md#colour) |

@@ -77,10 +77,10 @@ const SAMPLE_PIECES: ReplyPieces = {
     if (card.card === 'shares') {
       const nameOf = (id: string) => DATA.people.find((p) => p.userId === id)?.name ?? null;
       const rows = [
-        { userId: 'glyn', balance: '+1' },
-        { userId: 'sam', balance: '+1' },
-        { userId: 'priya', balance: '−6' },
-        { userId: 'tom', balance: '+4' },
+        { userId: 'glyn', balance: '+1', points: 1 },
+        { userId: 'sam', balance: '+1', points: 1 },
+        { userId: 'priya', balance: '−6', points: -6 },
+        { userId: 'tom', balance: '+4', points: 4 },
       ];
       return <SharesCard rows={rows} viewerId="glyn" nameOf={nameOf} />;
     }

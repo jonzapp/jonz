@@ -32,6 +32,8 @@
   "house.table.shares": "Fair shares",
   "house.table.sharesBody": "What each of you has done since you joined, against your share. A missed John comes back to whoever missed it, and covering for someone counts as yours. Each deal gives a little more to whoever is behind, never more than half a week extra, until it evens out.",
   "house.table.sharesKey": "Below zero is behind, above is ahead. Time away is made up:",
+  "house.table.behind": "Behind",
+  "house.table.ahead": "Ahead",
   "house.table.streaks": "Streaks and perks",
   "house.table.weeks": "{n, plural, one {# week} other {# weeks}}",
   "house.table.swap": "swap",

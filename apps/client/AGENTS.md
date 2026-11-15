@@ -145,7 +145,9 @@ permanent once a store has seen them.
   side: equal, stacking when narrow), `IconButton` (every icon-only control, its name
   in a `Tooltip` on the web), `TextButton`, `TextLink`, `Popover` (a number or
   a rule explained: a card beside its opener on a laptop, a sheet on a phone), `Progress` (how far
-  through something is: ink, hazard nearly used, green done),
+  through something is: ink, hazard nearly used, green done), `BarChart` (where
+  everyone stands: a bar each either side of a middle line, its number at the end;
+  fair shares draw theirs with `SharesChart`),
   `Switch` (one thing on or off, straight away), `Separator` (the line between things), `Select` (pick one from a list, its list floating under its box; `small` beside a heading), `Combobox` (type to search a long list, then pick), `Calendar` (a month to pick a run of days or one in, drawn by the app, no native date module) and `DateField` (a day in a form: the Select's box opening a Calendar), `InputGroup` and `InputBox` (a text box with an icon or a button inside: `SearchBox`, a password's Show, `CopyLine`), `Field`, `SignInForm` and `HiddenUsername` (sign-in and password boxes
   as a real form on the web, for password managers), `Alert`, `Segmented`,
   `EmptyState`, `Waiting` (a first read on its way: its outline, built

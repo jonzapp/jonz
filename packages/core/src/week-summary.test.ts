@@ -358,12 +358,12 @@ describe("weekShareRows", () => {
     { userId: "priya", balance: 0.75 },
   ];
 
-  it("lists you first, then the order they joined, with each balance as the Table writes it", () => {
+  it("lists you first, then the order they joined, with each balance as the Table writes it and the number it rounds to", () => {
     expect(weekShareRows(balances, ["priya", "sam", "tom", "megan"], "sam", 100, words).rows).toEqual([
-      { userId: "sam", balance: "level" },
-      { userId: "priya", balance: "+1" },
-      { userId: "tom", balance: "−4" },
-      { userId: "megan", balance: "+3.5" },
+      { userId: "sam", balance: "level", points: 0 },
+      { userId: "priya", balance: "+1", points: 1 },
+      { userId: "tom", balance: "−4", points: -4 },
+      { userId: "megan", balance: "+3.5", points: 3.5 },
     ]);
   });
 

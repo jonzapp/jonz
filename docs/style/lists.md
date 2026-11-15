@@ -148,6 +148,16 @@ Built for very many rows from the start. (Admin lists, 31 Oct)
   weeks still to come in grey, laid out as your Track record row (a kind
   line and your on-time figure, the bars, what your streak earns next).
   (Your weeks A, 14 Nov)
+- **Where everyone stands is one `BarChart`:** a line each, its face and
+  name, a bar either side of a thin middle line (behind to the left, ahead
+  to the right, as long as its share of the furthest), and its number in ink
+  at the end, the halves named over it (Behind, Ahead). One series, in ink,
+  so no key and no colour to learn; the numbers are its table, and a screen
+  reader hears it as one picture naming each and their number. Week's fair
+  shares (`SharesChart`, in its popover or sheet) and an Ask Jonz reply's
+  fair shares card draw the same one, the card with Track record at its
+  section's end. (Kit plan, Chart, 15 Nov; was a row each with the number
+  at its end) *Backed by* shadcn's Chart (a bar chart with negative values).
 - **How far through something is, is one `Progress` bar:** a thin bar on
   the grey track, its name and how much on one line over it. Ink while
   it's going, hazard once a limit is nearly used (Ask Jonz's week from 90%,

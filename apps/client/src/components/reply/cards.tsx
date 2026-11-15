@@ -1,12 +1,13 @@
-import { weekLabel, pointsLabel, scheduleLine, weekWho, type BoardItem, type JohnDef } from '@app/core';
+import { weekLabel, pointsLabel, scheduleLine, type BoardItem, type JohnDef } from '@app/core';
 import type { Href } from 'expo-router';
 
-import { Avatar } from '@/components/avatar';
-import { Group } from '@/components/group';
+import { Group, GroupItem } from '@/components/group';
 import { JohnRow, type JohnRowContext } from '@/components/john-row';
 import { Row } from '@/components/row';
 import { Section } from '@/components/section';
 import { Meta } from '@/components/text';
+import { TextButton } from '@/components/text-button';
+import { SharesChart } from '@/components/week/fair-shares';
 import { useWords } from '@/hooks/use-words';
 
 /**
@@ -33,7 +34,11 @@ export function WeekCard({ items, context, who, open }: { items: BoardItem[]; co
   );
 }
 
-/** ::shares: everyone's balance against their fair share, as the Week page's sheet shows it. */
+/**
+ * ::shares: everyone's balance against their fair share, as the Week page's
+ * popover shows it (a BarChart, behind to the left), with the Track record
+ * at the section's end.
+ */
 export function SharesCard({
   rows,
   viewerId,
@@ -41,7 +46,7 @@ export function SharesCard({
   keyLine,
   href,
 }: {
-  rows: { userId: string; balance: string }[];
+  rows: { userId: string; balance: string; points: number }[];
   viewerId: string;
   nameOf: (userId: string) => string | null;
   keyLine?: string;
@@ -49,18 +54,14 @@ export function SharesCard({
 }) {
   const words = useWords();
   return (
-    <Section label={words('ask.reply.shares')}>
+    <Section
+      label={words('ask.reply.shares')}
+      right={href ? <TextButton label={words('week.record.open')} href={href} chevron align="end" testID="reply-shares-open" /> : undefined}
+    >
       <Group>
-        {rows.map((row) => (
-          <Row
-            key={row.userId}
-            leading={<Avatar name={nameOf(row.userId) ?? words('common.shell.formerHousemate')} userId={row.userId} me={row.userId === viewerId} />}
-            title={weekWho(row.userId, viewerId, nameOf, words)}
-            trailing={row.balance}
-            href={href}
-            testID="reply-share"
-          />
-        ))}
+        <GroupItem>
+          <SharesChart rows={rows} viewerId={viewerId} nameOf={nameOf} testID="reply-shares" />
+        </GroupItem>
       </Group>
       {keyLine ? <Meta>{keyLine}</Meta> : null}
     </Section>

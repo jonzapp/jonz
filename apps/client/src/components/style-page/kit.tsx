@@ -23,6 +23,7 @@ import { Avatar } from '@/components/avatar';
 import { CountBadge } from '@/components/badge';
 import { Button } from '@/components/button';
 import { ButtonRow } from '@/components/button-row';
+import { BarChart } from '@/components/chart';
 import { CodeBoxes } from '@/components/code-boxes';
 import { ColourPicker } from '@/components/colour-picker';
 import { DangerRow, DangerZone } from '@/components/danger-zone';
@@ -296,6 +297,19 @@ export function Marks() {
           <Progress value={1} max={3} amount="1 of 3 steps done" spoken="Set up Bin Street" testID="style-progress" />
           <Progress value={0.92} max={1} label="You" amount="92% used" warn />
           <Progress value={3} max={3} label="Set up" amount="Done" />
+        </GroupItem>
+        <GroupItem>
+          <BarChart
+            bars={[
+              { key: 'glyn', leading: <Avatar name="Glyn" userId="u-glyn" me />, name: 'You', value: 1.5, shown: '+1.5' },
+              { key: 'ava', leading: <Avatar name="Ava Brook" userId="u-ava" />, name: 'Ava', value: -4, shown: '−4' },
+              { key: 'sam', leading: <Avatar name="Sam Ortiz" userId="u-sam" />, name: 'Sam', value: 0, shown: 'level' },
+              { key: 'priya', leading: <Avatar name="Priya Shah" userId="u-priya" />, name: 'Priya', value: 2.5, shown: '+2.5' },
+            ]}
+            below="Behind"
+            above="Ahead"
+            testID="style-chart"
+          />
         </GroupItem>
       </Group>
       <NoticeView tone="news" icon={MegaphoneIcon} title="New this week" body="Swaps now ask first." onClose={none} />

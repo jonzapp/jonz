@@ -292,8 +292,9 @@ export function weekSpokenRow(
 /**
  * The fair shares sheet behind the footer: everyone's balance against their
  * share, in Week's order (you first, then the order they joined), as the
- * Table writes it ("+1.5", "−4", "level"), and the key under it, with how
- * the house makes up time away.
+ * Table writes it ("+1.5", "−4", "level") and as the number it rounds to
+ * (for its bar), and the key under it, with how the house makes up time
+ * away.
  */
 export function weekShareRows(
   balances: readonly { userId: string; balance: number }[],
@@ -301,12 +302,12 @@ export function weekShareRows(
   viewerId: string,
   awayMakeup: number,
   words: Words,
-): { rows: { userId: string; balance: string }[]; key: string } {
+): { rows: { userId: string; balance: string; points: number }[]; key: string } {
   const order = [viewerId, ...memberIds.filter((id) => id !== viewerId)];
   const rank = (id: string) => (order.includes(id) ? order.indexOf(id) : order.length);
   const rows = [...balances]
     .sort((a, b) => rank(a.userId) - rank(b.userId))
-    .map((b) => ({ userId: b.userId, balance: formatBalance(b.balance, words) }));
+    .map((b) => ({ userId: b.userId, balance: formatBalance(b.balance, words), points: Math.round(b.balance * 2) / 2 }));
   const makeup = MAKEUP_LABEL[awayMakeup] ?? MAKEUP_LABEL[100];
   return { rows, key: words('week.summary.sharesKey', { key: words('house.table.sharesKey'), makeup: makeup.toLowerCase() }) };
 }
