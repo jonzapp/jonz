@@ -123,7 +123,7 @@ export function draftRequest(d: PromotionDraft): PromotionRequest {
 /** The checks promotionProblems can't make from the request: a day that isn't one, a limit that isn't a number. */
 export function draftProblems(d: PromotionDraft): { endsAt?: string; maxUses?: string; gives?: string } {
   const out: { endsAt?: string; maxUses?: string; gives?: string } = {};
-  if (d.ends === "day" && !endOfDay(d.endsOn)) out.endsAt = "Type the day as 2026-12-31.";
+  if (d.ends === "day" && !endOfDay(d.endsOn)) out.endsAt = "Pick the last day.";
   if (d.audience === "anyone" && d.maxUses.trim() && !whole(d.maxUses)) out.maxUses = "Type how many houses, or leave it empty.";
   if (d.kind === "percent" && d.percent.trim() && (whole(d.percent) === null || whole(d.percent)! > 100)) out.gives = "Say how much off, from 1 to 100%.";
   if (d.kind === "amount" && d.amount.trim() && dollars(d.amount) === null) out.gives = "Type the amount in dollars, like 10.";

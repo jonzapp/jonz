@@ -1,8 +1,8 @@
-import type { ReactNode, RefObject } from 'react';
-import { Modal, StyleSheet, View, type HostInstance } from 'react-native';
+import { useState, type ReactNode, type RefObject } from 'react';
+import { Modal, StyleSheet, useWindowDimensions, View, type HostInstance } from 'react-native';
 
 import { measureBox } from '@/components/measure-box';
-import { floatShadow, GROUP_RADIUS, SPACE, useTheme } from '@/theme';
+import { floatShadow, GROUP_RADIUS, SPACE, useTheme, WIDE } from '@/theme';
 
 /** How wide a dropped menu is beside the page. */
 const MENU = 240;
@@ -50,6 +50,33 @@ export function placeFloat(box: RefObject<HostInstance | null>, fit: FloatFit, t
     const tall = Math.min(most, Math.max(below, above));
     then(below >= Math.min(most, above) ? { top: y + h, ...side, width, tall } : { bottom: win.height - y, ...side, width, tall });
   });
+}
+
+/**
+ * Whether a card that floats from `box` on a laptop, and is a sheet on a
+ * phone, is open, and where it floats (placed by placeFloat with `fit`):
+ * a Popover's and a DateField's. `show` opens it, `close` puts it away.
+ */
+export function useFloatOrSheet(box: RefObject<HostInstance | null>, fit: Omit<FloatFit, 'win'>) {
+  const win = useWindowDimensions();
+  const wide = win.width >= WIDE;
+  const [open, setOpen] = useState(false);
+  const [place, setPlace] = useState<MenuPlace | null>(null);
+  const show = () => {
+    if (!wide) {
+      setOpen(true);
+      return;
+    }
+    placeFloat(box, { ...fit, win }, (at) => {
+      setPlace(at);
+      setOpen(true);
+    });
+  };
+  const close = () => {
+    setOpen(false);
+    setPlace(null);
+  };
+  return { wide, open, place, show, close };
 }
 
 /**

@@ -8,11 +8,11 @@ import { HouseTimeNote, type HouseClock } from '@/components/house-time-note';
 import { Alert } from '@/components/alert';
 import { Button } from '@/components/button';
 import { ButtonRow } from '@/components/button-row';
+import { Calendar } from '@/components/calendar';
 import { GroupItem } from '@/components/group';
 import { HousePage } from '@/components/house/house-page';
 import { Pair, useSideBySide } from '@/components/page-columns';
 import { Section } from '@/components/section';
-import { AwayDates, type DateRange } from '@/components/setup/away-dates';
 import { Body, Meta } from '@/components/text';
 import { TextButton } from '@/components/text-button';
 import { useHouse } from '@/hooks/use-house';
@@ -81,8 +81,6 @@ function MovingForm({
   const words = useWords();
   const move = useMove(houseId);
   const [picked, setPicked] = useState<string | null>(saved);
-  // One day, not a run of them: whichever day was tapped last.
-  const range: DateRange = { from: picked, to: picked };
   const changed = picked !== saved;
 
   // On a laptop what moving out does sits beside the day you pick; on a phone, the note under the calendar.
@@ -120,12 +118,7 @@ function MovingForm({
           ) : null}
           <Section label={saved ? words('house.moving.change') : words('house.moving.pick')}>
             <GroupItem>
-              <AwayDates
-                today={today}
-                weekStarts={weekStarts}
-                value={range}
-                onChange={(next) => setPicked(next.to ?? next.from)}
-              />
+              <Calendar today={today} weekStarts={weekStarts} value={{ from: picked, to: picked }} onChange={(next) => setPicked(next.from)} single />
               <HouseTimeNote house={clock.zone} now={clock.now} />
               {move.problem ? <Alert message={move.problem} /> : null}
               <View style={styles.action}>

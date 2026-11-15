@@ -274,7 +274,7 @@
   "admin.promotions.ends": "Ends",
   "admin.promotions.endsChoices.never": "Never",
   "admin.promotions.endsChoices.day": "On a day",
-  "admin.promotions.endsOn": "Last day, as 2026-12-31",
+  "admin.promotions.endsOn": "Last day",
   "admin.promotions.note": "A line for them",
   "admin.promotions.noteHint": "They read it first, on the link and in the email: “Thanks for helping test Jonz.”",
   "admin.promotions.code": "Code in the link",

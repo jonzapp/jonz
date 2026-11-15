@@ -65,7 +65,7 @@ describe("the form as typed", () => {
     expect(formatDay(end)).toBe("2026-12-31");
     expect(endOfDay("2026-02-30")).toBeNull();
     expect(draftRequest({ ...PROMOTION_DRAFT, ends: "day", endsOn: "2026-12-31" }).endsAt).toBe(end.toISOString());
-    expect(draftProblems({ ...PROMOTION_DRAFT, ends: "day", endsOn: "soon" }).endsAt).toBe("Type the day as 2026-12-31.");
+    expect(draftProblems({ ...PROMOTION_DRAFT, ends: "day", endsOn: "soon" }).endsAt).toBe("Pick the last day.");
     expect(draftProblems({ ...PROMOTION_DRAFT, maxUses: "lots" }).maxUses).toBeDefined();
     expect(draftProblems({ ...PROMOTION_DRAFT, percent: "150" }).gives).toBeDefined();
     expect(draftProblems(PROMOTION_DRAFT)).toEqual({});

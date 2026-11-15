@@ -142,6 +142,14 @@
   laptop it drops from the box as a card (rising over it near the window's
   foot, as a Select's list does); on a phone it opens as a sheet.
   (Search by city, 14 Nov; Combobox, 15 Nov)
+- **Picking a day in a form is a `DateField`** (shadcn's Date Picker):
+  the Select's box showing the day in words with its year ("Tue 15 Dec
+  2026") and a calendar mark; pressed, a `Calendar` floats under it on a
+  laptop (over it near the window's foot) and opens as a sheet on a phone,
+  and tapping a day puts it away. Never a day typed as 2026-12-31 (a
+  promotion's last day). A page whose whole job is picking days keeps the
+  `Calendar` open on it (moving out, time away's sheet). (Kit to shadcn's
+  breadth, 15 Nov; was a typed day)
 - **A few quick choices side by side are a `Segmented`,** wrapped into
   equal rows with `perRow` where the words don't fit one row; never pills
   of our own, and the chosen one is never amber (the John editor's How

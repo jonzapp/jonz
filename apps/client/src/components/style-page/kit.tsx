@@ -56,6 +56,7 @@ import { TextLink } from '@/components/text-link';
 import { TickBox, type TickState } from '@/components/tick-box';
 import { MonthBars, WeekStrip, type StripCell } from '@/components/week/week-strip';
 
+import { Dates } from './dates';
 import { Explaining } from './explaining';
 import { Picking } from './picking';
 import { RADIUS, SPACE, useTheme } from '@/theme';
@@ -185,7 +186,7 @@ export function Buttons() {
 
 const TICKS: readonly TickState[] = ['open', 'checking', 'done', 'disputed', 'busy'];
 
-/** Picking and typing: segments, switches, day chips, tick boxes, fields, code boxes, selects, a combobox, a popover, a fold and the lines between things. */
+/** Picking and typing: segments, switches, day chips, tick boxes, fields, code boxes, selects, a combobox, a date field and a calendar, a popover, a fold and the lines between things. */
 export function Choosing() {
   const [scope, setScope] = useState<'me' | 'house'>('me');
   const [soon, setSoon] = useState(true);
@@ -227,6 +228,7 @@ export function Choosing() {
           <Row title="Hoover the stairs" meta="Done 10am" lid="floors" leading={<TickBox state="done" label="Hoover the stairs" />} leadingControl />
         </Fold>
         <Picking />
+        <Dates />
         <Explaining />
         <Lines />
       </Group>

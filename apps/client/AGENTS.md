@@ -146,7 +146,7 @@ permanent once a store has seen them.
   in a `Tooltip` on the web), `TextButton`, `TextLink`, `Popover` (a number or
   a rule explained: a card beside its opener on a laptop, a sheet on a phone), `Progress` (how far
   through something is: ink, hazard nearly used, green done),
-  `Switch` (one thing on or off, straight away), `Separator` (the line between things), `Select` (pick one from a list, its list floating under its box; `small` beside a heading), `Combobox` (type to search a long list, then pick), `InputGroup` and `InputBox` (a text box with an icon or a button inside: `SearchBox`, a password's Show, `CopyLine`), `Field`, `SignInForm` and `HiddenUsername` (sign-in and password boxes
+  `Switch` (one thing on or off, straight away), `Separator` (the line between things), `Select` (pick one from a list, its list floating under its box; `small` beside a heading), `Combobox` (type to search a long list, then pick), `Calendar` (a month to pick a run of days or one in, drawn by the app, no native date module) and `DateField` (a day in a form: the Select's box opening a Calendar), `InputGroup` and `InputBox` (a text box with an icon or a button inside: `SearchBox`, a password's Show, `CopyLine`), `Field`, `SignInForm` and `HiddenUsername` (sign-in and password boxes
   as a real form on the web, for password managers), `Alert`, `Segmented`,
   `EmptyState`, `Waiting` (a first read on its way: its outline, built
   from `outline.tsx`, after 300ms and for at least 300ms) and `ReadFailed`
@@ -182,9 +182,7 @@ permanent once a store has seen them.
   - `wall/`: a Wall row with its reactions control, and `WallEventSheet`,
     an event in full.
   - `setup/`: the setup pages' own rows (`ChoiceRow`, a radio or checkbox
-    row), `AwayDates` (the
-    calendar for booking time away, drawn by the app, no native date
-    module) and `DealFoot`.
+    row) and `DealFoot`.
   - `front-door/`: the pages from before you have a house (`Door`, `Sign`,
     `SignHeading`), and `DefaultsLine`, a new house's defaults with Change.
   - `shell/`: `HouseTabBar`, the tabs and the rail.

@@ -1,4 +1,4 @@
-import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-react-native';
+import { CheckIcon, ChevronDownIcon, ChevronUpIcon, type LucideIcon } from 'lucide-react-native';
 import { useRef, useState, type RefObject } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View, type HostInstance } from 'react-native';
 
@@ -91,7 +91,7 @@ export function Select<T extends string | number>({
   );
 }
 
-/** The box: what's chosen and a chevron, edged as a text box is, wearing the focus ring while its list is open. A Combobox opens from the same box. */
+/** The box: what's chosen and a chevron, edged as a text box is, wearing the focus ring while its list is open. A Combobox opens from the same box, and a DateField with a calendar `icon` for the chevron, opening a dialog (`popup`). */
 export function SelectBox({
   boxRef,
   label,
@@ -100,6 +100,8 @@ export function SelectBox({
   onPress,
   small = false,
   disabled = false,
+  icon,
+  popup = 'listbox',
   testID,
 }: {
   boxRef: RefObject<HostInstance | null>;
@@ -109,17 +111,19 @@ export function SelectBox({
   onPress: () => void;
   small?: boolean;
   disabled?: boolean;
+  icon?: LucideIcon;
+  popup?: 'listbox' | 'dialog';
   testID?: string;
 }) {
   const { colors, type } = useTheme();
-  const Chevron = open ? ChevronUpIcon : ChevronDownIcon;
+  const Chevron = icon ?? (open ? ChevronUpIcon : ChevronDownIcon);
   return (
     <Pressable
       ref={boxRef}
       accessibilityRole="button"
       accessibilityLabel={`${label}, ${shown}`}
       aria-expanded={open}
-      aria-haspopup="listbox"
+      aria-haspopup={popup}
       aria-disabled={disabled}
       disabled={disabled}
       onPress={onPress}
