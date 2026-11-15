@@ -56,7 +56,8 @@ test("add kinds, file a John under one, move it, delete it, and put the John in 
   await page.getByTestId("john-def").filter({ hasText: "Water the plants" }).click();
   const john = page.getByTestId("john-form");
   await john.getByTestId("john-kind").click();
-  await john.getByRole("radio", { name: "Garden" }).click();
+  // The list floats over the page, outside the form.
+  await page.getByRole("radio", { name: "Garden" }).click();
   await john.getByTestId("save-john").click();
   await expect(john).toBeHidden();
   const section = page.getByTestId(`kind-${garden!.id}`);
@@ -85,7 +86,7 @@ test("add kinds, file a John under one, move it, delete it, and put the John in 
   // Given a kind, it leaves No kind; put back in No kind on purpose, it goes back.
   await none.getByTestId("john-def").click();
   await john.getByTestId("john-kind").click();
-  await john.getByRole("radio", { name: "Kitchen" }).click();
+  await page.getByRole("radio", { name: "Kitchen" }).click();
   await john.getByTestId("save-john").click();
   await expect(john).toBeHidden();
   const kitchen = await kindId("Kitchen");
@@ -94,7 +95,7 @@ test("add kinds, file a John under one, move it, delete it, and put the John in 
   expect(await plantsKind()).toBe(kitchen);
   await page.getByTestId("john-def").filter({ hasText: "Water the plants" }).click();
   await john.getByTestId("john-kind").click();
-  await john.getByRole("radio", { name: words("house.kinds.none") }).click();
+  await page.getByRole("radio", { name: words("house.kinds.none") }).click();
   await john.getByTestId("save-john").click();
   await expect(john).toBeHidden();
   await expect(none.getByTestId("john-def")).toContainText("Water the plants");

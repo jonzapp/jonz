@@ -41,6 +41,7 @@ test("start a house, and land on it caught up", async ({ context, page }) => {
   // One field, the name; the defaults are a line under it, and Change opens them.
   await page.getByLabel(words('door.welcome.name')).fill(name);
   await page.getByTestId("change-defaults").click();
+  await page.getByTestId("house-week-starts").click();
   await page.getByRole("radio", { name: "Sunday" }).click();
   const fresh = caughtUp(page);
   await page.getByTestId("create-house").click();

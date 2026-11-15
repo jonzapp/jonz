@@ -67,17 +67,19 @@ it('opens the currency and the first day under Change, and the line follows them
   // The same control, now open, says Done.
   expect(screen.getByTestId('change-defaults')).toBeExpanded();
   expect(screen.getByTestId('change-defaults')).toHaveTextContent(words('door.welcome.done'), { exact: false });
-  expect(screen.getByLabelText(words('door.newHouse.currency'))).toBeOnTheScreen();
-  expect(screen.getByRole('radio', { name: 'CAD' })).toBeChecked();
-  expect(screen.getByRole('radio', { name: 'Monday' })).toBeChecked();
-  // Seven days share the sign's width, so they fit across a phone.
-  for (const day of ['Monday', 'Wednesday', 'Sunday']) expect(screen.getByRole('radio', { name: day })).toHaveStyle({ flex: 1 });
+  // Each is a Select: a box showing what's chosen, its list floating under it.
+  expect(screen.getByRole('button', { name: `${words('door.newHouse.currency')}, CAD` })).toBeOnTheScreen();
+  expect(screen.getByRole('button', { name: `${words('door.newHouse.weekStarts')}, Monday` })).toBeOnTheScreen();
   expect(screen.getByText(words('door.welcome.zoneNote', { zone: 'St Johns, Canada' }))).toBeOnTheScreen();
 
+  await fireEvent.press(screen.getByTestId('house-currency'));
+  expect(screen.getByRole('radio', { name: 'CAD' })).toBeChecked();
   await fireEvent.press(screen.getByRole('radio', { name: 'EUR' }));
+  expect(screen.queryByRole('radio', { name: 'CAD' })).not.toBeOnTheScreen();
+  await fireEvent.press(screen.getByTestId('house-week-starts'));
+  expect(screen.getByRole('radio', { name: 'Monday' })).toBeChecked();
   await fireEvent.press(screen.getByRole('radio', { name: 'Sunday' }));
-  expect(screen.getByRole('radio', { name: 'Sunday' })).toBeChecked();
-  expect(screen.getByRole('radio', { name: 'Monday' })).not.toBeChecked();
+  expect(screen.getByRole('button', { name: `${words('door.newHouse.weekStarts')}, Sunday` })).toBeOnTheScreen();
   expect(screen.getByTestId('house-defaults')).toHaveTextContent(
     line('EUR 20 a month each', 'weeks start Sunday', 'St Johns, Canada'),
   );
@@ -85,7 +87,7 @@ it('opens the currency and the first day under Change, and the line follows them
   // Done folds them away again, keeping what was chosen.
   await fireEvent.press(screen.getByTestId('change-defaults'));
   expect(screen.getByTestId('change-defaults')).toBeCollapsed();
-  expect(screen.queryByRole('radio', { name: 'EUR' })).not.toBeOnTheScreen();
+  expect(screen.queryByTestId('house-currency')).not.toBeOnTheScreen();
 
   await fireEvent.changeText(screen.getByLabelText(words('door.welcome.name')), 'Flat 3');
   await fireEvent.press(screen.getByRole('button', { name: words('door.welcome.submit') }));

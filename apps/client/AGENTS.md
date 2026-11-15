@@ -144,7 +144,7 @@ permanent once a store has seen them.
   `LidBar`, `Avatar`, `CountBadge`, `Button`, `ButtonRow` (buttons side by
   side: equal, stacking when narrow), `IconButton` (every icon-only control),
   `TextButton`, `TextLink`,
-  `Switch` (one thing on or off, straight away), `Separator` (the line between things), `Field`, `SignInForm` and `HiddenUsername` (sign-in and password boxes
+  `Switch` (one thing on or off, straight away), `Separator` (the line between things), `Select` (pick one from a list, its list floating under its box; `small` beside a heading), `Combobox` (type to search a long list, then pick), `InputGroup` and `InputBox` (a text box with an icon or a button inside: `SearchBox`, a password's Show, `CopyLine`), `Field`, `SignInForm` and `HiddenUsername` (sign-in and password boxes
   as a real form on the web, for password managers), `Alert`, `Segmented`,
   `EmptyState`, `Waiting` (a first read on its way: its outline, built
   from `outline.tsx`, after 300ms and for at least 300ms) and `ReadFailed`
@@ -179,8 +179,8 @@ permanent once a store has seen them.
     for admins Make admin and Remove (`PersonAdmin`).
   - `wall/`: a Wall row with its reactions control, and `WallEventSheet`,
     an event in full.
-  - `setup/`: the setup pages' own rows (`PickRow`, a short select that
-    opens in place; `ChoiceRow`, a radio or checkbox row), `AwayDates` (the
+  - `setup/`: the setup pages' own rows (`ChoiceRow`, a radio or checkbox
+    row), `AwayDates` (the
     calendar for booking time away, drawn by the app, no native date
     module) and `DealFoot`.
   - `front-door/`: the pages from before you have a house (`Door`, `Sign`,

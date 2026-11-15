@@ -511,17 +511,17 @@ describe('Button', () => {
 
 describe('Field and Alert', () => {
   it('says what to fix in ink after a triangle, never hazard, and edges the box in ink', async () => {
-    await render(<Field label="House name" problem="Give the house a name." value="" onChangeText={jest.fn()} />);
+    await render(<Field label="House name" problem="Give the house a name." value="" onChangeText={jest.fn()} testID="name" />);
     const alert = screen.getByRole('alert');
     expect(within(alert).getByText('Give the house a name.')).toHaveStyle({ color: light.foreground, fontSize: 14 });
-    expect(screen.getByLabelText('House name')).toHaveStyle({ borderColor: light.foreground });
+    expect(screen.getByTestId('name-box')).toHaveStyle({ borderColor: light.foreground });
   });
 
   it('gives a hint in Meta while nothing is wrong', async () => {
-    await render(<Field label="House name" hint="What you call it" value="" onChangeText={jest.fn()} />);
+    await render(<Field label="House name" hint="What you call it" value="" onChangeText={jest.fn()} testID="name" />);
     expect(screen.queryByRole('alert')).toBeNull();
     expect(screen.getByText('What you call it')).toHaveStyle({ color: light.mutedForeground });
-    expect(screen.getByLabelText('House name')).toHaveStyle({ borderColor: light.mutedForeground });
+    expect(screen.getByTestId('name-box')).toHaveStyle({ borderColor: light.mutedForeground });
   });
 });
 

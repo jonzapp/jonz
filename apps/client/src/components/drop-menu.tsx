@@ -6,11 +6,14 @@ import { floatShadow, GROUP_RADIUS, SPACE, useTheme } from '@/theme';
 /** How wide a dropped menu is beside the page. */
 const MENU = 240;
 
-/** Where a menu drops from: the bottom of what opened it, and how far its right edge is from the window's. */
-export interface MenuPlace {
-  top: number;
-  right: number;
-}
+/**
+ * Where a menu floats: under what opened it (`top`, its bottom edge) or over
+ * it (`bottom`, its top edge counted from the window's foot), its right edge
+ * on the opener's (`right`, from the window's) or its left (`left`); `width`
+ * when not the menu's own, and `tall`, the most it may take before it scrolls.
+ */
+export type MenuPlace = ({ top: number; bottom?: never } | { bottom: number; top?: never }) &
+  ({ right: number; left?: never } | { left: number; right?: never }) & { width?: number; tall?: number };
 
 /** Measures what opens a menu, for the menu to drop from under it, its right edge on the opener's. */
 export function measurePlace(opener: RefObject<HostInstance | null>, windowWidth: number, then: (place: MenuPlace) => void) {
@@ -18,9 +21,9 @@ export function measurePlace(opener: RefObject<HostInstance | null>, windowWidth
 }
 
 /**
- * A menu dropped over the page from what opened it, from WIDE where a
- * pointer can reach it (a phone opens the same rows in a Sheet): the Table's
- * This week | October and the title bar's "•••". The page's one thing that
+ * A menu dropped over the page from what opened it: the title bar's "•••"
+ * from WIDE, where a pointer can reach it (a phone opens those rows in a
+ * Sheet), and a Select's list on any screen. The page's one thing that
  * floats, lifted by a soft shadow. A tap anywhere else puts it away, as a
  * sheet's scrim does, and so does Escape.
  */
@@ -53,12 +56,8 @@ export function DropMenu({
           testID={testID ? `${testID}-menu` : undefined}
           style={[
             styles.menu,
-            {
-              top: place.top + SPACE.xs,
-              right: Math.max(place.right, SPACE.sm),
-              borderColor: colors.border,
-              boxShadow: floatShadow(colors, scheme),
-            },
+            at(place),
+            { borderColor: colors.border, boxShadow: floatShadow(colors, scheme) },
           ]}
         >
           {children}
@@ -68,10 +67,21 @@ export function DropMenu({
   );
 }
 
+/** The menu's edges in the window: a little clear of what opened it, never against the window's side. */
+function at(place: MenuPlace) {
+  return {
+    top: place.top === undefined ? undefined : place.top + SPACE.xs,
+    bottom: place.bottom === undefined ? undefined : place.bottom + SPACE.xs,
+    right: place.right === undefined ? undefined : Math.max(place.right, SPACE.sm),
+    left: place.left === undefined ? undefined : Math.max(place.left, SPACE.sm),
+    width: place.width ?? MENU,
+    maxHeight: place.tall,
+  };
+}
+
 const styles = StyleSheet.create({
   menu: {
     position: 'absolute',
-    width: MENU,
     borderRadius: GROUP_RADIUS,
     borderWidth: StyleSheet.hairlineWidth,
     overflow: 'hidden',

@@ -351,7 +351,7 @@ function Suggestions({
         {
           backgroundColor: colors.background,
           borderColor: colors.border,
-          // It floats over the list, as a PickMenu does: a soft shadow lifts it off the rows.
+          // It floats over the list, as a Select's list does: a soft shadow lifts it off the rows.
           boxShadow: floatShadow(colors, scheme),
         },
       ]}

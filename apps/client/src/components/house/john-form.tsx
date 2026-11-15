@@ -9,10 +9,10 @@ import { Button } from '@/components/button';
 import { ButtonRow } from '@/components/button-row';
 import { Field } from '@/components/field';
 import { Group, GroupItem } from '@/components/group';
+import { Select } from '@/components/select';
 import { TimingSentence, type TimingWord } from '@/components/house/john-timing';
 import { TimingPicker } from '@/components/house/john-timing-picker';
 import { ChoiceRow } from '@/components/setup/choice-row';
-import { PickRow } from '@/components/setup/pick-row';
 import { Meta } from '@/components/text';
 import { useMove } from '@/hooks/use-move';
 import { useWords } from '@/hooks/use-words';
@@ -137,8 +137,12 @@ function WhatAndWho({ value: v, kinds, groups, onChange: set }: { value: Draft; 
   return (
     <View style={styles.noted}>
       <Group>
-        <PickRow label={words('house.johns.kind')} options={options} value={kind?.id ?? ''} onChange={pickKind} testID="john-kind" />
-        <PickRow label={words('house.johns.sharedBy')} options={sharers} value={v.groupId ?? ''} onChange={(id) => set({ groupId: id || null })} />
+        <GroupItem>
+          <Select label={words('house.johns.kind')} options={options} value={kind?.id ?? ''} onChange={pickKind} testID="john-kind" />
+        </GroupItem>
+        <GroupItem>
+          <Select label={words('house.johns.sharedBy')} options={sharers} value={v.groupId ?? ''} onChange={(id) => set({ groupId: id || null })} />
+        </GroupItem>
       </Group>
       {sharing ? (
         <Meta style={styles.note} testID="sharing-note">
@@ -162,11 +166,15 @@ function HowItsDone({ value: v, onChange: set, children }: { value: Draft; onCha
   return (
     <View style={styles.noted}>
       <Group>
-        <PickRow label={words('house.johns.effort')} options={effort(words)} value={v.points} onChange={(points) => set({ points })} />
+        <GroupItem>
+          <Select label={words('house.johns.effort')} options={effort(words)} value={v.points} onChange={(points) => set({ points })} />
+        </GroupItem>
         {children}
         {/* On call stays one person: whoever is on call. */}
         {v.when === 'day' ? (
-          <PickRow label={words('john.crew.doneBy')} options={CREW_CHOICES.map((n) => ({ value: n, label: words('john.crew.choice', { crew: n }) }))} value={v.crew} onChange={(crew) => set({ crew })} testID="john-crew" />
+          <GroupItem>
+            <Select label={words('john.crew.doneBy')} options={CREW_CHOICES.map((n) => ({ value: n, label: words('john.crew.choice', { crew: n }) }))} value={v.crew} onChange={(crew) => set({ crew })} testID="john-crew" />
+          </GroupItem>
         ) : null}
         {/* On call has no day to keep. */}
         {v.when === 'day' ? (

@@ -16,7 +16,7 @@ test.use({ baseURL: CLIENT_URL });
 const made: string[] = [];
 test.afterAll(async () => cleanUp(made));
 
-/** A setting's row in a form, which opens into its choices: "Effort, 2 pts". */
+/** A setting's Select in a form, which floats its choices over the page: "Effort, 2 pts". */
 function pickRow(page: Page, label: string) {
   return page.getByRole("button", { name: new RegExp(`^${label}, `) });
 }
@@ -27,7 +27,7 @@ async function addJohn(page: Page, name: string, points: number) {
   const form = page.getByTestId("john-form");
   await form.getByLabel(words('house.johns.name')).fill(name);
   await pickRow(page, words('house.johns.effort')).click();
-  await form.getByRole("radio", { name: pointsLabel(points, words), exact: true }).click();
+  await page.getByRole("radio", { name: pointsLabel(points, words), exact: true }).click();
   await form.getByTestId("save-john").click();
   await expect(form).toBeHidden();
   await expect(list.getByTestId("john-def").filter({ hasText: name })).toBeVisible();
@@ -113,7 +113,7 @@ test("run a house from nothing on the phone", async ({ browser }) => {
   await rulesPage.getByTestId("edit-rules").click();
   await rulesPage.getByTestId("house-stake").fill("25");
   await pickRow(page, words('house.setup.disputes')).click();
-  await rulesPage.getByRole("radio", { name: words('house.rules.disputeHours', { hours: 12 }) }).click();
+  await page.getByRole("radio", { name: words('house.rules.disputeHours', { hours: 12 }) }).click();
   await rulesPage.getByTestId("save-rules").click();
   await expect(page.getByTestId("toast")).toHaveText(words('house.setup.saved'));
   const { data: rules } = await db.from("houses").select("stake_minor, dispute_hours").eq("id", houseRow!.id).single();

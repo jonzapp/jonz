@@ -22,7 +22,7 @@ import { Section } from '@/components/section';
 import { Segmented } from '@/components/segmented';
 import { Sheet } from '@/components/sheet';
 import { useToastIfAny } from '@/components/toast';
-import { PickMenu } from '@/components/pick-menu';
+import { Select } from '@/components/select';
 import { HiddenUsername, SignInForm } from '@/components/sign-in-form';
 import { Meta } from '@/components/text';
 import { useLook } from '@/hooks/look';
@@ -182,7 +182,7 @@ function LanguageRow() {
       leading={<RowIcon icon={LanguagesIcon} />}
       title={words('house.lower.language')}
       trailing={
-        <PickMenu
+        <Select small
           options={LANGUAGES_OFFERED.map((value) => ({ value, label: LANGUAGE_NAMES[value] }))}
           value={language.language}
           // It changes at once; one that can't be saved goes back, and says so.

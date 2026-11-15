@@ -13,7 +13,7 @@ import { GroupItem } from '@/components/group';
 import { InviteSheet } from '@/components/house-page/invite-sheet';
 import { MetaLine, Money } from '@/components/house-page/money';
 import { RulesSheet } from '@/components/house-page/rules-sheet';
-import { PickMenu } from '@/components/pick-menu';
+import { Select } from '@/components/select';
 import { ReadFailed } from '@/components/read-state';
 import { Row, RowIcon } from '@/components/row';
 import { useContentWidth } from '@/components/screen';
@@ -90,7 +90,7 @@ export function TableSection({
         <Section
           label={words('house.page.table')}
           right={
-            <PickMenu
+            <Select small
               options={[
                 { value: 'week', label: words('house.page.week') },
                 { value: 'month', label: monthWord(month, words) },

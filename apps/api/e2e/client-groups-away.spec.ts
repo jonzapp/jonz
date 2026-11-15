@@ -67,7 +67,8 @@ test("make a group, give it a John, and book time away", async ({ browser }) => 
   const johnForm = page.getByTestId("john-form");
   await johnForm.getByLabel(words('house.johns.name')).fill("Bathroom clean");
   await johnForm.getByRole("button", { name: new RegExp(`^${words('house.johns.sharedBy')}, `) }).click();
-  await johnForm.getByRole("radio", { name: "Upstairs bathroom" }).click();
+  // The list floats over the page, outside the form.
+  await page.getByRole("radio", { name: "Upstairs bathroom" }).click();
   await johnForm.getByTestId("save-john").click();
   await expect(johnForm).toBeHidden();
   await expect(list.getByTestId("john-def").filter({ hasText: "Bathroom clean" })).toContainText("Upstairs bathroom");
