@@ -142,8 +142,9 @@ permanent once a store has seen them.
   everywhere), `Fold` (and `QuietFold`, a chat's aside), `Card` (at most one stand-alone card a screen),
   `TickBox`, `StatusMark` and `Chip` (core's `STATUS_MARK`, drawn),
   `LidBar`, `Avatar`, `CountBadge`, `Button`, `ButtonRow` (buttons side by
-  side: equal, stacking when narrow), `IconButton` (every icon-only control),
-  `TextButton`, `TextLink`,
+  side: equal, stacking when narrow), `IconButton` (every icon-only control, its name
+  in a `Tooltip` on the web), `TextButton`, `TextLink`, `Popover` (a number or
+  a rule explained: a card beside its opener on a laptop, a sheet on a phone),
   `Switch` (one thing on or off, straight away), `Separator` (the line between things), `Select` (pick one from a list, its list floating under its box; `small` beside a heading), `Combobox` (type to search a long list, then pick), `InputGroup` and `InputBox` (a text box with an icon or a button inside: `SearchBox`, a password's Show, `CopyLine`), `Field`, `SignInForm` and `HiddenUsername` (sign-in and password boxes
   as a real form on the web, for password managers), `Alert`, `Segmented`,
   `EmptyState`, `Waiting` (a first read on its way: its outline, built

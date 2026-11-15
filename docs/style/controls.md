@@ -91,6 +91,14 @@
   *Backed by* Nielsen's "consistency and standards" and WCAG 4.1.2.
 - **A toggle shows its state in its icon,** with no grey square behind it
   while it's on. (Sparkles A, #48)
+- **An icon-only control names itself on a laptop:** its name in a small
+  ink label under it (a `Tooltip`), once the mouse has rested on it for half
+  a second, or straight away when the keyboard lands on it. It runs toward
+  the middle of the window, never off its side, and goes when the mouse
+  leaves, it's pressed or focus moves on. Every `IconButton` has one, from
+  its spoken name; a phone has none, as a finger can't hover. (Kit plan,
+  Tooltip, 15 Nov) *Backed by* WAI-ARIA's tooltip pattern and the HIG's
+  help tags.
 
 ## Inputs
 
@@ -157,6 +165,13 @@
   the "•••", `DropMenu`), its right edge on the control's, put away by a tap
   anywhere else or Escape; on a phone it is a sheet. A Select's list drops
   the same way on any screen. (••• menu A, 13 Nov; Select A, 15 Nov)
+- **A number or a rule explained opens a `Popover`:** on a laptop a small
+  card floats beside what you tapped, its right edge on its opener's, with
+  its title, a line on what it is and the detail (Week's fair shares; the
+  Table's How points and the stake work). A tap anywhere else or Escape
+  puts it away. On a phone the same opens as a sheet. (Kit plan, Popover,
+  15 Nov) *Backed by* WAI-ARIA's dialog pattern (non-modal) and shadcn's
+  Popover. A John's "Why?" stays a section of its own sheet.
 - **Sign-in and password boxes work with password managers.** On the web
   each step is a real form (`SignInForm`), Enter sends it, the email box is
   `username` and a new password is `new-password` (with `passwordRules` on

@@ -220,6 +220,8 @@ still look right stretched (content capped, nothing pinned to far edges).
 - **A choice from a short list** is a `Select`, its list floating under
   its box (the small one beside a heading). Not a segmented switch squeezed
   into a label line.
+- **An explanation opened from a line or a row** (fair shares, how points
+  work) is a `Popover`: a card beside it on a laptop, a sheet on a phone.
 - A `Segmented` switch never cuts its words or runs off its panel: where
   four choices won't fit one row of a side panel or a phone, it wraps in
   equal parts (`perRow`, two to a row for a notice's Ends). (UI review small

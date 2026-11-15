@@ -2,11 +2,11 @@ import { useRef, useState, type ReactNode } from 'react';
 import { ScrollView, StyleSheet, useWindowDimensions, View, type HostInstance } from 'react-native';
 
 import { Alert } from '@/components/alert';
-import { DropMenu, type MenuPlace } from '@/components/drop-menu';
+import { DropMenu, placeFloat, type MenuPlace } from '@/components/drop-menu';
 import { FieldLabel } from '@/components/field';
 import { nearEnd } from '@/components/near-end';
 import { SearchBox } from '@/components/search-box';
-import { placeList, SelectBox } from '@/components/select';
+import { SelectBox } from '@/components/select';
 import { Sheet } from '@/components/sheet';
 import { Meta } from '@/components/text';
 import { INSET, SPACE, useTheme, WIDE } from '@/theme';
@@ -74,7 +74,7 @@ export function Combobox({
       setOpen(true);
       return;
     }
-    placeList(box, { win, least: COMBO_MIN, most: COMBO_TALL }, (at) => {
+    placeFloat(box, { win, least: COMBO_MIN, most: COMBO_TALL }, (at) => {
       setPlace(at);
       setOpen(true);
     });

@@ -1,6 +1,7 @@
 import type { ReactNode, RefObject } from 'react';
 import { Modal, StyleSheet, View, type HostInstance } from 'react-native';
 
+import { measureBox } from '@/components/measure-box';
 import { floatShadow, GROUP_RADIUS, SPACE, useTheme } from '@/theme';
 
 /** How wide a dropped menu is beside the page. */
@@ -21,10 +22,41 @@ export function measurePlace(opener: RefObject<HostInstance | null>, windowWidth
 }
 
 /**
+ * How something floats from its box: the window; the most of it the thing
+ * takes before it scrolls; the least it is wide (`least`, else the box's
+ * width) or just how wide it is (`width`); and `end` for its right edge on
+ * the box's rather than its left.
+ */
+export interface FloatFit {
+  win: { width: number; height: number };
+  most: number;
+  least?: number;
+  width?: number;
+  end?: boolean;
+}
+
+/**
+ * Where a Select's list, a Combobox's card or a Popover floats from its
+ * box: under it, or over it when there's more room there, kept inside the
+ * window.
+ */
+export function placeFloat(box: RefObject<HostInstance | null>, fit: FloatFit, then: (place: MenuPlace) => void) {
+  const { win, most, least = 0, end = false } = fit;
+  measureBox(box, ({ x, y, width: w, height: h }) => {
+    const width = fit.width ?? Math.max(w, least);
+    const side = end ? { right: win.width - x - w } : { left: width > w ? Math.min(x, win.width - width - SPACE.lg) : x };
+    const below = win.height - (y + h) - SPACE.lg;
+    const above = y - SPACE.lg;
+    const tall = Math.min(most, Math.max(below, above));
+    then(below >= Math.min(most, above) ? { top: y + h, ...side, width, tall } : { bottom: win.height - y, ...side, width, tall });
+  });
+}
+
+/**
  * A menu dropped over the page from what opened it: the title bar's "•••"
  * from WIDE, where a pointer can reach it (a phone opens those rows in a
- * Sheet), and a Select's list on any screen. The page's one thing that
- * floats, lifted by a soft shadow. A tap anywhere else puts it away, as a
+ * Sheet), a Select's list on any screen, and a Popover on a laptop. The
+ * page's one thing that floats, lifted by a soft shadow. A tap anywhere else puts it away, as a
  * sheet's scrim does, and so does Escape.
  */
 export function DropMenu({
