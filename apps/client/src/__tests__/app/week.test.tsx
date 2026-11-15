@@ -510,7 +510,7 @@ describe('the fairness footer', () => {
     );
   });
 
-  it("opens everyone's fair share from the sentence, you first", async () => {
+  it("opens everyone's fair share from the sentence as a chart, you first", async () => {
     (loadTable as jest.Mock).mockResolvedValue({
       month: '2026-10',
       monthTable: [],
@@ -524,11 +524,12 @@ describe('the fairness footer', () => {
     const sheet = screen.getByTestId('fair-shares');
     expect(within(sheet).getByRole('header', { name: words('house.table.shares') })).toBeOnTheScreen();
     expect(within(sheet).getByText(words('house.table.sharesBody'))).toBeOnTheScreen();
-    const rows = within(sheet).getAllByTestId('fair-share');
-    expect(within(rows[0]).getByText(words('week.table.you'))).toBeOnTheScreen();
-    expect(within(rows[0]).getByText('+1')).toBeOnTheScreen();
-    expect(within(rows[1]).getByText('Sam')).toBeOnTheScreen();
-    expect(within(rows[1]).getByText('−1')).toBeOnTheScreen();
+    // A chart: one bar each, you first, heard as one picture naming each and their number.
+    const chart = within(sheet).getByTestId('fair-shares-chart');
+    expect(chart).toHaveAccessibleName(`${words('week.table.you')}, +1; Sam, −1`);
+    expect(within(chart).getByText(words('house.table.behind'))).toBeOnTheScreen();
+    expect(within(chart).getByText(words('house.table.ahead'))).toBeOnTheScreen();
+    expect(within(chart).getAllByTestId('fair-shares-chart-bar')).toHaveLength(2);
     expect(within(sheet).getByText('Below zero is behind, above is ahead. Time away is made up: in full.')).toBeOnTheScreen();
   });
 });

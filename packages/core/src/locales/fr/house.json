@@ -32,6 +32,8 @@
   "house.table.shares": "Justes parts",
   "house.table.sharesBody": "Ce que chacun a fait depuis son arrivée, par rapport à sa part. Un John oublié revient à celui qui l’a oublié, et remplacer quelqu’un compte pour toi. Chaque distribution donne un peu plus à celui qui est en retard, jamais plus d’une demi-semaine en plus, jusqu’à ce que ça s’équilibre.",
   "house.table.sharesKey": "En dessous de zéro, c’est du retard ; au-dessus, de l’avance. Les absences sont rattrapées :",
+  "house.table.behind": "En retard",
+  "house.table.ahead": "En avance",
   "house.table.streaks": "Séries et bonus",
   "house.table.weeks": "{n, plural, one {# semaine} other {# semaines}}",
   "house.table.swap": "échange",
