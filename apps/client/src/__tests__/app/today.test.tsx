@@ -382,6 +382,9 @@ describe('what takes Next up’s place', () => {
       read.mockResolvedValue({ ...first(), members: first().members.slice(0, 1) });
       const card = await open();
       expect(await within(card).findByText(words('today.nextUp.onTheList', { count: 0 }))).toBeOnTheScreen();
+      // Nothing done yet: an empty bar, named for the house it sets up.
+      expect(within(card).getByTestId('setup-progress')).toHaveTextContent(words('today.nextUp.stepsDone', { done: 0, all: 3 }));
+      expect(within(card).getByRole('progressbar', { name: words('today.nextUp.setUp', { house: first().house.name }) })).toHaveProp('aria-valuenow', 0);
       const deal = within(card).getByRole('button', { name: words('today.nextUp.dealWeek1') });
       expect(deal).toHaveStyle({ backgroundColor: 'transparent' });
       await fireEvent.press(deal);

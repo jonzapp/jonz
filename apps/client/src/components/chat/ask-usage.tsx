@@ -8,8 +8,9 @@ import { Button } from '@/components/button';
 import { ChatNotice, ChatStop } from '@/components/chat/chat-notice';
 import { Group, GroupItem } from '@/components/group';
 import { Section } from '@/components/section';
-import { Meta, RowTitle } from '@/components/text';
-import { RADIUS, SECTION_GAP, SPACE, useTheme } from '@/theme';
+import { nearlyUsed, Progress } from '@/components/progress';
+import { Meta } from '@/components/text';
+import { SECTION_GAP, SPACE } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
 // The week's Ask Jonz, as the chat and the usage page show it: a warning over
@@ -28,27 +29,12 @@ export function usageState(usage: AskUsage | undefined): 'plenty' | 'low' | 'out
   return usage.left < ASK_LOW ? 'low' : 'plenty';
 }
 
-/** One person's (or the house's) use: what, how much used, a bar, and a note under it. */
+/** One person's (or the house's) use: what, how much used, its bar (hazard from 90%), and a note under it. */
 function UsageBar({ label, used, note, testID }: { label: string; used: number; note?: string; testID?: string }) {
   const words = useWords();
-  const { colors } = useTheme();
-  const fill = used >= 0.9 ? colors.hazard : colors.primary;
   return (
     <View style={styles.bar} testID={testID}>
-      <View style={styles.barTop}>
-        <RowTitle>{label}</RowTitle>
-        <Meta>{words('ask.usage.used', { used: wholePercent(used) })}</Meta>
-      </View>
-      <View
-        style={[styles.track, { backgroundColor: colors.muted }]}
-        role="progressbar"
-        aria-label={label}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={Math.round(used * 100)}
-      >
-        <View style={[styles.fill, { width: `${Math.min(100, Math.round(used * 100))}%`, backgroundColor: fill }]} />
-      </View>
+      <Progress value={used} max={1} label={label} amount={words('ask.usage.used', { used: wholePercent(used) })} warn={nearlyUsed(used)} testID={testID ? `${testID}-progress` : undefined} />
       {note ? <Meta>{note}</Meta> : null}
     </View>
   );
@@ -145,7 +131,4 @@ export function UsageDetail({
 const styles = StyleSheet.create({
   page: { gap: SECTION_GAP },
   bar: { gap: SPACE.xs },
-  barTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: SPACE.sm },
-  track: { height: SPACE.sm, borderRadius: RADIUS, overflow: 'hidden' },
-  fill: { height: '100%', borderRadius: RADIUS },
 });

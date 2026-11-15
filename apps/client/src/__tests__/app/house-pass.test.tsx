@@ -1,4 +1,4 @@
-import { LEGAL, wordsFor } from '@app/core';
+import { BIN_NIGHT, LEGAL, wordsFor } from '@app/core';
 import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 
 import { loadHouse } from '@/api/board';
@@ -105,6 +105,10 @@ it('shows a house on its free month the plans in its own currency, Yearly first,
   await open();
   expect(screen.getByTestId('pass-lead')).toHaveTextContent(words('house.pass.lead'));
   expect(screen.getByTestId('pass-line')).toHaveTextContent(words('house.pass.trialLeft', { days: 12 }));
+  // 18 of its 30 days gone, in ink: plenty left.
+  const month = screen.getByRole('progressbar', { name: words('house.pass.trialLeft', { days: 12 }) });
+  expect(month).toHaveProp('aria-valuenow', 60);
+  expect(screen.getByTestId('pass-trial-fill')).toHaveStyle({ backgroundColor: BIN_NIGHT.light.foreground });
   const plans = within(screen.getByTestId('pass-plans'));
   for (const price of ['£29.99 a year', '£3.99 a month']) expect(plans.getByText(price)).toBeOnTheScreen();
   expect(within(screen.getByTestId('plan-yearly')).getByText(words('house.pass.yearly'))).toBeOnTheScreen();

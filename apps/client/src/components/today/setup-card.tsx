@@ -7,11 +7,15 @@ import { Card, CardRows } from '@/components/card';
 import { DealButton } from '@/components/house/deal-button';
 import { InviteSheet } from '@/components/house-page/invite-sheet';
 import { Row, RowIcon } from '@/components/row';
+import { Progress } from '@/components/progress';
 import { Lead, SectionLabel } from '@/components/text';
 import { TickBox } from '@/components/tick-box';
 import { useAskJonz } from '@/hooks/use-ask-jonz';
 import { useWords } from '@/hooks/use-words';
 import { HAIR, SPACE } from '@/theme';
+
+/** The steps to start a house: the Johns, the housemates, then the first deal. */
+const SETUP_STEPS = 3;
 
 /** A checklist step's tick box: ticked once it's done. A picture, not a control: the row is the way in. */
 function Step({ done }: { done: boolean }) {
@@ -21,7 +25,7 @@ function Step({ done }: { done: boolean }) {
 
 /**
  * An admin's Today before anything is dealt, in Next up's place: the steps
- * to start the house. While the list is empty, Describe your house (Claude
+ * to start the house, with a bar of how many are done. While the list is empty, Describe your house (Claude
  * drafts the Johns from a sentence or two). Add the Johns (the John list), invite the housemates
  * (House's invite sheet), then "Deal week 1", across the card, which becomes
  * the screen's amber button once the first two have something. It's there
@@ -47,11 +51,16 @@ export function SetupCard({
   // Describe your house: the chat's page on a phone, the panel beside Today from WIDE.
   const ask = useAskJonz();
   const steps = setupChecklist(johns, memberCount);
+  // Deal week 1 is the third: this card goes once it's done.
+  const done = Number(steps.johns) + Number(steps.housemates);
   return (
     <>
       <Card testID="next-up">
         <SectionLabel style={styles.label}>{words('today.nextUp.label')}</SectionLabel>
         <Lead style={styles.lead}>{words('today.nextUp.setUp', { house: houseName })}</Lead>
+        <View style={styles.progress}>
+          <Progress value={done} max={SETUP_STEPS} amount={words('today.nextUp.stepsDone', { done, all: SETUP_STEPS })} spoken={words('today.nextUp.setUp', { house: houseName })} testID="setup-progress" />
+        </View>
         <CardRows testID="setup-steps">
           {steps.johnCount === 0 ? (
             <Row
@@ -93,5 +102,6 @@ const styles = StyleSheet.create({
   // Overpass's caps sit high in their line.
   label: { paddingTop: HAIR },
   lead: { marginTop: SPACE.sm },
+  progress: { marginTop: SPACE.md },
   deal: { marginTop: SPACE.lg },
 });

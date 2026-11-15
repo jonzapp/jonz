@@ -45,6 +45,7 @@
   "today.nextUp.describe": "Describe your house",
   "today.nextUp.describeMeta": "Jonz drafts the list for you",
   "today.nextUp.onTheList": "{count, plural, =0 {Nothing on the list yet} other {# on the list}}",
+  "today.nextUp.stepsDone": "{done} of {all} steps done",
   "today.nextUp.dealWeek1": "Deal week 1",
   "today.nextUp.waiting": "{admin} will deal it soon.",
   "today.nextUp.someoneGone": "someone who left",

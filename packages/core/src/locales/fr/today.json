@@ -45,6 +45,7 @@
   "today.nextUp.describe": "Décris ta maison",
   "today.nextUp.describeMeta": "Jonz prépare la liste pour toi",
   "today.nextUp.onTheList": "{count, plural, =0 {Rien sur la liste pour l’instant} other {# sur la liste}}",
+  "today.nextUp.stepsDone": "Étapes faites : {done} sur {all}",
   "today.nextUp.dealWeek1": "Distribuer la semaine 1",
   "today.nextUp.waiting": "{admin} va bientôt distribuer.",
   "today.nextUp.someoneGone": "quelqu’un qui est parti",
