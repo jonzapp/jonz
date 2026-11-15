@@ -363,6 +363,12 @@ The rules themselves (what to use where, on a phone and a laptop) are in
   where a John has got to a `StatusMark`. Decoration is `aria-hidden`.
 - **Controls** are at least `TAP` (48) tall; links get the same target
   (`TextLink`, or `Button` with `href`, which is an anchor on the web).
+- **Focus, hover and floating** come from the theme, never drawn by hand:
+  a box you type in takes `focusRing(colors)` while focused; buttons and
+  rows get the keyboard's ring from `FocusRings` (mounted once in the root
+  layout) through their `dataSet` (`RING_EDGE`, `RING_ROW`); a press or the
+  mouse over a row or an unfilled button is `pressTint(colors)`; whatever
+  floats over the page wears `floatShadow(colors, scheme)`.
 - **`Link asChild` merges its child's style by spreading it**, so a child
   given a style function or array loses it all. Give it one flat object
   (`StyleSheet.flatten`), as `Button` does.

@@ -1,9 +1,9 @@
-import { withAlpha } from '@app/core';
 import { useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
 
+import { RING_ROW, RING_ROW_HOLDER } from '@/components/focus-rings';
 import { Group, Hairline } from '@/components/group';
-import { GROUP_RADIUS, HAIR, INSET, ROW_GAP, SPACE, TABULAR, useTheme } from '@/theme';
+import { GROUP_RADIUS, HAIR, INSET, pressTint, ROW_GAP, SPACE, TABULAR, useTheme } from '@/theme';
 
 /** One of a table's columns: its name, and a fixed width or a share of what's left. */
 export interface ListColumn {
@@ -101,8 +101,12 @@ export function ListTableRow({
 }) {
   const { colors, type } = useTheme();
   const [pressed, setPressed] = useState(false);
+  // The mouse over a row that opens: the same wash as a press.
+  const [hovered, setHovered] = useState(false);
+  // The keyboard's focus ring, inside the row's edges (components/focus-rings.tsx).
+  const ring = (set: object) => (onPress && Platform.OS === 'web' ? ({ dataSet: set } as object) : {});
   return (
-    <View style={[chosen && { backgroundColor: colors.secondary }]} testID={testID}>
+    <View style={[chosen && { backgroundColor: colors.secondary }]} testID={testID} {...ring(RING_ROW_HOLDER)}>
       <Hairline />
       {chosen ? <View aria-hidden pointerEvents="none" style={[styles.edge, { backgroundColor: colors.foreground }]} /> : null}
       <Pressable
@@ -113,7 +117,10 @@ export function ListTableRow({
         onPress={onPress}
         onPressIn={() => setPressed(true)}
         onPressOut={() => setPressed(false)}
-        style={[styles.row, pressed && { backgroundColor: withAlpha(colors.foreground, 0.06) }]}
+        onHoverIn={() => setHovered(true)}
+        onHoverOut={() => setHovered(false)}
+        {...ring(RING_ROW)}
+        style={[styles.row, (pressed || (hovered && onPress != null)) && { backgroundColor: pressTint(colors) }]}
       >
         {columns.map((column) => {
           const cell = cells[column.key];

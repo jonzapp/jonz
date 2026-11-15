@@ -1,11 +1,11 @@
-import { withAlpha } from '@app/core';
 import { Link, type Href } from 'expo-router';
 import { useEffect, useState, type ComponentType } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, Text } from 'react-native';
 
 import { useRowFit } from '@/components/button-row';
 import { useWaitShown } from '@/hooks/use-wait-shown';
-import { ICON, ICON_ONLY, RADIUS, SPACE, TAP, useTheme } from '@/theme';
+import { RING_EDGE } from '@/components/focus-rings';
+import { ICON, ICON_ONLY, pressTint, RADIUS, SPACE, TAP, useTheme } from '@/theme';
 
 type Variant = 'primary' | 'outline' | 'ghost' | 'hazard';
 
@@ -82,6 +82,8 @@ export function Button({
 }) {
   const { colors, type } = useTheme();
   const [pressed, setPressed] = useState(false);
+  // The mouse over it on a laptop: the same wash as a press, a little lighter on a filled one.
+  const [hovered, setHovered] = useState(false);
   const row = useRowFit();
   const fit = row?.fit ?? null;
   // It can't be pressed again from the tap, but looks busy only after
@@ -118,8 +120,12 @@ export function Button({
     chosen === undefined ? {} : Platform.OS === 'web' ? ({ 'aria-pressed': chosen } as object) : { 'aria-selected': chosen };
   const expandedState = expanded === undefined ? {} : ({ 'aria-expanded': expanded } as object);
   // For the layout checks (e2e/button-rules.ts): how the button was placed and its kind, as data-* on the web.
+  // RING_EDGE: the keyboard's focus ring turns its edge (components/focus-rings.tsx).
   const placed =
-    Platform.OS === 'web' ? ({ dataSet: { button: iconOnly ? 'icon' : (fit ?? 'loose'), variant: chosen === undefined ? variant : 'chosen' } } as object) : {};
+    Platform.OS === 'web'
+      ? ({ dataSet: { button: iconOnly ? 'icon' : (fit ?? 'loose'), variant: chosen === undefined ? variant : 'chosen', ...RING_EDGE } } as object)
+      : {};
+  const lit = (pressed || hovered) && !off;
 
   const button = (
     <Pressable
@@ -134,6 +140,8 @@ export function Button({
       onPress={onPress}
       onPressIn={() => setPressed(true)}
       onPressOut={() => setPressed(false)}
+      onHoverIn={() => setHovered(true)}
+      onHoverOut={() => setHovered(false)}
       testID={testID}
       // One flat object, not a function or an array: Link's asChild merges
       // styles by spreading them, which would drop either.
@@ -143,9 +151,9 @@ export function Button({
         fit === 'share' && styles.share,
         fit === 'full' && styles.full,
         {
-          backgroundColor: pressed && look.background === 'transparent' ? withAlpha(colors.foreground, 0.06) : look.background,
+          backgroundColor: lit && look.background === 'transparent' ? pressTint(colors) : look.background,
           borderColor: look.edge,
-          opacity: pale ? 0.5 : pressed && !off && look.background !== 'transparent' ? 0.85 : 1,
+          opacity: pale ? 0.5 : lit && look.background !== 'transparent' ? (pressed ? 0.85 : 0.92) : 1,
         },
       ])}
     >

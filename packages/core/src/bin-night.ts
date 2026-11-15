@@ -108,8 +108,8 @@ export const BIN_NIGHT: { light: BinNightScheme; dark: BinNightScheme; radius: n
       other: "#6b7378",
     },
   },
-  /** `--radius` (0.375rem) in pixels, at the usual 16px root. */
-  radius: 6,
+  /** `--radius` (0.5rem) in pixels, at the usual 16px root: a button's and a box's corner. */
+  radius: 8,
 };
 
 /**

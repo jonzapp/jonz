@@ -162,6 +162,17 @@ the John sheet, opened by tapping that John anywhere. (Focus, #17)
   `aria-selected`, `aria-disabled`; `aria-pressed` and `aria-expanded` on the
   web), never `accessibilityState`, which react-native-web ignores.
   (AGENTS.md)
-- **A focus ring shows for the keyboard, never after a tap,** and never on a
-  sheet's close button just because the sheet opened. (**New**) *Backed by*
-  WCAG 2.4.7 and the browser's focus-visible behaviour.
+- **One focus ring for everything:** the control's edge turns `ring` (ink
+  by day, amber after dark) with a soft 3pt halo of it round the outside
+  (`focusRing` in `theme.ts`); a row draws it inside its own edges. A box you
+  type in (a `Field`, `SearchBox`, an admin list's search, the chat box, the
+  code boxes' next box) wears it while you type. A button or a row shows it
+  only when the keyboard brought you there, never after a tap or a click, and
+  never on a sheet's close button just because the sheet opened
+  (`FocusRings`, the browser's `:focus-visible`). (Look A, 15 Nov) *Backed
+  by* WCAG 2.4.7 and 1.4.11, and the browser's focus-visible behaviour.
+- **A hover tint on a laptop:** under the mouse, a row, a menu's line, a
+  table's row or a button with no fill takes the same light wash of ink as a
+  press (`pressTint`); a filled button lightens a little. A phone never shows
+  it. (Look A, 15 Nov) *Backed by* Material's hover state and NN/g on
+  clickability signifiers.

@@ -14,6 +14,7 @@ import { useTooOld } from '@/api/too-old';
 import { BeingDeleted } from '@/components/account/being-deleted';
 import { Button } from '@/components/button';
 import { ButtonRow } from '@/components/button-row';
+import { FocusRings } from '@/components/focus-rings';
 import { CrashReport } from '@/components/report/crash-report';
 import { NoticeBand } from '@/components/notice-banner';
 import { StagingRibbon } from '@/components/staging-ribbon';
@@ -35,6 +36,7 @@ export default function RootLayout() {
   return (
     <QueryProvider>
       <LookProvider>
+        <FocusRings />
         <MembershipProvider>
           <Routes />
         </MembershipProvider>

@@ -19,6 +19,7 @@ import { NO_PIECES, Reply, type ReplyPieces } from "@/components/reply/reply";
 import { Body, Meta } from "@/components/text";
 import {
   CONTENT_MAX,
+  focusRing,
   GROUP_RADIUS,
   GUTTER,
   INSET,
@@ -42,7 +43,7 @@ const ZERO_WIDTH = '\u200b';
 const LINE = TAP - 2;
 /** The message box at its tallest: five lines, then it scrolls. */
 const BOX_MAX = LINE + 4 * 24;
-/** No focus ring of the browser's own round the words: the bubble round them darkens instead. */
+/** No focus ring of the browser's own round the words: the bubble round them wears the focus ring instead. */
 const NO_RING =
   Platform.OS === "web" ? ({ outlineStyle: "none" } as object) : null;
 /** The send arrow's round, and its room from the bubble's edge (the same all round, one line tall). */
@@ -301,9 +302,10 @@ export function Composer({
         style={[
           styles.box,
           {
-            borderColor: focused ? colors.foreground : colors.mutedForeground,
+            borderColor: colors.mutedForeground,
             backgroundColor: colors.card,
           },
+          focused && focusRing(colors),
         ]}
         testID={`${testID}-box`}
       >

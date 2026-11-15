@@ -5,7 +5,7 @@ import { Platform, StyleSheet, TextInput, View, type TextInputProps } from 'reac
 import { Alert } from '@/components/alert';
 import { FieldLabel } from '@/components/field';
 import { Lead, Meta } from '@/components/text';
-import { RADIUS, SPACE, TAP, useTheme } from '@/theme';
+import { focusRing, RADIUS, SPACE, TAP, useTheme } from '@/theme';
 
 type Props = {
   label: string;
@@ -67,9 +67,10 @@ export function CodeBoxes({ label, hint, problem, value, onChangeText, onFilled,
           {
             height,
             backgroundColor: colors.card,
-            borderColor: here || problem ? colors.foreground : colors.mutedForeground,
-            borderWidth: here ? 2 : 1,
+            borderColor: problem ? colors.foreground : colors.mutedForeground,
           },
+          // The box the next digit goes in wears the focus ring, as any box you type in does.
+          here && focusRing(colors),
         ]}
         testID={testID ? `${testID}-box-${index}` : undefined}
       >
@@ -146,6 +147,7 @@ const styles = StyleSheet.create({
   boxes: { flexDirection: 'row', gap: SPACE.sm },
   box: {
     flex: 1,
+    borderWidth: 1,
     borderRadius: RADIUS,
     alignItems: 'center',
     justifyContent: 'center',

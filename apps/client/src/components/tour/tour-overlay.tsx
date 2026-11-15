@@ -6,7 +6,7 @@ import Svg, { Path } from 'react-native-svg';
 import { Button } from '@/components/button';
 import { TextButton } from '@/components/text-button';
 import { Body, Meta, RowTitle } from '@/components/text';
-import { GROUP_RADIUS, GUTTER, INSET, SPACE, useTheme } from '@/theme';
+import { floatShadow, GROUP_RADIUS, GUTTER, INSET, SPACE, useTheme } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
 /** How far the lit area reaches past the spot, so its edge isn't on the spot's own. */
@@ -108,7 +108,7 @@ export function TourOverlay({
                 top: card.y,
                 width: card.width,
                 backgroundColor: colors.card,
-                boxShadow: `0 8px 24px ${withAlpha(ink, scheme === 'dark' ? 0.5 : 0.24)}`,
+                boxShadow: floatShadow(colors, scheme),
               },
             ]}
           >
