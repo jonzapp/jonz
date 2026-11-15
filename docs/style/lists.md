@@ -124,7 +124,9 @@ Built for very many rows from the start. (Admin lists, 31 Oct)
   first day, the months either side lighter, the same day height). A page
   shows one calendar; picking days is in a sheet from a button under it,
   plain (no shading), its picked ends solid ink and the days between grey.
-  (One calendar D, 13 Nov)
+  (One calendar D, 13 Nov) Picking is the kit's `Calendar`, a run of days
+  (time away) or one (moving out, a `DateField`'s), opening on the month
+  of the day picked. (Kit to shadcn's breadth, 15 Nov)
 - Records over time are bars that share the width, one per week (on Week,
   one per John), coloured by the worst thing in it, this week an outline:
   `WeekStrip`. Every row's bars share one set of columns, at most 13 to a

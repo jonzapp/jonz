@@ -10,6 +10,7 @@ import { PromotionPreview } from '@/components/admin/promotion-parts';
 import { Alert } from '@/components/alert';
 import { Button } from '@/components/button';
 import { ButtonRow } from '@/components/button-row';
+import { DateField } from '@/components/date-field';
 import { Field, FieldLabel } from '@/components/field';
 import { Group } from '@/components/group';
 import { Segmented } from '@/components/segmented';
@@ -313,7 +314,7 @@ function WhenItEnds({ form, set, shown }: Filling) {
         testID="promotion-ends"
       />
       {form.ends === 'day' ? (
-        <Field label={words('admin.promotions.endsOn')} value={form.endsOn} onChangeText={(endsOn) => set({ endsOn })} problem={shown('endsAt')} testID="promotion-ends-on" />
+        <DateField label={words('admin.promotions.endsOn')} value={form.endsOn} onChange={(endsOn) => set({ endsOn })} today={formatDay(new Date())} problem={shown('endsAt')} testID="promotion-ends-on" />
       ) : null}
     </View>
   );

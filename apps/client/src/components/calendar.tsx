@@ -17,33 +17,42 @@ export interface DateRange {
 }
 
 /**
- * Pick the days you're away from a month calendar, the same shape as Who's
- * away's: weeks from the house's first day, opening on this month, with the
- * days either side from the months around it, lighter. The first tap is the
- * first day (and the last, for a single day), the next the last day; the two
- * ends are solid ink and the days between grey. Nothing before `today` can
- * be picked, nor a month before this one shown.
+ * A month calendar (shadcn's Calendar), the same shape as Who's away's:
+ * weeks from the house's first day, opening on the month of the day picked
+ * (this month when there's none), with the days either side from the
+ * months around it, lighter. It picks a run of days, or one with `single`.
+ * For a run the first tap is the first day (and the last, for a single
+ * day), the next the last day; the two ends are solid ink and the days
+ * between grey. Today is outlined. Nothing before `today` can be picked,
+ * nor a month before this one shown. Time away picks a run in it, moving
+ * out one day, and a DateField opens one.
  */
-export function AwayDates({
+export function Calendar({
   today,
   weekStarts,
   value,
   onChange,
+  single = false,
+  testID = 'calendar',
 }: {
   today: string;
   weekStarts: IsoDow;
   value: DateRange;
   onChange: (range: DateRange, picking: boolean) => void;
+  single?: boolean;
+  testID?: string;
 }) {
   const words = useWords();
   const { colors, type } = useTheme();
-  const [month, setMonth] = useState(today.slice(0, 7));
+  const [month, setMonth] = useState((value.from && value.from > today ? value.from : today).slice(0, 7));
   const [picking, setPicking] = useState(false);
   const weeks = monthWeeks(month, weekStarts);
   const days = Array.from({ length: 7 }, (_, i) => (((weekStarts - 1 + i) % 7) + 1) as IsoDow);
 
   function tap(date: string) {
-    if (picking && value.from && date >= value.from) {
+    if (single) {
+      onChange({ from: date, to: date }, false);
+    } else if (picking && value.from && date >= value.from) {
       setPicking(false);
       onChange({ from: value.from, to: date }, false);
     } else {
@@ -53,7 +62,7 @@ export function AwayDates({
   }
 
   return (
-    <View style={styles.calendar} testID="date-range">
+    <View style={styles.calendar} testID={testID}>
       <View style={styles.head}>
         <IconButton
           icon={ChevronLeftIcon}

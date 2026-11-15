@@ -1,10 +1,10 @@
-import { useRef, useState, type ReactNode } from 'react';
+import { useRef, type ReactNode } from 'react';
 import { ScrollView, StyleSheet, Text, useWindowDimensions, View, type HostInstance } from 'react-native';
 
-import { DropMenu, placeFloat, type MenuPlace } from '@/components/drop-menu';
+import { DropMenu, useFloatOrSheet } from '@/components/drop-menu';
 import { Sheet } from '@/components/sheet';
 import { Meta } from '@/components/text';
-import { SPACE, useTheme, WIDE } from '@/theme';
+import { SPACE, useTheme } from '@/theme';
 
 /** How wide a popover is, and the most of the window it takes before it scrolls. */
 const POP_WIDTH = 380;
@@ -33,24 +33,8 @@ export function Popover({
   testID?: string;
 }) {
   const win = useWindowDimensions();
-  const wide = win.width >= WIDE;
   const box = useRef<HostInstance>(null);
-  const [open, setOpen] = useState(false);
-  const [place, setPlace] = useState<MenuPlace | null>(null);
-  const show = () => {
-    if (!wide) {
-      setOpen(true);
-      return;
-    }
-    placeFloat(box, { win, most: POP_TALL, width: Math.min(POP_WIDTH, win.width - 2 * SPACE.lg), end: true }, (at) => {
-      setPlace(at);
-      setOpen(true);
-    });
-  };
-  const close = () => {
-    setOpen(false);
-    setPlace(null);
-  };
+  const { wide, open, place, show, close } = useFloatOrSheet(box, { most: POP_TALL, width: Math.min(POP_WIDTH, win.width - 2 * SPACE.lg), end: true });
   return (
     <>
       <View ref={box} collapsable={false}>

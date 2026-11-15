@@ -13,7 +13,7 @@ import { Group, GroupItem } from '@/components/group';
 import { HouseTimeNote, type HouseClock } from '@/components/house-time-note';
 import { Row, RowIcon } from '@/components/row';
 import { Section } from '@/components/section';
-import { AwayDates, DAY_HEIGHT, type DateRange } from '@/components/setup/away-dates';
+import { Calendar, DAY_HEIGHT, type DateRange } from '@/components/calendar';
 import { Sheet } from '@/components/sheet';
 import { Body, Meta } from '@/components/text';
 import { TextButton } from '@/components/text-button';
@@ -393,10 +393,11 @@ function AwayForm({
 
   return (
     <>
-      <AwayDates
+      <Calendar
         today={today}
         weekStarts={weekStarts}
         value={range}
+        testID="date-range"
         onChange={(next, stillPicking) => {
           setRange(next);
           setPicking(stillPicking);
