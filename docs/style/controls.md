@@ -125,6 +125,16 @@
   Overview, a parent's switch to a kid's Today). It opens the same list as
   the Select. (Small picks A, 16 Nov; was the Select's edged box sized to
   its words, which read as a form in a list)
+- **A John's effort on a laptop is a `Slider`** (shadcn's Slider): its
+  name over it with the points at the end ("8 pts"), the grey track inked
+  up to a round knob, and 1, 5 and 20 marked under it, as the John list's
+  hint names them (the bins, a deep clean, a whole day). Drag the knob,
+  click the track, or use the arrows (Page Up and Down by five, Home and
+  End to the ends); the knob wears the focus ring. A screen reader hears a
+  slider and its points, which swiping up and down changes. On a phone
+  effort stays a `Select`, where a thin knob is fiddly under a thumb. (Kit
+  plan, laptop extras, 16 Nov; was a Select of 1 to 20 on a laptop too)
+  *Backed by* shadcn's Slider and WAI-ARIA's slider role.
 - **A text box with something inside it is an input group** (`InputGroup`,
   `InputBox`): a search's magnifier at its start, a password's Show at its
   end (every password box), an address's Copy at its end (`CopyLine`), all
