@@ -70,31 +70,55 @@ export const NOTICE_ENDS_LABEL: Record<NoticeEnds, string> = {
   date: "On a date",
 };
 
-/** The end a choice means, from `start`; `date` is the typed one. Null for no end. */
-export function noticeEndsAt(choice: NoticeEnds, start: Date, typed: Date | null): Date | null {
+/** The end a choice means, from `start`; `date` is the picked one. Null for no end. */
+export function noticeEndsAt(choice: NoticeEnds, start: Date, picked: Date | null): Date | null {
   if (choice === "never") return null;
   if (choice === "2h") return new Date(start.getTime() + 2 * 3_600_000);
   if (choice === "tomorrow") return new Date(start.getTime() + 24 * 3_600_000);
-  return typed;
+  return picked;
 }
 
+const two = (n: number) => String(n).padStart(2, "0");
+
+/** The times a notice can start or end at: every half hour of the day, "00:00" to "23:30". */
+const HALF_HOURS: readonly string[] = Array.from({ length: 48 }, (_, i) => `${two(Math.floor(i / 2))}:${i % 2 === 0 ? "00" : "30"}`);
+
 /**
- * A typed local date and time, "2026-11-30 09:00" (a T between them is fine
- * too), as the moment it names on this device; null when it isn't one.
+ * The times to pick from beside a notice's day: every half hour, and
+ * `current` in its place when it's between them (a notice saved at 16:05).
  */
-export function parseLocalDateTime(text: string): Date | null {
-  const match = text.trim().match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{1,2}):(\d{2})$/);
-  if (!match) return null;
-  const [, y, mo, d, h, mi] = match.map(Number);
-  const date = new Date(y, mo - 1, d, h, mi);
-  if (date.getFullYear() !== y || date.getMonth() !== mo - 1 || date.getDate() !== d || h > 23 || mi > 59) return null;
+export function noticeTimes(current: string): readonly string[] {
+  return HALF_HOURS.includes(current) || !/^\d{2}:\d{2}$/.test(current) ? HALF_HOURS : [...HALF_HOURS, current].sort();
+}
+
+/** A moment as its day ("2026-11-30") and time ("09:05") on this device's clock. */
+export function localDayTime(date: Date): { day: string; time: string } {
+  return {
+    day: `${date.getFullYear()}-${two(date.getMonth() + 1)}-${two(date.getDate())}`,
+    time: `${two(date.getHours())}:${two(date.getMinutes())}`,
+  };
+}
+
+/** The moment a day and a time ("2026-11-30", "09:00") name on this device's clock; null when they don't name one. */
+export function atLocalTime(day: string, time: string): Date | null {
+  const d = day.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const t = time.match(/^(\d{2}):(\d{2})$/);
+  if (!d || !t) return null;
+  const [y, mo, dd] = d.slice(1).map(Number);
+  const [h, mi] = t.slice(1).map(Number);
+  if (h > 23 || mi > 59) return null;
+  const date = new Date(y, mo - 1, dd, h, mi);
+  if (date.getFullYear() !== y || date.getMonth() !== mo - 1 || date.getDate() !== dd) return null;
   return date;
 }
 
-/** A moment as parseLocalDateTime reads it, for a field's starting text. */
-export function formatLocalDateTime(date: Date): string {
-  const two = (n: number) => String(n).padStart(2, "0");
-  return `${date.getFullYear()}-${two(date.getMonth() + 1)}-${two(date.getDate())} ${two(date.getHours())}:${two(date.getMinutes())}`;
+/** Where a notice that starts later begins: a day after `now`, at the half hour after it. */
+export function noticeLaterStart(now: Date): Date {
+  const start = new Date(now.getTime() + 24 * 3_600_000);
+  start.setSeconds(0, 0);
+  const m = start.getMinutes();
+  if (m !== 0 && m !== 30) start.setMinutes(m < 30 ? 30 : 60);
+  return start;
 }
 
 export interface NoticeDraft {

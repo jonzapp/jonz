@@ -160,8 +160,12 @@
   laptop (over it near the window's foot) and opens as a sheet on a phone,
   and tapping a day puts it away. Never a day typed as 2026-12-31 (a
   promotion's last day). A page whose whole job is picking days keeps the
-  `Calendar` open on it (moving out, time away's sheet). (Kit to shadcn's
-  breadth, 15 Nov; was a typed day)
+  `Calendar` open on it (moving out, time away's sheet). A day and a time
+  together (when a notice starts or ends) are a `DateField` with a `Select`
+  of the day's half hours beside it, stacking where the two don't fit;
+  never a typed 2026-11-30 09:00. A long `Select` list opens scrolled to
+  the chosen one. (Kit to shadcn's breadth, 15 Nov; was a typed day; day
+  and time 16 Nov)
 - **A few quick choices side by side are a `Segmented`,** wrapped into
   equal rows with `perRow` where the words don't fit one row; never pills
   of our own, and the chosen one is never amber (the John editor's How

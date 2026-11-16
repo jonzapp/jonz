@@ -2,7 +2,7 @@ import { BIN_NIGHT, wordsFor } from '@app/core';
 import * as Clipboard from 'expo-clipboard';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { useState } from 'react';
-import { Dimensions, StyleSheet } from 'react-native';
+import { Dimensions, ScrollView, StyleSheet } from 'react-native';
 
 import { CopyLine } from '@/components/copy-line';
 import { Field } from '@/components/field';
@@ -89,6 +89,28 @@ describe('Select', () => {
     expect(screen.queryByText('Johns are dealt on this day')).toBeNull();
     await fireEvent.press(screen.getByRole('button', { name: 'Weeks start, Monday' }));
     expect(screen.getByRole('radio', { name: 'Sunday' })).toBeOnTheScreen();
+  });
+
+  it('opens a long list scrolled to the chosen one, a line above it showing, and only the once', async () => {
+    const scrollTo = (ScrollView as unknown as { prototype: { scrollTo: jest.Mock } }).prototype.scrollTo;
+    scrollTo.mockClear();
+    const hours = Array.from({ length: 24 }, (_, h) => ({ value: `${String(h).padStart(2, '0')}:00`, label: `${String(h).padStart(2, '0')}:00` }));
+    await render(<Select label="At" options={hours} value="14:00" onChange={jest.fn()} testID="at" />);
+    await fireEvent.press(screen.getByTestId('at'));
+    const place = (y: number) => ({ nativeEvent: { layout: { x: 0, y, width: 300, height: TAP } } });
+    await fireEvent(screen.getByTestId('at-14:00'), 'layout', place(14 * TAP));
+    expect(scrollTo).toHaveBeenCalledWith({ y: 13 * TAP, animated: false });
+    await fireEvent(screen.getByTestId('at-14:00'), 'layout', place(15 * TAP));
+    expect(scrollTo).toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves a list alone when the chosen one is at its top', async () => {
+    const scrollTo = (ScrollView as unknown as { prototype: { scrollTo: jest.Mock } }).prototype.scrollTo;
+    scrollTo.mockClear();
+    await render(<Days />);
+    await fireEvent.press(screen.getByTestId('days'));
+    await fireEvent(screen.getByTestId('days-1'), 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 300, height: TAP } } });
+    expect(scrollTo).not.toHaveBeenCalled();
   });
 });
 

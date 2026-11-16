@@ -1,6 +1,6 @@
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon, type LucideIcon } from 'lucide-react-native';
 import { useRef, useState, type RefObject } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View, type HostInstance } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View, type HostInstance, type ScrollViewInstance } from 'react-native';
 
 import { DropMenu, placeFloat, type MenuPlace } from '@/components/drop-menu';
 import { RING_EDGE } from '@/components/focus-rings';
@@ -154,7 +154,12 @@ export function SelectBox({
   );
 }
 
-/** The floating list: each choice a thumb-tall line (its `meta` under it), the chosen one in bold and ticked, a wash of ink under the finger or the mouse. */
+/**
+ * The floating list: each choice a thumb-tall line (its `meta` under it),
+ * the chosen one in bold and ticked, a wash of ink under the finger or the
+ * mouse. A list longer than it has room for opens scrolled to the chosen
+ * one, a line above it showing (a notice's 09:00 among the day's half hours).
+ */
 function SelectList<T extends string | number>({
   label,
   options,
@@ -169,11 +174,25 @@ function SelectList<T extends string | number>({
   testID?: string;
 }) {
   const { colors } = useTheme();
+  const list = useRef<ScrollViewInstance>(null);
+  const placed = useRef(false);
+  const toChosen = (y: number) => {
+    if (placed.current) return;
+    placed.current = true;
+    if (y > TAP) list.current?.scrollTo({ y: y - TAP, animated: false });
+  };
   return (
-    <ScrollView style={{ backgroundColor: colors.popover }} contentContainerStyle={styles.list}>
+    <ScrollView ref={list} style={{ backgroundColor: colors.popover }} contentContainerStyle={styles.list}>
       <View accessibilityRole="radiogroup" accessibilityLabel={label} testID={testID ? `${testID}-choices` : undefined}>
         {options.map((option) => (
-          <Choice key={String(option.value)} option={option} chosen={option.value === value} onPick={onPick} testID={testID ? `${testID}-${option.value}` : undefined} />
+          <Choice
+            key={String(option.value)}
+            option={option}
+            chosen={option.value === value}
+            onPick={onPick}
+            onPlaced={option.value === value ? toChosen : undefined}
+            testID={testID ? `${testID}-${option.value}` : undefined}
+          />
         ))}
       </View>
     </ScrollView>
@@ -181,7 +200,20 @@ function SelectList<T extends string | number>({
 }
 
 /** One line of the list. */
-function Choice<T extends string | number>({ option, chosen, onPick, testID }: { option: SelectOption<T>; chosen: boolean; onPick: (value: T) => void; testID?: string }) {
+function Choice<T extends string | number>({
+  option,
+  chosen,
+  onPick,
+  onPlaced,
+  testID,
+}: {
+  option: SelectOption<T>;
+  chosen: boolean;
+  onPick: (value: T) => void;
+  /** Where the line sits in the list, once it's laid out: the chosen one's, to scroll to. */
+  onPlaced?: (y: number) => void;
+  testID?: string;
+}) {
   const { colors, type } = useTheme();
   const [lit, setLit] = useState(false);
   return (
@@ -194,6 +226,7 @@ function Choice<T extends string | number>({ option, chosen, onPick, testID }: {
       onPressOut={() => setLit(false)}
       onHoverIn={() => setLit(true)}
       onHoverOut={() => setLit(false)}
+      onLayout={onPlaced ? (event) => onPlaced(event.nativeEvent.layout.y) : undefined}
       testID={testID}
       {...(Platform.OS === 'web' ? ({ dataSet: RING_EDGE } as object) : {})}
       style={[styles.choice, lit && { backgroundColor: pressTint(colors) }]}

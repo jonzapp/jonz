@@ -6,12 +6,14 @@ import {
   auditParts,
   auditRowWords,
   daysUntil,
-  formatLocalDateTime,
+  atLocalTime,
+  localDayTime,
   noticeEndsAt,
   noticeProblems,
   noticeLine,
   noticeWindow,
-  parseLocalDateTime,
+  noticeLaterStart,
+  noticeTimes,
   type AuditEntry,
   type NoticeDraft,
 } from "./owner-admin";
@@ -66,14 +68,31 @@ describe("when a notice ends", () => {
     expect(noticeEndsAt("date", NOW, typed)).toBe(typed);
   });
 
-  it("reads a typed date and time on this device, and refuses one that isn't", () => {
-    const date = parseLocalDateTime("2026-11-30 09:05")!;
+  it("reads a picked day and time on this device's clock, and refuses ones that aren't", () => {
+    const date = atLocalTime("2026-11-30", "09:05")!;
     expect([date.getFullYear(), date.getMonth(), date.getDate(), date.getHours(), date.getMinutes()]).toEqual([2026, 10, 30, 9, 5]);
-    expect(parseLocalDateTime("2026-11-30T09:05")).not.toBeNull();
-    expect(parseLocalDateTime("2026-02-30 09:00")).toBeNull();
-    expect(parseLocalDateTime("30/11/2026")).toBeNull();
-    expect(parseLocalDateTime("2026-11-30 24:00")).toBeNull();
-    expect(formatLocalDateTime(date)).toBe("2026-11-30 09:05");
+    expect(atLocalTime("2026-02-30", "09:00")).toBeNull();
+    expect(atLocalTime("30/11/2026", "09:00")).toBeNull();
+    expect(atLocalTime("2026-11-30", "24:00")).toBeNull();
+    expect(atLocalTime("2026-11-30", "")).toBeNull();
+    expect(localDayTime(date)).toEqual({ day: "2026-11-30", time: "09:05" });
+  });
+
+  it("offers every half hour, and a saved time between them in its place", () => {
+    const times = noticeTimes("09:00");
+    expect(times).toHaveLength(48);
+    expect([times[0], times[1], times[47]]).toEqual(["00:00", "00:30", "23:30"]);
+    const saved = noticeTimes("16:05");
+    expect(saved).toHaveLength(49);
+    expect(saved.slice(32, 35)).toEqual(["16:00", "16:05", "16:30"]);
+  });
+
+  it("starts a later notice a day on, at the next half hour", () => {
+    const at = (h: number, m: number) => localDayTime(noticeLaterStart(new Date(2026, 10, 16, h, m, 40)));
+    expect(at(3, 12)).toEqual({ day: "2026-11-17", time: "03:30" });
+    expect(at(3, 47)).toEqual({ day: "2026-11-17", time: "04:00" });
+    expect(at(23, 50)).toEqual({ day: "2026-11-18", time: "00:00" });
+    expect(localDayTime(noticeLaterStart(new Date(2026, 10, 16, 9, 30)))).toEqual({ day: "2026-11-17", time: "09:30" });
   });
 });
 
