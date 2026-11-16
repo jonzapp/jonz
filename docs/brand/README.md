@@ -89,6 +89,7 @@ form is "Fair shares of the housework." The social handle is @jonz.app.
 | Splash | `splash-icon.png`, the rounded tile on the ground colour | 1024, shown at 96 |
 | Browser tab | `apps/client/public/favicon.svg`, `favicon.ico` (16, 32, 48) | |
 | iPhone's Add to Home Screen | `apple-touch-icon.png` | 180 |
+| Password managers' and older iOS's first guess | `apple-touch-icon-precomposed.png` (same picture) | 180 |
 | Installed web app | `icon-192.png`, `icon-512.png`, `icon-maskable-512.png` | 192, 512 |
 | Any jonz.app link pasted in a chat | `og.png` | 1200×630 |
 | A join link pasted in a chat | drawn per house by `apps/api/app/api/og/join/[code]` | 1200×630 |
