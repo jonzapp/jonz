@@ -1,6 +1,6 @@
 import { BIN_NIGHT, wordsFor } from '@app/core';
 import * as Clipboard from 'expo-clipboard';
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { useState } from 'react';
 import { Dimensions, ScrollView, StyleSheet } from 'react-native';
 
@@ -91,17 +91,22 @@ describe('Select', () => {
     expect(screen.getByRole('radio', { name: 'Sunday' })).toBeOnTheScreen();
   });
 
-  it('opens a long list scrolled to the chosen one, a line above it showing, and only the once', async () => {
+  it('opens a long list scrolled to the chosen one, a line above it, and keeps that place once the list settles', async () => {
     const scrollTo = (ScrollView as unknown as { prototype: { scrollTo: jest.Mock } }).prototype.scrollTo;
     scrollTo.mockClear();
+    jest.useFakeTimers();
     const hours = Array.from({ length: 24 }, (_, h) => ({ value: `${String(h).padStart(2, '0')}:00`, label: `${String(h).padStart(2, '0')}:00` }));
     await render(<Select label="At" options={hours} value="14:00" onChange={jest.fn()} testID="at" />);
     await fireEvent.press(screen.getByTestId('at'));
     const place = (y: number) => ({ nativeEvent: { layout: { x: 0, y, width: 300, height: TAP } } });
     await fireEvent(screen.getByTestId('at-14:00'), 'layout', place(14 * TAP));
     expect(scrollTo).toHaveBeenCalledWith({ y: 13 * TAP, animated: false });
+    // Laid out again: still where it first sat, never a second place.
     await fireEvent(screen.getByTestId('at-14:00'), 'layout', place(15 * TAP));
-    expect(scrollTo).toHaveBeenCalledTimes(1);
+    await act(() => jest.runOnlyPendingTimers());
+    expect(scrollTo.mock.calls.length).toBeGreaterThan(1);
+    for (const [to] of scrollTo.mock.calls) expect(to).toEqual({ y: 13 * TAP, animated: false });
+    jest.useRealTimers();
   });
 
   it('leaves a list alone when the chosen one is at its top', async () => {

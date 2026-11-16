@@ -1,5 +1,5 @@
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon, type LucideIcon } from 'lucide-react-native';
-import { useRef, useState, type RefObject } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View, type HostInstance, type ScrollViewInstance } from 'react-native';
 
 import { DropMenu, placeFloat, type MenuPlace } from '@/components/drop-menu';
@@ -22,6 +22,8 @@ const LIST_TALL = 360;
 const SMALL_LIST = 200;
 /** The small Select's ⌄, as a See all's words are sized. */
 const SMALL_CHEVRON = 16;
+/** When a long list scrolls to the chosen one again, after it opens: once it has settled in every browser. */
+const SETTLE = [50, 250];
 
 /**
  * Pick one from a list (shadcn's Select): a box like a text box showing
@@ -175,11 +177,19 @@ function SelectList<T extends string | number>({
 }) {
   const { colors } = useTheme();
   const list = useRef<ScrollViewInstance>(null);
-  const placed = useRef(false);
+  const aim = useRef<number | null>(null);
+  const later = useRef<ReturnType<typeof setTimeout>[]>([]);
+  useEffect(() => () => later.current.forEach(clearTimeout), []);
   const toChosen = (y: number) => {
-    if (placed.current) return;
-    placed.current = true;
-    if (y > TAP) list.current?.scrollTo({ y: y - TAP, animated: false });
+    // Once, from where the chosen one first sits; nothing to do when it shows at the top.
+    if (aim.current !== null || y <= TAP) return;
+    const to = y - TAP;
+    aim.current = to;
+    const go = () => list.current?.scrollTo({ y: to, animated: false });
+    go();
+    // Safari loses a scroll made while the list is still floating in: the same scroll again
+    // once the list has settled, too soon for a finger or the mouse to have moved it.
+    later.current = SETTLE.map((ms) => setTimeout(go, ms));
   };
   return (
     <ScrollView ref={list} style={{ backgroundColor: colors.popover }} contentContainerStyle={styles.list}>
