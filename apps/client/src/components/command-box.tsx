@@ -151,19 +151,25 @@ function Hit({ hit, id, active, onHover }: { hit: CommandHit; id: string; active
   );
 }
 
-/** The card's foot: the keys that work in it. */
+/** The card's foot: the keys that work in it, each kept beside what it does. */
 function Keys() {
   const words = useWords();
   const { colors } = useTheme();
   return (
     <View aria-hidden style={[styles.foot, { borderTopColor: colors.border }]}>
-      <Kbd>{words('common.keys.up')}</Kbd>
-      <Kbd>{words('common.keys.down')}</Kbd>
-      <Meta style={styles.hint}>{words('common.command.move')}</Meta>
-      <Kbd>{words('common.keys.enter')}</Kbd>
-      <Meta style={styles.hint}>{words('common.command.open')}</Meta>
-      <Kbd>{words('common.keys.esc')}</Kbd>
-      <Meta>{words('common.command.close')}</Meta>
+      <View style={styles.keys}>
+        <Kbd>{words('common.keys.up')}</Kbd>
+        <Kbd>{words('common.keys.down')}</Kbd>
+        <Meta>{words('common.command.move')}</Meta>
+      </View>
+      <View style={styles.keys}>
+        <Kbd>{words('common.keys.enter')}</Kbd>
+        <Meta>{words('common.command.open')}</Meta>
+      </View>
+      <View style={styles.keys}>
+        <Kbd>{words('common.keys.esc')}</Kbd>
+        <Meta>{words('common.command.close')}</Meta>
+      </View>
     </View>
   );
 }
@@ -218,6 +224,6 @@ const styles = StyleSheet.create({
   lead: { width: SPACE.xl, alignItems: 'center' },
   title: { flex: 1, minWidth: 0 },
   meta: { flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: SPACE.sm },
-  foot: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: SPACE.xs, paddingHorizontal: INSET, paddingVertical: SPACE.sm, borderTopWidth: StyleSheet.hairlineWidth },
-  hint: { marginRight: SPACE.sm },
+  foot: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: SPACE.md, rowGap: SPACE.xs, paddingHorizontal: INSET, paddingVertical: SPACE.sm, borderTopWidth: StyleSheet.hairlineWidth },
+  keys: { flexDirection: 'row', alignItems: 'center', gap: SPACE.xs },
 });

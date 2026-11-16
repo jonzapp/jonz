@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
     gap: SPACE.xl,
   },
   house: { paddingHorizontal: GUTTER + INSET - SPACE.sm, gap: HAIR },
-  // The search box's words start where the places' names do, its edge as far out as their icons.
+  // The search box's magnifier lines up with the places' icons.
   search: { paddingHorizontal: GUTTER + INSET - SPACE.sm - SPACE.md },
   railItems: { gap: SPACE.xs },
   railItem: {

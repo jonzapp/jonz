@@ -42,8 +42,9 @@ export function CommandProvider({ houseId, userId, children }: { houseId: string
       setOpen((was) => !was);
       setQuery('');
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    // On the way down, before a text box (the box's own search among them) keeps the keys to itself.
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
   }, []);
   return (
     <CommandContext.Provider value={show}>

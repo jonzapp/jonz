@@ -60,7 +60,7 @@ test("Ctrl K finds a John, a housemate or a page, and opens the one picked", asy
   await box.getByTestId("command-input").press("Enter");
   await expect(box).toHaveCount(0);
   await expect(page.getByTestId("john-sheet-name")).toHaveText("Wipe the hob");
-  await page.keyboard.press("Escape");
+  await page.getByTestId("sheet-close").click();
   await expect(page.getByTestId("john-sheet-name")).toHaveCount(0);
 
   // A page by its name; Esc, a click beside it and Ctrl K again each put it away.

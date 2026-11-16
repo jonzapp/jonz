@@ -24,6 +24,18 @@ still look right stretched (content capped, nothing pinned to far edges).
   rail from `WIDE`. House is the house's (its life, its setup, its Pass);
   You is yours (your settings, help, moving out and leaving). Pages pushed
   from House or You keep the tabs. (Focus, #17; Fourth tab A, 12 Nov)
+- **Ctrl K goes anywhere in the house** (⌘K on a Mac), on the web: the
+  command box (`CommandBox`, shadcn's Command) over the page, as high as a
+  third of the way down and as wide as a sheet. With nothing typed it lists
+  the pages; typing finds the Johns, the housemates and the pages, in that
+  order, each word typed starting a word of the name (as the time zone
+  search finds). ↑ ↓ and Enter open one, as a click does; Esc, a click
+  beside it or Ctrl K again put it away. A John of this week opens its
+  sheet, yours first, as a chat's chip does, else the John list; a
+  housemate opens their page. On a laptop the rail's Search, under the
+  house's name, opens it too, its keys at its end (`Kbd`). A phone keeps
+  its tabs and has no Search. (Kit plan, laptop extras, 15 Nov) *Backed by*
+  shadcn's Command and WAI-ARIA's combobox with a listbox.
 - **The owner's pages have four tabs too:** Overview (with the Audit log),
   Inbox (with Deletions), Houses and Send (Messages, Notices, Promotions).
   A tab with more than one page has a switch at the top on a phone; on a
