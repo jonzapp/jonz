@@ -63,6 +63,9 @@ const ICONS = [
   [`${PUBLIC}/icon-maskable-512.png`, 512, icon.maskable],
   // iPhone's Add to Home Screen: 180, opaque, square (iOS rounds it).
   [`${PUBLIC}/apple-touch-icon.png`, 180, icon.square],
+  // The same, under the older name that some icon finders still ask for
+  // first (password managers, older iOS); without it the app's page answers.
+  [`${PUBLIC}/apple-touch-icon-precomposed.png`, 180, icon.square],
   [`${IMAGES}/icon.png`, 1024, icon.square],
   [`${IMAGES}/icon-dark.png`, 1024, icon.dark],
   [`${IMAGES}/icon-tinted.png`, 1024, icon.tinted],
