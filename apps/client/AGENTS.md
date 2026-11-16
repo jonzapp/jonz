@@ -150,7 +150,7 @@ permanent once a store has seen them.
   fair shares draw theirs with `SharesChart`), `CommandBox` and `CommandCard` (Ctrl K: type to
   find and open anything; the house's is `CommandProvider` in `shell/command.tsx`, with the rail's
   `RailSearch`), `Kbd` (a key's name in a small box, on the web only),
-  `Switch` (one thing on or off, straight away), `Separator` (the line between things), `Select` (pick one from a list, its list floating under its box; `small` beside a heading), `Combobox` (type to search a long list, then pick), `Calendar` (a month to pick a run of days or one in, drawn by the app, no native date module) and `DateField` (a day in a form: the Select's box opening a Calendar), `InputGroup` and `InputBox` (a text box with an icon or a button inside: `SearchBox`, a password's Show, `CopyLine`), `Field`, `SignInForm` and `HiddenUsername` (sign-in and password boxes
+  `Switch` (one thing on or off, straight away), `Separator` (the line between things), `Select` (pick one from a list, its list floating under its box; `small` beside a heading), `Combobox` (type to search a long list, then pick), `Slider` (drag a whole number: a John's effort on a laptop), `Calendar` (a month to pick a run of days or one in, drawn by the app, no native date module) and `DateField` (a day in a form: the Select's box opening a Calendar), `InputGroup` and `InputBox` (a text box with an icon or a button inside: `SearchBox`, a password's Show, `CopyLine`), `Field`, `SignInForm` and `HiddenUsername` (sign-in and password boxes
   as a real form on the web, for password managers), `Alert`, `Segmented`,
   `EmptyState`, `Waiting` (a first read on its way: its outline, built
   from `outline.tsx`, after 300ms and for at least 300ms) and `ReadFailed`

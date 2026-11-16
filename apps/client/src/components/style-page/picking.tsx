@@ -7,6 +7,7 @@ import { GroupItem } from '@/components/group';
 import { Row } from '@/components/row';
 import { Select } from '@/components/select';
 import { commandGroups, type CommandHouse } from '@/components/shell/command-hits';
+import { Slider } from '@/components/slider';
 import { useWords } from '@/hooks/use-words';
 
 import { SAMPLE_HOUSE } from './replies';
@@ -87,6 +88,16 @@ export function Finding() {
         onClose={() => setQuery('')}
         autoFocus={false}
       />
+    </GroupItem>
+  );
+}
+
+/** A John's effort as a laptop sets it: dragged on a slider, marked at 1, 5 and 20. */
+export function Sliding() {
+  const [points, setPoints] = useState(3);
+  return (
+    <GroupItem>
+      <Slider label="Effort" value={points} min={1} max={20} marks={[1, 5, 20]} shown={`${points} pts`} onChange={setPoints} testID="style-slider" />
     </GroupItem>
   );
 }

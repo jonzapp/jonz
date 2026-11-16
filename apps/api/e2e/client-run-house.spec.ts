@@ -21,13 +21,28 @@ function pickRow(page: Page, label: string) {
   return page.getByRole("button", { name: new RegExp(`^${label}, `) });
 }
 
+/**
+ * A John's effort: on a laptop its slider, from the low end a step at a
+ * time with the arrow keys; on a phone its Select, which floats its choices.
+ */
+async function setEffort(page: Page, points: number) {
+  if ((page.viewportSize()?.width ?? 0) >= 1024) {
+    const slider = page.getByTestId("john-form").getByRole("slider", { name: words('house.johns.effort') });
+    await slider.press("Home");
+    for (let step = 1; step < points; step++) await slider.press("ArrowRight");
+    await expect(slider).toHaveAttribute("aria-valuenow", String(points));
+    return;
+  }
+  await pickRow(page, words('house.johns.effort')).click();
+  await page.getByRole("radio", { name: pointsLabel(points, words), exact: true }).click();
+}
+
 async function addJohn(page: Page, name: string, points: number) {
   const list = page.getByTestId("johns-screen");
   await list.getByTestId("add-john").click();
   const form = page.getByTestId("john-form");
   await form.getByLabel(words('house.johns.name')).fill(name);
-  await pickRow(page, words('house.johns.effort')).click();
-  await page.getByRole("radio", { name: pointsLabel(points, words), exact: true }).click();
+  await setEffort(page, points);
   await form.getByTestId("save-john").click();
   await expect(form).toBeHidden();
   await expect(list.getByTestId("john-def").filter({ hasText: name })).toBeVisible();

@@ -1,7 +1,7 @@
 import { CREW_CHOICES, crewLine, CURRENCY_SYMBOL, kindOf, kindsInOrder, moneyInput, parseMinAge, parseMoney, pointsLabel, type GroupDef, type HouseRules, type JohnDef, type KindDef, type Words } from '@app/core';
 import { Trash2Icon } from 'lucide-react-native';
 import { useState, type ReactNode } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { archiveJohn, saveJohn } from '@/api/settings';
 import { Alert } from '@/components/alert';
@@ -10,20 +10,24 @@ import { ButtonRow } from '@/components/button-row';
 import { Field } from '@/components/field';
 import { Group, GroupItem } from '@/components/group';
 import { Select } from '@/components/select';
+import { Slider } from '@/components/slider';
 import { TimingSentence, type TimingWord } from '@/components/house/john-timing';
 import { TimingPicker } from '@/components/house/john-timing-picker';
 import { ChoiceRow } from '@/components/setup/choice-row';
 import { Meta } from '@/components/text';
 import { useMove } from '@/hooks/use-move';
 import { useWords } from '@/hooks/use-words';
-import { INSET, LABEL_GAP, SECTION_GAP, SPACE } from '@/theme';
+import { INSET, LABEL_GAP, SECTION_GAP, SPACE, WIDE } from '@/theme';
 
 /** A John being added (no id yet) or edited. */
 export type Draft = Omit<JohnDef, 'id'> & { id?: string };
 
 type SetDraft = (patch: Partial<Draft>) => void;
 
-const effort = (words: Words) => Array.from({ length: 20 }, (_, i) => ({ value: i + 1, label: pointsLabel(i + 1, words) }));
+/** The most effort a John can be, and the points the slider marks. */
+const EFFORT_MOST = 20;
+const EFFORT_MARKS = [1, 5, 20];
+const effort = (words: Words) => Array.from({ length: EFFORT_MOST }, (_, i) => ({ value: i + 1, label: pointsLabel(i + 1, words) }));
 
 /**
  * One John's details: its name; what it is and who shares it, with a line on
@@ -154,6 +158,30 @@ function WhatAndWho({ value: v, kinds, groups, onChange: set }: { value: Draft; 
 }
 
 /**
+ * How much effort a John is, 1 to 20 points: a Slider on a laptop, marked
+ * where the John list's hint puts the bins (1), a deep clean (5) and a whole
+ * day (20); a Select on a phone, where dragging a thin knob is fiddly.
+ */
+function Effort({ points, onChange }: { points: number; onChange: (points: number) => void }) {
+  const words = useWords();
+  const wide = useWindowDimensions().width >= WIDE;
+  return wide ? (
+    <Slider
+      label={words('house.johns.effort')}
+      value={points}
+      min={1}
+      max={EFFORT_MOST}
+      marks={EFFORT_MARKS}
+      shown={pointsLabel(points, words)}
+      onChange={onChange}
+      testID="john-effort"
+    />
+  ) : (
+    <Select label={words('house.johns.effort')} options={effort(words)} value={points} onChange={onChange} testID="john-effort" />
+  );
+}
+
+/**
  * How much effort it is, how many do it, whether it keeps its day and
  * whether the tick needs a photo. `children` are a family's fields, after
  * the effort.
@@ -167,7 +195,7 @@ function HowItsDone({ value: v, onChange: set, children }: { value: Draft; onCha
     <View style={styles.noted}>
       <Group>
         <GroupItem>
-          <Select label={words('house.johns.effort')} options={effort(words)} value={v.points} onChange={(points) => set({ points })} />
+          <Effort points={v.points} onChange={(points) => set({ points })} />
         </GroupItem>
         {children}
         {/* On call stays one person: whoever is on call. */}
