@@ -3,6 +3,7 @@ import { CalendarDaysIcon, HouseIcon, ListChecksIcon, UserRoundIcon, type Lucide
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { CountBadge } from '@/components/badge';
+import { RailSearch } from '@/components/shell/command';
 import { Meta, RowTitle } from '@/components/text';
 import { TourSpot } from '@/components/tour/tour-spot';
 import { useWords } from '@/hooks/use-words';
@@ -34,7 +35,8 @@ export interface ShellHouse {
 
 /**
  * The house's four places: tabs along the bottom of a phone, a rail down
- * the left from WIDE on the web, the same four either way. The current one
+ * the left from WIDE on the web, the same four either way, the rail's with
+ * the house's name and Search (the command box, Ctrl K) over them. The current one
  * is ink with the 3pt hi-vis marker (amber's one job besides the primary
  * button); Today carries a badge counting the disputes waiting for your
  * vote, said in words to a screen reader.
@@ -115,6 +117,9 @@ export function HouseTabBar({
           <Meta>{words('common.members', { count: house.memberCount })}</Meta>
         </View>
       ) : null}
+      <View style={styles.search}>
+        <RailSearch />
+      </View>
       <TourSpot id="shell.tabs">
         <View role="tablist" accessibilityLabel={words('common.shell.places')} style={styles.railItems}>
           {places}
@@ -144,6 +149,8 @@ const styles = StyleSheet.create({
     gap: SPACE.xl,
   },
   house: { paddingHorizontal: GUTTER + INSET - SPACE.sm, gap: HAIR },
+  // The search box's words start where the places' names do, its edge as far out as their icons.
+  search: { paddingHorizontal: GUTTER + INSET - SPACE.sm - SPACE.md },
   railItems: { gap: SPACE.xs },
   railItem: {
     minHeight: TAP,

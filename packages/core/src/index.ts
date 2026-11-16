@@ -36,6 +36,7 @@ export * from "./email-sign-in";
 export * from "./errors";
 export * from "./family";
 export * from "./family-board";
+export * from "./finds";
 export * from "./format";
 export * from "./front-door";
 export * from "./history";

@@ -152,6 +152,14 @@ export function floatShadow(colors: BinNightScheme, scheme: SchemeName): string 
 }
 
 /**
+ * What dims the page behind a sheet or the command box: the darker of the
+ * two inks, faintly, whichever way the theme is.
+ */
+export function scrim(colors: BinNightScheme, scheme: SchemeName): string {
+  return withAlpha(scheme === 'dark' ? colors.background : colors.foreground, 0.5);
+}
+
+/**
  * Waiting (docs/style/states.md): nothing shows for the first WAIT_DELAY ms of
  * a read, so a fast one never flashes; once an outline or a busy spinner shows,
  * it stays at least WAIT_MIN ms, so it never blinks. A photo fades in over

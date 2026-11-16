@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { Platform, Pressable, StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
 
 import type { ButtonIcon } from '@/components/button';
-import { RING_EDGE } from '@/components/focus-rings';
+import { RING_EDGE, RING_PART_SHOWN } from '@/components/focus-rings';
 import { focusRing, FONT, pressTint, RADIUS, SPACE, TAP, useTheme } from '@/theme';
 
 /**
@@ -18,6 +18,7 @@ export function InputBox({
   focused = false,
   problem = false,
   tall = false,
+  ring = false,
   children,
   testID,
 }: {
@@ -26,6 +27,8 @@ export function InputBox({
   focused?: boolean;
   problem?: boolean;
   tall?: boolean;
+  /** It's what a button presses (the rail's Search): the box wears the ring when the keyboard reaches the button. */
+  ring?: boolean;
   children: ReactNode;
   testID?: string;
 }) {
@@ -33,6 +36,7 @@ export function InputBox({
   return (
     <View
       testID={testID}
+      {...(ring && Platform.OS === 'web' ? ({ dataSet: RING_PART_SHOWN } as object) : {})}
       style={[
         styles.box,
         tall && styles.tall,

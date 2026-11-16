@@ -1,4 +1,3 @@
-import { withAlpha } from '@app/core';
 import { XIcon } from 'lucide-react-native';
 import { createContext, useCallback, useContext, useEffect, useRef, type ReactNode } from 'react';
 import {
@@ -18,7 +17,7 @@ import { HazardTape, SIGN_TAPE } from '@/components/hazard-tape';
 import { nearEnd } from '@/components/near-end';
 import { Body, Lead } from '@/components/text';
 import { IconButton } from '@/components/icon-button';
-import { GUTTER, INSET, MARK_RADIUS, SECTION_GAP, SHEET_RADIUS, SPACE, TAP, useTheme, WIDE } from '@/theme';
+import { GUTTER, INSET, MARK_RADIUS, scrim, SECTION_GAP, SHEET_RADIUS, SPACE, TAP, useTheme, WIDE } from '@/theme';
 import { useWords } from '@/hooks/use-words';
 
 /**
@@ -131,8 +130,7 @@ export function Sheet({
   // into the next sheet would land on this one's backdrop instead. So on the
   // web a closed sheet goes at once.
   if (Platform.OS === 'web' && !visible) return null;
-  // The darker of the two inks, faintly, whichever way the theme is.
-  const shade = withAlpha(scheme === 'dark' ? colors.background : colors.foreground, 0.5);
+  const shade = scrim(colors, scheme);
   return (
     <Modal
       visible={visible}
