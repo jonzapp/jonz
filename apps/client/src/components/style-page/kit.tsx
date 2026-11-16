@@ -59,7 +59,7 @@ import { MonthBars, WeekStrip, type StripCell } from '@/components/week/week-str
 
 import { Dates } from './dates';
 import { Explaining } from './explaining';
-import { Picking } from './picking';
+import { Finding, Picking } from './picking';
 import { RADIUS, SPACE, useTheme } from '@/theme';
 
 const none = () => {};
@@ -187,7 +187,7 @@ export function Buttons() {
 
 const TICKS: readonly TickState[] = ['open', 'checking', 'done', 'disputed', 'busy'];
 
-/** Picking and typing: segments, switches, day chips, tick boxes, fields, code boxes, selects, a combobox, a date field and a calendar, a popover, a fold and the lines between things. */
+/** Picking and typing: segments, switches, day chips, tick boxes, fields, code boxes, selects, a combobox, the command box, a date field and a calendar, a popover, a fold and the lines between things. */
 export function Choosing() {
   const [scope, setScope] = useState<'me' | 'house'>('me');
   const [soon, setSoon] = useState(true);
@@ -229,6 +229,7 @@ export function Choosing() {
           <Row title="Hoover the stairs" meta="Done 10am" lid="floors" leading={<TickBox state="done" label="Hoover the stairs" />} leadingControl />
         </Fold>
         <Picking />
+        <Finding />
         <Dates />
         <Explaining />
         <Lines />

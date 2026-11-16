@@ -1,5 +1,6 @@
 import { tzOffset } from "@date-fns/tz";
 
+import { finds } from "./finds";
 import { dateIn } from "./format";
 import type { Words } from "./words-for";
 import { ZONE_COUNTRY } from "./zone-countries";
@@ -103,21 +104,11 @@ export function zoneChoices(known: readonly string[], { at, keep }: { at: Date; 
     .sort((a, b) => a.city.localeCompare(b.city, words.language) || a.zone.localeCompare(b.zone));
 }
 
-/** Lower case with the accents taken off, so "sao" finds São Paulo and "cote" Côte d'Ivoire. */
-function plain(text: string): string {
-  return text.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
-}
-
 /**
  * The choices a search finds: each word typed must start a word of the
  * city, the country, the zone's own name or its country's code, so "canada"
  * finds every Canadian zone and "new y" finds New York.
  */
 export function findZones(choices: readonly ZoneChoice[], query: string): ZoneChoice[] {
-  const asked = plain(query).split(/[\s,/_-]+/).filter(Boolean);
-  if (asked.length === 0) return [...choices];
-  return choices.filter((choice) => {
-    const said = plain([choice.city, choice.country ?? "", choice.zone, ZONE_COUNTRY[choice.zone] ?? ""].join(" ")).split(/[\s,/_'’()-]+/);
-    return asked.every((word) => said.some((part) => part.startsWith(word)));
-  });
+  return choices.filter((choice) => finds(query, [choice.city, choice.country ?? "", choice.zone, ZONE_COUNTRY[choice.zone] ?? ""].join(" ")));
 }

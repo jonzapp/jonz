@@ -1,4 +1,4 @@
-import { firstName, kindOf, PAGES, weekShareRows, type BoardItem, type GroupDef, type JohnDef, type KindDef, type PageName, type ReplyCard, type Words } from '@app/core';
+import { firstName, kindOf, PAGES, weekItemOf, weekShareRows, type BoardItem, type GroupDef, type JohnDef, type KindDef, type PageName, type ReplyCard, type Words } from '@app/core';
 import type { Href } from 'expo-router';
 
 import type { JohnRowContext } from '@/components/john-row';
@@ -62,8 +62,7 @@ export function replyPieces(data: ReplyData, words: Words): ReplyPieces {
       const john = findJohn(data, ref);
       if (!john) return null;
       // This week's: its sheet, yours first.
-      const item =
-        data.items?.find((i) => i.johnId === john.id && i.userId === data.viewerId) ?? data.items?.find((i) => i.johnId === john.id);
+      const item = data.items ? weekItemOf(data.items, john.id, data.viewerId) : null;
       const lead = { kind: 'lid' as const, lid: lidOf(john) };
       const spoken = words('ask.reply.spokenJohn', { name: john.name });
       return item && data.openJohn ? { lead, spoken, onPress: () => data.openJohn!(item.id) } : { lead, spoken, href: johnList };

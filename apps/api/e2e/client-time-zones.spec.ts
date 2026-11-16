@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { dateIn, wordsFor } from "@app/core";
 
+import { fromNow } from "../tests/support/clock";
 import { admin, CLIENT_URL, cleanUp, dealtHouseInClient } from "./auth";
 
 const words = wordsFor("en", "housemates");
@@ -18,15 +19,17 @@ test.afterAll(async () => cleanUp(made));
 test("read times on your own clock, set them in house time, and pick the house's zone by country", async ({ context, page }) => {
   const { userId, weekId } = await dealtHouseInClient(context, "Gwen Away", "Flat 14", [{ name: "Bins out", preset: "bins", dueTime: "21:00" }]);
   made.push(userId);
-  const { data: bins } = await admin().from("assignments").select("due_at").eq("week_id", weekId).eq("name", "Bins out").single();
-  const due = new Date(bins!.due_at!);
+  // Due three hours from now, whatever day the real clock says it is, so it
+  // always reads as a time ("today 15:00"), never a date a week off.
+  const due = new Date(Math.ceil(fromNow(3 * 60 * 60_000).getTime() / 60_000) * 60_000);
+  await admin().from("assignments").update({ due_at: due.toISOString() }).eq("week_id", weekId).eq("name", "Bins out");
 
   await page.goto("/today");
   const today = page.getByTestId("today-screen");
   await expect(today.getByTestId("next-up-name")).toHaveText("Bins out");
-  // Due 21:00 in London, said on this browser's Regina clock, and nothing says so.
+  // Said on this browser's Regina clock, not London's, and nothing says so.
   await expect(today.getByTestId("next-up")).toContainText(dateIn(due, "time", "America/Regina", words));
-  await expect(today.getByTestId("next-up")).not.toContainText("21:00");
+  await expect(today.getByTestId("next-up")).not.toContainText(dateIn(due, "time", "Europe/London", words));
   await expect(today.getByTestId("house-time-note")).toHaveCount(0);
 
   // Setting a John's time is in house time, and the editor says so.

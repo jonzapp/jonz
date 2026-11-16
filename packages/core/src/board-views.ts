@@ -230,3 +230,12 @@ export function monthStandings(
   const { rows: table, jobs } = tableInputs(places);
   return standings(table, memberIds, jobs);
 }
+
+/**
+ * A John's place on this week's board, yours first, else anyone's; none when
+ * it isn't in this week. Where a John opens from a chat's chip or the
+ * command box: its sheet when it's this week's, else the John list.
+ */
+export function weekItemOf(items: readonly BoardItem[], johnId: string, userId: string): BoardItem | null {
+  return items.find((i) => i.johnId === johnId && i.userId === userId) ?? items.find((i) => i.johnId === johnId) ?? null;
+}

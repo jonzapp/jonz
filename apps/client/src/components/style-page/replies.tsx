@@ -21,8 +21,8 @@ const john = (n: string, j: Partial<JohnDef> & Pick<JohnDef, 'name' | 'kindId'>)
   ...j,
 });
 
-/** The sample house the replies (packages/core reply-samples.ts) talk about. */
-const DATA: ReplyData = {
+/** The sample house the replies (packages/core reply-samples.ts) talk about, and the style page's command box searches. */
+export const SAMPLE_HOUSE: ReplyData = {
   viewerId: 'glyn',
   people: [
     { userId: 'glyn', name: 'Glyn Finck' },
@@ -70,12 +70,12 @@ const WEEK = [
  */
 // The style page's sample house is housemates, in English.
 const words = wordsFor('en', 'housemates');
-const live = replyPieces(DATA, words);
+const live = replyPieces(SAMPLE_HOUSE, words);
 const SAMPLE_PIECES: ReplyPieces = {
   ...live,
   card(card) {
     if (card.card === 'shares') {
-      const nameOf = (id: string) => DATA.people.find((p) => p.userId === id)?.name ?? null;
+      const nameOf = (id: string) => SAMPLE_HOUSE.people.find((p) => p.userId === id)?.name ?? null;
       const rows = [
         { userId: 'glyn', balance: '+1', points: 1 },
         { userId: 'sam', balance: '+1', points: 1 },
@@ -87,7 +87,7 @@ const SAMPLE_PIECES: ReplyPieces = {
     if (card.card !== 'week') return live.card(card);
     const person = card.who === null ? null : card.who === 'me' ? 'glyn' : card.who.toLowerCase();
     const rows = WEEK.filter((w) => (person === null || w.who === person) && (!card.open || !w.done));
-    const name = (id: string) => (id === 'glyn' ? 'You' : (DATA.people.find((p) => p.userId === id)?.name.split(' ')[0] ?? ''));
+    const name = (id: string) => (id === 'glyn' ? 'You' : (SAMPLE_HOUSE.people.find((p) => p.userId === id)?.name.split(' ')[0] ?? ''));
     const who = person === null ? null : name(person);
     return (
       <Section label={weekLabel(who, card.open, words)} count={card.open ? rows.length : undefined}>

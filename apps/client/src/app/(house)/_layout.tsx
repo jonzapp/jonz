@@ -5,6 +5,7 @@ import { StyleSheet, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AskPanel } from "@/components/house/ask-panel";
+import { CommandProvider } from "@/components/shell/command";
 import { JohnSheetProvider } from "@/components/john-sheet";
 import { SheetRailContext } from "@/components/sheet";
 import { HouseTabBar, type ShellHouse } from "@/components/shell/house-tab-bar";
@@ -32,7 +33,8 @@ const TAB_BAR = 56;
  * chat with Jonz opens as a panel down the right (AskPanel) with the page
  * still beside it.
  * The tours and the Help sheet (TourProvider) are mounted here too, round
- * every tab, as a tour can walk from one page to another.
+ * every tab, as a tour can walk from one page to another, and so is the
+ * command box (Ctrl K, or the rail's Search), which goes to any of them.
  */
 export default function HouseLayout() {
   const words = useWords();
@@ -80,6 +82,7 @@ export default function HouseLayout() {
           <JohnSheetProvider houseId={house!.id} userId={session!.user.id}>
             <AskPanelProvider>
               <TourProvider facts={facts} canAsk={memberCan(view?.me, "house:read")}>
+              <CommandProvider houseId={house!.id} userId={session!.user.id}>
               <View style={styles.row}>
                 <View style={styles.page}>
                   <Tabs
@@ -117,6 +120,7 @@ export default function HouseLayout() {
                 </View>
                 <AskPanel houseId={house!.id} userId={session!.user.id} />
               </View>
+              </CommandProvider>
               </TourProvider>
             </AskPanelProvider>
           </JohnSheetProvider>
