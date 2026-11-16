@@ -118,11 +118,13 @@
   Select A, 15 Nov; was a row that opened in place, `PickRow`, and grey
   switches on Start your house) A radio or checkbox in a list is a
   `ChoiceRow`.
-- **The small Select** is the same box sized to its words, with no name
-  over it: beside a section's heading or at a row's end (Language, each
+- **The small Select** has no box and no name over it: the chosen words in
+  bold ink with a small ⌄, sitting where a See all would, its words ending
+  at the edge, beside a section's heading or at a row's end (Language, each
   John on Your preferences, the Table's This week | October, the owner's
-  Overview, a parent's switch to a kid's Today). (Glyn, 15 Nov; was words
-  with a ⌄, `PickMenu`)
+  Overview, a parent's switch to a kid's Today). It opens the same list as
+  the Select. (Small picks A, 16 Nov; was the Select's edged box sized to
+  its words, which read as a form in a list)
 - **A text box with something inside it is an input group** (`InputGroup`,
   `InputBox`): a search's magnifier at its start, a password's Show at its
   end (every password box), an address's Copy at its end (`CopyLine`), all

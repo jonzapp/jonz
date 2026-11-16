@@ -20,15 +20,18 @@ export interface SelectOption<T> {
 /** The most a list takes of the window before it scrolls, and the least a small Select's list is wide (its right edge on the box's). */
 const LIST_TALL = 360;
 const SMALL_LIST = 200;
+/** The small Select's ⌄, as a See all's words are sized. */
+const SMALL_CHEVRON = 16;
 
 /**
  * Pick one from a list (shadcn's Select): a box like a text box showing
  * what's chosen, with a chevron; pressed, its list floats under it (over
  * it, near the window's foot), the chosen one ticked, and picking one puts
  * it away, as do a tap anywhere else and Escape. Its name sits over the box
- * as a text box's does, with `hint` under it; `small` is the same box sized
- * to its words with no name shown (beside a section's heading, at the end
- * of a row). A screen reader hears a button that opens a list, then a radio
+ * as a text box's does, with `hint` under it. `small` (beside a section's
+ * heading, at the end of a row) has no box and no name shown: the chosen
+ * one's words in bold ink with a ⌄, where a See all would sit, opening the
+ * same list. A screen reader hears a button that opens a list, then a radio
  * group named `label`.
  */
 export function Select<T extends string | number>({
@@ -91,7 +94,13 @@ export function Select<T extends string | number>({
   );
 }
 
-/** The box: what's chosen and a chevron, edged as a text box is, wearing the focus ring while its list is open. A Combobox opens from the same box, and a DateField with a calendar `icon` for the chevron, opening a dialog (`popup`). */
+/**
+ * The box: what's chosen and a chevron, edged as a text box is, wearing the
+ * focus ring while its list is open; `small`, only the words in bold ink and
+ * a smaller ⌄, ending at the edge as a See all does. A Combobox opens from
+ * the same box, and a DateField with a calendar `icon` for the chevron,
+ * opening a dialog (`popup`).
+ */
 export function SelectBox({
   boxRef,
   label,
@@ -116,6 +125,7 @@ export function SelectBox({
   testID?: string;
 }) {
   const { colors, type } = useTheme();
+  const [pressed, setPressed] = useState(false);
   const Chevron = icon ?? (open ? ChevronUpIcon : ChevronDownIcon);
   return (
     <Pressable
@@ -127,20 +137,19 @@ export function SelectBox({
       aria-disabled={disabled}
       disabled={disabled}
       onPress={onPress}
+      onPressIn={() => setPressed(true)}
+      onPressOut={() => setPressed(false)}
       testID={testID}
       {...(Platform.OS === 'web' ? ({ dataSet: RING_EDGE } as object) : {})}
       style={[
-        styles.box,
-        small && styles.small,
-        { backgroundColor: colors.card, borderColor: colors.mutedForeground },
-        open && focusRing(colors),
+        small ? [styles.smallBox, pressed && styles.pressed] : [styles.box, { backgroundColor: colors.card, borderColor: colors.mutedForeground }, open && focusRing(colors)],
         disabled && styles.off,
       ]}
     >
-      <Text numberOfLines={1} style={[type.body, TABULAR, { color: colors.foreground }, small ? styles.hug : styles.grow]}>
+      <Text numberOfLines={1} style={[type.body, TABULAR, { color: colors.foreground }, small ? styles.bold : styles.grow, small && styles.hug]}>
         {shown}
       </Text>
-      <Chevron size={20} color={colors.mutedForeground} aria-hidden />
+      <Chevron size={small ? SMALL_CHEVRON : 20} color={small ? colors.foreground : colors.mutedForeground} aria-hidden />
     </Pressable>
   );
 }
@@ -203,8 +212,9 @@ function Choice<T extends string | number>({ option, chosen, onPick, testID }: {
 const styles = StyleSheet.create({
   field: { gap: SPACE.sm },
   box: { minHeight: TAP, flexDirection: 'row', alignItems: 'center', gap: SPACE.sm, borderWidth: 1, borderRadius: RADIUS, paddingHorizontal: SPACE.md },
-  // Sized to its words, never wider than half a phone.
-  small: { alignSelf: 'flex-end', flexShrink: 0, maxWidth: SMALL_LIST * 1.25 },
+  // Sized to its words, never wider than half a phone; ending at the edge, as an end-aligned TextButton's words do.
+  smallBox: { minHeight: TAP, flexDirection: 'row', alignItems: 'center', gap: SPACE.xs, paddingHorizontal: SPACE.md, marginRight: -SPACE.md, alignSelf: 'flex-end', flexShrink: 0, maxWidth: SMALL_LIST * 1.25 },
+  pressed: { opacity: 0.6 },
   grow: { flex: 1, minWidth: 0 },
   hug: { flexShrink: 1 },
   off: { opacity: 0.5 },
